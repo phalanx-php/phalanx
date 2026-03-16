@@ -1,0 +1,39 @@
+{
+    "name": "havy/stream",
+    "description": "Reactive stream primitives for Convoy",
+    "license": "MIT",
+    "type": "library",
+    "keywords": ["reactive", "stream", "channel", "emitter", "backpressure", "async", "reactphp"],
+    "authors": [
+        {
+            "name": "Jonathan Havens",
+            "email": "mail@jhavens.tech"
+        }
+    ],
+    "homepage": "https://github.com/havy-tech/convoy-stream",
+    "require": {
+        "php": "^8.4",
+        "havy/core": "^1.0",
+        "react/async": "^4.3",
+        "react/event-loop": "^1.5",
+        "react/stream": "^1.4",
+        "evenement/evenement": "^3.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Convoy\\Stream\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Convoy\\Stream\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "1.0-dev"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

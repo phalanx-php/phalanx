@@ -1,0 +1,37 @@
+{
+    "name": "havy/redis",
+    "description": "Async Redis for Convoy via clue/redis-react",
+    "license": "MIT",
+    "type": "library",
+    "keywords": ["redis", "async", "pubsub", "cache", "reactphp"],
+    "authors": [
+        {
+            "name": "Jonathan Havens",
+            "email": "mail@jhavens.tech"
+        }
+    ],
+    "homepage": "https://github.com/havy-tech/convoy-redis",
+    "require": {
+        "php": "^8.4",
+        "havy/core": "^1.0",
+        "havy/stream": "^1.0",
+        "clue/redis-react": "^2.8"
+    },
+    "autoload": {
+        "psr-4": {
+            "Convoy\\Redis\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Convoy\\Redis\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "1.0-dev"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

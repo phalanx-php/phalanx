@@ -1,0 +1,24 @@
+# Dependencies
+/vendor/
+packages/*/vendor/
+composer.phar
+/node_modules/
+
+# Build artifacts
+*.cache
+*.log
+*.sqlite
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Caches
+.phpstan-cache/
+.php-cs-fixer.cache
+
+# AI tool configs (tracked in AIMind vault, not here)
+.claude/
+.cursorrules
+.gemini/

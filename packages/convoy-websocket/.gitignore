@@ -1,0 +1,16 @@
+/vendor/
+/composer.lock
+/node_modules/
+*.cache
+*.log
+
+# AI tool configs
+.claude/
+.cursorrules
+.gemini/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+.phpstan-cache/

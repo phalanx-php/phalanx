@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+         failOnRisky="true"
+         failOnWarning="true">
+    <testsuites>
+        <testsuite name="Core Unit">
+            <directory>packages/convoy-core/tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Core Integration">
+            <directory>packages/convoy-core/tests/Integration</directory>
+        </testsuite>
+        <testsuite name="Stream Unit">
+            <directory>packages/convoy-stream/tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Stream Integration">
+            <directory>packages/convoy-stream/tests/Integration</directory>
+        </testsuite>
+        <testsuite name="Console Unit">
+            <directory>packages/convoy-console/tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Console Integration">
+            <directory>packages/convoy-console/tests/Integration</directory>
+        </testsuite>
+        <testsuite name="Http Unit">
+            <directory>packages/convoy-http/tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Http Integration">
+            <directory>packages/convoy-http/tests/Integration</directory>
+        </testsuite>
+        <testsuite name="Parallel Unit">
+            <directory>packages/convoy-parallel/tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Parallel Integration">
+            <directory>packages/convoy-parallel/tests/Integration</directory>
+        </testsuite>
+        <testsuite name="WebSocket Unit">
+            <directory>packages/convoy-websocket/tests/Unit</directory>
+        </testsuite>
+        <testsuite name="WebSocket Integration">
+            <directory>packages/convoy-websocket/tests/Integration</directory>
+        </testsuite>
+        <testsuite name="Integrations Unit">
+            <directory>packages/convoy-integrations/tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Integrations Integration">
+            <directory>packages/convoy-integrations/tests/Integration</directory>
+        </testsuite>
+    </testsuites>
+</phpunit>

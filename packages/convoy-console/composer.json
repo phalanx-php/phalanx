@@ -1,0 +1,39 @@
+{
+    "name": "havy/console",
+    "description": "CLI application framework for Convoy",
+    "license": "MIT",
+    "type": "library",
+    "keywords": ["cli", "console", "async", "reactphp", "convoy"],
+    "homepage": "https://github.com/havy-tech/convoy-console",
+    "authors": [
+        {
+            "name": "Jonathan Havens",
+            "email": "jonathan@jhavens.tech"
+        }
+    ],
+    "require": {
+        "php": "^8.4",
+        "havy/core": "^1.0"
+    },
+    "suggest": {
+        "havy/stream": "For streaming data through console commands",
+        "havy/parallel": "For worker process parallelism in CLI tasks"
+    },
+    "autoload": {
+        "psr-4": {
+            "Convoy\\Console\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Convoy\\Console\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "1.0-dev"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

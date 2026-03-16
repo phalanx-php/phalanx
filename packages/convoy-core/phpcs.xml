@@ -1,0 +1,83 @@
+<?xml version="1.0"?>
+<ruleset name="Convoy">
+    <file>src</file>
+    <arg name="colors"/>
+    <arg value="sp"/>
+
+    <!-- PSR-12 base -->
+    <rule ref="PSR12">
+        <exclude name="PSR1.Classes.ClassDeclaration.MultipleClasses"/>
+        <!-- PHP 8.4 property hooks: phpcs parser doesn't understand { get => } syntax -->
+        <exclude name="PSR2.Classes.PropertyDeclaration.Multiple"/>
+        <exclude name="PSR2.Classes.PropertyDeclaration.ScopeMissing"/>
+    </rule>
+
+    <!-- PHP 8.4 property hooks: interface property hooks trigger false positives -->
+    <rule ref="Internal.ParseError.InterfaceHasMemberVar">
+        <severity>0</severity>
+    </rule>
+
+    <!-- PHP 8.4 property hooks: Slevomat doesn't understand hooked properties vs regular properties -->
+    <rule ref="SlevomatCodingStandard.Classes.ClassStructure.IncorrectGroupOrder">
+        <exclude-pattern>*/SettlementBag.php</exclude-pattern>
+        <exclude-pattern>*/ExecutionScope.php</exclude-pattern>
+        <exclude-pattern>*/DeferredScope.php</exclude-pattern>
+        <exclude-pattern>*/CancellationToken.php</exclude-pattern>
+    </rule>
+
+    <!-- PHP 8.4 property hooks: spacing rules misfire on hook syntax -->
+    <rule ref="PSR2.Classes.PropertyDeclaration.SpacingAfterType">
+        <exclude-pattern>*/SettlementBag.php</exclude-pattern>
+    </rule>
+
+    <!-- Slevomat: Member ordering -->
+    <rule ref="SlevomatCodingStandard.Classes.ClassStructure">
+        <properties>
+            <property name="groups" type="array">
+                <element value="uses"/>
+                <element value="enum cases"/>
+                <element value="public constants"/>
+                <element value="protected constants"/>
+                <element value="private constants"/>
+                <element value="public static properties"/>
+                <element value="protected static properties"/>
+                <element value="private static properties"/>
+                <element value="public properties"/>
+                <element value="protected properties"/>
+                <element value="private properties"/>
+                <element value="constructor"/>
+                <element value="static constructors"/>
+                <element value="destructor"/>
+                <element value="public static final methods"/>
+                <element value="public static abstract methods"/>
+                <element value="public static methods"/>
+                <element value="protected static final methods"/>
+                <element value="protected static abstract methods"/>
+                <element value="protected static methods"/>
+                <element value="private static methods"/>
+                <element value="public final methods"/>
+                <element value="public abstract methods"/>
+                <element value="public methods"/>
+                <element value="protected final methods"/>
+                <element value="protected abstract methods"/>
+                <element value="protected methods"/>
+                <element value="private methods"/>
+                <element value="magic methods"/>
+            </property>
+        </properties>
+    </rule>
+
+    <rule ref="SlevomatCodingStandard.Namespaces.AlphabeticallySortedUses"/>
+
+    <rule ref="SlevomatCodingStandard.Namespaces.UnusedUses">
+        <properties>
+            <property name="searchAnnotations" value="true"/>
+        </properties>
+    </rule>
+
+    <rule ref="SlevomatCodingStandard.TypeHints.DeclareStrictTypes">
+        <properties>
+            <property name="spacesCountAroundEqualsSign" value="0"/>
+        </properties>
+    </rule>
+</ruleset>

@@ -1,0 +1,75 @@
+{
+    "name": "havy/core",
+    "description": "Expression-based async coordination for PHP 8.4+",
+    "license": "MIT",
+    "type": "library",
+    "keywords": [
+        "async",
+        "concurrency",
+        "fibers",
+        "reactphp",
+        "promises",
+        "parallel",
+        "event-loop"
+    ],
+    "homepage": "https://github.com/havy-tech/convoy-core",
+    "authors": [
+        {
+            "name": "Jonathan Havens",
+            "email": "mail@jhavens.tech"
+        }
+    ],
+    "require": {
+        "php": "^8.4",
+        "react/async": "^4.3",
+        "react/event-loop": "^1.5",
+        "react/promise": "^3.2"
+    },
+    "require-dev": {
+        "havy/console": "^1.0",
+        "havy/http": "^1.0",
+        "havy/parallel": "^1.0",
+        "phpstan/phpstan": "^2.0",
+        "phpunit/phpunit": "^11.0",
+        "react/promise-timer": "^1.11",
+        "rector/rector": "^2.0",
+        "slevomat/coding-standard": "^8.15",
+        "squizlabs/php_codesniffer": "^3.10"
+    },
+    "scripts": {
+        "rector": "rector process",
+        "rector:dry": "rector process --dry-run",
+        "cs": "phpcs",
+        "cs:fix": "phpcbf",
+        "test": "php vendor/bin/phpunit"
+    },
+    "suggest": {
+        "havy/stream": "Reactive stream primitives (Emitter, ScopedStream, Channel)",
+        "havy/console": "CLI application framework",
+        "havy/http": "HTTP server framework",
+        "havy/parallel": "Worker process parallelism",
+        "react/http": "Required for HttpRunner",
+        "spatie/backtrace": "Enhanced stack traces",
+        "symfony/runtime": "For symfony/runtime integration",
+        "symfony/dotenv": "For .env file support"
+    },
+    "autoload": {
+        "psr-4": {
+            "Convoy\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Convoy\\Tests\\": "tests/"
+        },
+        "classmap": [
+            "tests/Support/Fixtures/"
+        ]
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    }
+}

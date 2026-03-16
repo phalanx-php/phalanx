@@ -1,0 +1,11 @@
+parameters:
+    level: 8
+    paths:
+        - src
+    excludePaths:
+        - src/Parallel/
+        - src/Stream/
+        - src/Runtime/ConvoyRuntime.php
+        - src/Runtime/ConvoyHttpRunner.php
+    tmpDir: .phpstan-cache
+    treatPhpDocTypesAsCertain: false

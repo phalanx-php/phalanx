@@ -1,0 +1,42 @@
+name: 'Monorepo Split'
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - '*'
+
+env:
+  GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+
+jobs:
+  split_monorepo:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          - convoy-core
+          - convoy-console
+          - convoy-http
+          - convoy-integrations
+          - convoy-parallel
+          - convoy-postgres
+          - convoy-redis
+          - convoy-stream
+          - convoy-websocket
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: symplify/monorepo-split-github-action@v2.3.0
+        with:
+          package_directory: 'packages/${{ matrix.package }}'
+          repository_organization: 'havy-tech'
+          repository_name: '${{ matrix.package }}'
+          tag: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'

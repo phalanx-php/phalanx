@@ -1,0 +1,20 @@
+parameters:
+    level: 8
+    paths:
+        - packages/convoy-core/src
+        - packages/convoy-console/src
+        - packages/convoy-http/src
+        - packages/convoy-integrations/src
+        - packages/convoy-parallel/src
+        - packages/convoy-postgres/src
+        - packages/convoy-redis/src
+        - packages/convoy-stream/src
+        - packages/convoy-websocket/src
+    excludePaths:
+        analyseAndScan:
+            - packages/convoy-core/src/Parallel (?)
+            - packages/convoy-core/src/Stream/
+            - packages/convoy-core/src/Runtime/ConvoyRuntime.php (?)
+            - packages/convoy-core/src/Runtime/ConvoyHttpRunner.php (?)
+    tmpDir: .phpstan-cache
+    treatPhpDocTypesAsCertain: false

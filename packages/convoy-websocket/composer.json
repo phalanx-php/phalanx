@@ -1,0 +1,34 @@
+{
+    "name": "havy/websocket",
+    "description": "WebSocket support for Convoy async coordination library",
+    "license": "MIT",
+    "type": "library",
+    "keywords": ["websocket", "ws", "async", "realtime", "ratchet", "reactphp"],
+    "authors": [
+        {
+            "name": "Jonathan Havens",
+            "email": "mail@jhavens.tech"
+        }
+    ],
+    "homepage": "https://github.com/havy-tech/convoy-websocket",
+    "require": {
+        "php": "^8.4",
+        "havy/core": "^1.0@alpha",
+        "havy/stream": "^1.0@alpha",
+        "ratchet/rfc6455": "^0.4",
+        "react/stream": "^1.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "Convoy\\WebSocket\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Convoy\\WebSocket\\Tests\\": "tests/"
+        }
+    },
+    "suggest": {
+        "havy/http": "For HTTP server with WebSocket upgrade support"
+    }
+}

@@ -1,0 +1,104 @@
+{
+    "name": "havy/convoy",
+    "description": "Expression-based async coordination for PHP 8.4+ (monorepo)",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Jonathan Havens",
+            "email": "mail@jhavens.tech"
+        }
+    ],
+    "type": "project",
+    "require": {
+        "php": "^8.4",
+        "amphp/amp": "^3.0",
+        "amphp/postgres": "^2.2",
+        "clue/redis-react": "^2.8",
+        "evenement/evenement": "^3.0",
+        "nikic/fast-route": "^2.0",
+        "ratchet/rfc6455": "^0.4.0",
+        "react/async": "^4.3",
+        "react/child-process": "^0.6",
+        "react/datagram": "^1.10",
+        "react/event-loop": "^1.5",
+        "react/http": "^1.10",
+        "react/promise": "^3.2",
+        "react/stream": "^1.4",
+        "revolt/event-loop-adapter-react": "^1.1"
+    },
+    "require-dev": {
+        "clue/docker-react": "^1.6",
+        "phpstan/phpstan": "^2.0",
+        "phpunit/phpunit": "^11.0",
+        "react/promise-timer": "^1.11",
+        "rector/rector": "^2.0",
+        "slevomat/coding-standard": "^8.15",
+        "squizlabs/php_codesniffer": "^3.10",
+        "symplify/monorepo-builder": "^11.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Convoy\\": "packages/convoy-core/src/",
+            "Convoy\\Console\\": "packages/convoy-console/src/",
+            "Convoy\\Http\\": "packages/convoy-http/src/",
+            "Convoy\\Parallel\\": "packages/convoy-parallel/src/",
+            "Convoy\\Stream\\": "packages/convoy-stream/src/",
+            "Convoy\\Integration\\": "packages/convoy-integrations/src/",
+            "Convoy\\Postgres\\": "packages/convoy-postgres/src/",
+            "Convoy\\Redis\\": "packages/convoy-redis/src/",
+            "Convoy\\WebSocket\\": "packages/convoy-websocket/src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Convoy\\Console\\Tests\\": "packages/convoy-console/tests/",
+            "Convoy\\Http\\Tests\\": "packages/convoy-http/tests/",
+            "Convoy\\Parallel\\Tests\\": "packages/convoy-parallel/tests/",
+            "Convoy\\Stream\\Tests\\": "packages/convoy-stream/tests/",
+            "Convoy\\Tests\\": "packages/convoy-core/tests/",
+            "Convoy\\Integration\\Tests\\": "packages/convoy-integrations/tests/",
+            "Convoy\\Postgres\\Tests\\": "packages/convoy-postgres/tests/",
+            "Convoy\\Redis\\Tests\\": "packages/convoy-redis/tests/",
+            "Convoy\\WebSocket\\Tests\\": "packages/convoy-websocket/tests/"
+        },
+        "classmap": [
+            "packages/convoy-core/tests/Support/Fixtures/"
+        ]
+    },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "packages/*"
+        }
+    ],
+    "scripts": {
+        "test": "php vendor/bin/phpunit",
+        "test:core": "cd packages/convoy-core && php vendor/bin/phpunit",
+        "analyse": "php vendor/bin/phpstan analyse",
+        "rector": "php vendor/bin/rector process",
+        "rector:dry": "php vendor/bin/rector process --dry-run",
+        "cs": "php vendor/bin/phpcs --standard=packages/convoy-core/phpcs.xml",
+        "cs:fix": "php vendor/bin/phpcbf --standard=packages/convoy-core/phpcs.xml",
+        "check": ["@analyse", "@rector:dry", "@test"]
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "symfony/runtime": true,
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    },
+    "replace": {
+        "havy/console": "0.1.0",
+        "havy/core": "0.1.0",
+        "havy/http": "0.1.0",
+        "havy/integrations": "0.1.0",
+        "havy/parallel": "0.1.0",
+        "havy/postgres": "0.1.0",
+        "havy/redis": "0.1.0",
+        "havy/stream": "0.1.0",
+        "havy/websocket": "0.1.0"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
