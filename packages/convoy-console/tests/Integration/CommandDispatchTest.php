@@ -62,11 +62,11 @@ final class CommandDispatchTest extends TestCase
     public function command_group_keys_and_merge(): void
     {
         $group1 = CommandGroup::of([
-            'migrate' => new Command(fn: static fn() => 0, config: new CommandConfig(description: 'Run migrations')),
+            'migrate' => new Command(fn: static fn() => 0, config: static fn(CommandConfig $c) => $c->withDescription('Run migrations')),
         ]);
 
         $group2 = CommandGroup::of([
-            'seed' => new Command(fn: static fn() => 0, config: new CommandConfig(description: 'Seed database')),
+            'seed' => new Command(fn: static fn() => 0, config: static fn(CommandConfig $c) => $c->withDescription('Seed database')),
         ]);
 
         $merged = $group1->merge($group2);
@@ -80,7 +80,7 @@ final class CommandDispatchTest extends TestCase
     public function command_config_preserved(): void
     {
         $group = CommandGroup::of([
-            'migrate' => new Command(fn: static fn() => 0, config: new CommandConfig(description: 'Run migrations')),
+            'migrate' => new Command(fn: static fn() => 0, config: static fn(CommandConfig $c) => $c->withDescription('Run migrations')),
         ]);
 
         $handler = $group->handlers()->get('migrate');

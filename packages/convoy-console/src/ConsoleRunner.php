@@ -27,8 +27,13 @@ final class ConsoleRunner
         return new self($app, [], $handlers);
     }
 
-    public static function withCommands(AppHost $app, CommandGroup $commands): self
+    /** @param CommandGroup|string|list<string> $commands */
+    public static function withCommands(AppHost $app, CommandGroup|string|array $commands): self
     {
+        if (is_string($commands) || is_array($commands)) {
+            $commands = self::loadFromPaths($app, $commands);
+        }
+
         return new self($app, [], $commands);
     }
 
@@ -218,5 +223,19 @@ final class ConsoleRunner
                 printf("  %s\n", $name);
             }
         }
+    }
+
+    /** @param string|list<string> $paths */
+    private static function loadFromPaths(AppHost $app, string|array $paths): CommandGroup
+    {
+        $paths = is_string($paths) ? [$paths] : $paths;
+        $scope = $app->createScope();
+        $group = CommandGroup::create();
+
+        foreach ($paths as $dir) {
+            $group = $group->merge(CommandLoader::loadDirectory($dir, $scope));
+        }
+
+        return $group;
     }
 }

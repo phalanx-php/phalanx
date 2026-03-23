@@ -16,10 +16,15 @@ use Convoy\Task\Scopeable;
  */
 final class Command implements Scopeable
 {
+    public private(set) CommandConfig $config;
+
     public function __construct(
         public private(set) Closure $fn,
-        public private(set) CommandConfig $config = new CommandConfig(),
+        CommandConfig|Closure $config = new CommandConfig(),
     ) {
+        $this->config = $config instanceof Closure
+            ? $config(new CommandConfig())
+            : $config;
     }
 
     public function __invoke(Scope $scope): mixed

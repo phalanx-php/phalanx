@@ -15,7 +15,7 @@ use function React\Async\delay;
 final class ScopeConcurrencyTest extends AsyncTestCase
 {
     #[Test]
-    public function concurrent_executes_in_parallel(): void
+    public function concurrent_executes_cooperatively(): void
     {
         $app = Application::starting()->compile();
 

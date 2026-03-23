@@ -55,8 +55,13 @@ final class Runner
         return new self($app, $requestTimeout, $debug);
     }
 
-    public function withRoutes(RouteGroup $routes): self
+    /** @param RouteGroup|string|list<string> $routes */
+    public function withRoutes(RouteGroup|string|array $routes): self
     {
+        if (is_string($routes) || is_array($routes)) {
+            $routes = self::loadRoutes($this->app, $routes);
+        }
+
         $this->routes = $this->routes !== null
             ? $this->routes->merge($routes)
             : $routes;
@@ -344,5 +349,19 @@ final class Runner
         }
 
         return array_slice($trace, 0, 10);
+    }
+
+    /** @param string|list<string> $paths */
+    private static function loadRoutes(AppHost $app, string|array $paths): RouteGroup
+    {
+        $paths = is_string($paths) ? [$paths] : $paths;
+        $scope = $app->createScope();
+        $group = RouteGroup::create();
+
+        foreach ($paths as $dir) {
+            $group = $group->merge(RouteLoader::loadDirectory($dir, $scope));
+        }
+
+        return $group;
     }
 }
