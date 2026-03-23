@@ -1,5 +1,5 @@
 {
-    "name": "havy/redis",
+    "name": "convoy/redis",
     "description": "Async Redis for Convoy via clue/redis-react",
     "license": "MIT",
     "type": "library",
@@ -13,8 +13,8 @@
     "homepage": "https://github.com/havy-tech/convoy-redis",
     "require": {
         "php": "^8.4",
-        "havy/core": "^1.0",
-        "havy/stream": "^1.0",
+        "convoy/core": "^1.0",
+        "convoy/stream": "^1.0",
         "clue/redis-react": "^2.8"
     },
     "autoload": {

@@ -1,5 +1,5 @@
 {
-    "name": "havy/integrations",
+    "name": "convoy/integrations",
     "description": "AI and Twilio integrations for Convoy",
     "license": "MIT",
     "type": "library",
@@ -13,8 +13,8 @@
     "homepage": "https://github.com/havy-tech/convoy-integrations",
     "require": {
         "php": "^8.4",
-        "havy/core": "^1.0",
-        "havy/stream": "^1.0",
+        "convoy/core": "^1.0",
+        "convoy/stream": "^1.0",
         "react/http": "^1.10"
     },
     "autoload": {

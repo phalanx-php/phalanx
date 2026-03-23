@@ -1,5 +1,5 @@
 {
-    "name": "havy/convoy",
+    "name": "convoy/convoy",
     "description": "Expression-based async coordination for PHP 8.4+ (monorepo)",
     "license": "MIT",
     "authors": [
@@ -89,15 +89,15 @@
         }
     },
     "replace": {
-        "havy/console": "0.1.0",
-        "havy/core": "0.1.0",
-        "havy/http": "0.1.0",
-        "havy/integrations": "0.1.0",
-        "havy/parallel": "0.1.0",
-        "havy/postgres": "0.1.0",
-        "havy/redis": "0.1.0",
-        "havy/stream": "0.1.0",
-        "havy/websocket": "0.1.0"
+        "convoy/console": "0.1.0",
+        "convoy/core": "0.1.0",
+        "convoy/http": "0.1.0",
+        "convoy/integrations": "0.1.0",
+        "convoy/parallel": "0.1.0",
+        "convoy/postgres": "0.1.0",
+        "convoy/redis": "0.1.0",
+        "convoy/stream": "0.1.0",
+        "convoy/websocket": "0.1.0"
     },
     "minimum-stability": "dev",
     "prefer-stable": true

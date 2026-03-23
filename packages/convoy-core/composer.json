@@ -1,5 +1,5 @@
 {
-    "name": "havy/core",
+    "name": "convoy/core",
     "description": "Expression-based async coordination for PHP 8.4+",
     "license": "MIT",
     "type": "library",
@@ -26,9 +26,9 @@
         "react/promise": "^3.2"
     },
     "require-dev": {
-        "havy/console": "^1.0",
-        "havy/http": "^1.0",
-        "havy/parallel": "^1.0",
+        "convoy/console": "^1.0",
+        "convoy/http": "^1.0",
+        "convoy/parallel": "^1.0",
         "phpstan/phpstan": "^2.0",
         "phpunit/phpunit": "^11.0",
         "react/promise-timer": "^1.11",
@@ -44,10 +44,10 @@
         "test": "php vendor/bin/phpunit"
     },
     "suggest": {
-        "havy/stream": "Reactive stream primitives (Emitter, ScopedStream, Channel)",
-        "havy/console": "CLI application framework",
-        "havy/http": "HTTP server framework",
-        "havy/parallel": "Worker process parallelism",
+        "convoy/stream": "Reactive stream primitives (Emitter, ScopedStream, Channel)",
+        "convoy/console": "CLI application framework",
+        "convoy/http": "HTTP server framework",
+        "convoy/parallel": "Worker process parallelism",
         "react/http": "Required for HttpRunner",
         "spatie/backtrace": "Enhanced stack traces",
         "symfony/runtime": "For symfony/runtime integration",

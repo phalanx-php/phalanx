@@ -1,5 +1,5 @@
 {
-    "name": "havy/websocket",
+    "name": "convoy/websocket",
     "description": "WebSocket support for Convoy async coordination library",
     "license": "MIT",
     "type": "library",
@@ -13,8 +13,8 @@
     "homepage": "https://github.com/havy-tech/convoy-websocket",
     "require": {
         "php": "^8.4",
-        "havy/core": "^1.0@alpha",
-        "havy/stream": "^1.0@alpha",
+        "convoy/core": "^1.0@alpha",
+        "convoy/stream": "^1.0@alpha",
         "ratchet/rfc6455": "^0.4",
         "react/stream": "^1.4"
     },
@@ -29,6 +29,6 @@
         }
     },
     "suggest": {
-        "havy/http": "For HTTP server with WebSocket upgrade support"
+        "convoy/http": "For HTTP server with WebSocket upgrade support"
     }
 }

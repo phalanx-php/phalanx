@@ -1,5 +1,5 @@
 {
-    "name": "havy/console",
+    "name": "convoy/console",
     "description": "CLI application framework for Convoy",
     "license": "MIT",
     "type": "library",
@@ -13,11 +13,11 @@
     ],
     "require": {
         "php": "^8.4",
-        "havy/core": "^1.0"
+        "convoy/core": "^1.0"
     },
     "suggest": {
-        "havy/stream": "For streaming data through console commands",
-        "havy/parallel": "For worker process parallelism in CLI tasks"
+        "convoy/stream": "For streaming data through console commands",
+        "convoy/parallel": "For worker process parallelism in CLI tasks"
     },
     "autoload": {
         "psr-4": {
