@@ -18,7 +18,15 @@ composer.phar
 .phpstan-cache/
 .php-cs-fixer.cache
 
-# AI tool configs (tracked in AIMind vault, not here)
-.claude/
-.cursorrules
-.gemini/
+# Markdown (docs live outside the repo)
+*.md
+
+# Hidden files/folders (blanket ignore)
+.*
+
+# --- Exceptions (tracked) ---
+!.gitignore
+!packages/*/.gitignore
+!.github/
+!.github/**
+!.editorconfig
