@@ -18,13 +18,31 @@ composer.phar
 .phpstan-cache/
 .php-cs-fixer.cache
 
-# Markdown (docs live outside the repo)
-*.md
-
-# Hidden files/folders (blanket ignore)
+# Hidden files/folders
 .*
 
-# --- Exceptions (tracked) ---
+# AI configs (managed outside repo)
+CLAUDE.md
+**/CLAUDE.md
+**/.aimind
+**/tasks/
+
+# Planning/research docs (local only)
+/article.md
+/DESIGN*.md
+/AUDIT_PLAN.md
+/IMPLEMENTATION_MANIFEST.md
+/MONOREPO-SETUP.md
+/*-MIGRATION.md
+/PRIMITIVES-LIBRARY.md
+/RESEARCH*.md
+/TECHNICAL_RESEARCH.md
+**/UNIMPLEMENTED_PATTERNS.md
+
+# Reference docs (not public yet)
+/docs/
+
+# --- Tracked exceptions ---
 !.gitignore
 !packages/*/.gitignore
 !.github/
