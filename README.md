@@ -1,4 +1,6 @@
-# Phalanx
+<p align="center">
+  <img src="logo.svg" alt="Phalanx" width="520">
+</p>
 
 **Async coordination for PHP 8.4+ that reads like synchronous code.**
 
