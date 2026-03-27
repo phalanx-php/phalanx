@@ -1,0 +1,17 @@
+{
+    "name": "phalanx/example-research-agent",
+    "description": "Phalanx AI example: multi-document research agent with sub-agent delegation over WebSocket",
+    "type": "project",
+    "require": {
+        "php": "^8.4",
+        "phalanx/ai": "dev-main",
+        "phalanx/websocket": "dev-main"
+    },
+    "autoload": {
+        "psr-4": {
+            "Acme\\": "src/"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

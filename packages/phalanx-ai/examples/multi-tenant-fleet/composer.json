@@ -1,0 +1,19 @@
+{
+    "name": "phalanx/example-multi-tenant-fleet",
+    "description": "Phalanx AI example: multi-tenant support fleet with gateway/worker architecture over Redis pub/sub",
+    "type": "project",
+    "require": {
+        "php": "^8.4",
+        "phalanx/ai": "dev-main",
+        "phalanx/websocket": "dev-main",
+        "phalanx/redis": "dev-main",
+        "phalanx/postgres": "dev-main"
+    },
+    "autoload": {
+        "psr-4": {
+            "Acme\\": "src/"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

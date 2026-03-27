@@ -655,9 +655,9 @@ Three complete examples demonstrate progressive architectural complexity:
 
 | Example | Transport | Architecture |
 |---------|-----------|-------------|
-| [Support Triage](examples/01-support-triage/) | SSE | Single agent, 4 tools, structured output |
-| [Research Agent](examples/02-research-agent/) | WebSocket | Multi-agent with sub-agent delegation |
-| [Multi-Tenant Fleet](examples/03-multi-tenant-fleet/) | Redis pub/sub | Gateway + workers, cross-process coordination |
+| [Support Triage](examples/support-triage/) | SSE | Single agent, 4 tools, structured output |
+| [Research Agent](examples/research-agent/) | WebSocket | Multi-agent with sub-agent delegation |
+| [Multi-Tenant Fleet](examples/multi-tenant-fleet/) | Redis pub/sub | Gateway + workers, cross-process coordination |
 
 ## Package Dependencies
 
