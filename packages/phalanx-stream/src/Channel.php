@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Stream;
 
 use Generator;
+use React\EventLoop\Loop;
 use React\Promise\Deferred;
 use Throwable;
 
@@ -50,7 +51,7 @@ final class Channel
         if ($this->consumerWaiting !== null) {
             $deferred = $this->consumerWaiting;
             $this->consumerWaiting = null;
-            $deferred->resolve(true);
+            Loop::futureTick(static fn() => $deferred->resolve(true));
         }
 
         if (count($this->buffer) >= $this->bufferSize) {
@@ -77,7 +78,7 @@ final class Channel
         if ($this->consumerWaiting !== null) {
             $deferred = $this->consumerWaiting;
             $this->consumerWaiting = null;
-            $deferred->resolve(false);
+            Loop::futureTick(static fn() => $deferred->resolve(false));
         }
     }
 
@@ -93,7 +94,7 @@ final class Channel
         if ($this->consumerWaiting !== null) {
             $deferred = $this->consumerWaiting;
             $this->consumerWaiting = null;
-            $deferred->resolve(false);
+            Loop::futureTick(static fn() => $deferred->resolve(false));
         }
     }
 
@@ -112,7 +113,7 @@ final class Channel
                     if ($this->producerWaiting !== null) {
                         $deferred = $this->producerWaiting;
                         $this->producerWaiting = null;
-                        $deferred->resolve(null);
+                        Loop::futureTick(static fn() => $deferred->resolve(null));
                     }
                 }
 

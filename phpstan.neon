@@ -4,7 +4,8 @@ parameters:
         - packages/phalanx-core/src
         - packages/phalanx-console/src
         - packages/phalanx-http/src
-        - packages/phalanx-integrations/src
+        - packages/phalanx-twilio/src
+        - packages/phalanx-ai/src
         - packages/phalanx-parallel/src
         - packages/phalanx-postgres/src
         - packages/phalanx-redis/src

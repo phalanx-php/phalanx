@@ -43,7 +43,8 @@
             "Phalanx\\Http\\": "packages/phalanx-http/src/",
             "Phalanx\\Parallel\\": "packages/phalanx-parallel/src/",
             "Phalanx\\Stream\\": "packages/phalanx-stream/src/",
-            "Phalanx\\Integration\\": "packages/phalanx-integrations/src/",
+            "Phalanx\\Twilio\\": "packages/phalanx-twilio/src/",
+            "Phalanx\\Ai\\": "packages/phalanx-ai/src/",
             "Phalanx\\Postgres\\": "packages/phalanx-postgres/src/",
             "Phalanx\\Redis\\": "packages/phalanx-redis/src/",
             "Phalanx\\WebSocket\\": "packages/phalanx-websocket/src/"
@@ -56,7 +57,8 @@
             "Phalanx\\Parallel\\Tests\\": "packages/phalanx-parallel/tests/",
             "Phalanx\\Stream\\Tests\\": "packages/phalanx-stream/tests/",
             "Phalanx\\Tests\\": "packages/phalanx-core/tests/",
-            "Phalanx\\Integration\\Tests\\": "packages/phalanx-integrations/tests/",
+            "Phalanx\\Twilio\\Tests\\": "packages/phalanx-twilio/tests/",
+            "Phalanx\\Ai\\Tests\\": "packages/phalanx-ai/tests/",
             "Phalanx\\Postgres\\Tests\\": "packages/phalanx-postgres/tests/",
             "Phalanx\\Redis\\Tests\\": "packages/phalanx-redis/tests/",
             "Phalanx\\WebSocket\\Tests\\": "packages/phalanx-websocket/tests/"
@@ -74,6 +76,8 @@
     "scripts": {
         "test": "php vendor/bin/phpunit",
         "test:core": "cd packages/phalanx-core && php vendor/bin/phpunit",
+        "test:twilio": "php vendor/bin/phpunit packages/phalanx-twilio/tests/",
+        "test:ai": "php vendor/bin/phpunit packages/phalanx-ai/tests/",
         "analyse": "php vendor/bin/phpstan analyse",
         "rector": "php vendor/bin/rector process",
         "rector:dry": "php vendor/bin/rector process --dry-run",
@@ -92,7 +96,8 @@
         "phalanx/console": "0.1.0",
         "phalanx/core": "0.1.0",
         "phalanx/http": "0.1.0",
-        "phalanx/integrations": "0.1.0",
+        "phalanx/twilio": "0.1.0",
+        "phalanx/ai": "0.1.0",
         "phalanx/parallel": "0.1.0",
         "phalanx/postgres": "0.1.0",
         "phalanx/redis": "0.1.0",

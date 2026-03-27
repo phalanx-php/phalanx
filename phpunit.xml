@@ -42,11 +42,8 @@
         <testsuite name="WebSocket Integration">
             <directory>packages/phalanx-websocket/tests/Integration</directory>
         </testsuite>
-        <testsuite name="Integrations Unit">
-            <directory>packages/phalanx-integrations/tests/Unit</directory>
-        </testsuite>
-        <testsuite name="Integrations Integration">
-            <directory>packages/phalanx-integrations/tests/Integration</directory>
+        <testsuite name="AI Integration">
+            <directory>packages/phalanx-ai/tests/Integration</directory>
         </testsuite>
     </testsuites>
 </phpunit>

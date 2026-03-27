@@ -20,7 +20,8 @@ jobs:
           - phalanx-core
           - phalanx-console
           - phalanx-http
-          - phalanx-integrations
+          - phalanx-twilio
+          - phalanx-ai
           - phalanx-parallel
           - phalanx-postgres
           - phalanx-redis
