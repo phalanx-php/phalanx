@@ -11,13 +11,7 @@
     </linearGradient>
   </defs>
 
-  <!-- Crossed spears (behind everything) -->
-  <line x1="18" y1="112" x2="90" y2="10" stroke="#B89850" stroke-width="2.5" opacity="0.55"/>
-  <polygon points="94,5 85,6 89,15" fill="#C9A55A" opacity="0.65"/>
-  <line x1="92" y1="112" x2="20" y2="10" stroke="#B89850" stroke-width="2.5" opacity="0.55"/>
-  <polygon points="16,5 25,6 21,15" fill="#C9A55A" opacity="0.65"/>
-
-  <!-- Helmet crest / plume (behind shield, peeks above) -->
+  <!-- Helmet crest / plume -->
   <path d="M 38 22 C 42 10, 50 4, 55 3 C 60 4, 68 10, 72 22 C 66 16, 59 12, 55 11 C 51 12, 44 16, 38 22 Z"
         fill="url(#bronze)" opacity="0.8"/>
 
