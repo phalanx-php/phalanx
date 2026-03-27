@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use Convoy\Scope;
+use Phalanx\Scope;
 use React\Http\Message\Response;
 
 final class DashboardPage

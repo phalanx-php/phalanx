@@ -17,15 +17,15 @@ jobs:
       fail-fast: false
       matrix:
         package:
-          - convoy-core
-          - convoy-console
-          - convoy-http
-          - convoy-integrations
-          - convoy-parallel
-          - convoy-postgres
-          - convoy-redis
-          - convoy-stream
-          - convoy-websocket
+          - phalanx-core
+          - phalanx-console
+          - phalanx-http
+          - phalanx-integrations
+          - phalanx-parallel
+          - phalanx-postgres
+          - phalanx-redis
+          - phalanx-stream
+          - phalanx-websocket
 
     steps:
       - uses: actions/checkout@v4

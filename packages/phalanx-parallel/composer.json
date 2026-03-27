@@ -1,0 +1,42 @@
+{
+    "name": "phalanx/parallel",
+    "description": "Worker process parallelism for Phalanx",
+    "license": "MIT",
+    "type": "library",
+    "keywords": ["parallel", "worker", "process", "async", "ipc", "reactphp"],
+    "authors": [
+        {
+            "name": "Jonathan Havens",
+            "email": "mail@jhavens.tech"
+        }
+    ],
+    "homepage": "https://github.com/havy-tech/phalanx-parallel",
+    "require": {
+        "php": "^8.4",
+        "phalanx/core": "^1.0",
+        "react/child-process": "^0.6",
+        "react/async": "^4.3",
+        "react/event-loop": "^1.5",
+        "react/promise": "^3.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "Phalanx\\Parallel\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Phalanx\\Parallel\\Tests\\": "tests/"
+        }
+    },
+    "bin": [
+        "bin/phalanx-worker"
+    ],
+    "extra": {
+        "branch-alias": {
+            "dev-main": "1.0-dev"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

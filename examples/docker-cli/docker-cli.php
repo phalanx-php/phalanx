@@ -11,14 +11,14 @@ require __DIR__ . '/Commands/PullCommand.php';
 require __DIR__ . '/Commands/InspectCommand.php';
 require __DIR__ . '/Commands/LogsCommand.php';
 
-use Convoy\Application;
-use Convoy\Console\CommandGroup;
-use Convoy\Console\ConsoleRunner;
-use Convoy\Console\Examples\Commands\ImagesCommand;
-use Convoy\Console\Examples\Commands\InspectCommand;
-use Convoy\Console\Examples\Commands\LogsCommand;
-use Convoy\Console\Examples\Commands\PsCommand;
-use Convoy\Console\Examples\Commands\PullCommand;
+use Phalanx\Application;
+use Phalanx\Console\CommandGroup;
+use Phalanx\Console\ConsoleRunner;
+use Phalanx\Console\Examples\Commands\ImagesCommand;
+use Phalanx\Console\Examples\Commands\InspectCommand;
+use Phalanx\Console\Examples\Commands\LogsCommand;
+use Phalanx\Console\Examples\Commands\PsCommand;
+use Phalanx\Console\Examples\Commands\PullCommand;
 
 $commands = CommandGroup::of([
     'ps'      => new PsCommand(),

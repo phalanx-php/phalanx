@@ -1,0 +1,11 @@
+parameters:
+    level: 8
+    paths:
+        - src
+    excludePaths:
+        - src/Parallel/
+        - src/Stream/
+        - src/Runtime/PhalanxRuntime.php
+        - src/Runtime/PhalanxHttpRunner.php
+    tmpDir: .phpstan-cache
+    treatPhpDocTypesAsCertain: false

@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use Clue\React\Docker\Client;
-use Convoy\Service\ServiceBundle;
-use Convoy\Service\Services;
+use Phalanx\Service\ServiceBundle;
+use Phalanx\Service\Services;
 
 final class DockerBundle implements ServiceBundle
 {

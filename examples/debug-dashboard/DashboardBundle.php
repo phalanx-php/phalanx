@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use Convoy\Service\ServiceBundle;
-use Convoy\Service\Services;
-use Convoy\WebSocket\WsGateway;
+use Phalanx\Service\ServiceBundle;
+use Phalanx\Service\Services;
+use Phalanx\WebSocket\WsGateway;
 
 final class DashboardBundle implements ServiceBundle
 {

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use Convoy\Scope;
-use Convoy\WebSocket\WsGateway;
-use Convoy\WebSocket\WsMessage;
+use Phalanx\Scope;
+use Phalanx\WebSocket\WsGateway;
+use Phalanx\WebSocket\WsMessage;
 use React\Http\Message\Response;
 
 final class DumpReceiver

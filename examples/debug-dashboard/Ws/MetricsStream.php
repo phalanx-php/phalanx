@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-use Convoy\Stream\Emitter;
-use Convoy\Stream\ScopedStream;
-use Convoy\WebSocket\WsGateway;
-use Convoy\WebSocket\WsRoute;
-use Convoy\WebSocket\WsScope;
+use Phalanx\Stream\Emitter;
+use Phalanx\Stream\ScopedStream;
+use Phalanx\WebSocket\WsGateway;
+use Phalanx\WebSocket\WsRoute;
+use Phalanx\WebSocket\WsScope;
 
 final class MetricsStream
 {

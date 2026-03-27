@@ -7,46 +7,46 @@
          failOnWarning="true">
     <testsuites>
         <testsuite name="Core Unit">
-            <directory>packages/convoy-core/tests/Unit</directory>
+            <directory>packages/phalanx-core/tests/Unit</directory>
         </testsuite>
         <testsuite name="Core Integration">
-            <directory>packages/convoy-core/tests/Integration</directory>
+            <directory>packages/phalanx-core/tests/Integration</directory>
         </testsuite>
         <testsuite name="Stream Unit">
-            <directory>packages/convoy-stream/tests/Unit</directory>
+            <directory>packages/phalanx-stream/tests/Unit</directory>
         </testsuite>
         <testsuite name="Stream Integration">
-            <directory>packages/convoy-stream/tests/Integration</directory>
+            <directory>packages/phalanx-stream/tests/Integration</directory>
         </testsuite>
         <testsuite name="Console Unit">
-            <directory>packages/convoy-console/tests/Unit</directory>
+            <directory>packages/phalanx-console/tests/Unit</directory>
         </testsuite>
         <testsuite name="Console Integration">
-            <directory>packages/convoy-console/tests/Integration</directory>
+            <directory>packages/phalanx-console/tests/Integration</directory>
         </testsuite>
         <testsuite name="Http Unit">
-            <directory>packages/convoy-http/tests/Unit</directory>
+            <directory>packages/phalanx-http/tests/Unit</directory>
         </testsuite>
         <testsuite name="Http Integration">
-            <directory>packages/convoy-http/tests/Integration</directory>
+            <directory>packages/phalanx-http/tests/Integration</directory>
         </testsuite>
         <testsuite name="Parallel Unit">
-            <directory>packages/convoy-parallel/tests/Unit</directory>
+            <directory>packages/phalanx-parallel/tests/Unit</directory>
         </testsuite>
         <testsuite name="Parallel Integration">
-            <directory>packages/convoy-parallel/tests/Integration</directory>
+            <directory>packages/phalanx-parallel/tests/Integration</directory>
         </testsuite>
         <testsuite name="WebSocket Unit">
-            <directory>packages/convoy-websocket/tests/Unit</directory>
+            <directory>packages/phalanx-websocket/tests/Unit</directory>
         </testsuite>
         <testsuite name="WebSocket Integration">
-            <directory>packages/convoy-websocket/tests/Integration</directory>
+            <directory>packages/phalanx-websocket/tests/Integration</directory>
         </testsuite>
         <testsuite name="Integrations Unit">
-            <directory>packages/convoy-integrations/tests/Unit</directory>
+            <directory>packages/phalanx-integrations/tests/Unit</directory>
         </testsuite>
         <testsuite name="Integrations Integration">
-            <directory>packages/convoy-integrations/tests/Integration</directory>
+            <directory>packages/phalanx-integrations/tests/Integration</directory>
         </testsuite>
     </testsuites>
 </phpunit>

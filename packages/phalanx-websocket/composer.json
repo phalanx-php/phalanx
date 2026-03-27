@@ -1,0 +1,34 @@
+{
+    "name": "phalanx/websocket",
+    "description": "WebSocket support for Phalanx async coordination library",
+    "license": "MIT",
+    "type": "library",
+    "keywords": ["websocket", "ws", "async", "realtime", "ratchet", "reactphp"],
+    "authors": [
+        {
+            "name": "Jonathan Havens",
+            "email": "mail@jhavens.tech"
+        }
+    ],
+    "homepage": "https://github.com/havy-tech/phalanx-websocket",
+    "require": {
+        "php": "^8.4",
+        "phalanx/core": "^1.0@alpha",
+        "phalanx/stream": "^1.0@alpha",
+        "ratchet/rfc6455": "^0.4",
+        "react/stream": "^1.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "Phalanx\\WebSocket\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Phalanx\\WebSocket\\Tests\\": "tests/"
+        }
+    },
+    "suggest": {
+        "phalanx/http": "For HTTP server with WebSocket upgrade support"
+    }
+}

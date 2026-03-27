@@ -1,10 +1,12 @@
-# Convoy
+# Phalanx
 
 **Async coordination for PHP 8.4+ that reads like synchronous code.**
 
-Convoy separates what you want from how it runs. You declare operations as plain PHP classes. Convoy handles fibers, event loops, worker processes, cancellation, and cleanup. No promise chains. No callback hell. No manual fiber management.
+Phalanx separates what you want from how it runs. You declare operations as plain PHP classes. Phalanx handles fibers, event loops, worker processes, cancellation, and cleanup. No promise chains. No callback hell. No manual fiber management.
 
 ```php
+<?php
+
 $app = Application::starting()
     ->providers(new AppBundle())
     ->compile();
@@ -33,34 +35,34 @@ $scope->dispose();
 Install what you need:
 
 ```bash
-composer require convoy/core           # Scopes, tasks, concurrency, services, cancellation
-composer require convoy/console        # CLI framework with command routing
-composer require convoy/http           # HTTP server on ReactPHP with routing and SSE
-composer require convoy/parallel       # Worker process pools with IPC and supervisors
-composer require convoy/stream         # Reactive streams with channels and backpressure
-composer require convoy/postgres       # Async PostgreSQL via Amphp with LISTEN/NOTIFY
-composer require convoy/redis          # Async Redis via clue/redis-react with pub/sub
-composer require convoy/websocket      # WebSocket connections, gateway, pub/sub topics
-composer require convoy/integrations   # AI (Claude, GPT) and Twilio (SMS, Voice) clients
+composer require phalanx/core           # Scopes, tasks, concurrency, services, cancellation
+composer require phalanx/console        # CLI framework with command routing
+composer require phalanx/http           # HTTP server on ReactPHP with routing and SSE
+composer require phalanx/parallel       # Worker process pools with IPC and supervisors
+composer require phalanx/stream         # Reactive streams with channels and backpressure
+composer require phalanx/postgres       # Async PostgreSQL via Amphp with LISTEN/NOTIFY
+composer require phalanx/redis          # Async Redis via clue/redis-react with pub/sub
+composer require phalanx/websocket      # WebSocket connections, gateway, pub/sub topics
+composer require phalanx/integrations   # AI (Claude, GPT) and Twilio (SMS, Voice) clients
 ```
 
-`convoy/core` is the foundation. Every other package builds on it.
+`phalanx/core` is the foundation. Every other package builds on it.
 
-## What makes Convoy different
+## What makes Phalanx different
 
 **Scoped execution, not global state.** Every operation runs inside a scope that carries services, cancellation tokens, and a disposal stack. When the scope ends, everything cleans up. No reliance on `__destruct` or manual GC management.
 
-**Tasks are classes, not closures.** A task like `FetchUser` has identity -- it shows up in stack traces, can be serialized, retried, and sent to worker processes. Closures are anonymous. Convoy tasks are named computations.
+**Tasks are classes, not closures.** A task like `FetchUser` has identity -- it shows up in stack traces, can be serialized, retried, and sent to worker processes. Closures are anonymous. Phalanx tasks are named computations.
 
 **Concurrency without ceremony.** Call `$scope->concurrent([...])` and get back an array of results. Call `$scope->race([...])` to get the first result. Call `$scope->settle([...])` to get all outcomes including failures. The scope manages fibers internally.
 
-**Built on proven async.** ReactPHP event loop, React promises, Amphp for Postgres. Convoy does not reinvent async primitives. It provides the coordination layer above them.
+**Built on proven async.** ReactPHP event loop, React promises, Amphp for Postgres. Phalanx does not reinvent async primitives. It provides the coordination layer above them.
 
 ## Requirements
 
 - PHP 8.4+
-- `ext-pcntl` for worker process pools (`convoy/parallel`)
-- `ext-pgsql` for PostgreSQL (`convoy/postgres`)
+- `ext-pcntl` for worker process pools (`phalanx/parallel`)
+- `ext-pgsql` for PostgreSQL (`phalanx/postgres`)
 
 ## Quick start
 
@@ -70,9 +72,9 @@ A CLI tool that queries Docker concurrently:
 #!/usr/bin/env php
 <?php
 
-use Convoy\Application;
-use Convoy\Console\CommandGroup;
-use Convoy\Console\ConsoleRunner;
+use Phalanx\Application;
+use Phalanx\Console\CommandGroup;
+use Phalanx\Console\ConsoleRunner;
 
 $app = Application::starting()
     ->providers(new DockerBundle())
@@ -94,12 +96,12 @@ An HTTP server with WebSocket support:
 #!/usr/bin/env php
 <?php
 
-use Convoy\Application;
-use Convoy\Http\Route;
-use Convoy\Http\RouteGroup;
-use Convoy\Http\Runner;
-use Convoy\WebSocket\WsGateway;
-use Convoy\WebSocket\WsRouteGroup;
+use Phalanx\Application;
+use Phalanx\Http\Route;
+use Phalanx\Http\RouteGroup;
+use Phalanx\Http\Runner;
+use Phalanx\WebSocket\WsGateway;
+use Phalanx\WebSocket\WsRouteGroup;
 
 $gateway = new WsGateway();
 

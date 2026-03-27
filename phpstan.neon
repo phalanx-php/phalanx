@@ -1,20 +1,20 @@
 parameters:
     level: 8
     paths:
-        - packages/convoy-core/src
-        - packages/convoy-console/src
-        - packages/convoy-http/src
-        - packages/convoy-integrations/src
-        - packages/convoy-parallel/src
-        - packages/convoy-postgres/src
-        - packages/convoy-redis/src
-        - packages/convoy-stream/src
-        - packages/convoy-websocket/src
+        - packages/phalanx-core/src
+        - packages/phalanx-console/src
+        - packages/phalanx-http/src
+        - packages/phalanx-integrations/src
+        - packages/phalanx-parallel/src
+        - packages/phalanx-postgres/src
+        - packages/phalanx-redis/src
+        - packages/phalanx-stream/src
+        - packages/phalanx-websocket/src
     excludePaths:
         analyseAndScan:
-            - packages/convoy-core/src/Parallel (?)
-            - packages/convoy-core/src/Stream/
-            - packages/convoy-core/src/Runtime/ConvoyRuntime.php (?)
-            - packages/convoy-core/src/Runtime/ConvoyHttpRunner.php (?)
+            - packages/phalanx-core/src/Parallel (?)
+            - packages/phalanx-core/src/Stream/
+            - packages/phalanx-core/src/Runtime/PhalanxRuntime.php (?)
+            - packages/phalanx-core/src/Runtime/PhalanxHttpRunner.php (?)
     tmpDir: .phpstan-cache
     treatPhpDocTypesAsCertain: false

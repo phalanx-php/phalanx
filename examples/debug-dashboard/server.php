@@ -4,7 +4,7 @@
 declare(strict_types=1);
 
 /**
- * Convoy Debug Dashboard
+ * Phalanx Debug Dashboard
  *
  * A dump server + live metrics monitor. Any PHP app can POST dumps to it;
  * the browser dashboard streams them live via WebSocket.
@@ -16,7 +16,7 @@ declare(strict_types=1);
  *
  * To send dumps from any PHP app, paste this helper:
  *
- *   function convoy_dump(mixed $data, string $channel = 'app'): void {
+ *   function phalanx_dump(mixed $data, string $channel = 'app'): void {
  *       $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
  *       @file_get_contents('http://localhost:8080/dump', false, stream_context_create([
  *           'http' => [
@@ -34,7 +34,7 @@ declare(strict_types=1);
  *   }
  *
  * Then call it anywhere:
- *   convoy_dump(['user' => $user, 'query' => $sql], 'database');
+ *   phalanx_dump(['user' => $user, 'query' => $sql], 'database');
  */
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
@@ -45,12 +45,12 @@ require __DIR__ . '/Routes/DumpReceiver.php';
 require __DIR__ . '/Ws/DumpStream.php';
 require __DIR__ . '/Ws/MetricsStream.php';
 
-use Convoy\Application;
-use Convoy\Http\Route;
-use Convoy\Http\RouteGroup;
-use Convoy\Http\Runner;
-use Convoy\WebSocket\WsGateway;
-use Convoy\WebSocket\WsRouteGroup;
+use Phalanx\Application;
+use Phalanx\Http\Route;
+use Phalanx\Http\RouteGroup;
+use Phalanx\Http\Runner;
+use Phalanx\WebSocket\WsGateway;
+use Phalanx\WebSocket\WsRouteGroup;
 
 $gateway = new WsGateway();
 

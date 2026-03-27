@@ -1,0 +1,39 @@
+{
+    "name": "phalanx/console",
+    "description": "CLI application framework for Phalanx",
+    "license": "MIT",
+    "type": "library",
+    "keywords": ["cli", "console", "async", "reactphp", "phalanx"],
+    "homepage": "https://github.com/havy-tech/phalanx-console",
+    "authors": [
+        {
+            "name": "Jonathan Havens",
+            "email": "jonathan@jhavens.tech"
+        }
+    ],
+    "require": {
+        "php": "^8.4",
+        "phalanx/core": "^1.0"
+    },
+    "suggest": {
+        "phalanx/stream": "For streaming data through console commands",
+        "phalanx/parallel": "For worker process parallelism in CLI tasks"
+    },
+    "autoload": {
+        "psr-4": {
+            "Phalanx\\Console\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Phalanx\\Console\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "1.0-dev"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
