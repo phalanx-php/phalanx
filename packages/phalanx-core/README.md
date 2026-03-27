@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/havy-tech/phalanx/main/logo.svg" alt="Phalanx" width="520">
+</p>
+
 # Phalanx Core - Async PHP
 
 Phalanx is an async coordination library for PHP 8.4+. It replaces callbacks with typed tasks—named computations that carry their own identity, behavior, and lifecycle through a unified execution model built on ReactPHP.

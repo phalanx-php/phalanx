@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/havy-tech/phalanx/main/logo.svg" alt="Phalanx" width="520">
+</p>
+
 # phalanx/console
 
 Build CLI applications with the same scope-driven concurrency that powers Phalanx HTTP servers. Define commands as closures, group them, load them from directories, and let the framework handle argument parsing, validation, and help generation.

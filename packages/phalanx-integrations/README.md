@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/havy-tech/phalanx/main/logo.svg" alt="Phalanx" width="520">
+</p>
+
 # phalanx/integrations
 
 Async clients for Claude, GPT, and Twilio — streaming AI responses, SMS, voice, and Conversation Relay — all non-blocking, all composable with Phalanx scopes.

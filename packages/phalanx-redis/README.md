@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/havy-tech/phalanx/main/logo.svg" alt="Phalanx" width="520">
+</p>
+
 # phalanx/redis
 
 Async Redis with typed commands, pub/sub, and automatic connection management — fully non-blocking, fully integrated with Phalanx scopes and services.
