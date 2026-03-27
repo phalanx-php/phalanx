@@ -11,20 +11,18 @@
     </linearGradient>
   </defs>
 
-  <!-- Helmet crest / plume (bolder) -->
-  <path d="M 35 22 C 40 8, 49 2, 55 1 C 61 2, 70 8, 75 22 C 68 14, 60 10, 55 9 C 50 10, 42 14, 35 22 Z"
-        fill="url(#bronze)"/>
+  <!-- Helmet crest / plume -->
+  <path d="M 38 22 C 42 10, 50 4, 55 3 C 60 4, 68 10, 72 22 C 66 16, 59 12, 55 11 C 51 12, 44 16, 38 22 Z"
+        fill="url(#bronze)" opacity="0.8"/>
 
   <!-- Shield body -->
   <path d="M 55 18 L 100 32 L 96 80 Q 55 116 14 80 L 10 32 Z" fill="url(#shield)"/>
 
-  <!-- Outer rim -->
+  <!-- Double rim -->
   <path d="M 55 26 L 92 38 L 89 76 Q 55 106 21 76 L 18 38 Z"
-        fill="none" stroke="url(#bronze)" stroke-width="1.8" opacity="0.5"/>
-
-  <!-- Inner rim -->
+        fill="none" stroke="url(#bronze)" stroke-width="1.5" opacity="0.35"/>
   <path d="M 55 33 L 85 43 L 83 72 Q 55 98 27 72 L 25 43 Z"
-        fill="none" stroke="url(#bronze)" stroke-width="1" opacity="0.25"/>
+        fill="none" stroke="url(#bronze)" stroke-width="0.8" opacity="0.18"/>
 
   <!-- Shield highlight -->
   <path d="M 55 18 L 100 32 L 98 50 Q 55 58 12 50 L 10 32 Z"
@@ -32,9 +30,6 @@
 
   <!-- Lambda -->
   <path d="M 55 38 L 78 92 L 67 92 L 55 58 L 43 92 L 32 92 Z" fill="url(#bronze)"/>
-
-  <!-- Accent line (ties icon to text) -->
-  <line x1="10" y1="118" x2="490" y2="118" stroke="url(#bronze)" stroke-width="0.8" opacity="0.2"/>
 
   <!-- Wordmark -->
   <text x="120" y="62" font-family="monospace"
