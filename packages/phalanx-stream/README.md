@@ -55,7 +55,7 @@ foreach ($alerts->consume() as $alert) {
 }
 ```
 
-No promise chains. No callback nesting. The `Emitter` handles the async coordination; your code reads top-to-bottom.
+The `Emitter` handles the async coordination; your code reads top-to-bottom.
 
 ## Creating Streams
 

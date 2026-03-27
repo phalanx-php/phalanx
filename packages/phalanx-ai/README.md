@@ -6,7 +6,7 @@
 
 An agentic runtime for PHP 8.4+ that treats LLM interactions as scoped, typed, stream-native computations. Define tools as invokable classes, wire providers as services, and let the Phalanx runtime handle concurrency, retries, streaming, and cleanup.
 
-Three things PHP developers building AI features can't do today without leaving PHP: concurrent tool execution, streaming with backpressure, and multi-agent coordination. This package solves all three.
+Phalanx/ai brings concurrent tool execution, streaming with backpressure, and multi-agent coordination to PHP -- capabilities that previously required leaving for another language.
 
 ## Table of Contents
 

@@ -25,7 +25,7 @@ Workers scale horizontally. Add more processes to handle more concurrent convers
 
 A SaaS platform hosts support agents for multiple tenants. Each tenant has their own knowledge base, brand guidelines, escalation rules, and connected data sources. Concurrent users across tenants number in the hundreds. Each conversation is a long-lived WebSocket session with streaming AI responses. Some conversations need to escalate to human agents in real time.
 
-In existing PHP, this is impossible without a Node.js/Python service for the AI + WebSocket layer, or a monolithic Swoole app that attempts everything in one process.
+Traditional synchronous PHP frameworks aren't designed for this -- long-lived WebSocket connections, streaming LLM responses, and cross-process coordination require an async runtime.
 
 This example does it with multiple Phalanx processes coordinated via Redis pub/sub.
 

@@ -20,7 +20,7 @@ Then POST to `http://localhost:8080/triage`:
 
 Every SaaS with a support system faces the same workflow: ticket arrives, human reads it, classifies priority, writes a response (often copying templates), routes to the right team. 3-8 minutes per ticket. Companies hire more support staff or let response times degrade.
 
-PHP-specific pain: Laravel apps can call OpenAI to classify a ticket, but classification and response drafting become two blocking API calls (6-10 seconds). There's no way to enrich classification with customer context without making it sequential. Streaming the draft to the browser requires hacking `ob_flush()`. Tool calling is completely manual.
+With traditional synchronous PHP, classification and response drafting become two sequential blocking API calls (6-10 seconds). Enriching classification with customer context adds more sequential calls. Streaming the draft to the browser requires workarounds outside the normal request lifecycle. Tool calling has no built-in orchestration.
 
 This example solves the concurrent tool execution + streaming + structured output trifecta in a single request.
 
