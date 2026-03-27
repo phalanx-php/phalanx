@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/havy-tech/phalanx/main/logo.svg" alt="Phalanx" width="520">
+  <img src="brand/logo.svg" alt="Phalanx" width="520">
 </p>
 
 # Phalanx Stream
