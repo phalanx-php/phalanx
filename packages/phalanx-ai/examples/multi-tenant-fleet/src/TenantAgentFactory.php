@@ -44,7 +44,7 @@ final class TenantAgentFactory
 
         return new TenantSupportAgent(
             tenantId: $tenantId,
-            instructions: $config['system_prompt'],
+            systemInstructions: $config['system_prompt'],
             providerName: $config['provider'],
             toolClasses: $this->resolveTools($config['enabled_tools']),
         );

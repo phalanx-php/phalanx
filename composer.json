@@ -64,7 +64,10 @@
             "Phalanx\\WebSocket\\Tests\\": "packages/phalanx-websocket/tests/"
         },
         "classmap": [
-            "packages/phalanx-core/tests/Support/Fixtures/"
+            "packages/phalanx-core/tests/Support/Fixtures/",
+            "packages/phalanx-ai/examples/support-triage/src/",
+            "packages/phalanx-ai/examples/research-agent/src/",
+            "packages/phalanx-ai/examples/multi-tenant-fleet/src/"
         ]
     },
     "repositories": [
