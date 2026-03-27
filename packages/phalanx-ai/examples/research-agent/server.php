@@ -30,7 +30,7 @@ $wsRoutes = WsRouteGroup::of([
                     continue;
                 }
 
-                $request = $msg->json();
+                $request = $msg->decode();
                 if ($request['type'] !== 'research') {
                     continue;
                 }
@@ -54,26 +54,26 @@ $wsRoutes = WsRouteGroup::of([
 
                 foreach ($events($scope) as $event) {
                     match ($event->kind) {
-                        AgentEventKind::ToolCallStart => $conn->send(WsMessage::text(json_encode([
+                        AgentEventKind::ToolCallStart => $conn->send(WsMessage::json([
                             'type' => 'progress',
                             'stage' => 'tool',
                             'tool' => $event->data->toolName,
-                        ]))),
-                        AgentEventKind::ToolCallComplete => $conn->send(WsMessage::text(json_encode([
+                        ])),
+                        AgentEventKind::ToolCallComplete => $conn->send(WsMessage::json([
                             'type' => 'progress',
                             'stage' => 'tool_done',
                             'tool' => $event->data->toolName,
                             'ms' => $event->elapsed,
-                        ]))),
-                        AgentEventKind::TokenDelta => $conn->send(WsMessage::text(json_encode([
+                        ])),
+                        AgentEventKind::TokenDelta => $conn->send(WsMessage::json([
                             'type' => 'token',
                             'text' => $event->data->text,
-                        ]))),
-                        AgentEventKind::AgentComplete => $conn->send(WsMessage::text(json_encode([
+                        ])),
+                        AgentEventKind::AgentComplete => $conn->send(WsMessage::json([
                             'type' => 'complete',
                             'tokens' => $event->data->usage->total,
                             'steps' => $event->data->steps,
-                        ]))),
+                        ])),
                         default => null,
                     };
                 }

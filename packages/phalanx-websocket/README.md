@@ -101,6 +101,7 @@ foreach ($conn->inbound->consume() as $msg) {
 use Phalanx\WebSocket\WsMessage;
 
 $text   = WsMessage::text('{"action": "join"}');
+$json   = WsMessage::json(['action' => 'join']); // Encode to JSON text frame
 $binary = WsMessage::binary($protobuf);
 $ping   = WsMessage::ping();
 $pong   = WsMessage::pong();
@@ -113,7 +114,7 @@ Type checks use property hooks:
 <?php
 
 if ($msg->isText) {
-    $data = $msg->json(); // Decode JSON payload, throws on invalid JSON
+    $data = $msg->decode(); // Decode JSON payload, throws on invalid JSON
 }
 
 if ($msg->isBinary) {
@@ -205,7 +206,7 @@ $gateway->publish('chat.room.42', WsMessage::text($json));
 $gateway->publish('chat.room.42', WsMessage::text($json), exclude: $conn);
 
 // Broadcast to every connected client
-$gateway->broadcast(WsMessage::text(json_encode(['type' => 'system', 'text' => 'Maintenance in 5 minutes'])));
+$gateway->broadcast(WsMessage::json(['type' => 'system', 'text' => 'Maintenance in 5 minutes']));
 
 // Unsubscribe or remove entirely
 $gateway->unsubscribe($conn, 'chat.room.42');
@@ -241,7 +242,7 @@ final readonly class ChatRoomHandler implements Scopeable
 
         $gateway->publish(
             "chat.{$room}",
-            WsMessage::text(json_encode(['type' => 'join', 'id' => $conn->id])),
+            WsMessage::json(['type' => 'join', 'id' => $conn->id]),
             exclude: $conn,
         );
 
@@ -257,7 +258,7 @@ final readonly class ChatRoomHandler implements Scopeable
 
         $gateway->publish(
             "chat.{$room}",
-            WsMessage::text(json_encode(['type' => 'leave', 'id' => $conn->id])),
+            WsMessage::json(['type' => 'leave', 'id' => $conn->id]),
         );
 
         $gateway->unregister($conn);

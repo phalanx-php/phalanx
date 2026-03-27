@@ -30,7 +30,7 @@ final class DumpStream
             $conn
                 ->stream($ws)
                 ->filter(static fn($msg) => $msg->isText)
-                ->map(static fn($msg) => $msg->json())
+                ->map(static fn($msg) => $msg->decode())
                 ->onEach(static function (array $cmd) use ($conn, $gateway): void {
                     $action = $cmd["action"] ?? null;
                     $channel = $cmd["channel"] ?? null;

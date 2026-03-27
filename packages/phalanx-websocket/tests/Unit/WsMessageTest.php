@@ -77,23 +77,23 @@ final class WsMessageTest extends TestCase
     }
 
     #[Test]
-    public function json_decodes_text_payload(): void
+    public function decode_decodes_text_payload(): void
     {
         $msg = WsMessage::text('{"type":"chat","body":"hi"}');
 
-        $data = $msg->json();
+        $data = $msg->decode();
 
         $this->assertSame('chat', $data['type']);
         $this->assertSame('hi', $data['body']);
     }
 
     #[Test]
-    public function json_throws_on_invalid_payload(): void
+    public function decode_throws_on_invalid_payload(): void
     {
         $msg = WsMessage::text('not json');
 
         $this->expectException(\JsonException::class);
-        $msg->json();
+        $msg->decode();
     }
 
     #[Test]

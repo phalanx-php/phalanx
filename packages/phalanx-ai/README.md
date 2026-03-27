@@ -458,16 +458,16 @@ final readonly class AgentWsHandler implements Scopeable
 
             $turn = Turn::begin(new ChatAssistant())
                 ->conversation($conversation)
-                ->message(Message::user($msg->json()['text']))
+                ->message(Message::user($msg->decode()['text']))
                 ->stream();
 
             $events = AgentLoop::run($turn, $scope);
 
             foreach ($events($scope) as $event) {
                 if ($event->kind === AgentEventKind::TokenDelta) {
-                    $conn->send(WsMessage::text(json_encode([
+                    $conn->send(WsMessage::json([
                         'type' => 'token', 'text' => $event->data->text,
-                    ])));
+                    ]));
                 }
             }
         }

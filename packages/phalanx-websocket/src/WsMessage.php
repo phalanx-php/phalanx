@@ -64,6 +64,11 @@ final class WsMessage
         return new self($payload, Frame::OP_PONG);
     }
 
+    public static function json(mixed $data, int $flags = 0): self
+    {
+        return self::text(json_encode($data, $flags | JSON_THROW_ON_ERROR));
+    }
+
     public static function fromFrame(Frame $frame): self
     {
         $opcode = $frame->getOpcode();
@@ -82,7 +87,7 @@ final class WsMessage
         return new self($payload, $opcode, $closeCode);
     }
 
-    public function json(bool $assoc = true, int $flags = 0): mixed
+    public function decode(bool $assoc = true, int $flags = 0): mixed
     {
         return json_decode($this->payload, $assoc, 512, $flags | JSON_THROW_ON_ERROR);
     }

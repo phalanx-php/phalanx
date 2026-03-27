@@ -30,10 +30,10 @@ final class DumpReceiver
             'line' => $payload['line'] ?? null,
         ]);
 
-        $msg = WsMessage::text(json_encode([
+        $msg = WsMessage::json([
             'type' => 'dump',
             'entry' => $entry,
-        ]));
+        ]);
 
         $gateway->publish("dump:{$channel}", $msg);
         $gateway->publish('dump:*', $msg);

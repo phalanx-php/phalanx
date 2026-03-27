@@ -324,6 +324,14 @@ final class Runner
 
     public static function toResponse(mixed $data): ResponseInterface
     {
+        if ($data instanceof ResponseInterface) {
+            return $data;
+        }
+
+        if ($data instanceof ToResponse) {
+            return $data->toResponse();
+        }
+
         if (is_array($data) || is_object($data)) {
             return Response::json($data);
         }

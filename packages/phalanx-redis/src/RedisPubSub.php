@@ -4,11 +4,16 @@ declare(strict_types=1);
 
 namespace Phalanx\Redis;
 
+use Closure;
 use Clue\React\Redis\Client;
 use Clue\React\Redis\Factory as RedisFactory;
+use Phalanx\ExecutionScope;
 use Phalanx\Stream\Channel;
 use Phalanx\Stream\Contract\StreamContext;
 use Phalanx\Stream\Emitter;
+use Phalanx\Task\Executable;
+use Phalanx\Task\Scopeable;
+use Phalanx\Task\Task;
 use React\Promise\Deferred;
 
 use function React\Async\await;
@@ -56,6 +61,23 @@ final class RedisPubSub
 
             await($done->promise());
         });
+    }
+
+    public function subscribeEach(
+        string $channel,
+        Scopeable|Executable|Closure $handler,
+        ExecutionScope $scope,
+    ): void {
+        $emitter = $this->subscribe($channel);
+
+        foreach ($emitter($scope) as $item) {
+            $scope->executeFresh(Task::of(static function (ExecutionScope $child) use ($handler, $item): mixed {
+                $child = $child->withAttribute('subscription.message', $item['message']);
+                $child = $child->withAttribute('subscription.channel', $item['channel']);
+
+                return ($handler)($child);
+            }));
+        }
     }
 
     public function close(): void

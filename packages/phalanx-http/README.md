@@ -378,6 +378,137 @@ Runner::from($app)
 
 HTTP on 8080, UDP on 8081, single process.
 
+## Authentication
+
+Protect routes with the built-in `Authenticate` middleware. Implement a `Guard` to resolve identity from the request, and an `Identity` for your user model:
+
+```php
+<?php
+
+use Phalanx\Auth\AuthContext;
+use Phalanx\Auth\Authenticate;
+use Phalanx\Auth\Guard;
+use Phalanx\Auth\Identity;
+use Psr\Http\Message\ServerRequestInterface;
+
+final class JwtGuard implements Guard
+{
+    public function __construct(private readonly string $secret) {}
+
+    public function resolve(ServerRequestInterface $request): ?AuthContext
+    {
+        $token = $this->extractBearer($request);
+        $claims = $this->verifyJwt($token, $this->secret);
+
+        if ($claims === null) {
+            return null;
+        }
+
+        return AuthContext::authenticated(
+            new AppUser($claims['sub']),
+            $token,
+            $claims['abilities'] ?? [],
+        );
+    }
+}
+```
+
+Apply to a route group:
+
+```php
+<?php
+
+$api = RouteGroup::of([
+    'GET /me'       => $getProfile,
+    'PUT /me'       => $updateProfile,
+])->wrap(new Authenticate(new JwtGuard($secret)));
+```
+
+Inside handlers, the auth context is available as an attribute:
+
+```php
+<?php
+
+$auth = $scope->attribute('auth');
+$userId = $auth->identity->id;
+
+if ($auth->can('admin')) {
+    // ...
+}
+```
+
+For typed access, use `AuthenticatedRequestScope` which adds `$scope->auth`:
+
+```php
+<?php
+
+use Phalanx\Http\AuthenticatedExecutionContext;
+
+/** @var AuthenticatedRequestScope $scope */
+$scope->auth->identity->id;
+$scope->auth->can('write');
+$scope->auth->token();
+```
+
+## ToResponse Interface
+
+Domain objects can implement `ToResponse` to control their own HTTP serialization:
+
+```php
+<?php
+
+use Phalanx\Http\ToResponse;
+use Psr\Http\Message\ResponseInterface;
+use React\Http\Message\Response;
+
+final readonly class ApiResult implements ToResponse
+{
+    public function __construct(
+        private array $data,
+        private int $status = 200,
+    ) {}
+
+    public function toResponse(): ResponseInterface
+    {
+        return Response::json($this->data)->withStatus($this->status);
+    }
+}
+```
+
+Return it from any handler -- `Runner::toResponse()` calls `toResponse()` automatically.
+
+## Request Validators
+
+Validate body parameters inline with `RequestValidator`:
+
+```php
+<?php
+
+use Phalanx\Http\RequestValidator;
+
+final class MinLength implements RequestValidator
+{
+    public function __construct(private readonly int $min) {}
+
+    public function __invoke(mixed $value): bool
+    {
+        return is_string($value) && strlen($value) >= $this->min;
+    }
+}
+```
+
+Use validators on any body accessor:
+
+```php
+<?php
+
+$name = $scope->body->string('name', validate: new MinLength(3));
+$age = $scope->body->int('age', validate: new Min(18));
+$email = $scope->body->required('email', validate: new EmailFormat());
+```
+
+Failed validation throws `ValidationException` with `$e->field`, `$e->value`, and `$e->validator`. Validation results are cached per key+validator pair within the same `RequestBody` instance.
+
 ## WebSocket Integration
 
 The HTTP runner handles WebSocket upgrades natively. See [phalanx/websocket](../phalanx-websocket/README.md) for the WebSocket API, then wire it in:

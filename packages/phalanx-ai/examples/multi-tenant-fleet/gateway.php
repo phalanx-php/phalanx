@@ -54,7 +54,7 @@ $customerWs = WsRouteGroup::of([
                             continue;
                         }
 
-                        $input = $msg->json();
+                        $input = $msg->decode();
 
                         $s->service(RedisPubSub::class)->publish(
                             'agent:tasks',

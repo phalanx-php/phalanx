@@ -424,6 +424,87 @@ PHALANX_TRACE=1 php server.php
 0 svc  4.0MB peak  0 gc  39.8ms total
 ```
 
+## Authentication
+
+Phalanx provides core auth primitives that transport packages (`phalanx/http`, `phalanx/websocket`) build on.
+
+### Guard Interface
+
+Implement `Guard` to extract identity from a request:
+
+```php
+<?php
+
+use Phalanx\Auth\AuthContext;
+use Phalanx\Auth\Guard;
+use Psr\Http\Message\ServerRequestInterface;
+
+final class BearerTokenGuard implements Guard
+{
+    public function resolve(ServerRequestInterface $request): ?AuthContext
+    {
+        $header = $request->getHeaderLine('Authorization');
+        if (!str_starts_with($header, 'Bearer ')) {
+            return null;
+        }
+
+        $user = $this->validateToken(substr($header, 7));
+        return $user !== null
+            ? AuthContext::authenticated($user, substr($header, 7))
+            : null;
+    }
+}
+```
+
+### Identity Interface
+
+Your user model implements `Identity`:
+
+```php
+<?php
+
+use Phalanx\Auth\Identity;
+
+final class AppUser implements Identity
+{
+    public string|int $id { get => $this->userId; }
+
+    public function __construct(private readonly int $userId) {}
+}
+```
+
+### AuthContext
+
+The resolved auth state, carrying identity, token, and abilities:
+
+```php
+<?php
+
+use Phalanx\Auth\AuthContext;
+
+$auth = AuthContext::authenticated($user, $token, ['admin', 'write']);
+
+$auth->isAuthenticated;      // true
+$auth->identity->id;         // user ID
+$auth->can('admin');         // true
+$auth->token();              // the raw token string
+
+$guest = AuthContext::guest();
+$guest->isAuthenticated;     // false
+```
+
+### Authenticate Middleware
+
+Use the built-in `Authenticate` middleware with any `Guard`:
+
+```php
+<?php
+
+use Phalanx\Auth\Authenticate;
+
+$routes = RouteGroup::of([...])->wrap(new Authenticate(new BearerTokenGuard()));
+```
+
 ## Deterministic Cleanup
 
 ```php

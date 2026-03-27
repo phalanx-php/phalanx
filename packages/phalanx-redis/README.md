@@ -157,6 +157,41 @@ $pubsub->publish('notifications', json_encode([
 
 Multiple subscriptions run concurrently on the same connection. Publishing works from any scope that has access to `RedisPubSub`.
 
+### Scoped Subscriptions
+
+`subscribeEach()` runs a handler per message in a fresh child scope. Each message gets its own scoped services, disposed automatically after the handler completes:
+
+```php
+<?php
+
+use Phalanx\Redis\RedisPubSub;
+use Phalanx\ExecutionScope;
+use Phalanx\Task\Executable;
+
+final class OrderHandler implements Executable
+{
+    public function __invoke(ExecutionScope $scope): mixed
+    {
+        $message = $scope->attribute('subscription.message');
+        $channel = $scope->attribute('subscription.channel');
+
+        $order = json_decode($message, true);
+        $scope->service(OrderProcessor::class)->process($order);
+
+        return null;
+    }
+}
+```
+
+```php
+<?php
+
+$pubsub = $scope->service(RedisPubSub::class);
+$pubsub->subscribeEach('orders', new OrderHandler(), $scope);
+```
+
+The handler receives `subscription.message` and `subscription.channel` as scope attributes. Parent cancellation stops the subscription loop.
+
 ## Shutdown
 
 `RedisServiceBundle` registers disposal hooks on the scope. When the scope tears down, connections close and subscriptions unsubscribe. No manual cleanup required.
