@@ -1,37 +1,45 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 110">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 120">
   <defs>
-    <linearGradient id="shield-fill" x1="0" y1="0" x2="0" y2="1">
+    <linearGradient id="shield" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#C62840"/>
       <stop offset="100%" stop-color="#891428"/>
     </linearGradient>
-    <linearGradient id="bronze-fill" x1="0.2" y1="0" x2="0.8" y2="1">
-      <stop offset="0%" stop-color="#E2C07C"/>
+    <linearGradient id="bronze" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0%" stop-color="#ECD48E"/>
       <stop offset="50%" stop-color="#C9A55A"/>
-      <stop offset="100%" stop-color="#A67C30"/>
+      <stop offset="100%" stop-color="#A07828"/>
     </linearGradient>
   </defs>
 
-  <!-- Shield body -->
-  <path d="M 50 5 L 96 20 L 92 70 Q 50 108 8 70 L 4 20 Z" fill="url(#shield-fill)"/>
+  <!-- Crossed spears (behind everything) -->
+  <line x1="18" y1="112" x2="90" y2="10" stroke="#B89850" stroke-width="2.5" opacity="0.55"/>
+  <polygon points="94,5 85,6 89,15" fill="#C9A55A" opacity="0.65"/>
+  <line x1="92" y1="112" x2="20" y2="10" stroke="#B89850" stroke-width="2.5" opacity="0.55"/>
+  <polygon points="16,5 25,6 21,15" fill="#C9A55A" opacity="0.65"/>
 
-  <!-- Subtle inner rim -->
-  <path d="M 50 14 L 88 27 L 85 66 Q 50 99 15 66 L 12 27 Z"
-        fill="none" stroke="url(#bronze-fill)" stroke-width="1.2" opacity="0.3"/>
+  <!-- Helmet crest / plume (behind shield, peeks above) -->
+  <path d="M 38 22 C 42 10, 50 4, 55 3 C 60 4, 68 10, 72 22 C 66 16, 59 12, 55 11 C 51 12, 44 16, 38 22 Z"
+        fill="url(#bronze)" opacity="0.8"/>
+
+  <!-- Shield body -->
+  <path d="M 55 18 L 100 32 L 96 80 Q 55 116 14 80 L 10 32 Z" fill="url(#shield)"/>
+
+  <!-- Double rim -->
+  <path d="M 55 26 L 92 38 L 89 76 Q 55 106 21 76 L 18 38 Z"
+        fill="none" stroke="url(#bronze)" stroke-width="1.5" opacity="0.35"/>
+  <path d="M 55 33 L 85 43 L 83 72 Q 55 98 27 72 L 25 43 Z"
+        fill="none" stroke="url(#bronze)" stroke-width="0.8" opacity="0.18"/>
 
   <!-- Shield highlight -->
-  <path d="M 50 5 L 96 20 L 94 40 Q 50 50 6 40 L 4 20 Z"
-        fill="white" opacity="0.08"/>
+  <path d="M 55 18 L 100 32 L 98 50 Q 55 58 12 50 L 10 32 Z"
+        fill="white" opacity="0.07"/>
 
   <!-- Lambda -->
-  <path d="M 50 25 L 76 85 L 64 85 L 50 48 L 36 85 L 24 85 Z" fill="url(#bronze-fill)"/>
+  <path d="M 55 38 L 78 92 L 67 92 L 55 58 L 43 92 L 32 92 Z" fill="url(#bronze)"/>
 
   <!-- Wordmark -->
-  <text x="120" y="58"
-        font-family="'SFMono-Regular', 'SF Mono', 'Menlo', 'Consolas', 'Liberation Mono', monospace"
+  <text x="120" y="62" font-family="monospace"
         font-size="46" font-weight="bold" fill="#B91C3A" letter-spacing="4">PHALANX</text>
-
-  <!-- Tagline -->
-  <text x="123" y="82"
-        font-family="-apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif"
+  <text x="123" y="86" font-family="sans-serif"
         font-size="12" fill="#808080" letter-spacing="2.5">ASYNC COORDINATION FOR PHP</text>
 </svg>

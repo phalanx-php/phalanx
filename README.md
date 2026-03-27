@@ -1,12 +1,5 @@
 <p align="center">
-  <strong>V1 — Spartan Shield + Formation Spears</strong><br>
-  <img src="logo-v1.svg" alt="Variant 1: Spartan" width="520"><br><br>
-  <strong>V2 — Owl of Athena + Concurrent Feathers</strong><br>
-  <img src="logo-v2.svg" alt="Variant 2: Athenian" width="520"><br><br>
-  <strong>V3 — Vergina Sun + Radiating Dispatch</strong><br>
-  <img src="logo-v3.svg" alt="Variant 3: Macedonian" width="520"><br><br>
-  <strong>V4 — Theban Shield Wall + Spear Formation</strong><br>
-  <img src="logo-v4.svg" alt="Variant 4: Theban" width="520">
+  <img src="logo.svg" alt="Phalanx" width="520">
 </p>
 
 **Async coordination for PHP 8.4+ that reads like synchronous code.**
