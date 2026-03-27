@@ -64,7 +64,7 @@ Phalanx HTTP Server
 
 ## Key Patterns
 
-**Concurrent tool execution.** When the LLM requests multiple tools in one response, all execute in parallel via `$scope->concurrent()`. `LookupCustomer` + `SearchKnowledgeBase` + `CheckServiceStatus` run simultaneously -- total time equals the slowest, not the sum.
+**Concurrent tool execution.** When the LLM requests multiple tools in one response, all execute concurrently via `$scope->concurrent()`. `LookupCustomer` + `SearchKnowledgeBase` + `CheckServiceStatus` interleave on fibers -- total time equals the slowest, not the sum.
 
 **Structured output with streaming.** `TriageResult` carries priority, category, summary, and draft response as typed PHP properties. The LLM response validates against the generated JSON schema. The browser receives *both* the streaming draft text *and* the final structured classification.
 

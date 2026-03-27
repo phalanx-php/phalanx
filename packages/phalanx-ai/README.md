@@ -516,7 +516,7 @@ PHP enums become JSON Schema `enum` constraints. Typed properties become require
 
 ## Pipelines
 
-For workflows more complex than a single agent turn -- chained transformations, conditional routing, parallel branches:
+For workflows more complex than a single agent turn -- chained transformations, conditional routing, concurrent branches:
 
 ```php
 <?php
