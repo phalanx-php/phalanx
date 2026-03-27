@@ -12,5 +12,16 @@ interface RequestScope extends ExecutionScope
     public ServerRequestInterface $request { get; }
     public RouteParams $params { get; }
     public QueryParams $query { get; }
+    public RequestBody $body { get; }
     public RouteConfig $config { get; }
+
+    public function method(): string;
+
+    public function path(): string;
+
+    public function header(string $name): string;
+
+    public function isJson(): bool;
+
+    public function bearerToken(): ?string;
 }

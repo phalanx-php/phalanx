@@ -6,12 +6,13 @@ namespace Phalanx\WebSocket;
 
 use Closure;
 use Phalanx\Scope;
+use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 
 final readonly class WsRoute implements Scopeable
 {
-    /** @param Closure(WsScope): void $fn */
-    public function __construct(public Closure $fn, public WsConfig $config = new WsConfig())
+    /** @param Closure(WsScope): void|Scopeable|Executable $fn */
+    public function __construct(public Closure|Scopeable|Executable $fn, public WsConfig $config = new WsConfig())
     {
     }
 

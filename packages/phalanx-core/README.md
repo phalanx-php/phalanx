@@ -264,31 +264,20 @@ Operators (`map`, `filter`, `take`, `chunk`) are lazy—nothing runs until a ter
 
 ## Route Groups
 
-Typed collections of HTTP routes with `RouteGroup`. Handler closures receive `RequestScope`—a scope decorator with typed route parameters and query strings:
+Typed collections of HTTP routes with `RouteGroup`. Route handlers receive `RequestScope`—a scope decorator with typed route parameters, query strings, and request body access:
 
 ```php
 <?php
 // routes/api.php
 
-use Phalanx\Http\RequestScope;
 use Phalanx\Http\Route;
 use Phalanx\Http\RouteGroup;
 use Phalanx\Scope;
 
 return static fn(Scope $s): RouteGroup => RouteGroup::of([
-    'GET /users' => new Route(
-        fn: static fn(RequestScope $hs) => $hs->service(UserRepo::class)->all(),
-    ),
-    'GET /users/{id}' => new Route(
-        fn: static fn(RequestScope $hs) => $hs->service(UserRepo::class)->find(
-            (int) $hs->params->required('id')
-        ),
-    ),
-    'POST /users' => new Route(
-        fn: static fn(RequestScope $hs) => $hs->service(UserRepo::class)->create(
-            $hs->attribute('request.body')
-        ),
-    ),
+    'GET /users'      => new Route(fn: new ListUsers()),
+    'GET /users/{id}' => new Route(fn: new ShowUser()),
+    'POST /users'     => new Route(fn: new CreateUser()),
 ]);
 ```
 
@@ -317,28 +306,25 @@ $api = RouteGroup::create()
 
 ## Command Groups
 
-Typed collections of CLI commands with `CommandGroup`. Handler closures receive `CommandScope`—a scope decorator with typed arguments and options:
+Typed collections of CLI commands with `CommandGroup`. Command handlers receive `CommandScope`—a scope decorator with typed arguments and options:
 
 ```php
 <?php
 // commands/db.php
 
 use Phalanx\Console\Command;
-use Phalanx\Console\CommandGroup;
 use Phalanx\Console\CommandConfig;
-use Phalanx\Console\CommandScope;
+use Phalanx\Console\CommandGroup;
 use Phalanx\Scope;
 
 return static fn(Scope $s): CommandGroup => CommandGroup::of([
     'migrate' => new Command(
-        fn: static fn(CommandScope $cs) => $cs->service(Migrator::class)->run(),
+        fn: new RunMigrations(),
         config: static fn(CommandConfig $c) => $c
             ->withDescription('Run database migrations'),
     ),
     'db:seed' => new Command(
-        fn: static fn(CommandScope $cs) => $cs->service(Seeder::class)->run(
-            $cs->options->flag('fresh')
-        ),
+        fn: new SeedDatabase(),
         config: static fn(CommandConfig $c) => $c
             ->withDescription('Seed the database')
             ->withOption('fresh', shorthand: 'f', description: 'Truncate tables first'),

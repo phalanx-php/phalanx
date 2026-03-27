@@ -391,11 +391,19 @@ Pipe a token stream directly into an SSE response:
 ```php
 <?php
 
-use Phalanx\Http\Sse\SseResponse;
+declare(strict_types=1);
 
-$chatRoute = new Route(
-    fn: static function (RequestScope $scope) {
-        $body = json_decode((string) $scope->request->getBody(), true);
+use Phalanx\ExecutionScope;
+use Phalanx\Http\RequestScope;
+use Phalanx\Http\Sse\SseResponse;
+use Phalanx\Task\Executable;
+
+final readonly class ChatSseHandler implements Executable
+{
+    public function __invoke(ExecutionScope $scope): mixed
+    {
+        /** @var RequestScope $scope */
+        $body = $scope->body->json();
 
         $turn = Turn::begin(new ChatAssistant())
             ->conversation(Conversation::fromArray($body['messages']))
@@ -405,12 +413,18 @@ $chatRoute = new Route(
         $events = AgentLoop::run($turn, $scope);
 
         return SseResponse::from(
-            $events->filter(fn($e) => $e->kind->isUserFacing()),
+            $events->filter(static fn($e) => $e->kind->isUserFacing()),
             $scope,
             event: 'chat',
         );
-    },
-);
+    }
+}
+```
+
+```php
+<?php
+
+$chatRoute = new Route(fn: new ChatSseHandler());
 ```
 
 Client disconnect propagates through the event channel -> the LLM request cancels -> the scope disposes. No orphaned connections.
@@ -422,13 +436,25 @@ Same pattern, different transport:
 ```php
 <?php
 
-$agentWs = new WsRoute(
-    fn: static function (WsScope $scope): void {
+declare(strict_types=1);
+
+use Phalanx\Scope;
+use Phalanx\Task\Scopeable;
+use Phalanx\WebSocket\WsMessage;
+use Phalanx\WebSocket\WsScope;
+
+final readonly class AgentWsHandler implements Scopeable
+{
+    public function __invoke(Scope $scope): mixed
+    {
+        assert($scope instanceof WsScope);
         $conn = $scope->connection;
         $conversation = Conversation::create()->system('You are a helpful assistant.');
 
         foreach ($conn->inbound->consume() as $msg) {
-            if (!$msg->isText) continue;
+            if (!$msg->isText) {
+                continue;
+            }
 
             $turn = Turn::begin(new ChatAssistant())
                 ->conversation($conversation)
@@ -445,8 +471,16 @@ $agentWs = new WsRoute(
                 }
             }
         }
-    },
-);
+
+        return null;
+    }
+}
+```
+
+```php
+<?php
+
+$agentWs = new WsRoute(fn: new AgentWsHandler());
 ```
 
 ### Token Accumulator

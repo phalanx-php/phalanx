@@ -6,18 +6,20 @@ namespace Phalanx\Http;
 
 use Closure;
 use Phalanx\Scope;
+use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 
 /**
  * HTTP route handler as an invokable with fn + config.
  *
- * Routes are defined with a closure that receives ExecutionScope at dispatch time.
- * File loading receives Scope; handler execution receives ExecutionScope.
+ * Routes are defined with a closure, Scopeable, or Executable that receives
+ * ExecutionScope at dispatch time. File loading receives Scope; handler
+ * execution receives ExecutionScope.
  */
 final readonly class Route implements Scopeable
 {
     public function __construct(
-        public Closure $fn,
+        public Closure|Scopeable|Executable $fn,
         public RouteConfig $config = new RouteConfig(),
     ) {}
 

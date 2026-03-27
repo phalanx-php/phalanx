@@ -6,20 +6,22 @@ namespace Phalanx\Console;
 
 use Closure;
 use Phalanx\Scope;
+use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 
 /**
  * CLI command handler as an invokable with fn + config.
  *
- * Commands are defined with a closure that receives ExecutionScope at dispatch time.
- * File loading receives Scope; handler execution receives ExecutionScope.
+ * Commands are defined with a closure, Scopeable, or Executable that receives
+ * ExecutionScope at dispatch time. File loading receives Scope; handler
+ * execution receives ExecutionScope.
  */
 final class Command implements Scopeable
 {
     public private(set) CommandConfig $config;
 
     public function __construct(
-        public private(set) Closure $fn,
+        public private(set) Closure|Scopeable|Executable $fn,
         CommandConfig|Closure $config = new CommandConfig(),
     ) {
         $this->config = $config instanceof Closure

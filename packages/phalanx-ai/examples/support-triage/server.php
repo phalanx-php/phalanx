@@ -25,7 +25,7 @@ $app = Application::starting()
 $routes = RouteGroup::of([
     'POST /triage' => Route::of(
         fn: static function ($scope) {
-            $body = json_decode((string) $scope->request->getBody(), true);
+            $body = $scope->body->json();
 
             $turn = Turn::begin(new SupportTriageAgent())
                 ->message(Message::user(

@@ -4,7 +4,7 @@
 
 # phalanx/console
 
-Build CLI applications with the same scope-driven concurrency that powers Phalanx HTTP servers. Define commands as closures, group them, load them from directories, and let the framework handle argument parsing, validation, and help generation.
+Build CLI applications with the same scope-driven concurrency that powers Phalanx HTTP servers. Define commands as invokable classes, group them, load them from directories, and let the framework handle argument parsing, validation, and help generation.
 
 ## Table of Contents
 
@@ -30,21 +30,38 @@ Requires PHP 8.4+ and `phalanx/core`.
 ```php
 <?php
 
+declare(strict_types=1);
+
+use Phalanx\Console\CommandScope;
+use Phalanx\Scope;
+use Phalanx\Task\Scopeable;
+
+final readonly class GreetCommand implements Scopeable
+{
+    public function __invoke(Scope $scope): mixed
+    {
+        /** @var CommandScope $scope */
+        $name = $scope->args->get('name', 'world');
+        echo "Hello, {$name}!\n";
+
+        return 0;
+    }
+}
+```
+
+```php
+<?php
+
 use Phalanx\Console\Command;
 use Phalanx\Console\CommandGroup;
-use Phalanx\Console\CommandScope;
 use Phalanx\Console\ConsoleRunner;
 
 $app = Application::starting()->compile();
 
 $commands = CommandGroup::of([
     'greet' => new Command(
-        fn: static function (CommandScope $scope): int {
-            $name = $scope->args->get('name', 'world');
-            echo "Hello, {$name}!\n";
-            return 0;
-        },
-        config: fn($c) => $c
+        fn: new GreetCommand(),
+        config: static fn($c) => $c
             ->withDescription('Greet someone by name')
             ->withArgument('name', 'Name to greet', required: false),
     ),
@@ -61,21 +78,25 @@ Hello, Jonathan!
 
 ## Defining Commands
 
-A `Command` wraps a closure and a `CommandConfig`. The closure receives a `CommandScope` at dispatch time, giving it access to parsed arguments, options, and the full Phalanx execution scope.
+A `Command` wraps a handler and a `CommandConfig`. The handler receives a `CommandScope` at dispatch time, giving it access to parsed arguments, options, and the full Phalanx execution scope. Use invokable classes for commands with real logic:
 
 ```php
 <?php
 
-use Phalanx\Console\Command;
-use Phalanx\Console\CommandConfig;
-use Phalanx\Console\CommandScope;
+declare(strict_types=1);
 
-$migrate = new Command(
-    fn: static function (CommandScope $scope): int {
+use Phalanx\Console\CommandScope;
+use Phalanx\Scope;
+use Phalanx\Task\Scopeable;
+
+final readonly class MigrateCommand implements Scopeable
+{
+    public function __invoke(Scope $scope): mixed
+    {
+        /** @var CommandScope $scope */
         $step = $scope->options->get('step', 'all');
         $dry = $scope->options->has('dry-run');
 
-        // Full ExecutionScope access -- run concurrent tasks, use services
         $pending = $scope->service(Migrations::class)->pending();
 
         foreach ($pending as $migration) {
@@ -88,8 +109,18 @@ $migrate = new Command(
         }
 
         return 0;
-    },
-    config: fn($c) => $c
+    }
+}
+```
+
+```php
+<?php
+
+use Phalanx\Console\Command;
+
+$migrate = new Command(
+    fn: new MigrateCommand(),
+    config: static fn($c) => $c
         ->withDescription('Run pending database migrations')
         ->withOption('step', 's', 'Number of migrations to run', requiresValue: true)
         ->withOption('dry-run', 'd', 'Preview without applying'),
@@ -156,7 +187,7 @@ use Phalanx\Console\CommandLoader;
 $commands = CommandLoader::loadDirectory(__DIR__ . '/commands');
 ```
 
-Each file returns a `CommandGroup`:
+Each file returns a `CommandGroup` with invokable handlers:
 
 ```php
 <?php
@@ -164,15 +195,11 @@ Each file returns a `CommandGroup`:
 // commands/deploy.php
 use Phalanx\Console\Command;
 use Phalanx\Console\CommandGroup;
-use Phalanx\Console\CommandScope;
 
 return CommandGroup::of([
     'deploy' => new Command(
-        fn: static function (CommandScope $scope): int {
-            // ...
-            return 0;
-        },
-        config: fn($c) => $c->withDescription('Deploy the application'),
+        fn: new DeployCommand(),
+        config: static fn($c) => $c->withDescription('Deploy the application'),
     ),
 ]);
 ```
@@ -198,12 +225,18 @@ Because `CommandScope` extends `ExecutionScope`, every command has access to Pha
 ```php
 <?php
 
-use Phalanx\Console\Command;
-use Phalanx\Console\CommandScope;
-use Phalanx\Task;
+declare(strict_types=1);
 
-$healthCheck = new Command(
-    fn: static function (CommandScope $scope): int {
+use Phalanx\Console\CommandScope;
+use Phalanx\ExecutionScope;
+use Phalanx\Task;
+use Phalanx\Task\Executable;
+
+final readonly class HealthCheckCommand implements Executable
+{
+    public function __invoke(ExecutionScope $scope): mixed
+    {
+        /** @var CommandScope $scope */
         $services = ['api', 'database', 'cache', 'queue'];
 
         $results = $scope->concurrent(
@@ -221,9 +254,19 @@ $healthCheck = new Command(
         }
 
         return array_any($results, static fn($r) => !$r) ? 1 : 0;
-    },
-    config: fn($c) => $c->withDescription('Check health of all services'),
+    }
+}
+```
+
+```php
+<?php
+
+use Phalanx\Console\Command;
+
+$healthCheck = new Command(
+    fn: new HealthCheckCommand(),
+    config: static fn($c) => $c->withDescription('Check health of all services'),
 );
 ```
 
-All concurrency runs on the ReactPHP event loop under the hood. The command closure reads like synchronous code.
+All concurrency runs on the ReactPHP event loop under the hood. The command handler reads like synchronous code.

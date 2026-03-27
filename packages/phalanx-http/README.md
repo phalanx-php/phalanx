@@ -57,22 +57,41 @@ $ curl http://localhost:8080/hello
 Hello, Phalanx!
 ```
 
+For anything beyond a one-liner, use an invokable class implementing `Scopeable` or `Executable` instead of an inline closure. Named handlers are traceable, testable, and carry their own identity through the system.
+
 ## Defining Routes
 
-A `Route` wraps a closure and a `RouteConfig`. The closure receives a `RequestScope` (which extends `ExecutionScope`) at dispatch time:
+A `Route` wraps a handler and a `RouteConfig`. The handler receives a `RequestScope` (which extends `ExecutionScope`) at dispatch time. Handlers can be closures for trivial cases, or invokable classes for anything with real logic:
+
+```php
+<?php
+
+declare(strict_types=1);
+
+use Phalanx\Http\RequestScope;
+use Phalanx\Scope;
+use Phalanx\Task\Scopeable;
+
+final readonly class ShowUser implements Scopeable
+{
+    public function __invoke(Scope $scope): mixed
+    {
+        /** @var RequestScope $scope */
+        $user = $scope->service(UserRepository::class)->find(42);
+
+        return Response::json($user);
+    }
+}
+```
+
+Wire it into a route:
 
 ```php
 <?php
 
 use Phalanx\Http\Route;
-use React\Http\Message\Response;
 
-$route = new Route(
-    fn: static function ($scope): Response {
-        $user = $scope->service(UserRepository::class)->find(42);
-        return Response::json($user);
-    },
-);
+$route = new Route(fn: new ShowUser());
 ```
 
 Route keys use the `METHOD /path` format. Multiple methods can be comma-separated:
@@ -120,27 +139,41 @@ Path parameters use `{name}` syntax with optional regex constraints:
 ```php
 <?php
 
-$routes = RouteGroup::of([
-    // Basic parameter
-    'GET /users/{id}' => new Route(
-        fn: static function ($scope): Response {
-            $id = $scope->params->get('id');
-            $user = $scope->service(UserRepository::class)->find($id);
-            return Response::json($user);
-        },
-    ),
+declare(strict_types=1);
 
-    // Constrained parameter
+use Phalanx\Http\RequestScope;
+use Phalanx\Scope;
+use Phalanx\Task\Scopeable;
+use React\Http\Message\Response;
+
+final readonly class ShowUser implements Scopeable
+{
+    public function __invoke(Scope $scope): mixed
+    {
+        /** @var RequestScope $scope */
+        $id = $scope->params->get('id');
+        $user = $scope->service(UserRepository::class)->find($id);
+
+        return Response::json($user);
+    }
+}
+```
+
+```php
+<?php
+
+use Phalanx\Http\Route;
+use Phalanx\Http\RouteGroup;
+
+$routes = RouteGroup::of([
+    'GET /users/{id}' => new Route(fn: new ShowUser()),
     'GET /posts/{slug:[a-z0-9-]+}' => new Route(
-        fn: static function ($scope): Response {
-            $slug = $scope->params->get('slug');
-            return Response::json(['slug' => $slug]);
-        },
+        fn: static fn($scope) => Response::json(['slug' => $scope->params->get('slug')]),
     ),
 ]);
 ```
 
-The `RequestScope` exposes `$request`, `$params`, `$query`, and `$config` through typed property hooks.
+The `RequestScope` exposes `$request`, `$params`, `$query`, `$body`, and `$config` through typed property hooks. Convenience methods -- `$scope->method()`, `$scope->path()`, `$scope->header()`, `$scope->isJson()`, `$scope->bearerToken()` -- wrap common PSR-7 access patterns.
 
 ## Concurrent Request Handling
 
@@ -149,12 +182,19 @@ Every route handler has access to Phalanx's concurrency primitives through the s
 ```php
 <?php
 
-use Phalanx\Http\Route;
+declare(strict_types=1);
+
+use Phalanx\ExecutionScope;
+use Phalanx\Http\RequestScope;
 use Phalanx\Task;
+use Phalanx\Task\Executable;
 use React\Http\Message\Response;
 
-$dashboard = new Route(
-    fn: static function ($scope): Response {
+final readonly class DashboardHandler implements Executable
+{
+    public function __invoke(ExecutionScope $scope): mixed
+    {
+        /** @var RequestScope $scope */
         [$stats, $alerts, $recent] = $scope->concurrent([
             Task::of(static fn($s) => $s->service(PgPool::class)->query(
                 'SELECT count(*) as total FROM orders WHERE date = CURRENT_DATE'
@@ -166,8 +206,14 @@ $dashboard = new Route(
         ]);
 
         return Response::json(compact('stats', 'alerts', 'recent'));
-    },
-);
+    }
+}
+```
+
+```php
+<?php
+
+$dashboard = new Route(fn: new DashboardHandler());
 ```
 
 Three I/O operations, one request, wall-clock time of the slowest. The handler reads like synchronous code -- no promises, no callbacks, no `yield`.
@@ -222,7 +268,7 @@ use Phalanx\Http\RouteLoader;
 $routes = RouteLoader::loadDirectory(__DIR__ . '/routes');
 ```
 
-Each file defines its routes:
+Each file defines its routes with invokable handlers:
 
 ```php
 <?php
@@ -232,9 +278,9 @@ use Phalanx\Http\Route;
 use Phalanx\Http\RouteGroup;
 
 return RouteGroup::of([
-    'GET /users'      => new Route(fn: static fn($scope) => /* ... */),
-    'GET /users/{id}' => new Route(fn: static fn($scope) => /* ... */),
-    'POST /users'     => new Route(fn: static fn($scope) => /* ... */),
+    'GET /users'      => new Route(fn: new ListUsers()),
+    'GET /users/{id}' => new Route(fn: new ShowUser()),
+    'POST /users'     => new Route(fn: new CreateUser()),
 ]);
 ```
 
@@ -259,12 +305,19 @@ Push real-time updates to clients with `SseResponse` and `SseChannel`.
 ```php
 <?php
 
-use Phalanx\Http\Route;
+declare(strict_types=1);
+
+use Phalanx\ExecutionScope;
+use Phalanx\Http\RequestScope;
 use Phalanx\Http\Sse\SseResponse;
 use Phalanx\Stream\Emitter;
+use Phalanx\Task\Executable;
 
-$events = new Route(
-    fn: static function ($scope) {
+final readonly class MetricsStream implements Executable
+{
+    public function __invoke(ExecutionScope $scope): mixed
+    {
+        /** @var RequestScope $scope */
         $source = Emitter::produce(static function ($ch, $ctx) use ($scope) {
             while (!$ctx->isCancelled()) {
                 $data = $scope->service(MetricsCollector::class)->snapshot();
@@ -274,8 +327,14 @@ $events = new Route(
         });
 
         return SseResponse::from($source, $scope, event: 'metrics');
-    },
-);
+    }
+}
+```
+
+```php
+<?php
+
+$events = new Route(fn: new MetricsStream());
 ```
 
 ### Broadcast SSE with SseChannel

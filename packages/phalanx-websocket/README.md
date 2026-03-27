@@ -31,22 +31,38 @@ Requires PHP 8.4+, `phalanx/core`, `phalanx/stream`, `ratchet/rfc6455`, and `rea
 ```php
 <?php
 
-use Phalanx\Http\Runner;
-use Phalanx\WebSocket\WsGateway;
+declare(strict_types=1);
+
+use Phalanx\Scope;
+use Phalanx\Task\Scopeable;
 use Phalanx\WebSocket\WsMessage;
+use Phalanx\WebSocket\WsScope;
+
+final readonly class EchoHandler implements Scopeable
+{
+    public function __invoke(Scope $scope): mixed
+    {
+        assert($scope instanceof WsScope);
+        $conn = $scope->connection;
+
+        foreach ($conn->inbound->consume() as $msg) {
+            $conn->send(WsMessage::text("echo: {$msg->payload}"));
+        }
+
+        return null;
+    }
+}
+```
+
+```php
+<?php
+
+use Phalanx\Http\Runner;
 use Phalanx\WebSocket\WsRoute;
 use Phalanx\WebSocket\WsRouteGroup;
 
 $ws = WsRouteGroup::of([
-    '/ws/echo' => new WsRoute(
-        fn: static function ($scope): void {
-            $conn = $scope->connection;
-
-            foreach ($conn->inbound->consume() as $msg) {
-                $conn->send(WsMessage::text("echo: {$msg->payload}"));
-            }
-        },
-    ),
+    '/ws/echo' => new WsRoute(fn: new EchoHandler()),
 ]);
 
 $app = Application::starting()->compile();
@@ -111,24 +127,41 @@ if ($msg->isClose) {
 
 ## Routes
 
-`WsRoute` defines a handler for a specific WebSocket path. The closure receives a `WsScope` with the connection, the upgrade request, route parameters, and the full `ExecutionScope`:
+`WsRoute` defines a handler for a specific WebSocket path. The handler receives a `WsScope` with the connection, the upgrade request, route parameters, and the full `ExecutionScope`:
+
+```php
+<?php
+
+declare(strict_types=1);
+
+use Phalanx\Scope;
+use Phalanx\Task\Scopeable;
+use Phalanx\WebSocket\WsScope;
+
+final readonly class ChatHandler implements Scopeable
+{
+    public function __invoke(Scope $scope): mixed
+    {
+        assert($scope instanceof WsScope);
+        $conn = $scope->connection;
+        $request = $scope->request;
+        $params = $scope->params;
+
+        foreach ($conn->inbound->consume() as $msg) {
+            // Handle messages
+        }
+
+        return null;
+    }
+}
+```
 
 ```php
 <?php
 
 use Phalanx\WebSocket\WsRoute;
 
-$chatRoute = new WsRoute(
-    fn: static function ($scope): void {
-        $conn = $scope->connection;
-        $request = $scope->request;    // Original HTTP upgrade request
-        $params = $scope->params;       // Route parameters
-
-        foreach ($conn->inbound->consume() as $msg) {
-            // Handle messages
-        }
-    },
-);
+$chatRoute = new WsRoute(fn: new ChatHandler());
 ```
 
 Group routes into a `WsRouteGroup`:
@@ -186,12 +219,19 @@ A typical chat handler that registers with the gateway, subscribes to a room, an
 ```php
 <?php
 
+declare(strict_types=1);
+
+use Phalanx\Scope;
+use Phalanx\Task\Scopeable;
 use Phalanx\WebSocket\WsGateway;
 use Phalanx\WebSocket\WsMessage;
-use Phalanx\WebSocket\WsRoute;
+use Phalanx\WebSocket\WsScope;
 
-$chat = new WsRoute(
-    fn: static function ($scope): void {
+final readonly class ChatRoomHandler implements Scopeable
+{
+    public function __invoke(Scope $scope): mixed
+    {
+        assert($scope instanceof WsScope);
         $conn = $scope->connection;
         $gateway = $scope->service(WsGateway::class);
         $room = $scope->params->get('room');
@@ -199,7 +239,6 @@ $chat = new WsRoute(
         $gateway->register($conn);
         $gateway->subscribe($conn, "chat.{$room}");
 
-        // Announce arrival
         $gateway->publish(
             "chat.{$room}",
             WsMessage::text(json_encode(['type' => 'join', 'id' => $conn->id])),
@@ -208,7 +247,6 @@ $chat = new WsRoute(
 
         foreach ($conn->inbound->consume() as $msg) {
             if ($msg->isText) {
-                // Relay to everyone else in the room
                 $gateway->publish("chat.{$room}", $msg, exclude: $conn);
             }
 
@@ -217,15 +255,24 @@ $chat = new WsRoute(
             }
         }
 
-        // Announce departure
         $gateway->publish(
             "chat.{$room}",
             WsMessage::text(json_encode(['type' => 'leave', 'id' => $conn->id])),
         );
 
         $gateway->unregister($conn);
-    },
-);
+
+        return null;
+    }
+}
+```
+
+```php
+<?php
+
+use Phalanx\WebSocket\WsRoute;
+
+$chat = new WsRoute(fn: new ChatRoomHandler());
 ```
 
 The `foreach` loop over `$conn->inbound->consume()` blocks the fiber (not the event loop) until the next frame arrives. When the client disconnects, the iterator completes and execution continues with cleanup.
