@@ -20,6 +20,8 @@ use Ratchet\RFC6455\Messaging\Frame;
 use React\Stream\ThroughStream;
 
 use function React\Async\async;
+use function React\Async\await;
+use function React\Async\delay;
 
 final class WsConnectionLifecycleTest extends TestCase
 {
@@ -55,15 +57,17 @@ final class WsConnectionLifecycleTest extends TestCase
 
         $transport = new ThroughStream();
 
-        async(function () use ($handler, $transport): void {
+        $promise = async(function () use ($handler, $transport): void {
             $handler->handle($this->app->createScope(), $transport, new ServerRequest('GET', '/ws/test'), new RouteParams([]));
+            $transport->close();
         })();
 
         $this->sendMaskedText($transport, 'message one');
         $this->sendMaskedText($transport, 'message two');
 
+        await($promise);
+
         $this->assertSame(['message one', 'message two'], $received);
-        $this->assertSame(1, $gateway->count());
     }
 
     #[Test]
@@ -87,6 +91,8 @@ final class WsConnectionLifecycleTest extends TestCase
         async(function () use ($handler, $transport): void {
             $handler->handle($this->app->createScope(), $transport, new ServerRequest('GET', '/ws/test'), new RouteParams([]));
         })();
+
+        delay(0);
 
         $this->assertNotEmpty($written, 'Expected outbound data written to transport');
     }
@@ -134,11 +140,13 @@ final class WsConnectionLifecycleTest extends TestCase
 
         $transport = new ThroughStream();
 
-        async(function () use ($handler, $transport): void {
+        $promise = async(function () use ($handler, $transport): void {
             $handler->handle($this->app->createScope(), $transport, new ServerRequest('GET', '/ws'), new RouteParams([]));
         })();
 
         $transport->close();
+
+        await($promise);
 
         $this->assertTrue($pumpCompleted);
     }

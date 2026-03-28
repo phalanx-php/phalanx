@@ -71,12 +71,17 @@ final class RedisPubSub
         $emitter = $this->subscribe($channel);
 
         foreach ($emitter($scope) as $item) {
-            $scope->executeFresh(Task::of(static function (ExecutionScope $child) use ($handler, $item): mixed {
-                $child = $child->withAttribute('subscription.message', $item['message']);
-                $child = $child->withAttribute('subscription.channel', $item['channel']);
+            try {
+                $scope->executeFresh(Task::of(static function (ExecutionScope $child) use ($handler, $item): mixed {
+                    $child = $child->withAttribute('subscription.message', $item['message']);
+                    $child = $child->withAttribute('subscription.channel', $item['channel']);
 
-                return ($handler)($child);
-            }));
+                    return ($handler)($child);
+                }));
+            } catch (\Throwable) {
+                // Individual message failure must not kill the subscription loop.
+                // Callers needing error visibility should use subscribe() directly.
+            }
         }
     }
 

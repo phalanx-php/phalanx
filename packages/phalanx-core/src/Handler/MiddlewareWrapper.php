@@ -48,6 +48,6 @@ final readonly class MiddlewareWrapper implements Executable
 
         $stack = $this->buildStack($this->handler, $this->middleware);
 
-        return $scope->execute($stack);
+        return ($stack)($scope);
     }
 }

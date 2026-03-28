@@ -13,6 +13,8 @@ use Phalanx\Stream\Emitter;
 use React\Http\Browser;
 use React\Stream\ReadableStreamInterface;
 
+use React\Promise\Deferred;
+
 use function React\Async\await;
 
 final class AnthropicProvider implements LlmProvider
@@ -29,17 +31,20 @@ final class AnthropicProvider implements LlmProvider
 
     public function generate(GenerateRequest $request): Emitter
     {
-        return Emitter::produce(function ($channel, $ctx) use ($request) {
-            $model = $request->model ?? $this->config->model;
-            $body = self::buildRequestBody($request, $model, $this->config);
-            $headers = self::buildHeaders($this->config);
+        $config = $this->config;
+        $browser = $this->browser;
+
+        return Emitter::produce(static function ($channel, $ctx) use ($request, $config, $browser) {
+            $model = $request->model ?? $config->model;
+            $body = self::buildRequestBody($request, $model, $config);
+            $headers = self::buildHeaders($config);
             $startTime = hrtime(true);
             $step = 0;
             $usage = TokenUsage::zero();
 
-            $response = await($this->browser->requestStreaming(
+            $response = await($browser->requestStreaming(
                 'POST',
-                $this->config->baseUrl . '/v1/messages',
+                $config->baseUrl . '/v1/messages',
                 $headers,
                 json_encode($body, JSON_THROW_ON_ERROR),
             ));
@@ -187,17 +192,33 @@ final class AnthropicProvider implements LlmProvider
     {
         $buffer = '';
         $ended = false;
+        $waiting = null;
 
-        $body->on('data', static function (string $data) use (&$buffer): void {
+        $body->on('data', static function (string $data) use (&$buffer, &$waiting): void {
             $buffer .= $data;
+            if ($waiting !== null) {
+                $d = $waiting;
+                $waiting = null;
+                $d->resolve(true);
+            }
         });
 
-        $body->on('end', static function () use (&$ended): void {
+        $body->on('end', static function () use (&$ended, &$waiting): void {
             $ended = true;
+            if ($waiting !== null) {
+                $d = $waiting;
+                $waiting = null;
+                $d->resolve(false);
+            }
         });
 
-        $body->on('error', static function () use (&$ended): void {
+        $body->on('error', static function () use (&$ended, &$waiting): void {
             $ended = true;
+            if ($waiting !== null) {
+                $d = $waiting;
+                $waiting = null;
+                $d->resolve(false);
+            }
         });
 
         while (!$ended || $buffer !== '') {
@@ -206,8 +227,8 @@ final class AnthropicProvider implements LlmProvider
                 $buffer = '';
                 yield $chunk;
             } else {
-                \React\EventLoop\Loop::futureTick(static fn() => null);
-                \Fiber::suspend();
+                $waiting = new Deferred();
+                await($waiting->promise());
             }
         }
     }

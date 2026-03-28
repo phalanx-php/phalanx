@@ -8,8 +8,8 @@ use Psr\Http\Message\ServerRequestInterface;
 
 final class RequestBody
 {
-    /** @var array<string, true> */
-    private array $validationCache = [];
+    /** @var \WeakMap<RequestValidator, array<string, true>> */
+    private \WeakMap $validationCache;
 
     /**
      * @param array<string, mixed> $values Eagerly-decoded body (empty when body is not JSON)
@@ -18,6 +18,7 @@ final class RequestBody
         private readonly string $raw,
         private readonly array $values,
     ) {
+        $this->validationCache = new \WeakMap();
     }
 
     public static function from(ServerRequestInterface $request): self
@@ -138,9 +139,9 @@ final class RequestBody
     /** @throws ValidationException */
     private function validate(string $key, mixed $value, RequestValidator $validator): void
     {
-        $cacheKey = $key . ':' . spl_object_id($validator);
+        $validated = $this->validationCache[$validator] ?? [];
 
-        if (isset($this->validationCache[$cacheKey])) {
+        if (isset($validated[$key])) {
             return;
         }
 
@@ -148,6 +149,7 @@ final class RequestBody
             throw new ValidationException($key, $value, $validator);
         }
 
-        $this->validationCache[$cacheKey] = true;
+        $validated[$key] = true;
+        $this->validationCache[$validator] = $validated;
     }
 }

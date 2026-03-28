@@ -2,38 +2,35 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Auth;
+namespace Phalanx\WebSocket\Auth;
 
+use Phalanx\Auth\AuthenticationException;
+use Phalanx\Auth\Guard;
 use Phalanx\ExecutionScope;
 use Phalanx\Task\Executable;
-use Psr\Http\Message\ServerRequestInterface;
+use Phalanx\WebSocket\AuthenticatedWsScope;
+use Phalanx\WebSocket\WsScope;
 
 final class Authenticate implements Executable
 {
     public function __construct(
         private readonly Guard $guard,
-    ) {
-    }
+    ) {}
 
     public function __invoke(ExecutionScope $scope): mixed
     {
-        $request = $scope->attribute('request');
+        assert($scope instanceof WsScope);
 
-        if (!$request instanceof ServerRequestInterface) {
-            throw new AuthenticationException('No request available for authentication');
-        }
-
-        $auth = $this->guard->resolve($request);
+        $auth = $this->guard->resolve($scope->request);
 
         if ($auth === null) {
             throw new AuthenticationException();
         }
 
-        $scope = $scope->withAttribute('auth', $auth);
-
         /** @var Executable $next */
         $next = $scope->attribute('handler.next');
+        $authenticated = new AuthenticatedWsScope($scope, $auth);
 
-        return $scope->execute($next);
+        return ($next)($authenticated);
     }
 }

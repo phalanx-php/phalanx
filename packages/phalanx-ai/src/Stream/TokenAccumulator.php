@@ -58,8 +58,10 @@ final class TokenAccumulator
 
     public function text(): Emitter
     {
-        return Emitter::produce(function (Channel $ch) {
-            foreach ($this->textChannel->consume() as $text) {
+        $textChannel = $this->textChannel;
+
+        return Emitter::produce(static function (Channel $ch) use ($textChannel) {
+            foreach ($textChannel->consume() as $text) {
                 $ch->emit($text);
             }
             $ch->complete();

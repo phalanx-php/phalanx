@@ -6,12 +6,12 @@ namespace Phalanx\Stream;
 
 enum StreamEvent: string
 {
-    case Data = 'data';
     case End = 'end';
+    case Data = 'data';
+    case Exit = 'exit';
     case Error = 'error';
     case Close = 'close';
-    case Connection = 'connection';
-    case Exit = 'exit';
     case Drain = 'drain';
     case Message = 'message';
+    case Connection = 'connection';
 }

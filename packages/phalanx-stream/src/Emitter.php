@@ -159,8 +159,6 @@ final class Emitter implements StreamSource
             })();
         });
 
-        $this->copyStreamState($emitter);
-
         return $emitter;
     }
 
@@ -185,8 +183,6 @@ final class Emitter implements StreamSource
             })();
         });
 
-        $this->copyStreamState($emitter);
-
         return $emitter;
     }
 
@@ -199,12 +195,11 @@ final class Emitter implements StreamSource
                 try {
                     $count = 0;
                     foreach ($prev($ctx) as $value) {
-                        if ($count >= $n) {
-                            break;
-                        }
                         $ctx->throwIfCancelled();
                         $ch->emit($value);
-                        $count++;
+                        if (++$count >= $n) {
+                            break;
+                        }
                     }
                     $ch->complete();
                 } catch (\Throwable $e) {
@@ -212,8 +207,6 @@ final class Emitter implements StreamSource
                 }
             })();
         });
-
-        $this->copyStreamState($emitter);
 
         return $emitter;
     }
@@ -242,8 +235,6 @@ final class Emitter implements StreamSource
                 }
             })();
         });
-
-        $this->copyStreamState($emitter);
 
         return $emitter;
     }
@@ -295,8 +286,6 @@ final class Emitter implements StreamSource
             })();
         });
 
-        $this->copyStreamState($emitter);
-
         return $emitter;
     }
 
@@ -347,8 +336,6 @@ final class Emitter implements StreamSource
             })();
         });
 
-        $this->copyStreamState($emitter);
-
         return $emitter;
     }
 
@@ -380,8 +367,6 @@ final class Emitter implements StreamSource
             }
         });
 
-        $this->copyStreamState($emitter);
-
         return $emitter;
     }
 
@@ -409,8 +394,6 @@ final class Emitter implements StreamSource
                 }
             })();
         });
-
-        $this->copyStreamState($emitter);
 
         return $emitter;
     }
@@ -441,8 +424,6 @@ final class Emitter implements StreamSource
                 }
             })();
         });
-
-        $this->copyStreamState($emitter);
 
         return $emitter;
     }
@@ -484,8 +465,6 @@ final class Emitter implements StreamSource
                 $ch->complete();
             })();
         });
-
-        $this->copyStreamState($emitter);
 
         return $emitter;
     }

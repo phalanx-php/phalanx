@@ -25,6 +25,6 @@ final readonly class MiddlewareChainLink implements Executable
     {
         $scope = $scope->withAttribute('handler.next', $this->next);
 
-        return $scope->execute($this->middleware);
+        return ($this->middleware)($scope);
     }
 }
