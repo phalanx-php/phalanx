@@ -20,13 +20,28 @@ final class Command implements Scopeable
 {
     public private(set) CommandConfig $config;
 
+    /**
+     * @param list<CommandArgument> $args
+     * @param list<CommandOption> $opts
+     */
     public function __construct(
         public private(set) Closure|Scopeable|Executable $fn,
-        CommandConfig|Closure $config = new CommandConfig(),
+        string $desc = '',
+        array $args = [],
+        array $opts = [],
+        CommandConfig|Closure|null $config = null,
     ) {
-        $this->config = $config instanceof Closure
-            ? $config(new CommandConfig())
-            : $config;
+        if ($config !== null) {
+            $this->config = $config instanceof Closure
+                ? $config(new CommandConfig())
+                : $config;
+        } else {
+            $this->config = new CommandConfig(
+                description: $desc,
+                arguments: $args,
+                options: $opts,
+            );
+        }
     }
 
     public function __invoke(Scope $scope): mixed

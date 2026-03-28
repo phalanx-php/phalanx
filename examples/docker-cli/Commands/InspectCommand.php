@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Console\Examples\Commands;
 
 use Clue\React\Docker\Client;
+use Phalanx\Console\Arg;
 use Phalanx\Console\CommandConfig;
 use Phalanx\Console\CommandScope;
 use Phalanx\Scope;
@@ -15,9 +16,10 @@ use function React\Async\await;
 final class InspectCommand implements Scopeable
 {
     public CommandConfig $config {
-        get => (new CommandConfig())
-            ->withDescription('Inspect a container')
-            ->withArgument('container', 'Container ID or name', required: true);
+        get => new CommandConfig(
+            description: 'Inspect a container',
+            arguments: [Arg::required('container', 'Container ID or name')],
+        );
     }
 
     public function __invoke(Scope $scope): int

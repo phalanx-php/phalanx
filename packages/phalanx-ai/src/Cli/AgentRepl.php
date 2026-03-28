@@ -14,8 +14,8 @@ use Phalanx\Ai\Message\Conversation;
 use Phalanx\Ai\Message\Message;
 use Phalanx\Ai\Turn;
 use Phalanx\Console\Command;
-use Phalanx\Console\CommandConfig;
 use Phalanx\Console\CommandScope;
+use Phalanx\Console\Opt;
 
 final class AgentRepl
 {
@@ -85,10 +85,11 @@ final class AgentRepl
 
                 return 0;
             },
-            config: static fn(CommandConfig $c): CommandConfig => $c
-                ->withDescription($description)
-                ->withOption('session', 's', 'Resume a session by ID', requiresValue: true)
-                ->withOption('verbose', 'v', 'Show tool calls and timing'),
+            desc: $description,
+            opts: [
+                Opt::value('session', 's', 'Resume a session by ID'),
+                Opt::flag('verbose', 'v', 'Show tool calls and timing'),
+            ],
         );
     }
 

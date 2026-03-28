@@ -7,6 +7,7 @@ namespace Phalanx\Console\Examples\Commands;
 use Clue\React\Docker\Client;
 use Phalanx\Console\CommandConfig;
 use Phalanx\Console\CommandScope;
+use Phalanx\Console\Opt;
 use Phalanx\Scope;
 use Phalanx\Task\Scopeable;
 
@@ -15,9 +16,10 @@ use function React\Async\await;
 final class PsCommand implements Scopeable
 {
     public CommandConfig $config {
-        get => (new CommandConfig())
-            ->withDescription('List containers')
-            ->withOption('all', shorthand: 'a', description: 'Show all containers (default shows just running)');
+        get => new CommandConfig(
+            description: 'List containers',
+            options: [Opt::flag('all', 'a', 'Show all containers (default shows just running)')],
+        );
     }
 
     public function __invoke(Scope $scope): int

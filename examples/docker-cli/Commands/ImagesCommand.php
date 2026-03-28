@@ -15,8 +15,7 @@ use function React\Async\await;
 final class ImagesCommand implements Scopeable
 {
     public CommandConfig $config {
-        get => (new CommandConfig())
-            ->withDescription('List images');
+        get => new CommandConfig(description: 'List images');
     }
 
     public function __invoke(Scope $scope): int

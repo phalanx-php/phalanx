@@ -30,8 +30,8 @@ final class CommandDispatchTest extends TestCase
     public function dispatches_command_by_command_attribute(): void
     {
         $group = CommandGroup::of([
-            'migrate' => new Command(fn: static fn() => 0, config: new CommandConfig()),
-            'seed' => new Command(fn: static fn() => 1, config: new CommandConfig()),
+            'migrate' => new Command(fn: static fn() => 0),
+            'seed' => new Command(fn: static fn() => 1),
         ]);
 
         $scope = $this->app->createScope();
@@ -46,7 +46,7 @@ final class CommandDispatchTest extends TestCase
     public function throws_when_command_not_found(): void
     {
         $group = CommandGroup::of([
-            'migrate' => new Command(fn: static fn() => 0, config: new CommandConfig()),
+            'migrate' => new Command(fn: static fn() => 0),
         ]);
 
         $scope = $this->app->createScope();
@@ -62,11 +62,11 @@ final class CommandDispatchTest extends TestCase
     public function command_group_keys_and_merge(): void
     {
         $group1 = CommandGroup::of([
-            'migrate' => new Command(fn: static fn() => 0, config: static fn(CommandConfig $c) => $c->withDescription('Run migrations')),
+            'migrate' => new Command(fn: static fn() => 0, desc: 'Run migrations'),
         ]);
 
         $group2 = CommandGroup::of([
-            'seed' => new Command(fn: static fn() => 0, config: static fn(CommandConfig $c) => $c->withDescription('Seed database')),
+            'seed' => new Command(fn: static fn() => 0, desc: 'Seed database'),
         ]);
 
         $merged = $group1->merge($group2);
@@ -80,7 +80,7 @@ final class CommandDispatchTest extends TestCase
     public function command_config_preserved(): void
     {
         $group = CommandGroup::of([
-            'migrate' => new Command(fn: static fn() => 0, config: static fn(CommandConfig $c) => $c->withDescription('Run migrations')),
+            'migrate' => new Command(fn: static fn() => 0, desc: 'Run migrations'),
         ]);
 
         $handler = $group->handlers()->get('migrate');
