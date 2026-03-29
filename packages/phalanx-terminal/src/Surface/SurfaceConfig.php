@@ -20,17 +20,25 @@ final class SurfaceConfig
 
     public function withMode(ScreenMode $mode): self
     {
-        $clone = clone $this;
-        $clone->mode = $mode;
-
-        return $clone;
+        return new self(
+            $this->terminal,
+            $mode,
+            $this->contentFps,
+            $this->structureFps,
+            $this->mouseTracking,
+            $this->bracketedPaste,
+        );
     }
 
     public function withTerminal(TerminalConfig $terminal): self
     {
-        $clone = clone $this;
-        $clone->terminal = $terminal;
-
-        return $clone;
+        return new self(
+            $terminal,
+            $this->mode,
+            $this->contentFps,
+            $this->structureFps,
+            $this->mouseTracking,
+            $this->bracketedPaste,
+        );
     }
 }

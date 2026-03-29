@@ -8,16 +8,6 @@ use Phalanx\Terminal\Buffer\Buffer;
 use Phalanx\Terminal\Buffer\Rect;
 use Phalanx\Terminal\Style\Style;
 
-final class AccordionSection
-{
-    public function __construct(
-        public private(set) string $title,
-        public private(set) Widget $content,
-        public bool $expanded = false,
-        public private(set) int $contentHeight = 5,
-    ) {}
-}
-
 final class Accordion implements Widget
 {
     /** @var list<AccordionSection> */

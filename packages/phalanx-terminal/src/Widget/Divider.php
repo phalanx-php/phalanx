@@ -8,19 +8,17 @@ use Phalanx\Terminal\Buffer\Buffer;
 use Phalanx\Terminal\Buffer\Rect;
 use Phalanx\Terminal\Style\Style;
 
-enum DividerDirection
-{
-    case Horizontal;
-    case Vertical;
-}
-
 final class Divider implements Widget
 {
+    private Style $style;
+
     public function __construct(
         private DividerDirection $direction = DividerDirection::Horizontal,
-        private ?Style $style = null,
+        ?Style $style = null,
         private ?string $char = null,
-    ) {}
+    ) {
+        $this->style = $style ?? Style::new();
+    }
 
     public static function horizontal(?Style $style = null): self
     {
@@ -34,14 +32,12 @@ final class Divider implements Widget
 
     public function render(Rect $area, Buffer $buffer): void
     {
-        $style = $this->style ?? Style::new();
-
         if ($this->direction === DividerDirection::Horizontal) {
             $char = $this->char ?? '─';
             $y = $area->y;
 
             for ($x = $area->x; $x < $area->right; $x++) {
-                $buffer->set($x, $y, $char, $style);
+                $buffer->set($x, $y, $char, $this->style);
             }
 
             return;
@@ -51,7 +47,7 @@ final class Divider implements Widget
         $x = $area->x;
 
         for ($y = $area->y; $y < $area->bottom; $y++) {
-            $buffer->set($x, $y, $char, $style);
+            $buffer->set($x, $y, $char, $this->style);
         }
     }
 }

@@ -8,14 +8,18 @@ use Phalanx\Terminal\Style\Style;
 
 final class Span
 {
+    public private(set) Style $style;
+
+    public int $width {
+        get => mb_strlen($this->content);
+    }
+
     public function __construct(
         public private(set) string $content,
         ?Style $style = null,
     ) {
         $this->style = $style ?? Style::new();
     }
-
-    public private(set) Style $style;
 
     public static function plain(string $content): self
     {
@@ -25,9 +29,5 @@ final class Span
     public static function styled(string $content, Style $style): self
     {
         return new self($content, $style);
-    }
-
-    public int $width {
-        get => mb_strlen($this->content);
     }
 }
