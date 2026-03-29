@@ -99,6 +99,15 @@ final class InputLine implements Widget
             return null;
         }
 
+        if ($event->is(Key::Space)) {
+            $this->value = mb_substr($this->value, 0, $this->cursor)
+                . ' '
+                . mb_substr($this->value, $this->cursor);
+            $this->cursor++;
+
+            return null;
+        }
+
         if ($event->isChar()) {
             $char = $event->char();
 
