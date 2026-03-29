@@ -83,7 +83,7 @@ final class Surface
         return $this->compositor->get($name);
     }
 
-    public function dispatch(Message $message): void
+    public function dispatch(Message|InputEvent $message): void
     {
         $class = $message::class;
         $handlers = $this->messageHandlers[$class] ?? [];
@@ -93,7 +93,7 @@ final class Surface
         }
     }
 
-    /** @param callable(Message, self): void $handler */
+    /** @param callable(Message|InputEvent, self): void $handler */
     public function onMessage(string $messageClass, callable $handler): void
     {
         $this->messageHandlers[$messageClass] ??= [];
