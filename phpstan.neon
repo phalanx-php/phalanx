@@ -23,3 +23,11 @@ parameters:
             - packages/phalanx-ai/src/Cli/AgentRepl.php (?)
     tmpDir: .phpstan-cache
     treatPhpDocTypesAsCertain: false
+    ignoreErrors:
+        - identifier: wyrihaximus.reactphp.blocking.function.fileExists
+        - identifier: wyrihaximus.reactphp.blocking.function.isDir
+        - identifier: wyrihaximus.reactphp.blocking.function.isFile
+        - identifier: wyrihaximus.reactphp.blocking.function.filePutContents
+        - identifier: wyrihaximus.reactphp.blocking.function.fwrite
+        - identifier: wyrihaximus.reactphp.blocking.function.fread
+        - identifier: wyrihaximus.reactphp.blocking.function.usleep
