@@ -6,11 +6,14 @@ namespace Phalanx\Ai;
 
 use Phalanx\Ai\Event\AgentEvent;
 use Phalanx\Ai\Event\TokenUsage;
+use Phalanx\Ai\Message\Content;
+use Phalanx\Ai\Message\Message;
 use Phalanx\Ai\Provider\GenerateRequest;
 use Phalanx\Ai\Provider\LlmProvider;
 use Phalanx\Ai\Provider\ProviderConfig;
 use Phalanx\Ai\Stream\Generation;
 use Phalanx\Ai\Tool\Disposition;
+use Phalanx\Ai\Tool\ToolCallBag;
 use Phalanx\Ai\Tool\ToolOutcome;
 use Phalanx\Ai\Tool\ToolRegistry;
 use Phalanx\ExecutionScope;
@@ -59,7 +62,9 @@ final class AgentLoop
                     return;
                 }
 
-                $conversation = $conversation->assistant($generation->text);
+                $conversation = $conversation->append(
+                    self::assistantWithToolUse($generation->text, $generation->toolCalls),
+                );
 
                 $toolTasks = [];
                 foreach ($generation->toolCalls->all() as $toolCall) {
@@ -182,5 +187,20 @@ final class AgentLoop
         );
 
         return ($turn->onStepHook)($stepResult, $scope);
+    }
+
+    private static function assistantWithToolUse(string $text, ToolCallBag $toolCalls): Message
+    {
+        $contentBlocks = [];
+
+        if ($text !== '') {
+            $contentBlocks[] = Content::text($text);
+        }
+
+        foreach ($toolCalls->all() as $call) {
+            $contentBlocks[] = Content::toolCall($call->id, $call->name, $call->arguments);
+        }
+
+        return Message::assistant($contentBlocks);
     }
 }
