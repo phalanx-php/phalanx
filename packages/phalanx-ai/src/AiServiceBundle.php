@@ -16,17 +16,17 @@ final class AiServiceBundle implements ServiceBundle
             ->factory(static function () use ($context) {
                 $config = ProviderConfig::create();
 
-                $anthropicKey = $context['ANTHROPIC_API_KEY'] ?? getenv('ANTHROPIC_API_KEY') ?: null;
+                $anthropicKey = $context['ANTHROPIC_API_KEY'] ?? null;
                 if ($anthropicKey !== null) {
                     $config->anthropic(apiKey: $anthropicKey);
                 }
 
-                $openaiKey = $context['OPENAI_API_KEY'] ?? getenv('OPENAI_API_KEY') ?: null;
+                $openaiKey = $context['OPENAI_API_KEY'] ?? null;
                 if ($openaiKey !== null) {
                     $config->openai(apiKey: $openaiKey);
                 }
 
-                $ollamaUrl = $context['OLLAMA_BASE_URL'] ?? getenv('OLLAMA_BASE_URL') ?: null;
+                $ollamaUrl = $context['OLLAMA_BASE_URL'] ?? null;
                 if ($ollamaUrl !== null) {
                     $config->ollama(baseUrl: $ollamaUrl);
                 }

@@ -24,7 +24,7 @@ final class TwilioServiceBundle implements ServiceBundle
                 return new TwilioRest($twilioConfig);
             });
 
-        $baseUrl = $context['base_url'] ?? getenv('BASE_URL') ?: '';
+        $baseUrl = $context['base_url'] ?? $context['BASE_URL'] ?? '';
 
         $services->singleton(TwilioWebhook::class)
             ->factory(static fn() => new TwilioWebhook($twilioConfig, $baseUrl));

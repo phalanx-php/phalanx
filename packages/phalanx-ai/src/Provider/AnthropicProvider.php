@@ -26,7 +26,8 @@ final class AnthropicProvider implements LlmProvider
     ) {
         $this->browser = new Browser()
             ->withTimeout(120.0)
-            ->withFollowRedirects(false);
+            ->withFollowRedirects(false)
+            ->withRejectErrorResponse(false);
     }
 
     public function generate(GenerateRequest $request): Emitter
@@ -42,12 +43,25 @@ final class AnthropicProvider implements LlmProvider
             $step = 0;
             $usage = TokenUsage::zero();
 
+            $jsonBody = json_encode($body, JSON_THROW_ON_ERROR);
+
             $response = await($browser->requestStreaming(
                 'POST',
                 $config->baseUrl . '/v1/messages',
                 $headers,
-                json_encode($body, JSON_THROW_ON_ERROR),
+                $jsonBody,
             ));
+
+            $statusCode = $response->getStatusCode();
+            if ($statusCode >= 400) {
+                $errorBody = (string) $response->getBody();
+                @file_put_contents(
+                    '/tmp/sentinel-api-debug.log',
+                    '[' . date('H:i:s') . "] HTTP {$statusCode}\nREQUEST: {$jsonBody}\nRESPONSE: {$errorBody}\n\n",
+                    FILE_APPEND,
+                );
+                throw new \RuntimeException("Anthropic API {$statusCode}: {$errorBody}");
+            }
 
             /** @var ReadableStreamInterface $body */
             $body = $response->getBody();
