@@ -1,0 +1,45 @@
+{
+    "name": "phalanx/terminal",
+    "description": "Async terminal UI with buffer diffing, regions, and reactive widgets",
+    "license": "MIT",
+    "type": "library",
+    "keywords": ["terminal", "tui", "ansi", "async", "buffer", "widget", "rendering"],
+    "authors": [
+        {
+            "name": "Jonathan Havens",
+            "email": "mail@jhavens.tech"
+        }
+    ],
+    "homepage": "https://github.com/havy-tech/phalanx-terminal",
+    "require": {
+        "php": "^8.4"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.0",
+        "react/event-loop": "^1.5",
+        "react/async": "^4.3"
+    },
+    "suggest": {
+        "react/event-loop": "Required for Surface (async event loop integration)",
+        "react/async": "Required for Surface (fiber-based async)",
+        "ext-pcntl": "Required for SIGWINCH terminal resize handling on Unix",
+        "ext-mbstring": "Recommended for accurate Unicode width calculation"
+    },
+    "autoload": {
+        "psr-4": {
+            "Phalanx\\Terminal\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Phalanx\\Terminal\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "1.0-dev"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

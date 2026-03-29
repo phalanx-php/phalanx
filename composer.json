@@ -47,6 +47,7 @@
             "Phalanx\\Ai\\": "packages/phalanx-ai/src/",
             "Phalanx\\Postgres\\": "packages/phalanx-postgres/src/",
             "Phalanx\\Redis\\": "packages/phalanx-redis/src/",
+            "Phalanx\\Terminal\\": "packages/phalanx-terminal/src/",
             "Phalanx\\WebSocket\\": "packages/phalanx-websocket/src/"
         }
     },
@@ -61,6 +62,7 @@
             "Phalanx\\Ai\\Tests\\": "packages/phalanx-ai/tests/",
             "Phalanx\\Postgres\\Tests\\": "packages/phalanx-postgres/tests/",
             "Phalanx\\Redis\\Tests\\": "packages/phalanx-redis/tests/",
+            "Phalanx\\Terminal\\Tests\\": "packages/phalanx-terminal/tests/",
             "Phalanx\\WebSocket\\Tests\\": "packages/phalanx-websocket/tests/"
         },
         "classmap": [
@@ -105,6 +107,7 @@
         "phalanx/postgres": "0.1.0",
         "phalanx/redis": "0.1.0",
         "phalanx/stream": "0.1.0",
+        "phalanx/terminal": "0.1.0",
         "phalanx/websocket": "0.1.0"
     },
     "minimum-stability": "dev",
