@@ -1,3 +1,6 @@
+includes:
+    - vendor/wyrihaximus/phpstan-react/extension.neon
+
 parameters:
     level: 8
     paths:
@@ -17,5 +20,6 @@ parameters:
             - packages/phalanx-core/src/Stream/
             - packages/phalanx-core/src/Runtime/PhalanxRuntime.php (?)
             - packages/phalanx-core/src/Runtime/PhalanxHttpRunner.php (?)
+            - packages/phalanx-ai/src/Cli/AgentRepl.php (?)
     tmpDir: .phpstan-cache
     treatPhpDocTypesAsCertain: false
