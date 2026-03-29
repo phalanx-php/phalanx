@@ -211,7 +211,7 @@ final class Surface
     /** @param callable(int, int): void $fn receives (width, height) */
     public function onResize(callable $fn): void
     {
-        $this->onMessage(ResizeEvent::class, static function (Message $msg) use ($fn): void {
+        $this->onMessage(ResizeEvent::class, static function (Message|InputEvent $msg) use ($fn): void {
             if ($msg instanceof ResizeEvent) {
                 $fn($msg->width, $msg->height);
             }
