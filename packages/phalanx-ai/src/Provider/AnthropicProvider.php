@@ -54,13 +54,21 @@ final class AnthropicProvider implements LlmProvider
 
             $statusCode = $response->getStatusCode();
             if ($statusCode >= 400) {
-                $errorBody = (string) $response->getBody();
+                $errStream = $response->getBody();
+                $errBuf = '';
+                if ($errStream instanceof ReadableStreamInterface) {
+                    $errDone = new Deferred();
+                    $errStream->on('data', static function (string $d) use (&$errBuf): void { $errBuf .= $d; });
+                    $errStream->on('end', static function () use ($errDone): void { $errDone->resolve(null); });
+                    $errStream->on('error', static function () use ($errDone): void { $errDone->resolve(null); });
+                    await($errDone->promise());
+                }
                 @file_put_contents(
                     '/tmp/sentinel-api-debug.log',
-                    '[' . date('H:i:s') . "] HTTP {$statusCode}\nREQUEST: {$jsonBody}\nRESPONSE: {$errorBody}\n\n",
+                    '[' . date('H:i:s') . "] HTTP {$statusCode}\nREQUEST: {$jsonBody}\nRESPONSE: {$errBuf}\n\n",
                     FILE_APPEND,
                 );
-                throw new \RuntimeException("Anthropic API {$statusCode}: {$errorBody}");
+                throw new \RuntimeException("Anthropic API {$statusCode}: {$errBuf}");
             }
 
             /** @var ReadableStreamInterface $body */

@@ -84,4 +84,10 @@ interface ExecutionScope extends Scope, StreamContext
      * Services accessed via $scope->service() are proxied back to the parent process.
      */
     public function inWorker(Scopeable|Executable $task): mixed;
+
+    /**
+     * Deduplicate concurrent identical operations. If $key is already in-flight,
+     * suspend and share the result. If not, execute $task and broadcast to all waiters.
+     */
+    public function singleflight(string $key, Scopeable|Executable $task): mixed;
 }

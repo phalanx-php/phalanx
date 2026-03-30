@@ -144,6 +144,11 @@ final class DeferredScope implements ExecutionScope
         return $this->scope()->inWorker($task);
     }
 
+    public function singleflight(string $key, Scopeable|Executable $task): mixed
+    {
+        return $this->scope()->singleflight($key, $task);
+    }
+
     private function scope(): ExecutionScope
     {
         return FiberScopeRegistry::current()

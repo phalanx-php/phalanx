@@ -136,5 +136,10 @@ trait ExecutionScopeDelegate
         return $this->innerScope()->inWorker($task);
     }
 
+    public function singleflight(string $key, Scopeable|Executable $task): mixed
+    {
+        return $this->innerScope()->singleflight($key, $task);
+    }
+
     abstract protected function innerScope(): ExecutionScope;
 }

@@ -69,7 +69,13 @@ final class AgentLoop
                 $toolTasks = [];
                 foreach ($generation->toolCalls->all() as $toolCall) {
                     $tool = $toolRegistry->hydrate($toolCall);
-                    $toolTasks[] = Task::of(static fn($s) => $tool($s));
+                    $sfKey = $toolCall->name . ':' . hash('xxh3', json_encode($toolCall->arguments));
+                    $toolTasks[] = Task::of(
+                        static fn(ExecutionScope $s) => $s->singleflight(
+                            $sfKey,
+                            Task::of(static fn(ExecutionScope $inner) => $tool($inner)),
+                        )
+                    );
                 }
 
                 /** @var list<ToolOutcome> $outcomes */

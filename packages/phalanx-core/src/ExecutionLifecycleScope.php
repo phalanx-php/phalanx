@@ -9,6 +9,7 @@ use Phalanx\Concurrency\CancellationToken;
 use Phalanx\Concurrency\RetryPolicy;
 use Phalanx\Concurrency\Settlement;
 use Phalanx\Concurrency\SettlementBag;
+use Phalanx\Concurrency\SingleflightGroup;
 use Phalanx\Middleware\TaskMiddleware;
 use Phalanx\Service\CompiledService;
 use Phalanx\Service\DeferredScope;
@@ -64,6 +65,7 @@ final class ExecutionLifecycleScope implements ExecutionScope
         /** @var array<string, mixed> */
         private array $attributes = [],
         private readonly ?WorkerDispatch $workerDispatch = null,
+        private readonly SingleflightGroup $singleflightGroup = new SingleflightGroup(),
     ) {
     }
 
@@ -130,6 +132,7 @@ final class ExecutionLifecycleScope implements ExecutionScope
             $this->taskInterceptors,
             $this->attributes,
             $this->workerDispatch,
+            $this->singleflightGroup,
         );
 
         try {
@@ -400,6 +403,7 @@ final class ExecutionLifecycleScope implements ExecutionScope
             $this->taskInterceptors,
             $this->attributes,
             $this->workerDispatch,
+            $this->singleflightGroup,
         );
 
         $taskPromise = async(static fn() => $childScope->execute($task))();
@@ -510,6 +514,7 @@ final class ExecutionLifecycleScope implements ExecutionScope
             $this->taskInterceptors,
             $attributes,
             $this->workerDispatch,
+            $this->singleflightGroup,
         );
     }
 
@@ -523,6 +528,11 @@ final class ExecutionLifecycleScope implements ExecutionScope
         return ($this->workerDispatch ?? throw new \RuntimeException(
             'Worker execution requires phalanx/parallel. Install it via: composer require phalanx/parallel'
         ))->inWorker($task, $this);
+    }
+
+    public function singleflight(string $key, Scopeable|Executable $task): mixed
+    {
+        return $this->singleflightGroup->do($key, fn(): mixed => $this->execute($task));
     }
 
     private function executeWithBehavior(Scopeable|Executable $task): mixed
@@ -591,6 +601,7 @@ final class ExecutionLifecycleScope implements ExecutionScope
             $this->taskInterceptors,
             $this->attributes,
             $this->workerDispatch,
+            $this->singleflightGroup,
         );
 
         $taskPromise = async(static fn() => $work())();
