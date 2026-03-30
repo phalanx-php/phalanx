@@ -532,7 +532,9 @@ final class ExecutionLifecycleScope implements ExecutionScope
 
     public function singleflight(string $key, Scopeable|Executable $task): mixed
     {
-        return $this->singleflightGroup->do($key, fn(): mixed => $this->execute($task));
+        $execute = $this->execute(...);
+
+        return $this->singleflightGroup->do($key, static fn(): mixed => $execute($task));
     }
 
     private function executeWithBehavior(Scopeable|Executable $task): mixed

@@ -16,6 +16,11 @@ final class InputLine implements Widget
     private int $cursor = 0;
     private int $scrollOffset = 0;
 
+    /** @var list<string> */
+    private array $history = [];
+    private int $historyIndex = -1;
+    private string $historyStash = '';
+
     private Style $style;
     private Style $cursorStyle;
 
@@ -30,6 +35,10 @@ final class InputLine implements Widget
 
     public string $text {
         get => $this->value;
+    }
+
+    public int $cursorPosition {
+        get => $this->cursor;
     }
 
     public function setValue(string $value): void
@@ -48,10 +57,26 @@ final class InputLine implements Widget
         return $prev;
     }
 
+    public function insertText(string $text): void
+    {
+        $clean = str_replace(["\r\n", "\r", "\n"], ' ', $text);
+        $this->value = mb_substr($this->value, 0, $this->cursor)
+            . $clean
+            . mb_substr($this->value, $this->cursor);
+        $this->cursor += mb_strlen($clean);
+    }
+
     public function handleKey(KeyEvent $event): ?string
     {
         if ($event->is(Key::Enter)) {
-            return $this->clear();
+            $text = $this->clear();
+            if ($text !== '') {
+                $this->history[] = $text;
+            }
+            $this->historyIndex = -1;
+            $this->historyStash = '';
+
+            return $text;
         }
 
         if ($event->is(Key::Backspace)) {
@@ -75,14 +100,70 @@ final class InputLine implements Widget
             return null;
         }
 
+        // Ctrl+Left or Cmd+Left → start of line
+        if ($event->is(Key::Left) && $event->ctrl) {
+            $this->cursor = 0;
+
+            return null;
+        }
+
+        // Alt+Left (Opt+Left) → word boundary left (CSI format)
+        if ($event->is(Key::Left) && $event->alt) {
+            $this->cursor = $this->wordBoundaryLeft();
+
+            return null;
+        }
+
+        // Meta-b (Opt+Left on macOS terminals) → word boundary left
+        if ($event->alt && $event->is('b')) {
+            $this->cursor = $this->wordBoundaryLeft();
+
+            return null;
+        }
+
         if ($event->is(Key::Left)) {
             $this->cursor = max(0, $this->cursor - 1);
 
             return null;
         }
 
+        // Ctrl+Right or Cmd+Right → end of line
+        if ($event->is(Key::Right) && $event->ctrl) {
+            $this->cursor = mb_strlen($this->value);
+
+            return null;
+        }
+
+        // Alt+Right (Opt+Right) → word boundary right (CSI format)
+        if ($event->is(Key::Right) && $event->alt) {
+            $this->cursor = $this->wordBoundaryRight();
+
+            return null;
+        }
+
+        // Meta-f (Opt+Right on macOS terminals) → word boundary right
+        if ($event->alt && $event->is('f')) {
+            $this->cursor = $this->wordBoundaryRight();
+
+            return null;
+        }
+
         if ($event->is(Key::Right)) {
             $this->cursor = min(mb_strlen($this->value), $this->cursor + 1);
+
+            return null;
+        }
+
+        // Up → history previous
+        if ($event->is(Key::Up)) {
+            $this->historyUp();
+
+            return null;
+        }
+
+        // Down → history next
+        if ($event->is(Key::Down)) {
+            $this->historyDown();
 
             return null;
         }
@@ -95,6 +176,45 @@ final class InputLine implements Widget
 
         if ($event->is(Key::End)) {
             $this->cursor = mb_strlen($this->value);
+
+            return null;
+        }
+
+        // Ctrl+A → start of line
+        if ($event->ctrl && $event->is('a')) {
+            $this->cursor = 0;
+
+            return null;
+        }
+
+        // Ctrl+E → end of line
+        if ($event->ctrl && $event->is('e')) {
+            $this->cursor = mb_strlen($this->value);
+
+            return null;
+        }
+
+        // Ctrl+U → kill to start
+        if ($event->ctrl && $event->is('u')) {
+            $this->value = mb_substr($this->value, $this->cursor);
+            $this->cursor = 0;
+
+            return null;
+        }
+
+        // Ctrl+K → kill to end
+        if ($event->ctrl && $event->is('k')) {
+            $this->value = mb_substr($this->value, 0, $this->cursor);
+
+            return null;
+        }
+
+        // Ctrl+W → kill word backward
+        if ($event->ctrl && $event->is('w')) {
+            $boundary = $this->wordBoundaryLeft();
+            $this->value = mb_substr($this->value, 0, $boundary)
+                . mb_substr($this->value, $this->cursor);
+            $this->cursor = $boundary;
 
             return null;
         }
@@ -163,5 +283,74 @@ final class InputLine implements Widget
 
             $buffer->set($cursorX, $area->y, $charAtCursor, $this->cursorStyle);
         }
+    }
+
+    private function wordBoundaryLeft(): int
+    {
+        $pos = $this->cursor;
+
+        while ($pos > 0 && mb_substr($this->value, $pos - 1, 1) === ' ') {
+            $pos--;
+        }
+
+        while ($pos > 0 && mb_substr($this->value, $pos - 1, 1) !== ' ') {
+            $pos--;
+        }
+
+        return $pos;
+    }
+
+    private function wordBoundaryRight(): int
+    {
+        $len = mb_strlen($this->value);
+        $pos = $this->cursor;
+
+        while ($pos < $len && mb_substr($this->value, $pos, 1) !== ' ') {
+            $pos++;
+        }
+
+        while ($pos < $len && mb_substr($this->value, $pos, 1) === ' ') {
+            $pos++;
+        }
+
+        return $pos;
+    }
+
+    private function historyUp(): void
+    {
+        if ($this->history === []) {
+            return;
+        }
+
+        if ($this->historyIndex === -1) {
+            $this->historyStash = $this->value;
+            $this->historyIndex = count($this->history) - 1;
+        } elseif ($this->historyIndex > 0) {
+            $this->historyIndex--;
+        } else {
+            return;
+        }
+
+        $this->value = $this->history[$this->historyIndex];
+        $this->cursor = mb_strlen($this->value);
+    }
+
+    private function historyDown(): void
+    {
+        if ($this->historyIndex === -1) {
+            return;
+        }
+
+        $this->historyIndex++;
+
+        if ($this->historyIndex >= count($this->history)) {
+            $this->historyIndex = -1;
+            $this->value = $this->historyStash;
+            $this->historyStash = '';
+        } else {
+            $this->value = $this->history[$this->historyIndex];
+        }
+
+        $this->cursor = mb_strlen($this->value);
     }
 }

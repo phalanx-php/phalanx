@@ -150,15 +150,35 @@ final class EventParser
         $this->buffer = substr($b, $paramEnd + 1);
 
         return match ($finalByte) {
-            'A' => new KeyEvent(Key::Up, shift: str_contains($params, '2')),
-            'B' => new KeyEvent(Key::Down, shift: str_contains($params, '2')),
-            'C' => new KeyEvent(Key::Right, shift: str_contains($params, '2')),
-            'D' => new KeyEvent(Key::Left, shift: str_contains($params, '2')),
+            'A', 'B', 'C', 'D' => $this->parseArrow($finalByte, $params),
             'H' => new KeyEvent(Key::Home),
             'F' => new KeyEvent(Key::End),
             '~' => $this->parseTilde($params),
             default => new KeyEvent($finalByte),
         };
+    }
+
+    private function parseArrow(string $direction, string $params): KeyEvent
+    {
+        $key = match ($direction) {
+            'A' => Key::Up,
+            'B' => Key::Down,
+            'C' => Key::Right,
+            'D' => Key::Left,
+        };
+
+        $modifier = 1;
+        if (str_contains($params, ';')) {
+            $parts = explode(';', $params);
+            $modifier = (int) ($parts[1] ?? 1);
+        }
+
+        $shift = (bool) (($modifier - 1) & 1);
+        $alt   = (bool) (($modifier - 1) & 2);
+        $ctrl  = (bool) (($modifier - 1) & 4);
+        $super = (bool) (($modifier - 1) & 8);
+
+        return new KeyEvent($key, ctrl: $ctrl || $super, alt: $alt, shift: $shift);
     }
 
     private function parseTilde(string $params): KeyEvent
