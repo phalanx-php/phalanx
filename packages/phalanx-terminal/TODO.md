@@ -38,6 +38,15 @@
 **What**: Multi-line text input (like the InputLine but with height > 1). Currently the input box is 3 rows but the InputLine widget only renders on one line.
 **Approach**: The TextArea widget exists in the plan but wasn't implemented. Would replace InputLine for multi-line prompts.
 
+## aisentinel-cli TUI Integration (Deferred)
+
+The following files in aisentinel-cli depend on phalanx/terminal and are excluded from version control until this package is published:
+- `src/Sentinel/SentinelTuiCommand.php` — full TUI lifecycle (19 terminal imports)
+- `src/Sentinel/Render/TuiRenderer.php` — terminal widget rendering
+- `bin/commands/sentinel-tui.php` — TUI command entry point
+
+These files remain on disk in the aisentinel-cli working directory. When phalanx/terminal is published and added to the split workflow, re-add phalanx/terminal to aisentinel-cli's composer.json require and remove the gitignore exclusions for these files.
+
 ## Phalanx Core Integration Notes
 
 ### Singleflight Primitive
