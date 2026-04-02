@@ -248,18 +248,15 @@ final class ExecutionLifecycleScope implements ExecutionScope
                     $item,
                     $currentKey,
                     &$results,
-                    &$pending,
                     $deferred,
                     $execute,
                 ): void {
                     try {
                         $task = $fn($item);
                         $results[$currentKey] = $execute($task);
-                        $deferred->resolve(null);
+                        $deferred->resolve($currentKey);
                     } catch (\Throwable $e) {
                         $deferred->reject($e);
-                    } finally {
-                        unset($pending[$currentKey]);
                     }
                 })();
             }
@@ -271,7 +268,8 @@ final class ExecutionLifecycleScope implements ExecutionScope
             $this->throwIfCancelled();
 
             if ($pending !== []) {
-                await(race($pending));
+                $completedKey = await(race($pending));
+                unset($pending[$completedKey]);
             }
 
             $startNext();
