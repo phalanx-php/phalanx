@@ -52,7 +52,7 @@ $twilio->sendSms(
 
 ## Configuration
 
-`TwilioServiceBundle` registers `TwilioRest` and `TwilioWebhook` as singletons. Pass credentials through the application context:
+`TwilioServiceBundle` registers `TwilioRest` and `TwilioWebhook` as singletons. `TwilioRest` accepts `Suspendable` (the narrowest scope interface for `await()`) -- all HTTP calls to Twilio suspend through scope-managed await for cancellation support. Pass credentials through the application context:
 
 ```php
 <?php

@@ -174,6 +174,73 @@ $commands = CommandGroup::create()
 $all = $coreCommands->merge($pluginCommands);
 ```
 
+## Nested Command Groups
+
+Groups can contain other groups for hierarchical CLI structures:
+
+```php
+<?php
+
+use Phalanx\Console\Arg;
+use Phalanx\Console\Command;
+use Phalanx\Console\CommandGroup;
+use Phalanx\Console\Opt;
+
+$commands = CommandGroup::of([
+    'serve' => new ServeCommand(),
+    'db' => CommandGroup::of([
+        'migrate' => new MigrateCommand(),
+        'seed'    => new SeedCommand(),
+        'reset'   => new ResetCommand(),
+    ], description: 'Database operations'),
+    'make' => CommandGroup::of([
+        'task'    => new MakeTaskCommand(),
+        'command' => new MakeCommandCommand(),
+    ], description: 'Code generation'),
+]);
+```
+
+Invoke nested commands with space-separated names:
+
+```bash
+php app.php serve --port=8080
+php app.php db migrate --fresh
+php app.php make task FetchUser
+php app.php db --help
+```
+
+Typing a group name without a subcommand shows its help:
+
+```
+Database operations
+
+Usage:
+  db <command> [options]
+
+Commands:
+  migrate  Run database migrations
+  seed     Seed the database
+  reset    Reset the database
+
+Run 'db <command> --help' for details.
+```
+
+Top-level help separates commands from groups:
+
+```
+Usage:
+  app <command> [options]
+
+Commands:
+  serve   Start the HTTP server
+
+Groups:
+  db      Database operations
+  make    Code generation
+```
+
+Groups nest arbitrarily deep. Both flat and nested commands work in the same `CommandGroup`.
+
 ## Loading Commands from Files
 
 `CommandLoader` scans a directory and loads every `.php` file that returns a `CommandGroup`:

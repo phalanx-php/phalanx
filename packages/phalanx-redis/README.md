@@ -53,7 +53,7 @@ Falls back to `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`, `REDIS_DATABASE` env
 
 ## Commands
 
-`RedisClient` wraps `clue/redis-react` with typed methods for common operations:
+`RedisClient` wraps `clue/redis-react` with typed methods for common operations. It accepts `Suspendable` in its constructor (the narrowest scope interface needed for `await()`), and all Redis commands suspend through `$scope->await()` for scope-managed cancellation.
 
 ```php
 <?php
