@@ -7,6 +7,7 @@ namespace Phalanx\Postgres;
 use Amp\Postgres\PostgresListener as AmphpListener;
 use Amp\Postgres\PostgresNotification;
 use Phalanx\Stream\Channel;
+use Phalanx\Stream\Contract\StreamContext;
 use Phalanx\Stream\Emitter;
 
 final class PgListener
@@ -22,12 +23,18 @@ final class PgListener
         $pool = $this->pool;
         $listeners = &$this->listeners;
 
-        return Emitter::produce(static function (Channel $ch) use ($pool, $channel, &$listeners): void {
+        return Emitter::produce(static function (Channel $ch, StreamContext $ctx) use ($pool, $channel, &$listeners): void {
             $listener = $pool->listen($channel);
             $listeners[$channel] = $listener;
 
+            $ctx->onDispose(static function () use ($listener, $channel, &$listeners): void {
+                $listener->unlisten();
+                unset($listeners[$channel]);
+            });
+
             try {
                 foreach ($listener as $notification) {
+                    $ctx->throwIfCancelled();
                     /** @var PostgresNotification $notification */
                     $ch->emit($notification->payload);
                 }

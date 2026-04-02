@@ -447,22 +447,18 @@ final class Emitter implements StreamSource
                 Loop::cancelTimer($timer);
             });
 
-            async(static function () use ($prev, $ch, $ctx, &$latest, &$hasLatest, $timer): void {
+            async(static function () use ($prev, $ch, $ctx, &$latest, &$hasLatest): void {
                 try {
                     foreach ($prev($ctx) as $value) {
                         $ctx->throwIfCancelled();
                         $latest = $value;
                         $hasLatest = true;
                     }
+
+                    $ch->complete();
                 } catch (\Throwable $e) {
-                    Loop::cancelTimer($timer);
                     $ch->error($e);
-
-                    return;
                 }
-
-                Loop::cancelTimer($timer);
-                $ch->complete();
             })();
         });
 
