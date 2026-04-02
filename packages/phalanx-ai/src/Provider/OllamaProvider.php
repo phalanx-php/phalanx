@@ -65,8 +65,12 @@ final class OllamaProvider implements LlmProvider
             $buffer = '';
             $ended = false;
             $waiting = null;
+            $abandoned = false;
 
-            $body->on('data', static function (string $data) use (&$buffer, &$waiting): void {
+            $body->on('data', static function (string $data) use (&$buffer, &$waiting, &$abandoned): void {
+                if ($abandoned) {
+                    return;
+                }
                 $buffer .= $data;
                 if ($waiting !== null) {
                     $d = $waiting;
@@ -75,7 +79,10 @@ final class OllamaProvider implements LlmProvider
                 }
             });
 
-            $body->on('end', static function () use (&$ended, &$waiting): void {
+            $body->on('end', static function () use (&$ended, &$waiting, &$abandoned): void {
+                if ($abandoned) {
+                    return;
+                }
                 $ended = true;
                 if ($waiting !== null) {
                     $d = $waiting;
@@ -84,7 +91,10 @@ final class OllamaProvider implements LlmProvider
                 }
             });
 
-            $body->on('error', static function () use (&$ended, &$waiting): void {
+            $body->on('error', static function () use (&$ended, &$waiting, &$abandoned): void {
+                if ($abandoned) {
+                    return;
+                }
                 $ended = true;
                 if ($waiting !== null) {
                     $d = $waiting;
@@ -93,42 +103,47 @@ final class OllamaProvider implements LlmProvider
                 }
             });
 
-            while (!$ended || $buffer !== '') {
-                $ctx->throwIfCancelled();
+            try {
+                while (!$ended || $buffer !== '') {
+                    $ctx->throwIfCancelled();
 
-                while (($nlPos = strpos($buffer, "\n")) !== false) {
-                    $line = substr($buffer, 0, $nlPos);
-                    $buffer = substr($buffer, $nlPos + 1);
+                    while (($nlPos = strpos($buffer, "\n")) !== false) {
+                        $line = substr($buffer, 0, $nlPos);
+                        $buffer = substr($buffer, $nlPos + 1);
 
-                    if ($line === '') {
-                        continue;
+                        if ($line === '') {
+                            continue;
+                        }
+
+                        $parsed = json_decode($line, true, 512, JSON_THROW_ON_ERROR);
+                        $elapsed = (hrtime(true) - $startTime) / 1e6;
+
+                        $content = $parsed['message']['content'] ?? '';
+
+                        if ($content !== '') {
+                            $channel->emit(AgentEvent::tokenDelta(
+                                new TokenDelta(text: $content),
+                                $elapsed, $usage, $step,
+                            ));
+                        }
+
+                        if ($parsed['done'] ?? false) {
+                            $usage = new TokenUsage(
+                                input: (int) ($parsed['prompt_eval_count'] ?? 0),
+                                output: (int) ($parsed['eval_count'] ?? 0),
+                            );
+                            $channel->emit(AgentEvent::tokenComplete($elapsed, $usage, $step));
+                        }
                     }
 
-                    $parsed = json_decode($line, true, 512, JSON_THROW_ON_ERROR);
-                    $elapsed = (hrtime(true) - $startTime) / 1e6;
-
-                    $content = $parsed['message']['content'] ?? '';
-
-                    if ($content !== '') {
-                        $channel->emit(AgentEvent::tokenDelta(
-                            new TokenDelta(text: $content),
-                            $elapsed, $usage, $step,
-                        ));
-                    }
-
-                    if ($parsed['done'] ?? false) {
-                        $usage = new TokenUsage(
-                            input: (int) ($parsed['prompt_eval_count'] ?? 0),
-                            output: (int) ($parsed['eval_count'] ?? 0),
-                        );
-                        $channel->emit(AgentEvent::tokenComplete($elapsed, $usage, $step));
+                    if (!$ended) {
+                        $waiting = new Deferred();
+                        $ctx->await($waiting->promise());
                     }
                 }
-
-                if (!$ended) {
-                    $waiting = new Deferred();
-                    $ctx->await($waiting->promise());
-                }
+            } finally {
+                $abandoned = true;
+                $waiting = null;
             }
 
             $channel->complete();

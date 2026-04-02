@@ -63,11 +63,6 @@ final class AnthropicProvider implements LlmProvider
                     $errStream->on('error', static function () use ($errDone): void { $errDone->resolve(null); });
                     $ctx->await($errDone->promise());
                 }
-                @file_put_contents(
-                    '/tmp/sentinel-api-debug.log',
-                    '[' . date('H:i:s') . "] HTTP {$statusCode}\nREQUEST: {$jsonBody}\nRESPONSE: {$errBuf}\n\n",
-                    FILE_APPEND,
-                );
                 throw new \RuntimeException("Anthropic API {$statusCode}: {$errBuf}");
             }
 
