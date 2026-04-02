@@ -14,6 +14,8 @@ parameters:
         - packages/phalanx-redis/src
         - packages/phalanx-stream/src
         - packages/phalanx-websocket/src
+        - packages/phalanx-network/src
+        - packages/phalanx-ssh/src
     excludePaths:
         analyseAndScan:
             - packages/phalanx-core/src/Parallel (?)
