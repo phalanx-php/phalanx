@@ -20,13 +20,20 @@ jobs:
           - phalanx-core
           - phalanx-console
           - phalanx-http
-          - phalanx-twilio
           - phalanx-ai
           - phalanx-parallel
           - phalanx-postgres
-          - phalanx-redis
           - phalanx-stream
           - phalanx-websocket
+          # NOT published yet (maturing):
+          # - phalanx-redis
+          # - phalanx-twilio
+          # - phalanx-terminal
+          # NOT published yet (new/spec-only):
+          # - phalanx-network
+          # - phalanx-filesystem
+          # - phalanx-ssh
+          # - phalanx-cdp
 
     steps:
       - uses: actions/checkout@v4
