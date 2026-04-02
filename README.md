@@ -127,6 +127,38 @@ Runner::from($app)
     ->run('0.0.0.0:8080');
 ```
 
+## CLI with nested command groups
+
+Commands support nesting. Group related operations under a shared name:
+
+```php
+$commands = CommandGroup::of([
+    'serve' => new ServeCommand(),
+    'net' => CommandGroup::of([
+        'scan'     => new ScanSubnetCommand(),
+        'probe'    => new ProbePortCommand(),
+        'wake'     => new WakeHostCommand(),
+        'discover' => new DiscoverDevicesCommand(),
+    ], description: 'Network operations'),
+    'ssh' => CommandGroup::of([
+        'run'    => new RunRemoteCommand(),
+        'deploy' => new DeployCommand(),
+    ], description: 'Remote SSH operations'),
+]);
+
+$runner = ConsoleRunner::withHandlers($app, $commands);
+exit($runner->run($argv));
+```
+
+```bash
+php app.php serve --port=8080
+php app.php net scan 192.168.1.0/24 --concurrency=50
+php app.php net --help
+php app.php ssh deploy prod release.tar.gz /var/www
+```
+
+Groups can nest arbitrarily deep. Typing a group name without a subcommand shows its help.
+
 ## Development
 
 ```bash
