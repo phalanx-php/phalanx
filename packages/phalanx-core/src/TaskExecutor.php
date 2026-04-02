@@ -26,12 +26,12 @@ interface TaskExecutor
 
     /**
      * @template T
-     * @param array<string|int, T> $items
+     * @param iterable<string|int, T> $items
      * @param Closure(T): (Scopeable|Executable) $fn
      * @param int $limit
      * @return array<string|int, mixed>
      */
-    public function map(array $items, Closure $fn, int $limit = 10): array;
+    public function map(iterable $items, Closure $fn, int $limit = 10): array;
 
     /**
      * @param list<Scopeable|Executable> $tasks

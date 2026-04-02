@@ -4,15 +4,24 @@ declare(strict_types=1);
 
 namespace Phalanx\Network;
 
+use IPLib\Factory;
+use IPLib\Range\RangeInterface;
+use IPLib\Range\Subnet as IpLibSubnet;
+
 final readonly class Subnet
 {
-    /** @param list<string> $ips Precomputed list of IPs in the subnet */
-    private array $ips;
+    private RangeInterface $range;
 
     public function __construct(
         public string $cidr,
     ) {
-        $this->ips = self::expand($cidr);
+        $parsed = IpLibSubnet::parseString($cidr);
+
+        if ($parsed === null) {
+            throw new \InvalidArgumentException("Invalid CIDR notation: $cidr");
+        }
+
+        $this->range = $parsed;
     }
 
     public static function fromRange(string $base, int $start = 1, int $end = 254): self
@@ -27,50 +36,59 @@ final readonly class Subnet
         return new self("$prefix.0/24");
     }
 
+    /** @return \Generator<int, string> */
+    public function addresses(): \Generator
+    {
+        $current = $this->range->getStartAddress();
+        $end = $this->range->getEndAddress();
+
+        if ($current === null || $end === null) {
+            return;
+        }
+
+        $endStr = $end->getComparableString();
+        $current = $current->getNextAddress();
+
+        while ($current !== null && $current->getComparableString() < $endStr) {
+            yield $current->toString();
+            $current = $current->getNextAddress();
+        }
+    }
+
     /** @return list<string> */
     public function ips(): array
     {
-        return $this->ips;
+        return iterator_to_array($this->addresses(), false);
     }
 
     public function count(): int
     {
-        return count($this->ips);
+        return iterator_count($this->addresses());
     }
 
     public function contains(string $ip): bool
     {
-        return in_array($ip, $this->ips, true);
+        $address = Factory::parseAddressString($ip);
+
+        if ($address === null) {
+            return false;
+        }
+
+        return $this->range->contains($address);
     }
 
-    /** @return list<string> */
-    private static function expand(string $cidr): array
+    public function startAddress(): string
     {
-        if (!str_contains($cidr, '/')) {
-            throw new \InvalidArgumentException("CIDR notation required: $cidr");
-        }
+        return $this->range->getStartAddress()->toString();
+    }
 
-        [$network, $bits] = explode('/', $cidr);
-        $bits = (int) $bits;
+    public function endAddress(): string
+    {
+        return $this->range->getEndAddress()->toString();
+    }
 
-        if ($bits < 16 || $bits > 30) {
-            throw new \InvalidArgumentException("CIDR mask must be between /16 and /30: /$bits");
-        }
-
-        $networkLong = ip2long($network);
-        if ($networkLong === false) {
-            throw new \InvalidArgumentException("Invalid network address: $network");
-        }
-
-        $mask = -1 << (32 - $bits);
-        $networkLong &= $mask;
-        $broadcast = $networkLong | ~$mask;
-
-        $ips = [];
-        for ($i = $networkLong + 1; $i < $broadcast; $i++) {
-            $ips[] = long2ip($i);
-        }
-
-        return $ips;
+    public function range(): RangeInterface
+    {
+        return $this->range;
     }
 }

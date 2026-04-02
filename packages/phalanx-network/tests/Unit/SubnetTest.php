@@ -47,6 +47,13 @@ final class SubnetTest extends TestCase
         $this->assertFalse($subnet->contains('192.168.2.50'));
     }
 
+    public function test_contains_handles_invalid_ip(): void
+    {
+        $subnet = new Subnet('192.168.1.0/24');
+
+        $this->assertFalse($subnet->contains('not-an-ip'));
+    }
+
     public function test_from_range_creates_24_subnet(): void
     {
         $subnet = Subnet::fromRange('192.168.1');
@@ -55,22 +62,19 @@ final class SubnetTest extends TestCase
         $this->assertSame('192.168.1.0/24', $subnet->cidr);
     }
 
-    public function test_rejects_missing_cidr(): void
+    public function test_rejects_invalid_cidr(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        new Subnet('192.168.1.0');
+        new Subnet('not-a-cidr');
     }
 
-    public function test_rejects_too_large_subnet(): void
+    public function test_addresses_generator_is_lazy(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
-        new Subnet('10.0.0.0/8');
-    }
+        $subnet = new Subnet('192.168.1.0/24');
+        $gen = $subnet->addresses();
 
-    public function test_rejects_too_small_subnet(): void
-    {
-        $this->expectException(\InvalidArgumentException::class);
-        new Subnet('10.0.0.0/31');
+        $first = $gen->current();
+        $this->assertSame('192.168.1.1', $first);
     }
 
     public function test_count_returns_host_count(): void
@@ -78,5 +82,21 @@ final class SubnetTest extends TestCase
         $subnet = new Subnet('192.168.1.0/24');
 
         $this->assertSame(254, $subnet->count());
+    }
+
+    public function test_start_and_end_address(): void
+    {
+        $subnet = new Subnet('10.0.0.0/24');
+
+        $this->assertSame('10.0.0.0', $subnet->startAddress());
+        $this->assertSame('10.0.0.255', $subnet->endAddress());
+    }
+
+    public function test_supports_ipv6(): void
+    {
+        $subnet = new Subnet('fd00::/120');
+
+        $this->assertTrue($subnet->contains('fd00::1'));
+        $this->assertFalse($subnet->contains('fd01::1'));
     }
 }

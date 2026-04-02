@@ -207,7 +207,7 @@ final class ExecutionLifecycleScope implements ExecutionScope
      * @param array<string|int, mixed> $items
      * @return array<string|int, mixed>
      */
-    public function map(array $items, Closure $fn, int $limit = 10): array
+    public function map(iterable $items, Closure $fn, int $limit = 10): array
     {
         $this->throwIfCancelled();
 

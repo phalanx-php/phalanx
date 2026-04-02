@@ -15,6 +15,7 @@
         "amphp/postgres": "^2.2",
         "clue/redis-react": "^2.8",
         "evenement/evenement": "^3.0",
+        "mlocati/ip-lib": "^1.22",
         "nikic/fast-route": "^2.0",
         "ratchet/rfc6455": "^0.4.0",
         "react/async": "^4.3",
@@ -23,6 +24,7 @@
         "react/event-loop": "^1.5",
         "react/http": "^1.10",
         "react/promise": "^3.2",
+        "react/promise-timer": "^1.11",
         "react/stream": "^1.4",
         "revolt/event-loop-adapter-react": "^1.1"
     },
@@ -30,7 +32,6 @@
         "clue/docker-react": "^1.6",
         "phpstan/phpstan": "^2.0",
         "phpunit/phpunit": "^11.0",
-        "react/promise-timer": "^1.11",
         "rector/rector": "^2.0",
         "slevomat/coding-standard": "^8.15",
         "squizlabs/php_codesniffer": "^3.10",
@@ -51,7 +52,8 @@
             "Phalanx\\Terminal\\": "packages/phalanx-terminal/src/",
             "Phalanx\\WebSocket\\": "packages/phalanx-websocket/src/",
             "Phalanx\\Network\\": "packages/phalanx-network/src/",
-            "Phalanx\\Filesystem\\": "packages/phalanx-filesystem/src/"
+            "Phalanx\\Filesystem\\": "packages/phalanx-filesystem/src/",
+            "Phalanx\\Ssh\\": "packages/phalanx-ssh/src/"
         }
     },
     "autoload-dev": {
@@ -68,7 +70,8 @@
             "Phalanx\\Terminal\\Tests\\": "packages/phalanx-terminal/tests/",
             "Phalanx\\WebSocket\\Tests\\": "packages/phalanx-websocket/tests/",
             "Phalanx\\Network\\Tests\\": "packages/phalanx-network/tests/",
-            "Phalanx\\Filesystem\\Tests\\": "packages/phalanx-filesystem/tests/"
+            "Phalanx\\Filesystem\\Tests\\": "packages/phalanx-filesystem/tests/",
+            "Phalanx\\Ssh\\Tests\\": "packages/phalanx-ssh/tests/"
         },
         "classmap": [
             "packages/phalanx-core/tests/Support/Fixtures/",
@@ -88,6 +91,7 @@
         "test:core": "cd packages/phalanx-core && php vendor/bin/phpunit",
         "test:twilio": "php vendor/bin/phpunit packages/phalanx-twilio/tests/",
         "test:ai": "php vendor/bin/phpunit packages/phalanx-ai/tests/",
+        "test:ssh": "php vendor/bin/phpunit packages/phalanx-ssh/tests/",
         "analyse": "php vendor/bin/phpstan analyse",
         "rector": "php vendor/bin/rector process",
         "rector:dry": "php vendor/bin/rector process --dry-run",
@@ -115,7 +119,8 @@
         "phalanx/terminal": "0.1.0",
         "phalanx/websocket": "0.1.0",
         "phalanx/network": "0.1.0",
-        "phalanx/filesystem": "0.1.0"
+        "phalanx/filesystem": "0.1.0",
+        "phalanx/ssh": "0.1.0"
     },
     "minimum-stability": "dev",
     "prefer-stable": true
