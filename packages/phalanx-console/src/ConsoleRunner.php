@@ -72,6 +72,27 @@ final class ConsoleRunner
     {
         assert($this->handlers !== null);
 
+        if ($this->handlers instanceof CommandGroup && $this->handlers->isGroup($command)) {
+            $this->app->startup();
+
+            try {
+                $scope = $this->app->createScope();
+                $scope = $scope->withAttribute('command', $command);
+                $scope = $scope->withAttribute('args', $args);
+
+                $result = $scope->execute($this->handlers);
+
+                $scope->dispose();
+
+                return is_int($result) ? $result : 0;
+            } catch (\Throwable $e) {
+                printf("Error: %s\n", $e->getMessage());
+                return 1;
+            } finally {
+                $this->app->shutdown();
+            }
+        }
+
         $handlerGroup = $this->resolveHandlerGroup();
         $handler = $handlerGroup->get($command);
 
@@ -154,6 +175,11 @@ final class ConsoleRunner
     {
         assert($this->handlers !== null);
 
+        if ($this->handlers instanceof CommandGroup && $this->handlers->isGroup($name)) {
+            echo HelpGenerator::forGroup($name, $this->handlers->group($name));
+            return 0;
+        }
+
         $handlerGroup = $this->resolveHandlerGroup();
         $handler = $handlerGroup->get($name);
 
@@ -175,6 +201,11 @@ final class ConsoleRunner
 
     private function showHelp(): int
     {
+        if ($this->handlers instanceof CommandGroup) {
+            echo HelpGenerator::forTopLevel($this->handlers);
+            return 0;
+        }
+
         echo "Available commands:\n\n";
         $this->printAvailableCommands();
         return 0;
