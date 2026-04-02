@@ -22,6 +22,7 @@ final class WsConnection
 
     private(set) Channel $inbound;
     private(set) Channel $outbound;
+    private ?Emitter $inboundEmitter = null;
 
     public function __construct(
         private readonly string $connectionId,
@@ -72,16 +73,16 @@ final class WsConnection
 
     public function stream(ExecutionScope $scope): ScopedStream
     {
-        $inbound = $this->inbound;
-
-        return ScopedStream::from(
-            $scope,
-            Emitter::produce(static function (Channel $ch, StreamContext $ctx) use ($inbound): void {
+        if ($this->inboundEmitter === null) {
+            $inbound = $this->inbound;
+            $this->inboundEmitter = Emitter::produce(static function (Channel $ch, StreamContext $ctx) use ($inbound): void {
                 foreach ($inbound->consume() as $msg) {
                     $ctx->throwIfCancelled();
                     $ch->emit($msg);
                 }
-            }),
-        );
+            });
+        }
+
+        return ScopedStream::from($scope, $this->inboundEmitter);
     }
 }

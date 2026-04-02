@@ -345,22 +345,28 @@ final class Emitter implements StreamSource
 
         $emitter = new self(static function (Channel $ch, StreamContext $ctx) use ($sources): void {
             $remaining = count($sources);
+            $failed = false;
 
             foreach ($sources as $source) {
-                async(static function () use ($source, $ch, $ctx, &$remaining): void {
+                async(static function () use ($source, $ch, $ctx, &$remaining, &$failed): void {
                     try {
                         foreach ($source($ctx) as $value) {
                             $ctx->throwIfCancelled();
+                            if ($failed) {
+                                return;
+                            }
                             $ch->emit($value);
                         }
                     } catch (\Throwable $e) {
-                        $ch->error($e);
-
+                        if (!$failed) {
+                            $failed = true;
+                            $ch->error($e);
+                        }
                         return;
                     }
 
                     $remaining--;
-                    if ($remaining <= 0) {
+                    if ($remaining <= 0 && !$failed) {
                         $ch->complete();
                     }
                 })();
