@@ -6,9 +6,6 @@ namespace Phalanx\Console;
 
 use Phalanx\Handler\HandlerConfig;
 
-/**
- * Console command configuration.
- */
 final class CommandConfig extends HandlerConfig
 {
     /**
@@ -26,43 +23,6 @@ final class CommandConfig extends HandlerConfig
         int $priority = 0,
     ) {
         parent::__construct($tags, $priority);
-    }
-
-    public function withDescription(string $description): self
-    {
-        $clone = clone $this;
-        $clone->description = $description;
-        return $clone;
-    }
-
-    public function withArgument(
-        string $name,
-        string $description = '',
-        bool $required = true,
-        mixed $default = null,
-    ): self {
-        $clone = clone $this;
-        $clone->arguments = [...$this->arguments, new CommandArgument($name, $description, $required, $default)];
-        return $clone;
-    }
-
-    public function withOption(
-        string $name,
-        string $shorthand = '',
-        string $description = '',
-        bool $requiresValue = false,
-        mixed $default = null,
-    ): self {
-        $clone = clone $this;
-        $clone->options = [...$this->options, new CommandOption($name, $shorthand, $description, $requiresValue, $default)];
-        return $clone;
-    }
-
-    public function withValidator(CommandValidator $validator): self
-    {
-        $clone = clone $this;
-        $clone->validators = [...$this->validators, $validator];
-        return $clone;
     }
 
     #[\Override]

@@ -140,11 +140,7 @@ Both work interchangeably—`Command` accepts `Closure|Scopeable|Executable`.
 
 ## Command Configuration
 
-`Command` supports two configuration styles. Pick whichever fits the situation.
-
-### Direct parameters (preferred for most commands)
-
-Pass `desc`, `args`, and `opts` directly to the constructor. Use the `Arg` and `Opt` factories to build argument and option definitions:
+Pass `desc`, `args`, `opts`, and `validators` directly to the `Command` constructor. Use the `Arg` and `Opt` factories to build argument and option definitions:
 
 ```php
 <?php
@@ -164,46 +160,6 @@ $migrate = new Command(
     ],
 );
 ```
-
-### Config closure (for advanced or dynamic configuration)
-
-Pass a `config` closure that receives a fresh `CommandConfig` and returns the configured version. When `config` is provided, `desc`/`args`/`opts` are ignored:
-
-```php
-<?php
-
-use Phalanx\Console\Command;
-
-$migrate = new Command(
-    fn: new MigrateCommand(),
-    config: static fn($c) => $c
-        ->withDescription('Run pending database migrations')
-        ->withArgument('database', 'Connection name', required: true)
-        ->withOption('step', 's', 'Number of migrations to run', requiresValue: true, default: 'all')
-        ->withOption('dry-run', 'd', 'Preview without applying')
-        ->withOption('force', 'f', 'Skip confirmation prompts')
-        ->withValidator(new RequireFreshOnProduction()),
-);
-```
-
-You can also pass a `CommandConfig` instance directly:
-
-```php
-<?php
-
-use Phalanx\Console\CommandConfig;
-
-$config = (new CommandConfig())
-    ->withDescription('Deploy the application')
-    ->withArgument('environment', 'Target environment', required: true)
-    ->withArgument('tag', 'Git tag to deploy', required: false, default: 'latest')
-    ->withOption('force', 'f', 'Skip confirmation prompts')
-    ->withOption('concurrency', 'c', 'Max concurrent tasks', requiresValue: true, default: '4');
-
-$deploy = new Command(fn: new DeployCommand(), config: $config);
-```
-
-Each `withX()` call returns a new `CommandConfig`—the original stays untouched.
 
 ## Arguments and Options
 
@@ -451,20 +407,21 @@ final readonly class RequireFreshOnProduction implements CommandValidator
 }
 ```
 
-Attach validators via the config closure:
+Attach validators via the `validators` parameter:
 
 ```php
 <?php
 
+use Phalanx\Console\Arg;
 use Phalanx\Console\Command;
+use Phalanx\Console\Opt;
 
 $deploy = new Command(
     fn: new DeployCommand(),
-    config: static fn($c) => $c
-        ->withDescription('Deploy the application')
-        ->withArgument('environment', 'Target environment', required: true)
-        ->withOption('force', 'f', 'Skip confirmation prompts')
-        ->withValidator(new RequireFreshOnProduction()),
+    desc: 'Deploy the application',
+    args: [Arg::required('environment', 'Target environment')],
+    opts: [Opt::flag('force', 'f', 'Skip confirmation prompts')],
+    validators: [new RequireFreshOnProduction()],
 );
 ```
 

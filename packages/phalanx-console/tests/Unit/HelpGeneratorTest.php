@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Phalanx\Console\Tests\Unit;
 
+use Phalanx\Console\Arg;
 use Phalanx\Console\CommandConfig;
 use Phalanx\Console\HelpGenerator;
+use Phalanx\Console\Opt;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -14,9 +16,13 @@ final class HelpGeneratorTest extends TestCase
     #[Test]
     public function generates_usage_with_arguments(): void
     {
-        $config = new CommandConfig(description: 'Create a container')
-            ->withArgument('image', 'Docker image', required: true)
-            ->withArgument('tag', 'Image tag', required: false, default: 'latest');
+        $config = new CommandConfig(
+            description: 'Create a container',
+            arguments: [
+                Arg::required('image', 'Docker image'),
+                Arg::optional('tag', 'Image tag', default: 'latest'),
+            ],
+        );
 
         $help = HelpGenerator::forCommand('up', $config);
 
@@ -29,9 +35,13 @@ final class HelpGeneratorTest extends TestCase
     #[Test]
     public function generates_options_section(): void
     {
-        $config = new CommandConfig(description: 'List containers')
-            ->withOption('all', shorthand: 'a', description: 'Show all containers')
-            ->withOption('format', shorthand: 'f', description: 'Output format', requiresValue: true, default: 'table');
+        $config = new CommandConfig(
+            description: 'List containers',
+            options: [
+                Opt::flag('all', 'a', 'Show all containers'),
+                Opt::value('format', 'f', 'Output format', default: 'table'),
+            ],
+        );
 
         $help = HelpGenerator::forCommand('ps', $config);
 

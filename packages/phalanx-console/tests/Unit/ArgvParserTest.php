@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Phalanx\Console\Tests\Unit;
 
+use Phalanx\Console\Arg;
 use Phalanx\Console\ArgvParser;
 use Phalanx\Console\CommandConfig;
 use Phalanx\Console\InvalidInputException;
+use Phalanx\Console\Opt;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -15,9 +17,12 @@ final class ArgvParserTest extends TestCase
     #[Test]
     public function parses_positional_arguments(): void
     {
-        $config = new CommandConfig()
-            ->withArgument('image', 'Docker image', required: true)
-            ->withArgument('tag', 'Image tag', required: false, default: 'latest');
+        $config = new CommandConfig(
+            arguments: [
+                Arg::required('image', 'Docker image'),
+                Arg::optional('tag', 'Image tag', default: 'latest'),
+            ],
+        );
 
         $input = ArgvParser::parse(['nginx'], $config);
 
@@ -28,9 +33,10 @@ final class ArgvParserTest extends TestCase
     #[Test]
     public function parses_long_option_with_equals(): void
     {
-        $config = new CommandConfig()
-            ->withArgument('image')
-            ->withOption('name', shorthand: 'n', requiresValue: true);
+        $config = new CommandConfig(
+            arguments: [Arg::required('image')],
+            options: [Opt::value('name', 'n')],
+        );
 
         $input = ArgvParser::parse(['nginx', '--name=phalanx-test'], $config);
 
@@ -41,8 +47,9 @@ final class ArgvParserTest extends TestCase
     #[Test]
     public function parses_long_option_with_space(): void
     {
-        $config = new CommandConfig()
-            ->withOption('name', requiresValue: true);
+        $config = new CommandConfig(
+            options: [Opt::value('name')],
+        );
 
         $input = ArgvParser::parse(['--name', 'phalanx-test'], $config);
 
@@ -52,8 +59,9 @@ final class ArgvParserTest extends TestCase
     #[Test]
     public function parses_boolean_flag(): void
     {
-        $config = new CommandConfig()
-            ->withOption('all', shorthand: 'a', description: 'Show all');
+        $config = new CommandConfig(
+            options: [Opt::flag('all', 'a', 'Show all')],
+        );
 
         $input = ArgvParser::parse(['--all'], $config);
 
@@ -63,8 +71,9 @@ final class ArgvParserTest extends TestCase
     #[Test]
     public function parses_shorthand_flag(): void
     {
-        $config = new CommandConfig()
-            ->withOption('all', shorthand: 'a');
+        $config = new CommandConfig(
+            options: [Opt::flag('all', 'a')],
+        );
 
         $input = ArgvParser::parse(['-a'], $config);
 
@@ -74,8 +83,9 @@ final class ArgvParserTest extends TestCase
     #[Test]
     public function parses_shorthand_with_value(): void
     {
-        $config = new CommandConfig()
-            ->withOption('name', shorthand: 'n', requiresValue: true);
+        $config = new CommandConfig(
+            options: [Opt::value('name', 'n')],
+        );
 
         $input = ArgvParser::parse(['-n', 'test'], $config);
 
@@ -85,9 +95,10 @@ final class ArgvParserTest extends TestCase
     #[Test]
     public function double_dash_stops_option_parsing(): void
     {
-        $config = new CommandConfig()
-            ->withArgument('file')
-            ->withOption('verbose', shorthand: 'v');
+        $config = new CommandConfig(
+            arguments: [Arg::optional('file')],
+            options: [Opt::flag('verbose', 'v')],
+        );
 
         $input = ArgvParser::parse(['--', '--verbose'], $config);
 
@@ -98,8 +109,9 @@ final class ArgvParserTest extends TestCase
     #[Test]
     public function throws_on_missing_required_argument(): void
     {
-        $config = new CommandConfig()
-            ->withArgument('image', 'Docker image', required: true);
+        $config = new CommandConfig(
+            arguments: [Arg::required('image', 'Docker image')],
+        );
 
         $this->expectException(InvalidInputException::class);
         $this->expectExceptionMessage('Missing required argument: image');
@@ -121,8 +133,9 @@ final class ArgvParserTest extends TestCase
     #[Test]
     public function throws_on_missing_option_value(): void
     {
-        $config = new CommandConfig()
-            ->withOption('name', requiresValue: true);
+        $config = new CommandConfig(
+            options: [Opt::value('name')],
+        );
 
         $this->expectException(InvalidInputException::class);
         $this->expectExceptionMessage('Option --name requires a value');
@@ -133,8 +146,9 @@ final class ArgvParserTest extends TestCase
     #[Test]
     public function applies_option_defaults(): void
     {
-        $config = new CommandConfig()
-            ->withOption('format', requiresValue: true, default: 'json');
+        $config = new CommandConfig(
+            options: [Opt::value('format', default: 'json')],
+        );
 
         $input = ArgvParser::parse([], $config);
 
@@ -144,10 +158,13 @@ final class ArgvParserTest extends TestCase
     #[Test]
     public function mixed_positional_and_options(): void
     {
-        $config = new CommandConfig()
-            ->withArgument('image', required: true)
-            ->withOption('name', shorthand: 'n', requiresValue: true)
-            ->withOption('detach', shorthand: 'd');
+        $config = new CommandConfig(
+            arguments: [Arg::required('image')],
+            options: [
+                Opt::value('name', 'n'),
+                Opt::flag('detach', 'd'),
+            ],
+        );
 
         $input = ArgvParser::parse(['nginx', '--name=web', '-d'], $config);
 
@@ -168,8 +185,10 @@ final class ArgvParserTest extends TestCase
     #[Test]
     public function exception_carries_config(): void
     {
-        $config = new CommandConfig(description: 'Test command')
-            ->withArgument('image', required: true);
+        $config = new CommandConfig(
+            description: 'Test command',
+            arguments: [Arg::required('image')],
+        );
 
         try {
             ArgvParser::parse([], $config);
