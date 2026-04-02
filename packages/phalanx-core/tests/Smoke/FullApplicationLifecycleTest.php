@@ -85,10 +85,12 @@ final class FullApplicationLifecycleTest extends AsyncTestCase
             $result = $scope->execute(Task::of(static function (ExecutionScope $es) use (&$events) {
                 $events[] = 'task:start';
 
-                $es->service(DatabaseConnection::class);
+                $db = $es->service(DatabaseConnection::class);
+                $db->connected; // trigger lazy ghost initialization
                 $events[] = 'task:db_used';
 
-                $es->service(RequestContext::class);
+                $ctx = $es->service(RequestContext::class);
+                $ctx->id; // trigger lazy ghost initialization
                 $events[] = 'task:request_used';
 
                 return 'completed';

@@ -145,7 +145,18 @@ final class LazySingleton
         $factory = $compiled->factory;
 
         if ($compiled->lazy) {
-            return LazyFactory::wrap($compiled->type, static fn() => $factory(...$deps), $this->trace);
+            $lifecycle = $compiled->lifecycle;
+            return LazyFactory::wrap(
+                $compiled->type,
+                static function () use ($factory, $deps, $lifecycle): object {
+                    $instance = $factory(...$deps);
+                    foreach ($lifecycle->onInit as $hook) {
+                        $hook($instance);
+                    }
+                    return $instance;
+                },
+                $this->trace,
+            );
         }
 
         $this->trace->log(TraceType::ServiceInit, $compiled->shortName());

@@ -715,7 +715,18 @@ final class ExecutionLifecycleScope implements ExecutionScope
         }
 
         if ($compiled->lazy) {
-            return LazyFactory::wrap($compiled->type, fn() => ($compiled->factory)(...$deps), $this->trace);
+            $lifecycle = $compiled->lifecycle;
+            return LazyFactory::wrap(
+                $compiled->type,
+                static function () use ($compiled, $deps, $lifecycle): object {
+                    $instance = ($compiled->factory)(...$deps);
+                    foreach ($lifecycle->onInit as $hook) {
+                        $hook($instance);
+                    }
+                    return $instance;
+                },
+                $this->trace,
+            );
         }
 
         $this->trace->log(TraceType::ServiceInit, $compiled->shortName());

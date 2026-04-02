@@ -4,12 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Filesystem;
 
-use Phalanx\Service\FiberScopeRegistry;
 use Phalanx\Suspendable;
 use React\Promise\Deferred;
-use React\Promise\PromiseInterface;
-
-use function React\Async\await;
 
 final class FilePool
 {
