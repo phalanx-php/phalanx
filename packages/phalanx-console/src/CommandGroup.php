@@ -18,12 +18,9 @@ final class CommandGroup implements Executable
     /** @var array<string, self> */
     private array $groups = [];
 
-    private string $description;
-
     /** @param array<string, Command|Scopeable|Executable|self> $commands */
-    private function __construct(array $commands, string $description = '')
+    private function __construct(array $commands, private string $description = '')
     {
-        $this->description = $description;
         $handlers = [];
 
         foreach ($commands as $name => $command) {

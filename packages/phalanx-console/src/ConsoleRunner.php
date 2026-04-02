@@ -175,9 +175,12 @@ final class ConsoleRunner
     {
         assert($this->handlers !== null);
 
-        if ($this->handlers instanceof CommandGroup && $this->handlers->isGroup($name)) {
-            echo HelpGenerator::forGroup($name, $this->handlers->group($name));
-            return 0;
+        if ($this->handlers instanceof CommandGroup) {
+            $subgroup = $this->handlers->group($name);
+            if ($subgroup !== null) {
+                echo HelpGenerator::forGroup($name, $subgroup);
+                return 0;
+            }
         }
 
         $handlerGroup = $this->resolveHandlerGroup();

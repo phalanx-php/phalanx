@@ -25,6 +25,6 @@ final class ResolveHostname implements Executable, HasTimeout
 
         $ips = $scope->await($resolver->resolveAll($this->hostname, \React\Dns\Model\Message::TYPE_A));
 
-        return array_values(array_filter($ips, 'is_string'));
+        return array_values(array_filter($ips, is_string(...)));
     }
 }
