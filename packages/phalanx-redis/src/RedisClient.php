@@ -11,7 +11,7 @@ use React\Promise\PromiseInterface;
 final class RedisClient
 {
     public function __construct(
-        private(set) Client $inner,
+        private readonly Client $inner,
         private readonly ExecutionScope $scope,
     ) {}
 

@@ -179,8 +179,12 @@ final class OpenAiProvider implements LlmProvider
         $buffer = '';
         $ended = false;
         $waiting = null;
+        $abandoned = false;
 
-        $body->on('data', static function (string $data) use (&$buffer, &$waiting): void {
+        $body->on('data', static function (string $data) use (&$buffer, &$waiting, &$abandoned): void {
+            if ($abandoned) {
+                return;
+            }
             $buffer .= $data;
             if ($waiting !== null) {
                 $d = $waiting;
@@ -189,7 +193,10 @@ final class OpenAiProvider implements LlmProvider
             }
         });
 
-        $body->on('end', static function () use (&$ended, &$waiting): void {
+        $body->on('end', static function () use (&$ended, &$waiting, &$abandoned): void {
+            if ($abandoned) {
+                return;
+            }
             $ended = true;
             if ($waiting !== null) {
                 $d = $waiting;
@@ -198,7 +205,10 @@ final class OpenAiProvider implements LlmProvider
             }
         });
 
-        $body->on('error', static function () use (&$ended, &$waiting): void {
+        $body->on('error', static function () use (&$ended, &$waiting, &$abandoned): void {
+            if ($abandoned) {
+                return;
+            }
             $ended = true;
             if ($waiting !== null) {
                 $d = $waiting;
@@ -207,15 +217,20 @@ final class OpenAiProvider implements LlmProvider
             }
         });
 
-        while (!$ended || $buffer !== '') {
-            if ($buffer !== '') {
-                $chunk = $buffer;
-                $buffer = '';
-                yield $chunk;
-            } else {
-                $waiting = new Deferred();
-                $ctx->await($waiting->promise());
+        try {
+            while (!$ended || $buffer !== '') {
+                if ($buffer !== '') {
+                    $chunk = $buffer;
+                    $buffer = '';
+                    yield $chunk;
+                } else {
+                    $waiting = new Deferred();
+                    $ctx->await($waiting->promise());
+                }
             }
+        } finally {
+            $abandoned = true;
+            $waiting = null;
         }
     }
 }

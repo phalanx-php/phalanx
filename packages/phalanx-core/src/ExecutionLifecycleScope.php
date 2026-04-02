@@ -327,14 +327,22 @@ final class ExecutionLifecycleScope implements ExecutionScope
     {
         $this->throwIfCancelled();
 
+        $settled = false;
         $cancellation = $this->cancellation;
-        $cancellationPromise = new \React\Promise\Promise(static function ($_, $reject) use ($cancellation): void {
-            $cancellation->onCancel(static function () use ($reject): void {
-                $reject(new \Phalanx\Exception\CancelledException());
+
+        $cancellationPromise = new \React\Promise\Promise(static function ($_, $reject) use ($cancellation, &$settled): void {
+            $cancellation->onCancel(static function () use ($reject, &$settled): void {
+                if (!$settled) {
+                    $reject(new \Phalanx\Exception\CancelledException());
+                }
             });
         });
 
-        return \React\Async\await(race([$promise, $cancellationPromise]));
+        try {
+            return \React\Async\await(race([$promise, $cancellationPromise]));
+        } finally {
+            $settled = true;
+        }
     }
 
     public function retry(Scopeable|Executable $task, RetryPolicy $policy): mixed
