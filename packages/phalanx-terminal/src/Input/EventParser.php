@@ -16,8 +16,8 @@ final class EventParser
     /** @return list<InputEvent> */
     public function parse(string $data): array
     {
-        $this->buffer .= $data;
         $events = [];
+        $this->buffer .= $data;
 
         while ($this->buffer !== '') {
             if ($this->inPaste) {

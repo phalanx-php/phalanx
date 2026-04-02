@@ -37,10 +37,29 @@ final class TaskScheduler implements Executable
         $this->results = new WeakMap();
     }
 
+    /** @return array<int|string, mixed> */
+    public function __invoke(ExecutionScope $scope): array
+    {
+        foreach ($this->tasks as $index => $task) {
+            $priority = $task instanceof HasPriority ? $task->priority : 0;
+            $this->queue->insert(['task' => $task, 'index' => $index], $priority);
+        }
+
+        $this->processQueue($scope);
+
+        $results = [];
+        foreach ($this->tasks as $index => $task) {
+            if (isset($this->results[$task])) {
+                $results[$index] = $this->results[$task];
+            }
+        }
+
+        return $results;
+    }
+    
     private function processQueue(ExecutionScope $scope): void
     {
         $pending = [];
-
         while (!$this->queue->isEmpty() || !empty($pending)) {
             while (!$this->queue->isEmpty()) {
                 /** @var array{task: Scopeable|Executable, index: int} $item */
@@ -93,25 +112,5 @@ final class TaskScheduler implements Executable
                 static fn($item): bool => !$item['state']->done,
             ));
         }
-    }
-
-    /** @return array<int|string, mixed> */
-    public function __invoke(ExecutionScope $scope): array
-    {
-        foreach ($this->tasks as $index => $task) {
-            $priority = $task instanceof HasPriority ? $task->priority : 0;
-            $this->queue->insert(['task' => $task, 'index' => $index], $priority);
-        }
-
-        $this->processQueue($scope);
-
-        $results = [];
-        foreach ($this->tasks as $index => $task) {
-            if (isset($this->results[$task])) {
-                $results[$index] = $this->results[$task];
-            }
-        }
-
-        return $results;
     }
 }
