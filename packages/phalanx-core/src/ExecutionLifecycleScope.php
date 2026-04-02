@@ -347,31 +347,7 @@ final class ExecutionLifecycleScope implements ExecutionScope
 
     public function retry(Scopeable|Executable $task, RetryPolicy $policy): mixed
     {
-        $attempt = 0;
-        $lastException = null;
-
-        while ($attempt < $policy->attempts) {
-            $this->throwIfCancelled();
-
-            $attempt++;
-
-            try {
-                return $this->execute($task);
-            } catch (\Throwable $e) {
-                $lastException = $e;
-
-                if (!$policy->shouldRetry($e) || $attempt >= $policy->attempts) {
-                    throw $e;
-                }
-
-                $delayMs = $policy->calculateDelay($attempt);
-                $this->trace->log(TraceType::Retry, "attempt $attempt", ['delay' => $delayMs]);
-
-                $this->delay($delayMs / 1000);
-            }
-        }
-
-        throw $lastException ?? new \RuntimeException("Retry exhausted with no exception");
+        return $this->executeRetry(fn(): mixed => $this->execute($task), $policy);
     }
 
     public function settle(array $tasks): SettlementBag
@@ -629,7 +605,14 @@ final class ExecutionLifecycleScope implements ExecutionScope
             $this->singleflightGroup,
         );
 
-        $taskPromise = async(static fn() => $work())();
+        $taskPromise = async(function () use ($childScope, $work): mixed {
+            FiberScopeRegistry::register($childScope);
+            try {
+                return $work();
+            } finally {
+                FiberScopeRegistry::unregister();
+            }
+        })();
 
         $timeoutPromise = new \React\Promise\Promise(static function ($_, $reject) use ($timeoutToken): void {
             $timeoutToken->onCancel(static function () use ($reject): void {
