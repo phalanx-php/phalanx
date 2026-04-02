@@ -31,6 +31,12 @@ final class ParallelWorkerDispatch implements WorkerDispatch
     ) {
     }
 
+    public function shutdown(): void
+    {
+        $this->supervisor?->shutdown();
+        $this->supervisor = null;
+    }
+
     public function inWorker(Scopeable|Executable $task, ExecutionScope $scope): mixed
     {
         $scope->throwIfCancelled();
@@ -74,10 +80,6 @@ final class ParallelWorkerDispatch implements WorkerDispatch
 
         $this->supervisor = $supervisor;
         $supervisor->start();
-
-        $scope->onDispose(static function () use ($supervisor): void {
-            $supervisor->shutdown();
-        });
 
         return $supervisor->dispatcher();
     }

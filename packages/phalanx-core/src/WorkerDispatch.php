@@ -10,4 +10,6 @@ use Phalanx\Task\Scopeable;
 interface WorkerDispatch
 {
     public function inWorker(Scopeable|Executable $task, ExecutionScope $scope): mixed;
+
+    public function shutdown(): void;
 }
