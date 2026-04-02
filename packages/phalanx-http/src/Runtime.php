@@ -27,9 +27,18 @@ final class Runtime extends GenericRuntime
 
     public function getRunner(?object $application): RunnerInterface
     {
-        if ($application instanceof AppHost) {
+        if ($application instanceof PhalanxApplication) {
             return new ReactRunner(
                 $application,
+                $this->host,
+                $this->port,
+                $this->requestTimeout,
+            );
+        }
+
+        if ($application instanceof AppHost) {
+            return new ReactRunner(
+                new PhalanxApplication($application, RouteGroup::of([])),
                 $this->host,
                 $this->port,
                 $this->requestTimeout,
