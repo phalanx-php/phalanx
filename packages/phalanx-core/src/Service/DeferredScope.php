@@ -12,6 +12,7 @@ use Phalanx\ExecutionScope;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 use Phalanx\Trace\Trace;
+use React\Promise\PromiseInterface;
 use RuntimeException;
 
 final class DeferredScope implements ExecutionScope
@@ -147,6 +148,11 @@ final class DeferredScope implements ExecutionScope
     public function singleflight(string $key, Scopeable|Executable $task): mixed
     {
         return $this->scope()->singleflight($key, $task);
+    }
+
+    public function await(PromiseInterface $promise): mixed
+    {
+        return $this->scope()->await($promise);
     }
 
     private function scope(): ExecutionScope

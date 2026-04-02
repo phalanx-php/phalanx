@@ -11,6 +11,7 @@ use Phalanx\Stream\Emitter;
 use Phalanx\Stream\Tests\Support\AsyncTestCase;
 use PHPUnit\Framework\Attributes\Test;
 use React\EventLoop\Loop;
+use React\Promise\PromiseInterface;
 use React\Stream\ThroughStream;
 
 final class EmitterStreamTest extends AsyncTestCase
@@ -38,6 +39,11 @@ final class EmitterStreamTest extends AsyncTestCase
             public function cancel(): void
             {
                 $this->cancelled = true;
+            }
+
+            public function await(PromiseInterface $promise): mixed
+            {
+                return \React\Async\await($promise);
             }
 
             public function dispose(): void

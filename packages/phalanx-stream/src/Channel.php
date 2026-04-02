@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Phalanx\Stream;
 
 use Generator;
+use Phalanx\Service\FiberScopeRegistry;
 use React\EventLoop\Loop;
 use React\Promise\Deferred;
+use React\Promise\PromiseInterface;
 use Throwable;
 
 use function React\Async\await;
@@ -62,7 +64,7 @@ final class Channel
 
             if ($this->open && count($this->buffer) >= $this->bufferSize) {
                 $this->producerWaiting = new Deferred();
-                await($this->producerWaiting->promise());
+                $this->scopeAwait($this->producerWaiting->promise());
             }
         }
     }
@@ -129,7 +131,7 @@ final class Channel
             }
 
             $this->consumerWaiting = new Deferred();
-            $hasData = await($this->consumerWaiting->promise());
+            $hasData = $this->scopeAwait($this->consumerWaiting->promise());
 
             if (!$hasData && $this->buffer === []) {
                 if ($this->error !== null) {
@@ -146,5 +148,14 @@ final class Channel
         $this->pressureCallback = $fn;
 
         return $this;
+    }
+
+    private function scopeAwait(PromiseInterface $promise): mixed
+    {
+        $scope = FiberScopeRegistry::current();
+
+        return $scope !== null
+            ? $scope->await($promise)
+            : await($promise);
     }
 }

@@ -16,7 +16,7 @@ use Phalanx\Task\Scopeable;
 use Phalanx\Task\Task;
 use React\Promise\Deferred;
 
-use function React\Async\await;
+
 
 final class RedisPubSub
 {
@@ -59,7 +59,7 @@ final class RedisPubSub
                 $client->__call('subscribe', [$channel]);
             }
 
-            await($done->promise());
+            $ctx->await($done->promise());
         });
     }
 

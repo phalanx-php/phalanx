@@ -4,17 +4,18 @@ declare(strict_types=1);
 
 namespace Phalanx\Twilio;
 
+use Phalanx\ExecutionScope;
 use Psr\Http\Message\ResponseInterface;
 use React\Http\Browser;
-
-use function React\Async\await;
 
 final class TwilioRest
 {
     private Browser $browser;
 
-    public function __construct(private TwilioConfig $config)
-    {
+    public function __construct(
+        private TwilioConfig $config,
+        private readonly ExecutionScope $scope,
+    ) {
         $this->browser = new Browser()
             ->withTimeout(30.0)
             ->withFollowRedirects(false);
@@ -61,7 +62,7 @@ final class TwilioRest
         $auth = base64_encode("{$this->config->accountSid}:{$this->config->authToken}");
 
         /** @var ResponseInterface $response */
-        $response = await($this->browser->get($url, [
+        $response = $this->scope->await($this->browser->get($url, [
             'Authorization' => "Basic {$auth}",
         ]));
 
@@ -85,7 +86,7 @@ final class TwilioRest
         $auth = base64_encode("{$this->config->accountSid}:{$this->config->authToken}");
 
         /** @var ResponseInterface $response */
-        $response = await($this->browser->post(
+        $response = $this->scope->await($this->browser->post(
             $url,
             [
                 'Content-Type' => 'application/x-www-form-urlencoded',

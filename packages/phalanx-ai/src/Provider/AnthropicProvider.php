@@ -15,7 +15,7 @@ use React\Stream\ReadableStreamInterface;
 
 use React\Promise\Deferred;
 
-use function React\Async\await;
+use Phalanx\Stream\Contract\StreamContext;
 
 final class AnthropicProvider implements LlmProvider
 {
@@ -45,7 +45,7 @@ final class AnthropicProvider implements LlmProvider
 
             $jsonBody = json_encode($body, JSON_THROW_ON_ERROR);
 
-            $response = await($browser->requestStreaming(
+            $response = $ctx->await($browser->requestStreaming(
                 'POST',
                 $config->baseUrl . '/v1/messages',
                 $headers,
@@ -61,7 +61,7 @@ final class AnthropicProvider implements LlmProvider
                     $errStream->on('data', static function (string $d) use (&$errBuf): void { $errBuf .= $d; });
                     $errStream->on('end', static function () use ($errDone): void { $errDone->resolve(null); });
                     $errStream->on('error', static function () use ($errDone): void { $errDone->resolve(null); });
-                    await($errDone->promise());
+                    $ctx->await($errDone->promise());
                 }
                 @file_put_contents(
                     '/tmp/sentinel-api-debug.log',
@@ -81,7 +81,7 @@ final class AnthropicProvider implements LlmProvider
             $currentToolName = null;
             $currentToolInput = '';
 
-            foreach (self::readChunks($body) as $chunk) {
+            foreach (self::readChunks($body, $ctx) as $chunk) {
                 $ctx->throwIfCancelled();
 
                 foreach ($parser->feed($chunk) as $sseEvent) {
@@ -210,7 +210,7 @@ final class AnthropicProvider implements LlmProvider
     }
 
     /** @return \Generator<int, string, mixed, void> */
-    private static function readChunks(ReadableStreamInterface $body): \Generator
+    private static function readChunks(ReadableStreamInterface $body, StreamContext $ctx): \Generator
     {
         $buffer = '';
         $ended = false;
@@ -250,7 +250,7 @@ final class AnthropicProvider implements LlmProvider
                 yield $chunk;
             } else {
                 $waiting = new Deferred();
-                await($waiting->promise());
+                $ctx->await($waiting->promise());
             }
         }
     }

@@ -1,0 +1,47 @@
+{
+    "name": "phalanx/network",
+    "description": "Network discovery, probing, and device management for Phalanx",
+    "license": "MIT",
+    "type": "library",
+    "keywords": ["network", "discovery", "mdns", "ssdp", "wol", "ping", "scan", "async", "reactphp"],
+    "authors": [
+        {
+            "name": "Jonathan Havens",
+            "email": "mail@jhavens.tech"
+        }
+    ],
+    "homepage": "https://github.com/havy-tech/phalanx-network",
+    "require": {
+        "php": "^8.4",
+        "phalanx/core": "^1.0",
+        "react/datagram": "^1.10",
+        "react/async": "^4.3",
+        "react/event-loop": "^1.5",
+        "react/promise": "^3.2",
+        "react/child-process": "^0.6",
+        "react/socket": "^1.16",
+        "react/dns": "^1.13"
+    },
+    "suggest": {
+        "clue/multicast-react": "Required for mDNS and SSDP discovery (multicast UDP)",
+        "clue/mdns-react": "Required for mDNS zeroconf discovery",
+        "clue/ssdp-react": "Required for SSDP/UPnP device discovery"
+    },
+    "autoload": {
+        "psr-4": {
+            "Phalanx\\Network\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Phalanx\\Network\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "1.0-dev"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

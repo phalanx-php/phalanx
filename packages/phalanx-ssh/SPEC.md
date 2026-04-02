@@ -1,0 +1,1 @@
+/Users/jhavens/.obsidian/vaults/aimind/AIMind/50-projects/phalanx/phalanx-ssh/context/SPEC.md

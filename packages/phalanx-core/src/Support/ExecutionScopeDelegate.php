@@ -12,6 +12,7 @@ use Phalanx\ExecutionScope;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 use Phalanx\Trace\Trace;
+use React\Promise\PromiseInterface;
 
 /**
  * Delegates all ExecutionScope methods to an inner scope.
@@ -139,6 +140,11 @@ trait ExecutionScopeDelegate
     public function singleflight(string $key, Scopeable|Executable $task): mixed
     {
         return $this->innerScope()->singleflight($key, $task);
+    }
+
+    public function await(PromiseInterface $promise): mixed
+    {
+        return $this->innerScope()->await($promise);
     }
 
     abstract protected function innerScope(): ExecutionScope;

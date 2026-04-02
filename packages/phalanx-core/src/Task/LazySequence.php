@@ -11,7 +11,7 @@ use Phalanx\Stream\Contract\StreamSource;
 use Generator;
 
 use function React\Async\async;
-use function React\Async\await;
+
 use function React\Promise\race;
 
 final class LazySequence implements StreamSource, Executable
@@ -84,7 +84,7 @@ final class LazySequence implements StreamSource, Executable
             }
 
             while ($pending !== []) {
-                await(race($pending));
+                $scope->await(race($pending));
 
                 foreach ($results as $key => $result) {
                     unset($pending[$key]);

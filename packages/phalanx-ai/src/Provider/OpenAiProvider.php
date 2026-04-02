@@ -15,7 +15,7 @@ use React\Stream\ReadableStreamInterface;
 
 use React\Promise\Deferred;
 
-use function React\Async\await;
+use Phalanx\Stream\Contract\StreamContext;
 
 final class OpenAiProvider implements LlmProvider
 {
@@ -42,7 +42,7 @@ final class OpenAiProvider implements LlmProvider
             $step = 0;
             $usage = TokenUsage::zero();
 
-            $response = await($browser->requestStreaming(
+            $response = $ctx->await($browser->requestStreaming(
                 'POST',
                 $config->baseUrl . '/v1/chat/completions',
                 $headers,
@@ -56,7 +56,7 @@ final class OpenAiProvider implements LlmProvider
             $parser = new SseParser();
             $toolCalls = [];
 
-            foreach (self::readChunks($body) as $chunk) {
+            foreach (self::readChunks($body, $ctx) as $chunk) {
                 $ctx->throwIfCancelled();
 
                 foreach ($parser->feed($chunk) as $sseEvent) {
@@ -174,7 +174,7 @@ final class OpenAiProvider implements LlmProvider
     }
 
     /** @return \Generator<int, string, mixed, void> */
-    private static function readChunks(ReadableStreamInterface $body): \Generator
+    private static function readChunks(ReadableStreamInterface $body, StreamContext $ctx): \Generator
     {
         $buffer = '';
         $ended = false;
@@ -214,7 +214,7 @@ final class OpenAiProvider implements LlmProvider
                 yield $chunk;
             } else {
                 $waiting = new Deferred();
-                await($waiting->promise());
+                $ctx->await($waiting->promise());
             }
         }
     }

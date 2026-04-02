@@ -49,7 +49,8 @@
             "Phalanx\\Postgres\\": "packages/phalanx-postgres/src/",
             "Phalanx\\Redis\\": "packages/phalanx-redis/src/",
             "Phalanx\\Terminal\\": "packages/phalanx-terminal/src/",
-            "Phalanx\\WebSocket\\": "packages/phalanx-websocket/src/"
+            "Phalanx\\WebSocket\\": "packages/phalanx-websocket/src/",
+            "Phalanx\\Network\\": "packages/phalanx-network/src/"
         }
     },
     "autoload-dev": {
@@ -64,7 +65,8 @@
             "Phalanx\\Postgres\\Tests\\": "packages/phalanx-postgres/tests/",
             "Phalanx\\Redis\\Tests\\": "packages/phalanx-redis/tests/",
             "Phalanx\\Terminal\\Tests\\": "packages/phalanx-terminal/tests/",
-            "Phalanx\\WebSocket\\Tests\\": "packages/phalanx-websocket/tests/"
+            "Phalanx\\WebSocket\\Tests\\": "packages/phalanx-websocket/tests/",
+            "Phalanx\\Network\\Tests\\": "packages/phalanx-network/tests/"
         },
         "classmap": [
             "packages/phalanx-core/tests/Support/Fixtures/",
@@ -109,7 +111,8 @@
         "phalanx/redis": "0.1.0",
         "phalanx/stream": "0.1.0",
         "phalanx/terminal": "0.1.0",
-        "phalanx/websocket": "0.1.0"
+        "phalanx/websocket": "0.1.0",
+        "phalanx/network": "0.1.0"
     },
     "minimum-stability": "dev",
     "prefer-stable": true

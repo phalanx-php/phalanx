@@ -9,7 +9,7 @@ use SplPriorityQueue;
 use WeakMap;
 
 use function React\Async\async;
-use function React\Async\await;
+
 use function React\Promise\race;
 
 final class TaskScheduler implements Executable
@@ -86,7 +86,7 @@ final class TaskScheduler implements Executable
             }
 
             $promises = array_column($pending, 'promise');
-            await(race($promises));
+            $scope->await(race($promises));
 
             $pending = array_values(array_filter(
                 $pending,

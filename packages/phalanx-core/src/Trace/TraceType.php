@@ -17,4 +17,5 @@ enum TraceType: string
     case ServiceDispose = 'SVC-';
     case LifecycleStartup = 'STRT';
     case LifecycleShutdown = 'STOP';
+    case Suspend = 'SUSP';
 }

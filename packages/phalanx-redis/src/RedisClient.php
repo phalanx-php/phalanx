@@ -5,55 +5,50 @@ declare(strict_types=1);
 namespace Phalanx\Redis;
 
 use Clue\React\Redis\Client;
+use Phalanx\ExecutionScope;
 use React\Promise\PromiseInterface;
 
-use function React\Async\await;
-
-/**
- * Typed wrapper around clue/redis-react's magic-method Client.
- *
- * The inner Client uses __call() for all Redis commands. This wrapper
- * provides typed methods for common operations and falls through to
- * __call() for anything else.
- */
 final class RedisClient
 {
-    public function __construct(private(set) Client $inner) {}
+    public function __construct(
+        private(set) Client $inner,
+        private readonly ExecutionScope $scope,
+    ) {}
 
     public function get(string $key): mixed
     {
-        return await($this->inner->__call('get', [$key]));
+        return $this->scope->await($this->inner->__call('get', [$key]));
     }
 
     public function set(string $key, string $value, ?int $ttl = null): void
     {
         if ($ttl !== null) {
-            await($this->inner->__call('setex', [$key, (string) $ttl, $value]));
+            $this->scope->await($this->inner->__call('setex', [$key, (string) $ttl, $value]));
         } else {
-            await($this->inner->__call('set', [$key, $value]));
+            $this->scope->await($this->inner->__call('set', [$key, $value]));
         }
     }
 
     public function del(string ...$keys): int
     {
         /** @var int */
-        return await($this->inner->__call('del', $keys));
+        return $this->scope->await($this->inner->__call('del', $keys));
     }
 
     public function exists(string $key): bool
     {
-        return (bool) await($this->inner->__call('exists', [$key]));
+        return (bool) $this->scope->await($this->inner->__call('exists', [$key]));
     }
 
     public function expire(string $key, int $seconds): bool
     {
-        return (bool) await($this->inner->__call('expire', [$key, (string) $seconds]));
+        return (bool) $this->scope->await($this->inner->__call('expire', [$key, (string) $seconds]));
     }
 
     public function incr(string $key): int
     {
         /** @var int */
-        return await($this->inner->__call('incr', [$key]));
+        return $this->scope->await($this->inner->__call('incr', [$key]));
     }
 
     /** @return PromiseInterface<mixed> */

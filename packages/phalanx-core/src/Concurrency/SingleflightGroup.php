@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Concurrency;
 
+use Phalanx\Service\FiberScopeRegistry;
 use React\Promise\Deferred;
 
 use function React\Async\await;
@@ -16,7 +17,12 @@ final class SingleflightGroup
     public function do(string $key, callable $execute): mixed
     {
         if (isset($this->inFlight[$key])) {
-            return await($this->inFlight[$key]->promise());
+            $promise = $this->inFlight[$key]->promise();
+            $scope = FiberScopeRegistry::current();
+
+            return $scope !== null
+                ? $scope->await($promise)
+                : await($promise);
         }
 
         $deferred = new Deferred();
@@ -41,4 +47,3 @@ final class SingleflightGroup
         return count($this->inFlight);
     }
 }
-

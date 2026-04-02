@@ -12,8 +12,6 @@ use React\Http\Browser;
 use React\Promise\Deferred;
 use React\Stream\ReadableStreamInterface;
 
-use function React\Async\await;
-
 final class OllamaProvider implements LlmProvider
 {
     private Browser $browser;
@@ -53,7 +51,7 @@ final class OllamaProvider implements LlmProvider
             $step = 0;
             $usage = TokenUsage::zero();
 
-            $response = await($browser->requestStreaming(
+            $response = $ctx->await($browser->requestStreaming(
                 'POST',
                 $config->baseUrl . '/api/chat',
                 ['Content-Type' => 'application/json'],
@@ -129,7 +127,7 @@ final class OllamaProvider implements LlmProvider
 
                 if (!$ended) {
                     $waiting = new Deferred();
-                    await($waiting->promise());
+                    $ctx->await($waiting->promise());
                 }
             }
 

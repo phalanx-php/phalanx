@@ -20,8 +20,6 @@ use Phalanx\WorkerDispatch;
 use React\EventLoop\Loop;
 use ReflectionClass;
 
-use function React\Async\await;
-
 final class ParallelWorkerDispatch implements WorkerDispatch
 {
     private ?WorkerSupervisor $supervisor = null;
@@ -47,7 +45,7 @@ final class ParallelWorkerDispatch implements WorkerDispatch
         $promise = $dispatcher->dispatch($request);
 
         try {
-            $result = await($promise);
+            $result = $scope->await($promise);
             $elapsed = (hrtime(true) - $start) / 1e6;
             $scope->trace()->log(TraceType::Done, "worker:$name", ['elapsed' => $elapsed]);
             return $result;

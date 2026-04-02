@@ -30,6 +30,7 @@ use Phalanx\Task\UsesPool;
 use Phalanx\Trace\Trace;
 use Phalanx\Trace\TraceType;
 use React\Promise\Deferred;
+use React\Promise\PromiseInterface;
 
 use function React\Async\async;
 use function React\Async\await;
@@ -320,6 +321,20 @@ final class ExecutionLifecycleScope implements ExecutionScope
     {
         $this->throwIfCancelled();
         delay($seconds);
+    }
+
+    public function await(PromiseInterface $promise): mixed
+    {
+        $this->throwIfCancelled();
+
+        $cancellation = $this->cancellation;
+        $cancellationPromise = new \React\Promise\Promise(static function ($_, $reject) use ($cancellation): void {
+            $cancellation->onCancel(static function () use ($reject): void {
+                $reject(new \Phalanx\Exception\CancelledException());
+            });
+        });
+
+        return \React\Async\await(race([$promise, $cancellationPromise]));
     }
 
     public function retry(Scopeable|Executable $task, RetryPolicy $policy): mixed
