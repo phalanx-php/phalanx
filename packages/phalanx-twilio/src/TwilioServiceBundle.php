@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Twilio;
 
-use Phalanx\ExecutionScope;
+use Phalanx\Suspendable;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 
@@ -18,7 +18,7 @@ final class TwilioServiceBundle implements ServiceBundle
         );
 
         $services->singleton(TwilioRest::class)
-            ->factory(static function (ExecutionScope $scope) use ($twilioConfig) {
+            ->factory(static function (Suspendable $scope) use ($twilioConfig) {
                 if ($twilioConfig->accountSid === '' || $twilioConfig->authToken === '') {
                     throw new \RuntimeException('TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN are required to use TwilioRest');
                 }

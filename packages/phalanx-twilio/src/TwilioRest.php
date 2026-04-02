@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Twilio;
 
-use Phalanx\ExecutionScope;
+use Phalanx\Suspendable;
 use Psr\Http\Message\ResponseInterface;
 use React\Http\Browser;
 
@@ -14,7 +14,7 @@ final class TwilioRest
 
     public function __construct(
         private TwilioConfig $config,
-        private readonly ExecutionScope $scope,
+        private readonly Suspendable $scope,
     ) {
         $this->browser = new Browser()
             ->withTimeout(30.0)

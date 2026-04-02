@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace Phalanx\Redis;
 
 use Clue\React\Redis\Client;
-use Phalanx\ExecutionScope;
+use Phalanx\Suspendable;
 use React\Promise\PromiseInterface;
 
 final class RedisClient
 {
     public function __construct(
         private readonly Client $inner,
-        private readonly ExecutionScope $scope,
+        private readonly Suspendable $scope,
     ) {}
 
     public function get(string $key): mixed

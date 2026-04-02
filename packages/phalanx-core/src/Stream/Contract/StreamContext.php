@@ -5,13 +5,11 @@ declare(strict_types=1);
 namespace Phalanx\Stream\Contract;
 
 use Closure;
-use React\Promise\PromiseInterface;
+use Phalanx\Suspendable;
 
-interface StreamContext
+interface StreamContext extends Suspendable
 {
     public function throwIfCancelled(): void;
 
     public function onDispose(Closure $callback): void;
-
-    public function await(PromiseInterface $promise): mixed;
 }

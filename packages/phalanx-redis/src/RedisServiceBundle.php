@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Redis;
 
 use Clue\React\Redis\Factory as RedisFactory;
-use Phalanx\ExecutionScope;
+use Phalanx\Suspendable;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 
@@ -23,7 +23,7 @@ final class RedisServiceBundle implements ServiceBundle
             );
 
         $services->singleton(RedisClient::class)
-            ->factory(static function (ExecutionScope $scope) use ($redisConfig): RedisClient {
+            ->factory(static function (Suspendable $scope) use ($redisConfig): RedisClient {
                 $factory = new RedisFactory();
                 $client = $factory->createLazyClient($redisConfig->toConnectionString());
                 return new RedisClient($client, $scope);
