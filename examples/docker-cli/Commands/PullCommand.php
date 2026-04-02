@@ -9,12 +9,10 @@ use Phalanx\Console\Arg;
 use Phalanx\Console\CommandConfig;
 use Phalanx\Console\CommandScope;
 use Phalanx\Console\Opt;
-use Phalanx\Scope;
-use Phalanx\Task\Scopeable;
+use Phalanx\ExecutionScope;
+use Phalanx\Task\Executable;
 
-use function React\Async\await;
-
-final class PullCommand implements Scopeable
+final class PullCommand implements Executable
 {
     public CommandConfig $config {
         get => new CommandConfig(
@@ -24,7 +22,7 @@ final class PullCommand implements Scopeable
         );
     }
 
-    public function __invoke(Scope $scope): int
+    public function __invoke(ExecutionScope $scope): int
     {
         assert($scope instanceof CommandScope);
 
@@ -34,7 +32,7 @@ final class PullCommand implements Scopeable
 
         echo "Pulling {$image}:{$tag}...\n";
 
-        $stream = await($client->imageCreate($image, null, null, $tag));
+        $stream = $scope->await($client->imageCreate($image, null, null, $tag));
 
         if (is_string($stream)) {
             self::printProgress($stream);

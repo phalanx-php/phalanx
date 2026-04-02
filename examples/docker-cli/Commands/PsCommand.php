@@ -8,12 +8,10 @@ use Clue\React\Docker\Client;
 use Phalanx\Console\CommandConfig;
 use Phalanx\Console\CommandScope;
 use Phalanx\Console\Opt;
-use Phalanx\Scope;
-use Phalanx\Task\Scopeable;
+use Phalanx\ExecutionScope;
+use Phalanx\Task\Executable;
 
-use function React\Async\await;
-
-final class PsCommand implements Scopeable
+final class PsCommand implements Executable
 {
     public CommandConfig $config {
         get => new CommandConfig(
@@ -22,13 +20,13 @@ final class PsCommand implements Scopeable
         );
     }
 
-    public function __invoke(Scope $scope): int
+    public function __invoke(ExecutionScope $scope): int
     {
         assert($scope instanceof CommandScope);
 
         $client = $scope->service(Client::class);
         $all = $scope->options->flag('all');
-        $containers = await($client->containerList($all));
+        $containers = $scope->await($client->containerList($all));
 
         if ($containers === []) {
             echo "No containers" . ($all ? '' : ' running') . ".\n";

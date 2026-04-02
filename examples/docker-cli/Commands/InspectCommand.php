@@ -8,12 +8,10 @@ use Clue\React\Docker\Client;
 use Phalanx\Console\Arg;
 use Phalanx\Console\CommandConfig;
 use Phalanx\Console\CommandScope;
-use Phalanx\Scope;
-use Phalanx\Task\Scopeable;
+use Phalanx\ExecutionScope;
+use Phalanx\Task\Executable;
 
-use function React\Async\await;
-
-final class InspectCommand implements Scopeable
+final class InspectCommand implements Executable
 {
     public CommandConfig $config {
         get => new CommandConfig(
@@ -22,14 +20,14 @@ final class InspectCommand implements Scopeable
         );
     }
 
-    public function __invoke(Scope $scope): int
+    public function __invoke(ExecutionScope $scope): int
     {
         assert($scope instanceof CommandScope);
 
         $client = $scope->service(Client::class);
         $container = $scope->args->required('container');
 
-        $info = await($client->containerInspect($container));
+        $info = $scope->await($client->containerInspect($container));
 
         echo json_encode($info, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
         return 0;

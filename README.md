@@ -38,14 +38,18 @@ Install what you need:
 
 ```bash
 composer require phalanx/core           # Scopes, tasks, concurrency, services, cancellation
-composer require phalanx/console        # CLI framework with command routing
+composer require phalanx/console        # CLI framework with nested command groups
 composer require phalanx/http           # HTTP server on ReactPHP with routing and SSE
 composer require phalanx/parallel       # Worker process pools with IPC and supervisors
 composer require phalanx/stream         # Reactive streams with channels and backpressure
 composer require phalanx/postgres       # Async PostgreSQL via Amphp with LISTEN/NOTIFY
 composer require phalanx/redis          # Async Redis via clue/redis-react with pub/sub
 composer require phalanx/websocket      # WebSocket connections, gateway, pub/sub topics
-composer require phalanx/integrations   # AI (Claude, GPT) and Twilio (SMS, Voice) clients
+composer require phalanx/ai             # AI agent runtime (Claude, GPT, Ollama)
+composer require phalanx/twilio         # Twilio SMS, Voice, TwiML
+composer require phalanx/filesystem     # Async file operations with FilePool
+composer require phalanx/network        # Network scanning, probing, WOL, discovery
+composer require phalanx/terminal       # Terminal UI framework
 ```
 
 `phalanx/core` is the foundation. Every other package builds on it.

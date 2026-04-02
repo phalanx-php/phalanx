@@ -7,23 +7,21 @@ namespace Phalanx\Console\Examples\Commands;
 use Clue\React\Docker\Client;
 use Phalanx\Console\CommandConfig;
 use Phalanx\Console\CommandScope;
-use Phalanx\Scope;
-use Phalanx\Task\Scopeable;
+use Phalanx\ExecutionScope;
+use Phalanx\Task\Executable;
 
-use function React\Async\await;
-
-final class ImagesCommand implements Scopeable
+final class ImagesCommand implements Executable
 {
     public CommandConfig $config {
         get => new CommandConfig(description: 'List images');
     }
 
-    public function __invoke(Scope $scope): int
+    public function __invoke(ExecutionScope $scope): int
     {
         assert($scope instanceof CommandScope);
 
         $client = $scope->service(Client::class);
-        $images = await($client->imageList());
+        $images = $scope->await($client->imageList());
 
         if ($images === []) {
             echo "No images.\n";
