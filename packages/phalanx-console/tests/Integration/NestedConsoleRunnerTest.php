@@ -5,15 +5,11 @@ declare(strict_types=1);
 namespace Phalanx\Console\Tests\Integration;
 
 use Phalanx\Application;
+use Phalanx\Console\Arg;
 use Phalanx\Console\Command;
-use Phalanx\Console\CommandArgument;
-use Phalanx\Console\CommandConfig;
 use Phalanx\Console\CommandGroup;
 use Phalanx\Console\CommandScope;
 use Phalanx\Console\ConsoleRunner;
-use Phalanx\ExecutionScope;
-use Phalanx\Scope;
-use Phalanx\Task\Task;
 use Phalanx\Tests\Support\AsyncTestCase;
 use PHPUnit\Framework\Attributes\Test;
 
@@ -34,7 +30,7 @@ final class NestedConsoleRunnerTest extends AsyncTestCase
                             return 0;
                         },
                         desc: 'Scan network',
-                        args: [new CommandArgument('target', 'CIDR range')],
+                        args: [Arg::required('target', 'CIDR range')],
                     ),
                 ], description: 'Network operations'),
             ]);

@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace Phalanx\Console\Tests\Unit;
 
 use Phalanx\Console\Command;
-use Phalanx\Console\CommandConfig;
 use Phalanx\Console\CommandGroup;
 use Phalanx\Scope;
-use Phalanx\Task\Scopeable;
 use PHPUnit\Framework\TestCase;
 
 final class NestedCommandGroupTest extends TestCase
