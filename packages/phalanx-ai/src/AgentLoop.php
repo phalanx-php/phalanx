@@ -17,6 +17,7 @@ use Phalanx\Ai\Tool\ToolCallBag;
 use Phalanx\Ai\Tool\ToolOutcome;
 use Phalanx\Ai\Tool\ToolRegistry;
 use Phalanx\ExecutionScope;
+use Phalanx\Scope;
 use Phalanx\Stream\Channel;
 use Phalanx\Stream\Emitter;
 use Phalanx\Task\Task;
@@ -165,7 +166,7 @@ final class AgentLoop
         });
     }
 
-    private static function resolveProvider(Turn $turn, ExecutionScope $scope): LlmProvider
+    private static function resolveProvider(Turn $turn, Scope $scope): LlmProvider
     {
         /** @var ProviderConfig $config */
         $config = $scope->service(ProviderConfig::class);

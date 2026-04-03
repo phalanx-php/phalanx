@@ -64,9 +64,9 @@ trait ExecutionScopeDelegate
         return $this->innerScope()->any($tasks);
     }
 
-    public function map(iterable $items, Closure $fn, int $limit = 10): array
+    public function map(iterable $items, Closure $fn, int $limit = 10, ?Closure $onEach = null): array
     {
-        return $this->innerScope()->map($items, $fn, $limit);
+        return $this->innerScope()->map($items, $fn, $limit, $onEach);
     }
 
     /** @param list<Scopeable|Executable> $tasks */

@@ -7,6 +7,7 @@ namespace Phalanx\Service;
 use Phalanx\Exception\CyclicDependencyException;
 use Phalanx\Exception\InvalidServiceConfigurationException;
 use Phalanx\Middleware\ConditionalTransformationMiddleware;
+use Phalanx\Support\ClosureInspector;
 
 final class ServiceGraphCompiler
 {
@@ -27,16 +28,32 @@ final class ServiceGraphCompiler
             $definitions[$type] = $this->applyMiddleware($def, $middleware);
         }
 
-        $this->validateDependencies($definitions, $catalog->aliases());
+        $aliases = $catalog->aliases();
+        $configTypes = $catalog->configs();
 
-        $this->detectCycles($definitions, $catalog->aliases());
+        foreach ($definitions as $type => $def) {
+            if ($def->dependencies === [] && $def->factory !== null) {
+                $inferred = array_filter(
+                    ClosureInspector::classParameters($def->factory),
+                    static fn(string $t): bool => isset($definitions[$aliases[$t] ?? $t]) || isset($configTypes[$t]),
+                );
 
-        $this->validateSingletonScoping($definitions, $catalog->aliases());
+                if ($inferred !== []) {
+                    $definitions[$type] = $def->withDependencies(...array_values($inferred));
+                }
+            }
+        }
+
+        $this->validateDependencies($definitions, $aliases, $configTypes);
+
+        $this->detectCycles($definitions, $aliases);
+
+        $this->validateSingletonScoping($definitions, $aliases);
 
         $services = [];
 
         foreach ($definitions as $type => $def) {
-            $depOrder = $this->resolveDependencyOrder($def, $definitions, $catalog->aliases());
+            $depOrder = $this->resolveDependencyOrder($def, $definitions, $aliases);
 
             $services[$type] = new CompiledService(
                 $def->type,
@@ -68,14 +85,15 @@ final class ServiceGraphCompiler
     /**
      * @param array<string, ServiceDefinition> $definitions
      * @param array<string, string> $aliases
+     * @param array<string, \Closure> $configs
      */
-    private function validateDependencies(array $definitions, array $aliases): void
+    private function validateDependencies(array $definitions, array $aliases, array $configs = []): void
     {
         foreach ($definitions as $type => $def) {
             foreach ($def->dependencies as $dep) {
                 $resolved = $aliases[$dep] ?? $dep;
 
-                if (!isset($definitions[$resolved])) {
+                if (!isset($definitions[$resolved]) && !isset($configs[$dep])) {
                     throw InvalidServiceConfigurationException::missingDependency($type, $dep);
                 }
             }

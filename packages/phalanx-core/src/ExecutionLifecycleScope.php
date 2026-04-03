@@ -207,7 +207,7 @@ final class ExecutionLifecycleScope implements ExecutionScope
      * @param array<string|int, mixed> $items
      * @return array<string|int, mixed>
      */
-    public function map(iterable $items, Closure $fn, int $limit = 10): array
+    public function map(iterable $items, Closure $fn, int $limit = 10, ?Closure $onEach = null): array
     {
         $this->throwIfCancelled();
 
@@ -232,6 +232,7 @@ final class ExecutionLifecycleScope implements ExecutionScope
             $limit,
             $execute,
             $cancellation,
+            $onEach,
         ): void {
             while (count($pending) < $limit && $index < count($keys)) {
                 $cancellation->throwIfCancelled();
@@ -250,10 +251,14 @@ final class ExecutionLifecycleScope implements ExecutionScope
                     &$results,
                     $deferred,
                     $execute,
+                    $onEach,
                 ): void {
                     try {
                         $task = $fn($item);
                         $results[$currentKey] = $execute($task);
+                        if ($onEach !== null) {
+                            $onEach($results[$currentKey], $currentKey);
+                        }
                         $deferred->resolve($currentKey);
                     } catch (\Throwable $e) {
                         $deferred->reject($e);

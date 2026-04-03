@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Phalanx\Ai;
 
 use Phalanx\Ai\Message\Message;
-use Phalanx\ExecutionScope;
-use Phalanx\Stream\Emitter;
 
 final class Agent
 {
