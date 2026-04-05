@@ -213,6 +213,45 @@ $stream = Emitter::produce(static function (Channel $ch, StreamContext $ctx) {
 });
 ```
 
+### Non-Blocking Emit
+
+`Channel::tryEmit()` buffers a value without suspending the producer. Returns `true` if the value was accepted, `false` if the channel is full or closed.
+
+Use this when the producer must never block. A WebSocket gateway dispatching messages to multiple consumers is the canonical example -- if one consumer's channel is full, blocking the producer would prevent messages from reaching every other consumer:
+
+```php
+<?php
+
+// emit() suspends when the buffer is full -- safe for single-consumer pipelines
+$channel->emit($value); // blocks fiber until space is available
+
+// tryEmit() returns immediately -- the caller decides what to do when full
+if (!$channel->tryEmit($value)) {
+    // Channel is full or closed. Options:
+    // - Drop the value and log it
+    // - Route to a spillover channel
+    // - Apply backpressure upstream through a different mechanism
+    $metrics->increment('channel.drops');
+}
+```
+
+A message router that dispatches to per-client channels without blocking:
+
+```php
+<?php
+
+use Phalanx\Stream\Channel;
+
+/** @var array<string, Channel> $clients */
+foreach ($clients as $clientId => $channel) {
+    if (!$channel->tryEmit($message)) {
+        $logger->warning("Dropped message for slow client {$clientId}");
+    }
+}
+```
+
+`tryEmit()` still triggers the pressure callback when the buffer reaches capacity, so `ReadableStreamInterface` sources will pause correctly. The only difference from `emit()` is that the producer fiber never suspends -- it gets a boolean signal instead.
+
 ## Scoped Streams
 
 `ScopedStream` binds a stream to an `ExecutionScope`. It inherits the scope's cancellation token, and cleanup runs when the scope disposes:

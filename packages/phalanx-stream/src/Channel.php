@@ -69,6 +69,30 @@ final class Channel
         }
     }
 
+    public function tryEmit(mixed ...$args): bool
+    {
+        if (!$this->open || count($this->buffer) >= $this->bufferSize) {
+            return false;
+        }
+
+        $value = count($args) === 1 ? $args[0] : $args;
+
+        $this->buffer[] = $value;
+
+        if ($this->consumerWaiting !== null) {
+            $deferred = $this->consumerWaiting;
+            $this->consumerWaiting = null;
+            Loop::futureTick(static fn() => $deferred->resolve(true));
+        }
+
+        if (count($this->buffer) >= $this->bufferSize && $this->pressureCallback !== null && !$this->paused) {
+            $this->paused = true;
+            ($this->pressureCallback)(true);
+        }
+
+        return true;
+    }
+
     public function complete(): void
     {
         if (!$this->open) {
