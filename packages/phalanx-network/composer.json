@@ -13,7 +13,7 @@
     "homepage": "https://github.com/havy-tech/phalanx-network",
     "require": {
         "php": "^8.4",
-        "phalanx/core": "^1.0",
+        "phalanx/core": "^0.4",
         "mlocati/ip-lib": "^1.22",
         "react/datagram": "^1.10",
         "react/async": "^4.3",
@@ -40,7 +40,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-main": "1.0-dev"
+            "dev-main": "0.4-dev"
         }
     },
     "minimum-stability": "dev",

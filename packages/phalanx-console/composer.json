@@ -13,7 +13,7 @@
     ],
     "require": {
         "php": "^8.4",
-        "phalanx/core": "^1.0"
+        "phalanx/core": "^0.4"
     },
     "suggest": {
         "phalanx/stream": "For streaming data through console commands",
@@ -31,7 +31,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-main": "1.0-dev"
+            "dev-main": "0.4-dev"
         }
     },
     "minimum-stability": "dev",

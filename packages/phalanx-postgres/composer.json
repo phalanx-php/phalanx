@@ -13,8 +13,8 @@
     "homepage": "https://github.com/havy-tech/phalanx-postgres",
     "require": {
         "php": "^8.4",
-        "phalanx/core": "^1.0",
-        "phalanx/stream": "^1.0",
+        "phalanx/core": "^0.4",
+        "phalanx/stream": "^0.4",
         "amphp/postgres": "^2.2",
         "revolt/event-loop-adapter-react": "^1.1"
     },
@@ -30,7 +30,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-main": "1.0-dev"
+            "dev-main": "0.4-dev"
         }
     },
     "minimum-stability": "dev",

@@ -13,9 +13,9 @@
     "homepage": "https://github.com/havy-tech/phalanx-ai",
     "require": {
         "php": "^8.4",
-        "phalanx/core": "^1.0",
-        "phalanx/stream": "^1.0",
-        "phalanx/http": "^1.0"
+        "phalanx/core": "^0.4",
+        "phalanx/stream": "^0.4",
+        "phalanx/http": "^0.4"
     },
     "suggest": {
         "phalanx/redis": "For conversation memory and pub/sub agent coordination",
@@ -35,7 +35,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-main": "1.0-dev"
+            "dev-main": "0.4-dev"
         }
     },
     "minimum-stability": "dev",
