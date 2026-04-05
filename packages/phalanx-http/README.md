@@ -66,8 +66,6 @@ A `Route` wraps a handler and a `RouteConfig`. The handler receives a `RequestSc
 ```php
 <?php
 
-declare(strict_types=1);
-
 use Phalanx\Http\RequestScope;
 use Phalanx\Scope;
 use Phalanx\Task\Scopeable;
@@ -139,8 +137,6 @@ Path parameters use `{name}` syntax with optional regex constraints:
 ```php
 <?php
 
-declare(strict_types=1);
-
 use Phalanx\Http\RequestScope;
 use Phalanx\Scope;
 use Phalanx\Task\Scopeable;
@@ -181,8 +177,6 @@ Every route handler has access to Phalanx's concurrency primitives through the s
 
 ```php
 <?php
-
-declare(strict_types=1);
 
 use Phalanx\ExecutionScope;
 use Phalanx\Http\RequestScope;
@@ -304,8 +298,6 @@ Push real-time updates to clients with `SseResponse` and `SseChannel`.
 
 ```php
 <?php
-
-declare(strict_types=1);
 
 use Phalanx\ExecutionScope;
 use Phalanx\Http\RequestScope;
@@ -511,7 +503,7 @@ Failed validation throws `ValidationException` with `$e->field`, `$e->value`, an
 
 ## WebSocket Integration
 
-The HTTP runner handles WebSocket upgrades natively. See [phalanx/websocket](../phalanx-websocket/README.md) for the WebSocket API, then wire it in:
+The HTTP runner handles WebSocket upgrades natively. See [phalanx/ws-server](../phalanx-ws-server/README.md) for the WebSocket API, then wire it in:
 
 ```php
 <?php

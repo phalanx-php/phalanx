@@ -20,7 +20,7 @@
     "suggest": {
         "phalanx/redis": "For conversation memory and pub/sub agent coordination",
         "phalanx/postgres": "For persistent conversation storage and LISTEN/NOTIFY tasks",
-        "phalanx/websocket": "For real-time agent sessions over WebSocket",
+        "phalanx/ws-server": "For real-time agent sessions over WebSocket",
         "phalanx/console": "For CLI agent REPL"
     },
     "autoload": {

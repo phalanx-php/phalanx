@@ -6,7 +6,7 @@
 
 An agentic runtime for PHP 8.4+ that treats LLM interactions as scoped, typed, stream-native computations. Define tools as invokable classes, wire providers as services, and let the Phalanx runtime handle concurrency, retries, streaming, and cleanup.
 
-Phalanx/ai brings concurrent tool execution, streaming with backpressure, and multi-agent coordination to PHP -- capabilities that previously required leaving for another language.
+Phalanx/ai brings concurrent tool execution, streaming with backpressure, and multi-agent coordination to PHP -- building on the same scope-driven execution model and proven async foundations that power the rest of the framework.
 
 ## Table of Contents
 
@@ -43,7 +43,7 @@ composer require phalanx/ai
 
 Requires PHP 8.4+, `phalanx/core`, `phalanx/stream`, `phalanx/http`.
 
-Optional: `phalanx/redis` for conversation memory and pub/sub coordination, `phalanx/postgres` for persistent storage, `phalanx/websocket` for real-time delivery, `phalanx/console` for CLI agents.
+Optional: `phalanx/redis` for conversation memory and pub/sub coordination, `phalanx/postgres` for persistent storage, `phalanx/ws-server` for real-time delivery, `phalanx/console` for CLI agents.
 
 ## Quick Start
 
@@ -339,8 +339,8 @@ Provider selection maps directly to Phalanx concurrency primitives:
 
 use Phalanx\Ai\Provider\ProviderStrategy;
 
-// First response wins (maps to $scope->race())
-$provider = ProviderStrategy::race($anthropic, $openai);
+// Always uses the first configured provider
+$provider = ProviderStrategy::primary($anthropic, $openai);
 
 // Try in order, use first success (maps to $scope->any())
 $provider = ProviderStrategy::fallback($anthropic, $openai);
@@ -391,8 +391,6 @@ Pipe a token stream directly into an SSE response:
 ```php
 <?php
 
-declare(strict_types=1);
-
 use Phalanx\ExecutionScope;
 use Phalanx\Http\RequestScope;
 use Phalanx\Http\Sse\SseResponse;
@@ -435,8 +433,6 @@ Same pattern, different transport:
 
 ```php
 <?php
-
-declare(strict_types=1);
 
 use Phalanx\Scope;
 use Phalanx\Task\Scopeable;
@@ -703,6 +699,6 @@ phalanx/ai
 └── optional:
     ├── phalanx/redis     (conversation memory, pub/sub coordination)
     ├── phalanx/postgres  (persistent memory, LISTEN/NOTIFY tasks)
-    ├── phalanx/websocket (real-time agent sessions)
+    ├── phalanx/ws-server (real-time agent sessions)
     └── phalanx/console   (CLI agent REPL)
 ```

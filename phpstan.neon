@@ -13,7 +13,8 @@ parameters:
         - packages/phalanx-postgres/src
         - packages/phalanx-redis/src
         - packages/phalanx-stream/src
-        - packages/phalanx-websocket/src
+        - packages/phalanx-ws-server/src
+        - packages/phalanx-ws-client/src
         - packages/phalanx-network/src
         - packages/phalanx-ssh/src
     excludePaths:

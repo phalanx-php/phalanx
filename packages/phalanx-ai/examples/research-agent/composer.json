@@ -5,7 +5,7 @@
     "require": {
         "php": "^8.4",
         "phalanx/ai": "dev-main",
-        "phalanx/websocket": "dev-main"
+        "phalanx/ws-server": "dev-main"
     },
     "autoload": {
         "psr-4": {

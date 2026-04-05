@@ -138,7 +138,7 @@ Domain scopes extend `ExecutionScope` with typed properties:
 |-------|---------|------|
 | `CommandScope` | phalanx-console | `$args`, `$options`, `$commandName` |
 | `RequestScope` | phalanx-http | `$request`, `$params`, `$query`, `$body` |
-| `WsScope` | phalanx-websocket | `$connection`, `$request` |
+| `WsScope` | phalanx-ws-server | `$connection`, `$request` |
 
 ## The Task System
 
@@ -325,22 +325,20 @@ Typed collections of CLI commands with `CommandGroup`. Command handlers receive 
 <?php
 // commands/db.php
 
+use Phalanx\Console\Arg;
 use Phalanx\Console\Command;
-use Phalanx\Console\CommandConfig;
 use Phalanx\Console\CommandGroup;
-use Phalanx\Scope;
+use Phalanx\Console\Opt;
 
-return static fn(Scope $s): CommandGroup => CommandGroup::of([
+return CommandGroup::of([
     'migrate' => new Command(
         fn: new RunMigrations(),
-        config: static fn(CommandConfig $c) => $c
-            ->withDescription('Run database migrations'),
+        desc: 'Run database migrations',
     ),
     'db:seed' => new Command(
         fn: new SeedDatabase(),
-        config: static fn(CommandConfig $c) => $c
-            ->withDescription('Seed the database')
-            ->withOption('fresh', shorthand: 'f', description: 'Truncate tables first'),
+        desc: 'Seed the database',
+        opts: [Opt::flag('fresh', 'f', 'Truncate tables first')],
     ),
 ]);
 ```
@@ -439,7 +437,7 @@ PHALANX_TRACE=1 php server.php
 
 ## Authentication
 
-Phalanx provides core auth primitives that transport packages (`phalanx/http`, `phalanx/websocket`) build on.
+Phalanx provides core auth primitives that transport packages (`phalanx/http`, `phalanx/ws-server`) build on.
 
 ### Guard Interface
 

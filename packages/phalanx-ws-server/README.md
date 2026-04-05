@@ -2,9 +2,9 @@
   <img src="brand/logo.svg" alt="Phalanx" width="520">
 </p>
 
-# phalanx/websocket
+# phalanx/ws-server
 
-Production-grade WebSocket support with RFC 6455 handshake, topic-based pub/sub, and leak-free connection tracking via `WeakMap`. Integrates directly with the Phalanx HTTP runner -- WebSocket and HTTP traffic share a single port.
+Production-grade WebSocket server support with RFC 6455 handshake, topic-based pub/sub, and leak-free connection tracking via `WeakMap`. Integrates directly with the Phalanx HTTP runner -- WebSocket and HTTP traffic share a single port.
 
 ## Table of Contents
 
@@ -21,7 +21,7 @@ Production-grade WebSocket support with RFC 6455 handshake, topic-based pub/sub,
 ## Installation
 
 ```bash
-composer require phalanx/websocket
+composer require phalanx/ws-server
 ```
 
 Requires PHP 8.4+, `phalanx/core`, `phalanx/stream`, `ratchet/rfc6455`, and `react/stream`.
@@ -30,8 +30,6 @@ Requires PHP 8.4+, `phalanx/core`, `phalanx/stream`, `ratchet/rfc6455`, and `rea
 
 ```php
 <?php
-
-declare(strict_types=1);
 
 use Phalanx\Scope;
 use Phalanx\Task\Scopeable;
@@ -133,8 +131,6 @@ if ($msg->isClose) {
 ```php
 <?php
 
-declare(strict_types=1);
-
 use Phalanx\Scope;
 use Phalanx\Task\Scopeable;
 use Phalanx\WebSocket\WsScope;
@@ -219,8 +215,6 @@ A typical chat handler that registers with the gateway, subscribes to a room, an
 
 ```php
 <?php
-
-declare(strict_types=1);
 
 use Phalanx\Scope;
 use Phalanx\Task\Scopeable;

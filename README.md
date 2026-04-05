@@ -34,35 +34,34 @@ $scope->dispose();
 
 ## Packages
 
-Install what you need:
-
-```bash
-composer require phalanx/core           # Scopes, tasks, concurrency, services, cancellation
-composer require phalanx/console        # CLI framework with nested command groups
-composer require phalanx/http           # HTTP server on ReactPHP with routing and SSE
-composer require phalanx/parallel       # Worker process pools with IPC and supervisors
-composer require phalanx/stream         # Reactive streams with channels and backpressure
-composer require phalanx/postgres       # Async PostgreSQL via Amphp with LISTEN/NOTIFY
-composer require phalanx/redis          # Async Redis via clue/redis-react with pub/sub
-composer require phalanx/websocket      # WebSocket connections, gateway, pub/sub topics
-composer require phalanx/ai             # AI agent runtime (Claude, GPT, Ollama)
-composer require phalanx/twilio         # Twilio SMS, Voice, TwiML
-composer require phalanx/filesystem     # Async file operations with FilePool
-composer require phalanx/network        # Network scanning, probing, WOL, discovery
-composer require phalanx/terminal       # Terminal UI framework
-```
-
 `phalanx/core` is the foundation. Every other package builds on it.
+
+| Package | Description | |
+|---------|-------------|---|
+| [phalanx/core](https://github.com/havy-tech/phalanx-core) | Scopes, tasks, concurrency, services, cancellation | [![Latest Version](https://img.shields.io/packagist/v/phalanx/core)](https://packagist.org/packages/phalanx/core) [![PHP](https://img.shields.io/packagist/dependency-v/phalanx/core/php)](https://packagist.org/packages/phalanx/core) |
+| [phalanx/console](https://github.com/havy-tech/phalanx-console) | CLI framework with nested command groups | [![Latest Version](https://img.shields.io/packagist/v/phalanx/console)](https://packagist.org/packages/phalanx/console) [![PHP](https://img.shields.io/packagist/dependency-v/phalanx/console/php)](https://packagist.org/packages/phalanx/console) |
+| [phalanx/http](https://github.com/havy-tech/phalanx-http) | HTTP server on ReactPHP with routing, middleware, and SSE | [![Latest Version](https://img.shields.io/packagist/v/phalanx/http)](https://packagist.org/packages/phalanx/http) [![PHP](https://img.shields.io/packagist/dependency-v/phalanx/http/php)](https://packagist.org/packages/phalanx/http) |
+| [phalanx/ai](https://github.com/havy-tech/phalanx-ai) | AI agent runtime -- providers, tools, streaming, structured output | [![Latest Version](https://img.shields.io/packagist/v/phalanx/ai)](https://packagist.org/packages/phalanx/ai) [![PHP](https://img.shields.io/packagist/dependency-v/phalanx/ai/php)](https://packagist.org/packages/phalanx/ai) |
+| [phalanx/parallel](https://github.com/havy-tech/phalanx-parallel) | Worker process pools with IPC and supervisors | [![Latest Version](https://img.shields.io/packagist/v/phalanx/parallel)](https://packagist.org/packages/phalanx/parallel) [![PHP](https://img.shields.io/packagist/dependency-v/phalanx/parallel/php)](https://packagist.org/packages/phalanx/parallel) |
+| [phalanx/stream](https://github.com/havy-tech/phalanx-stream) | Reactive streams with channels and backpressure | [![Latest Version](https://img.shields.io/packagist/v/phalanx/stream)](https://packagist.org/packages/phalanx/stream) [![PHP](https://img.shields.io/packagist/dependency-v/phalanx/stream/php)](https://packagist.org/packages/phalanx/stream) |
+| [phalanx/postgres](https://github.com/havy-tech/phalanx-postgres) | Async PostgreSQL via amphp/postgres with LISTEN/NOTIFY | [![Latest Version](https://img.shields.io/packagist/v/phalanx/postgres)](https://packagist.org/packages/phalanx/postgres) [![PHP](https://img.shields.io/packagist/dependency-v/phalanx/postgres/php)](https://packagist.org/packages/phalanx/postgres) |
+| [phalanx/ws-server](https://github.com/havy-tech/phalanx-ws-server) | WebSocket server connections, gateway, and pub/sub topics | [![Latest Version](https://img.shields.io/packagist/v/phalanx/ws-server)](https://packagist.org/packages/phalanx/ws-server) [![PHP](https://img.shields.io/packagist/dependency-v/phalanx/ws-server/php)](https://packagist.org/packages/phalanx/ws-server) |
+| [phalanx/network](https://github.com/havy-tech/phalanx-network) | Network scanning, probing, WOL, and service discovery | *in progress* |
+| [phalanx/filesystem](https://github.com/havy-tech/phalanx-filesystem) | Async file operations with resource-governed FilePool | *in progress* |
+| [phalanx/ssh](https://github.com/havy-tech/phalanx-ssh) | SSH command execution, SFTP, and tunnel management | *in progress* |
+| [phalanx/cdp](https://github.com/havy-tech/phalanx-cdp) | Chrome DevTools Protocol client | *in progress* |
 
 ## What makes Phalanx different
 
-**Scoped execution, not global state.** Every operation runs inside a scope that carries services, cancellation tokens, and a disposal stack. When the scope ends, everything cleans up. No reliance on `__destruct` or manual GC management.
+**Scoped execution, not global state.** Every operation runs inside a scope that carries services, cancellation tokens, and a disposal stack. When the scope ends, everything cleans up deterministically.
 
-**Tasks are classes, not closures.** A task like `FetchUser` has identity -- it shows up in stack traces, can be serialized, retried, and sent to worker processes. Closures are anonymous. Phalanx tasks are named computations.
+**Tasks are classes, not closures.** A task like `FetchUser` has identity -- it shows up in stack traces, can be serialized, retried, and sent to worker processes. Phalanx tasks are named computations you can inspect, compose, and dispatch.
 
 **Concurrency without ceremony.** Call `$scope->concurrent([...])` and get back an array of results. Call `$scope->race([...])` to get the first result. Call `$scope->settle([...])` to get all outcomes including failures. The scope manages fibers internally.
 
-**Built on proven async.** ReactPHP event loop, React promises, Amphp for Postgres. Phalanx does not reinvent async primitives. It provides the coordination layer above them.
+**Built on proven async.** ReactPHP event loop, React promises, Amphp for Postgres. The PHP async ecosystem has matured into a collection of battle-tested, reliable libraries. Phalanx builds a coordination layer on top of them -- composing these foundations into a unified execution model in a way we haven't seen done before in async PHP.
+
+**Actively iterated, converging fast.** The API has been through multiple design passes -- exploring different patterns for task definition, service wiring, and handler configuration. Each iteration has simplified the surface while increasing capability. The current shape is the result of that process, and it's landing in a place that feels right.
 
 ## Requirements
 

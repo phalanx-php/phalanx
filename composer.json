@@ -50,7 +50,8 @@
             "Phalanx\\Postgres\\": "packages/phalanx-postgres/src/",
             "Phalanx\\Redis\\": "packages/phalanx-redis/src/",
             "Phalanx\\Terminal\\": "packages/phalanx-terminal/src/",
-            "Phalanx\\WebSocket\\": "packages/phalanx-websocket/src/",
+            "Phalanx\\WebSocket\\": "packages/phalanx-ws-server/src/",
+            "Phalanx\\WebSocket\\Client\\": "packages/phalanx-ws-client/src/",
             "Phalanx\\Network\\": "packages/phalanx-network/src/",
             "Phalanx\\Filesystem\\": "packages/phalanx-filesystem/src/",
             "Phalanx\\Ssh\\": "packages/phalanx-ssh/src/"
@@ -68,7 +69,8 @@
             "Phalanx\\Postgres\\Tests\\": "packages/phalanx-postgres/tests/",
             "Phalanx\\Redis\\Tests\\": "packages/phalanx-redis/tests/",
             "Phalanx\\Terminal\\Tests\\": "packages/phalanx-terminal/tests/",
-            "Phalanx\\WebSocket\\Tests\\": "packages/phalanx-websocket/tests/",
+            "Phalanx\\WebSocket\\Tests\\": "packages/phalanx-ws-server/tests/",
+            "Phalanx\\WebSocket\\Client\\Tests\\": "packages/phalanx-ws-client/tests/",
             "Phalanx\\Network\\Tests\\": "packages/phalanx-network/tests/",
             "Phalanx\\Filesystem\\Tests\\": "packages/phalanx-filesystem/tests/",
             "Phalanx\\Ssh\\Tests\\": "packages/phalanx-ssh/tests/"
@@ -117,6 +119,8 @@
         "phalanx/redis": "0.1.0",
         "phalanx/stream": "0.1.0",
         "phalanx/terminal": "0.1.0",
+        "phalanx/ws-server": "0.1.0",
+        "phalanx/ws-client": "0.1.0",
         "phalanx/websocket": "0.1.0",
         "phalanx/network": "0.1.0",
         "phalanx/filesystem": "0.1.0",

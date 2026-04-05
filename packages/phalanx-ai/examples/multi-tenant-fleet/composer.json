@@ -5,7 +5,7 @@
     "require": {
         "php": "^8.4",
         "phalanx/ai": "dev-main",
-        "phalanx/websocket": "dev-main",
+        "phalanx/ws-server": "dev-main",
         "phalanx/redis": "dev-main",
         "phalanx/postgres": "dev-main"
     },

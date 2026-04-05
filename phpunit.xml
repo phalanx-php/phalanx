@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
-         bootstrap="vendor/autoload.php"
+         bootstrap="tests/bootstrap.php"
          colors="true"
          failOnRisky="true"
          failOnWarning="true">
+    <php>
+        <var name="DAEMON8_BASE_URL" value="http://127.0.0.1:9077"/>
+        <var name="DAEMON8_SDK_PATH" value=""/>
+    </php>
     <testsuites>
         <testsuite name="Core Unit">
             <directory>packages/phalanx-core/tests/Unit</directory>
@@ -37,10 +41,16 @@
             <directory>packages/phalanx-parallel/tests/Integration</directory>
         </testsuite>
         <testsuite name="WebSocket Unit">
-            <directory>packages/phalanx-websocket/tests/Unit</directory>
+            <directory>packages/phalanx-ws-server/tests/Unit</directory>
         </testsuite>
         <testsuite name="WebSocket Integration">
-            <directory>packages/phalanx-websocket/tests/Integration</directory>
+            <directory>packages/phalanx-ws-server/tests/Integration</directory>
+        </testsuite>
+        <testsuite name="WsClient Unit">
+            <directory>packages/phalanx-ws-client/tests/Unit</directory>
+        </testsuite>
+        <testsuite name="WsClient Integration">
+            <directory>packages/phalanx-ws-client/tests/Integration</directory>
         </testsuite>
         <testsuite name="AI Integration">
             <directory>packages/phalanx-ai/tests/Integration</directory>
