@@ -1,0 +1,32 @@
+{
+    "name": "phalanx/ws-client",
+    "description": "Async WebSocket client for Phalanx framework",
+    "license": "MIT",
+    "type": "library",
+    "keywords": ["websocket", "ws", "client", "async", "reactphp"],
+    "authors": [
+        {
+            "name": "Jonathan Havens",
+            "email": "mail@jhavens.tech"
+        }
+    ],
+    "homepage": "https://github.com/havy-tech/phalanx-ws-client",
+    "require": {
+        "php": "^8.4",
+        "phalanx/core": "^1.0@alpha",
+        "phalanx/stream": "^1.0@alpha",
+        "phalanx/ws-server": "^1.0@alpha",
+        "ratchet/rfc6455": "^0.4",
+        "react/socket": "^1.16"
+    },
+    "autoload": {
+        "psr-4": {
+            "Phalanx\\WebSocket\\Client\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Phalanx\\WebSocket\\Client\\Tests\\": "tests/"
+        }
+    }
+}
