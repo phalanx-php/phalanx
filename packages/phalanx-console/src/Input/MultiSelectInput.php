@@ -56,7 +56,7 @@ final class MultiSelectInput extends SelectInput
         $total   = count($keys);
         $scroll  = $this->visibleScrollSize();
         $visible = array_slice($this->options, $this->firstVisible, $scroll, preserve_keys: true);
-        $width   = max(40, $this->width() - 4);
+        $width   = $this->innerWidth();
 
         $showScrollbar = $total > $scroll;
         $scrollPos     = $showScrollbar
@@ -72,7 +72,7 @@ final class MultiSelectInput extends SelectInput
             $isSelected  = isset($this->selected[$value]);
 
             $circle  = $isSelected ? '●' : '○';
-            $arrow   = $isActive ? '› ' : '  ';
+            $arrow   = $isActive ? "{$this->activeGlyph} " : '  ';
             $prefix  = $isActive
                 ? $this->theme->accent->apply("  {$arrow}{$circle} ")
                 : ($isSelected ? "    {$circle} " : $this->theme->muted->apply("    {$circle} "));
@@ -99,7 +99,11 @@ final class MultiSelectInput extends SelectInput
         $selectedCount = count($this->selected);
         $count = $this->theme->hint->apply("  {$selectedCount} selected");
 
-        return $this->buildFrame(implode("\n", $lines) . "\n" . $count . $this->hintLine(), $this->theme->accent->apply($this->label), $this->label, $width);
+        $title = $this->state === 'error'
+            ? $this->theme->error->apply($this->label)
+            : $this->theme->accent->apply($this->label);
+
+        return $this->buildFrame(implode("\n", $lines) . "\n" . $count . $this->hintLine(), $title, $this->label, $width);
     }
 
     protected function renderAnswered(): string
@@ -115,7 +119,7 @@ final class MultiSelectInput extends SelectInput
             ? $this->theme->muted->apply('none selected')
             : $this->theme->accent->apply("{$count} selected") . ': ' . implode(', ', $labels);
 
-        return $this->buildFrame('  ' . $summary, $this->theme->muted->apply($this->label), $this->label, max(40, $this->width() - 4), answered: true);
+        return $this->buildFrame('  ' . $summary, $this->theme->muted->apply($this->label), $this->label, $this->innerWidth(), answered: true);
     }
 
     protected function hints(): string

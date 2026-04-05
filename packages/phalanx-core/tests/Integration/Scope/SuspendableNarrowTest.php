@@ -23,7 +23,7 @@ use function React\Promise\resolve;
  *
  * The decomposition of ExecutionScope into granular interfaces means services
  * that only need await() should type-hint Suspendable, not ExecutionScope.
- * DaemonAiBridge is a real example of this pattern. These tests confirm that
+ * Daemon8Bridge is a real example of this pattern. These tests confirm that
  * the cancellation-racing invariant of await() is preserved when the caller
  * only holds a Suspendable reference.
  */
@@ -103,7 +103,7 @@ final class SuspendableNarrowTest extends AsyncTestCase
     }
 
     /**
-     * Simulates a service that type-hints only Suspendable (e.g. DaemonAiBridge).
+     * Simulates a service that type-hints only Suspendable (e.g. Daemon8Bridge).
      * The narrow type-hint is the point: callers can pass any ExecutionScope here.
      */
     private static function awaitOn(Suspendable $scope, PromiseInterface $promise): mixed

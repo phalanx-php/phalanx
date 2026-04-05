@@ -40,6 +40,8 @@ abstract class BasePrompt
     protected bool $validated = false;
     protected bool $loopOwned = false;
 
+    private ?int $cachedInnerWidth = null;
+
     private bool $settled         = false;
     private ?StreamOutput $output = null;
     private ?RawInput $input      = null;
@@ -119,6 +121,16 @@ abstract class BasePrompt
         return $this->output?->height() ?? 24;
     }
 
+    // Computed once on first render and reused. Caps at 72 so prompts don't
+    // sprawl across ultra-wide terminals.
+    final protected function innerWidth(): int
+    {
+        if ($this->cachedInnerWidth === null) {
+            $this->cachedInnerWidth = max(40, min(72, $this->width() - 4));
+        }
+        return $this->cachedInnerWidth;
+    }
+
     abstract protected function renderActive(): string;
     abstract protected function renderAnswered(): string;
     abstract protected function handleKey(string $key): void;
@@ -156,7 +168,9 @@ abstract class BasePrompt
         int $width,
         bool $answered = false,
     ): string {
-        $borderStyle = $answered ? $this->theme->border : $this->theme->accent;
+        $borderStyle = $answered
+            ? $this->theme->border
+            : ($this->state === 'error' ? $this->theme->error : $this->theme->accent);
         $topFill     = str_repeat('─', max(0, $width - mb_strlen($labelText) - 3));
 
         $top    = $borderStyle->apply('─ ') . $styledTitle . ' ' . $borderStyle->apply($topFill);

@@ -58,7 +58,7 @@ final class SuggestInput extends BasePrompt
 
     protected function renderActive(): string
     {
-        $width      = max(40, $this->width() - 4);
+        $width      = $this->innerWidth();
         $innerWidth = $width - 4;
         $content    = '  ' . $this->valueWithCursor($innerWidth - 4);
 
@@ -76,7 +76,11 @@ final class SuggestInput extends BasePrompt
 
         $content .= $this->hintLine();
 
-        return $this->buildFrame($content, $this->theme->accent->apply($this->label), $this->label, $width);
+        $title = $this->state === 'error'
+            ? $this->theme->error->apply($this->label)
+            : $this->theme->accent->apply($this->label);
+
+        return $this->buildFrame($content, $title, $this->label, $width);
     }
 
     protected function renderAnswered(): string
@@ -85,7 +89,7 @@ final class SuggestInput extends BasePrompt
             '  ' . $this->finalValue(),
             $this->theme->muted->apply($this->label),
             $this->label,
-            max(40, $this->width() - 4),
+            $this->innerWidth(),
             answered: true,
         );
     }

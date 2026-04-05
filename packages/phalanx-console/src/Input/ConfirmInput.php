@@ -48,11 +48,15 @@ final class ConfirmInput extends BasePrompt
             ? $this->theme->accent->apply(' ● No  ')
             : $this->theme->muted->apply(' ○ No  ');
 
+        $title = $this->state === 'error'
+            ? $this->theme->error->apply($this->label)
+            : $this->theme->accent->apply($this->label);
+
         return $this->buildFrame(
             "  {$yes}  {$no}\n" . $this->theme->hint->apply('  ← → to select, enter to confirm'),
-            $this->theme->accent->apply($this->label),
+            $title,
             $this->label,
-            max(40, $this->width() - 4),
+            $this->innerWidth(),
         );
     }
 
@@ -66,7 +70,7 @@ final class ConfirmInput extends BasePrompt
             "  {$answer}",
             $this->theme->muted->apply($this->label),
             $this->label,
-            max(40, $this->width() - 4),
+            $this->innerWidth(),
             answered: true,
         );
     }

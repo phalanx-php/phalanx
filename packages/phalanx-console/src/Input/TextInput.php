@@ -59,8 +59,10 @@ class TextInput extends BasePrompt
 
     protected function renderActive(): string
     {
-        $innerWidth = max(40, $this->width() - 4);
-        $title      = $this->theme->accent->apply($this->label);
+        $innerWidth = $this->innerWidth();
+        $title      = $this->state === 'error'
+            ? $this->theme->error->apply($this->label)
+            : $this->theme->accent->apply($this->label);
         $content    = '  ' . $this->valueWithCursor($innerWidth - 4);
 
         if ($this->hint !== '') {
@@ -82,7 +84,7 @@ class TextInput extends BasePrompt
             '  ' . $this->finalValue(),
             $this->theme->muted->apply($this->label),
             $this->label,
-            max(40, $this->width() - 4),
+            $this->innerWidth(),
             answered: true,
         );
     }

@@ -21,6 +21,7 @@ use Phalanx\Console\Style\Theme;
  */
 class SelectInput extends BasePrompt
 {
+    public string $activeGlyph  = '›';
     protected int $highlighted  = 0;
     protected int $firstVisible = 0;
 
@@ -56,7 +57,7 @@ class SelectInput extends BasePrompt
         $total   = count($keys);
         $scroll  = $this->visibleScrollSize();
         $visible = array_slice($this->options, $this->firstVisible, $scroll, preserve_keys: true);
-        $width   = max(40, $this->width() - 4);
+        $width   = $this->innerWidth();
 
         $showScrollbar = $total > $scroll;
         $scrollPos     = $showScrollbar
@@ -70,7 +71,7 @@ class SelectInput extends BasePrompt
             $isActive    = $absoluteIdx === $this->highlighted;
 
             $prefix = $isActive
-                ? $this->theme->accent->apply('  › ')
+                ? $this->theme->accent->apply("  {$this->activeGlyph} ")
                 : '    ';
 
             $labelText = $isActive
@@ -96,7 +97,11 @@ class SelectInput extends BasePrompt
             $rowIndex++;
         }
 
-        return $this->buildFrame(implode("\n", $lines) . $this->hintLine(), $this->theme->accent->apply($this->label), $this->label, $width);
+        $title = $this->state === 'error'
+            ? $this->theme->error->apply($this->label)
+            : $this->theme->accent->apply($this->label);
+
+        return $this->buildFrame(implode("\n", $lines) . $this->hintLine(), $title, $this->label, $width);
     }
 
     protected function hints(): string
@@ -113,7 +118,7 @@ class SelectInput extends BasePrompt
             '  ' . $this->theme->accent->apply($label),
             $this->theme->muted->apply($this->label),
             $this->label,
-            max(40, $this->width() - 4),
+            $this->innerWidth(),
             answered: true,
         );
     }

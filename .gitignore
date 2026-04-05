@@ -1,50 +1,21 @@
+# Default deny: all hidden files/dirs and markdown
+.*
+*.md
+
+# Explicit includes
+!.gitignore
+!.env.example
+!README.md
+
 # Dependencies
-/vendor/
-packages/*/vendor/
-composer.phar
-/node_modules/
+vendor/
+node_modules/
 
 # Build artifacts
-*.cache
+build/
+dist/
+coverage/
+
+# Logs
 *.log
-*.sqlite
 
-# IDE
-.idea/
-.vscode/
-*.swp
-
-# Caches
-.phpstan-cache/
-.php-cs-fixer.cache
-
-# Hidden files/folders
-.*
-
-# AI configs (managed outside repo)
-CLAUDE.md
-**/CLAUDE.md
-**/.aimind
-**/tasks/
-
-# Planning/research docs (local only)
-/article.md
-/DESIGN*.md
-/AUDIT_PLAN.md
-/IMPLEMENTATION_MANIFEST.md
-/MONOREPO-SETUP.md
-/*-MIGRATION.md
-/PRIMITIVES-LIBRARY.md
-/RESEARCH*.md
-/TECHNICAL_RESEARCH.md
-**/UNIMPLEMENTED_PATTERNS.md
-
-# Reference docs (not public yet)
-/docs/
-
-# --- Tracked exceptions ---
-!.gitignore
-!packages/*/.gitignore
-!.github/
-!.github/**
-!.editorconfig

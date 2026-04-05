@@ -22,6 +22,7 @@ final class StreamOutput
 {
     private int $lastLineCount = 0;
     private bool $isTty;
+    private bool $syncSupported;
     private int $cachedWidth;
     private int $cachedHeight;
 
@@ -29,6 +30,10 @@ final class StreamOutput
     public function __construct(private mixed $stream = STDOUT)
     {
         $this->isTty = stream_isatty($this->stream);
+
+        // Apple Terminal does not support CSI ?2026 (synchronized output) and the
+        // sequences appear literally in scrollback history. Suppress them there.
+        $this->syncSupported = ($_SERVER['TERM_PROGRAM'] ?? '') !== 'Apple_Terminal';
 
         // Compute terminal dimensions once at construction (acceptable blocking call
         // at boot before the event loop starts). SIGWINCH invalidates and recomputes
@@ -60,11 +65,15 @@ final class StreamOutput
      */
     public function persist(string ...$lines): void
     {
-        fwrite($this->stream, "\033[?2026h");
+        if ($this->syncSupported) {
+            fwrite($this->stream, "\033[?2026h");
+        }
         $this->eraseRegion();
         fwrite($this->stream, implode("\n", $lines));
         fwrite($this->stream, "\n");
-        fwrite($this->stream, "\033[?2026l");
+        if ($this->syncSupported) {
+            fwrite($this->stream, "\033[?2026l");
+        }
 
         $this->lastLineCount = 0;
     }
@@ -82,11 +91,15 @@ final class StreamOutput
             return;
         }
 
-        fwrite($this->stream, "\033[?2026h");
+        if ($this->syncSupported) {
+            fwrite($this->stream, "\033[?2026h");
+        }
         $this->eraseRegion();
         $rendered = implode("\n", $lines);
         fwrite($this->stream, $rendered);
-        fwrite($this->stream, "\033[?2026l");
+        if ($this->syncSupported) {
+            fwrite($this->stream, "\033[?2026l");
+        }
 
         $this->lastLineCount = substr_count($rendered, "\n") + 1;
     }
@@ -101,10 +114,14 @@ final class StreamOutput
             return;
         }
 
-        fwrite($this->stream, "\033[?2026h");
+        if ($this->syncSupported) {
+            fwrite($this->stream, "\033[?2026h");
+        }
         $this->eraseRegion();
         fwrite($this->stream, "\n");
-        fwrite($this->stream, "\033[?2026l");
+        if ($this->syncSupported) {
+            fwrite($this->stream, "\033[?2026l");
+        }
 
         $this->lastLineCount = 0;
     }

@@ -79,7 +79,9 @@ final class Box
         }
 
         // Title embedded: ╭─ Title ───────╮
-        $titleLen   = mb_strlen($title);
+        // Strip ANSI codes before measuring — $title may be pre-styled.
+        $visible  = preg_replace('/\033\[[\x30-\x3F]*[\x20-\x2F]*[\x40-\x7E]/', '', $title) ?? $title;
+        $titleLen = mb_strlen($visible);
         $leftPad    = 2; // dash + space before title
         $remaining  = $innerWidth + 2 - $leftPad - $titleLen - 1; // 1 space after title
         $remaining  = max(0, $remaining);

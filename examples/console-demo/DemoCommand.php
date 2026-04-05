@@ -70,7 +70,7 @@ final class DemoCommand implements Executable
             content: $theme->muted->apply('  Interactive showcase of every phalanx/console primitive.')
                 . "\n  Arrow keys · Enter · Ctrl+C to quit · Ctrl+U to go back (in forms)",
             title: $theme->accent->apply('phalanx/console  demo'),
-            style: BoxStyle::Rounded,
+            style: BoxStyle::Single,
             borderStyle: $theme->accent,
             width: min($w - 2, 70),
         ));
@@ -123,14 +123,22 @@ final class DemoCommand implements Executable
             'Terminal Width' => "{$w} cols",
         ], $theme));
 
-        // Box — all styles in one line
+        // Box — all styles side-by-side (zip line arrays so each style renders in its own column)
         $output->persist('');
-        $output->persist(implode('  ', [
-            Box::render("Rounded\nBox", '', BoxStyle::Rounded, $theme->accent,  16),
-            Box::render("Single\nBox",  '', BoxStyle::Single,  $theme->border,  16),
-            Box::render("Double\nBox",  '', BoxStyle::Double,  $theme->label,   16),
-            Box::render("Heavy\nBox",   '', BoxStyle::Heavy,   $theme->error,   16),
-        ]));
+        $boxColumns = array_map(
+            static fn(string $b) => explode("\n", $b),
+            [
+                Box::render("Rounded\nBox", '', BoxStyle::Rounded, $theme->accent, 16),
+                Box::render("Single\nBox",  '', BoxStyle::Single,  $theme->border, 16),
+                Box::render("Double\nBox",  '', BoxStyle::Double,  $theme->label,  16),
+                Box::render("Heavy\nBox",   '', BoxStyle::Heavy,   $theme->error,  16),
+            ],
+        );
+        $rows = array_map(
+            static fn(array $cols) => implode('  ', $cols),
+            array_map(null, ...$boxColumns),
+        );
+        $output->persist(implode("\n", $rows));
 
         // ProgressBar — animated
         $output->persist($theme->muted->apply('  ProgressBar'));
@@ -382,7 +390,7 @@ final class DemoCommand implements Executable
         $output->persist(Box::render(
             '  ' . $theme->success->apply('All 12 components exercised.'),
             title: $theme->accent->apply('demo complete'),
-            style: BoxStyle::Rounded,
+            style: BoxStyle::Single,
             borderStyle: $theme->success,
             width: min($w - 2, 50),
         ));

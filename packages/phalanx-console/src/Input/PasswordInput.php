@@ -60,7 +60,7 @@ final class PasswordInput extends TextInput
             '  ' . $this->theme->muted->apply(str_repeat(self::BULLET, self::ANSWERED_MASK_LEN)),
             $this->theme->muted->apply($this->label),
             $this->label,
-            max(40, $this->width() - 4),
+            $this->innerWidth(),
             answered: true,
         );
     }

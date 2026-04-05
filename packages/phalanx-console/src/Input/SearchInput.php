@@ -68,9 +68,11 @@ final class SearchInput extends BasePrompt
 
     protected function renderActive(): string
     {
-        $width      = max(40, $this->width() - 4);
+        $width      = $this->innerWidth();
         $innerWidth = $width - 4;
-        $title      = $this->theme->accent->apply($this->label);
+        $title      = $this->state === 'error'
+            ? $this->theme->error->apply($this->label)
+            : $this->theme->accent->apply($this->label);
 
         $queryLine = $this->renderQueryLine($innerWidth - 4);
 
@@ -111,7 +113,7 @@ final class SearchInput extends BasePrompt
             '  ' . $this->theme->accent->apply((string) $submitted),
             $this->theme->muted->apply($this->label),
             $this->label,
-            max(40, $this->width() - 4),
+            $this->innerWidth(),
             answered: true,
         );
     }
@@ -198,12 +200,12 @@ final class SearchInput extends BasePrompt
         $this->state       = 'searching';
         $this->matches     = null;
         $this->highlighted = null;
-        $this->render();
 
         $result = ($this->search)($this->query);
 
         if ($result instanceof PromiseInterface) {
             $this->loopOwned = true;
+            $this->render();  // show spinner only for genuine async search
             /**
              * Non-static: search may resolve after loop() yields. WeakReference
              * risks GC before resolution, leaving the prompt frozen with no key handler.
@@ -219,6 +221,7 @@ final class SearchInput extends BasePrompt
         } else {
             $this->matches = (array) $result;
             $this->state   = 'active';
+            // loop().then() will call renderFrame() — no intermediate render needed
         }
     }
 
