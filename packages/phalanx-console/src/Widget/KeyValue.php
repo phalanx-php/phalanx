@@ -25,7 +25,7 @@ final class KeyValue
             return '';
         }
 
-        $maxKeyLen = max(array_map(static fn(string $k) => mb_strlen($k), array_keys($pairs)));
+        $maxKeyLen = max(array_map(mb_strlen(...), array_keys($pairs)));
 
         $lines = [];
         foreach ($pairs as $key => $value) {

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Ssh;
 
-final readonly class SshCredential
+final readonly class SshCredential implements \Stringable
 {
     public function __construct(
         public string $host,

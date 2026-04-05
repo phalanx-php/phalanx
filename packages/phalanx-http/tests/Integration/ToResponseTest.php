@@ -27,8 +27,8 @@ final class ToResponseTest extends TestCase
     {
         $inner = new Response(201, ['X-Custom' => 'yes'], '{"created":true}');
 
-        $obj = new class ($inner) implements ToResponse {
-            public function __construct(private readonly ResponseInterface $response)
+        $obj = new readonly class ($inner) implements ToResponse {
+            public function __construct(private ResponseInterface $response)
             {
             }
 

@@ -11,7 +11,7 @@ use Phalanx\Task\Scopeable;
 use Phalanx\TaskScope;
 use React\ChildProcess\Process;
 
-final class TunnelHandle
+final class TunnelHandle implements \Stringable
 {
     private(set) bool $closed = false;
 

@@ -151,8 +151,8 @@ final class RequestValidatorTest extends TestCase
 
     private function validator(\Closure $fn): RequestValidator
     {
-        return new class ($fn) implements RequestValidator {
-            public function __construct(private readonly \Closure $fn)
+        return new readonly class ($fn) implements RequestValidator {
+            public function __construct(private \Closure $fn)
             {
             }
 

@@ -35,6 +35,7 @@ final class PasswordInput extends TextInput
         );
     }
 
+    #[\Override]
     protected function valueWithCursor(int $maxWidth): string
     {
         $len = mb_strlen($this->value);
@@ -54,6 +55,7 @@ final class PasswordInput extends TextInput
         return implode('', $bullets);
     }
 
+    #[\Override]
     protected function renderAnswered(): string
     {
         return $this->buildFrame(

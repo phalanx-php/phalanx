@@ -63,12 +63,10 @@ final class SingleflightGroupTest extends TestCase
     {
         $group = new SingleflightGroup();
 
-        $task = static function () use ($group) {
-            return $group->do('fail-key', static function () {
-                delay(0.05);
-                throw new RuntimeException('boom');
-            });
-        };
+        $task = (static fn() => $group->do('fail-key', static function () {
+            delay(0.05);
+            throw new RuntimeException('boom');
+        }));
 
         $promises = [
             async($task)(),

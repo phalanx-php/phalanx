@@ -39,6 +39,7 @@ final class NumberInput extends TextInput
         );
     }
 
+    #[\Override]
     protected function handleKey(string $key): void
     {
         match ($key) {
@@ -48,17 +49,20 @@ final class NumberInput extends TextInput
         };
     }
 
+    #[\Override]
     protected function hints(): string
     {
         return '↑↓ adjust value  enter confirm';
     }
 
+    #[\Override]
     protected function finalValue(): int|float
     {
         $raw = $this->value !== '' ? $this->value : $this->default;
         return $this->float ? (float) $raw : (int) $raw;
     }
 
+    #[\Override]
     protected function defaultValue(): mixed
     {
         return $this->finalValue();

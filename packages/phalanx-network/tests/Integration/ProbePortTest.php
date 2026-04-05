@@ -16,7 +16,7 @@ final class ProbePortTest extends TestCase
     {
         $server = new SocketServer('127.0.0.1:0');
         $address = $server->getAddress();
-        preg_match('/\d+$/', $address, $matches);
+        preg_match('/\d+$/', (string) $address, $matches);
         $port = (int) $matches[0];
 
         $result = await(async(static function () use ($port): mixed {

@@ -41,11 +41,6 @@ final readonly class AgentEvent
         return new self(AgentEventKind::ToolCallComplete, $data, $elapsed, $usage, $step);
     }
 
-    public static function stepStart(int $step, float $elapsed, TokenUsage $usage): self
-    {
-        return new self(AgentEventKind::StepComplete, null, $elapsed, $usage, $step);
-    }
-
     public static function stepComplete(int $step, float $elapsed, TokenUsage $usage): self
     {
         return new self(AgentEventKind::StepComplete, null, $elapsed, $usage, $step);

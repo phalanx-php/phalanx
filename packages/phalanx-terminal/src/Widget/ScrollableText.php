@@ -16,16 +16,14 @@ final class ScrollableText implements Widget
     private array $lines = [];
     private int $scrollOffset = 0;
     private bool $followTail = true;
-    private int $maxLines;
 
     private Style $baseStyle;
 
     public function __construct(
         ?Style $baseStyle = null,
-        int $maxLines = 10_000,
+        private int $maxLines = 10_000,
     ) {
         $this->baseStyle = $baseStyle ?? Style::new();
-        $this->maxLines = $maxLines;
     }
 
     public int $lineCount {

@@ -47,7 +47,7 @@ final class Box
             ? $width - 4 // 2 for border chars + 2 for padding spaces
             : max(
                 $title !== '' ? mb_strlen($title) + 2 : 0,
-                ...array_map(static fn(string $l) => mb_strlen($l), $lines),
+                ...array_map(mb_strlen(...), $lines),
             );
 
         $top = self::topBorder($chars, $innerWidth, $title, $borderStyle);

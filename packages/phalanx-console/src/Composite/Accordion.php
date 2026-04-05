@@ -55,7 +55,7 @@ final class Accordion
 
                 if (isset($values[$id])) {
                     $summary = is_array($values[$id])
-                        ? implode(', ', array_map('strval', $values[$id]))
+                        ? implode(', ', array_map(strval(...), $values[$id]))
                         : (string) $values[$id];
                     $lines[] = "  \033[32m✓\033[0m {$label}: \033[2m{$summary}\033[0m";
                 } elseif ($i === $expanded) {

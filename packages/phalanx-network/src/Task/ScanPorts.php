@@ -20,10 +20,13 @@ final readonly class ScanPorts implements Executable
 
     public function __invoke(ExecutionScope $scope): array
     {
+        $ip = $this->ip;
+        $timeout = $this->perPortTimeout;
+
         $results = $scope->map(
             items: $this->ports,
-            fn: fn(int $port): ProbeResult => $scope->execute(
-                new ProbePort($this->ip, $port, $this->perPortTimeout),
+            fn: static fn(int $port): ProbeResult => $scope->execute(
+                new ProbePort($ip, $port, $timeout),
             ),
             limit: $this->concurrency,
         );

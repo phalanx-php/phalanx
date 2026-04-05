@@ -40,6 +40,7 @@ final class MultiSelectInput extends SelectInput
         $this->selected = array_fill_keys($defaultValues, true);
     }
 
+    #[\Override]
     protected function handleKey(string $key): void
     {
         match ($key) {
@@ -50,6 +51,7 @@ final class MultiSelectInput extends SelectInput
         };
     }
 
+    #[\Override]
     protected function renderActive(): string
     {
         $keys    = array_keys($this->options);
@@ -106,6 +108,7 @@ final class MultiSelectInput extends SelectInput
         return $this->buildFrame(implode("\n", $lines) . "\n" . $count . $this->hintLine(), $title, $this->label, $width);
     }
 
+    #[\Override]
     protected function renderAnswered(): string
     {
         $options = $this->options;
@@ -122,11 +125,13 @@ final class MultiSelectInput extends SelectInput
         return $this->buildFrame('  ' . $summary, $this->theme->muted->apply($this->label), $this->label, $this->innerWidth(), answered: true);
     }
 
+    #[\Override]
     protected function hints(): string
     {
         return '↑↓ navigate  space toggle  ctrl-a all  enter confirm';
     }
 
+    #[\Override]
     protected function defaultValue(): mixed
     {
         return array_keys($this->selected);

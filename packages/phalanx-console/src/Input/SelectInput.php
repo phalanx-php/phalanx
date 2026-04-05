@@ -104,6 +104,7 @@ class SelectInput extends BasePrompt
         return $this->buildFrame(implode("\n", $lines) . $this->hintLine(), $title, $this->label, $width);
     }
 
+    #[\Override]
     protected function hints(): string
     {
         return '↑↓ / jk navigate  enter confirm';

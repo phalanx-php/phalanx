@@ -10,19 +10,15 @@ use Phalanx\Terminal\Style\Style;
 
 final class Accordion implements Widget
 {
-    /** @var list<AccordionSection> */
-    private array $sections;
-
     private Style $titleStyle;
     private Style $activeTitleStyle;
 
     /** @param list<AccordionSection> $sections */
     public function __construct(
-        array $sections = [],
+        private array $sections = [],
         ?Style $titleStyle = null,
         ?Style $activeTitleStyle = null,
     ) {
-        $this->sections = $sections;
         $this->titleStyle = $titleStyle ?? Style::new()->bold();
         $this->activeTitleStyle = $activeTitleStyle ?? Style::new()->bold()->fg('cyan');
     }

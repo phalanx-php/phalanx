@@ -11,23 +11,21 @@ use PHPUnit\Framework\TestCase;
 #[Group('daemon')]
 final class Daemon8CoordinationTest extends TestCase
 {
-    private const SDK_PATH = '/Users/jhavens/Code/Me/Rust/daemonai/sdks/php/src';
-
     private static string $runId;
+
+    private static string $baseUrl;
 
     public static function setUpBeforeClass(): void
     {
         if (!function_exists('daemon8_observe')) {
-            if (!file_exists(self::SDK_PATH . '/DaemonAI.php')) {
-                self::markTestSkipped('daemon8 not running on port 9077');
-            }
-            require self::SDK_PATH . '/DaemonAI.php';
-            require self::SDK_PATH . '/functions.php';
+            self::markTestSkipped('daemon8 SDK not loaded (set DAEMON8_SDK_PATH in phpunit.xml)');
         }
 
-        $health = @file_get_contents('http://127.0.0.1:9077/health');
+        self::$baseUrl = rtrim($GLOBALS['DAEMON8_BASE_URL'] ?? 'http://127.0.0.1:9077', '/');
+
+        $health = @file_get_contents(self::$baseUrl . '/health');
         if ($health !== 'ok') {
-            self::markTestSkipped('daemon8 not running on port 9077');
+            self::markTestSkipped('daemon8 not running at ' . self::$baseUrl);
         }
 
         self::$runId = substr(bin2hex(random_bytes(4)), 0, 8);

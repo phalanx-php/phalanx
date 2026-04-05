@@ -11,17 +11,13 @@ use Phalanx\Terminal\Style\Style;
 final class Sparkline implements Widget
 {
     private const array BLOCKS = ['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
-
-    /** @var list<float> */
-    private array $data;
     private Style $style;
 
     /** @param list<float> $data */
     public function __construct(
-        array $data = [],
+        private array $data = [],
         ?Style $style = null,
     ) {
-        $this->data = $data;
         $this->style = $style ?? Style::new()->fg('green');
     }
 

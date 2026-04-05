@@ -41,6 +41,10 @@ use function React\Promise\race;
 
 final class ExecutionLifecycleScope implements ExecutionScope
 {
+    public bool $isCancelled {
+        get => $this->cancellation->isCancelled;
+    }
+
     private bool $disposed = false;
 
     /** @var list<string> */
@@ -51,10 +55,6 @@ final class ExecutionLifecycleScope implements ExecutionScope
 
     /** @var list<Closure> */
     private array $disposeCallbacks = [];
-
-    public bool $isCancelled {
-        get => $this->cancellation->isCancelled;
-    }
 
     public function __construct(
         private readonly ServiceGraph $graph,
@@ -91,7 +91,8 @@ final class ExecutionLifecycleScope implements ExecutionScope
 
         if ($compiled->singleton) {
             /** @var T */
-            return $this->singletons->get($type, fn(string $t): object => $this->service($t)); // @phpstan-ignore argument.type, argument.templateType
+            // @phpstan-ignore argument.type, argument.templateType
+            return $this->singletons->get($type, fn(string $t): object => $this->service($t));
         }
 
         if (isset($this->scopedInstances[$resolved])) {
@@ -333,13 +334,15 @@ final class ExecutionLifecycleScope implements ExecutionScope
         $settled = false;
         $cancellation = $this->cancellation;
 
-        $cancellationPromise = new \React\Promise\Promise(static function ($_, $reject) use ($cancellation, &$settled): void {
-            $cancellation->onCancel(static function () use ($reject, &$settled): void {
-                if (!$settled) {
-                    $reject(new \Phalanx\Exception\CancelledException());
-                }
-            });
-        });
+        $cancellationPromise = new \React\Promise\Promise(
+            static function ($_, $reject) use ($cancellation, &$settled): void {
+                $cancellation->onCancel(static function () use ($reject, &$settled): void {
+                    if (!$settled) {
+                        $reject(new \Phalanx\Exception\CancelledException());
+                    }
+                });
+            },
+        );
 
         try {
             return \React\Async\await(race([$promise, $cancellationPromise]));
@@ -543,24 +546,28 @@ final class ExecutionLifecycleScope implements ExecutionScope
     {
         $config = $this->resolveTaskConfig($task);
 
-        $work = fn(): mixed => $this->executeCore($task);
+        $executeCore = $this->executeCore(...);
+        $work = static fn(): mixed => $executeCore($task);
 
         if ($config->timeout !== null) {
             $timeout = $config->timeout;
             $inner = $work;
-            $work = fn(): mixed => $this->executeTimeout($timeout, $inner);
+            $executeTimeout = $this->executeTimeout(...);
+            $work = static fn(): mixed => $executeTimeout($timeout, $inner);
         }
 
         if ($config->retry !== null) {
             $policy = $config->retry;
             $inner = $work;
-            $work = fn(): mixed => $this->executeRetry($inner, $policy);
+            $executeRetry = $this->executeRetry(...);
+            $work = static fn(): mixed => $executeRetry($inner, $policy);
         }
 
         if ($config->trace && $config->name !== '') {
             $name = $config->name;
             $inner = $work;
-            $work = fn(): mixed => $this->traced($name, $inner);
+            $traced = $this->traced(...);
+            $work = static fn(): mixed => $traced($name, $inner);
         }
 
         return $work();
@@ -573,11 +580,12 @@ final class ExecutionLifecycleScope implements ExecutionScope
 
         $this->trace->log(TraceType::Executing, $name, task: $task);
 
-        $pipeline = fn() => $task($this);
+        $scope = $this;
+        $pipeline = static fn() => $task($scope);
 
         foreach (array_reverse($this->taskInterceptors) as $mw) {
             $next = $pipeline;
-            $pipeline = fn() => $mw->process($task, $this, $next);
+            $pipeline = static fn() => $mw->process($task, $scope, $next);
         }
 
         try {

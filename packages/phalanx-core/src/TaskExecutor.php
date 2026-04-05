@@ -29,7 +29,7 @@ interface TaskExecutor
      * @param iterable<string|int, T> $items
      * @param Closure(T): (Scopeable|Executable) $fn
      * @param int $limit
-     * @param Closure(mixed, string|int): void|null $onEach Called immediately as each item settles, before map() returns.
+     * @param Closure(mixed, string|int): void|null $onEach Called as each item settles, before map() returns.
      * @return array<string|int, mixed>
      */
     public function map(iterable $items, Closure $fn, int $limit = 10, ?Closure $onEach = null): array;

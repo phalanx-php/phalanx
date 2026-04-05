@@ -9,7 +9,7 @@ use Phalanx\Stream\Emitter;
 
 final readonly class ProviderStrategy
 {
-    public static function race(LlmProvider ...$providers): LlmProvider
+    public static function primary(LlmProvider ...$providers): LlmProvider
     {
         $list = array_values($providers);
 

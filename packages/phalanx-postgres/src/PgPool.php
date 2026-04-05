@@ -12,7 +12,7 @@ use Amp\Postgres\PostgresListener;
 
 final class PgPool
 {
-    private(set) PostgresConnectionPool $inner;
+    private PostgresConnectionPool $inner;
 
     public function __construct(PgConfig $config)
     {

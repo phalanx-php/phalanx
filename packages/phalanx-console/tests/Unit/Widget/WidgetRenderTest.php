@@ -173,7 +173,7 @@ final class WidgetRenderTest extends TestCase
     #[Test]
     public function spinner_appends_label(): void
     {
-        $out = (new Spinner($this->theme))->frame(0, 'Working');
+        $out = new Spinner($this->theme)->frame(0, 'Working');
         self::assertStringContainsString('Working', $out);
     }
 
@@ -221,7 +221,7 @@ final class WidgetRenderTest extends TestCase
     #[Test]
     public function table_footer_includes_summary_text(): void
     {
-        $out = (new Table($this->theme))->footer([10, 6], 'Found 3 items');
+        $out = new Table($this->theme)->footer([10, 6], 'Found 3 items');
         self::assertStringContainsString('Found 3 items', $out);
     }
 

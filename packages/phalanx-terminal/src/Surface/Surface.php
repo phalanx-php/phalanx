@@ -25,7 +25,6 @@ final class Surface
     private AnsiWriter $writer;
     private Buffer $currentBuffer;
     private Buffer $previousBuffer;
-    private RawMode $rawMode;
     private ?InputReader $inputReader = null;
     private ?TimerInterface $renderTimer = null;
     private bool $running = false;
@@ -51,7 +50,7 @@ final class Surface
 
     public function __construct(
         public private(set) SurfaceConfig $config,
-        ?RawMode $rawMode = null,
+        private ?RawMode $rawMode = new SttyRawMode(),
         mixed $stdout = null,
         mixed $stdin = null,
     ) {
@@ -59,7 +58,6 @@ final class Surface
         $this->writer = new AnsiWriter($config->terminal->colorMode, $stdout);
         $this->currentBuffer = Buffer::empty($config->terminal->width, $config->terminal->height);
         $this->previousBuffer = Buffer::empty($config->terminal->width, $config->terminal->height);
-        $this->rawMode = $rawMode ?? new SttyRawMode();
 
         $dispatch = $this->dispatchInput(...);
         $this->inputReader = new InputReader($dispatch, $stdin);

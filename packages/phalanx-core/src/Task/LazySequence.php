@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace Phalanx\Task;
 
+use Generator;
 use Phalanx\ExecutionScope;
 use Phalanx\Stream\Contract\Streamable;
 use Phalanx\Stream\Contract\StreamContext;
 use Phalanx\Stream\Contract\StreamSource;
-use Generator;
 
 use function React\Async\async;
-
 use function React\Promise\race;
 
 final class LazySequence implements StreamSource, Executable
@@ -35,25 +34,6 @@ final class LazySequence implements StreamSource, Executable
         return new self(static function (ExecutionScope $s) use ($items): Generator {
             yield from $items;
         });
-    }
-
-    public function __invoke(StreamContext|ExecutionScope $scope): Generator
-    {
-        $this->fireOnStart($scope);
-
-        try {
-            foreach (($this->factory)($scope) as $key => $value) {
-                $scope->throwIfCancelled();
-                $this->fireOnEach($value, $scope);
-                yield $key => $value;
-            }
-            $this->fireOnComplete($scope);
-        } catch (\Throwable $e) {
-            $this->fireOnError($e, $scope);
-            throw $e;
-        } finally {
-            $this->fireOnDispose($scope);
-        }
     }
 
     /**
@@ -248,57 +228,62 @@ final class LazySequence implements StreamSource, Executable
 
     public function toArray(): Executable
     {
-        $terminal = new \Phalanx\Stream\Terminal\Collect($this);
-        return new readonly class ($terminal) implements Executable {
-            public function __construct(private \Phalanx\Stream\Terminal\Collect $terminal)
-            {
-            }
-            public function __invoke(ExecutionScope $scope): array
-            {
-                return ($this->terminal)($scope);
-            }
-        };
+        return new TerminalTask(new \Phalanx\Stream\Terminal\Collect($this));
     }
 
     public function reduce(callable $fn, mixed $initial = null): Executable
     {
-        $terminal = new \Phalanx\Stream\Terminal\Reduce($this, $fn(...), $initial);
-        return new readonly class ($terminal) implements Executable {
-            public function __construct(private \Phalanx\Stream\Terminal\Reduce $terminal)
-            {
-            }
-            public function __invoke(ExecutionScope $scope): mixed
-            {
-                return ($this->terminal)($scope);
-            }
-        };
+        return new TerminalTask(new \Phalanx\Stream\Terminal\Reduce($this, $fn(...), $initial));
     }
 
     public function first(): Executable
     {
-        $terminal = new \Phalanx\Stream\Terminal\First($this);
-        return new readonly class ($terminal) implements Executable {
-            public function __construct(private \Phalanx\Stream\Terminal\First $terminal)
-            {
-            }
-            public function __invoke(ExecutionScope $scope): mixed
-            {
-                return ($this->terminal)($scope);
-            }
-        };
+        return new TerminalTask(new \Phalanx\Stream\Terminal\First($this));
     }
 
     public function consume(): Executable
     {
-        $terminal = new \Phalanx\Stream\Terminal\Drain($this);
-        return new readonly class ($terminal) implements Executable {
-            public function __construct(private \Phalanx\Stream\Terminal\Drain $terminal)
-            {
+        return new TerminalTask(new \Phalanx\Stream\Terminal\Drain($this));
+    }
+
+    public function __invoke(StreamContext|ExecutionScope $scope): Generator
+    {
+        $this->fireOnStart($scope);
+
+        try {
+            foreach (($this->factory)($scope) as $key => $value) {
+                $scope->throwIfCancelled();
+                $this->fireOnEach($value, $scope);
+                yield $key => $value;
             }
-            public function __invoke(ExecutionScope $scope): null
-            {
-                return ($this->terminal)($scope);
-            }
-        };
+            $this->fireOnComplete($scope);
+        } catch (\Throwable $e) {
+            $this->fireOnError($e, $scope);
+            throw $e;
+        } finally {
+            $this->fireOnDispose($scope);
+        }
+    }
+}
+
+/**
+ * Bridges a StreamContext-accepting terminal into the Executable interface.
+ *
+ * Terminal operations (Collect, Reduce, First, Drain) consume a StreamContext.
+ * ExecutionScope satisfies StreamContext, so this wrapper accepts the wider
+ * ExecutionScope required by Executable and delegates down to the terminal.
+ *
+ * @internal
+ */
+final readonly class TerminalTask implements Executable
+{
+    /** @param callable(StreamContext): mixed $terminal */
+    public function __construct(private mixed $terminal)
+    {
+    }
+
+    public function __invoke(ExecutionScope $scope): mixed
+    {
+        return ($this->terminal)($scope);
     }
 }

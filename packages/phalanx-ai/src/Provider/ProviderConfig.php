@@ -77,9 +77,4 @@ final class ProviderConfig
     {
         return $this->providers;
     }
-
-    public function getStrategy(): Strategy
-    {
-        return $this->strategy;
-    }
 }

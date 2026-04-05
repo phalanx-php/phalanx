@@ -29,9 +29,7 @@ final class ScopeAwaitTest extends AsyncTestCase
         $this->runAsync(function () use ($app): void {
             $scope = $app->createScope();
 
-            $result = $scope->execute(Task::of(static function (ExecutionScope $scope): mixed {
-                return $scope->await(resolve('hello'));
-            }));
+            $result = $scope->execute(Task::of(static fn(ExecutionScope $scope): mixed => $scope->await(resolve('hello'))));
 
             $this->assertSame('hello', $result);
         });
@@ -48,9 +46,7 @@ final class ScopeAwaitTest extends AsyncTestCase
             $this->expectException(\RuntimeException::class);
             $this->expectExceptionMessage('boom');
 
-            $scope->execute(Task::of(static function (ExecutionScope $scope): mixed {
-                return $scope->await(reject(new \RuntimeException('boom')));
-            }));
+            $scope->execute(Task::of(static fn(ExecutionScope $scope): mixed => $scope->await(reject(new \RuntimeException('boom')))));
         });
     }
 
@@ -66,9 +62,7 @@ final class ScopeAwaitTest extends AsyncTestCase
 
             $this->expectException(CancelledException::class);
 
-            $scope->execute(Task::of(static function (ExecutionScope $scope): mixed {
-                return $scope->await(resolve('should not reach'));
-            }));
+            $scope->execute(Task::of(static fn(ExecutionScope $scope): mixed => $scope->await(resolve('should not reach'))));
         });
     }
 
@@ -89,9 +83,7 @@ final class ScopeAwaitTest extends AsyncTestCase
 
             $this->expectException(CancelledException::class);
 
-            $scope->execute(Task::of(static function (ExecutionScope $scope) use ($deferred): mixed {
-                return $scope->await($deferred->promise());
-            }));
+            $scope->execute(Task::of(static fn(ExecutionScope $scope): mixed => $scope->await($deferred->promise())));
         });
     }
 

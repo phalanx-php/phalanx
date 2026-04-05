@@ -31,7 +31,6 @@ final class RoundRobinDispatcher implements Dispatcher
             return reject(new \RuntimeException('No agents available'));
         }
 
-        $startIndex = $this->index;
         $attempts = 0;
 
         while ($attempts < $count) {

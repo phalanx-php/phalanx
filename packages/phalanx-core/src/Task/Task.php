@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Phalanx\Task;
 
 use Closure;
-use Phalanx\Scope;
 use InvalidArgumentException;
+use Phalanx\Scope;
 use ReflectionFunction;
 
 final readonly class Task implements Scopeable

@@ -67,7 +67,7 @@ final class Deploy implements Executable, HasTimeout
             credential: $this->credential,
             command: "readlink -f {$currentLink} 2>/dev/null || echo ''",
         ));
-        $previousRelease = trim($previousResult->stdout);
+        $previousRelease = trim((string) $previousResult->stdout);
 
         $scope->execute(new RunCommand(
             credential: $this->credential,

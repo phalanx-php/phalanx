@@ -40,27 +40,27 @@ final class LifecycleCallbacks
 
     public function hasInit(): bool
     {
-        return count($this->onInit) > 0;
+        return $this->onInit !== [];
     }
 
     public function hasStartup(): bool
     {
-        return count($this->onStartup) > 0;
+        return $this->onStartup !== [];
     }
 
     public function hasReady(): bool
     {
-        return count($this->onReady) > 0;
+        return $this->onReady !== [];
     }
 
     public function hasDispose(): bool
     {
-        return count($this->onDispose) > 0;
+        return $this->onDispose !== [];
     }
 
     public function hasShutdown(): bool
     {
-        return count($this->onShutdown) > 0;
+        return $this->onShutdown !== [];
     }
 
     public function merge(self $other): self

@@ -21,10 +21,11 @@ final readonly class ScanSubnet implements Executable
     public function __invoke(ExecutionScope $scope): array
     {
         $ips = $this->subnet->ips();
+        $strategy = $this->strategy;
 
         $results = $scope->map(
             items: $ips,
-            fn: fn(string $ip): ProbeResult => $scope->execute($this->strategy->forHost($ip)),
+            fn: static fn(string $ip): ProbeResult => $scope->execute($strategy->forHost($ip)),
             limit: $this->concurrency,
         );
 

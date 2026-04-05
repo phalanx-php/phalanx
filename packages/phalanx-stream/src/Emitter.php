@@ -145,7 +145,7 @@ final class Emitter implements StreamSource
     {
         $prev = $this;
 
-        $emitter = new self(static function (Channel $ch, StreamContext $ctx) use ($prev, $fn): void {
+        return new self(static function (Channel $ch, StreamContext $ctx) use ($prev, $fn): void {
             async(static function () use ($prev, $ch, $ctx, $fn): void {
                 try {
                     foreach ($prev($ctx) as $value) {
@@ -158,8 +158,6 @@ final class Emitter implements StreamSource
                 }
             })();
         });
-
-        return $emitter;
     }
 
     /** @param callable(mixed): bool $predicate */
@@ -167,7 +165,7 @@ final class Emitter implements StreamSource
     {
         $prev = $this;
 
-        $emitter = new self(static function (Channel $ch, StreamContext $ctx) use ($prev, $predicate): void {
+        return new self(static function (Channel $ch, StreamContext $ctx) use ($prev, $predicate): void {
             async(static function () use ($prev, $ch, $ctx, $predicate): void {
                 try {
                     foreach ($prev($ctx) as $value) {
@@ -182,15 +180,13 @@ final class Emitter implements StreamSource
                 }
             })();
         });
-
-        return $emitter;
     }
 
     public function take(int $n): self
     {
         $prev = $this;
 
-        $emitter = new self(static function (Channel $ch, StreamContext $ctx) use ($prev, $n): void {
+        return new self(static function (Channel $ch, StreamContext $ctx) use ($prev, $n): void {
             async(static function () use ($prev, $ch, $ctx, $n): void {
                 try {
                     $count = 0;
@@ -207,15 +203,13 @@ final class Emitter implements StreamSource
                 }
             })();
         });
-
-        return $emitter;
     }
 
     public function throttle(float $seconds): self
     {
         $prev = $this;
 
-        $emitter = new self(static function (Channel $ch, StreamContext $ctx) use ($prev, $seconds): void {
+        return new self(static function (Channel $ch, StreamContext $ctx) use ($prev, $seconds): void {
             async(static function () use ($prev, $ch, $ctx, $seconds): void {
                 $lastEmit = 0.0;
                 $intervalNs = $seconds * 1e9;
@@ -235,15 +229,13 @@ final class Emitter implements StreamSource
                 }
             })();
         });
-
-        return $emitter;
     }
 
     public function debounce(float $seconds): self
     {
         $prev = $this;
 
-        $emitter = new self(static function (Channel $ch, StreamContext $ctx) use ($prev, $seconds): void {
+        return new self(static function (Channel $ch, StreamContext $ctx) use ($prev, $seconds): void {
             async(static function () use ($prev, $ch, $ctx, $seconds): void {
                 $timer = null;
                 $lastValue = null;
@@ -285,15 +277,13 @@ final class Emitter implements StreamSource
                 }
             })();
         });
-
-        return $emitter;
     }
 
     public function bufferWindow(int $count, float $seconds): self
     {
         $prev = $this;
 
-        $emitter = new self(static function (Channel $ch, StreamContext $ctx) use ($prev, $count, $seconds): void {
+        return new self(static function (Channel $ch, StreamContext $ctx) use ($prev, $count, $seconds): void {
             async(static function () use ($prev, $ch, $ctx, $count, $seconds): void {
                 $buffer = [];
                 $timer = null;
@@ -335,15 +325,13 @@ final class Emitter implements StreamSource
                 }
             })();
         });
-
-        return $emitter;
     }
 
     public function merge(self ...$others): self
     {
         $sources = [$this, ...$others];
 
-        $emitter = new self(static function (Channel $ch, StreamContext $ctx) use ($sources): void {
+        return new self(static function (Channel $ch, StreamContext $ctx) use ($sources): void {
             $remaining = count($sources);
             $failed = false;
 
@@ -372,15 +360,13 @@ final class Emitter implements StreamSource
                 })();
             }
         });
-
-        return $emitter;
     }
 
     public function distinct(): self
     {
         $prev = $this;
 
-        $emitter = new self(static function (Channel $ch, StreamContext $ctx) use ($prev): void {
+        return new self(static function (Channel $ch, StreamContext $ctx) use ($prev): void {
             async(static function () use ($prev, $ch, $ctx): void {
                 $hasLast = false;
                 $lastValue = null;
@@ -400,8 +386,6 @@ final class Emitter implements StreamSource
                 }
             })();
         });
-
-        return $emitter;
     }
 
     /** @param callable(mixed): mixed $keyFn */
@@ -409,7 +393,7 @@ final class Emitter implements StreamSource
     {
         $prev = $this;
 
-        $emitter = new self(static function (Channel $ch, StreamContext $ctx) use ($prev, $keyFn): void {
+        return new self(static function (Channel $ch, StreamContext $ctx) use ($prev, $keyFn): void {
             async(static function () use ($prev, $ch, $ctx, $keyFn): void {
                 $hasLastKey = false;
                 $lastKey = null;
@@ -430,15 +414,13 @@ final class Emitter implements StreamSource
                 }
             })();
         });
-
-        return $emitter;
     }
 
     public function sample(float $seconds): self
     {
         $prev = $this;
 
-        $emitter = new self(static function (Channel $ch, StreamContext $ctx) use ($prev, $seconds): void {
+        return new self(static function (Channel $ch, StreamContext $ctx) use ($prev, $seconds): void {
             $latest = null;
             $hasLatest = false;
 
@@ -467,8 +449,6 @@ final class Emitter implements StreamSource
                 }
             })();
         });
-
-        return $emitter;
     }
 
     public function toArray(): \Phalanx\Stream\Terminal\Collect

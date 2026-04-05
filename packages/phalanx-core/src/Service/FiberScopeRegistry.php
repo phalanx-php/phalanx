@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Service;
 
-use Phalanx\ExecutionScope;
 use Fiber;
+use Phalanx\ExecutionScope;
 use WeakMap;
 
 final class FiberScopeRegistry

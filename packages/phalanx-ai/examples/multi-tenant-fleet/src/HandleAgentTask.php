@@ -20,7 +20,7 @@ final class HandleAgentTask implements Executable
     public function __invoke(ExecutionScope $scope): mixed
     {
         $raw = $scope->attribute('subscription.message');
-        $task = json_decode($raw, true);
+        $task = json_decode((string) $raw, true);
         $tenantId = $task['tenant_id'];
         $sessionId = $task['session_id'];
 

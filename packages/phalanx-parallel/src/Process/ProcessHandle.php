@@ -82,15 +82,21 @@ final class ProcessHandle
         $this->state = ProcessState::Idle;
         $this->buffer = '';
 
+        // Non-static: writes mutable $this->buffer, calls $this->processBuffer().
+        // Cycle is bounded -- listener lives on $this->process, which cleanup() nulls,
+        // detaching all listeners and breaking the cycle on process exit or kill().
         $this->process->stdout->on('data', function (string $data): void {
             $this->buffer .= $data;
             $this->processBuffer();
         });
 
-        $this->process->stderr->on('data', function (string $data): void {
+        $this->process->stderr->on('data', static function (string $data): void {
             error_log("[Worker STDERR] $data");
         });
 
+        // Non-static: calls $this->onExit() to handle pending task/service call cleanup.
+        // Cycle is bounded -- fires exactly once on process exit, after which $this->process
+        // is nulled by cleanup() in the kill() path or left as a dead handle.
         $this->process->on('exit', function (?int $code, $signal): void {
             $this->onExit($code);
         });
@@ -112,6 +118,8 @@ final class ProcessHandle
 
         $this->process->stdin->write(Codec::encode($task));
 
+        // Non-static: reads and writes mutable $this->state.
+        // Cycle is bounded -- finally() fires exactly once when the task promise settles.
         return $this->pendingTask->promise()->finally(function (): void {
             if ($this->state === ProcessState::Busy) {
                 $this->state = ProcessState::Idle;
@@ -133,6 +141,8 @@ final class ProcessHandle
         $this->state = ProcessState::Draining;
         $deferred = new Deferred();
 
+        // Non-static: calls $this->cancelDrainTimers() to clean up graceful/force timers.
+        // Cycle is bounded -- fires exactly once on process exit.
         $this->process->on('exit', function () use ($deferred): void {
             $this->cancelDrainTimers();
             $deferred->resolve(null);
@@ -140,6 +150,8 @@ final class ProcessHandle
 
         $this->process->stdin->end();
 
+        // Non-static: reads nullable $this->gracefulTimer and $this->process.
+        // Cycle is bounded -- addTimer fires once; the timer reference is nulled on entry.
         $this->gracefulTimer = $this->loop->addTimer($this->config->gracefulTimeout, function (): void {
             $this->gracefulTimer = null;
             if ($this->process?->isRunning()) {
@@ -147,6 +159,7 @@ final class ProcessHandle
             }
         });
 
+        // Non-static: same pattern as gracefulTimer above.
         $this->forceTimer = $this->loop->addTimer($this->config->forceTimeout, function (): void {
             $this->forceTimer = null;
             if ($this->process?->isRunning()) {
@@ -254,6 +267,8 @@ final class ProcessHandle
     private function handleServiceCall(ServiceCall $call): void
     {
         $handler = $this->serviceHandler;
+        // Non-static: writes response back via $this->process->stdin.
+        // Cycle is bounded -- both callbacks fire exactly once when the service handler promise settles.
         $handler($call)->then(
             function (mixed $result) use ($call): void {
                 $response = Response::serviceOk($call->id, $result);

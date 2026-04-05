@@ -163,6 +163,7 @@ class TextInput extends BasePrompt
         $this->value = implode('', $chars);
     }
 
+    #[\Override]
     protected function hints(): string
     {
         return 'alt-← → word  ctrl-w del word  ctrl-k del to end';

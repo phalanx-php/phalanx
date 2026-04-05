@@ -94,6 +94,7 @@ final class SuggestInput extends BasePrompt
         );
     }
 
+    #[\Override]
     protected function hints(): string
     {
         return 'tab accept suggestion  esc dismiss  enter confirm';

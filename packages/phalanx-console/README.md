@@ -33,8 +33,6 @@ Requires PHP 8.4+ and `phalanx/core`.
 ```php
 <?php
 
-declare(strict_types=1);
-
 use Phalanx\Console\Arg;
 use Phalanx\Console\Command;
 use Phalanx\Console\CommandGroup;
@@ -83,8 +81,6 @@ A command handler is an invokable class implementing `Scopeable` or `Executable`
 ```php
 <?php
 
-declare(strict_types=1);
-
 use Phalanx\Console\CommandScope;
 use Phalanx\Scope;
 use Phalanx\Task\Scopeable;
@@ -117,8 +113,6 @@ final readonly class MigrateCommand implements Scopeable
 
 ```php
 <?php
-
-declare(strict_types=1);
 
 use Phalanx\Console\CommandScope;
 use Phalanx\ExecutionScope;
@@ -383,8 +377,6 @@ Implement `CommandValidator` to add custom input validation. Validators run afte
 ```php
 <?php
 
-declare(strict_types=1);
-
 use Phalanx\Console\CommandConfig;
 use Phalanx\Console\CommandInput;
 use Phalanx\Console\CommandValidator;
@@ -472,8 +464,6 @@ Because `CommandScope` extends `ExecutionScope`, every command has access to Pha
 
 ```php
 <?php
-
-declare(strict_types=1);
 
 use Phalanx\Console\CommandScope;
 use Phalanx\ExecutionScope;

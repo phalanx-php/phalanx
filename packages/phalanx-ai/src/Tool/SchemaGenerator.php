@@ -95,7 +95,7 @@ final class SchemaGenerator
             $schema = self::typeSchema($type);
         } elseif ($type instanceof ReflectionUnionType) {
             $schemas = array_map(
-                static fn(ReflectionNamedType $t) => self::typeSchema($t),
+                self::typeSchema(...),
                 array_filter($type->getTypes(), static fn($t) => $t instanceof ReflectionNamedType),
             );
             if (count($schemas) > 1) {

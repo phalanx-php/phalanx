@@ -108,7 +108,14 @@ final class ApplicationBuilder
             ? ($this->workerDispatch)($graph, $singletons)
             : $this->workerDispatch;
 
-        return Application::create($graph, $singletons, $trace, $this->providers, $this->taskInterceptors, $workerDispatch);
+        return Application::create(
+            $graph,
+            $singletons,
+            $trace,
+            $this->providers,
+            $this->taskInterceptors,
+            $workerDispatch,
+        );
     }
 
     private function loadDiscoveredProviders(): void

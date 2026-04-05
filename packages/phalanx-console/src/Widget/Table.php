@@ -43,7 +43,7 @@ final class Table
             return [];
         }
 
-        $maxWidths = array_map(static fn(string $h) => mb_strlen($h), $headers);
+        $maxWidths = array_map(mb_strlen(...), $headers);
 
         foreach ($sampleRows as $row) {
             foreach ($row as $i => $cell) {

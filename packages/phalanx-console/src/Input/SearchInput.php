@@ -118,6 +118,7 @@ final class SearchInput extends BasePrompt
         );
     }
 
+    #[\Override]
     protected function hints(): string
     {
         return '↑↓ navigate results  enter confirm';

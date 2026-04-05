@@ -11,8 +11,6 @@ final class Buffer
 {
     /** @var Cell[] */
     private array $cells;
-    private int $w;
-    private int $h;
 
     public int $width {
         get => $this->w;
@@ -22,11 +20,9 @@ final class Buffer
         get => $this->h;
     }
 
-    private function __construct(int $width, int $height)
+    private function __construct(private int $w, private int $h)
     {
-        $this->w = $width;
-        $this->h = $height;
-        $this->cells = self::allocateCells($width * $height);
+        $this->cells = self::allocateCells($this->w * $this->h);
     }
 
     public static function empty(int $width, int $height): self

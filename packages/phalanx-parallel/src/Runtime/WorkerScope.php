@@ -48,7 +48,7 @@ final class WorkerScope implements Scope
             throw new \RuntimeException($response->errorMessage ?? "Failed to resolve service: $type");
         }
 
-        return new ServiceProxy($type, $this->stdin, $this->stdout, $this);
+        return new ServiceProxy($type, $this);
     }
 
     public function attribute(string $key, mixed $default = null): mixed

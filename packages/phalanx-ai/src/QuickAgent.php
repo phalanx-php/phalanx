@@ -32,6 +32,3 @@ final class QuickAgent implements AgentDefinition
         return AgentLoop::run(Turn::begin($this), $scope);
     }
 }
-// trigger
-// trigger review
-// debug trigger

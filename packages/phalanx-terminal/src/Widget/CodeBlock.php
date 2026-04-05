@@ -14,7 +14,6 @@ use Phalanx\Terminal\Widget\Text\Span;
 
 final class CodeBlock implements Widget
 {
-    private Highlighter $highlighter;
     private Style $lineNumberStyle;
     private Style $markerStyle;
 
@@ -22,11 +21,10 @@ final class CodeBlock implements Widget
         private string $code,
         private int $startLine = 1,
         private ?int $highlightLine = null,
-        ?Highlighter $highlighter = null,
+        private ?Highlighter $highlighter = new PhpHighlighter(),
         ?Style $lineNumberStyle = null,
         ?Style $markerStyle = null,
     ) {
-        $this->highlighter = $highlighter ?? new PhpHighlighter();
         $this->lineNumberStyle = $lineNumberStyle ?? Style::new()->dim();
         $this->markerStyle = $markerStyle ?? Style::new()->fg('red')->bold();
     }

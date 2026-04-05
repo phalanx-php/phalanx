@@ -37,9 +37,7 @@ final class SuspendableNarrowTest extends AsyncTestCase
         $this->runAsync(function () use ($app): void {
             $scope = $app->createScope();
 
-            $result = $scope->execute(Task::of(static function (ExecutionScope $scope): mixed {
-                return self::awaitOn($scope, resolve('narrow-value'));
-            }));
+            $result = $scope->execute(Task::of(static fn(ExecutionScope $scope): mixed => self::awaitOn($scope, resolve('narrow-value'))));
 
             $this->assertSame('narrow-value', $result);
         });
@@ -61,9 +59,7 @@ final class SuspendableNarrowTest extends AsyncTestCase
 
             $this->expectException(CancelledException::class);
 
-            $scope->execute(Task::of(static function (ExecutionScope $scope) use ($deferred): mixed {
-                return self::awaitOn($scope, $deferred->promise());
-            }));
+            $scope->execute(Task::of(static fn(ExecutionScope $scope): mixed => self::awaitOn($scope, $deferred->promise())));
         });
     }
 
@@ -79,9 +75,7 @@ final class SuspendableNarrowTest extends AsyncTestCase
 
             $this->expectException(CancelledException::class);
 
-            $scope->execute(Task::of(static function (ExecutionScope $scope): mixed {
-                return self::awaitOn($scope, resolve('never-reached'));
-            }));
+            $scope->execute(Task::of(static fn(ExecutionScope $scope): mixed => self::awaitOn($scope, resolve('never-reached'))));
         });
     }
 
@@ -96,9 +90,7 @@ final class SuspendableNarrowTest extends AsyncTestCase
             $this->expectException(\RuntimeException::class);
             $this->expectExceptionMessage('narrow-rejection');
 
-            $scope->execute(Task::of(static function (ExecutionScope $scope): mixed {
-                return self::awaitOn($scope, \React\Promise\reject(new \RuntimeException('narrow-rejection')));
-            }));
+            $scope->execute(Task::of(static fn(ExecutionScope $scope): mixed => self::awaitOn($scope, \React\Promise\reject(new \RuntimeException('narrow-rejection')))));
         });
     }
 

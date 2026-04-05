@@ -10,12 +10,6 @@ use Phalanx\Terminal\Style\Style;
 
 final class Table implements Widget
 {
-    /** @var list<string> */
-    private array $headers;
-
-    /** @var list<list<string>> */
-    private array $rows;
-
     private Style $headerStyle;
     private Style $rowStyle;
     private Style $borderStyle;
@@ -25,14 +19,12 @@ final class Table implements Widget
      * @param list<list<string>> $rows
      */
     public function __construct(
-        array $headers,
-        array $rows = [],
+        private array $headers,
+        private array $rows = [],
         ?Style $headerStyle = null,
         ?Style $rowStyle = null,
         ?Style $borderStyle = null,
     ) {
-        $this->headers = $headers;
-        $this->rows = $rows;
         $this->headerStyle = $headerStyle ?? Style::new()->bold();
         $this->rowStyle = $rowStyle ?? Style::new();
         $this->borderStyle = $borderStyle ?? Style::new()->dim();

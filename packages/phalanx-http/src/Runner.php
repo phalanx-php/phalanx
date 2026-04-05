@@ -278,8 +278,9 @@ final class Runner
             return;
         }
 
-        $this->windowsTimer = Loop::addPeriodicTimer(0.1, function () {
-            if ($this->shutdownRequested) {
+        $shutdownRequested = &$this->shutdownRequested;
+        $this->windowsTimer = Loop::addPeriodicTimer(0.1, static function () use (&$shutdownRequested): void {
+            if ($shutdownRequested) {
                 Loop::stop();
             }
         });
@@ -287,8 +288,10 @@ final class Runner
 
     private function createShutdownHandler(): callable
     {
-        return function (): void {
-            $this->shutdown();
+        $shutdown = $this->shutdown(...);
+
+        return static function () use ($shutdown): void {
+            $shutdown();
         };
     }
 
