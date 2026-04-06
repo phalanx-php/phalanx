@@ -245,6 +245,8 @@ final class SearchDatabase implements Tool
 }
 ```
 
+`Tool` extends `SelfDescribed` from `phalanx/core`. The `$description` property hook is part of that interface, not specific to tools -- HTTP routes and CLI commands implement the same contract. This means tools can be introspected, listed, and documented through the same framework-wide interface as every other named computation.
+
 The JSON schema sent to the LLM is generated from the constructor signature and `#[Param]` attributes. No separate schema definition. No mapping layer. The tool *is* the schema.
 
 Constructor promotion means PHP's type system validates inputs before `__invoke` runs. An LLM that sends `{"limit": "banana"}` fails at hydration, not at runtime.

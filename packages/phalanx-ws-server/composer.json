@@ -13,8 +13,8 @@
     "homepage": "https://github.com/havy-tech/phalanx-ws-server",
     "require": {
         "php": "^8.4",
-        "phalanx/core": "^0.4",
-        "phalanx/stream": "^0.4",
+        "phalanx/core": "^0.5",
+        "phalanx/stream": "^0.5",
         "ratchet/rfc6455": "^0.4",
         "react/stream": "^1.4"
     },

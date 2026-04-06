@@ -13,13 +13,20 @@ Async HTTP server built on ReactPHP with scope-driven request handling. Every ro
 - [Defining Routes](#defining-routes)
 - [Route Groups](#route-groups)
 - [Route Parameters](#route-parameters)
+- [Route Contracts](#route-contracts)
+- [Input Validation](#input-validation)
 - [Concurrent Request Handling](#concurrent-request-handling)
 - [Middleware](#middleware)
 - [Mounting Sub-Groups](#mounting-sub-groups)
 - [Loading Routes from Files](#loading-routes-from-files)
 - [Server-Sent Events](#server-sent-events)
 - [UDP Listeners](#udp-listeners)
+- [Authentication](#authentication)
 - [WebSocket Integration](#websocket-integration)
+- [ToResponse Interface](#toresponse-interface)
+- [Response Wrappers](#response-wrappers)
+- [Request Validators](#request-validators)
+- [OpenAPI Generation](#openapi-generation)
 
 ## Installation
 
@@ -170,6 +177,200 @@ $routes = RouteGroup::of([
 ```
 
 The `RequestScope` exposes `$request`, `$params`, `$query`, `$body`, and `$config` through typed property hooks. Convenience methods -- `$scope->method()`, `$scope->path()`, `$scope->header()`, `$scope->isJson()`, `$scope->bearerToken()` -- wrap common PSR-7 access patterns.
+
+## Route Contracts
+
+The `__invoke` signature of a handler is the complete contract for a route. Beyond the scope parameter, any additional typed class parameter is automatically hydrated from request data before dispatch -- no manual parsing, no `$scope->body->get(...)` boilerplate.
+
+`InputHydrator` reflects on the handler's `__invoke` at first dispatch and caches the result. It skips parameters typed as scope interfaces (`Scope`, `ExecutionScope`, `RequestScope`) and targets the first remaining class-typed parameter. The source for hydration follows HTTP convention:
+
+- `POST`, `PUT`, `PATCH` -- hydrated from the request body
+- `GET`, `DELETE`, and all other methods -- hydrated from query string parameters
+
+Handlers with no extra typed parameter work exactly as before -- the scope is passed as the sole argument.
+
+### POST handler with a typed input DTO
+
+```php
+<?php
+
+use Phalanx\ExecutionScope;
+use Phalanx\Http\RequestScope;
+use Phalanx\Task\Executable;
+use React\Http\Message\Response;
+
+final readonly class CreateTaskInput
+{
+    public function __construct(
+        public string $title,
+        public ?string $description = null,
+        public int $priority = 0,
+    ) {}
+}
+
+final readonly class CreateTask implements Executable
+{
+    public function __invoke(ExecutionScope $scope, CreateTaskInput $input): mixed
+    {
+        /** @var RequestScope $scope */
+        $task = $scope->service(TaskRepository::class)->create(
+            title: $input->title,
+            description: $input->description,
+            priority: $input->priority,
+        );
+
+        return new \Phalanx\Http\Response\Created($task);
+    }
+}
+```
+
+```php
+<?php
+
+use Phalanx\Http\Route;
+use Phalanx\Http\RouteGroup;
+
+$routes = RouteGroup::of([
+    'POST /tasks' => new Route(fn: new CreateTask()),
+]);
+```
+
+The JSON body keys map to constructor parameter names. Missing required fields produce a 422 before the handler is called.
+
+### GET handler with a typed query DTO
+
+```php
+<?php
+
+use Phalanx\Http\RequestScope;
+use Phalanx\Scope;
+use Phalanx\Task\Scopeable;
+use React\Http\Message\Response;
+
+final readonly class ListTasksQuery
+{
+    public function __construct(
+        public int $page = 1,
+        public int $perPage = 25,
+        public ?string $status = null,
+    ) {}
+}
+
+final readonly class ListTasks implements Scopeable
+{
+    public function __invoke(Scope $scope, ListTasksQuery $query): mixed
+    {
+        /** @var RequestScope $scope */
+        $tasks = $scope->service(TaskRepository::class)->paginate(
+            page: $query->page,
+            perPage: $query->perPage,
+            status: $query->status,
+        );
+
+        return Response::json($tasks);
+    }
+}
+```
+
+Query string values are coerced to constructor parameter types -- `?page=2&perPage=50` arrives as `int $page = 2`, `int $perPage = 50`.
+
+### Handler with no typed input
+
+```php
+<?php
+
+use Phalanx\Http\RequestScope;
+use Phalanx\Scope;
+use Phalanx\Task\Scopeable;
+use React\Http\Message\Response;
+
+final readonly class HealthCheck implements Scopeable
+{
+    public function __invoke(Scope $scope): mixed
+    {
+        return Response::json(['status' => 'ok']);
+    }
+}
+```
+
+No extra parameter -- the scope is the only argument. Hydration is a no-op.
+
+## Input Validation
+
+### Type coercion
+
+`InputHydrator` coerces raw string data to the declared constructor parameter type:
+
+| Target type | Coercion |
+|---|---|
+| `string` | `(string) $value` |
+| `int` | `(int) $value` (fails if non-numeric) |
+| `float` | `(float) $value` (fails if non-numeric) |
+| `bool` | `filter_var($value, FILTER_VALIDATE_BOOLEAN)` |
+| `array` | passed through if already an array, error otherwise |
+| backed enum | `EnumClass::from($value)` with allowed-values error on failure |
+
+Coercion errors are collected across all fields before throwing. The handler never executes when coercion fails.
+
+### The `Validatable` interface
+
+After successful construction, if the DTO implements `Validatable`, its `validate()` method is called. Return an empty array to pass, or a `field => messages` map to fail:
+
+```php
+<?php
+
+use Phalanx\Http\Contract\Validatable;
+
+final readonly class CreateTaskInput implements Validatable
+{
+    public function __construct(
+        public string $title,
+        public int $priority = 0,
+    ) {}
+
+    public function validate(): array
+    {
+        $errors = [];
+
+        if (strlen($this->title) < 3) {
+            $errors['title'][] = 'Must be at least 3 characters';
+        }
+
+        if ($this->priority < 0 || $this->priority > 10) {
+            $errors['priority'][] = 'Must be between 0 and 10';
+        }
+
+        return $errors;
+    }
+}
+```
+
+`validate()` runs after construction, so it has access to the fully typed, coerced values. It is the right place for cross-field rules or domain constraints that go beyond type correctness.
+
+### 422 responses
+
+Both coercion failures and `Validatable` failures throw `ValidationException`. The runner catches this and returns a 422 with a JSON body:
+
+```json
+{
+  "error": "Validation failed (2 error(s))",
+  "errors": {
+    "title": ["Must be at least 3 characters"],
+    "priority": ["Must be between 0 and 10"]
+  }
+}
+```
+
+`ValidationException` can also be thrown manually from handler code when domain validation fails after the DTO is already hydrated:
+
+```php
+<?php
+
+use Phalanx\Http\ValidationException;
+
+throw ValidationException::single('email', 'Already in use');
+throw ValidationException::fromErrors(['email' => ['Already in use'], 'name' => ['Taken']]);
+```
 
 ## Concurrent Request Handling
 
@@ -469,6 +670,54 @@ final readonly class ApiResult implements ToResponse
 
 Return it from any handler -- `Runner::toResponse()` calls `toResponse()` automatically.
 
+## Response Wrappers
+
+Three concrete `ToResponse` implementations cover the most common non-200 success statuses:
+
+| Class | Status | Body |
+|---|---|---|
+| `Created` | 201 | JSON-encoded `$data` |
+| `Accepted` | 202 | JSON-encoded `$data` |
+| `NoContent` | 204 | empty |
+
+All three are in the `Phalanx\Http\Response` namespace and implement `ToResponse`, so they flow through the same dispatch path as any custom `ToResponse` object.
+
+```php
+<?php
+
+use Phalanx\ExecutionScope;
+use Phalanx\Http\RequestScope;
+use Phalanx\Http\Response\Created;
+use Phalanx\Http\Response\NoContent;
+use Phalanx\Task\Executable;
+
+final readonly class CreateTask implements Executable
+{
+    public function __invoke(ExecutionScope $scope, CreateTaskInput $input): Created
+    {
+        /** @var RequestScope $scope */
+        $task = $scope->service(TaskRepository::class)->create($input);
+
+        return new Created($task);
+    }
+}
+
+final readonly class DeleteTask implements Executable
+{
+    public function __invoke(ExecutionScope $scope): NoContent
+    {
+        /** @var RequestScope $scope */
+        $scope->service(TaskRepository::class)->delete(
+            $scope->params->get('id'),
+        );
+
+        return new NoContent();
+    }
+}
+```
+
+Handlers that return `void` or `null` produce an empty 200 response. There is no wrapper for this case -- it is the implicit default.
+
 ## Request Validators
 
 Validate body parameters inline with `RequestValidator`:
@@ -499,7 +748,7 @@ $age = $scope->body->int('age', validate: new Min(18));
 $email = $scope->body->required('email', validate: new EmailFormat());
 ```
 
-Failed validation throws `ValidationException` with `$e->field`, `$e->value`, and `$e->validator`. Validation results are cached per key+validator pair within the same `RequestBody` instance.
+Failed validation throws `ValidationException` with `$e->errors` -- an `array<string, list<string>>` mapping field names to error messages. Validation results are cached per key+validator pair within the same `RequestBody` instance.
 
 ## WebSocket Integration
 
@@ -517,3 +766,72 @@ Runner::from($app)
 ```
 
 HTTP and WebSocket traffic share a single TCP listener. The runner detects upgrade requests and routes them to the appropriate `WsRouteGroup`.
+
+## OpenAPI Generation
+
+`OpenApiGenerator` reflects on route handler signatures to produce an OpenAPI 3.1 spec. No running server is required -- generation is a pure static analysis pass over a `RouteGroup`.
+
+```php
+<?php
+
+use Phalanx\Http\OpenApi\OpenApiGenerator;
+
+$generator = new OpenApiGenerator(
+    title: 'Task API',
+    version: '2.0.0',
+    description: 'Async task management',
+);
+
+$spec = $generator->generate($routes);
+
+file_put_contents('openapi.json', json_encode($spec, JSON_PRETTY_PRINT));
+```
+
+What the generator derives from each route automatically:
+
+- **Path parameters** -- extracted from `{name}` segments in the route pattern
+- **Request body** -- reflected from the typed DTO parameter on `POST`/`PUT`/`PATCH` handlers; schema built from constructor parameter types
+- **Query parameters** -- reflected from the typed DTO parameter on `GET`/`DELETE` handlers
+- **Response status** -- inferred from the return type (`Created` → 201, `NoContent` → 204, etc.)
+- **422 response** -- included automatically on any route with a typed input parameter
+- **404 response** -- included automatically on any route with path parameters
+- **Summary and tags** -- read from `SelfDescribed` and `Tagged` interfaces on the handler class if implemented
+
+### Kubb integration
+
+The generated spec is designed for consumption by [Kubb](https://kubb.dev/), which generates typed TypeScript clients and React Query hooks directly from an OpenAPI document:
+
+```json
+{
+  "openapi": "3.1.0",
+  "info": { "title": "Task API", "version": "2.0.0" },
+  "paths": {
+    "/tasks": {
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": { "type": "string" },
+                  "description": { "type": "string", "nullable": true },
+                  "priority": { "type": "integer" }
+                },
+                "required": ["title"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Created" },
+          "422": { "description": "Validation Failed" }
+        }
+      }
+    }
+  }
+}
+```
+
+The spec round-trips cleanly: PHP constructor types become JSON Schema types, PHP return type annotations become response status codes, and route patterns become OpenAPI path templates.

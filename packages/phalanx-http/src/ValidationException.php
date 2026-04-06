@@ -4,13 +4,24 @@ declare(strict_types=1);
 
 namespace Phalanx\Http;
 
-final class ValidationException extends \RuntimeException
+class ValidationException extends \RuntimeException
 {
+    /** @param array<string, list<string>> $errors field => error messages */
     public function __construct(
-        public readonly string $field,
-        public readonly mixed $value,
-        public readonly RequestValidator $validator,
+        public readonly array $errors,
     ) {
-        parent::__construct("Validation failed for field '{$field}'");
+        $count = array_sum(array_map('count', $errors));
+        parent::__construct("Validation failed ({$count} error(s))");
+    }
+
+    public static function single(string $field, string $message): static
+    {
+        return new static([$field => [$message]]);
+    }
+
+    /** @param array<string, list<string>> $errors */
+    public static function fromErrors(array $errors): static
+    {
+        return new static($errors);
     }
 }

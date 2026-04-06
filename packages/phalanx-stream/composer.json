@@ -13,7 +13,7 @@
     "homepage": "https://github.com/havy-tech/phalanx-stream",
     "require": {
         "php": "^8.4",
-        "phalanx/core": "^0.4",
+        "phalanx/core": "^0.5",
         "react/async": "^4.3",
         "react/event-loop": "^1.5",
         "react/stream": "^1.4",
@@ -31,7 +31,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-main": "0.4-dev"
+            "dev-main": "0.5-dev"
         }
     },
     "minimum-stability": "dev",

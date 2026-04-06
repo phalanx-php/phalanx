@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Http\Tests\Unit;
+namespace Phalanx\Tests\Http\Unit;
 
 use Phalanx\Http\QueryParams;
 use PHPUnit\Framework\Attributes\Test;

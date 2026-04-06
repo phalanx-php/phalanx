@@ -13,8 +13,8 @@
     "homepage": "https://github.com/havy-tech/phalanx-redis",
     "require": {
         "php": "^8.4",
-        "phalanx/core": "^0.4",
-        "phalanx/stream": "^0.4",
+        "phalanx/core": "^0.5",
+        "phalanx/stream": "^0.5",
         "clue/redis-react": "^2.8"
     },
     "autoload": {
@@ -29,7 +29,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-main": "0.4-dev"
+            "dev-main": "0.5-dev"
         }
     },
     "minimum-stability": "dev",

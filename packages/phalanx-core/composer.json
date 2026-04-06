@@ -26,9 +26,9 @@
         "react/promise": "^3.2"
     },
     "require-dev": {
-        "phalanx/console": "^0.4",
-        "phalanx/http": "^0.4",
-        "phalanx/parallel": "^0.4",
+        "phalanx/console": "^0.5",
+        "phalanx/http": "^0.5",
+        "phalanx/parallel": "^0.5",
         "phpstan/phpstan": "^2.0",
         "phpunit/phpunit": "^11.0",
         "react/promise-timer": "^1.11",
@@ -68,7 +68,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-main": "0.4.x-dev"
+            "dev-main": "0.5.x-dev"
         }
     },
     "config": {

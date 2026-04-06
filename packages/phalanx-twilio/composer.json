@@ -13,7 +13,7 @@
     "homepage": "https://github.com/havy-tech/phalanx-twilio",
     "require": {
         "php": "^8.4",
-        "phalanx/core": "^0.4",
+        "phalanx/core": "^0.5",
         "react/http": "^1.10"
     },
     "autoload": {
@@ -28,7 +28,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-main": "0.4-dev"
+            "dev-main": "0.5-dev"
         }
     },
     "minimum-stability": "dev",

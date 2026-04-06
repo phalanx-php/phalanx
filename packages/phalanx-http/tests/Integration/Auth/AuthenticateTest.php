@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Http\Tests\Integration\Auth;
+namespace Phalanx\Tests\Http\Integration\Auth;
 
 use GuzzleHttp\Psr7\ServerRequest;
 use Phalanx\Application;

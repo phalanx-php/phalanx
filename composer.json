@@ -61,7 +61,6 @@
     "autoload-dev": {
         "psr-4": {
             "Phalanx\\Console\\Tests\\": "packages/phalanx-console/tests/",
-            "Phalanx\\Http\\Tests\\": "packages/phalanx-http/tests/",
             "Phalanx\\Tests\\Http\\": "packages/phalanx-http/tests/",
             "Phalanx\\Parallel\\Tests\\": "packages/phalanx-parallel/tests/",
             "Phalanx\\Stream\\Tests\\": "packages/phalanx-stream/tests/",
@@ -111,21 +110,21 @@
         }
     },
     "replace": {
-        "phalanx/console": "0.4.0",
-        "phalanx/core": "0.4.0",
-        "phalanx/http": "0.4.0",
-        "phalanx/twilio": "0.4.0",
-        "phalanx/ai": "0.4.0",
-        "phalanx/parallel": "0.4.0",
-        "phalanx/postgres": "0.4.0",
-        "phalanx/redis": "0.4.0",
-        "phalanx/stream": "0.4.0",
-        "phalanx/terminal": "0.4.0",
-        "phalanx/ws-server": "0.4.0",
-        "phalanx/ws-client": "0.4.0",
-        "phalanx/network": "0.4.0",
-        "phalanx/filesystem": "0.4.0",
-        "phalanx/ssh": "0.4.0"
+        "phalanx/console": "0.5.0",
+        "phalanx/core": "0.5.0",
+        "phalanx/http": "0.5.0",
+        "phalanx/twilio": "0.5.0",
+        "phalanx/ai": "0.5.0",
+        "phalanx/parallel": "0.5.0",
+        "phalanx/postgres": "0.5.0",
+        "phalanx/redis": "0.5.0",
+        "phalanx/stream": "0.5.0",
+        "phalanx/terminal": "0.5.0",
+        "phalanx/ws-server": "0.5.0",
+        "phalanx/ws-client": "0.5.0",
+        "phalanx/network": "0.5.0",
+        "phalanx/filesystem": "0.5.0",
+        "phalanx/ssh": "0.5.0"
     },
     "minimum-stability": "dev",
     "prefer-stable": true

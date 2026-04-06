@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Http\Tests\Unit;
+namespace Phalanx\Tests\Http\Unit;
 
 use Phalanx\Http\RouteConfig;
 use PHPUnit\Framework\Attributes\Test;

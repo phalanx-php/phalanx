@@ -17,6 +17,7 @@ Phalanx is an async coordination library for PHP 8.4+. It replaces callbacks wit
 - [The Task System](#the-task-system)
   - [Two Ways to Define Tasks](#two-ways-to-define-tasks)
   - [Behavior via Interfaces](#behavior-via-interfaces)
+  - [Self-Description](#self-description)
 - [Concurrency Primitives](#concurrency-primitives)
 - [Lazy Sequences](#lazy-sequences)
 - [Route Groups](#route-groups)
@@ -211,6 +212,40 @@ The behavior pipeline applies automatically: **timeout wraps retry wraps trace w
 | `HasPriority` | `int $priority { get; }` | Priority queue ordering |
 | `UsesPool` | `UnitEnum $pool { get; }` | Pool-aware scheduling |
 | `Traceable` | `string $traceName { get; }` | Custom trace label |
+
+### Self-Description
+
+Two opt-in interfaces let tasks and components carry human-readable metadata. The execution layer does not read these — they are consumed by tooling that introspects the component graph at registration time.
+
+| Interface | Property | Purpose |
+|-----------|----------|---------|
+| `SelfDescribed` | `string $description { get; }` | Human-readable description of what the component does |
+| `Tagged` | `list<string> $tags { get; }` | Classification labels for grouping and filtering |
+
+Consumers: OpenAPI generation in `phalanx-http` uses `$description` to populate operation summaries. `phalanx-ai` reads both when registering agent tools. CLI inspection commands use them to build help output.
+
+```php
+<?php
+
+final class SummarizeDocument implements Executable, SelfDescribed, Tagged
+{
+    public string $description {
+        get => 'Fetches a document by ID and returns an AI-generated summary.';
+    }
+
+    /** @return list<string> */
+    public array $tags {
+        get => ['ai', 'documents', 'read'];
+    }
+
+    public function __construct(private int $documentId) {}
+
+    public function __invoke(ExecutionScope $scope): string
+    {
+        return $scope->service(Summarizer::class)->summarize($this->documentId);
+    }
+}
+```
 
 ## Concurrency Primitives
 

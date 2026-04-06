@@ -146,7 +146,7 @@ final class RequestBody
         }
 
         if (!$validator($value)) {
-            throw new ValidationException($key, $value, $validator);
+            throw ValidationException::single($key, "Validation failed for field '{$key}'");
         }
 
         $validated[$key] = true;

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Ai\Tool;
 
+use Phalanx\SelfDescribed;
 use ReflectionClass;
 use ReflectionNamedType;
 use ReflectionParameter;
@@ -64,6 +65,15 @@ final class SchemaGenerator
     /** @param ReflectionClass<Tool> $ref */
     private static function extractDescription(ReflectionClass $ref): string
     {
+        if ($ref->implementsInterface(SelfDescribed::class)) {
+            $instance = $ref->newInstanceWithoutConstructor();
+            try {
+                return $instance->description;
+            } catch (\Throwable) {
+                // fall through to legacy extraction
+            }
+        }
+
         if ($ref->hasProperty('description')) {
             $prop = $ref->getProperty('description');
 
@@ -73,7 +83,7 @@ final class SchemaGenerator
             }
 
             if ($prop->hasHooks()) {
-                $instance = $ref->newInstanceWithoutConstructor();
+                $instance ??= $ref->newInstanceWithoutConstructor();
                 try {
                     return $instance->description;
                 } catch (\Throwable) {

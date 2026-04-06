@@ -13,9 +13,9 @@
     "homepage": "https://github.com/havy-tech/phalanx-ws-client",
     "require": {
         "php": "^8.4",
-        "phalanx/core": "^0.4",
-        "phalanx/stream": "^0.4",
-        "phalanx/ws-server": "^0.4",
+        "phalanx/core": "^0.5",
+        "phalanx/stream": "^0.5",
+        "phalanx/ws-server": "^0.5",
         "ratchet/rfc6455": "^0.4",
         "react/socket": "^1.16"
     },

@@ -206,6 +206,11 @@ final class Runner
                 'error' => 'Method Not Allowed',
                 'message' => $e->getMessage(),
             ])->withStatus(405)->withHeader('Allow', implode(', ', $e->allowedMethods));
+        } catch (ValidationException $e) {
+            return Response::json([
+                'error' => 'Validation Failed',
+                'errors' => $e->errors,
+            ])->withStatus(422);
         } catch (\Throwable $e) {
             $trace->log(TraceType::Failed, 'request', ['error' => $e->getMessage()]);
 

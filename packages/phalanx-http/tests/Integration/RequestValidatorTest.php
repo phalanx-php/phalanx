@@ -30,13 +30,13 @@ final class RequestValidatorTest extends TestCase
         $over18 = $this->validator(static fn(mixed $v): bool => $v >= 18);
 
         $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage("Validation failed for field 'age'");
+        $this->expectExceptionMessage('Validation failed');
 
         $body->int('age', validate: $over18);
     }
 
     #[Test]
-    public function validation_exception_carries_field_and_value(): void
+    public function validation_exception_carries_field_errors(): void
     {
         $body = $this->createBody('{"name":"x"}');
         $minLength = $this->validator(static fn(mixed $v): bool => strlen((string) $v) >= 3);
@@ -45,9 +45,8 @@ final class RequestValidatorTest extends TestCase
             $body->string('name', validate: $minLength);
             $this->fail('Expected ValidationException');
         } catch (ValidationException $e) {
-            $this->assertSame('name', $e->field);
-            $this->assertSame('x', $e->value);
-            $this->assertSame($minLength, $e->validator);
+            $this->assertArrayHasKey('name', $e->errors);
+            $this->assertNotEmpty($e->errors['name']);
         }
     }
 
