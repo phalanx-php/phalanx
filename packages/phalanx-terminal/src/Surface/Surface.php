@@ -270,11 +270,11 @@ final class Surface
         if ($updates !== []) {
             $this->writer->flush($updates);
 
-            // Sync previous buffer to match current.
-            // Cannot use swap() — the compositor only blits dirty regions into
-            // currentBuffer. If we swapped, the "new current" would be stale
-            // (missing non-dirty regions), causing every non-dirty cell to
-            // diff as changed on the next frame → full redraw every tick → flicker.
+            /**
+             * Sync previous buffer to match current. Cannot use swap() — the compositor
+             * only blits dirty regions, so a swapped "new current" would be stale,
+             * causing every non-dirty cell to diff as changed → full redraw → flicker.
+             */
             foreach ($updates as $u) {
                 $this->previousBuffer->set($u->x, $u->y, $u->char, $u->style);
             }

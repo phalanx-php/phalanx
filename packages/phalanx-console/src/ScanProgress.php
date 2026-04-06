@@ -137,11 +137,11 @@ final class ScanProgress implements ScanObserver
     {
         $ref = WeakReference::create($this);
 
-        // Static closure + Closure::bind(null, ScanProgress::class) combination:
-        //   - Static → no implicit $this capture, no reference cycle
-        //   - Class scope → allowed to access private members ($spinnerTick,
-        //     $output, buildLiveLine()) on the instance retrieved from the WeakRef
-        //   - WeakReference → timer closure does not pin ScanProgress in memory
+        /**
+         * Static closure + Closure::bind(null, ScanProgress::class):
+         * static = no $this capture, class scope = private member access via WeakRef,
+         * WeakReference = timer closure does not pin ScanProgress in memory.
+         */
         /** @var Closure(): void $tick */
         $tick = Closure::bind(
             static function () use ($ref): void {

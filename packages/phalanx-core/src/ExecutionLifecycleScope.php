@@ -312,6 +312,7 @@ final class ExecutionLifecycleScope implements ExecutionScope
     {
         $this->throwIfCancelled();
 
+        /** Each step runs in a child scope — scoped services are not shared between steps. */
         $result = null;
         foreach ($tasks as $task) {
             $scope = $this->withAttribute('_waterfall_previous', $result);
@@ -353,7 +354,8 @@ final class ExecutionLifecycleScope implements ExecutionScope
 
     public function retry(Scopeable|Executable $task, RetryPolicy $policy): mixed
     {
-        return $this->executeRetry(fn(): mixed => $this->execute($task), $policy);
+        $execute = $this->execute(...);
+        return $this->executeRetry(static fn(): mixed => $execute($task), $policy);
     }
 
     public function settle(array $tasks): SettlementBag
@@ -449,6 +451,7 @@ final class ExecutionLifecycleScope implements ExecutionScope
 
         $this->disposed = true;
 
+        /** LIFO: last registered = first disposed, mirroring stack unwinding. */
         foreach (array_reverse($this->disposeCallbacks) as $callback) {
             try {
                 $callback();
@@ -495,6 +498,7 @@ final class ExecutionLifecycleScope implements ExecutionScope
     {
         $this->throwIfCancelled();
 
+        /** Detached fiber — no cancel path. throwIfCancelled() inside execute() is the only guard. */
         $execute = $this->execute(...);
 
         async(static function () use ($task, $execute): void {
@@ -580,6 +584,7 @@ final class ExecutionLifecycleScope implements ExecutionScope
 
         $this->trace->log(TraceType::Executing, $name, task: $task);
 
+        /** Alias needed — static closures cannot capture $this directly. */
         $scope = $this;
         $pipeline = static fn() => $task($scope);
 
@@ -616,7 +621,7 @@ final class ExecutionLifecycleScope implements ExecutionScope
             $this->singleflightGroup,
         );
 
-        $taskPromise = async(function () use ($childScope, $work): mixed {
+        $taskPromise = async(static function () use ($childScope, $work): mixed {
             FiberScopeRegistry::register($childScope);
             try {
                 return $work();

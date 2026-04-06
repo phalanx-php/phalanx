@@ -4,58 +4,17 @@ declare(strict_types=1);
 
 namespace Phalanx\Stream\Tests\Integration;
 
-use Closure;
 use Phalanx\Stream\Channel;
 use Phalanx\Stream\Contract\StreamContext;
 use Phalanx\Stream\Emitter;
 use Phalanx\Stream\Tests\Support\AsyncTestCase;
+use Phalanx\Testing\Stub\TestStreamContext;
 use PHPUnit\Framework\Attributes\Test;
 use React\EventLoop\Loop;
-use React\Promise\PromiseInterface;
 use React\Stream\ThroughStream;
 
 final class EmitterStreamTest extends AsyncTestCase
 {
-    private function makeContext(): StreamContext
-    {
-        return new class () implements StreamContext {
-            /** @var list<Closure> */
-            private array $disposeCallbacks = [];
-
-            private bool $cancelled = false;
-
-            public function throwIfCancelled(): void
-            {
-                if ($this->cancelled) {
-                    throw new \RuntimeException('Cancelled');
-                }
-            }
-
-            public function onDispose(Closure $callback): void
-            {
-                $this->disposeCallbacks[] = $callback;
-            }
-
-            public function cancel(): void
-            {
-                $this->cancelled = true;
-            }
-
-            public function await(PromiseInterface $promise): mixed
-            {
-                return \React\Async\await($promise);
-            }
-
-            public function dispose(): void
-            {
-                foreach ($this->disposeCallbacks as $cb) {
-                    $cb();
-                }
-                $this->disposeCallbacks = [];
-            }
-        };
-    }
-
     #[Test]
     public function full_pipeline_stream_to_operators_to_terminal(): void
     {
@@ -75,7 +34,7 @@ final class EmitterStreamTest extends AsyncTestCase
                 ->map(static fn(int $v): int => $v * 10)
                 ->toArray();
 
-            $ctx = $this->makeContext();
+            $ctx = new TestStreamContext();
             $items = $result($ctx);
 
             $this->assertSame([20, 30, 40], $items);
@@ -91,7 +50,7 @@ final class EmitterStreamTest extends AsyncTestCase
             $ch->emit(3);
         })->reduce(static fn(int $acc, int $v): int => $acc + $v, 0);
 
-        $ctx = $this->makeContext();
+        $ctx = new TestStreamContext();
         $result = $sum($ctx);
 
         $this->assertSame(6, $result);
@@ -110,7 +69,7 @@ final class EmitterStreamTest extends AsyncTestCase
             ->map(static fn(int $v): int => $v * 2)
             ->filter(static fn(int $v): bool => $v > 2);
 
-        $ctx = $this->makeContext();
+        $ctx = new TestStreamContext();
         $items = iterator_to_array($emitter($ctx));
 
         $this->assertSame([4], $items);
@@ -137,7 +96,7 @@ final class EmitterStreamTest extends AsyncTestCase
 
         $merged = $s1->merge($s2, $s3);
 
-        $ctx = $this->makeContext();
+        $ctx = new TestStreamContext();
         $items = iterator_to_array($merged($ctx));
 
         sort($items);
@@ -162,7 +121,7 @@ final class EmitterStreamTest extends AsyncTestCase
             $ch->emit('beta');
         })->first();
 
-        $ctx = $this->makeContext();
+        $ctx = new TestStreamContext();
         $this->assertSame('alpha', $first($ctx));
     }
 
@@ -178,7 +137,7 @@ final class EmitterStreamTest extends AsyncTestCase
             ->onEach(static function ($v) use (&$processed): void { $processed[] = $v; })
             ->consume();
 
-        $ctx = $this->makeContext();
+        $ctx = new TestStreamContext();
         $result = $drain($ctx);
 
         $this->assertNull($result);
@@ -193,7 +152,7 @@ final class EmitterStreamTest extends AsyncTestCase
             throw new \RuntimeException('producer failed');
         });
 
-        $ctx = $this->makeContext();
+        $ctx = new TestStreamContext();
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('producer failed');
@@ -205,10 +164,9 @@ final class EmitterStreamTest extends AsyncTestCase
     public function empty_stream_completes(): void
     {
         $emitter = Emitter::produce(static function (): void {
-            // produce nothing
         });
 
-        $ctx = $this->makeContext();
+        $ctx = new TestStreamContext();
         $items = iterator_to_array($emitter($ctx));
 
         $this->assertSame([], $items);

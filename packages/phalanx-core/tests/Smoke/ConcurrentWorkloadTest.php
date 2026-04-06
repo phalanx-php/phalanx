@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Tests\Smoke;
 
-use Phalanx\Application;
 use Phalanx\Concurrency\RetryPolicy;
-use Phalanx\Concurrency\Settlement;
 use Phalanx\Exception\CancelledException;
 use Phalanx\ExecutionScope;
 use Phalanx\Scope;
@@ -15,61 +13,50 @@ use Phalanx\Task\HasTimeout;
 use Phalanx\Task\Retryable;
 use Phalanx\Task\Scopeable;
 use Phalanx\Task\Task;
-use Phalanx\Tests\Support\AsyncTestCase;
+use Phalanx\Testing\Assert;
+use Phalanx\Testing\Probe\ConcurrencyProbe;
+use Phalanx\Testing\Probe\InterleavingProbe;
+use Phalanx\Testing\TestScope;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
-use function React\Async\delay;
-
-final class ConcurrentWorkloadTest extends AsyncTestCase
+final class ConcurrentWorkloadTest extends TestCase
 {
     #[Test]
     public function concurrent_all_with_varying_delays(): void
     {
-        $app = Application::starting()->compile();
-        $app->startup();
-
-        $this->runAsync(function () use ($app): void {
-            $scope = $app->createScope();
+        TestScope::run(static function (ExecutionScope $scope): void {
             $start = hrtime(true);
 
             $results = $scope->concurrent([
-                'fast' => Task::of(static function () {
-                    delay(0.01);
+                'fast' => Task::of(static function (ExecutionScope $es): string {
+                    $es->delay(0.01);
                     return 'fast_result';
                 }),
-                'medium' => Task::of(static function () {
-                    delay(0.03);
+                'medium' => Task::of(static function (ExecutionScope $es): string {
+                    $es->delay(0.03);
                     return 'medium_result';
                 }),
-                'slow' => Task::of(static function () {
-                    delay(0.02);
+                'slow' => Task::of(static function (ExecutionScope $es): string {
+                    $es->delay(0.02);
                     return 'slow_result';
                 }),
             ]);
 
             $elapsed = (hrtime(true) - $start) / 1e6;
 
-            $this->assertSame('fast_result', $results['fast']);
-            $this->assertSame('medium_result', $results['medium']);
-            $this->assertSame('slow_result', $results['slow']);
-            $this->assertLessThan(100, $elapsed);
-
-            $scope->dispose();
+            Assert::assertSame('fast_result', $results['fast']);
+            Assert::assertSame('medium_result', $results['medium']);
+            Assert::assertSame('slow_result', $results['slow']);
+            Assert::assertElapsedBelow($elapsed, 100);
         });
-
-        $app->shutdown();
     }
 
     #[Test]
     public function settle_captures_mixed_results(): void
     {
-        $app = Application::starting()->compile();
-        $app->startup();
-
-        $this->runAsync(function () use ($app): void {
-            $scope = $app->createScope();
-
+        TestScope::run(static function (ExecutionScope $scope): void {
             $settlements = $scope->settle([
                 'success1' => Task::of(static fn() => 'ok1'),
                 'failure1' => Task::of(static fn() => throw new RuntimeException('fail1')),
@@ -77,151 +64,105 @@ final class ConcurrentWorkloadTest extends AsyncTestCase
                 'failure2' => Task::of(static fn() => throw new RuntimeException('fail2')),
             ]);
 
-            $this->assertTrue($settlements['success1']->isOk);
-            $this->assertSame('ok1', $settlements['success1']->value);
-
-            $this->assertFalse($settlements['failure1']->isOk);
-            $this->assertInstanceOf(RuntimeException::class, $settlements['failure1']->error);
-            $this->assertSame('fail1', $settlements['failure1']->error->getMessage());
-
-            $this->assertTrue($settlements['success2']->isOk);
-            $this->assertSame('ok2', $settlements['success2']->value);
-
-            $this->assertFalse($settlements['failure2']->isOk);
-
-            $scope->dispose();
+            Assert::assertSettled($settlements, [
+                'success1' => Assert::ok('ok1'),
+                'failure1' => Assert::failed(RuntimeException::class, 'fail1'),
+                'success2' => Assert::ok('ok2'),
+                'failure2' => Assert::failed(RuntimeException::class, 'fail2'),
+            ]);
         });
-
-        $app->shutdown();
     }
 
     #[Test]
     public function race_returns_fastest(): void
     {
-        $app = Application::starting()->compile();
-        $app->startup();
-
-        $this->runAsync(function () use ($app): void {
-            $scope = $app->createScope();
-
+        TestScope::run(static function (ExecutionScope $scope): void {
             $result = $scope->race([
-                Task::of(static function () {
-                    delay(0.1);
+                Task::of(static function (ExecutionScope $es): string {
+                    $es->delay(0.1);
                     return 'slow';
                 }),
-                Task::of(static function () {
-                    delay(0.005);
+                Task::of(static function (ExecutionScope $es): string {
+                    $es->delay(0.005);
                     return 'fast';
                 }),
-                Task::of(static function () {
-                    delay(0.05);
+                Task::of(static function (ExecutionScope $es): string {
+                    $es->delay(0.05);
                     return 'medium';
                 }),
             ]);
 
-            $this->assertSame('fast', $result);
-
-            $scope->dispose();
+            Assert::assertSame('fast', $result);
         });
-
-        $app->shutdown();
     }
 
     #[Test]
     public function any_ignores_failures_returns_first_success(): void
     {
-        $app = Application::starting()->compile();
-        $app->startup();
-
-        $this->runAsync(function () use ($app): void {
-            $scope = $app->createScope();
-
+        TestScope::run(static function (ExecutionScope $scope): void {
             $result = $scope->any([
                 Task::of(static fn() => throw new RuntimeException('immediate_fail')),
-                Task::of(static function () {
-                    delay(0.02);
+                Task::of(static function (ExecutionScope $es): string {
+                    $es->delay(0.02);
                     return 'delayed_success';
                 }),
-                Task::of(static function () {
-                    delay(0.01);
+                Task::of(static function (ExecutionScope $es): never {
+                    $es->delay(0.01);
                     throw new RuntimeException('delayed_fail');
                 }),
             ]);
 
-            $this->assertSame('delayed_success', $result);
-
-            $scope->dispose();
+            Assert::assertSame('delayed_success', $result);
         });
-
-        $app->shutdown();
     }
 
     #[Test]
     public function map_with_bounded_concurrency(): void
     {
-        $app = Application::starting()->compile();
-        $app->startup();
-
-        $this->runAsync(function () use ($app): void {
-            $scope = $app->createScope();
-            $maxConcurrent = 0;
-            $currentConcurrent = 0;
+        TestScope::run(static function (ExecutionScope $scope): void {
+            $probe = new ConcurrencyProbe();
 
             $results = $scope->map(
                 range(1, 10),
-                function (int $item) use (&$maxConcurrent, &$currentConcurrent) {
-                    return Task::of(static function () use ($item, &$maxConcurrent, &$currentConcurrent) {
-                        $currentConcurrent++;
-                        $maxConcurrent = max($maxConcurrent, $currentConcurrent);
-
-                        delay(0.01);
-
-                        $currentConcurrent--;
+                static function (int $item) use ($probe): Scopeable {
+                    return Task::of(static function (ExecutionScope $es) use ($item, $probe): int {
+                        $probe->enter();
+                        $es->delay(0.01);
+                        $probe->exit();
                         return $item * 2;
                     });
                 },
                 limit: 3,
             );
 
-            $this->assertEquals([2, 4, 6, 8, 10, 12, 14, 16, 18, 20], array_values($results));
-            $this->assertLessThanOrEqual(3, $maxConcurrent);
-
-            $scope->dispose();
+            Assert::assertEquals([2, 4, 6, 8, 10, 12, 14, 16, 18, 20], array_values($results));
+            Assert::assertConcurrencyBound($probe, 3);
         });
-
-        $app->shutdown();
     }
 
     #[Test]
     public function timeout_cancels_long_running_task(): void
     {
-        $app = Application::starting()->compile();
-        $app->startup();
+        $threw = false;
 
-        $this->runAsync(function () use ($app): void {
-            $scope = $app->createScope();
+        try {
+            TestScope::run(static function (ExecutionScope $scope): void {
+                $scope->timeout(0.01, Task::of(static function (ExecutionScope $es): string {
+                    $es->delay(1.0);
+                    return 'should_not_complete';
+                }));
+            });
+        } catch (CancelledException) {
+            $threw = true;
+        }
 
-            $this->expectException(CancelledException::class);
-
-            $scope->timeout(0.01, Task::of(static function () {
-                delay(1.0);
-                return 'should_not_complete';
-            }));
-
-            $scope->dispose();
-        });
-
-        $app->shutdown();
+        $this->assertTrue($threw, 'Expected CancelledException');
     }
 
     #[Test]
     public function retry_with_transient_failure(): void
     {
-        $app = Application::starting()->compile();
-        $app->startup();
-
-        $this->runAsync(function () use ($app): void {
-            $scope = $app->createScope();
+        TestScope::run(static function (ExecutionScope $scope): void {
             $attempts = 0;
 
             $task = new class($attempts) implements Scopeable, Retryable {
@@ -243,138 +184,122 @@ final class ConcurrentWorkloadTest extends AsyncTestCase
 
             $result = $scope->execute($task);
 
-            $this->assertSame('finally_succeeded', $result);
-            $this->assertSame(3, $attempts);
-
-            $scope->dispose();
+            Assert::assertSame('finally_succeeded', $result);
+            Assert::assertSame(3, $attempts);
         });
-
-        $app->shutdown();
     }
 
     #[Test]
     public function timeout_via_interface(): void
     {
-        $app = Application::starting()->compile();
-        $app->startup();
+        $threw = false;
 
-        $this->runAsync(function () use ($app): void {
-            $scope = $app->createScope();
+        try {
+            TestScope::run(static function (ExecutionScope $scope): void {
+                $task = new class implements Executable, HasTimeout {
+                    public float $timeout {
+                        get => 0.01;
+                    }
 
-            $task = new class implements Executable, HasTimeout {
-                public float $timeout {
-                    get => 0.01;
-                }
+                    public function __invoke(ExecutionScope $scope): string
+                    {
+                        $scope->delay(1.0);
+                        return 'should_not_complete';
+                    }
+                };
 
-                public function __invoke(ExecutionScope $scope): string
-                {
-                    delay(1.0);
-                    return 'should_not_complete';
-                }
-            };
+                $scope->execute($task);
+            });
+        } catch (CancelledException) {
+            $threw = true;
+        }
 
-            $this->expectException(CancelledException::class);
-            $scope->execute($task);
-
-            $scope->dispose();
-        });
-
-        $app->shutdown();
+        $this->assertTrue($threw, 'Expected CancelledException');
     }
 
     #[Test]
     public function series_maintains_order(): void
     {
-        $app = Application::starting()->compile();
-        $app->startup();
-
-        $this->runAsync(function () use ($app): void {
-            $scope = $app->createScope();
+        TestScope::run(static function (ExecutionScope $scope): void {
             $order = [];
 
             $results = $scope->series([
-                Task::of(static function () use (&$order) {
-                    delay(0.02);
+                Task::of(static function (ExecutionScope $es) use (&$order): string {
+                    $es->delay(0.02);
                     $order[] = 1;
                     return 'first';
                 }),
-                Task::of(static function () use (&$order) {
-                    delay(0.01);
+                Task::of(static function (ExecutionScope $es) use (&$order): string {
+                    $es->delay(0.01);
                     $order[] = 2;
                     return 'second';
                 }),
-                Task::of(static function () use (&$order) {
+                Task::of(static function () use (&$order): string {
                     $order[] = 3;
                     return 'third';
                 }),
             ]);
 
-            $this->assertEquals([1, 2, 3], $order);
-            $this->assertEquals(['first', 'second', 'third'], $results);
-
-            $scope->dispose();
+            Assert::assertEquals([1, 2, 3], $order);
+            Assert::assertEquals(['first', 'second', 'third'], $results);
         });
-
-        $app->shutdown();
     }
 
     #[Test]
     public function defer_executes_without_blocking(): void
     {
-        $app = Application::starting()->compile();
-        $app->startup();
-
-        $this->runAsync(function () use ($app): void {
-            $scope = $app->createScope();
+        TestScope::run(static function (ExecutionScope $scope): void {
             $deferred = false;
             $mainCompleted = false;
 
-            $scope->defer(Task::of(static function () use (&$deferred) {
-                delay(0.02);
+            $scope->defer(Task::of(static function (ExecutionScope $es) use (&$deferred): void {
+                $es->delay(0.02);
                 $deferred = true;
             }));
 
             $mainCompleted = true;
 
-            $this->assertTrue($mainCompleted);
-            $this->assertFalse($deferred);
+            Assert::assertTrue($mainCompleted);
+            Assert::assertFalse($deferred);
 
-            delay(0.05);
+            $scope->delay(0.05);
 
-            $this->assertTrue($deferred);
-
-            $scope->dispose();
+            Assert::assertTrue($deferred);
         });
-
-        $app->shutdown();
     }
 
     #[Test]
     public function nested_concurrent_operations(): void
     {
-        $app = Application::starting()->compile();
-        $app->startup();
-
-        $this->runAsync(function () use ($app): void {
-            $scope = $app->createScope();
+        TestScope::run(static function (ExecutionScope $scope): void {
+            $probe = new InterleavingProbe();
 
             $results = $scope->concurrent([
-                'batch1' => Task::of(static fn(ExecutionScope $es) => $es->concurrent([
-                    'a' => Task::of(static fn() => 'a'),
-                    'b' => Task::of(static fn() => 'b'),
-                ])),
-                'batch2' => Task::of(static fn(ExecutionScope $es) => $es->concurrent([
-                    'c' => Task::of(static fn() => 'c'),
-                    'd' => Task::of(static fn() => 'd'),
-                ])),
+                'batch1' => Task::of(static function (ExecutionScope $es) use ($probe): array {
+                    $probe->checkpoint('batch1:start');
+                    $es->delay(0.01);
+                    $result = $es->concurrent([
+                        'a' => Task::of(static fn() => 'a'),
+                        'b' => Task::of(static fn() => 'b'),
+                    ]);
+                    $probe->checkpoint('batch1:end');
+                    return $result;
+                }),
+                'batch2' => Task::of(static function (ExecutionScope $es) use ($probe): array {
+                    $probe->checkpoint('batch2:start');
+                    $es->delay(0.01);
+                    $result = $es->concurrent([
+                        'c' => Task::of(static fn() => 'c'),
+                        'd' => Task::of(static fn() => 'd'),
+                    ]);
+                    $probe->checkpoint('batch2:end');
+                    return $result;
+                }),
             ]);
 
-            $this->assertSame(['a' => 'a', 'b' => 'b'], $results['batch1']);
-            $this->assertSame(['c' => 'c', 'd' => 'd'], $results['batch2']);
-
-            $scope->dispose();
+            Assert::assertSame(['a' => 'a', 'b' => 'b'], $results['batch1']);
+            Assert::assertSame(['c' => 'c', 'd' => 'd'], $results['batch2']);
+            $probe->assertInterleaved('batch1', 'batch2');
         });
-
-        $app->shutdown();
     }
 }

@@ -184,6 +184,11 @@ final class ServiceGraphCompiler
      * @param array<string, string> $aliases
      * @return list<string>
      */
+    /**
+     * @param array<string, ServiceDefinition> $definitions
+     * @param array<string, string> $aliases
+     * @return list<string>
+     */
     private function resolveDependencyOrder(
         ServiceDefinition $def,
         array $definitions,
@@ -192,29 +197,41 @@ final class ServiceGraphCompiler
         $order = [];
         $seen = [];
 
-        $resolve = static function (string $type) use (&$resolve, &$order, &$seen, $definitions, $aliases): void {
-            if (isset($seen[$type])) {
-                return;
-            }
-
-            $seen[$type] = true;
-            $resolved = $aliases[$type] ?? $type;
-            $depDef = $definitions[$resolved] ?? null;
-
-            if ($depDef !== null) {
-                foreach ($depDef->dependencies as $dep) {
-                    $resolve($dep);
-                }
-            }
-
-            $order[] = $type;
-        };
-
         foreach ($def->dependencies as $dep) {
-            $resolve($dep);
+            self::resolveOrder($dep, $definitions, $aliases, $seen, $order);
         }
 
         return $order;
+    }
+
+    /**
+     * @param array<string, ServiceDefinition> $definitions
+     * @param array<string, string> $aliases
+     * @param array<string, true> $seen
+     * @param list<string> $order
+     */
+    private static function resolveOrder(
+        string $type,
+        array $definitions,
+        array $aliases,
+        array &$seen,
+        array &$order,
+    ): void {
+        if (isset($seen[$type])) {
+            return;
+        }
+
+        $seen[$type] = true;
+        $resolved = $aliases[$type] ?? $type;
+        $depDef = $definitions[$resolved] ?? null;
+
+        if ($depDef !== null) {
+            foreach ($depDef->dependencies as $dep) {
+                self::resolveOrder($dep, $definitions, $aliases, $seen, $order);
+            }
+        }
+
+        $order[] = $type;
     }
 
     private function defaultFactory(string $type): \Closure

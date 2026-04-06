@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "2f280146024605a68a0e9216691f61fe",
+    "content-hash": "95d1aaad6be12f4e882a56a9b73006f5",
     "packages": [
         {
             "name": "amphp/amp",
@@ -3301,6 +3301,53 @@
                 }
             ],
             "time": "2026-02-22T09:45:50+00:00"
+        },
+        {
+            "name": "rector/swiss-knife",
+            "version": "2.3.5",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/rectorphp/swiss-knife.git",
+                "reference": "1e7c2cbe0738beabaf603e7b2bd7582bbdf0212e"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/rectorphp/swiss-knife/zipball/1e7c2cbe0738beabaf603e7b2bd7582bbdf0212e",
+                "reference": "1e7c2cbe0738beabaf603e7b2bd7582bbdf0212e",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.2"
+            },
+            "bin": [
+                "bin/swiss-knife"
+            ],
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Rector\\SwissKnife\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "Swiss knife in pocket of every upgrade architect",
+            "support": {
+                "issues": "https://github.com/rectorphp/swiss-knife/issues",
+                "source": "https://github.com/rectorphp/swiss-knife/tree/2.3.5"
+            },
+            "funding": [
+                {
+                    "url": "https://www.paypal.me/rectorphp",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/tomasvotruba",
+                    "type": "github"
+                }
+            ],
+            "time": "2026-01-09T10:59:22+00:00"
         },
         {
             "name": "rize/uri-template",

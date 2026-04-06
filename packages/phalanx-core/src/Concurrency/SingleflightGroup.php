@@ -20,6 +20,7 @@ final class SingleflightGroup
             $promise = $this->inFlight[$key]->promise();
             $scope = FiberScopeRegistry::current();
 
+            /** Raw await fallback: no scope = no cancellation token to race against. */
             return $scope !== null
                 ? $scope->await($promise)
                 : await($promise);
