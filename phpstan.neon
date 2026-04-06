@@ -17,6 +17,7 @@ parameters:
         - packages/phalanx-ws-client/src
         - packages/phalanx-network/src
         - packages/phalanx-ssh/src
+        - packages/phalanx-ui/src
     excludePaths:
         analyseAndScan:
             - packages/phalanx-core/src/Parallel (?)

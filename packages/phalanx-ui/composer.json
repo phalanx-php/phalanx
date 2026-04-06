@@ -1,0 +1,41 @@
+{
+    "name": "phalanx/ui",
+    "description": "Frontend bridge for Phalanx — typed route contracts, OpenAPI generation, Kubb integration, and signal-based reactivity",
+    "license": "MIT",
+    "type": "library",
+    "keywords": ["frontend", "openapi", "kubb", "tanstack", "react", "ssr", "signals", "async", "reactphp"],
+    "authors": [
+        {
+            "name": "Jonathan Havens",
+            "email": "mail@jhavens.tech"
+        }
+    ],
+    "homepage": "https://github.com/havy-tech/phalanx-ui",
+    "require": {
+        "php": "^8.4",
+        "phalanx/core": "^0.5",
+        "phalanx/http": "^0.5",
+        "phalanx/stream": "^0.5"
+    },
+    "suggest": {
+        "phalanx/ws-server": "For WebSocket signal transport",
+        "phalanx/ai": "For agent streaming to frontend"
+    },
+    "autoload": {
+        "psr-4": {
+            "Phalanx\\Ui\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Phalanx\\Tests\\Ui\\": "tests/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "0.5-dev"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

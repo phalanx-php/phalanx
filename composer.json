@@ -55,7 +55,8 @@
             "Phalanx\\WebSocket\\Client\\": "packages/phalanx-ws-client/src/",
             "Phalanx\\Network\\": "packages/phalanx-network/src/",
             "Phalanx\\Filesystem\\": "packages/phalanx-filesystem/src/",
-            "Phalanx\\Ssh\\": "packages/phalanx-ssh/src/"
+            "Phalanx\\Ssh\\": "packages/phalanx-ssh/src/",
+            "Phalanx\\Ui\\": "packages/phalanx-ui/src/"
         }
     },
     "autoload-dev": {
@@ -74,7 +75,8 @@
             "Phalanx\\WebSocket\\Client\\Tests\\": "packages/phalanx-ws-client/tests/",
             "Phalanx\\Network\\Tests\\": "packages/phalanx-network/tests/",
             "Phalanx\\Filesystem\\Tests\\": "packages/phalanx-filesystem/tests/",
-            "Phalanx\\Ssh\\Tests\\": "packages/phalanx-ssh/tests/"
+            "Phalanx\\Ssh\\Tests\\": "packages/phalanx-ssh/tests/",
+            "Phalanx\\Tests\\Ui\\": "packages/phalanx-ui/tests/"
         },
         "classmap": [
             "packages/phalanx-core/tests/Support/Fixtures/",
@@ -124,7 +126,8 @@
         "phalanx/ws-client": "0.5.0",
         "phalanx/network": "0.5.0",
         "phalanx/filesystem": "0.5.0",
-        "phalanx/ssh": "0.5.0"
+        "phalanx/ssh": "0.5.0",
+        "phalanx/ui": "0.5.0"
     },
     "minimum-stability": "dev",
     "prefer-stable": true

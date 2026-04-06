@@ -30,6 +30,7 @@ jobs:
           - phalanx-filesystem
           - phalanx-ssh
           - phalanx-terminal
+          - phalanx-ui
           # NOT published yet (maturing):
           # - phalanx-redis
           # - phalanx-twilio

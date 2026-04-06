@@ -48,6 +48,7 @@ $app->shutdown();
 | [phalanx/network](https://github.com/havy-tech/phalanx-network) | Network scanning, probing, WOL, and service discovery | *in progress* |
 | [phalanx/filesystem](https://github.com/havy-tech/phalanx-filesystem) | Async file operations with resource-governed FilePool | *in progress* |
 | [phalanx/ssh](https://github.com/havy-tech/phalanx-ssh) | SSH command execution, SFTP, and tunnel management | *in progress* |
+| [phalanx/ui](https://github.com/havy-tech/phalanx-ui) | Frontend bridge — OpenAPI generation, Kubb integration, signal-based reactivity | *in progress* |
 | [phalanx/cdp](https://github.com/havy-tech/phalanx-cdp) | Chrome DevTools Protocol client | *in progress* |
 
 ## What makes Phalanx different
