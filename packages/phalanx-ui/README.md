@@ -1,58 +1,76 @@
-<?php # phalanx/ui — Frontend Bridge
+<p align="center">
+  <img src="brand/logo.svg" alt="Phalanx" width="520">
+</p>
 
-Typed route contracts, OpenAPI generation, and signal-based reactivity for Phalanx applications. Connects async PHP backends to TanStack Start + React frontends via Kubb-generated TypeScript hooks.
+# phalanx/ui
 
-## Installation
+Frontend bridge that turns PHP route signatures into TypeScript hooks. Define a handler with typed parameters, and the framework generates an OpenAPI spec that Kubb transforms into React Query mutations, Zod schemas, and type-safe query keys -- no manual API client code, no schema drift.
 
-```bash
-composer require phalanx/ui
+**This package is in early development.** The foundational primitives (route contracts, input hydration, OpenAPI generation) are implemented in `phalanx/http`. This package will provide the signal system, Kubb configuration, and TypeScript client that complete the PHP-to-browser pipeline.
+
+## Planned Architecture
+
+```
+PHP Handler (__invoke signature)
+    |
+    v
+OpenApiGenerator (reflection, no running server)
+    |
+    v
+OpenAPI 3.1 JSON
+    |
+    v
+Kubb (TypeScript types + Zod schemas + React Query hooks)
+    |
+    v
+TanStack Start frontend (SSR, streaming, signals)
 ```
 
-## What This Package Provides
+## What Exists Today (in phalanx/http)
 
-**Route contracts** — the `__invoke` signature on handler classes IS the API contract. Extra typed parameters beyond the scope are auto-hydrated from request body (POST/PUT/PATCH) or query string (GET/DELETE). No attributes, no annotations.
-
-**Input hydration + validation** — DTOs with typed constructor properties are hydrated automatically. Type coercion (string → int, enum resolution, nullable handling) and business rule validation via the `Validatable` interface.
-
-**Response wrappers** — `Created`, `Accepted`, `NoContent` encode HTTP status codes in the return type. The spec generator reads them; the runner serializes them.
-
-**OpenAPI generation** — `OpenApiGenerator` reflects on a `RouteGroup` to produce a complete OpenAPI 3.1 spec. No running server needed. Designed for Kubb consumption.
-
-**Signal system** — *(coming soon)* Backend-driven cache invalidation, flash messages, redirects, and custom events pushed to the frontend via response envelope or persistent WebSocket/SSE connections.
-
-## Quick Start
+Route contracts, input hydration, and OpenAPI generation are implemented in `phalanx/http` as the foundation this package builds on:
 
 ```php
 <?php
 
+use Phalanx\ExecutionScope;
 use Phalanx\Http\Response\Created;
-use Phalanx\Http\Route;
-use Phalanx\Http\RouteGroup;
-use Phalanx\Http\OpenApi\OpenApiGenerator;
 
-// Define routes with typed contracts
-$routes = RouteGroup::of([
-    'POST /tasks' => Route::of(static function (\Phalanx\ExecutionScope $scope, CreateTaskInput $input): Created {
-        $task = $scope->service(TaskService::class)->create($input);
-        return new Created($task);
-    }),
-    'GET /tasks' => Route::of(static function (\Phalanx\ExecutionScope $scope, ListTasksQuery $query): TaskCollection {
-        return $scope->service(TaskService::class)->list($query);
-    }),
-]);
+final readonly class CreateTaskInput
+{
+    public function __construct(
+        public string $title,
+        public ?string $description = null,
+        public TaskPriority $priority = TaskPriority::Normal,
+    ) {}
+}
 
-// Generate OpenAPI spec for Kubb
-$spec = (new OpenApiGenerator(title: 'My API', version: '1.0.0'))->generate($routes);
-file_put_contents('openapi.json', json_encode($spec, JSON_PRETTY_PRINT));
+// The __invoke signature IS the API contract
+// POST body hydrated automatically, validated, typed
+$handler = static function (ExecutionScope $scope, CreateTaskInput $input): Created {
+    $task = $scope->service(TaskService::class)->create($input);
+    return new Created($task);
+};
 ```
 
-## Status
+The OpenAPI generator reflects on this signature and produces a complete spec -- request body schema from `CreateTaskInput`, 201 response from `Created`, 422 documented automatically because the handler has typed input.
 
-This package is in active development. The route contract and OpenAPI generation systems are implemented. The signal system (Resonance port) and TypeScript client are next.
+## What This Package Will Add
 
-## Requirements
+**Signal system** -- Backend-driven cache invalidation ported from the [Resonance](https://github.com/jhavenz/resonance) Laravel library. The server tells the frontend what to refetch, where to redirect, and what to flash -- no manual `queryClient.invalidateQueries()` calls. Phalanx extends this beyond request-response: signals flow continuously over WebSocket and SSE connections.
 
-- PHP 8.4+
-- phalanx/core ^0.5
-- phalanx/http ^0.5
-- phalanx/stream ^0.5
+**Kubb configuration** -- Pre-configured Kubb plugin chain (`pluginOas` + `pluginTs` + `pluginZod` + `pluginReactQuery`) with a custom client that processes signals from every response envelope.
+
+**TypeScript client** -- `ResonanceClient` that dispatches signals (invalidate, flash, redirect, event, token) to TanStack Query and TanStack Router. Transport-agnostic: works over HTTP responses, SSE streams, and WebSocket connections.
+
+**Agent streaming hooks** -- `useAgent()` and `useEventStream()` hooks that consume `AgentEvent` streams from `phalanx/ai`, rendering token deltas and tool progress in real time.
+
+## Dependencies
+
+| Package | Purpose |
+|---------|---------|
+| `phalanx/core` | Scope system, `SelfDescribed` interface |
+| `phalanx/http` | Route contracts, `InputHydrator`, `OpenApiGenerator`, response wrappers |
+| `phalanx/stream` | `Emitter` pipelines for signal and agent event streaming |
+| `phalanx/ws-server` | WebSocket signal transport (optional) |
+| `phalanx/ai` | Agent event streaming to frontend (optional) |
