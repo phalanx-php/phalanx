@@ -10,11 +10,17 @@ use Phalanx\TaskScope;
 
 final class FilesystemServiceBundle implements ServiceBundle
 {
+    public function __construct(
+        private readonly ?int $maxOpen = null,
+    ) {}
+
     public function services(Services $services, array $context): void
     {
+        $maxOpen = $this->maxOpen ?? (int) ($context['FILESYSTEM_MAX_OPEN'] ?? 64);
+
         $services->singleton(FilePool::class)
             ->factory(static fn() => new FilePool(
-                maxOpen: (int) ($context['FILESYSTEM_MAX_OPEN'] ?? 64),
+                maxOpen: $maxOpen,
             ));
 
         $services->scoped(Files::class)

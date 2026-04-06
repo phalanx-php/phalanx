@@ -51,6 +51,12 @@ final class RedisClient
         return $this->scope->await($this->inner->__call('incr', [$key]));
     }
 
+    public function decr(string $key): int
+    {
+        /** @var int */
+        return $this->scope->await($this->inner->__call('decr', [$key]));
+    }
+
     /** @return PromiseInterface<mixed> */
     public function raw(string $command, mixed ...$args): PromiseInterface
     {

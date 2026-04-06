@@ -15,7 +15,7 @@ interface AppHost
 
     public function createScope(?CancellationToken $token = null): ExecutionScope;
 
-    public function startup(): void;
+    public function startup(): static;
 
     public function shutdown(): void;
 

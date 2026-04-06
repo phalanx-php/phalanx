@@ -79,15 +79,17 @@ final class Application implements AppHost
         );
     }
 
-    public function startup(): void
+    public function startup(): static
     {
         if ($this->started) {
-            return;
+            return $this;
         }
 
         $this->started = true;
         ManagedResource::enableShutdownFlush();
         $this->singletons->startup();
+
+        return $this;
     }
 
     public function shutdown(): void
