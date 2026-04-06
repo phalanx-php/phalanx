@@ -434,7 +434,7 @@ For typed access, use `AuthenticatedRequestScope` which adds `$scope->auth`:
 ```php
 <?php
 
-use Phalanx\Http\AuthenticatedExecutionContext;
+use Phalanx\Http\AuthenticatedRequestScope;
 
 /** @var AuthenticatedRequestScope $scope */
 $scope->auth->identity->id;

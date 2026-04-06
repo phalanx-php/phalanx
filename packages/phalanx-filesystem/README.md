@@ -38,12 +38,11 @@ use Phalanx\Application;
 use Phalanx\Filesystem\Files;
 use Phalanx\Filesystem\FilesystemServiceBundle;
 
-$app = Application::starting()
+$scope = Application::starting()
     ->providers(new FilesystemServiceBundle())
-    ->compile();
-
-$app->startup();
-$scope = $app->createScope();
+    ->compile()
+    ->startup()
+    ->createScope();
 
 $files = $scope->service(Files::class);
 $config = $files->readJson('/etc/myapp/config.json');
@@ -100,18 +99,16 @@ Streaming tasks use `react/stream` under the hood and integrate with the `FilePo
 <?php
 
 use Phalanx\Filesystem\Files;
-use Phalanx\Stream\Operators;
 
 $files = $scope->service(Files::class);
 
-// Stream a large CSV, processing line by line
+// readStream() returns an Emitter — chain operators directly
 $stream = $files->readStream('/data/transactions.csv');
 
 $results = $stream
-    ->pipe(Operators::lines())
-    ->pipe(Operators::map(fn(string $line) => str_getcsv($line)))
-    ->pipe(Operators::filter(fn(array $row) => (float) $row[3] > 1000.00))
-    ->pipe(Operators::take(100));
+    ->map(static fn(string $chunk) => str_getcsv($chunk))
+    ->filter(static fn(array $row) => (float) $row[3] > 1000.00)
+    ->take(100);
 
 $rows = $scope->execute($results->toArray());
 ```
@@ -120,15 +117,24 @@ Memory stays flat regardless of file size--values flow one line at a time throug
 
 ### Writing Streams
 
+`writeStream()` accepts a path and an `Emitter` source. The stream data is written to the file as it arrives:
+
 ```php
 <?php
 
+use Phalanx\Filesystem\Files;
+use Phalanx\Stream\Emitter;
+
 $files = $scope->service(Files::class);
 
-$out = $files->writeStream('/data/output.csv');
-$scope->execute($out->write("id,name,total\n"));
-$scope->execute($out->write("1,Alice,500\n"));
-$scope->execute($out->end());
+// Create an Emitter that produces output data
+$source = Emitter::produce(static function ($ch, $ctx) {
+    $ch->emit("id,name,total\n");
+    $ch->emit("1,Alice,500\n");
+    $ch->emit("2,Bob,750\n");
+});
+
+$files->writeStream('/data/output.csv', $source);
 ```
 
 ## FilePool
@@ -144,7 +150,7 @@ use Phalanx\Filesystem\FilePool;
 use Phalanx\Filesystem\FilesystemServiceBundle;
 
 // Custom pool limit
-$bundle = new FilesystemServiceBundle(poolLimit: 128);
+$bundle = new FilesystemServiceBundle(maxOpen: 128);
 ```
 
 If you're streaming hundreds of files concurrently (log tailing, bulk ETL), the pool prevents your process from hitting the OS file descriptor limit. Tasks queue transparently--callers don't need to manage slots manually.
@@ -210,6 +216,6 @@ use Phalanx\Application;
 use Phalanx\Filesystem\FilesystemServiceBundle;
 
 $app = Application::starting()
-    ->providers(new FilesystemServiceBundle(poolLimit: 128))
+    ->providers(new FilesystemServiceBundle(maxOpen: 128))
     ->compile();
 ```

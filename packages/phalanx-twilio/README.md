@@ -33,14 +33,14 @@ Requires PHP 8.4+, `phalanx/core`, `react/http`.
 
 use Phalanx\Twilio\TwilioServiceBundle;
 
-$app = Application::starting([
-    'twilio_account_sid' => getenv('TWILIO_ACCOUNT_SID'),
-    'twilio_auth_token' => getenv('TWILIO_AUTH_TOKEN'),
+$scope = Application::starting([
+    'twilio_account_sid' => $context['TWILIO_ACCOUNT_SID'],
+    'twilio_auth_token' => $context['TWILIO_AUTH_TOKEN'],
 ])
     ->providers(new TwilioServiceBundle())
-    ->compile();
-
-$scope = $app->createScope();
+    ->compile()
+    ->startup()
+    ->createScope();
 $twilio = $scope->service(TwilioRest::class);
 
 $twilio->sendSms(
@@ -181,8 +181,8 @@ When behind a reverse proxy, pass `base_url` through the application context so 
 <?php
 
 $app = Application::starting([
-    'twilio_account_sid' => getenv('TWILIO_ACCOUNT_SID'),
-    'twilio_auth_token' => getenv('TWILIO_AUTH_TOKEN'),
+    'twilio_account_sid' => $context['TWILIO_ACCOUNT_SID'],
+    'twilio_auth_token' => $context['TWILIO_AUTH_TOKEN'],
     'base_url' => 'https://your-app.com',
 ]);
 ```

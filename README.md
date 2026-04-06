@@ -9,11 +9,11 @@ Phalanx separates what you want from how it runs. You declare operations as plai
 ```php
 <?php
 
-$app = Application::starting()
+$scope = Application::starting()
     ->providers(new AppBundle())
-    ->compile();
-
-$scope = $app->createScope();
+    ->compile()
+    ->startup()
+    ->createScope();
 
 // Three services queried concurrently — one line
 [$user, $orders, $prefs] = $scope->concurrent([

@@ -55,11 +55,11 @@ use Phalanx\Ai\AiServiceBundle;
 use Phalanx\Ai\Message\Message;
 use Phalanx\Application;
 
-$app = Application::starting(['ANTHROPIC_API_KEY' => getenv('ANTHROPIC_API_KEY')])
+$scope = Application::starting(['ANTHROPIC_API_KEY' => $context['ANTHROPIC_API_KEY']])
     ->providers(new AiServiceBundle())
-    ->compile();
-
-$scope = $app->createScope();
+    ->compile()
+    ->startup()
+    ->createScope();
 
 $events = $scope->execute(
     Agent::quick('You are a helpful assistant.')
@@ -367,7 +367,7 @@ $result = AgentResult::awaitFrom($events, $scope);
 return SseResponse::from($events, $scope);
 ```
 
-`$events` is an `Emitter` from `phalanx/stream`. It supports `filter`, `map`, `tap`, `throttle`, `bufferWindow`, `merge`, and every other operator. The push/pull backpressure model means a slow SSE client pauses the LLM stream -- no unbounded buffering.
+`$events` is an `Emitter` from `phalanx/stream`. It supports `filter`, `map`, `onEach`, `throttle`, `bufferWindow`, `merge`, and every other operator. The push/pull backpressure model means a slow SSE client pauses the LLM stream -- no unbounded buffering.
 
 Events emitted during execution:
 

@@ -79,21 +79,19 @@ $redis->del('session:abc', 'session:def');
 
 ### Any Redis Command
 
-For commands without a typed method, use `raw()` or call them directly:
+For commands without a typed method, use `raw()`. It returns a promise, so wrap it in `$scope->await()` when you need the result synchronously:
 
 ```php
 <?php
 
-// Explicit
-$redis->raw('HSET', 'user:42', 'email', 'alice@example.com');
-$redis->raw('HGETALL', 'user:42');
+// raw() returns a PromiseInterface — use scope->await() for the result
+$scope->await($redis->raw('HSET', 'user:42', 'email', 'alice@example.com'));
+$hash = $scope->await($redis->raw('HGETALL', 'user:42'));
 
-// Magic method fallback — same result, slightly nicer syntax
-$redis->hset('user:42', 'email', 'alice@example.com');
-$redis->hgetall('user:42');
+// Any Redis command works through raw()
+$scope->await($redis->raw('LPUSH', 'queue:jobs', json_encode($job)));
+$scope->await($redis->raw('SADD', 'tags', 'php', 'async'));
 ```
-
-Both paths resolve to the same underlying async call. Use whichever reads better at the call site.
 
 ## Caching Patterns
 
@@ -135,27 +133,36 @@ $scope->concurrent([
 
 ## Pub/Sub
 
-`RedisPubSub` uses a dedicated connection for subscriptions, separate from the command client:
+`RedisPubSub` uses a dedicated connection for subscriptions, separate from the command client. `subscribe()` returns an `Emitter` that yields `['channel' => string, 'message' => string]` arrays:
 
 ```php
 <?php
 
+use Phalanx\Stream\ScopedStream;
+
 $pubsub = $scope->service(RedisPubSub::class);
 
-// Subscribe to a channel
-$pubsub->subscribe('notifications', static function (string $message) {
-    $event = json_decode($message, true);
-    handleNotification($event);
-});
+// subscribe() returns an Emitter — consume it with a ScopedStream or foreach
+$stream = ScopedStream::from($scope, $pubsub->subscribe('notifications'));
 
-// Publish from anywhere
-$pubsub->publish('notifications', json_encode([
-    'type' => 'order.shipped',
-    'orderId' => $orderId,
-]));
+foreach ($stream as $item) {
+    $event = json_decode($item['message'], true);
+    handleNotification($event);
+}
 ```
 
-Multiple subscriptions run concurrently on the same connection. Publishing works from any scope that has access to `RedisPubSub`.
+Publishing goes through `RedisClient::raw()` since it's a standard command, not a subscription:
+
+```php
+<?php
+
+$redis = $scope->service(RedisClient::class);
+
+$scope->await($redis->raw('publish', 'notifications', json_encode([
+    'type' => 'order.shipped',
+    'orderId' => $orderId,
+])));
+```
 
 ### Scoped Subscriptions
 

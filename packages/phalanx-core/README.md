@@ -43,10 +43,11 @@ Requires PHP 8.4+.
 ```php
 <?php
 
-$app = Application::starting()->providers(new AppBundle())->compile();
-$app->startup();
-
-$scope = $app->createScope();
+$scope = Application::starting()
+    ->providers(new AppBundle())
+    ->compile()
+    ->startup()
+    ->createScope();
 
 $result = $scope->execute(Task::of(static fn(ExecutionScope $s) =>
     $s->service(OrderService::class)->process(42)
@@ -511,7 +512,7 @@ Use the built-in `Authenticate` middleware with any `Guard`:
 ```php
 <?php
 
-use Phalanx\Auth\Authenticate;
+use Phalanx\Http\Auth\Authenticate;
 
 $routes = RouteGroup::of([...])->wrap(new Authenticate(new BearerTokenGuard()));
 ```

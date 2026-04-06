@@ -63,13 +63,16 @@ Environment variables work out of the box — `PgConfig` resolves `PG_HOST`, `PG
 
 $pg = $scope->service(PgPool::class);
 
-// Parameterized SELECT — returns rows as associative arrays
-$users = $pg->query(
+// Parameterized query — returns PostgresResult
+$users = $pg->execute(
     'SELECT * FROM users WHERE active = $1 LIMIT $2',
     [true, 50]
 );
 
-// Non-SELECT statements — returns affected row count
+// Simple query (no parameters)
+$all = $pg->query('SELECT * FROM users');
+
+// Non-SELECT statements
 $pg->execute(
     'UPDATE users SET last_seen = NOW() WHERE id = $1',
     [$userId]
@@ -127,11 +130,15 @@ PostgreSQL's LISTEN/NOTIFY turns your database into a lightweight message broker
 ```php
 <?php
 
+use Phalanx\Stream\ScopedStream;
+
 $listener = $scope->service(PgListener::class);
 
-// Subscribe — returns an async iterable
-foreach ($listener->listen('order_created') as $notification) {
-    $order = json_decode($notification->payload, true);
+// listen() returns an Emitter that yields payload strings
+$stream = ScopedStream::from($scope, $listener->listen('order_created'));
+
+foreach ($stream as $payload) {
+    $order = json_decode($payload, true);
     processOrder($order);
 }
 ```

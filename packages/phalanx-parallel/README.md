@@ -33,13 +33,12 @@ Requires PHP 8.4+ and `ext-pcntl`.
 use Phalanx\Application;
 use Phalanx\Parallel\ParallelConfig;
 
-$app = Application::starting()
+$scope = Application::starting()
     ->withWorkerDispatch(ParallelConfig::default()->workerDispatchFactory())
     ->providers(new AppBundle())
-    ->compile();
-
-$app->startup();
-$scope = $app->createScope();
+    ->compile()
+    ->startup()
+    ->createScope();
 
 // Offload image processing to a worker
 $result = $scope->inWorker(new ProcessImage($path, width: 800, height: 600));
