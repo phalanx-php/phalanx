@@ -41,11 +41,10 @@ use Phalanx\Ssh\SshCredential;
 use Phalanx\Ssh\SshServiceBundle;
 use Phalanx\Ssh\Task\RunCommand;
 
-$scope = Application::starting()
+[$app, $scope] = Application::starting()
     ->providers(new SshServiceBundle())
     ->compile()
-    ->startup()
-    ->createScope();
+    ->boot();
 
 $server = new SshCredential(host: '192.168.1.10', user: 'deploy');
 
@@ -57,6 +56,7 @@ $result = $scope->execute(new RunCommand(
 echo $result->stdout; // 14:32:01 up 42 days, ...
 
 $scope->dispose();
+$app->shutdown();
 ```
 
 ## Connection Credentials
@@ -351,10 +351,10 @@ Returns `true` on success, `false` on any failure. Never throws.
 
 use Phalanx\Ssh\SshServiceBundle;
 
-$app = Application::starting($context)
+[$app, $scope] = Application::starting($context)
     ->providers(new SshServiceBundle())
     ->compile()
-    ->startup();
+    ->boot();
 ```
 
 | Context Key | Default | Description |

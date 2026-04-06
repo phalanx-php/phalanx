@@ -55,11 +55,10 @@ use Phalanx\Ai\AiServiceBundle;
 use Phalanx\Ai\Message\Message;
 use Phalanx\Application;
 
-$scope = Application::starting(['ANTHROPIC_API_KEY' => $context['ANTHROPIC_API_KEY']])
+[$app, $scope] = Application::starting(['ANTHROPIC_API_KEY' => $context['ANTHROPIC_API_KEY']])
     ->providers(new AiServiceBundle())
     ->compile()
-    ->startup()
-    ->createScope();
+    ->boot();
 
 $events = $scope->execute(
     Agent::quick('You are a helpful assistant.')
@@ -68,6 +67,9 @@ $events = $scope->execute(
 
 $result = AgentResult::awaitFrom($events, $scope);
 echo $result->text; // "Paris is the capital of France."
+
+$scope->dispose();
+$app->shutdown();
 ```
 
 That's a single LLM call. The architecture scales to multi-step agents with concurrent tools, streaming responses, and cross-process coordination -- without changing the programming model.

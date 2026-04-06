@@ -46,11 +46,10 @@ use Phalanx\Network\NetworkServiceBundle;
 use Phalanx\Network\Task\ScanSubnet;
 use Phalanx\Network\Subnet;
 
-$scope = Application::starting()
+[$app, $scope] = Application::starting()
     ->providers(new NetworkServiceBundle())
     ->compile()
-    ->startup()
-    ->createScope();
+    ->boot();
 
 $hosts = $scope->execute(new ScanSubnet(
     Subnet::from('192.168.1.0/24'),

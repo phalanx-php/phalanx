@@ -33,14 +33,14 @@ Requires PHP 8.4+, `phalanx/core`, `react/http`.
 
 use Phalanx\Twilio\TwilioServiceBundle;
 
-$scope = Application::starting([
+[$app, $scope] = Application::starting([
     'twilio_account_sid' => $context['TWILIO_ACCOUNT_SID'],
     'twilio_auth_token' => $context['TWILIO_AUTH_TOKEN'],
 ])
     ->providers(new TwilioServiceBundle())
     ->compile()
-    ->startup()
-    ->createScope();
+    ->boot();
+
 $twilio = $scope->service(TwilioRest::class);
 
 $twilio->sendSms(
@@ -48,6 +48,9 @@ $twilio->sendSms(
     from: '+15559876543',
     body: 'Your order has shipped!',
 );
+
+$scope->dispose();
+$app->shutdown();
 ```
 
 ## Configuration

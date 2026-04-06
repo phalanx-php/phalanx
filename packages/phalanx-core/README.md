@@ -43,11 +43,10 @@ Requires PHP 8.4+.
 ```php
 <?php
 
-$scope = Application::starting()
+[$app, $scope] = Application::starting()
     ->providers(new AppBundle())
     ->compile()
-    ->startup()
-    ->createScope();
+    ->boot();
 
 $result = $scope->execute(Task::of(static fn(ExecutionScope $s) =>
     $s->service(OrderService::class)->process(42)

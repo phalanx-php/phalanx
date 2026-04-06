@@ -38,11 +38,10 @@ use Phalanx\Application;
 use Phalanx\Filesystem\Files;
 use Phalanx\Filesystem\FilesystemServiceBundle;
 
-$scope = Application::starting()
+[$app, $scope] = Application::starting()
     ->providers(new FilesystemServiceBundle())
     ->compile()
-    ->startup()
-    ->createScope();
+    ->boot();
 
 $files = $scope->service(Files::class);
 $config = $files->readJson('/etc/myapp/config.json');

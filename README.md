@@ -9,11 +9,10 @@ Phalanx separates what you want from how it runs. You declare operations as plai
 ```php
 <?php
 
-$scope = Application::starting()
+[$app, $scope] = Application::starting()
     ->providers(new AppBundle())
     ->compile()
-    ->startup()
-    ->createScope();
+    ->boot();
 
 // Three services queried concurrently — one line
 [$user, $orders, $prefs] = $scope->concurrent([
@@ -28,8 +27,8 @@ $result = $scope->retry(
     RetryPolicy::exponential(attempts: 3),
 );
 
-// Everything disposes automatically when scope ends
 $scope->dispose();
+$app->shutdown();
 ```
 
 ## Packages
