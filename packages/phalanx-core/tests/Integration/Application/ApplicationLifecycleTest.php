@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Phalanx\Tests\Integration\Application;
 
 use Phalanx\Application;
+use Phalanx\Concurrency\CancellationToken;
+use Phalanx\ExecutionScope;
 use Phalanx\Tests\Support\Fixtures\CountingService;
 use Phalanx\Tests\Support\Fixtures\Logger;
 use Phalanx\Tests\Support\TestServiceBundle;
@@ -256,5 +258,70 @@ final class ApplicationLifecycleTest extends TestCase
         $graph = $app->graph();
 
         $this->assertTrue($graph->has(Logger::class));
+    }
+
+    #[Test]
+    public function boot_returns_app_and_scope(): void
+    {
+        $bundle = TestServiceBundle::create()
+            ->singleton(Logger::class, static fn() => new Logger());
+
+        $app = Application::starting()
+            ->providers($bundle)
+            ->compile();
+
+        [$bootedApp, $scope] = $app->boot();
+
+        $this->assertSame($app, $bootedApp);
+        $this->assertInstanceOf(ExecutionScope::class, $scope);
+
+        $scope->dispose();
+        $bootedApp->shutdown();
+    }
+
+    #[Test]
+    public function boot_passes_cancellation_token(): void
+    {
+        $bundle = TestServiceBundle::create();
+
+        $app = Application::starting()
+            ->providers($bundle)
+            ->compile();
+
+        $token = CancellationToken::timeout(5.0);
+        [$bootedApp, $scope] = $app->boot($token);
+
+        $this->assertSame($token, $scope->cancellation());
+
+        $scope->dispose();
+        $bootedApp->shutdown();
+    }
+
+    #[Test]
+    public function boot_calls_startup_idempotently(): void
+    {
+        $startupCount = 0;
+
+        $bundle = TestServiceBundle::create()
+            ->eager(Logger::class, static fn() => new Logger())
+            ->withLifecycle(Logger::class, 'startup', static function () use (&$startupCount): void {
+                $startupCount++;
+            });
+
+        $app = Application::starting()
+            ->providers($bundle)
+            ->compile();
+
+        [$bootedApp, $scope] = $app->boot();
+
+        $this->assertSame(1, $startupCount);
+
+        // Calling startup() again after boot() is safe (idempotent)
+        $bootedApp->startup();
+
+        $this->assertSame(1, $startupCount);
+
+        $scope->dispose();
+        $bootedApp->shutdown();
     }
 }

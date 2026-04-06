@@ -17,6 +17,9 @@ interface AppHost
 
     public function startup(): static;
 
+    /** @return array{0: static, 1: \Phalanx\ExecutionScope} */
+    public function boot(?CancellationToken $token = null): array;
+
     public function shutdown(): void;
 
     public function trace(): Trace;

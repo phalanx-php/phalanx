@@ -92,6 +92,13 @@ final class Application implements AppHost
         return $this;
     }
 
+    public function boot(?CancellationToken $token = null): array
+    {
+        $this->startup();
+
+        return [$this, $this->createScope($token)];
+    }
+
     public function shutdown(): void
     {
         if (!$this->started) {
