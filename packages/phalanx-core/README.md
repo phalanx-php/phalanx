@@ -354,10 +354,12 @@ $runner->run('0.0.0.0:8080');
 ```php
 <?php
 
-$api = RouteGroup::create()
-    ->merge($publicRoutes)
+use Phalanx\Http\RouteGroup;
+
+$api = $publicRoutes
+    ->merge($adminRoutes)
     ->mount('/admin', $adminRoutes)
-    ->wrap(new AuthMiddleware());
+    ->wrap(AuthMiddleware::class);
 ```
 
 ## Command Groups

@@ -48,7 +48,7 @@ final class CommandLoader
             throw new RuntimeException("Handler directory not found: $dir");
         }
 
-        $group = CommandGroup::create();
+        $group = CommandGroup::of([]);
         $files = glob($dir . '/*.php');
 
         if ($files === false) {

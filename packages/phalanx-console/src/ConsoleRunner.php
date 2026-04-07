@@ -264,7 +264,7 @@ final class ConsoleRunner
     {
         $paths = is_string($paths) ? [$paths] : $paths;
         $scope = $app->createScope();
-        $group = CommandGroup::create();
+        $group = CommandGroup::of([]);
 
         foreach ($paths as $dir) {
             $group = $group->merge(CommandLoader::loadDirectory($dir, $scope));

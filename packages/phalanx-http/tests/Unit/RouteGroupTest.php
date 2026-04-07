@@ -28,16 +28,6 @@ final class RouteGroupTest extends TestCase
     }
 
     #[Test]
-    public function fluent_route_adds_handler(): void
-    {
-        $group = RouteGroup::create()
-            ->route('/users', StatusList::class)
-            ->route('/users/{id}', StatusShow::class);
-
-        $this->assertCount(2, $group->keys());
-    }
-
-    #[Test]
     public function routes_returns_route_handlers(): void
     {
         $group = RouteGroup::of([

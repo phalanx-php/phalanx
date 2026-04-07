@@ -128,25 +128,18 @@ $routes = RouteGroup::of([
 
 ## Route Groups
 
-`RouteGroup` collects routes into a dispatch table backed by FastRoute. Build from an array or use the fluent API:
+`RouteGroup` collects routes into a dispatch table backed by FastRoute. Build from an array using `"METHOD /path" => HandlerClass::class` keys:
 
 ```php
 <?php
 
 use Phalanx\Http\RouteGroup;
 
-// From an array
 $routes = RouteGroup::of([
     'GET /users'      => ListUsers::class,
     'POST /users'     => CreateUser::class,
     'GET /users/{id}' => ShowUser::class,
 ]);
-
-// Fluent builder
-$routes = RouteGroup::create()
-    ->route('/users', ListUsers::class, 'GET')
-    ->route('/users', CreateUser::class, 'POST')
-    ->route('/users/{id}', ShowUser::class, 'GET');
 
 // Merge groups
 $all = $apiRoutes->merge($adminRoutes);
@@ -492,7 +485,7 @@ $v2 = RouteGroup::of([
     'POST /users' => CreateUserV2::class,
 ]);
 
-$api = RouteGroup::create()
+$api = RouteGroup::of([])
     ->mount('/api/v1', $v1)
     ->mount('/api/v2', $v2);
 ```

@@ -220,18 +220,11 @@ $scope->options->all();                    // array<string, mixed>
 
 use Phalanx\Console\CommandGroup;
 
-// From an array
 $commands = CommandGroup::of([
     'deploy'  => DeployApplication::class,
     'migrate' => RunMigrations::class,
     'seed'    => SeedDatabase::class,
 ]);
-
-// Fluent builder
-$commands = CommandGroup::create()
-    ->command('deploy', DeployApplication::class)
-    ->command('migrate', RunMigrations::class)
-    ->command('seed', SeedDatabase::class);
 
 // Merge groups together
 $all = $coreCommands->merge($pluginCommands);

@@ -110,8 +110,9 @@ final class RouteDispatchTest extends TestCase
     #[Test]
     public function matches_multiple_methods(): void
     {
-        $group = RouteGroup::create()
-            ->route('/resource', StatusOk::class, ['GET', 'POST']);
+        $group = RouteGroup::of([
+            'GET,POST /resource' => StatusOk::class,
+        ]);
 
         foreach (['GET', 'POST'] as $method) {
             $request = $this->createRequest($method, '/resource');
@@ -132,7 +133,7 @@ final class RouteDispatchTest extends TestCase
             'GET /users/{id}' => ShowRouteId::class,
         ]);
 
-        $mounted = RouteGroup::create()->mount('/api/v1', $group);
+        $mounted = RouteGroup::of([])->mount('/api/v1', $group);
 
         $this->assertContains('GET /api/v1/users', $mounted->keys());
         $this->assertContains('GET /api/v1/users/{id}', $mounted->keys());

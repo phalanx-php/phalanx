@@ -361,7 +361,7 @@ final class Runner
     {
         $paths = is_string($paths) ? [$paths] : $paths;
         $scope = $app->createScope();
-        $group = RouteGroup::create();
+        $group = RouteGroup::of([]);
 
         foreach ($paths as $dir) {
             $group = $group->merge(RouteLoader::loadDirectory($dir, $scope));

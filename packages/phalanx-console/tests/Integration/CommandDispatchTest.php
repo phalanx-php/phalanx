@@ -90,15 +90,4 @@ final class CommandDispatchTest extends TestCase
         $this->assertSame('Run migrations', $handler->config->description);
     }
 
-    #[Test]
-    public function fluent_command_adds_handler(): void
-    {
-        $group = CommandGroup::create()
-            ->command('migrate', NoopCommand::class, new CommandConfig(description: 'Run migrations'));
-
-        $handler = $group->handlers()->get('migrate');
-
-        $this->assertNotNull($handler);
-        $this->assertInstanceOf(CommandConfig::class, $handler->config);
-    }
 }

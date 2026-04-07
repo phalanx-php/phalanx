@@ -27,9 +27,9 @@ use Phalanx\Task\Scopeable;
  *
  * Patterns are applied at route-COMPILE time. Routes added via `of()` use
  * whatever patterns are active at construction (defaults). To use custom
- * patterns in initial routes, build incrementally:
- *   `RouteGroup::create()->withPatterns([...])->route(...)->route(...)`
- * Patterns added after `of()` only affect routes added afterwards.
+ * patterns, chain `withPatterns([...])` before passing the group to
+ * composition methods like `merge()`, `mount()`, or `wrap()`.
+ * Patterns added via `withPatterns()` only affect routes added afterwards.
  */
 final class RouteGroup implements Executable
 {
@@ -77,11 +77,13 @@ final class RouteGroup implements Executable
         return new self($routes);
     }
 
-    public static function create(): self
-    {
-        return new self([]);
-    }
-
+    /**
+     * Wrap a raw HandlerGroup in a RouteGroup, applying HTTP-specific matcher
+     * and invoker. Used by RouteLoader when a route file returns a HandlerGroup
+     * rather than a RouteGroup directly.
+     *
+     * @internal
+     */
     public static function fromHandlerGroup(HandlerGroup $inner): self
     {
         $instance = new self([]);
@@ -156,25 +158,6 @@ final class RouteGroup implements Executable
     public function __invoke(ExecutionScope $scope): mixed
     {
         return ($this->inner)($scope);
-    }
-
-    /**
-     * Add an HTTP route by class-string handler.
-     *
-     * @param class-string<Scopeable|Executable> $handler
-     * @param string|list<string> $method
-     */
-    public function route(string $path, string $handler, string|array $method = 'GET'): self
-    {
-        $key = self::routeKey($path, $method);
-        $config = RouteConfig::compile($path, $method, patterns: $this->patterns);
-
-        $newInner = $this->inner->add($key, new Handler($handler, $config));
-
-        $clone = self::fromHandlerGroup($newInner);
-        $clone->patterns = $this->patterns;
-
-        return $clone;
     }
 
     /**
@@ -273,17 +256,6 @@ final class RouteGroup implements Executable
         }
 
         return null;
-    }
-
-    /**
-     * @param string|list<string> $method
-     */
-    private static function routeKey(string $path, string|array $method): string
-    {
-        $methods = is_array($method) ? $method : [$method];
-        $methods = array_map(strtoupper(...), $methods);
-
-        return implode(',', $methods) . ' ' . $path;
     }
 
     private static function prefixRouteKey(string $prefix, string $key): string

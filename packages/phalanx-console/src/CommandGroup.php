@@ -62,11 +62,13 @@ final class CommandGroup implements Executable
         return new self($commands, $description);
     }
 
-    public static function create(string $description = ''): self
-    {
-        return new self([], $description);
-    }
-
+    /**
+     * Wrap a raw HandlerGroup in a CommandGroup, applying the command matcher.
+     * Used by CommandLoader when a command file returns a HandlerGroup rather
+     * than a CommandGroup directly.
+     *
+     * @internal
+     */
     public static function fromHandlerGroup(HandlerGroup $inner, string $description = ''): self
     {
         $instance = new self([], $description);
@@ -97,20 +99,6 @@ final class CommandGroup implements Executable
         }
 
         return ($this->inner)($scope);
-    }
-
-    /**
-     * Add a single command by class-string.
-     *
-     * @param class-string<Scopeable|Executable> $handler
-     */
-    public function command(string $name, string $handler, CommandConfig $config = new CommandConfig()): self
-    {
-        $newInner = $this->inner->add($name, new Handler($handler, $config));
-        $instance = self::fromHandlerGroup($newInner, $this->description);
-        $instance->groups = $this->groups;
-
-        return $instance;
     }
 
     public function merge(self $other): self

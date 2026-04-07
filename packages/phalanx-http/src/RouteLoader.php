@@ -48,7 +48,7 @@ final readonly class RouteLoader
             throw new RuntimeException("Handler directory not found: $dir");
         }
 
-        $group = RouteGroup::create();
+        $group = RouteGroup::of([]);
         $files = glob($dir . '/*.php');
 
         if ($files === false) {
