@@ -4,6 +4,8 @@
 
 # phalanx/network
 
+> **Phalanx** is a first-principles rethinking of what PHP can be when modern language features and a decade of async community work are treated as the foundation, not an afterthought. [Read more](https://github.com/havy-tech/phalanx-core#phalanx-core---async-php) in the core library.
+
 Network discovery, probing, and device management as Phalanx tasks. Scan subnets, probe ports, wake machines, and discover services--all through the same scope-driven concurrency model as the rest of Phalanx.
 
 ## Table of Contents

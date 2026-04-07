@@ -4,6 +4,8 @@
 
 # phalanx/ai
 
+> **Phalanx** is a first-principles rethinking of what PHP can be when modern language features and a decade of async community work are treated as the foundation, not an afterthought. [Read more](https://github.com/havy-tech/phalanx-core#phalanx-core---async-php) in the core library.
+
 An agentic runtime for PHP 8.4+ that treats LLM interactions as scoped, typed, stream-native computations. Define tools as invokable classes, wire providers as services, and let the Phalanx runtime handle concurrency, retries, streaming, and cleanup.
 
 Phalanx/ai brings concurrent tool execution, streaming with backpressure, and multi-agent coordination to PHP -- building on the same scope-driven execution model and proven async foundations that power the rest of the framework.
@@ -426,7 +428,11 @@ final readonly class ChatSseHandler implements Executable
 ```php
 <?php
 
-$chatRoute = new Route(fn: new ChatSseHandler());
+use Phalanx\Http\RouteGroup;
+
+$routes = RouteGroup::of([
+    'POST /chat' => ChatSseHandler::class,
+]);
 ```
 
 Client disconnect propagates through the event channel -> the LLM request cancels -> the scope disposes. No orphaned connections.
@@ -480,7 +486,11 @@ final readonly class AgentWsHandler implements Scopeable
 ```php
 <?php
 
-$agentWs = new WsRoute(fn: new AgentWsHandler());
+use Phalanx\WebSocket\WsRouteGroup;
+
+$ws = WsRouteGroup::of([
+    '/ws/agent' => AgentWsHandler::class,
+]);
 ```
 
 ### Token Accumulator

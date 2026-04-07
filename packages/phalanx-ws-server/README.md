@@ -4,6 +4,8 @@
 
 # phalanx/ws-server
 
+> **Phalanx** is a first-principles rethinking of what PHP can be when modern language features and a decade of async community work are treated as the foundation, not an afterthought. [Read more](https://github.com/havy-tech/phalanx-core#phalanx-core---async-php) in the core library.
+
 Production-grade WebSocket server support with RFC 6455 handshake, topic-based pub/sub, and leak-free connection tracking via `WeakMap`. Integrates directly with the Phalanx HTTP runner -- WebSocket and HTTP traffic share a single port.
 
 ## Table of Contents
@@ -36,7 +38,7 @@ use Phalanx\Task\Scopeable;
 use Phalanx\WebSocket\WsMessage;
 use Phalanx\WebSocket\WsScope;
 
-final readonly class EchoHandler implements Scopeable
+final class EchoHandler implements Scopeable
 {
     public function __invoke(Scope $scope): mixed
     {
@@ -55,12 +57,12 @@ final readonly class EchoHandler implements Scopeable
 ```php
 <?php
 
+use Phalanx\Application;
 use Phalanx\Http\Runner;
-use Phalanx\WebSocket\WsRoute;
 use Phalanx\WebSocket\WsRouteGroup;
 
 $ws = WsRouteGroup::of([
-    '/ws/echo' => new WsRoute(fn: new EchoHandler()),
+    '/ws/echo' => EchoHandler::class,
 ]);
 
 $app = Application::starting()->compile();
@@ -126,7 +128,7 @@ if ($msg->isClose) {
 
 ## Routes
 
-`WsRoute` defines a handler for a specific WebSocket path. The handler receives a `WsScope` with the connection, the upgrade request, route parameters, and the full `ExecutionScope`:
+`WsRouteGroup` maps paths to handler class-strings. The `HandlerResolver` constructs the handler at upgrade time with constructor dependencies injected from the service container, then calls `__invoke` with a `WsScope`. The scope carries the connection, the upgrade request, route parameters, and the full `ExecutionScope`:
 
 ```php
 <?php
@@ -135,17 +137,23 @@ use Phalanx\Scope;
 use Phalanx\Task\Scopeable;
 use Phalanx\WebSocket\WsScope;
 
-final readonly class ChatHandler implements Scopeable
+final class ChatHandler implements Scopeable
 {
+    public function __construct(
+        private readonly MessageRepository $messages,
+    ) {}
+
     public function __invoke(Scope $scope): mixed
     {
         assert($scope instanceof WsScope);
         $conn = $scope->connection;
-        $request = $scope->request;
-        $params = $scope->params;
+        $room = $scope->params->get('room');
 
         foreach ($conn->inbound->consume() as $msg) {
-            // Handle messages
+            if ($msg->isText) {
+                $this->messages->save($room, $msg->payload);
+                $conn->send(WsMessage::text("received: {$msg->payload}"));
+            }
         }
 
         return null;
@@ -156,22 +164,24 @@ final readonly class ChatHandler implements Scopeable
 ```php
 <?php
 
-use Phalanx\WebSocket\WsRoute;
+use Phalanx\WebSocket\WsRouteGroup;
 
-$chatRoute = new WsRoute(fn: new ChatHandler());
+$ws = WsRouteGroup::of([
+    '/ws/chat/{room}' => ChatHandler::class,
+]);
 ```
 
-Group routes into a `WsRouteGroup`:
+When a route needs custom WebSocket settings, pair the class-string with a `WsConfig`:
 
 ```php
 <?php
 
+use Phalanx\WebSocket\WsConfig;
 use Phalanx\WebSocket\WsRouteGroup;
 
 $ws = WsRouteGroup::of([
-    '/ws/chat'        => $chatRoute,
-    '/ws/feed'        => $feedRoute,
-    '/ws/admin'       => $adminRoute,
+    '/ws/chat/{room}'    => ChatHandler::class,
+    '/ws/notifications'  => [NotificationStream::class, new WsConfig(pingInterval: 10.0)],
 ]);
 ```
 
@@ -222,14 +232,18 @@ use Phalanx\WebSocket\WsGateway;
 use Phalanx\WebSocket\WsMessage;
 use Phalanx\WebSocket\WsScope;
 
-final readonly class ChatRoomHandler implements Scopeable
+final class ChatRoomHandler implements Scopeable
 {
+    public function __construct(
+        private readonly WsGateway $gateway,
+    ) {}
+
     public function __invoke(Scope $scope): mixed
     {
         assert($scope instanceof WsScope);
         $conn = $scope->connection;
-        $gateway = $scope->service(WsGateway::class);
         $room = $scope->params->get('room');
+        $gateway = $this->gateway;
 
         $gateway->register($conn);
         $gateway->subscribe($conn, "chat.{$room}");
@@ -265,9 +279,11 @@ final readonly class ChatRoomHandler implements Scopeable
 ```php
 <?php
 
-use Phalanx\WebSocket\WsRoute;
+use Phalanx\WebSocket\WsRouteGroup;
 
-$chat = new WsRoute(fn: new ChatRoomHandler());
+$ws = WsRouteGroup::of([
+    '/ws/rooms/{room}' => ChatRoomHandler::class,
+]);
 ```
 
 The `foreach` loop over `$conn->inbound->consume()` blocks the fiber (not the event loop) until the next frame arrives. When the client disconnects, the iterator completes and execution continues with cleanup.
@@ -279,9 +295,11 @@ WebSocket routes support the same `{param}` syntax as HTTP routes:
 ```php
 <?php
 
+use Phalanx\WebSocket\WsRouteGroup;
+
 $ws = WsRouteGroup::of([
-    '/ws/rooms/{room}'          => $roomRoute,
-    '/ws/users/{id:\\d+}/feed'  => $userFeedRoute,
+    '/ws/rooms/{room}'         => RoomHandler::class,
+    '/ws/users/{id:\\d+}/feed' => UserFeedHandler::class,
 ]);
 ```
 
@@ -306,12 +324,12 @@ use Phalanx\Http\Runner;
 use Phalanx\WebSocket\WsRouteGroup;
 
 $http = RouteGroup::of([
-    'GET /api/rooms'     => $listRooms,
-    'POST /api/rooms'    => $createRoom,
+    'GET /api/rooms'  => ListRooms::class,
+    'POST /api/rooms' => CreateRoom::class,
 ]);
 
 $ws = WsRouteGroup::of([
-    '/ws/rooms/{room}' => $roomRoute,
+    '/ws/rooms/{room}' => ChatRoomHandler::class,
 ]);
 
 Runner::from($app)

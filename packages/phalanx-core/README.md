@@ -4,7 +4,17 @@
 
 # Phalanx Core - Async PHP
 
-Phalanx is an async coordination library for PHP 8.4+. It replaces callbacks with typed tasks—named computations that carry their own identity, behavior, and lifecycle through a unified execution model built on ReactPHP.
+**PHP 8.4 changed what's possible. Phalanx is an attempt to make it accessible.**
+
+In my view, PHP's async foundations — built over years by the ReactPHP and AMPHP communities — represent some of the most underutilized work in the language's ecosystem. Fibers, property hooks, lazy objects, and asymmetric visibility have quietly made PHP a different language since 8.0. Phalanx is an attempt to bring all of this to bear through a unified coordination layer, using the most powerful tools available in the modern PHP ecosystem — particularly as AI workloads raise the bar on throughput and reactivity.
+
+The framework coordinates async PHP through a centralized scope hierarchy — a single scheduler that manages concurrency, cancellation, and resource cleanup no matter how deeply nested the execution becomes. Developers write named computations. The scope handles the machinery. Every API decision is weighed against the balance between first-class DX and call-site explicitness — a tradeoff influenced by ideas from SICP, Rust's ownership model, .NET's task system, Clojure's value semantics, and Go's structured concurrency.
+
+The design has been iterated on since late 2024, with intensive refinement through mid-2025 and resumed development earlier this year. Every abstraction has been questioned, discarded, and rebuilt — often more than once. Several proof-of-concept applications continue to evolve from their MVP baseline — a multi-agent AI terminal ([aisentinel-cli](https://github.com/havy-tech/aisentinel-cli)), a subnet scanner, a Twilio control center, a Docker CLI, and a debug dashboard. Some of these will be released as they stabilize, and there are many ideas for what comes next that haven't been started yet.
+
+The project is currently stabilizing through active iteration. Design decisions in one area sometimes require foundational refactoring in others, and some corners of the codebase will fall out of sync with others. This is expected.
+
+Contributions are welcome from those who feel inspired to do so. See the [contributing guide](https://github.com/havy-tech/phalanx-core/blob/main/CONTRIBUTING.md) for how to get involved.
 
 [Substack write up](https://open.substack.com/pub/jhavenz/p/when-php-computations-have-names)
 
@@ -318,14 +328,12 @@ Typed collections of HTTP routes with `RouteGroup`. Route handlers receive `Requ
 <?php
 // routes/api.php
 
-use Phalanx\Http\Route;
 use Phalanx\Http\RouteGroup;
-use Phalanx\Scope;
 
-return static fn(Scope $s): RouteGroup => RouteGroup::of([
-    'GET /users'      => new Route(fn: new ListUsers()),
-    'GET /users/{id}' => new Route(fn: new ShowUser()),
-    'POST /users'     => new Route(fn: new CreateUser()),
+return RouteGroup::of([
+    'GET /users'      => ListUsers::class,
+    'GET /users/{id}' => ShowUser::class,
+    'POST /users'     => CreateUser::class,
 ]);
 ```
 
@@ -360,21 +368,18 @@ Typed collections of CLI commands with `CommandGroup`. Command handlers receive 
 <?php
 // commands/db.php
 
-use Phalanx\Console\Arg;
-use Phalanx\Console\Command;
+use Phalanx\Console\CommandConfig;
 use Phalanx\Console\CommandGroup;
 use Phalanx\Console\Opt;
 
 return CommandGroup::of([
-    'migrate' => new Command(
-        fn: new RunMigrations(),
-        desc: 'Run database migrations',
-    ),
-    'db:seed' => new Command(
-        fn: new SeedDatabase(),
-        desc: 'Seed the database',
-        opts: [Opt::flag('fresh', 'f', 'Truncate tables first')],
-    ),
+    'migrate' => [RunMigrations::class, new CommandConfig(
+        description: 'Run database migrations',
+    )],
+    'db:seed' => [SeedDatabase::class, new CommandConfig(
+        description: 'Seed the database',
+        options: [Opt::flag('fresh', 'f', 'Truncate tables first')],
+    )],
 ]);
 ```
 

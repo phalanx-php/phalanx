@@ -4,6 +4,8 @@
 
 # Phalanx Parallel
 
+> **Phalanx** is a first-principles rethinking of what PHP can be when modern language features and a decade of async community work are treated as the foundation, not an afterthought. [Read more](https://github.com/havy-tech/phalanx-core#phalanx-core---async-php) in the core library.
+
 Offload CPU-heavy work to supervised child processes. Tasks serialize, cross process boundaries via IPC, execute in isolated workers, and return results--all through a single `$scope->inWorker()` call.
 
 ## Table of Contents

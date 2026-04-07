@@ -4,6 +4,8 @@
 
 # phalanx/http
 
+> **Phalanx** is a first-principles rethinking of what PHP can be when modern language features and a decade of async community work are treated as the foundation, not an afterthought. [Read more](https://github.com/havy-tech/phalanx-core#phalanx-core---async-php) in the core library.
+
 Async HTTP server built on ReactPHP with scope-driven request handling. Every route handler receives an `ExecutionScope` with full access to concurrent task execution, service injection, and cancellation -- write concurrent data-fetching code that reads like sequential PHP.
 
 ## Table of Contents
@@ -41,17 +43,25 @@ Requires PHP 8.4+, `phalanx/core`, `react/http`, and `nikic/fast-route`.
 ```php
 <?php
 
-use Phalanx\Http\Route;
+use Phalanx\Application;
 use Phalanx\Http\RouteGroup;
 use Phalanx\Http\Runner;
+use Phalanx\Scope;
+use Phalanx\Task\Scopeable;
 use React\Http\Message\Response;
+
+final class HealthCheck implements Scopeable
+{
+    public function __invoke(Scope $scope): mixed
+    {
+        return Response::plaintext('Hello, Phalanx!');
+    }
+}
 
 $app = Application::starting()->compile();
 
 $routes = RouteGroup::of([
-    'GET /hello' => new Route(
-        fn: static fn($scope) => Response::plaintext('Hello, Phalanx!'),
-    ),
+    'GET /hello' => HealthCheck::class,
 ]);
 
 Runner::from($app)
@@ -68,7 +78,7 @@ For anything beyond a one-liner, use an invokable class implementing `Scopeable`
 
 ## Defining Routes
 
-A `Route` wraps a handler and a `RouteConfig`. The handler receives a `RequestScope` (which extends `ExecutionScope`) at dispatch time. Handlers can be closures for trivial cases, or invokable classes for anything with real logic:
+Routes are class-strings registered in a `RouteGroup`. The `HandlerResolver` constructs the handler at dispatch time with dependencies injected from the service container, then calls `__invoke` with a `RequestScope` (which extends `ExecutionScope`). Constructor injection makes dependencies explicit at the class level and keeps `__invoke` bodies focused on the work:
 
 ```php
 <?php
@@ -76,27 +86,32 @@ A `Route` wraps a handler and a `RouteConfig`. The handler receives a `RequestSc
 use Phalanx\Http\RequestScope;
 use Phalanx\Scope;
 use Phalanx\Task\Scopeable;
+use React\Http\Message\Response;
 
-final readonly class ShowUser implements Scopeable
+final class ShowUser implements Scopeable
 {
+    public function __construct(
+        private readonly UserRepository $users,
+    ) {}
+
     public function __invoke(Scope $scope): mixed
     {
         /** @var RequestScope $scope */
-        $user = $scope->service(UserRepository::class)->find(42);
+        $user = $this->users->find($scope->params->get('id'));
 
         return Response::json($user);
     }
 }
 ```
 
-Wire it into a route:
-
 ```php
 <?php
 
-use Phalanx\Http\Route;
+use Phalanx\Http\RouteGroup;
 
-$route = new Route(fn: new ShowUser());
+$routes = RouteGroup::of([
+    'GET /users/{id}' => ShowUser::class,
+]);
 ```
 
 Route keys use the `METHOD /path` format. Multiple methods can be comma-separated:
@@ -105,9 +120,9 @@ Route keys use the `METHOD /path` format. Multiple methods can be comma-separate
 <?php
 
 $routes = RouteGroup::of([
-    'GET /users'        => $listUsers,
-    'POST /users'       => $createUser,
-    'GET,HEAD /health'  => $healthCheck,
+    'GET /users'       => ListUsers::class,
+    'POST /users'      => CreateUser::class,
+    'GET,HEAD /health' => HealthCheck::class,
 ]);
 ```
 
@@ -122,16 +137,16 @@ use Phalanx\Http\RouteGroup;
 
 // From an array
 $routes = RouteGroup::of([
-    'GET /users'     => $listUsers,
-    'POST /users'    => $createUser,
-    'GET /users/{id}' => $getUser,
+    'GET /users'      => ListUsers::class,
+    'POST /users'     => CreateUser::class,
+    'GET /users/{id}' => ShowUser::class,
 ]);
 
 // Fluent builder
 $routes = RouteGroup::create()
-    ->route('/users', $listUsers, 'GET')
-    ->route('/users', $createUser, 'POST')
-    ->route('/users/{id}', $getUser, 'GET');
+    ->route('/users', ListUsers::class, 'GET')
+    ->route('/users', CreateUser::class, 'POST')
+    ->route('/users/{id}', ShowUser::class, 'GET');
 
 // Merge groups
 $all = $apiRoutes->merge($adminRoutes);
@@ -139,7 +154,25 @@ $all = $apiRoutes->merge($adminRoutes);
 
 ## Route Parameters
 
-Path parameters use `{name}` syntax with optional regex constraints:
+Path parameters use `{name}` syntax. Named pattern aliases constrain parameters to specific formats. The default set includes `int`, `uuid`, `slug`, `year`, `month`, `day`, `date`, and `any`. Add your own with `withPatterns()`:
+
+```php
+<?php
+
+use Phalanx\Http\RouteGroup;
+
+$routes = RouteGroup::of([
+    'GET /users/{id:int}'             => ShowUser::class,
+    'GET /posts/{slug:slug}'          => ShowPost::class,
+    'GET /orgs/{orgId:uuid}/projects' => ListProjects::class,
+])->withPatterns([
+    'int'  => '\d+',
+    'uuid' => '[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}',
+    'slug' => '[a-z0-9-]+',
+]);
+```
+
+The built-in patterns are pre-registered -- the `withPatterns()` call above is only needed when adding custom ones. Access parameters through `$scope->params`:
 
 ```php
 <?php
@@ -149,31 +182,21 @@ use Phalanx\Scope;
 use Phalanx\Task\Scopeable;
 use React\Http\Message\Response;
 
-final readonly class ShowUser implements Scopeable
+final class ShowUser implements Scopeable
 {
+    public function __construct(
+        private readonly UserRepository $users,
+    ) {}
+
     public function __invoke(Scope $scope): mixed
     {
         /** @var RequestScope $scope */
         $id = $scope->params->get('id');
-        $user = $scope->service(UserRepository::class)->find($id);
+        $user = $this->users->find($id);
 
         return Response::json($user);
     }
 }
-```
-
-```php
-<?php
-
-use Phalanx\Http\Route;
-use Phalanx\Http\RouteGroup;
-
-$routes = RouteGroup::of([
-    'GET /users/{id}' => new Route(fn: new ShowUser()),
-    'GET /posts/{slug:[a-z0-9-]+}' => new Route(
-        fn: static fn($scope) => Response::json(['slug' => $scope->params->get('slug')]),
-    ),
-]);
 ```
 
 The `RequestScope` exposes `$request`, `$params`, `$query`, `$body`, and `$config` through typed property hooks. Convenience methods -- `$scope->method()`, `$scope->path()`, `$scope->header()`, `$scope->isJson()`, `$scope->bearerToken()` -- wrap common PSR-7 access patterns.
@@ -196,8 +219,8 @@ Handlers with no extra typed parameter work exactly as before -- the scope is pa
 
 use Phalanx\ExecutionScope;
 use Phalanx\Http\RequestScope;
+use Phalanx\Http\Response\Created;
 use Phalanx\Task\Executable;
-use React\Http\Message\Response;
 
 final readonly class CreateTaskInput
 {
@@ -208,18 +231,22 @@ final readonly class CreateTaskInput
     ) {}
 }
 
-final readonly class CreateTask implements Executable
+final class CreateTask implements Executable
 {
-    public function __invoke(ExecutionScope $scope, CreateTaskInput $input): mixed
+    public function __construct(
+        private readonly TaskRepository $tasks,
+    ) {}
+
+    public function __invoke(ExecutionScope $scope, CreateTaskInput $input): Created
     {
         /** @var RequestScope $scope */
-        $task = $scope->service(TaskRepository::class)->create(
+        $task = $this->tasks->create(
             title: $input->title,
             description: $input->description,
             priority: $input->priority,
         );
 
-        return new \Phalanx\Http\Response\Created($task);
+        return new Created($task);
     }
 }
 ```
@@ -227,11 +254,10 @@ final readonly class CreateTask implements Executable
 ```php
 <?php
 
-use Phalanx\Http\Route;
 use Phalanx\Http\RouteGroup;
 
 $routes = RouteGroup::of([
-    'POST /tasks' => new Route(fn: new CreateTask()),
+    'POST /tasks' => CreateTask::class,
 ]);
 ```
 
@@ -256,18 +282,22 @@ final readonly class ListTasksQuery
     ) {}
 }
 
-final readonly class ListTasks implements Scopeable
+final class ListTasks implements Scopeable
 {
+    public function __construct(
+        private readonly TaskRepository $tasks,
+    ) {}
+
     public function __invoke(Scope $scope, ListTasksQuery $query): mixed
     {
         /** @var RequestScope $scope */
-        $tasks = $scope->service(TaskRepository::class)->paginate(
+        $result = $this->tasks->paginate(
             page: $query->page,
             perPage: $query->perPage,
             status: $query->status,
         );
 
-        return Response::json($tasks);
+        return Response::json($result);
     }
 }
 ```
@@ -284,7 +314,7 @@ use Phalanx\Scope;
 use Phalanx\Task\Scopeable;
 use React\Http\Message\Response;
 
-final readonly class HealthCheck implements Scopeable
+final class HealthCheck implements Scopeable
 {
     public function __invoke(Scope $scope): mixed
     {
@@ -385,17 +415,25 @@ use Phalanx\Task;
 use Phalanx\Task\Executable;
 use React\Http\Message\Response;
 
-final readonly class DashboardHandler implements Executable
+final class DashboardHandler implements Executable
 {
+    public function __construct(
+        private readonly PgPool $db,
+        private readonly RedisClient $redis,
+    ) {}
+
     public function __invoke(ExecutionScope $scope): mixed
     {
         /** @var RequestScope $scope */
+        $db = $this->db;
+        $redis = $this->redis;
+
         [$stats, $alerts, $recent] = $scope->concurrent([
-            Task::of(static fn($s) => $s->service(PgPool::class)->query(
+            Task::of(static fn() => $db->query(
                 'SELECT count(*) as total FROM orders WHERE date = CURRENT_DATE'
             )),
-            Task::of(static fn($s) => $s->service(RedisClient::class)->get('alerts:active')),
-            Task::of(static fn($s) => $s->service(PgPool::class)->query(
+            Task::of(static fn() => $redis->get('alerts:active')),
+            Task::of(static fn() => $db->query(
                 'SELECT * FROM activity ORDER BY created_at DESC LIMIT 10'
             )),
         ]);
@@ -408,24 +446,32 @@ final readonly class DashboardHandler implements Executable
 ```php
 <?php
 
-$dashboard = new Route(fn: new DashboardHandler());
+use Phalanx\Http\RouteGroup;
+
+$routes = RouteGroup::of([
+    'GET /dashboard' => DashboardHandler::class,
+]);
 ```
 
 Three I/O operations, one request, wall-clock time of the slowest. The handler reads like synchronous code -- no promises, no callbacks, no `yield`.
 
 ## Middleware
 
-Wrap an entire route group with middleware. Middleware receives the scope before the matched route handler:
+Wrap an entire route group with middleware. `wrap()` accepts class-strings -- the framework resolves middleware from the container at dispatch time:
 
 ```php
 <?php
 
+use Phalanx\Http\RouteGroup;
+
 $api = RouteGroup::of([
-    'GET /me'       => $getProfile,
-    'PUT /me'       => $updateProfile,
-    'GET /settings' => $getSettings,
-])->wrap($authMiddleware, $corsMiddleware);
+    'GET /me'       => GetProfile::class,
+    'PUT /me'       => UpdateProfile::class,
+    'GET /settings' => GetSettings::class,
+])->wrap(AuthMiddleware::class, CorsMiddleware::class);
 ```
+
+Composition order is group (outermost) -> per-route config -> handler (innermost). Class-string deduplication applies -- innermost wins when the same middleware appears at multiple levels.
 
 ## Mounting Sub-Groups
 
@@ -434,14 +480,16 @@ Nest route groups under a path prefix with `mount()`:
 ```php
 <?php
 
+use Phalanx\Http\RouteGroup;
+
 $v1 = RouteGroup::of([
-    'GET /users'  => $listUsers,
-    'POST /users' => $createUser,
+    'GET /users'  => ListUsers::class,
+    'POST /users' => CreateUser::class,
 ]);
 
 $v2 = RouteGroup::of([
-    'GET /users'  => $listUsersV2,
-    'POST /users' => $createUserV2,
+    'GET /users'  => ListUsersV2::class,
+    'POST /users' => CreateUserV2::class,
 ]);
 
 $api = RouteGroup::create()
@@ -463,19 +511,19 @@ use Phalanx\Http\RouteLoader;
 $routes = RouteLoader::loadDirectory(__DIR__ . '/routes');
 ```
 
-Each file defines its routes with invokable handlers:
+Each file defines its routes with class-string handlers:
 
 ```php
 <?php
 
 // routes/users.php
-use Phalanx\Http\Route;
 use Phalanx\Http\RouteGroup;
 
 return RouteGroup::of([
-    'GET /users'      => new Route(fn: new ListUsers()),
-    'GET /users/{id}' => new Route(fn: new ShowUser()),
-    'POST /users'     => new Route(fn: new CreateUser()),
+    'GET /users'        => ListUsers::class,
+    'GET /users/{id}'   => ShowUser::class,
+    'POST /users'       => CreateUser::class,
+    'DELETE /users/{id}' => DeleteUser::class,
 ]);
 ```
 
@@ -483,6 +531,8 @@ return RouteGroup::of([
 
 ```php
 <?php
+
+use Phalanx\Http\Runner;
 
 Runner::from($app)
     ->withRoutes(__DIR__ . '/routes')
@@ -506,15 +556,20 @@ use Phalanx\Http\Sse\SseResponse;
 use Phalanx\Stream\Emitter;
 use Phalanx\Task\Executable;
 
-final readonly class MetricsStream implements Executable
+final class MetricsStream implements Executable
 {
+    public function __construct(
+        private readonly MetricsCollector $metrics,
+    ) {}
+
     public function __invoke(ExecutionScope $scope): mixed
     {
         /** @var RequestScope $scope */
-        $source = Emitter::produce(static function ($ch, $ctx) use ($scope) {
+        $metrics = $this->metrics;
+
+        $source = Emitter::produce(static function ($ch, $ctx) use ($scope, $metrics) {
             while (!$ctx->isCancelled()) {
-                $data = $scope->service(MetricsCollector::class)->snapshot();
-                $ch->emit(json_encode($data));
+                $ch->emit(json_encode($metrics->snapshot()));
                 $scope->delay(1.0);
             }
         });
@@ -527,7 +582,11 @@ final readonly class MetricsStream implements Executable
 ```php
 <?php
 
-$events = new Route(fn: new MetricsStream());
+use Phalanx\Http\RouteGroup;
+
+$routes = RouteGroup::of([
+    'GET /events/metrics' => MetricsStream::class,
+]);
 ```
 
 ### Broadcast SSE with SseChannel
@@ -558,6 +617,8 @@ The runner supports UDP alongside HTTP on the same event loop:
 ```php
 <?php
 
+use Phalanx\Http\Runner;
+
 Runner::from($app)
     ->withRoutes($routes)
     ->withUdp(
@@ -579,9 +640,7 @@ Protect routes with the built-in `Authenticate` middleware. Implement a `Guard` 
 <?php
 
 use Phalanx\Auth\AuthContext;
-use Phalanx\Auth\Authenticate;
 use Phalanx\Auth\Guard;
-use Phalanx\Auth\Identity;
 use Psr\Http\Message\ServerRequestInterface;
 
 final class JwtGuard implements Guard
@@ -606,15 +665,18 @@ final class JwtGuard implements Guard
 }
 ```
 
-Apply to a route group:
+Register `JwtGuard` as a service and apply `Authenticate` to a route group:
 
 ```php
 <?php
 
+use Phalanx\Http\Auth\Authenticate;
+use Phalanx\Http\RouteGroup;
+
 $api = RouteGroup::of([
-    'GET /me'       => $getProfile,
-    'PUT /me'       => $updateProfile,
-])->wrap(new Authenticate(new JwtGuard($secret)));
+    'GET /me'  => GetProfile::class,
+    'PUT /me'  => UpdateProfile::class,
+])->wrap(Authenticate::class);
 ```
 
 Inside handlers, the auth context is available as an attribute:
@@ -645,7 +707,9 @@ $scope->auth->token();
 
 ## ToResponse Interface
 
-Domain objects can implement `ToResponse` to control their own HTTP serialization:
+Domain objects can implement `ToResponse` to control their own HTTP serialization. The `Runner` calls `toResponse()` automatically when a handler returns a `ToResponse` instance.
+
+The interface requires a `$status` property hook alongside the `toResponse()` method -- both are needed for the runner and OpenAPI generator to work correctly:
 
 ```php
 <?php
@@ -656,9 +720,12 @@ use React\Http\Message\Response;
 
 final readonly class ApiResult implements ToResponse
 {
+    public int $status {
+        get => 200;
+    }
+
     public function __construct(
         private array $data,
-        private int $status = 200,
     ) {}
 
     public function toResponse(): ResponseInterface
@@ -668,7 +735,7 @@ final readonly class ApiResult implements ToResponse
 }
 ```
 
-Return it from any handler -- `Runner::toResponse()` calls `toResponse()` automatically.
+Domain exception classes can also implement `ToResponse`. The runner catches these during dispatch and converts them to HTTP responses automatically -- no try/catch boilerplate in handler code.
 
 ## Response Wrappers
 
@@ -691,25 +758,29 @@ use Phalanx\Http\Response\Created;
 use Phalanx\Http\Response\NoContent;
 use Phalanx\Task\Executable;
 
-final readonly class CreateTask implements Executable
+final class CreateUser implements Executable
 {
-    public function __invoke(ExecutionScope $scope, CreateTaskInput $input): Created
+    public function __construct(
+        private readonly UserRepository $users,
+    ) {}
+
+    public function __invoke(ExecutionScope $scope, CreateUserInput $input): Created
     {
         /** @var RequestScope $scope */
-        $task = $scope->service(TaskRepository::class)->create($input);
-
-        return new Created($task);
+        return new Created($this->users->create($input));
     }
 }
 
-final readonly class DeleteTask implements Executable
+final class DeleteUser implements Executable
 {
+    public function __construct(
+        private readonly UserRepository $users,
+    ) {}
+
     public function __invoke(ExecutionScope $scope): NoContent
     {
         /** @var RequestScope $scope */
-        $scope->service(TaskRepository::class)->delete(
-            $scope->params->get('id'),
-        );
+        $this->users->delete($scope->params->get('id'));
 
         return new NoContent();
     }
@@ -757,6 +828,7 @@ The HTTP runner handles WebSocket upgrades natively. See [phalanx/ws-server](../
 ```php
 <?php
 
+use Phalanx\Http\Runner;
 use Phalanx\WebSocket\WsRouteGroup;
 
 Runner::from($app)

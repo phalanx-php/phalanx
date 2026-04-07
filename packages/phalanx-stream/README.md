@@ -4,6 +4,8 @@
 
 # Phalanx Stream
 
+> **Phalanx** is a first-principles rethinking of what PHP can be when modern language features and a decade of async community work are treated as the foundation, not an afterthought. [Read more](https://github.com/havy-tech/phalanx-core#phalanx-core---async-php) in the core library.
+
 Reactive streams that bridge push-based sources into pull-based fiber iteration. WebSocket frames, SSE events, file tails, timers--they all become composable pipelines you consume with `foreach`.
 
 ## Table of Contents

@@ -86,9 +86,9 @@ $app = Application::starting()
     ->compile();
 
 $commands = CommandGroup::of([
-    'ps'     => new PsCommand(),
-    'images' => new ImagesCommand(),
-    'pull'   => new PullCommand(),
+    'ps'     => PsCommand::class,
+    'images' => ImagesCommand::class,
+    'pull'   => PullCommand::class,
 ]);
 
 $runner = ConsoleRunner::withCommands($app, $commands);
@@ -102,7 +102,6 @@ An HTTP server with WebSocket support:
 <?php
 
 use Phalanx\Application;
-use Phalanx\Http\Route;
 use Phalanx\Http\RouteGroup;
 use Phalanx\Http\Runner;
 use Phalanx\WebSocket\WsGateway;
@@ -115,13 +114,13 @@ $app = Application::starting()
     ->compile();
 
 $routes = RouteGroup::of([
-    'GET /'      => Route::of(fn: new HomePage()),
-    'POST /dump' => Route::of(fn: new DumpReceiver()),
+    'GET /'      => HomePage::class,
+    'POST /dump' => DumpReceiver::class,
 ]);
 
 $ws = WsRouteGroup::of([
-    '/live'    => LiveStream::route(),
-    '/metrics' => MetricsStream::route(),
+    '/live'    => LiveStreamHandler::class,
+    '/metrics' => MetricsStreamHandler::class,
 ], gateway: $gateway);
 
 Runner::from($app)
@@ -135,21 +134,23 @@ Runner::from($app)
 Commands support nesting. Group related operations under a shared name:
 
 ```php
+<?php
+
 $commands = CommandGroup::of([
-    'serve' => new ServeCommand(),
+    'serve' => ServeHttp::class,
     'net' => CommandGroup::of([
-        'scan'     => new ScanSubnetCommand(),
-        'probe'    => new ProbePortCommand(),
-        'wake'     => new WakeHostCommand(),
-        'discover' => new DiscoverDevicesCommand(),
+        'scan'     => ScanSubnet::class,
+        'probe'    => ProbePort::class,
+        'wake'     => WakeHost::class,
+        'discover' => DiscoverDevices::class,
     ], description: 'Network operations'),
     'ssh' => CommandGroup::of([
-        'run'    => new RunRemoteCommand(),
-        'deploy' => new DeployCommand(),
+        'run'    => RunRemoteCommand::class,
+        'deploy' => DeployApplication::class,
     ], description: 'Remote SSH operations'),
 ]);
 
-$runner = ConsoleRunner::withHandlers($app, $commands);
+$runner = ConsoleRunner::withCommands($app, $commands);
 exit($runner->run($argv));
 ```
 
@@ -168,7 +169,7 @@ Groups can nest arbitrarily deep. Typing a group name without a subcommand shows
 composer install          # Install all dependencies
 composer test             # PHPUnit across all packages
 composer analyse          # PHPStan level 8
-composer check            # analyse + rector:dry + test (full CI gate)
+composer check            # analyse + rector:dry + examples:lint + test (full CI gate)
 ```
 
 ## License

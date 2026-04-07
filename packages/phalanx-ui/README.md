@@ -30,8 +30,9 @@ Define a handler with typed parameters. The framework does the rest.
 
 use Phalanx\ExecutionScope;
 use Phalanx\Http\Response\Created;
-use Phalanx\Http\Route;
 use Phalanx\Http\RouteGroup;
+use Phalanx\Task\Executable;
+use Phalanx\Task\Scopeable;
 
 final readonly class CreateTaskInput
 {
@@ -42,24 +43,33 @@ final readonly class CreateTaskInput
     ) {}
 }
 
-final readonly class Task
+final class CreateTask implements Executable
 {
     public function __construct(
-        public int $id,
-        public string $title,
-        public ?string $description,
-        public TaskPriority $priority,
+        private readonly TaskRepository $tasks,
     ) {}
+
+    public function __invoke(ExecutionScope $scope, CreateTaskInput $input): Created
+    {
+        return new Created($this->tasks->create($input));
+    }
+}
+
+final class ListTasks implements Scopeable
+{
+    public function __construct(
+        private readonly TaskRepository $tasks,
+    ) {}
+
+    public function __invoke(\Phalanx\Scope $scope, ListTasksQuery $query): TaskCollection
+    {
+        return $this->tasks->list($query);
+    }
 }
 
 $routes = RouteGroup::of([
-    'POST /tasks' => new Route(fn: static function (ExecutionScope $scope, CreateTaskInput $input): Created {
-        $task = $scope->service(TaskRepository::class)->create($input);
-        return new Created($task);
-    }),
-    'GET /tasks' => new Route(fn: static function (ExecutionScope $scope, ListTasksQuery $query): TaskCollection {
-        return $scope->service(TaskRepository::class)->list($query);
-    }),
+    'POST /tasks' => CreateTask::class,
+    'GET /tasks'  => ListTasks::class,
 ]);
 ```
 
@@ -130,16 +140,27 @@ The server owns reactivity. Instead of the frontend deciding what to refetch aft
 ```php
 <?php
 
+use Phalanx\ExecutionScope;
+use Phalanx\Http\Response\Created;
+use Phalanx\Task\Executable;
 use Phalanx\Ui\Signal;
 
-$handler = static function (ExecutionScope $scope, CreateTaskInput $input): Created {
-    $task = $scope->service(TaskRepository::class)->create($input);
+final class CreateTaskWithSignals implements Executable
+{
+    public function __construct(
+        private readonly TaskRepository $tasks,
+    ) {}
 
-    Signal::invalidate($scope, 'tasks.list');
-    Signal::flash($scope, 'Task created', 'success');
+    public function __invoke(ExecutionScope $scope, CreateTaskInput $input): Created
+    {
+        $task = $this->tasks->create($input);
 
-    return new Created($task);
-};
+        Signal::invalidate($scope, 'tasks.list');
+        Signal::flash($scope, 'Task created', 'success');
+
+        return new Created($task);
+    }
+}
 ```
 
 Signals are collected during the request and delivered in the response envelope:
@@ -168,21 +189,28 @@ AI agents produce typed event streams. The frontend renders them in real time:
 <?php
 
 use Phalanx\Ai\Agent;
+use Phalanx\ExecutionScope;
+use Phalanx\Http\RequestScope;
 use Phalanx\Http\Sse\SseResponse;
-use Phalanx\Stream\Emitter;
+use Phalanx\Task\Executable;
 
-$handler = static function (ExecutionScope $scope): SseResponse {
-    $message = $scope->body->required('message');
+final class AgentChatHandler implements Executable
+{
+    public function __invoke(ExecutionScope $scope): SseResponse
+    {
+        /** @var RequestScope $scope */
+        $message = $scope->body->required('message');
 
-    $events = $scope->execute(
-        Agent::quick('You are a helpful assistant.')->message($message)
-    );
+        $events = $scope->execute(
+            Agent::quick('You are a helpful assistant.')->message($message)
+        );
 
-    return SseResponse::from(
-        $events->filter(static fn($e) => $e->kind->isUserFacing()),
-        $scope,
-    );
-};
+        return SseResponse::from(
+            $events->filter(static fn($e) => $e->kind->isUserFacing()),
+            $scope,
+        );
+    }
+}
 ```
 
 ```tsx

@@ -4,6 +4,8 @@
 
 # phalanx/ws-client
 
+> **Phalanx** is a first-principles rethinking of what PHP can be when modern language features and a decade of async community work are treated as the foundation, not an afterthought. [Read more](https://github.com/havy-tech/phalanx-core#phalanx-core---async-php) in the core library.
+
 Async WebSocket client that connects to remote servers with fiber-based message consumption and automatic backpressure. The outbound counterpart to `phalanx/ws-server` -- both use `Channel` for iteration, so sending and receiving messages reads the same way regardless of which side initiated the connection.
 
 ## Table of Contents

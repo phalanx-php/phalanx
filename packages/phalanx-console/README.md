@@ -4,6 +4,8 @@
 
 # phalanx/console
 
+> **Phalanx** is a first-principles rethinking of what PHP can be when modern language features and a decade of async community work are treated as the foundation, not an afterthought. [Read more](https://github.com/havy-tech/phalanx-core#phalanx-core---async-php) in the core library.
+
 Build CLI applications with the same scope-driven concurrency that powers Phalanx HTTP servers. Define commands as invokable classes, group them, load them from directories, and let the framework handle argument parsing, validation, and help generation.
 
 ## Table of Contents
@@ -33,15 +35,16 @@ Requires PHP 8.4+ and `phalanx/core`.
 ```php
 <?php
 
+use Phalanx\Application;
 use Phalanx\Console\Arg;
-use Phalanx\Console\Command;
+use Phalanx\Console\CommandConfig;
 use Phalanx\Console\CommandGroup;
 use Phalanx\Console\CommandScope;
 use Phalanx\Console\ConsoleRunner;
 use Phalanx\Scope;
 use Phalanx\Task\Scopeable;
 
-final readonly class GreetCommand implements Scopeable
+final class GreetCommand implements Scopeable
 {
     public function __invoke(Scope $scope): mixed
     {
@@ -56,11 +59,10 @@ final readonly class GreetCommand implements Scopeable
 $app = Application::starting()->compile();
 
 $commands = CommandGroup::of([
-    'greet' => new Command(
-        fn: new GreetCommand(),
-        desc: 'Greet someone by name',
-        args: [Arg::optional('name', 'Name to greet', default: 'world')],
-    ),
+    'greet' => [GreetCommand::class, new CommandConfig(
+        description: 'Greet someone by name',
+        arguments: [Arg::optional('name', 'Name to greet', default: 'world')],
+    )],
 ]);
 
 $runner = ConsoleRunner::withCommands($app, $commands);
@@ -74,9 +76,9 @@ Hello, Jonathan!
 
 ## Defining Commands
 
-A command handler is an invokable class implementing `Scopeable` or `Executable`. At dispatch time it receives a `CommandScope`—which extends `ExecutionScope`—giving it access to parsed arguments, options, services, and concurrency primitives.
+A command handler is an invokable class implementing `Scopeable` or `Executable`. At dispatch time the `HandlerResolver` constructs the handler with its constructor dependencies injected from the service container, then passes a `CommandScope` to `__invoke`.
 
-`Scopeable` handlers receive `Scope`:
+`Scopeable` handlers receive `Scope` and use it for service resolution:
 
 ```php
 <?php
@@ -85,22 +87,26 @@ use Phalanx\Console\CommandScope;
 use Phalanx\Scope;
 use Phalanx\Task\Scopeable;
 
-final readonly class MigrateCommand implements Scopeable
+final class RunMigrations implements Scopeable
 {
+    public function __construct(
+        private readonly MigrationRunner $migrations,
+    ) {}
+
     public function __invoke(Scope $scope): mixed
     {
         /** @var CommandScope $scope */
-        $step = $scope->options->get('step', 'all');
+        $fresh = $scope->options->flag('fresh');
         $dry = $scope->options->flag('dry-run');
 
-        $pending = $scope->service(Migrations::class)->pending();
+        $pending = $this->migrations->pending();
 
         foreach ($pending as $migration) {
             if ($dry) {
                 echo "[dry-run] Would apply: {$migration->name}\n";
                 continue;
             }
-            $scope->execute($migration);
+            $this->migrations->run($migration);
             echo "Applied: {$migration->name}\n";
         }
 
@@ -109,7 +115,7 @@ final readonly class MigrateCommand implements Scopeable
 }
 ```
 
-`Executable` handlers receive `ExecutionScope` directly—use this when you don't need the broader `Scope` interface:
+`Executable` handlers receive `ExecutionScope` directly -- use this when the command needs concurrency primitives like `concurrent()` or `map()`:
 
 ```php
 <?php
@@ -118,7 +124,7 @@ use Phalanx\Console\CommandScope;
 use Phalanx\ExecutionScope;
 use Phalanx\Task\Executable;
 
-final readonly class PingCommand implements Executable
+final class PingCommand implements Executable
 {
     public function __invoke(ExecutionScope $scope): mixed
     {
@@ -130,29 +136,31 @@ final readonly class PingCommand implements Executable
 }
 ```
 
-Both work interchangeably—`Command` accepts `Closure|Scopeable|Executable`.
+Constructors take repositories, clients, and services. Pure helpers that don't need sharing stay as direct calls inside `__invoke`.
 
 ## Command Configuration
 
-Pass `desc`, `args`, `opts`, and `validators` directly to the `Command` constructor. Use the `Arg` and `Opt` factories to build argument and option definitions:
+Register commands in a `CommandGroup` using class-strings. When a command needs description, arguments, options, or validators, pair the class-string with a `CommandConfig`:
 
 ```php
 <?php
 
 use Phalanx\Console\Arg;
-use Phalanx\Console\Command;
+use Phalanx\Console\CommandConfig;
+use Phalanx\Console\CommandGroup;
 use Phalanx\Console\Opt;
 
-$migrate = new Command(
-    fn: new MigrateCommand(),
-    desc: 'Run pending database migrations',
-    args: [Arg::required('database', 'Connection name')],
-    opts: [
-        Opt::value('step', 's', 'Number of migrations to run', default: 'all'),
-        Opt::flag('dry-run', 'd', 'Preview without applying'),
-        Opt::flag('force', 'f', 'Skip confirmation prompts'),
-    ],
-);
+$commands = CommandGroup::of([
+    'migrate' => [RunMigrations::class, new CommandConfig(
+        description: 'Run pending database migrations',
+        arguments: [Arg::required('database', 'Connection name')],
+        options: [
+            Opt::value('step', 's', 'Number of migrations to run', default: 'all'),
+            Opt::flag('dry-run', 'd', 'Preview without applying'),
+            Opt::flag('force', 'f', 'Skip confirmation prompts'),
+        ],
+    )],
+]);
 ```
 
 ## Arguments and Options
@@ -205,7 +213,7 @@ $scope->options->all();                    // array<string, mixed>
 
 ## Grouping Commands
 
-`CommandGroup` collects commands into a registry:
+`CommandGroup` collects commands into a registry. Commands without extra config are registered as bare class-strings; commands that need metadata use the `[class-string, CommandConfig]` tuple form:
 
 ```php
 <?php
@@ -214,16 +222,16 @@ use Phalanx\Console\CommandGroup;
 
 // From an array
 $commands = CommandGroup::of([
-    'deploy'  => $deploy,
-    'migrate' => $migrate,
-    'seed'    => $seed,
+    'deploy'  => DeployApplication::class,
+    'migrate' => RunMigrations::class,
+    'seed'    => SeedDatabase::class,
 ]);
 
 // Fluent builder
 $commands = CommandGroup::create()
-    ->command('deploy', new DeployCommand(), 'Deploy the application')
-    ->command('migrate', new MigrateCommand(), 'Run database migrations')
-    ->command('seed', new SeedCommand(), 'Seed the database');
+    ->command('deploy', DeployApplication::class)
+    ->command('migrate', RunMigrations::class)
+    ->command('seed', SeedDatabase::class);
 
 // Merge groups together
 $all = $coreCommands->merge($pluginCommands);
@@ -237,32 +245,31 @@ Groups can contain other groups for hierarchical CLI structures:
 <?php
 
 use Phalanx\Console\Arg;
-use Phalanx\Console\Command;
+use Phalanx\Console\CommandConfig;
 use Phalanx\Console\CommandGroup;
 use Phalanx\Console\Opt;
 
 $commands = CommandGroup::of([
-    'serve' => new Command(
-        fn: new ServeCommand(),
-        desc: 'Start the HTTP server',
-        opts: [Opt::value('port', 'p', 'Port number', default: '8080')],
-    ),
+    'serve' => [ServeHttp::class, new CommandConfig(
+        description: 'Start the HTTP server',
+        options: [Opt::value('port', 'p', 'Port number', default: '8080')],
+    )],
     'db' => CommandGroup::of([
-        'migrate' => new Command(
-            fn: new MigrateCommand(),
-            desc: 'Run database migrations',
-            opts: [Opt::flag('fresh', 'f', 'Drop all tables first')],
-        ),
-        'seed' => new Command(
-            fn: new SeedCommand(),
-            desc: 'Seed the database',
-            args: [Arg::optional('class', 'Seeder class')],
-        ),
-        'reset' => new Command(fn: new ResetCommand(), desc: 'Reset the database'),
+        'migrate' => [RunMigrations::class, new CommandConfig(
+            description: 'Run database migrations',
+            options: [Opt::flag('fresh', 'f', 'Drop all tables first')],
+        )],
+        'seed' => [SeedDatabase::class, new CommandConfig(
+            description: 'Seed the database',
+            arguments: [Arg::optional('class', 'Seeder class')],
+        )],
+        'reset' => [ResetDatabase::class, new CommandConfig(
+            description: 'Reset the database',
+        )],
     ], description: 'Database operations'),
     'make' => CommandGroup::of([
-        'task'    => new Command(fn: new MakeTaskCommand(), desc: 'Create a new task class'),
-        'command' => new Command(fn: new MakeCommandCommand(), desc: 'Create a new command class'),
+        'task'    => [MakeTask::class, new CommandConfig(description: 'Create a new task class')],
+        'command' => [MakeCommand::class, new CommandConfig(description: 'Create a new command class')],
     ], description: 'Code generation'),
 ]);
 ```
@@ -317,20 +324,18 @@ Groups nest arbitrarily deep. Both flat commands and nested groups work in the s
 
 // commands/db.php
 use Phalanx\Console\Arg;
-use Phalanx\Console\Command;
+use Phalanx\Console\CommandConfig;
 use Phalanx\Console\CommandGroup;
 use Phalanx\Console\Opt;
 
 return CommandGroup::of([
-    'migrate' => new Command(
-        fn: new MigrateCommand(),
-        desc: 'Run database migrations',
-        opts: [Opt::flag('fresh', 'f', 'Drop all tables first')],
-    ),
-    'seed' => new Command(
-        fn: new SeedCommand(),
-        desc: 'Seed the database',
-    ),
+    'migrate' => [RunMigrations::class, new CommandConfig(
+        description: 'Run database migrations',
+        options: [Opt::flag('fresh', 'f', 'Drop all tables first')],
+    )],
+    'seed' => [SeedDatabase::class, new CommandConfig(
+        description: 'Seed the database',
+    )],
 ]);
 ```
 
@@ -382,7 +387,7 @@ use Phalanx\Console\CommandInput;
 use Phalanx\Console\CommandValidator;
 use Phalanx\Console\InvalidInputException;
 
-final readonly class RequireFreshOnProduction implements CommandValidator
+final readonly class RequireForceOnProduction implements CommandValidator
 {
     public function validate(CommandInput $input, CommandConfig $config): void
     {
@@ -399,22 +404,24 @@ final readonly class RequireFreshOnProduction implements CommandValidator
 }
 ```
 
-Attach validators via the `validators` parameter:
+Attach validators via `CommandConfig`:
 
 ```php
 <?php
 
 use Phalanx\Console\Arg;
-use Phalanx\Console\Command;
+use Phalanx\Console\CommandConfig;
+use Phalanx\Console\CommandGroup;
 use Phalanx\Console\Opt;
 
-$deploy = new Command(
-    fn: new DeployCommand(),
-    desc: 'Deploy the application',
-    args: [Arg::required('environment', 'Target environment')],
-    opts: [Opt::flag('force', 'f', 'Skip confirmation prompts')],
-    validators: [new RequireFreshOnProduction()],
-);
+$commands = CommandGroup::of([
+    'deploy' => [DeployApplication::class, new CommandConfig(
+        description: 'Deploy the application',
+        arguments: [Arg::required('environment', 'Target environment')],
+        options: [Opt::flag('force', 'f', 'Skip confirmation prompts')],
+        validators: [new RequireForceOnProduction()],
+    )],
+]);
 ```
 
 When an `InvalidInputException` carries a `CommandConfig`, the runner automatically prints contextual help alongside the error message.
@@ -470,8 +477,12 @@ use Phalanx\ExecutionScope;
 use Phalanx\Task;
 use Phalanx\Task\Executable;
 
-final readonly class HealthCheckCommand implements Executable
+final class HealthCheckCommand implements Executable
 {
+    public function __construct(
+        private readonly HealthChecker $checker,
+    ) {}
+
     public function __invoke(ExecutionScope $scope): mixed
     {
         /** @var CommandScope $scope */
@@ -479,8 +490,8 @@ final readonly class HealthCheckCommand implements Executable
 
         $results = $scope->concurrent(
             array_map(
-                static fn(string $name) => Task::of(
-                    static fn($s) => $s->service(HealthChecker::class)->check($name)
+                fn(string $name) => Task::of(
+                    static fn() => $this->checker->check($name)
                 ),
                 $services,
             ),
@@ -499,12 +510,14 @@ final readonly class HealthCheckCommand implements Executable
 ```php
 <?php
 
-use Phalanx\Console\Command;
+use Phalanx\Console\CommandConfig;
+use Phalanx\Console\CommandGroup;
 
-$healthCheck = new Command(
-    fn: new HealthCheckCommand(),
-    desc: 'Check health of all services',
-);
+$commands = CommandGroup::of([
+    'health' => [HealthCheckCommand::class, new CommandConfig(
+        description: 'Check health of all services',
+    )],
+]);
 ```
 
 All concurrency runs on the ReactPHP event loop under the hood. The command handler reads like synchronous code.
