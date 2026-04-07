@@ -10,7 +10,9 @@ use Phalanx\Handler\Handler;
 use Phalanx\Handler\HandlerGroup;
 use Phalanx\Handler\HandlerMatcher;
 use Phalanx\Handler\MatchResult;
-use Phalanx\Task\Task;
+use Phalanx\Tests\Fixtures\Handlers\HandlerA;
+use Phalanx\Tests\Fixtures\Handlers\HandlerB;
+use Phalanx\Tests\Fixtures\Handlers\PrefixingMiddleware;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -32,8 +34,8 @@ final class HandlerDispatchTest extends TestCase
     public function dispatches_by_handler_key(): void
     {
         $group = HandlerGroup::of([
-            'task-a' => Handler::of(Task::of(static fn() => 'a')),
-            'task-b' => Handler::of(Task::of(static fn() => 'b')),
+            'task-a' => Handler::of(HandlerA::class),
+            'task-b' => Handler::of(HandlerB::class),
         ]);
 
         $scope = $this->app->createScope();
@@ -48,7 +50,7 @@ final class HandlerDispatchTest extends TestCase
     public function throws_when_handler_key_not_found(): void
     {
         $group = HandlerGroup::of([
-            'task-a' => Handler::of(Task::of(static fn() => 'a')),
+            'task-a' => Handler::of(HandlerA::class),
         ]);
 
         $scope = $this->app->createScope();
@@ -81,8 +83,8 @@ final class HandlerDispatchTest extends TestCase
         };
 
         $group = HandlerGroup::of([
-            'task-a' => Handler::of(Task::of(static fn() => 'a')),
-            'task-b' => Handler::of(Task::of(static fn() => 'b')),
+            'task-a' => Handler::of(HandlerA::class),
+            'task-b' => Handler::of(HandlerB::class),
         ])->withMatcher($matcher);
 
         $scope = $this->app->createScope();
@@ -97,7 +99,7 @@ final class HandlerDispatchTest extends TestCase
     public function throws_when_no_matcher_handles_scope(): void
     {
         $group = HandlerGroup::of([
-            'task-a' => Handler::of(Task::of(static fn() => 'a')),
+            'task-a' => Handler::of(HandlerA::class),
         ]);
 
         $scope = $this->app->createScope();
@@ -111,29 +113,15 @@ final class HandlerDispatchTest extends TestCase
     #[Test]
     public function applies_group_middleware_with_key_dispatch(): void
     {
-        $calls = [];
-
-        $middleware = Task::of(static function (ExecutionScope $es) use (&$calls): mixed {
-            $calls[] = 'middleware:before';
-            $next = $es->attribute('handler.next');
-            $result = $es->execute($next);
-            $calls[] = 'middleware:after';
-            return $result;
-        });
-
         $group = HandlerGroup::of([
-            'task-a' => Handler::of(Task::of(static function () use (&$calls): string {
-                $calls[] = 'handler';
-                return 'done';
-            })),
-        ])->wrap($middleware);
+            'task-a' => Handler::of(HandlerA::class),
+        ])->wrap(PrefixingMiddleware::class);
 
         $scope = $this->app->createScope();
         $scope = $scope->withAttribute('handler.key', 'task-a');
 
         $result = $scope->execute($group);
 
-        $this->assertSame('done', $result);
-        $this->assertSame(['middleware:before', 'handler', 'middleware:after'], $calls);
+        $this->assertSame('before:a:after', $result);
     }
 }

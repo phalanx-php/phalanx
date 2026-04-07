@@ -6,17 +6,18 @@ namespace Phalanx\Tests\Unit\Handler;
 
 use Phalanx\Handler\Handler;
 use Phalanx\Handler\HandlerGroup;
-use Phalanx\Task\Task;
+use Phalanx\Tests\Fixtures\Handlers\HandlerA;
+use Phalanx\Tests\Fixtures\Handlers\HandlerB;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class HandlerGroupTest extends TestCase
 {
     #[Test]
-    public function creates_from_dispatchable_directly(): void
+    public function creates_from_class_string_directly(): void
     {
         $group = HandlerGroup::of([
-            'task' => Task::of(static fn() => 'result'),
+            'task' => HandlerA::class,
         ]);
 
         $this->assertNotNull($group->get('task'));
@@ -26,11 +27,11 @@ final class HandlerGroupTest extends TestCase
     public function merge_combines_groups(): void
     {
         $group1 = HandlerGroup::of([
-            'a' => Handler::of(Task::of(static fn() => 'a')),
+            'a' => Handler::of(HandlerA::class),
         ]);
 
         $group2 = HandlerGroup::of([
-            'b' => Handler::of(Task::of(static fn() => 'b')),
+            'b' => Handler::of(HandlerB::class),
         ]);
 
         $merged = $group1->merge($group2);
@@ -43,24 +44,22 @@ final class HandlerGroupTest extends TestCase
     #[Test]
     public function merge_later_overrides_earlier(): void
     {
-        $task1 = Task::of(static fn() => 'first');
-        $task2 = Task::of(static fn() => 'second');
-
-        $group1 = HandlerGroup::of(['key' => Handler::of($task1)]);
-        $group2 = HandlerGroup::of(['key' => Handler::of($task2)]);
+        $group1 = HandlerGroup::of(['key' => Handler::of(HandlerA::class)]);
+        $group2 = HandlerGroup::of(['key' => Handler::of(HandlerB::class)]);
 
         $merged = $group1->merge($group2);
         $handler = $merged->get('key');
 
-        $this->assertSame($task2, $handler->task);
+        $this->assertNotNull($handler);
+        $this->assertSame(HandlerB::class, $handler->task);
     }
 
     #[Test]
     public function add_appends_handler(): void
     {
         $group = HandlerGroup::create()
-            ->add('a', Handler::of(Task::of(static fn() => 'a')))
-            ->add('b', Handler::of(Task::of(static fn() => 'b')));
+            ->add('a', Handler::of(HandlerA::class))
+            ->add('b', Handler::of(HandlerB::class));
 
         $this->assertCount(2, $group->keys());
     }
@@ -69,8 +68,8 @@ final class HandlerGroupTest extends TestCase
     public function filter_by_config_returns_matching_handlers(): void
     {
         $group = HandlerGroup::of([
-            'a' => Handler::of(Task::of(static fn() => 'a')),
-            'b' => Handler::of(Task::of(static fn() => 'b')),
+            'a' => Handler::of(HandlerA::class),
+            'b' => Handler::of(HandlerB::class),
         ]);
 
         $filtered = $group->filterByConfig(\Phalanx\Handler\HandlerConfig::class);
@@ -82,8 +81,8 @@ final class HandlerGroupTest extends TestCase
     public function all_returns_all_handlers(): void
     {
         $group = HandlerGroup::of([
-            'a' => Handler::of(Task::of(static fn() => 'a')),
-            'b' => Handler::of(Task::of(static fn() => 'b')),
+            'a' => Handler::of(HandlerA::class),
+            'b' => Handler::of(HandlerB::class),
         ]);
 
         $this->assertCount(2, $group->all());

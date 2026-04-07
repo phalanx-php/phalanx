@@ -28,6 +28,9 @@ parameters:
     tmpDir: .phpstan-cache
     treatPhpDocTypesAsCertain: false
     ignoreErrors:
+        # Scopeable and Executable are marker interfaces. Implementations
+        # always declare __invoke; the dispatcher invokes them via call syntax.
+        - identifier: callable.nonCallable
         - identifier: wyrihaximus.reactphp.blocking.function.fileExists
         - identifier: wyrihaximus.reactphp.blocking.function.isDir
         - identifier: wyrihaximus.reactphp.blocking.function.isFile

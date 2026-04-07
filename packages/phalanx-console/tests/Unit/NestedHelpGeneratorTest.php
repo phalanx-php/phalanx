@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Phalanx\Console\Tests\Unit;
 
-use Phalanx\Console\Command;
+use Phalanx\Console\CommandConfig;
 use Phalanx\Console\CommandGroup;
 use Phalanx\Console\HelpGenerator;
-use Phalanx\Scope;
+use Phalanx\Console\Tests\Fixtures\Commands\NoopCommand;
 use PHPUnit\Framework\TestCase;
 
 final class NestedHelpGeneratorTest extends TestCase
@@ -15,8 +15,8 @@ final class NestedHelpGeneratorTest extends TestCase
     public function test_group_help_lists_commands(): void
     {
         $group = CommandGroup::of([
-            'scan' => new Command(static fn(Scope $s) => 0, desc: 'Scan a subnet'),
-            'probe' => new Command(static fn(Scope $s) => 0, desc: 'Probe a host'),
+            'scan' => [NoopCommand::class, new CommandConfig(description: 'Scan a subnet')],
+            'probe' => [NoopCommand::class, new CommandConfig(description: 'Probe a host')],
         ], description: 'Network operations');
 
         $help = HelpGenerator::forGroup('net', $group);
@@ -32,9 +32,9 @@ final class NestedHelpGeneratorTest extends TestCase
     public function test_top_level_help_separates_groups_and_commands(): void
     {
         $root = CommandGroup::of([
-            'serve' => new Command(static fn(Scope $s) => 0, desc: 'Start server'),
+            'serve' => [NoopCommand::class, new CommandConfig(description: 'Start server')],
             'net' => CommandGroup::of([
-                'scan' => new Command(static fn(Scope $s) => 0),
+                'scan' => NoopCommand::class,
             ], description: 'Network operations'),
         ], description: 'myapp');
 
@@ -50,9 +50,9 @@ final class NestedHelpGeneratorTest extends TestCase
     public function test_group_help_with_nested_subgroups(): void
     {
         $group = CommandGroup::of([
-            'scan' => new Command(static fn(Scope $s) => 0, desc: 'Scan'),
+            'scan' => [NoopCommand::class, new CommandConfig(description: 'Scan')],
             'deep' => CommandGroup::of([
-                'inner' => new Command(static fn(Scope $s) => 0),
+                'inner' => NoopCommand::class,
             ], description: 'Deeper group'),
         ], description: 'Outer');
 

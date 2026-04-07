@@ -6,7 +6,6 @@ namespace Phalanx\Http\OpenApi;
 
 use Phalanx\Http\Contract\InputHydrator;
 use Phalanx\Http\Contract\InputSource;
-use Phalanx\Http\Route;
 use Phalanx\Http\RouteConfig;
 use Phalanx\Http\RouteGroup;
 use Phalanx\SelfDescribed;
@@ -26,21 +25,20 @@ class OpenApiGenerator
     public function generate(RouteGroup $routes): array
     {
         $paths = [];
-        $schemas = [];
 
-        foreach ($routes->handlers()->all() as $key => $handler) {
+        foreach ($routes->handlers()->all() as $handler) {
             $config = $handler->config;
 
             if (!$config instanceof RouteConfig) {
                 continue;
             }
 
-            $task = $handler->task;
+            $handlerClass = $handler->task;
             $method = strtolower($config->methods[0] ?? 'get');
             $openApiPath = self::toOpenApiPath($config->path);
 
             $paths[$openApiPath] ??= [];
-            $paths[$openApiPath][$method] = $this->buildOperation($task, $config);
+            $paths[$openApiPath][$method] = $this->buildOperation($handlerClass, $config);
         }
 
         $info = ['title' => $this->title, 'version' => $this->version];
@@ -48,36 +46,38 @@ class OpenApiGenerator
             $info['description'] = $this->description;
         }
 
-        $spec = [
+        return [
             'openapi' => '3.1.0',
             'info' => $info,
-            'paths' => $paths ?: new \stdClass(),
+            'paths' => $paths !== [] ? $paths : new \stdClass(),
         ];
-
-        return $spec;
     }
 
-    /** @return array<string, mixed> */
-    protected function buildOperation(mixed $task, RouteConfig $config): array
+    /**
+     * @param class-string $handlerClass
+     * @return array<string, mixed>
+     */
+    protected function buildOperation(string $handlerClass, RouteConfig $config): array
     {
         $operation = [];
 
-        $originalHandler = $task instanceof Route ? $task->fn : $task;
-        $callable = $task instanceof Route ? $task->callable : $task;
+        $ref = new ReflectionClass($handlerClass);
+        $defaultProps = $ref->getDefaultProperties();
 
-        if ($originalHandler instanceof SelfDescribed) {
-            $operation['summary'] = $originalHandler->description;
+        $description = self::readPropertyHook($ref, 'description');
+        if ($description !== null) {
+            $operation['summary'] = $description;
+        } elseif (is_subclass_of($handlerClass, SelfDescribed::class)) {
+            // SelfDescribed declared but no static default -- skip eager read.
         }
 
-        if ($originalHandler instanceof Tagged) {
-            $tags = $originalHandler->tags;
-            if ($tags !== []) {
-                $operation['tags'] = $tags;
-            }
+        $tags = self::readPropertyHook($ref, 'tags');
+        if (is_array($tags) && $tags !== []) {
+            $operation['tags'] = $tags;
         }
 
         $pathParams = self::extractPathParams($config);
-        $inputMeta = InputHydrator::meta($callable);
+        $inputMeta = InputHydrator::meta($handlerClass);
         $source = InputSource::fromMethod($config->methods[0] ?? 'GET');
 
         $parameters = $pathParams;
@@ -95,7 +95,7 @@ class OpenApiGenerator
             $operation['requestBody'] = self::buildRequestBody($inputMeta->inputClass);
         }
 
-        $operation['responses'] = $this->buildResponses($callable, $config, $inputMeta !== null);
+        $operation['responses'] = $this->buildResponses($handlerClass, $config, $inputMeta !== null);
 
         return $operation;
     }
@@ -168,15 +168,18 @@ class OpenApiGenerator
         ];
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * @param class-string $handlerClass
+     * @return array<string, mixed>
+     */
     protected function buildResponses(
-        mixed $task,
+        string $handlerClass,
         RouteConfig $config,
         bool $hasInput,
     ): array {
         $responses = [];
 
-        $ref = self::reflectReturnType($task);
+        $ref = self::reflectInvokeReturnType($handlerClass);
 
         if ($ref instanceof ReflectionNamedType) {
             [$status, $schema] = SchemaReflector::unwrapResponseWrapper($ref);
@@ -218,16 +221,48 @@ class OpenApiGenerator
         return $responses;
     }
 
-    private static function reflectReturnType(mixed $task): ?\ReflectionType
+    /**
+     * @param class-string $handlerClass
+     */
+    private static function reflectInvokeReturnType(string $handlerClass): ?\ReflectionType
     {
-        if ($task instanceof \Closure) {
-            return (new \ReflectionFunction($task))->getReturnType();
+        $ref = new ReflectionClass($handlerClass);
+
+        if (!$ref->hasMethod('__invoke')) {
+            return null;
         }
 
-        if (is_object($task)) {
-            $ref = new ReflectionClass($task);
-            if ($ref->hasMethod('__invoke')) {
-                return $ref->getMethod('__invoke')->getReturnType();
+        return $ref->getMethod('__invoke')->getReturnType();
+    }
+
+    /**
+     * Read a static-default property hook value from a handler class without
+     * constructing an instance. Falls back to scanning property hook bodies
+     * via reflection where the value is a literal.
+     *
+     * @param ReflectionClass<object> $ref
+     */
+    private static function readPropertyHook(ReflectionClass $ref, string $name): mixed
+    {
+        if (!$ref->hasProperty($name)) {
+            return null;
+        }
+
+        // Try default value first (works for backed properties).
+        $defaults = $ref->getDefaultProperties();
+        if (array_key_exists($name, $defaults) && $defaults[$name] !== null) {
+            return $defaults[$name];
+        }
+
+        // For property hooks with no constructor deps, instantiate to read.
+        $constructor = $ref->getConstructor();
+        if ($constructor === null || $constructor->getNumberOfRequiredParameters() === 0) {
+            try {
+                $instance = $ref->newInstance();
+                $prop = $ref->getProperty($name);
+                return $prop->getValue($instance);
+            } catch (\Throwable) {
+                return null;
             }
         }
 

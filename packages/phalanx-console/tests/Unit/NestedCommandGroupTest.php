@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Console\Tests\Unit;
 
-use Phalanx\Console\Command;
+use Phalanx\Console\CommandConfig;
 use Phalanx\Console\CommandGroup;
-use Phalanx\Scope;
+use Phalanx\Console\Tests\Fixtures\Commands\NoopCommand;
 use PHPUnit\Framework\TestCase;
 
 final class NestedCommandGroupTest extends TestCase
@@ -14,9 +14,9 @@ final class NestedCommandGroupTest extends TestCase
     public function test_keys_includes_groups_and_commands(): void
     {
         $group = CommandGroup::of([
-            'serve' => new Command(static fn(Scope $s) => 0, desc: 'Start server'),
+            'serve' => [NoopCommand::class, new CommandConfig(description: 'Start server')],
             'net' => CommandGroup::of([
-                'scan' => new Command(static fn(Scope $s) => 0, desc: 'Scan network'),
+                'scan' => [NoopCommand::class, new CommandConfig(description: 'Scan network')],
             ], description: 'Network operations'),
         ]);
 
@@ -29,9 +29,9 @@ final class NestedCommandGroupTest extends TestCase
     public function test_is_group_distinguishes_groups_from_commands(): void
     {
         $group = CommandGroup::of([
-            'serve' => new Command(static fn(Scope $s) => 0),
+            'serve' => NoopCommand::class,
             'net' => CommandGroup::of([
-                'scan' => new Command(static fn(Scope $s) => 0),
+                'scan' => NoopCommand::class,
             ]),
         ]);
 
@@ -43,7 +43,7 @@ final class NestedCommandGroupTest extends TestCase
     public function test_group_returns_nested_group(): void
     {
         $inner = CommandGroup::of([
-            'scan' => new Command(static fn(Scope $s) => 0, desc: 'Scan'),
+            'scan' => [NoopCommand::class, new CommandConfig(description: 'Scan')],
         ], description: 'Network ops');
 
         $root = CommandGroup::of([
@@ -60,7 +60,7 @@ final class NestedCommandGroupTest extends TestCase
     public function test_group_returns_null_for_nonexistent(): void
     {
         $group = CommandGroup::of([
-            'serve' => new Command(static fn(Scope $s) => 0),
+            'serve' => NoopCommand::class,
         ]);
 
         $this->assertNull($group->group('nonexistent'));
@@ -77,13 +77,13 @@ final class NestedCommandGroupTest extends TestCase
     {
         $a = CommandGroup::of([
             'net' => CommandGroup::of([
-                'scan' => new Command(static fn(Scope $s) => 0),
+                'scan' => NoopCommand::class,
             ]),
         ]);
 
         $b = CommandGroup::of([
             'ssh' => CommandGroup::of([
-                'run' => new Command(static fn(Scope $s) => 0),
+                'run' => NoopCommand::class,
             ]),
         ]);
 
@@ -96,9 +96,9 @@ final class NestedCommandGroupTest extends TestCase
     public function test_commands_excludes_groups(): void
     {
         $group = CommandGroup::of([
-            'serve' => new Command(static fn(Scope $s) => 0, desc: 'Start server'),
+            'serve' => [NoopCommand::class, new CommandConfig(description: 'Start server')],
             'net' => CommandGroup::of([
-                'scan' => new Command(static fn(Scope $s) => 0),
+                'scan' => NoopCommand::class,
             ]),
         ]);
 

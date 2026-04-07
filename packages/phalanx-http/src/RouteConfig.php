@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Phalanx\Http;
 
 use Phalanx\Handler\HandlerConfig;
-use Phalanx\Task\Executable;
-use Phalanx\Task\Scopeable;
 
 /**
  * HTTP route configuration with path matching and middleware.
@@ -15,12 +13,12 @@ use Phalanx\Task\Scopeable;
  * RouteConfig remains the source of truth for route definition;
  * FastRouteCompiler reads from it to build the dispatch table.
  */
-final class RouteConfig extends HandlerConfig
+class RouteConfig extends HandlerConfig
 {
     /**
      * @param list<string> $methods
      * @param list<string> $paramNames
-     * @param list<Scopeable|Executable> $middleware
+     * @param list<class-string> $middleware
      * @param list<string> $tags
      */
     public function __construct(
@@ -40,14 +38,17 @@ final class RouteConfig extends HandlerConfig
      * Compile a path pattern into regex and extract param names.
      *
      * /users/{id}        -> /users/(?P<id>[^/]+)
-     * /users/{id:\d+}    -> /users/(?P<id>\d+)
+     * /users/{id:int}    -> /users/(?P<id>\d+)        (named alias)
+     * /users/{id:\d+}    -> /users/(?P<id>\d+)        (literal regex)
      *
      * @param string|list<string> $method
+     * @param array<string, string> $patterns Named pattern aliases
      */
     public static function compile(
         string $path,
         string|array $method = 'GET',
         string $protocol = 'http',
+        array $patterns = [],
     ): self {
         $methods = is_array($method) ? $method : [$method];
         $methods = array_values(array_map(strtoupper(...), $methods));
@@ -55,9 +56,10 @@ final class RouteConfig extends HandlerConfig
         $paramNames = [];
         $pattern = preg_replace_callback(
             '#\{([a-zA-Z_][a-zA-Z0-9_]*)(?::([^}]+))?\}#',
-            static function (array $m) use (&$paramNames): string {
+            static function (array $m) use (&$paramNames, $patterns): string {
                 $paramNames[] = $m[1];
                 $constraint = $m[2] ?? '[^/]+';
+                $constraint = $patterns[$constraint] ?? $constraint;
                 return "(?P<{$m[1]}>{$constraint})";
             },
             $path,
@@ -75,8 +77,6 @@ final class RouteConfig extends HandlerConfig
     }
 
     /**
-     * Check if this route matches the given method and path.
-     *
      * @return array<string, string>|null Params if matched, null otherwise
      */
     public function matches(string $method, string $path): ?array
@@ -127,30 +127,6 @@ final class RouteConfig extends HandlerConfig
         $clone->path = $path;
         $clone->pattern = $compiled->pattern;
         $clone->paramNames = $compiled->paramNames;
-        return $clone;
-    }
-
-    #[\Override]
-    public function withMiddleware(Scopeable|Executable ...$middleware): static
-    {
-        $clone = clone $this;
-        $clone->middleware = array_values([...$this->middleware, ...$middleware]);
-        return $clone;
-    }
-
-    #[\Override]
-    public function withTags(string ...$tags): static
-    {
-        $clone = clone $this;
-        $clone->tags = array_values([...$this->tags, ...$tags]);
-        return $clone;
-    }
-
-    #[\Override]
-    public function withPriority(int $priority): static
-    {
-        $clone = clone $this;
-        $clone->priority = $priority;
         return $clone;
     }
 }

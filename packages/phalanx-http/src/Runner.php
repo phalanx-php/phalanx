@@ -196,22 +196,11 @@ final class Runner
             }
 
             return self::toResponse($response);
-        } catch (RouteNotFoundException $e) {
-            return Response::json([
-                'error' => 'Not Found',
-                'message' => $e->getMessage(),
-            ])->withStatus(404);
-        } catch (MethodNotAllowedException $e) {
-            return Response::json([
-                'error' => 'Method Not Allowed',
-                'message' => $e->getMessage(),
-            ])->withStatus(405)->withHeader('Allow', implode(', ', $e->allowedMethods));
-        } catch (ValidationException $e) {
-            return Response::json([
-                'error' => 'Validation Failed',
-                'errors' => $e->errors,
-            ])->withStatus(422);
         } catch (\Throwable $e) {
+            if ($e instanceof ToResponse) {
+                return $e->toResponse();
+            }
+
             $trace->log(TraceType::Failed, 'request', ['error' => $e->getMessage()]);
 
             $body = ['error' => 'Internal Server Error'];

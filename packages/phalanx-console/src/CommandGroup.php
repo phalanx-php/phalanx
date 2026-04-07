@@ -6,11 +6,22 @@ namespace Phalanx\Console;
 
 use Phalanx\ExecutionScope;
 use Phalanx\Handler\Handler;
-use Phalanx\Handler\HandlerConfig;
 use Phalanx\Handler\HandlerGroup;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 
+/**
+ * Typed collection of CLI commands.
+ *
+ * Each command entry is either:
+ *  - a class-string of a Scopeable/Executable command class
+ *  - a tuple [class-string, CommandConfig] when the command needs description,
+ *    arguments, options, or validators
+ *  - another CommandGroup, for nested subcommand groups
+ *
+ * Command instances are constructed at dispatch time via HandlerResolver,
+ * with constructor-injected dependencies from the service container.
+ */
 final class CommandGroup implements Executable
 {
     private(set) HandlerGroup $inner;
@@ -18,7 +29,9 @@ final class CommandGroup implements Executable
     /** @var array<string, self> */
     private array $groups = [];
 
-    /** @param array<string, Command|Scopeable|Executable|self> $commands */
+    /**
+     * @param array<string, class-string<Scopeable|Executable>|array{class-string<Scopeable|Executable>, CommandConfig}|self> $commands
+     */
     private function __construct(array $commands, private string $description = '')
     {
         $handlers = [];
@@ -29,15 +42,21 @@ final class CommandGroup implements Executable
                 continue;
             }
 
-            $config = $command->config ?? new CommandConfig();
-            assert($config instanceof HandlerConfig);
-            $handlers[$name] = new Handler($command, $config);
+            if (is_array($command)) {
+                [$class, $config] = $command;
+                $handlers[$name] = new Handler($class, $config);
+                continue;
+            }
+
+            $handlers[$name] = new Handler($command, new CommandConfig());
         }
 
         $this->inner = HandlerGroup::of($handlers)->withMatcher(new CommandMatcher());
     }
 
-    /** @param array<string, Command|Scopeable|Executable|self> $commands */
+    /**
+     * @param array<string, class-string<Scopeable|Executable>|array{class-string<Scopeable|Executable>, CommandConfig}|self> $commands
+     */
     public static function of(array $commands, string $description = ''): self
     {
         return new self($commands, $description);
@@ -80,9 +99,14 @@ final class CommandGroup implements Executable
         return ($this->inner)($scope);
     }
 
-    public function command(string $name, Scopeable|Executable $handler, string $description = ''): self
+    /**
+     * Add a single command by class-string.
+     *
+     * @param class-string<Scopeable|Executable> $handler
+     */
+    public function command(string $name, string $handler, CommandConfig $config = new CommandConfig()): self
     {
-        $newInner = $this->inner->add($name, new Handler($handler, new CommandConfig(description: $description)));
+        $newInner = $this->inner->add($name, new Handler($handler, $config));
         $instance = self::fromHandlerGroup($newInner, $this->description);
         $instance->groups = $this->groups;
 

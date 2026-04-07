@@ -4,17 +4,22 @@ declare(strict_types=1);
 
 namespace Phalanx\Task;
 
-use Phalanx\ExecutionScope;
-
 /**
- * Task requiring full execution capabilities.
+ * Marker interface for tasks that need full ExecutionScope capabilities --
+ * concurrency primitives, cancellation, disposal, etc.
  *
- * Implement this interface for tasks that need concurrency primitives,
- * cancellation checking, or other ExecutionScope capabilities.
+ * Implementations expose `__invoke()` whose first parameter is
+ * `Phalanx\ExecutionScope` (or a narrower subtype). Additional parameters
+ * may be declared after the scope -- the framework hydrates them through
+ * input pipelines like `Phalanx\Http\Contract\InputHydrator`. Because the
+ * parameter shape is variable, this interface declares no method signature;
+ * the dispatcher relies on the framework's resolution machinery to invoke
+ * implementations correctly.
  *
- * @see Scopeable For tasks requiring only service resolution
+ * @method mixed __invoke(\Phalanx\ExecutionScope $scope, mixed ...$args)
+ *
+ * @see Scopeable For tasks needing only service resolution
  */
 interface Executable
 {
-    public function __invoke(ExecutionScope $scope): mixed;
 }

@@ -4,8 +4,13 @@ declare(strict_types=1);
 
 namespace Phalanx\Http;
 
-class ValidationException extends \RuntimeException
+use Psr\Http\Message\ResponseInterface;
+use React\Http\Message\Response;
+
+class ValidationException extends \RuntimeException implements ToResponse
 {
+    public int $status { get => 422; }
+
     /** @param array<string, list<string>> $errors field => error messages */
     public function __construct(
         public readonly array $errors,
@@ -23,5 +28,13 @@ class ValidationException extends \RuntimeException
     public static function fromErrors(array $errors): static
     {
         return new static($errors);
+    }
+
+    public function toResponse(): ResponseInterface
+    {
+        return Response::json([
+            'error' => 'Validation Failed',
+            'errors' => $this->errors,
+        ])->withStatus($this->status);
     }
 }

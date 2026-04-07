@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Http\Contract;
 
-use Closure;
 use Phalanx\ExecutionScope;
 use Phalanx\Http\RequestScope;
 use Phalanx\Http\ValidationException;
@@ -12,14 +11,12 @@ use Phalanx\Scope;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 use ReflectionClass;
-use ReflectionFunction;
-use ReflectionFunctionAbstract;
 use ReflectionNamedType;
 use ReflectionParameter;
 
 class InputHydrator
 {
-    /** @var array<string, ?InputMeta> */
+    /** @var array<class-string, ?InputMeta> */
     private static array $metaCache = [];
 
     /** @var list<class-string> */
@@ -31,16 +28,18 @@ class InputHydrator
 
     /**
      * Reflect on the handler's __invoke and find the typed input parameter.
+     *
+     * @param class-string<Scopeable|Executable>|Scopeable|Executable $handler
      */
-    public static function meta(Closure|Scopeable|Executable $handler): ?InputMeta
+    public static function meta(string|Scopeable|Executable $handler): ?InputMeta
     {
-        $key = self::cacheKey($handler);
+        $key = is_string($handler) ? $handler : $handler::class;
 
         if (array_key_exists($key, self::$metaCache)) {
             return self::$metaCache[$key];
         }
 
-        $ref = self::reflectInvoke($handler);
+        $ref = (new ReflectionClass($key))->getMethod('__invoke');
         $meta = null;
 
         foreach ($ref->getParameters() as $param) {
@@ -73,10 +72,11 @@ class InputHydrator
     /**
      * Resolve handler arguments: scope + any hydrated inputs.
      *
+     * @param class-string<Scopeable|Executable>|Scopeable|Executable $handler
      * @return list<mixed>
      */
     public static function resolve(
-        Closure|Scopeable|Executable $handler,
+        string|Scopeable|Executable $handler,
         RequestScope $scope,
     ): array {
         $meta = self::meta($handler);
@@ -167,6 +167,9 @@ class InputHydrator
         return $dto;
     }
 
+    /**
+     * @param array<string, list<string>> $errors
+     */
     protected static function coerce(
         mixed $value,
         ReflectionNamedType $type,
@@ -197,11 +200,11 @@ class InputHydrator
 
         return match ($typeName) {
             'string' => (string) $value,
-            'int' => is_numeric($value) ? (int) $value : (function () use ($field, $value, &$errors) {
+            'int' => is_numeric($value) ? (int) $value : (function () use ($field, &$errors) {
                 $errors[$field][] = 'Must be an integer';
                 return null;
             })(),
-            'float' => is_numeric($value) ? (float) $value : (function () use ($field, $value, &$errors) {
+            'float' => is_numeric($value) ? (float) $value : (function () use ($field, &$errors) {
                 $errors[$field][] = 'Must be a number';
                 return null;
             })(),
@@ -215,26 +218,6 @@ class InputHydrator
             })(),
             default => $value,
         };
-    }
-
-    private static function reflectInvoke(Closure|Scopeable|Executable $handler): ReflectionFunctionAbstract
-    {
-        if ($handler instanceof Closure) {
-            return new ReflectionFunction($handler);
-        }
-
-        return (new ReflectionClass($handler))->getMethod('__invoke');
-    }
-
-    private static function cacheKey(Closure|Scopeable|Executable $handler): string
-    {
-        if ($handler instanceof Closure) {
-            $ref = new ReflectionFunction($handler);
-
-            return $ref->getFileName() . ':' . $ref->getStartLine();
-        }
-
-        return $handler::class;
     }
 
     private static function isScopeType(string $typeName): bool

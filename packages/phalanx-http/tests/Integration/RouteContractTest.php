@@ -5,17 +5,17 @@ declare(strict_types=1);
 namespace Phalanx\Tests\Http\Integration;
 
 use Phalanx\Application;
-use Phalanx\ExecutionScope;
 use Phalanx\Http\Response\Created;
 use Phalanx\Http\Response\NoContent;
-use Phalanx\Http\Route;
 use Phalanx\Http\RouteGroup;
 use Phalanx\Http\ValidationException;
-use Phalanx\Tests\Http\Fixtures\CreateTaskInput;
-use Phalanx\Tests\Http\Fixtures\ListTasksQuery;
+use Phalanx\Tests\Http\Fixtures\Routes\CreateTaskEcho;
+use Phalanx\Tests\Http\Fixtures\Routes\CreateTaskHandler;
+use Phalanx\Tests\Http\Fixtures\Routes\DeleteTaskNoContent;
+use Phalanx\Tests\Http\Fixtures\Routes\HealthCheck;
+use Phalanx\Tests\Http\Fixtures\Routes\ListTasksHandler;
 use Phalanx\Tests\Http\Fixtures\TaskPriority;
 use Phalanx\Tests\Http\Fixtures\TaskResource;
-use Phalanx\Tests\Http\Fixtures\TaskStatus;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ServerRequestInterface;
@@ -40,15 +40,7 @@ final class RouteContractTest extends TestCase
     public function post_route_hydrates_input_from_body(): void
     {
         $group = RouteGroup::of([
-            'POST /tasks' => new Route(fn: static function (ExecutionScope $scope, CreateTaskInput $input): Created {
-                return new Created(new TaskResource(
-                    id: 1,
-                    title: $input->title,
-                    description: $input->description,
-                    priority: $input->priority,
-                    status: TaskStatus::Pending,
-                ));
-            }),
+            'POST /tasks' => CreateTaskHandler::class,
         ]);
 
         $request = $this->createRequest('POST', '/tasks', json: [
@@ -72,14 +64,7 @@ final class RouteContractTest extends TestCase
     public function get_route_hydrates_query_params(): void
     {
         $group = RouteGroup::of([
-            'GET /tasks' => new Route(fn: static function (ExecutionScope $scope, ListTasksQuery $query): array {
-                return [
-                    'page' => $query->page,
-                    'limit' => $query->limit,
-                    'status' => $query->status?->value,
-                    'search' => $query->search,
-                ];
-            }),
+            'GET /tasks' => ListTasksHandler::class,
         ]);
 
         $request = $this->createRequest('GET', '/tasks', query: [
@@ -103,7 +88,7 @@ final class RouteContractTest extends TestCase
     public function handler_with_no_input_still_works(): void
     {
         $group = RouteGroup::of([
-            'GET /health' => new Route(fn: static fn() => ['status' => 'ok']),
+            'GET /health' => HealthCheck::class,
         ]);
 
         $request = $this->createRequest('GET', '/health');
@@ -120,9 +105,7 @@ final class RouteContractTest extends TestCase
     public function missing_required_field_throws_validation_exception(): void
     {
         $group = RouteGroup::of([
-            'POST /tasks' => new Route(fn: static function (ExecutionScope $scope, CreateTaskInput $input): Created {
-                return new Created($input);
-            }),
+            'POST /tasks' => CreateTaskEcho::class,
         ]);
 
         $request = $this->createRequest('POST', '/tasks', json: [
@@ -144,9 +127,7 @@ final class RouteContractTest extends TestCase
     public function invalid_enum_throws_validation_exception(): void
     {
         $group = RouteGroup::of([
-            'POST /tasks' => new Route(fn: static function (ExecutionScope $scope, CreateTaskInput $input): Created {
-                return new Created($input);
-            }),
+            'POST /tasks' => CreateTaskEcho::class,
         ]);
 
         $request = $this->createRequest('POST', '/tasks', json: [
@@ -168,13 +149,8 @@ final class RouteContractTest extends TestCase
     #[Test]
     public function validatable_dto_errors_throw_before_handler(): void
     {
-        $handlerCalled = false;
-
         $group = RouteGroup::of([
-            'POST /tasks' => new Route(fn: static function (ExecutionScope $scope, CreateTaskInput $input) use (&$handlerCalled): Created {
-                $handlerCalled = true;
-                return new Created($input);
-            }),
+            'POST /tasks' => CreateTaskEcho::class,
         ]);
 
         $request = $this->createRequest('POST', '/tasks', json: [
@@ -188,7 +164,6 @@ final class RouteContractTest extends TestCase
             $scope->execute($group);
             $this->fail('Expected ValidationException');
         } catch (ValidationException $e) {
-            $this->assertFalse($handlerCalled, 'Handler should not run when validation fails');
             $this->assertArrayHasKey('title', $e->errors);
         }
     }
@@ -197,9 +172,7 @@ final class RouteContractTest extends TestCase
     public function void_handler_returns_null(): void
     {
         $group = RouteGroup::of([
-            'DELETE /tasks/{id}' => new Route(fn: static function (ExecutionScope $scope): NoContent {
-                return new NoContent();
-            }),
+            'DELETE /tasks/{id}' => DeleteTaskNoContent::class,
         ]);
 
         $request = $this->createRequest('DELETE', '/tasks/42');
@@ -212,6 +185,10 @@ final class RouteContractTest extends TestCase
         $this->assertInstanceOf(NoContent::class, $result);
     }
 
+    /**
+     * @param array<string, mixed> $json
+     * @param array<string, string> $query
+     */
     private function createRequest(
         string $method,
         string $path,

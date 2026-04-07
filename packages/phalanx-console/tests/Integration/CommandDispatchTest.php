@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Phalanx\Tests\Console\Integration;
 
 use Phalanx\Application;
-use Phalanx\Console\Command;
 use Phalanx\Console\CommandConfig;
 use Phalanx\Console\CommandGroup;
-use Phalanx\Task\Task;
+use Phalanx\Console\Tests\Fixtures\Commands\FailingCommand;
+use Phalanx\Console\Tests\Fixtures\Commands\NoopCommand;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -30,8 +30,8 @@ final class CommandDispatchTest extends TestCase
     public function dispatches_command_by_command_attribute(): void
     {
         $group = CommandGroup::of([
-            'migrate' => new Command(fn: static fn() => 0),
-            'seed' => new Command(fn: static fn() => 1),
+            'migrate' => NoopCommand::class,
+            'seed' => FailingCommand::class,
         ]);
 
         $scope = $this->app->createScope();
@@ -46,7 +46,7 @@ final class CommandDispatchTest extends TestCase
     public function throws_when_command_not_found(): void
     {
         $group = CommandGroup::of([
-            'migrate' => new Command(fn: static fn() => 0),
+            'migrate' => NoopCommand::class,
         ]);
 
         $scope = $this->app->createScope();
@@ -62,11 +62,11 @@ final class CommandDispatchTest extends TestCase
     public function command_group_keys_and_merge(): void
     {
         $group1 = CommandGroup::of([
-            'migrate' => new Command(fn: static fn() => 0, desc: 'Run migrations'),
+            'migrate' => [NoopCommand::class, new CommandConfig(description: 'Run migrations')],
         ]);
 
         $group2 = CommandGroup::of([
-            'seed' => new Command(fn: static fn() => 0, desc: 'Seed database'),
+            'seed' => [NoopCommand::class, new CommandConfig(description: 'Seed database')],
         ]);
 
         $merged = $group1->merge($group2);
@@ -80,11 +80,12 @@ final class CommandDispatchTest extends TestCase
     public function command_config_preserved(): void
     {
         $group = CommandGroup::of([
-            'migrate' => new Command(fn: static fn() => 0, desc: 'Run migrations'),
+            'migrate' => [NoopCommand::class, new CommandConfig(description: 'Run migrations')],
         ]);
 
         $handler = $group->handlers()->get('migrate');
 
+        $this->assertNotNull($handler);
         $this->assertInstanceOf(CommandConfig::class, $handler->config);
         $this->assertSame('Run migrations', $handler->config->description);
     }
@@ -93,7 +94,7 @@ final class CommandDispatchTest extends TestCase
     public function fluent_command_adds_handler(): void
     {
         $group = CommandGroup::create()
-            ->command('migrate', Task::of(static fn() => 0), 'Run migrations');
+            ->command('migrate', NoopCommand::class, new CommandConfig(description: 'Run migrations'));
 
         $handler = $group->handlers()->get('migrate');
 

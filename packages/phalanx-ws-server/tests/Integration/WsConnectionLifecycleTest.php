@@ -4,16 +4,19 @@ declare(strict_types=1);
 
 namespace Phalanx\WebSocket\Tests\Integration;
 
+use GuzzleHttp\Psr7\ServerRequest;
 use Phalanx\Application;
+use Phalanx\Http\RouteParams;
+use Phalanx\WebSocket\Tests\Fixtures\DrainAndFlagPump;
+use Phalanx\WebSocket\Tests\Fixtures\ImmediateClosePump;
+use Phalanx\WebSocket\Tests\Fixtures\InboundCollectorPump;
+use Phalanx\WebSocket\Tests\Fixtures\ScopeCapturePump;
+use Phalanx\WebSocket\Tests\Fixtures\SendThenClosePump;
 use Phalanx\WebSocket\WsConfig;
 use Phalanx\WebSocket\WsConnection;
 use Phalanx\WebSocket\WsConnectionHandler;
 use Phalanx\WebSocket\WsGateway;
-use Phalanx\WebSocket\WsMessage;
-use Phalanx\WebSocket\WsRoute;
 use Phalanx\WebSocket\WsScope;
-use Phalanx\Http\RouteParams;
-use GuzzleHttp\Psr7\ServerRequest;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Ratchet\RFC6455\Messaging\Frame;
@@ -30,6 +33,9 @@ final class WsConnectionLifecycleTest extends TestCase
     protected function setUp(): void
     {
         $this->app = Application::starting()->compile();
+        InboundCollectorPump::$received = [];
+        ScopeCapturePump::$captured = null;
+        DrainAndFlagPump::$completed = false;
     }
 
     protected function tearDown(): void
@@ -40,20 +46,9 @@ final class WsConnectionLifecycleTest extends TestCase
     #[Test]
     public function connection_receives_inbound_messages_via_stream(): void
     {
-        $received = [];
-
-        $route = new WsRoute(fn: static function (WsScope $ws) use (&$received): void {
-            $ws->connection->stream($ws)
-                ->filter(static fn(WsMessage $m) => $m->isText)
-                ->onEach(static function (WsMessage $m) use (&$received): void {
-                    $received[] = $m->payload;
-                })
-                ->take(2)
-                ->consume();
-        }, config: new WsConfig(pingInterval: 0));
-
+        $config = new WsConfig(pingInterval: 0);
         $gateway = new WsGateway();
-        $handler = new WsConnectionHandler($route, $route->config, $gateway);
+        $handler = new WsConnectionHandler(new InboundCollectorPump(), $config, $gateway);
 
         $transport = new ThroughStream();
 
@@ -67,21 +62,16 @@ final class WsConnectionLifecycleTest extends TestCase
 
         await($promise);
 
-        $this->assertSame(['message one', 'message two'], $received);
+        $this->assertSame(['message one', 'message two'], InboundCollectorPump::$received);
     }
 
     #[Test]
     public function connection_sends_outbound_messages_to_transport(): void
     {
         $written = [];
-
-        $route = new WsRoute(fn: static function (WsScope $ws): void {
-            $ws->connection->sendText('hello from server');
-            $ws->connection->close();
-        }, config: new WsConfig(pingInterval: 0));
-
+        $config = new WsConfig(pingInterval: 0);
         $gateway = new WsGateway();
-        $handler = new WsConnectionHandler($route, $route->config, $gateway);
+        $handler = new WsConnectionHandler(new SendThenClosePump(), $config, $gateway);
 
         $transport = new ThroughStream();
         $transport->on('data', static function (string $data) use (&$written): void {
@@ -100,15 +90,9 @@ final class WsConnectionLifecycleTest extends TestCase
     #[Test]
     public function ws_scope_provides_typed_access(): void
     {
-        $capturedScope = null;
-
-        $route = new WsRoute(fn: static function (WsScope $ws) use (&$capturedScope): void {
-            $capturedScope = $ws;
-            $ws->connection->close();
-        }, config: new WsConfig(pingInterval: 0, maxMessageSize: 1024));
-
+        $config = new WsConfig(pingInterval: 0, maxMessageSize: 1024);
         $gateway = new WsGateway();
-        $handler = new WsConnectionHandler($route, $route->config, $gateway);
+        $handler = new WsConnectionHandler(new ScopeCapturePump(), $config, $gateway);
 
         $transport = new ThroughStream();
         $request = new ServerRequest('GET', '/ws/chat/lobby', ['Host' => 'localhost']);
@@ -118,25 +102,19 @@ final class WsConnectionLifecycleTest extends TestCase
             $handler->handle($this->app->createScope(), $transport, $request, $params);
         })();
 
-        $this->assertInstanceOf(WsScope::class, $capturedScope);
-        $this->assertInstanceOf(WsConnection::class, $capturedScope->connection);
-        $this->assertSame(1024, $capturedScope->config->maxMessageSize);
-        $this->assertSame('/ws/chat/lobby', $capturedScope->request->getUri()->getPath());
-        $this->assertSame('lobby', $capturedScope->params->get('room'));
+        $this->assertInstanceOf(WsScope::class, ScopeCapturePump::$captured);
+        $this->assertInstanceOf(WsConnection::class, ScopeCapturePump::$captured->connection);
+        $this->assertSame(1024, ScopeCapturePump::$captured->config->maxMessageSize);
+        $this->assertSame('/ws/chat/lobby', ScopeCapturePump::$captured->request->getUri()->getPath());
+        $this->assertSame('lobby', ScopeCapturePump::$captured->params->get('room'));
     }
 
     #[Test]
     public function transport_close_completes_channels(): void
     {
-        $pumpCompleted = false;
-
-        $route = new WsRoute(fn: static function (WsScope $ws) use (&$pumpCompleted): void {
-            $ws->connection->stream($ws)->consume();
-            $pumpCompleted = true;
-        }, config: new WsConfig(pingInterval: 0));
-
+        $config = new WsConfig(pingInterval: 0);
         $gateway = new WsGateway();
-        $handler = new WsConnectionHandler($route, $route->config, $gateway);
+        $handler = new WsConnectionHandler(new DrainAndFlagPump(), $config, $gateway);
 
         $transport = new ThroughStream();
 
@@ -148,18 +126,15 @@ final class WsConnectionLifecycleTest extends TestCase
 
         await($promise);
 
-        $this->assertTrue($pumpCompleted);
+        $this->assertTrue(DrainAndFlagPump::$completed);
     }
 
     #[Test]
     public function gateway_tracks_connection_during_lifecycle(): void
     {
-        $route = new WsRoute(fn: static function (WsScope $ws): void {
-            $ws->connection->close();
-        }, config: new WsConfig(pingInterval: 0));
-
+        $config = new WsConfig(pingInterval: 0);
         $gateway = new WsGateway();
-        $handler = new WsConnectionHandler($route, $route->config, $gateway);
+        $handler = new WsConnectionHandler(new ImmediateClosePump(), $config, $gateway);
 
         $transport = new ThroughStream();
 

@@ -13,27 +13,20 @@ use Phalanx\Ai\Memory\ConversationMemory;
 use Phalanx\Ai\Message\Conversation;
 use Phalanx\Ai\Message\Message;
 use Phalanx\Ai\Turn;
-use Phalanx\Console\Command;
 use Phalanx\Console\CommandScope;
-use Phalanx\Console\Opt;
 
+/**
+ * Interactive REPL runner for an AgentDefinition.
+ *
+ * Used as the body of a Scopeable command class. The command class
+ * constructor injects an AgentDefinition (registered as a scoped/singleton
+ * service) and an optional ConversationMemory, then delegates __invoke to
+ * AgentRepl::run.
+ */
 final class AgentRepl
 {
-    public static function command(AgentDefinition $agent, string $description = 'Interactive agent REPL'): Command
+    public static function run(AgentDefinition $agent, CommandScope $scope, ?ConversationMemory $memory = null): int
     {
-        return new Command(
-            fn: static fn(CommandScope $scope): int => self::runRepl($agent, $scope),
-            desc: $description,
-            opts: [
-                Opt::value('session', 's', 'Resume a session by ID'),
-                Opt::flag('verbose', 'v', 'Show tool calls and timing'),
-            ],
-        );
-    }
-
-    private static function runRepl(AgentDefinition $agent, CommandScope $scope): int
-    {
-        $memory = self::resolveMemory($scope);
         $sessionId = $scope->options->get('session', uniqid('cli_'));
         $conversation = $memory?->load($sessionId) ?? Conversation::create();
         $verbose = $scope->options->has('verbose');
@@ -94,15 +87,5 @@ final class AgentRepl
         }
 
         return 0;
-    }
-
-    private static function resolveMemory(CommandScope $scope): ?ConversationMemory
-    {
-        try {
-            /** @var ConversationMemory */
-            return $scope->service(ConversationMemory::class);
-        } catch (\Throwable) {
-            return null;
-        }
     }
 }

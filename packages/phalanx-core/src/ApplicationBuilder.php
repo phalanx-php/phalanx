@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx;
 
 use Closure;
+use Phalanx\Handler\HandlerResolver;
 use Phalanx\Middleware\ServiceTransformationMiddleware;
 use Phalanx\Middleware\TaskMiddleware;
 use Phalanx\Service\LazySingleton;
@@ -90,6 +91,9 @@ final class ApplicationBuilder
         $trace->log(TraceType::LifecycleStartup, 'compiling');
 
         $registry = new ServiceCatalog();
+
+        $registry->singleton(HandlerResolver::class)
+            ->factory(static fn(): HandlerResolver => new HandlerResolver());
 
         if ($this->discover) {
             $this->loadDiscoveredProviders();

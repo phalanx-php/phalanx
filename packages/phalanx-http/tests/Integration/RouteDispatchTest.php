@@ -5,11 +5,18 @@ declare(strict_types=1);
 namespace Phalanx\Tests\Http\Integration;
 
 use Phalanx\Application;
-use Phalanx\ExecutionScope;
-use Phalanx\Http\RouteGroup;
-use Phalanx\Http\Route;
 use Phalanx\Http\RouteConfig;
-use Phalanx\Task\Task;
+use Phalanx\Http\RouteGroup;
+use Phalanx\Tests\Fixtures\Handlers\PrefixingMiddleware;
+use Phalanx\Tests\Http\Fixtures\Routes\ListPosts;
+use Phalanx\Tests\Http\Fixtures\Routes\ListUsers;
+use Phalanx\Tests\Http\Fixtures\Routes\ShowRouteId;
+use Phalanx\Tests\Http\Fixtures\Routes\ShowUserById;
+use Phalanx\Tests\Http\Fixtures\Routes\StatusList;
+use Phalanx\Tests\Http\Fixtures\Routes\StatusOk;
+use Phalanx\Tests\Http\Fixtures\Routes\StatusPosts;
+use Phalanx\Tests\Http\Fixtures\Routes\StatusShow;
+use Phalanx\Tests\Http\Fixtures\Routes\StatusUsers;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ServerRequestInterface;
@@ -33,8 +40,8 @@ final class RouteDispatchTest extends TestCase
     public function dispatches_route_by_request_attribute(): void
     {
         $group = RouteGroup::of([
-            'GET /users' => new Route(fn: static fn() => ['users' => []]),
-            'GET /posts' => new Route(fn: static fn() => ['posts' => []]),
+            'GET /users' => ListUsers::class,
+            'GET /posts' => ListPosts::class,
         ]);
 
         $request = $this->createRequest('GET', '/users');
@@ -51,10 +58,7 @@ final class RouteDispatchTest extends TestCase
     public function extracts_route_params_to_attributes(): void
     {
         $group = RouteGroup::of([
-            'GET /users/{id}' => new Route(fn: static fn(ExecutionScope $es): array => [
-                'id' => $es->attribute('route.id'),
-                'params' => $es->attribute('route.params'),
-            ]),
+            'GET /users/{id}' => ShowUserById::class,
         ]);
 
         $request = $this->createRequest('GET', '/users/42');
@@ -72,7 +76,7 @@ final class RouteDispatchTest extends TestCase
     public function throws_when_no_route_matches(): void
     {
         $group = RouteGroup::of([
-            'GET /users' => new Route(fn: static fn() => []),
+            'GET /users' => ListUsers::class,
         ]);
 
         $request = $this->createRequest('GET', '/posts');
@@ -89,22 +93,9 @@ final class RouteDispatchTest extends TestCase
     #[Test]
     public function applies_group_middleware(): void
     {
-        $calls = [];
-
-        $middleware = Task::of(static function (ExecutionScope $es) use (&$calls): mixed {
-            $calls[] = 'middleware:before';
-            $next = $es->attribute('handler.next');
-            $result = $es->execute($next);
-            $calls[] = 'middleware:after';
-            return $result;
-        });
-
         $group = RouteGroup::of([
-            'GET /test' => new Route(fn: static function () use (&$calls): string {
-                $calls[] = 'handler';
-                return 'done';
-            }),
-        ])->wrap($middleware);
+            'GET /test' => StatusOk::class,
+        ])->wrap(PrefixingMiddleware::class);
 
         $request = $this->createRequest('GET', '/test');
 
@@ -113,15 +104,14 @@ final class RouteDispatchTest extends TestCase
 
         $result = $scope->execute($group);
 
-        $this->assertSame('done', $result);
-        $this->assertSame(['middleware:before', 'handler', 'middleware:after'], $calls);
+        $this->assertSame('before:ok:after', $result);
     }
 
     #[Test]
     public function matches_multiple_methods(): void
     {
         $group = RouteGroup::create()
-            ->route('/resource', Task::of(static fn() => 'ok'), ['GET', 'POST']);
+            ->route('/resource', StatusOk::class, ['GET', 'POST']);
 
         foreach (['GET', 'POST'] as $method) {
             $request = $this->createRequest($method, '/resource');
@@ -138,8 +128,8 @@ final class RouteDispatchTest extends TestCase
     public function mount_prefixes_routes(): void
     {
         $group = RouteGroup::of([
-            'GET /users' => new Route(fn: static fn() => 'list'),
-            'GET /users/{id}' => new Route(fn: static fn(ExecutionScope $es) => $es->attribute('route.id')),
+            'GET /users' => StatusList::class,
+            'GET /users/{id}' => ShowRouteId::class,
         ]);
 
         $mounted = RouteGroup::create()->mount('/api/v1', $group);
@@ -160,11 +150,11 @@ final class RouteDispatchTest extends TestCase
     public function route_group_keys_and_merge(): void
     {
         $group1 = RouteGroup::of([
-            'GET /users' => new Route(fn: static fn() => 'users'),
+            'GET /users' => StatusUsers::class,
         ]);
 
         $group2 = RouteGroup::of([
-            'GET /posts' => new Route(fn: static fn() => 'posts'),
+            'GET /posts' => StatusPosts::class,
         ]);
 
         $merged = $group1->merge($group2);
@@ -178,11 +168,12 @@ final class RouteDispatchTest extends TestCase
     public function compiles_route_pattern_from_key(): void
     {
         $group = RouteGroup::of([
-            'GET /users/{id}' => new Route(fn: static fn() => 'show'),
+            'GET /users/{id}' => StatusShow::class,
         ]);
 
         $handler = $group->handlers()->get('GET /users/{id}');
 
+        $this->assertNotNull($handler);
         $this->assertInstanceOf(RouteConfig::class, $handler->config);
         $this->assertSame(['id'], $handler->config->paramNames);
     }

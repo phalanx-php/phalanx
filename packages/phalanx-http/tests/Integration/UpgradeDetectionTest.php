@@ -5,13 +5,10 @@ declare(strict_types=1);
 namespace Phalanx\Tests\Http\Integration;
 
 use Phalanx\Application;
-use Phalanx\ExecutionScope;
-use Phalanx\Http\Route;
-use Phalanx\Http\RouteConfig;
-use Phalanx\Http\RouteGroup;
-use Phalanx\Http\RouteMatcher;
 use Phalanx\Handler\Handler;
-use Phalanx\Task\Task;
+use Phalanx\Http\RouteConfig;
+use Phalanx\Http\RouteMatcher;
+use Phalanx\Tests\Http\Fixtures\Routes\StatusOk;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ServerRequestInterface;
@@ -35,12 +32,12 @@ final class UpgradeDetectionTest extends TestCase
     public function http_request_skips_ws_routes(): void
     {
         $httpRoute = new Handler(
-            Task::of(static fn() => 'http'),
+            StatusOk::class,
             RouteConfig::compile('/test', 'GET', 'http'),
         );
 
         $wsRoute = new Handler(
-            Task::of(static fn() => 'ws'),
+            StatusOk::class,
             RouteConfig::compile('/test', 'GET', 'ws'),
         );
 
@@ -59,12 +56,12 @@ final class UpgradeDetectionTest extends TestCase
     public function ws_upgrade_skips_http_routes(): void
     {
         $httpRoute = new Handler(
-            Task::of(static fn() => 'http'),
+            StatusOk::class,
             RouteConfig::compile('/test', 'GET', 'http'),
         );
 
         $wsRoute = new Handler(
-            Task::of(static fn() => 'ws'),
+            StatusOk::class,
             RouteConfig::compile('/test', 'GET', 'ws'),
         );
 
@@ -83,7 +80,7 @@ final class UpgradeDetectionTest extends TestCase
     public function ws_upgrade_to_unknown_path_throws(): void
     {
         $httpRoute = new Handler(
-            Task::of(static fn() => 'http'),
+            StatusOk::class,
             RouteConfig::compile('/api', 'GET', 'http'),
         );
 
@@ -124,12 +121,12 @@ final class UpgradeDetectionTest extends TestCase
     public function http_and_ws_routes_coexist_on_same_path(): void
     {
         $httpRoute = new Handler(
-            Task::of(static fn() => 'http-response'),
+            StatusOk::class,
             RouteConfig::compile('/api', 'GET', 'http'),
         );
 
         $wsRoute = new Handler(
-            Task::of(static fn() => 'ws-response'),
+            StatusOk::class,
             RouteConfig::compile('/api', 'GET', 'ws'),
         );
 
@@ -144,6 +141,8 @@ final class UpgradeDetectionTest extends TestCase
         $wsScope = $this->app->createScope()->withAttribute('request', $wsReq);
         $wsMatch = $matcher->match($wsScope, $handlers);
 
+        $this->assertNotNull($httpMatch);
+        $this->assertNotNull($wsMatch);
         $this->assertSame($httpRoute, $httpMatch->handler);
         $this->assertSame($wsRoute, $wsMatch->handler);
     }

@@ -106,10 +106,6 @@ final readonly class WsConnectionHandler
             $scope->dispose();
         });
 
-        if ($this->pump instanceof WsRoute) {
-            ($this->pump->fn)($wsScope);
-        } else {
-            $wsScope->execute($this->pump);
-        }
+        ($this->pump)($wsScope);
     }
 }

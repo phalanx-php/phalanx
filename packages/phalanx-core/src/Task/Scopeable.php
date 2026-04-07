@@ -4,17 +4,22 @@ declare(strict_types=1);
 
 namespace Phalanx\Task;
 
-use Phalanx\Scope;
-
 /**
- * Task requiring only service resolution and attribute access.
+ * Marker interface for tasks that need only service resolution and attribute
+ * access (no concurrency primitives, no cancellation, no disposal).
  *
- * Implement this interface for tasks that don't need concurrency primitives,
- * cancellation checking, or other ExecutionScope capabilities.
+ * Implementations expose `__invoke()` whose first parameter is `Phalanx\Scope`
+ * (or a narrower subtype). Additional parameters may be declared after the
+ * scope -- the framework hydrates them through input pipelines like
+ * `Phalanx\Http\Contract\InputHydrator`. Because the parameter shape is
+ * variable, this interface declares no method signature; the dispatcher
+ * relies on the framework's resolution machinery to invoke implementations
+ * correctly.
  *
- * @see Executable For tasks requiring full execution capabilities
+ * @method mixed __invoke(\Phalanx\Scope $scope, mixed ...$args)
+ *
+ * @see Executable For tasks requiring full ExecutionScope capabilities
  */
 interface Scopeable
 {
-    public function __invoke(Scope $scope): mixed;
 }

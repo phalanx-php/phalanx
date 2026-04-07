@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Handler;
 
+use Closure;
 use Phalanx\ExecutionScope;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
@@ -19,25 +20,35 @@ use RuntimeException;
  * - Registered matchers -> protocol-specific matching (routes, commands, etc.)
  *
  * Runners become thin shells that set attributes and execute the group.
+ *
+ * Middleware composition order at dispatch:
+ *   group (outermost) -> handler-config (innermost)
+ * Class-string identity is used to deduplicate; if the same middleware
+ * class-string appears at multiple levels, the innermost declaration wins.
+ *
+ * Protocol-specific groups (Route, Command, WsRoute) install an `invoker`
+ * closure via `withInvoker()` to translate the scope-only dispatch into
+ * additional argument shapes (e.g. HTTP input hydration). The default
+ * invoker simply calls `$instance($scope)`.
  */
 final class HandlerGroup implements Executable
 {
     /**
      * @param array<string, Handler> $handlers
-     * @param list<Scopeable|Executable> $middleware
+     * @param list<class-string> $middleware
      * @param list<HandlerMatcher> $matchers
+     * @param Closure(Scopeable|Executable, ExecutionScope): mixed|null $invoker
      */
     private function __construct(
         public private(set) array $handlers,
         public private(set) array $middleware = [],
         public private(set) array $matchers = [],
+        private ?Closure $invoker = null,
     ) {
     }
 
     /**
-     * Create from an array of handlers.
-     *
-     * @param array<string, Handler|Scopeable|Executable> $handlers
+     * @param array<string, Handler|class-string<Scopeable|Executable>> $handlers
      */
     public static function of(array $handlers): self
     {
@@ -59,15 +70,13 @@ final class HandlerGroup implements Executable
         return new self([]);
     }
 
-    /**
-     * Add a handler with explicit key.
-     */
     public function add(string $key, Handler $handler): self
     {
         return new self(
             [...$this->handlers, $key => $handler],
             $this->middleware,
             $this->matchers,
+            $this->invoker,
         );
     }
 
@@ -82,66 +91,68 @@ final class HandlerGroup implements Executable
             [...$this->handlers, ...$other->handlers],
             [...$this->middleware, ...$other->middleware],
             [...$this->matchers, ...$other->matchers],
+            $this->invoker ?? $other->invoker,
         );
     }
 
     /**
-     * Wrap all handlers with middleware.
+     * Wrap all handlers in this group with middleware (outermost layer).
      *
-     * Middleware runs in order: first added runs first.
+     * @param class-string ...$middleware
      */
-    public function wrap(Scopeable|Executable ...$middleware): self
+    public function wrap(string ...$middleware): self
     {
         return new self(
             $this->handlers,
             array_values([...$this->middleware, ...$middleware]),
             $this->matchers,
+            $this->invoker,
         );
     }
 
-    /**
-     * Register matchers for protocol-specific dispatch.
-     */
     public function withMatcher(HandlerMatcher ...$matchers): self
     {
         return new self(
             $this->handlers,
             $this->middleware,
             array_values([...$this->matchers, ...$matchers]),
+            $this->invoker,
         );
     }
 
     /**
-     * Get all handler keys.
+     * Install an invocation strategy for resolved handler instances.
      *
-     * @return list<string>
+     * @param Closure(Scopeable|Executable, ExecutionScope): mixed $invoker
      */
+    public function withInvoker(Closure $invoker): self
+    {
+        return new self(
+            $this->handlers,
+            $this->middleware,
+            $this->matchers,
+            $invoker,
+        );
+    }
+
+    /** @return list<string> */
     public function keys(): array
     {
         return array_keys($this->handlers);
     }
 
-    /**
-     * Get a handler by key.
-     */
     public function get(string $key): ?Handler
     {
         return $this->handlers[$key] ?? null;
     }
 
-    /**
-     * Get all handlers.
-     *
-     * @return array<string, Handler>
-     */
+    /** @return array<string, Handler> */
     public function all(): array
     {
         return $this->handlers;
     }
 
     /**
-     * Filter handlers by config type.
-     *
      * @param class-string<HandlerConfig> $configClass
      * @return array<string, Handler>
      */
@@ -153,34 +164,6 @@ final class HandlerGroup implements Executable
         );
     }
 
-    private function dispatchByKey(ExecutionScope $scope): mixed
-    {
-        $key = $scope->attribute('handler.key');
-        $handler = $this->handlers[$key] ?? null;
-
-        if ($handler === null) {
-            throw new RuntimeException("Handler not found: $key");
-        }
-
-        return $this->executeHandler($handler, $scope);
-    }
-
-    private function executeHandler(Handler $handler, ExecutionScope $scope): mixed
-    {
-        $task = $handler->task;
-
-        $allMiddleware = [...$this->middleware, ...$handler->config->middleware];
-
-        if ($allMiddleware !== []) {
-            $task = new MiddlewareWrapper($task, $allMiddleware);
-        }
-
-        return $task($scope);
-    }
-
-    /**
-     * Dispatch to the appropriate handler based on scope attributes.
-     */
     public function __invoke(ExecutionScope $scope): mixed
     {
         if ($scope->attribute('handler.key') !== null) {
@@ -199,5 +182,68 @@ final class HandlerGroup implements Executable
             'HandlerGroup: no matcher could handle this scope. '
             . 'Register matchers via withMatcher() or set handler.key attribute.'
         );
+    }
+
+    private function dispatchByKey(ExecutionScope $scope): mixed
+    {
+        $key = $scope->attribute('handler.key');
+        $handler = $this->handlers[$key] ?? null;
+
+        if ($handler === null) {
+            throw new RuntimeException("Handler not found: $key");
+        }
+
+        return $this->executeHandler($handler, $scope);
+    }
+
+    private function executeHandler(Handler $handler, ExecutionScope $scope): mixed
+    {
+        $resolver = $scope->service(HandlerResolver::class);
+        assert($resolver instanceof HandlerResolver);
+        $instance = $resolver->resolve($handler->task, $scope);
+
+        $invoker = $this->invoker ?? self::defaultInvoker();
+
+        $combined = self::dedupMiddleware([
+            ...$this->middleware,
+            ...$handler->config->middleware,
+        ]);
+
+        if ($combined === []) {
+            return $invoker($instance, $scope);
+        }
+
+        $resolved = [];
+        foreach ($combined as $cs) {
+            /** @var class-string<Scopeable|Executable> $cs */
+            $resolved[] = $resolver->resolve($cs, $scope);
+        }
+
+        $terminal = new HandlerInvocationAdapter($instance, $invoker);
+
+        return (new MiddlewareWrapper($terminal, $resolved))($scope);
+    }
+
+    /**
+     * @return Closure(Scopeable|Executable, ExecutionScope): mixed
+     */
+    private static function defaultInvoker(): Closure
+    {
+        return static fn(Scopeable|Executable $instance, ExecutionScope $scope): mixed => $instance($scope);
+    }
+
+    /**
+     * Deduplicate middleware class-strings keeping the LAST occurrence
+     * (innermost declaration wins). The chain is then walked in original
+     * order so the surviving entry runs at its innermost position.
+     *
+     * @param list<class-string> $middleware
+     * @return list<class-string>
+     */
+    private static function dedupMiddleware(array $middleware): array
+    {
+        return array_values(array_reverse(
+            array_unique(array_reverse($middleware))
+        ));
     }
 }

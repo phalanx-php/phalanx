@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Tests\Unit\Handler;
 
-use Phalanx\Handler\Handler;
 use Phalanx\Handler\HandlerGroup;
 use Phalanx\Handler\HandlerLoader;
-use Phalanx\Task\Task;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -38,10 +36,10 @@ final class HandlerLoaderTest extends TestCase
 <?php
 use Phalanx\Handler\Handler;
 use Phalanx\Handler\HandlerGroup;
-use Phalanx\Task\Task;
+use Phalanx\Tests\Fixtures\Handlers\HandlerA;
 
 return HandlerGroup::of([
-    'task-a' => Handler::of(Task::of(static fn() => 'list')),
+    'task-a' => Handler::of(HandlerA::class),
 ]);
 PHP;
 

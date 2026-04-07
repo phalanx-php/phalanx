@@ -4,50 +4,67 @@ declare(strict_types=1);
 
 namespace Phalanx\Http;
 
+use Closure;
 use Phalanx\ExecutionScope;
 use Phalanx\Handler\Handler;
 use Phalanx\Handler\HandlerGroup;
+use Phalanx\Http\Contract\InputHydrator;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 
 /**
  * Typed collection of HTTP routes.
  *
- * Keys are "METHOD /path" format, parsed automatically.
- * Wraps HandlerGroup for dispatch mechanics.
+ * Keys are "METHOD /path" format and parsed automatically. Values are
+ * class-strings of Scopeable or Executable handler classes; the framework
+ * constructs them at dispatch time via HandlerResolver with constructor
+ * injection from the service container.
+ *
+ * Path placeholders may use named pattern aliases registered via
+ * `withPatterns(['int' => '\d+', ...])`. A default set ships built-in
+ * (uuid, int, slug, year, month, day, date, any). Users may add their own.
  */
 final class RouteGroup implements Executable
 {
+    /** @var array<string, string> */
+    public const array DEFAULT_PATTERNS = [
+        'int' => '\d+',
+        'uuid' => '[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}',
+        'slug' => '[a-z0-9-]+',
+        'year' => '\d{4}',
+        'month' => '\d{2}',
+        'day' => '\d{2}',
+        'date' => '\d{4}-\d{2}-\d{2}',
+        'any' => '.+',
+    ];
+
     private(set) HandlerGroup $inner;
 
-    /** @param array<string, Route> $routes */
+    /** @var array<string, string> */
+    private array $patterns = self::DEFAULT_PATTERNS;
+
+    /**
+     * @param array<string, class-string<Scopeable|Executable>> $routes
+     */
     private function __construct(array $routes)
     {
         $handlers = [];
-        foreach ($routes as $key => $route) {
+        foreach ($routes as $key => $handlerClass) {
             $parsed = self::parseKey($key);
-            $config = $route->config;
 
-            if ($parsed !== null) {
-                $compiled = RouteConfig::compile($parsed['path'], $parsed['methods']);
-                $config = new RouteConfig(
-                    $compiled->methods,
-                    $compiled->pattern,
-                    $compiled->paramNames,
-                    $route->config->protocol ?? 'http',
-                    $parsed['path'],
-                    $route->config->middleware,
-                    $route->config->tags,
-                    $route->config->priority,
-                );
+            if ($parsed === null) {
+                continue;
             }
 
-            $handlers[$key] = new Handler($route, $config);
+            $config = RouteConfig::compile($parsed['path'], $parsed['methods'], patterns: $this->patterns);
+            $handlers[$key] = new Handler($handlerClass, $config);
         }
-        $this->inner = HandlerGroup::of($handlers)->withMatcher(new RouteMatcher());
+        $this->inner = HandlerGroup::of($handlers)
+            ->withMatcher(new RouteMatcher())
+            ->withInvoker(self::httpInvoker());
     }
 
-    /** @param array<string, Route> $routes */
+    /** @param array<string, class-string<Scopeable|Executable>> $routes */
     public static function of(array $routes): self
     {
         return new self($routes);
@@ -61,9 +78,25 @@ final class RouteGroup implements Executable
     public static function fromHandlerGroup(HandlerGroup $inner): self
     {
         $instance = new self([]);
-        $instance->inner = $inner->withMatcher(new RouteMatcher());
+        $instance->inner = $inner
+            ->withMatcher(new RouteMatcher())
+            ->withInvoker(self::httpInvoker());
 
         return $instance;
+    }
+
+    /**
+     * @return Closure(Scopeable|Executable, ExecutionScope): mixed
+     */
+    private static function httpInvoker(): Closure
+    {
+        return static function (Scopeable|Executable $instance, ExecutionScope $scope): mixed {
+            if ($scope instanceof RequestScope) {
+                $args = InputHydrator::resolve($instance, $scope);
+                return $instance(...$args);
+            }
+            return $instance($scope);
+        };
     }
 
     public function __invoke(ExecutionScope $scope): mixed
@@ -72,25 +105,45 @@ final class RouteGroup implements Executable
     }
 
     /**
-     * Add an HTTP route.
+     * Add an HTTP route by class-string handler.
      *
+     * @param class-string<Scopeable|Executable> $handler
      * @param string|list<string> $method
      */
-    public function route(string $path, Scopeable|Executable $handler, string|array $method = 'GET'): self
+    public function route(string $path, string $handler, string|array $method = 'GET'): self
     {
         $key = self::routeKey($path, $method);
-        $config = RouteConfig::compile($path, $method);
+        $config = RouteConfig::compile($path, $method, patterns: $this->patterns);
 
         $newInner = $this->inner->add($key, new Handler($handler, $config));
 
-        return self::fromHandlerGroup($newInner);
+        $clone = self::fromHandlerGroup($newInner);
+        $clone->patterns = $this->patterns;
+
+        return $clone;
+    }
+
+    /**
+     * Register named pattern aliases for path placeholders.
+     *
+     * @param array<string, string> $patterns
+     */
+    public function withPatterns(array $patterns): self
+    {
+        $clone = self::fromHandlerGroup($this->inner);
+        $clone->patterns = [...$this->patterns, ...$patterns];
+
+        return $clone;
     }
 
     public function merge(self $other): self
     {
         $newInner = $this->inner->merge($other->inner);
 
-        return self::fromHandlerGroup($newInner);
+        $clone = self::fromHandlerGroup($newInner);
+        $clone->patterns = [...$this->patterns, ...$other->patterns];
+
+        return $clone;
     }
 
     public function mount(string $prefix, self $group): self
@@ -110,14 +163,25 @@ final class RouteGroup implements Executable
 
         $newInner = $this->inner->merge($mounted);
 
-        return self::fromHandlerGroup($newInner);
+        $clone = self::fromHandlerGroup($newInner);
+        $clone->patterns = $this->patterns;
+
+        return $clone;
     }
 
-    public function wrap(Scopeable|Executable ...$middleware): self
+    /**
+     * Wrap all routes in this group with middleware (outermost layer).
+     *
+     * @param class-string ...$middleware
+     */
+    public function wrap(string ...$middleware): self
     {
         $newInner = $this->inner->wrap(...$middleware);
 
-        return self::fromHandlerGroup($newInner);
+        $clone = self::fromHandlerGroup($newInner);
+        $clone->patterns = $this->patterns;
+
+        return $clone;
     }
 
     /** @return list<string> */
@@ -126,19 +190,12 @@ final class RouteGroup implements Executable
         return $this->inner->keys();
     }
 
-    /**
-     * Get the underlying HandlerGroup for dispatch.
-     */
     public function handlers(): HandlerGroup
     {
         return $this->inner;
     }
 
-    /**
-     * Get all route handlers.
-     *
-     * @return array<string, Handler>
-     */
+    /** @return array<string, Handler> */
     public function routes(): array
     {
         return $this->inner->filterByConfig(RouteConfig::class);
@@ -160,8 +217,6 @@ final class RouteGroup implements Executable
     }
 
     /**
-     * Build route key from path and method(s).
-     *
      * @param string|list<string> $method
      */
     private static function routeKey(string $path, string|array $method): string

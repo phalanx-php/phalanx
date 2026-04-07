@@ -10,9 +10,10 @@ use Phalanx\Http\Contract\InputSource;
 use Phalanx\Http\ValidationException;
 use Phalanx\Tests\Http\Fixtures\CreateTaskInput;
 use Phalanx\Tests\Http\Fixtures\ListTasksQuery;
+use Phalanx\Tests\Http\Fixtures\Routes\CreateTaskHandler;
+use Phalanx\Tests\Http\Fixtures\Routes\HealthCheck;
+use Phalanx\Tests\Http\Fixtures\Routes\ListTasksHandler;
 use Phalanx\Tests\Http\Fixtures\TaskPriority;
-use Phalanx\Tests\Http\Fixtures\TaskResource;
-use Phalanx\Tests\Http\Fixtures\TaskStatus;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -21,17 +22,13 @@ final class InputHydratorTest extends TestCase
     #[Test]
     public function meta_returns_null_for_scope_only_handler(): void
     {
-        $handler = static fn(\Phalanx\Scope $scope): array => [];
-
-        $this->assertNull(InputHydrator::meta($handler));
+        $this->assertNull(InputHydrator::meta(HealthCheck::class));
     }
 
     #[Test]
     public function meta_detects_typed_input_parameter(): void
     {
-        $handler = static fn(\Phalanx\ExecutionScope $scope, CreateTaskInput $input): TaskResource => throw new \RuntimeException('not called');
-
-        $meta = InputHydrator::meta($handler);
+        $meta = InputHydrator::meta(CreateTaskHandler::class);
 
         $this->assertInstanceOf(InputMeta::class, $meta);
         $this->assertSame(CreateTaskInput::class, $meta->inputClass);
@@ -41,9 +38,7 @@ final class InputHydratorTest extends TestCase
     #[Test]
     public function meta_detects_query_type_parameter(): void
     {
-        $handler = static fn(\Phalanx\ExecutionScope $scope, ListTasksQuery $query): array => [];
-
-        $meta = InputHydrator::meta($handler);
+        $meta = InputHydrator::meta(ListTasksHandler::class);
 
         $this->assertInstanceOf(InputMeta::class, $meta);
         $this->assertSame(ListTasksQuery::class, $meta->inputClass);

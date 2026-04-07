@@ -4,21 +4,20 @@ declare(strict_types=1);
 
 namespace Phalanx\Tests\Http\Unit;
 
-use Phalanx\Http\Route;
-use Phalanx\Http\RouteConfig;
 use Phalanx\Http\RouteGroup;
-use Phalanx\Task\Task;
+use Phalanx\Tests\Http\Fixtures\Routes\StatusList;
+use Phalanx\Tests\Http\Fixtures\Routes\StatusShow;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class RouteGroupTest extends TestCase
 {
     #[Test]
-    public function creates_from_array_with_route_handlers(): void
+    public function creates_from_array_with_class_string_handlers(): void
     {
         $group = RouteGroup::of([
-            'GET /users' => new Route(fn: static fn() => 'list'),
-            'GET /users/{id}' => new Route(fn: static fn() => 'show'),
+            'GET /users' => StatusList::class,
+            'GET /users/{id}' => StatusShow::class,
         ]);
 
         $keys = $group->keys();
@@ -32,8 +31,8 @@ final class RouteGroupTest extends TestCase
     public function fluent_route_adds_handler(): void
     {
         $group = RouteGroup::create()
-            ->route('/users', Task::of(static fn() => 'list'))
-            ->route('/users/{id}', Task::of(static fn() => 'show'));
+            ->route('/users', StatusList::class)
+            ->route('/users/{id}', StatusShow::class);
 
         $this->assertCount(2, $group->keys());
     }
@@ -42,7 +41,7 @@ final class RouteGroupTest extends TestCase
     public function routes_returns_route_handlers(): void
     {
         $group = RouteGroup::of([
-            'GET /users' => new Route(fn: static fn() => 'list'),
+            'GET /users' => StatusList::class,
         ]);
 
         $routes = $group->routes();
