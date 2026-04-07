@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Handler;
 
 use Closure;
+use LogicException;
 use Phalanx\ExecutionScope;
 use Phalanx\Scope;
 use Phalanx\Task\Executable;
@@ -31,7 +32,14 @@ final readonly class HandlerInvocationAdapter implements Scopeable, Executable
 
     public function __invoke(Scope $scope): mixed
     {
-        assert($scope instanceof ExecutionScope);
+        if (!$scope instanceof ExecutionScope) {
+            throw new LogicException(
+                'HandlerInvocationAdapter requires an ExecutionScope (got '
+                . $scope::class . '). The adapter is only used inside the '
+                . 'middleware dispatch path which always carries an ExecutionScope.'
+            );
+        }
+
         return ($this->invoker)($this->instance, $scope);
     }
 }
