@@ -300,10 +300,10 @@ final class RouteGroup implements Executable
     private static function prefixRouteConfig(string $prefix, RouteConfig $config): RouteConfig
     {
         $prefixPattern = preg_quote($prefix, '#');
-        // Pattern format is '#^/path$#'. Strip the '#^' delimiter+anchor from
-        // the start and the trailing '#' delimiter from the end, leaving the
-        // inner '/path$' body. Concatenating produces '#^/prefix/path$$#';
-        // the duplicate '$' is a harmless redundant end-of-string assertion.
+        // Pattern format is '#^/path$#'. Strip the '#^' delimiter+anchor (2
+        // chars) from the start and the trailing '#' delimiter (1 char) from
+        // the end, leaving '/path$'. Then prepend a fresh '#^/prefix' and
+        // close with '#' to produce the final '#^/prefix/path$#'.
         $innerPattern = substr($config->pattern, 2, -1);
         $newPattern = '#^' . $prefixPattern . $innerPattern . '#';
 

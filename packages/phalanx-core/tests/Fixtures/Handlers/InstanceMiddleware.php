@@ -16,8 +16,8 @@ final class InstanceMiddleware implements Executable
 {
     public function __invoke(ExecutionScope $scope): mixed
     {
+        /** @var Scopeable|Executable $next */
         $next = $scope->attribute('handler.next');
-        assert($next instanceof Scopeable || $next instanceof Executable);
 
         return 'instance(' . $scope->execute($next) . ')';
     }
