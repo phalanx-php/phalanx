@@ -45,6 +45,7 @@ abstract class BasePrompt
     private bool $settled         = false;
     private ?StreamOutput $output = null;
     private ?RawInput $input      = null;
+    /** @var Deferred<mixed>|null */
     private ?Deferred $deferred   = null;
 
     public function __construct(
@@ -52,6 +53,7 @@ abstract class BasePrompt
         protected readonly ?Closure $validate = null,
     ) {}
 
+    /** @return PromiseInterface<mixed> */
     final public function prompt(StreamOutput $output, RawInput $input): PromiseInterface
     {
         $this->output   = $output;

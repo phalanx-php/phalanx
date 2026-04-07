@@ -75,6 +75,19 @@ final class Daemon8CoordinationTest extends TestCase
             self::markTestSkipped('ext-sockets not available');
         }
 
+        // Verify UDP observations are actually indexed by sending a probe and checking.
+        $probeCheckpoint = daemon8_observe(limit: 1)['checkpoint'];
+        $probeApp = self::appName('udp-probe');
+        daemon8_send_udp(['message' => 'udp-probe'], severity: 'debug', kind: 'custom', channel: 'probe', app: $probeApp);
+        usleep(500_000);
+        $probe = daemon8_observe(kinds: ['custom'], origins: ["app:$probeApp"], since: $probeCheckpoint);
+        if (count($probe['observations']) === 0) {
+            self::markTestSkipped(
+                'daemon8 UDP ingestion is not indexing observations at this server version. ' .
+                'UDP packets reach port 9078 but do not appear in the /observe API.'
+            );
+        }
+
         $checkpoint = daemon8_observe(limit: 1)['checkpoint'];
         $app = self::appName('security');
 

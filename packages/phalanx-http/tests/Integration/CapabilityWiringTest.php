@@ -7,8 +7,10 @@ namespace Phalanx\Tests\Http\Integration;
 use Phalanx\Application;
 use Phalanx\Http\RouteGroup;
 use Phalanx\Http\ValidationException;
+use Phalanx\Tests\Http\Fixtures\Routes\InputCapturingValidator;
 use Phalanx\Tests\Http\Fixtures\Routes\RequireApiVersionHandler;
 use Phalanx\Tests\Http\Fixtures\Routes\ValidatedHandler;
+use Phalanx\Tests\Http\Fixtures\Routes\ValidatedInputHandler;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ServerRequestInterface;
@@ -105,10 +107,42 @@ final class CapabilityWiringTest extends TestCase
         }
     }
 
+    #[Test]
+    public function has_validators_receives_hydrated_dto_when_handler_has_input_param(): void
+    {
+        InputCapturingValidator::reset();
+
+        $group = RouteGroup::of([
+            'GET /v' => ValidatedInputHandler::class,
+        ]);
+
+        // Supply query param so InputHydrator hydrates a non-default SimpleInputDto.
+        $request = $this->createRequest('GET', '/v', queryParams: ['name' => 'alice']);
+        $scope = $this->app->createScope()->withAttribute('request', $request);
+
+        try {
+            $scope->execute($group);
+            $this->fail('Expected ValidationException from validator');
+        } catch (ValidationException $e) {
+            $this->assertArrayHasKey('captured', $e->errors);
+        }
+
+        // The validator should have received the hydrated DTO, not null.
+        $this->assertNotNull(InputCapturingValidator::$capturedInput, 'Validator should receive a hydrated DTO');
+        $this->assertInstanceOf(\Phalanx\Tests\Http\Fixtures\Routes\SimpleInputDto::class, InputCapturingValidator::$capturedInput);
+        $this->assertSame('alice', InputCapturingValidator::$capturedInput->name);
+    }
+
     /**
      * @param array<string, string> $headers
+     * @param array<string, string> $queryParams
      */
-    private function createRequest(string $method, string $path, array $headers = []): ServerRequestInterface
+    private function createRequest(
+        string $method,
+        string $path,
+        array $headers = [],
+        array $queryParams = [],
+    ): ServerRequestInterface
     {
         $uri = $this->createMock(UriInterface::class);
         $uri->method('getPath')->willReturn($path);
@@ -116,7 +150,7 @@ final class CapabilityWiringTest extends TestCase
         $request = $this->createMock(ServerRequestInterface::class);
         $request->method('getMethod')->willReturn($method);
         $request->method('getUri')->willReturn($uri);
-        $request->method('getQueryParams')->willReturn([]);
+        $request->method('getQueryParams')->willReturn($queryParams);
         $request->method('getHeaderLine')->willReturnCallback(
             static fn(string $name): string => $headers[$name] ?? ''
         );

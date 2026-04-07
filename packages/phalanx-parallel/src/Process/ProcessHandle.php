@@ -14,6 +14,7 @@ use React\EventLoop\LoopInterface;
 use React\EventLoop\TimerInterface;
 use React\Promise\Deferred;
 use React\Promise\PromiseInterface;
+use React\Stream\WritableStreamInterface;
 
 use function React\Promise\reject;
 use function React\Promise\resolve;
@@ -22,6 +23,7 @@ final class ProcessHandle
 {
     private ?Process $process = null;
     private string $buffer = '';
+    /** @var Deferred<mixed>|null */
     private ?Deferred $pendingTask = null;
     private ?string $pendingTaskId = null;
     private ProcessState $state = ProcessState::Idle;
@@ -29,10 +31,10 @@ final class ProcessHandle
     private ?TimerInterface $gracefulTimer = null;
     private ?TimerInterface $forceTimer = null;
 
-    /** @var array<string, Deferred> */
+    /** @var array<string, Deferred<mixed>> */
     private array $pendingServiceCalls = [];
 
-    /** @var callable(ServiceCall): PromiseInterface */
+    /** @var callable(ServiceCall): PromiseInterface<mixed> */
     private $serviceHandler;
 
     public function __construct(
@@ -57,7 +59,7 @@ final class ProcessHandle
         return $this->process !== null && $this->process->isRunning();
     }
 
-    /** @param callable(ServiceCall): PromiseInterface $handler */
+    /** @param callable(ServiceCall): PromiseInterface<mixed> $handler */
     public function setServiceHandler(callable $handler): void
     {
         $this->serviceHandler = $handler;
@@ -85,23 +87,26 @@ final class ProcessHandle
         // Non-static: writes mutable $this->buffer, calls $this->processBuffer().
         // Cycle is bounded -- listener lives on $this->process, which cleanup() nulls,
         // detaching all listeners and breaking the cycle on process exit or kill().
-        $this->process->stdout->on('data', function (string $data): void {
+        $process = $this->process;
+
+        $process->stdout?->on('data', function (string $data): void {
             $this->buffer .= $data;
             $this->processBuffer();
         });
 
-        $this->process->stderr->on('data', static function (string $data): void {
+        $process->stderr?->on('data', static function (string $data): void {
             error_log("[Worker STDERR] $data");
         });
 
         // Non-static: calls $this->onExit() to handle pending task/service call cleanup.
         // Cycle is bounded -- fires exactly once on process exit, after which $this->process
         // is nulled by cleanup() in the kill() path or left as a dead handle.
-        $this->process->on('exit', function (?int $code, $signal): void {
+        $process->on('exit', function (?int $code, $signal): void {
             $this->onExit($code);
         });
     }
 
+    /** @return PromiseInterface<mixed> */
     public function execute(TaskRequest $task): PromiseInterface
     {
         if ($this->state !== ProcessState::Idle) {
@@ -116,7 +121,9 @@ final class ProcessHandle
         $this->pendingTaskId = $task->id;
         $this->pendingTask = new Deferred();
 
-        $this->process->stdin->write(Codec::encode($task));
+        if ($this->process->stdin instanceof WritableStreamInterface) {
+            $this->process->stdin->write(Codec::encode($task));
+        }
 
         // Non-static: reads and writes mutable $this->state.
         // Cycle is bounded -- finally() fires exactly once when the task promise settles.
@@ -127,6 +134,7 @@ final class ProcessHandle
         });
     }
 
+    /** @return PromiseInterface<mixed> */
     public function drain(): PromiseInterface
     {
         if ($this->process === null || !$this->process->isRunning()) {
@@ -140,15 +148,18 @@ final class ProcessHandle
         $this->drainInProgress = true;
         $this->state = ProcessState::Draining;
         $deferred = new Deferred();
+        $process = $this->process;
 
         // Non-static: calls $this->cancelDrainTimers() to clean up graceful/force timers.
         // Cycle is bounded -- fires exactly once on process exit.
-        $this->process->on('exit', function () use ($deferred): void {
+        $process->on('exit', function () use ($deferred): void {
             $this->cancelDrainTimers();
             $deferred->resolve(null);
         });
 
-        $this->process->stdin->end();
+        if ($process->stdin instanceof WritableStreamInterface) {
+            $process->stdin->end();
+        }
 
         // Non-static: reads nullable $this->gracefulTimer and $this->process.
         // Cycle is bounded -- addTimer fires once; the timer reference is nulled on entry.
@@ -272,11 +283,17 @@ final class ProcessHandle
         $handler($call)->then(
             function (mixed $result) use ($call): void {
                 $response = Response::serviceOk($call->id, $result);
-                $this->process?->stdin->write(Codec::encode($response));
+                $stdin = $this->process?->stdin;
+                if ($stdin instanceof WritableStreamInterface) {
+                    $stdin->write(Codec::encode($response));
+                }
             },
             function (\Throwable $e) use ($call): void {
                 $response = Response::serviceErr($call->id, $e);
-                $this->process?->stdin->write(Codec::encode($response));
+                $stdin = $this->process?->stdin;
+                if ($stdin instanceof WritableStreamInterface) {
+                    $stdin->write(Codec::encode($response));
+                }
             },
         );
     }

@@ -209,6 +209,7 @@ final class AnthropicProvider implements LlmProvider
     {
         $buffer = '';
         $ended = false;
+        /** @var \React\Promise\Deferred<bool>|null $waiting */
         $waiting = null;
         $abandoned = false;
 

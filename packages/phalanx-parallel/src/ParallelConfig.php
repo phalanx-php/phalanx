@@ -43,14 +43,14 @@ final readonly class ParallelConfig
     {
         if (PHP_OS_FAMILY === 'Darwin') {
             $output = shell_exec('sysctl -n hw.ncpu');
-            if ($output !== null && is_numeric(trim($output))) {
+            if (is_string($output) && is_numeric(trim($output))) {
                 return (int) trim($output);
             }
         }
 
         if (PHP_OS_FAMILY === 'Linux') {
             $output = shell_exec('nproc');
-            if ($output !== null && is_numeric(trim($output))) {
+            if (is_string($output) && is_numeric(trim($output))) {
                 return (int) trim($output);
             }
         }

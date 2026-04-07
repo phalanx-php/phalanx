@@ -49,6 +49,7 @@ final class ArgvParser
     }
 
     /**
+     * @param list<string> $argv
      * @param array<string, CommandOption> $optionsByName
      * @param array<string, mixed> $parsedOptions
      * @return int Updated index
@@ -101,6 +102,7 @@ final class ArgvParser
     }
 
     /**
+     * @param list<string> $argv
      * @param array<string, string> $shorthandMap
      * @param array<string, CommandOption> $optionsByName
      * @param array<string, mixed> $parsedOptions

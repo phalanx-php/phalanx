@@ -27,7 +27,7 @@ final class Worker
     private bool $tickScheduled = false;
     private ?TimerInterface $drainPollTimer = null;
 
-    /** @var callable(ServiceCall): PromiseInterface */
+    /** @var callable(ServiceCall): PromiseInterface<mixed> */
     private $serviceHandler;
 
     public function __construct(
@@ -52,13 +52,14 @@ final class Worker
         return $this->mailbox->count();
     }
 
-    /** @param callable(ServiceCall): PromiseInterface $handler */
+    /** @param callable(ServiceCall): PromiseInterface<mixed> $handler */
     public function setServiceHandler(callable $handler): void
     {
         $this->serviceHandler = $handler;
         $this->process->setServiceHandler($handler);
     }
 
+    /** @return PromiseInterface<mixed> */
     public function send(TaskRequest $task): PromiseInterface
     {
         if ($this->state === AgentState::Crashed) {
@@ -80,6 +81,7 @@ final class Worker
         return $deferred->promise();
     }
 
+    /** @return PromiseInterface<mixed> */
     public function drain(): PromiseInterface
     {
         if ($this->state === AgentState::Crashed) {

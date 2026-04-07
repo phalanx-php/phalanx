@@ -69,6 +69,9 @@ final class WorkerScope implements Scope
         return $this->trace;
     }
 
+    /**
+     * @param list<mixed> $args
+     */
     public function callService(string $serviceClass, string $method, array $args): mixed
     {
         $id = bin2hex(random_bytes(8));
@@ -77,7 +80,7 @@ final class WorkerScope implements Scope
             id: $id,
             serviceClass: $serviceClass,
             method: $method,
-            args: $args,
+            args: array_values($args),
         );
 
         fwrite($this->stdout, Codec::encode($call));
@@ -119,6 +122,7 @@ final class WorkerScope implements Scope
             $this->buffer .= $chunk;
         }
 
+        assert(is_int($pos));
         $line = substr($this->buffer, 0, $pos);
         $this->buffer = substr($this->buffer, $pos + 1);
 

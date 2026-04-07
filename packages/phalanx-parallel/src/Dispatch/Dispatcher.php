@@ -9,5 +9,6 @@ use React\Promise\PromiseInterface;
 
 interface Dispatcher
 {
+    /** @return PromiseInterface<mixed> */
     public function dispatch(TaskRequest $task): PromiseInterface;
 }

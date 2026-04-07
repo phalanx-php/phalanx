@@ -41,6 +41,7 @@ final class SearchInput extends BasePrompt
 {
     private string $query       = '';
     private int $queryCursor    = 0;
+    /** @var list<mixed>|null */
     private ?array $matches     = [];
     private ?int $highlighted   = null;
     private int $spinnerTick    = 0;

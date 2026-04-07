@@ -94,6 +94,7 @@ final class RawInput
         $this->attached = true;
     }
 
+    /** @return PromiseInterface<mixed> */
     public function nextKey(): PromiseInterface
     {
         $deferred        = new Deferred();

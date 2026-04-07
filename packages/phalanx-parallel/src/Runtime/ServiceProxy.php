@@ -11,6 +11,9 @@ final class ServiceProxy
         private readonly WorkerScope $scope,
     ) {}
 
+    /**
+     * @param list<mixed> $args
+     */
     public function __call(string $method, array $args): mixed
     {
         return $this->scope->callService($this->serviceClass, $method, $args);

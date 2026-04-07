@@ -20,8 +20,10 @@ final class Channel
     /** @var list<mixed> */
     private array $buffer = [];
 
+    /** @var Deferred<mixed>|null */
     private ?Deferred $consumerWaiting = null;
 
+    /** @var Deferred<mixed>|null */
     private ?Deferred $producerWaiting = null;
 
     private ?Throwable $error = null;
@@ -62,6 +64,9 @@ final class Channel
                 ($this->pressureCallback)(true);
             }
 
+            // Both conditions are re-checked here because scopeAwait() suspends the fiber,
+            // allowing another fiber to drain the buffer or close the channel before we resume.
+            // @phpstan-ignore booleanAnd.leftAlwaysTrue
             if ($this->open && count($this->buffer) >= $this->bufferSize) {
                 $this->producerWaiting = new Deferred();
                 $this->scopeAwait($this->producerWaiting->promise());
@@ -157,6 +162,8 @@ final class Channel
             $this->consumerWaiting = new Deferred();
             $hasData = $this->scopeAwait($this->consumerWaiting->promise());
 
+            // scopeAwait() suspended the fiber; $buffer and $error may have changed.
+            // @phpstan-ignore identical.alwaysTrue, notIdentical.alwaysFalse
             if (!$hasData && $this->buffer === []) {
                 if ($this->error !== null) {
                     throw $this->error;
@@ -174,6 +181,7 @@ final class Channel
         return $this;
     }
 
+    /** @param PromiseInterface<mixed> $promise */
     private function scopeAwait(PromiseInterface $promise): mixed
     {
         $scope = FiberScopeRegistry::current();

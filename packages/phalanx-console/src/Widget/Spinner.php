@@ -28,6 +28,9 @@ final class Spinner
     public const array LINE    = ['-', '\\', '|', '/'];
     public const array ARC     = ['◜', '◠', '◝', '◞', '◡', '◟'];
 
+    /**
+     * @param list<string> $frames
+     */
     public function __construct(
         private readonly Theme $theme,
         private readonly array $frames = self::DOTS,

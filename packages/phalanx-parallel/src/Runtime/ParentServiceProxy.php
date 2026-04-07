@@ -20,6 +20,7 @@ final class ParentServiceProxy
     ) {
     }
 
+    /** @return PromiseInterface<mixed> */
     public function handle(ServiceCall $call): PromiseInterface
     {
         try {

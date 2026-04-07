@@ -65,6 +65,7 @@ final class Emitter implements StreamSource
     public static function listen(string $event, EventEmitterInterface|callable $source): self
     {
         return new self(static function (Channel $ch, StreamContext $ctx) use ($event, $source): void {
+            /** @var EventEmitterInterface $emitter */
             $emitter = is_callable($source) ? $source() : $source;
 
             $emitter->on($event, static function (mixed ...$args) use ($ch): void {
@@ -285,7 +286,9 @@ final class Emitter implements StreamSource
 
         return new self(static function (Channel $ch, StreamContext $ctx) use ($prev, $count, $seconds): void {
             async(static function () use ($prev, $ch, $ctx, $count, $seconds): void {
+                /** @var list<mixed> $buffer */
                 $buffer = [];
+                /** @var \React\EventLoop\TimerInterface|null $timer */
                 $timer = null;
 
                 $flush = static function () use ($ch, &$buffer, &$timer): void {
@@ -422,6 +425,7 @@ final class Emitter implements StreamSource
 
         return new self(static function (Channel $ch, StreamContext $ctx) use ($prev, $seconds): void {
             $latest = null;
+            /** @var bool $hasLatest */
             $hasLatest = false;
 
             $timer = Loop::addPeriodicTimer($seconds, static function () use ($ch, &$latest, &$hasLatest): void {

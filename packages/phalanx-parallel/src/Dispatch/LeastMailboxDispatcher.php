@@ -21,6 +21,7 @@ final class LeastMailboxDispatcher implements Dispatcher
     ) {
     }
 
+    /** @return PromiseInterface<mixed> */
     public function dispatch(TaskRequest $task): PromiseInterface
     {
         if (count($this->agents) === 0) {

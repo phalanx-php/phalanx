@@ -10,7 +10,7 @@ use SplQueue;
 
 final class Mailbox
 {
-    /** @var SplQueue<array{TaskRequest, Deferred}> */
+    /** @var SplQueue<array{TaskRequest, Deferred<mixed>}> */
     private SplQueue $queue;
 
     public function __construct(
@@ -19,6 +19,7 @@ final class Mailbox
         $this->queue = new SplQueue();
     }
 
+    /** @param Deferred<mixed> $deferred */
     public function enqueue(TaskRequest $task, Deferred $deferred): void
     {
         if ($this->isFull()) {
@@ -29,7 +30,7 @@ final class Mailbox
     }
 
     /**
-     * @return array{TaskRequest, Deferred}
+     * @return array{TaskRequest, Deferred<mixed>}
      */
     public function dequeue(): array
     {

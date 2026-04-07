@@ -25,6 +25,7 @@ final class SuggestInput extends BasePrompt
 {
     private string $value       = '';
     private int $cursor         = 0;
+    /** @var list<mixed>|null */
     private ?array $suggestions = null;
     private int $highlighted    = 0;
 
@@ -135,12 +136,13 @@ final class SuggestInput extends BasePrompt
 
     private function renderSuggestionBox(int $width): string
     {
-        $limit = min(4, count($this->suggestions));
+        $suggestions = $this->suggestions ?? [];
+        $limit = min(4, count($suggestions));
         $sep   = $this->theme->border->apply('  ' . str_repeat('─', max(0, $width - 2)));
         $lines = [$sep];
 
         for ($i = 0; $i < $limit; $i++) {
-            $item    = (string) $this->suggestions[$i];
+            $item    = (string) $suggestions[$i];
             $active  = $i === $this->highlighted;
             $prefix  = $active ? $this->theme->accent->apply('  › ') : '    ';
             $lines[] = $prefix . ($active ? $this->theme->accent->apply($item) : $item);

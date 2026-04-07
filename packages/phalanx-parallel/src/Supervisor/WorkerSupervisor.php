@@ -86,6 +86,7 @@ final class WorkerSupervisor
         return $this->dispatcher;
     }
 
+    /** @return PromiseInterface<mixed> */
     public function shutdown(): PromiseInterface
     {
         if (!$this->started) {
@@ -169,10 +170,10 @@ final class WorkerSupervisor
         $this->restartHistory[$agentId][] = $now;
 
         $windowStart = $now - $this->config->restartWindow;
-        $this->restartHistory[$agentId] = array_filter(
+        $this->restartHistory[$agentId] = array_values(array_filter(
             $this->restartHistory[$agentId],
-            static fn(float $time) => $time >= $windowStart
-        );
+            static fn(float $time) => $time >= $windowStart,
+        ));
 
         if (count($this->restartHistory[$agentId]) > $this->config->maxRestarts) {
             error_log("[Supervisor] Agent {$agentId} exceeded max restarts ({$this->config->maxRestarts}), not restarting");

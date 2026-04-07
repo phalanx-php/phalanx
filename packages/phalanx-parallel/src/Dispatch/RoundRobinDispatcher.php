@@ -23,6 +23,7 @@ final class RoundRobinDispatcher implements Dispatcher
     ) {
     }
 
+    /** @return PromiseInterface<mixed> */
     public function dispatch(TaskRequest $task): PromiseInterface
     {
         $count = count($this->agents);

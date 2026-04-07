@@ -83,7 +83,7 @@ final class ConcurrentTaskList
                 if ($bag->isOk($id)) {
                     $taskList->setState($id, TaskState::Success);
                 } else {
-                    $taskList->setState($id, TaskState::Error, $bag->errors[$id]?->getMessage());
+                    $taskList->setState($id, TaskState::Error, $bag->errors[$id]->getMessage());
                 }
             }
         } finally {

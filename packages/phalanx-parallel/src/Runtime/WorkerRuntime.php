@@ -112,12 +112,16 @@ final class WorkerRuntime
         $constructor = $reflection->getConstructor();
 
         if ($constructor === null) {
-            return $reflection->newInstance();
+            $instance = $reflection->newInstance();
+            assert($instance instanceof Scopeable || $instance instanceof Executable);
+            return $instance;
         }
 
         $args = $this->resolveConstructorArgs($constructor->getParameters(), $request->constructorArgs);
 
-        return $reflection->newInstanceArgs($args);
+        $instance = $reflection->newInstanceArgs($args);
+        assert($instance instanceof Scopeable || $instance instanceof Executable);
+        return $instance;
     }
 
     /**
