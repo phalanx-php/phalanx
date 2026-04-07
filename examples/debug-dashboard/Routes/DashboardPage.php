@@ -3,9 +3,10 @@
 declare(strict_types=1);
 
 use Phalanx\Scope;
+use Phalanx\Task\Scopeable;
 use React\Http\Message\Response;
 
-final class DashboardPage
+final class DashboardPage implements Scopeable
 {
     public function __invoke(Scope $scope): Response
     {

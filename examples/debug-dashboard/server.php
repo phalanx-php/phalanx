@@ -47,7 +47,6 @@ require __DIR__ . '/Ws/DumpStream.php';
 require __DIR__ . '/Ws/MetricsStream.php';
 
 use Phalanx\Application;
-use Phalanx\Http\Route;
 use Phalanx\Http\RouteGroup;
 use Phalanx\Http\Runner;
 use Phalanx\WebSocket\WsGateway;
@@ -60,14 +59,14 @@ $app = Application::starting()
     ->compile();
 
 $httpRoutes = RouteGroup::of([
-    'GET /'               => Route::of(fn: new DashboardPage()),
-    'POST /dump'          => Route::of(fn: new DumpReceiver()),
-    'POST /test/generate' => Route::of(fn: new TestGenerator()),
+    'GET /'               => DashboardPage::class,
+    'POST /dump'          => DumpReceiver::class,
+    'POST /test/generate' => TestGenerator::class,
 ]);
 
 $wsRoutes = WsRouteGroup::of([
-    '/dumps'   => DumpStream::route(),
-    '/metrics' => MetricsStream::route(),
+    '/dumps'   => DumpStream::class,
+    '/metrics' => MetricsStream::class,
 ], gateway: $gateway);
 
 Runner::from($app)

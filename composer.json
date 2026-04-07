@@ -102,7 +102,8 @@
         "rector:dry": "php vendor/bin/rector process --dry-run",
         "cs": "php vendor/bin/phpcs --standard=packages/phalanx-core/phpcs.xml",
         "cs:fix": "php vendor/bin/phpcbf --standard=packages/phalanx-core/phpcs.xml",
-        "check": ["@analyse", "@rector:dry", "@test"]
+        "examples:lint": "find examples packages/phalanx-ai/examples -name '*.php' -not -path '*/vendor/*' -print0 | xargs -0 -n1 php -l > /dev/null",
+        "check": ["@analyse", "@rector:dry", "@test", "@examples:lint"]
     },
     "config": {
         "sort-packages": true,

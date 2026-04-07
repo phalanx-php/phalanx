@@ -3,12 +3,13 @@
 declare(strict_types=1);
 
 use Phalanx\ExecutionScope;
+use Phalanx\Task\Executable;
 use Phalanx\Task\Task;
 use Phalanx\WebSocket\WsGateway;
 use Phalanx\WebSocket\WsMessage;
 use React\Http\Message\Response;
 
-final class TestGenerator
+final class TestGenerator implements Executable
 {
     public function __invoke(ExecutionScope $scope): Response
     {

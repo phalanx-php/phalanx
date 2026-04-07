@@ -2,51 +2,53 @@
 
 declare(strict_types=1);
 
+use Phalanx\Scope;
+use Phalanx\Task\Scopeable;
 use Phalanx\WebSocket\WsGateway;
-use Phalanx\WebSocket\WsRoute;
 use Phalanx\WebSocket\WsScope;
 
-final class DumpStream
+final class DumpStream implements Scopeable
 {
-    public static function route(): WsRoute
+    public function __invoke(Scope $scope): void
     {
-        return new WsRoute(static function (WsScope $ws): void {
-            $conn = $ws->connection;
-            $store = $ws->service(DumpStore::class);
-            $gateway = $ws->service(WsGateway::class);
+        assert($scope instanceof WsScope);
+        $ws = $scope;
 
-            $gateway->subscribe($conn, "dump:*");
+        $conn = $ws->connection;
+        $store = $ws->service(DumpStore::class);
+        $gateway = $ws->service(WsGateway::class);
 
-            $backlog = $store->recent(50);
-            if ($backlog !== []) {
-                $conn->sendText(
-                    json_encode([
-                        "type" => "backlog",
-                        "entries" => $backlog,
-                    ]),
-                );
-            }
+        $gateway->subscribe($conn, "dump:*");
 
-            $conn
-                ->stream($ws)
-                ->filter(static fn($msg) => $msg->isText)
-                ->map(static fn($msg) => $msg->decode())
-                ->onEach(static function (array $cmd) use ($conn, $gateway): void {
-                    $action = $cmd["action"] ?? null;
-                    $channel = $cmd["channel"] ?? null;
+        $backlog = $store->recent(50);
+        if ($backlog !== []) {
+            $conn->sendText(
+                json_encode([
+                    "type" => "backlog",
+                    "entries" => $backlog,
+                ]),
+            );
+        }
 
-                    if ($action === "subscribe" && $channel !== null) {
-                        $gateway->subscribe($conn, "dump:{$channel}");
-                    }
+        $conn
+            ->stream($ws)
+            ->filter(static fn($msg) => $msg->isText)
+            ->map(static fn($msg) => $msg->decode())
+            ->onEach(static function (array $cmd) use ($conn, $gateway): void {
+                $action = $cmd["action"] ?? null;
+                $channel = $cmd["channel"] ?? null;
 
-                    if ($action === "unsubscribe" && $channel !== null) {
-                        $gateway->unsubscribe($conn, "dump:{$channel}");
-                    }
-                })
-                ->onComplete(static function () use ($conn, $gateway): void {
-                    $gateway->unregister($conn);
-                })
-                ->consume();
-        });
+                if ($action === "subscribe" && $channel !== null) {
+                    $gateway->subscribe($conn, "dump:{$channel}");
+                }
+
+                if ($action === "unsubscribe" && $channel !== null) {
+                    $gateway->unsubscribe($conn, "dump:{$channel}");
+                }
+            })
+            ->onComplete(static function () use ($conn, $gateway): void {
+                $gateway->unregister($conn);
+            })
+            ->consume();
     }
 }

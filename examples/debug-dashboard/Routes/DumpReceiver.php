@@ -3,11 +3,12 @@
 declare(strict_types=1);
 
 use Phalanx\Scope;
+use Phalanx\Task\Scopeable;
 use Phalanx\WebSocket\WsGateway;
 use Phalanx\WebSocket\WsMessage;
 use React\Http\Message\Response;
 
-final class DumpReceiver
+final class DumpReceiver implements Scopeable
 {
     public function __invoke(Scope $scope): Response
     {
