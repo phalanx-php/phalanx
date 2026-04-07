@@ -9,11 +9,18 @@ use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 
 /**
- * Wraps a handler task with middleware.
+ * Wraps a handler task with a non-empty middleware chain.
  *
- * Middleware are Scopeable|Executable that can call the next handler via
- * $scope->attribute('handler.next'). Each middleware receives the
- * scope and can modify attributes before/after the inner call.
+ * Each middleware is a Scopeable|Executable that calls the next handler via
+ * `$scope->attribute('handler.next')`. The chain is built once at construction
+ * and then invoked. Middleware dispatch is a direct-call chain -- it does NOT
+ * route through `$scope->execute()`, so trace/timeout/retry/Fiber-registry
+ * behaviors apply only at the entry point (the HandlerGroup itself when the
+ * runner invokes it).
+ *
+ * Construction precondition: `$middleware` MUST be non-empty. The empty case
+ * is short-circuited by `HandlerGroup::executeHandler` before this class is
+ * ever instantiated.
  */
 final readonly class MiddlewareWrapper implements Executable
 {
@@ -42,10 +49,6 @@ final readonly class MiddlewareWrapper implements Executable
 
     public function __invoke(ExecutionScope $scope): mixed
     {
-        if ($this->middleware === []) {
-            return $scope->execute($this->handler);
-        }
-
         $stack = $this->buildStack($this->handler, $this->middleware);
 
         return ($stack)($scope);

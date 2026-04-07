@@ -9,9 +9,13 @@ namespace Phalanx\Http;
  *
  * Each entry maps an HTTP status code to a body class-string. The map covers
  * both successful responses (e.g. 201 => User::class) and domain error responses
- * (e.g. 409 => UserConflictError::class). The OpenAPI generator and response
- * negotiation pipeline read this contract via reflection without instantiating
- * the handler.
+ * (e.g. 409 => UserConflictError::class).
+ *
+ * v0.6.0 status: this interface is currently DECLARATIVE METADATA. The
+ * Phalanx dispatcher does not consume it at runtime, and the OpenAPI
+ * generator does not yet read it. It is intended for OpenAPI integration
+ * in a follow-up release. Implement it today to document handler contracts;
+ * the framework will pick it up automatically when the consumer ships.
  */
 interface Responds
 {

@@ -7,9 +7,10 @@ namespace Phalanx\Http;
 /**
  * Declares HTTP headers a handler requires (or optionally accepts).
  *
- * Each entry is a Header descriptor. Required headers cause dispatch to abort
- * with a 400 response if missing or pattern-mismatched. Optional headers are
- * advisory metadata for OpenAPI generation.
+ * Required headers cause dispatch to abort with a ValidationException
+ * (status 422) if missing or pattern-mismatched. Optional headers are
+ * advisory metadata for OpenAPI generation. The runner enforces this
+ * contract on every request before the handler runs.
  */
 interface RequiresHeaders
 {

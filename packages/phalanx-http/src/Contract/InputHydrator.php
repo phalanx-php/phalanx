@@ -200,19 +200,19 @@ class InputHydrator
 
         return match ($typeName) {
             'string' => (string) $value,
-            'int' => is_numeric($value) ? (int) $value : (function () use ($field, &$errors) {
+            'int' => is_numeric($value) ? (int) $value : (static function () use ($field, &$errors) {
                 $errors[$field][] = 'Must be an integer';
                 return null;
             })(),
-            'float' => is_numeric($value) ? (float) $value : (function () use ($field, &$errors) {
+            'float' => is_numeric($value) ? (float) $value : (static function () use ($field, &$errors) {
                 $errors[$field][] = 'Must be a number';
                 return null;
             })(),
-            'bool' => filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? (function () use ($field, &$errors) {
+            'bool' => filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? (static function () use ($field, &$errors) {
                 $errors[$field][] = 'Must be a boolean';
                 return null;
             })(),
-            'array' => is_array($value) ? $value : (function () use ($field, &$errors) {
+            'array' => is_array($value) ? $value : (static function () use ($field, &$errors) {
                 $errors[$field][] = 'Must be an array';
                 return null;
             })(),

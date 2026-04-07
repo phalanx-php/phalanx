@@ -126,8 +126,8 @@ final class WsRouteGroup implements Executable
                 ? ($routeConfig->matches('GET', $request->getUri()->getPath()) ?? [])
                 : [];
 
+            /** @var HandlerResolver $resolver */
             $resolver = $match->scope->service(HandlerResolver::class);
-            assert($resolver instanceof HandlerResolver);
             $pump = $resolver->resolve($handler->task, $match->scope);
 
             $connectionHandler = new WsConnectionHandler(

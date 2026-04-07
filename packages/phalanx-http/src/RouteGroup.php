@@ -8,6 +8,7 @@ use Closure;
 use Phalanx\ExecutionScope;
 use Phalanx\Handler\Handler;
 use Phalanx\Handler\HandlerGroup;
+use Phalanx\Handler\HandlerResolver;
 use Phalanx\Http\Contract\InputHydrator;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
@@ -23,6 +24,12 @@ use Phalanx\Task\Scopeable;
  * Path placeholders may use named pattern aliases registered via
  * `withPatterns(['int' => '\d+', ...])`. A default set ships built-in
  * (uuid, int, slug, year, month, day, date, any). Users may add their own.
+ *
+ * Patterns are applied at route-COMPILE time. Routes added via `of()` use
+ * whatever patterns are active at construction (defaults). To use custom
+ * patterns in initial routes, build incrementally:
+ *   `RouteGroup::create()->withPatterns([...])->route(...)->route(...)`
+ * Patterns added after `of()` only affect routes added afterwards.
  */
 final class RouteGroup implements Executable
 {
@@ -86,17 +93,64 @@ final class RouteGroup implements Executable
     }
 
     /**
+     * HTTP-specific invoker. When the dispatch scope is a RequestScope, runs
+     * (in order) header checks, business validators, and input hydration
+     * before calling the handler. For non-HTTP scopes (e.g. tests using a
+     * raw ExecutionScope) it falls through to direct invocation.
+     *
      * @return Closure(Scopeable|Executable, ExecutionScope): mixed
      */
     private static function httpInvoker(): Closure
     {
         return static function (Scopeable|Executable $instance, ExecutionScope $scope): mixed {
-            if ($scope instanceof RequestScope) {
-                $args = InputHydrator::resolve($instance, $scope);
-                return $instance(...$args);
+            if (!$scope instanceof RequestScope) {
+                return $instance($scope);
             }
-            return $instance($scope);
+
+            if ($instance instanceof RequiresHeaders) {
+                self::enforceRequiredHeaders($instance->requiredHeaders, $scope);
+            }
+
+            if ($instance instanceof HasValidators && $instance->validators !== []) {
+                /** @var HandlerResolver $resolver */
+                $resolver = $scope->service(HandlerResolver::class);
+                foreach ($instance->validators as $validatorClass) {
+                    $validator = $resolver->resolve($validatorClass, $scope);
+                    /** @var RouteValidator $validator */
+                    $validator->validate($scope);
+                }
+            }
+
+            $args = InputHydrator::resolve($instance, $scope);
+            return $instance(...$args);
         };
+    }
+
+    /**
+     * @param list<Header> $required
+     */
+    private static function enforceRequiredHeaders(array $required, RequestScope $scope): void
+    {
+        $errors = [];
+
+        foreach ($required as $header) {
+            $value = $scope->header($header->name);
+
+            if ($value === '') {
+                if ($header->required) {
+                    $errors[$header->name][] = 'This header is required';
+                }
+                continue;
+            }
+
+            if ($header->pattern !== null && preg_match('#^' . $header->pattern . '$#', $value) !== 1) {
+                $errors[$header->name][] = 'Header value does not match required pattern';
+            }
+        }
+
+        if ($errors !== []) {
+            throw new ValidationException($errors);
+        }
     }
 
     public function __invoke(ExecutionScope $scope): mixed
@@ -125,6 +179,11 @@ final class RouteGroup implements Executable
 
     /**
      * Register named pattern aliases for path placeholders.
+     *
+     * Patterns apply to routes added AFTER this call -- routes already
+     * compiled by `of()` or earlier `route()` calls keep their compiled
+     * regex. Build incrementally if you want patterns to apply to all
+     * routes in the group.
      *
      * @param array<string, string> $patterns
      */
@@ -164,7 +223,7 @@ final class RouteGroup implements Executable
         $newInner = $this->inner->merge($mounted);
 
         $clone = self::fromHandlerGroup($newInner);
-        $clone->patterns = $this->patterns;
+        $clone->patterns = [...$this->patterns, ...$group->patterns];
 
         return $clone;
     }
@@ -241,8 +300,12 @@ final class RouteGroup implements Executable
     private static function prefixRouteConfig(string $prefix, RouteConfig $config): RouteConfig
     {
         $prefixPattern = preg_quote($prefix, '#');
+        // Pattern format is '#^/path$#'. Strip the '#^' delimiter+anchor from
+        // the start and the trailing '#' delimiter from the end, leaving the
+        // inner '/path$' body. Concatenating produces '#^/prefix/path$$#';
+        // the duplicate '$' is a harmless redundant end-of-string assertion.
         $innerPattern = substr($config->pattern, 2, -1);
-        $newPattern = '#^' . $prefixPattern . $innerPattern . '$#';
+        $newPattern = '#^' . $prefixPattern . $innerPattern . '#';
 
         return new RouteConfig(
             $config->methods,

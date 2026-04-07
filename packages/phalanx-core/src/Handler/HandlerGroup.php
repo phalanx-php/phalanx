@@ -6,6 +6,7 @@ namespace Phalanx\Handler;
 
 use Closure;
 use Phalanx\ExecutionScope;
+use Phalanx\HasMiddleware;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 use RuntimeException;
@@ -22,7 +23,7 @@ use RuntimeException;
  * Runners become thin shells that set attributes and execute the group.
  *
  * Middleware composition order at dispatch:
- *   group (outermost) -> handler-config (innermost)
+ *   group (outermost) -> handler-config -> handler-instance HasMiddleware (innermost)
  * Class-string identity is used to deduplicate; if the same middleware
  * class-string appears at multiple levels, the innermost declaration wins.
  *
@@ -198,15 +199,21 @@ final class HandlerGroup implements Executable
 
     private function executeHandler(Handler $handler, ExecutionScope $scope): mixed
     {
+        /** @var HandlerResolver $resolver */
         $resolver = $scope->service(HandlerResolver::class);
-        assert($resolver instanceof HandlerResolver);
         $instance = $resolver->resolve($handler->task, $scope);
 
         $invoker = $this->invoker ?? self::defaultInvoker();
 
+        // Three-layer middleware composition (outermost first):
+        //   group -> handler-config -> handler-instance HasMiddleware
+        // Dedup keeps the LAST occurrence so the innermost declaration wins.
+        $instanceMiddleware = $instance instanceof HasMiddleware ? $instance->middleware : [];
+
         $combined = self::dedupMiddleware([
             ...$this->middleware,
             ...$handler->config->middleware,
+            ...$instanceMiddleware,
         ]);
 
         if ($combined === []) {

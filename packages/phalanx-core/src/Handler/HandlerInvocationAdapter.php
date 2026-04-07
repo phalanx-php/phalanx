@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Handler;
 
 use Closure;
-use LogicException;
 use Phalanx\ExecutionScope;
-use Phalanx\Scope;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 
@@ -19,6 +17,12 @@ use Phalanx\Task\Scopeable;
  * whatever shape the underlying handler expects -- e.g. an HTTP route may
  * call InputHydrator to produce additional DTO arguments before applying
  * them to the instance.
+ *
+ * INTERNAL: this class is constructed only from HandlerGroup::executeHandler
+ * and is always called with an ExecutionScope (the dispatch path that
+ * reaches the middleware chain). It implements both Scopeable and Executable
+ * so the middleware chain's `Scopeable|Executable` union accepts it; the
+ * dual implementation is a type-system convenience, not a semantic claim.
  */
 final readonly class HandlerInvocationAdapter implements Scopeable, Executable
 {
@@ -30,16 +34,8 @@ final readonly class HandlerInvocationAdapter implements Scopeable, Executable
         private Closure $invoker,
     ) {}
 
-    public function __invoke(Scope $scope): mixed
+    public function __invoke(ExecutionScope $scope): mixed
     {
-        if (!$scope instanceof ExecutionScope) {
-            throw new LogicException(
-                'HandlerInvocationAdapter requires an ExecutionScope (got '
-                . $scope::class . '). The adapter is only used inside the '
-                . 'middleware dispatch path which always carries an ExecutionScope.'
-            );
-        }
-
         return ($this->invoker)($this->instance, $scope);
     }
 }

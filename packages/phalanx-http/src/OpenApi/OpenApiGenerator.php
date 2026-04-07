@@ -8,8 +8,6 @@ use Phalanx\Http\Contract\InputHydrator;
 use Phalanx\Http\Contract\InputSource;
 use Phalanx\Http\RouteConfig;
 use Phalanx\Http\RouteGroup;
-use Phalanx\SelfDescribed;
-use Phalanx\Tagged;
 use ReflectionClass;
 use ReflectionNamedType;
 
@@ -62,13 +60,10 @@ class OpenApiGenerator
         $operation = [];
 
         $ref = new ReflectionClass($handlerClass);
-        $defaultProps = $ref->getDefaultProperties();
 
         $description = self::readPropertyHook($ref, 'description');
         if ($description !== null) {
             $operation['summary'] = $description;
-        } elseif (is_subclass_of($handlerClass, SelfDescribed::class)) {
-            // SelfDescribed declared but no static default -- skip eager read.
         }
 
         $tags = self::readPropertyHook($ref, 'tags');
@@ -236,9 +231,14 @@ class OpenApiGenerator
     }
 
     /**
-     * Read a static-default property hook value from a handler class without
-     * constructing an instance. Falls back to scanning property hook bodies
-     * via reflection where the value is a literal.
+     * Read a property-hook value from a handler class for OpenAPI generation.
+     *
+     * Tries the static default first (cheap, works for backed properties).
+     * Falls back to instantiating the class IF its constructor has no
+     * required parameters -- handlers with constructor dependencies cannot
+     * be inspected this way because OpenAPI generation does not have access
+     * to the service container (it is a build-time / boot-time operation
+     * by design).
      *
      * @param ReflectionClass<object> $ref
      */
