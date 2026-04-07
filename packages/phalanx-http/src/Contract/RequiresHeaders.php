@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Http;
+namespace Phalanx\Http\Contract;
 
 /**
  * Declares HTTP headers a handler requires (or optionally accepts).

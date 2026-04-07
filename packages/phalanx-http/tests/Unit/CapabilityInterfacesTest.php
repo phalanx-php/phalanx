@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Phalanx\Tests\Http\Unit;
 
 use Phalanx\HasMiddleware;
-use Phalanx\Http\HasValidators;
-use Phalanx\Http\Header;
-use Phalanx\Http\RequiresHeaders;
-use Phalanx\Http\Responds;
-use Phalanx\Http\RouteValidator;
+use Phalanx\Http\Contract\HasValidators;
+use Phalanx\Http\Contract\Header;
+use Phalanx\Http\Contract\RequiresHeaders;
+use Phalanx\Http\Contract\Responds;
+use Phalanx\Http\Contract\RouteValidator;
 use Phalanx\Http\Response\Accepted;
 use Phalanx\Http\Response\Created;
 use Phalanx\Http\Response\NoContent;
@@ -20,7 +20,7 @@ use PHPUnit\Framework\TestCase;
 final class CapabilityInterfacesTest extends TestCase
 {
     #[Test]
-    public function responds_property_hook_returns_status_to_class_map(): void
+    public function responds_property_returns_status_to_class_map(): void
     {
         $handler = new class implements Responds {
             /** @var array<int, class-string> */
@@ -30,6 +30,24 @@ final class CapabilityInterfacesTest extends TestCase
                     409 => \RuntimeException::class,
                 ];
             }
+        };
+
+        $this->assertSame(
+            [201 => \stdClass::class, 409 => \RuntimeException::class],
+            $handler->responseTypes,
+        );
+    }
+
+    #[Test]
+    public function responds_satisfies_interface_with_backed_property(): void
+    {
+        // Preferred form: backed property with public private(set), no hook ceremony.
+        $handler = new class implements Responds {
+            /** @var array<int, class-string> */
+            public private(set) array $responseTypes = [
+                201 => \stdClass::class,
+                409 => \RuntimeException::class,
+            ];
         };
 
         $this->assertSame(

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Http;
 
 use Phalanx\Handler\HandlerConfig;
+use Phalanx\Http\Contract\RouteParamValidator;
 
 /**
  * HTTP route configuration with path matching and middleware.
@@ -20,6 +21,7 @@ class RouteConfig extends HandlerConfig
      * @param list<string> $paramNames
      * @param list<class-string> $middleware
      * @param list<string> $tags
+     * @param array<string, RouteParamValidator> $paramValidators
      */
     public function __construct(
         public private(set) array $methods = ['GET'],
@@ -30,6 +32,7 @@ class RouteConfig extends HandlerConfig
         array $middleware = [],
         array $tags = [],
         int $priority = 0,
+        public private(set) array $paramValidators = [],
     ) {
         parent::__construct($tags, $priority, $middleware);
     }
@@ -127,6 +130,22 @@ class RouteConfig extends HandlerConfig
         $clone->path = $path;
         $clone->pattern = $compiled->pattern;
         $clone->paramNames = $compiled->paramNames;
+        return $clone;
+    }
+
+    /**
+     * Attach imperative param validators to this route config.
+     *
+     * These run after FastRoute match, against the extracted param values.
+     * Validators that also provide toPattern() should have had their patterns
+     * applied at compile time via RouteGroup::withPatterns().
+     *
+     * @param array<string, RouteParamValidator> $validators
+     */
+    public function withParamValidators(array $validators): self
+    {
+        $clone = clone $this;
+        $clone->paramValidators = $validators;
         return $clone;
     }
 }

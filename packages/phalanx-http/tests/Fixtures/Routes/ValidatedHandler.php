@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Tests\Http\Fixtures\Routes;
 
-use Phalanx\Http\HasValidators;
-use Phalanx\Http\RouteValidator;
+use Phalanx\Http\Contract\HasValidators;
+use Phalanx\Http\Contract\RouteValidator;
 use Phalanx\Scope;
 use Phalanx\Task\Scopeable;
 

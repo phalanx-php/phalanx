@@ -189,16 +189,14 @@ AI agents produce typed event streams. The frontend renders them in real time:
 <?php
 
 use Phalanx\Ai\Agent;
-use Phalanx\ExecutionScope;
 use Phalanx\Http\RequestScope;
 use Phalanx\Http\Sse\SseResponse;
 use Phalanx\Task\Executable;
 
 final class AgentChatHandler implements Executable
 {
-    public function __invoke(ExecutionScope $scope): SseResponse
+    public function __invoke(RequestScope $scope): SseResponse
     {
-        /** @var RequestScope $scope */
         $message = $scope->body->required('message');
 
         $events = $scope->execute(

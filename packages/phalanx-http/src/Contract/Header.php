@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Http;
+namespace Phalanx\Http\Contract;
 
 /**
  * Required HTTP header descriptor for handler RequiresHeaders capability.

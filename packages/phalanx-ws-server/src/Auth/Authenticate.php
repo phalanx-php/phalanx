@@ -21,7 +21,7 @@ final class Authenticate implements Executable
     {
         assert($scope instanceof WsScope);
 
-        $auth = $this->guard->resolve($scope->request);
+        $auth = $this->guard->authenticate($scope->request);
 
         if ($auth === null) {
             throw new AuthenticationException();

@@ -84,7 +84,6 @@ Routes are class-strings registered in a `RouteGroup`. The `HandlerResolver` con
 <?php
 
 use Phalanx\Http\RequestScope;
-use Phalanx\Scope;
 use Phalanx\Task\Scopeable;
 use React\Http\Message\Response;
 
@@ -94,9 +93,8 @@ final class ShowUser implements Scopeable
         private readonly UserRepository $users,
     ) {}
 
-    public function __invoke(Scope $scope): mixed
+    public function __invoke(RequestScope $scope): mixed
     {
-        /** @var RequestScope $scope */
         $user = $this->users->find($scope->params->get('id'));
 
         return Response::json($user);
@@ -171,7 +169,6 @@ The built-in patterns are pre-registered -- the `withPatterns()` call above is o
 <?php
 
 use Phalanx\Http\RequestScope;
-use Phalanx\Scope;
 use Phalanx\Task\Scopeable;
 use React\Http\Message\Response;
 
@@ -181,9 +178,8 @@ final class ShowUser implements Scopeable
         private readonly UserRepository $users,
     ) {}
 
-    public function __invoke(Scope $scope): mixed
+    public function __invoke(RequestScope $scope): mixed
     {
-        /** @var RequestScope $scope */
         $id = $scope->params->get('id');
         $user = $this->users->find($id);
 
@@ -210,7 +206,6 @@ Handlers with no extra typed parameter work exactly as before -- the scope is pa
 ```php
 <?php
 
-use Phalanx\ExecutionScope;
 use Phalanx\Http\RequestScope;
 use Phalanx\Http\Response\Created;
 use Phalanx\Task\Executable;
@@ -230,9 +225,8 @@ final class CreateTask implements Executable
         private readonly TaskRepository $tasks,
     ) {}
 
-    public function __invoke(ExecutionScope $scope, CreateTaskInput $input): Created
+    public function __invoke(RequestScope $scope, CreateTaskInput $input): Created
     {
-        /** @var RequestScope $scope */
         $task = $this->tasks->create(
             title: $input->title,
             description: $input->description,
@@ -262,7 +256,6 @@ The JSON body keys map to constructor parameter names. Missing required fields p
 <?php
 
 use Phalanx\Http\RequestScope;
-use Phalanx\Scope;
 use Phalanx\Task\Scopeable;
 use React\Http\Message\Response;
 
@@ -281,9 +274,8 @@ final class ListTasks implements Scopeable
         private readonly TaskRepository $tasks,
     ) {}
 
-    public function __invoke(Scope $scope, ListTasksQuery $query): mixed
+    public function __invoke(RequestScope $scope, ListTasksQuery $query): mixed
     {
-        /** @var RequestScope $scope */
         $result = $this->tasks->paginate(
             page: $query->page,
             perPage: $query->perPage,
@@ -302,21 +294,19 @@ Query string values are coerced to constructor parameter types -- `?page=2&perPa
 ```php
 <?php
 
-use Phalanx\Http\RequestScope;
-use Phalanx\Scope;
 use Phalanx\Task\Scopeable;
 use React\Http\Message\Response;
 
 final class HealthCheck implements Scopeable
 {
-    public function __invoke(Scope $scope): mixed
+    public function __invoke(): mixed
     {
         return Response::json(['status' => 'ok']);
     }
 }
 ```
 
-No extra parameter -- the scope is the only argument. Hydration is a no-op.
+No parameters -- the handler needs nothing from the request. Hydration is a no-op and the invoker calls the handler with no arguments.
 
 ## Input Validation
 
@@ -395,6 +385,37 @@ throw ValidationException::single('email', 'Already in use');
 throw ValidationException::fromErrors(['email' => ['Already in use'], 'name' => ['Taken']]);
 ```
 
+## Static Closures in Long-Running Processes
+
+Phalanx runs as a long-lived process. PHP's cycle collector runs infrequently relative to event loop tick rate, which means reference cycles can accumulate unbounded between collections. One common source: non-static closures inside class methods.
+
+A closure declared without `static` implicitly captures `$this`:
+
+```php
+<?php
+
+// Non-static: captures $this. If $this also holds a reference back to the
+// closure (e.g. via a timer or promise callback), the cycle may persist
+// until GC runs -- or indefinitely if the collector is never triggered.
+$timer = Loop::addPeriodicTimer(1.0, fn() => $this->poll());
+```
+
+Declare closures `static` to prevent the implicit capture. When you need object state, extract it into a local variable first -- this copies the reference, not `$this`:
+
+```php
+<?php
+
+// Correct: local copy of the service, static closure captures the copy.
+$poller = $this->poller;
+$timer = Loop::addPeriodicTimer(1.0, static fn() => $poller->poll());
+```
+
+The same rule applies to every closure passed to `Task::of()`, `onDispose()`, stream operators, and promise chains. `Task::of()` enforces this at runtime via reflection. Apply the same discipline manually everywhere else.
+
+References:
+- [PHP anonymous functions](https://www.php.net/manual/en/functions.anonymous.php)
+- [Static closures RFC](https://wiki.php.net/rfc/closures/removal-of-this)
+
 ## Concurrent Request Handling
 
 Every route handler has access to Phalanx's concurrency primitives through the scope. Fetch data from multiple sources concurrently within a single request:
@@ -402,7 +423,6 @@ Every route handler has access to Phalanx's concurrency primitives through the s
 ```php
 <?php
 
-use Phalanx\ExecutionScope;
 use Phalanx\Http\RequestScope;
 use Phalanx\Task;
 use Phalanx\Task\Executable;
@@ -415,9 +435,12 @@ final class DashboardHandler implements Executable
         private readonly RedisClient $redis,
     ) {}
 
-    public function __invoke(ExecutionScope $scope): mixed
+    public function __invoke(RequestScope $scope): mixed
     {
-        /** @var RequestScope $scope */
+        // Extract service references before entering static closures -- static
+        // closures cannot capture $this, so local copies are used instead.
+        // See the Static Closures section below for why this matters in a
+        // long-running event loop.
         $db = $this->db;
         $redis = $this->redis;
 
@@ -543,7 +566,6 @@ Push real-time updates to clients with `SseResponse` and `SseChannel`.
 ```php
 <?php
 
-use Phalanx\ExecutionScope;
 use Phalanx\Http\RequestScope;
 use Phalanx\Http\Sse\SseResponse;
 use Phalanx\Stream\Emitter;
@@ -555,9 +577,8 @@ final class MetricsStream implements Executable
         private readonly MetricsCollector $metrics,
     ) {}
 
-    public function __invoke(ExecutionScope $scope): mixed
+    public function __invoke(RequestScope $scope): mixed
     {
-        /** @var RequestScope $scope */
         $metrics = $this->metrics;
 
         $source = Emitter::produce(static function ($ch, $ctx) use ($scope, $metrics) {
@@ -605,25 +626,35 @@ Missed events replay automatically when a client reconnects with `Last-Event-ID`
 
 ## UDP Listeners
 
-The runner supports UDP alongside HTTP on the same event loop:
+The runner supports UDP alongside HTTP on the same event loop. Implement `UdpHandler` for named, traceable UDP handlers:
 
 ```php
 <?php
 
+use Phalanx\ExecutionScope;
 use Phalanx\Http\Runner;
+use Phalanx\Http\UdpHandler;
+
+final class IngestMetrics implements UdpHandler
+{
+    public function __construct(private readonly MetricsIngester $ingester) {}
+
+    public function __invoke(ExecutionScope $scope, string $data, string $remote): void
+    {
+        $this->ingester->ingest($data, $remote);
+    }
+}
+
+// Resolve or construct the handler, then pass the instance to withUdp()
+$handler = new IngestMetrics($app->createScope()->service(MetricsIngester::class));
 
 Runner::from($app)
     ->withRoutes($routes)
-    ->withUdp(
-        handler: static function (string $data, string $remote, $scope): void {
-            $scope->service(MetricsIngester::class)->ingest($data, $remote);
-        },
-        port: 8081,
-    )
+    ->withUdp(handler: $handler, port: 8081)
     ->run();
 ```
 
-HTTP on 8080, UDP on 8081, single process.
+Handler argument order: scope first, then the datagram payload, then the sender address. HTTP on 8080, UDP on 8081, single process.
 
 ## Authentication
 
@@ -640,7 +671,7 @@ final class JwtGuard implements Guard
 {
     public function __construct(private readonly string $secret) {}
 
-    public function resolve(ServerRequestInterface $request): ?AuthContext
+    public function authenticate(ServerRequestInterface $request): ?AuthContext
     {
         $token = $this->extractBearer($request);
         $claims = $this->verifyJwt($token, $this->secret);
@@ -745,7 +776,6 @@ All three are in the `Phalanx\Http\Response` namespace and implement `ToResponse
 ```php
 <?php
 
-use Phalanx\ExecutionScope;
 use Phalanx\Http\RequestScope;
 use Phalanx\Http\Response\Created;
 use Phalanx\Http\Response\NoContent;
@@ -757,9 +787,8 @@ final class CreateUser implements Executable
         private readonly UserRepository $users,
     ) {}
 
-    public function __invoke(ExecutionScope $scope, CreateUserInput $input): Created
+    public function __invoke(RequestScope $scope, CreateUserInput $input): Created
     {
-        /** @var RequestScope $scope */
         return new Created($this->users->create($input));
     }
 }
@@ -770,9 +799,8 @@ final class DeleteUser implements Executable
         private readonly UserRepository $users,
     ) {}
 
-    public function __invoke(ExecutionScope $scope): NoContent
+    public function __invoke(RequestScope $scope): NoContent
     {
-        /** @var RequestScope $scope */
         $this->users->delete($scope->params->get('id'));
 
         return new NoContent();

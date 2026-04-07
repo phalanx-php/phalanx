@@ -102,6 +102,27 @@ final class RouteContractTest extends TestCase
     }
 
     #[Test]
+    public function handler_with_no_parameters_still_works(): void
+    {
+        // HealthCheck declares __invoke() with zero parameters -- not even a
+        // scope. InputHydrator must return [] and the invoker must call the
+        // handler with no arguments rather than injecting a scope it doesn't
+        // accept.
+        $group = RouteGroup::of([
+            'GET /ping' => HealthCheck::class,
+        ]);
+
+        $request = $this->createRequest('GET', '/ping');
+
+        $scope = $this->app->createScope();
+        $scope = $scope->withAttribute('request', $request);
+
+        $result = $scope->execute($group);
+
+        $this->assertSame(['status' => 'ok'], $result);
+    }
+
+    #[Test]
     public function missing_required_field_throws_validation_exception(): void
     {
         $group = RouteGroup::of([

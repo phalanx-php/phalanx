@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Tests\Http\Fixtures\Routes;
 
-use Phalanx\Http\Header;
-use Phalanx\Http\RequiresHeaders;
+use Phalanx\Http\Contract\Header;
+use Phalanx\Http\Contract\RequiresHeaders;
 use Phalanx\Scope;
 use Phalanx\Task\Scopeable;
 

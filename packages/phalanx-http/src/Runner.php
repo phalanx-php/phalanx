@@ -75,8 +75,15 @@ final class Runner
         return $this;
     }
 
+    /**
+     * Register a UDP listener.
+     *
+     * The handler signature must match UdpHandler: ($scope, $data, $remote).
+     * Scope is always the first argument. Passing a plain callable is supported
+     * for now but will be removed in v0.7 -- prefer implementing UdpHandler.
+     */
     public function withUdp(
-        callable $handler,
+        UdpHandler|callable $handler,
         int $port = 8081,
         UdpConfig $config = new UdpConfig(),
     ): self {
@@ -156,7 +163,7 @@ final class Runner
                     $scope = $this->app->createScope(CancellationToken::none());
 
                     try {
-                        ($listener['handler'])($data, $remote, $scope);
+                        ($listener['handler'])($scope, $data, $remote);
                     } catch (\Throwable $e) {
                         $this->app->trace()->log(TraceType::Failed, 'udp', [
                             'error' => $e->getMessage(),

@@ -136,7 +136,7 @@ final class TestGuard implements Guard
         private readonly ?AuthContext $result,
     ) {}
 
-    public function resolve(ServerRequestInterface $request): ?AuthContext
+    public function authenticate(ServerRequestInterface $request): ?AuthContext
     {
         return $this->result;
     }

@@ -19,12 +19,37 @@ class InputHydrator
     /** @var array<class-string, ?InputMeta> */
     private static array $metaCache = [];
 
+    /** @var array<class-string, int> */
+    private static array $paramCountCache = [];
+
     /** @var list<class-string> */
     private static array $scopeTypes = [
         Scope::class,
         ExecutionScope::class,
         RequestScope::class,
     ];
+
+    /**
+     * Count the parameters declared on the handler's __invoke method.
+     *
+     * Used to short-circuit hydration for handlers that take no parameters
+     * at all (not even a scope), returning an empty args array.
+     *
+     * @param class-string<Scopeable|Executable>|Scopeable|Executable $handler
+     */
+    public static function paramCount(string|Scopeable|Executable $handler): int
+    {
+        $key = is_string($handler) ? $handler : $handler::class;
+
+        if (array_key_exists($key, self::$paramCountCache)) {
+            return self::$paramCountCache[$key];
+        }
+
+        $count = (new ReflectionClass($key))->getMethod('__invoke')->getNumberOfParameters();
+        self::$paramCountCache[$key] = $count;
+
+        return $count;
+    }
 
     /**
      * Reflect on the handler's __invoke and find the typed input parameter.
@@ -72,6 +97,10 @@ class InputHydrator
     /**
      * Resolve handler arguments: scope + any hydrated inputs.
      *
+     * Handlers with zero parameters receive an empty args array. Handlers
+     * with only a scope parameter receive [$scope]. Handlers with a scope
+     * plus a typed DTO parameter receive [$scope, $dto].
+     *
      * @param class-string<Scopeable|Executable>|Scopeable|Executable $handler
      * @return list<mixed>
      */
@@ -79,6 +108,10 @@ class InputHydrator
         string|Scopeable|Executable $handler,
         RequestScope $scope,
     ): array {
+        if (self::paramCount($handler) === 0) {
+            return [];
+        }
+
         $meta = self::meta($handler);
 
         if ($meta === null) {

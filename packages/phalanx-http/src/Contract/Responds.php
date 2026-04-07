@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Http;
+namespace Phalanx\Http\Contract;
 
 /**
  * Declares the response body types a handler may produce, keyed by HTTP status.

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Http;
+namespace Phalanx\Http\Contract;
 
 /**
  * Declares business validators that must run before the handler executes.
@@ -10,8 +10,11 @@ namespace Phalanx\Http;
  * Each entry is a class-string of a RouteValidator. Validators are
  * constructed via HandlerResolver (constructor-injected from the service
  * container) and invoked in declaration order on every request before the
- * handler runs. Throwing aborts dispatch; the runner converts a thrown
- * ToResponse-implementing exception to its declared HTTP response.
+ * handler runs.
+ *
+ * Validators receive the hydrated input DTO (or null when the handler
+ * declares no input parameter) and the RequestScope. A non-empty errors
+ * array from any validator aborts dispatch with a ValidationException.
  */
 interface HasValidators
 {

@@ -397,16 +397,14 @@ Pipe a token stream directly into an SSE response:
 ```php
 <?php
 
-use Phalanx\ExecutionScope;
 use Phalanx\Http\RequestScope;
 use Phalanx\Http\Sse\SseResponse;
 use Phalanx\Task\Executable;
 
 final readonly class ChatSseHandler implements Executable
 {
-    public function __invoke(ExecutionScope $scope): mixed
+    public function __invoke(RequestScope $scope): mixed
     {
-        /** @var RequestScope $scope */
         $body = $scope->body->json();
 
         $turn = Turn::begin(new ChatAssistant())

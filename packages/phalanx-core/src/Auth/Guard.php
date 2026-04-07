@@ -8,5 +8,5 @@ use Psr\Http\Message\ServerRequestInterface;
 
 interface Guard
 {
-    public function resolve(ServerRequestInterface $request): ?AuthContext;
+    public function authenticate(ServerRequestInterface $request): ?AuthContext;
 }

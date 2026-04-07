@@ -49,6 +49,7 @@ final class HandlerGroup implements Executable
     }
 
     /**
+     * @internal
      * @param array<string, Handler|class-string<Scopeable|Executable>> $handlers
      */
     public static function of(array $handlers): self
@@ -66,11 +67,13 @@ final class HandlerGroup implements Executable
         return new self($normalized);
     }
 
+    /** @internal */
     public static function create(): self
     {
         return new self([]);
     }
 
+    /** @internal */
     public function add(string $key, Handler $handler): self
     {
         return new self(

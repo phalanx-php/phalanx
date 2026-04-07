@@ -9,7 +9,12 @@ use Phalanx\ExecutionScope;
 use Phalanx\Handler\Handler;
 use Phalanx\Handler\HandlerGroup;
 use Phalanx\Handler\HandlerResolver;
+use Phalanx\Http\Contract\HasValidators;
+use Phalanx\Http\Contract\Header;
 use Phalanx\Http\Contract\InputHydrator;
+use Phalanx\Http\Contract\RequiresHeaders;
+use Phalanx\Http\Contract\RouteParamValidator;
+use Phalanx\Http\Contract\RouteValidator;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 
@@ -49,6 +54,9 @@ final class RouteGroup implements Executable
 
     /** @var array<string, string> */
     private array $patterns = self::DEFAULT_PATTERNS;
+
+    /** @var array<string, RouteParamValidator> */
+    private array $paramValidators = [];
 
     /**
      * @param array<string, class-string<Scopeable|Executable>> $routes
@@ -96,9 +104,13 @@ final class RouteGroup implements Executable
 
     /**
      * HTTP-specific invoker. When the dispatch scope is a RequestScope, runs
-     * (in order) header checks, business validators, and input hydration
-     * before calling the handler. For non-HTTP scopes (e.g. tests using a
-     * raw ExecutionScope) it falls through to direct invocation.
+     * (in order): header checks, input hydration, then business validators
+     * (validators receive the already-typed DTO so they operate on coerced
+     * values). For non-HTTP scopes (e.g. tests using a raw ExecutionScope)
+     * it falls through to direct invocation.
+     *
+     * Validator errors are collected from all validators before throwing so
+     * callers see the full error set in one response.
      *
      * @return Closure(Scopeable|Executable, ExecutionScope): mixed
      */
@@ -113,19 +125,62 @@ final class RouteGroup implements Executable
                 self::enforceRequiredHeaders($instance->requiredHeaders, $scope);
             }
 
+            // Run param validators before hydration -- they operate on raw
+            // route param strings, not the hydrated DTO.
+            if ($scope->config->paramValidators !== []) {
+                self::enforceParamValidators($scope->config->paramValidators, $scope);
+            }
+
+            // Hydrate before route validators so they receive the typed, coerced DTO.
+            $args = InputHydrator::resolve($instance, $scope);
+
+            // $args is either [], [$scope], or [$scope, $input]. Extract $input for validators.
+            $input = count($args) >= 2 ? $args[1] : null;
+
             if ($instance instanceof HasValidators && $instance->validators !== []) {
                 /** @var HandlerResolver $resolver */
                 $resolver = $scope->service(HandlerResolver::class);
+                $errors = [];
                 foreach ($instance->validators as $validatorClass) {
-                    $validator = $resolver->resolve($validatorClass, $scope);
                     /** @var RouteValidator $validator */
-                    $validator->validate($scope);
+                    $validator = $resolver->resolve($validatorClass, $scope);
+                    $fieldErrors = $validator->validate($input, $scope);
+                    foreach ($fieldErrors as $field => $messages) {
+                        $errors[$field] = array_merge($errors[$field] ?? [], $messages);
+                    }
+                }
+                if ($errors !== []) {
+                    throw new ValidationException($errors);
                 }
             }
 
-            $args = InputHydrator::resolve($instance, $scope);
             return $instance(...$args);
         };
+    }
+
+    /**
+     * @param array<string, RouteParamValidator> $validators
+     */
+    private static function enforceParamValidators(array $validators, RequestScope $scope): void
+    {
+        $errors = [];
+
+        foreach ($validators as $paramName => $validator) {
+            $value = $scope->params->get($paramName);
+
+            if ($value === null) {
+                continue;
+            }
+
+            $error = $validator->validate($paramName, $value);
+            if ($error !== null) {
+                $errors[$paramName][] = $error;
+            }
+        }
+
+        if ($errors !== []) {
+            throw new ValidationException($errors);
+        }
     }
 
     /**
@@ -163,17 +218,59 @@ final class RouteGroup implements Executable
     /**
      * Register named pattern aliases for path placeholders.
      *
-     * Patterns apply to routes added AFTER this call -- routes already
-     * compiled by `of()` or earlier `route()` calls keep their compiled
-     * regex. Build incrementally if you want patterns to apply to all
-     * routes in the group.
+     * Accepts a mix of string patterns (fed to FastRoute at compile time) and
+     * RouteParamValidator instances keyed by PARAM NAME. Validators are
+     * attached to every route in the group whose compiled paramNames include
+     * the given key. Validators that return a non-null toPattern() are used
+     * as both the compile-time regex constraint AND the imperative validator.
      *
-     * @param array<string, string> $patterns
+     * String pattern aliases (e.g. 'int' => '\d+') continue to work as
+     * before and apply to routes added AFTER this call only.
+     *
+     * @param array<string, string|RouteParamValidator> $patterns
      */
     public function withPatterns(array $patterns): self
     {
-        $clone = self::fromHandlerGroup($this->inner);
-        $clone->patterns = [...$this->patterns, ...$patterns];
+        $newStringPatterns = [];
+        $newParamValidators = [];
+
+        foreach ($patterns as $alias => $value) {
+            if (is_string($value)) {
+                $newStringPatterns[$alias] = $value;
+            } else {
+                $newParamValidators[$alias] = $value;
+                $regex = $value->toPattern();
+                if ($regex !== null) {
+                    $newStringPatterns[$alias] = $regex;
+                }
+            }
+        }
+
+        // Attach imperative validators to existing routes whose param names
+        // match. Re-build the inner HandlerGroup preserving all state except
+        // the updated handler entries.
+        $inner = $this->inner;
+        if ($newParamValidators !== []) {
+            foreach ($inner->all() as $key => $handler) {
+                if (!$handler->config instanceof RouteConfig) {
+                    continue;
+                }
+                $matchingValidators = array_intersect_key(
+                    $newParamValidators,
+                    array_flip($handler->config->paramNames),
+                );
+                if ($matchingValidators !== []) {
+                    $newConfig = $handler->config->withParamValidators(
+                        [...$handler->config->paramValidators, ...$matchingValidators]
+                    );
+                    $inner = $inner->add($key, new Handler($handler->task, $newConfig));
+                }
+            }
+        }
+
+        $clone = self::fromHandlerGroup($inner);
+        $clone->patterns = [...$this->patterns, ...$newStringPatterns];
+        $clone->paramValidators = [...$this->paramValidators, ...$newParamValidators];
 
         return $clone;
     }
@@ -184,6 +281,7 @@ final class RouteGroup implements Executable
 
         $clone = self::fromHandlerGroup($newInner);
         $clone->patterns = [...$this->patterns, ...$other->patterns];
+        $clone->paramValidators = [...$this->paramValidators, ...$other->paramValidators];
 
         return $clone;
     }
@@ -207,6 +305,7 @@ final class RouteGroup implements Executable
 
         $clone = self::fromHandlerGroup($newInner);
         $clone->patterns = [...$this->patterns, ...$group->patterns];
+        $clone->paramValidators = [...$this->paramValidators, ...$group->paramValidators];
 
         return $clone;
     }
@@ -222,6 +321,7 @@ final class RouteGroup implements Executable
 
         $clone = self::fromHandlerGroup($newInner);
         $clone->patterns = $this->patterns;
+        $clone->paramValidators = $this->paramValidators;
 
         return $clone;
     }
@@ -288,6 +388,7 @@ final class RouteGroup implements Executable
             $config->middleware,
             $config->tags,
             $config->priority,
+            $config->paramValidators,
         );
     }
 }

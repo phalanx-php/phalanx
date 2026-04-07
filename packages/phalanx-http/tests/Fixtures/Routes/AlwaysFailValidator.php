@@ -4,19 +4,17 @@ declare(strict_types=1);
 
 namespace Phalanx\Tests\Http\Fixtures\Routes;
 
+use Phalanx\Http\Contract\RouteValidator;
 use Phalanx\Http\RequestScope;
-use Phalanx\Http\RouteValidator;
-use Phalanx\Http\ValidationException;
 
 /**
- * Test fixture validator: always throws a ValidationException with a known
- * error key. Used to verify HasValidators wiring runs validators before the
- * handler executes.
+ * Test fixture validator: always returns a known error.
+ * Used to verify HasValidators wiring runs validators before the handler executes.
  */
 final class AlwaysFailValidator implements RouteValidator
 {
-    public function validate(RequestScope $scope): void
+    public function validate(object|null $input, RequestScope $scope): array
     {
-        throw ValidationException::single('test_field', 'validator ran');
+        return ['test_field' => ['validator ran']];
     }
 }
