@@ -8,10 +8,14 @@ use Phalanx\Http\ToResponse;
 use Psr\Http\Message\ResponseInterface;
 use React\Http\Message\Response;
 
-readonly class NoContent implements ToResponse
+class NoContent implements ToResponse
 {
+    public const int STATUS = 204;
+
+    public int $status { get => static::STATUS; }
+
     public function toResponse(): ResponseInterface
     {
-        return new Response(204);
+        return new Response($this->status);
     }
 }

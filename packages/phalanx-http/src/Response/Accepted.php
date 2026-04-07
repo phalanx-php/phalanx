@@ -8,14 +8,18 @@ use Phalanx\Http\ToResponse;
 use Psr\Http\Message\ResponseInterface;
 use React\Http\Message\Response;
 
-readonly class Accepted implements ToResponse
+class Accepted implements ToResponse
 {
+    public const int STATUS = 202;
+
+    public int $status { get => static::STATUS; }
+
     public function __construct(
-        public mixed $data,
+        public readonly mixed $data,
     ) {}
 
     public function toResponse(): ResponseInterface
     {
-        return Response::json($this->data)->withStatus(202);
+        return Response::json($this->data)->withStatus($this->status);
     }
 }
