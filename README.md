@@ -172,6 +172,22 @@ composer analyse          # PHPStan level 8
 composer check            # analyse + rector:dry + examples:lint + test (full CI gate)
 ```
 
+## Testing
+
+The default `composer test` run excludes tests that need external services. Groups excluded by default:
+
+- `daemon` -- requires a running [daemon8](https://daemon8.ai) instance and the daemon8 PHP SDK
+- `live` -- requires live network services (real HTTP calls to external endpoints)
+
+To run a specific excluded group:
+
+```bash
+php vendor/bin/phpunit --group daemon
+php vendor/bin/phpunit --group live
+```
+
+Other groups that run by default: `smoke` (heavier concurrency workloads), `architecture` (code style/lint checks).
+
 ## License
 
 MIT

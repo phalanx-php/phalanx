@@ -9,6 +9,12 @@
         <var name="DAEMON8_BASE_URL" value="http://127.0.0.1:9077"/>
         <var name="DAEMON8_SDK_PATH" value=""/>
     </php>
+    <groups>
+        <exclude>
+            <group>daemon</group>
+            <group>live</group>
+        </exclude>
+    </groups>
     <testsuites>
         <testsuite name="Core Unit">
             <directory>packages/phalanx-core/tests/Unit</directory>

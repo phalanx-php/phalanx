@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Tests\Integration\Testing;
 
 use Phalanx\ExecutionScope;
+use Phalanx\Support\ErrorHandler;
 use Phalanx\Task\Task;
 use Phalanx\Testing\Probe\DisposalProbe;
 use Phalanx\Testing\TestScope;
@@ -18,17 +19,22 @@ final class DisposalDurabilityTest extends TestCase
     #[Test]
     public function dispose_continues_past_callback_failure(): void
     {
+        ErrorHandler::use(static function (): void {});
         $probe = new DisposalProbe();
 
-        TestScope::run(static function (ExecutionScope $scope) use ($probe): void {
-            $scope->onDispose($probe->track('first'));
-            $scope->onDispose(static function (): void {
-                throw new RuntimeException('dispose bomb');
+        try {
+            TestScope::run(static function (ExecutionScope $scope) use ($probe): void {
+                $scope->onDispose($probe->track('first'));
+                $scope->onDispose(static function (): void {
+                    throw new RuntimeException('dispose bomb');
+                });
+                $scope->onDispose($probe->track('third'));
             });
-            $scope->onDispose($probe->track('third'));
-        });
 
-        $probe->assertDisposed('third', 'first');
+            $probe->assertDisposed('third', 'first');
+        } finally {
+            ErrorHandler::reset();
+        }
     }
 
     #[Test]

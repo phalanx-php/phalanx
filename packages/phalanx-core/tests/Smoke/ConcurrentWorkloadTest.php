@@ -17,10 +17,12 @@ use Phalanx\Testing\Assert;
 use Phalanx\Testing\Probe\ConcurrencyProbe;
 use Phalanx\Testing\Probe\InterleavingProbe;
 use Phalanx\Testing\TestScope;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
+#[Group('smoke')]
 final class ConcurrentWorkloadTest extends TestCase
 {
     #[Test]
