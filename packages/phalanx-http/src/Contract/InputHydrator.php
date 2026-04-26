@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Http\Contract;
 
-use Phalanx\ExecutionScope;
 use Phalanx\Http\RequestScope;
 use Phalanx\Http\ValidationException;
 use Phalanx\Scope;
@@ -25,8 +24,6 @@ class InputHydrator
     /** @var list<class-string> */
     private static array $scopeTypes = [
         Scope::class,
-        ExecutionScope::class,
-        RequestScope::class,
     ];
 
     /**

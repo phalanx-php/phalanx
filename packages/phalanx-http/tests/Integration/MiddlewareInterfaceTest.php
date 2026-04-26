@@ -6,7 +6,6 @@ namespace Phalanx\Tests\Http\Integration;
 
 use Closure;
 use Phalanx\Application;
-use Phalanx\ExecutionScope;
 use Phalanx\Http\Contract\Middleware;
 use Phalanx\Http\RequestScope;
 use Phalanx\Http\RouteGroup;
@@ -104,10 +103,8 @@ final class PrefixingMiddlewareV2 implements Middleware, Executable
         return 'before:' . $inner . ':after';
     }
 
-    public function __invoke(ExecutionScope $scope): mixed
+    public function __invoke(RequestScope $scope): mixed
     {
-        assert($scope instanceof RequestScope);
-
         /** @var Scopeable|Executable $next */
         $next = $scope->attribute('handler.next');
 
@@ -130,10 +127,8 @@ final class AbortingMiddlewareV2 implements Middleware, Executable
         return 'aborted';
     }
 
-    public function __invoke(ExecutionScope $scope): mixed
+    public function __invoke(RequestScope $scope): mixed
     {
-        assert($scope instanceof RequestScope);
-
         return $this->handle(
             $scope,
             static fn(RequestScope $s): mixed => null,

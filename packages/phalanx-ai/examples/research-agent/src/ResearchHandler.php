@@ -8,17 +8,14 @@ use Phalanx\Ai\AgentLoop;
 use Phalanx\Ai\Event\AgentEventKind;
 use Phalanx\Ai\Message\Message;
 use Phalanx\Ai\Turn;
-use Phalanx\Scope;
 use Phalanx\Task\Scopeable;
 use Phalanx\WebSocket\WsMessage;
 use Phalanx\WebSocket\WsScope;
 
 final class ResearchHandler implements Scopeable
 {
-    public function __invoke(Scope $scope): void
+    public function __invoke(WsScope $scope): void
     {
-        assert($scope instanceof WsScope);
-
         $conn = $scope->connection;
 
         foreach ($conn->inbound->consume() as $msg) {

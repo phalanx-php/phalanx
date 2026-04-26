@@ -2,16 +2,14 @@
 
 declare(strict_types=1);
 
-use Phalanx\Scope;
 use Phalanx\Task\Scopeable;
 use Phalanx\WebSocket\WsGateway;
 use Phalanx\WebSocket\WsScope;
 
 final class DumpStream implements Scopeable
 {
-    public function __invoke(Scope $scope): void
+    public function __invoke(WsScope $scope): void
     {
-        assert($scope instanceof WsScope);
         $ws = $scope;
 
         $conn = $ws->connection;

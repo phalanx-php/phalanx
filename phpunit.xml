@@ -55,6 +55,9 @@
         <testsuite name="AI Integration">
             <directory>packages/phalanx-ai/tests/Integration</directory>
         </testsuite>
+        <testsuite name="UI Unit">
+            <directory>packages/phalanx-ui/tests/Unit</directory>
+        </testsuite>
         <testsuite name="Architecture">
             <directory>tests/Architecture</directory>
         </testsuite>

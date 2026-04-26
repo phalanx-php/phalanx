@@ -9,7 +9,6 @@ use Phalanx\Console\Arg;
 use Phalanx\Console\CommandConfig;
 use Phalanx\Console\CommandScope;
 use Phalanx\Console\Opt;
-use Phalanx\ExecutionScope;
 use Phalanx\Task\Executable;
 
 final class LogsCommand implements Executable
@@ -22,9 +21,8 @@ final class LogsCommand implements Executable
         );
     }
 
-    public function __invoke(ExecutionScope $scope): int
+    public function __invoke(CommandScope $scope): int
     {
-        assert($scope instanceof CommandScope);
 
         $client = $scope->service(Client::class);
         $container = $scope->args->required('container');

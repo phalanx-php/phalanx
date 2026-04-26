@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Acme\Fleet;
 
-use Phalanx\Scope;
 use Phalanx\Task\Scopeable;
 use Phalanx\Task\Task;
 use Phalanx\Redis\RedisPubSub;
@@ -14,10 +13,8 @@ use Phalanx\WebSocket\WsScope;
 
 final class CustomerChatHandler implements Scopeable
 {
-    public function __invoke(Scope $scope): void
+    public function __invoke(WsScope $scope): void
     {
-        assert($scope instanceof WsScope);
-
         $conn = $scope->connection;
         $tenantId = $scope->params->get('tenantId');
         $sessionId = $scope->params->get('sessionId');

@@ -7,7 +7,6 @@ namespace Phalanx\Console\Examples\Commands;
 use Clue\React\Docker\Client;
 use Phalanx\Console\CommandConfig;
 use Phalanx\Console\CommandScope;
-use Phalanx\ExecutionScope;
 use Phalanx\Task\Executable;
 
 final class ImagesCommand implements Executable
@@ -16,9 +15,8 @@ final class ImagesCommand implements Executable
         get => new CommandConfig(description: 'List images');
     }
 
-    public function __invoke(ExecutionScope $scope): int
+    public function __invoke(CommandScope $scope): int
     {
-        assert($scope instanceof CommandScope);
 
         $client = $scope->service(Client::class);
         $images = $scope->await($client->imageList());
