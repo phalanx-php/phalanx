@@ -1,5 +1,5 @@
 {
-    "name": "phalanx/stoa",
+    "name": "phalanx-php/stoa",
     "description": "HTTP server framework for Phalanx",
     "license": "MIT",
     "type": "library",
@@ -13,15 +13,15 @@
     "homepage": "https://github.com/phalanx-php/phalanx-stoa",
     "require": {
         "php": "^8.4",
-        "phalanx/aegis": "^0.5",
+        "phalanx-php/aegis": "^0.5",
         "nikic/fast-route": "^2.0",
         "react/datagram": "^1.10",
         "react/http": "^1.10"
     },
     "suggest": {
         "symfony/runtime": "For Symfony Runtime integration via PhalanxHttpRunner",
-        "phalanx/styx": "For streaming responses",
-        "phalanx/hydra": "For worker process parallelism in request handlers"
+        "phalanx-php/styx": "For streaming responses",
+        "phalanx-php/hydra": "For worker process parallelism in request handlers"
     },
     "autoload": {
         "psr-4": {

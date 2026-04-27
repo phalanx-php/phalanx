@@ -1,5 +1,5 @@
 {
-    "name": "phalanx/hermes",
+    "name": "phalanx-php/hermes",
     "description": "WebSocket server and client support for Phalanx async coordination library",
     "license": "MIT",
     "type": "library",
@@ -13,15 +13,15 @@
     "homepage": "https://github.com/phalanx-php/phalanx-hermes",
     "require": {
         "php": "^8.4",
-        "phalanx/aegis": "^0.5",
-        "phalanx/styx": "^0.5",
+        "phalanx-php/aegis": "^0.5",
+        "phalanx-php/styx": "^0.5",
         "ratchet/rfc6455": "^0.4",
         "react/event-loop": "^1.5",
         "react/promise": "^3.2",
         "react/stream": "^1.4"
     },
     "suggest": {
-        "phalanx/stoa": "For HTTP server with WebSocket upgrade support"
+        "phalanx-php/stoa": "For HTTP server with WebSocket upgrade support"
     },
     "autoload": {
         "psr-4": {

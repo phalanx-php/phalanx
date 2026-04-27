@@ -1,5 +1,5 @@
 {
-    "name": "phalanx/theatron",
+    "name": "phalanx-php/theatron",
     "description": "Async terminal UI with buffer diffing, regions, and reactive widgets",
     "license": "MIT",
     "type": "library",

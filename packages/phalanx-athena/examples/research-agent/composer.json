@@ -1,11 +1,11 @@
 {
-    "name": "phalanx/example-research-agent",
+    "name": "phalanx-php/example-research-agent",
     "description": "Phalanx AI example: multi-document research agent with sub-agent delegation over WebSocket",
     "type": "project",
     "require": {
         "php": "^8.4",
-        "phalanx/ai": "dev-main",
-        "phalanx/ws-server": "dev-main"
+        "phalanx-php/athena": "dev-main",
+        "phalanx-php/hermes": "dev-main"
     },
     "autoload": {
         "psr-4": {

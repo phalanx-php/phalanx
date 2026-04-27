@@ -1,12 +1,12 @@
 {
-    "name": "phalanx/phx-agents",
+    "name": "phalanx-php/phx-agents",
     "description": "Brainstorming agents for Daemon8 built with Phalanx AI",
     "type": "project",
     "require": {
         "php": "^8.4",
-        "phalanx/athena": "*",
-        "phalanx/archon": "*",
-        "phalanx/theatron": "*",
+        "phalanx-php/athena": "*",
+        "phalanx-php/archon": "*",
+        "phalanx-php/theatron": "*",
         "symfony/dotenv": "^8.0"
     },
     "autoload": {

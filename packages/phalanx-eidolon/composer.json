@@ -1,5 +1,5 @@
 {
-    "name": "phalanx/eidolon",
+    "name": "phalanx-php/eidolon",
     "description": "Frontend bridge for Phalanx — typed route contracts, OpenAPI generation, Kubb integration, and signal-based reactivity",
     "license": "MIT",
     "type": "library",
@@ -13,13 +13,13 @@
     "homepage": "https://github.com/phalanx-php/phalanx-eidolon",
     "require": {
         "php": "^8.4",
-        "phalanx/aegis": "^0.5",
-        "phalanx/stoa": "^0.5",
-        "phalanx/styx": "^0.5"
+        "phalanx-php/aegis": "^0.5",
+        "phalanx-php/stoa": "^0.5",
+        "phalanx-php/styx": "^0.5"
     },
     "suggest": {
-        "phalanx/hermes": "For WebSocket signal transport",
-        "phalanx/athena": "For agent streaming to frontend"
+        "phalanx-php/hermes": "For WebSocket signal transport",
+        "phalanx-php/athena": "For agent streaming to frontend"
     },
     "autoload": {
         "psr-4": {

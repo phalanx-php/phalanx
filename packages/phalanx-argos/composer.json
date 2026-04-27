@@ -1,5 +1,5 @@
 {
-    "name": "phalanx/argos",
+    "name": "phalanx-php/argos",
     "description": "Network discovery, probing, and device management for Phalanx",
     "license": "MIT",
     "type": "library",
@@ -13,7 +13,7 @@
     "homepage": "https://github.com/phalanx-php/phalanx-argos",
     "require": {
         "php": "^8.4",
-        "phalanx/aegis": "^0.5",
+        "phalanx-php/aegis": "^0.5",
         "mlocati/ip-lib": "^1.22",
         "react/datagram": "^1.10",
         "react/async": "^4.3",

@@ -1,5 +1,5 @@
 {
-    "name": "phalanx/styx",
+    "name": "phalanx-php/styx",
     "description": "Reactive stream primitives for Phalanx",
     "license": "MIT",
     "type": "library",
@@ -13,7 +13,7 @@
     "homepage": "https://github.com/phalanx-php/phalanx-styx",
     "require": {
         "php": "^8.4",
-        "phalanx/aegis": "^0.5",
+        "phalanx-php/aegis": "^0.5",
         "react/async": "^4.3",
         "react/event-loop": "^1.5",
         "react/stream": "^1.4",

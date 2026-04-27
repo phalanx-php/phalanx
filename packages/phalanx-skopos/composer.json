@@ -1,5 +1,5 @@
 {
-    "name": "phalanx/skopos",
+    "name": "phalanx-php/skopos",
     "description": "Dev server orchestrator with process management, output multiplexing, and file watching",
     "type": "library",
     "license": "MIT",
@@ -12,8 +12,8 @@
     ],
     "require": {
         "php": "^8.4",
-        "phalanx/aegis": "^0.5",
-        "phalanx/styx": "^0.5",
+        "phalanx-php/aegis": "^0.5",
+        "phalanx-php/styx": "^0.5",
         "react/child-process": "^0.6",
         "react/http": "^1.10",
         "react/socket": "^1.16"

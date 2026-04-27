@@ -1,5 +1,5 @@
 {
-    "name": "phalanx/enigma",
+    "name": "phalanx-php/enigma",
     "description": "Non-blocking SSH command execution, file transfer, and tunnel management as Phalanx tasks",
     "type": "library",
     "license": "MIT",
@@ -12,7 +12,7 @@
     ],
     "require": {
         "php": "^8.4",
-        "phalanx/aegis": "^0.5",
+        "phalanx-php/aegis": "^0.5",
         "react/child-process": "^0.6",
         "react/async": "^4.3",
         "react/event-loop": "^1.5",

@@ -1,5 +1,5 @@
 {
-    "name": "phalanx/aegis",
+    "name": "phalanx-php/aegis",
     "description": "Expression-based async coordination for PHP 8.4+",
     "license": "MIT",
     "type": "library",
@@ -26,9 +26,9 @@
         "react/promise": "^3.2"
     },
     "require-dev": {
-        "phalanx/archon": "^0.5",
-        "phalanx/stoa": "^0.5",
-        "phalanx/hydra": "^0.5",
+        "phalanx-php/archon": "^0.5",
+        "phalanx-php/stoa": "^0.5",
+        "phalanx-php/hydra": "^0.5",
         "phpstan/phpstan": "^2.0",
         "phpunit/phpunit": "^11.0",
         "react/promise-timer": "^1.11",
@@ -44,10 +44,10 @@
         "test": "php vendor/bin/phpunit"
     },
     "suggest": {
-        "phalanx/styx": "Reactive stream primitives (Emitter, ScopedStream, Channel)",
-        "phalanx/archon": "CLI application framework",
-        "phalanx/stoa": "HTTP server framework",
-        "phalanx/hydra": "Worker process parallelism",
+        "phalanx-php/styx": "Reactive stream primitives (Emitter, ScopedStream, Channel)",
+        "phalanx-php/archon": "CLI application framework",
+        "phalanx-php/stoa": "HTTP server framework",
+        "phalanx-php/hydra": "Worker process parallelism",
         "react/http": "Required for HttpRunner",
         "spatie/backtrace": "Enhanced stack traces",
         "symfony/runtime": "For symfony/runtime integration",

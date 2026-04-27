@@ -1,5 +1,5 @@
 {
-    "name": "phalanx/athena",
+    "name": "phalanx-php/athena",
     "description": "AI agent runtime for Phalanx — providers, tools, streaming, structured output, multi-agent coordination",
     "license": "MIT",
     "type": "library",
@@ -13,15 +13,15 @@
     "homepage": "https://github.com/phalanx-php/phalanx-athena",
     "require": {
         "php": "^8.4",
-        "phalanx/aegis": "^0.5",
-        "phalanx/styx": "^0.5",
-        "phalanx/stoa": "^0.5"
+        "phalanx-php/aegis": "^0.5",
+        "phalanx-php/styx": "^0.5",
+        "phalanx-php/stoa": "^0.5"
     },
     "suggest": {
-        "phalanx/redis": "For conversation memory and pub/sub agent coordination",
-        "phalanx/postgres": "For persistent conversation storage and LISTEN/NOTIFY tasks",
-        "phalanx/hermes": "For real-time agent sessions over WebSocket",
-        "phalanx/archon": "For CLI agent REPL"
+        "phalanx-php/redis": "For conversation memory and pub/sub agent coordination",
+        "phalanx-php/postgres": "For persistent conversation storage and LISTEN/NOTIFY tasks",
+        "phalanx-php/hermes": "For real-time agent sessions over WebSocket",
+        "phalanx-php/archon": "For CLI agent REPL"
     },
     "autoload": {
         "psr-4": {

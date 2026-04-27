@@ -1,5 +1,5 @@
 {
-    "name": "phalanx/redis",
+    "name": "phalanx-php/redis",
     "description": "Async Redis for Phalanx via clue/redis-react",
     "license": "MIT",
     "type": "library",
@@ -13,8 +13,8 @@
     "homepage": "https://github.com/phalanx-php/phalanx-redis",
     "require": {
         "php": "^8.4",
-        "phalanx/aegis": "^0.5",
-        "phalanx/styx": "^0.5",
+        "phalanx-php/aegis": "^0.5",
+        "phalanx-php/styx": "^0.5",
         "clue/redis-react": "^2.8"
     },
     "autoload": {

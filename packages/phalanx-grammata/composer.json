@@ -1,5 +1,5 @@
 {
-    "name": "phalanx/grammata",
+    "name": "phalanx-php/grammata",
     "description": "Async-aware filesystem operations for Phalanx",
     "license": "MIT",
     "type": "library",
@@ -13,11 +13,11 @@
     "homepage": "https://github.com/phalanx-php/phalanx-grammata",
     "require": {
         "php": "^8.4",
-        "phalanx/aegis": "^0.5",
+        "phalanx-php/aegis": "^0.5",
         "react/stream": "^1.4"
     },
     "suggest": {
-        "phalanx/hydra": "Required for WorkerReadFile/WorkerWriteFile (slow-storage offload)"
+        "phalanx-php/hydra": "Required for WorkerReadFile/WorkerWriteFile (slow-storage offload)"
     },
     "autoload": {
         "psr-4": {

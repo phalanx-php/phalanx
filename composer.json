@@ -1,5 +1,5 @@
 {
-    "name": "phalanx/phalanx",
+    "name": "phalanx-php/phalanx",
     "description": "Expression-based async coordination for PHP 8.4+ (monorepo)",
     "license": "MIT",
     "authors": [
@@ -114,22 +114,22 @@
         }
     },
     "replace": {
-        "phalanx/aegis": "0.6.1",
-        "phalanx/archon": "0.6.1",
-        "phalanx/argos": "0.6.1",
-        "phalanx/athena": "0.6.1",
-        "phalanx/eidolon": "0.6.1",
-        "phalanx/enigma": "0.6.1",
-        "phalanx/grammata": "0.6.1",
-        "phalanx/hermes": "0.6.1",
-        "phalanx/hydra": "0.6.1",
-        "phalanx/postgres": "0.6.1",
-        "phalanx/redis": "0.6.1",
-        "phalanx/skopos": "0.6.1",
-        "phalanx/stoa": "0.6.1",
-        "phalanx/styx": "0.6.1",
-        "phalanx/theatron": "0.6.1",
-        "phalanx/twilio": "0.6.1"
+        "phalanx-php/aegis": "0.6.1",
+        "phalanx-php/archon": "0.6.1",
+        "phalanx-php/argos": "0.6.1",
+        "phalanx-php/athena": "0.6.1",
+        "phalanx-php/eidolon": "0.6.1",
+        "phalanx-php/enigma": "0.6.1",
+        "phalanx-php/grammata": "0.6.1",
+        "phalanx-php/hermes": "0.6.1",
+        "phalanx-php/hydra": "0.6.1",
+        "phalanx-php/postgres": "0.6.1",
+        "phalanx-php/redis": "0.6.1",
+        "phalanx-php/skopos": "0.6.1",
+        "phalanx-php/stoa": "0.6.1",
+        "phalanx-php/styx": "0.6.1",
+        "phalanx-php/theatron": "0.6.1",
+        "phalanx-php/twilio": "0.6.1"
     },
     "minimum-stability": "dev",
     "prefer-stable": true

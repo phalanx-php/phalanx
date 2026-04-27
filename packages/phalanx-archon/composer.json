@@ -1,5 +1,5 @@
 {
-    "name": "phalanx/archon",
+    "name": "phalanx-php/archon",
     "description": "CLI application framework for Phalanx",
     "license": "MIT",
     "type": "library",
@@ -13,11 +13,11 @@
     ],
     "require": {
         "php": "^8.4",
-        "phalanx/aegis": "^0.5"
+        "phalanx-php/aegis": "^0.5"
     },
     "suggest": {
-        "phalanx/styx": "For streaming data through console commands",
-        "phalanx/hydra": "For worker process parallelism in CLI tasks"
+        "phalanx-php/styx": "For streaming data through console commands",
+        "phalanx-php/hydra": "For worker process parallelism in CLI tasks"
     },
     "autoload": {
         "psr-4": {
