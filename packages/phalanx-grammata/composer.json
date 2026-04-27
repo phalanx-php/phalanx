@@ -1,0 +1,39 @@
+{
+    "name": "phalanx/grammata",
+    "description": "Async-aware filesystem operations for Phalanx",
+    "license": "MIT",
+    "type": "library",
+    "keywords": ["filesystem", "async", "file", "stream", "reactphp"],
+    "authors": [
+        {
+            "name": "Jonathan Havens",
+            "email": "mail@phalanx-php.com"
+        }
+    ],
+    "homepage": "https://github.com/phalanx-php/phalanx-grammata",
+    "require": {
+        "php": "^8.4",
+        "phalanx/aegis": "^0.5",
+        "react/stream": "^1.4"
+    },
+    "suggest": {
+        "phalanx/hydra": "Required for WorkerReadFile/WorkerWriteFile (slow-storage offload)"
+    },
+    "autoload": {
+        "psr-4": {
+            "Phalanx\\Grammata\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Phalanx\\Grammata\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "0.5-dev"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

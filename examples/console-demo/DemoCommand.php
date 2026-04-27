@@ -2,33 +2,33 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Console\Demo;
+namespace Phalanx\Archon\Demo;
 
-use Phalanx\Console\Composite\ConcurrentTaskList;
-use Phalanx\Console\Composite\Form;
-use Phalanx\Console\Input\ConfirmInput;
-use Phalanx\Console\Input\MultiSelectInput;
-use Phalanx\Console\Input\NumberInput;
-use Phalanx\Console\Input\PasswordInput;
-use Phalanx\Console\Input\RawInput;
-use Phalanx\Console\Input\SearchInput;
-use Phalanx\Console\Input\SelectInput;
-use Phalanx\Console\Input\SuggestInput;
-use Phalanx\Console\Input\TextInput;
-use Phalanx\Console\Output\StreamOutput;
-use Phalanx\Console\Style\Style;
-use Phalanx\Console\Style\Theme;
-use Phalanx\Console\Widget\Badge;
-use Phalanx\Console\Widget\Box;
-use Phalanx\Console\Widget\BoxStyle;
-use Phalanx\Console\Widget\Divider;
-use Phalanx\Console\Widget\KeyValue;
-use Phalanx\Console\Widget\ProgressBar;
-use Phalanx\Console\Widget\Spinner;
-use Phalanx\Console\Widget\Table;
-use Phalanx\Console\Widget\TaskList;
-use Phalanx\Console\Widget\TaskState;
-use Phalanx\Console\Widget\Tree;
+use Phalanx\Archon\Composite\ConcurrentTaskList;
+use Phalanx\Archon\Composite\Form;
+use Phalanx\Archon\Input\ConfirmInput;
+use Phalanx\Archon\Input\MultiSelectInput;
+use Phalanx\Archon\Input\NumberInput;
+use Phalanx\Archon\Input\PasswordInput;
+use Phalanx\Archon\Input\RawInput;
+use Phalanx\Archon\Input\SearchInput;
+use Phalanx\Archon\Input\SelectInput;
+use Phalanx\Archon\Input\SuggestInput;
+use Phalanx\Archon\Input\TextInput;
+use Phalanx\Archon\Output\StreamOutput;
+use Phalanx\Archon\Style\Style;
+use Phalanx\Archon\Style\Theme;
+use Phalanx\Archon\Widget\Badge;
+use Phalanx\Archon\Widget\Box;
+use Phalanx\Archon\Widget\BoxStyle;
+use Phalanx\Archon\Widget\Divider;
+use Phalanx\Archon\Widget\KeyValue;
+use Phalanx\Archon\Widget\ProgressBar;
+use Phalanx\Archon\Widget\Spinner;
+use Phalanx\Archon\Widget\Table;
+use Phalanx\Archon\Widget\TaskList;
+use Phalanx\Archon\Widget\TaskState;
+use Phalanx\Archon\Widget\Tree;
 use Phalanx\ExecutionScope;
 use Phalanx\Task\Executable;
 use React\EventLoop\Loop;
@@ -199,15 +199,15 @@ final class DemoCommand implements Executable
         // Tree
         $output->persist($theme->muted->apply('  Tree'));
         $output->persist(Tree::render([
-            'phalanx-core'    => ['ExecutionScope', 'Task', 'Service', 'Concurrency'],
-            'phalanx-console' => [
+            'phalanx-aegis'   => ['ExecutionScope', 'Task', 'Service', 'Concurrency'],
+            'phalanx-archon'  => [
                 'Output'    => ['StreamOutput'],
                 'Widget'    => ['Box', 'Table', 'Tree', 'ProgressBar', 'Spinner', 'TaskList'],
                 'Input'     => ['TextInput', 'SelectInput', 'MultiSelectInput', 'SearchInput'],
                 'Composite' => ['Form', 'Accordion', 'ConcurrentTaskList'],
             ],
-            'phalanx-http'    => ['Route', 'RouteGroup', 'HttpRunner'],
-            'phalanx-stream'  => ['Emitter', 'Channel', 'StreamContext'],
+            'phalanx-stoa'    => ['Route', 'RouteGroup', 'HttpRunner'],
+            'phalanx-styx'    => ['Emitter', 'Channel', 'StreamContext'],
         ], $theme));
 
         // TaskList — animated state transitions

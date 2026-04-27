@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Console\Examples\Commands;
+namespace Phalanx\Archon\Examples\Commands;
 
 use Clue\React\Docker\Client;
-use Phalanx\Console\Arg;
-use Phalanx\Console\CommandConfig;
-use Phalanx\Console\CommandScope;
+use Phalanx\Archon\Arg;
+use Phalanx\Archon\CommandConfig;
+use Phalanx\Archon\CommandScope;
 use Phalanx\Task\Executable;
 
 final class InspectCommand implements Executable

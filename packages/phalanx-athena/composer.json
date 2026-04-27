@@ -1,0 +1,43 @@
+{
+    "name": "phalanx/athena",
+    "description": "AI agent runtime for Phalanx — providers, tools, streaming, structured output, multi-agent coordination",
+    "license": "MIT",
+    "type": "library",
+    "keywords": ["ai", "agent", "llm", "claude", "openai", "ollama", "streaming", "tools", "async"],
+    "authors": [
+        {
+            "name": "Jonathan Havens",
+            "email": "mail@phalanx-php.com"
+        }
+    ],
+    "homepage": "https://github.com/phalanx-php/phalanx-athena",
+    "require": {
+        "php": "^8.4",
+        "phalanx/aegis": "^0.5",
+        "phalanx/styx": "^0.5",
+        "phalanx/stoa": "^0.5"
+    },
+    "suggest": {
+        "phalanx/redis": "For conversation memory and pub/sub agent coordination",
+        "phalanx/postgres": "For persistent conversation storage and LISTEN/NOTIFY tasks",
+        "phalanx/hermes": "For real-time agent sessions over WebSocket",
+        "phalanx/archon": "For CLI agent REPL"
+    },
+    "autoload": {
+        "psr-4": {
+            "Phalanx\\Athena\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Phalanx\\Athena\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "0.5-dev"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

@@ -1,0 +1,45 @@
+{
+    "name": "phalanx/hermes",
+    "description": "WebSocket server and client support for Phalanx async coordination library",
+    "license": "MIT",
+    "type": "library",
+    "keywords": ["websocket", "ws", "async", "realtime", "ratchet", "reactphp"],
+    "authors": [
+        {
+            "name": "Jonathan Havens",
+            "email": "mail@phalanx-php.com"
+        }
+    ],
+    "homepage": "https://github.com/phalanx-php/phalanx-hermes",
+    "require": {
+        "php": "^8.4",
+        "phalanx/aegis": "^0.5",
+        "phalanx/styx": "^0.5",
+        "ratchet/rfc6455": "^0.4",
+        "react/event-loop": "^1.5",
+        "react/promise": "^3.2",
+        "react/stream": "^1.4"
+    },
+    "suggest": {
+        "phalanx/stoa": "For HTTP server with WebSocket upgrade support"
+    },
+    "autoload": {
+        "psr-4": {
+            "Phalanx\\Hermes\\": "src/",
+            "Phalanx\\Hermes\\Client\\": "src/Client/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Phalanx\\Hermes\\Tests\\": "tests/",
+            "Phalanx\\Hermes\\Client\\Tests\\": "tests/Client/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "0.5-dev"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

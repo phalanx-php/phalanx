@@ -4,29 +4,34 @@ includes:
 parameters:
     level: 8
     paths:
-        - packages/phalanx-core/src
-        - packages/phalanx-console/src
-        - packages/phalanx-http/src
+        - packages/phalanx-aegis/src
+        - packages/phalanx-archon/src
+        - packages/phalanx-stoa/src
         - packages/phalanx-twilio/src
-        - packages/phalanx-ai/src
-        - packages/phalanx-parallel/src
+        - packages/phalanx-athena/src
+        - packages/phalanx-hydra/src
         - packages/phalanx-postgres/src
         - packages/phalanx-redis/src
-        - packages/phalanx-stream/src
-        - packages/phalanx-ws-server/src
-        - packages/phalanx-ws-client/src
-        - packages/phalanx-network/src
-        - packages/phalanx-ssh/src
-        - packages/phalanx-ui/src
+        - packages/phalanx-styx/src
+        - packages/phalanx-hermes/src
+        - packages/phalanx-argos/src
+        - packages/phalanx-enigma/src
+        - packages/phalanx-eidolon/src
+        - packages/phalanx-theatron/src
+        - packages/phalanx-grammata/src
+        - packages/phalanx-skopos/src
     excludePaths:
         analyseAndScan:
-            - packages/phalanx-core/src/Parallel (?)
-            - packages/phalanx-core/src/Stream/
-            - packages/phalanx-core/src/Runtime/PhalanxRuntime.php (?)
-            - packages/phalanx-core/src/Runtime/PhalanxHttpRunner.php (?)
-            - packages/phalanx-ai/src/Cli/AgentRepl.php (?)
+            - packages/phalanx-aegis/src/Parallel (?)
+            - packages/phalanx-aegis/src/Stream/
+            - packages/phalanx-aegis/src/Runtime/PhalanxRuntime.php (?)
+            - packages/phalanx-aegis/src/Runtime/PhalanxHttpRunner.php (?)
+            - packages/phalanx-athena/src/Cli/AgentRepl.php (?)
     tmpDir: .phpstan-cache
     treatPhpDocTypesAsCertain: false
+    bootstrapFiles:
+        - stubs/Symfony/Component/Runtime/RunnerInterface.php
+        - stubs/Symfony/Component/Runtime/GenericRuntime.php
     ignoreErrors:
         # Scopeable and Executable are marker interfaces. Implementations
         # always declare __invoke; the dispatcher invokes them via call syntax.
@@ -38,3 +43,4 @@ parameters:
         - identifier: wyrihaximus.reactphp.blocking.function.fwrite
         - identifier: wyrihaximus.reactphp.blocking.function.fread
         - identifier: wyrihaximus.reactphp.blocking.function.usleep
+        - identifier: wyrihaximus.reactphp.blocking.function.mkdir

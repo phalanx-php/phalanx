@@ -1,0 +1,39 @@
+{
+    "name": "phalanx/styx",
+    "description": "Reactive stream primitives for Phalanx",
+    "license": "MIT",
+    "type": "library",
+    "keywords": ["reactive", "stream", "channel", "emitter", "backpressure", "async", "reactphp"],
+    "authors": [
+        {
+            "name": "Jonathan Havens",
+            "email": "mail@phalanx-php.com"
+        }
+    ],
+    "homepage": "https://github.com/phalanx-php/phalanx-styx",
+    "require": {
+        "php": "^8.4",
+        "phalanx/aegis": "^0.5",
+        "react/async": "^4.3",
+        "react/event-loop": "^1.5",
+        "react/stream": "^1.4",
+        "evenement/evenement": "^3.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Phalanx\\Styx\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Phalanx\\Styx\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "0.5-dev"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

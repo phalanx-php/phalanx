@@ -7,10 +7,10 @@ require dirname(__DIR__, 2) . '/vendor/autoload.php';
 require __DIR__ . '/DemoCommand.php';
 
 use Phalanx\Application;
-use Phalanx\Console\CommandGroup;
-use Phalanx\Console\ConsoleRunner;
-use Phalanx\Console\Demo\DemoCommand;
-use Phalanx\Console\Style\ConsoleServiceBundle;
+use Phalanx\Archon\CommandGroup;
+use Phalanx\Archon\ConsoleRunner;
+use Phalanx\Archon\Demo\DemoCommand;
+use Phalanx\Archon\Style\ConsoleServiceBundle;
 
 $app = Application::starting()
     ->providers(new ConsoleServiceBundle())

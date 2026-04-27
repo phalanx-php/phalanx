@@ -1,0 +1,39 @@
+{
+    "name": "phalanx/archon",
+    "description": "CLI application framework for Phalanx",
+    "license": "MIT",
+    "type": "library",
+    "keywords": ["cli", "console", "async", "reactphp", "phalanx"],
+    "homepage": "https://github.com/phalanx-php/phalanx-archon",
+    "authors": [
+        {
+            "name": "Jonathan Havens",
+            "email": "mail@phalanx-php.com"
+        }
+    ],
+    "require": {
+        "php": "^8.4",
+        "phalanx/aegis": "^0.5"
+    },
+    "suggest": {
+        "phalanx/styx": "For streaming data through console commands",
+        "phalanx/hydra": "For worker process parallelism in CLI tasks"
+    },
+    "autoload": {
+        "psr-4": {
+            "Phalanx\\Archon\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Phalanx\\Archon\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "0.5-dev"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

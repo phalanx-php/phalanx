@@ -7,14 +7,14 @@
     "authors": [
         {
             "name": "Jonathan Havens",
-            "email": "mail@jhavens.tech"
+            "email": "mail@phalanx-php.com"
         }
     ],
-    "homepage": "https://github.com/havy-tech/phalanx-postgres",
+    "homepage": "https://github.com/phalanx-php/phalanx-postgres",
     "require": {
         "php": "^8.4",
-        "phalanx/core": "^0.5",
-        "phalanx/stream": "^0.5",
+        "phalanx/aegis": "^0.5",
+        "phalanx/styx": "^0.5",
         "amphp/postgres": "^2.2",
         "revolt/event-loop-adapter-react": "^1.1"
     },

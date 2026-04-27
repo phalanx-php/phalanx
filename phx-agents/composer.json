@@ -1,0 +1,25 @@
+{
+    "name": "phalanx/phx-agents",
+    "description": "Brainstorming agents for Daemon8 built with Phalanx AI",
+    "type": "project",
+    "require": {
+        "php": "^8.4",
+        "phalanx/athena": "*",
+        "phalanx/archon": "*",
+        "phalanx/theatron": "*",
+        "symfony/dotenv": "^8.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Phx\\Agents\\": "src/"
+        }
+    },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../packages/*"
+        }
+    ],
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

@@ -6,9 +6,9 @@ namespace Phalanx\Postgres;
 
 use Amp\Postgres\PostgresListener as AmphpListener;
 use Amp\Postgres\PostgresNotification;
-use Phalanx\Stream\Channel;
+use Phalanx\Styx\Channel;
 use Phalanx\Stream\Contract\StreamContext;
-use Phalanx\Stream\Emitter;
+use Phalanx\Styx\Emitter;
 
 final class PgListener
 {

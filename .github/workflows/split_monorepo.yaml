@@ -1,11 +1,7 @@
 name: 'Monorepo Split'
 
 on:
-  push:
-    branches:
-      - main
-    tags:
-      - '*'
+  workflow_dispatch:
 
 env:
   GITHUB_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
@@ -17,20 +13,20 @@ jobs:
       fail-fast: false
       matrix:
         package:
-          - phalanx-core
-          - phalanx-console
-          - phalanx-http
-          - phalanx-ai
-          - phalanx-parallel
+          - phalanx-aegis
+          - phalanx-archon
+          - phalanx-stoa
+          - phalanx-athena
+          - phalanx-hydra
           - phalanx-postgres
-          - phalanx-stream
-          - phalanx-ws-server
-          - phalanx-ws-client
-          - phalanx-network
-          - phalanx-filesystem
-          - phalanx-ssh
-          - phalanx-terminal
-          - phalanx-ui
+          - phalanx-styx
+          - phalanx-hermes
+          - phalanx-argos
+          - phalanx-grammata
+          - phalanx-enigma
+          - phalanx-theatron
+          - phalanx-eidolon
+          - phalanx-skopos
           # NOT published yet (maturing):
           # - phalanx-redis
           # - phalanx-twilio
@@ -45,7 +41,7 @@ jobs:
       - uses: symplify/monorepo-split-github-action@v2.3.0
         with:
           package_directory: 'packages/${{ matrix.package }}'
-          repository_organization: 'havy-tech'
+          repository_organization: 'phalanx-php'
           repository_name: '${{ matrix.package }}'
           tag: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
           user_name: 'github-actions[bot]'

@@ -1,0 +1,45 @@
+{
+    "name": "phalanx/theatron",
+    "description": "Async terminal UI with buffer diffing, regions, and reactive widgets",
+    "license": "MIT",
+    "type": "library",
+    "keywords": ["terminal", "tui", "ansi", "async", "buffer", "widget", "rendering"],
+    "authors": [
+        {
+            "name": "Jonathan Havens",
+            "email": "mail@phalanx-php.com"
+        }
+    ],
+    "homepage": "https://github.com/phalanx-php/phalanx-theatron",
+    "require": {
+        "php": "^8.4"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.0",
+        "react/event-loop": "^1.5",
+        "react/async": "^4.3"
+    },
+    "suggest": {
+        "react/event-loop": "Required for Surface (async event loop integration)",
+        "react/async": "Required for Surface (fiber-based async)",
+        "ext-pcntl": "Required for SIGWINCH terminal resize handling on Unix",
+        "ext-mbstring": "Recommended for accurate Unicode width calculation"
+    },
+    "autoload": {
+        "psr-4": {
+            "Phalanx\\Theatron\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Phalanx\\Theatron\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "0.5-dev"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

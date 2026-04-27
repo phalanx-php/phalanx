@@ -4,7 +4,7 @@
 
 # phalanx/cdp
 
-> **Phalanx** is a first-principles rethinking of what PHP can be when modern language features and a decade of async community work are treated as the foundation, not an afterthought. [Read more](https://github.com/havy-tech/phalanx-core#phalanx-core---async-php) in the core library.
+> **Phalanx** is a first-principles rethinking of what PHP can be when modern language features and a decade of async community work are treated as the foundation, not an afterthought. [Read more](https://github.com/phalanx-php/phalanx-aegis#phalanx-aegis---async-php) in the core library.
 
 Chrome DevTools Protocol client for Phalanx. Async-native browser automation built on `phalanx/ws-client` for WebSocket transport and `phalanx/stream` for event handling.
 

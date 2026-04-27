@@ -1,0 +1,41 @@
+{
+    "name": "phalanx/eidolon",
+    "description": "Frontend bridge for Phalanx — typed route contracts, OpenAPI generation, Kubb integration, and signal-based reactivity",
+    "license": "MIT",
+    "type": "library",
+    "keywords": ["frontend", "openapi", "kubb", "tanstack", "react", "ssr", "signals", "async", "reactphp"],
+    "authors": [
+        {
+            "name": "Jonathan Havens",
+            "email": "mail@phalanx-php.com"
+        }
+    ],
+    "homepage": "https://github.com/phalanx-php/phalanx-eidolon",
+    "require": {
+        "php": "^8.4",
+        "phalanx/aegis": "^0.5",
+        "phalanx/stoa": "^0.5",
+        "phalanx/styx": "^0.5"
+    },
+    "suggest": {
+        "phalanx/hermes": "For WebSocket signal transport",
+        "phalanx/athena": "For agent streaming to frontend"
+    },
+    "autoload": {
+        "psr-4": {
+            "Phalanx\\Eidolon\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Phalanx\\Tests\\Eidolon\\": "tests/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "0.5-dev"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

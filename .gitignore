@@ -4,6 +4,7 @@
 
 # Explicit includes
 !.gitignore
+!.github/
 !.env.example
 !README.md
 

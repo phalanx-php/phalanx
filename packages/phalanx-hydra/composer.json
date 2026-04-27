@@ -1,0 +1,42 @@
+{
+    "name": "phalanx/hydra",
+    "description": "Worker process parallelism for Phalanx",
+    "license": "MIT",
+    "type": "library",
+    "keywords": ["parallel", "worker", "process", "async", "ipc", "reactphp"],
+    "authors": [
+        {
+            "name": "Jonathan Havens",
+            "email": "mail@phalanx-php.com"
+        }
+    ],
+    "homepage": "https://github.com/phalanx-php/phalanx-hydra",
+    "require": {
+        "php": "^8.4",
+        "phalanx/aegis": "^0.5",
+        "react/child-process": "^0.6",
+        "react/async": "^4.3",
+        "react/event-loop": "^1.5",
+        "react/promise": "^3.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "Phalanx\\Hydra\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Phalanx\\Hydra\\Tests\\": "tests/"
+        }
+    },
+    "bin": [
+        "bin/phalanx-worker"
+    ],
+    "extra": {
+        "branch-alias": {
+            "dev-main": "0.5-dev"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

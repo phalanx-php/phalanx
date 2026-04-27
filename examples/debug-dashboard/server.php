@@ -47,10 +47,10 @@ require __DIR__ . '/Ws/DumpStream.php';
 require __DIR__ . '/Ws/MetricsStream.php';
 
 use Phalanx\Application;
-use Phalanx\Http\RouteGroup;
-use Phalanx\Http\Runner;
-use Phalanx\WebSocket\WsGateway;
-use Phalanx\WebSocket\WsRouteGroup;
+use Phalanx\Stoa\RouteGroup;
+use Phalanx\Stoa\Runner;
+use Phalanx\Hermes\WsGateway;
+use Phalanx\Hermes\WsRouteGroup;
 
 $gateway = new WsGateway();
 

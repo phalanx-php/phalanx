@@ -7,13 +7,13 @@
     "authors": [
         {
             "name": "Jonathan Havens",
-            "email": "mail@jhavens.tech"
+            "email": "mail@phalanx-php.com"
         }
     ],
-    "homepage": "https://github.com/havy-tech/phalanx-twilio",
+    "homepage": "https://github.com/phalanx-php/phalanx-twilio",
     "require": {
         "php": "^8.4",
-        "phalanx/core": "^0.5",
+        "phalanx/aegis": "^0.5",
         "react/http": "^1.10"
     },
     "autoload": {

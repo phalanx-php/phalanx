@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
-use Phalanx\WebSocket\WsGateway;
+use Phalanx\Hermes\WsGateway;
 
 final class DashboardBundle implements ServiceBundle
 {

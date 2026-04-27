@@ -12,13 +12,13 @@ require __DIR__ . '/Commands/InspectCommand.php';
 require __DIR__ . '/Commands/LogsCommand.php';
 
 use Phalanx\Application;
-use Phalanx\Console\CommandGroup;
-use Phalanx\Console\ConsoleRunner;
-use Phalanx\Console\Examples\Commands\ImagesCommand;
-use Phalanx\Console\Examples\Commands\InspectCommand;
-use Phalanx\Console\Examples\Commands\LogsCommand;
-use Phalanx\Console\Examples\Commands\PsCommand;
-use Phalanx\Console\Examples\Commands\PullCommand;
+use Phalanx\Archon\CommandGroup;
+use Phalanx\Archon\ConsoleRunner;
+use Phalanx\Archon\Examples\Commands\ImagesCommand;
+use Phalanx\Archon\Examples\Commands\InspectCommand;
+use Phalanx\Archon\Examples\Commands\LogsCommand;
+use Phalanx\Archon\Examples\Commands\PsCommand;
+use Phalanx\Archon\Examples\Commands\PullCommand;
 
 $commands = CommandGroup::of([
     'ps'      => new PsCommand(),

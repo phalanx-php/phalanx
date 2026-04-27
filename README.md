@@ -33,23 +33,23 @@ $app->shutdown();
 
 ## Packages
 
-`phalanx/core` is the foundation. Every other package builds on it.
+`phalanx/aegis` is the foundation. Every other package builds on it.
 
 | Package | Description | |
 |---------|-------------|---|
-| [phalanx/core](https://github.com/havy-tech/phalanx-core) | Scopes, tasks, concurrency, services, cancellation | [![Latest Version](https://img.shields.io/packagist/v/phalanx/core)](https://packagist.org/packages/phalanx/core) [![PHP](https://img.shields.io/packagist/dependency-v/phalanx/core/php)](https://packagist.org/packages/phalanx/core) |
-| [phalanx/console](https://github.com/havy-tech/phalanx-console) | CLI framework with nested command groups | [![Latest Version](https://img.shields.io/packagist/v/phalanx/console)](https://packagist.org/packages/phalanx/console) [![PHP](https://img.shields.io/packagist/dependency-v/phalanx/console/php)](https://packagist.org/packages/phalanx/console) |
-| [phalanx/http](https://github.com/havy-tech/phalanx-http) | HTTP server on ReactPHP with routing, middleware, and SSE | [![Latest Version](https://img.shields.io/packagist/v/phalanx/http)](https://packagist.org/packages/phalanx/http) [![PHP](https://img.shields.io/packagist/dependency-v/phalanx/http/php)](https://packagist.org/packages/phalanx/http) |
-| [phalanx/ai](https://github.com/havy-tech/phalanx-ai) | AI agent runtime -- providers, tools, streaming, structured output | [![Latest Version](https://img.shields.io/packagist/v/phalanx/ai)](https://packagist.org/packages/phalanx/ai) [![PHP](https://img.shields.io/packagist/dependency-v/phalanx/ai/php)](https://packagist.org/packages/phalanx/ai) |
-| [phalanx/parallel](https://github.com/havy-tech/phalanx-parallel) | Worker process pools with IPC and supervisors | [![Latest Version](https://img.shields.io/packagist/v/phalanx/parallel)](https://packagist.org/packages/phalanx/parallel) [![PHP](https://img.shields.io/packagist/dependency-v/phalanx/parallel/php)](https://packagist.org/packages/phalanx/parallel) |
-| [phalanx/stream](https://github.com/havy-tech/phalanx-stream) | Reactive streams with channels and backpressure | [![Latest Version](https://img.shields.io/packagist/v/phalanx/stream)](https://packagist.org/packages/phalanx/stream) [![PHP](https://img.shields.io/packagist/dependency-v/phalanx/stream/php)](https://packagist.org/packages/phalanx/stream) |
-| [phalanx/postgres](https://github.com/havy-tech/phalanx-postgres) | Async PostgreSQL via amphp/postgres with LISTEN/NOTIFY | [![Latest Version](https://img.shields.io/packagist/v/phalanx/postgres)](https://packagist.org/packages/phalanx/postgres) [![PHP](https://img.shields.io/packagist/dependency-v/phalanx/postgres/php)](https://packagist.org/packages/phalanx/postgres) |
-| [phalanx/ws-server](https://github.com/havy-tech/phalanx-ws-server) | WebSocket server connections, gateway, and pub/sub topics | [![Latest Version](https://img.shields.io/packagist/v/phalanx/ws-server)](https://packagist.org/packages/phalanx/ws-server) [![PHP](https://img.shields.io/packagist/dependency-v/phalanx/ws-server/php)](https://packagist.org/packages/phalanx/ws-server) |
-| [phalanx/network](https://github.com/havy-tech/phalanx-network) | Network scanning, probing, WOL, and service discovery | *in progress* |
-| [phalanx/filesystem](https://github.com/havy-tech/phalanx-filesystem) | Async file operations with resource-governed FilePool | *in progress* |
-| [phalanx/ssh](https://github.com/havy-tech/phalanx-ssh) | SSH command execution, SFTP, and tunnel management | *in progress* |
-| [phalanx/ui](https://github.com/havy-tech/phalanx-ui) | Frontend bridge — OpenAPI generation, Kubb integration, signal-based reactivity | *in progress* |
-| [phalanx/cdp](https://github.com/havy-tech/phalanx-cdp) | Chrome DevTools Protocol client | *in progress* |
+| [phalanx/aegis](https://github.com/phalanx-php/phalanx-aegis) | Scopes, tasks, concurrency, services, cancellation | [![Latest Version](https://img.shields.io/packagist/v/phalanx/aegis)](https://packagist.org/packages/phalanx/aegis) [![PHP](https://img.shields.io/packagist/dependency-v/phalanx/aegis/php)](https://packagist.org/packages/phalanx/aegis) |
+| [phalanx/archon](https://github.com/phalanx-php/phalanx-archon) | CLI framework with nested command groups | [![Latest Version](https://img.shields.io/packagist/v/phalanx/archon)](https://packagist.org/packages/phalanx/archon) [![PHP](https://img.shields.io/packagist/dependency-v/phalanx/archon/php)](https://packagist.org/packages/phalanx/archon) |
+| [phalanx/stoa](https://github.com/phalanx-php/phalanx-stoa) | HTTP server on ReactPHP with routing, middleware, and SSE | [![Latest Version](https://img.shields.io/packagist/v/phalanx/stoa)](https://packagist.org/packages/phalanx/stoa) [![PHP](https://img.shields.io/packagist/dependency-v/phalanx/stoa/php)](https://packagist.org/packages/phalanx/stoa) |
+| [phalanx/athena](https://github.com/phalanx-php/phalanx-athena) | AI agent runtime -- providers, tools, streaming, structured output | [![Latest Version](https://img.shields.io/packagist/v/phalanx/athena)](https://packagist.org/packages/phalanx/athena) [![PHP](https://img.shields.io/packagist/dependency-v/phalanx/athena/php)](https://packagist.org/packages/phalanx/athena) |
+| [phalanx/hydra](https://github.com/phalanx-php/phalanx-hydra) | Worker process pools with IPC and supervisors | [![Latest Version](https://img.shields.io/packagist/v/phalanx/hydra)](https://packagist.org/packages/phalanx/hydra) [![PHP](https://img.shields.io/packagist/dependency-v/phalanx/hydra/php)](https://packagist.org/packages/phalanx/hydra) |
+| [phalanx/styx](https://github.com/phalanx-php/phalanx-styx) | Reactive streams with channels and backpressure | [![Latest Version](https://img.shields.io/packagist/v/phalanx/styx)](https://packagist.org/packages/phalanx/styx) [![PHP](https://img.shields.io/packagist/dependency-v/phalanx/styx/php)](https://packagist.org/packages/phalanx/styx) |
+| [phalanx/postgres](https://github.com/phalanx-php/phalanx-postgres) | Async PostgreSQL via amphp/postgres with LISTEN/NOTIFY | [![Latest Version](https://img.shields.io/packagist/v/phalanx/postgres)](https://packagist.org/packages/phalanx/postgres) [![PHP](https://img.shields.io/packagist/dependency-v/phalanx/postgres/php)](https://packagist.org/packages/phalanx/postgres) |
+| [phalanx/hermes](https://github.com/phalanx-php/phalanx-hermes) | WebSocket server connections, gateway, and pub/sub topics | [![Latest Version](https://img.shields.io/packagist/v/phalanx/hermes)](https://packagist.org/packages/phalanx/hermes) [![PHP](https://img.shields.io/packagist/dependency-v/phalanx/hermes/php)](https://packagist.org/packages/phalanx/hermes) |
+| [phalanx/argos](https://github.com/phalanx-php/phalanx-argos) | Network scanning, probing, WOL, and service discovery | *in progress* |
+| [phalanx/grammata](https://github.com/phalanx-php/phalanx-grammata) | Async file operations with resource-governed FilePool | *in progress* |
+| [phalanx/enigma](https://github.com/phalanx-php/phalanx-enigma) | SSH command execution, SFTP, and tunnel management | *in progress* |
+| [phalanx/eidolon](https://github.com/phalanx-php/phalanx-eidolon) | Frontend bridge — OpenAPI generation, Kubb integration, signal-based reactivity | *in progress* |
+| [phalanx/cdp](https://github.com/phalanx-php/phalanx-cdp) | Chrome DevTools Protocol client | *in progress* |
 
 ## What makes Phalanx different
 
@@ -66,7 +66,7 @@ $app->shutdown();
 ## Requirements
 
 - PHP 8.4+
-- `ext-pcntl` for worker process pools (`phalanx/parallel`)
+- `ext-pcntl` for worker process pools (`phalanx/hydra`)
 - `ext-pgsql` for PostgreSQL (`phalanx/postgres`)
 
 ## Quick start

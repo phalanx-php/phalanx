@@ -1,0 +1,70 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Phalanx\Theatron\Widget;
+
+use Phalanx\Theatron\Buffer\Buffer;
+use Phalanx\Theatron\Buffer\Rect;
+use Phalanx\Theatron\Style\Style;
+
+final class Accordion implements Widget
+{
+    private Style $titleStyle;
+    private Style $activeTitleStyle;
+
+    /** @param list<AccordionSection> $sections */
+    public function __construct(
+        private array $sections = [],
+        ?Style $titleStyle = null,
+        ?Style $activeTitleStyle = null,
+    ) {
+        $this->titleStyle = $titleStyle ?? Style::new()->bold();
+        $this->activeTitleStyle = $activeTitleStyle ?? Style::new()->bold()->fg('cyan');
+    }
+
+    public function addSection(AccordionSection $section): void
+    {
+        $this->sections[] = $section;
+    }
+
+    public function toggle(int $index): void
+    {
+        if (isset($this->sections[$index])) {
+            $this->sections[$index]->expanded = !$this->sections[$index]->expanded;
+        }
+    }
+
+    public function render(Rect $area, Buffer $buffer): void
+    {
+        if ($area->height === 0 || $area->width === 0) {
+            return;
+        }
+
+        $y = $area->y;
+
+        foreach ($this->sections as $section) {
+            if ($y >= $area->bottom) {
+                break;
+            }
+
+            $indicator = $section->expanded ? '▼' : '▶';
+            $style = $section->expanded ? $this->activeTitleStyle : $this->titleStyle;
+            $titleText = " {$indicator} {$section->title}";
+
+            $buffer->putString($area->x, $y, $titleText, $style);
+            $y++;
+
+            if ($section->expanded && $y < $area->bottom) {
+                $contentHeight = min($section->contentHeight, $area->bottom - $y);
+                $contentArea = Rect::of($area->x + 2, $y, $area->width - 2, $contentHeight);
+
+                if ($contentArea->width > 0 && $contentArea->height > 0) {
+                    $section->content->render($contentArea, $buffer);
+                }
+
+                $y += $contentHeight;
+            }
+        }
+    }
+}

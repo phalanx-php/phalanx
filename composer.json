@@ -5,7 +5,7 @@
     "authors": [
         {
             "name": "Jonathan Havens",
-            "email": "mail@jhavens.tech"
+            "email": "mail@phalanx-php.com"
         }
     ],
     "type": "project",
@@ -41,48 +41,49 @@
     },
     "autoload": {
         "psr-4": {
-            "Phalanx\\": "packages/phalanx-core/src/",
-            "Phalanx\\Console\\": "packages/phalanx-console/src/",
-            "Phalanx\\Http\\": "packages/phalanx-http/src/",
-            "Phalanx\\Parallel\\": "packages/phalanx-parallel/src/",
-            "Phalanx\\Stream\\": "packages/phalanx-stream/src/",
+            "Phalanx\\": "packages/phalanx-aegis/src/",
+            "Phalanx\\Archon\\": "packages/phalanx-archon/src/",
+            "Phalanx\\Stoa\\": "packages/phalanx-stoa/src/",
+            "Phalanx\\Hydra\\": "packages/phalanx-hydra/src/",
+            "Phalanx\\Styx\\": "packages/phalanx-styx/src/",
             "Phalanx\\Twilio\\": "packages/phalanx-twilio/src/",
-            "Phalanx\\Ai\\": "packages/phalanx-ai/src/",
+            "Phalanx\\Athena\\": "packages/phalanx-athena/src/",
             "Phalanx\\Postgres\\": "packages/phalanx-postgres/src/",
             "Phalanx\\Redis\\": "packages/phalanx-redis/src/",
-            "Phalanx\\Terminal\\": "packages/phalanx-terminal/src/",
-            "Phalanx\\WebSocket\\": "packages/phalanx-ws-server/src/",
-            "Phalanx\\WebSocket\\Client\\": "packages/phalanx-ws-client/src/",
-            "Phalanx\\Network\\": "packages/phalanx-network/src/",
-            "Phalanx\\Filesystem\\": "packages/phalanx-filesystem/src/",
-            "Phalanx\\Ssh\\": "packages/phalanx-ssh/src/",
-            "Phalanx\\Ui\\": "packages/phalanx-ui/src/"
+            "Phalanx\\Theatron\\": "packages/phalanx-theatron/src/",
+            "Phalanx\\Hermes\\": "packages/phalanx-hermes/src/",
+            "Phalanx\\Hermes\\Client\\": "packages/phalanx-hermes/src/Client/",
+            "Phalanx\\Argos\\": "packages/phalanx-argos/src/",
+            "Phalanx\\Grammata\\": "packages/phalanx-grammata/src/",
+            "Phalanx\\Enigma\\": "packages/phalanx-enigma/src/",
+            "Phalanx\\Eidolon\\": "packages/phalanx-eidolon/src/",
+            "Phalanx\\Skopos\\": "packages/phalanx-skopos/src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Phalanx\\Console\\Tests\\": "packages/phalanx-console/tests/",
-            "Phalanx\\Tests\\Http\\": "packages/phalanx-http/tests/",
-            "Phalanx\\Parallel\\Tests\\": "packages/phalanx-parallel/tests/",
-            "Phalanx\\Stream\\Tests\\": "packages/phalanx-stream/tests/",
-            "Phalanx\\Tests\\": ["packages/phalanx-core/tests/", "tests/"],
+            "Phalanx\\Archon\\Tests\\": "packages/phalanx-archon/tests/",
+            "Phalanx\\Tests\\Stoa\\": "packages/phalanx-stoa/tests/",
+            "Phalanx\\Hydra\\Tests\\": "packages/phalanx-hydra/tests/",
+            "Phalanx\\Styx\\Tests\\": "packages/phalanx-styx/tests/",
+            "Phalanx\\Tests\\": ["packages/phalanx-aegis/tests/", "tests/"],
             "Phalanx\\Twilio\\Tests\\": "packages/phalanx-twilio/tests/",
-            "Phalanx\\Ai\\Tests\\": "packages/phalanx-ai/tests/",
+            "Phalanx\\Athena\\Tests\\": "packages/phalanx-athena/tests/",
             "Phalanx\\Postgres\\Tests\\": "packages/phalanx-postgres/tests/",
             "Phalanx\\Redis\\Tests\\": "packages/phalanx-redis/tests/",
-            "Phalanx\\Terminal\\Tests\\": "packages/phalanx-terminal/tests/",
-            "Phalanx\\WebSocket\\Tests\\": "packages/phalanx-ws-server/tests/",
-            "Phalanx\\WebSocket\\Client\\Tests\\": "packages/phalanx-ws-client/tests/",
-            "Phalanx\\Network\\Tests\\": "packages/phalanx-network/tests/",
-            "Phalanx\\Filesystem\\Tests\\": "packages/phalanx-filesystem/tests/",
-            "Phalanx\\Ssh\\Tests\\": "packages/phalanx-ssh/tests/",
-            "Phalanx\\Tests\\Ui\\": "packages/phalanx-ui/tests/"
+            "Phalanx\\Theatron\\Tests\\": "packages/phalanx-theatron/tests/",
+            "Phalanx\\Hermes\\Tests\\": "packages/phalanx-hermes/tests/",
+            "Phalanx\\Hermes\\Client\\Tests\\": "packages/phalanx-hermes/tests/Client/",
+            "Phalanx\\Argos\\Tests\\": "packages/phalanx-argos/tests/",
+            "Phalanx\\Grammata\\Tests\\": "packages/phalanx-grammata/tests/",
+            "Phalanx\\Enigma\\Tests\\": "packages/phalanx-enigma/tests/",
+            "Phalanx\\Tests\\Eidolon\\": "packages/phalanx-eidolon/tests/"
         },
         "classmap": [
-            "packages/phalanx-core/tests/Support/Fixtures/",
-            "packages/phalanx-ai/examples/support-triage/src/",
-            "packages/phalanx-ai/examples/research-agent/src/",
-            "packages/phalanx-ai/examples/multi-tenant-fleet/src/"
+            "packages/phalanx-aegis/tests/Support/Fixtures/",
+            "packages/phalanx-athena/examples/support-triage/src/",
+            "packages/phalanx-athena/examples/research-agent/src/",
+            "packages/phalanx-athena/examples/multi-tenant-fleet/src/"
         ]
     },
     "repositories": [
@@ -93,16 +94,16 @@
     ],
     "scripts": {
         "test": "php vendor/bin/phpunit",
-        "test:core": "cd packages/phalanx-core && php vendor/bin/phpunit",
+        "test:core": "cd packages/phalanx-aegis && php vendor/bin/phpunit",
         "test:twilio": "php vendor/bin/phpunit packages/phalanx-twilio/tests/",
-        "test:ai": "php vendor/bin/phpunit packages/phalanx-ai/tests/",
-        "test:ssh": "php vendor/bin/phpunit packages/phalanx-ssh/tests/",
+        "test:ai": "php vendor/bin/phpunit packages/phalanx-athena/tests/",
+        "test:ssh": "php vendor/bin/phpunit packages/phalanx-enigma/tests/",
         "analyse": "php vendor/bin/phpstan analyse",
         "rector": "php vendor/bin/rector process",
         "rector:dry": "php vendor/bin/rector process --dry-run",
-        "cs": "php vendor/bin/phpcs --standard=packages/phalanx-core/phpcs.xml",
-        "cs:fix": "php vendor/bin/phpcbf --standard=packages/phalanx-core/phpcs.xml",
-        "examples:lint": "find examples packages/phalanx-ai/examples -name '*.php' -not -path '*/vendor/*' -print0 | xargs -0 -n1 php -l > /dev/null",
+        "cs": "php vendor/bin/phpcs --standard=packages/phalanx-aegis/phpcs.xml",
+        "cs:fix": "php vendor/bin/phpcbf --standard=packages/phalanx-aegis/phpcs.xml",
+        "examples:lint": "find examples packages/phalanx-athena/examples -name '*.php' -not -path '*/vendor/*' -print0 | xargs -0 -n1 php -l > /dev/null",
         "check": ["@analyse", "@rector:dry", "@test", "@examples:lint"]
     },
     "config": {
@@ -113,22 +114,22 @@
         }
     },
     "replace": {
-        "phalanx/console": "0.6.1",
-        "phalanx/core": "0.6.1",
-        "phalanx/http": "0.6.1",
-        "phalanx/twilio": "0.6.1",
-        "phalanx/ai": "0.6.1",
-        "phalanx/parallel": "0.6.1",
+        "phalanx/aegis": "0.6.1",
+        "phalanx/archon": "0.6.1",
+        "phalanx/argos": "0.6.1",
+        "phalanx/athena": "0.6.1",
+        "phalanx/eidolon": "0.6.1",
+        "phalanx/enigma": "0.6.1",
+        "phalanx/grammata": "0.6.1",
+        "phalanx/hermes": "0.6.1",
+        "phalanx/hydra": "0.6.1",
         "phalanx/postgres": "0.6.1",
         "phalanx/redis": "0.6.1",
-        "phalanx/stream": "0.6.1",
-        "phalanx/terminal": "0.6.1",
-        "phalanx/ws-server": "0.6.1",
-        "phalanx/ws-client": "0.6.1",
-        "phalanx/network": "0.6.1",
-        "phalanx/filesystem": "0.6.1",
-        "phalanx/ssh": "0.6.1",
-        "phalanx/ui": "0.6.1"
+        "phalanx/skopos": "0.6.1",
+        "phalanx/stoa": "0.6.1",
+        "phalanx/styx": "0.6.1",
+        "phalanx/theatron": "0.6.1",
+        "phalanx/twilio": "0.6.1"
     },
     "minimum-stability": "dev",
     "prefer-stable": true

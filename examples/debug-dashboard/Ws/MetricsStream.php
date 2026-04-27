@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-use Phalanx\Stream\Emitter;
-use Phalanx\Stream\ScopedStream;
+use Phalanx\Styx\Emitter;
+use Phalanx\Styx\ScopedStream;
 use Phalanx\Task\Scopeable;
-use Phalanx\WebSocket\WsGateway;
-use Phalanx\WebSocket\WsScope;
+use Phalanx\Hermes\WsGateway;
+use Phalanx\Hermes\WsScope;
 
 final class MetricsStream implements Scopeable
 {

@@ -1,0 +1,60 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Phalanx\Athena;
+
+use Phalanx\Athena\Provider\ProviderConfig;
+use Phalanx\Athena\Swarm\Daemon8SwarmBus;
+use Phalanx\Athena\Swarm\SwarmBus;
+use Phalanx\Athena\Swarm\SwarmConfig;
+use Phalanx\Service\ServiceBundle;
+use Phalanx\Service\Services;
+
+final class AiServiceBundle implements ServiceBundle
+{
+    public function services(Services $services, array $context): void
+    {
+        $services->singleton(ProviderConfig::class)
+            ->factory(static function () use ($context) {
+                $config = ProviderConfig::create();
+
+                if ($anthropicKey = $context['ANTHROPIC_API_KEY'] ?? null) {
+                    $config->anthropic(apiKey: $anthropicKey);
+                }
+
+                if ($openaiKey = $context['OPENAI_API_KEY'] ?? null) {
+                    $baseUrl = $context['OPENAI_BASE_URL'] ?? 'https://api.openai.com';
+                    $config->openai(apiKey: $openaiKey, baseUrl: $baseUrl);
+                }
+
+                if ($geminiKey = $context['GEMINI_API_KEY'] ?? null) {
+                    $config->gemini(apiKey: $geminiKey, model: $context['GEMINI_MODEL'] ?? 'gemini-1.5-flash');
+                }
+
+                if ($ollamaUrl = $context['OLLAMA_BASE_URL'] ?? null) {
+                    $config->ollama(baseUrl: $ollamaUrl);
+                }
+
+                return $config;
+            });
+
+        $services->singleton(SwarmConfig::class)
+            ->factory(static function () use ($context) {
+                return new SwarmConfig(
+                    workspace: $context['SWARM_WORKSPACE'] ?? 'default',
+                    session:   $context['SWARM_SESSION'] ?? 'default',
+                    daemon8Url: $context['DAEMON8_URL'] ?? 'http://localhost:9077',
+                    app:        $context['DAEMON8_APP'] ?? 'phalanx-swarm',
+                );
+            });
+
+        $services->singleton(Daemon8SwarmBus::class)
+            ->needs(SwarmConfig::class)
+            ->factory(static function (SwarmConfig $config) {
+                return new Daemon8SwarmBus($config);
+            });
+
+        $services->alias(SwarmBus::class, Daemon8SwarmBus::class);
+    }
+}

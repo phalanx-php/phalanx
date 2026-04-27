@@ -17,52 +17,49 @@
     </groups>
     <testsuites>
         <testsuite name="Core Unit">
-            <directory>packages/phalanx-core/tests/Unit</directory>
+            <directory>packages/phalanx-aegis/tests/Unit</directory>
         </testsuite>
         <testsuite name="Core Integration">
-            <directory>packages/phalanx-core/tests/Integration</directory>
+            <directory>packages/phalanx-aegis/tests/Integration</directory>
         </testsuite>
-        <testsuite name="Stream Unit">
-            <directory>packages/phalanx-stream/tests/Unit</directory>
+        <testsuite name="Styx Unit">
+            <directory>packages/phalanx-styx/tests/Unit</directory>
         </testsuite>
-        <testsuite name="Stream Integration">
-            <directory>packages/phalanx-stream/tests/Integration</directory>
+        <testsuite name="Styx Integration">
+            <directory>packages/phalanx-styx/tests/Integration</directory>
         </testsuite>
-        <testsuite name="Console Unit">
-            <directory>packages/phalanx-console/tests/Unit</directory>
+        <testsuite name="Archon Unit">
+            <directory>packages/phalanx-archon/tests/Unit</directory>
         </testsuite>
-        <testsuite name="Console Integration">
-            <directory>packages/phalanx-console/tests/Integration</directory>
+        <testsuite name="Archon Integration">
+            <directory>packages/phalanx-archon/tests/Integration</directory>
         </testsuite>
-        <testsuite name="Http Unit">
-            <directory>packages/phalanx-http/tests/Unit</directory>
+        <testsuite name="Stoa Unit">
+            <directory>packages/phalanx-stoa/tests/Unit</directory>
         </testsuite>
-        <testsuite name="Http Integration">
-            <directory>packages/phalanx-http/tests/Integration</directory>
+        <testsuite name="Stoa Integration">
+            <directory>packages/phalanx-stoa/tests/Integration</directory>
         </testsuite>
-        <testsuite name="Parallel Unit">
-            <directory>packages/phalanx-parallel/tests/Unit</directory>
+        <testsuite name="Hydra Unit">
+            <directory>packages/phalanx-hydra/tests/Unit</directory>
         </testsuite>
-        <testsuite name="Parallel Integration">
-            <directory>packages/phalanx-parallel/tests/Integration</directory>
+        <testsuite name="Hydra Integration">
+            <directory>packages/phalanx-hydra/tests/Integration</directory>
         </testsuite>
-        <testsuite name="WebSocket Unit">
-            <directory>packages/phalanx-ws-server/tests/Unit</directory>
+        <testsuite name="Hermes Unit">
+            <directory>packages/phalanx-hermes/tests/Unit</directory>
         </testsuite>
-        <testsuite name="WebSocket Integration">
-            <directory>packages/phalanx-ws-server/tests/Integration</directory>
+        <testsuite name="Hermes Integration">
+            <directory>packages/phalanx-hermes/tests/Integration</directory>
         </testsuite>
-        <testsuite name="WsClient Unit">
-            <directory>packages/phalanx-ws-client/tests/Unit</directory>
+        <testsuite name="Hermes Client Unit">
+            <directory>packages/phalanx-hermes/tests/Client/Unit</directory>
         </testsuite>
-        <testsuite name="WsClient Integration">
-            <directory>packages/phalanx-ws-client/tests/Integration</directory>
+        <testsuite name="Athena Integration">
+            <directory>packages/phalanx-athena/tests/Integration</directory>
         </testsuite>
-        <testsuite name="AI Integration">
-            <directory>packages/phalanx-ai/tests/Integration</directory>
-        </testsuite>
-        <testsuite name="UI Unit">
-            <directory>packages/phalanx-ui/tests/Unit</directory>
+        <testsuite name="Eidolon Unit">
+            <directory>packages/phalanx-eidolon/tests/Unit</directory>
         </testsuite>
         <testsuite name="Architecture">
             <directory>tests/Architecture</directory>

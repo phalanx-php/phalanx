@@ -1,0 +1,80 @@
+{
+    "name": "phalanx/aegis",
+    "description": "Expression-based async coordination for PHP 8.4+",
+    "license": "MIT",
+    "type": "library",
+    "keywords": [
+        "async",
+        "concurrency",
+        "fibers",
+        "reactphp",
+        "promises",
+        "parallel",
+        "event-loop"
+    ],
+    "homepage": "https://github.com/phalanx-php/phalanx-aegis",
+    "authors": [
+        {
+            "name": "Jonathan Havens",
+            "email": "mail@phalanx-php.com"
+        }
+    ],
+    "require": {
+        "php": "^8.4",
+        "react/async": "^4.3",
+        "react/event-loop": "^1.5",
+        "react/promise": "^3.2"
+    },
+    "require-dev": {
+        "phalanx/archon": "^0.5",
+        "phalanx/stoa": "^0.5",
+        "phalanx/hydra": "^0.5",
+        "phpstan/phpstan": "^2.0",
+        "phpunit/phpunit": "^11.0",
+        "react/promise-timer": "^1.11",
+        "rector/rector": "^2.0",
+        "slevomat/coding-standard": "^8.15",
+        "squizlabs/php_codesniffer": "^3.10"
+    },
+    "scripts": {
+        "rector": "rector process",
+        "rector:dry": "rector process --dry-run",
+        "cs": "phpcs",
+        "cs:fix": "phpcbf",
+        "test": "php vendor/bin/phpunit"
+    },
+    "suggest": {
+        "phalanx/styx": "Reactive stream primitives (Emitter, ScopedStream, Channel)",
+        "phalanx/archon": "CLI application framework",
+        "phalanx/stoa": "HTTP server framework",
+        "phalanx/hydra": "Worker process parallelism",
+        "react/http": "Required for HttpRunner",
+        "spatie/backtrace": "Enhanced stack traces",
+        "symfony/runtime": "For symfony/runtime integration",
+        "symfony/dotenv": "For .env file support"
+    },
+    "autoload": {
+        "psr-4": {
+            "Phalanx\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Phalanx\\Tests\\": "tests/"
+        },
+        "classmap": [
+            "tests/Support/Fixtures/"
+        ]
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "0.5.x-dev"
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    }
+}

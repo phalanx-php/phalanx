@@ -7,14 +7,14 @@
     "authors": [
         {
             "name": "Jonathan Havens",
-            "email": "mail@jhavens.tech"
+            "email": "mail@phalanx-php.com"
         }
     ],
-    "homepage": "https://github.com/havy-tech/phalanx-redis",
+    "homepage": "https://github.com/phalanx-php/phalanx-redis",
     "require": {
         "php": "^8.4",
-        "phalanx/core": "^0.5",
-        "phalanx/stream": "^0.5",
+        "phalanx/aegis": "^0.5",
+        "phalanx/styx": "^0.5",
         "clue/redis-react": "^2.8"
     },
     "autoload": {
