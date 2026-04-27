@@ -2,9 +2,9 @@
   <img src="brand/logo.svg" alt="Phalanx" width="520">
 </p>
 
-# phalanx/twilio
+# Phalanx Twilio
 
-> **Phalanx** is a first-principles rethinking of what PHP can be when modern language features and a decade of async community work are treated as the foundation, not an afterthought. [Read more](https://github.com/phalanx-php/phalanx-aegis#phalanx-aegis---async-php) in the core library.
+> Part of the [Phalanx](https://github.com/phalanx-php/phalanx-aegis) async PHP framework.
 
 Async Twilio integration for Phalanx -- SMS, voice calls, webhook validation, TwiML building, and Conversation Relay protocol support. Built on ReactPHP for non-blocking I/O.
 
@@ -26,7 +26,10 @@ Async Twilio integration for Phalanx -- SMS, voice calls, webhook validation, Tw
 composer require phalanx/twilio
 ```
 
-Requires PHP 8.4+, `phalanx/core`, `react/http`.
+> [!NOTE]
+> Requires PHP 8.4 or later.
+
+Dependencies: `phalanx/aegis`, `react/http`.
 
 ## Quick Start
 

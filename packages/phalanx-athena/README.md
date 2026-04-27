@@ -2,13 +2,13 @@
   <img src="brand/logo.svg" alt="Phalanx" width="520">
 </p>
 
-# phalanx/ai
+# Phalanx Athena
 
-> **Phalanx** is a first-principles rethinking of what PHP can be when modern language features and a decade of async community work are treated as the foundation, not an afterthought. [Read more](https://github.com/phalanx-php/phalanx-aegis#phalanx-aegis---async-php) in the core library.
+> Part of the [Phalanx](https://github.com/phalanx-php/phalanx-aegis) async PHP framework.
 
 An agentic runtime for PHP 8.4+ that treats LLM interactions as scoped, typed, stream-native computations. Define tools as invokable classes, wire providers as services, and let the Phalanx runtime handle concurrency, retries, streaming, and cleanup.
 
-Phalanx/ai brings concurrent tool execution, streaming with backpressure, and multi-agent coordination to PHP -- building on the same scope-driven execution model and proven async foundations that power the rest of the framework.
+Phalanx/athena brings concurrent tool execution, streaming with backpressure, and multi-agent coordination to PHP -- building on the same scope-driven execution model and proven async foundations that power the rest of the framework.
 
 ## Table of Contents
 
@@ -40,21 +40,20 @@ Phalanx/ai brings concurrent tool execution, streaming with backpressure, and mu
 ## Installation
 
 ```bash
-composer require phalanx/ai
+composer require phalanx/athena
 ```
 
-Requires PHP 8.4+, `phalanx/core`, `phalanx/stream`, `phalanx/http`.
-
-Optional: `phalanx/redis` for conversation memory and pub/sub coordination, `phalanx/postgres` for persistent storage, `phalanx/ws-server` for real-time delivery, `phalanx/console` for CLI agents.
+> [!NOTE]
+> Requires PHP 8.4 or later.
 
 ## Quick Start
 
 ```php
 <?php
 
-use Phalanx\Ai\Agent;
-use Phalanx\Ai\AiServiceBundle;
-use Phalanx\Ai\Message\Message;
+use Phalanx\Athena\Agent;
+use Phalanx\Athena\AiServiceBundle;
+use Phalanx\Athena\Message\Message;
 use Phalanx\Application;
 
 [$app, $scope] = Application::starting(['ANTHROPIC_API_KEY' => $context['ANTHROPIC_API_KEY']])
@@ -85,9 +84,9 @@ An agent is an invokable class that declares its system prompt, tools, and provi
 ```php
 <?php
 
-use Phalanx\Ai\AgentDefinition;
-use Phalanx\Ai\AgentLoop;
-use Phalanx\Ai\Turn;
+use Phalanx\Athena\AgentDefinition;
+use Phalanx\Athena\AgentLoop;
+use Phalanx\Athena\Turn;
 use Phalanx\ExecutionScope;
 use Phalanx\Task\HasTimeout;
 use Phalanx\Task\Retryable;
@@ -185,9 +184,9 @@ When an agent calls tools iteratively (think -> act -> observe -> think), `maxSt
 ```php
 <?php
 
-use Phalanx\Ai\StepAction;
-use Phalanx\Ai\StepResult;
-use Phalanx\Ai\Message\Message;
+use Phalanx\Athena\StepAction;
+use Phalanx\Athena\StepResult;
+use Phalanx\Athena\Message\Message;
 
 Agent::from(new ResearchAssistant())
     ->maxSteps(5)
@@ -217,9 +216,9 @@ Tools are invokable classes. The constructor defines the input schema. `__invoke
 ```php
 <?php
 
-use Phalanx\Ai\Tool\Tool;
-use Phalanx\Ai\Tool\ToolOutcome;
-use Phalanx\Ai\Tool\Param;
+use Phalanx\Athena\Tool\Tool;
+use Phalanx\Athena\Tool\ToolOutcome;
+use Phalanx\Athena\Tool\Param;
 use Phalanx\Scope;
 
 final class SearchDatabase implements Tool
@@ -247,7 +246,7 @@ final class SearchDatabase implements Tool
 }
 ```
 
-`Tool` extends `SelfDescribed` from `phalanx/core`. The `$description` property hook is part of that interface, not specific to tools -- HTTP routes and CLI commands implement the same contract. This means tools can be introspected, listed, and documented through the same framework-wide interface as every other named computation.
+`Tool` extends `SelfDescribed` from `phalanx/aegis`. The `$description` property hook is part of that interface, not specific to tools -- HTTP routes and CLI commands implement the same contract. This means tools can be introspected, listed, and documented through the same framework-wide interface as every other named computation.
 
 The JSON schema sent to the LLM is generated from the constructor signature and `#[Param]` attributes. No separate schema definition. No mapping layer. The tool *is* the schema.
 
@@ -285,7 +284,7 @@ Group related tools:
 ```php
 <?php
 
-use Phalanx\Ai\Tool\ToolBundle;
+use Phalanx\Athena\Tool\ToolBundle;
 
 final class DatabaseTools implements ToolBundle
 {
@@ -315,7 +314,7 @@ Providers are Phalanx services. Register them through `AiServiceBundle` with env
 ```php
 <?php
 
-use Phalanx\Ai\Provider\ProviderConfig;
+use Phalanx\Athena\Provider\ProviderConfig;
 
 $config = ProviderConfig::create()
     ->anthropic(apiKey: $key, model: 'claude-sonnet-4-20250514')
@@ -343,7 +342,7 @@ Provider selection maps directly to Phalanx concurrency primitives:
 ```php
 <?php
 
-use Phalanx\Ai\Provider\ProviderStrategy;
+use Phalanx\Athena\Provider\ProviderStrategy;
 
 // Always uses the first configured provider
 $provider = ProviderStrategy::primary($anthropic, $openai);
@@ -373,7 +372,7 @@ $result = AgentResult::awaitFrom($events, $scope);
 return SseResponse::from($events, $scope);
 ```
 
-`$events` is an `Emitter` from `phalanx/stream`. It supports `filter`, `map`, `onEach`, `throttle`, `bufferWindow`, `merge`, and every other operator. The push/pull backpressure model means a slow SSE client pauses the LLM stream -- no unbounded buffering.
+`$events` is an `Emitter` from `phalanx/styx`. It supports `filter`, `map`, `onEach`, `throttle`, `bufferWindow`, `merge`, and every other operator. The push/pull backpressure model means a slow SSE client pauses the LLM stream -- no unbounded buffering.
 
 Events emitted during execution:
 
@@ -397,8 +396,8 @@ Pipe a token stream directly into an SSE response:
 ```php
 <?php
 
-use Phalanx\Http\RequestScope;
-use Phalanx\Http\Sse\SseResponse;
+use Phalanx\Stoa\RequestScope;
+use Phalanx\Stoa\Sse\SseResponse;
 use Phalanx\Task\Executable;
 
 final readonly class ChatSseHandler implements Executable
@@ -426,7 +425,7 @@ final readonly class ChatSseHandler implements Executable
 ```php
 <?php
 
-use Phalanx\Http\RouteGroup;
+use Phalanx\Stoa\RouteGroup;
 
 $routes = RouteGroup::of([
     'POST /chat' => ChatSseHandler::class,
@@ -444,8 +443,8 @@ Same pattern, different transport:
 
 use Phalanx\Scope;
 use Phalanx\Task\Scopeable;
-use Phalanx\WebSocket\WsMessage;
-use Phalanx\WebSocket\WsScope;
+use Phalanx\Hermes\WsMessage;
+use Phalanx\Hermes\WsScope;
 
 final readonly class AgentWsHandler implements Scopeable
 {
@@ -484,7 +483,7 @@ final readonly class AgentWsHandler implements Scopeable
 ```php
 <?php
 
-use Phalanx\WebSocket\WsRouteGroup;
+use Phalanx\Hermes\WsRouteGroup;
 
 $ws = WsRouteGroup::of([
     '/ws/agent' => AgentWsHandler::class,
@@ -498,7 +497,7 @@ For the common case of "stream tokens to the client AND need the final result":
 ```php
 <?php
 
-use Phalanx\Ai\Stream\TokenAccumulator;
+use Phalanx\Athena\Stream\TokenAccumulator;
 
 $accumulator = TokenAccumulator::from($events, $scope);
 
@@ -517,8 +516,8 @@ Define output shapes as PHP classes. The SDK generates JSON schema from the clas
 ```php
 <?php
 
-use Phalanx\Ai\Schema\Structured;
-use Phalanx\Ai\Tool\Param;
+use Phalanx\Athena\Schema\Structured;
+use Phalanx\Athena\Tool\Param;
 
 #[Structured(description: 'Sentiment analysis result')]
 final readonly class SentimentResult
@@ -563,7 +562,7 @@ For workflows more complex than a single agent turn -- chained transformations, 
 ```php
 <?php
 
-use Phalanx\Ai\Pipeline\Pipeline;
+use Phalanx\Athena\Pipeline\Pipeline;
 
 $pipeline = Pipeline::create()
     ->step(new ClassifyIntent())
@@ -602,7 +601,7 @@ Persist conversation history across turns with Redis or Postgres:
 ```php
 <?php
 
-use Phalanx\Ai\Memory\ConversationMemory;
+use Phalanx\Athena\Memory\ConversationMemory;
 
 $memory = $scope->service(ConversationMemory::class);
 
@@ -644,7 +643,7 @@ Build an interactive CLI agent in one line:
 ```php
 <?php
 
-use Phalanx\Ai\Cli\AgentRepl;
+use Phalanx\Athena\Cli\AgentRepl;
 
 $command = AgentRepl::command(new ProductAssistant());
 ```
@@ -704,13 +703,13 @@ Three complete examples demonstrate progressive architectural complexity:
 ## Package Dependencies
 
 ```
-phalanx/ai
-├── phalanx/core     (scope, tasks, concurrency, DI, lifecycle)
-├── phalanx/stream   (Emitter, Channel, backpressure, operators)
-├── phalanx/http     (async HTTP client for LLM API calls)
+phalanx/athena
+├── phalanx/aegis    (scope, tasks, concurrency, DI, lifecycle)
+├── phalanx/styx     (Emitter, Channel, backpressure, operators)
+├── phalanx/stoa     (async HTTP client for LLM API calls)
 └── optional:
     ├── phalanx/redis     (conversation memory, pub/sub coordination)
     ├── phalanx/postgres  (persistent memory, LISTEN/NOTIFY tasks)
-    ├── phalanx/ws-server (real-time agent sessions)
-    └── phalanx/console   (CLI agent REPL)
+    ├── phalanx/hermes    (real-time agent sessions)
+    └── phalanx/archon    (CLI agent REPL)
 ```

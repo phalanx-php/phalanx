@@ -2,9 +2,9 @@
   <img src="brand/logo.svg" alt="Phalanx" width="520">
 </p>
 
-# phalanx/cdp
+# Phalanx CDP
 
-> **Phalanx** is a first-principles rethinking of what PHP can be when modern language features and a decade of async community work are treated as the foundation, not an afterthought. [Read more](https://github.com/phalanx-php/phalanx-aegis#phalanx-aegis---async-php) in the core library.
+> Part of the [Phalanx](https://github.com/phalanx-php/phalanx-aegis) async PHP framework.
 
 Chrome DevTools Protocol client for Phalanx. Async-native browser automation built on `phalanx/ws-client` for WebSocket transport and `phalanx/stream` for event handling.
 
@@ -23,9 +23,9 @@ Chrome DevTools Protocol client for Phalanx. Async-native browser automation bui
 
 | Package | Purpose |
 |---------|---------|
-| `phalanx/core` | Task execution, scope system, cancellation |
-| `phalanx/stream` | Event stream composition via `Emitter` |
-| `phalanx/ws-client` | WebSocket client transport (RFC 6455, client-mode framing) |
+| `phalanx/aegis` | Task execution, scope system, cancellation |
+| `phalanx/styx` | Event stream composition via `Emitter` |
+| `phalanx/hermes` | WebSocket client transport (RFC 6455, client-mode framing) |
 | `react/http` | HTTP `Browser` for CDP discovery endpoints |
 
 ## Architecture

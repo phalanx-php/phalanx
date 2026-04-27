@@ -2,9 +2,9 @@
   <img src="brand/logo.svg" alt="Phalanx" width="520">
 </p>
 
-# phalanx/terminal
+# Phalanx Theatron
 
-> **Phalanx** is a first-principles rethinking of what PHP can be when modern language features and a decade of async community work are treated as the foundation, not an afterthought. [Read more](https://github.com/phalanx-php/phalanx-aegis#phalanx-aegis---async-php) in the core library.
+> Part of the [Phalanx](https://github.com/phalanx-php/phalanx-aegis) async PHP framework.
 
 Async terminal UI framework with tick-based rendering, region composition, and buffer diffing. Build interactive TUI applications with widgets, styled text, layout constraints, and full keyboard/mouse input -- all driven by the ReactPHP event loop.
 
@@ -35,28 +35,29 @@ Async terminal UI framework with tick-based rendering, region composition, and b
 ## Installation
 
 ```bash
-composer require phalanx/terminal
+composer require phalanx/theatron
 ```
 
-Requires PHP 8.4+. Suggests `react/event-loop` and `react/async` for the `Surface` runtime, `ext-pcntl` for terminal resize handling, and `ext-mbstring` for Unicode width calculation.
+> [!NOTE]
+> Requires PHP 8.4 or later.
 
 ## Quick Start
 
 ```php
 <?php
 
-use Phalanx\Terminal\Buffer\Rect;
-use Phalanx\Terminal\Layout\Constraint;
-use Phalanx\Terminal\Layout\Layout;
-use Phalanx\Terminal\Region\RegionConfig;
-use Phalanx\Terminal\Surface\Surface;
-use Phalanx\Terminal\Surface\SurfaceConfig;
-use Phalanx\Terminal\Terminal\Terminal;
-use Phalanx\Terminal\Widget\Box;
-use Phalanx\Terminal\Widget\ScrollableText;
-use Phalanx\Terminal\Widget\StatusBar;
-use Phalanx\Terminal\Widget\Text\Span;
-use Phalanx\Terminal\Style\Style;
+use Phalanx\Theatron\Buffer\Rect;
+use Phalanx\Theatron\Layout\Constraint;
+use Phalanx\Theatron\Layout\Layout;
+use Phalanx\Theatron\Region\RegionConfig;
+use Phalanx\Theatron\Surface\Surface;
+use Phalanx\Theatron\Surface\SurfaceConfig;
+use Phalanx\Theatron\Terminal\Terminal;
+use Phalanx\Theatron\Widget\Box;
+use Phalanx\Theatron\Widget\ScrollableText;
+use Phalanx\Theatron\Widget\StatusBar;
+use Phalanx\Theatron\Widget\Text\Span;
+use Phalanx\Theatron\Style\Style;
 use React\EventLoop\Loop;
 
 $config = new SurfaceConfig(terminal: Terminal::detect());
@@ -91,10 +92,10 @@ Loop::run();
 ```php
 <?php
 
-use Phalanx\Terminal\Surface\ScreenMode;
-use Phalanx\Terminal\Surface\Surface;
-use Phalanx\Terminal\Surface\SurfaceConfig;
-use Phalanx\Terminal\Terminal\Terminal;
+use Phalanx\Theatron\Surface\ScreenMode;
+use Phalanx\Theatron\Surface\Surface;
+use Phalanx\Theatron\Surface\SurfaceConfig;
+use Phalanx\Theatron\Terminal\Terminal;
 
 $config = new SurfaceConfig(
     terminal: Terminal::detect(),
@@ -122,8 +123,8 @@ A `Region` is a positioned rectangular area within the surface. Each region has 
 ```php
 <?php
 
-use Phalanx\Terminal\Buffer\Rect;
-use Phalanx\Terminal\Region\RegionConfig;
+use Phalanx\Theatron\Buffer\Rect;
+use Phalanx\Theatron\Region\RegionConfig;
 
 // Create a region at position (0, 0), 80 columns wide, 20 rows tall
 $main = $surface->region('main', Rect::of(0, 0, 80, 20));
@@ -159,9 +160,9 @@ The `Compositor` manages all registered regions. It resolves z-order, checks eac
 ```php
 <?php
 
-use Phalanx\Terminal\Buffer\Rect;
-use Phalanx\Terminal\Layout\Constraint;
-use Phalanx\Terminal\Layout\Layout;
+use Phalanx\Theatron\Buffer\Rect;
+use Phalanx\Theatron\Layout\Constraint;
+use Phalanx\Theatron\Layout\Layout;
 
 $area = Rect::sized(80, 24);
 
@@ -205,9 +206,9 @@ All widgets implement the `Widget` interface:
 ```php
 <?php
 
-use Phalanx\Terminal\Buffer\Buffer;
-use Phalanx\Terminal\Buffer\Rect;
-use Phalanx\Terminal\Widget\Widget;
+use Phalanx\Theatron\Buffer\Buffer;
+use Phalanx\Theatron\Buffer\Rect;
+use Phalanx\Theatron\Widget\Widget;
 
 interface Widget
 {
@@ -224,9 +225,9 @@ Wraps an inner widget with a border and optional title:
 ```php
 <?php
 
-use Phalanx\Terminal\Widget\Box;
-use Phalanx\Terminal\Widget\BoxStyle;
-use Phalanx\Terminal\Style\Style;
+use Phalanx\Theatron\Widget\Box;
+use Phalanx\Theatron\Widget\BoxStyle;
+use Phalanx\Theatron\Style\Style;
 
 $region->draw(new Box(
     inner: $myWidget,
@@ -244,8 +245,8 @@ Renders tabular data with auto-sized columns and styled headers:
 ```php
 <?php
 
-use Phalanx\Terminal\Widget\Table;
-use Phalanx\Terminal\Style\Style;
+use Phalanx\Theatron\Widget\Table;
+use Phalanx\Theatron\Style\Style;
 
 $table = new Table(
     headers: ['Name', 'Status', 'Latency'],
@@ -268,8 +269,8 @@ Scrollable text buffer with tail-follow behavior, ideal for log output and strea
 ```php
 <?php
 
-use Phalanx\Terminal\Widget\ScrollableText;
-use Phalanx\Terminal\Style\Style;
+use Phalanx\Theatron\Widget\ScrollableText;
+use Phalanx\Theatron\Style\Style;
 
 $log = new ScrollableText(maxLines: 10_000);
 
@@ -296,8 +297,8 @@ Single-line text input with cursor movement, history, and readline-style key bin
 ```php
 <?php
 
-use Phalanx\Terminal\Input\KeyEvent;
-use Phalanx\Terminal\Widget\InputLine;
+use Phalanx\Theatron\Input\KeyEvent;
+use Phalanx\Theatron\Widget\InputLine;
 
 $input = new InputLine(prompt: '> ');
 
@@ -318,8 +319,8 @@ Horizontal progress bar with percentage label:
 ```php
 <?php
 
-use Phalanx\Terminal\Widget\ProgressBar;
-use Phalanx\Terminal\Style\Style;
+use Phalanx\Theatron\Widget\ProgressBar;
+use Phalanx\Theatron\Style\Style;
 
 $bar = new ProgressBar(
     filledStyle: Style::new()->fg('green'),
@@ -339,7 +340,7 @@ Animated spinner with configurable frame sets:
 ```php
 <?php
 
-use Phalanx\Terminal\Widget\Spinner;
+use Phalanx\Theatron\Widget\Spinner;
 
 $spinner = new Spinner(label: 'Loading...');
 
@@ -358,9 +359,9 @@ Left/right-aligned spans on a single row, typically used for status information:
 ```php
 <?php
 
-use Phalanx\Terminal\Widget\StatusBar;
-use Phalanx\Terminal\Widget\Text\Span;
-use Phalanx\Terminal\Style\Style;
+use Phalanx\Theatron\Widget\StatusBar;
+use Phalanx\Theatron\Widget\Text\Span;
+use Phalanx\Theatron\Style\Style;
 
 $bar = new StatusBar(barStyle: Style::new()->bg('blue'));
 $bar->setLeft(
@@ -381,8 +382,8 @@ Miniature line chart using Unicode block characters:
 ```php
 <?php
 
-use Phalanx\Terminal\Widget\Sparkline;
-use Phalanx\Terminal\Style\Style;
+use Phalanx\Theatron\Widget\Sparkline;
+use Phalanx\Theatron\Style\Style;
 
 $spark = new Sparkline(style: Style::new()->fg('cyan'));
 $spark->setData([1.0, 3.2, 2.1, 5.4, 4.8, 6.1, 3.3]);
@@ -400,7 +401,7 @@ Syntax-highlighted code display with line numbers and a highlight marker:
 ```php
 <?php
 
-use Phalanx\Terminal\Widget\CodeBlock;
+use Phalanx\Theatron\Widget\CodeBlock;
 
 $code = new CodeBlock(
     code: $phpSource,
@@ -420,8 +421,8 @@ Expandable/collapsible sections, each wrapping an inner widget:
 ```php
 <?php
 
-use Phalanx\Terminal\Widget\Accordion;
-use Phalanx\Terminal\Widget\AccordionSection;
+use Phalanx\Theatron\Widget\Accordion;
+use Phalanx\Theatron\Widget\AccordionSection;
 
 $accordion = new Accordion();
 $accordion->addSection(new AccordionSection('Server Info', $infoWidget, contentHeight: 5));
@@ -440,8 +441,8 @@ Horizontal or vertical line separator:
 ```php
 <?php
 
-use Phalanx\Terminal\Widget\Divider;
-use Phalanx\Terminal\Style\Style;
+use Phalanx\Theatron\Widget\Divider;
+use Phalanx\Theatron\Style\Style;
 
 $region->draw(Divider::horizontal(Style::new()->dim()));
 $region->draw(Divider::vertical(Style::new()->fg('cyan')));
@@ -454,8 +455,8 @@ $region->draw(Divider::vertical(Style::new()->fg('cyan')));
 ```php
 <?php
 
-use Phalanx\Terminal\Style\Color;
-use Phalanx\Terminal\Style\Style;
+use Phalanx\Theatron\Style\Color;
+use Phalanx\Theatron\Style\Style;
 
 // Named colors
 $style = Style::new()->fg('red')->bg('black')->bold();
@@ -482,10 +483,10 @@ Color resolution happens at render time based on the detected `ColorMode`. A tru
 ```php
 <?php
 
-use Phalanx\Terminal\Input\KeyEvent;
-use Phalanx\Terminal\Input\MouseEvent;
-use Phalanx\Terminal\Input\PasteEvent;
-use Phalanx\Terminal\Input\Key;
+use Phalanx\Theatron\Input\KeyEvent;
+use Phalanx\Theatron\Input\MouseEvent;
+use Phalanx\Theatron\Input\PasteEvent;
+use Phalanx\Theatron\Input\Key;
 
 $surface->onMessage(KeyEvent::class, static function (KeyEvent $event) use ($input, $main): void {
     if ($event->is(Key::Escape)) {
@@ -532,7 +533,7 @@ $surface->onResize(static function (int $width, int $height) use ($surface): voi
 ```php
 <?php
 
-use Phalanx\Terminal\Terminal\Terminal;
+use Phalanx\Theatron\Terminal\Terminal;
 
 $config = Terminal::detect();
 // $config->width, $config->height, $config->colorMode, $config->isTty
@@ -547,10 +548,10 @@ Implement `Widget` for stateless rendering or `StatefulWidget` when you need mut
 ```php
 <?php
 
-use Phalanx\Terminal\Buffer\Buffer;
-use Phalanx\Terminal\Buffer\Rect;
-use Phalanx\Terminal\Style\Style;
-use Phalanx\Terminal\Widget\Widget;
+use Phalanx\Theatron\Buffer\Buffer;
+use Phalanx\Theatron\Buffer\Rect;
+use Phalanx\Theatron\Style\Style;
+use Phalanx\Theatron\Widget\Widget;
 
 final class Clock implements Widget
 {

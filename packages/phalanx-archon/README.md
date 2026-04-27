@@ -2,9 +2,9 @@
   <img src="brand/logo.svg" alt="Phalanx" width="520">
 </p>
 
-# phalanx/console
+# Phalanx Archon
 
-> **Phalanx** is a first-principles rethinking of what PHP can be when modern language features and a decade of async community work are treated as the foundation, not an afterthought. [Read more](https://github.com/phalanx-php/phalanx-aegis#phalanx-aegis---async-php) in the core library.
+> Part of the [Phalanx](https://github.com/phalanx-php/phalanx-aegis) async PHP framework.
 
 Build CLI applications with the same scope-driven concurrency that powers Phalanx HTTP servers. Define commands as invokable classes, group them, load them from directories, and let the framework handle argument parsing, validation, and help generation.
 
@@ -25,10 +25,11 @@ Build CLI applications with the same scope-driven concurrency that powers Phalan
 ## Installation
 
 ```bash
-composer require phalanx/console
+composer require phalanx/archon
 ```
 
-Requires PHP 8.4+ and `phalanx/core`.
+> [!NOTE]
+> Requires PHP 8.4 or later.
 
 ## Quick Start
 
@@ -36,11 +37,11 @@ Requires PHP 8.4+ and `phalanx/core`.
 <?php
 
 use Phalanx\Application;
-use Phalanx\Console\Arg;
-use Phalanx\Console\CommandConfig;
-use Phalanx\Console\CommandGroup;
-use Phalanx\Console\CommandScope;
-use Phalanx\Console\ConsoleRunner;
+use Phalanx\Archon\Arg;
+use Phalanx\Archon\CommandConfig;
+use Phalanx\Archon\CommandGroup;
+use Phalanx\Archon\CommandScope;
+use Phalanx\Archon\ConsoleRunner;
 use Phalanx\Scope;
 use Phalanx\Task\Scopeable;
 
@@ -83,7 +84,7 @@ A command handler is an invokable class implementing `Scopeable` or `Executable`
 ```php
 <?php
 
-use Phalanx\Console\CommandScope;
+use Phalanx\Archon\CommandScope;
 use Phalanx\Scope;
 use Phalanx\Task\Scopeable;
 
@@ -120,7 +121,7 @@ final class RunMigrations implements Scopeable
 ```php
 <?php
 
-use Phalanx\Console\CommandScope;
+use Phalanx\Archon\CommandScope;
 use Phalanx\ExecutionScope;
 use Phalanx\Task\Executable;
 
@@ -145,10 +146,10 @@ Register commands in a `CommandGroup` using class-strings. When a command needs 
 ```php
 <?php
 
-use Phalanx\Console\Arg;
-use Phalanx\Console\CommandConfig;
-use Phalanx\Console\CommandGroup;
-use Phalanx\Console\Opt;
+use Phalanx\Archon\Arg;
+use Phalanx\Archon\CommandConfig;
+use Phalanx\Archon\CommandGroup;
+use Phalanx\Archon\Opt;
 
 $commands = CommandGroup::of([
     'migrate' => [RunMigrations::class, new CommandConfig(
@@ -170,7 +171,7 @@ $commands = CommandGroup::of([
 ```php
 <?php
 
-use Phalanx\Console\Arg;
+use Phalanx\Archon\Arg;
 
 Arg::required('name', 'Description');
 Arg::optional('name', 'Description', default: 'fallback');
@@ -193,7 +194,7 @@ $scope->args->all();                  // array<string, mixed>
 ```php
 <?php
 
-use Phalanx\Console\Opt;
+use Phalanx\Archon\Opt;
 
 Opt::flag('verbose', 'v', 'Enable verbose output');           // --verbose / -v (boolean)
 Opt::value('format', 'f', 'Output format', default: 'json');  // --format=json / -f json (requires value)
@@ -218,7 +219,7 @@ $scope->options->all();                    // array<string, mixed>
 ```php
 <?php
 
-use Phalanx\Console\CommandGroup;
+use Phalanx\Archon\CommandGroup;
 
 $commands = CommandGroup::of([
     'deploy'  => DeployApplication::class,
@@ -237,10 +238,10 @@ Groups can contain other groups for hierarchical CLI structures:
 ```php
 <?php
 
-use Phalanx\Console\Arg;
-use Phalanx\Console\CommandConfig;
-use Phalanx\Console\CommandGroup;
-use Phalanx\Console\Opt;
+use Phalanx\Archon\Arg;
+use Phalanx\Archon\CommandConfig;
+use Phalanx\Archon\CommandGroup;
+use Phalanx\Archon\Opt;
 
 $commands = CommandGroup::of([
     'serve' => [ServeHttp::class, new CommandConfig(
@@ -316,10 +317,10 @@ Groups nest arbitrarily deep. Both flat commands and nested groups work in the s
 <?php
 
 // commands/db.php
-use Phalanx\Console\Arg;
-use Phalanx\Console\CommandConfig;
-use Phalanx\Console\CommandGroup;
-use Phalanx\Console\Opt;
+use Phalanx\Archon\Arg;
+use Phalanx\Archon\CommandConfig;
+use Phalanx\Archon\CommandGroup;
+use Phalanx\Archon\Opt;
 
 return CommandGroup::of([
     'migrate' => [RunMigrations::class, new CommandConfig(
@@ -337,7 +338,7 @@ Load a single file or scan an entire directory:
 ```php
 <?php
 
-use Phalanx\Console\CommandLoader;
+use Phalanx\Archon\CommandLoader;
 
 // Single file
 $commands = CommandLoader::load(__DIR__ . '/commands/db.php');
@@ -351,7 +352,7 @@ $commands = CommandLoader::loadDirectory(__DIR__ . '/commands');
 ```php
 <?php
 
-use Phalanx\Console\ConsoleRunner;
+use Phalanx\Archon\ConsoleRunner;
 
 // From a CommandGroup
 $runner = ConsoleRunner::withCommands($app, $commands);
@@ -375,10 +376,10 @@ Implement `CommandValidator` to add custom input validation. Validators run afte
 ```php
 <?php
 
-use Phalanx\Console\CommandConfig;
-use Phalanx\Console\CommandInput;
-use Phalanx\Console\CommandValidator;
-use Phalanx\Console\InvalidInputException;
+use Phalanx\Archon\CommandConfig;
+use Phalanx\Archon\CommandInput;
+use Phalanx\Archon\CommandValidator;
+use Phalanx\Archon\InvalidInputException;
 
 final readonly class RequireForceOnProduction implements CommandValidator
 {
@@ -402,10 +403,10 @@ Attach validators via `CommandConfig`:
 ```php
 <?php
 
-use Phalanx\Console\Arg;
-use Phalanx\Console\CommandConfig;
-use Phalanx\Console\CommandGroup;
-use Phalanx\Console\Opt;
+use Phalanx\Archon\Arg;
+use Phalanx\Archon\CommandConfig;
+use Phalanx\Archon\CommandGroup;
+use Phalanx\Archon\Opt;
 
 $commands = CommandGroup::of([
     'deploy' => [DeployApplication::class, new CommandConfig(
@@ -465,7 +466,7 @@ Because `CommandScope` extends `ExecutionScope`, every command has access to Pha
 ```php
 <?php
 
-use Phalanx\Console\CommandScope;
+use Phalanx\Archon\CommandScope;
 use Phalanx\ExecutionScope;
 use Phalanx\Task;
 use Phalanx\Task\Executable;
@@ -503,8 +504,8 @@ final class HealthCheckCommand implements Executable
 ```php
 <?php
 
-use Phalanx\Console\CommandConfig;
-use Phalanx\Console\CommandGroup;
+use Phalanx\Archon\CommandConfig;
+use Phalanx\Archon\CommandGroup;
 
 $commands = CommandGroup::of([
     'health' => [HealthCheckCommand::class, new CommandConfig(

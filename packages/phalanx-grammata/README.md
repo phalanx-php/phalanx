@@ -2,9 +2,9 @@
   <img src="brand/logo.svg" alt="Phalanx" width="520">
 </p>
 
-# phalanx/filesystem
+# Phalanx Grammata
 
-> **Phalanx** is a first-principles rethinking of what PHP can be when modern language features and a decade of async community work are treated as the foundation, not an afterthought. [Read more](https://github.com/phalanx-php/phalanx-aegis#phalanx-aegis---async-php) in the core library.
+> Part of the [Phalanx](https://github.com/phalanx-php/phalanx-aegis) async PHP framework.
 
 Async-aware file operations with resource governance. Read, write, stream, and manage files through the scope's service layer--with a file descriptor pool that prevents your process from exhausting OS handles during concurrent streaming.
 
@@ -24,12 +24,15 @@ Async-aware file operations with resource governance. Read, write, stream, and m
 ## Installation
 
 ```bash
-composer require phalanx/filesystem
+composer require phalanx/grammata
 ```
 
-Requires PHP 8.4+, `phalanx/core`, and `react/stream`.
+> [!NOTE]
+> Requires PHP 8.4 or later.
 
-Optional: `phalanx/parallel` for worker-offloaded reads on slow storage.
+Dependencies: `phalanx/aegis` and `react/stream`.
+
+Optional: `phalanx/hydra` for worker-offloaded reads on slow storage.
 
 ## Quick Start
 
@@ -37,8 +40,8 @@ Optional: `phalanx/parallel` for worker-offloaded reads on slow storage.
 <?php
 
 use Phalanx\Application;
-use Phalanx\Filesystem\Files;
-use Phalanx\Filesystem\FilesystemServiceBundle;
+use Phalanx\Grammata\Files;
+use Phalanx\Grammata\FilesystemServiceBundle;
 
 [$app, $scope] = Application::starting()
     ->providers(new FilesystemServiceBundle())
@@ -61,7 +64,7 @@ $app->shutdown();
 ```php
 <?php
 
-use Phalanx\Filesystem\Files;
+use Phalanx\Grammata\Files;
 
 $files = $scope->service(Files::class);
 
@@ -99,7 +102,7 @@ Streaming tasks use `react/stream` under the hood and integrate with the `FilePo
 ```php
 <?php
 
-use Phalanx\Filesystem\Files;
+use Phalanx\Grammata\Files;
 
 $files = $scope->service(Files::class);
 
@@ -123,8 +126,8 @@ Memory stays flat regardless of file size--values flow one line at a time throug
 ```php
 <?php
 
-use Phalanx\Filesystem\Files;
-use Phalanx\Stream\Emitter;
+use Phalanx\Grammata\Files;
+use Phalanx\Styx\Emitter;
 
 $files = $scope->service(Files::class);
 
@@ -147,8 +150,8 @@ Streaming tasks (`ReadFileStream`, `WriteFileStream`) acquire a pool slot on ope
 ```php
 <?php
 
-use Phalanx\Filesystem\FilePool;
-use Phalanx\Filesystem\FilesystemServiceBundle;
+use Phalanx\Grammata\FilePool;
+use Phalanx\Grammata\FilesystemServiceBundle;
 
 // Custom pool limit
 $bundle = new FilesystemServiceBundle(maxOpen: 128);
@@ -158,7 +161,7 @@ If you're streaming hundreds of files concurrently (log tailing, bulk ETL), the 
 
 ## Task Reference
 
-All tasks live in the `Phalanx\Filesystem\Task` namespace. The `Files` facade calls these internally, but you can use them directly with `$scope->execute()`.
+All tasks live in the `Phalanx\Grammata\Task` namespace. The `Files` facade calls these internally, but you can use them directly with `$scope->execute()`.
 
 | Task | Operation | Notes |
 |------|-----------|-------|
@@ -179,9 +182,9 @@ All tasks live in the `Phalanx\Filesystem\Task` namespace. The `Files` facade ca
 ```php
 <?php
 
-use Phalanx\Filesystem\Task\ReadFile;
-use Phalanx\Filesystem\Task\WriteFile;
-use Phalanx\Filesystem\Task\StatFile;
+use Phalanx\Grammata\Task\ReadFile;
+use Phalanx\Grammata\Task\WriteFile;
+use Phalanx\Grammata\Task\StatFile;
 
 // Direct task usage
 $content = $scope->execute(new ReadFile('/etc/hosts'));
@@ -214,7 +217,7 @@ Readonly value object returned by `StatFile` and `Files::stat()`:
 <?php
 
 use Phalanx\Application;
-use Phalanx\Filesystem\FilesystemServiceBundle;
+use Phalanx\Grammata\FilesystemServiceBundle;
 
 $app = Application::starting()
     ->providers(new FilesystemServiceBundle(maxOpen: 128))

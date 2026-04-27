@@ -2,9 +2,9 @@
   <img src="brand/logo.svg" alt="Phalanx" width="520">
 </p>
 
-# phalanx/redis
+# Phalanx Redis
 
-> **Phalanx** is a first-principles rethinking of what PHP can be when modern language features and a decade of async community work are treated as the foundation, not an afterthought. [Read more](https://github.com/phalanx-php/phalanx-aegis#phalanx-aegis---async-php) in the core library.
+> Part of the [Phalanx](https://github.com/phalanx-php/phalanx-aegis) async PHP framework.
 
 Async Redis with typed commands, pub/sub, and automatic connection management â€” fully non-blocking, fully integrated with Phalanx scopes and services.
 
@@ -14,7 +14,8 @@ Async Redis with typed commands, pub/sub, and automatic connection management â€
 composer require phalanx/redis
 ```
 
-Requires PHP 8.4+.
+> [!NOTE]
+> Requires PHP 8.4 or later.
 
 ## Setup
 
@@ -140,7 +141,7 @@ $scope->concurrent([
 ```php
 <?php
 
-use Phalanx\Stream\ScopedStream;
+use Phalanx\Styx\ScopedStream;
 
 $pubsub = $scope->service(RedisPubSub::class);
 

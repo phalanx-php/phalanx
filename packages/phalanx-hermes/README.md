@@ -2,9 +2,9 @@
   <img src="brand/logo.svg" alt="Phalanx" width="520">
 </p>
 
-# phalanx/ws-server
+# Phalanx Hermes
 
-> **Phalanx** is a first-principles rethinking of what PHP can be when modern language features and a decade of async community work are treated as the foundation, not an afterthought. [Read more](https://github.com/phalanx-php/phalanx-aegis#phalanx-aegis---async-php) in the core library.
+> Part of the [Phalanx](https://github.com/phalanx-php/phalanx-aegis) async PHP framework.
 
 Production-grade WebSocket server support with RFC 6455 handshake, topic-based pub/sub, and leak-free connection tracking via `WeakMap`. Integrates directly with the Phalanx HTTP runner -- WebSocket and HTTP traffic share a single port.
 
@@ -18,15 +18,16 @@ Production-grade WebSocket server support with RFC 6455 handshake, topic-based p
 - [Gateway Pub/Sub](#gateway-pubsub)
 - [Connection Lifecycle](#connection-lifecycle)
 - [Route Parameters](#route-parameters)
-- [Integration with phalanx/http](#integration-with-phalanxhttp)
+- [Integration with phalanx/stoa](#integration-with-phalanxstoa)
 
 ## Installation
 
 ```bash
-composer require phalanx/ws-server
+composer require phalanx/hermes
 ```
 
-Requires PHP 8.4+, `phalanx/core`, `phalanx/stream`, `ratchet/rfc6455`, and `react/stream`.
+> [!NOTE]
+> Requires PHP 8.4 or later.
 
 ## Quick Start
 
@@ -35,8 +36,8 @@ Requires PHP 8.4+, `phalanx/core`, `phalanx/stream`, `ratchet/rfc6455`, and `rea
 
 use Phalanx\Scope;
 use Phalanx\Task\Scopeable;
-use Phalanx\WebSocket\WsMessage;
-use Phalanx\WebSocket\WsScope;
+use Phalanx\Hermes\WsMessage;
+use Phalanx\Hermes\WsScope;
 
 final class EchoHandler implements Scopeable
 {
@@ -58,8 +59,8 @@ final class EchoHandler implements Scopeable
 <?php
 
 use Phalanx\Application;
-use Phalanx\Http\Runner;
-use Phalanx\WebSocket\WsRouteGroup;
+use Phalanx\Stoa\Runner;
+use Phalanx\Hermes\WsRouteGroup;
 
 $ws = WsRouteGroup::of([
     '/ws/echo' => EchoHandler::class,
@@ -98,7 +99,7 @@ foreach ($conn->inbound->consume() as $msg) {
 ```php
 <?php
 
-use Phalanx\WebSocket\WsMessage;
+use Phalanx\Hermes\WsMessage;
 
 $text   = WsMessage::text('{"action": "join"}');
 $json   = WsMessage::json(['action' => 'join']); // Encode to JSON text frame
@@ -135,7 +136,7 @@ if ($msg->isClose) {
 
 use Phalanx\Scope;
 use Phalanx\Task\Scopeable;
-use Phalanx\WebSocket\WsScope;
+use Phalanx\Hermes\WsScope;
 
 final class ChatHandler implements Scopeable
 {
@@ -164,7 +165,7 @@ final class ChatHandler implements Scopeable
 ```php
 <?php
 
-use Phalanx\WebSocket\WsRouteGroup;
+use Phalanx\Hermes\WsRouteGroup;
 
 $ws = WsRouteGroup::of([
     '/ws/chat/{room}' => ChatHandler::class,
@@ -176,8 +177,8 @@ When a route needs custom WebSocket settings, pair the class-string with a `WsCo
 ```php
 <?php
 
-use Phalanx\WebSocket\WsConfig;
-use Phalanx\WebSocket\WsRouteGroup;
+use Phalanx\Hermes\WsConfig;
+use Phalanx\Hermes\WsRouteGroup;
 
 $ws = WsRouteGroup::of([
     '/ws/chat/{room}'    => ChatHandler::class,
@@ -194,8 +195,8 @@ Route keys accept bare paths (`/ws/chat`) or the explicit `WS /ws/chat` prefix.
 ```php
 <?php
 
-use Phalanx\WebSocket\WsGateway;
-use Phalanx\WebSocket\WsMessage;
+use Phalanx\Hermes\WsGateway;
+use Phalanx\Hermes\WsMessage;
 
 $gateway = $scope->service(WsGateway::class);
 
@@ -228,9 +229,9 @@ A typical chat handler that registers with the gateway, subscribes to a room, an
 
 use Phalanx\Scope;
 use Phalanx\Task\Scopeable;
-use Phalanx\WebSocket\WsGateway;
-use Phalanx\WebSocket\WsMessage;
-use Phalanx\WebSocket\WsScope;
+use Phalanx\Hermes\WsGateway;
+use Phalanx\Hermes\WsMessage;
+use Phalanx\Hermes\WsScope;
 
 final class ChatRoomHandler implements Scopeable
 {
@@ -279,7 +280,7 @@ final class ChatRoomHandler implements Scopeable
 ```php
 <?php
 
-use Phalanx\WebSocket\WsRouteGroup;
+use Phalanx\Hermes\WsRouteGroup;
 
 $ws = WsRouteGroup::of([
     '/ws/rooms/{room}' => ChatRoomHandler::class,
@@ -295,7 +296,7 @@ WebSocket routes support the same `{param}` syntax as HTTP routes:
 ```php
 <?php
 
-use Phalanx\WebSocket\WsRouteGroup;
+use Phalanx\Hermes\WsRouteGroup;
 
 $ws = WsRouteGroup::of([
     '/ws/rooms/{room}'         => RoomHandler::class,
@@ -312,16 +313,16 @@ $room = $scope->params->get('room');
 $userId = $scope->params->get('id');
 ```
 
-## Integration with phalanx/http
+## Integration with phalanx/stoa
 
 The HTTP `Runner` handles WebSocket upgrades on the same port as HTTP traffic. No separate server needed:
 
 ```php
 <?php
 
-use Phalanx\Http\RouteGroup;
-use Phalanx\Http\Runner;
-use Phalanx\WebSocket\WsRouteGroup;
+use Phalanx\Stoa\RouteGroup;
+use Phalanx\Stoa\Runner;
+use Phalanx\Hermes\WsRouteGroup;
 
 $http = RouteGroup::of([
     'GET /api/rooms'  => ListRooms::class,

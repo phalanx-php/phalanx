@@ -2,44 +2,13 @@
   <img src="brand/logo.svg" alt="Phalanx" width="520">
 </p>
 
-# Phalanx Core - Async PHP
+# Phalanx Aegis
 
-**PHP 8.4 changed what's possible. Phalanx is an attempt to make it accessible.**
+Async coordination for PHP 8.4+. Built on [ReactPHP](https://reactphp.org/) and [AMPHP](https://amphp.org/). Scope hierarchy manages concurrency, cancellation, and cleanup. You write named computations. The scope handles the machinery.
 
-In my view, PHP's async foundations — built over years by the ReactPHP and AMPHP communities — represent some of the most underutilized work in the language's ecosystem. Fibers, property hooks, lazy objects, and asymmetric visibility have quietly made PHP a different language since 8.0. Phalanx is an attempt to bring all of this to bear through a unified coordination layer, using the most powerful tools available in the modern PHP ecosystem — particularly as AI workloads raise the bar on throughput and reactivity.
+Fibers, property hooks, lazy objects, asymmetric visibility -- PHP 8.4 is a different language. Phalanx treats these as the foundation, not optional extras.
 
-The framework coordinates async PHP through a centralized scope hierarchy — a single scheduler that manages concurrency, cancellation, and resource cleanup no matter how deeply nested the execution becomes. Developers write named computations. The scope handles the machinery. Every API decision is weighed against the balance between first-class DX and call-site explicitness — a tradeoff influenced by ideas from SICP, Rust's ownership model, .NET's task system, Clojure's value semantics, and Go's structured concurrency.
-
-The design has been iterated on since late 2024, with intensive refinement through mid-2025 and resumed development earlier this year. Every abstraction has been questioned, discarded, and rebuilt — often more than once. Several proof-of-concept applications continue to evolve from their MVP baseline — a multi-agent AI terminal ([aisentinel-cli](https://github.com/phalanx-php/aisentinel-cli)), a subnet scanner, a Twilio control center, a Docker CLI, and a debug dashboard. Some of these will be released as they stabilize, and there are many ideas for what comes next that haven't been started yet.
-
-The project is currently stabilizing through active iteration. Design decisions in one area sometimes require foundational refactoring in others, and some corners of the codebase will fall out of sync with others. This is expected.
-
-Contributions are welcome from those who feel inspired to do so. See the [contributing guide](https://github.com/phalanx-php/phalanx-aegis/blob/main/CONTRIBUTING.md) for how to get involved.
-
-[Substack write up](https://open.substack.com/pub/jhavenz/p/when-php-computations-have-names)
-
-## Table of Contents
-
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [How It Works](#how-it-works)
-  - [Scope Hierarchy](#scope-hierarchy)
-- [The Task System](#the-task-system)
-  - [Two Ways to Define Tasks](#two-ways-to-define-tasks)
-  - [Behavior via Interfaces](#behavior-via-interfaces)
-  - [Self-Description](#self-description)
-- [Concurrency Primitives](#concurrency-primitives)
-- [Lazy Sequences](#lazy-sequences)
-- [Route Groups](#route-groups)
-  - [Loading Routes](#loading-routes)
-  - [Composing Route Groups](#composing-route-groups)
-- [Command Groups](#command-groups)
-  - [Running Commands](#running-commands)
-- [Services](#services)
-- [Cancellation & Retry](#cancellation--retry)
-- [Tracing](#tracing)
-- [Deterministic Cleanup](#deterministic-cleanup)
-- [Examples](#examples)
+[Read more](https://open.substack.com/pub/jhavenz/p/when-php-computations-have-names) | [Contributing](https://github.com/phalanx-php/phalanx-aegis/blob/main/CONTRIBUTING.md)
 
 ## Installation
 
@@ -47,7 +16,8 @@ Contributions are welcome from those who feel inspired to do so. See the [contri
 composer require phalanx/aegis
 ```
 
-Requires PHP 8.4+.
+> [!NOTE]
+> Requires PHP 8.4 or later.
 
 ## Quick Start
 
@@ -66,8 +36,6 @@ $result = $scope->execute(Task::of(static fn(ExecutionScope $s) =>
 $scope->dispose();
 $app->shutdown();
 ```
-
-**Note:** Service classes like `OrderService`, `UserRepo`, `DatabasePool` in these examples are illustrative. Phalanx Core provides the coordination primitives—your application brings the domain logic.
 
 ## How It Works
 
@@ -223,40 +191,6 @@ The behavior pipeline applies automatically: **timeout wraps retry wraps trace w
 | `UsesPool` | `UnitEnum $pool { get; }` | Pool-aware scheduling |
 | `Traceable` | `string $traceName { get; }` | Custom trace label |
 
-### Self-Description
-
-Two opt-in interfaces let tasks and components carry human-readable metadata. The execution layer does not read these — they are consumed by tooling that introspects the component graph at registration time.
-
-| Interface | Property | Purpose |
-|-----------|----------|---------|
-| `SelfDescribed` | `string $description { get; }` | Human-readable description of what the component does |
-| `Tagged` | `list<string> $tags { get; }` | Classification labels for grouping and filtering |
-
-Consumers: OpenAPI generation in `phalanx-stoa` uses `$description` to populate operation summaries. `phalanx-athena` reads both when registering agent tools. CLI inspection commands use them to build help output.
-
-```php
-<?php
-
-final class SummarizeDocument implements Executable, SelfDescribed, Tagged
-{
-    public string $description {
-        get => 'Fetches a document by ID and returns an AI-generated summary.';
-    }
-
-    /** @return list<string> */
-    public array $tags {
-        get => ['ai', 'documents', 'read'];
-    }
-
-    public function __construct(private int $documentId) {}
-
-    public function __invoke(ExecutionScope $scope): string
-    {
-        return $scope->service(Summarizer::class)->summarize($this->documentId);
-    }
-}
-```
-
 ## Concurrency Primitives
 
 | Method | Behavior | Returns |
@@ -291,7 +225,7 @@ $results = $scope->map($items, fn($item) => new ProcessItem($item), limit: 10);
 
 ## Lazy Sequences
 
-`LazySequence` processes large datasets through generator-based pipelines. Values flow one at a time—memory stays flat regardless of dataset size.
+Generator-based pipelines. Values flow one at a time -- memory stays flat regardless of dataset size.
 
 ```php
 <?php
@@ -313,88 +247,7 @@ $totals = $seq
 $result = $scope->execute($totals);
 ```
 
-Operators (`map`, `filter`, `take`, `chunk`) are lazy—nothing runs until a terminal (`toArray`, `reduce`, `first`, `consume`) triggers execution. Two mapping modes handle different workloads:
-
-| Method | Execution Model |
-|--------|----------------|
-| `mapConcurrent($fn, $concurrency)` | Fibers in the current process |
-| `mapParallel($fn, $concurrency)` | Worker processes via IPC |
-
-## Route Groups
-
-Typed collections of HTTP routes with `RouteGroup`. Route handlers receive `RequestScope`—a scope decorator with typed route parameters, query strings, and request body access:
-
-```php
-<?php
-// routes/api.php
-
-use Phalanx\Http\RouteGroup;
-
-return RouteGroup::of([
-    'GET /users'      => ListUsers::class,
-    'GET /users/{id}' => ShowUser::class,
-    'POST /users'     => CreateUser::class,
-]);
-```
-
-### Loading Routes
-
-```php
-<?php
-
-use Phalanx\Http\Runner;
-
-$runner = Runner::from($app, requestTimeout: 30.0)
-    ->withRoutes(__DIR__ . '/routes');
-$runner->run('0.0.0.0:8080');
-```
-
-### Composing Route Groups
-
-```php
-<?php
-
-use Phalanx\Http\RouteGroup;
-
-$api = $publicRoutes
-    ->merge($adminRoutes)
-    ->mount('/admin', $adminRoutes)
-    ->wrap(AuthMiddleware::class);
-```
-
-## Command Groups
-
-Typed collections of CLI commands with `CommandGroup`. Command handlers receive `CommandScope`—a scope decorator with typed arguments and options:
-
-```php
-<?php
-// commands/db.php
-
-use Phalanx\Console\CommandConfig;
-use Phalanx\Console\CommandGroup;
-use Phalanx\Console\Opt;
-
-return CommandGroup::of([
-    'migrate' => [RunMigrations::class, new CommandConfig(
-        description: 'Run database migrations',
-    )],
-    'db:seed' => [SeedDatabase::class, new CommandConfig(
-        description: 'Seed the database',
-        options: [Opt::flag('fresh', 'f', 'Truncate tables first')],
-    )],
-]);
-```
-
-### Running Commands
-
-```php
-<?php
-
-use Phalanx\Console\ConsoleRunner;
-
-$runner = ConsoleRunner::withCommands($app, __DIR__ . '/commands');
-exit($runner->run($argv));
-```
+Operators are lazy -- nothing runs until a terminal (`toArray`, `reduce`, `first`, `consume`) triggers execution.
 
 ## Services
 
@@ -477,87 +330,6 @@ PHALANX_TRACE=1 php server.php
 0 svc  4.0MB peak  0 gc  39.8ms total
 ```
 
-## Authentication
-
-Phalanx provides core auth primitives that transport packages (`phalanx/stoa`, `phalanx/hermes`) build on.
-
-### Guard Interface
-
-Implement `Guard` to extract identity from a request:
-
-```php
-<?php
-
-use Phalanx\Auth\AuthContext;
-use Phalanx\Auth\Guard;
-use Psr\Http\Message\ServerRequestInterface;
-
-final class BearerTokenGuard implements Guard
-{
-    public function resolve(ServerRequestInterface $request): ?AuthContext
-    {
-        $header = $request->getHeaderLine('Authorization');
-        if (!str_starts_with($header, 'Bearer ')) {
-            return null;
-        }
-
-        $user = $this->validateToken(substr($header, 7));
-        return $user !== null
-            ? AuthContext::authenticated($user, substr($header, 7))
-            : null;
-    }
-}
-```
-
-### Identity Interface
-
-Your user model implements `Identity`:
-
-```php
-<?php
-
-use Phalanx\Auth\Identity;
-
-final class AppUser implements Identity
-{
-    public string|int $id { get => $this->userId; }
-
-    public function __construct(private readonly int $userId) {}
-}
-```
-
-### AuthContext
-
-The resolved auth state, carrying identity, token, and abilities:
-
-```php
-<?php
-
-use Phalanx\Auth\AuthContext;
-
-$auth = AuthContext::authenticated($user, $token, ['admin', 'write']);
-
-$auth->isAuthenticated;      // true
-$auth->identity->id;         // user ID
-$auth->can('admin');         // true
-$auth->token();              // the raw token string
-
-$guest = AuthContext::guest();
-$guest->isAuthenticated;     // false
-```
-
-### Authenticate Middleware
-
-Use the built-in `Authenticate` middleware with any `Guard`:
-
-```php
-<?php
-
-use Phalanx\Http\Auth\Authenticate;
-
-$routes = RouteGroup::of([...])->wrap(new Authenticate(new BearerTokenGuard()));
-```
-
 ## Deterministic Cleanup
 
 ```php
@@ -571,14 +343,21 @@ $scope->onDispose(fn() => $connection->close());
 $scope->dispose();  // Cleanup fires in reverse order
 ```
 
-## Examples
+## Packages
 
-### Docker CLI
-
-A practical CLI app demonstrating `CommandScope` with typed arguments and options, `ServiceBundle` wiring, and invokable task classes.
-
-```bash
-php examples/docker-cli/docker-cli.php ps -a
-php examples/docker-cli/docker-cli.php images
-php examples/docker-cli/docker-cli.php logs nginx
-```
+| Package | Purpose |
+|---------|---------|
+| [phalanx/aegis](https://github.com/phalanx-php/phalanx-aegis) | Scope hierarchy, tasks, services, cancellation |
+| [phalanx/stoa](https://github.com/phalanx-php/phalanx-stoa) | HTTP server and routing |
+| [phalanx/archon](https://github.com/phalanx-php/phalanx-archon) | CLI commands |
+| [phalanx/styx](https://github.com/phalanx-php/phalanx-styx) | Reactive streams, backpressure |
+| [phalanx/athena](https://github.com/phalanx-php/phalanx-athena) | AI agent runtime |
+| [phalanx/theatron](https://github.com/phalanx-php/phalanx-theatron) | Terminal UI |
+| [phalanx/hermes](https://github.com/phalanx-php/phalanx-hermes) | WebSocket server and client |
+| [phalanx/hydra](https://github.com/phalanx-php/phalanx-hydra) | Worker process parallelism |
+| [phalanx/eidolon](https://github.com/phalanx-php/phalanx-eidolon) | Frontend bridge, OpenAPI |
+| [phalanx/skopos](https://github.com/phalanx-php/phalanx-skopos) | Dev server orchestrator |
+| [phalanx/postgres](https://github.com/phalanx-php/phalanx-postgres) | Async PostgreSQL |
+| [phalanx/argos](https://github.com/phalanx-php/phalanx-argos) | Network utilities |
+| [phalanx/grammata](https://github.com/phalanx-php/phalanx-grammata) | Async filesystem |
+| [phalanx/enigma](https://github.com/phalanx-php/phalanx-enigma) | SSH client |

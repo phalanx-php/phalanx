@@ -4,7 +4,7 @@
 
 # Phalanx Skopos
 
-> **Phalanx** is a first-principles rethinking of what PHP can be when modern language features and a decade of async community work are treated as the foundation, not an afterthought. [Read more](https://github.com/phalanx-php/phalanx-aegis#phalanx-aegis---async-php) in the core library.
+> Part of the [Phalanx](https://github.com/phalanx-php/phalanx-aegis) async PHP framework.
 
 PHP-native dev server orchestrator. Manages backend servers, frontend builds, CSS compilation, file watching, and live reload from a single `skopos.php` config file. No Vite. No Node. No `npx concurrently`.
 
@@ -28,7 +28,8 @@ PHP-native dev server orchestrator. Manages backend servers, frontend builds, CS
 composer require phalanx/skopos
 ```
 
-Requires PHP 8.4+.
+> [!NOTE]
+> Requires PHP 8.4 or later.
 
 ## Getting Started
 

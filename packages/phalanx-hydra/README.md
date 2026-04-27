@@ -2,9 +2,9 @@
   <img src="brand/logo.svg" alt="Phalanx" width="520">
 </p>
 
-# Phalanx Parallel
+# Phalanx Hydra
 
-> **Phalanx** is a first-principles rethinking of what PHP can be when modern language features and a decade of async community work are treated as the foundation, not an afterthought. [Read more](https://github.com/phalanx-php/phalanx-aegis#phalanx-aegis---async-php) in the core library.
+> Part of the [Phalanx](https://github.com/phalanx-php/phalanx-aegis) async PHP framework.
 
 Offload CPU-heavy work to supervised child processes. Tasks serialize, cross process boundaries via IPC, execute in isolated workers, and return results--all through a single `$scope->inWorker()` call.
 
@@ -22,10 +22,11 @@ Offload CPU-heavy work to supervised child processes. Tasks serialize, cross pro
 ## Installation
 
 ```bash
-composer require phalanx/parallel
+composer require phalanx/hydra
 ```
 
-Requires PHP 8.4+ and `ext-pcntl`.
+> [!NOTE]
+> Requires PHP 8.4 or later.
 
 ## Quick Start
 
@@ -33,7 +34,7 @@ Requires PHP 8.4+ and `ext-pcntl`.
 <?php
 
 use Phalanx\Application;
-use Phalanx\Parallel\ParallelConfig;
+use Phalanx\Hydra\ParallelConfig;
 
 [$app, $scope] = Application::starting()
     ->withWorkerDispatch(ParallelConfig::default()->workerDispatchFactory())
@@ -98,7 +99,7 @@ $scope->inWorker(new CompressVideo($file3));   // queued -- all executing in par
 ```php
 <?php
 
-use Phalanx\Parallel\ParallelConfig;
+use Phalanx\Hydra\ParallelConfig;
 
 // 4 workers, least-mailbox dispatch, restart on crash
 ParallelConfig::default();
@@ -141,7 +142,7 @@ Two built-in strategies determine which worker receives the next task:
 ```php
 <?php
 
-use Phalanx\Parallel\Dispatch\DispatchStrategy;
+use Phalanx\Hydra\Dispatch\DispatchStrategy;
 
 new ParallelConfig(
     agents: 4,

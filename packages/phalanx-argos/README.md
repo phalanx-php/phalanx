@@ -2,9 +2,9 @@
   <img src="brand/logo.svg" alt="Phalanx" width="520">
 </p>
 
-# phalanx/network
+# Phalanx Argos
 
-> **Phalanx** is a first-principles rethinking of what PHP can be when modern language features and a decade of async community work are treated as the foundation, not an afterthought. [Read more](https://github.com/phalanx-php/phalanx-aegis#phalanx-aegis---async-php) in the core library.
+> Part of the [Phalanx](https://github.com/phalanx-php/phalanx-aegis) async PHP framework.
 
 Network discovery, probing, and device management as Phalanx tasks. Scan subnets, probe ports, wake machines, and discover services--all through the same scope-driven concurrency model as the rest of Phalanx.
 
@@ -31,10 +31,13 @@ Network discovery, probing, and device management as Phalanx tasks. Scan subnets
 ## Installation
 
 ```bash
-composer require phalanx/network
+composer require phalanx/argos
 ```
 
-Requires PHP 8.4+, `phalanx/core`, `mlocati/ip-lib`, `react/datagram`, `react/socket`, `react/dns`, and `react/child-process`.
+> [!NOTE]
+> Requires PHP 8.4 or later.
+
+Dependencies: `phalanx/aegis`, `mlocati/ip-lib`, `react/datagram`, `react/socket`, `react/dns`, and `react/child-process`.
 
 Optional: `clue/multicast-react`, `clue/mdns-react`, `clue/ssdp-react` for mDNS and SSDP discovery.
 
@@ -44,9 +47,9 @@ Optional: `clue/multicast-react`, `clue/mdns-react`, `clue/ssdp-react` for mDNS 
 <?php
 
 use Phalanx\Application;
-use Phalanx\Network\NetworkServiceBundle;
-use Phalanx\Network\Task\ScanSubnet;
-use Phalanx\Network\Subnet;
+use Phalanx\Argos\NetworkServiceBundle;
+use Phalanx\Argos\Task\ScanSubnet;
+use Phalanx\Argos\Subnet;
 
 [$app, $scope] = Application::starting()
     ->providers(new NetworkServiceBundle())
@@ -74,7 +77,7 @@ $app->shutdown();
 ```php
 <?php
 
-use Phalanx\Network\Subnet;
+use Phalanx\Argos\Subnet;
 
 $net = Subnet::from('10.0.0.0/24');     // 256 addresses
 $net = Subnet::from('fd00::/64');        // IPv6 works the same way
@@ -91,7 +94,7 @@ foreach ($net->addresses() as $ip) {
 ```php
 <?php
 
-use Phalanx\Network\ProbeStrategy;
+use Phalanx\Argos\ProbeStrategy;
 
 // TCP connect probe on port 443 with 2s timeout
 $probe = ProbeStrategy::tcp(port: 443, timeout: 2.0);
@@ -108,9 +111,9 @@ Pass a strategy to `ScanSubnet` to control how each host is probed:
 ```php
 <?php
 
-use Phalanx\Network\ProbeStrategy;
-use Phalanx\Network\Subnet;
-use Phalanx\Network\Task\ScanSubnet;
+use Phalanx\Argos\ProbeStrategy;
+use Phalanx\Argos\Subnet;
+use Phalanx\Argos\Task\ScanSubnet;
 
 // Scan for web servers instead of pinging
 $hosts = $scope->execute(new ScanSubnet(
@@ -122,7 +125,7 @@ $hosts = $scope->execute(new ScanSubnet(
 
 ## Task Reference
 
-All tasks live in the `Phalanx\Network\Task` namespace. Each is an invokable class with serializable constructor args.
+All tasks live in the `Phalanx\Argos\Task` namespace. Each is an invokable class with serializable constructor args.
 
 ### PingHost
 
@@ -131,7 +134,7 @@ ICMP ping via child process. Implements `HasTimeout` and `Retryable`.
 ```php
 <?php
 
-use Phalanx\Network\Task\PingHost;
+use Phalanx\Argos\Task\PingHost;
 
 $result = $scope->execute(new PingHost('192.168.1.1'));
 // ProbeResult { ip: '192.168.1.1', reachable: true, latencyMs: 1.2, method: 'ping' }
@@ -144,7 +147,7 @@ TCP connect probe. Implements `HasTimeout`.
 ```php
 <?php
 
-use Phalanx\Network\Task\ProbePort;
+use Phalanx\Argos\Task\ProbePort;
 
 $result = $scope->execute(new ProbePort('192.168.1.1', port: 22));
 // ProbeResult { ip: '192.168.1.1', reachable: true, latencyMs: 3.4, method: 'tcp', port: 22 }
@@ -157,7 +160,7 @@ UDP probe with payload. Implements `HasTimeout`.
 ```php
 <?php
 
-use Phalanx\Network\Task\ProbeUdp;
+use Phalanx\Argos\Task\ProbeUdp;
 
 $result = $scope->execute(new ProbeUdp('192.168.1.1', port: 53, payload: $dnsQuery));
 ```
@@ -169,7 +172,7 @@ Send a Wake-on-LAN magic packet via UDP broadcast.
 ```php
 <?php
 
-use Phalanx\Network\Task\WakeHost;
+use Phalanx\Argos\Task\WakeHost;
 
 $scope->execute(new WakeHost(mac: '00:11:22:33:44:55'));
 ```
@@ -181,8 +184,8 @@ Scan a CIDR range with bounded concurrency via `$scope->map()`.
 ```php
 <?php
 
-use Phalanx\Network\Subnet;
-use Phalanx\Network\Task\ScanSubnet;
+use Phalanx\Argos\Subnet;
+use Phalanx\Argos\Task\ScanSubnet;
 
 $results = $scope->execute(new ScanSubnet(
     Subnet::from('10.0.0.0/24'),
@@ -197,7 +200,7 @@ Scan multiple ports on a single host.
 ```php
 <?php
 
-use Phalanx\Network\Task\ScanPorts;
+use Phalanx\Argos\Task\ScanPorts;
 
 $results = $scope->execute(new ScanPorts(
     ip: '192.168.1.1',
@@ -212,7 +215,7 @@ Send a WOL packet, then retry-probe until the host comes up.
 ```php
 <?php
 
-use Phalanx\Network\Task\WakeAndWait;
+use Phalanx\Argos\Task\WakeAndWait;
 
 $result = $scope->execute(new WakeAndWait(
     mac: '00:11:22:33:44:55',
@@ -227,7 +230,7 @@ Concurrent ping + port scan to fingerprint a device.
 ```php
 <?php
 
-use Phalanx\Network\Task\IdentifyDevice;
+use Phalanx\Argos\Task\IdentifyDevice;
 
 $host = $scope->execute(new IdentifyDevice('192.168.1.1'));
 // Host { ip, mac, hostname, services, metadata }
@@ -240,7 +243,7 @@ Async DNS resolution via `react/dns`.
 ```php
 <?php
 
-use Phalanx\Network\Task\ResolveHostname;
+use Phalanx\Argos\Task\ResolveHostname;
 
 $ip = $scope->execute(new ResolveHostname('example.com'));
 ```
@@ -256,7 +259,7 @@ Requires `clue/ssdp-react`.
 ```php
 <?php
 
-use Phalanx\Network\Discovery\DiscoverSsdp;
+use Phalanx\Argos\Discovery\DiscoverSsdp;
 
 $devices = $scope->execute(new DiscoverSsdp(timeout: 5.0));
 ```
@@ -268,7 +271,7 @@ Requires `clue/mdns-react`.
 ```php
 <?php
 
-use Phalanx\Network\Discovery\DiscoverMdns;
+use Phalanx\Argos\Discovery\DiscoverMdns;
 
 $services = $scope->execute(new DiscoverMdns(serviceType: '_http._tcp.local', timeout: 3.0));
 ```
@@ -303,8 +306,8 @@ $services = $scope->execute(new DiscoverMdns(serviceType: '_http._tcp.local', ti
 ```php
 <?php
 
-use Phalanx\Network\NetworkConfig;
-use Phalanx\Network\NetworkServiceBundle;
+use Phalanx\Argos\NetworkConfig;
+use Phalanx\Argos\NetworkServiceBundle;
 
 $bundle = new NetworkServiceBundle(new NetworkConfig(
     defaultTimeout: 3.0,

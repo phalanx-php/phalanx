@@ -2,9 +2,9 @@
   <img src="brand/logo.svg" alt="Phalanx" width="520">
 </p>
 
-# Phalanx Stream
+# Phalanx Styx
 
-> **Phalanx** is a first-principles rethinking of what PHP can be when modern language features and a decade of async community work are treated as the foundation, not an afterthought. [Read more](https://github.com/phalanx-php/phalanx-aegis#phalanx-aegis---async-php) in the core library.
+> Part of the [Phalanx](https://github.com/phalanx-php/phalanx-aegis) async PHP framework.
 
 Reactive streams that bridge push-based sources into pull-based fiber iteration. WebSocket frames, SSE events, file tails, timers--they all become composable pipelines you consume with `foreach`.
 
@@ -26,17 +26,18 @@ Reactive streams that bridge push-based sources into pull-based fiber iteration.
 ## Installation
 
 ```bash
-composer require phalanx/stream
+composer require phalanx/styx
 ```
 
-Requires PHP 8.4+.
+> [!NOTE]
+> Requires PHP 8.4 or later.
 
 ## Quick Start
 
 ```php
 <?php
 
-use Phalanx\Stream\Emitter;
+use Phalanx\Styx\Emitter;
 
 // Create a stream from a producer
 $prices = Emitter::produce(static function (Channel $ch) use ($exchange) {
@@ -242,7 +243,7 @@ A message router that dispatches to per-client channels without blocking:
 ```php
 <?php
 
-use Phalanx\Stream\Channel;
+use Phalanx\Styx\Channel;
 
 /** @var array<string, Channel> $clients */
 foreach ($clients as $clientId => $channel) {
@@ -261,7 +262,7 @@ foreach ($clients as $clientId => $channel) {
 ```php
 <?php
 
-use Phalanx\Stream\ScopedStream;
+use Phalanx\Styx\ScopedStream;
 
 $stream = ScopedStream::from($scope, static function (Channel $ch, StreamContext $ctx) {
     while ($msg = $queue->receive()) {

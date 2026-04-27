@@ -2,9 +2,9 @@
   <img src="brand/logo.svg" alt="Phalanx" width="520">
 </p>
 
-# phalanx/http
+# Phalanx Stoa
 
-> **Phalanx** is a first-principles rethinking of what PHP can be when modern language features and a decade of async community work are treated as the foundation, not an afterthought. [Read more](https://github.com/phalanx-php/phalanx-aegis#phalanx-aegis---async-php) in the core library.
+> Part of the [Phalanx](https://github.com/phalanx-php/phalanx-aegis) async PHP framework.
 
 Async HTTP server built on ReactPHP with scope-driven request handling. Every route handler receives an `ExecutionScope` with full access to concurrent task execution, service injection, and cancellation -- write concurrent data-fetching code that reads like sequential PHP.
 
@@ -33,10 +33,11 @@ Async HTTP server built on ReactPHP with scope-driven request handling. Every ro
 ## Installation
 
 ```bash
-composer require phalanx/http
+composer require phalanx/stoa
 ```
 
-Requires PHP 8.4+, `phalanx/core`, `react/http`, and `nikic/fast-route`.
+> [!NOTE]
+> Requires PHP 8.4 or later.
 
 ## Quick Start
 
@@ -44,8 +45,8 @@ Requires PHP 8.4+, `phalanx/core`, `react/http`, and `nikic/fast-route`.
 <?php
 
 use Phalanx\Application;
-use Phalanx\Http\RouteGroup;
-use Phalanx\Http\Runner;
+use Phalanx\Stoa\RouteGroup;
+use Phalanx\Stoa\Runner;
 use Phalanx\Scope;
 use Phalanx\Task\Scopeable;
 use React\Http\Message\Response;
@@ -83,7 +84,7 @@ Routes are class-strings registered in a `RouteGroup`. The `HandlerResolver` con
 ```php
 <?php
 
-use Phalanx\Http\RequestScope;
+use Phalanx\Stoa\RequestScope;
 use Phalanx\Task\Scopeable;
 use React\Http\Message\Response;
 
@@ -105,7 +106,7 @@ final class ShowUser implements Scopeable
 ```php
 <?php
 
-use Phalanx\Http\RouteGroup;
+use Phalanx\Stoa\RouteGroup;
 
 $routes = RouteGroup::of([
     'GET /users/{id}' => ShowUser::class,
@@ -131,7 +132,7 @@ $routes = RouteGroup::of([
 ```php
 <?php
 
-use Phalanx\Http\RouteGroup;
+use Phalanx\Stoa\RouteGroup;
 
 $routes = RouteGroup::of([
     'GET /users'      => ListUsers::class,
@@ -150,7 +151,7 @@ Path parameters use `{name}` syntax. Named pattern aliases constrain parameters 
 ```php
 <?php
 
-use Phalanx\Http\RouteGroup;
+use Phalanx\Stoa\RouteGroup;
 
 $routes = RouteGroup::of([
     'GET /users/{id:int}'             => ShowUser::class,
@@ -168,7 +169,7 @@ The built-in patterns are pre-registered -- the `withPatterns()` call above is o
 ```php
 <?php
 
-use Phalanx\Http\RequestScope;
+use Phalanx\Stoa\RequestScope;
 use Phalanx\Task\Scopeable;
 use React\Http\Message\Response;
 
@@ -206,8 +207,8 @@ Handlers with no extra typed parameter work exactly as before -- the scope is pa
 ```php
 <?php
 
-use Phalanx\Http\RequestScope;
-use Phalanx\Http\Response\Created;
+use Phalanx\Stoa\RequestScope;
+use Phalanx\Stoa\Response\Created;
 use Phalanx\Task\Executable;
 
 final readonly class CreateTaskInput
@@ -241,7 +242,7 @@ final class CreateTask implements Executable
 ```php
 <?php
 
-use Phalanx\Http\RouteGroup;
+use Phalanx\Stoa\RouteGroup;
 
 $routes = RouteGroup::of([
     'POST /tasks' => CreateTask::class,
@@ -255,7 +256,7 @@ The JSON body keys map to constructor parameter names. Missing required fields p
 ```php
 <?php
 
-use Phalanx\Http\RequestScope;
+use Phalanx\Stoa\RequestScope;
 use Phalanx\Task\Scopeable;
 use React\Http\Message\Response;
 
@@ -332,7 +333,7 @@ After successful construction, if the DTO implements `Validatable`, its `validat
 ```php
 <?php
 
-use Phalanx\Http\Contract\Validatable;
+use Phalanx\Stoa\Contract\Validatable;
 
 final readonly class CreateTaskInput implements Validatable
 {
@@ -379,7 +380,7 @@ Both coercion failures and `Validatable` failures throw `ValidationException`. T
 ```php
 <?php
 
-use Phalanx\Http\ValidationException;
+use Phalanx\Stoa\ValidationException;
 
 throw ValidationException::single('email', 'Already in use');
 throw ValidationException::fromErrors(['email' => ['Already in use'], 'name' => ['Taken']]);
@@ -423,7 +424,7 @@ Every route handler has access to Phalanx's concurrency primitives through the s
 ```php
 <?php
 
-use Phalanx\Http\RequestScope;
+use Phalanx\Stoa\RequestScope;
 use Phalanx\Task;
 use Phalanx\Task\Executable;
 use React\Http\Message\Response;
@@ -462,7 +463,7 @@ final class DashboardHandler implements Executable
 ```php
 <?php
 
-use Phalanx\Http\RouteGroup;
+use Phalanx\Stoa\RouteGroup;
 
 $routes = RouteGroup::of([
     'GET /dashboard' => DashboardHandler::class,
@@ -478,7 +479,7 @@ Wrap an entire route group with middleware. `wrap()` accepts class-strings -- th
 ```php
 <?php
 
-use Phalanx\Http\RouteGroup;
+use Phalanx\Stoa\RouteGroup;
 
 $api = RouteGroup::of([
     'GET /me'       => GetProfile::class,
@@ -496,7 +497,7 @@ Nest route groups under a path prefix with `mount()`:
 ```php
 <?php
 
-use Phalanx\Http\RouteGroup;
+use Phalanx\Stoa\RouteGroup;
 
 $v1 = RouteGroup::of([
     'GET /users'  => ListUsers::class,
@@ -522,7 +523,7 @@ Requests to `/api/v1/users` and `/api/v2/users` dispatch to their respective han
 ```php
 <?php
 
-use Phalanx\Http\RouteLoader;
+use Phalanx\Stoa\RouteLoader;
 
 $routes = RouteLoader::loadDirectory(__DIR__ . '/routes');
 ```
@@ -533,7 +534,7 @@ Each file defines its routes with class-string handlers:
 <?php
 
 // routes/users.php
-use Phalanx\Http\RouteGroup;
+use Phalanx\Stoa\RouteGroup;
 
 return RouteGroup::of([
     'GET /users'        => ListUsers::class,
@@ -548,7 +549,7 @@ return RouteGroup::of([
 ```php
 <?php
 
-use Phalanx\Http\Runner;
+use Phalanx\Stoa\Runner;
 
 Runner::from($app)
     ->withRoutes(__DIR__ . '/routes')
@@ -566,9 +567,9 @@ Push real-time updates to clients with `SseResponse` and `SseChannel`.
 ```php
 <?php
 
-use Phalanx\Http\RequestScope;
-use Phalanx\Http\Sse\SseResponse;
-use Phalanx\Stream\Emitter;
+use Phalanx\Stoa\RequestScope;
+use Phalanx\Stoa\Sse\SseResponse;
+use Phalanx\Styx\Emitter;
 use Phalanx\Task\Executable;
 
 final class MetricsStream implements Executable
@@ -596,7 +597,7 @@ final class MetricsStream implements Executable
 ```php
 <?php
 
-use Phalanx\Http\RouteGroup;
+use Phalanx\Stoa\RouteGroup;
 
 $routes = RouteGroup::of([
     'GET /events/metrics' => MetricsStream::class,
@@ -610,7 +611,7 @@ $routes = RouteGroup::of([
 ```php
 <?php
 
-use Phalanx\Http\Sse\SseChannel;
+use Phalanx\Stoa\Sse\SseChannel;
 
 // Register the channel as a service
 $channel = new SseChannel(bufferSize: 200, defaultEvent: 'update');
@@ -632,8 +633,8 @@ The runner supports UDP alongside HTTP on the same event loop. Implement `UdpHan
 <?php
 
 use Phalanx\ExecutionScope;
-use Phalanx\Http\Runner;
-use Phalanx\Http\UdpHandler;
+use Phalanx\Stoa\Runner;
+use Phalanx\Stoa\UdpHandler;
 
 final class IngestMetrics implements UdpHandler
 {
@@ -694,8 +695,8 @@ Register `JwtGuard` as a service and apply `Authenticate` to a route group:
 ```php
 <?php
 
-use Phalanx\Http\Auth\Authenticate;
-use Phalanx\Http\RouteGroup;
+use Phalanx\Stoa\Auth\Authenticate;
+use Phalanx\Stoa\RouteGroup;
 
 $api = RouteGroup::of([
     'GET /me'  => GetProfile::class,
@@ -721,7 +722,7 @@ For typed access, use `AuthenticatedRequestScope` which adds `$scope->auth`:
 ```php
 <?php
 
-use Phalanx\Http\AuthenticatedRequestScope;
+use Phalanx\Stoa\AuthenticatedRequestScope;
 
 /** @var AuthenticatedRequestScope $scope */
 $scope->auth->identity->id;
@@ -738,7 +739,7 @@ The interface requires a `$status` property hook alongside the `toResponse()` me
 ```php
 <?php
 
-use Phalanx\Http\ToResponse;
+use Phalanx\Stoa\ToResponse;
 use Psr\Http\Message\ResponseInterface;
 use React\Http\Message\Response;
 
@@ -771,14 +772,14 @@ Three concrete `ToResponse` implementations cover the most common non-200 succes
 | `Accepted` | 202 | JSON-encoded `$data` |
 | `NoContent` | 204 | empty |
 
-All three are in the `Phalanx\Http\Response` namespace and implement `ToResponse`, so they flow through the same dispatch path as any custom `ToResponse` object.
+All three are in the `Phalanx\Stoa\Response` namespace and implement `ToResponse`, so they flow through the same dispatch path as any custom `ToResponse` object.
 
 ```php
 <?php
 
-use Phalanx\Http\RequestScope;
-use Phalanx\Http\Response\Created;
-use Phalanx\Http\Response\NoContent;
+use Phalanx\Stoa\RequestScope;
+use Phalanx\Stoa\Response\Created;
+use Phalanx\Stoa\Response\NoContent;
 use Phalanx\Task\Executable;
 
 final class CreateUser implements Executable
@@ -817,7 +818,7 @@ Validate body parameters inline with `RequestValidator`:
 ```php
 <?php
 
-use Phalanx\Http\RequestValidator;
+use Phalanx\Stoa\RequestValidator;
 
 final class MinLength implements RequestValidator
 {
@@ -849,8 +850,8 @@ The HTTP runner handles WebSocket upgrades natively. See [phalanx/hermes](../pha
 ```php
 <?php
 
-use Phalanx\Http\Runner;
-use Phalanx\WebSocket\WsRouteGroup;
+use Phalanx\Stoa\Runner;
+use Phalanx\Hermes\WsRouteGroup;
 
 Runner::from($app)
     ->withRoutes($httpRoutes)
@@ -867,7 +868,7 @@ HTTP and WebSocket traffic share a single TCP listener. The runner detects upgra
 ```php
 <?php
 
-use Phalanx\Http\OpenApi\OpenApiGenerator;
+use Phalanx\Stoa\OpenApi\OpenApiGenerator;
 
 $generator = new OpenApiGenerator(
     title: 'Task API',

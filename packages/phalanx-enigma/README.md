@@ -2,9 +2,9 @@
   <img src="brand/logo.svg" alt="Phalanx" width="520">
 </p>
 
-# phalanx/enigma
+# Phalanx Enigma
 
-> **Phalanx** is a first-principles rethinking of what PHP can be when modern language features and a decade of async community work are treated as the foundation, not an afterthought. [Read more](https://github.com/phalanx-php/phalanx-aegis#phalanx-aegis---async-php) in the core library.
+> Part of the [Phalanx](https://github.com/phalanx-php/phalanx-aegis) async PHP framework.
 
 Non-blocking SSH command execution, file transfer, and tunnel management as Phalanx tasks. Built on `react/child-process` to drive the system `ssh`, `scp`, and `sftp` binaries without blocking the event loop.
 
@@ -31,7 +31,10 @@ Non-blocking SSH command execution, file transfer, and tunnel management as Phal
 composer require phalanx/enigma
 ```
 
-Requires PHP 8.4+, `phalanx/aegis`, `react/child-process`, `react/async`, `react/promise`, and `react/promise-timer`.
+> [!NOTE]
+> Requires PHP 8.4 or later.
+
+Dependencies: `phalanx/aegis`, `react/child-process`, `react/async`, `react/promise`, and `react/promise-timer`.
 
 ## Quick Start
 
@@ -39,9 +42,9 @@ Requires PHP 8.4+, `phalanx/aegis`, `react/child-process`, `react/async`, `react
 <?php
 
 use Phalanx\Application;
-use Phalanx\Ssh\SshCredential;
-use Phalanx\Ssh\SshServiceBundle;
-use Phalanx\Ssh\Task\RunCommand;
+use Phalanx\Enigma\SshCredential;
+use Phalanx\Enigma\SshServiceBundle;
+use Phalanx\Enigma\Task\RunCommand;
 
 [$app, $scope] = Application::starting()
     ->providers(new SshServiceBundle())
@@ -68,7 +71,7 @@ $app->shutdown();
 ```php
 <?php
 
-use Phalanx\Ssh\SshCredential;
+use Phalanx\Enigma\SshCredential;
 
 // Explicit connection details
 $server = new SshCredential(
@@ -91,7 +94,7 @@ When using `fromConfig()`, all connection details come from your SSH config file
 ```php
 <?php
 
-use Phalanx\Ssh\Task\RunCommand;
+use Phalanx\Enigma\Task\RunCommand;
 
 $result = $scope->execute(new RunCommand(
     credential: $server,
@@ -129,7 +132,7 @@ Call `$result->throwIfFailed()` to throw an `SshException` on non-zero exit code
 ```php
 <?php
 
-use Phalanx\Ssh\Task\RunScript;
+use Phalanx\Enigma\Task\RunScript;
 
 $result = $scope->execute(new RunScript(
     credential: $server,
@@ -157,7 +160,7 @@ echo $result->stdout;
 ```php
 <?php
 
-use Phalanx\Ssh\Task\SftpUpload;
+use Phalanx\Enigma\Task\SftpUpload;
 
 // Upload a local file
 $result = $scope->execute(new SftpUpload(
@@ -181,7 +184,7 @@ $result = $scope->execute(new SftpUpload(
 ```php
 <?php
 
-use Phalanx\Ssh\Task\SftpDownload;
+use Phalanx\Enigma\Task\SftpDownload;
 
 $result = $scope->execute(new SftpDownload(
     credential: $server,
@@ -209,8 +212,8 @@ echo "Downloaded {$result->bytesTransferred} bytes\n";
 ```php
 <?php
 
-use Phalanx\Ssh\Task\ScpTransfer;
-use Phalanx\Ssh\TransferDirection;
+use Phalanx\Enigma\Task\ScpTransfer;
+use Phalanx\Enigma\TransferDirection;
 
 // Upload
 $scope->execute(new ScpTransfer(
@@ -236,8 +239,8 @@ $scope->execute(new ScpTransfer(
 ```php
 <?php
 
-use Phalanx\Ssh\Task\OpenTunnel;
-use Phalanx\Ssh\TunnelDirection;
+use Phalanx\Enigma\Task\OpenTunnel;
+use Phalanx\Enigma\TunnelDirection;
 
 $tunnel = $scope->execute(new OpenTunnel(
     credential: $bastion,
@@ -266,8 +269,8 @@ $tunnel->close();
 ```php
 <?php
 
-use Phalanx\Ssh\Task\RunCommand;
-use Phalanx\Ssh\Task\TunnelThrough;
+use Phalanx\Enigma\Task\RunCommand;
+use Phalanx\Enigma\Task\TunnelThrough;
 
 $result = $scope->execute(new TunnelThrough(
     bastion: $bastionCredential,
@@ -291,7 +294,7 @@ echo $result->stdout; // internal-web-01
 ```php
 <?php
 
-use Phalanx\Ssh\Task\Deploy;
+use Phalanx\Enigma\Task\Deploy;
 
 $result = $scope->execute(new Deploy(
     credential: $server,
@@ -314,7 +317,7 @@ The deploy sequence: create release directory, upload tarball via SCP, extract, 
 ```php
 <?php
 
-use Phalanx\Ssh\Task\MultiDeploy;
+use Phalanx\Enigma\Task\MultiDeploy;
 
 $results = $scope->execute(new MultiDeploy(
     credentials: [$web01, $web02, $web03],
@@ -333,7 +336,7 @@ $results = $scope->execute(new MultiDeploy(
 ```php
 <?php
 
-use Phalanx\Ssh\Task\TestConnection;
+use Phalanx\Enigma\Task\TestConnection;
 
 $reachable = $scope->execute(new TestConnection(
     credential: $server,
@@ -351,7 +354,7 @@ Returns `true` on success, `false` on any failure. Never throws.
 ```php
 <?php
 
-use Phalanx\Ssh\SshServiceBundle;
+use Phalanx\Enigma\SshServiceBundle;
 
 [$app, $scope] = Application::starting($context)
     ->providers(new SshServiceBundle())
@@ -383,8 +386,8 @@ All SSH operations throw typed exceptions rooted at `SshException`:
 ```php
 <?php
 
-use Phalanx\Ssh\Exception\SshConnectionException;
-use Phalanx\Ssh\Exception\SshException;
+use Phalanx\Enigma\Exception\SshConnectionException;
+use Phalanx\Enigma\Exception\SshException;
 
 try {
     $result = $scope->execute(new RunCommand(

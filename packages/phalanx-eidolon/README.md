@@ -2,15 +2,15 @@
   <img src="brand/logo.svg" alt="Phalanx" width="520">
 </p>
 
-# phalanx/ui
+# Phalanx Eidolon
 
-> **Phalanx** coordinates async PHP through a centralized scope hierarchy, balancing first-class DX with call-site explicitness. Built on the proven work of ReactPHP and AMPHP. Currently stabilizing through active iteration -- [contributions welcome](https://github.com/phalanx-php/phalanx-aegis/blob/main/CONTRIBUTING.md).
+> Part of the [Phalanx](https://github.com/phalanx-php/phalanx-aegis) async PHP framework.
 
 Write a PHP handler. Get a TypeScript hook. The `__invoke` signature on your handler class IS the API contract -- the framework reflects on it to generate an OpenAPI spec, and Kubb transforms that spec into typed React Query hooks, Zod schemas, and query keys. One source of truth, full-stack type safety, zero manual API client code.
 
 Phalanx's async nature enables patterns that request-response PHP frameworks can't offer: signals that flow continuously over WebSocket and SSE, concurrent data loading that streams to the page as each fetch resolves, and multi-agent AI output rendered in real time. The server doesn't just respond to requests -- it drives the frontend.
 
-**This package is in early development.** The route contract system, input hydration, and OpenAPI generation are implemented in `phalanx/http`. The signal system, Kubb integration, and TypeScript client are next.
+**This package is in early development.** The route contract system, input hydration, and OpenAPI generation are implemented in `phalanx/stoa`. The signal system, Kubb integration, and TypeScript client are next.
 
 ## Table of Contents
 
@@ -29,8 +29,8 @@ Define a handler with typed parameters. The framework does the rest.
 <?php
 
 use Phalanx\ExecutionScope;
-use Phalanx\Http\Response\Created;
-use Phalanx\Http\RouteGroup;
+use Phalanx\Stoa\Response\Created;
+use Phalanx\Stoa\RouteGroup;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 
@@ -110,7 +110,7 @@ DTOs with constructor properties become request/response schemas. Required vs op
 ```php
 <?php
 
-use Phalanx\Http\Contract\Validatable;
+use Phalanx\Stoa\Contract\Validatable;
 
 final readonly class CreateTaskInput implements Validatable
 {
@@ -141,9 +141,9 @@ The server owns reactivity. Instead of the frontend deciding what to refetch aft
 <?php
 
 use Phalanx\ExecutionScope;
-use Phalanx\Http\Response\Created;
+use Phalanx\Stoa\Response\Created;
 use Phalanx\Task\Executable;
-use Phalanx\Ui\Signal;
+use Phalanx\Eidolon\Signal;
 
 final class CreateTaskWithSignals implements Executable
 {
@@ -188,9 +188,9 @@ AI agents produce typed event streams. The frontend renders them in real time:
 ```php
 <?php
 
-use Phalanx\Ai\Agent;
-use Phalanx\Http\RequestScope;
-use Phalanx\Http\Sse\SseResponse;
+use Phalanx\Athena\Agent;
+use Phalanx\Stoa\RequestScope;
+use Phalanx\Stoa\Sse\SseResponse;
 use Phalanx\Task\Executable;
 
 final class AgentChatHandler implements Executable
@@ -237,7 +237,7 @@ The spec generator reflects on your route group. No running server required:
 ```php
 <?php
 
-use Phalanx\Http\OpenApi\OpenApiGenerator;
+use Phalanx\Stoa\OpenApi\OpenApiGenerator;
 
 $spec = (new OpenApiGenerator(title: 'Task API', version: '1.0.0'))
     ->generate($routes);
@@ -253,8 +253,8 @@ Handlers that implement `SelfDescribed` and `Tagged` contribute summaries and ta
 
 | Package | Purpose |
 |---------|---------|
-| `phalanx/core` | Scope system, `SelfDescribed` interface |
-| `phalanx/http` | Route contracts, input hydration, OpenAPI generation, response wrappers |
-| `phalanx/stream` | Emitter pipelines for signal and agent event streaming |
-| `phalanx/ws-server` | WebSocket signal transport (optional) |
-| `phalanx/ai` | Agent event streaming to frontend (optional) |
+| `phalanx/aegis` | Scope system, `SelfDescribed` interface |
+| `phalanx/stoa` | Route contracts, input hydration, OpenAPI generation, response wrappers |
+| `phalanx/styx` | Emitter pipelines for signal and agent event streaming |
+| `phalanx/hermes` | WebSocket signal transport (optional) |
+| `phalanx/athena` | Agent event streaming to frontend (optional) |

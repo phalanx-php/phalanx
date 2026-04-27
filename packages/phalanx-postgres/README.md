@@ -2,9 +2,9 @@
   <img src="brand/logo.svg" alt="Phalanx" width="520">
 </p>
 
-# phalanx/postgres
+# Phalanx Postgres
 
-> **Phalanx** is a first-principles rethinking of what PHP can be when modern language features and a decade of async community work are treated as the foundation, not an afterthought. [Read more](https://github.com/phalanx-php/phalanx-aegis#phalanx-aegis---async-php) in the core library.
+> Part of the [Phalanx](https://github.com/phalanx-php/phalanx-aegis) async PHP framework.
 
 Async PostgreSQL with connection pooling, prepared statements, transactions, and LISTEN/NOTIFY — all non-blocking, all composable with Phalanx's concurrency primitives.
 
@@ -14,7 +14,10 @@ Async PostgreSQL with connection pooling, prepared statements, transactions, and
 composer require phalanx/postgres
 ```
 
-Requires `ext-pgsql` and PHP 8.4+.
+> [!NOTE]
+> Requires PHP 8.4 or later.
+
+Requires `ext-pgsql`.
 
 ## Setup
 
@@ -132,7 +135,7 @@ PostgreSQL's LISTEN/NOTIFY turns your database into a lightweight message broker
 ```php
 <?php
 
-use Phalanx\Stream\ScopedStream;
+use Phalanx\Styx\ScopedStream;
 
 $listener = $scope->service(PgListener::class);
 
