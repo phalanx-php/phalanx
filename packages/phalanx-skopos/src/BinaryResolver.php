@@ -10,8 +10,10 @@ final class BinaryResolver
 {
     public static function bun(): string
     {
+        $home = $_SERVER['HOME'] ?? $_SERVER['USERPROFILE'] ?? '';
+
         return self::resolve('bun', [
-            $_SERVER['HOME'] . '/.bun/bin/bun',
+            $home . '/.bun/bin/bun',
         ], 'Install bun: curl -fsSL https://bun.sh/install | bash');
     }
 

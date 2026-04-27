@@ -78,18 +78,23 @@ final class Server
 
     public function reload(): void
     {
-        foreach ($this->clients as $stream) {
+        /** @var list<ThroughStream> $streams */
+        $streams = iterator_to_array($this->clients);
+
+        foreach ($streams as $stream) {
             $stream->write("data: reload\n\n");
         }
     }
 
     public function stop(): void
     {
-        foreach ($this->clients as $stream) {
+        /** @var list<ThroughStream> $streams */
+        $streams = iterator_to_array($this->clients);
+        $this->clients = new \SplObjectStorage();
+
+        foreach ($streams as $stream) {
             $stream->end();
         }
-
-        $this->clients = new \SplObjectStorage();
 
         $this->socket?->close();
         $this->socket = null;

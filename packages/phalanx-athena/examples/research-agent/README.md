@@ -97,8 +97,8 @@ All three document extractions completed in ~3.1 seconds (concurrent), not 8+ se
 <?php
 
 use Acme\ResearchAgent;
-use Phalanx\Ai\Turn;
-use Phalanx\Ai\Message\Message;
+use Phalanx\Athena\Turn;
+use Phalanx\Athena\Message\Message;
 
 $turn = Turn::begin(new ResearchAgent())
     ->message(Message::user(

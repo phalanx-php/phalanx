@@ -155,6 +155,9 @@ final class Css
 
     private function buildSassCommand(): string
     {
+        $input = $this->input ?? throw new \RuntimeException('Sass requires an input file');
+        $output = $this->output ?? throw new \RuntimeException('Sass requires an output file');
+
         $bin = BinaryResolver::sass();
         $parts = [$bin];
 
@@ -162,7 +165,7 @@ final class Css
             $parts[] = '--watch';
         }
 
-        $parts[] = $this->input . ':' . $this->output;
+        $parts[] = $input . ':' . $output;
 
         if ($this->minify) {
             $parts[] = '--style=compressed';

@@ -193,7 +193,7 @@ final class Frontend
 
         $reloadPattern = '/\\d+.*\\btransformed\\b/';
 
-        return Process::named('bun-build')
+        return Process::named("bun-{$this->type}")
             ->command(implode(' ', $parts))
             ->cwd($cwd)
             ->env($this->env)
@@ -216,8 +216,8 @@ final class Frontend
         $scriptPath = BuildScript::write($cwd, $script);
         $reloadPattern = '/files transformed/';
 
-        return Process::named('bun-build')
-            ->command("{$bin} run {$scriptPath} --watch")
+        return Process::named("bun-{$this->type}")
+            ->command("{$bin} run --watch {$scriptPath}")
             ->cwd($cwd)
             ->env($this->env)
             ->ready($reloadPattern)

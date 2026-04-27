@@ -102,8 +102,8 @@ The frontend renders tool activity as status indicators and streams the draft wo
 
 use Acme\SupportTriageAgent;
 use Acme\TriageResult;
-use Phalanx\Ai\Message\Message;
-use Phalanx\Ai\Turn;
+use Phalanx\Athena\Message\Message;
+use Phalanx\Athena\Turn;
 
 $turn = Turn::begin(new SupportTriageAgent())
     ->message(Message::user(
