@@ -8,7 +8,7 @@ Async coordination for PHP 8.4+. Built on [ReactPHP](https://reactphp.org/) and 
 
 Fibers, property hooks, lazy objects, asymmetric visibility -- PHP 8.4 is a different language. Phalanx treats these as the foundation, not optional extras.
 
-[Read more](https://open.substack.com/pub/jhavenz/p/when-php-computations-have-names) | [Contributing](https://github.com/phalanx-php/phalanx-aegis/blob/main/CONTRIBUTING.md)
+[Contributing](https://github.com/phalanx-php/phalanx-aegis/blob/main/CONTRIBUTING.md)
 
 ## Installation
 
