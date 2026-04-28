@@ -6,7 +6,7 @@
 
 > Part of the [Phalanx](https://github.com/phalanx-php/phalanx-aegis) async PHP framework.
 
-PHP-native dev server orchestrator. Manages backend servers, frontend builds, CSS compilation, file watching, and live reload from a single `skopos.php` config file. No Vite. No Node. No `npx concurrently`.
+PHP-native dev server orchestrator. Manages backend servers, frontend builds, CSS compilation, file watching, and live reload from a single `skopos.php` config file. Uses a `bun` binary under the hood for frontend builds and CSS &mdash; no Node toolchain, no `npx concurrently`.
 
 ## Table of Contents
 
@@ -100,9 +100,9 @@ use Phalanx\Skopos\Process;
 return DevServer::create()
     ->server('php artisan serve --port=8000', ready: '/Server running/')
     ->process(
-        Process::named('webpack')
-            ->command('npx webpack --watch')
-            ->reloadOn('/compiled successfully/')
+        Process::named('esbuild')
+            ->command('esbuild app.jsx --bundle --watch --outfile=public/assets/app.js')
+            ->reloadOn('/build finished/')
     )
     ->process(
         Process::named('queue')
