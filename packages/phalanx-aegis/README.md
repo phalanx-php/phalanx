@@ -56,7 +56,8 @@ Three tasks. One process. Bounded memory. Visible execution.
 
 ---
 
-## The deadlocks you can't see at any single call site
+<details>
+<summary><b>The deadlocks you can't see at any single call site</b> — what goes wrong in production async PHP, and what the scope does about it</summary>
 
 Async PHP is mostly fine until you compose it. Two services that are correct in isolation can deadlock when one calls the other -- and the call site that triggers it looks completely innocuous. These are the ones that bite real codebases.
 
@@ -114,6 +115,8 @@ Pool size 10. Ten concurrent fibers each hold a connection in `createOrder` and 
 
 The point isn't that Phalanx prevents every footgun. It's that the patterns that cause these problems -- raw `await()` scattered across services, untracked transactions, untimed promises, ad-hoc pool acquisition -- aren't the path of least resistance. The scope is.
 
+</details>
+
 ---
 
 ## Install
@@ -147,23 +150,9 @@ $scope->dispose();   // scoped services and disposal hooks fire in reverse order
 $app->shutdown();    // singleton shutdown hooks fire
 ```
 
-## Concurrency primitives
+## Concurrency
 
-This is what the scope gives you. Every method takes `Scopeable | Executable` tasks -- a closure-backed `Task::of(...)` or a named class.
-
-| Method | Behavior | Returns |
-|--------|----------|---------|
-| `concurrent($tasks)` | Run all concurrently, wait for all, throw on first failure | Array of results |
-| `settle($tasks)` | Run all, collect outcomes including failures | `SettlementBag` |
-| `race($tasks)` | First to settle wins (success or failure) | Single result |
-| `any($tasks)` | First success wins (failures ignored unless all fail) | Single result |
-| `map($items, $fn, limit: 10)` | Bounded concurrent map over a collection | Array of results |
-| `series($tasks)` | Sequential | Array of results |
-| `waterfall($tasks)` | Sequential, each receives the previous result | Final result |
-| `timeout($seconds, $task)` | Run with a deadline | Result, or throws |
-| `retry($task, $policy)` | Run with retry policy | Result, or throws after exhaustion |
-| `singleflight($key, $task)` | De-duplicate concurrent calls behind a key | Shared result |
-| `inWorker($task)` | Run in a child process (parallel, not concurrent) | Result |
+If you've used ReactPHP promises or AMPHP futures, you'll be right at home -- `concurrent`, `race`, `any`, `map` are the same patterns, exposed as scope methods that thread cancellation and tracing through every call.
 
 ```php
 <?php
@@ -197,7 +186,28 @@ logger()->warning('partial sync', ['failed' => $bag->errKeys]);
 return $bag->extract(['primary' => null, 'analytics' => [], 'webhook' => false]);
 ```
 
-**Concurrent != Parallel.** `concurrent()`, `map()`, `race()`, `any()` interleave fibers in a single process. `inWorker()` runs in a child process. Same API, different runtime -- the call site decides.
+> **Concurrent != Parallel.** `concurrent`, `map`, `race`, `any` interleave fibers in a single process. `inWorker` runs in a child process. Same API, different runtime -- the call site decides.
+
+<details>
+<summary><b>Full primitives reference</b> — every method on the scope, what it does, what it returns</summary>
+
+Every method takes `Scopeable | Executable` tasks -- a closure-backed `Task::of(...)` or a named class.
+
+| Method | Behavior | Returns |
+|--------|----------|---------|
+| `concurrent($tasks)` | Run all concurrently, wait for all, throw on first failure | Array of results |
+| `settle($tasks)` | Run all, collect outcomes including failures | `SettlementBag` |
+| `race($tasks)` | First to settle wins (success or failure) | Single result |
+| `any($tasks)` | First success wins (failures ignored unless all fail) | Single result |
+| `map($items, $fn, limit: 10)` | Bounded concurrent map over a collection | Array of results |
+| `series($tasks)` | Sequential | Array of results |
+| `waterfall($tasks)` | Sequential, each receives the previous result | Final result |
+| `timeout($seconds, $task)` | Run with a deadline | Result, or throws |
+| `retry($task, $policy)` | Run with retry policy | Result, or throws after exhaustion |
+| `singleflight($key, $task)` | De-duplicate concurrent calls behind a key | Shared result |
+| `inWorker($task)` | Run in a child process (parallel, not concurrent) | Result |
+
+</details>
 
 ## Tasks
 
@@ -276,6 +286,9 @@ final class DatabaseQuery implements Scopeable, Retryable, HasTimeout, Traceable
 
 `timeout` wraps `retry` wraps `trace` wraps your work. The pipeline is composed once and reused on every dispatch.
 
+<details>
+<summary>All behavioral interfaces</summary>
+
 | Interface | Property | Adds |
 |-----------|----------|------|
 | `Retryable` | `RetryPolicy $retryPolicy { get; }` | Automatic retry with policy |
@@ -285,6 +298,8 @@ final class DatabaseQuery implements Scopeable, Retryable, HasTimeout, Traceable
 | `Traceable` | `string $traceName { get; }` | Custom trace label |
 | `SelfDescribed` | `string $description { get; }` | Human-readable description |
 | `Tagged` | `list<string> $tags { get; }` | Classification labels |
+
+</details>
 
 ## Cancellation, deadlines, retry
 
@@ -344,7 +359,7 @@ $summary = LazySequence::from(static function (ExecutionScope $scope) {
 $top50 = $scope->execute($summary);
 ```
 
-`map`, `filter`, `take`, `chunk`, `mapConcurrent($fn, concurrency: 10)`, `mapParallel($fn, concurrency: 4)`. Terminals: `toArray`, `reduce`, `first`, `consume`. Cancellation is checked between every yield.
+Operators: `map`, `filter`, `take`, `chunk`, `mapConcurrent($fn, concurrency: 10)`, `mapParallel($fn, concurrency: 4)`. Terminals: `toArray`, `reduce`, `first`, `consume`. Cancellation is checked between every yield.
 
 ## Services
 
@@ -381,7 +396,8 @@ final class AppBundle implements ServiceBundle
 
 All configuration flows through `array $context` from Symfony Runtime. `getenv()` is forbidden in service bundles and application code; the explicit context flow is what makes the system testable and fiber-safe.
 
-## Scope hierarchy
+<details>
+<summary><b>Scope hierarchy</b> — the capability interfaces and when to type-hint each one</summary>
 
 The scope is decomposed into capability interfaces. Type-hint the narrowest one that covers what the dependency actually needs.
 
@@ -435,6 +451,8 @@ Domain packages extend `ExecutionScope` with typed properties for their context:
 | `WsScope` | `phalanx/hermes` | `$connection`, `$request` |
 
 All fiber suspension goes through `$scope->await()`. Raw `React\Async\await()` is used only inside `ExecutionLifecycleScope` internals and stream/transport infrastructure.
+
+</details>
 
 ## Tracing
 
