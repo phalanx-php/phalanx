@@ -95,11 +95,11 @@ final class TaskTreeFormatterTest extends TestCase
         self::assertStringContainsString('Root', $out);
         self::assertStringContainsString('ChildA', $out);
         self::assertStringContainsString('ChildB', $out);
-        // Children indented two spaces deeper than root.
+        // Children prefixed with one vertical bar per depth.
         $lines = explode("\n", trim($out));
-        self::assertSame('Root', substr(ltrim($lines[0]), 0, 4));
-        self::assertStringStartsWith('  ', $lines[1]);
-        self::assertStringStartsWith('  ', $lines[2]);
+        self::assertStringStartsWith('Root', $lines[0]);
+        self::assertStringStartsWith('│ ', $lines[1]);
+        self::assertStringStartsWith('│ ', $lines[2]);
     }
 
     public function testRendersAllRootsWhenNoRootIdGiven(): void
