@@ -9,12 +9,12 @@ namespace Phalanx\Supervisor;
  * Supervisor::tree(). Powers the future `phalanx ps` / `phalanx doctor`
  * surfaces and the leak / hang diagnostic reports.
  *
- * Output shape (single vertical bar per depth, no branches):
+ * Output shape (one colon per depth as the indent marker):
  *
  *   AppHandler                Running    12.4ms
- *   │ FetchUser(7)            Suspended   8.1ms  wait: postgres SELECT * FROM users WHERE id...
- *   │ AuditWrite(login)       Running     6.2ms
- *   │ │ FlushBuffer           Running     1.0ms  [holds: redis/cache#3/shared]
+ *   : FetchUser(7)            Suspended   8.1ms  wait: postgres SELECT * FROM users WHERE id...
+ *   : AuditWrite(login)       Running     6.2ms
+ *   :: FlushBuffer            Running     1.0ms  [holds: redis/cache#3/shared]
  *
  * The snapshot list is the flat `Supervisor::tree()` projection. The
  * formatter rebuilds the parent/child structure from `parentId` and the
@@ -74,7 +74,8 @@ final class TaskTreeFormatter
         array $byId,
         int $depth,
     ): string {
-        $line = str_repeat('│ ', $depth) . self::formatLine($node) . "\n";
+        $prefix = $depth > 0 ? str_repeat(':', $depth) . ' ' : '';
+        $line = $prefix . self::formatLine($node) . "\n";
 
         foreach ($node->childIds as $childId) {
             if (isset($byId[$childId])) {
