@@ -518,7 +518,13 @@ $services->scoped(UserRepo::class)->factory(
 
 ### 6. Per-coroutine scope re-installation is mandatory
 
-Every primitive that spawns a coroutine — `concurrent`, `race`, `any`, `map`, `settle`, `defer`, supervised child tasks, worker dispatch — installs the active scope into the spawned coroutine's context as the first action and clears it in `finally`. Without this, `DeferredScope` (used by long-lived services like `HttpClient`, `LlmClient`, `PostgresPool`) resolves to `null`. The framework owns this; user code that calls `Coroutine::create` directly bypasses it and breaks scope-aware services.
+Every primitive that spawns a coroutine — `concurrent`, `race`, `any`, `map`, `settle`, `defer`, `go`, supervised child tasks, worker dispatch — installs the active scope into the spawned coroutine's context as the first action and clears it in `finally`. Without this, `DeferredScope` (used by long-lived services like `HttpClient`, `LlmClient`, `PostgresPool`) resolves to `null`. The framework owns this; user code that calls `Coroutine::create` directly bypasses it and breaks scope-aware services. Prefer `$scope->go(...)` for supervised background work.
+
+### 6a. `Phalanx::scope()` is a last-resort accessor
+
+For service classes that genuinely cannot accept `$scope` as a constructor or method parameter — third-party adapters with fixed signatures, static loggers in library code — `Phalanx::scope()` returns the currently-installed scope of the running coroutine. `Phalanx::tryScope()` returns null instead of throwing when no scope is installed.
+
+The default rule is *don't use it*. Pass `$scope` explicitly. For service classes you control, prefer constructor-injecting `DeferredScope` so the dependency is visible at the class signature. Reach for the static helper only when neither option applies.
 
 ### 7. Singleton vs scoped — the disposition test
 
