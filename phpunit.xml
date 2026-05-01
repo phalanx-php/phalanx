@@ -25,6 +25,9 @@
         <testsuite name="Core Smoke">
             <directory>packages/phalanx-aegis/tests/Smoke</directory>
         </testsuite>
+        <testsuite name="Core Resilience">
+            <directory>packages/phalanx-aegis/tests/Resilience</directory>
+        </testsuite>
         <testsuite name="Styx Unit">
             <directory>packages/phalanx-styx/tests/Unit</directory>
         </testsuite>
