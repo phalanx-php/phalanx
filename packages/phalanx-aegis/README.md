@@ -587,6 +587,20 @@ $scope->dispose();   // tempFile first, then connection
 
 Scopes derived via `$scope->withAttribute(...)` are independent. In long-lived sessions, `dispose()` derived scopes after each unit of work -- undisposed derived scopes leak their cleanup callbacks.
 
+### Context attributes flow to every child
+
+Attributes set with `$scope->withAttribute('request.id', $id)` propagate into every child scope spawned by every concurrency primitive — `concurrent`, `race`, `any`, `map`, `series`, `settle`, `defer`, `go` — and continue flowing into grandchildren. This is how request IDs, tenant IDs, and trace IDs reach deeply-nested concurrent work without manual threading. Children that override an attribute on their *own* derived scope do not mutate the parent.
+
+```php
+<?php
+
+$scope = $scope->withAttribute('trace.id', $traceId);
+$scope->concurrent([
+    'a' => new FetchUser($id),       // sees trace.id
+    'b' => new RecordAuditEvent($e), // sees trace.id
+]);
+```
+
 ## The Phalanx ecosystem
 
 Aegis is the core. The rest of the framework is built on the same scope model.
