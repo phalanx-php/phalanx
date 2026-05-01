@@ -31,14 +31,14 @@ use Throwable;
  *   - Subsequent slices wire execute(), concurrent(), and the rest of
  *     the primitives through start()/join()/cancel()/reap().
  *
- * Sibling-isolation invariant (Decision 5):
+ * Sibling-isolation invariant:
  *   When start() is called with DispatchMode::Concurrent, the caller is
  *   responsible for handing the child its own scope object with its own
  *   scoped-instance map, its own dispose stack, and its own cancellation
  *   token linked to the parent's token as a source. The supervisor does
  *   NOT amplify pool depth — pools live in the singleton container,
- *   which is shared across siblings. See packages/phalanx-aegis/CLAUDE.md
- *   "Pool & Scope Discipline" for the full invariants.
+ *   which is shared across siblings. See the "Pool & Scope Discipline"
+ *   section of the package README for the full invariants.
  */
 final class Supervisor
 {

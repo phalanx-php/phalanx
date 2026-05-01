@@ -450,9 +450,99 @@ Domain packages extend `ExecutionScope` with typed properties for their context:
 | `CommandScope` | `phalanx/archon` | `$args`, `$options`, `$commandName` |
 | `WsScope` | `phalanx/hermes` | `$connection`, `$request` |
 
-All fiber suspension goes through `$scope->await()`. Raw `React\Async\await()` is used only inside `ExecutionLifecycleScope` internals and stream/transport infrastructure.
+All coroutine suspension goes through `$scope->call()`. Raw `Coroutine::sleep`, `Channel::pop`, `WaitGroup::wait`, etc. are used only inside `ExecutionLifecycleScope` internals and stream/transport infrastructure.
 
 </details>
+
+## Pool & Scope Discipline
+
+The supervisor gives you cheap concurrency. Cheap concurrency exposes pool-management mistakes that don't fail loudly until production. These rules are invariants — every service factory, scope decision, and supervisor primitive obeys them.
+
+### 1. Connection pools are singletons
+
+```php
+<?php
+
+$services->singleton(PostgresPool::class)->factory(...);   // correct
+$services->scoped(PostgresPool::class)->factory(...);      // wrong — pool storm under concurrent()
+```
+
+The pool's job is to bound concurrent connections. Per-scope pools defeat the bound.
+
+### 2. Sibling task scopes don't amplify pool depth
+
+When you `$scope->concurrent([$a, $b])`, each child gets its own scope object with its own scoped-instance map — but the singleton container, including the pool, is shared. Children check out connections from the same pool, bounded by `pool.size`. Two children running `$pool->withConnection(...)` consume two slots.
+
+This is the reason scoped-instance isolation is safe: scoped instances are per-task **state** (request loggers, current-tenant context, scoped caches); resources flow through singletons.
+
+### 3. Pool checkout is per-task and tracked
+
+Connections acquired inside a task body are leases on the active `TaskRun`. They release on task exit. Nested acquire from the same task is `PHX-POOL-001`. Holding a lease across a worker dispatch boundary is `PHX-POOL-002`.
+
+```php
+<?php
+
+return $pool->withConnection(static fn ($conn) => $conn->query(...));
+```
+
+### 4. Scoped service factories never acquire pool connections
+
+A factory that does `$pool->acquire()` couples service resolution to pool depth. Under `concurrent()` with N children resolving the same scoped service, the pool starves before any work runs.
+
+```php
+<?php
+
+// wrong — factory blocks on checkout
+$services->scoped(UserRepo::class)->factory(
+    static fn (PostgresPool $pool) => new UserRepo($pool->acquire())
+);
+
+// correct — factory takes the pool, checkout per method call
+$services->scoped(UserRepo::class)->factory(
+    static fn (PostgresPool $pool) => new UserRepo($pool)
+);
+```
+
+### 5. OpenSwoole primitive rules
+
+| Primitive | Rule |
+|---|---|
+| `Channel(N)` | Use as a semaphore. Never push falsy values (`0`, `''`, `null`, `false`) — consumers can't tell them from `pop()` returning `false` on close. |
+| `WaitGroup` | Pre-add the count via `add(count($items))` before spawning. `done()` exactly once per spawn in `finally`. WaitGroups are one-shot — fresh one per primitive call. |
+| `ClientPool` | Call `$pool->fill()` at construction. Otherwise N concurrent first-time `get()` calls each invoke `make()` past the configured size. |
+| `Coroutine::cancel($cid)` | Returns `false` / sets `Coroutine::isCanceled()` — does not throw. The framework translates at every suspending boundary. User code never calls it directly. |
+| `OpenSwoole\Coroutine\PostgreSQL` | Use `query()` with client-side `escapeLiteral`-substituted placeholders. Avoid `prepare()` under pool recycling — segfaults at N > pool size. |
+| Coroutine context | `Coroutine::create` gives the child an empty `getContext()`. Spawn sites capture the active scope and re-install via `CoroutineScopeRegistry`. The framework handles this; user code never spawns coroutines directly. |
+| `Co::sleep(s)` | Substrate-only — does not honor scope cancellation. Use `$scope->delay(s)`. |
+| `OpenSwoole\Process` | Forbidden inside coroutine context. Use `proc_open` with `stream_set_blocking(false)` + `stream_select` for pipe reads. |
+
+### 6. Per-coroutine scope re-installation is mandatory
+
+Every primitive that spawns a coroutine — `concurrent`, `race`, `any`, `map`, `settle`, `defer`, supervised child tasks, worker dispatch — installs the active scope into the spawned coroutine's context as the first action and clears it in `finally`. Without this, `DeferredScope` (used by long-lived services like `HttpClient`, `LlmClient`, `PostgresPool`) resolves to `null`. The framework owns this; user code that calls `Coroutine::create` directly bypasses it and breaks scope-aware services.
+
+### 7. Singleton vs scoped — the disposition test
+
+Register as **singleton** when:
+
+- It bounds a finite resource (pools, file descriptor caches, network clients with internal pools).
+- One instance per app is the right cardinality (logger sinks, metric emitters).
+- Replacing the implementation matters in tests.
+
+Register as **scoped** when:
+
+- It carries per-task state that should not leak across tasks (request loggers, current-tenant context, scoped caches keyed by request id).
+- It has a meaningful `dispose()` action that should run when the task ends.
+
+If neither applies, don't register it. Call it directly. The container is for resources with lifecycle, not for stateless helpers.
+
+### 8. Ledger backend lives behind an interface
+
+The supervisor's `TaskRun` ledger has two viable backends:
+
+- `InProcessLedger` — PHP array on the supervisor object. Cheapest for single-process workloads. Cooperative non-preemptive scheduling makes it lock-free.
+- `SwooleTableLedger` — `Swoole\Table` shared memory. Mandatory once workers participate in the live ledger so the parent and worker children see the same `TaskRun`s.
+
+The supervisor logic is backend-agnostic; pick per deployment. `Swoole\Table` constraints (fixed schema, fixed string column widths, no nested arrays) shape the lease and child-edge schema when targeting that backend.
 
 ## Tracing
 
