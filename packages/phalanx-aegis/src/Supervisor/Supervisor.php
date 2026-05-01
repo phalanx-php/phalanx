@@ -183,10 +183,27 @@ final class Supervisor
             $this->cancel($run);
         }
 
+        // Emit PHX-LEASE-001 for any lease still held at reap time —
+        // indicates the lease owner forgot to release in a finally
+        // block. The supervisor doesn't free the underlying resource
+        // (it doesn't own pool connections / locks), but the trace
+        // event makes the leak visible and attributable to a specific
+        // run by name.
         if ($run->leases !== []) {
-            // Wiring (subsequent slice): emit a PHX-LEASE-001 trace event
-            // for each leftover lease — these indicate a missing
-            // release somewhere in the lease's owner code.
+            foreach ($run->leases as $orphaned) {
+                $this->trace->log(
+                    \Phalanx\Trace\TraceType::Defer,
+                    'PHX-LEASE-001',
+                    [
+                        'run' => $run->id,
+                        'task' => $run->name,
+                        'domain' => $orphaned->domain,
+                        'key' => $orphaned->key,
+                        'mode' => $orphaned->mode,
+                        'detail' => 'lease still held at reap; release missing in owner code',
+                    ],
+                );
+            }
         }
 
         $this->ledger->reap($run->id);
@@ -194,12 +211,62 @@ final class Supervisor
 
     /**
      * Register a lease against an active run. Pool / transaction / lock
-     * acquisitions call this. Detection of nested-acquire and other
-     * violations happens here in subsequent slices via the appropriate
-     * PHX error codes.
+     * acquisitions call this; the supervisor checks the run's existing
+     * leases for violations before recording.
+     *
+     * @throws LeaseViolation
+     *   PHX-POOL-001  Nested acquire of the same pool by the same run.
+     *   PHX-LOCK-001  Lock acquire whose key sorts before an already-held
+     *                 lock in the same domain — the unsorted acquire would
+     *                 allow the canonical deadlock pattern.
      */
     public function registerLease(TaskRun $run, Lease $lease): void
     {
+        $existing = $this->ledger->find($run->id);
+        if ($existing === null) {
+            return;
+        }
+
+        if ($lease instanceof PoolLease) {
+            foreach ($existing->leases as $held) {
+                if ($held instanceof PoolLease && $held->domain === $lease->domain) {
+                    throw new LeaseViolation(
+                        phxCode: 'PHX-POOL-001',
+                        detail: "nested acquire from pool '{$lease->domain}' (already holds connection #{$held->key})",
+                        run: $run,
+                        offending: $lease,
+                    );
+                }
+            }
+        }
+
+        if ($lease instanceof LockLease) {
+            foreach ($existing->leases as $held) {
+                if (!$held instanceof LockLease) {
+                    continue;
+                }
+                if ($held->domain !== $lease->domain) {
+                    continue;
+                }
+                // Re-entry on the same key is allowed (read after read,
+                // upgrade-style write after read on same key is held by
+                // the lock manager, not us).
+                if ($held->key === $lease->key) {
+                    continue;
+                }
+                if (strcmp($lease->key, $held->key) < 0) {
+                    throw new LeaseViolation(
+                        phxCode: 'PHX-LOCK-001',
+                        detail: "out-of-order lock acquire in domain '{$lease->domain}': "
+                              . "would acquire '{$lease->key}' while holding '{$held->key}' "
+                              . "— canonical-sort multi-key acquires to prevent deadlock",
+                        run: $run,
+                        offending: $lease,
+                    );
+                }
+            }
+        }
+
         $this->ledger->update($run->id, static function (TaskRun $r) use ($lease): void {
             $r->leases[] = $lease;
         });
@@ -220,6 +287,25 @@ final class Supervisor
                 }
             }
         });
+    }
+
+    /**
+     * Bracketed lease helper: register, run body, release in finally.
+     * Pool clients should prefer this form so leases can never leak past
+     * a thrown body. Returns whatever the body returns.
+     *
+     * @template T
+     * @param Closure(): T $body
+     * @return T
+     */
+    public function withLease(TaskRun $run, Lease $lease, \Closure $body): mixed
+    {
+        $this->registerLease($run, $lease);
+        try {
+            return $body();
+        } finally {
+            $this->releaseLease($run, $lease);
+        }
     }
 
     /**
