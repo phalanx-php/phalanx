@@ -9,12 +9,14 @@ namespace Phalanx\Supervisor;
  * Supervisor::tree(). Powers the future `phalanx ps` / `phalanx doctor`
  * surfaces and the leak / hang diagnostic reports.
  *
- * Output shape (two-space indent per depth + child arrow):
+ * Output shape (left-edge indent absorbs into a fixed name column so that
+ * status, elapsed, and detail all align in the same vertical position
+ * regardless of depth):
  *
- *   AppHandler                Running    12.4ms
- *     ↳ FetchUser(7)          Suspended   8.1ms  wait: postgres SELECT * FROM users WHERE id...
- *     ↳ AuditWrite(login)     Running     6.2ms
- *       ↳ FlushBuffer         Running     1.0ms  [holds: redis/cache#3/shared]
+ *   AppHandler                                Running    12.4ms
+ *     ↳ FetchUser(7)                          Suspended   8.1ms  wait: postgres SELECT...
+ *     ↳ AuditWrite(login)                     Running     6.2ms
+ *       ↳ FlushBuffer                         Running     1.0ms  [holds: redis/cache#3/shared]
  *
  * The snapshot list is the flat `Supervisor::tree()` projection. The
  * formatter rebuilds the parent/child structure from `parentId` and the
@@ -22,6 +24,8 @@ namespace Phalanx\Supervisor;
  */
 final class TaskTreeFormatter
 {
+    private const LABEL_COLUMN_WIDTH = 44;
+
     /**
      * @param list<TaskRunSnapshot> $snapshots
      */
@@ -74,8 +78,7 @@ final class TaskTreeFormatter
         array $byId,
         int $depth,
     ): string {
-        $prefix = $depth > 0 ? str_repeat('  ', $depth) . '↳ ' : '';
-        $line = $prefix . self::formatLine($node) . "\n";
+        $line = self::formatLine($node, $depth) . "\n";
 
         foreach ($node->childIds as $childId) {
             if (isset($byId[$childId])) {
@@ -86,14 +89,18 @@ final class TaskTreeFormatter
         return $line;
     }
 
-    private static function formatLine(TaskRunSnapshot $snap): string
+    private static function formatLine(TaskRunSnapshot $snap, int $depth): string
     {
-        $name = self::truncate($snap->name, 40);
-        $namePad = str_pad($name, 40);
+        $prefix = $depth > 0 ? str_repeat('  ', $depth) . '↳ ' : '';
+        $prefixWidth = mb_strlen($prefix);
+        $nameBudget = max(8, self::LABEL_COLUMN_WIDTH - $prefixWidth);
+        $name = self::truncate($snap->name, $nameBudget);
+        $label = $prefix . str_pad($name, $nameBudget);
+
         $state = str_pad($snap->state->value, 10);
         $elapsed = self::formatElapsed($snap->elapsed());
 
-        $parts = [$namePad, $state, $elapsed];
+        $parts = [$label, $state, $elapsed];
 
         if ($snap->currentWait !== null) {
             $parts[] = self::formatWait($snap->currentWait);
