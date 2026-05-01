@@ -4,87 +4,51 @@ declare(strict_types=1);
 
 namespace Phalanx\Service;
 
-use Phalanx\Exception\ServiceNotFoundException;
+use RuntimeException;
 
-final readonly class ServiceGraph
+/**
+ * Compiled, read-only view of the service registry. Built once by ServiceCatalog::compile()
+ * and shared across all scopes for the application lifetime.
+ */
+final class ServiceGraph
 {
+    /**
+     * @param array<class-string, CompiledServiceConfig> $configs
+     * @param array<class-string, mixed> $contextConfigs
+     * @param array<class-string, class-string> $aliases
+     */
     public function __construct(
-        /** @var array<string, CompiledService> */
-        public array $services,
-        /** @var array<string, string> */
-        public array $aliases,
-        /** @var array<string, mixed> */
-        public array $configs,
+        public readonly array $configs,
+        public readonly array $contextConfigs,
+        public readonly array $aliases,
     ) {
     }
 
-    public function resolve(string $type): CompiledService
+    public function resolve(string $type): CompiledServiceConfig
     {
         $resolved = $this->aliases[$type] ?? $type;
-
-        if (!isset($this->services[$resolved])) {
-            throw new ServiceNotFoundException($type);
+        if (!isset($this->configs[$resolved])) {
+            throw new RuntimeException("No service registered for {$type}");
         }
-
-        return $this->services[$resolved];
+        return $this->configs[$resolved];
     }
 
-    public function has(string $type): bool
+    public function alias(string $type): string
+    {
+        return $this->aliases[$type] ?? $type;
+    }
+
+    public function hasContextConfig(string $type): bool
+    {
+        return array_key_exists($this->aliases[$type] ?? $type, $this->contextConfigs);
+    }
+
+    public function contextConfig(string $type): mixed
     {
         $resolved = $this->aliases[$type] ?? $type;
-        return isset($this->services[$resolved]);
-    }
-
-    public function config(string $type): mixed
-    {
-        if (!isset($this->configs[$type])) {
-            throw new ServiceNotFoundException("Config: $type");
+        if (!array_key_exists($resolved, $this->contextConfigs)) {
+            throw new RuntimeException("No context config for {$type}");
         }
-
-        return $this->configs[$type];
-    }
-
-    public function hasConfig(string $type): bool
-    {
-        return isset($this->configs[$type]);
-    }
-
-    /** @return list<CompiledService> */
-    public function startupServices(): array
-    {
-        return array_values(
-            array_filter(
-                $this->services,
-                fn(CompiledService $s): bool => $s->lifecycle->hasStartup(),
-            )
-        );
-    }
-
-    /** @return list<CompiledService> */
-    public function shutdownServices(): array
-    {
-        return array_values(
-            array_filter(
-                $this->services,
-                fn(CompiledService $s): bool => $s->lifecycle->hasShutdown(),
-            )
-        );
-    }
-
-    /** @return list<CompiledService> */
-    public function eagerSingletons(): array
-    {
-        return array_values(
-            array_filter(
-                $this->services,
-                fn(CompiledService $s): bool => $s->singleton && !$s->lazy,
-            )
-        );
-    }
-
-    /** @return list<string> */
-    public function types(): array
-    {
-        return array_keys($this->services);
+        return $this->contextConfigs[$resolved];
     }
 }

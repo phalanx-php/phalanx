@@ -5,57 +5,42 @@ declare(strict_types=1);
 namespace Phalanx\Service;
 
 use Closure;
+use RuntimeException;
 
-final class ServiceCatalog implements Services
+class ServiceCatalog implements Services
 {
-    /** @var array<string, string> interface => concrete */
-    private array $aliases = [];
-
-    /** @var array<string, Closure> type => fromContext closure */
+    /** @var array<class-string, CompiledServiceConfig> */
     private array $configs = [];
 
-    /** @var array<string, ServiceDefinition> */
-    private array $definitions = [];
+    /** @var array<class-string, mixed> */
+    private array $contextConfigs = [];
+
+    /** @var array<class-string, class-string> */
+    private array $aliases = [];
+
+    /** @param array<string, mixed> $context */
+    public function __construct(private readonly array $context = [])
+    {
+    }
+
+    public function singleton(string $type): ServiceConfig
+    {
+        return $this->register($type, ServiceLifetime::Singleton, lazy: true);
+    }
+
+    public function scoped(string $type): ServiceConfig
+    {
+        return $this->register($type, ServiceLifetime::Scoped, lazy: true);
+    }
+
+    public function eager(string $type): ServiceConfig
+    {
+        return $this->register($type, ServiceLifetime::Singleton, lazy: false);
+    }
 
     public function config(string $type, Closure $fromContext): void
     {
-        $this->configs[$type] = $fromContext;
-    }
-
-    /** @param class-string $type */
-    public function singleton(string $type): ServiceConfig
-    {
-        $this->definitions[$type] = new ServiceDefinition(
-            type: $type,
-            singleton: true,
-            lazy: true,
-        );
-
-        return new ServiceConfigBuilder($this, $type);
-    }
-
-    /** @param class-string $type */
-    public function scoped(string $type): ServiceConfig
-    {
-        $this->definitions[$type] = new ServiceDefinition(
-            type: $type,
-            singleton: false,
-            lazy: true,
-        );
-
-        return new ServiceConfigBuilder($this, $type);
-    }
-
-    /** @param class-string $type */
-    public function eager(string $type): ServiceConfig
-    {
-        $this->definitions[$type] = new ServiceDefinition(
-            type: $type,
-            singleton: true,
-            lazy: false,
-        );
-
-        return new ServiceConfigBuilder($this, $type);
+        $this->contextConfigs[$type] = $fromContext($this->context);
     }
 
     public function alias(string $interface, string $concrete): void
@@ -63,46 +48,18 @@ final class ServiceCatalog implements Services
         $this->aliases[$interface] = $concrete;
     }
 
-    public function updateDefinition(string $type, ServiceDefinition $definition): void
+    public function compile(): ServiceGraph
     {
-        $this->definitions[$type] = $definition;
+        return new ServiceGraph($this->configs, $this->contextConfigs, $this->aliases);
     }
 
-    public function getDefinition(string $type): ?ServiceDefinition
+    private function register(string $type, ServiceLifetime $lifetime, bool $lazy): CompiledServiceConfig
     {
-        return $this->definitions[$type] ?? null;
-    }
-
-    /** @return array<string, ServiceDefinition> */
-    public function definitions(): array
-    {
-        return $this->definitions;
-    }
-
-    /** @return array<string, string> */
-    public function aliases(): array
-    {
-        return $this->aliases;
-    }
-
-    /** @return array<string, Closure> */
-    public function configs(): array
-    {
-        return $this->configs;
-    }
-
-    /**
-     * @param array<string, mixed> $context
-     * @return array<string, object>
-     */
-    public function resolveConfigs(array $context): array
-    {
-        $resolved = [];
-
-        foreach ($this->configs as $type => $fromContext) {
-            $resolved[$type] = $fromContext($context);
+        if (isset($this->configs[$type])) {
+            throw new RuntimeException("Service {$type} already registered");
         }
-
-        return $resolved;
+        $config = new CompiledServiceConfig($type, $lifetime, $lazy);
+        $this->configs[$type] = $config;
+        return $config;
     }
 }

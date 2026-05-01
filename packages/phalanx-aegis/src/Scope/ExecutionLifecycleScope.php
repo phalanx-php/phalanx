@@ -18,8 +18,13 @@ use Phalanx\Service\LazySingleton;
 use Phalanx\Service\ServiceGraph;
 use Phalanx\Service\ServiceLifetime;
 use Phalanx\Service\ServiceTransformationMiddleware;
+use Phalanx\Supervisor\DispatchMode;
+use Phalanx\Supervisor\Supervisor;
+use Phalanx\Supervisor\TaskRun;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
+use Phalanx\Task\Task;
+use Phalanx\Task\Traceable;
 use Phalanx\Trace\Trace;
 use Phalanx\Trace\TraceType;
 use Phalanx\Worker\WorkerDispatch;
@@ -27,6 +32,7 @@ use Closure;
 use OpenSwoole\Core\Coroutine\WaitGroup;
 use OpenSwoole\Coroutine;
 use OpenSwoole\Coroutine\Channel;
+use ReflectionFunction;
 use RuntimeException;
 use Throwable;
 
@@ -66,6 +72,14 @@ class ExecutionLifecycleScope implements ExecutionScope
     private readonly SingleflightGroup $singleflightGroup;
 
     /**
+     * Currently active TaskRun in this scope, set while a supervised body is
+     * executing. Recursive execute() reads this to set parentId on the new
+     * run. Spawned children (concurrent/race/etc.) read this on their copy
+     * of the parent scope to determine what they descend from.
+     */
+    public ?TaskRun $currentRun = null;
+
+    /**
      * @param array<string, mixed> $attributes
      * @param list<ServiceTransformationMiddleware> $serviceMiddlewares
      * @param list<TaskMiddleware> $taskMiddlewares
@@ -75,6 +89,7 @@ class ExecutionLifecycleScope implements ExecutionScope
         private readonly LazySingleton $singletons,
         private readonly CancellationToken $cancellation,
         private readonly Trace $traceLog,
+        private readonly Supervisor $supervisor,
         private array $attributes = [],
         ?SingleflightGroup $singleflight = null,
         private readonly array $serviceMiddlewares = [],
@@ -82,6 +97,11 @@ class ExecutionLifecycleScope implements ExecutionScope
         private readonly ?WorkerDispatch $workerDispatch = null,
     ) {
         $this->singleflightGroup = $singleflight ?? new SingleflightGroup();
+    }
+
+    public function supervisor(): Supervisor
+    {
+        return $this->supervisor;
     }
 
     public function service(string $type): object
@@ -125,6 +145,7 @@ class ExecutionLifecycleScope implements ExecutionScope
             $this->singletons,
             $this->cancellation,
             $this->traceLog,
+            $this->supervisor,
             $attributes,
             $this->singleflightGroup,
             $this->serviceMiddlewares,
@@ -230,21 +251,88 @@ class ExecutionLifecycleScope implements ExecutionScope
         }
     }
 
+    /**
+     * Run a task to completion, supervised end-to-end.
+     *
+     * Slice 2 wiring: middleware chain runs OUTSIDE Supervisor::start().
+     * RetryMiddleware that calls $next() multiple times produces a
+     * distinct TaskRun per attempt — visible in the ledger as siblings
+     * sharing the same name. TimeoutMiddleware creates a child scope with
+     * a tighter cancellation; that child's execute() opens a nested
+     * TaskRun parented to the outer.
+     *
+     * Wraps the task body with:
+     *   - CoroutineScopeRegistry install/clear so DeferredScope resolves
+     *   - currentRun tracking so recursive execute() and concurrent()
+     *     children link parent/child correctly
+     *   - Supervisor lifecycle: register run -> markRunning -> body ->
+     *     complete | fail | cancel -> reap (always in finally)
+     */
     public function execute(Scopeable|Executable|Closure $task): mixed
     {
+        return $this->dispatchSupervised($task, DispatchMode::Inline);
+    }
+
+    /**
+     * Internal: run a task through the full pipeline (middleware chain ->
+     * supervisor lifecycle -> body) with an explicit DispatchMode.
+     *
+     * Public execute() is the user-visible entry — always Inline. The
+     * concurrent/race/any/map/settle/defer primitives spawn child scopes
+     * and call this on each child with DispatchMode::Concurrent so the
+     * ledger / diagnostics surface accurately reflects how each child
+     * was dispatched.
+     *
+     * Visibility: `protected` so other instances of the same class
+     * (sibling/child scopes) can call it; not part of the public scope API.
+     */
+    protected function dispatchSupervised(
+        Scopeable|Executable|Closure $task,
+        DispatchMode $mode,
+    ): mixed {
         $this->throwIfCancelled();
-        $previous = CoroutineScopeRegistry::current();
-        CoroutineScopeRegistry::install($this);
-        try {
-            $invoke = static fn(ExecutionScope $s): mixed => ($task)($s);
-            return $this->runTaskMiddleware($task, $invoke);
-        } finally {
-            if ($previous !== null) {
-                CoroutineScopeRegistry::install($previous);
-            } else {
-                CoroutineScopeRegistry::clear();
-            }
-        }
+        $self = $this;
+        return $this->runTaskMiddleware(
+            $task,
+            static fn(ExecutionScope $scope): mixed => $self->runSupervised(
+                $task,
+                $scope instanceof self ? $scope : $self,
+                $mode,
+            ),
+        );
+    }
+
+    /**
+     * Build a sibling-isolated child scope. Child gets:
+     *   - own composite cancellation token (linked to parent's as a source)
+     *   - own scoped-instance map (siblings don't share scoped service instances)
+     *   - own dispose stack
+     *   - own deferredCids list
+     *   - own currentRun (parent's run if $inheritParent is non-null, so the
+     *     child's first TaskRun gets the right parentId)
+     *
+     * Shared with parent (per Pool & Scope Discipline #2): graph,
+     * singletons (THE pool), trace log, supervisor, attributes (snapshot),
+     * singleflightGroup, middlewares, workerDispatch. Pool depth is bounded
+     * by the singleton's pool.size, NOT amplified by per-child scopes.
+     */
+    private function makeChildScope(?TaskRun $inheritParent = null): self
+    {
+        $childToken = CancellationToken::composite($this->cancellation);
+        $child = new self(
+            $this->graph,
+            $this->singletons,
+            $childToken,
+            $this->traceLog,
+            $this->supervisor,
+            $this->attributes,
+            $this->singleflightGroup,
+            $this->serviceMiddlewares,
+            $this->taskMiddlewares,
+            $this->workerDispatch,
+        );
+        $child->currentRun = $inheritParent;
+        return $child;
     }
 
     public function executeFresh(Scopeable|Executable|Closure $task): mixed
@@ -254,6 +342,7 @@ class ExecutionLifecycleScope implements ExecutionScope
             $this->singletons,
             $this->cancellation,
             $this->traceLog,
+            $this->supervisor,
             $this->attributes,
             $this->singleflightGroup,
             $this->serviceMiddlewares,
@@ -264,6 +353,100 @@ class ExecutionLifecycleScope implements ExecutionScope
             return $child->execute($task);
         } finally {
             $child->dispose();
+        }
+    }
+
+    /**
+     * Open a TaskRun, run the task body in this scope's coroutine, finalize
+     * the run state from the body's outcome, reap. Called only from
+     * execute() at the innermost middleware position.
+     *
+     * Sibling-isolation invariant (Pool & Scope Discipline #2): the scope
+     * passed in already has the right shape for the call site — for
+     * top-level execute() it's `$this`, for `concurrent()` children it's
+     * a fresh child scope built by the caller.
+     */
+    private function runSupervised(
+        Scopeable|Executable|Closure $task,
+        self $scope,
+        DispatchMode $mode,
+    ): mixed {
+        $name = self::resolveTaskName($task);
+        $parentRunId = $scope->currentRun?->id;
+        $run = $this->supervisor->start($task, $scope, $mode, $name, $parentRunId);
+
+        $previousScope = CoroutineScopeRegistry::current();
+        $previousRun = $scope->currentRun;
+
+        CoroutineScopeRegistry::install($scope);
+        $scope->currentRun = $run;
+
+        try {
+            $this->supervisor->markRunning($run);
+            $value = ($task)($scope);
+            $this->supervisor->complete($run, $value);
+            return $value;
+        } catch (Cancelled $e) {
+            $this->supervisor->cancel($run);
+            throw $e;
+        } catch (Throwable $e) {
+            $this->supervisor->fail($run, $e);
+            throw $e;
+        } finally {
+            $scope->currentRun = $previousRun;
+            $this->supervisor->reap($run);
+            if ($previousScope !== null) {
+                CoroutineScopeRegistry::install($previousScope);
+            } else {
+                CoroutineScopeRegistry::clear();
+            }
+        }
+    }
+
+    /**
+     * Identity for diagnostics (priority order):
+     *   1. Traceable->traceName when set and non-empty
+     *   2. Task::of(...) source location ("file.php:line")
+     *   3. Closure source location via reflection
+     *   4. Class FQCN for invokables
+     *   5. Anonymous-class fallback to the supervisor-generated id
+     */
+    private static function resolveTaskName(Scopeable|Executable|Closure $task): string
+    {
+        if (is_object($task) && $task instanceof Traceable) {
+            $hint = $task->traceName;
+            if ($hint !== '') {
+                return $hint;
+            }
+        }
+
+        if ($task instanceof Task) {
+            return $task->sourceLocation;
+        }
+
+        if ($task instanceof Closure) {
+            $location = self::closureLocation($task);
+            return $location ?? Closure::class;
+        }
+
+        $class = $task::class;
+        if (str_contains($class, '@anonymous')) {
+            return preg_replace('/@anonymous.*$/', '@anonymous', $class) ?? 'anonymous';
+        }
+        return $class;
+    }
+
+    private static function closureLocation(Closure $fn): ?string
+    {
+        try {
+            $reflection = new ReflectionFunction($fn);
+            $file = $reflection->getFileName();
+            if ($file === false) {
+                return null;
+            }
+            return basename($file) . ':' . $reflection->getStartLine();
+        } catch (Throwable) {
+            return null;
         }
     }
 
@@ -279,6 +462,9 @@ class ExecutionLifecycleScope implements ExecutionScope
         $results = [];
         $errors = [];
         $cids = [];
+        /** @var list<self> $childScopes */
+        $childScopes = [];
+        $parentRun = $this->currentRun;
 
         $unregister = $this->cancellation->onCancel(static function () use (&$cids): void {
             foreach ($cids as $cid) {
@@ -290,11 +476,13 @@ class ExecutionLifecycleScope implements ExecutionScope
 
         try {
             foreach ($tasks as $key => $task) {
-                $self = $this;
-                $cid = Coroutine::create(static function () use ($self, $task, $key, $wg, &$results, &$errors): void {
-                    CoroutineScopeRegistry::install($self);
+                $childScope = $this->makeChildScope($parentRun);
+                $childScopes[] = $childScope;
+
+                $cid = Coroutine::create(static function () use ($childScope, $task, $key, $wg, &$results, &$errors): void {
+                    CoroutineScopeRegistry::install($childScope);
                     try {
-                        $results[$key] = ($task)($self);
+                        $results[$key] = $childScope->dispatchSupervised($task, DispatchMode::Concurrent);
                         if (Coroutine::isCanceled()) {
                             unset($results[$key]);
                             $errors[$key] = new Cancelled("task {$key} cancelled");
@@ -327,6 +515,14 @@ class ExecutionLifecycleScope implements ExecutionScope
             }
         } finally {
             $unregister();
+            // Dispose every child scope — runs scoped service onDispose hooks,
+            // dispose stack, and cancellation listener cleanup. Sibling
+            // isolation invariant (Pool & Scope Discipline #2): children
+            // don't share scoped instances or dispose stacks with the
+            // parent or siblings.
+            foreach ($childScopes as $child) {
+                $child->dispose();
+            }
         }
 
         $ordered = [];
@@ -348,6 +544,9 @@ class ExecutionLifecycleScope implements ExecutionScope
         $count = count($tasks);
         $channel = new Channel($count);
         $cids = [];
+        /** @var list<self> $childScopes */
+        $childScopes = [];
+        $parentRun = $this->currentRun;
 
         $unregister = $this->cancellation->onCancel(static function () use (&$cids): void {
             foreach ($cids as $cid) {
@@ -357,13 +556,15 @@ class ExecutionLifecycleScope implements ExecutionScope
             }
         });
 
-        $self = $this;
         try {
             foreach ($tasks as $key => $task) {
-                $cid = Coroutine::create(static function () use ($self, $task, $key, $channel): void {
-                    CoroutineScopeRegistry::install($self);
+                $childScope = $this->makeChildScope($parentRun);
+                $childScopes[] = $childScope;
+
+                $cid = Coroutine::create(static function () use ($childScope, $task, $key, $channel): void {
+                    CoroutineScopeRegistry::install($childScope);
                     try {
-                        $value = ($task)($self);
+                        $value = $childScope->dispatchSupervised($task, DispatchMode::Concurrent);
                         if (Coroutine::isCanceled()) {
                             $channel->push(['err', $key, new Cancelled("task {$key} cancelled")], 0.001);
                             return;
@@ -382,6 +583,11 @@ class ExecutionLifecycleScope implements ExecutionScope
 
             $first = $channel->pop();
 
+            // Cancel losers via their own child cancellation tokens so each
+            // loser sees a clean Cancelled and runs its dispose stack.
+            foreach ($childScopes as $child) {
+                $child->cancellation->cancel();
+            }
             foreach ($cids as $cid) {
                 if (Coroutine::exists($cid)) {
                     Coroutine::cancel($cid);
@@ -396,6 +602,9 @@ class ExecutionLifecycleScope implements ExecutionScope
         } finally {
             $unregister();
             $channel->close();
+            foreach ($childScopes as $child) {
+                $child->dispose();
+            }
         }
     }
 
@@ -411,6 +620,9 @@ class ExecutionLifecycleScope implements ExecutionScope
         $cids = [];
         $errors = [];
         $remaining = $count;
+        /** @var list<self> $childScopes */
+        $childScopes = [];
+        $parentRun = $this->currentRun;
 
         $unregister = $this->cancellation->onCancel(static function () use (&$cids): void {
             foreach ($cids as $cid) {
@@ -420,13 +632,15 @@ class ExecutionLifecycleScope implements ExecutionScope
             }
         });
 
-        $self = $this;
         try {
             foreach ($tasks as $key => $task) {
-                $cid = Coroutine::create(static function () use ($self, $task, $key, $channel): void {
-                    CoroutineScopeRegistry::install($self);
+                $childScope = $this->makeChildScope($parentRun);
+                $childScopes[] = $childScope;
+
+                $cid = Coroutine::create(static function () use ($childScope, $task, $key, $channel): void {
+                    CoroutineScopeRegistry::install($childScope);
                     try {
-                        $value = ($task)($self);
+                        $value = $childScope->dispatchSupervised($task, DispatchMode::Concurrent);
                         if (Coroutine::isCanceled()) {
                             $channel->push(['err', $key, new Cancelled("task {$key} cancelled")], 0.001);
                             return;
@@ -446,6 +660,9 @@ class ExecutionLifecycleScope implements ExecutionScope
             while ($remaining-- > 0) {
                 [$kind, $key, $value] = $channel->pop();
                 if ($kind === 'ok') {
+                    foreach ($childScopes as $child) {
+                        $child->cancellation->cancel();
+                    }
                     foreach ($cids as $cid) {
                         if (Coroutine::exists($cid)) {
                             Coroutine::cancel($cid);
@@ -460,6 +677,9 @@ class ExecutionLifecycleScope implements ExecutionScope
         } finally {
             $unregister();
             $channel->close();
+            foreach ($childScopes as $child) {
+                $child->dispose();
+            }
         }
     }
 
@@ -478,6 +698,9 @@ class ExecutionLifecycleScope implements ExecutionScope
         $results = [];
         $errors = [];
         $cids = [];
+        /** @var list<self> $childScopes */
+        $childScopes = [];
+        $parentRun = $this->currentRun;
 
         $unregister = $this->cancellation->onCancel(static function () use (&$cids): void {
             foreach ($cids as $cid) {
@@ -487,15 +710,17 @@ class ExecutionLifecycleScope implements ExecutionScope
             }
         });
 
-        $self = $this;
         try {
             foreach ($itemsArr as $key => $item) {
-                $cid = Coroutine::create(static function () use ($self, $fn, $onEach, $item, $key, $sem, $wg, &$results, &$errors): void {
-                    CoroutineScopeRegistry::install($self);
+                $childScope = $this->makeChildScope($parentRun);
+                $childScopes[] = $childScope;
+
+                $cid = Coroutine::create(static function () use ($childScope, $fn, $onEach, $item, $key, $sem, $wg, &$results, &$errors): void {
+                    CoroutineScopeRegistry::install($childScope);
                     $sem->push(1);
                     try {
                         $task = $fn($item);
-                        $value = ($task)($self);
+                        $value = $childScope->dispatchSupervised($task, DispatchMode::Concurrent);
                         if (Coroutine::isCanceled()) {
                             $errors[$key] = new Cancelled("map[{$key}] cancelled");
                         } else {
@@ -529,6 +754,9 @@ class ExecutionLifecycleScope implements ExecutionScope
         } finally {
             $unregister();
             $sem->close();
+            foreach ($childScopes as $child) {
+                $child->dispose();
+            }
         }
 
         $ordered = [];
@@ -576,6 +804,9 @@ class ExecutionLifecycleScope implements ExecutionScope
         $wg->add(count($tasks));
         $bag = [];
         $cids = [];
+        /** @var list<self> $childScopes */
+        $childScopes = [];
+        $parentRun = $this->currentRun;
 
         $unregister = $this->cancellation->onCancel(static function () use (&$cids): void {
             foreach ($cids as $cid) {
@@ -585,13 +816,15 @@ class ExecutionLifecycleScope implements ExecutionScope
             }
         });
 
-        $self = $this;
         try {
             foreach ($tasks as $key => $task) {
-                $cid = Coroutine::create(static function () use ($self, $task, $key, $wg, &$bag): void {
-                    CoroutineScopeRegistry::install($self);
+                $childScope = $this->makeChildScope($parentRun);
+                $childScopes[] = $childScope;
+
+                $cid = Coroutine::create(static function () use ($childScope, $task, $key, $wg, &$bag): void {
+                    CoroutineScopeRegistry::install($childScope);
                     try {
-                        $value = ($task)($self);
+                        $value = $childScope->dispatchSupervised($task, DispatchMode::Concurrent);
                         if (Coroutine::isCanceled()) {
                             $bag[$key] = Settlement::err(new Cancelled("settle[{$key}] cancelled"));
                         } else {
@@ -616,6 +849,9 @@ class ExecutionLifecycleScope implements ExecutionScope
             $wg->wait();
         } finally {
             $unregister();
+            foreach ($childScopes as $child) {
+                $child->dispose();
+            }
         }
 
         $ordered = [];
@@ -638,6 +874,7 @@ class ExecutionLifecycleScope implements ExecutionScope
             $this->singletons,
             $composite,
             $this->traceLog,
+            $this->supervisor,
             $this->attributes,
             $this->singleflightGroup,
             $this->serviceMiddlewares,
@@ -694,15 +931,19 @@ class ExecutionLifecycleScope implements ExecutionScope
         if ($this->disposed) {
             return;
         }
-        $self = $this;
+        // Deferred task gets its own child scope. Disposed when the deferred
+        // body completes (success or error). The parent's onDispose still
+        // owns waiting/cancelling on shutdown via the deferredCids list.
+        $childScope = $this->makeChildScope($this->currentRun);
         $traceLog = $this->traceLog;
-        $cid = Coroutine::create(static function () use ($self, $task, $traceLog): void {
-            CoroutineScopeRegistry::install($self);
+        $cid = Coroutine::create(static function () use ($childScope, $task, $traceLog): void {
+            CoroutineScopeRegistry::install($childScope);
             try {
-                ($task)($self);
+                $childScope->dispatchSupervised($task, DispatchMode::Concurrent);
             } catch (Throwable $e) {
                 $traceLog->log(TraceType::Defer, 'defer.error', ['error' => $e->getMessage()]);
             } finally {
+                $childScope->dispose();
                 CoroutineScopeRegistry::clear();
             }
         });

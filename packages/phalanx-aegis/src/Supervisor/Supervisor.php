@@ -67,10 +67,11 @@ final class Supervisor
      *                                      back to class FQCN, then a generated id.
      */
     public function start(
-        Scopeable|Executable $task,
+        Scopeable|Executable|\Closure $task,
         Scope $parent,
         DispatchMode $mode,
         ?string $name = null,
+        ?string $parentRunId = null,
     ): TaskRun {
         $id = self::nextId();
         $resolvedName = $name ?? self::resolveName($task, $id);
@@ -82,13 +83,20 @@ final class Supervisor
         $run = new TaskRun(
             id: $id,
             name: $resolvedName,
-            parentId: null,
+            parentId: $parentRunId,
             mode: $mode,
             cancellation: CancellationToken::composite($parentToken),
             startedAt: microtime(true),
         );
 
         $this->ledger->register($run);
+
+        if ($parentRunId !== null) {
+            $this->ledger->update($parentRunId, static function (TaskRun $parent) use ($id): void {
+                $parent->childIds[] = $id;
+            });
+        }
+
         return $run;
     }
 
@@ -234,13 +242,24 @@ final class Supervisor
         return 'run-' . str_pad((string) ++self::$idSeq, 6, '0', STR_PAD_LEFT);
     }
 
-    private static function resolveName(Scopeable|Executable $task, string $fallbackId): string
+    private static function resolveName(Scopeable|Executable|\Closure $task, string $fallbackId): string
     {
+        if ($task instanceof \Closure) {
+            try {
+                $reflection = new \ReflectionFunction($task);
+                $file = $reflection->getFileName();
+                if ($file !== false) {
+                    return basename($file) . ':' . $reflection->getStartLine();
+                }
+            } catch (\Throwable) {
+                // fall through
+            }
+            return $fallbackId;
+        }
+
         $class = $task::class;
 
         if (str_contains($class, '@anonymous')) {
-            // Anonymous class — try to surface a useful name via the
-            // owning task's traceName property if present.
             if (property_exists($task, 'traceName')) {
                 /** @phpstan-ignore-next-line property hooks resolve at access */
                 $hint = $task->traceName ?? null;

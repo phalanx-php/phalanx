@@ -13,6 +13,7 @@ use Phalanx\Service\LazySingleton;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\ServiceGraph;
 use Phalanx\Service\ServiceTransformationMiddleware;
+use Phalanx\Supervisor\Supervisor;
 use Phalanx\Trace\Trace;
 use Phalanx\Worker\WorkerDispatch;
 
@@ -29,6 +30,7 @@ class Application implements AppHost
         private readonly ServiceGraph $graph,
         private readonly LazySingleton $singletons,
         private readonly Trace $traceLog,
+        private readonly Supervisor $supervisor,
         private readonly array $providers,
         private readonly array $serviceMiddlewares = [],
         private readonly array $taskMiddlewares = [],
@@ -47,6 +49,11 @@ class Application implements AppHost
         return $this->providers;
     }
 
+    public function supervisor(): Supervisor
+    {
+        return $this->supervisor;
+    }
+
     public function createScope(?CancellationToken $token = null): ExecutionScope
     {
         return new ExecutionLifecycleScope(
@@ -54,6 +61,7 @@ class Application implements AppHost
             $this->singletons,
             $token ?? CancellationToken::create(),
             $this->traceLog,
+            $this->supervisor,
             serviceMiddlewares: $this->serviceMiddlewares,
             taskMiddlewares: $this->taskMiddlewares,
             workerDispatch: $this->workerDispatch,

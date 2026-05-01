@@ -17,6 +17,6 @@ class RetryMiddleware implements TaskMiddleware
         if (!$task instanceof Retryable) {
             return $next($scope);
         }
-        return $scope->retry(static fn(ExecutionScope $s): mixed => $next($s), $task->retryPolicy());
+        return $scope->retry(static fn(ExecutionScope $s): mixed => $next($s), $task->retryPolicy);
     }
 }

@@ -17,6 +17,7 @@
         "evenement/evenement": "^3.0",
         "mlocati/ip-lib": "^1.22",
         "nikic/fast-route": "^2.0",
+        "openswoole/core": "^26.2",
         "ratchet/rfc6455": "^0.4.0",
         "react/async": "^4.3",
         "react/child-process": "^0.6",

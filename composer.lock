@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "2a99e766966b2b8fb084b8efb4c07b2f",
+    "content-hash": "91f227fe6cf919313709bab0695f0a2c",
     "packages": [
         {
             "name": "amphp/amp",
@@ -821,6 +821,77 @@
             "time": "2024-03-04T23:46:43+00:00"
         },
         {
+            "name": "openswoole/core",
+            "version": "26.2.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/openswoole/core.git",
+                "reference": "8bb110ec7ba6ca8b0d9d40bf8d8aa0b790d1bf22"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/openswoole/core/zipball/8bb110ec7ba6ca8b0d9d40bf8d8aa0b790d1bf22",
+                "reference": "8bb110ec7ba6ca8b0d9d40bf8d8aa0b790d1bf22",
+                "shasum": ""
+            },
+            "require": {
+                "ext-openswoole": ">=26.2.0",
+                "php": ">=8.3",
+                "psr/http-message": "^1.0 || ^2.0",
+                "psr/http-server-middleware": "^1.0.0"
+            },
+            "require-dev": {
+                "ext-curl": "*",
+                "ext-sockets": "*",
+                "friendsofphp/php-cs-fixer": "^3.6",
+                "openswoole/ide-helper": "^26.2",
+                "php-http/psr7-integration-tests": "^1.1",
+                "phpunit/phpunit": "^10.5"
+            },
+            "suggest": {
+                "ext-mysqli": "*",
+                "ext-pdo": "*",
+                "ext-redis": "Required to use redis database, and the required version is greater than or equal to 3.1.3"
+            },
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "src/Coroutine/functions.php"
+                ],
+                "psr-4": {
+                    "OpenSwoole\\Core\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Apache-2.0"
+            ],
+            "authors": [
+                {
+                    "name": "OpenSwoole Group",
+                    "email": "hello@openswoole.com"
+                }
+            ],
+            "description": "Openswoole core library",
+            "homepage": "https://openswoole.com",
+            "keywords": [
+                "http",
+                "http2",
+                "mqtt",
+                "openswoole",
+                "php",
+                "tcp",
+                "websocket"
+            ],
+            "support": {
+                "docs": "https://openswoole.com/docs",
+                "issues": "https://github.com/openswoole/openswoole/issues",
+                "pull-request": "https://github.com/openswoole/openswoole/pulls",
+                "source": "https://github.com/openswoole/openswoole"
+            },
+            "time": "2026-02-28T15:02:48+00:00"
+        },
+        {
             "name": "psr/http-factory",
             "version": "1.1.0",
             "source": {
@@ -927,6 +998,119 @@
                 "source": "https://github.com/php-fig/http-message/tree/1.1"
             },
             "time": "2023-04-04T09:50:52+00:00"
+        },
+        {
+            "name": "psr/http-server-handler",
+            "version": "1.0.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/php-fig/http-server-handler.git",
+                "reference": "84c4fb66179be4caaf8e97bd239203245302e7d4"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/php-fig/http-server-handler/zipball/84c4fb66179be4caaf8e97bd239203245302e7d4",
+                "reference": "84c4fb66179be4caaf8e97bd239203245302e7d4",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.0",
+                "psr/http-message": "^1.0 || ^2.0"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.0.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Psr\\Http\\Server\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "PHP-FIG",
+                    "homepage": "https://www.php-fig.org/"
+                }
+            ],
+            "description": "Common interface for HTTP server-side request handler",
+            "keywords": [
+                "handler",
+                "http",
+                "http-interop",
+                "psr",
+                "psr-15",
+                "psr-7",
+                "request",
+                "response",
+                "server"
+            ],
+            "support": {
+                "source": "https://github.com/php-fig/http-server-handler/tree/1.0.2"
+            },
+            "time": "2023-04-10T20:06:20+00:00"
+        },
+        {
+            "name": "psr/http-server-middleware",
+            "version": "1.0.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/php-fig/http-server-middleware.git",
+                "reference": "c1481f747daaa6a0782775cd6a8c26a1bf4a3829"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/php-fig/http-server-middleware/zipball/c1481f747daaa6a0782775cd6a8c26a1bf4a3829",
+                "reference": "c1481f747daaa6a0782775cd6a8c26a1bf4a3829",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.0",
+                "psr/http-message": "^1.0 || ^2.0",
+                "psr/http-server-handler": "^1.0"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.0.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Psr\\Http\\Server\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "PHP-FIG",
+                    "homepage": "https://www.php-fig.org/"
+                }
+            ],
+            "description": "Common interface for HTTP server-side middleware",
+            "keywords": [
+                "http",
+                "http-interop",
+                "middleware",
+                "psr",
+                "psr-15",
+                "psr-7",
+                "request",
+                "response"
+            ],
+            "support": {
+                "issues": "https://github.com/php-fig/http-server-middleware/issues",
+                "source": "https://github.com/php-fig/http-server-middleware/tree/1.0.2"
+            },
+            "time": "2023-04-11T06:14:47+00:00"
         },
         {
             "name": "psr/simple-cache",

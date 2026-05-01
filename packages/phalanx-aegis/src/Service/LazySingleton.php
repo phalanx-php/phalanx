@@ -4,169 +4,82 @@ declare(strict_types=1);
 
 namespace Phalanx\Service;
 
-use Phalanx\Support\ErrorHandler;
-use Phalanx\Trace\Trace;
-use Phalanx\Trace\TraceType;
+use Closure;
 
-final class LazySingleton
+/**
+ * Application-wide singleton cache + onShutdown chain.
+ * One instance lives in Application; shared across all scopes.
+ */
+class LazySingleton
 {
-    /** @var array<string, object> */
+    /** @var array<class-string, object> */
     private array $instances = [];
 
-    /** @var list<string> */
+    /** @var list<class-string> */
     private array $creationOrder = [];
 
-    public function __construct(
-        private readonly ServiceGraph $graph,
-        private readonly Trace $trace,
-    ) {
+    public function __construct(private readonly ServiceGraph $graph)
+    {
     }
 
-    public function get(string $type, ?callable $scopeResolver = null): object
+    /**
+     * @template T of object
+     * @param class-string<T> $type
+     * @param Closure(): T $build
+     * @return T
+     */
+    public function get(string $type, Closure $build): object
     {
-        $resolved = $this->graph->aliases[$type] ?? $type;
-
-        if (isset($this->instances[$resolved])) {
-            return $this->instances[$resolved];
-        }
-
-        $compiled = $this->graph->resolve($resolved);
-
-        if (!$compiled->singleton) {
-            throw new \LogicException("Cannot use SingletonContainer for scoped service: $type");
-        }
-
-        $deps = $this->resolveDependencies($compiled, $scopeResolver);
-
-        $instance = $this->createInstance($compiled, $deps);
-
-        $this->instances[$resolved] = $instance;
-        $this->creationOrder[] = $resolved;
-
-        return $instance;
-    }
-
-    public function has(string $type): bool
-    {
-        $resolved = $this->graph->aliases[$type] ?? $type;
-        return isset($this->instances[$resolved]);
-    }
-
-    public function startup(): void
-    {
-        foreach ($this->graph->eagerSingletons() as $compiled) {
-            $this->get($compiled->type);
-        }
-
-        $this->trace->log(TraceType::LifecycleStartup, 'startup');
-
-        foreach ($this->graph->startupServices() as $compiled) {
-            if (!$compiled->singleton) {
-                continue;
-            }
-
-            $instance = $this->get($compiled->type);
-
-            if (LazyFactory::isUninitialized($instance)) {
-                LazyFactory::initializeIfLazy($instance);
-            }
-
-            foreach ($compiled->lifecycle->onStartup as $hook) {
-                $hook($instance);
+        $resolved = $this->graph->alias($type);
+        if (!isset($this->instances[$resolved])) {
+            /** @var T $instance */
+            $instance = $build();
+            // Re-check after $build returns: if $build re-entered get() for the
+            // same type (factory chain went via Scope::service() which calls back
+            // into this method), the instance is already cached. Skip the second
+            // assignment + creationOrder append to avoid duplicate dispose hooks.
+            if (!isset($this->instances[$resolved])) {
+                $this->instances[$resolved] = $instance;
+                $this->creationOrder[] = $resolved;
             }
         }
-
-        $this->trace->log(TraceType::LifecycleStartup, 'ready');
+        /** @var T $cached */
+        $cached = $this->instances[$resolved];
+        return $cached;
     }
 
     public function shutdown(): void
     {
-        $this->trace->log(TraceType::LifecycleShutdown, 'shutdown');
-
-        $reversed = array_reverse($this->creationOrder);
-
-        foreach ($reversed as $type) {
-            $compiled = $this->graph->resolve($type);
+        foreach (array_reverse($this->creationOrder) as $type) {
             $instance = $this->instances[$type] ?? null;
-
             if ($instance === null) {
                 continue;
             }
-
-            if (LazyFactory::isUninitialized($instance)) {
+            $config = $this->graph->configs[$type] ?? null;
+            if ($config === null) {
                 continue;
             }
-
-            foreach ($compiled->lifecycle->onShutdown as $hook) {
+            foreach ($config->onShutdownHooks as $hook) {
                 try {
                     $hook($instance);
-                } catch (\Throwable $e) {
-                    ErrorHandler::report("Shutdown hook failed for $type: " . $e->getMessage());
+                } catch (\Throwable) {
                 }
             }
-
-            $this->trace->log(TraceType::ServiceDispose, $compiled->shortName());
         }
-
         $this->instances = [];
         $this->creationOrder = [];
     }
 
-    public function config(string $type): mixed
+    public function startupEager(Closure $factory): void
     {
-        return $this->graph->config($type);
-    }
-
-    /** @return list<object> */
-    private function resolveDependencies(CompiledService $compiled, ?callable $scopeResolver): array
-    {
-        $deps = [];
-
-        foreach ($compiled->dependencyOrder as $depType) {
-            $depCompiled = $this->graph->resolve($depType);
-
-            if ($depCompiled->singleton) {
-                $deps[] = $this->get($depType, $scopeResolver);
-            } elseif ($scopeResolver !== null) {
-                $deps[] = $scopeResolver($depType);
-            } else {
-                throw new \LogicException(
-                    "Cannot resolve scoped dependency '$depType' for singleton '{$compiled->type}' without scope"
-                );
+        foreach ($this->graph->configs as $type => $config) {
+            if ($config->lifetime !== ServiceLifetime::Singleton || $config->lazy) {
+                continue;
+            }
+            $instance = $this->get($type, static fn() => $factory($type));
+            foreach ($config->onStartupHooks as $hook) {
+                $hook($instance);
             }
         }
-
-        return $deps;
-    }
-
-    /** @param list<object> $deps */
-    private function createInstance(CompiledService $compiled, array $deps): object
-    {
-        $factory = $compiled->factory;
-
-        if ($compiled->lazy) {
-            $lifecycle = $compiled->lifecycle;
-            return LazyFactory::wrap(
-                $compiled->type,
-                static function () use ($factory, $deps, $lifecycle): object {
-                    $instance = $factory(...$deps);
-                    foreach ($lifecycle->onInit as $hook) {
-                        $hook($instance);
-                    }
-                    return $instance;
-                },
-                $this->trace,
-            );
-        }
-
-        $this->trace->log(TraceType::ServiceInit, $compiled->shortName());
-
-        $instance = $factory(...$deps);
-
-        foreach ($compiled->lifecycle->onInit as $hook) {
-            $hook($instance);
-        }
-
-        return $instance;
     }
 }

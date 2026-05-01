@@ -9,6 +9,9 @@ use Phalanx\Service\LazySingleton;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\ServiceCatalog;
 use Phalanx\Service\ServiceTransformationMiddleware;
+use Phalanx\Supervisor\InProcessLedger;
+use Phalanx\Supervisor\LedgerStorage;
+use Phalanx\Supervisor\Supervisor;
 use Phalanx\Trace\Trace;
 use Phalanx\Worker\WorkerDispatch;
 
@@ -24,6 +27,8 @@ class ApplicationBuilder
     private array $taskMiddlewares = [];
 
     private ?Trace $trace = null;
+
+    private ?LedgerStorage $ledger = null;
 
     private ?WorkerDispatch $workerDispatch = null;
 
@@ -62,6 +67,18 @@ class ApplicationBuilder
         return $this;
     }
 
+    /**
+     * Override the supervisor's ledger backend. Defaults to InProcessLedger
+     * (PHP array, lock-free under cooperative scheduling). Swap to
+     * SwooleTableLedger (when implemented) for cross-process worker
+     * visibility into the live TaskRun graph.
+     */
+    public function withLedger(LedgerStorage $ledger): self
+    {
+        $this->ledger = $ledger;
+        return $this;
+    }
+
     public function compile(): Application
     {
         $catalog = new ServiceCatalog($this->context);
@@ -70,10 +87,13 @@ class ApplicationBuilder
         }
         $graph = $catalog->compile();
         $singletons = new LazySingleton($graph);
+        $trace = $this->trace ?? new Trace();
+        $supervisor = new Supervisor($this->ledger ?? new InProcessLedger(), $trace);
         return new Application(
             $graph,
             $singletons,
-            $this->trace ?? new Trace(),
+            $trace,
+            $supervisor,
             $this->providers,
             $this->serviceMiddlewares,
             $this->taskMiddlewares,

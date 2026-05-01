@@ -19,7 +19,7 @@ class TraceMiddleware implements TaskMiddleware
         if (!$task instanceof Traceable) {
             return $next($scope);
         }
-        $name = $task->traceName();
+        $name = $task->traceName;
         $scope->trace()->log(TraceType::Execute, $name, ['phase' => 'start']);
         try {
             $result = $next($scope);
