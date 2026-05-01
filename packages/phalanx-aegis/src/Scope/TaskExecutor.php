@@ -6,6 +6,7 @@ namespace Phalanx\Scope;
 
 use Phalanx\Concurrency\RetryPolicy;
 use Phalanx\Concurrency\SettlementBag;
+use Phalanx\Supervisor\TaskRun;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 use Closure;
@@ -56,4 +57,28 @@ interface TaskExecutor
     public function singleflight(string $key, Scopeable|Executable|Closure $task): mixed;
 
     public function inWorker(Scopeable|Executable|Closure $task): mixed;
+
+    /**
+     * Spawn a supervisor-tracked background task and return immediately.
+     * Use for fire-and-forget work whose result the caller does not await.
+     *
+     * Unlike defer(), the spawned task is registered in the supervisor's
+     * ledger as a concurrent child of the current run — visible in the
+     * task tree, cancellable via the returned TaskRun's cancellation token,
+     * and bounded by the parent scope's lifetime.
+     *
+     * Errors raised inside the body are caught and emitted as
+     * PHX-SPAWN-001 trace events; they do NOT propagate to the parent
+     * coroutine. This is intentional — go() is an error boundary so a
+     * crashing background task can never tear down the worker process or
+     * surprise unrelated code paths.
+     *
+     * If the parent scope is disposed while a go() task is still running,
+     * PHX-SPAWN-002 is emitted and the task is force-cancelled.
+     *
+     * Cancel an in-flight spawn via:
+     *   $run = $scope->go(static fn() => ...);
+     *   $run->cancellation->cancel();
+     */
+    public function go(Closure $fn, ?string $name = null): TaskRun;
 }

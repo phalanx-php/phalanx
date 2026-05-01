@@ -67,6 +67,15 @@ class ExecutionLifecycleScope implements ExecutionScope
     /** @var list<int> */
     private array $deferredCids = [];
 
+    /**
+     * Active go()-spawned tasks awaiting completion. Each entry is
+     * [cid, TaskRun]. Cleared as tasks finish; force-cancelled with
+     * PHX-SPAWN-002 if any remain at dispose time.
+     *
+     * @var list<array{int, TaskRun}>
+     */
+    private array $goSpawns = [];
+
     private bool $disposed = false;
 
     private readonly SingleflightGroup $singleflightGroup;
@@ -194,6 +203,27 @@ class ExecutionLifecycleScope implements ExecutionScope
             }
         }
         $this->deferredCids = [];
+
+        foreach ($this->goSpawns as [$cid, $run]) {
+            if ($run->isTerminal()) {
+                continue;
+            }
+            $this->traceLog->log(
+                TraceType::Defer,
+                'PHX-SPAWN-002',
+                [
+                    'run' => $run->id,
+                    'task' => $run->name,
+                    'detail' => 'go()-spawned task still live at scope dispose; force-cancelling',
+                ],
+            );
+            $this->supervisor->cancel($run);
+            if (Coroutine::exists($cid)) {
+                Coroutine::cancel($cid);
+            }
+            $this->supervisor->reap($run);
+        }
+        $this->goSpawns = [];
 
         $callbacks = array_reverse($this->disposeStack);
         $this->disposeStack = [];
@@ -959,6 +989,63 @@ class ExecutionLifecycleScope implements ExecutionScope
         if ($cid !== false) {
             $this->deferredCids[] = $cid;
         }
+    }
+
+    public function go(Closure $fn, ?string $name = null): TaskRun
+    {
+        if ($this->disposed) {
+            throw new RuntimeException('go(): cannot spawn on a disposed scope');
+        }
+
+        $childScope = $this->makeChildScope($this->currentRun);
+        $parentRunId = $this->currentRun?->id;
+        $resolvedName = $name ?? self::closureLocation($fn) ?? 'go-spawn';
+
+        $run = $this->supervisor->start(
+            task: $fn,
+            parent: $childScope,
+            mode: DispatchMode::Concurrent,
+            name: $resolvedName,
+            parentRunId: $parentRunId,
+        );
+
+        $supervisor = $this->supervisor;
+        $traceLog = $this->traceLog;
+
+        $cid = Coroutine::create(static function () use ($childScope, $fn, $run, $supervisor, $traceLog): void {
+            CoroutineScopeRegistry::install($childScope);
+            $childScope->currentRun = $run;
+            $supervisor->markRunning($run);
+            try {
+                $value = $fn($childScope);
+                $supervisor->complete($run, $value);
+            } catch (Cancelled) {
+                $supervisor->cancel($run);
+            } catch (Throwable $e) {
+                $supervisor->fail($run, $e);
+                $traceLog->log(
+                    TraceType::Defer,
+                    'PHX-SPAWN-001',
+                    [
+                        'run' => $run->id,
+                        'task' => $run->name,
+                        'error' => $e::class,
+                        'message' => $e->getMessage(),
+                        'detail' => 'go()-spawned task threw; error caught at boundary',
+                    ],
+                );
+            } finally {
+                $supervisor->reap($run);
+                $childScope->dispose();
+                CoroutineScopeRegistry::clear();
+            }
+        });
+
+        if ($cid !== false) {
+            $this->goSpawns[] = [$cid, $run];
+        }
+
+        return $run;
     }
 
     public function singleflight(string $key, Scopeable|Executable|Closure $task): mixed
