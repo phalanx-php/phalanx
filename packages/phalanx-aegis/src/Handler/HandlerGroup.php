@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Handler;
 
 use Closure;
-use Phalanx\ExecutionScope;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\HasMiddleware;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;

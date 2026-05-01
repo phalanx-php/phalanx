@@ -94,8 +94,9 @@
         }
     ],
     "scripts": {
-        "test": "php vendor/bin/phpunit",
-        "test:core": "cd packages/phalanx-aegis && php vendor/bin/phpunit",
+        "test": "php vendor/bin/phpunit packages/phalanx-aegis/tests/",
+        "test:all": "php vendor/bin/phpunit",
+        "test:core": "php vendor/bin/phpunit packages/phalanx-aegis/tests/",
         "test:twilio": "php vendor/bin/phpunit packages/phalanx-twilio/tests/",
         "test:ai": "php vendor/bin/phpunit packages/phalanx-athena/tests/",
         "test:ssh": "php vendor/bin/phpunit packages/phalanx-enigma/tests/",

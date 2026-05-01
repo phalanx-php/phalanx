@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Tests\Integration\Handler;
 
 use Phalanx\Application;
-use Phalanx\ExecutionScope;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Handler\Handler;
 use Phalanx\Handler\HandlerGroup;
 use Phalanx\Handler\HandlerMatcher;

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Handler;
 
 use Phalanx\Exception\ServiceNotFoundException;
-use Phalanx\Scope;
+use Phalanx\Scope\Scope;
 use ReflectionClass;
 use ReflectionNamedType;
 use ReflectionParameter;

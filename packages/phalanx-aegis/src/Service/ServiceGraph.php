@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Service;
 
+use Phalanx\Exception\ServiceNotFoundException;
 use RuntimeException;
 
 /**
@@ -28,7 +29,7 @@ final class ServiceGraph
     {
         $resolved = $this->aliases[$type] ?? $type;
         if (!isset($this->configs[$resolved])) {
-            throw new RuntimeException("No service registered for {$type}");
+            throw new ServiceNotFoundException($type);
         }
         return $this->configs[$resolved];
     }

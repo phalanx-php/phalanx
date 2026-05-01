@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Handler;
 
 use Closure;
-use Phalanx\Scope;
+use Phalanx\Scope\Scope;
 use RuntimeException;
 
 /**

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Handler;
 
-use Phalanx\ExecutionScope;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 

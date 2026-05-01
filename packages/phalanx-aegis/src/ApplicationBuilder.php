@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx;
 
+use Phalanx\Handler\HandlerResolver;
 use Phalanx\Middleware\TaskMiddleware;
 use Phalanx\Service\LazySingleton;
 use Phalanx\Service\ServiceBundle;
@@ -82,6 +83,8 @@ class ApplicationBuilder
     public function compile(): Application
     {
         $catalog = new ServiceCatalog($this->context);
+        $catalog->singleton(HandlerResolver::class)
+            ->factory(static fn(): HandlerResolver => new HandlerResolver());
         foreach ($this->providers as $provider) {
             $provider->services($catalog, $this->context);
         }

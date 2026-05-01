@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Tests\Support\Fixtures;
 
-use Phalanx\Scope;
+use Phalanx\Scope\Scope;
 use Phalanx\Task\Scopeable;
 
 final readonly class AddNumbers implements Scopeable

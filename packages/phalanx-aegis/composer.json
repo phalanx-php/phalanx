@@ -1,77 +1,77 @@
 {
-    "name": "phalanx-php/aegis",
-    "description": "Scope-based async coordination for PHP 8.4+ on OpenSwoole 26",
-    "license": "MIT",
-    "type": "library",
-    "keywords": [
-        "async",
-        "concurrency",
-        "coroutines",
-        "openswoole",
-        "supervisor",
-        "parallel",
-        "structured-concurrency"
-    ],
-    "homepage": "https://github.com/phalanx-php/phalanx-aegis",
-    "authors": [
-        {
-            "name": "Jonathan Havens",
-            "email": "mail@phalanx-php.com"
-        }
-    ],
-    "require": {
-        "php": "^8.4",
-        "ext-openswoole": "^26.2",
-        "openswoole/core": "^26.2"
-    },
-    "require-dev": {
-        "phalanx-php/archon": "^0.5",
-        "phalanx-php/stoa": "^0.5",
-        "phalanx-php/hydra": "^0.5",
-        "phpstan/phpstan": "^2.0",
-        "phpunit/phpunit": "^11.0",
-        "rector/rector": "^2.0",
-        "slevomat/coding-standard": "^8.15",
-        "squizlabs/php_codesniffer": "^3.10"
-    },
-    "scripts": {
-        "rector": "rector process",
-        "rector:dry": "rector process --dry-run",
-        "cs": "phpcs",
-        "cs:fix": "phpcbf",
-        "test": "php vendor/bin/phpunit"
-    },
-    "suggest": {
-        "phalanx-php/styx": "Reactive stream primitives (Emitter, ScopedStream, Channel)",
-        "phalanx-php/archon": "CLI application framework",
-        "phalanx-php/stoa": "HTTP server framework",
-        "phalanx-php/hydra": "Worker process parallelism",
-        "spatie/backtrace": "Enhanced stack traces",
-        "symfony/runtime": "For symfony/runtime integration",
-        "symfony/dotenv": "For .env file support"
-    },
-    "autoload": {
-        "psr-4": {
-            "Phalanx\\": "src/"
-        }
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "Phalanx\\Tests\\": "tests/"
-        },
-        "classmap": [
-            "tests/Support/Fixtures/"
-        ]
-    },
-    "extra": {
-        "branch-alias": {
-            "dev-main": "0.5.x-dev"
-        }
-    },
-    "config": {
-        "sort-packages": true,
-        "allow-plugins": {
-            "dealerdirect/phpcodesniffer-composer-installer": true
-        }
+  "name": "phalanx-php/aegis",
+  "description": "Managed async for PHP 8.4+ on OpenSwoole",
+  "license": "MIT",
+  "type": "library",
+  "keywords": [
+    "async",
+    "concurrency",
+    "coroutines",
+    "openswoole",
+    "supervisor",
+    "parallel",
+    "structured-concurrency"
+  ],
+  "homepage": "https://github.com/phalanx-php/phalanx-aegis",
+  "authors": [
+    {
+      "name": "Jonathan Havens",
+      "email": "mail@phalanx-php.com"
     }
+  ],
+  "require": {
+    "php": "^8.4",
+    "ext-openswoole": "^26.2",
+    "openswoole/core": "^26.2"
+  },
+  "require-dev": {
+    "phalanx-php/archon": "^0.5",
+    "phalanx-php/stoa": "^0.5",
+    "phalanx-php/hydra": "^0.5",
+    "phpstan/phpstan": "^2.0",
+    "phpunit/phpunit": "^11.0",
+    "rector/rector": "^2.0",
+    "slevomat/coding-standard": "^8.15",
+    "squizlabs/php_codesniffer": "^3.10"
+  },
+  "scripts": {
+    "rector": "rector process",
+    "rector:dry": "rector process --dry-run",
+    "cs": "phpcs",
+    "cs:fix": "phpcbf",
+    "test": "php vendor/bin/phpunit"
+  },
+  "suggest": {
+    "phalanx-php/styx": "Reactive stream primitives (Emitter, ScopedStream, Channel)",
+    "phalanx-php/archon": "CLI application framework",
+    "phalanx-php/stoa": "HTTP server framework",
+    "phalanx-php/hydra": "Worker process parallelism",
+    "spatie/backtrace": "Enhanced stack traces",
+    "symfony/runtime": "For symfony/runtime integration",
+    "symfony/dotenv": "For .env file support"
+  },
+  "autoload": {
+    "psr-4": {
+      "Phalanx\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Phalanx\\Tests\\": "tests/"
+    },
+    "classmap": [
+      "tests/Support/Fixtures/"
+    ]
+  },
+  "extra": {
+    "branch-alias": {
+      "dev-main": "0.5.x-dev"
+    }
+  },
+  "config": {
+    "sort-packages": true,
+    "allow-plugins": {
+      "dealerdirect/phpcodesniffer-composer-installer": true
+    }
+  }
 }

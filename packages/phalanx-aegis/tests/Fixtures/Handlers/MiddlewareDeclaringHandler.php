@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Tests\Fixtures\Handlers;
 
 use Phalanx\HasMiddleware;
-use Phalanx\Scope;
+use Phalanx\Scope\Scope;
 use Phalanx\Task\Scopeable;
 
 /**
