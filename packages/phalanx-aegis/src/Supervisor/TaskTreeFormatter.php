@@ -9,12 +9,12 @@ namespace Phalanx\Supervisor;
  * Supervisor::tree(). Powers the future `phalanx ps` / `phalanx doctor`
  * surfaces and the leak / hang diagnostic reports.
  *
- * Output shape:
+ * Output shape (two-space indent per depth, no box-drawing chars):
  *
  *   AppHandler                Running    12.4ms
- *   ├─ FetchUser(7)           Suspended   8.1ms  wait: postgres SELECT * FROM users WHERE id...
- *   └─ AuditWrite(login)      Running     6.2ms
- *      └─ FlushBuffer         Running     1.0ms  [pool: redis/cache#3]
+ *     FetchUser(7)            Suspended   8.1ms  wait: postgres SELECT * FROM users WHERE id...
+ *     AuditWrite(login)       Running     6.2ms
+ *       FlushBuffer           Running     1.0ms  [holds: redis/cache#3/shared]
  *
  * The snapshot list is the flat `Supervisor::tree()` projection. The
  * formatter rebuilds the parent/child structure from `parentId` and the
@@ -45,9 +45,8 @@ final class TaskTreeFormatter
         }
 
         $out = '';
-        $lastIdx = count($roots) - 1;
-        foreach ($roots as $idx => $root) {
-            $out .= self::renderNode($root, $byId, '', $idx === $lastIdx, true);
+        foreach ($roots as $root) {
+            $out .= self::renderNode($root, $byId, 0);
         }
         return $out;
     }
@@ -73,24 +72,14 @@ final class TaskTreeFormatter
     private static function renderNode(
         TaskRunSnapshot $node,
         array $byId,
-        string $prefix,
-        bool $isLast,
-        bool $isRoot,
+        int $depth,
     ): string {
-        $branch = $isRoot ? '' : ($isLast ? '└─ ' : '├─ ');
-        $line = $prefix . $branch . self::formatLine($node) . "\n";
+        $line = str_repeat('  ', $depth) . self::formatLine($node) . "\n";
 
-        $children = [];
         foreach ($node->childIds as $childId) {
             if (isset($byId[$childId])) {
-                $children[] = $byId[$childId];
+                $line .= self::renderNode($byId[$childId], $byId, $depth + 1);
             }
-        }
-
-        $childPrefix = $prefix . ($isRoot ? '' : ($isLast ? '   ' : '│  '));
-        $lastIdx = count($children) - 1;
-        foreach ($children as $idx => $child) {
-            $line .= self::renderNode($child, $byId, $childPrefix, $idx === $lastIdx, false);
         }
 
         return $line;
