@@ -12,6 +12,36 @@ use Phalanx\Support\ClosureInspector;
 final class ServiceGraphCompiler
 {
     /**
+     * @param array<string, ServiceDefinition> $definitions
+     * @param array<string, string> $aliases
+     * @param array<string, true> $seen
+     * @param list<string> $order
+     */
+    private static function resolveOrder(
+        string $type,
+        array $definitions,
+        array $aliases,
+        array &$seen,
+        array &$order,
+    ): void {
+        if (isset($seen[$type])) {
+            return;
+        }
+
+        $seen[$type] = true;
+        $resolved = $aliases[$type] ?? $type;
+        $depDef = $definitions[$resolved] ?? null;
+
+        if ($depDef !== null) {
+            foreach ($depDef->dependencies as $dep) {
+                self::resolveOrder($dep, $definitions, $aliases, $seen, $order);
+            }
+        }
+
+        $order[] = $type;
+    }
+
+    /**
      * @param list<\Phalanx\Middleware\ServiceTransformationMiddleware> $middleware
      * @param array<string, mixed> $context
      */
@@ -202,36 +232,6 @@ final class ServiceGraphCompiler
         }
 
         return $order;
-    }
-
-    /**
-     * @param array<string, ServiceDefinition> $definitions
-     * @param array<string, string> $aliases
-     * @param array<string, true> $seen
-     * @param list<string> $order
-     */
-    private static function resolveOrder(
-        string $type,
-        array $definitions,
-        array $aliases,
-        array &$seen,
-        array &$order,
-    ): void {
-        if (isset($seen[$type])) {
-            return;
-        }
-
-        $seen[$type] = true;
-        $resolved = $aliases[$type] ?? $type;
-        $depDef = $definitions[$resolved] ?? null;
-
-        if ($depDef !== null) {
-            foreach ($depDef->dependencies as $dep) {
-                self::resolveOrder($dep, $definitions, $aliases, $seen, $order);
-            }
-        }
-
-        $order[] = $type;
     }
 
     private function defaultFactory(string $type): \Closure

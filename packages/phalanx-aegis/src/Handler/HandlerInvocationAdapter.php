@@ -32,7 +32,8 @@ final readonly class HandlerInvocationAdapter implements Scopeable, Executable
     public function __construct(
         private Scopeable|Executable $instance,
         private Closure $invoker,
-    ) {}
+    ) {
+    }
 
     public function __invoke(ExecutionScope $scope): mixed
     {

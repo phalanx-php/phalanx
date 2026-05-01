@@ -8,7 +8,6 @@ use Closure;
 use InvalidArgumentException;
 use Phalanx\AppHost;
 use Phalanx\Concurrency\CancellationToken;
-use Phalanx\ExecutionScope;
 use ReflectionFunction;
 
 use function React\Async\async;
@@ -20,7 +19,20 @@ final class ScopedTestApp
 
     public function __construct(
         private readonly AppHost $app,
-    ) {}
+    ) {
+    }
+
+    private static function enforceStaticClosure(Closure $closure): void
+    {
+        $rf = new ReflectionFunction($closure);
+
+        if ($rf->getClosureThis() !== null) {
+            throw new InvalidArgumentException(
+                'Test closure must be static to prevent reference cycles. ' .
+                'Use: static function(ExecutionScope $scope) { ... } with Assert::assert*() for assertions.',
+            );
+        }
+    }
 
     public function run(Closure $test, ?CancellationToken $token = null): void
     {
@@ -52,17 +64,5 @@ final class ScopedTestApp
         $this->shutdownOnRunComplete = true;
 
         return $this;
-    }
-
-    private static function enforceStaticClosure(Closure $closure): void
-    {
-        $rf = new ReflectionFunction($closure);
-
-        if ($rf->getClosureThis() !== null) {
-            throw new InvalidArgumentException(
-                'Test closure must be static to prevent reference cycles. ' .
-                'Use: static function(ExecutionScope $scope) { ... } with Assert::assert*() for assertions.',
-            );
-        }
     }
 }

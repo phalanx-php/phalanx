@@ -73,6 +73,29 @@ final class HandlerGroup implements Executable
         return new self([]);
     }
 
+    /**
+     * @return Closure(Scopeable|Executable, ExecutionScope): mixed
+     */
+    private static function defaultInvoker(): Closure
+    {
+        return static fn(Scopeable|Executable $instance, ExecutionScope $scope): mixed => $instance($scope);
+    }
+
+    /**
+     * Deduplicate middleware class-strings keeping the LAST occurrence
+     * (innermost declaration wins). The chain is then walked in original
+     * order so the surviving entry runs at its innermost position.
+     *
+     * @param list<class-string> $middleware
+     * @return list<class-string>
+     */
+    private static function dedupMiddleware(array $middleware): array
+    {
+        return array_values(array_reverse(
+            array_unique(array_reverse($middleware))
+        ));
+    }
+
     /** @internal */
     public function add(string $key, Handler $handler): self
     {
@@ -168,26 +191,6 @@ final class HandlerGroup implements Executable
         );
     }
 
-    public function __invoke(ExecutionScope $scope): mixed
-    {
-        if ($scope->attribute('handler.key') !== null) {
-            return $this->dispatchByKey($scope);
-        }
-
-        foreach ($this->matchers as $matcher) {
-            $result = $matcher->match($scope, $this->handlers);
-
-            if ($result !== null) {
-                return $this->executeHandler($result->handler, $result->scope);
-            }
-        }
-
-        throw new RuntimeException(
-            'HandlerGroup: no matcher could handle this scope. '
-            . 'Register matchers via withMatcher() or set handler.key attribute.'
-        );
-    }
-
     private function dispatchByKey(ExecutionScope $scope): mixed
     {
         $key = $scope->attribute('handler.key');
@@ -234,26 +237,23 @@ final class HandlerGroup implements Executable
         return (new MiddlewareWrapper($terminal, $resolved))($scope);
     }
 
-    /**
-     * @return Closure(Scopeable|Executable, ExecutionScope): mixed
-     */
-    private static function defaultInvoker(): Closure
+    public function __invoke(ExecutionScope $scope): mixed
     {
-        return static fn(Scopeable|Executable $instance, ExecutionScope $scope): mixed => $instance($scope);
-    }
+        if ($scope->attribute('handler.key') !== null) {
+            return $this->dispatchByKey($scope);
+        }
 
-    /**
-     * Deduplicate middleware class-strings keeping the LAST occurrence
-     * (innermost declaration wins). The chain is then walked in original
-     * order so the surviving entry runs at its innermost position.
-     *
-     * @param list<class-string> $middleware
-     * @return list<class-string>
-     */
-    private static function dedupMiddleware(array $middleware): array
-    {
-        return array_values(array_reverse(
-            array_unique(array_reverse($middleware))
-        ));
+        foreach ($this->matchers as $matcher) {
+            $result = $matcher->match($scope, $this->handlers);
+
+            if ($result !== null) {
+                return $this->executeHandler($result->handler, $result->scope);
+            }
+        }
+
+        throw new RuntimeException(
+            'HandlerGroup: no matcher could handle this scope. '
+            . 'Register matchers via withMatcher() or set handler.key attribute.'
+        );
     }
 }

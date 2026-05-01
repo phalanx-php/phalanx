@@ -14,7 +14,8 @@ class RequiresService
         public readonly string $host = '127.0.0.1',
         public readonly int $port = 0,
         public readonly float $timeout = 0.5,
-    ) {}
+    ) {
+    }
 
     public function isAvailable(): bool
     {

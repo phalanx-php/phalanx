@@ -50,5 +50,4 @@ final class TestStreamContext implements StreamContext
         }
         $this->disposeCallbacks = [];
     }
-
 }

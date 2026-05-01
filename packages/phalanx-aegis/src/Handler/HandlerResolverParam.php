@@ -17,5 +17,6 @@ final readonly class HandlerResolverParam
         public bool $nullable,
         public bool $hasDefault,
         public mixed $default,
-    ) {}
+    ) {
+    }
 }

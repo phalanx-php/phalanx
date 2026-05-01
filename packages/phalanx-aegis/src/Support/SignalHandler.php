@@ -6,6 +6,18 @@ namespace Phalanx\Support;
 
 use React\EventLoop\Loop;
 
+/**
+ * Process-lifetime signal handling for top-level entrypoints.
+ *
+ * Use this for one-shot bootstrap shutdown handlers in HTTP runners,
+ * dev server orchestrators, and similar process-owned components where
+ * no Phalanx scope is available at registration time.
+ *
+ * For scope-bound signal handling — REPLs, embedded sessions, test
+ * harnesses, anything tied to a Disposable lifetime — use
+ * {@see ScopedSignalHandler::on()} instead. That primitive composes
+ * with multiple registrations and self-removes on scope dispose.
+ */
 final class SignalHandler
 {
     private static bool $registered = false;

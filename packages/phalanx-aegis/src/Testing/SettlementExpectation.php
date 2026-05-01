@@ -16,7 +16,8 @@ final readonly class SettlementExpectation
         /** @var class-string<\Throwable>|null */
         public ?string $exceptionClass = null,
         public ?string $message = null,
-    ) {}
+    ) {
+    }
 
     public static function ok(mixed $value = null, bool $checkValue = false): self
     {

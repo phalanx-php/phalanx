@@ -10,7 +10,9 @@ use Phalanx\Concurrency\CancellationToken;
 
 final class TestScope
 {
-    private function __construct() {}
+    private function __construct()
+    {
+    }
 
     /**
      * @param array<string, mixed> $context
