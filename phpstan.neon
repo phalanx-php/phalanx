@@ -23,7 +23,7 @@ parameters:
     excludePaths:
         analyseAndScan:
             - packages/phalanx-aegis/src/Parallel (?)
-            - packages/phalanx-aegis/src/Stream/
+            - packages/phalanx-aegis/src/Stream/ (?)
             - packages/phalanx-aegis/src/Runtime/PhalanxRuntime.php (?)
             - packages/phalanx-aegis/src/Runtime/PhalanxHttpRunner.php (?)
             - packages/phalanx-athena/src/Cli/AgentRepl.php (?)

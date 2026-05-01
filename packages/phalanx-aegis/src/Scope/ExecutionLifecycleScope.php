@@ -224,7 +224,7 @@ class ExecutionLifecycleScope implements ExecutionScope
         $this->scopedCreationOrder = [];
     }
 
-    public function call(Closure $fn): mixed
+    public function call(Closure $fn, ?\Phalanx\Supervisor\WaitReason $waitReason = null): mixed
     {
         $this->throwIfCancelled();
         $cid = Coroutine::getCid();
@@ -233,6 +233,9 @@ class ExecutionLifecycleScope implements ExecutionScope
                 Coroutine::cancel($cid);
             }
         });
+        $clearWait = ($this->currentRun !== null && $waitReason !== null)
+            ? $this->supervisor->beginWait($this->currentRun, $waitReason)
+            : null;
         try {
             $result = $fn();
             if ($this->isCancelled || Coroutine::isCanceled()) {
@@ -248,6 +251,9 @@ class ExecutionLifecycleScope implements ExecutionScope
             throw $e;
         } finally {
             $unregister();
+            if ($clearWait !== null) {
+                $clearWait();
+            }
         }
     }
 
@@ -921,9 +927,12 @@ class ExecutionLifecycleScope implements ExecutionScope
 
     public function delay(float $seconds): void
     {
-        $this->call(static function () use ($seconds): void {
-            Co::sleep($seconds);
-        });
+        $this->call(
+            static function () use ($seconds): void {
+                Co::sleep($seconds);
+            },
+            \Phalanx\Supervisor\WaitReason::delay($seconds),
+        );
     }
 
     public function defer(Scopeable|Executable|Closure $task): void
