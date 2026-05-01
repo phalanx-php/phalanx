@@ -1,16 +1,16 @@
 {
     "name": "phalanx-php/aegis",
-    "description": "Expression-based async coordination for PHP 8.4+",
+    "description": "Scope-based async coordination for PHP 8.4+ on OpenSwoole 26",
     "license": "MIT",
     "type": "library",
     "keywords": [
         "async",
         "concurrency",
-        "fibers",
-        "reactphp",
-        "promises",
+        "coroutines",
+        "openswoole",
+        "supervisor",
         "parallel",
-        "event-loop"
+        "structured-concurrency"
     ],
     "homepage": "https://github.com/phalanx-php/phalanx-aegis",
     "authors": [
@@ -21,9 +21,8 @@
     ],
     "require": {
         "php": "^8.4",
-        "react/async": "^4.3",
-        "react/event-loop": "^1.5",
-        "react/promise": "^3.2"
+        "ext-openswoole": "^26.2",
+        "openswoole/core": "^26.2"
     },
     "require-dev": {
         "phalanx-php/archon": "^0.5",
@@ -31,7 +30,6 @@
         "phalanx-php/hydra": "^0.5",
         "phpstan/phpstan": "^2.0",
         "phpunit/phpunit": "^11.0",
-        "react/promise-timer": "^1.11",
         "rector/rector": "^2.0",
         "slevomat/coding-standard": "^8.15",
         "squizlabs/php_codesniffer": "^3.10"
@@ -48,7 +46,6 @@
         "phalanx-php/archon": "CLI application framework",
         "phalanx-php/stoa": "HTTP server framework",
         "phalanx-php/hydra": "Worker process parallelism",
-        "react/http": "Required for HttpRunner",
         "spatie/backtrace": "Enhanced stack traces",
         "symfony/runtime": "For symfony/runtime integration",
         "symfony/dotenv": "For .env file support"

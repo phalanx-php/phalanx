@@ -8,10 +8,12 @@ use ArrayAccess;
 use ArrayIterator;
 use Countable;
 use IteratorAggregate;
+use RuntimeException;
+use Throwable;
 use Traversable;
 
 /**
- * Collection wrapper for settle() results with ergonomic value extraction.
+ * Keyed collection of Settlements. Returned by settle().
  *
  * @implements ArrayAccess<string|int, Settlement>
  * @implements IteratorAggregate<string|int, Settlement>
@@ -19,173 +21,122 @@ use Traversable;
 final class SettlementBag implements ArrayAccess, IteratorAggregate, Countable
 {
     /** @var array<string|int, mixed> */
-    private(set) array $cachedValues;
-
-    /** @var array<string|int, \Throwable> */
-    private(set) array $cachedErrors;
-
-    /** @var array<string|int, mixed> */
     public array $values {
-        get => $this->cachedValues;
+        get {
+            $out = [];
+            foreach ($this->settlements as $k => $s) {
+                if ($s->isOk) {
+                    $out[$k] = $s->value;
+                }
+            }
+            return $out;
+        }
     }
 
-    /** @var array<string|int, \Throwable> */
+    /** @var array<string|int, Throwable> */
     public array $errors {
-        get => $this->cachedErrors;
+        get {
+            $out = [];
+            foreach ($this->settlements as $k => $s) {
+                if (!$s->isOk) {
+                    $out[$k] = $s->error;
+                }
+            }
+            return $out;
+        }
     }
 
-    /**
-     * True if all settlements succeeded.
-     */
     public bool $allOk {
-        get => $this->cachedErrors === [];
+        get {
+            foreach ($this->settlements as $s) {
+                if (!$s->isOk) return false;
+            }
+            return true;
+        }
     }
 
-    /**
-     * True if at least one settlement succeeded.
-     */
     public bool $anyOk {
-        get => $this->cachedValues !== [];
+        get {
+            foreach ($this->settlements as $s) {
+                if ($s->isOk) return true;
+            }
+            return false;
+        }
     }
 
-    /**
-     * True if all settlements failed.
-     */
     public bool $allErr {
-        get => $this->cachedValues === [];
+        get => !$this->anyOk;
     }
 
-    /**
-     * True if at least one settlement failed.
-     */
     public bool $anyErr {
-        get => $this->cachedErrors !== [];
+        get => !$this->allOk;
     }
 
     /** @var list<string|int> */
     public array $okKeys {
-        get => array_keys($this->cachedValues);
+        get => array_keys($this->values);
     }
 
     /** @var list<string|int> */
     public array $errKeys {
-        get => array_keys($this->cachedErrors);
+        get => array_keys($this->errors);
     }
 
-    /**
-     * @param array<string|int, Settlement> $settlements
-     */
-    public function __construct(
-        private(set) readonly array $settlements,
-    ) {
-        $values = [];
-        $errors = [];
-        foreach ($settlements as $key => $settlement) {
-            if ($settlement->isOk) {
-                $values[$key] = $settlement->value;
-            } elseif ($settlement->error !== null) {
-                $errors[$key] = $settlement->error;
-            }
-        }
+    /** @param array<string|int, Settlement> $settlements */
+    public function __construct(private readonly array $settlements) {}
 
-        $this->cachedValues = $values;
-        $this->cachedErrors = $errors;
-    }
-
-    /**
-     * Get value for key, returning default if failed or missing.
-     */
     public function get(string|int $key, mixed $default = null): mixed
     {
-        if (!isset($this->settlements[$key])) {
-            return $default;
-        }
-
-        return $this->settlements[$key]->unwrapOr($default);
+        $s = $this->settlements[$key] ?? null;
+        return $s !== null && $s->isOk ? $s->value : $default;
     }
 
-    /**
-     * Bulk extract values with defaults.
-     *
-     * @param array<string|int, mixed> $defaults Key => default value pairs
-     * @return array<string|int, mixed>
-     */
-    public function extract(array $defaults): array
-    {
-        $result = [];
-
-        foreach ($defaults as $key => $default) {
-            $result[$key] = $this->get($key, $default);
-        }
-
-        return $result;
-    }
-
-    /**
-     * Unwrap all successes, throwing if any failed.
-     *
-     * @return array<string|int, mixed>
-     * @throws \Throwable First error encountered
-     */
-    public function unwrapAll(): array
-    {
-        if ($this->anyErr) {
-            $firstKey = array_key_first($this->cachedErrors);
-            throw $this->cachedErrors[$firstKey];
-        }
-
-        return $this->cachedValues;
-    }
-
-    /**
-     * Partition into [successes, failures].
-     *
-     * @return array{0: array<string|int, mixed>, 1: array<string|int, \Throwable>}
-     */
-    public function partition(): array
-    {
-        return [$this->cachedValues, $this->cachedErrors];
-    }
-
-    /**
-     * Map over successful values only.
-     *
-     * @param callable(mixed, string|int): mixed $fn
-     * @return array<string|int, mixed>
-     */
-    public function mapOk(callable $fn): array
-    {
-        $result = [];
-
-        foreach ($this->cachedValues as $key => $value) {
-            $result[$key] = $fn($value, $key);
-        }
-
-        return $result;
-    }
-
-    /**
-     * Get raw Settlement for a key.
-     */
     public function settlement(string|int $key): ?Settlement
     {
         return $this->settlements[$key] ?? null;
     }
 
-    /**
-     * Check if a specific key succeeded.
-     */
     public function isOk(string|int $key): bool
     {
-        return isset($this->settlements[$key]) && $this->settlements[$key]->isOk;
+        return ($this->settlements[$key] ?? null)?->isOk ?? false;
+    }
+
+    public function isErr(string|int $key): bool
+    {
+        $s = $this->settlements[$key] ?? null;
+        return $s !== null && !$s->isOk;
+    }
+
+    /** @return array<string|int, mixed> */
+    public function unwrapAll(): array
+    {
+        if (!$this->allOk) {
+            $first = $this->errors[array_key_first($this->errors)];
+            throw new RuntimeException('SettlementBag::unwrapAll: at least one task failed', 0, $first);
+        }
+        return $this->values;
+    }
+
+    /** @return array{0: array<string|int, mixed>, 1: array<string|int, Throwable>} */
+    public function partition(): array
+    {
+        return [$this->values, $this->errors];
     }
 
     /**
-     * Check if a specific key failed.
+     * @template T
+     * @param callable(mixed, string|int): T $fn
+     * @return array<string|int, T>
      */
-    public function isErr(string|int $key): bool
+    public function mapOk(callable $fn): array
     {
-        return isset($this->settlements[$key]) && !$this->settlements[$key]->isOk;
+        $out = [];
+        foreach ($this->settlements as $k => $s) {
+            if ($s->isOk) {
+                $out[$k] = $fn($s->value, $k);
+            }
+        }
+        return $out;
     }
 
     public function offsetExists(mixed $offset): bool
@@ -193,19 +144,19 @@ final class SettlementBag implements ArrayAccess, IteratorAggregate, Countable
         return isset($this->settlements[$offset]);
     }
 
-    public function offsetGet(mixed $offset): ?Settlement
+    public function offsetGet(mixed $offset): Settlement
     {
-        return $this->settlements[$offset] ?? null;
+        return $this->settlements[$offset] ?? throw new RuntimeException("No settlement for key {$offset}");
     }
 
-    public function offsetSet(mixed $offset, mixed $value): void
+    public function offsetSet(mixed $offset, mixed $value): never
     {
-        throw new \LogicException('SettlementBag is immutable');
+        throw new RuntimeException('SettlementBag is immutable');
     }
 
-    public function offsetUnset(mixed $offset): void
+    public function offsetUnset(mixed $offset): never
     {
-        throw new \LogicException('SettlementBag is immutable');
+        throw new RuntimeException('SettlementBag is immutable');
     }
 
     public function getIterator(): Traversable

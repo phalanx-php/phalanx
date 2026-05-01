@@ -4,59 +4,43 @@ declare(strict_types=1);
 
 namespace Phalanx\Task;
 
+use Phalanx\Scope\ExecutionScope;
 use Closure;
-use InvalidArgumentException;
-use Phalanx\Scope;
 use ReflectionFunction;
+use RuntimeException;
 
-final readonly class Task implements Scopeable
+/**
+ * Closure adapter to give a bare closure a class identity.
+ *
+ * Static-closure enforcement is the load-bearing rule: non-static closures
+ * capture $this. In a coroutine event loop that runs for hours or days, a
+ * captured $this creates a reference cycle that the cycle collector cannot
+ * deterministically reap. Task::of() reflects on the closure and refuses to
+ * accept non-static closures.
+ *
+ * Use Task::of(static fn(...) => ...) for trivial wrapped logic. For tasks with
+ * behavioral declarations (Retryable, HasTimeout, Traceable, ...), write a
+ * named class that implements the appropriate interfaces directly.
+ */
+class Task implements Executable
 {
-    private function __construct(
-        private Closure $work,
-        public TaskConfig $config = new TaskConfig(),
-    ) {
-        $rf = new ReflectionFunction($work);
-        if ($rf->getClosureThis() !== null) {
-            throw new InvalidArgumentException(
-                'Task closure must be static to prevent reference cycles. ' .
-                'Use: static fn(ExecutionScope $es) => ... or pass $this via use()'
+    private function __construct(private readonly Closure $fn)
+    {
+    }
+
+    public static function of(Closure $fn): self
+    {
+        $r = new ReflectionFunction($fn);
+        if (!$r->isStatic()) {
+            throw new RuntimeException(
+                'Task::of() requires a static closure. Non-static closures capture $this and leak in long-running coroutines.',
             );
         }
+        return new self($fn);
     }
 
-    public static function of(Closure $work): self
+    public function __invoke(ExecutionScope $scope): mixed
     {
-        return new self($work);
-    }
-
-    public static function create(Closure $work, TaskConfig $config): self
-    {
-        return new self($work, $config);
-    }
-
-    public function with(TaskConfig $config): self
-    {
-        return new self($this->work, $config);
-    }
-
-    public function withConfig(
-        ?string $name = null,
-        ?int $priority = null,
-        mixed $pool = null,
-        mixed $retry = null,
-        ?float $timeout = null,
-    ): self {
-        return new self($this->work, $this->config->with(
-            name: $name,
-            priority: $priority,
-            pool: $pool,
-            retry: $retry,
-            timeout: $timeout,
-        ));
-    }
-
-    public function __invoke(Scope $scope): mixed
-    {
-        return ($this->work)($scope);
+        return ($this->fn)($scope);
     }
 }

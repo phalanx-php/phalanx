@@ -4,47 +4,72 @@ declare(strict_types=1);
 
 namespace Phalanx\Concurrency;
 
-use Phalanx\Service\FiberScopeRegistry;
-use React\Promise\Deferred;
+use Closure;
+use OpenSwoole\Coroutine\Channel;
+use Throwable;
 
-use function React\Async\await;
-
-final class SingleflightGroup
+/**
+ * In-flight deduplication. If a key is already executing, subsequent callers
+ * suspend on a per-call waiter channel and receive the in-flight result.
+ *
+ * No lock needed: Swoole's coroutine scheduler is non-preemptive on a single
+ * thread, so all state mutations between yield points are atomic from any
+ * single coroutine's view. The only yield points in do() are the in-flight
+ * $execute() and the waiter pop.
+ *
+ * @internal Per-key state structure:
+ * [
+ *   'in_flight' => bool,
+ *   'result'    => mixed,
+ *   'error'     => ?Throwable,
+ *   'waiters'   => list<Channel>,
+ * ]
+ */
+class SingleflightGroup
 {
-    /** @var array<string, Deferred<mixed>> */
-    private array $inFlight = [];
+    /** @var array<string, array{in_flight: bool, result: mixed, error: ?Throwable, waiters: list<Channel>}> */
+    private array $state = [];
 
-    public function do(string $key, callable $execute): mixed
+    /**
+     * @template T
+     * @param Closure(): T $execute
+     * @return T
+     */
+    public function do(string $key, Closure $execute): mixed
     {
-        if (isset($this->inFlight[$key])) {
-            $promise = $this->inFlight[$key]->promise();
-            $scope = FiberScopeRegistry::current();
-
-            /** Raw await fallback: no scope = no cancellation token to race against. */
-            return $scope !== null
-                ? $scope->await($promise)
-                : await($promise);
+        if (isset($this->state[$key]) && $this->state[$key]['in_flight']) {
+            $waiter = new Channel(1);
+            $this->state[$key]['waiters'][] = $waiter;
+            $msg = $waiter->pop();
+            if ($msg[0] === 'err') {
+                throw $msg[1];
+            }
+            return $msg[1];
         }
 
-        $deferred = new Deferred();
-        $this->inFlight[$key] = $deferred;
+        $this->state[$key] = ['in_flight' => true, 'result' => null, 'error' => null, 'waiters' => []];
 
         try {
             $result = $execute();
-            $deferred->resolve($result);
-
-            return $result;
-        } catch (\Throwable $e) {
-            $deferred->reject($e);
-
+        } catch (Throwable $e) {
+            $waiters = $this->state[$key]['waiters'];
+            unset($this->state[$key]);
+            foreach ($waiters as $waiter) {
+                $waiter->push(['err', $e]);
+            }
             throw $e;
-        } finally {
-            unset($this->inFlight[$key]);
         }
+
+        $waiters = $this->state[$key]['waiters'];
+        unset($this->state[$key]);
+        foreach ($waiters as $waiter) {
+            $waiter->push(['ok', $result]);
+        }
+        return $result;
     }
 
     public function pending(): int
     {
-        return count($this->inFlight);
+        return count($this->state);
     }
 }

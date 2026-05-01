@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Concurrency;
 
-use RuntimeException;
 use Throwable;
 
 final readonly class Settlement
@@ -18,24 +17,20 @@ final readonly class Settlement
 
     public static function ok(mixed $value): self
     {
-        return new self(isOk: true, value: $value, error: null);
+        return new self(true, $value, null);
     }
 
     public static function err(Throwable $error): self
     {
-        return new self(isOk: false, value: null, error: $error);
+        return new self(false, null, $error);
     }
 
-    /**
-     * @throws Throwable The original error if this settlement captured a failure
-     */
     public function unwrap(): mixed
     {
-        if (!$this->isOk) {
-            throw $this->error ?? new RuntimeException('Settlement is in error state');
+        if ($this->isOk) {
+            return $this->value;
         }
-
-        return $this->value;
+        throw $this->error;
     }
 
     public function unwrapOr(mixed $default): mixed

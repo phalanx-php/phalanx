@@ -4,71 +4,49 @@ declare(strict_types=1);
 
 namespace Phalanx;
 
-use Closure;
-use Phalanx\Handler\HandlerResolver;
-use Phalanx\Middleware\ServiceTransformationMiddleware;
 use Phalanx\Middleware\TaskMiddleware;
 use Phalanx\Service\LazySingleton;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\ServiceCatalog;
-use Phalanx\Service\ServiceGraph;
-use Phalanx\Service\ServiceGraphCompiler;
+use Phalanx\Service\ServiceTransformationMiddleware;
 use Phalanx\Trace\Trace;
-use Phalanx\Trace\TraceType;
+use Phalanx\Worker\WorkerDispatch;
 
-final class ApplicationBuilder
+class ApplicationBuilder
 {
-    private bool $discover = false;
-
-    private ?Trace $trace = null;
-
-    private WorkerDispatch|Closure|null $workerDispatch = null;
-
     /** @var list<ServiceBundle> */
     private array $providers = [];
 
-    /** @var list<TaskMiddleware> */
-    private array $taskInterceptors = [];
-
     /** @var list<ServiceTransformationMiddleware> */
-    private array $serviceMiddleware = [];
+    private array $serviceMiddlewares = [];
+
+    /** @var list<TaskMiddleware> */
+    private array $taskMiddlewares = [];
+
+    private ?Trace $trace = null;
+
+    private ?WorkerDispatch $workerDispatch = null;
 
     /** @param array<string, mixed> $context */
-    public function __construct(
-        private readonly array $context,
-    ) {
-    }
-
-    public function serviceMiddleware(ServiceTransformationMiddleware ...$middleware): self
+    public function __construct(private readonly array $context)
     {
-        foreach ($middleware as $mw) {
-            $this->serviceMiddleware[] = $mw;
-        }
-
-        return $this;
-    }
-
-    public function taskMiddleware(TaskMiddleware ...$interceptors): self
-    {
-        foreach ($interceptors as $interceptor) {
-            $this->taskInterceptors[] = $interceptor;
-        }
-
-        return $this;
-    }
-
-    public function discover(): self
-    {
-        $this->discover = true;
-        return $this;
     }
 
     public function providers(ServiceBundle ...$providers): self
     {
-        foreach ($providers as $provider) {
-            $this->providers[] = $provider;
-        }
+        $this->providers = [...$this->providers, ...$providers];
+        return $this;
+    }
 
+    public function serviceMiddleware(ServiceTransformationMiddleware ...$middlewares): self
+    {
+        $this->serviceMiddlewares = array_values([...$this->serviceMiddlewares, ...$middlewares]);
+        return $this;
+    }
+
+    public function taskMiddleware(TaskMiddleware ...$middlewares): self
+    {
+        $this->taskMiddlewares = array_values([...$this->taskMiddlewares, ...$middlewares]);
         return $this;
     }
 
@@ -78,8 +56,7 @@ final class ApplicationBuilder
         return $this;
     }
 
-    /** @param WorkerDispatch|Closure(ServiceGraph, LazySingleton): WorkerDispatch $dispatch */
-    public function withWorkerDispatch(WorkerDispatch|Closure $dispatch): self
+    public function withWorkerDispatch(WorkerDispatch $dispatch): self
     {
         $this->workerDispatch = $dispatch;
         return $this;
@@ -87,68 +64,20 @@ final class ApplicationBuilder
 
     public function compile(): Application
     {
-        $trace = $this->trace ?? Trace::fromContext($this->context);
-        $trace->log(TraceType::LifecycleStartup, 'compiling');
-
-        $registry = new ServiceCatalog();
-
-        $registry->singleton(HandlerResolver::class)
-            ->factory(static fn(): HandlerResolver => new HandlerResolver());
-
-        if ($this->discover) {
-            $this->loadDiscoveredProviders();
-        }
-
+        $catalog = new ServiceCatalog($this->context);
         foreach ($this->providers as $provider) {
-            $provider->services($registry, $this->context);
+            $provider->services($catalog, $this->context);
         }
-
-        $compiler = new ServiceGraphCompiler();
-        $graph = $compiler->compile($registry, $this->serviceMiddleware, $this->context);
-
-        $singletons = new LazySingleton($graph, $trace);
-
-        $workerDispatch = $this->workerDispatch instanceof Closure
-            ? ($this->workerDispatch)($graph, $singletons)
-            : $this->workerDispatch;
-
-        return Application::create(
+        $graph = $catalog->compile();
+        $singletons = new LazySingleton($graph);
+        return new Application(
             $graph,
             $singletons,
-            $trace,
+            $this->trace ?? new Trace(),
             $this->providers,
-            $this->taskInterceptors,
-            $workerDispatch,
+            $this->serviceMiddlewares,
+            $this->taskMiddlewares,
+            $this->workerDispatch,
         );
-    }
-
-    private function loadDiscoveredProviders(): void
-    {
-        $vendorPath = $this->context['vendor_path']
-            ?? (isset($this->context['project_dir']) ? $this->context['project_dir'] . '/vendor' : null);
-
-        if ($vendorPath === null) {
-            return;
-        }
-
-        $providersFile = $vendorPath . '/phalanx/providers.php';
-        if (!file_exists($providersFile)) {
-            return;
-        }
-        $providers = require $providersFile;
-        if (!is_array($providers)) {
-            return;
-        }
-        foreach ($providers as $providerClass) {
-            if (!class_exists($providerClass)) {
-                continue;
-            }
-
-            $provider = new $providerClass();
-
-            if ($provider instanceof ServiceBundle) {
-                $this->providers[] = $provider;
-            }
-        }
     }
 }

@@ -6,16 +6,11 @@ namespace Phalanx\Trace;
 
 enum TraceType: string
 {
-    case Executing = 'EXEC';
-    case Done = 'DONE';
-    case Failed = 'FAIL';
-    case ConcurrentStart = 'CON>';
-    case ConcurrentEnd = 'CON<';
-    case Retry = 'RTRY';
-    case Cancelled = 'CANC';
-    case ServiceInit = 'SVC+';
-    case ServiceDispose = 'SVC-';
-    case LifecycleStartup = 'STRT';
-    case LifecycleShutdown = 'STOP';
-    case Suspend = 'SUSP';
+    case Execute = 'execute';
+    case Retry = 'retry';
+    case Timeout = 'timeout';
+    case Defer = 'defer';
+    case Singleflight = 'singleflight';
+    case ServiceResolve = 'service.resolve';
+    case Worker = 'worker';
 }
