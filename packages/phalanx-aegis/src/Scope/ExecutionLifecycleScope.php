@@ -227,7 +227,7 @@ class ExecutionLifecycleScope implements ExecutionScope
     {
         $attributes = $this->attributes;
         $attributes[$key] = $value;
-        return new self(
+        $child = new self(
             $this->graph,
             $this->singletons,
             $this->cancellation,
@@ -239,6 +239,11 @@ class ExecutionLifecycleScope implements ExecutionScope
             $this->taskMiddlewares,
             $this->workerDispatch,
         );
+        $this->onDispose(static function () use ($child): void {
+            $child->dispose();
+        });
+
+        return $child;
     }
 
     public function trace(): Trace

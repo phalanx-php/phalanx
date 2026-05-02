@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Phalanx\Stoa;
 
-use Phalanx\Handler\Handler;
 use FastRoute\ConfigureRoutes;
 use FastRoute\Dispatcher;
-
-use function FastRoute\simpleDispatcher;
+use FastRoute\Dispatcher\Result\Matched;
+use FastRoute\Dispatcher\Result\MethodNotAllowed;
+use FastRoute\FastRoute;
+use Phalanx\Handler\Handler;
+use RuntimeException;
 
 final class FastRouteCompiler
 {
@@ -17,22 +19,25 @@ final class FastRouteCompiler
     /** @param array<string, Handler> $handlerMap */
     public function __construct(private array $handlerMap)
     {
-        $this->dispatcher = simpleDispatcher(function (ConfigureRoutes $r) use ($handlerMap): void {
-            foreach ($handlerMap as $key => $handler) {
-                if (!$handler->config instanceof RouteConfig) {
-                    continue;
-                }
+        $this->dispatcher = FastRoute::recommendedSettings(
+            static function (ConfigureRoutes $r) use ($handlerMap): void {
+                foreach ($handlerMap as $key => $handler) {
+                    if (!$handler->config instanceof RouteConfig) {
+                        continue;
+                    }
 
-                $path = $handler->config->path;
-                if ($path === '') {
-                    continue;
-                }
+                    $path = $handler->config->fastRoutePath;
+                    if ($path === '') {
+                        continue;
+                    }
 
-                foreach ($handler->config->methods as $method) {
-                    $r->addRoute($method, $path, $key);
+                    $r->addRoute($handler->config->methods, $path, $key);
                 }
-            }
-        });
+            },
+            'stoa-routes',
+        )
+            ->disableCache()
+            ->dispatcher();
     }
 
     /**
@@ -42,17 +47,21 @@ final class FastRouteCompiler
     {
         $result = $this->dispatcher->dispatch($method, $path);
 
-        return match ($result[0]) {
-            Dispatcher::FOUND => [
-                'handler' => $this->handlerMap[$result[1]],
-                'params' => $result[2],
-            ],
-            Dispatcher::METHOD_NOT_ALLOWED => throw new MethodNotAllowedException(
-                $method,
-                $path,
-                $result[1],
-            ),
-            default => throw new RouteNotFoundException($method, $path),
-        };
+        if ($result instanceof Matched) {
+            if (!is_string($result->handler) || !isset($this->handlerMap[$result->handler])) {
+                throw new RuntimeException('FastRoute returned an unknown Stoa handler key.');
+            }
+
+            return [
+                'handler' => $this->handlerMap[$result->handler],
+                'params' => $result->variables,
+            ];
+        }
+
+        if ($result instanceof MethodNotAllowed) {
+            throw new MethodNotAllowedException($method, $path, $result->allowedMethods);
+        }
+
+        throw new RouteNotFoundException($method, $path);
     }
 }

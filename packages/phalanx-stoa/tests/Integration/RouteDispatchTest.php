@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Phalanx\Tests\Stoa\Integration;
 
 use Phalanx\Application;
+use Phalanx\Stoa\MethodNotAllowedException;
 use Phalanx\Stoa\RouteConfig;
 use Phalanx\Stoa\RouteGroup;
+use Phalanx\Stoa\RouteNotFoundException;
 use Phalanx\Tests\Fixtures\Handlers\PrefixingMiddleware;
 use Phalanx\Tests\Stoa\Fixtures\Routes\ListPosts;
 use Phalanx\Tests\Stoa\Fixtures\Routes\ListUsers;
@@ -73,6 +75,66 @@ final class RouteDispatchTest extends TestCase
     }
 
     #[Test]
+    public function fast_route_aliases_constrain_route_params(): void
+    {
+        $group = RouteGroup::of([
+            'GET /users/{id:int}' => ShowRouteId::class,
+        ]);
+
+        $scope = $this->app->createScope()
+            ->withAttribute('request', $this->createRequest('GET', '/users/42'));
+
+        self::assertSame('42', $scope->execute($group));
+
+        $scope = $this->app->createScope()
+            ->withAttribute('request', $this->createRequest('GET', '/users/int'));
+
+        $this->expectException(RouteNotFoundException::class);
+
+        $scope->execute($group);
+    }
+
+    #[Test]
+    public function fast_route_aliases_use_default_pattern_set(): void
+    {
+        $group = RouteGroup::of([
+            'GET /posts/{id:slug}' => ShowRouteId::class,
+        ]);
+
+        $scope = $this->app->createScope()
+            ->withAttribute('request', $this->createRequest('GET', '/posts/hello-world'));
+
+        self::assertSame('hello-world', $scope->execute($group));
+
+        $scope = $this->app->createScope()
+            ->withAttribute('request', $this->createRequest('GET', '/posts/HelloWorld'));
+
+        $this->expectException(RouteNotFoundException::class);
+
+        $scope->execute($group);
+    }
+
+    #[Test]
+    public function with_patterns_recompiles_existing_fast_route_paths(): void
+    {
+        $group = RouteGroup::of([
+            'GET /codes/{id:code}' => ShowRouteId::class,
+        ])->withPatterns(['code' => '[A-Z]+']);
+
+        $scope = $this->app->createScope()
+            ->withAttribute('request', $this->createRequest('GET', '/codes/ABC'));
+
+        self::assertSame('ABC', $scope->execute($group));
+
+        $scope = $this->app->createScope()
+            ->withAttribute('request', $this->createRequest('GET', '/codes/abc'));
+
+        $this->expectException(RouteNotFoundException::class);
+
+        $scope->execute($group);
+    }
+
+    #[Test]
     public function throws_when_no_route_matches(): void
     {
         $group = RouteGroup::of([
@@ -88,6 +150,24 @@ final class RouteDispatchTest extends TestCase
         $this->expectExceptionMessage('No route matches GET /posts');
 
         $scope->execute($group);
+    }
+
+    #[Test]
+    public function throws_method_not_allowed_with_fast_route_allowed_methods(): void
+    {
+        $group = RouteGroup::of([
+            'GET,POST /resource' => StatusOk::class,
+        ]);
+
+        $scope = $this->app->createScope()
+            ->withAttribute('request', $this->createRequest('DELETE', '/resource'));
+
+        try {
+            $scope->execute($group);
+            $this->fail('Expected MethodNotAllowedException');
+        } catch (MethodNotAllowedException $e) {
+            self::assertSame(['GET', 'POST'], $e->allowedMethods);
+        }
     }
 
     #[Test]
@@ -148,6 +228,28 @@ final class RouteDispatchTest extends TestCase
     }
 
     #[Test]
+    public function mount_preserves_fast_route_alias_constraints(): void
+    {
+        $group = RouteGroup::of([
+            'GET /users/{id:int}' => ShowRouteId::class,
+        ]);
+
+        $mounted = RouteGroup::of([])->mount('/api/v1', $group);
+
+        $scope = $this->app->createScope()
+            ->withAttribute('request', $this->createRequest('GET', '/api/v1/users/42'));
+
+        self::assertSame('42', $scope->execute($mounted));
+
+        $scope = $this->app->createScope()
+            ->withAttribute('request', $this->createRequest('GET', '/api/v1/users/int'));
+
+        $this->expectException(RouteNotFoundException::class);
+
+        $scope->execute($mounted);
+    }
+
+    #[Test]
     public function route_group_keys_and_merge(): void
     {
         $group1 = RouteGroup::of([
@@ -177,6 +279,7 @@ final class RouteDispatchTest extends TestCase
         $this->assertNotNull($handler);
         $this->assertInstanceOf(RouteConfig::class, $handler->config);
         $this->assertSame(['id'], $handler->config->paramNames);
+        $this->assertSame('/users/{id}', $handler->config->fastRoutePath);
     }
 
     private function createRequest(string $method, string $path): ServerRequestInterface

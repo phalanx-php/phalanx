@@ -6,6 +6,7 @@ namespace Phalanx\Tests\Stoa\Integration;
 
 use Phalanx\Application;
 use Phalanx\Stoa\RouteGroup;
+use Phalanx\Stoa\RouteNotFoundException;
 use Phalanx\Stoa\ValidationException;
 use Phalanx\Stoa\Validator\Param\IntInRange;
 use Phalanx\Stoa\Validator\Param\OneOf;
@@ -47,6 +48,21 @@ final class ParamValidatorDispatchTest extends TestCase
         $result = $scope->execute($group);
 
         $this->assertSame('42', $result);
+    }
+
+    #[Test]
+    public function param_validator_pattern_rejects_invalid_shape_before_dispatch(): void
+    {
+        $group = RouteGroup::of([
+            'GET /items/{id}' => ShowRouteId::class,
+        ])->withPatterns(['id' => new IntInRange(1, 999)]);
+
+        $request = $this->createRequest('GET', '/items/abc');
+        $scope = $this->app->createScope()->withAttribute('request', $request);
+
+        $this->expectException(RouteNotFoundException::class);
+
+        $scope->execute($group);
     }
 
     #[Test]

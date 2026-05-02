@@ -5,14 +5,15 @@ declare(strict_types=1);
 namespace Phalanx\Stoa;
 
 use GuzzleHttp\Psr7\Response as PsrResponse;
+use GuzzleHttp\Psr7\Utils;
 use OpenSwoole\Http\Request;
 use OpenSwoole\Http\Response;
 use OpenSwoole\Http\Server;
 use OpenSwoole\Timer;
 use Phalanx\AppHost;
 use Phalanx\Cancellation\CancellationToken;
-use Phalanx\Support\SignalHandler;
 use Phalanx\Supervisor\TaskTreeFormatter;
+use Phalanx\Support\SignalHandler;
 use Phalanx\Trace\TraceType;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -52,6 +53,72 @@ final class StoaRunner
         bool $debug = false,
     ): self {
         return new self($app, $requestTimeout, $drainTimeout, $debug);
+    }
+
+    public static function toResponse(mixed $data): ResponseInterface
+    {
+        if ($data instanceof ResponseInterface) {
+            return $data;
+        }
+
+        if ($data instanceof ToResponse) {
+            return $data->toResponse();
+        }
+
+        if (is_array($data) || is_object($data)) {
+            return new PsrResponse(
+                200,
+                ['Content-Type' => 'application/json'],
+                json_encode($data, JSON_THROW_ON_ERROR),
+            );
+        }
+
+        if (is_string($data)) {
+            return new PsrResponse(200, ['Content-Type' => 'text/plain'], $data);
+        }
+
+        return new PsrResponse(
+            200,
+            ['Content-Type' => 'application/json'],
+            json_encode(['result' => $data], JSON_THROW_ON_ERROR),
+        );
+    }
+
+    /** @return array{string, int} */
+    private static function parseListen(string $listen): array
+    {
+        $separator = strrpos($listen, ':');
+
+        if ($separator === false) {
+            throw new RuntimeException("Invalid listen address: {$listen}");
+        }
+
+        $host = substr($listen, 0, $separator);
+        $port = (int) substr($listen, $separator + 1);
+
+        if ($host === '' || $port <= 0) {
+            throw new RuntimeException("Invalid listen address: {$listen}");
+        }
+
+        return [$host, $port];
+    }
+
+    /** @param string|list<string> $paths */
+    private static function loadRoutes(AppHost $app, string|array $paths): RouteGroup
+    {
+        $paths = is_string($paths) ? [$paths] : $paths;
+        $scope = $app->createScope();
+        $group = RouteGroup::of([]);
+
+        try {
+            foreach ($paths as $dir) {
+                $group = $group->merge(RouteLoader::loadDirectory($dir, $scope));
+            }
+        } finally {
+            $scope->dispose();
+        }
+
+        return $group;
     }
 
     /** @param RouteGroup|string|list<string> $routes */
@@ -204,7 +271,8 @@ final class StoaRunner
             return $this->finish($response, $target, $run);
         }
 
-        if ($this->routes === null) {
+        $routes = $this->routes;
+        if ($routes === null) {
             $response = $this->jsonResponse(404, ['error' => 'Not Found']);
             $run->complete();
             return $this->finish($response, $target, $run);
@@ -222,7 +290,7 @@ final class StoaRunner
 
         try {
             try {
-                $result = $scope->execute($this->routes);
+                $result = $scope->execute($routes);
                 $response = $result instanceof ResponseInterface
                     ? $result
                     : self::toResponse($result);
@@ -247,6 +315,8 @@ final class StoaRunner
 
     private function finish(ResponseInterface $response, ?Response $target, RequestLifecycle $run): ?ResponseInterface
     {
+        $response = $this->normalizeResponseForMethod($response, $run);
+
         if ($target === null) {
             $run->complete();
             return $response;
@@ -270,6 +340,15 @@ final class StoaRunner
         }
 
         return null;
+    }
+
+    private function normalizeResponseForMethod(ResponseInterface $response, RequestLifecycle $run): ResponseInterface
+    {
+        if ($run->method !== 'HEAD') {
+            return $response;
+        }
+
+        return $response->withBody(Utils::streamFor(''));
     }
 
     private function registerRun(RequestLifecycle $run): void
@@ -328,35 +407,6 @@ final class StoaRunner
         $this->server = null;
     }
 
-    public static function toResponse(mixed $data): ResponseInterface
-    {
-        if ($data instanceof ResponseInterface) {
-            return $data;
-        }
-
-        if ($data instanceof ToResponse) {
-            return $data->toResponse();
-        }
-
-        if (is_array($data) || is_object($data)) {
-            return new PsrResponse(
-                200,
-                ['Content-Type' => 'application/json'],
-                json_encode($data, JSON_THROW_ON_ERROR),
-            );
-        }
-
-        if (is_string($data)) {
-            return new PsrResponse(200, ['Content-Type' => 'text/plain'], $data);
-        }
-
-        return new PsrResponse(
-            200,
-            ['Content-Type' => 'application/json'],
-            json_encode(['result' => $data], JSON_THROW_ON_ERROR),
-        );
-    }
-
     /** @param array<string, mixed> $body */
     private function jsonResponse(int $status, array $body): ResponseInterface
     {
@@ -401,42 +451,5 @@ final class StoaRunner
         }
 
         return array_slice($trace, 0, 10);
-    }
-
-    /** @return array{string, int} */
-    private static function parseListen(string $listen): array
-    {
-        $separator = strrpos($listen, ':');
-
-        if ($separator === false) {
-            throw new RuntimeException("Invalid listen address: {$listen}");
-        }
-
-        $host = substr($listen, 0, $separator);
-        $port = (int) substr($listen, $separator + 1);
-
-        if ($host === '' || $port <= 0) {
-            throw new RuntimeException("Invalid listen address: {$listen}");
-        }
-
-        return [$host, $port];
-    }
-
-    /** @param string|list<string> $paths */
-    private static function loadRoutes(AppHost $app, string|array $paths): RouteGroup
-    {
-        $paths = is_string($paths) ? [$paths] : $paths;
-        $scope = $app->createScope();
-        $group = RouteGroup::of([]);
-
-        try {
-            foreach ($paths as $dir) {
-                $group = $group->merge(RouteLoader::loadDirectory($dir, $scope));
-            }
-        } finally {
-            $scope->dispose();
-        }
-
-        return $group;
     }
 }

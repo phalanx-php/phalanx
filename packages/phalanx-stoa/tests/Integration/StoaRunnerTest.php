@@ -46,6 +46,24 @@ final class StoaRunnerTest extends TestCase
     }
 
     #[Test]
+    public function head_request_uses_get_route_without_response_body(): void
+    {
+        $app = Application::starting()->compile()->startup();
+        $runner = StoaRunner::from($app)->withRoutes(RouteGroup::of([
+            'GET /plaintext' => PlainTextStoaRoute::class,
+        ]));
+
+        try {
+            $response = $runner->dispatch(new ServerRequest('HEAD', '/plaintext'));
+        } finally {
+            $app->shutdown();
+        }
+
+        self::assertSame(200, $response->getStatusCode());
+        self::assertSame('', (string) $response->getBody());
+    }
+
+    #[Test]
     public function dispatches_json_route_through_existing_route_scope(): void
     {
         $app = Application::starting()->compile()->startup();

@@ -210,25 +210,74 @@ final class RouteGroup implements Executable
         }
     }
 
-    public function __invoke(ExecutionScope $scope): mixed
+    /**
+     * @return array{methods: list<string>, path: string}|null
+     */
+    private static function parseKey(string $key): ?array
     {
-        return ($this->inner)($scope);
+        if (preg_match('#^([A-Z,]+)\s+(/\S*)$#', $key, $m)) {
+            return [
+                'methods' => explode(',', $m[1]),
+                'path' => $m[2],
+            ];
+        }
+
+        return null;
+    }
+
+    private static function prefixRouteKey(string $prefix, string $key): string
+    {
+        $parsed = self::parseKey($key);
+
+        if ($parsed !== null) {
+            return implode(',', $parsed['methods']) . ' ' . $prefix . $parsed['path'];
+        }
+
+        return $key;
+    }
+
+    private static function prefixRouteConfig(string $prefix, RouteConfig $config): RouteConfig
+    {
+        return new RouteConfig(
+            methods: $config->methods,
+            path: $prefix . $config->path,
+            fastRoutePath: $prefix . $config->fastRoutePath,
+            paramNames: $config->paramNames,
+            middleware: $config->middleware,
+            tags: $config->tags,
+            priority: $config->priority,
+            paramValidators: $config->paramValidators,
+        );
     }
 
     /**
-     * Register named pattern aliases for path placeholders.
-     *
-     * Accepts a mix of string patterns (fed to FastRoute at compile time) and
-     * RouteParamValidator instances keyed by PARAM NAME. Validators are
-     * attached to every route in the group whose compiled paramNames include
-     * the given key. Validators that return a non-null toPattern() are used
-     * as both the compile-time regex constraint AND the imperative validator.
-     *
-     * String pattern aliases (e.g. 'int' => '\d+') continue to work as
-     * before and apply to routes added AFTER this call only.
-     *
-     * @param array<string, string|RouteParamValidator> $patterns
+     * @param array<string, string> $patterns
+     * @param array<string, RouteParamValidator> $validators
      */
+    private static function compileRouteConfig(
+        RouteConfig $config,
+        array $patterns,
+        array $validators,
+    ): RouteConfig {
+        $compiled = RouteConfig::compile($config->path, $config->methods, $patterns);
+        $matchingValidators = array_intersect_key(
+            $validators,
+            array_flip($compiled->paramNames),
+        );
+
+        return new RouteConfig(
+            methods: $compiled->methods,
+            path: $compiled->path,
+            fastRoutePath: $compiled->fastRoutePath,
+            paramNames: $compiled->paramNames,
+            middleware: $config->middleware,
+            tags: $config->tags,
+            priority: $config->priority,
+            paramValidators: [...$config->paramValidators, ...$matchingValidators],
+        );
+    }
+
+    /** @param array<string, string|RouteParamValidator> $patterns */
     public function withPatterns(array $patterns): self
     {
         $newStringPatterns = [];
@@ -246,31 +295,27 @@ final class RouteGroup implements Executable
             }
         }
 
-        // Attach imperative validators to existing routes whose param names
-        // match. Re-build the inner HandlerGroup preserving all state except
-        // the updated handler entries.
+        $stringPatterns = [...$this->patterns, ...$newStringPatterns];
+        $paramValidators = [...$this->paramValidators, ...$newParamValidators];
         $inner = $this->inner;
-        if ($newParamValidators !== []) {
-            foreach ($inner->all() as $key => $handler) {
-                if (!$handler->config instanceof RouteConfig) {
-                    continue;
-                }
-                $matchingValidators = array_intersect_key(
-                    $newParamValidators,
-                    array_flip($handler->config->paramNames),
-                );
-                if ($matchingValidators !== []) {
-                    $newConfig = $handler->config->withParamValidators(
-                        [...$handler->config->paramValidators, ...$matchingValidators]
-                    );
-                    $inner = $inner->add($key, new Handler($handler->task, $newConfig));
-                }
+
+        foreach ($inner->all() as $key => $handler) {
+            if (!$handler->config instanceof RouteConfig) {
+                continue;
             }
+
+            $inner = $inner->add(
+                $key,
+                new Handler(
+                    $handler->task,
+                    self::compileRouteConfig($handler->config, $stringPatterns, $paramValidators),
+                ),
+            );
         }
 
         $clone = self::fromHandlerGroup($inner);
-        $clone->patterns = [...$this->patterns, ...$newStringPatterns];
-        $clone->paramValidators = [...$this->paramValidators, ...$newParamValidators];
+        $clone->patterns = $stringPatterns;
+        $clone->paramValidators = $paramValidators;
 
         return $clone;
     }
@@ -343,51 +388,8 @@ final class RouteGroup implements Executable
         return $this->inner->filterByConfig(RouteConfig::class);
     }
 
-    /**
-     * @return array{methods: list<string>, path: string}|null
-     */
-    private static function parseKey(string $key): ?array
+    public function __invoke(ExecutionScope $scope): mixed
     {
-        if (preg_match('#^([A-Z,]+)\s+(/\S*)$#', $key, $m)) {
-            return [
-                'methods' => explode(',', $m[1]),
-                'path' => $m[2],
-            ];
-        }
-
-        return null;
-    }
-
-    private static function prefixRouteKey(string $prefix, string $key): string
-    {
-        $parsed = self::parseKey($key);
-
-        if ($parsed !== null) {
-            return implode(',', $parsed['methods']) . ' ' . $prefix . $parsed['path'];
-        }
-
-        return $key;
-    }
-
-    private static function prefixRouteConfig(string $prefix, RouteConfig $config): RouteConfig
-    {
-        $prefixPattern = preg_quote($prefix, '#');
-        // Pattern format is '#^/path$#'. Strip the '#^' delimiter+anchor (2
-        // chars) from the start and the trailing '#' delimiter (1 char) from
-        // the end, leaving '/path$'. Then prepend a fresh '#^/prefix' and
-        // close with '#' to produce the final '#^/prefix/path$#'.
-        $innerPattern = substr($config->pattern, 2, -1);
-        $newPattern = '#^' . $prefixPattern . $innerPattern . '#';
-
-        return new RouteConfig(
-            $config->methods,
-            $newPattern,
-            $config->paramNames,
-            $prefix . $config->path,
-            $config->middleware,
-            $config->tags,
-            $config->priority,
-            $config->paramValidators,
-        );
+        return ($this->inner)($scope);
     }
 }
