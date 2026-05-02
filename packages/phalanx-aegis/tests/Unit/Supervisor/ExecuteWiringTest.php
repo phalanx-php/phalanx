@@ -8,6 +8,8 @@ use Phalanx\Application;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Concurrency\RetryPolicy;
 use Phalanx\Middleware\RetryMiddleware;
+use Phalanx\Runtime\RuntimeHooks;
+use Phalanx\Runtime\RuntimePolicy;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
@@ -206,7 +208,7 @@ final class ExecuteWiringTest extends TestCase
 
         // Retry uses Co::sleep between attempts; needs coroutine context.
         $caught = null;
-        \OpenSwoole\Coroutine::set(['hook_flags' => SWOOLE_HOOK_ALL]);
+        RuntimeHooks::ensure(RuntimePolicy::phalanxManaged());
         \OpenSwoole\Coroutine::run(static function () use ($app, $task, &$caught): void {
             try {
                 $scope = $app->createScope();

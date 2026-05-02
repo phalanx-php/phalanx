@@ -6,6 +6,8 @@ namespace Phalanx\Tests\Support;
 
 use Closure;
 use OpenSwoole\Coroutine;
+use Phalanx\Runtime\RuntimeHooks;
+use Phalanx\Runtime\RuntimePolicy;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Supervisor\InProcessLedger;
 use Phalanx\Testing\TestScope;
@@ -15,8 +17,8 @@ use Throwable;
 /**
  * Test base for cases that exercise suspending primitives — Co::sleep,
  * $scope->call(), $scope->concurrent(), $scope->retry(), worker dispatch,
- * etc. Wraps the test body in Coroutine::run() so HOOK_ALL is active and
- * coroutine-only APIs are callable.
+ * etc. Wraps the test body in Coroutine::run() after Aegis has ensured the
+ * managed OpenSwoole runtime hooks.
  *
  * Use plain TestCase for tests that don't suspend (data structures,
  * value objects, ledger CRUD).
@@ -29,7 +31,7 @@ abstract class CoroutineTestCase extends TestCase
         if ($booted) {
             return;
         }
-        Coroutine::set(['hook_flags' => SWOOLE_HOOK_ALL]);
+        RuntimeHooks::ensure(RuntimePolicy::phalanxManaged());
         $booted = true;
     }
 

@@ -7,14 +7,13 @@ namespace Phalanx\Worker;
 use RuntimeException;
 
 /**
- * Wraps a child process spawned via proc_open. proc_open is part of
- * SWOOLE_HOOK_ALL, so reads/writes on the returned pipes yield the calling
- * coroutine to the scheduler.
+ * Wraps a child process spawned via proc_open. Aegis enables OpenSwoole's
+ * process and stream hooks as runtime substrate support for worker dispatch.
  *
  * OpenSwoole's native `OpenSwoole\Process` cannot fork while the runtime's
  * async-io thread pool is active (the runtime refuses with "unable to create
  * OpenSwoole\Process with async-io threads"). proc_open is the supported path
- * for forking under HOOK_ALL.
+ * for forking under the managed runtime hook baseline.
  */
 class ProcessHandle
 {
@@ -63,10 +62,9 @@ class ProcessHandle
         $this->pid = (int) $status['pid'];
 
         // Substrate finding (Phase 8): blocking fread on a proc_open pipe does NOT
-        // yield to the OpenSwoole 26 coroutine scheduler. SWOOLE_HOOK_ALL includes
-        // HOOK_PROC but the pipe-side reads stall the entire scheduler when the
-        // child takes >0ms to respond. We set non-blocking + use stream_select
-        // (which IS hooked) for the wait — that yields cleanly.
+        // yield to the OpenSwoole 26 coroutine scheduler. Even with process hooks,
+        // pipe-side reads stall the scheduler when the child takes >0ms to respond.
+        // We set non-blocking + use stream_select for the wait — that yields cleanly.
         stream_set_blocking($this->stdout, false);
         stream_set_blocking($this->stderr, false);
     }
@@ -100,8 +98,8 @@ class ProcessHandle
                 $this->readBuffer = substr($this->readBuffer, $newlinePos + 1);
                 return $line;
             }
-            // Wait for data via stream_select (hooked under HOOK_ALL → yields
-            // the calling coroutine instead of blocking the scheduler).
+            // Wait for data via stream_select so the calling coroutine yields
+            // instead of blocking the scheduler.
             $r = [$stdout];
             $w = null;
             $e = null;

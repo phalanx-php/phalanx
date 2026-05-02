@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Phalanx;
 
+use InvalidArgumentException;
 use Phalanx\Handler\HandlerResolver;
 use Phalanx\Middleware\ServiceTransformationMiddleware;
 use Phalanx\Middleware\TaskMiddleware;
+use Phalanx\Runtime\RuntimePolicy;
 use Phalanx\Service\LazySingleton;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\ServiceCatalog;
@@ -33,9 +35,39 @@ class ApplicationBuilder
 
     private ?WorkerDispatch $workerDispatch = null;
 
+    private ?RuntimePolicy $runtimePolicy = null;
+
+    private ?bool $strictRuntimeHooks = null;
+
     /** @param array<string, mixed> $context */
     public function __construct(private readonly array $context)
     {
+    }
+
+    /** @param array<string, mixed> $context */
+    private static function strictRuntimeHooksFromContext(array $context): bool
+    {
+        $strict = $context[RuntimePolicy::CONTEXT_STRICT_HOOKS] ?? true;
+
+        if (is_bool($strict)) {
+            return $strict;
+        }
+
+        if (is_string($strict)) {
+            return match (strtolower($strict)) {
+                '1', 'true', 'yes', 'on' => true,
+                '0', 'false', 'no', 'off' => false,
+                default => throw new InvalidArgumentException(sprintf(
+                    '%s must be a boolean.',
+                    RuntimePolicy::CONTEXT_STRICT_HOOKS,
+                )),
+            };
+        }
+
+        throw new InvalidArgumentException(sprintf(
+            '%s must be a boolean.',
+            RuntimePolicy::CONTEXT_STRICT_HOOKS,
+        ));
     }
 
     public function providers(ServiceBundle ...$providers): self
@@ -68,6 +100,18 @@ class ApplicationBuilder
         return $this;
     }
 
+    public function withRuntimePolicy(RuntimePolicy $policy): self
+    {
+        $this->runtimePolicy = $policy;
+        return $this;
+    }
+
+    public function withRuntimeHooksStrict(bool $strict): self
+    {
+        $this->strictRuntimeHooks = $strict;
+        return $this;
+    }
+
     /**
      * Override the supervisor's ledger backend. Defaults to InProcessLedger
      * (PHP array, lock-free under cooperative scheduling). Swap to
@@ -92,6 +136,9 @@ class ApplicationBuilder
         $singletons = new LazySingleton($graph);
         $trace = $this->trace ?? new Trace();
         $supervisor = new Supervisor($this->ledger ?? new InProcessLedger(), $trace);
+        $runtimePolicy = $this->runtimePolicy ?? RuntimePolicy::fromContext($this->context);
+        $strictRuntimeHooks = $this->strictRuntimeHooks ?? self::strictRuntimeHooksFromContext($this->context);
+
         return new Application(
             $graph,
             $singletons,
@@ -101,6 +148,8 @@ class ApplicationBuilder
             $this->serviceMiddlewares,
             $this->taskMiddlewares,
             $this->workerDispatch,
+            $runtimePolicy,
+            $strictRuntimeHooks,
         );
     }
 }

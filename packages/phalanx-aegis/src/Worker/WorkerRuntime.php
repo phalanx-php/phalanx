@@ -6,6 +6,8 @@ namespace Phalanx\Worker;
 
 use OpenSwoole\Coroutine;
 use Phalanx\Application;
+use Phalanx\Runtime\RuntimeHooks;
+use Phalanx\Runtime\RuntimePolicy;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 use Phalanx\Worker\Protocol\Response;
@@ -31,7 +33,7 @@ class WorkerRuntime
             require $autoloadPath;
         }
 
-        Coroutine::set(['hook_flags' => SWOOLE_HOOK_ALL]);
+        RuntimeHooks::ensure(RuntimePolicy::phalanxManaged());
 
         Coroutine::run(static function (): void {
             $emptyBundle = new class implements ServiceBundle {
@@ -42,9 +44,9 @@ class WorkerRuntime
             $app = Application::starting([])->providers($emptyBundle)->compile()->startup();
 
             // Switch STDIN to non-blocking and use stream_select to yield to the
-            // scheduler. Mirrors the parent-side ProcessHandle::readLine pattern —
-            // STDIO hook flags don't reliably retro-hook STDIN under HOOK_ALL on
-            // OpenSwoole 26 (Phase 8 substrate finding).
+            // scheduler. Mirrors the parent-side ProcessHandle::readLine pattern:
+            // STDIO hooks are intentionally outside the default managed runtime
+            // baseline until console/TTY semantics are proven.
             stream_set_blocking(STDIN, false);
             $buffer = '';
             while (true) {

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Phalanx\Tests\Unit\Supervisor;
 
 use Phalanx\Application;
+use Phalanx\Runtime\RuntimeHooks;
+use Phalanx\Runtime\RuntimePolicy;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
@@ -24,7 +26,7 @@ final class WaitReasonRecordingTest extends TestCase
 
         $observed = null;
 
-        \OpenSwoole\Coroutine::set(['hook_flags' => SWOOLE_HOOK_ALL]);
+        self::bootRuntimeHooks();
         \OpenSwoole\Coroutine::run(static function () use ($app, $ledger, &$observed): void {
             $scope = $app->createScope();
             $task = Task::of(static function (ExecutionScope $s) use ($ledger, &$observed): void {
@@ -61,7 +63,7 @@ final class WaitReasonRecordingTest extends TestCase
 
         $observed = null;
 
-        \OpenSwoole\Coroutine::set(['hook_flags' => SWOOLE_HOOK_ALL]);
+        self::bootRuntimeHooks();
         \OpenSwoole\Coroutine::run(static function () use ($app, $ledger, &$observed): void {
             $scope = $app->createScope();
             $task = Task::of(static function (ExecutionScope $s) use ($ledger, &$observed): void {
@@ -91,7 +93,7 @@ final class WaitReasonRecordingTest extends TestCase
 
         $observedWait = 'sentinel';
 
-        \OpenSwoole\Coroutine::set(['hook_flags' => SWOOLE_HOOK_ALL]);
+        self::bootRuntimeHooks();
         \OpenSwoole\Coroutine::run(static function () use ($app, $ledger, &$observedWait): void {
             $scope = $app->createScope();
             $task = Task::of(static function (ExecutionScope $s) use ($ledger, &$observedWait): void {
@@ -124,5 +126,10 @@ final class WaitReasonRecordingTest extends TestCase
             ->providers($bundle)
             ->withLedger($ledger)
             ->compile();
+    }
+
+    private static function bootRuntimeHooks(): void
+    {
+        RuntimeHooks::ensure(RuntimePolicy::phalanxManaged());
     }
 }

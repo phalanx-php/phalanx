@@ -11,9 +11,10 @@ interface Suspendable
 {
     /**
      * Run the closure in the calling coroutine, racing against scope cancellation.
-     * Under HOOK_ALL the closure's blocking I/O suspends transparently;
-     * cancellation is enforced by registering a Coroutine::cancel listener on
-     * the scope's token for the duration of the call.
+     * Under Aegis-managed OpenSwoole runtime hooks, supported blocking I/O
+     * suspends transparently; cancellation is enforced by registering a
+     * Coroutine::cancel listener on the scope's token for the duration of the
+     * call.
      *
      * Pass $waitReason so the supervisor records what the active TaskRun is
      * parked on. The diagnostic surface (task tree dump, leak reports) shows

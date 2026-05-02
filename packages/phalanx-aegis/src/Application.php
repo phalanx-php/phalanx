@@ -7,6 +7,8 @@ namespace Phalanx;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Middleware\ServiceTransformationMiddleware;
 use Phalanx\Middleware\TaskMiddleware;
+use Phalanx\Runtime\RuntimeHooks;
+use Phalanx\Runtime\RuntimePolicy;
 use Phalanx\Scope\ExecutionLifecycleScope;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\Scope;
@@ -20,6 +22,8 @@ use Phalanx\Worker\WorkerDispatch;
 class Application implements AppHost
 {
     private bool $started = false;
+
+    private readonly RuntimePolicy $runtimePolicy;
 
     /**
      * @param list<ServiceBundle> $providers
@@ -35,7 +39,10 @@ class Application implements AppHost
         private readonly array $serviceMiddlewares = [],
         private readonly array $taskMiddlewares = [],
         private readonly ?WorkerDispatch $workerDispatch = null,
+        ?RuntimePolicy $runtimePolicy = null,
+        private readonly bool $strictRuntimeHooks = true,
     ) {
+        $this->runtimePolicy = $runtimePolicy ?? RuntimePolicy::phalanxManaged();
     }
 
     /** @param array<string, mixed> $context */
@@ -56,6 +63,8 @@ class Application implements AppHost
 
     public function createScope(?CancellationToken $token = null): ExecutionScope
     {
+        $this->ensureRuntimeHooks();
+
         return new ExecutionLifecycleScope(
             $this->graph,
             $this->singletons,
@@ -78,6 +87,7 @@ class Application implements AppHost
         if ($this->started) {
             return $this;
         }
+        $this->ensureRuntimeHooks();
         $this->started = true;
         $rootScope = $this->createScope();
         try {
@@ -98,5 +108,10 @@ class Application implements AppHost
     public function trace(): Trace
     {
         return $this->traceLog;
+    }
+
+    private function ensureRuntimeHooks(): void
+    {
+        RuntimeHooks::ensure($this->runtimePolicy, $this->strictRuntimeHooks);
     }
 }
