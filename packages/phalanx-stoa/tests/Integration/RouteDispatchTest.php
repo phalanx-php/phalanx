@@ -228,6 +228,29 @@ final class RouteDispatchTest extends TestCase
     }
 
     #[Test]
+    public function mount_preserves_wrapped_group_middleware_without_leaking_to_siblings(): void
+    {
+        $public = RouteGroup::of([
+            'GET /public' => StatusOk::class,
+        ]);
+        $admin = RouteGroup::of([
+            'GET /admin' => StatusOk::class,
+        ])->wrap(PrefixingMiddleware::class);
+
+        $mounted = RouteGroup::of([])
+            ->mount('/api', $public)
+            ->mount('/api', $admin);
+
+        $publicScope = $this->app->createScope()
+            ->withAttribute('request', $this->createRequest('GET', '/api/public'));
+        $adminScope = $this->app->createScope()
+            ->withAttribute('request', $this->createRequest('GET', '/api/admin'));
+
+        self::assertSame('ok', $publicScope->execute($mounted));
+        self::assertSame('before:ok:after', $adminScope->execute($mounted));
+    }
+
+    #[Test]
     public function mount_preserves_fast_route_alias_constraints(): void
     {
         $group = RouteGroup::of([

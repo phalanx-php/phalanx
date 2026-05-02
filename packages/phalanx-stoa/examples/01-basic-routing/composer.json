@@ -1,0 +1,26 @@
+{
+    "name": "phalanx-php/example-stoa-basic-routing",
+    "description": "Phalanx Stoa example: FastRoute-backed routes, path params, and HEAD handling",
+    "type": "project",
+    "require": {
+        "php": "^8.4",
+        "phalanx-php/stoa": "dev-main"
+    },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../../../*"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Acme\\StoaDemo\\Basic\\": "src/"
+        }
+    },
+    "scripts": {
+        "demo": "php demo.php",
+        "serve": "php server.php"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

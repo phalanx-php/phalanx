@@ -236,14 +236,15 @@ final class RouteGroup implements Executable
         return $key;
     }
 
-    private static function prefixRouteConfig(string $prefix, RouteConfig $config): RouteConfig
+    /** @param list<class-string> $middleware */
+    private static function prefixRouteConfig(string $prefix, RouteConfig $config, array $middleware = []): RouteConfig
     {
         return new RouteConfig(
             methods: $config->methods,
             path: $prefix . $config->path,
             fastRoutePath: $prefix . $config->fastRoutePath,
             paramNames: $config->paramNames,
-            middleware: $config->middleware,
+            middleware: [...$middleware, ...$config->middleware],
             tags: $config->tags,
             priority: $config->priority,
             paramValidators: $config->paramValidators,
@@ -339,7 +340,7 @@ final class RouteGroup implements Executable
         foreach ($group->inner->all() as $key => $handler) {
             if ($handler->config instanceof RouteConfig) {
                 $newKey = self::prefixRouteKey($prefix, $key);
-                $newConfig = self::prefixRouteConfig($prefix, $handler->config);
+                $newConfig = self::prefixRouteConfig($prefix, $handler->config, $group->inner->middleware);
                 $mounted = $mounted->add($newKey, new Handler($handler->task, $newConfig));
             } else {
                 $mounted = $mounted->add($key, $handler);
