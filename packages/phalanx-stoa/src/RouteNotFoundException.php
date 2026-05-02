@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Stoa;
 
+use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
-use React\Http\Message\Response;
 
 final class RouteNotFoundException extends \RuntimeException implements ToResponse
 {
@@ -20,9 +20,13 @@ final class RouteNotFoundException extends \RuntimeException implements ToRespon
 
     public function toResponse(): ResponseInterface
     {
-        return Response::json([
-            'error' => 'Not Found',
-            'message' => $this->getMessage(),
-        ])->withStatus($this->status);
+        return new Response(
+            $this->status,
+            ['Content-Type' => 'application/json'],
+            json_encode([
+                'error' => 'Not Found',
+                'message' => $this->getMessage(),
+            ], JSON_THROW_ON_ERROR),
+        );
     }
 }

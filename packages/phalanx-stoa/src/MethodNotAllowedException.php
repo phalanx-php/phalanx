@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Stoa;
 
+use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
-use React\Http\Message\Response;
 
 final class MethodNotAllowedException extends \RuntimeException implements ToResponse
 {
@@ -22,10 +22,16 @@ final class MethodNotAllowedException extends \RuntimeException implements ToRes
 
     public function toResponse(): ResponseInterface
     {
-        return Response::json([
-            'error' => 'Method Not Allowed',
-            'message' => $this->getMessage(),
-        ])->withStatus($this->status)
-            ->withHeader('Allow', implode(', ', $this->allowedMethods));
+        return new Response(
+            $this->status,
+            [
+                'Allow' => implode(', ', $this->allowedMethods),
+                'Content-Type' => 'application/json',
+            ],
+            json_encode([
+                'error' => 'Method Not Allowed',
+                'message' => $this->getMessage(),
+            ], JSON_THROW_ON_ERROR),
+        );
     }
 }

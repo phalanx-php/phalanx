@@ -3,7 +3,7 @@
     "description": "HTTP server framework for Phalanx",
     "license": "MIT",
     "type": "library",
-    "keywords": ["http", "server", "routing", "async", "fastroute", "reactphp"],
+    "keywords": ["http", "server", "routing", "async", "fastroute", "openswoole"],
     "authors": [
         {
             "name": "Jonathan Havens",
@@ -13,10 +13,10 @@
     "homepage": "https://github.com/phalanx-php/phalanx-stoa",
     "require": {
         "php": "^8.4",
-        "phalanx-php/aegis": "^0.5",
+        "guzzlehttp/psr7": "^2.0",
         "nikic/fast-route": "^2.0",
-        "react/datagram": "^1.10",
-        "react/http": "^1.10"
+        "openswoole/core": "^26.2",
+        "phalanx-php/aegis": "^0.5"
     },
     "suggest": {
         "symfony/runtime": "For Symfony Runtime integration via PhalanxHttpRunner",

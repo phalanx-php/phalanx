@@ -7,12 +7,15 @@ namespace Phalanx;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\Scope;
+use Phalanx\Supervisor\Supervisor;
 use Phalanx\Trace\Trace;
 
 interface AppHost
 {
     /** @return list<\Phalanx\Service\ServiceBundle> */
     public function providers(): array;
+
+    public function supervisor(): Supervisor;
 
     public function createScope(?CancellationToken $token = null): ExecutionScope;
 

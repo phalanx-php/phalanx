@@ -169,7 +169,7 @@ final class Frontend
 
     private function buildCliProcess(string $cwd): Process
     {
-        $bin = BinaryResolver::bun();
+        $bin = BinaryResolver::bun($this->env);
         $parts = [$bin, 'build', $this->entry, '--outdir', $this->outdir, '--target', 'browser'];
 
         if ($this->splitting) {
@@ -203,7 +203,7 @@ final class Frontend
 
     private function buildPluginProcess(string $cwd): Process
     {
-        $bin = BinaryResolver::bun();
+        $bin = BinaryResolver::bun($this->env);
         $script = BuildScript::generate(
             $this->type,
             $this->entry,

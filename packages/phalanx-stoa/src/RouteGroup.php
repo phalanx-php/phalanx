@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Phalanx\Stoa;
 
 use Closure;
-use Phalanx\ExecutionScope;
 use Phalanx\Handler\Handler;
 use Phalanx\Handler\HandlerGroup;
 use Phalanx\Handler\HandlerResolver;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Stoa\Contract\HasValidators;
 use Phalanx\Stoa\Contract\Header;
 use Phalanx\Stoa\Contract\InputHydrator;
@@ -383,7 +383,6 @@ final class RouteGroup implements Executable
             $config->methods,
             $newPattern,
             $config->paramNames,
-            $config->protocol,
             $prefix . $config->path,
             $config->middleware,
             $config->tags,

@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Phalanx\Tests\Stoa\Integration;
 
-use Phalanx\Stoa\Runner;
+use GuzzleHttp\Psr7\Response;
+use Phalanx\Stoa\StoaRunner;
 use Phalanx\Stoa\ToResponse;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
-use React\Http\Message\Response;
 
 final class ToResponseTest extends TestCase
 {
@@ -17,7 +17,7 @@ final class ToResponseTest extends TestCase
     public function to_response_returns_response_interface_unchanged(): void
     {
         $response = new Response(200, [], 'ok');
-        $result = Runner::toResponse($response);
+        $result = StoaRunner::toResponse($response);
 
         $this->assertSame($response, $result);
     }
@@ -40,7 +40,7 @@ final class ToResponseTest extends TestCase
             }
         };
 
-        $result = Runner::toResponse($obj);
+        $result = StoaRunner::toResponse($obj);
 
         $this->assertSame($inner, $result);
         $this->assertSame(201, $result->getStatusCode());
@@ -50,7 +50,7 @@ final class ToResponseTest extends TestCase
     #[Test]
     public function to_response_converts_array_to_json(): void
     {
-        $result = Runner::toResponse(['key' => 'value']);
+        $result = StoaRunner::toResponse(['key' => 'value']);
 
         $this->assertSame(200, $result->getStatusCode());
         $this->assertStringContainsString('application/json', $result->getHeaderLine('Content-Type'));
@@ -59,7 +59,7 @@ final class ToResponseTest extends TestCase
     #[Test]
     public function to_response_converts_string_to_plain_text(): void
     {
-        $result = Runner::toResponse('hello world');
+        $result = StoaRunner::toResponse('hello world');
 
         $this->assertSame(200, $result->getStatusCode());
         $this->assertSame('text/plain', $result->getHeaderLine('Content-Type'));

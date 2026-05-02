@@ -18,7 +18,7 @@ use Psr\Http\Message\UriInterface;
 
 /**
  * Verifies the typed Middleware interface dispatches correctly and composes in
- * the same order as the legacy Executable-based PrefixingMiddleware fixture.
+ * the same order as the executable PrefixingMiddleware fixture.
  */
 final class MiddlewareInterfaceTest extends TestCase
 {
@@ -93,7 +93,7 @@ final class PrefixingMiddlewareV2Handler implements Scopeable
 /**
  * Middleware implementing the typed Middleware interface. Wraps the inner
  * result with "before:" prefix and ":after" suffix. Composition order matches
- * the legacy PrefixingMiddleware test fixture.
+ * the executable PrefixingMiddleware test fixture.
  */
 final class PrefixingMiddlewareV2 implements Middleware, Executable
 {

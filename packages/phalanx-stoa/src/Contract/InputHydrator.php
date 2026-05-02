@@ -6,7 +6,7 @@ namespace Phalanx\Stoa\Contract;
 
 use Phalanx\Stoa\RequestScope;
 use Phalanx\Stoa\ValidationException;
-use Phalanx\Scope;
+use Phalanx\Scope\Scope;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 use ReflectionClass;

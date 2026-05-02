@@ -140,7 +140,13 @@ final class Css
     private function buildTailwindCommand(): string
     {
         $bin = BinaryResolver::tailwindcss();
-        $parts = [$bin, '-i', $this->input ?? 'resources/css/app.css', '-o', $this->output ?? 'public/assets/css/app.css'];
+        $parts = [
+            $bin,
+            '-i',
+            $this->input ?? 'resources/css/app.css',
+            '-o',
+            $this->output ?? 'public/assets/css/app.css',
+        ];
 
         if ($this->watch) {
             $parts[] = '--watch';
@@ -176,7 +182,7 @@ final class Css
 
     private function buildUnocssCommand(): string
     {
-        $bin = BinaryResolver::bun();
+        $bin = BinaryResolver::bun($this->env);
         $parts = [$bin, 'x', 'unocss'];
 
         if ($this->watch) {
@@ -193,8 +199,15 @@ final class Css
 
     private function buildPostcssCommand(): string
     {
-        $bin = BinaryResolver::bun();
-        $parts = [$bin, 'x', 'postcss', $this->input ?? 'resources/css/app.css', '-o', $this->output ?? 'public/assets/css/app.css'];
+        $bin = BinaryResolver::bun($this->env);
+        $parts = [
+            $bin,
+            'x',
+            'postcss',
+            $this->input ?? 'resources/css/app.css',
+            '-o',
+            $this->output ?? 'public/assets/css/app.css',
+        ];
 
         if ($this->watch) {
             $parts[] = '--watch';

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Tests\Stoa\Unit;
 
+use GuzzleHttp\Psr7\Response;
 use Phalanx\HasMiddleware;
 use Phalanx\Stoa\Contract\HasValidators;
 use Phalanx\Stoa\Contract\Header;
@@ -151,7 +152,7 @@ final class CapabilityInterfacesTest extends TestCase
 
             public function toResponse(): \Psr\Http\Message\ResponseInterface
             {
-                return new \React\Http\Message\Response($this->status);
+                return new Response($this->status);
             }
         };
 

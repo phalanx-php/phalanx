@@ -6,7 +6,7 @@ namespace Phalanx\Tests\Stoa\Fixtures\Routes;
 
 use Phalanx\Stoa\Contract\Header;
 use Phalanx\Stoa\Contract\RequiresHeaders;
-use Phalanx\Scope;
+use Phalanx\Scope\Scope;
 use Phalanx\Task\Scopeable;
 
 /**

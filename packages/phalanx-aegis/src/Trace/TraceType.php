@@ -12,5 +12,8 @@ enum TraceType: string
     case Defer = 'defer';
     case Singleflight = 'singleflight';
     case ServiceResolve = 'service.resolve';
+    case Failed = 'failed';
+    case LifecycleStartup = 'lifecycle.startup';
+    case LifecycleShutdown = 'lifecycle.shutdown';
     case Worker = 'worker';
 }

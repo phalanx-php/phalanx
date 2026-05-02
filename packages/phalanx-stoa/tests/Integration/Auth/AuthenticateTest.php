@@ -10,7 +10,7 @@ use Phalanx\Auth\AuthContext;
 use Phalanx\Auth\AuthenticationException;
 use Phalanx\Auth\Guard;
 use Phalanx\Auth\Identity;
-use Phalanx\ExecutionScope;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Handler\MiddlewareChainLink;
 use Phalanx\Stoa\Auth\Authenticate;
 use Phalanx\Stoa\AuthExecutionContext;

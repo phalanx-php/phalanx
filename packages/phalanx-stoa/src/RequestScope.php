@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Stoa;
 
-use Phalanx\ExecutionScope;
+use Phalanx\Scope\ExecutionScope;
 use Psr\Http\Message\ServerRequestInterface;
 
 interface RequestScope extends ExecutionScope

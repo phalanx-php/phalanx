@@ -6,6 +6,7 @@ namespace Phalanx\Archon\Tests\Unit\Input;
 
 use Phalanx\Archon\Input\RawInput;
 use Phalanx\Archon\Output\StreamOutput;
+use Phalanx\Archon\Output\TerminalEnvironment;
 use Phalanx\Archon\Style\Style;
 use Phalanx\Archon\Style\Theme;
 use PHPUnit\Framework\TestCase;
@@ -38,9 +39,8 @@ abstract class PromptTestCase extends TestCase
 
         // Non-TTY memory stream — writes still happen, cursor control is skipped.
         $this->stream = fopen('php://memory', 'w+');
-        $_SERVER['COLUMNS'] = '80';
-        $_SERVER['LINES']   = '24';
-        $this->output = new StreamOutput($this->stream);
+        $terminal = new TerminalEnvironment(columns: 80, lines: 24);
+        $this->output = new StreamOutput($this->stream, $terminal);
 
         // TTY=true so prompt enters interactive mode; enable()/attach() are never
         // called, avoiding real stty and STDIN registration.

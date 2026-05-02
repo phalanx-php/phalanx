@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Archon\Style;
 
 use Phalanx\Archon\Output\StreamOutput;
+use Phalanx\Archon\Output\TerminalEnvironment;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 
@@ -22,6 +23,6 @@ final class ConsoleServiceBundle implements ServiceBundle
             ->factory(static fn() => Theme::default());
 
         $services->singleton(StreamOutput::class)
-            ->factory(static fn() => new StreamOutput());
+            ->factory(static fn() => new StreamOutput(terminal: TerminalEnvironment::fromContext($context)));
     }
 }

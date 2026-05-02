@@ -6,7 +6,7 @@ namespace Phalanx\Tests\Stoa\Fixtures\Routes;
 
 use Phalanx\Stoa\Contract\HasValidators;
 use Phalanx\Stoa\Contract\RouteValidator;
-use Phalanx\Scope;
+use Phalanx\Scope\Scope;
 use Phalanx\Task\Scopeable;
 
 /**

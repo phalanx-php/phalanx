@@ -25,15 +25,17 @@ final class StreamOutput
     private bool $syncSupported;
     private int $cachedWidth;
     private int $cachedHeight;
+    private TerminalEnvironment $terminal;
 
     /** @param resource $stream */
-    public function __construct(private mixed $stream = STDOUT)
+    public function __construct(private mixed $stream = STDOUT, ?TerminalEnvironment $terminal = null)
     {
+        $this->terminal = $terminal ?? new TerminalEnvironment();
         $this->isTty = stream_isatty($this->stream);
 
         // Apple Terminal does not support CSI ?2026 (synchronized output) and the
         // sequences appear literally in scrollback history. Suppress them there.
-        $this->syncSupported = ($_SERVER['TERM_PROGRAM'] ?? '') !== 'Apple_Terminal';
+        $this->syncSupported = $this->terminal->termProgram !== 'Apple_Terminal';
 
         // Compute terminal dimensions once at construction (acceptable blocking call
         // at boot before the event loop starts). SIGWINCH invalidates and recomputes
@@ -160,18 +162,20 @@ final class StreamOutput
 
     private function measureWidth(): int
     {
-        if (isset($_SERVER['COLUMNS']) && is_numeric($_SERVER['COLUMNS'])) {
-            return (int) $_SERVER['COLUMNS'];
+        if ($this->terminal->columns !== null) {
+            return $this->terminal->columns;
         }
+
         $cols = (int) shell_exec('tput cols 2>/dev/null');
         return $cols > 0 ? $cols : 80;
     }
 
     private function measureHeight(): int
     {
-        if (isset($_SERVER['LINES']) && is_numeric($_SERVER['LINES'])) {
-            return (int) $_SERVER['LINES'];
+        if ($this->terminal->lines !== null) {
+            return $this->terminal->lines;
         }
+
         $lines = (int) shell_exec('tput lines 2>/dev/null');
         return $lines > 0 ? $lines : 24;
     }

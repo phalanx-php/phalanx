@@ -45,7 +45,7 @@ final class ManagedProcess
         $this->state = ProcessState::Starting;
         $this->readinessDeferred = new Deferred();
 
-        $env = array_merge(self::inheritedEnv(), $this->config->env);
+        $env = $this->config->env !== [] ? $this->config->env : null;
         // exec: replaces the shell wrapper so $process->getPid() returns the real PID
         // and signals reach the actual command, not just the shell.
         $command = PHP_OS_FAMILY !== 'Windows'
@@ -73,11 +73,11 @@ final class ManagedProcess
         $deferred = $this->readinessDeferred;
 
         if (!$this->config->readinessProbe->isImmediate() && $stdout !== null && $deferred !== null) {
-            self::watchReadiness($stdout, $this->config->readinessProbe, $deferred);
+            $this->watchReadiness($stdout, $this->config->readinessProbe, $deferred);
         }
 
         if ($this->config->reloadProbe !== null && $stdout !== null) {
-            self::watchReloadProbe($stdout, $this->config->reloadProbe, $this->outputCallbacks);
+            $this->watchReloadProbe($stdout, $this->config->reloadProbe, $this->outputCallbacks);
         }
 
         // Non-static: calls $this->onExit() to handle state transition and readiness rejection.
@@ -144,21 +144,62 @@ final class ManagedProcess
             $deferred->resolve(null);
         });
 
-        self::signalProcess($process, \SIGTERM);
+        $process->terminate(\SIGTERM);
 
         $this->gracefulTimer = Loop::addTimer($gracefulTimeout, static function () use ($process): void {
             if ($process->isRunning()) {
-                self::signalProcess($process, \SIGTERM);
+                $process->terminate(\SIGTERM);
             }
         });
 
         $this->forceTimer = Loop::addTimer($forceTimeout, static function () use ($process): void {
             if ($process->isRunning()) {
-                self::signalProcess($process, \SIGKILL);
+                $process->terminate(\SIGKILL);
             }
         });
 
         return $deferred->promise();
+    }
+
+    /** @param Deferred<null> $deferred */
+    private function watchReadiness(
+        \React\Stream\ReadableStreamInterface $stdout,
+        ReadinessProbe $probe,
+        Deferred $deferred,
+    ): void {
+        $resolved = false;
+
+        $stdout->on('data', static function (string $chunk) use ($probe, $deferred, &$resolved): void {
+            if ($resolved) {
+                return;
+            }
+
+            foreach (explode("\n", $chunk) as $line) {
+                if ($probe->matches($line)) {
+                    $resolved = true;
+                    $deferred->resolve(null);
+                    return;
+                }
+            }
+        });
+    }
+
+    /** @param list<\Closure(string): void> $callbacks */
+    private function watchReloadProbe(
+        \React\Stream\ReadableStreamInterface $stdout,
+        ReadinessProbe $probe,
+        array &$callbacks,
+    ): void {
+        $stdout->on('data', static function (string $chunk) use ($probe, &$callbacks): void {
+            foreach (explode("\n", $chunk) as $line) {
+                if ($probe->matches($line)) {
+                    foreach ($callbacks as $callback) {
+                        $callback($line);
+                    }
+                    return;
+                }
+            }
+        });
     }
 
     private function transitionReady(): void
@@ -214,61 +255,5 @@ final class ManagedProcess
             Loop::cancelTimer($this->forceTimer);
             $this->forceTimer = null;
         }
-    }
-
-    private static function signalProcess(ChildProcess $process, int $signal): void
-    {
-        $process->terminate($signal);
-    }
-
-    /** @return array<string, string> */
-    private static function inheritedEnv(): array
-    {
-        /** @var array<string, string> */
-        return array_filter(
-            $_SERVER,
-            static fn(mixed $v): bool => is_string($v),
-        );
-    }
-
-    /** @param Deferred<null> $deferred */
-    private static function watchReadiness(
-        \React\Stream\ReadableStreamInterface $stdout,
-        ReadinessProbe $probe,
-        Deferred $deferred,
-    ): void {
-        $resolved = false;
-
-        $stdout->on('data', static function (string $chunk) use ($probe, $deferred, &$resolved): void {
-            if ($resolved) {
-                return;
-            }
-
-            foreach (explode("\n", $chunk) as $line) {
-                if ($probe->matches($line)) {
-                    $resolved = true;
-                    $deferred->resolve(null);
-                    return;
-                }
-            }
-        });
-    }
-
-    /** @param list<\Closure(string): void> $callbacks */
-    private static function watchReloadProbe(
-        \React\Stream\ReadableStreamInterface $stdout,
-        ReadinessProbe $probe,
-        array &$callbacks,
-    ): void {
-        $stdout->on('data', static function (string $chunk) use ($probe, &$callbacks): void {
-            foreach (explode("\n", $chunk) as $line) {
-                if ($probe->matches($line)) {
-                    foreach ($callbacks as $callback) {
-                        $callback($line);
-                    }
-                    return;
-                }
-            }
-        });
     }
 }

@@ -6,7 +6,7 @@
 
 > Part of the [Phalanx](https://github.com/phalanx-php/phalanx-aegis) async PHP framework.
 
-Async HTTP server built on ReactPHP with scope-driven request handling. Every route handler receives an `ExecutionScope` with full access to concurrent task execution, service injection, and cancellation -- write concurrent data-fetching code that reads like sequential PHP.
+OpenSwoole HTTP server with scope-driven request handling. Every route handler receives an `ExecutionScope` with full access to concurrent task execution, service injection, and cancellation -- write concurrent data-fetching code that reads like sequential PHP.
 
 ## Table of Contents
 
@@ -21,11 +21,9 @@ Async HTTP server built on ReactPHP with scope-driven request handling. Every ro
 - [Middleware](#middleware)
 - [Mounting Sub-Groups](#mounting-sub-groups)
 - [Loading Routes from Files](#loading-routes-from-files)
-- [Server-Sent Events](#server-sent-events)
-- [UDP Listeners](#udp-listeners)
+- [Deferred Protocols](#deferred-protocols)
 - [Authentication](#authentication)
-- [WebSocket Integration](#websocket-integration)
-- [OpenSwoole Readiness](#openswoole-readiness)
+- [OpenSwoole Runtime](#openswoole-runtime)
 - [ToResponse Interface](#toresponse-interface)
 - [Response Wrappers](#response-wrappers)
 - [Request Validators](#request-validators)
@@ -40,14 +38,16 @@ composer require phalanx/stoa
 > [!NOTE]
 > Requires PHP 8.4 or later.
 
-## OpenSwoole Readiness
+## OpenSwoole Runtime
 
-Stoa migration starts after the Aegis and Archon OpenSwoole scope path is stable.
+Stoa 0.2 uses `StoaRunner` as the native OpenSwoole HTTP runner.
 
-- Replace React server/runtime dependencies in `Runner`: `React\Http\HttpServer`, `React\Socket\SocketServer`, `React\EventLoop\Loop`, `React\Datagram\Factory`, React streams used for upgrade bodies, and `React\Http\Message\Response` response factories.
-- Preserve the current request lifecycle shape: `handleRequest()` creates a timeout token, creates one app scope, attaches the PSR-7 request as `request`, executes the `RouteGroup`, converts the return value to a response, then disposes the scope in `finally`.
-- Add client-disconnect cancellation at the OpenSwoole HTTP response/connection layer. Existing hook points are `CancellationToken::timeout()` in `handleRequest()` and SSE stream `close` handling in `SseResponse`; the OpenSwoole path should cancel the request token before disposing the scope.
-- First smoke target: one OpenSwoole HTTP route returning plaintext through the existing `RouteGroup` and `RequestScope` dispatch path, then one JSON route through `Runner::toResponse()` semantics.
+- Each request creates one timeout cancellation token and one request scope.
+- The PSR-7 request is attached as the `request` scope attribute.
+- `RouteGroup` dispatch returns a PSR-7 response or a value converted by `StoaRunner::toResponse()`.
+- Scope disposal and token cancellation run in `finally`.
+- Debug 500 responses include request lifecycle state and an Aegis task-tree snapshot.
+- SSE, WebSocket, and UDP are deferred until they can be rebuilt on native OpenSwoole primitives.
 
 ## Quick Start
 
@@ -56,16 +56,15 @@ Stoa migration starts after the Aegis and Archon OpenSwoole scope path is stable
 
 use Phalanx\Application;
 use Phalanx\Stoa\RouteGroup;
-use Phalanx\Stoa\Runner;
+use Phalanx\Stoa\StoaRunner;
 use Phalanx\Scope;
 use Phalanx\Task\Scopeable;
-use React\Http\Message\Response;
 
 final class HealthCheck implements Scopeable
 {
     public function __invoke(Scope $scope): mixed
     {
-        return Response::plaintext('Hello, Phalanx!');
+        return 'Hello, Phalanx!';
     }
 }
 
@@ -75,7 +74,7 @@ $routes = RouteGroup::of([
     'GET /hello' => HealthCheck::class,
 ]);
 
-Runner::from($app)
+StoaRunner::from($app)
     ->withRoutes($routes)
     ->run('0.0.0.0:8080');
 ```
@@ -96,7 +95,6 @@ Routes are class-strings registered in a `RouteGroup`. The `HandlerResolver` con
 
 use Phalanx\Stoa\RequestScope;
 use Phalanx\Task\Scopeable;
-use React\Http\Message\Response;
 
 final class ShowUser implements Scopeable
 {
@@ -108,7 +106,7 @@ final class ShowUser implements Scopeable
     {
         $user = $this->users->find($scope->params->get('id'));
 
-        return Response::json($user);
+        return $user;
     }
 }
 ```
@@ -181,7 +179,6 @@ The built-in patterns are pre-registered -- the `withPatterns()` call above is o
 
 use Phalanx\Stoa\RequestScope;
 use Phalanx\Task\Scopeable;
-use React\Http\Message\Response;
 
 final class ShowUser implements Scopeable
 {
@@ -194,7 +191,7 @@ final class ShowUser implements Scopeable
         $id = $scope->params->get('id');
         $user = $this->users->find($id);
 
-        return Response::json($user);
+        return $user;
     }
 }
 ```
@@ -268,7 +265,6 @@ The JSON body keys map to constructor parameter names. Missing required fields p
 
 use Phalanx\Stoa\RequestScope;
 use Phalanx\Task\Scopeable;
-use React\Http\Message\Response;
 
 final readonly class ListTasksQuery
 {
@@ -293,7 +289,7 @@ final class ListTasks implements Scopeable
             status: $query->status,
         );
 
-        return Response::json($result);
+        return $result;
     }
 }
 ```
@@ -306,13 +302,12 @@ Query string values are coerced to constructor parameter types -- `?page=2&perPa
 <?php
 
 use Phalanx\Task\Scopeable;
-use React\Http\Message\Response;
 
 final class HealthCheck implements Scopeable
 {
     public function __invoke(): mixed
     {
-        return Response::json(['status' => 'ok']);
+        return ['status' => 'ok'];
     }
 }
 ```
@@ -437,7 +432,6 @@ Every route handler has access to Phalanx's concurrency primitives through the s
 use Phalanx\Stoa\RequestScope;
 use Phalanx\Task;
 use Phalanx\Task\Executable;
-use React\Http\Message\Response;
 
 final class DashboardHandler implements Executable
 {
@@ -465,7 +459,7 @@ final class DashboardHandler implements Executable
             )),
         ]);
 
-        return Response::json(compact('stats', 'alerts', 'recent'));
+        return compact('stats', 'alerts', 'recent');
     }
 }
 ```
@@ -554,118 +548,21 @@ return RouteGroup::of([
 ]);
 ```
 
-`Runner` accepts directory paths directly:
+`StoaRunner` accepts directory paths directly:
 
 ```php
 <?php
 
-use Phalanx\Stoa\Runner;
+use Phalanx\Stoa\StoaRunner;
 
-Runner::from($app)
+StoaRunner::from($app)
     ->withRoutes(__DIR__ . '/routes')
     ->run();
 ```
 
-## Server-Sent Events
+## Deferred Protocols
 
-Push real-time updates to clients with `SseResponse` and `SseChannel`.
-
-### Single-stream SSE
-
-`SseResponse` converts an `Emitter` into a streaming HTTP response:
-
-```php
-<?php
-
-use Phalanx\Stoa\RequestScope;
-use Phalanx\Stoa\Sse\SseResponse;
-use Phalanx\Styx\Emitter;
-use Phalanx\Task\Executable;
-
-final class MetricsStream implements Executable
-{
-    public function __construct(
-        private readonly MetricsCollector $metrics,
-    ) {}
-
-    public function __invoke(RequestScope $scope): mixed
-    {
-        $metrics = $this->metrics;
-
-        $source = Emitter::produce(static function ($ch, $ctx) use ($scope, $metrics) {
-            while (!$ctx->isCancelled()) {
-                $ch->emit(json_encode($metrics->snapshot()));
-                $scope->delay(1.0);
-            }
-        });
-
-        return SseResponse::from($source, $scope, event: 'metrics');
-    }
-}
-```
-
-```php
-<?php
-
-use Phalanx\Stoa\RouteGroup;
-
-$routes = RouteGroup::of([
-    'GET /events/metrics' => MetricsStream::class,
-]);
-```
-
-### Broadcast SSE with SseChannel
-
-`SseChannel` manages multiple connected clients with automatic replay on reconnect:
-
-```php
-<?php
-
-use Phalanx\Stoa\Sse\SseChannel;
-
-// Register the channel as a service
-$channel = new SseChannel(bufferSize: 200, defaultEvent: 'update');
-
-// Connect clients (in a route handler)
-$channel->connect($responseStream, lastEventId: $request->getHeaderLine('Last-Event-ID') ?: null);
-
-// Publish from anywhere with access to the channel
-$channel->send(json_encode($payload), event: 'price-change');
-```
-
-Missed events replay automatically when a client reconnects with `Last-Event-ID`.
-
-## UDP Listeners
-
-The runner supports UDP alongside HTTP on the same event loop. Implement `UdpHandler` for named, traceable UDP handlers:
-
-```php
-<?php
-
-use Phalanx\ExecutionScope;
-use Phalanx\Stoa\Runner;
-use Phalanx\Stoa\UdpHandler;
-
-final class IngestMetrics implements UdpHandler
-{
-    public function __construct(private readonly MetricsIngester $ingester) {}
-
-    public function __invoke(ExecutionScope $scope, string $data, string $remote): void
-    {
-        $this->ingester->ingest($data, $remote);
-    }
-}
-
-// Resolve or construct the handler, then pass the instance to withUdp()
-$handler = new IngestMetrics($app->createScope()->service(MetricsIngester::class));
-
-Runner::from($app)
-    ->withRoutes($routes)
-    ->withUdp(handler: $handler, port: 8081)
-    ->run();
-```
-
-Handler argument order: scope first, then the datagram payload, then the sender address. HTTP on 8080, UDP on 8081, single process.
+SSE, WebSocket, and UDP support are not part of the current Stoa 0.2 HTTP-core runtime. They will return as native OpenSwoole protocol surfaces after request lifecycle, response ownership, cancellation, and diagnostics are stable.
 
 ## Authentication
 
@@ -742,7 +639,7 @@ $scope->auth->token();
 
 ## ToResponse Interface
 
-Domain objects can implement `ToResponse` to control their own HTTP serialization. The `Runner` calls `toResponse()` automatically when a handler returns a `ToResponse` instance.
+Domain objects can implement `ToResponse` to control their own HTTP serialization. `StoaRunner` calls `toResponse()` automatically when a handler returns a `ToResponse` instance.
 
 The interface requires a `$status` property hook alongside the `toResponse()` method -- both are needed for the runner and OpenAPI generator to work correctly:
 
@@ -751,7 +648,7 @@ The interface requires a `$status` property hook alongside the `toResponse()` me
 
 use Phalanx\Stoa\ToResponse;
 use Psr\Http\Message\ResponseInterface;
-use React\Http\Message\Response;
+use GuzzleHttp\Psr7\Response;
 
 final readonly class ApiResult implements ToResponse
 {
@@ -765,7 +662,11 @@ final readonly class ApiResult implements ToResponse
 
     public function toResponse(): ResponseInterface
     {
-        return Response::json($this->data)->withStatus($this->status);
+        return new Response(
+            $this->status,
+            ['Content-Type' => 'application/json'],
+            json_encode($this->data, JSON_THROW_ON_ERROR),
+        );
     }
 }
 ```
@@ -852,24 +753,6 @@ $email = $scope->body->required('email', validate: new EmailFormat());
 ```
 
 Failed validation throws `ValidationException` with `$e->errors` -- an `array<string, list<string>>` mapping field names to error messages. Validation results are cached per key+validator pair within the same `RequestBody` instance.
-
-## WebSocket Integration
-
-The HTTP runner handles WebSocket upgrades natively. See [phalanx/hermes](../phalanx-hermes/README.md) for the WebSocket API, then wire it in:
-
-```php
-<?php
-
-use Phalanx\Stoa\Runner;
-use Phalanx\Hermes\WsRouteGroup;
-
-Runner::from($app)
-    ->withRoutes($httpRoutes)
-    ->withWebsockets($wsRouteGroup)
-    ->run();
-```
-
-HTTP and WebSocket traffic share a single TCP listener. The runner detects upgrade requests and routes them to the appropriate `WsRouteGroup`.
 
 ## OpenAPI Generation
 

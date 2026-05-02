@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Stoa\Response;
 
+use GuzzleHttp\Psr7\Response;
 use Phalanx\Stoa\ToResponse;
 use Psr\Http\Message\ResponseInterface;
-use React\Http\Message\Response;
 
 class Accepted implements ToResponse
 {
@@ -20,6 +20,10 @@ class Accepted implements ToResponse
 
     public function toResponse(): ResponseInterface
     {
-        return Response::json($this->data)->withStatus($this->status);
+        return new Response(
+            $this->status,
+            ['Content-Type' => 'application/json'],
+            json_encode($this->data, JSON_THROW_ON_ERROR),
+        );
     }
 }

@@ -27,7 +27,6 @@ class RouteConfig extends HandlerConfig
         public private(set) array $methods = ['GET'],
         public private(set) string $pattern = '',
         public private(set) array $paramNames = [],
-        public private(set) string $protocol = 'http',
         public private(set) string $path = '',
         array $middleware = [],
         array $tags = [],
@@ -50,7 +49,6 @@ class RouteConfig extends HandlerConfig
     public static function compile(
         string $path,
         string|array $method = 'GET',
-        string $protocol = 'http',
         array $patterns = [],
     ): self {
         $methods = is_array($method) ? $method : [$method];
@@ -74,7 +72,6 @@ class RouteConfig extends HandlerConfig
             methods: $methods,
             pattern: $pattern,
             paramNames: $paramNames,
-            protocol: $protocol,
             path: $path,
         );
     }
@@ -104,13 +101,6 @@ class RouteConfig extends HandlerConfig
         return $params;
     }
 
-    public function withProtocol(string $protocol): self
-    {
-        $clone = clone $this;
-        $clone->protocol = $protocol;
-        return $clone;
-    }
-
     /** @param string|list<string> $method */
     public function withMethod(string|array $method): self
     {
@@ -124,7 +114,7 @@ class RouteConfig extends HandlerConfig
 
     public function withPath(string $path): self
     {
-        $compiled = self::compile($path, $this->methods, $this->protocol);
+        $compiled = self::compile($path, $this->methods);
 
         $clone = clone $this;
         $clone->path = $path;

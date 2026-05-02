@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Tests\Stoa\Fixtures\Routes;
 
-use Phalanx\ExecutionScope;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
 
 final class DeleteTaskVoid implements Executable

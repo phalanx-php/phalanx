@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Stoa\Response;
 
+use GuzzleHttp\Psr7\Response;
 use Phalanx\Stoa\ToResponse;
 use Psr\Http\Message\ResponseInterface;
-use React\Http\Message\Response;
 
 class NoContent implements ToResponse
 {

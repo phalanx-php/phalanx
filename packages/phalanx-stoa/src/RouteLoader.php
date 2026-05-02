@@ -6,7 +6,7 @@ namespace Phalanx\Stoa;
 
 use Phalanx\Handler\HandlerGroup;
 use Phalanx\Handler\HandlerLoader;
-use Phalanx\Scope;
+use Phalanx\Scope\Scope;
 use RuntimeException;
 
 final readonly class RouteLoader

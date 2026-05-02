@@ -4,16 +4,15 @@ declare(strict_types=1);
 
 namespace Phalanx\Stoa;
 
-use Phalanx\ExecutionScope;
 use Phalanx\Handler\Handler;
 use Phalanx\Handler\HandlerMatcher;
 use Phalanx\Handler\MatchResult;
+use Phalanx\Scope\ExecutionScope;
 use Psr\Http\Message\ServerRequestInterface;
 
 final class RouteMatcher implements HandlerMatcher
 {
-    /** @var array<string, FastRouteCompiler> keyed by protocol */
-    private array $compilers = [];
+    private ?FastRouteCompiler $compiler = null;
 
     /** @param array<string, Handler> $handlers */
     public function match(ExecutionScope $scope, array $handlers): ?MatchResult
@@ -27,13 +26,7 @@ final class RouteMatcher implements HandlerMatcher
         $method = $request->getMethod();
         $path = $request->getUri()->getPath();
 
-        $upgradeHeader = (string) $request->getHeaderLine('Upgrade');
-        $connectionHeader = (string) $request->getHeaderLine('Connection');
-        $isWsUpgrade = strtolower($upgradeHeader) === 'websocket'
-            && stripos($connectionHeader, 'upgrade') !== false;
-        $requestProtocol = $isWsUpgrade ? 'ws' : 'http';
-
-        $compiler = $this->getCompiler($handlers, $requestProtocol);
+        $compiler = $this->getCompiler($handlers);
         $result = $compiler->dispatch($method, $path);
 
         $handler = $result['handler'];
@@ -60,22 +53,14 @@ final class RouteMatcher implements HandlerMatcher
     /**
      * @param array<string, Handler> $handlers
      */
-    private function getCompiler(array $handlers, string $protocol): FastRouteCompiler
+    private function getCompiler(array $handlers): FastRouteCompiler
     {
-        if (isset($this->compilers[$protocol])) {
-            return $this->compilers[$protocol];
+        if ($this->compiler !== null) {
+            return $this->compiler;
         }
 
-        $filtered = [];
-        foreach ($handlers as $key => $handler) {
-            if ($handler->config instanceof RouteConfig && $handler->config->protocol === $protocol) {
-                $filtered[$key] = $handler;
-            }
-        }
+        $this->compiler = new FastRouteCompiler($handlers);
 
-        $compiler = new FastRouteCompiler($filtered);
-        $this->compilers[$protocol] = $compiler;
-
-        return $compiler;
+        return $this->compiler;
     }
 }

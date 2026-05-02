@@ -8,13 +8,13 @@ use RuntimeException;
 
 final class BinaryResolver
 {
-    public static function bun(): string
+    /** @param array<string, string> $env */
+    public static function bun(array $env = []): string
     {
-        $home = $_SERVER['HOME'] ?? $_SERVER['USERPROFILE'] ?? '';
+        $home = $env['HOME'] ?? $env['USERPROFILE'] ?? '';
+        $fallbacks = $home !== '' ? [$home . '/.bun/bin/bun'] : [];
 
-        return self::resolve('bun', [
-            $home . '/.bun/bin/bun',
-        ], 'Install bun: curl -fsSL https://bun.sh/install | bash');
+        return self::resolve('bun', $fallbacks, 'Install bun: curl -fsSL https://bun.sh/install | bash');
     }
 
     public static function tailwindcss(): string
