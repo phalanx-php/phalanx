@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Archon\Tests\Fixtures\Commands;
 
-use Phalanx\Scope;
+use Phalanx\Scope\Scope;
 use Phalanx\Task\Scopeable;
 
 /**

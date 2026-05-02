@@ -1,0 +1,156 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Phalanx\Support;
+
+use Closure;
+use Phalanx\Cancellation\CancellationToken;
+use Phalanx\Concurrency\RetryPolicy;
+use Phalanx\Concurrency\SettlementBag;
+use Phalanx\Scope\ExecutionScope;
+use Phalanx\Supervisor\TaskRun;
+use Phalanx\Supervisor\TransactionLease;
+use Phalanx\Supervisor\WaitReason;
+use Phalanx\Task\Executable;
+use Phalanx\Task\Scopeable;
+use Phalanx\Trace\Trace;
+
+trait ExecutionScopeDelegate
+{
+    public bool $isCancelled {
+        get => $this->innerScope()->isCancelled;
+    }
+
+    /**
+     * @template T of object
+     * @param class-string<T> $type
+     * @return T
+     */
+    public function service(string $type): object
+    {
+        return $this->innerScope()->service($type);
+    }
+
+    public function attribute(string $key, mixed $default = null): mixed
+    {
+        return $this->innerScope()->attribute($key, $default);
+    }
+
+    public function trace(): Trace
+    {
+        return $this->innerScope()->trace();
+    }
+
+    public function execute(Scopeable|Executable|Closure $task): mixed
+    {
+        return $this->innerScope()->execute($task);
+    }
+
+    public function executeFresh(Scopeable|Executable|Closure $task): mixed
+    {
+        return $this->innerScope()->executeFresh($task);
+    }
+
+    public function concurrent(array $tasks): array
+    {
+        return $this->innerScope()->concurrent($tasks);
+    }
+
+    public function race(array $tasks): mixed
+    {
+        return $this->innerScope()->race($tasks);
+    }
+
+    public function any(array $tasks): mixed
+    {
+        return $this->innerScope()->any($tasks);
+    }
+
+    public function map(iterable $items, Closure $fn, int $limit = 10, ?Closure $onEach = null): array
+    {
+        return $this->innerScope()->map($items, $fn, $limit, $onEach);
+    }
+
+    public function series(array $tasks): array
+    {
+        return $this->innerScope()->series($tasks);
+    }
+
+    public function waterfall(array $tasks): mixed
+    {
+        return $this->innerScope()->waterfall($tasks);
+    }
+
+    public function settle(array $tasks): SettlementBag
+    {
+        return $this->innerScope()->settle($tasks);
+    }
+
+    public function timeout(float $seconds, Scopeable|Executable|Closure $task): mixed
+    {
+        return $this->innerScope()->timeout($seconds, $task);
+    }
+
+    public function retry(Scopeable|Executable|Closure $task, RetryPolicy $policy): mixed
+    {
+        return $this->innerScope()->retry($task, $policy);
+    }
+
+    public function delay(float $seconds): void
+    {
+        $this->innerScope()->delay($seconds);
+    }
+
+    public function defer(Scopeable|Executable|Closure $task): void
+    {
+        $this->innerScope()->defer($task);
+    }
+
+    public function singleflight(string $key, Scopeable|Executable|Closure $task): mixed
+    {
+        return $this->innerScope()->singleflight($key, $task);
+    }
+
+    public function inWorker(Scopeable|Executable|Closure $task): mixed
+    {
+        return $this->innerScope()->inWorker($task);
+    }
+
+    public function go(Closure $fn, ?string $name = null): TaskRun
+    {
+        return $this->innerScope()->go($fn, $name);
+    }
+
+    public function call(Closure $fn, ?WaitReason $waitReason = null): mixed
+    {
+        return $this->innerScope()->call($fn, $waitReason);
+    }
+
+    public function throwIfCancelled(): void
+    {
+        $this->innerScope()->throwIfCancelled();
+    }
+
+    public function cancellation(): CancellationToken
+    {
+        return $this->innerScope()->cancellation();
+    }
+
+    public function onDispose(Closure $callback): void
+    {
+        $this->innerScope()->onDispose($callback);
+    }
+
+    public function dispose(): void
+    {
+        $this->innerScope()->dispose();
+    }
+
+    public function transaction(TransactionLease $lease, Closure $body): mixed
+    {
+        return $this->innerScope()->transaction($lease, $body);
+    }
+
+    abstract protected function innerScope(): ExecutionScope;
+}

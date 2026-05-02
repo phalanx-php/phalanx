@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Archon;
 
-use Phalanx\ExecutionScope;
+use Phalanx\Scope\ExecutionScope;
 
 interface CommandScope extends ExecutionScope
 {

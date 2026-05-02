@@ -26,8 +26,8 @@ final class AttributeInheritanceTest extends CoroutineTestCase
 {
     public function testConcurrentChildrenSeeParentAttributes(): void
     {
-        $this->runInCoroutine(function (): void {
-            $scope = self::buildScope()->withAttribute('request.id', 'req-7');
+        $this->runScoped(static function (ExecutionScope $scope): void {
+            $scope = $scope->withAttribute('request.id', 'req-7');
 
             $observed = $scope->concurrent([
                 'a' => Task::of(static fn(ExecutionScope $s) => $s->attribute('request.id')),

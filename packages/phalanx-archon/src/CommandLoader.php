@@ -6,7 +6,7 @@ namespace Phalanx\Archon;
 
 use Phalanx\Handler\HandlerGroup;
 use Phalanx\Handler\HandlerLoader;
-use Phalanx\Scope;
+use Phalanx\Scope\Scope;
 use RuntimeException;
 
 final class CommandLoader

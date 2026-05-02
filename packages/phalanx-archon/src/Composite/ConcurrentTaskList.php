@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Archon\Composite;
 
-use Phalanx\ExecutionScope;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Archon\Output\StreamOutput;
 use Phalanx\Archon\Style\Theme;
 use Phalanx\Archon\Widget\TaskList;

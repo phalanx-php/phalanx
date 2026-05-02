@@ -25,6 +25,7 @@ Async HTTP server built on ReactPHP with scope-driven request handling. Every ro
 - [UDP Listeners](#udp-listeners)
 - [Authentication](#authentication)
 - [WebSocket Integration](#websocket-integration)
+- [OpenSwoole Readiness](#openswoole-readiness)
 - [ToResponse Interface](#toresponse-interface)
 - [Response Wrappers](#response-wrappers)
 - [Request Validators](#request-validators)
@@ -38,6 +39,15 @@ composer require phalanx/stoa
 
 > [!NOTE]
 > Requires PHP 8.4 or later.
+
+## OpenSwoole Readiness
+
+Stoa migration starts after the Aegis and Archon OpenSwoole scope path is stable.
+
+- Replace React server/runtime dependencies in `Runner`: `React\Http\HttpServer`, `React\Socket\SocketServer`, `React\EventLoop\Loop`, `React\Datagram\Factory`, React streams used for upgrade bodies, and `React\Http\Message\Response` response factories.
+- Preserve the current request lifecycle shape: `handleRequest()` creates a timeout token, creates one app scope, attaches the PSR-7 request as `request`, executes the `RouteGroup`, converts the return value to a response, then disposes the scope in `finally`.
+- Add client-disconnect cancellation at the OpenSwoole HTTP response/connection layer. Existing hook points are `CancellationToken::timeout()` in `handleRequest()` and SSE stream `close` handling in `SseResponse`; the OpenSwoole path should cancel the request token before disposing the scope.
+- First smoke target: one OpenSwoole HTTP route returning plaintext through the existing `RouteGroup` and `RequestScope` dispatch path, then one JSON route through `Runner::toResponse()` semantics.
 
 ## Quick Start
 

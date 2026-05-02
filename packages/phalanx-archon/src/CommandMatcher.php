@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Archon;
 
-use Phalanx\ExecutionScope;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Handler\Handler;
 use Phalanx\Handler\HandlerMatcher;
 use Phalanx\Handler\MatchResult;

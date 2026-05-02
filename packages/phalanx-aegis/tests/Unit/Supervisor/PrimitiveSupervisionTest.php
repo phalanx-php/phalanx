@@ -11,24 +11,32 @@ use Phalanx\Scope\ExecutionScope;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 use Phalanx\Supervisor\InProcessLedger;
+use Phalanx\Supervisor\Supervisor;
 use Phalanx\Task\Task;
+use Phalanx\Testing\Assert as PhalanxAssert;
 use Phalanx\Tests\Support\CoroutineTestCase;
+use Phalanx\Trace\Trace;
 
 final class PrimitiveSupervisionTest extends CoroutineTestCase
 {
     public function testSeriesTasksAreSupervisedAndParented(): void
     {
-        $this->runInCoroutine(function (): void {
-            $ledger = new InProcessLedger();
-            $scope = self::buildScope($ledger);
-            $probe = new class {
-                public ?string $observedParent = null;
-            };
+        $ledger = new InProcessLedger();
+        $probe = new class {
+            public ?string $observedParent = null;
+        };
+
+        $this->runScopedWithLedger($ledger, static function (ExecutionScope $scope) use ($ledger, $probe): void {
             $scope->execute(Task::of(static function (ExecutionScope $s) use ($ledger, $probe): void {
                 $s->series([
                     Task::of(static function () use ($ledger, $probe): string {
                         $tree = $ledger->tree();
                         self::assertCount(2, $tree);
+                        PhalanxAssert::assertTaskTreeContains(
+                            new Supervisor($ledger, new Trace()),
+                            'PrimitiveSupervisionTest.php',
+                        );
+
                         foreach ($tree as $run) {
                             if ($run->parentId !== null) {
                                 $probe->observedParent = $run->parentId;
@@ -41,8 +49,9 @@ final class PrimitiveSupervisionTest extends CoroutineTestCase
             }));
 
             self::assertNotNull($probe->observedParent);
-            self::assertSame(0, $ledger->liveCount());
         });
+
+        PhalanxAssert::assertNoLiveTasks(new Supervisor($ledger, new Trace()));
     }
 
     public function testRetryTasksAreSupervisedPerAttempt(): void

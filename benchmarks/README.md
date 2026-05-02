@@ -22,7 +22,16 @@ Emit JSON for local baselines:
 composer bench:aegis -- --format=json > benchmarks/results/aegis-kernel.json
 ```
 
+Compare against one local baseline:
+
+```bash
+composer bench:aegis -- --baseline=benchmarks/results/aegis-kernel.json
+```
+
+The comparison warns on `mean_us` or `p95_us` regressions above 10% for stable micro cases and 20% for fan-out/cancellation cases. Override with `--stable-threshold=0.15` or `--fanout-threshold=0.30` when a local machine is noisy.
+
 `benchmarks/results/*.json` and `benchmarks/results/*.csv` are ignored because benchmark output is machine-specific.
+Stored local runs are reference material only, not public performance claims.
 
 ## Current Aegis Signal
 
@@ -64,8 +73,8 @@ Use these as target shape only. They include HTTP parsing, routing, serializatio
 ## Rollout Order
 
 1. Keep Aegis kernel benchmarks as local regression guards.
-2. Add baseline comparison once the kernel cases settle: save a JSON baseline, compare later runs, warn on large percentage regressions.
-3. Add Phalanx HTTP benchmarks when the request path exists: `/plaintext` and `/json` first.
+2. Use local baseline comparison for machine-specific regression checks.
+3. Add Phalanx HTTP benchmarks when the Stoa OpenSwoole request path begins: `/plaintext` and `/json` first.
 4. Add middleware, DI, and request-scope benchmarks once those APIs stabilize.
 5. Add database benchmarks later: single query, multiple query, update, and transaction-wrapped variants.
 6. Add realistic application paths last.

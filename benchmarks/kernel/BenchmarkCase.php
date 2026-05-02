@@ -8,6 +8,8 @@ use Phalanx\Application;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Supervisor\InProcessLedger;
 use Phalanx\Supervisor\LedgerStorage;
+use Phalanx\Supervisor\TaskTreeFormatter;
+use RuntimeException;
 
 interface BenchmarkCase
 {
@@ -24,22 +26,50 @@ final class BenchmarkContext
 {
     private ?Application $defaultApp = null;
 
+    /** @var array<int, Application> */
+    private array $apps = [];
+
+    private function track(Application $app): Application
+    {
+        $this->apps[spl_object_id($app)] = $app;
+
+        return $app;
+    }
+
     public function app(?LedgerStorage $ledger = null): Application
     {
         if ($ledger === null) {
-            return $this->defaultApp ??= Application::starting([])
+            return $this->track($this->defaultApp ??= Application::starting([])
                 ->withLedger(new InProcessLedger())
-                ->compile();
+                ->compile());
         }
 
-        return Application::starting([])
+        return $this->track(Application::starting([])
             ->withLedger($ledger)
-            ->compile();
+            ->compile());
     }
 
     public function scope(?LedgerStorage $ledger = null): ExecutionScope
     {
         return $this->app($ledger)->createScope();
+    }
+
+    public function assertNoLiveTasks(string $case): void
+    {
+        foreach ($this->apps as $app) {
+            $supervisor = $app->supervisor();
+            $tree = $supervisor->tree();
+
+            if ($supervisor->liveCount() === 0 && $tree === []) {
+                continue;
+            }
+
+            $formatted = (new TaskTreeFormatter())->format($tree);
+
+            throw new RuntimeException(
+                "Benchmark case '{$case}' left live or unreaped task runs:\n{$formatted}",
+            );
+        }
     }
 }
 

@@ -6,6 +6,9 @@ namespace Phalanx\Tests\Support;
 
 use Closure;
 use OpenSwoole\Coroutine;
+use Phalanx\Scope\ExecutionScope;
+use Phalanx\Supervisor\InProcessLedger;
+use Phalanx\Testing\TestScope;
 use PHPUnit\Framework\TestCase;
 use Throwable;
 
@@ -53,5 +56,36 @@ abstract class CoroutineTestCase extends TestCase
         if (!$finished) {
             self::fail('Coroutine body did not run to completion');
         }
+    }
+
+    /**
+     * @param Closure(ExecutionScope): void $test
+     * @param Closure|null $services
+     * @param array<string, mixed> $context
+     */
+    protected function runScoped(
+        Closure $test,
+        ?Closure $services = null,
+        array $context = [],
+    ): void {
+        $this->runScopedWithLedger(new InProcessLedger(), $test, $services, $context);
+    }
+
+    /**
+     * @param Closure(ExecutionScope): void $test
+     * @param Closure|null $services
+     * @param array<string, mixed> $context
+     */
+    protected function runScopedWithLedger(
+        InProcessLedger $ledger,
+        Closure $test,
+        ?Closure $services = null,
+        array $context = [],
+    ): void {
+        $this->runInCoroutine(static function () use ($ledger, $test, $services, $context): void {
+            TestScope::compile($services, $context, $ledger)
+                ->shutdownAfterRun()
+                ->run($test);
+        });
     }
 }

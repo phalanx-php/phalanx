@@ -11,22 +11,24 @@ use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 use Phalanx\Supervisor\InProcessLedger;
 use Phalanx\Supervisor\LeaseViolation;
+use Phalanx\Supervisor\Supervisor;
 use Phalanx\Supervisor\TransactionLease;
 use Phalanx\Supervisor\WaitReason;
 use Phalanx\Task\Task;
+use Phalanx\Testing\Assert as PhalanxAssert;
 use Phalanx\Tests\Support\CoroutineTestCase;
+use Phalanx\Trace\Trace;
 
 final class TransactionScopeTest extends CoroutineTestCase
 {
     public function testTransactionRegistersAndReleasesLeaseAroundBody(): void
     {
-        $this->runInCoroutine(function (): void {
-            $ledger = new InProcessLedger();
-            $scope = self::buildScope($ledger);
-            $probe = new class {
-                public ?string $heldInside = null;
-            };
+        $ledger = new InProcessLedger();
+        $probe = new class {
+            public ?string $heldInside = null;
+        };
 
+        $this->runScopedWithLedger($ledger, static function (ExecutionScope $scope) use ($ledger, $probe): void {
             $value = $scope->execute(Task::of(
                 static fn(ExecutionScope $s): mixed => $s->transaction(
                     TransactionLease::open('postgres/main', 'tx#1'),
@@ -42,8 +44,9 @@ final class TransactionScopeTest extends CoroutineTestCase
 
             self::assertSame('tx#1', $value);
             self::assertSame('postgres/main', $probe->heldInside);
-            self::assertSame(0, $ledger->liveCount());
         });
+
+        PhalanxAssert::assertNoLiveTasks(new Supervisor($ledger, new Trace()));
     }
 
     public function testTransactionScopeDoesNotExposeFanOutExecutorMethods(): void

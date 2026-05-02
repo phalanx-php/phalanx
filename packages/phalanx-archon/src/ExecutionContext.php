@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Archon;
 
-use Phalanx\ExecutionScope;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Support\ExecutionScopeDelegate;
 
 class ExecutionContext implements CommandScope
