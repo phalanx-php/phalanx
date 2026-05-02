@@ -41,7 +41,7 @@ final class LedgerChurnTest extends CoroutineTestCase
             for ($batch = 0; $batch < $iterations / $batchSize; $batch++) {
                 for ($i = 0; $i < $batchSize; $i++) {
                     $scope = $app->createScope();
-                    $value = $scope->execute(Task::of(static fn(ExecutionScope $s): int => 42));
+                    $value = $scope->execute(Task::of(static fn(): int => 42));
                     self::assertSame(42, $value);
                     $scope->dispose();
                 }

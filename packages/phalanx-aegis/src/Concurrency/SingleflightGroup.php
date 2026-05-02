@@ -6,6 +6,8 @@ namespace Phalanx\Concurrency;
 
 use Closure;
 use OpenSwoole\Coroutine\Channel;
+use Phalanx\Cancellation\CancellationToken;
+use Phalanx\Cancellation\Cancelled;
 use Throwable;
 
 /**
@@ -22,29 +24,33 @@ use Throwable;
  *   'in_flight' => bool,
  *   'result'    => mixed,
  *   'error'     => ?Throwable,
- *   'waiters'   => list<Channel>,
+ *   'waiters'   => array<int, Channel>,
  * ]
  */
 class SingleflightGroup
 {
-    /** @var array<string, array{in_flight: bool, result: mixed, error: ?Throwable, waiters: list<Channel>}> */
+    /** @var array<string, array{in_flight: bool, result: mixed, error: ?Throwable, waiters: array<int, Channel>}> */
     private array $state = [];
+
+    private int $waiterSeq = 0;
 
     /**
      * @template T
      * @param Closure(): T $execute
+     * @param Closure|null $onWait Called when a duplicate caller begins waiting; may return a clear callback.
      * @return T
      */
-    public function do(string $key, Closure $execute): mixed
-    {
+    public function do(
+        string $key,
+        Closure $execute,
+        ?CancellationToken $cancellation = null,
+        ?Closure $onWait = null,
+    ): mixed {
+        $token = $cancellation ?? CancellationToken::none();
+        $token->throwIfCancelled();
+
         if (isset($this->state[$key]) && $this->state[$key]['in_flight']) {
-            $waiter = new Channel(1);
-            $this->state[$key]['waiters'][] = $waiter;
-            $msg = $waiter->pop();
-            if ($msg[0] === 'err') {
-                throw $msg[1];
-            }
-            return $msg[1];
+            return $this->waitForInflight($key, $token, $onWait);
         }
 
         $this->state[$key] = ['in_flight' => true, 'result' => null, 'error' => null, 'waiters' => []];
@@ -52,24 +58,71 @@ class SingleflightGroup
         try {
             $result = $execute();
         } catch (Throwable $e) {
-            $waiters = $this->state[$key]['waiters'];
-            unset($this->state[$key]);
-            foreach ($waiters as $waiter) {
-                $waiter->push(['err', $e]);
-            }
+            $this->wakeWaiters($key, ['err', $e]);
             throw $e;
         }
 
-        $waiters = $this->state[$key]['waiters'];
-        unset($this->state[$key]);
-        foreach ($waiters as $waiter) {
-            $waiter->push(['ok', $result]);
-        }
+        $this->wakeWaiters($key, ['ok', $result]);
         return $result;
     }
 
     public function pending(): int
     {
         return count($this->state);
+    }
+
+    /** @param Closure|null $onWait */
+    private function waitForInflight(
+        string $key,
+        CancellationToken $token,
+        ?Closure $onWait,
+    ): mixed {
+        $waiter = new Channel(1);
+        $waiterId = ++$this->waiterSeq;
+        $this->state[$key]['waiters'][$waiterId] = $waiter;
+
+        $group = $this;
+        $unregisterCancel = $token->onCancel(static function () use ($group, $key, $waiterId, $waiter): void {
+            $group->removeWaiter($key, $waiterId);
+            $waiter->push(['cancelled', new Cancelled("singleflight '{$key}' cancelled")], 0.001);
+        });
+        $clearWait = $onWait !== null ? $onWait() : null;
+
+        try {
+            $msg = $waiter->pop();
+            if (!is_array($msg) || $msg === []) {
+                throw new Cancelled("singleflight '{$key}' waiter closed");
+            }
+            if ($msg[0] === 'err' || $msg[0] === 'cancelled') {
+                throw $msg[1];
+            }
+            return $msg[1];
+        } finally {
+            $unregisterCancel();
+            if ($clearWait !== null) {
+                $clearWait();
+            }
+            $this->removeWaiter($key, $waiterId);
+        }
+    }
+
+    private function removeWaiter(string $key, int $waiterId): void
+    {
+        if (!isset($this->state[$key])) {
+            return;
+        }
+
+        unset($this->state[$key]['waiters'][$waiterId]);
+    }
+
+    /** @param array{0: 'ok'|'err'|'cancelled', 1: mixed} $message */
+    private function wakeWaiters(string $key, array $message): void
+    {
+        $waiters = $this->state[$key]['waiters'] ?? [];
+        unset($this->state[$key]);
+
+        foreach ($waiters as $waiter) {
+            $waiter->push($message, 0.001);
+        }
     }
 }

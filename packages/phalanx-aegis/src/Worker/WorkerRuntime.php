@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Phalanx\Worker;
 
+use OpenSwoole\Coroutine;
 use Phalanx\Application;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 use Phalanx\Worker\Protocol\Response;
-use OpenSwoole\Coroutine;
 use Throwable;
 
 /**

@@ -24,11 +24,11 @@ final class SettlementBag implements ArrayAccess, IteratorAggregate, Countable
     public array $values {
         get {
             $out = [];
-            foreach ($this->settlements as $k => $s) {
-                if ($s->isOk) {
-                    $out[$k] = $s->value;
-                }
-            }
+    foreach ($this->settlements as $k => $s) {
+        if ($s->isOk) {
+            $out[$k] = $s->value;
+        }
+    }
             return $out;
         }
     }
@@ -37,29 +37,33 @@ final class SettlementBag implements ArrayAccess, IteratorAggregate, Countable
     public array $errors {
         get {
             $out = [];
-            foreach ($this->settlements as $k => $s) {
-                if (!$s->isOk) {
-                    $out[$k] = $s->error;
-                }
-            }
+    foreach ($this->settlements as $k => $s) {
+        if (!$s->isOk) {
+            $out[$k] = $s->error;
+        }
+    }
             return $out;
         }
     }
 
     public bool $allOk {
         get {
-            foreach ($this->settlements as $s) {
-                if (!$s->isOk) return false;
-            }
+    foreach ($this->settlements as $s) {
+        if (!$s->isOk) {
+            return false;
+        }
+    }
             return true;
         }
     }
 
     public bool $anyOk {
         get {
-            foreach ($this->settlements as $s) {
-                if ($s->isOk) return true;
-            }
+    foreach ($this->settlements as $s) {
+        if ($s->isOk) {
+            return true;
+        }
+    }
             return false;
         }
     }
@@ -83,7 +87,9 @@ final class SettlementBag implements ArrayAccess, IteratorAggregate, Countable
     }
 
     /** @param array<string|int, Settlement> $settlements */
-    public function __construct(private readonly array $settlements) {}
+    public function __construct(private readonly array $settlements)
+    {
+    }
 
     public function get(string|int $key, mixed $default = null): mixed
     {

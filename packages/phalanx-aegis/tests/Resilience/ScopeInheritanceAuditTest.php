@@ -39,10 +39,10 @@ final class ScopeInheritanceAuditTest extends TestCase
                 if (!str_contains($line, 'Coroutine::create(')) {
                     continue;
                 }
-                // Look in the next 5 source lines for the install call —
-                // accounts for static fn () use (...): void { newline
-                // before the body, etc.
-                $window = implode('', array_slice($lines, $idx + 1, 6));
+                // Look shortly after the spawn for the install call. Long
+                // `use (...)` lists are line-wrapped by the style checker, so
+                // this window allows formatting without weakening the audit.
+                $window = implode('', array_slice($lines, $idx + 1, 16));
                 if (!str_contains($window, 'CoroutineScopeRegistry::install(')) {
                     $offenders[] = sprintf(
                         '%s:%d  %s',

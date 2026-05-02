@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Scope;
 
+use Closure;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
-use Closure;
 
 interface TaskScope extends Scope, Suspendable, Cancellable, Disposable
 {

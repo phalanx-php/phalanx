@@ -50,7 +50,7 @@ class ProcessHandle
             1 => ['pipe', 'w'],
             2 => ['pipe', 'w'],
         ];
-$proc = proc_open([PHP_BINARY, $this->workerScript, $this->autoloadPath], $descriptors, $pipes);
+        $proc = proc_open([PHP_BINARY, $this->workerScript, $this->autoloadPath], $descriptors, $pipes);
         if (!is_resource($proc)) {
             throw new RuntimeException('ProcessHandle: proc_open failed');
         }

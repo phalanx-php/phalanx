@@ -27,35 +27,6 @@ final class TaskTreeFormatter
     private const LABEL_COLUMN_WIDTH = 44;
 
     /**
-     * @param list<TaskRunSnapshot> $snapshots
-     */
-    public function format(array $snapshots, ?string $rootRunId = null): string
-    {
-        if ($snapshots === []) {
-            return "(no live tasks)\n";
-        }
-
-        $byId = [];
-        foreach ($snapshots as $snap) {
-            $byId[$snap->id] = $snap;
-        }
-
-        $roots = $rootRunId !== null
-            ? (isset($byId[$rootRunId]) ? [$byId[$rootRunId]] : [])
-            : self::findRoots($byId);
-
-        if ($roots === []) {
-            return "(no matching tasks)\n";
-        }
-
-        $out = '';
-        foreach ($roots as $root) {
-            $out .= self::renderNode($root, $byId, 0);
-        }
-        return $out;
-    }
-
-    /**
      * @param array<string, TaskRunSnapshot> $byId
      * @return list<TaskRunSnapshot>
      */
@@ -150,5 +121,34 @@ final class TaskTreeFormatter
             return $s;
         }
         return mb_substr($s, 0, $max - 3) . '...';
+    }
+
+    /**
+     * @param list<TaskRunSnapshot> $snapshots
+     */
+    public function format(array $snapshots, ?string $rootRunId = null): string
+    {
+        if ($snapshots === []) {
+            return "(no live tasks)\n";
+        }
+
+        $byId = [];
+        foreach ($snapshots as $snap) {
+            $byId[$snap->id] = $snap;
+        }
+
+        $roots = $rootRunId !== null
+            ? (isset($byId[$rootRunId]) ? [$byId[$rootRunId]] : [])
+            : self::findRoots($byId);
+
+        if ($roots === []) {
+            return "(no matching tasks)\n";
+        }
+
+        $out = '';
+        foreach ($roots as $root) {
+            $out .= self::renderNode($root, $byId, 0);
+        }
+        return $out;
     }
 }

@@ -40,7 +40,8 @@ class Task implements Executable
         $reflection = new ReflectionFunction($fn);
         if (!$reflection->isStatic()) {
             throw new RuntimeException(
-                'Task::of() requires a static closure. Non-static closures capture $this and leak in long-running coroutines.',
+                'Task::of() requires a static closure. Non-static closures capture $this '
+                . 'and leak in long-running coroutines.',
             );
         }
 
@@ -56,11 +57,6 @@ class Task implements Executable
         return $task;
     }
 
-    public function __invoke(ExecutionScope $scope): mixed
-    {
-        return ($this->fn)($scope);
-    }
-
     private static function deriveLocation(ReflectionFunction $reflection): string
     {
         $file = $reflection->getFileName();
@@ -68,5 +64,10 @@ class Task implements Executable
             return self::class;
         }
         return basename($file) . ':' . $reflection->getStartLine();
+    }
+
+    public function __invoke(ExecutionScope $scope): mixed
+    {
+        return ($this->fn)($scope);
     }
 }

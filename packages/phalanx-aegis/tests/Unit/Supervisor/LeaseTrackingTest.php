@@ -13,6 +13,7 @@ use Phalanx\Supervisor\PoolLease;
 use Phalanx\Supervisor\Supervisor;
 use Phalanx\Supervisor\TaskRun;
 use Phalanx\Supervisor\TransactionLease;
+use Phalanx\Supervisor\WaitReason;
 use Phalanx\Trace\Trace;
 use Phalanx\Trace\TraceType;
 use PHPUnit\Framework\TestCase;
@@ -133,6 +134,76 @@ final class LeaseTrackingTest extends TestCase
         $snapshot = $supervisor->ledger->snapshot($run->id);
         self::assertNotNull($snapshot);
         self::assertSame('exclusive', $snapshot->leases[0]['mode']);
+    }
+
+    public function testPoolLeaseHeldAcrossWorkerBoundaryTriggersPhxPool002(): void
+    {
+        $supervisor = $this->buildSupervisor();
+        $run = $this->openRun($supervisor);
+
+        $supervisor->registerLease($run, PoolLease::open('postgres/main', 'conn#1'));
+
+        $thrown = null;
+        try {
+            $supervisor->assertCanEnterWorker($run);
+        } catch (LeaseViolation $e) {
+            $thrown = $e;
+        }
+
+        self::assertNotNull($thrown);
+        self::assertSame('PHX-POOL-002', $thrown->phxCode);
+        self::assertStringContainsString('worker dispatch boundary', $thrown->detail);
+    }
+
+    public function testTransactionLeaseHeldAcrossWorkerBoundaryTriggersPhxPool002(): void
+    {
+        $supervisor = $this->buildSupervisor();
+        $run = $this->openRun($supervisor);
+
+        $supervisor->registerLease($run, TransactionLease::open('postgres/main', 'tx#1'));
+
+        $thrown = null;
+        try {
+            $supervisor->assertCanEnterWorker($run);
+        } catch (LeaseViolation $e) {
+            $thrown = $e;
+        }
+
+        self::assertNotNull($thrown);
+        self::assertSame('PHX-POOL-002', $thrown->phxCode);
+    }
+
+    public function testExternalWaitDuringTransactionTriggersPhxTxn001(): void
+    {
+        $supervisor = $this->buildSupervisor();
+        $run = $this->openRun($supervisor);
+
+        $supervisor->registerLease($run, TransactionLease::open('postgres/main', 'tx#1'));
+
+        $thrown = null;
+        try {
+            $supervisor->beginWait($run, WaitReason::http('GET', 'https://example.com'));
+        } catch (LeaseViolation $e) {
+            $thrown = $e;
+        }
+
+        self::assertNotNull($thrown);
+        self::assertSame('PHX-TXN-001', $thrown->phxCode);
+        self::assertStringContainsString('external http wait', $thrown->detail);
+    }
+
+    public function testLocalWaitDuringTransactionIsAllowed(): void
+    {
+        $supervisor = $this->buildSupervisor();
+        $run = $this->openRun($supervisor);
+
+        $supervisor->registerLease($run, TransactionLease::open('postgres/main', 'tx#1'));
+        $clear = $supervisor->beginWait($run, WaitReason::singleflight('user:42'));
+        $clear();
+
+        $snapshot = $supervisor->ledger->snapshot($run->id);
+        self::assertNotNull($snapshot);
+        self::assertNull($snapshot->currentWait);
     }
 
     public function testWithLeaseReleasesOnSuccess(): void

@@ -8,7 +8,7 @@
 
 Three HTTP calls in parallel. Cancellation that actually fires. Memory that stays flat across millions of rows. Stack traces that name your work instead of `Closure@handler.php:47`.
 
-Phalanx is built on [ReactPHP](https://reactphp.org/) and [AMPHP](https://amphp.org/). It separates *what you want to happen* from *how it runs*. You write named computations. The scope handles the fibers, the event loop, cancellation, and cleanup.
+Phalanx Aegis 0.2 is built on OpenSwoole 26 coroutines, channels, wait groups, timers, and client pools. It separates *what you want to happen* from *how it runs*. You write named computations. The scope handles coroutine scheduling, cancellation, and cleanup.
 
 PHP 8.4 -- fibers, property hooks, asymmetric visibility, lazy proxies -- is the foundation, not an afterthought.
 
@@ -206,6 +206,8 @@ Every method takes `Scopeable | Executable` tasks -- a closure-backed `Task::of(
 | `retry($task, $policy)` | Run with retry policy | Result, or throws after exhaustion |
 | `singleflight($key, $task)` | De-duplicate concurrent calls behind a key | Shared result |
 | `inWorker($task)` | Run in a child process (parallel, not concurrent) | Result |
+| `go($fn)` | Spawn supervised background work | `TaskRun` |
+| `transaction($lease, $body)` | Run with a transaction lease and narrowed scope | Body result |
 
 </details>
 
@@ -485,6 +487,17 @@ Connections acquired inside a task body are leases on the active `TaskRun`. They
 return $pool->withConnection(static fn ($conn) => $conn->query(...));
 ```
 
+Transaction bodies use the same lease ledger. `TransactionLease` marks the active `TaskRun` as inside a database transaction; external waits such as HTTP, Redis, custom waits, or worker dispatch are rejected with `PHX-TXN-001`. The body receives a `TransactionScope`, which exposes services, attributes, cancellation, disposal, and local suspension, but not fan-out primitives.
+
+```php
+<?php
+
+return $scope->transaction(
+    TransactionLease::open('postgres/main', $txId),
+    static fn (TransactionScope $tx) => $repo->write($tx),
+);
+```
+
 ### 4. Scoped service factories never acquire pool connections
 
 A factory that does `$pool->acquire()` couples service resolution to pool depth. Under `concurrent()` with N children resolving the same scoped service, the pool starves before any work runs.
@@ -549,6 +562,18 @@ The supervisor's `TaskRun` ledger has two viable backends:
 - `SwooleTableLedger` — `Swoole\Table` shared memory. Mandatory once workers participate in the live ledger so the parent and worker children see the same `TaskRun`s.
 
 The supervisor logic is backend-agnostic; pick per deployment. `Swoole\Table` constraints (fixed schema, fixed string column widths, no nested arrays) shape the lease and child-edge schema when targeting that backend.
+
+```php
+<?php
+
+$app = Application::starting($context)
+    ->withLedger(new SwooleTableLedger())
+    ->compile();
+```
+
+### 9. Diagnostics are reusable before they are CLI commands
+
+`EnvironmentDoctor` returns a `DoctorReport` with deterministic checks for PHP, OpenSwoole, coroutine support, table support, PostgreSQL coroutine support, and the configured ledger backend. CLI packages should render this report instead of duplicating runtime checks.
 
 ## Tracing
 

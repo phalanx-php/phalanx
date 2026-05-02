@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Phalanx\Scope;
 
+use Closure;
 use Phalanx\Concurrency\RetryPolicy;
 use Phalanx\Concurrency\SettlementBag;
 use Phalanx\Supervisor\TaskRun;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
-use Closure;
 
 interface TaskExecutor
 {

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Worker;
 
-use Phalanx\Worker\Protocol\TaskRequest;
 use OpenSwoole\Coroutine\Channel;
+use Phalanx\Worker\Protocol\TaskRequest;
 
 /**
  * Bounded coroutine channel for queued task requests. Push throws

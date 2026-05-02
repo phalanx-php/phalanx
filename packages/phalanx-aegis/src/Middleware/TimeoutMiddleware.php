@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Phalanx\Middleware;
 
+use Closure;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
 use Phalanx\Task\HasTimeout;
 use Phalanx\Task\Scopeable;
-use Closure;
 
 class TimeoutMiddleware implements TaskMiddleware
 {

@@ -36,7 +36,8 @@ final class DisposalProbe
         Assert::assertSame(
             array_values($labels),
             $filtered,
-            'Disposal order mismatch. Expected: [' . implode(', ', $labels) . '] Got: [' . implode(', ', $filtered) . ']',
+            'Disposal order mismatch. Expected: [' . implode(', ', $labels) . '] '
+            . 'Got: [' . implode(', ', $filtered) . ']',
         );
     }
 

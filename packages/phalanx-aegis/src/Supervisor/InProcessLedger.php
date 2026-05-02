@@ -26,6 +26,32 @@ final class InProcessLedger implements LedgerStorage
     /** @var array<string, TaskRun> */
     private array $runs = [];
 
+    private static function project(TaskRun $run): TaskRunSnapshot
+    {
+        $leases = [];
+        foreach ($run->leases as $lease) {
+            $leases[] = [
+                'domain' => $lease->domain,
+                'key' => $lease->key,
+                'mode' => $lease->mode,
+                'acquiredAt' => $lease->acquiredAt,
+            ];
+        }
+
+        return new TaskRunSnapshot(
+            id: $run->id,
+            name: $run->name,
+            parentId: $run->parentId,
+            mode: $run->mode,
+            state: $run->state,
+            currentWait: $run->currentWait,
+            childIds: $run->childIds,
+            leases: $leases,
+            startedAt: $run->startedAt,
+            endedAt: $run->endedAt,
+        );
+    }
+
     public function register(TaskRun $run): void
     {
         $this->runs[$run->id] = $run;
@@ -114,31 +140,5 @@ final class InProcessLedger implements LedgerStorage
     public function reap(string $runId): void
     {
         unset($this->runs[$runId]);
-    }
-
-    private static function project(TaskRun $run): TaskRunSnapshot
-    {
-        $leases = [];
-        foreach ($run->leases as $lease) {
-            $leases[] = [
-                'domain' => $lease->domain,
-                'key' => $lease->key,
-                'mode' => $lease->mode,
-                'acquiredAt' => $lease->acquiredAt,
-            ];
-        }
-
-        return new TaskRunSnapshot(
-            id: $run->id,
-            name: $run->name,
-            parentId: $run->parentId,
-            mode: $run->mode,
-            state: $run->state,
-            currentWait: $run->currentWait,
-            childIds: $run->childIds,
-            leases: $leases,
-            startedAt: $run->startedAt,
-            endedAt: $run->endedAt,
-        );
     }
 }

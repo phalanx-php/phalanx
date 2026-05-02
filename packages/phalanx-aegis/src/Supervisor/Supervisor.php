@@ -50,6 +50,56 @@ final class Supervisor
     ) {
     }
 
+    private static function nextId(): string
+    {
+        return 'run-' . str_pad((string) ++self::$idSeq, 6, '0', STR_PAD_LEFT);
+    }
+
+    private static function isExternalWait(WaitReason $reason): bool
+    {
+        return match ($reason->kind) {
+            WaitKind::Http,
+            WaitKind::Redis,
+            WaitKind::Worker,
+            WaitKind::Custom => true,
+            WaitKind::Delay,
+            WaitKind::Postgres,
+            WaitKind::Singleflight,
+            WaitKind::Lock,
+            WaitKind::Channel => false,
+        };
+    }
+
+    private static function resolveName(Scopeable|Executable|\Closure $task, string $fallbackId): string
+    {
+        if ($task instanceof \Closure) {
+            try {
+                $reflection = new \ReflectionFunction($task);
+                $file = $reflection->getFileName();
+                if ($file !== false) {
+                    return basename($file) . ':' . $reflection->getStartLine();
+                }
+            } catch (\Throwable) {
+                // fall through
+            }
+            return $fallbackId;
+        }
+
+        $class = $task::class;
+
+        if (str_contains($class, '@anonymous')) {
+            if (property_exists($task, 'traceName')) {
+                $hint = $task->traceName ?? null;
+                if (is_string($hint) && $hint !== '') {
+                    return $hint;
+                }
+            }
+            return $fallbackId;
+        }
+
+        return $class;
+    }
+
     /**
      * Open a new TaskRun. Creates the run record, derives the child's
      * cancellation token from the parent's, opens a trace span, returns
@@ -125,6 +175,8 @@ final class Supervisor
      */
     public function beginWait(TaskRun $run, WaitReason $reason): \Closure
     {
+        $this->assertCanWait($run, $reason);
+
         $this->ledger->update($run->id, static function (TaskRun $r) use ($reason): void {
             $r->state = RunState::Suspended;
             $r->currentWait = $reason;
@@ -273,6 +325,65 @@ final class Supervisor
     }
 
     /**
+     * Worker dispatch crosses a process boundary. Any lease that points at
+     * process-local state must be released before the task leaves the parent.
+     *
+     * @throws LeaseViolation PHX-POOL-002
+     */
+    public function assertCanEnterWorker(TaskRun $run): void
+    {
+        $existing = $this->ledger->find($run->id);
+        if ($existing === null) {
+            return;
+        }
+
+        foreach ($existing->leases as $held) {
+            if (!$held instanceof PoolLease && !$held instanceof TransactionLease) {
+                continue;
+            }
+
+            throw new LeaseViolation(
+                phxCode: 'PHX-POOL-002',
+                detail: "process-local lease '{$held->domain}'/'{$held->key}' held across worker dispatch boundary",
+                run: $run,
+                offending: $held,
+            );
+        }
+    }
+
+    /**
+     * Transactions may wait on local coordination primitives, but must not
+     * perform unrelated external IO while the transaction lease is held.
+     *
+     * @throws LeaseViolation PHX-TXN-001
+     */
+    public function assertCanWait(TaskRun $run, WaitReason $reason): void
+    {
+        if (!self::isExternalWait($reason)) {
+            return;
+        }
+
+        $existing = $this->ledger->find($run->id);
+        if ($existing === null) {
+            return;
+        }
+
+        foreach ($existing->leases as $held) {
+            if (!$held instanceof TransactionLease) {
+                continue;
+            }
+
+            throw new LeaseViolation(
+                phxCode: 'PHX-TXN-001',
+                detail: "external {$reason->kind->value} wait attempted while transaction "
+                    . "'{$held->domain}'/'{$held->key}' is open",
+                run: $run,
+                offending: $held,
+            );
+        }
+    }
+
+    /**
      * Release a lease previously registered against the run. Called by
      * the lease's owner (pool client, lock manager, transaction handle)
      * when the underlying resource is returned.
@@ -295,7 +406,7 @@ final class Supervisor
      * a thrown body. Returns whatever the body returns.
      *
      * @template T
-     * @param Closure(): T $body
+     * @param \Closure(): T $body
      * @return T
      */
     public function withLease(TaskRun $run, Lease $lease, \Closure $body): mixed
@@ -321,41 +432,5 @@ final class Supervisor
     public function liveCount(): int
     {
         return $this->ledger->liveCount();
-    }
-
-    private static function nextId(): string
-    {
-        return 'run-' . str_pad((string) ++self::$idSeq, 6, '0', STR_PAD_LEFT);
-    }
-
-    private static function resolveName(Scopeable|Executable|\Closure $task, string $fallbackId): string
-    {
-        if ($task instanceof \Closure) {
-            try {
-                $reflection = new \ReflectionFunction($task);
-                $file = $reflection->getFileName();
-                if ($file !== false) {
-                    return basename($file) . ':' . $reflection->getStartLine();
-                }
-            } catch (\Throwable) {
-                // fall through
-            }
-            return $fallbackId;
-        }
-
-        $class = $task::class;
-
-        if (str_contains($class, '@anonymous')) {
-            if (property_exists($task, 'traceName')) {
-                /** @phpstan-ignore-next-line property hooks resolve at access */
-                $hint = $task->traceName ?? null;
-                if (is_string($hint) && $hint !== '') {
-                    return $hint;
-                }
-            }
-            return $fallbackId;
-        }
-
-        return $class;
     }
 }

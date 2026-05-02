@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Phalanx\Middleware;
 
+use Closure;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 use Phalanx\Task\Traceable;
 use Phalanx\Trace\TraceType;
-use Closure;
 use Throwable;
 
 class TraceMiddleware implements TaskMiddleware

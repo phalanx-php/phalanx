@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Scope\Stream;
 
-use Phalanx\Scope\Suspendable;
 use Closure;
+use Phalanx\Scope\Suspendable;
 
 interface StreamContext extends Suspendable
 {

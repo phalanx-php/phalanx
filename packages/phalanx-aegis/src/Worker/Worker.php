@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Phalanx\Worker;
 
+use OpenSwoole\Coroutine;
+use OpenSwoole\Coroutine\Channel;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Worker\Protocol\Response;
 use Phalanx\Worker\Protocol\TaskRequest;
-use OpenSwoole\Coroutine;
-use OpenSwoole\Coroutine\Channel;
 
 /**
  * One process worker. Owns a ProcessHandle, a Mailbox, and reader/writer

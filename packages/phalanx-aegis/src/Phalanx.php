@@ -30,6 +30,10 @@ use Phalanx\Scope\Scope;
  */
 final class Phalanx
 {
+    private function __construct()
+    {
+    }
+
     /**
      * Returns the scope installed in the current coroutine.
      *
@@ -52,9 +56,5 @@ final class Phalanx
     public static function tryScope(): ?Scope
     {
         return CoroutineScopeRegistry::current();
-    }
-
-    private function __construct()
-    {
     }
 }
