@@ -1,0 +1,52 @@
+parameters:
+    phalanxInternalPaths: []
+    phalanxEnforcedPaths: []
+    phalanxAuditPaths: []
+
+parametersSchema:
+    phalanxInternalPaths: listOf(string())
+    phalanxEnforcedPaths: listOf(string())
+    phalanxAuditPaths: listOf(string())
+
+services:
+    -
+        class: Phalanx\PHPStan\Support\PathPolicy
+        arguments:
+            - %phalanxInternalPaths%
+            - %phalanxEnforcedPaths%
+            - %phalanxAuditPaths%
+
+    -
+        class: Phalanx\PHPStan\Rules\Migration\RootScopeAliasRule
+        tags:
+            - phpstan.rules.rule
+
+    -
+        class: Phalanx\PHPStan\Rules\Scope\StaticClosureOnlyRule
+        tags:
+            - phpstan.rules.rule
+
+    -
+        class: Phalanx\PHPStan\Rules\Scope\TaskFactoryStaticClosureOnlyRule
+        tags:
+            - phpstan.rules.rule
+
+    -
+        class: Phalanx\PHPStan\Rules\Cancellation\RawSleepRule
+        tags:
+            - phpstan.rules.rule
+
+    -
+        class: Phalanx\PHPStan\Rules\Worker\NoClosureBoundaryRule
+        tags:
+            - phpstan.rules.rule
+
+    -
+        class: Phalanx\PHPStan\Rules\Transaction\TransactionCallbackScopeRule
+        tags:
+            - phpstan.rules.rule
+
+    -
+        class: Phalanx\PHPStan\Rules\Cancellation\NoCancelledShortcutRule
+        tags:
+            - phpstan.rules.rule

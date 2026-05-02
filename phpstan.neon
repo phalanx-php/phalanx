@@ -1,5 +1,6 @@
 includes:
     - vendor/wyrihaximus/phpstan-react/extension.neon
+    - packages/phalanx-phpstan/extension.neon
 
 parameters:
     level: 8
@@ -19,7 +20,15 @@ parameters:
         - packages/phalanx-eidolon/src
         - packages/phalanx-theatron/src
         - packages/phalanx-grammata/src
+        - packages/phalanx-phpstan/src
         - packages/phalanx-skopos/src
+    phalanxInternalPaths:
+        - packages/phalanx-aegis/src/Concurrency/Co.php
+        - packages/phalanx-aegis/src/Scope/ExecutionLifecycleScope.php
+        - packages/phalanx-aegis/src/Worker/
+    phalanxEnforcedPaths:
+        - packages/phalanx-aegis/src
+    phalanxAuditPaths: []
     excludePaths:
         analyseAndScan:
             - packages/phalanx-aegis/src/Parallel (?)

@@ -70,5 +70,8 @@
         <testsuite name="Architecture">
             <directory>tests/Architecture</directory>
         </testsuite>
+        <testsuite name="PHPStan Extension">
+            <directory>packages/phalanx-phpstan/tests</directory>
+        </testsuite>
     </testsuites>
 </phpunit>
