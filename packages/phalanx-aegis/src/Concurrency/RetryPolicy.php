@@ -47,7 +47,8 @@ final class RetryPolicy
     public function retryingOn(string ...$exceptions): self
     {
         $clone = clone $this;
-        $clone->retryOn = $exceptions;
+        $clone->retryOn = array_values($exceptions);
+
         return $clone;
     }
 

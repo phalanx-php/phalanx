@@ -36,6 +36,7 @@ final class CompiledServiceConfig implements ServiceConfig
     /** @var list<Closure(object): void> */
     public array $onShutdownHooks = [];
 
+    /** @param class-string $type */
     public function __construct(
         public readonly string $type,
         public ServiceLifetime $lifetime,
@@ -55,9 +56,13 @@ final class CompiledServiceConfig implements ServiceConfig
         return $this;
     }
 
+    /** @param class-string ...$types */
     public function needs(string ...$types): self
     {
-        $this->needsTypes = array_values(array_unique([...$this->needsTypes, ...$types]));
+        /** @var list<class-string> $needs */
+        $needs = array_values(array_unique([...$this->needsTypes, ...$types]));
+        $this->needsTypes = $needs;
+
         return $this;
     }
 
@@ -67,9 +72,13 @@ final class CompiledServiceConfig implements ServiceConfig
         return $this;
     }
 
+    /** @param class-string ...$interfaces */
     public function implements(string ...$interfaces): self
     {
-        $this->interfacesImplemented = array_values(array_unique([...$this->interfacesImplemented, ...$interfaces]));
+        /** @var list<class-string> $implemented */
+        $implemented = array_values(array_unique([...$this->interfacesImplemented, ...$interfaces]));
+        $this->interfacesImplemented = $implemented;
+
         return $this;
     }
 

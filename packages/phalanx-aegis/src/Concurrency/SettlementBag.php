@@ -38,10 +38,11 @@ final class SettlementBag implements ArrayAccess, IteratorAggregate, Countable
         get {
             $out = [];
     foreach ($this->settlements as $k => $s) {
-        if (!$s->isOk) {
+        if (!$s->isOk && $s->error !== null) {
             $out[$k] = $s->error;
         }
     }
+
             return $out;
         }
     }
@@ -104,7 +105,9 @@ final class SettlementBag implements ArrayAccess, IteratorAggregate, Countable
 
     public function isOk(string|int $key): bool
     {
-        return ($this->settlements[$key] ?? null)?->isOk ?? false;
+        $settlement = $this->settlements[$key] ?? null;
+
+        return $settlement !== null && $settlement->isOk;
     }
 
     public function isErr(string|int $key): bool

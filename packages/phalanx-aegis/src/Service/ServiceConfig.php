@@ -12,10 +12,12 @@ interface ServiceConfig
 
     public function eager(): self;
 
+    /** @param class-string ...$types */
     public function needs(string ...$types): self;
 
     public function factory(Closure $factory): self;
 
+    /** @param class-string ...$interfaces */
     public function implements(string ...$interfaces): self;
 
     public function tags(string ...$tags): self;

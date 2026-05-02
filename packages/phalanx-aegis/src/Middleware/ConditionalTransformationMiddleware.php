@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Middleware;
 
-use Phalanx\Service\ServiceDefinition;
+use Phalanx\Service\CompiledServiceConfig;
 
 interface ConditionalTransformationMiddleware extends ServiceTransformationMiddleware
 {
-    public function applies(ServiceDefinition $def): bool;
+    public function applies(CompiledServiceConfig $config): bool;
 }

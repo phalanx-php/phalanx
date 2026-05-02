@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Middleware;
 
-use Phalanx\Service\ServiceDefinition;
+use Phalanx\Service\CompiledServiceConfig;
 
 abstract class TagBasedTransformationMiddleware implements ConditionalTransformationMiddleware
 {
@@ -13,8 +13,8 @@ abstract class TagBasedTransformationMiddleware implements ConditionalTransforma
     ) {
     }
 
-    public function applies(ServiceDefinition $def): bool
+    public function applies(CompiledServiceConfig $config): bool
     {
-        return $def->hasTag($this->tag);
+        return in_array($this->tag, $config->tagsList, true);
     }
 }

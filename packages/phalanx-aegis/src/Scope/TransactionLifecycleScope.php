@@ -23,6 +23,11 @@ final class TransactionLifecycleScope implements TransactionScope
     ) {
     }
 
+    /**
+     * @template T of object
+     * @param class-string<T> $type
+     * @return T
+     */
     public function service(string $type): object
     {
         return $this->scope->service($type);

@@ -70,6 +70,7 @@ class LazySingleton
         $this->creationOrder = [];
     }
 
+    /** @param Closure(class-string): object $factory */
     public function startupEager(Closure $factory): void
     {
         foreach ($this->graph->configs as $type => $config) {

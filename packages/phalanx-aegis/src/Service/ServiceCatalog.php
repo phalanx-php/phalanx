@@ -23,26 +23,34 @@ class ServiceCatalog implements Services
     {
     }
 
+    /** @param class-string $type */
     public function singleton(string $type): ServiceConfig
     {
         return $this->register($type, ServiceLifetime::Singleton, lazy: true);
     }
 
+    /** @param class-string $type */
     public function scoped(string $type): ServiceConfig
     {
         return $this->register($type, ServiceLifetime::Scoped, lazy: true);
     }
 
+    /** @param class-string $type */
     public function eager(string $type): ServiceConfig
     {
         return $this->register($type, ServiceLifetime::Singleton, lazy: false);
     }
 
+    /** @param class-string $type */
     public function config(string $type, Closure $fromContext): void
     {
         $this->contextConfigs[$type] = $fromContext($this->context);
     }
 
+    /**
+     * @param class-string $interface
+     * @param class-string $concrete
+     */
     public function alias(string $interface, string $concrete): void
     {
         $this->aliases[$interface] = $concrete;
@@ -53,6 +61,7 @@ class ServiceCatalog implements Services
         return new ServiceGraph($this->configs, $this->contextConfigs, $this->aliases);
     }
 
+    /** @param class-string $type */
     private function register(string $type, ServiceLifetime $lifetime, bool $lazy): CompiledServiceConfig
     {
         if (isset($this->configs[$type])) {

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Scope;
 
 use Closure;
+use Phalanx\Supervisor\WaitReason;
 use RuntimeException;
 
 /**
@@ -26,9 +27,9 @@ class DeferredScope implements Suspendable, Cancellable
         get => $this->resolve()->isCancelled;
     }
 
-    public function call(Closure $fn): mixed
+    public function call(Closure $fn, ?WaitReason $waitReason = null): mixed
     {
-        return $this->resolve()->call($fn);
+        return $this->resolve()->call($fn, $waitReason);
     }
 
     public function throwIfCancelled(): void

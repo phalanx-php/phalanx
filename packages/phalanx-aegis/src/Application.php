@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx;
 
 use Phalanx\Cancellation\CancellationToken;
+use Phalanx\Middleware\ServiceTransformationMiddleware;
 use Phalanx\Middleware\TaskMiddleware;
 use Phalanx\Scope\ExecutionLifecycleScope;
 use Phalanx\Scope\ExecutionScope;
@@ -12,7 +13,6 @@ use Phalanx\Scope\Scope;
 use Phalanx\Service\LazySingleton;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\ServiceGraph;
-use Phalanx\Service\ServiceTransformationMiddleware;
 use Phalanx\Supervisor\Supervisor;
 use Phalanx\Trace\Trace;
 use Phalanx\Worker\WorkerDispatch;
@@ -81,7 +81,7 @@ class Application implements AppHost
         $this->started = true;
         $rootScope = $this->createScope();
         try {
-            $this->singletons->startupEager(static fn(string $type) => $rootScope->service($type));
+            $this->singletons->startupEager(static fn(string $type): object => $rootScope->service($type));
         } finally {
             $rootScope->dispose();
         }

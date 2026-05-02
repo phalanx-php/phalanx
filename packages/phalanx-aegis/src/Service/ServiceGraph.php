@@ -25,6 +25,7 @@ final class ServiceGraph
     ) {
     }
 
+    /** @param class-string $type */
     public function resolve(string $type): CompiledServiceConfig
     {
         $resolved = $this->aliases[$type] ?? $type;
@@ -34,16 +35,22 @@ final class ServiceGraph
         return $this->configs[$resolved];
     }
 
+    /**
+     * @param class-string $type
+     * @return class-string
+     */
     public function alias(string $type): string
     {
         return $this->aliases[$type] ?? $type;
     }
 
+    /** @param class-string $type */
     public function hasContextConfig(string $type): bool
     {
         return array_key_exists($this->aliases[$type] ?? $type, $this->contextConfigs);
     }
 
+    /** @param class-string $type */
     public function contextConfig(string $type): mixed
     {
         $resolved = $this->aliases[$type] ?? $type;

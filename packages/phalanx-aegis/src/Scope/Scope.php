@@ -13,6 +13,11 @@ interface Scope
      * @param class-string<T> $type
      * @return T
      */
+    /**
+     * @template T of object
+     * @param class-string<T> $type
+     * @return T
+     */
     public function service(string $type): object;
 
     public function attribute(string $key, mixed $default = null): mixed;

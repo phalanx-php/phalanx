@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Phalanx\Middleware;
 
-use Phalanx\Service\ServiceDefinition;
+use Closure;
+use Phalanx\Scope\ExecutionScope;
 
 interface ServiceTransformationMiddleware
 {
-    public function __invoke(ServiceDefinition $def): ServiceDefinition;
+    /** @param Closure(): object $next */
+    public function transform(string $type, Closure $next, ExecutionScope $scope): object;
 }

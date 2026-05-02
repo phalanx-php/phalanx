@@ -16,12 +16,12 @@ use Phalanx\Concurrency\RetryPolicy;
 use Phalanx\Concurrency\Settlement;
 use Phalanx\Concurrency\SettlementBag;
 use Phalanx\Concurrency\SingleflightGroup;
+use Phalanx\Middleware\ServiceTransformationMiddleware;
 use Phalanx\Middleware\TaskMiddleware;
 use Phalanx\Service\CompiledServiceConfig;
 use Phalanx\Service\LazySingleton;
 use Phalanx\Service\ServiceGraph;
 use Phalanx\Service\ServiceLifetime;
-use Phalanx\Service\ServiceTransformationMiddleware;
 use Phalanx\Supervisor\DispatchMode;
 use Phalanx\Supervisor\Supervisor;
 use Phalanx\Supervisor\TaskRun;
@@ -120,7 +120,7 @@ class ExecutionLifecycleScope implements ExecutionScope
      */
     private static function resolveTaskName(Scopeable|Executable|Closure $task): string
     {
-        if (is_object($task) && $task instanceof Traceable) {
+        if ($task instanceof Traceable) {
             $hint = $task->traceName;
             if ($hint !== '') {
                 return $hint;
@@ -157,18 +157,36 @@ class ExecutionLifecycleScope implements ExecutionScope
         }
     }
 
+    /** @param list<int> $cids */
+    private static function cancelCoroutines(array $cids): void
+    {
+        foreach ($cids as $cid) {
+            if (Coroutine::exists($cid)) {
+                Coroutine::cancel($cid);
+            }
+        }
+    }
+
     public function supervisor(): Supervisor
     {
         return $this->supervisor;
     }
 
+    /**
+     * @template T of object
+     * @param class-string<T> $type
+     * @return T
+     */
     public function service(string $type): object
     {
         $this->throwIfCancelled();
         $resolved = $this->graph->alias($type);
 
         if ($this->graph->hasContextConfig($type)) {
-            return $this->graph->contextConfig($type);
+            /** @var T $config */
+            $config = $this->graph->contextConfig($type);
+
+            return $config;
         }
 
         $config = $this->graph->resolve($type);
@@ -176,16 +194,27 @@ class ExecutionLifecycleScope implements ExecutionScope
         $build = (fn(): object => $this->build($config));
 
         if ($config->lifetime === ServiceLifetime::Singleton) {
-            return $this->singletons->get($resolved, fn() => $this->runMiddleware($resolved, $build));
+            /** @var T $instance */
+            $instance = $this->singletons->get(
+                $resolved,
+                fn(): object => $this->runMiddleware($resolved, $build),
+            );
+
+            return $instance;
         }
 
         if (isset($this->scopedInstances[$resolved])) {
-            return $this->scopedInstances[$resolved];
+            /** @var T $instance */
+            $instance = $this->scopedInstances[$resolved];
+
+            return $instance;
         }
 
         $instance = $this->runMiddleware($resolved, $build);
         $this->scopedInstances[$resolved] = $instance;
         $this->scopedCreationOrder[] = $resolved;
+
+        /** @var T $instance */
         return $instance;
     }
 
@@ -396,11 +425,7 @@ class ExecutionLifecycleScope implements ExecutionScope
         $parentRun = $this->currentRun;
 
         $unregister = $this->cancellation->onCancel(static function () use (&$cids): void {
-            foreach ($cids as $cid) {
-                if (Coroutine::exists($cid)) {
-                    Coroutine::cancel($cid);
-                }
-            }
+            self::cancelCoroutines($cids);
         });
 
         try {
@@ -485,11 +510,7 @@ class ExecutionLifecycleScope implements ExecutionScope
         $parentRun = $this->currentRun;
 
         $unregister = $this->cancellation->onCancel(static function () use (&$cids): void {
-            foreach ($cids as $cid) {
-                if (Coroutine::exists($cid)) {
-                    Coroutine::cancel($cid);
-                }
-            }
+            self::cancelCoroutines($cids);
         });
 
         try {
@@ -561,11 +582,7 @@ class ExecutionLifecycleScope implements ExecutionScope
         $parentRun = $this->currentRun;
 
         $unregister = $this->cancellation->onCancel(static function () use (&$cids): void {
-            foreach ($cids as $cid) {
-                if (Coroutine::exists($cid)) {
-                    Coroutine::cancel($cid);
-                }
-            }
+            self::cancelCoroutines($cids);
         });
 
         try {
@@ -639,11 +656,7 @@ class ExecutionLifecycleScope implements ExecutionScope
         $parentRun = $this->currentRun;
 
         $unregister = $this->cancellation->onCancel(static function () use (&$cids): void {
-            foreach ($cids as $cid) {
-                if (Coroutine::exists($cid)) {
-                    Coroutine::cancel($cid);
-                }
-            }
+            self::cancelCoroutines($cids);
         });
 
         try {
@@ -755,11 +768,7 @@ class ExecutionLifecycleScope implements ExecutionScope
         $parentRun = $this->currentRun;
 
         $unregister = $this->cancellation->onCancel(static function () use (&$cids): void {
-            foreach ($cids as $cid) {
-                if (Coroutine::exists($cid)) {
-                    Coroutine::cancel($cid);
-                }
-            }
+            self::cancelCoroutines($cids);
         });
 
         try {

@@ -30,6 +30,10 @@ final readonly class Settlement
         if ($this->isOk) {
             return $this->value;
         }
+        if ($this->error === null) {
+            throw new \LogicException('Failed settlement is missing an error.');
+        }
+
         throw $this->error;
     }
 

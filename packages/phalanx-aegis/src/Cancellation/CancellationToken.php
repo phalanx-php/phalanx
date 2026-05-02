@@ -58,9 +58,11 @@ class CancellationToken
     {
         $token = new self();
         $ms = max(1, (int) round($seconds * 1000));
-        $token->timerId = Timer::after($ms, static function () use ($token): void {
+        $timerId = Timer::after($ms, static function () use ($token): void {
             $token->cancel();
         });
+        $token->timerId = is_int($timerId) ? $timerId : null;
+
         return $token;
     }
 
@@ -100,6 +102,7 @@ class CancellationToken
         $this->cancelled = true;
 
         if ($this->timerId !== null) {
+            /** @phpstan-ignore arguments.count */
             Timer::clear($this->timerId);
             $this->timerId = null;
         }

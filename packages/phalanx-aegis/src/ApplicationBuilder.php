@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Phalanx;
 
 use Phalanx\Handler\HandlerResolver;
+use Phalanx\Middleware\ServiceTransformationMiddleware;
 use Phalanx\Middleware\TaskMiddleware;
 use Phalanx\Service\LazySingleton;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\ServiceCatalog;
-use Phalanx\Service\ServiceTransformationMiddleware;
 use Phalanx\Supervisor\InProcessLedger;
 use Phalanx\Supervisor\LedgerStorage;
 use Phalanx\Supervisor\Supervisor;
@@ -40,7 +40,7 @@ class ApplicationBuilder
 
     public function providers(ServiceBundle ...$providers): self
     {
-        $this->providers = [...$this->providers, ...$providers];
+        $this->providers = array_values([...$this->providers, ...$providers]);
         return $this;
     }
 

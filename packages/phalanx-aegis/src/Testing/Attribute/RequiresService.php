@@ -25,7 +25,6 @@ class RequiresService
             return false;
         }
 
-        /** @phpstan-ignore wyrihaximus.reactphp.blocking.function.fclose */
         fclose($conn);
 
         return true;

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Phalanx\Testing\Stub;
 
-use Phalanx\Scope\ExecutionScope;
+use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
-use Phalanx\WorkerDispatch;
+use Phalanx\Worker\WorkerDispatch;
 
 final class FakeWorkerDispatch implements WorkerDispatch
 {
@@ -16,12 +16,12 @@ final class FakeWorkerDispatch implements WorkerDispatch
 
     public private(set) int $dispatchCount = 0;
 
-    public function inWorker(Scopeable|Executable $task, ExecutionScope $scope): mixed
+    public function dispatch(Scopeable|Executable $task, CancellationToken $token): mixed
     {
         $this->dispatched[] = $task;
         $this->dispatchCount++;
 
-        return $scope->executeFresh($task);
+        return null;
     }
 
     public function shutdown(): void

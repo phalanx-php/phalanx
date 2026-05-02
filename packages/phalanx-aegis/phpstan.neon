@@ -3,9 +3,16 @@ parameters:
     paths:
         - src
     excludePaths:
-        - src/Parallel/
-        - src/Stream/
-        - src/Runtime/PhalanxRuntime.php
-        - src/Runtime/PhalanxHttpRunner.php
+        analyseAndScan:
+            - src/Parallel (?)
+            - src/Stream (?)
+            - src/Runtime/PhalanxRuntime.php (?)
+            - src/Runtime/PhalanxHttpRunner.php (?)
     tmpDir: .phpstan-cache
     treatPhpDocTypesAsCertain: false
+    ignoreErrors:
+        # Scopeable and Executable are marker interfaces. Implementations
+        # always declare __invoke; the dispatcher invokes them via call syntax.
+        - identifier: callable.nonCallable
+        # Public support trait used by downstream packages in the monorepo.
+        - identifier: trait.unused
