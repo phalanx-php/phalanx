@@ -151,7 +151,7 @@ final class StoaRunner
         $this->server->on('start', function () use ($listen): void {
             $this->running = true;
             $this->app->trace()->log(TraceType::LifecycleStartup, 'ready', ['listen' => $listen]);
-            printf("OpenSwoole server listening on %s\n", $listen);
+            printf("Phalanx Server listening on %s\n", $listen);
         });
         $this->server->on('workerStart', $this->startupWorker(...));
         $this->server->on('workerStop', $this->shutdownWorker(...));
