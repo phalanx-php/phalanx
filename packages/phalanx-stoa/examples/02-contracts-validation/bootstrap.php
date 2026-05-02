@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 $autoload = null;
-foreach ([__DIR__ . '/vendor/autoload.php', __DIR__ . '/../../../../vendor/autoload.php'] as $candidate) {
+foreach ([__DIR__ . '/vendor/autoload.php', __DIR__ . '/../../vendor/autoload.php', __DIR__ . '/../../../../vendor/autoload.php'] as $candidate) {
     if (is_file($candidate)) {
         $autoload = $candidate;
         break;

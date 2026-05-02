@@ -109,6 +109,13 @@
         "cs": "php vendor/bin/phpcs --standard=packages/phalanx-aegis/phpcs.xml",
         "cs:fix": "php vendor/bin/phpcbf --standard=packages/phalanx-aegis/phpcs.xml",
         "bench:aegis": "php -d memory_limit=512M benchmarks/kernel/run.php",
+        "demo:stoa": ["@demo:stoa:basic", "@demo:stoa:contracts", "@demo:stoa:advanced"],
+        "demo:stoa:basic": "php packages/phalanx-stoa/examples/01-basic-routing/demo.php",
+        "demo:stoa:contracts": "php packages/phalanx-stoa/examples/02-contracts-validation/demo.php",
+        "demo:stoa:advanced": "php packages/phalanx-stoa/examples/03-advanced-api/demo.php",
+        "demo:stoa:serve:basic": "php packages/phalanx-stoa/examples/01-basic-routing/server.php",
+        "demo:stoa:serve:contracts": "php packages/phalanx-stoa/examples/02-contracts-validation/server.php",
+        "demo:stoa:serve:advanced": "php packages/phalanx-stoa/examples/03-advanced-api/server.php",
         "examples:lint": "find examples packages/phalanx-athena/examples packages/phalanx-stoa/examples -name '*.php' -not -path '*/vendor/*' -print0 | xargs -0 -n1 php -l > /dev/null",
         "check": ["@analyse", "@rector:dry", "@test", "@examples:lint"]
     },

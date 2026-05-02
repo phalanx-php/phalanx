@@ -33,6 +33,15 @@
             "Phalanx\\Tests\\Stoa\\": "tests/"
         }
     },
+    "scripts": {
+        "demo": ["@demo:basic", "@demo:contracts", "@demo:advanced"],
+        "demo:basic": "php examples/01-basic-routing/demo.php",
+        "demo:contracts": "php examples/02-contracts-validation/demo.php",
+        "demo:advanced": "php examples/03-advanced-api/demo.php",
+        "demo:serve:basic": "php examples/01-basic-routing/server.php",
+        "demo:serve:contracts": "php examples/02-contracts-validation/server.php",
+        "demo:serve:advanced": "php examples/03-advanced-api/server.php"
+    },
     "extra": {
         "branch-alias": {
             "dev-main": "0.5-dev"
