@@ -20,3 +20,6 @@ coverage/
 # Logs
 *.log
 
+# Benchmark outputs
+benchmarks/results/*.json
+benchmarks/results/*.csv
