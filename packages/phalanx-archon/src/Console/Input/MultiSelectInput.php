@@ -105,7 +105,9 @@ final class MultiSelectInput extends SelectInput
             ? $this->theme->error->apply($this->label)
             : $this->theme->accent->apply($this->label);
 
-        return $this->buildFrame(implode("\n", $lines) . "\n" . $count . $this->hintLine(), $title, $this->label, $width);
+        $body = implode("\n", $lines) . "\n" . $count . $this->hintLine();
+
+        return $this->buildFrame($body, $title, $this->label, $width);
     }
 
     #[\Override]
@@ -122,7 +124,13 @@ final class MultiSelectInput extends SelectInput
             ? $this->theme->muted->apply('none selected')
             : $this->theme->accent->apply("{$count} selected") . ': ' . implode(', ', $labels);
 
-        return $this->buildFrame('  ' . $summary, $this->theme->muted->apply($this->label), $this->label, $this->innerWidth(), answered: true);
+        return $this->buildFrame(
+            '  ' . $summary,
+            $this->theme->muted->apply($this->label),
+            $this->label,
+            $this->innerWidth(),
+            answered: true,
+        );
     }
 
     #[\Override]

@@ -51,7 +51,8 @@ final class KeyParser
             return $key->value;
         }
 
-        if (is_string($key) && mb_strlen($key) === 1 && mb_ord($key) >= 32) { // @phpstan-ignore function.alreadyNarrowedType
+        // @phpstan-ignore function.alreadyNarrowedType
+        if (is_string($key) && mb_strlen($key) === 1 && mb_ord($key) >= 32) {
             return $key;
         }
 

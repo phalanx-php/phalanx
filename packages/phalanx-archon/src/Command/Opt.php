@@ -11,8 +11,12 @@ final class Opt
         return new CommandOption($name, $shorthand, $desc, requiresValue: false, default: false);
     }
 
-    public static function value(string $name, string $shorthand = '', string $desc = '', mixed $default = null): CommandOption
-    {
+    public static function value(
+        string $name,
+        string $shorthand = '',
+        string $desc = '',
+        mixed $default = null,
+    ): CommandOption {
         return new CommandOption($name, $shorthand, $desc, requiresValue: true, default: $default);
     }
 }

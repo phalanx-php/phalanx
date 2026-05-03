@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Phalanx\Archon\Console\Input;
 
 use Closure;
-use Phalanx\Archon\Console\Widget\FormRevertedException;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Archon\Console\Style\Theme;
+use Phalanx\Archon\Console\Widget\FormRevertedException;
 use Phalanx\Scope\Disposable;
 use Phalanx\Scope\Suspendable;
 
@@ -39,17 +39,18 @@ abstract class BasePrompt
     protected string $error   = '';
     protected bool $validated = false;
 
+    protected ?Suspendable $scope = null;
     private ?int $cachedInnerWidth = null;
 
     private bool $settled         = false;
     private mixed $submittedValue = null;
     private ?StreamOutput $output = null;
-    protected ?Suspendable $scope = null;
 
     public function __construct(
         protected readonly Theme $theme,
         protected readonly ?Closure $validate = null,
-    ) {}
+    ) {
+    }
 
     final public function prompt(
         Suspendable&Disposable $scope,

@@ -30,7 +30,9 @@ final class CommandGroup implements Executable
     private array $groups = [];
 
     /**
-     * @param array<string, class-string<Scopeable|Executable>|array{class-string<Scopeable|Executable>, CommandConfig}|self> $commands
+     * @param array<string, class-string<Scopeable|Executable>
+     *     |array{class-string<Scopeable|Executable>, CommandConfig}
+     *     |self> $commands
      */
     private function __construct(array $commands, private string $description = '')
     {
@@ -55,7 +57,9 @@ final class CommandGroup implements Executable
     }
 
     /**
-     * @param array<string, class-string<Scopeable|Executable>|array{class-string<Scopeable|Executable>, CommandConfig}|self> $commands
+     * @param array<string, class-string<Scopeable|Executable>
+     *     |array{class-string<Scopeable|Executable>, CommandConfig}
+     *     |self> $commands
      */
     public static function of(array $commands, string $description = ''): self
     {
