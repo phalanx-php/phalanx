@@ -415,6 +415,116 @@ final class StoaRunnerTest extends TestCase
         self::assertSame('avatar.txt', $psrRequest->getUploadedFiles()['avatar']->getClientFilename());
     }
 
+    #[Test]
+    public function translates_indexed_uploaded_file_list_from_openswoole_request(): void
+    {
+        $first = tempnam(sys_get_temp_dir(), 'stoa-upload-a-');
+        $second = tempnam(sys_get_temp_dir(), 'stoa-upload-b-');
+        self::assertIsString($first);
+        self::assertIsString($second);
+        file_put_contents($first, 'first-body');
+        file_put_contents($second, 'second-body');
+
+        $request = new OpenSwooleRequest();
+        $request->server = [
+            'request_method' => 'POST',
+            'request_uri' => '/uploads',
+            'server_protocol' => 'HTTP/1.1',
+        ];
+        $request->files = [
+            'attachments' => [
+                'name' => ['a.txt', 'b.txt'],
+                'type' => ['text/plain', 'text/plain'],
+                'tmp_name' => [$first, $second],
+                'error' => [UPLOAD_ERR_OK, UPLOAD_ERR_OK],
+                'size' => [10, 11],
+            ],
+        ];
+
+        try {
+            $psrRequest = (new StoaRequestFactory())->create($request);
+        } finally {
+            @unlink($first);
+            @unlink($second);
+        }
+
+        $uploads = $psrRequest->getUploadedFiles();
+        self::assertArrayHasKey('attachments', $uploads);
+        self::assertIsArray($uploads['attachments']);
+        self::assertCount(2, $uploads['attachments']);
+        self::assertSame('a.txt', $uploads['attachments'][0]->getClientFilename());
+        self::assertSame('b.txt', $uploads['attachments'][1]->getClientFilename());
+    }
+
+    #[Test]
+    public function defensively_skips_indexed_uploaded_files_with_missing_tmp_name(): void
+    {
+        $present = tempnam(sys_get_temp_dir(), 'stoa-upload-c-');
+        self::assertIsString($present);
+        file_put_contents($present, 'only-real');
+
+        $request = new OpenSwooleRequest();
+        $request->server = [
+            'request_method' => 'POST',
+            'request_uri' => '/uploads',
+            'server_protocol' => 'HTTP/1.1',
+        ];
+        $request->files = [
+            'attachments' => [
+                'name' => ['real.txt', 'broken.txt'],
+                'type' => ['text/plain', 'text/plain'],
+                'tmp_name' => [$present, null],
+                'error' => [UPLOAD_ERR_OK, UPLOAD_ERR_NO_FILE],
+                'size' => [9, 0],
+            ],
+            'broken_single' => [
+                'name' => 'b.txt',
+                'tmp_name' => null,
+                'error' => UPLOAD_ERR_NO_FILE,
+                'size' => 0,
+                'type' => 'text/plain',
+            ],
+        ];
+
+        try {
+            $psrRequest = (new StoaRequestFactory())->create($request);
+        } finally {
+            @unlink($present);
+        }
+
+        $uploads = $psrRequest->getUploadedFiles();
+        self::assertArrayHasKey('attachments', $uploads);
+        self::assertIsArray($uploads['attachments']);
+        self::assertCount(1, $uploads['attachments']);
+        self::assertSame('real.txt', $uploads['attachments'][0]->getClientFilename());
+        self::assertArrayNotHasKey('broken_single', $uploads);
+    }
+
+    #[Test]
+    public function preserves_psr_header_lookups_regardless_of_openswoole_header_case(): void
+    {
+        $request = new OpenSwooleRequest();
+        $request->server = [
+            'request_method' => 'GET',
+            'request_uri' => '/headers',
+            'server_protocol' => 'HTTP/1.1',
+        ];
+        $request->header = [
+            'content-type' => 'application/json',
+            'X-Custom-Token' => 'abc-123',
+            'accept' => 'application/json, text/plain',
+        ];
+
+        $psrRequest = (new StoaRequestFactory())->create($request);
+
+        self::assertSame('application/json', $psrRequest->getHeaderLine('Content-Type'));
+        self::assertSame('application/json', $psrRequest->getHeaderLine('CONTENT-TYPE'));
+        self::assertSame('abc-123', $psrRequest->getHeaderLine('x-custom-token'));
+        self::assertSame('application/json, text/plain', $psrRequest->getHeaderLine('accept'));
+        self::assertTrue($psrRequest->hasHeader('X-Custom-Token'));
+        self::assertTrue($psrRequest->hasHeader('x-custom-token'));
+    }
+
     /**
      * @param list<\Phalanx\Runtime\Memory\RuntimeLifecycleEvent> $events
      * @return list<string>

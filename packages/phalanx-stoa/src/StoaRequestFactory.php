@@ -59,7 +59,14 @@ final readonly class StoaRequestFactory
             }
 
             if (is_array($file['tmp_name'] ?? null)) {
-                $uploaded[$field] = self::uploadedFileList($file);
+                $list = self::uploadedFileList($file);
+                if ($list !== []) {
+                    $uploaded[$field] = $list;
+                }
+                continue;
+            }
+
+            if (!is_string($file['tmp_name'] ?? null)) {
                 continue;
             }
 
@@ -76,14 +83,23 @@ final readonly class StoaRequestFactory
     private static function uploadedFileList(array $file): array
     {
         $uploaded = [];
+        $tmpNames = is_array($file['tmp_name'] ?? null) ? $file['tmp_name'] : [];
+        $errors = is_array($file['error'] ?? null) ? $file['error'] : [];
+        $names = is_array($file['name'] ?? null) ? $file['name'] : [];
+        $sizes = is_array($file['size'] ?? null) ? $file['size'] : [];
+        $types = is_array($file['type'] ?? null) ? $file['type'] : [];
 
-        foreach (array_keys($file['tmp_name']) as $index) {
+        foreach ($tmpNames as $index => $tmpName) {
+            if (!is_string($tmpName)) {
+                continue;
+            }
+
             $uploaded[] = self::uploadedFile([
-                'error' => $file['error'][$index] ?? UPLOAD_ERR_OK,
-                'name' => $file['name'][$index] ?? null,
-                'size' => $file['size'][$index] ?? null,
-                'tmp_name' => $file['tmp_name'][$index],
-                'type' => $file['type'][$index] ?? null,
+                'error' => $errors[$index] ?? UPLOAD_ERR_OK,
+                'name' => $names[$index] ?? null,
+                'size' => $sizes[$index] ?? null,
+                'tmp_name' => $tmpName,
+                'type' => $types[$index] ?? null,
             ]);
         }
 

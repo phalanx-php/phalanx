@@ -35,6 +35,7 @@ final class StoaRunner
     private ?int $drainTimer = null;
     private ?Server $server = null;
     private ?RouteGroup $routes = null;
+    private string $listenAddress = '';
 
     /** @var array<string, StoaRequestResource> */
     private array $activeRequestsById = [];
@@ -144,6 +145,7 @@ final class StoaRunner
         }
 
         [$host, $port] = self::parseListen($listen);
+        $this->listenAddress = $listen;
         $this->server = new Server($host, $port);
         $this->server->set([
             'worker_num' => 1,
@@ -152,24 +154,13 @@ final class StoaRunner
             'max_wait_time' => max(1, (int) ceil($this->config->drainTimeout)),
         ]);
 
-        $this->server->on('start', function () use ($listen): void {
-            $this->running = true;
-            $this->app->trace()->log(TraceType::LifecycleStartup, 'ready', ['listen' => $listen]);
-            if (!$this->config->quiet) {
-                printf("Phalanx Server listening on %s\n", $listen);
-            }
-            SignalHandler::register($this->shutdownOpenSwooleServer(...));
-        });
-        $this->server->on('managerStart', function (): void {
-            SignalHandler::ignoreShutdownSignals();
-        });
+        $this->server->on('start', $this->onServerStart(...));
+        $this->server->on('managerStart', $this->onManagerStart(...));
         $this->server->on('workerStart', $this->startupWorker(...));
         $this->server->on('workerStop', $this->shutdownWorker(...));
         $this->server->on('request', $this->handleStoaRequest(...));
         $this->server->on('close', $this->handleClose(...));
-        $this->server->on('shutdown', function (): void {
-            $this->running = false;
-        });
+        $this->server->on('shutdown', $this->onServerShutdown(...));
 
         try {
             $this->server->start();
@@ -216,6 +207,26 @@ final class StoaRunner
     public function isDraining(): bool
     {
         return $this->draining;
+    }
+
+    private function onServerStart(Server $server): void
+    {
+        $this->running = true;
+        $this->app->trace()->log(TraceType::LifecycleStartup, 'ready', ['listen' => $this->listenAddress]);
+        if (!$this->config->quiet) {
+            printf("Phalanx Server listening on %s\n", $this->listenAddress);
+        }
+        SignalHandler::register($this->shutdownOpenSwooleServer(...));
+    }
+
+    private function onManagerStart(Server $server): void
+    {
+        SignalHandler::ignoreShutdownSignals();
+    }
+
+    private function onServerShutdown(Server $server): void
+    {
+        $this->running = false;
     }
 
     private function startupWorker(Server $server, int $workerId): void
@@ -510,18 +521,34 @@ final class StoaRunner
             return;
         }
 
-        $timerId = Timer::after(max(1, (int) round($this->config->drainTimeout * 1000)), function (): void {
-            $this->drainTimer = null;
-            $this->abortActiveRequests(StoaEventSid::DrainTimeout, 'drain timeout');
-            $this->checkDrainComplete();
-        });
+        $timerId = Timer::after(
+            max(1, (int) round($this->config->drainTimeout * 1000)),
+            $this->onDrainTimeout(...),
+        );
         $this->drainTimer = is_int($timerId) ? $timerId : null;
+    }
+
+    private function onDrainTimeout(): void
+    {
+        $this->drainTimer = null;
+        $this->abortActiveRequests(StoaEventSid::DrainTimeout, 'drain timeout');
+        $this->checkDrainComplete();
     }
 
     private function abortActiveRequests(StoaEventSid $event, string $reason): void
     {
+        $cancelled = null;
+
         foreach ($this->activeRequestsById as $request) {
-            $this->abortRequest($request, $event, $reason);
+            try {
+                $this->abortRequest($request, $event, $reason);
+            } catch (Cancelled $e) {
+                $cancelled ??= $e;
+            }
+        }
+
+        if ($cancelled !== null) {
+            throw $cancelled;
         }
     }
 
