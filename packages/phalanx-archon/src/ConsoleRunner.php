@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Phalanx\Archon;
 
+use Closure;
 use Phalanx\AppHost;
 use Phalanx\Handler\HandlerGroup;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 use RuntimeException;
+use Throwable;
 
 final class ConsoleRunner
 {
@@ -35,6 +38,24 @@ final class ConsoleRunner
         }
 
         return new self($app, [], $commands);
+    }
+
+    /** @param string|list<string> $paths */
+    private static function loadFromPaths(AppHost $app, string|array $paths): CommandGroup
+    {
+        $paths = is_string($paths) ? [$paths] : $paths;
+        $scope = $app->createScope();
+        $group = CommandGroup::of([]);
+
+        try {
+            foreach ($paths as $dir) {
+                $group = $group->merge(CommandLoader::loadDirectory($dir, $scope));
+            }
+        } finally {
+            $scope->dispose();
+        }
+
+        return $group;
     }
 
     public function withCommand(string $name, Scopeable|Executable $handler): self
@@ -73,24 +94,13 @@ final class ConsoleRunner
         assert($this->handlers !== null);
 
         if ($this->handlers instanceof CommandGroup && $this->handlers->isGroup($command)) {
-            $this->app->startup();
+            $handlers = $this->handlers;
 
-            try {
-                $scope = $this->app->createScope();
-                $scope = $scope->withAttribute('command', $command);
-                $scope = $scope->withAttribute('args', $args);
-
-                $result = $scope->execute($this->handlers);
-
-                $scope->dispose();
-
-                return is_int($result) ? $result : 0;
-            } catch (\Throwable $e) {
-                printf("Error: %s\n", $e->getMessage());
-                return 1;
-            } finally {
-                $this->app->shutdown();
-            }
+            return $this->runScoped(
+                $command,
+                $args,
+                static fn(ExecutionScope $scope): mixed => $scope->execute($handlers),
+            );
         }
 
         $handlerGroup = $this->resolveHandlerGroup();
@@ -102,45 +112,16 @@ final class ConsoleRunner
             return 1;
         }
 
-        $this->app->startup();
+        $executable = $this->handlers instanceof HandlerGroup
+            ? $this->handlers->withMatcher(new CommandMatcher())
+            : $this->handlers;
 
-        try {
-            $scope = $this->app->createScope();
-            $scope = $scope->withAttribute('command', $command);
-            $scope = $scope->withAttribute('args', $args);
-
-            $executable = $this->handlers instanceof HandlerGroup
-                ? $this->handlers->withMatcher(new CommandMatcher())
-                : $this->handlers;
-
-            $result = $scope->execute($executable);
-
-            $scope->dispose();
-
-            return is_int($result) ? $result : 0;
-        } catch (InvalidInputException $e) {
-            printf("Error: %s\n\n", $e->getMessage());
-
-            if ($e->config !== null) {
-                echo HelpGenerator::forCommand($command, $e->config);
-            }
-
-            return 1;
-        } catch (RuntimeException $e) {
-            if (str_starts_with($e->getMessage(), 'Command not found')) {
-                printf("Unknown command: %s\n", $command);
-                $this->printAvailableCommands();
-                return 1;
-            }
-
-            printf("Error: %s\n", $e->getMessage());
-            return 1;
-        } catch (\Throwable $e) {
-            printf("Error: %s\n", $e->getMessage());
-            return 1;
-        } finally {
-            $this->app->shutdown();
-        }
+        return $this->runScoped(
+            $command,
+            $args,
+            static fn(ExecutionScope $scope): mixed => $scope->execute($executable),
+            fn(Throwable $e): int => $this->handleHandlerThrowable($command, $e),
+        );
     }
 
     /** @param list<string> $args */
@@ -152,23 +133,70 @@ final class ConsoleRunner
             return 1;
         }
 
+        $handler = $this->commands[$command];
+
+        return $this->runScoped(
+            $command,
+            $args,
+            static fn(ExecutionScope $scope): mixed => $scope->execute($handler),
+        );
+    }
+
+    /**
+     * @param list<string> $args
+     * @param Closure(ExecutionScope): mixed $execute
+     * @param Closure(Throwable): int|null $handleThrowable
+     */
+    private function runScoped(
+        string $command,
+        array $args,
+        Closure $execute,
+        ?Closure $handleThrowable = null,
+    ): int {
+        $scope = null;
         $this->app->startup();
 
         try {
-            $scope = $this->app->createScope();
-            $scope = $scope->withAttribute('args', $args);
+            $scope = $this->app->createScope()
+                ->withAttribute('args', $args)
+                ->withAttribute('command', $command);
 
-            $result = $scope->execute($this->commands[$command]);
-
-            $scope->dispose();
+            $result = $execute($scope);
 
             return is_int($result) ? $result : 0;
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
+            if ($handleThrowable !== null) {
+                return $handleThrowable($e);
+            }
+
             printf("Error: %s\n", $e->getMessage());
             return 1;
         } finally {
+            $scope?->dispose();
             $this->app->shutdown();
         }
+    }
+
+    private function handleHandlerThrowable(string $command, Throwable $e): int
+    {
+        if ($e instanceof InvalidInputException) {
+            printf("Error: %s\n\n", $e->getMessage());
+
+            if ($e->config !== null) {
+                echo HelpGenerator::forCommand($command, $e->config);
+            }
+
+            return 1;
+        }
+
+        if ($e instanceof RuntimeException && str_starts_with($e->getMessage(), 'Command not found')) {
+            printf("Unknown command: %s\n", $command);
+            $this->printAvailableCommands();
+            return 1;
+        }
+
+        printf("Error: %s\n", $e->getMessage());
+        return 1;
     }
 
     private function showCommandHelp(string $name): int
@@ -257,19 +285,5 @@ final class ConsoleRunner
                 printf("  %s\n", $name);
             }
         }
-    }
-
-    /** @param string|list<string> $paths */
-    private static function loadFromPaths(AppHost $app, string|array $paths): CommandGroup
-    {
-        $paths = is_string($paths) ? [$paths] : $paths;
-        $scope = $app->createScope();
-        $group = CommandGroup::of([]);
-
-        foreach ($paths as $dir) {
-            $group = $group->merge(CommandLoader::loadDirectory($dir, $scope));
-        }
-
-        return $group;
     }
 }

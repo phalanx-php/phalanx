@@ -14,36 +14,36 @@ use Phalanx\Task\Task;
 use Phalanx\Testing\Assert as PhalanxAssert;
 use Phalanx\Tests\Support\CoroutineTestCase;
 
-final class OpenSwooleConsoleRunnerTest extends CoroutineTestCase
+final class ArchonConsoleRunnerTest extends CoroutineTestCase
 {
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        OpenSwooleProbeCommand::$receivedCommandScope = false;
-        OpenSwooleProbeCommand::$commandName = null;
-        OpenSwooleProbeCommand::$taskResult = null;
-    }
-
-    public function testCommandRunsInsideAegisOpenSwooleScope(): void
+    public function testCommandRunsInsideAegisArchonScope(): void
     {
         $app = Application::starting()->compile();
         $runner = ConsoleRunner::withHandlers($app, CommandGroup::of([
-            'probe' => OpenSwooleProbeCommand::class,
+            'probe' => ArchonProbeCommand::class,
         ]));
 
         $this->runInCoroutine(static function () use ($runner): void {
             self::assertSame(0, $runner->run(['cli', 'probe']));
         });
 
-        self::assertTrue(OpenSwooleProbeCommand::$receivedCommandScope);
-        self::assertSame('probe', OpenSwooleProbeCommand::$commandName);
-        self::assertSame('task:probe', OpenSwooleProbeCommand::$taskResult);
+        self::assertTrue(ArchonProbeCommand::$receivedCommandScope);
+        self::assertSame('probe', ArchonProbeCommand::$commandName);
+        self::assertSame('task:probe', ArchonProbeCommand::$taskResult);
         PhalanxAssert::assertNoLiveTasks($app->supervisor());
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        ArchonProbeCommand::$receivedCommandScope = false;
+        ArchonProbeCommand::$commandName = null;
+        ArchonProbeCommand::$taskResult = null;
     }
 }
 
-final class OpenSwooleProbeCommand implements Scopeable
+final class ArchonProbeCommand implements Scopeable
 {
     public static bool $receivedCommandScope = false;
 
