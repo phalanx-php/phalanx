@@ -12,5 +12,6 @@ final readonly class TaskResource
         public ?string $description,
         public TaskPriority $priority,
         public TaskStatus $status,
-    ) {}
+    ) {
+    }
 }

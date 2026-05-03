@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Tests\Stoa\Fixtures\Routes;
 
+use Phalanx\Scope\Scope;
 use Phalanx\Stoa\Contract\HasValidators;
 use Phalanx\Stoa\Contract\RouteValidator;
-use Phalanx\Scope\Scope;
 use Phalanx\Task\Scopeable;
 
 /**

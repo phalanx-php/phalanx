@@ -12,5 +12,7 @@ final class DemoIdentity implements Identity
         get => $this->identityId;
     }
 
-    public function __construct(private string|int $identityId) {}
+    public function __construct(private string|int $identityId)
+    {
+    }
 }

@@ -18,7 +18,6 @@ use Phalanx\Stoa\ExecutionContext;
 use Phalanx\Stoa\QueryParams;
 use Phalanx\Stoa\RouteConfig;
 use Phalanx\Stoa\RouteParams;
-use Phalanx\Task\Executable;
 use Phalanx\Tests\Support\TestServiceBundle;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -111,14 +110,16 @@ final class TestIdentity implements Identity
 
     public function __construct(
         private readonly string|int $identityId,
-    ) {}
+    ) {
+    }
 }
 
 final class TestGuard implements Guard
 {
     public function __construct(
         private readonly ?AuthContext $result,
-    ) {}
+    ) {
+    }
 
     public function authenticate(ServerRequestInterface $request): ?AuthContext
     {

@@ -98,7 +98,6 @@ try {
         Process::kill($pid, SIGKILL);
         Process::wait(false);
     }
-
 }
 
 exit($failed ? 1 : 0);

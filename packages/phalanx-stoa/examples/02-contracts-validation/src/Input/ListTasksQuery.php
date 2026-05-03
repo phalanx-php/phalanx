@@ -9,5 +9,6 @@ final readonly class ListTasksQuery
     public function __construct(
         public string $owner = 'all',
         public int $limit = 10,
-    ) {}
+    ) {
+    }
 }

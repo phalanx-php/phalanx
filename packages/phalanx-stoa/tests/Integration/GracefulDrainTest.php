@@ -16,16 +16,32 @@ use Phalanx\Stoa\RouteGroup;
 use Phalanx\Stoa\Runtime\Identity\StoaEventSid;
 use Phalanx\Stoa\StoaRunner;
 use Phalanx\Stoa\StoaServerConfig;
+use Phalanx\Task\Scopeable;
 use Phalanx\Tests\Stoa\Fixtures\EventTrackingSlowHandler;
 use Phalanx\Tests\Stoa\Fixtures\Routes\StatusOk;
 use Phalanx\Tests\Stoa\Fixtures\SlowHandler;
 use Phalanx\Tests\Support\CoroutineTestCase;
-use Phalanx\Task\Scopeable;
 use PHPUnit\Framework\Attributes\Test;
 use Psr\Http\Message\ResponseInterface;
 
 final class GracefulDrainTest extends CoroutineTestCase
 {
+    /**
+     * @param list<\Phalanx\Runtime\Memory\RuntimeLifecycleEvent> $events
+     * @return list<string>
+     */
+    private static function eventTypesForResource(array $events, string $resourceId): array
+    {
+        $types = [];
+        foreach ($events as $event) {
+            if ($event->resourceId === $resourceId) {
+                $types[] = $event->type;
+            }
+        }
+
+        return $types;
+    }
+
     #[Test]
     public function inflight_request_completes_within_drain_timeout(): void
     {
@@ -131,7 +147,7 @@ final class GracefulDrainTest extends CoroutineTestCase
     {
         $this->runInCoroutine(function (): void {
             $shutdownFired = false;
-            $bundle = new class($shutdownFired) implements ServiceBundle {
+            $bundle = new class ($shutdownFired) implements ServiceBundle {
                 public function __construct(private bool &$shutdownFired)
                 {
                 }
@@ -168,22 +184,6 @@ final class GracefulDrainTest extends CoroutineTestCase
             self::assertContains('handler:complete', EventTrackingSlowHandler::$events);
             self::assertTrue($shutdownFired, 'Service shutdown hook should have fired');
         });
-    }
-
-    /**
-     * @param list<\Phalanx\Runtime\Memory\RuntimeLifecycleEvent> $events
-     * @return list<string>
-     */
-    private static function eventTypesForResource(array $events, string $resourceId): array
-    {
-        $types = [];
-        foreach ($events as $event) {
-            if ($event->resourceId === $resourceId) {
-                $types[] = $event->type;
-            }
-        }
-
-        return $types;
     }
 }
 

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Acme\StoaDemo\Contracts\Routes;
 
 use Acme\StoaDemo\Contracts\Input\CreateTaskInput;
-use Phalanx\Stoa\Contract\Header;
 use Phalanx\Stoa\Contract\HasValidators;
+use Phalanx\Stoa\Contract\Header;
 use Phalanx\Stoa\Contract\RequiresHeaders;
 use Phalanx\Stoa\RequestScope;
 use Phalanx\Stoa\Response\Created;

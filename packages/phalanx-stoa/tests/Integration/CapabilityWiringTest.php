@@ -25,16 +25,6 @@ final class CapabilityWiringTest extends TestCase
 {
     private Application $app;
 
-    protected function setUp(): void
-    {
-        $this->app = Application::starting()->compile();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->app->shutdown();
-    }
-
     #[Test]
     public function requires_headers_aborts_when_header_missing(): void
     {
@@ -133,6 +123,16 @@ final class CapabilityWiringTest extends TestCase
         $this->assertSame('alice', InputCapturingValidator::$capturedInput->name);
     }
 
+    protected function setUp(): void
+    {
+        $this->app = Application::starting()->compile();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->app->shutdown();
+    }
+
     /**
      * @param array<string, string> $headers
      * @param array<string, string> $queryParams
@@ -142,8 +142,7 @@ final class CapabilityWiringTest extends TestCase
         string $path,
         array $headers = [],
         array $queryParams = [],
-    ): ServerRequestInterface
-    {
+    ): ServerRequestInterface {
         $uri = $this->createStub(UriInterface::class);
         $uri->method('getPath')->willReturn($path);
 

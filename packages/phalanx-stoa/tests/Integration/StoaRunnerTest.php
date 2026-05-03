@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Tests\Stoa\Integration;
 
-use GuzzleHttp\Psr7\ServerRequest;
 use GuzzleHttp\Psr7\Response as PsrResponse;
+use GuzzleHttp\Psr7\ServerRequest;
 use OpenSwoole\Http\Request as OpenSwooleRequest;
 use Phalanx\Application;
 use Phalanx\Cancellation\CancellationToken;
@@ -17,8 +17,8 @@ use Phalanx\Runtime\Memory\RuntimeMemoryConfig;
 use Phalanx\Runtime\RuntimeContext;
 use Phalanx\Stoa\ExecutionContext;
 use Phalanx\Stoa\MissingRequestResource;
-use Phalanx\Stoa\RequestScope;
 use Phalanx\Stoa\QueryParams;
+use Phalanx\Stoa\RequestScope;
 use Phalanx\Stoa\RouteConfig;
 use Phalanx\Stoa\RouteGroup;
 use Phalanx\Stoa\RouteParams;
@@ -37,10 +37,20 @@ use RuntimeException;
 
 final class StoaRunnerTest extends TestCase
 {
-    protected function setUp(): void
+    /**
+     * @param list<\Phalanx\Runtime\Memory\RuntimeLifecycleEvent> $events
+     * @return list<string>
+     */
+    private static function eventTypesForResource(array $events, string $resourceId): array
     {
-        PlainTextStoaRoute::$disposed = false;
-        FailingStoaRoute::$disposed = false;
+        $types = [];
+        foreach ($events as $event) {
+            if ($event->resourceId === $resourceId) {
+                $types[] = $event->type;
+            }
+        }
+
+        return $types;
     }
 
     #[Test]
@@ -525,20 +535,10 @@ final class StoaRunnerTest extends TestCase
         self::assertTrue($psrRequest->hasHeader('x-custom-token'));
     }
 
-    /**
-     * @param list<\Phalanx\Runtime\Memory\RuntimeLifecycleEvent> $events
-     * @return list<string>
-     */
-    private static function eventTypesForResource(array $events, string $resourceId): array
+    protected function setUp(): void
     {
-        $types = [];
-        foreach ($events as $event) {
-            if ($event->resourceId === $resourceId) {
-                $types[] = $event->type;
-            }
-        }
-
-        return $types;
+        PlainTextStoaRoute::$disposed = false;
+        FailingStoaRoute::$disposed = false;
     }
 }
 

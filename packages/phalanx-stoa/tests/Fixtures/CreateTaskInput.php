@@ -12,7 +12,8 @@ final readonly class CreateTaskInput implements Validatable
         public string $title,
         public ?string $description = null,
         public TaskPriority $priority = TaskPriority::Normal,
-    ) {}
+    ) {
+    }
 
     public function validate(): array
     {

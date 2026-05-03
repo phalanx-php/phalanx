@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Phalanx\Tests\Stoa\Unit;
 
 use Phalanx\AppHost;
-use Phalanx\Stoa\Runtime;
 use Phalanx\Stoa\RouteGroup;
+use Phalanx\Stoa\Runtime;
 use Phalanx\Stoa\StoaApplication;
 use Phalanx\Stoa\StoaRuntimeRunner;
 use Phalanx\Stoa\StoaServerConfig;

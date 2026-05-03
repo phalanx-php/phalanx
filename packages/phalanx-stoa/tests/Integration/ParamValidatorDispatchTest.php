@@ -25,16 +25,6 @@ final class ParamValidatorDispatchTest extends TestCase
 {
     private Application $app;
 
-    protected function setUp(): void
-    {
-        $this->app = Application::starting()->compile();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->app->shutdown();
-    }
-
     #[Test]
     public function param_validator_passes_for_valid_value(): void
     {
@@ -118,6 +108,16 @@ final class ParamValidatorDispatchTest extends TestCase
         $result = $scope->execute($group);
 
         $this->assertSame('bar', $result);
+    }
+
+    protected function setUp(): void
+    {
+        $this->app = Application::starting()->compile();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->app->shutdown();
     }
 
     private function createRequest(string $method, string $path): ServerRequestInterface

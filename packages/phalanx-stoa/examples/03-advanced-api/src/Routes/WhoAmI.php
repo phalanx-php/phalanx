@@ -10,7 +10,9 @@ use Phalanx\Task\Scopeable;
 
 final class WhoAmI implements Scopeable
 {
-    public function __construct(private readonly AuditLog $audit) {}
+    public function __construct(private readonly AuditLog $audit)
+    {
+    }
 
     /** @return array{identity: string|int|null, audit_events: int} */
     public function __invoke(AuthRequestScope $scope): array

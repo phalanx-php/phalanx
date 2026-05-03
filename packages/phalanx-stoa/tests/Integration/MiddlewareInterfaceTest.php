@@ -23,16 +23,6 @@ final class MiddlewareInterfaceTest extends TestCase
 {
     private Application $app;
 
-    protected function setUp(): void
-    {
-        $this->app = Application::starting()->compile();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->app->shutdown();
-    }
-
     #[Test]
     public function middleware_interface_wraps_result_in_order(): void
     {
@@ -62,6 +52,16 @@ final class MiddlewareInterfaceTest extends TestCase
         $result = $scope->execute($group);
 
         $this->assertSame('aborted', $result);
+    }
+
+    protected function setUp(): void
+    {
+        $this->app = Application::starting()->compile();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->app->shutdown();
     }
 
     private function createRequest(string $method, string $path): ServerRequestInterface

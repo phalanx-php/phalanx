@@ -28,16 +28,6 @@ final class RouteDispatchTest extends TestCase
 {
     private Application $app;
 
-    protected function setUp(): void
-    {
-        $this->app = Application::starting()->compile();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->app->shutdown();
-    }
-
     #[Test]
     public function dispatches_route_by_request_attribute(): void
     {
@@ -303,6 +293,16 @@ final class RouteDispatchTest extends TestCase
         $this->assertInstanceOf(RouteConfig::class, $handler->config);
         $this->assertSame(['id'], $handler->config->paramNames);
         $this->assertSame('/users/{id}', $handler->config->fastRoutePath);
+    }
+
+    protected function setUp(): void
+    {
+        $this->app = Application::starting()->compile();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->app->shutdown();
     }
 
     private function createRequest(string $method, string $path): ServerRequestInterface

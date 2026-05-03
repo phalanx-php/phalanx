@@ -22,16 +22,6 @@ final class RequireAbilityTest extends TestCase
 {
     private Application $app;
 
-    protected function setUp(): void
-    {
-        $this->app = Application::starting()->compile();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->app->shutdown();
-    }
-
     #[Test]
     public function returns_empty_when_user_has_ability(): void
     {
@@ -66,6 +56,16 @@ final class RequireAbilityTest extends TestCase
         $v->validate(null, $scope);
     }
 
+    protected function setUp(): void
+    {
+        $this->app = Application::starting()->compile();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->app->shutdown();
+    }
+
     private function createRequestScope(): ExecutionContext
     {
         $inner = $this->app->createScope();
@@ -87,5 +87,7 @@ final class TestAbilityIdentity implements Identity
         get => $this->identityId;
     }
 
-    public function __construct(private readonly string|int $identityId) {}
+    public function __construct(private readonly string|int $identityId)
+    {
+    }
 }

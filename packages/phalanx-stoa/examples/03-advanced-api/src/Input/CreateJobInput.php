@@ -11,7 +11,8 @@ final readonly class CreateJobInput implements Validatable
     public function __construct(
         public string $name,
         public int $priority = 3,
-    ) {}
+    ) {
+    }
 
     /** @return array<string, list<string>> */
     public function validate(): array

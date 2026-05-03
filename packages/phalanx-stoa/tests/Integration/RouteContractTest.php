@@ -26,16 +26,6 @@ final class RouteContractTest extends TestCase
 {
     private Application $app;
 
-    protected function setUp(): void
-    {
-        $this->app = Application::starting()->compile();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->app->shutdown();
-    }
-
     #[Test]
     public function post_route_hydrates_input_from_body(): void
     {
@@ -204,6 +194,16 @@ final class RouteContractTest extends TestCase
         $result = $scope->execute($group);
 
         $this->assertInstanceOf(NoContent::class, $result);
+    }
+
+    protected function setUp(): void
+    {
+        $this->app = Application::starting()->compile();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->app->shutdown();
     }
 
     /**

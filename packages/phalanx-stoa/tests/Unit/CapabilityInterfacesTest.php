@@ -30,7 +30,7 @@ final class CapabilityInterfacesTest extends TestCase
                     201 => \stdClass::class,
                     409 => \RuntimeException::class,
                 ];
-            }
+                }
         };
 
         $this->assertSame(
@@ -93,7 +93,7 @@ final class CapabilityInterfacesTest extends TestCase
                     Header::required('X-Api-Version', pattern: 'v\d+'),
                     Header::optional('X-Trace-Id'),
                 ];
-            }
+                }
         };
 
         $this->assertCount(2, $handler->requiredHeaders);

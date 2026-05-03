@@ -11,5 +11,6 @@ final readonly class ListTasksQuery
         public int $limit = 25,
         public ?TaskStatus $status = null,
         public ?string $search = null,
-    ) {}
+    ) {
+    }
 }

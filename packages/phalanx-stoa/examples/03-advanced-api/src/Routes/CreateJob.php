@@ -12,7 +12,9 @@ use Phalanx\Task\Scopeable;
 
 final class CreateJob implements Scopeable
 {
-    public function __construct(private readonly AuditLog $audit) {}
+    public function __construct(private readonly AuditLog $audit)
+    {
+    }
 
     public function __invoke(AuthRequestScope $scope, CreateJobInput $input): Accepted
     {
