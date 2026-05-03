@@ -435,7 +435,8 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         }
     }
 
-    public function concurrent(array $tasks): array
+    /** @return array<string|int, mixed> */
+    public function concurrent(Scopeable|Executable|Closure ...$tasks): array
     {
         $this->throwIfCancelled();
         if ($tasks === []) {
@@ -522,7 +523,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         return $ordered;
     }
 
-    public function race(array $tasks): mixed
+    public function race(Scopeable|Executable|Closure ...$tasks): mixed
     {
         $this->throwIfCancelled();
         if ($tasks === []) {
@@ -592,7 +593,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         }
     }
 
-    public function any(array $tasks): mixed
+    public function any(Scopeable|Executable|Closure ...$tasks): mixed
     {
         $this->throwIfCancelled();
         if ($tasks === []) {
@@ -754,7 +755,8 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         return $ordered;
     }
 
-    public function series(array $tasks): array
+    /** @return array<string|int, mixed> */
+    public function series(Scopeable|Executable|Closure ...$tasks): array
     {
         $results = [];
         foreach ($tasks as $key => $task) {
@@ -764,7 +766,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         return $results;
     }
 
-    public function waterfall(array $tasks): mixed
+    public function waterfall(Scopeable|Executable|Closure ...$tasks): mixed
     {
         $previous = null;
         $first = true;
@@ -779,7 +781,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         return $previous;
     }
 
-    public function settle(array $tasks): SettlementBag
+    public function settle(Scopeable|Executable|Closure ...$tasks): SettlementBag
     {
         $this->throwIfCancelled();
         if ($tasks === []) {

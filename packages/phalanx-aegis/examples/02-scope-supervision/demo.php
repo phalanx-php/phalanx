@@ -20,7 +20,7 @@ $exitCode = Application::starting($context)
     ->run(Task::named(
         'demo.supervision.root',
         static function (ExecutionScope $root) use ($ledger): int {
-            $results = $root->concurrent([
+            $results = $root->concurrent(...[
                 'sleeper' => Task::named(
                     'demo.supervision.sleeper',
                     static function (ExecutionScope $child): int {

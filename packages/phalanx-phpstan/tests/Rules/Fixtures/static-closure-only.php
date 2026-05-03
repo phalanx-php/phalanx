@@ -11,7 +11,12 @@ final class StaticClosureOnlyFixture
 {
     public function __invoke(ExecutionScope $scope): void
     {
-        $scope->concurrent([
+        $scope->concurrent(
+            static fn(): int => 1,
+            fn(): int => 2,
+        );
+
+        $scope->race(...[
             static fn(): int => 1,
             fn(): int => 2,
         ]);

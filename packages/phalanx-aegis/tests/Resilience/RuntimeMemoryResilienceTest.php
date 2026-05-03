@@ -33,7 +33,7 @@ class RuntimeMemoryResilienceTest extends PhalanxTestCase
                 );
             }
 
-            return $scope->concurrent($tasks);
+            return $scope->concurrent(...$tasks);
         });
 
         sort($ids);

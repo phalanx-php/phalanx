@@ -36,9 +36,9 @@ final readonly class Swarm
             }
 
             // Spawning workers and relay in the background.
-            $scope->concurrent([
+            $scope->concurrent(...[
                 'workers' => Task::of(static function (ExecutionScope $es) use ($tasks): void {
-                    $es->concurrent($tasks);
+                    $es->concurrent(...$tasks);
                 }),
                 'relay' => Task::of(static function (ExecutionScope $es) use ($bus, $config, $out): void {
                     foreach ($bus->subscribe(['workspace' => $config->workspace])($es) as $event) {

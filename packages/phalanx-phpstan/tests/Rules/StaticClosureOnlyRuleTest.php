@@ -20,8 +20,9 @@ final class StaticClosureOnlyRuleTest extends RuleTestCase
             [__DIR__ . '/Fixtures/static-closure-only.php'],
             [
                 ['Closure passed to concurrent() must be static so it cannot capture $this in a long-running coroutine.', 16],
-                ['Closure passed to map() must be static so it cannot capture $this in a long-running coroutine.', 21],
-                ['Closure passed to go() must be static so it cannot capture $this in a long-running coroutine.', 25],
+                ['Closure passed to race() must be static so it cannot capture $this in a long-running coroutine.', 21],
+                ['Closure passed to map() must be static so it cannot capture $this in a long-running coroutine.', 26],
+                ['Closure passed to go() must be static so it cannot capture $this in a long-running coroutine.', 30],
             ],
         );
     }

@@ -28,7 +28,7 @@ final class PrimitiveSupervisionTest extends CoroutineTestCase
 
         $this->runScopedWithLedger($ledger, static function (ExecutionScope $scope) use ($ledger, $probe): void {
             $scope->execute(Task::of(static function (ExecutionScope $s) use ($ledger, $probe): void {
-                $s->series([
+                $s->series(...[
                     Task::of(static function () use ($ledger, $probe): string {
                         $tree = $ledger->tree();
                         self::assertCount(2, $tree);
@@ -118,7 +118,7 @@ final class PrimitiveSupervisionTest extends CoroutineTestCase
         $this->runInCoroutine(function (): void {
             $scope = self::buildScope(new InProcessLedger());
 
-            $bag = $scope->settle([
+            $bag = $scope->settle(...[
                 'owner' => Task::of(static fn(ExecutionScope $s): mixed => $s->singleflight(
                     'shared',
                     Task::of(static function (ExecutionScope $owner): string {

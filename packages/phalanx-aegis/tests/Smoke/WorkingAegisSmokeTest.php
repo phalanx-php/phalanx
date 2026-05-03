@@ -75,7 +75,7 @@ final class WorkingAegisSmokeTest extends CoroutineTestCase
             $scope = $app->createScope();
             $startPool = $scope->service(SmokePool::class);
 
-            $results = $scope->concurrent([
+            $results = $scope->concurrent(...[
                 'fetch' => new FetchUserSummary(7),
                 'audit' => new AuditWrite('login', 'user-7'),
                 'compute' => Task::of(static fn(ExecutionScope $s): int => 21 * 2),
@@ -161,7 +161,7 @@ final class WorkingAegisSmokeTest extends CoroutineTestCase
             $start = microtime(true);
             $caught = null;
             try {
-                $scope->concurrent([
+                $scope->concurrent(...[
                     'a' => Task::of(static function (ExecutionScope $s): never {
                         $s->delay(5.0);
                         throw new RuntimeException('should not reach');

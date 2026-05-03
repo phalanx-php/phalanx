@@ -14,16 +14,16 @@ use Phalanx\Task\Scopeable;
 interface TaskExecutor
 {
     /**
-     * @param array<string|int, Scopeable|Executable|Closure> $tasks
+     * @param Scopeable|Executable|Closure ...$tasks
      * @return array<string|int, mixed>
      */
-    public function concurrent(array $tasks): array;
+    public function concurrent(Scopeable|Executable|Closure ...$tasks): array;
 
-    /** @param array<string|int, Scopeable|Executable|Closure> $tasks */
-    public function race(array $tasks): mixed;
+    /** @param Scopeable|Executable|Closure ...$tasks */
+    public function race(Scopeable|Executable|Closure ...$tasks): mixed;
 
-    /** @param array<string|int, Scopeable|Executable|Closure> $tasks */
-    public function any(array $tasks): mixed;
+    /** @param Scopeable|Executable|Closure ...$tasks */
+    public function any(Scopeable|Executable|Closure ...$tasks): mixed;
 
     /**
      * @template TItem
@@ -35,16 +35,16 @@ interface TaskExecutor
     public function map(iterable $items, Closure $fn, int $limit = 10, ?Closure $onEach = null): array;
 
     /**
-     * @param array<int, Scopeable|Executable|Closure> $tasks
-     * @return array<int, mixed>
+     * @param Scopeable|Executable|Closure ...$tasks
+     * @return array<string|int, mixed>
      */
-    public function series(array $tasks): array;
+    public function series(Scopeable|Executable|Closure ...$tasks): array;
 
-    /** @param array<int, Scopeable|Executable|Closure> $tasks */
-    public function waterfall(array $tasks): mixed;
+    /** @param Scopeable|Executable|Closure ...$tasks */
+    public function waterfall(Scopeable|Executable|Closure ...$tasks): mixed;
 
-    /** @param array<string|int, Scopeable|Executable|Closure> $tasks */
-    public function settle(array $tasks): SettlementBag;
+    /** @param Scopeable|Executable|Closure ...$tasks */
+    public function settle(Scopeable|Executable|Closure ...$tasks): SettlementBag;
 
     public function timeout(float $seconds, Scopeable|Executable|Closure $task): mixed;
 

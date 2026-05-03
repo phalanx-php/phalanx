@@ -31,7 +31,7 @@ final class ChatAdminTask implements Executable
         $workspace = $this->config->workspace;
         $self = $this;
 
-        return $scope->concurrent([
+        return $scope->concurrent(...[
             'monitor' => \Phalanx\Task\Task::of(static function (ExecutionScope $s) use ($bus, $workspace, $self) {
                 foreach ($bus->subscribe([
                     'workspace' => $workspace,

@@ -107,7 +107,7 @@ final class InWorkerTest extends AsyncTestCase
             $scope = $this->app->createScope();
 
             $results = $scope->execute(Task::of(
-                static fn(ExecutionScope $es): array => $es->concurrent([
+                static fn(ExecutionScope $es): array => $es->concurrent(...[
                     'a' => Task::of(static fn(ExecutionScope $s) => $s->inWorker(new AddNumbers(1, 2))),
                     'b' => Task::of(static fn(ExecutionScope $s) => $s->inWorker(new AddNumbers(3, 4))),
                 ])

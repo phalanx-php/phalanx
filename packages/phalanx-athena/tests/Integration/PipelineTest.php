@@ -53,7 +53,7 @@ final class PipelineTest extends TestCase
     public function pipeline_fan_composition(): void
     {
         $p = Pipeline::create()
-            ->fan([
+            ->fan(...[
                 new AddSuffix(' a'),
                 new AddSuffix(' b'),
                 new AddSuffix(' c'),

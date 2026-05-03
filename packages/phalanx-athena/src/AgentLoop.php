@@ -87,7 +87,7 @@ final class AgentLoop
                 }
 
                 /** @var list<ToolOutcome> $outcomes */
-                $outcomes = array_values($scope->concurrent($toolTasks));
+                $outcomes = array_values($scope->concurrent(...$toolTasks));
 
                 $terminated = false;
                 foreach ($outcomes as $i => $outcome) {

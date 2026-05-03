@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\PHPStan\Rules\Scope;
 
+use Phalanx\PHPStan\Support\NodeNames;
+use Phalanx\PHPStan\Support\PathPolicy;
+use Phalanx\PHPStan\Support\RuleErrors;
 use PhpParser\Node;
 use PhpParser\Node\Arg;
 use PhpParser\Node\Expr\Array_;
@@ -11,9 +14,6 @@ use PhpParser\Node\Expr\ArrowFunction;
 use PhpParser\Node\Expr\Closure;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\VariadicPlaceholder;
-use Phalanx\PHPStan\Support\NodeNames;
-use Phalanx\PHPStan\Support\PathPolicy;
-use Phalanx\PHPStan\Support\RuleErrors;
 use PHPStan\Analyser\Scope;
 use PHPStan\Rules\IdentifierRuleError;
 use PHPStan\Rules\Rule;
@@ -69,7 +69,7 @@ final class StaticClosureOnlyRule implements Rule
             return [];
         }
 
-        foreach ($this->closuresToCheck($method, self::args($node->args)) as $closure) {
+        foreach ($this->closuresToCheck($method, $this->args($node->args)) as $closure) {
             if ($closure->static) {
                 continue;
             }
@@ -91,7 +91,7 @@ final class StaticClosureOnlyRule implements Rule
      * @param array<Arg|VariadicPlaceholder> $args
      * @return list<Arg>
      */
-    private static function args(array $args): array
+    private function args(array $args): array
     {
         return array_values(array_filter(
             $args,
@@ -111,16 +111,38 @@ final class StaticClosureOnlyRule implements Rule
             'race',
             'series',
             'settle',
-            'waterfall' => self::arrayClosures($args[0]->value ?? null),
-            'map' => self::directClosures($args, [1, 3]),
+            'waterfall' => $this->taskListClosures($args),
+            'map' => $this->directClosures($args, [1, 3]),
             'retry',
             'defer',
             'go',
             'inWorker',
-            'timeout' => self::directClosures($args, [0]),
-            'singleflight' => self::directClosures($args, [1]),
+            'timeout' => $this->directClosures($args, [0]),
+            'singleflight' => $this->directClosures($args, [1]),
             default => [],
         };
+    }
+
+    /**
+     * @param array<Arg> $args
+     * @return list<Closure|ArrowFunction>
+     */
+    private function taskListClosures(array $args): array
+    {
+        $closures = [];
+        foreach ($args as $arg) {
+            $value = $arg->value;
+            if ($value instanceof ArrowFunction || $value instanceof Closure) {
+                $closures[] = $value;
+                continue;
+            }
+
+            if ($arg->unpack && $value instanceof Array_) {
+                array_push($closures, ...$this->arrayClosures($value));
+            }
+        }
+
+        return $closures;
     }
 
     /**
@@ -128,7 +150,7 @@ final class StaticClosureOnlyRule implements Rule
      * @param list<int> $positions
      * @return list<Closure|ArrowFunction>
      */
-    private static function directClosures(array $args, array $positions): array
+    private function directClosures(array $args, array $positions): array
     {
         $closures = [];
         foreach ($positions as $position) {
@@ -144,7 +166,7 @@ final class StaticClosureOnlyRule implements Rule
     /**
      * @return list<Closure|ArrowFunction>
      */
-    private static function arrayClosures(Node\Expr|null $expr): array
+    private function arrayClosures(Node\Expr|null $expr): array
     {
         if (!$expr instanceof Array_) {
             return [];

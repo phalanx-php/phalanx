@@ -35,7 +35,7 @@ final class CancellationPropagationTimingTest extends CoroutineTestCase
     public function testConcurrentCancelsWithinBudget(): void
     {
         $this->assertCancelTimingOf(static function (ExecutionScope $scope): void {
-            $scope->concurrent([
+            $scope->concurrent(...[
                 'a' => Task::of(static fn(ExecutionScope $s) => $s->delay(5.0)),
                 'b' => Task::of(static fn(ExecutionScope $s) => $s->delay(5.0)),
                 'c' => Task::of(static fn(ExecutionScope $s) => $s->delay(5.0)),
@@ -46,7 +46,7 @@ final class CancellationPropagationTimingTest extends CoroutineTestCase
     public function testRaceCancelsWithinBudget(): void
     {
         $this->assertCancelTimingOf(static function (ExecutionScope $scope): void {
-            $scope->race([
+            $scope->race(...[
                 Task::of(static fn(ExecutionScope $s) => $s->delay(5.0)),
                 Task::of(static fn(ExecutionScope $s) => $s->delay(5.0)),
             ]);
@@ -56,7 +56,7 @@ final class CancellationPropagationTimingTest extends CoroutineTestCase
     public function testAnyCancelsWithinBudget(): void
     {
         $this->assertCancelTimingOf(static function (ExecutionScope $scope): void {
-            $scope->any([
+            $scope->any(...[
                 Task::of(static fn(ExecutionScope $s) => $s->delay(5.0)),
                 Task::of(static fn(ExecutionScope $s) => $s->delay(5.0)),
             ]);
@@ -77,7 +77,7 @@ final class CancellationPropagationTimingTest extends CoroutineTestCase
     public function testSeriesCancelsWithinBudget(): void
     {
         $this->assertCancelTimingOf(static function (ExecutionScope $scope): void {
-            $scope->series([
+            $scope->series(...[
                 Task::of(static fn(ExecutionScope $s) => $s->delay(5.0)),
                 Task::of(static fn(ExecutionScope $s) => $s->delay(5.0)),
             ]);
@@ -88,7 +88,7 @@ final class CancellationPropagationTimingTest extends CoroutineTestCase
     {
         $this->assertCancelTimingOf(static function (ExecutionScope $scope): void {
             // settle returns Result objects but should still observe cancel.
-            $scope->settle([
+            $scope->settle(...[
                 Task::of(static fn(ExecutionScope $s) => $s->delay(5.0)),
                 Task::of(static fn(ExecutionScope $s) => $s->delay(5.0)),
             ]);

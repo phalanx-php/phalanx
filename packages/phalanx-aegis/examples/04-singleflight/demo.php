@@ -36,7 +36,7 @@ $exitCode = Application::starting($context)
                 );
             }
 
-            $results = $root->concurrent($tasks);
+            $results = $root->concurrent(...$tasks);
             $objectIds = array_map(static fn(object $result): int => spl_object_id($result), $results);
             $checks = [
                 'all waiters share result' => count(array_unique($objectIds)) === 1,

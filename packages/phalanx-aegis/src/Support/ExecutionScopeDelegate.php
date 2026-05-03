@@ -57,19 +57,20 @@ trait ExecutionScopeDelegate
         return $this->innerScope()->executeFresh($task);
     }
 
-    public function concurrent(array $tasks): array
+    /** @return array<string|int, mixed> */
+    public function concurrent(Scopeable|Executable|Closure ...$tasks): array
     {
-        return $this->innerScope()->concurrent($tasks);
+        return $this->innerScope()->concurrent(...$tasks);
     }
 
-    public function race(array $tasks): mixed
+    public function race(Scopeable|Executable|Closure ...$tasks): mixed
     {
-        return $this->innerScope()->race($tasks);
+        return $this->innerScope()->race(...$tasks);
     }
 
-    public function any(array $tasks): mixed
+    public function any(Scopeable|Executable|Closure ...$tasks): mixed
     {
-        return $this->innerScope()->any($tasks);
+        return $this->innerScope()->any(...$tasks);
     }
 
     public function map(iterable $items, Closure $fn, int $limit = 10, ?Closure $onEach = null): array
@@ -77,19 +78,20 @@ trait ExecutionScopeDelegate
         return $this->innerScope()->map($items, $fn, $limit, $onEach);
     }
 
-    public function series(array $tasks): array
+    /** @return array<string|int, mixed> */
+    public function series(Scopeable|Executable|Closure ...$tasks): array
     {
-        return $this->innerScope()->series($tasks);
+        return $this->innerScope()->series(...$tasks);
     }
 
-    public function waterfall(array $tasks): mixed
+    public function waterfall(Scopeable|Executable|Closure ...$tasks): mixed
     {
-        return $this->innerScope()->waterfall($tasks);
+        return $this->innerScope()->waterfall(...$tasks);
     }
 
-    public function settle(array $tasks): SettlementBag
+    public function settle(Scopeable|Executable|Closure ...$tasks): SettlementBag
     {
-        return $this->innerScope()->settle($tasks);
+        return $this->innerScope()->settle(...$tasks);
     }
 
     public function timeout(float $seconds, Scopeable|Executable|Closure $task): mixed

@@ -39,7 +39,7 @@ final class LeaseLedgerConcurrencyTest extends CoroutineTestCase
                 $tasks["worker-{$i}"] = new LeaseHolder("pool-{$i}");
             }
 
-            $results = $scope->concurrent($tasks);
+            $results = $scope->concurrent(...$tasks);
 
             // Every worker reports its own pool domain back, proving leases
             // are scoped to the right TaskRun.

@@ -76,7 +76,7 @@ final class ConcurrentTaskList
 
         try {
             $bag = $this->scope->settle(
-                array_map(static fn(array $def): Executable|Scopeable => $def['task'], $this->tasks),
+                ...array_map(static fn(array $def): Executable|Scopeable => $def['task'], $this->tasks),
             );
 
             foreach (array_keys($this->tasks) as $id) {

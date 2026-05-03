@@ -47,7 +47,7 @@ final class SiblingCancelIsolationStressTest extends CoroutineTestCase
             $start = microtime(true);
             $caught = null;
             try {
-                $scope->concurrent($tasks);
+                $scope->concurrent(...$tasks);
             } catch (Cancelled $e) {
                 $caught = $e;
             }
@@ -86,7 +86,7 @@ final class SiblingCancelIsolationStressTest extends CoroutineTestCase
                 }),
             ];
 
-            $results = $scope->concurrent($tasks);
+            $results = $scope->concurrent(...$tasks);
 
             self::assertSame(['fast' => 1, 'slow-a' => 2, 'slow-b' => 3, 'slow-c' => 4], $results);
 
@@ -103,7 +103,7 @@ final class SiblingCancelIsolationStressTest extends CoroutineTestCase
             $scope = $app->createScope();
 
             $start = microtime(true);
-            $value = $scope->race([
+            $value = $scope->race(...[
                 Task::of(static fn(ExecutionScope $s): int => 1),  // wins
                 Task::of(static function (ExecutionScope $s): never {
                     $s->delay(5.0);

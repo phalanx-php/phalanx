@@ -85,7 +85,7 @@ final class TestGenerator implements Executable
             });
         }
 
-        $scope->series($tasks);
+        $scope->series(...$tasks);
 
         return ['ids' => $ids];
     }
@@ -142,7 +142,7 @@ final class TestGenerator implements Executable
             });
         }
 
-        $scope->concurrent($tasks);
+        $scope->concurrent(...$tasks);
 
         return ['ids' => $ids];
     }
@@ -177,7 +177,7 @@ final class TestGenerator implements Executable
             });
         }
 
-        $scope->waterfall($tasks);
+        $scope->waterfall(...$tasks);
 
         return ['ids' => $ids, 'capped_at' => $capped];
     }
@@ -215,7 +215,7 @@ final class TestGenerator implements Executable
             });
         }
 
-        $settlement = $scope->settle($tasks);
+        $settlement = $scope->settle(...$tasks);
 
         return [
             'ids' => $ids,

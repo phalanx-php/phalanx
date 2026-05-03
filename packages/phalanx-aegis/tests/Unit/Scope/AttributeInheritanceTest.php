@@ -29,7 +29,7 @@ final class AttributeInheritanceTest extends CoroutineTestCase
         $this->runScoped(static function (ExecutionScope $scope): void {
             $scope = $scope->withAttribute('request.id', 'req-7');
 
-            $observed = $scope->concurrent([
+            $observed = $scope->concurrent(...[
                 'a' => Task::of(static fn(ExecutionScope $s) => $s->attribute('request.id')),
                 'b' => Task::of(static fn(ExecutionScope $s) => $s->attribute('request.id')),
             ]);
@@ -43,7 +43,7 @@ final class AttributeInheritanceTest extends CoroutineTestCase
         $this->runInCoroutine(function (): void {
             $scope = self::buildScope()->withAttribute('tenant.id', 'acme');
 
-            $value = $scope->race([
+            $value = $scope->race(...[
                 Task::of(static fn(ExecutionScope $s) => $s->attribute('tenant.id')),
                 Task::of(static function (ExecutionScope $s): never {
                     $s->delay(5.0);
@@ -60,7 +60,7 @@ final class AttributeInheritanceTest extends CoroutineTestCase
         $this->runInCoroutine(function (): void {
             $scope = self::buildScope()->withAttribute('trace.id', 't-99');
 
-            $value = $scope->any([
+            $value = $scope->any(...[
                 Task::of(static fn(ExecutionScope $s) => $s->attribute('trace.id')),
             ]);
 
@@ -90,7 +90,7 @@ final class AttributeInheritanceTest extends CoroutineTestCase
         $this->runInCoroutine(function (): void {
             $scope = self::buildScope()->withAttribute('flag.a', 'on');
 
-            $observed = $scope->series([
+            $observed = $scope->series(...[
                 Task::of(static fn(ExecutionScope $s) => $s->attribute('flag.a')),
                 Task::of(static fn(ExecutionScope $s) => $s->attribute('flag.a')),
             ]);
@@ -104,7 +104,7 @@ final class AttributeInheritanceTest extends CoroutineTestCase
         $this->runInCoroutine(function (): void {
             $scope = self::buildScope()->withAttribute('region', 'us-west');
 
-            $bag = $scope->settle([
+            $bag = $scope->settle(...[
                 'a' => Task::of(static fn(ExecutionScope $s) => $s->attribute('region')),
                 'b' => Task::of(static fn(ExecutionScope $s) => $s->attribute('region')),
             ]);
@@ -136,8 +136,8 @@ final class AttributeInheritanceTest extends CoroutineTestCase
         $this->runInCoroutine(function (): void {
             $scope = self::buildScope()->withAttribute('chain', 'root');
 
-            $observed = $scope->concurrent([
-                'outer' => Task::of(static fn(ExecutionScope $outer): array => $outer->concurrent([
+            $observed = $scope->concurrent(...[
+                'outer' => Task::of(static fn(ExecutionScope $outer): array => $outer->concurrent(...[
                     'inner' => Task::of(static fn(ExecutionScope $inner) => $inner->attribute('chain')),
                 ])),
             ]);
@@ -151,7 +151,7 @@ final class AttributeInheritanceTest extends CoroutineTestCase
         $this->runInCoroutine(function (): void {
             $scope = self::buildScope()->withAttribute('mutable', 'parent-value');
 
-            $scope->concurrent([
+            $scope->concurrent(...[
                 'child' => Task::of(static function (ExecutionScope $s): void {
                     // Local override on a derived scope; parent must not see it.
                     $derived = $s->withAttribute('mutable', 'child-value');

@@ -22,7 +22,7 @@ final class CustomerChatHandler implements Scopeable
 
         $gateway->register($conn);
 
-        $scope->concurrent([
+        $scope->concurrent(...[
             Task::of(static function ($s) use ($sessionId, $conn): void {
                 $s->service(RedisPubSub::class)->subscribe(
                     "session:{$sessionId}:response",
