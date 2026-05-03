@@ -19,6 +19,8 @@ final readonly class RuntimeMemoryConfig
         public int $counterRows = 1024,
         public int $claimRows = 1024,
         public int $symbolRows = 2048,
+        public int $transitionLockStripes = 64,
+        public float $transitionLockTimeout = 1.0,
         public string $projectPath = '',
     ) {
         foreach (
@@ -31,11 +33,16 @@ final readonly class RuntimeMemoryConfig
             'counterRows' => $this->counterRows,
             'claimRows' => $this->claimRows,
             'symbolRows' => $this->symbolRows,
+            'transitionLockStripes' => $this->transitionLockStripes,
             ] as $name => $rows
         ) {
             if ($rows < 1) {
                 throw new InvalidArgumentException("{$name} must be greater than zero.");
             }
+        }
+
+        if ($this->transitionLockTimeout < 1.0) {
+            throw new InvalidArgumentException('transitionLockTimeout must be greater than or equal to one.');
         }
     }
 
@@ -56,6 +63,8 @@ final readonly class RuntimeMemoryConfig
             counterRows: self::intOption($raw, 'counter_rows', 1024),
             claimRows: self::intOption($raw, 'claim_rows', 1024),
             symbolRows: self::intOption($raw, 'symbol_rows', 2048),
+            transitionLockStripes: self::intOption($raw, 'transition_lock_stripes', 64),
+            transitionLockTimeout: self::floatOption($raw, 'transition_lock_timeout', 1.0),
             projectPath: self::stringOption($raw, 'project_path', ''),
         );
     }
@@ -72,6 +81,20 @@ final readonly class RuntimeMemoryConfig
             claimRows: max(16, $rows),
             symbolRows: max(16, $rows * 2),
         );
+    }
+
+    /** @param array<string, mixed> $options */
+    private static function floatOption(array $options, string $key, float $default): float
+    {
+        $value = $options[$key] ?? $default;
+        if (is_float($value) || is_int($value)) {
+            return (float) $value;
+        }
+        if (is_string($value) && is_numeric($value)) {
+            return (float) $value;
+        }
+
+        throw new InvalidArgumentException(self::CONTEXT_KEY . ".{$key} must be a float.");
     }
 
     /** @param array<string, mixed> $options */

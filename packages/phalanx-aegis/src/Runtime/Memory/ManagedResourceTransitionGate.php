@@ -15,6 +15,7 @@ final readonly class ManagedResourceTransitionGate
         private RuntimeSymbols $symbols,
         private RuntimeCounters $counters,
         private RuntimeLifecycleEvents $events,
+        private ManagedResourceTransitionLocks $locks,
     ) {
     }
 
@@ -86,44 +87,55 @@ final readonly class ManagedResourceTransitionGate
         int $workerId = -1,
         int $coroutineId = -1,
     ): ManagedResourceHandle {
-        $now = microtime(true);
+        $lock = $this->locks->acquire($id);
+        $event = null;
+
         try {
-            $ok = $this->tables->resources->set($id, [
-                'type_symbol' => $this->symbols->idFor('resource.type', $type),
-                'parent_resource_id' => $parentResourceId ?? '',
-                'owner_scope_id' => $ownerScopeId ?? '',
-                'owner_run_id' => $ownerRunId ?? '',
-                'state' => $state->value,
-                'generation' => 1,
-                'worker_id' => $workerId,
-                'coroutine_id' => $coroutineId,
-                'created_at' => $now,
-                'updated_at' => $now,
-                'terminal_at' => $state->isTerminal() ? $now : 0.0,
-                'expires_at' => 0.0,
-                'outcome' => '',
-                'reason_symbol' => 0,
-                'cancel_requested' => 0,
-            ]);
-        } catch (OpenSwooleException) {
-            throw RuntimeMemoryCapacityExceeded::forTable('resources', $id);
+            $now = microtime(true);
+            $typeSymbol = $this->symbols->idFor('resource.type', $type);
+            try {
+                $ok = $this->tables->resources->set($id, [
+                    'type_symbol' => $typeSymbol,
+                    'parent_resource_id' => $parentResourceId ?? '',
+                    'owner_scope_id' => $ownerScopeId ?? '',
+                    'owner_run_id' => $ownerRunId ?? '',
+                    'state' => $state->value,
+                    'generation' => 1,
+                    'worker_id' => $workerId,
+                    'coroutine_id' => $coroutineId,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                    'terminal_at' => $state->isTerminal() ? $now : 0.0,
+                    'expires_at' => 0.0,
+                    'outcome' => '',
+                    'reason_symbol' => 0,
+                    'cancel_requested' => 0,
+                ]);
+            } catch (OpenSwooleException) {
+                throw RuntimeMemoryCapacityExceeded::forTable('resources', $id);
+            }
+
+            if (!$ok) {
+                throw RuntimeMemoryCapacityExceeded::forTable('resources', $id);
+            }
+
+            $this->tables->mark('resources');
+            $this->counters->tryIncr("aegis.resources.{$type}.opened");
+            $event = $this->events->record(
+                AegisEventSid::ResourceOpened,
+                resourceId: $id,
+                resourceType: $type,
+                scopeId: $ownerScopeId ?? '',
+                runId: $ownerRunId ?? '',
+                state: $state->value,
+                valueA: $type,
+                dispatchListeners: false,
+            );
+        } finally {
+            $lock->release();
         }
 
-        if (!$ok) {
-            throw RuntimeMemoryCapacityExceeded::forTable('resources', $id);
-        }
-
-        $this->tables->mark('resources');
-        $this->counters->incr("aegis.resources.{$type}.opened");
-        $this->events->record(
-            AegisEventSid::ResourceOpened,
-            resourceId: $id,
-            resourceType: $type,
-            scopeId: $ownerScopeId ?? '',
-            runId: $ownerRunId ?? '',
-            state: $state->value,
-            valueA: $type,
-        );
+        $this->events->dispatch($event);
 
         return new ManagedResourceHandle($id, $type, 1);
     }
@@ -136,71 +148,82 @@ final readonly class ManagedResourceTransitionGate
         RuntimeEventId|string $eventType = '',
     ): ManagedResourceHandle {
         $id = $resource instanceof ManagedResourceHandle ? $resource->id : $resource;
-        $row = $this->tables->resources->get($id);
-        if (!is_array($row)) {
-            throw new ManagedResourceException("managed resource '{$id}' does not exist");
-        }
-
-        $from = ManagedResourceState::from((string) $row['state']);
-        $generation = (int) $row['generation'];
-        if ($resource instanceof ManagedResourceHandle && $resource->generation !== $generation) {
-            throw StaleManagedResourceHandle::forGeneration($id, $resource->generation, $generation);
-        }
-
-        $type = $this->symbols->valueFor((int) $row['type_symbol'], 'unknown');
-        if ($from->isTerminal()) {
-            if ($from !== $to) {
-                $this->events->record(
-                    AegisEventSid::ResourceLateTransition,
-                    resourceId: $id,
-                    resourceType: $type,
-                    scopeId: (string) $row['owner_scope_id'],
-                    runId: (string) $row['owner_run_id'],
-                    state: $from->value,
-                    valueA: $to->value,
-                    valueB: $reason,
-                );
+        $lock = $this->locks->acquire($id);
+        $event = null;
+        try {
+            $row = $this->tables->resources->get($id);
+            if (!is_array($row)) {
+                throw new ManagedResourceException("managed resource '{$id}' does not exist");
             }
 
-            return new ManagedResourceHandle($id, $type, $generation);
+            $from = ManagedResourceState::from((string) $row['state']);
+            $generation = (int) $row['generation'];
+            if ($resource instanceof ManagedResourceHandle && $resource->generation !== $generation) {
+                throw StaleManagedResourceHandle::forGeneration($id, $resource->generation, $generation);
+            }
+
+            $type = $this->symbols->valueFor((int) $row['type_symbol'], 'unknown');
+            if ($from->isTerminal()) {
+                if ($from !== $to) {
+                    $event = $this->events->record(
+                        AegisEventSid::ResourceLateTransition,
+                        resourceId: $id,
+                        resourceType: $type,
+                        scopeId: (string) $row['owner_scope_id'],
+                        runId: (string) $row['owner_run_id'],
+                        state: $from->value,
+                        valueA: $to->value,
+                        valueB: $reason,
+                        dispatchListeners: false,
+                    );
+                }
+
+                return new ManagedResourceHandle($id, $type, $generation);
+            }
+
+            if (!self::canTransition($from, $to)) {
+                throw InvalidManagedResourceTransition::forState($id, $from, $to);
+            }
+
+            $now = microtime(true);
+            $row['state'] = $to->value;
+            $row['generation'] = $generation + 1;
+            $row['updated_at'] = $now;
+            $row['terminal_at'] = $to->isTerminal() ? $now : 0.0;
+            $row['outcome'] = self::fit($outcome, 32);
+            $row['reason_symbol'] = $this->symbols->idFor('resource.reason', $reason);
+            $cancelRequested = $to === ManagedResourceState::Aborting || $to === ManagedResourceState::Aborted;
+            $row['cancel_requested'] = $cancelRequested ? 1 : 0;
+
+            try {
+                $ok = $this->tables->resources->set($id, $row);
+            } catch (OpenSwooleException) {
+                throw RuntimeMemoryCapacityExceeded::forTable('resources', $id);
+            }
+
+            if (!$ok) {
+                throw RuntimeMemoryCapacityExceeded::forTable('resources', $id);
+            }
+
+            $event = $this->events->record(
+                $eventType === '' ? 'resource.' . $to->value : $eventType,
+                resourceId: $id,
+                resourceType: $type,
+                scopeId: (string) $row['owner_scope_id'],
+                runId: (string) $row['owner_run_id'],
+                state: $to->value,
+                valueA: $outcome,
+                valueB: $reason,
+                dispatchListeners: false,
+            );
+            $this->counters->tryIncr("aegis.resources.{$type}.{$to->value}");
+
+            return new ManagedResourceHandle($id, $type, $generation + 1);
+        } finally {
+            $lock->release();
+            if ($event !== null) {
+                $this->events->dispatch($event);
+            }
         }
-
-        if (!self::canTransition($from, $to)) {
-            throw InvalidManagedResourceTransition::forState($id, $from, $to);
-        }
-
-        $now = microtime(true);
-        $row['state'] = $to->value;
-        $row['generation'] = $generation + 1;
-        $row['updated_at'] = $now;
-        $row['terminal_at'] = $to->isTerminal() ? $now : 0.0;
-        $row['outcome'] = self::fit($outcome, 32);
-        $row['reason_symbol'] = $this->symbols->idFor('resource.reason', $reason);
-        $cancelRequested = $to === ManagedResourceState::Aborting || $to === ManagedResourceState::Aborted;
-        $row['cancel_requested'] = $cancelRequested ? 1 : 0;
-
-        try {
-            $ok = $this->tables->resources->set($id, $row);
-        } catch (OpenSwooleException) {
-            throw RuntimeMemoryCapacityExceeded::forTable('resources', $id);
-        }
-
-        if (!$ok) {
-            throw RuntimeMemoryCapacityExceeded::forTable('resources', $id);
-        }
-
-        $this->events->record(
-            $eventType === '' ? 'resource.' . $to->value : $eventType,
-            resourceId: $id,
-            resourceType: $type,
-            scopeId: (string) $row['owner_scope_id'],
-            runId: (string) $row['owner_run_id'],
-            state: $to->value,
-            valueA: $outcome,
-            valueB: $reason,
-        );
-        $this->counters->incr("aegis.resources.{$type}.{$to->value}");
-
-        return new ManagedResourceHandle($id, $type, $generation + 1);
     }
 }

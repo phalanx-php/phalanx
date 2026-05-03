@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Tests\Unit\Supervisor;
 
 use Phalanx\Cancellation\CancellationToken;
+use Phalanx\Runtime\Identity\AegisAnnotationSid;
 use Phalanx\Supervisor\DispatchMode;
 use Phalanx\Supervisor\InProcessLedger;
 use Phalanx\Supervisor\LedgerStorage;
@@ -17,9 +18,29 @@ use Phalanx\Supervisor\WaitKind;
 use Phalanx\Supervisor\WaitReason;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 
 final class LedgerStorageContractTest extends TestCase
 {
+    /** @return iterable<string, array{LedgerStorage}> */
+    public static function ledgers(): iterable
+    {
+        yield 'in-process' => [new InProcessLedger()];
+        yield 'swoole-table' => [new SwooleTableLedger(64)];
+    }
+
+    private static function taskRun(string $id, ?string $parentId): TaskRun
+    {
+        return new TaskRun(
+            id: $id,
+            name: $id,
+            parentId: $parentId,
+            mode: DispatchMode::Inline,
+            cancellation: CancellationToken::create(),
+            startedAt: microtime(true),
+        );
+    }
+
     #[DataProvider('ledgers')]
     public function testRegisterUpdateSnapshotTreeAndReap(LedgerStorage $ledger): void
     {
@@ -58,13 +79,6 @@ final class LedgerStorageContractTest extends TestCase
         self::assertSame(0, $ledger->liveScopeCount());
     }
 
-    /** @return iterable<string, array{LedgerStorage}> */
-    public static function ledgers(): iterable
-    {
-        yield 'in-process' => [new InProcessLedger()];
-        yield 'swoole-table' => [new SwooleTableLedger(64)];
-    }
-
     public function testSwooleTableLedgerStoresRelationshipsAsPrimitiveResourceRows(): void
     {
         $ledger = new SwooleTableLedger(32);
@@ -87,15 +101,25 @@ final class LedgerStorageContractTest extends TestCase
         $ledger->memory->shutdown();
     }
 
-    private static function taskRun(string $id, ?string $parentId): TaskRun
+    public function testSwooleTableLedgerTerminalProjectionFollowsResourceTruth(): void
     {
-        return new TaskRun(
-            id: $id,
-            name: $id,
-            parentId: $parentId,
-            mode: DispatchMode::Inline,
-            cancellation: CancellationToken::create(),
-            startedAt: microtime(true),
+        $ledger = new SwooleTableLedger(32);
+        $run = self::taskRun('run-terminal', null);
+
+        $ledger->register($run);
+        $ledger->markRunning('run-terminal');
+        $ledger->complete('run-terminal', 'ok');
+        $ledger->fail('run-terminal', new RuntimeException('late failure'));
+        $ledger->memory->resources->annotate(
+            'run-terminal',
+            AegisAnnotationSid::RunState,
+            RunState::Failed->value,
         );
+
+        $snapshot = $ledger->snapshot('run-terminal');
+        self::assertNotNull($snapshot);
+        self::assertSame(RunState::Completed, $snapshot->state);
+
+        $ledger->memory->shutdown();
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Runtime\Memory;
 
+use OpenSwoole\Exception as OpenSwooleException;
 use Phalanx\Runtime\Identity\RuntimeCounterId;
 
 final class RuntimeCounters
@@ -33,6 +34,15 @@ final class RuntimeCounters
         $this->tables->mark('counters');
 
         return $value;
+    }
+
+    public function tryIncr(RuntimeCounterId|string $name, int $by = 1): ?int
+    {
+        try {
+            return $this->incr($name, $by);
+        } catch (OpenSwooleException) {
+            return null;
+        }
     }
 
     public function decr(RuntimeCounterId|string $name, int $by = 1): int

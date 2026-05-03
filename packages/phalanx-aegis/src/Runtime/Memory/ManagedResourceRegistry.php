@@ -19,6 +19,7 @@ final readonly class ManagedResourceRegistry
         private RuntimeLifecycleEvents $events,
         private RuntimeIds $ids,
         private ManagedResourceTransitionGate $gate,
+        private ManagedResourceTransitionLocks $locks,
     ) {
     }
 
@@ -373,30 +374,43 @@ final readonly class ManagedResourceRegistry
 
     public function release(string $id): void
     {
-        $this->tables->resources->del($id);
+        $lock = $this->locks->acquire($id);
+        $event = null;
+        try {
+            $this->tables->resources->del($id);
 
-        foreach ($this->tables->resourceEdges as $edgeId => $row) {
-            if (!is_array($row)) {
-                continue;
+            foreach ($this->tables->resourceEdges as $edgeId => $row) {
+                if (!is_array($row)) {
+                    continue;
+                }
+                if ((string) $row['parent_resource_id'] === $id || (string) $row['child_resource_id'] === $id) {
+                    $this->tables->resourceEdges->del((string) $edgeId);
+                }
             }
-            if ((string) $row['parent_resource_id'] === $id || (string) $row['child_resource_id'] === $id) {
-                $this->tables->resourceEdges->del((string) $edgeId);
+
+            foreach ($this->tables->resourceLeases as $leaseId => $row) {
+                if (is_array($row) && (string) $row['owner_resource_id'] === $id) {
+                    $this->tables->resourceLeases->del((string) $leaseId);
+                }
+            }
+
+            foreach ($this->tables->resourceAnnotations as $annotationId => $row) {
+                if (is_array($row) && (string) $row['resource_id'] === $id) {
+                    $this->tables->resourceAnnotations->del((string) $annotationId);
+                }
+            }
+
+            $event = $this->events->record(
+                AegisEventSid::ResourceReleased,
+                resourceId: $id,
+                dispatchListeners: false,
+            );
+        } finally {
+            $lock->release();
+            if ($event !== null) {
+                $this->events->dispatch($event);
             }
         }
-
-        foreach ($this->tables->resourceLeases as $leaseId => $row) {
-            if (is_array($row) && (string) $row['owner_resource_id'] === $id) {
-                $this->tables->resourceLeases->del((string) $leaseId);
-            }
-        }
-
-        foreach ($this->tables->resourceAnnotations as $annotationId => $row) {
-            if (is_array($row) && (string) $row['resource_id'] === $id) {
-                $this->tables->resourceAnnotations->del((string) $annotationId);
-            }
-        }
-
-        $this->events->record(AegisEventSid::ResourceReleased, resourceId: $id);
     }
 
     /** @param array<string, mixed> $row */

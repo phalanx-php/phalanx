@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace Phalanx\Tests\Unit\Runtime;
 
+use InvalidArgumentException;
 use Phalanx\Application;
+use Phalanx\Cancellation\Cancelled;
 use Phalanx\Runtime\Identity\AegisResourceSid;
 use Phalanx\Runtime\Identity\RuntimeAnnotationId;
 use Phalanx\Runtime\Identity\RuntimeResourceId;
+use Phalanx\Runtime\Memory\ManagedResourceLockTimeout;
 use Phalanx\Runtime\Memory\ManagedResourceState;
+use Phalanx\Runtime\Memory\ManagedResourceTransitionLocks;
 use Phalanx\Runtime\Memory\RuntimeAnnotationRejected;
 use Phalanx\Runtime\Memory\RuntimeMemory;
 use Phalanx\Runtime\Memory\RuntimeMemoryConfig;
@@ -42,6 +46,34 @@ final class RuntimeMemoryTest extends TestCase
         $memory->shutdown();
     }
 
+    public function testTransitionLockTimeoutIsExplicit(): void
+    {
+        $locks = new ManagedResourceTransitionLocks(stripes: 1, timeout: 1.0);
+        $held = $locks->acquire('resource-1');
+
+        try {
+            $locks->acquire('resource-2');
+            self::fail('Expected managed resource transition lock timeout.');
+        } catch (ManagedResourceLockTimeout) {
+            self::assertTrue(true);
+        } finally {
+            $held->release();
+            $locks->destroy();
+        }
+    }
+
+    public function testTransitionLockGuardIsAutoloadableAndConfigValidated(): void
+    {
+        self::assertTrue(class_exists(\Phalanx\Runtime\Memory\ManagedResourceTransitionLock::class));
+
+        try {
+            new ManagedResourceTransitionLocks(stripes: 0, timeout: 1.0);
+            self::fail('Expected stripe count validation.');
+        } catch (InvalidArgumentException) {
+            self::assertTrue(true);
+        }
+    }
+
     public function testLifecycleListenersCannotFailTheRecorder(): void
     {
         $memory = RuntimeMemory::forLedgerSize(16);
@@ -56,6 +88,25 @@ final class RuntimeMemoryTest extends TestCase
         self::assertCount(1, $memory->events->recent());
 
         $memory->shutdown();
+    }
+
+    public function testLifecycleListenerCancellationRethrowsAfterCommittedTransition(): void
+    {
+        $memory = RuntimeMemory::forLedgerSize(16);
+        $opened = $memory->resources->open(AegisResourceSid::Test, id: 'listener-resource');
+        $memory->events->listen(static function (): void {
+            throw new Cancelled('listener cancelled');
+        });
+
+        try {
+            $memory->resources->close($opened, 'listener');
+            self::fail('Expected listener cancellation to be rethrown.');
+        } catch (Cancelled) {
+            self::assertSame(ManagedResourceState::Closed, $memory->resources->get('listener-resource')?->state);
+            self::assertSame([], $memory->events->listenerErrors());
+        } finally {
+            $memory->shutdown();
+        }
     }
 
     public function testManagedResourcesEnforceGenerationAndTerminalTruth(): void
@@ -73,6 +124,13 @@ final class RuntimeMemoryTest extends TestCase
         $late = $memory->resources->abort('request-1', 'client_disconnected');
         self::assertSame($closed->generation, $late->generation);
         self::assertSame(ManagedResourceState::Closed, $memory->resources->get('request-1')?->state);
+
+        try {
+            $memory->resources->fail($active, 'late_error');
+            self::fail('Expected stale terminal handle rejection.');
+        } catch (StaleManagedResourceHandle) {
+            self::assertSame(ManagedResourceState::Closed, $memory->resources->get('request-1')?->state);
+        }
 
         $memory->shutdown();
     }

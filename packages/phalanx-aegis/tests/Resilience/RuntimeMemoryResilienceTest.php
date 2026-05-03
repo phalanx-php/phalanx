@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Phalanx\Tests\Resilience;
 
+use OpenSwoole\Coroutine;
+use OpenSwoole\Coroutine\Channel;
 use Phalanx\Runtime\Identity\AegisCounterSid;
 use Phalanx\Runtime\Identity\AegisEventSid;
 use Phalanx\Runtime\Identity\AegisResourceSid;
 use Phalanx\Runtime\Identity\RuntimeAnnotationId;
+use Phalanx\Runtime\Memory\ManagedResourceException;
 use Phalanx\Runtime\Memory\ManagedResourceState;
 use Phalanx\Runtime\Memory\RuntimeMemory;
 use Phalanx\Runtime\Memory\RuntimeMemoryCapacityExceeded;
@@ -15,6 +18,7 @@ use Phalanx\Runtime\Memory\RuntimeMemoryConfig;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Task;
 use Phalanx\Testing\PhalanxTestCase;
+use Throwable;
 
 class RuntimeMemoryResilienceTest extends PhalanxTestCase
 {
@@ -64,6 +68,90 @@ class RuntimeMemoryResilienceTest extends PhalanxTestCase
             self::assertSame(0, $memory->tables->resourceEdges->count());
             self::assertSame(0, $memory->tables->resourceLeases->count());
             self::assertSame(0, $memory->tables->resourceAnnotations->count());
+
+            try {
+                $memory->resources->close($parent->id);
+                self::fail('Expected released resource to reject late transitions.');
+            } catch (ManagedResourceException) {
+                self::assertNull($memory->resources->get($parent->id));
+            }
+        } finally {
+            $memory->shutdown();
+        }
+    }
+
+    public function testTerminalTransitionRaceKeepsFirstTerminalTruth(): void
+    {
+        $memory = RuntimeMemory::forLedgerSize(64);
+
+        try {
+            $opened = $memory->resources->open(AegisResourceSid::Test, id: 'race-resource');
+            $memory->resources->activate($opened);
+            $results = [];
+            $errors = [];
+
+            Coroutine::run(static function () use ($memory, &$results, &$errors): void {
+                $ready = new Channel(3);
+                $start = new Channel(3);
+                $done = new Channel(3);
+
+                foreach (['abort', 'close', 'fail'] as $operation) {
+                    Coroutine::create(static function () use (
+                        $memory,
+                        $operation,
+                        $ready,
+                        $start,
+                        $done,
+                        &$results,
+                        &$errors,
+                    ): void {
+                        try {
+                            $ready->push(true);
+                            $start->pop();
+                            $handle = match ($operation) {
+                                'abort' => $memory->resources->abort('race-resource', 'race-abort'),
+                                'close' => $memory->resources->close('race-resource', 'race-close'),
+                                'fail' => $memory->resources->fail('race-resource', 'race-fail'),
+                            };
+                            $results[$operation] = $handle->generation;
+                        } catch (Throwable $e) {
+                            $errors[] = $e;
+                        } finally {
+                            $done->push(true);
+                        }
+                    });
+                }
+
+                for ($i = 0; $i < 3; $i++) {
+                    $ready->pop();
+                }
+                for ($i = 0; $i < 3; $i++) {
+                    $start->push(true);
+                }
+
+                for ($i = 0; $i < 3; $i++) {
+                    $done->pop();
+                }
+            });
+
+            if ($errors !== []) {
+                throw $errors[0];
+            }
+
+            $resource = $memory->resources->get('race-resource');
+            self::assertNotNull($resource);
+            self::assertTrue($resource->state->isTerminal());
+            self::assertSame(3, $resource->generation);
+            self::assertSame(
+                ['abort', 'close', 'fail'],
+                array_values(array_intersect(['abort', 'close', 'fail'], array_keys($results))),
+            );
+
+            $lateTransitions = array_filter(
+                $memory->events->recent(),
+                static fn($event): bool => $event->type === AegisEventSid::ResourceLateTransition->value,
+            );
+            self::assertCount(2, $lateTransitions);
         } finally {
             $memory->shutdown();
         }

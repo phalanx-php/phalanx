@@ -48,6 +48,7 @@ final class RuntimeLifecycleEvents
         string $valueA = '',
         string $valueB = '',
         float $expiresAt = 0.0,
+        bool $dispatchListeners = true,
     ): RuntimeLifecycleEvent {
         $type = $type instanceof RuntimeEventId ? $type->value() : $type;
         $sequence = (int) $this->sequence->add();
@@ -66,7 +67,7 @@ final class RuntimeLifecycleEvents
         $key = (string) ($sequence % $this->tables->config->eventRows);
         $existing = $this->tables->resourceEvents->get($key);
         if (is_array($existing) && (int) $existing['sequence'] > 0) {
-            $this->counters?->incr(AegisCounterSid::RuntimeEventsDropped);
+            $this->counters?->tryIncr(AegisCounterSid::RuntimeEventsDropped);
         }
 
         $this->tables->resourceEvents->set($key, [
@@ -84,6 +85,17 @@ final class RuntimeLifecycleEvents
         ]);
         $this->tables->mark('resource_events');
 
+        if (!$dispatchListeners) {
+            return $event;
+        }
+
+        $this->dispatch($event);
+
+        return $event;
+    }
+
+    public function dispatch(RuntimeLifecycleEvent $event): void
+    {
         foreach ($this->listeners as $listener) {
             try {
                 $listener($event);
@@ -95,8 +107,6 @@ final class RuntimeLifecycleEvents
                 $this->listenerErrors[] = ['event' => $event, 'error' => $e];
             }
         }
-
-        return $event;
     }
 
     /** @return list<RuntimeLifecycleEvent> */

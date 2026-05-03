@@ -20,6 +20,8 @@ final class RuntimeMemory
 
     public readonly ManagedResourceRegistry $resources;
 
+    private ManagedResourceTransitionLocks $transitionLocks;
+
     private bool $shutdown = false;
 
     public function __construct(public readonly RuntimeMemoryConfig $config)
@@ -30,16 +32,22 @@ final class RuntimeMemory
         $this->ids = new RuntimeIds($this->counters);
         $this->claims = new RuntimeClaims($this->tables);
         $this->events = new RuntimeLifecycleEvents($this->tables, $this->counters);
+        $this->transitionLocks = new ManagedResourceTransitionLocks(
+            stripes: $config->transitionLockStripes,
+            timeout: $config->transitionLockTimeout,
+        );
         $this->resources = new ManagedResourceRegistry(
             tables: $this->tables,
             symbols: $this->symbols,
             events: $this->events,
             ids: $this->ids,
+            locks: $this->transitionLocks,
             gate: new ManagedResourceTransitionGate(
                 tables: $this->tables,
                 symbols: $this->symbols,
                 counters: $this->counters,
                 events: $this->events,
+                locks: $this->transitionLocks,
             ),
         );
     }
@@ -74,6 +82,7 @@ final class RuntimeMemory
         $this->shutdown = true;
 
         $this->claims->destroy();
+        $this->transitionLocks->destroy();
         $this->tables->destroy();
     }
 }

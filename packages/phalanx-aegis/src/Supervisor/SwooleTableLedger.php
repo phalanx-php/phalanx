@@ -63,6 +63,17 @@ final class SwooleTableLedger implements LedgerStorage
     /** @param array<string, string> $annotations */
     private static function runState(ManagedResource $resource, array $annotations): RunState
     {
+        if ($resource->state->isTerminal()) {
+            return match ($resource->state) {
+                ManagedResourceState::Closed => RunState::Completed,
+                ManagedResourceState::Aborted => RunState::Cancelled,
+                ManagedResourceState::Failed => RunState::Failed,
+                default => throw new RuntimeException(
+                    "unsupported terminal resource state '{$resource->state->value}'",
+                ),
+            };
+        }
+
         $state = $annotations[AegisAnnotationSid::RunState->value()] ?? '';
         if ($state !== '') {
             return RunState::from($state);
@@ -72,11 +83,13 @@ final class SwooleTableLedger implements LedgerStorage
             ManagedResourceState::Opening => RunState::Pending,
             ManagedResourceState::Active,
             ManagedResourceState::Closing => RunState::Running,
-            ManagedResourceState::Closed => RunState::Completed,
-            ManagedResourceState::Aborted,
             ManagedResourceState::Aborting => RunState::Cancelled,
-            ManagedResourceState::Failed,
             ManagedResourceState::Failing => RunState::Failed,
+            ManagedResourceState::Closed,
+            ManagedResourceState::Aborted,
+            ManagedResourceState::Failed => throw new RuntimeException(
+                "unreachable terminal resource state '{$resource->state->value}'",
+            ),
         };
     }
 
@@ -318,17 +331,22 @@ final class SwooleTableLedger implements LedgerStorage
             return;
         }
 
-        $this->memory->resources->annotate($runId, AegisAnnotationSid::RunState, $runState->value);
-        $this->memory->resources->annotate($runId, AegisAnnotationSid::EndedAt, (string) microtime(true));
-        $this->memory->resources->annotate($runId, AegisAnnotationSid::WaitKind, '');
-        $this->memory->resources->annotate($runId, AegisAnnotationSid::WaitDetail, '');
-
         match ($resourceState) {
             ManagedResourceState::Closed => $this->memory->resources->close($runId, $reason),
             ManagedResourceState::Aborted => $this->memory->resources->abort($runId, $reason),
             ManagedResourceState::Failed => $this->memory->resources->fail($runId, $reason),
             default => throw new RuntimeException("unsupported terminal resource state '{$resourceState->value}'"),
         };
+
+        $resource = $this->memory->resources->get($runId);
+        if ($resource->state !== $resourceState) {
+            return;
+        }
+
+        $this->memory->resources->annotate($runId, AegisAnnotationSid::RunState, $runState->value);
+        $this->memory->resources->annotate($runId, AegisAnnotationSid::EndedAt, (string) microtime(true));
+        $this->memory->resources->annotate($runId, AegisAnnotationSid::WaitKind, '');
+        $this->memory->resources->annotate($runId, AegisAnnotationSid::WaitDetail, '');
     }
 
     private function hydrate(ManagedResource $resource): TaskRun
