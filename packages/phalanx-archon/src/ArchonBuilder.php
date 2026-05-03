@@ -9,6 +9,7 @@ use InvalidArgumentException;
 use Phalanx\AppHost;
 use Phalanx\Application;
 use Phalanx\ApplicationBuilder;
+use Phalanx\Console\Input\ConsoleInputServiceBundle;
 use Phalanx\Middleware\ServiceTransformationMiddleware;
 use Phalanx\Middleware\TaskMiddleware;
 use Phalanx\Runtime\RuntimePolicy;
@@ -35,6 +36,7 @@ final class ArchonBuilder
     public function __construct(private readonly array $context = [])
     {
         $this->app = Application::starting($context);
+        $this->app->providers(new ConsoleInputServiceBundle());
     }
 
     /**

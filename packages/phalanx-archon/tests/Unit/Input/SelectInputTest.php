@@ -18,12 +18,9 @@ final class SelectInputTest extends PromptTestCase
     #[Test]
     public function enter_submits_first_option_by_default(): void
     {
-        $result = null;
-        $this->select()->prompt($this->output, $this->input)->then(static function ($v) use (&$result): void {
-            $result = $v;
-        });
+        $reader = $this->reader([self::ENTER]);
 
-        $this->press(self::ENTER);
+        $result = $this->select()->prompt($this->scope, $this->output, $reader);
 
         self::assertSame('a', $result);
     }
@@ -31,12 +28,9 @@ final class SelectInputTest extends PromptTestCase
     #[Test]
     public function down_arrow_moves_to_next_option(): void
     {
-        $result = null;
-        $this->select()->prompt($this->output, $this->input)->then(static function ($v) use (&$result): void {
-            $result = $v;
-        });
+        $reader = $this->reader([self::DOWN, self::ENTER]);
 
-        $this->press(self::DOWN, self::ENTER);
+        $result = $this->select()->prompt($this->scope, $this->output, $reader);
 
         self::assertSame('b', $result);
     }
@@ -44,12 +38,9 @@ final class SelectInputTest extends PromptTestCase
     #[Test]
     public function j_key_also_moves_down(): void
     {
-        $result = null;
-        $this->select()->prompt($this->output, $this->input)->then(static function ($v) use (&$result): void {
-            $result = $v;
-        });
+        $reader = $this->reader(['j', 'j', self::ENTER]);
 
-        $this->press('j', 'j', self::ENTER);
+        $result = $this->select()->prompt($this->scope, $this->output, $reader);
 
         self::assertSame('c', $result);
     }
@@ -57,12 +48,9 @@ final class SelectInputTest extends PromptTestCase
     #[Test]
     public function up_arrow_does_not_go_below_zero(): void
     {
-        $result = null;
-        $this->select()->prompt($this->output, $this->input)->then(static function ($v) use (&$result): void {
-            $result = $v;
-        });
+        $reader = $this->reader([self::UP, self::UP, self::ENTER]);
 
-        $this->press(self::UP, self::UP, self::ENTER);
+        $result = $this->select()->prompt($this->scope, $this->output, $reader);
 
         self::assertSame('a', $result);
     }
@@ -70,12 +58,9 @@ final class SelectInputTest extends PromptTestCase
     #[Test]
     public function end_key_jumps_to_last_option(): void
     {
-        $result = null;
-        $this->select()->prompt($this->output, $this->input)->then(static function ($v) use (&$result): void {
-            $result = $v;
-        });
+        $reader = $this->reader(['end', self::ENTER]);
 
-        $this->press("\x1b[F", self::ENTER); // End key = ESC [ F
+        $result = $this->select()->prompt($this->scope, $this->output, $reader);
 
         self::assertSame('c', $result);
     }
@@ -83,11 +68,9 @@ final class SelectInputTest extends PromptTestCase
     #[Test]
     public function non_tty_returns_first_option(): void
     {
-        $noTty  = new \Phalanx\Archon\Input\RawInput(isTty: false);
-        $result = null;
-        $this->select(['a' => 'Alpha', 'b' => 'Beta', 'c' => 'Gamma'])->prompt($this->output, $noTty)->then(static function ($v) use (&$result): void {
-            $result = $v;
-        });
+        $reader = $this->reader([], interactive: false);
+
+        $result = $this->select()->prompt($this->scope, $this->output, $reader);
 
         self::assertSame('a', $result);
     }

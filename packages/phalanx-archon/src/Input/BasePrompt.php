@@ -8,69 +8,80 @@ use Closure;
 use Phalanx\Archon\Composite\FormRevertedException;
 use Phalanx\Archon\Output\StreamOutput;
 use Phalanx\Archon\Style\Theme;
-use React\Promise\Deferred;
-use React\Promise\PromiseInterface;
+use Phalanx\Scope\Disposable;
+use Phalanx\Scope\Suspendable;
 
 /**
  * Abstract base for all interactive prompts.
  *
- * State machine: initial → active → (error → active)* → submit | cancel
+ * State machine: initial -> active -> (error -> active)* -> submit | cancel | revert
  *
- * Fiber suspension bridge: prompt() returns a PromiseInterface. The command
- * calls $scope->await($prompt->prompt($output, $input)), suspending its fiber.
- * The event loop continues — Loop::addReadStream fires on keypresses, each
- * nextKey() promise resolves, the loop() .then() chain advances state, and
- * when submit() calls $deferred->resolve() the suspended fiber resumes.
+ * Synchronous flow: prompt() returns the answered value directly. Each loop
+ * iteration calls $reader->nextKey($scope), which suspends the calling
+ * coroutine inside Aegis ConsoleInput::read until a key arrives. On submit
+ * the prompt returns the value; on cancel it throws CancelledException;
+ * on revert it throws FormRevertedException so Form/Accordion can rewind.
  *
  * Subclasses implement:
- *   renderActive()   — full prompt string while accepting input
- *   renderAnswered() — compact "frozen" state written permanently on submit
- *   handleKey()      — mutate subclass state in response to a key string
+ *   renderActive()   - full prompt string while accepting input
+ *   renderAnswered() - compact "frozen" state written permanently on submit
+ *   handleKey()      - mutate subclass state in response to a key string
  *
- * Validation: pass $validate(mixed $value): ?string — null = valid, string = error.
+ * Validation: pass $validate(mixed $value): ?string - null = valid, string = error.
  * After the first failed submit, silent re-validation runs on every keypress so
  * the error clears as the user corrects the value.
  *
- * Non-TTY: prompt() resolves immediately with defaultValue(). No rendering.
+ * Non-TTY: prompt() returns defaultValue() immediately. No rendering, no key reads.
  */
 abstract class BasePrompt
 {
     protected string $state   = 'initial';
     protected string $error   = '';
     protected bool $validated = false;
-    protected bool $loopOwned = false;
 
     private ?int $cachedInnerWidth = null;
 
     private bool $settled         = false;
+    private mixed $submittedValue = null;
     private ?StreamOutput $output = null;
-    private ?RawInput $input      = null;
-    /** @var Deferred<mixed>|null */
-    private ?Deferred $deferred   = null;
+    protected ?Suspendable $scope = null;
 
     public function __construct(
         protected readonly Theme $theme,
         protected readonly ?Closure $validate = null,
-    ) {
-    }
+    ) {}
 
-    /** @return PromiseInterface<mixed> */
-    final public function prompt(StreamOutput $output, RawInput $input): PromiseInterface
-    {
-        $this->output   = $output;
-        $this->input    = $input;
-        $deferred       = new Deferred();
-        $this->deferred = $deferred;
+    final public function prompt(
+        Suspendable&Disposable $scope,
+        StreamOutput $output,
+        KeyReader $reader,
+    ): mixed {
+        $this->output = $output;
+        $this->scope  = $scope;
 
-        if (!$input->isTty()) {
-            $deferred->resolve($this->defaultValue());
-            return $deferred->promise();
+        if (!$reader->isInteractive) {
+            return $this->defaultValue();
         }
 
         $this->renderFrame();
-        $this->loop();
 
-        return $deferred->promise();
+        while (!$this->isFinalState()) {
+            $key = $reader->nextKey($scope);
+
+            if ($key === '') {
+                $this->state = 'cancel';
+                $output->clear();
+                break;
+            }
+
+            $this->processKey($key);
+        }
+
+        return match ($this->state) {
+            'submit' => $this->submittedValue,
+            'revert' => throw new FormRevertedException(),
+            default => throw new CancelledException('Prompt cancelled'),
+        };
     }
 
     final protected function render(): void
@@ -85,11 +96,10 @@ abstract class BasePrompt
         }
 
         assert($this->output !== null);
-        assert($this->deferred !== null);
-        $this->settled = true;
-        $this->state   = 'submit';
+        $this->settled        = true;
+        $this->state          = 'submit';
+        $this->submittedValue = $value;
         $this->output->persist($this->renderAnswered());
-        $this->deferred->resolve($value);
     }
 
     final protected function cancel(): void
@@ -99,11 +109,9 @@ abstract class BasePrompt
         }
 
         assert($this->output !== null);
-        assert($this->deferred !== null);
         $this->settled = true;
         $this->state   = 'cancel';
         $this->output->clear();
-        $this->deferred->reject(new CancelledException('Prompt cancelled'));
     }
 
     final protected function revert(): void
@@ -113,12 +121,10 @@ abstract class BasePrompt
         }
 
         assert($this->output !== null);
-        assert($this->deferred !== null);
         $this->settled = true;
-        $this->state   = 'cancel';
+        $this->state   = 'revert';
         $this->output->update(' ');
         $this->output->clear();
-        $this->deferred->reject(new FormRevertedException());
     }
 
     final protected function width(): int
@@ -149,7 +155,7 @@ abstract class BasePrompt
 
     /**
      * Render a rounded box frame around $content with $styledTitle embedded in the top border.
-     * $labelText is the unstyled label — used to measure the title's column width.
+     * $labelText is the unstyled label - used to measure the title's column width.
      * $answered = true switches to dim border and skips the title styling guard.
      */
     final protected function buildFrame(
@@ -171,47 +177,6 @@ abstract class BasePrompt
         return implode("\n", [$top, ...$body, $bottom]);
     }
 
-    final protected function loop(): void
-    {
-        assert($this->input !== null);
-        /**
-         * Non-static: this closure is the only strong reference keeping $this alive
-         * while the fiber is suspended. WeakReference would allow GC mid-interaction.
-         * The cycle breaks when submit/cancel/revert resolves $deferred.
-         */
-        $this->input->nextKey()->then(function (string $key): void {
-            if ($key === 'ctrl-c') {
-                $this->cancel();
-                return;
-            }
-
-            if ($key === 'ctrl-u') {
-                $this->revert();
-                return;
-            }
-
-            if ($this->state === 'error') {
-                $this->state = 'active';
-            }
-
-            $this->handleKey($key);
-
-            if ($this->state === 'submit' || $this->state === 'cancel') {
-                return;
-            }
-
-            if ($this->validated) {
-                $this->runValidateSilent();
-            }
-
-            $this->renderFrame();
-
-            if (!$this->loopOwned) {
-                $this->loop();
-            }
-        });
-    }
-
     abstract protected function renderActive(): string;
     abstract protected function renderAnswered(): string;
     abstract protected function handleKey(string $key): void;
@@ -229,6 +194,42 @@ abstract class BasePrompt
     protected function hints(): string
     {
         return '';
+    }
+
+    private function processKey(string $key): void
+    {
+        if ($key === 'ctrl-c') {
+            $this->cancel();
+            return;
+        }
+
+        if ($key === 'ctrl-u') {
+            $this->revert();
+            return;
+        }
+
+        if ($this->state === 'error') {
+            $this->state = 'active';
+        }
+
+        $this->handleKey($key);
+
+        if ($this->isFinalState()) {
+            return;
+        }
+
+        if ($this->validated) {
+            $this->runValidateSilent();
+        }
+
+        $this->renderFrame();
+    }
+
+    private function isFinalState(): bool
+    {
+        return $this->state === 'submit'
+            || $this->state === 'cancel'
+            || $this->state === 'revert';
     }
 
     private function renderFrame(): void

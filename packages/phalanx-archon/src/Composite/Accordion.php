@@ -6,18 +6,18 @@ namespace Phalanx\Archon\Composite;
 
 use Closure;
 use Phalanx\Archon\Input\CancelledException;
-use Phalanx\Archon\Input\RawInput;
+use Phalanx\Archon\Input\KeyReader;
 use Phalanx\Archon\Output\StreamOutput;
-use React\Promise\Deferred;
-use React\Promise\PromiseInterface;
+use Phalanx\Scope\Disposable;
+use Phalanx\Scope\Suspendable;
 
 /**
  * Collapsible sections, each containing a Form.
  *
  * Section headers are navigable with up/down. Enter expands the focused
  * section and runs its Form. When the form completes, the section collapses
- * and shows a one-line summary. When all sections have values, the deferred
- * resolves with array<string, mixed>.
+ * and shows a one-line summary. When all sections have values, run() returns
+ * array<string, mixed>.
  *
  * Visual per header row:
  *   ▸ Label           collapsed, not focused
@@ -38,135 +38,79 @@ final class Accordion
         return $clone;
     }
 
-    /** @return PromiseInterface<array<string, mixed>> */
-    public function run(StreamOutput $output, RawInput $input): PromiseInterface
-    {
-        $deferred = new Deferred();
-        $sections = $this->sections;
+    /** @return array<string, mixed> */
+    public function run(
+        Suspendable&Disposable $scope,
+        StreamOutput $output,
+        KeyReader $reader,
+    ): array {
         /** @var array<string, mixed> $values */
         $values   = [];
         $cursor   = 0;
-        /** @var int|null $expanded */
         $expanded = null;
 
-        $render = static function () use (&$sections, &$values, &$cursor, &$expanded, $output): void {
-            $lines = [];
-            foreach ($sections as $i => $section) {
-                $id    = $section['id'];
-                $label = $section['label'];
+        $this->renderHeaders($output, $values, $cursor, $expanded);
 
-                if (isset($values[$id])) {
-                    $summary = is_array($values[$id])
-                        ? implode(', ', array_map(strval(...), $values[$id]))
-                        : (string) $values[$id];
-                    $lines[] = "  \033[32m✓\033[0m {$label}: \033[2m{$summary}\033[0m";
-                } elseif ($i === $expanded) {
-                    $lines[] = "  \033[36m▾ {$label}\033[0m";
-                } elseif ($i === $cursor) {
-                    $lines[] = "  \033[36m› {$label}\033[0m";
-                } else {
-                    $lines[] = "  \033[2m▸\033[0m {$label}";
-                }
+        while (count($values) < count($this->sections)) {
+            $key = $reader->nextKey($scope);
+
+            if ($key === '' || $key === 'ctrl-c') {
+                throw new CancelledException('Accordion cancelled');
             }
-            $output->update(...$lines);
-        };
 
-        $listenForNav = null;
-        $runSection   = null;
+            $count = count($this->sections);
 
-        $runSection = static function (int $index) use ( // @phpstan-ignore closure.unusedUse
-            &$runSection,
-            &$listenForNav,
-            &$cursor,
-            &$expanded,
-            &$values,
-            &$sections,
-            $output,
-            $input,
-            $deferred,
-            $render,
-        ): void {
-            $section  = $sections[$index];
-            $id       = $section['id'];
-            $expanded = $index;
-            $render();
+            match ($key) {
+                'up'             => $cursor = max(0, $cursor - 1),
+                'down'           => $cursor = min($count - 1, $cursor + 1),
+                'enter', 'space' => null,
+                default          => null,
+            };
 
-            $form = ($section['factory'])();
-            $form->submit($output, $input)->then(
-                static function (mixed $value) use (
-                    &$listenForNav,
-                    &$cursor,
-                    &$expanded,
-                    &$values,
-                    &$sections,
-                    $id,
-                    $index,
-                    $deferred,
-                    $render,
-                ): void {
-                    $values[$id] = $value;
-                    $expanded    = null;
+            if ($key === 'enter' || $key === 'space') {
+                $section  = $this->sections[$cursor];
+                $expanded = $cursor;
+                $this->renderHeaders($output, $values, $cursor, $expanded);
 
-                    if (count($values) === count($sections)) {
-                        $render();
-                        $deferred->resolve($values);
-                        return;
-                    }
+                $form        = ($section['factory'])();
+                $values[$section['id']] = $form->submit($scope, $output, $reader);
+                $expanded    = null;
+                $cursor      = min($count - 1, $cursor + 1);
+            }
 
-                    $cursor = $index + 1;
-                    $render();
-                    $listenForNav();
-                },
-                static function (\Throwable $e) use ($deferred): void {
-                    $deferred->reject($e);
-                },
-            );
-        };
+            $this->renderHeaders($output, $values, $cursor, $expanded);
+        }
 
-        $listenForNav = static function () use (
-            &$listenForNav,
-            &$runSection,
-            &$cursor,
-            &$sections,
-            $render,
-            $input,
-            $deferred,
-        ): void {
-            $input->nextKey()->then(
-                static function (string $key) use ( // @phpstan-ignore closure.unusedUse
-                    &$listenForNav,
-                    &$runSection,
-                    &$cursor,
-                    &$sections,
-                    $render,
-                    $input,
-                    $deferred,
-                ): void {
-                    if ($key === 'ctrl-c') {
-                        $deferred->reject(new CancelledException('Accordion cancelled'));
-                        return;
-                    }
+        return $values;
+    }
 
-                    $count = count($sections);
+    /**
+     * @param array<string, mixed> $values
+     */
+    private function renderHeaders(
+        StreamOutput $output,
+        array $values,
+        int $cursor,
+        ?int $expanded,
+    ): void {
+        $lines = [];
+        foreach ($this->sections as $i => $section) {
+            $id    = $section['id'];
+            $label = $section['label'];
 
-                    match ($key) {
-                        'up'             => $cursor = max(0, $cursor - 1),
-                        'down'           => $cursor = min($count - 1, $cursor + 1),
-                        'enter', 'space' => $runSection($cursor),
-                        default          => null,
-                    };
-
-                    if ($key !== 'enter' && $key !== 'space') {
-                        $render();
-                        $listenForNav();
-                    }
-                },
-            );
-        };
-
-        $render();
-        $listenForNav();
-
-        return $deferred->promise();
+            if (array_key_exists($id, $values)) {
+                $summary = is_array($values[$id])
+                    ? implode(', ', array_map(strval(...), $values[$id]))
+                    : (string) $values[$id];
+                $lines[] = "  \033[32m✓\033[0m {$label}: \033[2m{$summary}\033[0m";
+            } elseif ($i === $expanded) {
+                $lines[] = "  \033[36m▾ {$label}\033[0m";
+            } elseif ($i === $cursor) {
+                $lines[] = "  \033[36m› {$label}\033[0m";
+            } else {
+                $lines[] = "  \033[2m▸\033[0m {$label}";
+            }
+        }
+        $output->update(...$lines);
     }
 }

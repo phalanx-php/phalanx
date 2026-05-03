@@ -4,30 +4,28 @@ declare(strict_types=1);
 
 namespace Phalanx\Archon\Tests\Unit\Input;
 
+use Closure;
 use Phalanx\Archon\Input\PasswordInput;
 use PHPUnit\Framework\Attributes\Test;
 
 final class PasswordInputTest extends PromptTestCase
 {
-    private function password(?callable $validate = null): PasswordInput
+    private function password(?Closure $validate = null): PasswordInput
     {
         return new PasswordInput(
             theme: $this->theme,
             label: 'Password',
             hint: '',
-            validate: $validate !== null ? \Closure::fromCallable($validate) : null,
+            validate: $validate,
         );
     }
 
     #[Test]
     public function submits_typed_password_as_plain_text(): void
     {
-        $result = null;
-        $this->password()->prompt($this->output, $this->input)->then(static function ($v) use (&$result): void {
-            $result = $v;
-        });
+        $reader = $this->reader(['s', 'e', 'c', 'r', 'e', 't', self::ENTER]);
 
-        $this->press('s', 'e', 'c', 'r', 'e', 't', self::ENTER);
+        $result = $this->password()->prompt($this->scope, $this->output, $reader);
 
         self::assertSame('secret', $result);
     }
@@ -35,12 +33,13 @@ final class PasswordInputTest extends PromptTestCase
     #[Test]
     public function answered_output_does_not_contain_actual_password(): void
     {
-        $this->password()->prompt($this->output, $this->input);
+        $reader = $this->reader(['m', 'y', 'p', 'a', 's', 's', self::ENTER]);
 
-        $this->press('m', 'y', 'p', 'a', 's', 's', self::ENTER);
+        $this->password()->prompt($this->scope, $this->output, $reader);
 
         rewind($this->stream);
         $written = stream_get_contents($this->stream);
+        self::assertIsString($written);
 
         self::assertStringNotContainsString('mypass', $written);
         self::assertStringContainsString('•', $written);
@@ -49,12 +48,9 @@ final class PasswordInputTest extends PromptTestCase
     #[Test]
     public function backspace_removes_character_from_value(): void
     {
-        $result = null;
-        $this->password()->prompt($this->output, $this->input)->then(static function ($v) use (&$result): void {
-            $result = $v;
-        });
+        $reader = $this->reader(['a', 'b', 'c', self::BACKSPACE, self::ENTER]);
 
-        $this->press('a', 'b', 'c', self::BACKSPACE, self::ENTER);
+        $result = $this->password()->prompt($this->scope, $this->output, $reader);
 
         self::assertSame('ab', $result);
     }
@@ -62,15 +58,12 @@ final class PasswordInputTest extends PromptTestCase
     #[Test]
     public function validation_applies_to_password_value(): void
     {
-        $result = null;
-        $this->password(validate: static fn(string $v): ?string => mb_strlen($v) < 4 ? 'Too short' : null)
-            ->prompt($this->output, $this->input)
-            ->then(static function ($v) use (&$result): void { $result = $v; });
+        $reader = $this->reader(['a', 'b', 'c', self::ENTER, 'd', self::ENTER]);
 
-        $this->press('a', 'b', 'c', self::ENTER);
-        self::assertNull($result);
+        $result = $this->password(
+            validate: static fn(string $v): ?string => mb_strlen($v) < 4 ? 'Too short' : null,
+        )->prompt($this->scope, $this->output, $reader);
 
-        $this->press('d', self::ENTER);
         self::assertSame('abcd', $result);
     }
 }

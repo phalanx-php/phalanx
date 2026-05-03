@@ -4,202 +4,75 @@ declare(strict_types=1);
 
 namespace Phalanx\Archon\Input;
 
-use Closure;
-use Phalanx\Scope\ExecutionScope;
-use React\EventLoop\Loop;
-use React\Promise\Deferred;
-use React\Promise\PromiseInterface;
-use WeakReference;
+use Phalanx\Console\Input\ConsoleInput;
+use Phalanx\Scope\Disposable;
+use Phalanx\Scope\Scope;
+use Phalanx\Scope\Suspendable;
 
 /**
- * Non-blocking stdin reader with raw-mode lifecycle management.
+ * Per-prompt key reader. Holds a KeyParser to accumulate partial multi-byte
+ * sequences across reads, drains bytes from Aegis ConsoleInput, and yields
+ * one canonical key token per nextKey() call.
  *
- * Call order per input session:
- *   enable() → attach() → [nextKey() calls] → detach() → disable()
+ * Lifecycle: enableRawMode() flips the terminal once before the prompt
+ * loop starts, restore() runs on scope dispose. Both delegate to the
+ * managed ConsoleInput service so stty cooperation lives in Aegis.
  *
- * stty is invoked exactly twice: once to save state (enable) and once to restore
- * (disable). ~10ms per call — never call inside a render loop.
- *
- * disable() MUST be called in a finally block. Raw mode persists across process
- * exit and leaves the parent shell unusable until the user types `reset`.
- *
- * The nextKey() queue is FIFO. Sequential form flow naturally has exactly one
- * pending deferred at a time — if two callers race, each receives keys in order.
- *
- * Non-TTY: all lifecycle methods are no-ops. nextKey() returns a promise that
- * never resolves. Callers must check isTty() and return defaults immediately.
+ * Read buffer size: 32 bytes. Most keypresses are 1-3 bytes; bracketed
+ * paste can deliver larger chunks but the parser handles fragmentation.
  */
-final class RawInput
+final class RawInput implements KeyReader
 {
-    private string $savedStty = '';
-    private bool $active      = false;
-    private bool $attached    = false;
-    private ?bool $previousBlocking = null;
+    private const int READ_CHUNK = 32;
 
-    /** @var list<Deferred<string>> */
-    private array $pending = [];
+    public bool $isInteractive {
+        get => $this->consoleInput->isInteractive;
+    }
 
-    private readonly KeyParser $parser;
+    /** @var list<string> */
+    private array $queue = [];
 
-    /** @var Closure(string): string */
-    private Closure $stty;
-
-    /** @param resource|null $stream */
     public function __construct(
-        private readonly bool $isTty = true,
-        private mixed $stream = null,
-        ?Closure $stty = null,
+        private readonly ConsoleInput $consoleInput,
+        private readonly KeyParser $parser = new KeyParser(),
     ) {
-        $this->stream = $stream ?? STDIN;
-        $this->stty = $stty ?? static fn(string $command): string => trim((string) shell_exec($command));
-        $this->parser = new KeyParser();
     }
 
-    public static function fromStdin(): self
+    public static function fromScope(Scope $scope): self
     {
-        return new self(stream_isatty(STDIN));
+        return new self($scope->service(ConsoleInput::class));
     }
 
-    /** @param resource $stream */
-    private static function isBlocking(mixed $stream): bool
+    public function nextKey(Suspendable $scope): string
     {
-        /** @var array<string, mixed> $metadata */
-        $metadata = stream_get_meta_data($stream);
-
-        return ($metadata['blocked'] ?? true) === true;
-    }
-
-    public function enable(): void
-    {
-        if (!$this->isTty || $this->active) {
-            return;
+        while ($this->queue === []) {
+            $bytes = $this->consoleInput->read($scope, self::READ_CHUNK);
+            if ($bytes === '') {
+                return '';
+            }
+            $this->queue = $this->parser->parse($bytes);
         }
 
-        /**
-         * Blocking shell_exec is acceptable here because raw mode is entered once
-         * before the input loop starts, not inside a timer or stream callback.
-         */
-        $this->savedStty = ($this->stty)('stty -g 2>/dev/null');
-        if ($this->savedStty === '') {
-            return;
-        }
-
-        ($this->stty)('stty -icanon -isig -echo -ixon min 1 time 0 2>/dev/null');
-        $this->active = true;
+        return array_shift($this->queue);
     }
 
-    public function attach(): void
+    public function enableRawMode(Suspendable $scope): void
     {
-        if (!$this->isTty || $this->attached) {
-            return;
-        }
-
-        $stream = $this->stream;
-        assert(is_resource($stream));
-
-        $this->previousBlocking = self::isBlocking($stream);
-        stream_set_blocking($stream, false);
-
-        $ref = WeakReference::create($this);
-
-        /**
-         * Bind a static closure to RawInput scope so it can call dispatch()
-         * without capturing this object through the loop listener registry.
-         */
-        $handler = Closure::bind(
-            static function ($stream) use ($ref): void {
-                $self = $ref->get();
-                if ($self === null) {
-                    return;
-                }
-                $data = fread($stream, 1024);
-                if ($data !== false && $data !== '') {
-                    $self->dispatch($data);
-                }
-            },
-            null,
-            self::class,
-        );
-
-        Loop::addReadStream($stream, $handler);
-        $this->attached = true;
+        $this->consoleInput->enableRawMode($scope);
     }
 
-    /** @return PromiseInterface<mixed> */
-    public function nextKey(): PromiseInterface
+    public function restore(Suspendable $scope): void
     {
-        $deferred        = new Deferred();
-        $this->pending[] = $deferred;
-        return $deferred->promise();
+        $this->consoleInput->restore($scope);
     }
 
-    public function detach(): void
+    public function restoreOnDispose(Disposable&Suspendable $scope): self
     {
-        if (!$this->attached) {
-            return;
-        }
-
-        $stream = $this->stream;
-        assert(is_resource($stream));
-
-        Loop::removeReadStream($stream);
-        stream_set_blocking($stream, $this->previousBlocking ?? true);
-        $this->attached = false;
-        $this->previousBlocking = null;
-    }
-
-    public function disable(): void
-    {
-        if (!$this->active) {
-            return;
-        }
-
-        if ($this->savedStty !== '') {
-            ($this->stty)("stty {$this->savedStty} 2>/dev/null");
-        }
-
-        $this->active    = false;
-        $this->savedStty = '';
-    }
-
-    public function restore(): void
-    {
-        $this->detach();
-        $this->disable();
-    }
-
-    public function restoreOnDispose(ExecutionScope $scope): self
-    {
-        $input = $this;
-        $scope->onDispose(static function () use ($input): void {
-            $input->restore();
+        $reader = $this;
+        $scope->onDispose(static function () use ($reader, $scope): void {
+            $reader->restore($scope);
         });
 
-        return $this;
-    }
-
-    public function isActive(): bool
-    {
-        return $this->active;
-    }
-
-    public function isAttached(): bool
-    {
-        return $this->attached;
-    }
-
-    public function isTty(): bool
-    {
-        return $this->isTty;
-    }
-
-    private function dispatch(string $data): void
-    {
-        foreach ($this->parser->parse($data) as $key) {
-            if ($this->pending === []) {
-                break;
-            }
-            array_shift($this->pending)->resolve($key);
-        }
+        return $reader;
     }
 }

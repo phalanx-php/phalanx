@@ -6,7 +6,7 @@ namespace Phalanx\Archon\Input;
 
 use Closure;
 use Phalanx\Archon\Style\Theme;
-use React\Promise\PromiseInterface;
+use Phalanx\Supervisor\WaitReason;
 
 /**
  * Text input with an inline suggestion overlay.
@@ -190,23 +190,17 @@ final class SuggestInput extends BasePrompt
     {
         $result = ($this->search)($this->value);
 
-        if ($result instanceof PromiseInterface) {
-            $this->loopOwned = true;
-            /**
-             * Non-static: search may resolve after loop() yields. WeakReference
-             * risks GC before resolution, leaving the prompt frozen with no key handler.
-             */
-            $result->then(function (array $suggestions): void {
-                $this->loopOwned   = false;
-                $this->suggestions = array_values($suggestions);
-                $this->highlighted = 0;
-                $this->render();
-                $this->loop();
-            });
-        } else {
-            $this->suggestions = array_values((array) $result);
-            $this->highlighted = 0;
+        if ($result instanceof Closure) {
+            assert($this->scope !== null);
+            /** @var Closure(): mixed $deferred */
+            $deferred = $result;
+            $result = $this->scope->call($deferred, WaitReason::input('suggest', $this->value));
         }
+
+        /** @var list<mixed> $suggestions */
+        $suggestions = is_array($result) ? array_values($result) : [];
+        $this->suggestions = $suggestions;
+        $this->highlighted = 0;
     }
 
     private function finalValue(): string

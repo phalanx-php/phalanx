@@ -17,12 +17,9 @@ final class ConfirmInputTest extends PromptTestCase
     #[Test]
     public function y_key_submits_true(): void
     {
-        $result = null;
-        $this->confirm()->prompt($this->output, $this->input)->then(static function ($v) use (&$result): void {
-            $result = $v;
-        });
+        $reader = $this->reader(['y']);
 
-        $this->press('y');
+        $result = $this->confirm()->prompt($this->scope, $this->output, $reader);
 
         self::assertTrue($result);
     }
@@ -30,12 +27,9 @@ final class ConfirmInputTest extends PromptTestCase
     #[Test]
     public function n_key_submits_false(): void
     {
-        $result = null;
-        $this->confirm()->prompt($this->output, $this->input)->then(static function ($v) use (&$result): void {
-            $result = $v;
-        });
+        $reader = $this->reader(['n']);
 
-        $this->press('n');
+        $result = $this->confirm()->prompt($this->scope, $this->output, $reader);
 
         self::assertFalse($result);
     }
@@ -43,12 +37,9 @@ final class ConfirmInputTest extends PromptTestCase
     #[Test]
     public function enter_submits_default_true(): void
     {
-        $result = null;
-        $this->confirm(default: true)->prompt($this->output, $this->input)->then(static function ($v) use (&$result): void {
-            $result = $v;
-        });
+        $reader = $this->reader([self::ENTER]);
 
-        $this->press(self::ENTER);
+        $result = $this->confirm(default: true)->prompt($this->scope, $this->output, $reader);
 
         self::assertTrue($result);
     }
@@ -56,12 +47,9 @@ final class ConfirmInputTest extends PromptTestCase
     #[Test]
     public function enter_submits_default_false(): void
     {
-        $result = null;
-        $this->confirm(default: false)->prompt($this->output, $this->input)->then(static function ($v) use (&$result): void {
-            $result = $v;
-        });
+        $reader = $this->reader([self::ENTER]);
 
-        $this->press(self::ENTER);
+        $result = $this->confirm(default: false)->prompt($this->scope, $this->output, $reader);
 
         self::assertFalse($result);
     }
@@ -69,12 +57,9 @@ final class ConfirmInputTest extends PromptTestCase
     #[Test]
     public function tab_toggles_selection(): void
     {
-        $result = null;
-        $this->confirm(default: true)->prompt($this->output, $this->input)->then(static function ($v) use (&$result): void {
-            $result = $v;
-        });
+        $reader = $this->reader([self::TAB, self::ENTER]);
 
-        $this->press(self::TAB, self::ENTER);
+        $result = $this->confirm(default: true)->prompt($this->scope, $this->output, $reader);
 
         self::assertFalse($result);
     }
@@ -82,12 +67,9 @@ final class ConfirmInputTest extends PromptTestCase
     #[Test]
     public function right_arrow_selects_no(): void
     {
-        $result = null;
-        $this->confirm(default: true)->prompt($this->output, $this->input)->then(static function ($v) use (&$result): void {
-            $result = $v;
-        });
+        $reader = $this->reader([self::RIGHT, self::ENTER]);
 
-        $this->press(self::RIGHT, self::ENTER);
+        $result = $this->confirm(default: true)->prompt($this->scope, $this->output, $reader);
 
         self::assertFalse($result);
     }

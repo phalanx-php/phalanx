@@ -7,23 +7,22 @@ namespace Phalanx\Archon\Input;
 use Closure;
 use Phalanx\Archon\Style\Theme;
 use Phalanx\Archon\Widget\Spinner;
-use React\Promise\PromiseInterface;
+use Phalanx\Supervisor\WaitReason;
 
 /**
  * Async-capable search prompt. Combines a text input with a filterable results list.
  *
  * The $search closure receives the current query and returns either:
- *   - list<string>        for synchronous/in-memory filtering
- *   - PromiseInterface    for async search (database, API, etc.)
+ *   - list<mixed>             for synchronous in-memory filtering
+ *   - Closure(): list<mixed>  for deferred async work
  *
- * When the search returns a Promise, the key loop is intentionally suspended until
- * the Promise resolves. Keys typed during that window queue in RawInput::$pending
- * and are processed in order after loop() restarts. This prevents out-of-order
- * state mutations if two searches race.
+ * Async closures run through $scope->call(...) under WaitReason::input('search', $query)
+ * so the supervisor records what the prompt is waiting on. Cancellation
+ * propagates from the scope token.
  *
  * State:
- *   $highlighted === null → focus is in the text input
- *   $highlighted !== null → focus is in the results list
+ *   $highlighted === null - focus is in the text input
+ *   $highlighted !== null - focus is in the results list
  *
  * Bindings (text input focus):
  *   printable  insert char, trigger search
@@ -202,29 +201,21 @@ final class SearchInput extends BasePrompt
         $this->state       = 'searching';
         $this->matches     = null;
         $this->highlighted = null;
+        $this->render();
 
         $result = ($this->search)($this->query);
 
-        if ($result instanceof PromiseInterface) {
-            $this->loopOwned = true;
-            $this->render();  // show spinner only for genuine async search
-            /**
-             * Non-static: search may resolve after loop() yields. WeakReference
-             * risks GC before resolution, leaving the prompt frozen with no key handler.
-             */
-            $result->then(function (array $matches): void {
-                $this->loopOwned = false;
-                $this->matches   = array_values($matches);
-                $this->state     = 'active';
-                $this->render();
-                $this->loop();
-            });
-            // loop() intentionally NOT called here — .then() resumes it after search.
-        } else {
-            $this->matches = array_values((array) $result);
-            $this->state   = 'active';
-            // loop().then() will call renderFrame() — no intermediate render needed
+        if ($result instanceof Closure) {
+            assert($this->scope !== null);
+            /** @var Closure(): mixed $deferred */
+            $deferred = $result;
+            $result = $this->scope->call($deferred, WaitReason::input('search', $this->query));
         }
+
+        /** @var list<mixed> $matches */
+        $matches = is_array($result) ? array_values($result) : [];
+        $this->matches = $matches;
+        $this->state   = 'active';
     }
 
     private function renderQueryLine(int $maxWidth): string

@@ -4,129 +4,56 @@ declare(strict_types=1);
 
 namespace Phalanx\Archon\Tests\Unit\Input;
 
-use Phalanx\Application;
 use Phalanx\Archon\Input\RawInput;
-use PHPUnit\Framework\Attributes\RunInSeparateProcess;
+use Phalanx\Console\Input\ConsoleInput;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * Thin facade over Aegis ConsoleInput. The KeyReader contract is exercised
+ * end-to-end by every prompt test via FakeKeyReader. The real read path
+ * (System::waitEvent + non-blocking fread) is OpenSwoole-runtime dependent
+ * and lives in the integration suite.
+ *
+ * Unit-level concerns left to verify here:
+ *   - non-interactive mirroring from ConsoleInput
+ *   - restoreOnDispose registers a teardown callback
+ */
 final class RawInputTest extends TestCase
 {
     #[Test]
-    public function restoreIsIdempotentAndDisablesRawMode(): void
+    public function isInteractiveMirrorsConsoleInput(): void
     {
-        $commands = [];
-        $input = new RawInput(
-            isTty: true,
-            stty: static function (string $command) use (&$commands): string {
-                $commands[] = $command;
+        $stream = fopen('php://memory', 'r+');
+        self::assertNotFalse($stream);
 
-                return $command === 'stty -g 2>/dev/null' ? 'saved-state' : '';
-            },
-        );
+        $consoleInput = new ConsoleInput($stream);
+        $rawInput     = new RawInput($consoleInput);
 
-        $input->enable();
-        $input->restore();
-        $input->restore();
+        self::assertSame($consoleInput->isInteractive, $rawInput->isInteractive);
+        self::assertFalse($rawInput->isInteractive);
 
-        self::assertFalse($input->isActive());
-        self::assertFalse($input->isAttached());
-        self::assertSame([
-            'stty -g 2>/dev/null',
-            'stty -icanon -isig -echo -ixon min 1 time 0 2>/dev/null',
-            'stty saved-state 2>/dev/null',
-        ], $commands);
+        fclose($stream);
     }
 
     #[Test]
-    public function enableDoesNotEnterRawModeWithoutSavedTerminalState(): void
+    public function restoreOnDisposeRegistersDisposalCallback(): void
     {
-        $commands = [];
-        $input = new RawInput(
-            isTty: true,
-            stty: static function (string $command) use (&$commands): string {
-                $commands[] = $command;
+        $stream = fopen('php://memory', 'r+');
+        self::assertNotFalse($stream);
 
-                return '';
-            },
-        );
+        $consoleInput = new ConsoleInput($stream);
+        $rawInput     = new RawInput($consoleInput);
+        $scope        = new StubScope();
 
-        $input->enable();
-        $input->restore();
+        $rawInput->restoreOnDispose($scope);
 
-        self::assertFalse($input->isActive());
-        self::assertSame(['stty -g 2>/dev/null'], $commands);
-    }
+        self::assertCount(1, $scope->disposeCallbacks);
 
-    #[Test]
-    public function restoreOnDisposeRestoresRawModeWhenScopeDisposes(): void
-    {
-        $commands = [];
-        $app = Application::starting()->compile();
-        $scope = $app->createScope();
-        $input = new RawInput(
-            isTty: true,
-            stty: static function (string $command) use (&$commands): string {
-                $commands[] = $command;
+        $scope->dispose();
 
-                return $command === 'stty -g 2>/dev/null' ? 'saved-state' : '';
-            },
-        );
+        self::assertCount(0, $scope->disposeCallbacks);
 
-        try {
-            $input->enable();
-            $input->restoreOnDispose($scope);
-
-            self::assertTrue($input->isActive());
-        } finally {
-            $scope->dispose();
-            $app->shutdown();
-        }
-
-        self::assertFalse($input->isActive());
-        self::assertSame([
-            'stty -g 2>/dev/null',
-            'stty -icanon -isig -echo -ixon min 1 time 0 2>/dev/null',
-            'stty saved-state 2>/dev/null',
-        ], $commands);
-    }
-
-    #[Test]
-    #[RunInSeparateProcess]
-    public function restorePreservesPreviousStreamBlockingMode(): void
-    {
-        $pair = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
-
-        if ($pair === false) {
-            self::fail('Unable to create socket pair.');
-        }
-
-        [$stream, $peer] = $pair;
-        stream_set_blocking($stream, false);
-
-        $input = new RawInput(
-            isTty: true,
-            stream: $stream,
-            stty: static fn(string $command): string => '',
-        );
-
-        try {
-            $input->attach();
-            $input->restore();
-
-            self::assertFalse(self::isBlocking($stream));
-        } finally {
-            fclose($stream);
-            fclose($peer);
-        }
-    }
-
-    /** @param resource $stream */
-    private static function isBlocking(mixed $stream): bool
-    {
-        /** @var array<string, mixed> $metadata */
-        $metadata = stream_get_meta_data($stream);
-
-        return ($metadata['blocked'] ?? true) === true;
+        fclose($stream);
     }
 }

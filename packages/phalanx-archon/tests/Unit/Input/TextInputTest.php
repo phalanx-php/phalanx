@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace Phalanx\Archon\Tests\Unit\Input;
 
+use Closure;
 use Phalanx\Archon\Input\CancelledException;
 use Phalanx\Archon\Input\TextInput;
 use PHPUnit\Framework\Attributes\Test;
 
 final class TextInputTest extends PromptTestCase
 {
-    private function input(string $label = 'Name', string $default = '', ?callable $validate = null): TextInput
+    private function input(string $label = 'Name', string $default = '', ?Closure $validate = null): TextInput
     {
         return new TextInput(
             theme: $this->theme,
@@ -18,7 +19,7 @@ final class TextInputTest extends PromptTestCase
             placeholder: '',
             default: $default,
             hint: '',
-            validate: $validate !== null ? \Closure::fromCallable($validate) : null,
+            validate: $validate,
             transform: null,
         );
     }
@@ -26,12 +27,9 @@ final class TextInputTest extends PromptTestCase
     #[Test]
     public function submits_typed_value_on_enter(): void
     {
-        $result = null;
-        $this->input()->prompt($this->output, $this->input)->then(static function ($v) use (&$result): void {
-            $result = $v;
-        });
+        $reader = $this->reader(['h', 'e', 'l', 'l', 'o', self::ENTER]);
 
-        $this->press('h', 'e', 'l', 'l', 'o', self::ENTER);
+        $result = $this->input()->prompt($this->scope, $this->output, $reader);
 
         self::assertSame('hello', $result);
     }
@@ -39,12 +37,9 @@ final class TextInputTest extends PromptTestCase
     #[Test]
     public function returns_default_when_nothing_typed(): void
     {
-        $result = null;
-        $this->input(default: 'fallback')->prompt($this->output, $this->input)->then(static function ($v) use (&$result): void {
-            $result = $v;
-        });
+        $reader = $this->reader([self::ENTER]);
 
-        $this->press(self::ENTER);
+        $result = $this->input(default: 'fallback')->prompt($this->scope, $this->output, $reader);
 
         self::assertSame('fallback', $result);
     }
@@ -52,64 +47,47 @@ final class TextInputTest extends PromptTestCase
     #[Test]
     public function backspace_removes_last_character(): void
     {
-        $result = null;
-        $this->input()->prompt($this->output, $this->input)->then(static function ($v) use (&$result): void {
-            $result = $v;
-        });
+        $reader = $this->reader(['a', 'b', 'c', self::BACKSPACE, self::ENTER]);
 
-        $this->press('a', 'b', 'c', self::BACKSPACE, self::ENTER);
+        $result = $this->input()->prompt($this->scope, $this->output, $reader);
 
         self::assertSame('ab', $result);
     }
 
     #[Test]
-    public function cancel_via_ctrl_c_rejects_promise(): void
+    public function cancel_via_ctrl_c_throws(): void
     {
-        $rejected = null;
-        $this->input()->prompt($this->output, $this->input)
-            ->then(null, static function ($e) use (&$rejected): void {
-                $rejected = $e;
-            });
+        $reader = $this->reader(['h', 'i', self::CTRL_C]);
 
-        $this->press('h', 'i', self::CTRL_C);
+        $this->expectException(CancelledException::class);
 
-        self::assertInstanceOf(CancelledException::class, $rejected);
+        $this->input()->prompt($this->scope, $this->output, $reader);
     }
 
     #[Test]
     public function validation_error_blocks_submit_until_corrected(): void
     {
         $callCount = 0;
-        $result    = null;
+        $reader    = $this->reader(['a', 'b', self::ENTER, 'c', self::ENTER]);
 
         $prompt = $this->input(validate: static function (string $v) use (&$callCount): ?string {
             $callCount++;
             return mb_strlen($v) < 3 ? 'Too short' : null;
         });
 
-        $prompt->prompt($this->output, $this->input)->then(static function ($v) use (&$result): void {
-            $result = $v;
-        });
+        $result = $prompt->prompt($this->scope, $this->output, $reader);
 
-        // 'ab' fails validation — prompt stays open
-        $this->press('a', 'b', self::ENTER);
-        self::assertNull($result);
-
-        // 'abc' passes
-        $this->press('c', self::ENTER);
         self::assertSame('abc', $result);
+        self::assertGreaterThan(1, $callCount);
     }
 
     #[Test]
     public function non_tty_returns_default_immediately(): void
     {
         $prompt = new TextInput(theme: $this->theme, label: 'X', placeholder: '', default: 'skip', hint: '', validate: null, transform: null);
-        $noTty  = new \Phalanx\Archon\Input\RawInput(isTty: false);
+        $reader = $this->reader([], interactive: false);
 
-        $result = null;
-        $prompt->prompt($this->output, $noTty)->then(static function ($v) use (&$result): void {
-            $result = $v;
-        });
+        $result = $prompt->prompt($this->scope, $this->output, $reader);
 
         self::assertSame('skip', $result);
     }

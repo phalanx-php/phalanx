@@ -6,10 +6,10 @@ namespace Phalanx\Archon\Composite;
 
 use Closure;
 use Phalanx\Archon\Input\BasePrompt;
-use Phalanx\Archon\Input\RawInput;
+use Phalanx\Archon\Input\KeyReader;
 use Phalanx\Archon\Output\StreamOutput;
-use React\Promise\Deferred;
-use React\Promise\PromiseInterface;
+use Phalanx\Scope\Disposable;
+use Phalanx\Scope\Suspendable;
 
 /**
  * Sequential multi-field form with backward navigation.
@@ -19,13 +19,11 @@ use React\Promise\PromiseInterface;
  * returns a configured BasePrompt instance.
  *
  * Ctrl+U on any field after the first triggers revert() on that prompt,
- * rejecting its deferred with FormRevertedException. Form catches this,
- * erases the current field, and re-runs the previous step pre-populated
- * with its stored value.
+ * which throws FormRevertedException. Form catches it, erases the current
+ * field, and re-runs the previous step pre-populated with its stored value.
  *
- * submit() returns a PromiseInterface that resolves to array<string, mixed>
- * keyed by field $id, or rejects with CancelledException if any field is
- * cancelled.
+ * submit() returns array<string, mixed> keyed by field $id. Cancellation
+ * propagates as CancelledException from the underlying prompt.
  */
 final class Form
 {
@@ -72,48 +70,35 @@ final class Form
         return $this->addStep($id, $factory);
     }
 
-    /** @return PromiseInterface<array<string, mixed>> */
-    public function submit(StreamOutput $output, RawInput $input): PromiseInterface
-    {
-        $deferred = new Deferred();
-        $steps    = $this->steps;
+    /** @return array<string, mixed> */
+    public function submit(
+        Suspendable&Disposable $scope,
+        StreamOutput $output,
+        KeyReader $reader,
+    ): array {
         /** @var array<string, mixed> $values */
-        $values   = [];
-        $index    = 0;
+        $values = [];
+        $index  = 0;
 
-        $runStep = null;
-        $runStep = static function () use (&$runStep, &$index, &$values, $steps, $deferred, $output, $input): void {
-            if ($index >= count($steps)) {
-                $deferred->resolve($values);
-                return;
-            }
-
-            $step          = $steps[$index];
+        while ($index < count($this->steps)) {
+            $step          = $this->steps[$index];
             $id            = $step['id'];
             $previousValue = $values[$id] ?? null;
             $prompt        = ($step['factory'])($previousValue);
 
-            $prompt->prompt($output, $input)->then(
-                static function (mixed $value) use (&$index, &$values, $id, &$runStep): void {
-                    $values[$id] = $value;
-                    $index++;
-                    $runStep();
-                },
-                static function (\Throwable $e) use (&$index, &$values, $id, &$runStep, $deferred): void {
-                    if ($e instanceof FormRevertedException) {
-                        unset($values[$id]);
-                        $index = max(0, $index - 1);
-                        $runStep();
-                    } else {
-                        $deferred->reject($e);
-                    }
-                },
-            );
-        };
+            try {
+                $values[$id] = $prompt->prompt($scope, $output, $reader);
+                $index++;
+            } catch (FormRevertedException) {
+                if ($index === 0) {
+                    throw new FormRevertedException();
+                }
+                unset($values[$id]);
+                $index--;
+            }
+        }
 
-        $runStep();
-
-        return $deferred->promise();
+        return $values;
     }
 
     private function addStep(string $id, Closure $factory): self

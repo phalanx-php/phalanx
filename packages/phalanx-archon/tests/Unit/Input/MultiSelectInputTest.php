@@ -9,6 +9,8 @@ use PHPUnit\Framework\Attributes\Test;
 
 final class MultiSelectInputTest extends PromptTestCase
 {
+    private const string CTRL_A = 'ctrl-a';
+
     /** @param list<string> $defaults */
     private function multi(array $defaults = []): MultiSelectInput
     {
@@ -24,12 +26,9 @@ final class MultiSelectInputTest extends PromptTestCase
     #[Test]
     public function enter_with_no_selection_returns_empty_array(): void
     {
-        $result = null;
-        $this->multi()->prompt($this->output, $this->input)->then(static function ($v) use (&$result): void {
-            $result = $v;
-        });
+        $reader = $this->reader([self::ENTER]);
 
-        $this->press(self::ENTER);
+        $result = $this->multi()->prompt($this->scope, $this->output, $reader);
 
         self::assertSame([], $result);
     }
@@ -37,12 +36,9 @@ final class MultiSelectInputTest extends PromptTestCase
     #[Test]
     public function space_toggles_highlighted_item(): void
     {
-        $result = null;
-        $this->multi()->prompt($this->output, $this->input)->then(static function ($v) use (&$result): void {
-            $result = $v;
-        });
+        $reader = $this->reader([self::SPACE, self::ENTER]);
 
-        $this->press(self::SPACE, self::ENTER);
+        $result = $this->multi()->prompt($this->scope, $this->output, $reader);
 
         self::assertSame(['a'], $result);
     }
@@ -50,12 +46,9 @@ final class MultiSelectInputTest extends PromptTestCase
     #[Test]
     public function navigate_and_select_multiple(): void
     {
-        $result = null;
-        $this->multi()->prompt($this->output, $this->input)->then(static function ($v) use (&$result): void {
-            $result = $v;
-        });
+        $reader = $this->reader([self::SPACE, self::DOWN, self::DOWN, self::SPACE, self::ENTER]);
 
-        $this->press(self::SPACE, self::DOWN, self::DOWN, self::SPACE, self::ENTER);
+        $result = $this->multi()->prompt($this->scope, $this->output, $reader);
 
         self::assertEqualsCanonicalizing(['a', 'c'], $result);
     }
@@ -63,12 +56,9 @@ final class MultiSelectInputTest extends PromptTestCase
     #[Test]
     public function space_toggles_off_already_selected_item(): void
     {
-        $result = null;
-        $this->multi(defaults: ['a'])->prompt($this->output, $this->input)->then(static function ($v) use (&$result): void {
-            $result = $v;
-        });
+        $reader = $this->reader([self::SPACE, self::ENTER]);
 
-        $this->press(self::SPACE, self::ENTER);
+        $result = $this->multi(defaults: ['a'])->prompt($this->scope, $this->output, $reader);
 
         self::assertSame([], $result);
     }
@@ -76,12 +66,9 @@ final class MultiSelectInputTest extends PromptTestCase
     #[Test]
     public function ctrl_a_selects_all(): void
     {
-        $result = null;
-        $this->multi()->prompt($this->output, $this->input)->then(static function ($v) use (&$result): void {
-            $result = $v;
-        });
+        $reader = $this->reader([self::CTRL_A, self::ENTER]);
 
-        $this->press(self::CTRL_A, self::ENTER);
+        $result = $this->multi()->prompt($this->scope, $this->output, $reader);
 
         self::assertEqualsCanonicalizing(['a', 'b', 'c'], $result);
     }
@@ -89,12 +76,9 @@ final class MultiSelectInputTest extends PromptTestCase
     #[Test]
     public function ctrl_a_deselects_all_when_all_selected(): void
     {
-        $result = null;
-        $this->multi(defaults: ['a', 'b', 'c'])->prompt($this->output, $this->input)->then(static function ($v) use (&$result): void {
-            $result = $v;
-        });
+        $reader = $this->reader([self::CTRL_A, self::ENTER]);
 
-        $this->press(self::CTRL_A, self::ENTER);
+        $result = $this->multi(defaults: ['a', 'b', 'c'])->prompt($this->scope, $this->output, $reader);
 
         self::assertSame([], $result);
     }
@@ -102,12 +86,9 @@ final class MultiSelectInputTest extends PromptTestCase
     #[Test]
     public function default_values_are_pre_selected(): void
     {
-        $result = null;
-        $this->multi(defaults: ['b'])->prompt($this->output, $this->input)->then(static function ($v) use (&$result): void {
-            $result = $v;
-        });
+        $reader = $this->reader([self::ENTER]);
 
-        $this->press(self::ENTER);
+        $result = $this->multi(defaults: ['b'])->prompt($this->scope, $this->output, $reader);
 
         self::assertSame(['b'], $result);
     }

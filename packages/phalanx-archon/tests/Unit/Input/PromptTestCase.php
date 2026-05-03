@@ -4,13 +4,11 @@ declare(strict_types=1);
 
 namespace Phalanx\Archon\Tests\Unit\Input;
 
-use Phalanx\Archon\Input\RawInput;
 use Phalanx\Archon\Output\StreamOutput;
 use Phalanx\Archon\Output\TerminalEnvironment;
 use Phalanx\Archon\Style\Style;
 use Phalanx\Archon\Style\Theme;
 use PHPUnit\Framework\TestCase;
-use ReflectionMethod;
 
 abstract class PromptTestCase extends TestCase
 {
@@ -19,8 +17,19 @@ abstract class PromptTestCase extends TestCase
     /** @var resource */
     protected mixed $stream;
     protected StreamOutput $output;
-    protected RawInput $input;
-    private ReflectionMethod $dispatchMethod;
+    protected StubScope $scope;
+
+    protected const string ENTER     = 'enter';
+    protected const string BACKSPACE = 'backspace';
+    protected const string UP        = 'up';
+    protected const string DOWN      = 'down';
+    protected const string LEFT      = 'left';
+    protected const string RIGHT     = 'right';
+    protected const string SPACE     = 'space';
+    protected const string TAB       = 'tab';
+    protected const string ESCAPE    = 'escape';
+    protected const string CTRL_C    = 'ctrl-c';
+    protected const string CTRL_U    = 'ctrl-u';
 
     protected function setUp(): void
     {
@@ -37,21 +46,15 @@ abstract class PromptTestCase extends TestCase
             active:  $plain,
         );
 
-        // Non-TTY memory stream — writes still happen, cursor control is skipped.
         $stream = fopen('php://memory', 'w+');
         if ($stream === false) {
             self::fail('Unable to open memory stream.');
         }
 
         $this->stream = $stream;
-        $terminal = new TerminalEnvironment(columns: 80, lines: 24);
+        $terminal     = new TerminalEnvironment(columns: 80, lines: 24);
         $this->output = new StreamOutput($this->stream, $terminal);
-
-        // TTY=true so prompt enters interactive mode; enable()/attach() are never
-        // called, avoiding real stty and STDIN registration.
-        $this->input = new RawInput(isTty: true);
-
-        $this->dispatchMethod = new ReflectionMethod(RawInput::class, 'dispatch');
+        $this->scope  = new StubScope();
     }
 
     protected function tearDown(): void
@@ -59,26 +62,9 @@ abstract class PromptTestCase extends TestCase
         fclose($this->stream);
     }
 
-    /**
-     * Inject raw terminal bytes into RawInput as if typed by the user.
-     * Resolves pending nextKey() deferreds synchronously — no event loop needed.
-     */
-    protected function press(string ...$byteSequences): void
+    /** @param list<string> $keys */
+    protected function reader(array $keys = [], bool $interactive = true): FakeKeyReader
     {
-        foreach ($byteSequences as $bytes) {
-            $this->dispatchMethod->invoke($this->input, $bytes);
-        }
+        return new FakeKeyReader($keys, $interactive);
     }
-
-    protected const string ENTER     = "\r";
-    protected const string BACKSPACE  = "\x7f";
-    protected const string UP        = "\x1b[A";
-    protected const string DOWN      = "\x1b[B";
-    protected const string LEFT      = "\x1b[D";
-    protected const string RIGHT     = "\x1b[C";
-    protected const string SPACE     = ' ';
-    protected const string TAB       = "\x09";
-    protected const string CTRL_C    = "\x03";
-    protected const string CTRL_U    = "\x15";
-    protected const string CTRL_A    = "\x01";
 }
