@@ -51,7 +51,7 @@ final class StoaServerConfigTest extends TestCase
     #[Test]
     public function phalanxApplicationConfigOverridesRuntimeFallback(): void
     {
-        $host = $this->createMock(AppHost::class);
+        $host = $this->createStub(AppHost::class);
         $runtime = new StoaServerConfig(host: '0.0.0.0', port: 8080);
         $explicit = new StoaServerConfig(host: '127.0.0.2', port: 8181);
         $application = new StoaApplication($host, RouteGroup::of([]), $explicit);
@@ -62,7 +62,7 @@ final class StoaServerConfigTest extends TestCase
     #[Test]
     public function runtimeFallbackIsUsedWhenApplicationHasNoServerConfig(): void
     {
-        $host = $this->createMock(AppHost::class);
+        $host = $this->createStub(AppHost::class);
         $runtime = new StoaServerConfig(host: '127.0.0.3', port: 8282);
         $application = new StoaApplication($host, RouteGroup::of([]));
 
@@ -76,7 +76,7 @@ final class StoaServerConfigTest extends TestCase
             self::markTestSkipped('symfony/runtime is not installed.');
         }
 
-        $host = $this->createMock(AppHost::class);
+        $host = $this->createStub(AppHost::class);
         $application = new StoaApplication($host, RouteGroup::of([]));
 
         $runner = (new Runtime())->getRunner($application);
@@ -94,6 +94,6 @@ final class StoaServerConfigTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Stoa runtime expects a StoaApplication');
 
-        (new Runtime())->getRunner($this->createMock(AppHost::class));
+        (new Runtime())->getRunner($this->createStub(AppHost::class));
     }
 }

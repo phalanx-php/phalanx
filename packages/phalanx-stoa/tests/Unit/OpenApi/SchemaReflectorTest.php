@@ -120,7 +120,7 @@ final class SchemaReflectorTest extends TestCase
 
     private function createNamedType(string $name): ReflectionNamedType
     {
-        $type = $this->createMock(ReflectionNamedType::class);
+        $type = $this->createStub(ReflectionNamedType::class);
         $type->method('getName')->willReturn($name);
         $type->method('allowsNull')->willReturn(false);
 

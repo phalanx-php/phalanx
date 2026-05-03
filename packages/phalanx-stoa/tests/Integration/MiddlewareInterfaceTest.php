@@ -66,10 +66,10 @@ final class MiddlewareInterfaceTest extends TestCase
 
     private function createRequest(string $method, string $path): ServerRequestInterface
     {
-        $uri = $this->createMock(UriInterface::class);
+        $uri = $this->createStub(UriInterface::class);
         $uri->method('getPath')->willReturn($path);
 
-        $request = $this->createMock(ServerRequestInterface::class);
+        $request = $this->createStub(ServerRequestInterface::class);
         $request->method('getMethod')->willReturn($method);
         $request->method('getUri')->willReturn($uri);
         $request->method('getQueryParams')->willReturn([]);

@@ -216,15 +216,15 @@ final class RouteContractTest extends TestCase
         array $json = [],
         array $query = [],
     ): ServerRequestInterface {
-        $uri = $this->createMock(UriInterface::class);
+        $uri = $this->createStub(UriInterface::class);
         $uri->method('getPath')->willReturn($path);
 
         $body = json_encode($json, JSON_THROW_ON_ERROR);
 
-        $stream = $this->createMock(StreamInterface::class);
+        $stream = $this->createStub(StreamInterface::class);
         $stream->method('__toString')->willReturn($body);
 
-        $request = $this->createMock(ServerRequestInterface::class);
+        $request = $this->createStub(ServerRequestInterface::class);
         $request->method('getMethod')->willReturn($method);
         $request->method('getUri')->willReturn($uri);
         $request->method('getQueryParams')->willReturn($query);
