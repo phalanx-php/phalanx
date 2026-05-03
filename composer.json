@@ -110,6 +110,7 @@
         "cs": "php vendor/bin/phpcs --standard=packages/phalanx-aegis/phpcs.xml",
         "cs:fix": "php vendor/bin/phpcbf --standard=packages/phalanx-aegis/phpcs.xml",
         "bench:aegis": "php -d memory_limit=512M benchmarks/kernel/run.php",
+        "bench:stoa": "php -d memory_limit=512M benchmarks/http/run.php",
         "demo:aegis": ["@demo:aegis:runtime", "@demo:aegis:supervision", "@demo:aegis:cancellation", "@demo:aegis:singleflight", "@demo:aegis:memory"],
         "demo:aegis:runtime": "php packages/phalanx-aegis/examples/01-runtime-policy/demo.php",
         "demo:aegis:supervision": "php packages/phalanx-aegis/examples/02-scope-supervision/demo.php",
