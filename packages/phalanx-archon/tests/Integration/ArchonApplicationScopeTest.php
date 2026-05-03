@@ -7,6 +7,7 @@ namespace Phalanx\Archon\Tests\Integration;
 use Phalanx\Archon\Archon;
 use Phalanx\Archon\CommandGroup;
 use Phalanx\Archon\CommandScope;
+use Phalanx\Archon\Identity\ArchonResourceSid;
 use Phalanx\Runtime\Memory\ManagedResourceState;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Scopeable;
@@ -32,7 +33,9 @@ final class ArchonApplicationScopeTest extends CoroutineTestCase
         self::assertSame('probe', ArchonProbeCommand::$commandName);
         self::assertNotSame('', ArchonProbeCommand::$commandResourceId);
         self::assertSame('task:probe', ArchonProbeCommand::$taskResult);
-        self::assertSame(ManagedResourceState::Closed, $app->host()->runtime()->memory->resources->all('archon.command')[0]->state);
+        self::assertSame(ManagedResourceState::Closed, $app->host()->runtime()->memory->resources->all(
+            ArchonResourceSid::Command,
+        )[0]->state);
         PhalanxAssert::assertNoLiveTasks($app->host()->supervisor());
         $app->shutdown();
     }
