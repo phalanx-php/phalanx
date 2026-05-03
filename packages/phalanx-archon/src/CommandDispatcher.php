@@ -99,7 +99,7 @@ final class CommandDispatcher
     ): int {
         if ($command === 'help') {
             $lifecycle->activate('archon.help');
-            $this->writeHelp($args[0] ?? null);
+            $this->writeHelp($args);
 
             return 0;
         }
@@ -137,19 +137,26 @@ final class CommandDispatcher
         return implode(' ', $this->commandPath($command, $args));
     }
 
-    private function writeHelp(?string $name): void
+    /** @param list<string> $path */
+    private function writeHelp(array $path): void
     {
-        if ($name === null) {
+        if ($path === []) {
             $this->output()->persist($this->topLevelHelp());
             return;
         }
+
+        $name = array_shift($path);
 
         if ($this->commands->isGroup($name)) {
             $group = $this->commands->group($name);
             assert($group !== null);
 
-            $this->output()->persist(HelpGenerator::forGroup($name, $group));
+            $this->writeGroupHelpPath([$name], $group, $path);
             return;
+        }
+
+        if ($path !== []) {
+            throw UnknownCommand::named(implode(' ', [$name, ...$path]));
         }
 
         $handler = $this->commands->handlers()->get($name);
@@ -164,6 +171,48 @@ final class CommandDispatcher
         }
 
         throw UnknownCommand::named($name);
+    }
+
+    /**
+     * @param list<string> $prefix
+     * @param list<string> $path
+     */
+    private function writeGroupHelpPath(array $prefix, CommandGroup $group, array $path): void
+    {
+        while (true) {
+            $next = array_shift($path);
+
+            if ($next === null || $next === 'help' || $next === '--help') {
+                $this->output()->persist(HelpGenerator::forGroup(implode(' ', $prefix), $group));
+                return;
+            }
+
+            $prefix[] = $next;
+            $child = $group->group($next);
+
+            if ($child !== null) {
+                $group = $child;
+                continue;
+            }
+
+            $handler = $group->handlers()->get($next);
+            if (
+                $handler !== null
+                && $handler->config instanceof CommandConfig
+                && $this->isHelpSuffix($path)
+            ) {
+                $this->output()->persist(HelpGenerator::forCommand(implode(' ', $prefix), $handler->config));
+                return;
+            }
+
+            throw UnknownCommand::named(implode(' ', [...$prefix, ...$path]));
+        }
+    }
+
+    /** @param list<string> $path */
+    private function isHelpSuffix(array $path): bool
+    {
+        return $path === [] || $path === ['help'] || $path === ['--help'];
     }
 
     private function writeInvalidInput(string $command, InvalidInputException $e): void
