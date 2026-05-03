@@ -119,7 +119,7 @@ final class ConcurrentNoopCase extends AbstractBenchmarkCase
             }
         }
 
-        $this->scope->concurrent($this->tasks);
+        $this->scope->concurrent(...$this->tasks);
     }
 }
 
@@ -151,7 +151,7 @@ final class ConcurrentDelayCase extends AbstractBenchmarkCase
             }
         }
 
-        $this->scope->concurrent($this->tasks);
+        $this->scope->concurrent(...$this->tasks);
     }
 }
 
@@ -191,7 +191,7 @@ final class SingleflightWaitersCase extends AbstractBenchmarkCase
             );
         }
 
-        $this->scope->concurrent($tasks);
+        $this->scope->concurrent(...$tasks);
     }
 }
 
@@ -222,7 +222,7 @@ final class CancelSleepingChildrenCase extends AbstractBenchmarkCase
         });
 
         try {
-            $scope->concurrent($tasks);
+            $scope->concurrent(...$tasks);
         } catch (\Throwable) {
             // Cancellation is the measured path for this benchmark.
         } finally {

@@ -7,13 +7,19 @@ namespace Phalanx\Diagnostics;
 use OpenSwoole\Coroutine;
 use OpenSwoole\Coroutine\PostgreSQL;
 use OpenSwoole\Table;
+use Phalanx\Runtime\Identity\AegisCounterSid;
+use Phalanx\Runtime\Memory\ManagedResource;
+use Phalanx\Runtime\Memory\ManagedResourceState;
 use Phalanx\Runtime\Memory\RuntimeMemory;
+use Phalanx\Runtime\Memory\RuntimeTableStats;
 use Phalanx\Runtime\RuntimeHooks;
 use Phalanx\Runtime\RuntimePolicy;
 use Phalanx\Supervisor\LedgerStorage;
 
 final readonly class EnvironmentDoctor
 {
+    private const MEMORY_PRESSURE_RATIO = 0.9;
+
     public function __construct(
         private ?LedgerStorage $ledger = null,
         private ?RuntimePolicy $runtimePolicy = null,
@@ -25,6 +31,79 @@ final readonly class EnvironmentDoctor
     private static function formatNames(array $names): string
     {
         return $names === [] ? 'none' : implode(', ', $names);
+    }
+
+    /** @param array<string, int> $counts */
+    private static function formatCounts(array $counts): string
+    {
+        $parts = [];
+        foreach ($counts as $name => $count) {
+            $parts[] = "{$name}={$count}";
+        }
+
+        return implode(', ', $parts);
+    }
+
+    /** @return array<string, int> */
+    private static function resourceStateCounts(ManagedResource ...$resources): array
+    {
+        $counts = [];
+        foreach (ManagedResourceState::cases() as $state) {
+            $counts[$state->value] = 0;
+        }
+
+        foreach ($resources as $resource) {
+            $counts[$resource->state->value]++;
+        }
+
+        return $counts;
+    }
+
+    private static function terminalResourceCount(ManagedResource ...$resources): int
+    {
+        $terminal = 0;
+        foreach ($resources as $resource) {
+            if ($resource->state->isTerminal()) {
+                $terminal++;
+            }
+        }
+
+        return $terminal;
+    }
+
+    private static function listenerFailureDetail(int $count): string
+    {
+        return $count === 1 ? '1 failure' : "{$count} failures";
+    }
+
+    private static function droppedEventDetail(int $count): string
+    {
+        return $count === 1 ? '1 dropped event' : "{$count} dropped events";
+    }
+
+    private static function memoryPressureOk(RuntimeTableStats $stats): bool
+    {
+        if ($stats->currentRows > $stats->configuredRows) {
+            return false;
+        }
+
+        return $stats->highWaterRows < (int) ceil($stats->configuredRows * self::MEMORY_PRESSURE_RATIO);
+    }
+
+    private static function memoryPressureDetail(RuntimeTableStats $stats): string
+    {
+        $highWaterPercent = $stats->configuredRows === 0
+            ? 0.0
+            : ($stats->highWaterRows / $stats->configuredRows) * 100;
+
+        return sprintf(
+            '%d/%d rows, %d bytes, high-water %d (%.2f%%)',
+            $stats->currentRows,
+            $stats->configuredRows,
+            $stats->memorySize,
+            $stats->highWaterRows,
+            $highWaterPercent,
+        );
     }
 
     public function check(): DoctorReport
@@ -98,28 +177,47 @@ final readonly class EnvironmentDoctor
         }
 
         if ($this->memory !== null) {
+            $resources = $this->memory->resources->all();
+            $totalResources = count($resources);
+            $terminalResources = self::terminalResourceCount(...$resources);
+            $liveResources = $totalResources - $terminalResources;
+
             $checks[] = new DoctorCheck(
                 'runtime.resources.live',
                 true,
-                (string) $this->memory->resources->liveCount(),
+                sprintf(
+                    'live=%d, total=%d, terminal=%d, non_terminal=%d',
+                    $liveResources,
+                    $totalResources,
+                    $terminalResources,
+                    $liveResources,
+                ),
             );
             $checks[] = new DoctorCheck(
-                'runtime.events.dropped',
+                'runtime.resources.states',
                 true,
-                (string) $this->memory->counters->get('aegis.runtime.events.dropped'),
+                self::formatCounts(self::resourceStateCounts(...$resources)),
+            );
+
+            $listenerFailures = count($this->memory->events->listenerErrors());
+            $checks[] = new DoctorCheck(
+                'runtime.events.listener_failures',
+                $listenerFailures === 0,
+                self::listenerFailureDetail($listenerFailures),
+            );
+
+            $droppedEvents = $this->memory->counters->get(AegisCounterSid::RuntimeEventsDropped);
+            $checks[] = new DoctorCheck(
+                'runtime.events.dropped',
+                $droppedEvents === 0,
+                self::droppedEventDetail($droppedEvents),
             );
 
             foreach ($this->memory->stats() as $stats) {
                 $checks[] = new DoctorCheck(
                     'runtime.memory.' . $stats->name,
-                    $stats->currentRows <= $stats->configuredRows,
-                    sprintf(
-                        '%d/%d rows, %d bytes, high-water %d',
-                        $stats->currentRows,
-                        $stats->configuredRows,
-                        $stats->memorySize,
-                        $stats->highWaterRows,
-                    ),
+                    self::memoryPressureOk($stats),
+                    self::memoryPressureDetail($stats),
                 );
             }
         }

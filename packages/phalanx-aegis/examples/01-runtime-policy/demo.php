@@ -24,7 +24,12 @@ $exitCode = $app->run(Task::named(
         $failed = !$report->isHealthy();
 
         foreach ($report as $check) {
-            if (!str_starts_with($check->name, 'openswoole.') && !str_starts_with($check->name, 'runtime.memory.')) {
+            if (
+                !str_starts_with($check->name, 'openswoole.')
+                && !str_starts_with($check->name, 'runtime.resources.')
+                && !str_starts_with($check->name, 'runtime.events.')
+                && !str_starts_with($check->name, 'runtime.memory.')
+            ) {
                 continue;
             }
 
