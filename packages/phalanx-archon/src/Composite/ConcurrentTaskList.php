@@ -11,7 +11,6 @@ use Phalanx\Archon\Widget\TaskState;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
-use React\EventLoop\Loop;
 
 /**
  * Runs a named set of tasks concurrently with a live spinner display.
@@ -19,9 +18,11 @@ use React\EventLoop\Loop;
  * Each task: Pending → Running → Success | Error. Individual failures do not
  * abort the batch — settle() is used for per-task error isolation.
  *
- * The render timer fires at $spinnerFps Hz while the fiber is suspended inside
- * settle(). Timer invariant: ALWAYS cancelled in the finally block before
- * run() returns. Missing this corrupts subsequent terminal output.
+ * The render tick fires at $spinnerFps Hz on a scope-owned Subscription
+ * while the fiber is suspended inside settle(). cancel() runs in the
+ * finally block before the final persist; the scope would also dispose
+ * the subscription on teardown, but eager cancellation prevents a
+ * trailing render firing between the bag returning and persist.
  *
  * Usage (from within a command fiber):
  *
@@ -65,15 +66,15 @@ final class ConcurrentTaskList
             $taskList->setState($id, TaskState::Running);
         }
 
-        $timer = Loop::addPeriodicTimer(
+        $output->update($taskList->render(0));
+
+        $subscription = $this->scope->periodic(
             1.0 / $this->spinnerFps,
             static function () use ($taskList, &$spinnerTick, $output): void {
                 $spinnerTick++;
                 $output->update($taskList->render($spinnerTick));
             },
         );
-
-        $output->update($taskList->render(0));
 
         try {
             $bag = $this->scope->settle(
@@ -88,7 +89,7 @@ final class ConcurrentTaskList
                 }
             }
         } finally {
-            Loop::cancelTimer($timer);
+            $subscription->cancel();
             $output->persist($taskList->render($spinnerTick));
         }
     }

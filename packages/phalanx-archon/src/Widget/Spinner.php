@@ -7,19 +7,20 @@ namespace Phalanx\Archon\Widget;
 use Phalanx\Archon\Style\Theme;
 
 /**
- * Stateless spinner renderer. Caller owns the tick counter and the timer.
+ * Stateless spinner renderer. Caller owns the tick counter and the subscription.
  *
- * Caller pattern:
+ * Caller pattern (scope-owned periodic):
  *   $tick = 0;
- *   $timer = Loop::addPeriodicTimer(0.08, static function () use ($spinner, $output, &$tick): void {
+ *   $sub = $scope->periodic(0.08, static function () use ($spinner, $output, &$tick): void {
  *       $output->update($spinner->frame($tick++, 'Working...'));
  *   });
  *   // ... async work ...
- *   Loop::cancelTimer($timer);
+ *   $sub->cancel();
  *   $output->clear();
  *
- * The timer MUST be cancelled before any persist() output follows — an
- * orphaned periodic timer will run indefinitely, preventing loop exit.
+ * The subscription cancels automatically on scope dispose; explicit cancel()
+ * before any persist() output is required to avoid a torn render between
+ * the final tick and the persisted line.
  */
 final class Spinner
 {
