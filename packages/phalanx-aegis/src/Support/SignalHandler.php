@@ -14,6 +14,14 @@ final readonly class SignalHandler
         self::registerSignal(SIGTERM, $shutdown);
     }
 
+    public static function ignoreShutdownSignals(): void
+    {
+        self::registerSignal(SIGINT, static function (): void {
+        });
+        self::registerSignal(SIGTERM, static function (): void {
+        });
+    }
+
     private static function registerSignal(int $signal, callable $shutdown): void
     {
         set_error_handler(static fn(): bool => true);

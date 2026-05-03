@@ -6,6 +6,7 @@ namespace Phalanx\Stoa;
 
 use GuzzleHttp\Psr7\Response as PsrResponse;
 use GuzzleHttp\Psr7\Utils;
+use OpenSwoole\Constant;
 use OpenSwoole\Http\Request;
 use OpenSwoole\Http\Response;
 use OpenSwoole\Http\Server;
@@ -24,6 +25,7 @@ final class StoaRunner
 {
     private bool $running = false;
     private bool $draining = false;
+    private bool $serverShutdownRequested = false;
     private bool $workerStarted = false;
     private int $nextRequestId = 0;
     private ?int $drainTimer = null;
@@ -142,6 +144,8 @@ final class StoaRunner
         $this->server->set([
             'worker_num' => 1,
             'enable_coroutine' => true,
+            'log_level' => Constant::LOG_WARNING,
+            'max_wait_time' => max(1, (int) ceil($this->config->drainTimeout)),
         ]);
 
         $this->server->on('start', function () use ($listen): void {
@@ -150,7 +154,10 @@ final class StoaRunner
             if (!$this->config->quiet) {
                 printf("Phalanx Server listening on %s\n", $listen);
             }
-            SignalHandler::register($this->stop(...));
+            SignalHandler::register($this->shutdownOpenSwooleServer(...));
+        });
+        $this->server->on('managerStart', function (): void {
+            SignalHandler::ignoreShutdownSignals();
         });
         $this->server->on('workerStart', $this->startupWorker(...));
         $this->server->on('workerStop', $this->shutdownWorker(...));
@@ -221,6 +228,7 @@ final class StoaRunner
             return;
         }
 
+        SignalHandler::register($this->stop(...));
         $this->app->startup();
         $this->workerStarted = true;
         $this->app->trace()->log(TraceType::LifecycleStartup, 'worker', ['worker' => $workerId]);
@@ -416,8 +424,18 @@ final class StoaRunner
         $this->server = null;
 
         if ($shouldShutdownServer) {
-            $server->shutdown();
+            $this->shutdownOpenSwooleServer($server);
         }
+    }
+
+    private function shutdownOpenSwooleServer(?Server $server = null): void
+    {
+        if ($this->serverShutdownRequested) {
+            return;
+        }
+
+        $this->serverShutdownRequested = true;
+        ($server ?? $this->server)?->shutdown();
     }
 
     /** @param array<string, mixed> $body */
