@@ -1,0 +1,22 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Phalanx\Archon\Command;
+
+use RuntimeException;
+
+final class InvalidInputException extends RuntimeException
+{
+    public function __construct(
+        string $message,
+        public readonly ?CommandConfig $config = null,
+    ) {
+        parent::__construct($message);
+    }
+
+    public function withConfig(CommandConfig $config): self
+    {
+        return new self($this->getMessage(), $config);
+    }
+}

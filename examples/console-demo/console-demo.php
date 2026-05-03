@@ -6,13 +6,13 @@ declare(strict_types=1);
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 require __DIR__ . '/DemoCommand.php';
 
-use Phalanx\Archon\Archon;
-use Phalanx\Archon\Arg;
-use Phalanx\Archon\CommandConfig;
-use Phalanx\Archon\CommandGroup;
+use Phalanx\Archon\Application\Archon;
+use Phalanx\Archon\Command\Arg;
+use Phalanx\Archon\Command\CommandConfig;
+use Phalanx\Archon\Command\CommandGroup;
 use Phalanx\Archon\Demo\DemoCommand;
-use Phalanx\Archon\Opt;
-use Phalanx\Archon\Style\ConsoleServiceBundle;
+use Phalanx\Archon\Command\Opt;
+use Phalanx\Archon\Console\Style\ConsoleServiceBundle;
 
 exit(Archon::starting(['argv' => $argv])
     ->providers(new ConsoleServiceBundle())

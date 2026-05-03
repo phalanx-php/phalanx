@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Archon\Tests\Fixtures\Commands;
 
-use Phalanx\Archon\CommandScope;
+use Phalanx\Archon\Command\CommandScope;
 use Phalanx\Task\Scopeable;
 
 final class ScanCommand implements Scopeable

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Archon\Demo;
 
-use Phalanx\Archon\CommandScope;
-use Phalanx\Archon\Output\StreamOutput;
+use Phalanx\Archon\Command\CommandScope;
+use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Scopeable;
 use Phalanx\Task\Task;

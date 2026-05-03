@@ -17,14 +17,14 @@ Build CLI applications on the same Aegis-managed runtime used by Phalanx service
 
 declare(strict_types=1);
 
-use Phalanx\Archon\Archon;
-use Phalanx\Archon\Arg;
-use Phalanx\Archon\CommandConfig;
-use Phalanx\Archon\CommandGroup;
-use Phalanx\Archon\CommandScope;
-use Phalanx\Archon\ConsoleConfig;
-use Phalanx\Archon\ConsoleSignalPolicy;
-use Phalanx\Archon\Opt;
+use Phalanx\Archon\Application\Archon;
+use Phalanx\Archon\Command\Arg;
+use Phalanx\Archon\Command\CommandConfig;
+use Phalanx\Archon\Command\CommandGroup;
+use Phalanx\Archon\Command\CommandScope;
+use Phalanx\Archon\Application\ConsoleConfig;
+use Phalanx\Archon\Runtime\Identity\ConsoleSignalPolicy;
+use Phalanx\Archon\Command\Opt;
 use Phalanx\Archon\Output\StreamOutput;
 use Phalanx\Archon\Style\ConsoleServiceBundle;
 use Phalanx\Task\Scopeable;
