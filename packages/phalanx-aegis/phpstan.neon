@@ -2,6 +2,8 @@ parameters:
     level: 8
     paths:
         - src
+    scanDirectories:
+        - ../../vendor/openswoole/ide-helper
     bootstrapFiles:
         - phpstan-bootstrap.php
     excludePaths:

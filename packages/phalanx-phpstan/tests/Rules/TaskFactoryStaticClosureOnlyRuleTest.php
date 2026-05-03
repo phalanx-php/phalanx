@@ -19,8 +19,8 @@ final class TaskFactoryStaticClosureOnlyRuleTest extends RuleTestCase
         $this->analyse(
             [__DIR__ . '/Fixtures/static-closure-only.php'],
             [
-                ['Closure passed to Task::of() must be static so it cannot capture $this in a long-running coroutine.', 27],
-                ['Closure passed to Task::named() must be static so it cannot capture $this in a long-running coroutine.', 28],
+                ['Closure passed to Task::of() must be static so it cannot capture $this in a long-running coroutine.', 32],
+                ['Closure passed to Task::named() must be static so it cannot capture $this in a long-running coroutine.', 33],
             ],
         );
     }

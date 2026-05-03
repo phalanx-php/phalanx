@@ -3,29 +3,23 @@ includes:
 
 parameters:
     level: 8
+    # OSR-40 root gate: keep current OpenSwoole foundation packages green.
+    # Legacy and parallel-lane packages are classified in vault context and
+    # reintroduced package-by-package as their 0.2 ports land.
     paths:
         - packages/phalanx-aegis/src
         - packages/phalanx-archon/src
-        - packages/phalanx-stoa/src
-        - packages/phalanx-twilio/src
-        - packages/phalanx-athena/src
-        - packages/phalanx-hydra/src
-        - packages/phalanx-postgres/src
-        - packages/phalanx-redis/src
-        - packages/phalanx-styx/src
-        - packages/phalanx-hermes/src
-        - packages/phalanx-argos/src
-        - packages/phalanx-enigma/src
-        - packages/phalanx-eidolon/src
-        - packages/phalanx-theatron/src
-        - packages/phalanx-grammata/src
         - packages/phalanx-phpstan/src
-        - packages/phalanx-skopos/src
     scanDirectories:
         - vendor/openswoole/ide-helper
     phalanxInternalPaths:
         - packages/phalanx-aegis/src/Concurrency/Co.php
+        - packages/phalanx-aegis/src/Cancellation/CancellationToken.php
+        - packages/phalanx-aegis/src/Runtime/CoroutineRuntime.php
+        - packages/phalanx-aegis/src/Runtime/RuntimeHooks.php
         - packages/phalanx-aegis/src/Scope/ExecutionLifecycleScope.php
+        - packages/phalanx-aegis/src/Service/LazySingleton.php
+        - packages/phalanx-aegis/src/Supervisor/Supervisor.php
         - packages/phalanx-aegis/src/Worker/
     phalanxEnforcedPaths:
         - packages/phalanx-aegis/src

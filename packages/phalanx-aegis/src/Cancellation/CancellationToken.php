@@ -102,7 +102,6 @@ class CancellationToken
         $this->cancelled = true;
 
         if ($this->timerId !== null) {
-            /** @phpstan-ignore arguments.count */
             Timer::clear($this->timerId);
             $this->timerId = null;
         }
