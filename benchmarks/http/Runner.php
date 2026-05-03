@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Benchmarks\Http;
 
+use RuntimeException;
 use Throwable;
 
 use function Phalanx\Benchmarks\Http\Cases\stoaHttpCases;
@@ -82,6 +83,12 @@ final class Runner
             $results[] = $this->measure($case, $metadata);
         }
 
+        if (isset($this->options['baseline'])) {
+            foreach ($this->compareBaseline($results, $this->options['baseline']) as $warning) {
+                fwrite(STDERR, $warning . PHP_EOL);
+            }
+        }
+
         if (($this->options['format'] ?? 'table') === 'json') {
             $this->printJson($results, $metadata);
             return 0;
@@ -93,7 +100,8 @@ final class Runner
 
     private function printHelp(): void
     {
-        echo "Usage: php benchmarks/http/run.php [--case=name] [--format=table|json]\n";
+        echo "Usage: php benchmarks/http/run.php [--case=name] [--format=table|json] [--baseline=path]\n";
+        echo "       [--stable-threshold=0.10] [--drain-threshold=0.20]\n";
         echo "\nAvailable cases:\n";
 
         foreach (stoaHttpCases()->cases as $case) {
@@ -168,6 +176,91 @@ final class Runner
             samplesNs: $samples,
             metadata: $metadata,
         );
+    }
+
+    /**
+     * @param list<HttpBenchmarkResult> $results
+     * @return list<string>
+     */
+    private function compareBaseline(array $results, string $path): array
+    {
+        if (!is_file($path)) {
+            throw new RuntimeException("Baseline file not found: {$path}");
+        }
+
+        $raw = file_get_contents($path);
+        if ($raw === false) {
+            throw new RuntimeException("Unable to read baseline file: {$path}");
+        }
+
+        $decoded = json_decode($raw, true, flags: JSON_THROW_ON_ERROR);
+        if (!is_array($decoded) || !isset($decoded['results']) || !is_array($decoded['results'])) {
+            throw new RuntimeException("Baseline file must contain a results array: {$path}");
+        }
+
+        $baselineByCase = [];
+        foreach ($decoded['results'] as $result) {
+            if (!is_array($result) || !isset($result['case']) || !is_string($result['case'])) {
+                continue;
+            }
+
+            $baselineByCase[$result['case']] = $result;
+        }
+
+        $warnings = [];
+        foreach ($results as $result) {
+            $baseline = $baselineByCase[$result->case] ?? null;
+            if (!is_array($baseline)) {
+                continue;
+            }
+
+            foreach (['mean_us' => $result->meanUs(), 'p95_us' => $result->p95Us()] as $metric => $current) {
+                $previous = $baseline[$metric] ?? null;
+                if (!is_int($previous) && !is_float($previous)) {
+                    continue;
+                }
+                if ($previous <= 0.0) {
+                    continue;
+                }
+
+                $threshold = $this->thresholdForCase($result->case);
+                $change = ($current - (float) $previous) / (float) $previous;
+                if ($change <= $threshold) {
+                    continue;
+                }
+
+                $warnings[] = sprintf(
+                    'Benchmark regression warning: %s %s %.2fus -> %.2fus (%+.1f%%, threshold %.0f%%)',
+                    $result->case,
+                    $metric,
+                    (float) $previous,
+                    $current,
+                    $change * 100,
+                    $threshold * 100,
+                );
+            }
+        }
+
+        return $warnings;
+    }
+
+    private function thresholdForCase(string $case): float
+    {
+        if ($case === 'stoa_drain_cleanup') {
+            return $this->floatOption('drain-threshold', 0.20);
+        }
+
+        return $this->floatOption('stable-threshold', 0.10);
+    }
+
+    private function floatOption(string $name, float $default): float
+    {
+        $raw = $this->options[$name] ?? null;
+        if ($raw === null || !is_numeric($raw)) {
+            return $default;
+        }
+
+        return max(0.0, (float) $raw);
     }
 
     /**
