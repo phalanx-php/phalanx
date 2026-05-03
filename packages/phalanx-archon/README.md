@@ -25,8 +25,8 @@ use Phalanx\Archon\Command\CommandScope;
 use Phalanx\Archon\Application\ConsoleConfig;
 use Phalanx\Archon\Runtime\Identity\ConsoleSignalPolicy;
 use Phalanx\Archon\Command\Opt;
-use Phalanx\Archon\Output\StreamOutput;
-use Phalanx\Archon\Style\ConsoleServiceBundle;
+use Phalanx\Archon\Console\Output\StreamOutput;
+use Phalanx\Archon\Console\Style\ConsoleServiceBundle;
 use Phalanx\Task\Scopeable;
 
 final class DeployCommand implements Scopeable
@@ -86,4 +86,4 @@ exit(Archon::starting(['argv' => $argv])
 - `ConsoleConfig` owns argv, default command, output streams, terminal dimensions, and signal policy.
 - `CommandScope` exposes parsed args/options, command identity, managed resource id, services, cancellation, and supervised task execution.
 
-Interactive prompts, React-backed widgets, and timer-driven TUI surfaces are still being replaced for the 0.2 OpenSwoole runtime. Do not build new code against those APIs yet.
+Interactive prompts (`Console\Input\BasePrompt` and friends), composite widgets (`Console\Widget\Form`, `Accordion`, `ConcurrentTaskList`), and `Scan\ScanProgress` run on the Aegis-managed runtime: each `prompt()`, `submit()`, and `run()` accepts `Suspendable&Disposable` plus a `KeyReader`, suspending through `$scope->call(...)` under typed `WaitReason::input()` waits and tying any periodic redraw to a scope-owned `Subscription`.
