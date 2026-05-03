@@ -40,12 +40,13 @@ composer require phalanx/stoa
 
 ## OpenSwoole Runtime
 
-Stoa 0.2 uses `StoaRunner` as the native OpenSwoole HTTP runner.
+Stoa 0.2 uses `Stoa::starting()` as the native OpenSwoole HTTP app builder.
 
 - Each request creates one timeout cancellation token and one request scope.
 - The PSR-7 request is attached as the `request` scope attribute.
-- `RouteGroup` dispatch returns a PSR-7 response or a value converted by `StoaRunner::toResponse()`.
+- `RouteGroup` dispatch returns a PSR-7 response or a value converted by the Stoa runner.
 - Scope disposal and token cancellation run in `finally`.
+- Responses include `X-Powered-By: Phalanx` by default unless disabled or explicitly set by the handler.
 - Debug 500 responses include request lifecycle state and an Aegis task-tree snapshot.
 - SSE, WebSocket, and UDP are deferred until they can be rebuilt on native OpenSwoole primitives.
 
@@ -54,29 +55,27 @@ Stoa 0.2 uses `StoaRunner` as the native OpenSwoole HTTP runner.
 ```php
 <?php
 
-use Phalanx\Application;
+use Phalanx\Stoa\RequestScope;
 use Phalanx\Stoa\RouteGroup;
-use Phalanx\Stoa\StoaRunner;
-use Phalanx\Scope;
+use Phalanx\Stoa\Stoa;
 use Phalanx\Task\Scopeable;
 
 final class HealthCheck implements Scopeable
 {
-    public function __invoke(Scope $scope): mixed
+    public function __invoke(RequestScope $scope): mixed
     {
         return 'Hello, Phalanx!';
     }
 }
 
-$app = Application::starting()->compile();
-
 $routes = RouteGroup::of([
     'GET /hello' => HealthCheck::class,
 ]);
 
-StoaRunner::from($app)
-    ->withRoutes($routes)
-    ->run('0.0.0.0:8080');
+Stoa::starting()
+    ->routes($routes)
+    ->listen('0.0.0.0:8080')
+    ->run();
 ```
 
 ```
@@ -548,15 +547,15 @@ return RouteGroup::of([
 ]);
 ```
 
-`StoaRunner` accepts directory paths directly:
+`Stoa::starting()` accepts route files or directories directly:
 
 ```php
 <?php
 
-use Phalanx\Stoa\StoaRunner;
+use Phalanx\Stoa\Stoa;
 
-StoaRunner::from($app)
-    ->withRoutes(__DIR__ . '/routes')
+Stoa::starting()
+    ->routes(__DIR__ . '/routes')
     ->run();
 ```
 
@@ -639,7 +638,7 @@ $scope->auth->token();
 
 ## ToResponse Interface
 
-Domain objects can implement `ToResponse` to control their own HTTP serialization. `StoaRunner` calls `toResponse()` automatically when a handler returns a `ToResponse` instance.
+Domain objects can implement `ToResponse` to control their own HTTP serialization. Stoa calls `toResponse()` automatically when a handler returns a `ToResponse` instance.
 
 The interface requires a `$status` property hook alongside the `toResponse()` method -- both are needed for the runner and OpenAPI generator to work correctly:
 

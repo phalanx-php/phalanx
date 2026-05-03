@@ -5,13 +5,9 @@ declare(strict_types=1);
 require __DIR__ . '/../bootstrap.php';
 
 use Acme\StoaDemo\Advanced\DemoServiceBundle;
-use Phalanx\Application;
-use Phalanx\Stoa\StoaRunner;
+use Phalanx\Stoa\Stoa;
 
 $listen = $argv[1] ?? '127.0.0.1:8082';
-$app = Application::starting()
-    ->providers(new DemoServiceBundle())
-    ->compile();
 $exampleHost = str_starts_with($listen, '0.0.0.0:')
     ? '127.0.0.1:' . substr($listen, strlen('0.0.0.0:'))
     : $listen;
@@ -29,6 +25,9 @@ curl -i -X POST {$baseUrl}/api/v1/admin/jobs -H 'Authorization: Bearer demo-toke
 
 BOOT;
 
-StoaRunner::from($app)
-    ->withRoutes(require __DIR__ . '/routes.php')
-    ->run($listen);
+Stoa::starting()
+    ->providers(new DemoServiceBundle())
+    ->routes(__DIR__ . '/routes.php')
+    ->listen($listen)
+    ->quiet()
+    ->run();

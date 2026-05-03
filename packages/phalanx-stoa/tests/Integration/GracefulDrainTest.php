@@ -13,6 +13,7 @@ use Phalanx\Service\Services;
 use Phalanx\Stoa\StoaRunner;
 use Phalanx\Stoa\RequestScope;
 use Phalanx\Stoa\RouteGroup;
+use Phalanx\Stoa\StoaServerConfig;
 use Phalanx\Tests\Stoa\Fixtures\EventTrackingSlowHandler;
 use Phalanx\Tests\Stoa\Fixtures\Routes\StatusOk;
 use Phalanx\Tests\Stoa\Fixtures\SlowHandler;
@@ -28,7 +29,7 @@ final class GracefulDrainTest extends CoroutineTestCase
     {
         $this->runInCoroutine(function (): void {
             $app = Application::starting()->compile()->startup();
-            $runner = StoaRunner::from($app, requestTimeout: 5.0, drainTimeout: 2.0)
+            $runner = StoaRunner::from($app, new StoaServerConfig(requestTimeout: 5.0, drainTimeout: 2.0))
                 ->withRoutes(RouteGroup::of([
                     'GET /slow' => SlowHandler::class,
                 ]));
@@ -54,7 +55,7 @@ final class GracefulDrainTest extends CoroutineTestCase
     {
         $this->runInCoroutine(function (): void {
             $app = Application::starting()->compile()->startup();
-            $runner = StoaRunner::from($app, requestTimeout: 10.0, drainTimeout: 0.05)
+            $runner = StoaRunner::from($app, new StoaServerConfig(requestTimeout: 10.0, drainTimeout: 0.05))
                 ->withRoutes(RouteGroup::of([
                     'GET /stuck' => DrainStuckHandler::class,
                 ]));
@@ -83,7 +84,7 @@ final class GracefulDrainTest extends CoroutineTestCase
     {
         $this->runInCoroutine(function (): void {
             $app = Application::starting()->compile()->startup();
-            $runner = StoaRunner::from($app, requestTimeout: 5.0, drainTimeout: 2.0)
+            $runner = StoaRunner::from($app, new StoaServerConfig(requestTimeout: 5.0, drainTimeout: 2.0))
                 ->withRoutes(RouteGroup::of([
                     'GET /slow' => SlowHandler::class,
                     'GET /health' => StatusOk::class,
@@ -129,7 +130,7 @@ final class GracefulDrainTest extends CoroutineTestCase
             EventTrackingSlowHandler::$events = [];
 
             $app = Application::starting()->providers($bundle)->compile()->startup();
-            $runner = StoaRunner::from($app, requestTimeout: 5.0, drainTimeout: 2.0)
+            $runner = StoaRunner::from($app, new StoaServerConfig(requestTimeout: 5.0, drainTimeout: 2.0))
                 ->withRoutes(RouteGroup::of([
                     'GET /slow' => EventTrackingSlowHandler::class,
                 ]));

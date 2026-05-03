@@ -7,17 +7,14 @@ require __DIR__ . '/../bootstrap.php';
 use Acme\StoaDemo\Advanced\DemoServiceBundle;
 use GuzzleHttp\Psr7\ServerRequest;
 use GuzzleHttp\Psr7\Utils;
-use Phalanx\Application;
 use Phalanx\Stoa\OpenApi\OpenApiGenerator;
-use Phalanx\Stoa\StoaRunner;
+use Phalanx\Stoa\Stoa;
 
 $routes = require __DIR__ . '/routes.php';
-$app = Application::starting()
+$app = Stoa::starting()
     ->providers(new DemoServiceBundle())
-    ->compile()
-    ->startup();
-
-$runner = StoaRunner::from($app)->withRoutes($routes);
+    ->routes($routes)
+    ->build();
 
 $checks = [
     [
@@ -52,7 +49,7 @@ $failed = false;
 
 try {
     foreach ($checks as [$request, $expected]) {
-        $response = $runner->dispatch($request);
+        $response = $app->dispatch($request);
         $status = $response->getStatusCode();
         $ok = $status === $expected;
         $failed = $failed || !$ok;

@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 require __DIR__ . '/../bootstrap.php';
 
-use Phalanx\Application;
-use Phalanx\Stoa\StoaRunner;
+use Phalanx\Stoa\Stoa;
 
 $listen = $argv[1] ?? '127.0.0.1:8081';
-$app = Application::starting()->compile();
 $exampleHost = str_starts_with($listen, '0.0.0.0:')
     ? '127.0.0.1:' . substr($listen, strlen('0.0.0.0:'))
     : $listen;
@@ -26,6 +24,8 @@ curl -i {$baseUrl}/tasks/1000
 
 BOOT;
 
-StoaRunner::from($app)
-    ->withRoutes(require __DIR__ . '/routes.php')
-    ->run($listen);
+Stoa::starting()
+    ->routes(__DIR__ . '/routes.php')
+    ->listen($listen)
+    ->quiet()
+    ->run();

@@ -1,0 +1,308 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Phalanx\Stoa;
+
+use InvalidArgumentException;
+use LogicException;
+use Phalanx\Application;
+use Phalanx\ApplicationBuilder;
+use Phalanx\AppHost;
+use Phalanx\Middleware\ServiceTransformationMiddleware;
+use Phalanx\Middleware\TaskMiddleware;
+use Phalanx\Runtime\RuntimePolicy;
+use Phalanx\Service\ServiceBundle;
+use Phalanx\Supervisor\LedgerStorage;
+use Phalanx\Trace\Trace;
+use Phalanx\Worker\WorkerDispatch;
+
+final class StoaApplicationBuilder
+{
+    private ApplicationBuilder $app;
+
+    /** @var list<RouteGroup|string|list<string>|array<string, class-string>> */
+    private array $routeSources = [];
+
+    private ?string $host = null;
+
+    private ?int $port = null;
+
+    private ?float $requestTimeout = null;
+
+    private ?float $drainTimeout = null;
+
+    private ?string $poweredBy = null;
+
+    private bool $poweredByConfigured = false;
+
+    private ?bool $debug = null;
+
+    private ?bool $quiet = null;
+
+    private ?StoaServerConfig $serverConfig = null;
+
+    /** @param array<string, mixed> $context */
+    public function __construct(private readonly array $context = [])
+    {
+        $this->app = Application::starting($context);
+    }
+
+    public function providers(ServiceBundle ...$providers): self
+    {
+        $this->app->providers(...$providers);
+        return $this;
+    }
+
+    public function serviceMiddleware(ServiceTransformationMiddleware ...$middlewares): self
+    {
+        $this->app->serviceMiddleware(...$middlewares);
+        return $this;
+    }
+
+    public function taskMiddleware(TaskMiddleware ...$middlewares): self
+    {
+        $this->app->taskMiddleware(...$middlewares);
+        return $this;
+    }
+
+    public function withTrace(Trace $trace): self
+    {
+        $this->app->withTrace($trace);
+        return $this;
+    }
+
+    public function withWorkerDispatch(WorkerDispatch $dispatch): self
+    {
+        $this->app->withWorkerDispatch($dispatch);
+        return $this;
+    }
+
+    public function withRuntimePolicy(RuntimePolicy $policy): self
+    {
+        $this->app->withRuntimePolicy($policy);
+        return $this;
+    }
+
+    public function withRuntimeHooksStrict(bool $strict): self
+    {
+        $this->app->withRuntimeHooksStrict($strict);
+        return $this;
+    }
+
+    public function withLedger(LedgerStorage $ledger): self
+    {
+        $this->app->withLedger($ledger);
+        return $this;
+    }
+
+    /** @param RouteGroup|string|list<string>|array<string, class-string> $routes */
+    public function http(RouteGroup|string|array $routes): self
+    {
+        return $this->routes($routes);
+    }
+
+    /** @param RouteGroup|string|list<string>|array<string, class-string> $routes */
+    public function routes(RouteGroup|string|array $routes): self
+    {
+        $this->routeSources[] = $routes;
+        return $this;
+    }
+
+    public function websockets(mixed $routes): self
+    {
+        throw new LogicException(
+            'Native WebSocket protocol slots are reserved for Stoa but are not implemented in this slice.'
+        );
+    }
+
+    public function udp(mixed $routes): self
+    {
+        throw new LogicException(
+            'Native UDP protocol slots are reserved for Stoa but are not implemented in this slice.'
+        );
+    }
+
+    public function listen(string $listen): self
+    {
+        [$host, $port] = self::parseListen($listen);
+
+        $this->host = $host;
+        $this->port = $port;
+
+        return $this;
+    }
+
+    public function requestTimeout(float $seconds): self
+    {
+        $this->requestTimeout = $seconds;
+        return $this;
+    }
+
+    public function drainTimeout(float $seconds): self
+    {
+        $this->drainTimeout = $seconds;
+        return $this;
+    }
+
+    public function debug(bool $debug = true): self
+    {
+        $this->debug = $debug;
+        return $this;
+    }
+
+    public function quiet(bool $quiet = true): self
+    {
+        $this->quiet = $quiet;
+        return $this;
+    }
+
+    public function poweredBy(string|false|null $value): self
+    {
+        $this->poweredBy = $value === false ? null : $value;
+        $this->poweredByConfigured = true;
+
+        return $this;
+    }
+
+    public function withServerConfig(StoaServerConfig $config): self
+    {
+        $this->serverConfig = $config;
+        return $this;
+    }
+
+    public function build(): StoaApplication
+    {
+        $host = $this->app->compile();
+        $routes = RouteGroup::of([]);
+
+        foreach ($this->routeSources as $source) {
+            $routes = $routes->merge(self::loadRoutes($host, $source));
+        }
+
+        return new StoaApplication(
+            host: $host,
+            routes: $routes,
+            serverConfig: $this->hasServerConfigInput() ? $this->resolveServerConfig() : null,
+        );
+    }
+
+    public function run(): int
+    {
+        return $this->build()->run();
+    }
+
+    /** @return array{string, int} */
+    private static function parseListen(string $listen): array
+    {
+        $separator = strrpos($listen, ':');
+
+        if ($separator === false) {
+            throw new InvalidArgumentException("Invalid listen address: {$listen}");
+        }
+
+        $host = substr($listen, 0, $separator);
+        $port = (int) substr($listen, $separator + 1);
+
+        if ($host === '' || $port <= 0) {
+            throw new InvalidArgumentException("Invalid listen address: {$listen}");
+        }
+
+        return [$host, $port];
+    }
+
+    /**
+     * @param RouteGroup|string|list<string>|array<string, class-string> $source
+     */
+    private static function loadRoutes(AppHost $app, RouteGroup|string|array $source): RouteGroup
+    {
+        if ($source instanceof RouteGroup) {
+            return $source;
+        }
+
+        if (is_string($source)) {
+            return self::loadRoutePath($app, $source);
+        }
+
+        if (array_is_list($source) && array_all($source, static fn(mixed $value): bool => is_string($value))) {
+            $group = RouteGroup::of([]);
+
+            foreach ($source as $path) {
+                $group = $group->merge(self::loadRoutePath($app, $path));
+            }
+
+            return $group;
+        }
+
+        return RouteGroup::of($source);
+    }
+
+    private static function loadRoutePath(AppHost $app, string $path): RouteGroup
+    {
+        $scope = $app->createScope();
+
+        try {
+            if (is_dir($path)) {
+                return RouteLoader::loadDirectory($path, $scope);
+            }
+
+            return RouteLoader::load($path, $scope);
+        } finally {
+            $scope->dispose();
+        }
+    }
+
+    private function resolveServerConfig(): StoaServerConfig
+    {
+        $base = $this->serverConfig ?? StoaServerConfig::fromContext($this->context);
+
+        return new StoaServerConfig(
+            host: $this->host ?? $base->host,
+            port: $this->port ?? $base->port,
+            requestTimeout: $this->requestTimeout ?? $base->requestTimeout,
+            drainTimeout: $this->drainTimeout ?? $base->drainTimeout,
+            debug: $this->debug ?? $base->debug,
+            quiet: $this->quiet ?? $base->quiet,
+            poweredBy: $this->poweredByConfigured ? $this->poweredBy : $base->poweredBy,
+        );
+    }
+
+    private function hasServerConfigInput(): bool
+    {
+        if (
+            $this->serverConfig !== null
+            || $this->host !== null
+            || $this->port !== null
+            || $this->requestTimeout !== null
+            || $this->drainTimeout !== null
+            || $this->debug !== null
+            || $this->quiet !== null
+            || $this->poweredByConfigured
+        ) {
+            return true;
+        }
+
+        foreach ([
+            'host',
+            'port',
+            'debug',
+            'quiet',
+            'powered_by',
+            'PHALANX_HOST',
+            'PHALANX_PORT',
+            'PHALANX_DEBUG',
+            'PHALANX_QUIET',
+            'request_timeout',
+            'drain_timeout',
+            'PHALANX_POWERED_BY',
+            'PHALANX_REQUEST_TIMEOUT',
+            'PHALANX_DRAIN_TIMEOUT',
+        ] as $key) {
+            if (array_key_exists($key, $this->context)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}

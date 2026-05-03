@@ -38,9 +38,7 @@ final class StoaRunner
 
     private function __construct(
         private readonly AppHost $app,
-        private readonly float $requestTimeout = 30.0,
-        private readonly float $drainTimeout = 30.0,
-        private readonly bool $debug = false,
+        private readonly StoaServerConfig $config = new StoaServerConfig(),
         private readonly StoaRequestFactory $requestFactory = new StoaRequestFactory(),
         private readonly StoaResponseWriter $responseWriter = new StoaResponseWriter(),
     ) {
@@ -48,11 +46,9 @@ final class StoaRunner
 
     public static function from(
         AppHost $app,
-        float $requestTimeout = 30.0,
-        float $drainTimeout = 30.0,
-        bool $debug = false,
+        StoaServerConfig $config = new StoaServerConfig(),
     ): self {
-        return new self($app, $requestTimeout, $drainTimeout, $debug);
+        return new self($app, $config);
     }
 
     public static function toResponse(mixed $data): ResponseInterface
@@ -151,7 +147,9 @@ final class StoaRunner
         $this->server->on('start', function () use ($listen): void {
             $this->running = true;
             $this->app->trace()->log(TraceType::LifecycleStartup, 'ready', ['listen' => $listen]);
-            printf("Phalanx Server listening on %s\n", $listen);
+            if (!$this->config->quiet) {
+                printf("Phalanx Server listening on %s\n", $listen);
+            }
             SignalHandler::register($this->stop(...));
         });
         $this->server->on('workerStart', $this->startupWorker(...));
@@ -181,10 +179,10 @@ final class StoaRunner
 
         $this->app->trace()->log(TraceType::LifecycleShutdown, 'drain', [
             'active' => $this->activeRequests(),
-            'timeout' => $this->drainTimeout,
+            'timeout' => $this->config->drainTimeout,
         ]);
 
-        $timerId = Timer::after(max(1, (int) round($this->drainTimeout * 1000)), function (): void {
+        $timerId = Timer::after(max(1, (int) round($this->config->drainTimeout * 1000)), function (): void {
             $this->drainTimer = null;
             foreach ($this->activeRuns as $run) {
                 $run->abort('drain timeout');
@@ -279,7 +277,7 @@ final class StoaRunner
             return $this->finish($response, $target, $run);
         }
 
-        $token = CancellationToken::timeout($this->requestTimeout);
+        $token = CancellationToken::timeout($this->config->requestTimeout);
         $run->attach($token);
         $this->registerRun($run);
 
@@ -317,6 +315,7 @@ final class StoaRunner
     private function finish(ResponseInterface $response, ?Response $target, RequestLifecycle $run): ?ResponseInterface
     {
         $response = $this->normalizeResponseForMethod($response, $run);
+        $response = $this->applyResponseDefaults($response);
 
         if ($target === null) {
             $run->complete();
@@ -350,6 +349,15 @@ final class StoaRunner
         }
 
         return $response->withBody(Utils::streamFor(''));
+    }
+
+    private function applyResponseDefaults(ResponseInterface $response): ResponseInterface
+    {
+        if ($this->config->poweredBy === null || $response->hasHeader('X-Powered-By')) {
+            return $response;
+        }
+
+        return $response->withHeader('X-Powered-By', $this->config->poweredBy);
     }
 
     private function registerRun(RequestLifecycle $run): void
@@ -428,7 +436,7 @@ final class StoaRunner
             'error' => 'Internal Server Error',
         ];
 
-        if ($this->debug) {
+        if ($this->config->debug) {
             $body['message'] = $e->getMessage();
             $body['request'] = [
                 'path' => $run->path,

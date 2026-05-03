@@ -11,6 +11,9 @@ final readonly class StoaServerConfig
         public int $port = 8080,
         public float $requestTimeout = 30.0,
         public float $drainTimeout = 30.0,
+        public bool $debug = false,
+        public bool $quiet = false,
+        public ?string $poweredBy = 'Phalanx',
     ) {
     }
 
@@ -39,6 +42,9 @@ final readonly class StoaServerConfig
             port: self::intValue($values, ['port', 'PHALANX_PORT'], 8080),
             requestTimeout: self::floatValue($values, ['request_timeout', 'PHALANX_REQUEST_TIMEOUT'], 30.0),
             drainTimeout: self::floatValue($values, ['drain_timeout', 'PHALANX_DRAIN_TIMEOUT'], 30.0),
+            debug: self::boolValue($values, ['debug', 'PHALANX_DEBUG'], false),
+            quiet: self::boolValue($values, ['quiet', 'PHALANX_QUIET'], false),
+            poweredBy: self::nullableStringValue($values, ['powered_by', 'PHALANX_POWERED_BY'], 'Phalanx'),
         );
     }
 
@@ -82,6 +88,65 @@ final readonly class StoaServerConfig
             if (array_key_exists($key, $values)) {
                 return (float) $values[$key];
             }
+        }
+
+        return $default;
+    }
+
+    /**
+     * @param array<string, mixed> $values
+     * @param list<string> $keys
+     */
+    private static function boolValue(array $values, array $keys, bool $default): bool
+    {
+        foreach ($keys as $key) {
+            if (array_key_exists($key, $values)) {
+                $value = $values[$key];
+
+                if (is_bool($value)) {
+                    return $value;
+                }
+
+                if (is_string($value)) {
+                    return match (strtolower($value)) {
+                        '1', 'true', 'yes', 'on' => true,
+                        '0', 'false', 'no', 'off' => false,
+                        default => (bool) $value,
+                    };
+                }
+
+                return (bool) $value;
+            }
+        }
+
+        return $default;
+    }
+
+    /**
+     * @param array<string, mixed> $values
+     * @param list<string> $keys
+     */
+    private static function nullableStringValue(array $values, array $keys, ?string $default): ?string
+    {
+        foreach ($keys as $key) {
+            if (!array_key_exists($key, $values)) {
+                continue;
+            }
+
+            $value = $values[$key];
+
+            if ($value === false || $value === null) {
+                return null;
+            }
+
+            if (is_string($value)) {
+                return match (strtolower($value)) {
+                    '', '0', 'false', 'no', 'off', 'none' => null,
+                    default => $value,
+                };
+            }
+
+            return (string) $value;
         }
 
         return $default;

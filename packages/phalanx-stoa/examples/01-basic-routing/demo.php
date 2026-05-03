@@ -5,11 +5,11 @@ declare(strict_types=1);
 require __DIR__ . '/../bootstrap.php';
 
 use GuzzleHttp\Psr7\ServerRequest;
-use Phalanx\Application;
-use Phalanx\Stoa\StoaRunner;
+use Phalanx\Stoa\Stoa;
 
-$app = Application::starting()->compile()->startup();
-$runner = StoaRunner::from($app)->withRoutes(require __DIR__ . '/routes.php');
+$app = Stoa::starting()
+    ->routes(__DIR__ . '/routes.php')
+    ->build();
 
 $checks = [
     ['GET', '/', 200],
@@ -23,7 +23,7 @@ $failed = false;
 
 try {
     foreach ($checks as [$method, $path, $expected]) {
-        $response = $runner->dispatch(new ServerRequest($method, $path));
+        $response = $app->dispatch(new ServerRequest($method, $path));
         $status = $response->getStatusCode();
         $body = (string) $response->getBody();
         $ok = $status === $expected && ($method !== 'HEAD' || $body === '');

@@ -6,11 +6,11 @@ require __DIR__ . '/../bootstrap.php';
 
 use GuzzleHttp\Psr7\ServerRequest;
 use GuzzleHttp\Psr7\Utils;
-use Phalanx\Application;
-use Phalanx\Stoa\StoaRunner;
+use Phalanx\Stoa\Stoa;
 
-$app = Application::starting()->compile()->startup();
-$runner = StoaRunner::from($app)->withRoutes(require __DIR__ . '/routes.php');
+$app = Stoa::starting()
+    ->routes(__DIR__ . '/routes.php')
+    ->build();
 
 $checks = [
     [
@@ -52,7 +52,7 @@ $failed = false;
 
 try {
     foreach ($checks as [$request, $expected]) {
-        $response = $runner->dispatch($request);
+        $response = $app->dispatch($request);
         $status = $response->getStatusCode();
         $ok = $status === $expected;
         $failed = $failed || !$ok;

@@ -11,6 +11,7 @@ use Phalanx\Stoa\StoaRequestFactory;
 use Phalanx\Stoa\StoaRunner;
 use Phalanx\Stoa\RequestScope;
 use Phalanx\Stoa\RouteGroup;
+use Phalanx\Stoa\StoaServerConfig;
 use Phalanx\Task\Scopeable;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -91,7 +92,7 @@ final class StoaRunnerTest extends TestCase
     public function disposes_scope_after_handler_exception(): void
     {
         $app = Application::starting()->compile()->startup();
-        $runner = StoaRunner::from($app, debug: true)->withRoutes(RouteGroup::of([
+        $runner = StoaRunner::from($app, new StoaServerConfig(debug: true))->withRoutes(RouteGroup::of([
             'GET /fail' => FailingStoaRoute::class,
         ]));
 
