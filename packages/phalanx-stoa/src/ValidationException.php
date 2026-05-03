@@ -7,7 +7,7 @@ namespace Phalanx\Stoa;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
 
-class ValidationException extends \RuntimeException implements ToResponse
+final class ValidationException extends \RuntimeException implements ToResponse
 {
     public int $status { get => 422; }
 
@@ -21,13 +21,13 @@ class ValidationException extends \RuntimeException implements ToResponse
 
     public static function single(string $field, string $message): static
     {
-        return new static([$field => [$message]]); // @phpstan-ignore new.static
+        return new static([$field => [$message]]);
     }
 
     /** @param array<string, list<string>> $errors */
     public static function fromErrors(array $errors): static
     {
-        return new static($errors); // @phpstan-ignore new.static
+        return new static($errors);
     }
 
     public function toResponse(): ResponseInterface

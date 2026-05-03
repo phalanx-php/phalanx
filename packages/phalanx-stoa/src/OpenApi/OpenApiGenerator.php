@@ -17,7 +17,145 @@ class OpenApiGenerator
         private readonly string $title = 'API',
         private readonly string $version = '1.0.0',
         private readonly ?string $description = null,
-    ) {}
+    ) {
+    }
+
+    /** @return list<array<string, mixed>> */
+    private static function extractPathParams(RouteConfig $config): array
+    {
+        $params = [];
+
+        foreach ($config->paramNames as $name) {
+            $params[] = [
+                'name' => $name,
+                'in' => 'path',
+                'required' => true,
+                'schema' => ['type' => 'string'],
+            ];
+        }
+
+        return $params;
+    }
+
+    /**
+     * @param class-string $dtoClass
+     * @return list<array<string, mixed>>
+     */
+    private static function buildQueryParams(string $dtoClass): array
+    {
+        $ref = new ReflectionClass($dtoClass);
+        $constructor = $ref->getConstructor();
+
+        if ($constructor === null) {
+            return [];
+        }
+
+        $params = [];
+
+        foreach ($constructor->getParameters() as $param) {
+            $schema = SchemaReflector::returnTypeSchema($param->getType()) ?? ['type' => 'string'];
+            $required = !$param->isOptional() && !$param->getType()?->allowsNull();
+
+            $paramDef = [
+                'name' => $param->getName(),
+                'in' => 'query',
+                'schema' => $schema,
+            ];
+
+            if ($required) {
+                $paramDef['required'] = true;
+            }
+
+            $params[] = $paramDef;
+        }
+
+        return $params;
+    }
+
+    /**
+     * @param class-string $dtoClass
+     * @return array<string, mixed>
+     */
+    private static function buildRequestBody(string $dtoClass): array
+    {
+        return [
+            'required' => true,
+            'content' => [
+                'application/json' => [
+                    'schema' => SchemaReflector::classSchema($dtoClass),
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * @param class-string $handlerClass
+     */
+    private static function reflectInvokeReturnType(string $handlerClass): ?\ReflectionType
+    {
+        $ref = new ReflectionClass($handlerClass);
+
+        if (!$ref->hasMethod('__invoke')) {
+            return null;
+        }
+
+        return $ref->getMethod('__invoke')->getReturnType();
+    }
+
+    /**
+     * Read a property-hook value from a handler class for OpenAPI generation.
+     *
+     * Tries the static default first (cheap, works for backed properties).
+     * Falls back to instantiating the class IF its constructor has no
+     * required parameters -- handlers with constructor dependencies cannot
+     * be inspected this way because OpenAPI generation does not have access
+     * to the service container (it is a build-time / boot-time operation
+     * by design).
+     *
+     * @param ReflectionClass<object> $ref
+     */
+    private static function readPropertyHook(ReflectionClass $ref, string $name): mixed
+    {
+        if (!$ref->hasProperty($name)) {
+            return null;
+        }
+
+        // Try default value first (works for backed properties).
+        $defaults = $ref->getDefaultProperties();
+        if (array_key_exists($name, $defaults) && $defaults[$name] !== null) {
+            return $defaults[$name];
+        }
+
+        // For property hooks with no constructor deps, instantiate to read.
+        $constructor = $ref->getConstructor();
+        if ($constructor === null || $constructor->getNumberOfRequiredParameters() === 0) {
+            try {
+                $instance = $ref->newInstance();
+                $prop = $ref->getProperty($name);
+                return $prop->getValue($instance);
+            } catch (\Throwable) {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    private static function toOpenApiPath(string $path): string
+    {
+        return preg_replace('/\{(\w+)(?::[^}]+)?}/', '{$1}', $path) ?? $path;
+    }
+
+    private static function statusDescription(int $status): string
+    {
+        return match ($status) {
+            200 => 'OK',
+            201 => 'Created',
+            202 => 'Accepted',
+            204 => 'No Content',
+            default => 'Success',
+        };
+    }
 
     /** @return array<string, mixed> */
     public function generate(RouteGroup $routes): array
@@ -95,74 +233,6 @@ class OpenApiGenerator
         return $operation;
     }
 
-    /** @return list<array<string, mixed>> */
-    private static function extractPathParams(RouteConfig $config): array
-    {
-        $params = [];
-
-        foreach ($config->paramNames as $name) {
-            $params[] = [
-                'name' => $name,
-                'in' => 'path',
-                'required' => true,
-                'schema' => ['type' => 'string'],
-            ];
-        }
-
-        return $params;
-    }
-
-    /**
-     * @param class-string $dtoClass
-     * @return list<array<string, mixed>>
-     */
-    private static function buildQueryParams(string $dtoClass): array
-    {
-        $ref = new ReflectionClass($dtoClass);
-        $constructor = $ref->getConstructor();
-
-        if ($constructor === null) {
-            return [];
-        }
-
-        $params = [];
-
-        foreach ($constructor->getParameters() as $param) {
-            $schema = SchemaReflector::returnTypeSchema($param->getType()) ?? ['type' => 'string'];
-            $required = !$param->isOptional() && !$param->getType()?->allowsNull();
-
-            $paramDef = [
-                'name' => $param->getName(),
-                'in' => 'query',
-                'schema' => $schema,
-            ];
-
-            if ($required) {
-                $paramDef['required'] = true;
-            }
-
-            $params[] = $paramDef;
-        }
-
-        return $params;
-    }
-
-    /**
-     * @param class-string $dtoClass
-     * @return array<string, mixed>
-     */
-    private static function buildRequestBody(string $dtoClass): array
-    {
-        return [
-            'required' => true,
-            'content' => [
-                'application/json' => [
-                    'schema' => SchemaReflector::classSchema($dtoClass),
-                ],
-            ],
-        ];
-    }
-
     /**
      * @param class-string $handlerClass
      * @return array<string, mixed>
@@ -172,6 +242,7 @@ class OpenApiGenerator
         RouteConfig $config,
         bool $hasInput,
     ): array {
+        /** @var array<string, mixed> $responses */
         $responses = [];
 
         $ref = self::reflectInvokeReturnType($handlerClass);
@@ -213,75 +284,6 @@ class OpenApiGenerator
             $responses['404'] = ['description' => 'Not Found'];
         }
 
-        return $responses; // @phpstan-ignore return.type
-    }
-
-    /**
-     * @param class-string $handlerClass
-     */
-    private static function reflectInvokeReturnType(string $handlerClass): ?\ReflectionType
-    {
-        $ref = new ReflectionClass($handlerClass);
-
-        if (!$ref->hasMethod('__invoke')) {
-            return null;
-        }
-
-        return $ref->getMethod('__invoke')->getReturnType();
-    }
-
-    /**
-     * Read a property-hook value from a handler class for OpenAPI generation.
-     *
-     * Tries the static default first (cheap, works for backed properties).
-     * Falls back to instantiating the class IF its constructor has no
-     * required parameters -- handlers with constructor dependencies cannot
-     * be inspected this way because OpenAPI generation does not have access
-     * to the service container (it is a build-time / boot-time operation
-     * by design).
-     *
-     * @param ReflectionClass<object> $ref
-     */
-    private static function readPropertyHook(ReflectionClass $ref, string $name): mixed
-    {
-        if (!$ref->hasProperty($name)) {
-            return null;
-        }
-
-        // Try default value first (works for backed properties).
-        $defaults = $ref->getDefaultProperties();
-        if (array_key_exists($name, $defaults) && $defaults[$name] !== null) {
-            return $defaults[$name];
-        }
-
-        // For property hooks with no constructor deps, instantiate to read.
-        $constructor = $ref->getConstructor();
-        if ($constructor === null || $constructor->getNumberOfRequiredParameters() === 0) {
-            try {
-                $instance = $ref->newInstance();
-                $prop = $ref->getProperty($name);
-                return $prop->getValue($instance);
-            } catch (\Throwable) {
-                return null;
-            }
-        }
-
-        return null;
-    }
-
-    private static function toOpenApiPath(string $path): string
-    {
-        return preg_replace('/\{(\w+)(?::[^}]+)?}/', '{$1}', $path) ?? $path;
-    }
-
-    private static function statusDescription(int $status): string
-    {
-        return match ($status) {
-            200 => 'OK',
-            201 => 'Created',
-            202 => 'Accepted',
-            204 => 'No Content',
-            default => 'Success',
-        };
+        return $responses;
     }
 }
