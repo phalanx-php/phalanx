@@ -6,19 +6,28 @@ declare(strict_types=1);
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 require __DIR__ . '/DemoCommand.php';
 
-use Phalanx\Application;
+use Phalanx\Archon\Archon;
+use Phalanx\Archon\Arg;
+use Phalanx\Archon\CommandConfig;
 use Phalanx\Archon\CommandGroup;
-use Phalanx\Archon\ConsoleRunner;
 use Phalanx\Archon\Demo\DemoCommand;
+use Phalanx\Archon\Opt;
 use Phalanx\Archon\Style\ConsoleServiceBundle;
 
-$app = Application::starting()
+exit(Archon::starting(['argv' => $argv])
     ->providers(new ConsoleServiceBundle())
-    ->compile();
-
-$runner = ConsoleRunner::withHandlers(
-    $app,
-    CommandGroup::of(['demo' => new DemoCommand()]),
-);
-
-exit($runner->run(['console-demo', 'demo']));
+    ->commands(CommandGroup::of([
+        'demo' => [
+            DemoCommand::class,
+            new CommandConfig(
+                description: 'Print a scoped Archon demo message.',
+                arguments: [
+                    Arg::optional('name', 'Name to greet.', 'operator'),
+                ],
+                options: [
+                    Opt::flag('shout', 's', 'Uppercase the greeting.'),
+                ],
+            ),
+        ],
+    ]))
+    ->run());

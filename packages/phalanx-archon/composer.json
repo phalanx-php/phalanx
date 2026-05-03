@@ -3,7 +3,7 @@
     "description": "CLI application framework for Phalanx",
     "license": "MIT",
     "type": "library",
-    "keywords": ["cli", "console", "async", "reactphp", "phalanx"],
+    "keywords": ["cli", "console", "async", "phalanx"],
     "homepage": "https://github.com/phalanx-php/phalanx-archon",
     "authors": [
         {
