@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Tests\Fixtures\Handlers;
 
+use Closure;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
-use Phalanx\Task\Scopeable;
 
 /**
  * Test middleware that prefixes "before:" and suffixes ":after" around the
@@ -15,12 +15,9 @@ use Phalanx\Task\Scopeable;
  */
 final class PrefixingMiddleware implements Executable
 {
-    public function __invoke(ExecutionScope $scope): mixed
+    public function __invoke(ExecutionScope $scope, Closure $next): mixed
     {
-        $next = $scope->attribute('handler.next');
-        assert($next instanceof Scopeable || $next instanceof Executable);
-
-        $inner = $scope->execute($next);
+        $inner = $next($scope);
 
         return 'before:' . $inner . ':after';
     }

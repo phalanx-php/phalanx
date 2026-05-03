@@ -18,7 +18,6 @@ final class RuntimeHookNames
         Runtime::HOOK_STREAM_FUNCTION => 'STREAM_FUNCTION',
         Runtime::HOOK_FILE => 'FILE',
         Runtime::HOOK_SLEEP => 'SLEEP',
-        Runtime::HOOK_PROC => 'PROC',
         Runtime::HOOK_CURL => 'CURL',
         Runtime::HOOK_NATIVE_CURL => 'NATIVE_CURL',
         Runtime::HOOK_BLOCKING_FUNCTION => 'BLOCKING_FUNCTION',

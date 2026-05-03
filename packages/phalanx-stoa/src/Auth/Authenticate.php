@@ -10,14 +10,12 @@ use Phalanx\Auth\Guard;
 use Phalanx\Stoa\AuthExecutionContext;
 use Phalanx\Stoa\Contract\Middleware;
 use Phalanx\Stoa\RequestScope;
-use Phalanx\Task\Executable;
-use Phalanx\Task\Scopeable;
 
-final class Authenticate implements Middleware, Executable
+final class Authenticate implements Middleware
 {
     public function __construct(private readonly Guard $guard) {}
 
-    public function handle(RequestScope $scope, Closure $next): mixed
+    public function __invoke(RequestScope $scope, Closure $next): mixed
     {
         $auth = $this->guard->authenticate($scope->request);
 
@@ -26,18 +24,5 @@ final class Authenticate implements Middleware, Executable
         }
 
         return $next(new AuthExecutionContext($scope, $auth));
-    }
-
-    public function __invoke(RequestScope $scope): mixed
-    {
-        /** @var Scopeable|Executable $next */
-        $next = $scope->attribute('handler.next');
-
-        return $this->handle(
-            $scope,
-            static function (RequestScope $s) use ($next): mixed {
-                return $next($s);
-            },
-        );
     }
 }

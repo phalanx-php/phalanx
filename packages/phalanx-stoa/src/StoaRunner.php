@@ -152,13 +152,15 @@ final class StoaRunner
             $this->running = true;
             $this->app->trace()->log(TraceType::LifecycleStartup, 'ready', ['listen' => $listen]);
             printf("Phalanx Server listening on %s\n", $listen);
+            SignalHandler::register($this->stop(...));
         });
         $this->server->on('workerStart', $this->startupWorker(...));
         $this->server->on('workerStop', $this->shutdownWorker(...));
         $this->server->on('request', $this->handleStoaRequest(...));
         $this->server->on('close', $this->handleClose(...));
-
-        SignalHandler::register($this->stop(...));
+        $this->server->on('shutdown', function (): void {
+            $this->running = false;
+        });
 
         try {
             $this->server->start();
@@ -175,7 +177,6 @@ final class StoaRunner
             return;
         }
 
-        $this->running = false;
         $this->draining = true;
 
         $this->app->trace()->log(TraceType::LifecycleShutdown, 'drain', [
@@ -375,9 +376,7 @@ final class StoaRunner
             return;
         }
 
-        Timer::after(50, function (): void {
-            $this->finalize();
-        });
+        $this->finalize();
     }
 
     private function finalize(): void
@@ -385,6 +384,9 @@ final class StoaRunner
         if (!$this->draining && !$this->running && $this->server === null && !$this->workerStarted) {
             return;
         }
+
+        $server = $this->server;
+        $shouldShutdownServer = $server !== null && $this->running;
 
         $this->running = false;
         $this->draining = false;
@@ -403,8 +405,11 @@ final class StoaRunner
         $this->app->trace()->log(TraceType::LifecycleShutdown, 'shutdown');
         $this->app->shutdown();
         $this->workerStarted = false;
-        $this->server?->shutdown();
         $this->server = null;
+
+        if ($shouldShutdownServer) {
+            $server->shutdown();
+        }
     }
 
     /** @param array<string, mixed> $body */

@@ -4,25 +4,26 @@ declare(strict_types=1);
 
 namespace Phalanx\Support;
 
+use OpenSwoole\Process;
+
 final readonly class SignalHandler
 {
-    public static function isWindows(): bool
-    {
-        return PHP_OS_FAMILY === 'Windows';
-    }
-
     public static function register(callable $shutdown): void
     {
-        if (self::isWindows() || !function_exists('pcntl_async_signals') || !function_exists('pcntl_signal')) {
-            return;
-        }
+        self::registerSignal(SIGINT, $shutdown);
+        self::registerSignal(SIGTERM, $shutdown);
+    }
 
-        pcntl_async_signals(true);
-        pcntl_signal(SIGINT, static function () use ($shutdown): void {
-            $shutdown();
-        });
-        pcntl_signal(SIGTERM, static function () use ($shutdown): void {
-            $shutdown();
-        });
+    private static function registerSignal(int $signal, callable $shutdown): void
+    {
+        set_error_handler(static fn(): bool => true);
+
+        try {
+            Process::signal($signal, static function () use ($shutdown): void {
+                $shutdown();
+            });
+        } finally {
+            restore_error_handler();
+        }
     }
 }

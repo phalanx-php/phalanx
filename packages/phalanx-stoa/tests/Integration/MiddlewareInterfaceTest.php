@@ -9,7 +9,6 @@ use Phalanx\Application;
 use Phalanx\Stoa\Contract\Middleware;
 use Phalanx\Stoa\RequestScope;
 use Phalanx\Stoa\RouteGroup;
-use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -95,43 +94,22 @@ final class PrefixingMiddlewareV2Handler implements Scopeable
  * result with "before:" prefix and ":after" suffix. Composition order matches
  * the executable PrefixingMiddleware test fixture.
  */
-final class PrefixingMiddlewareV2 implements Middleware, Executable
+final class PrefixingMiddlewareV2 implements Middleware
 {
-    public function handle(RequestScope $scope, Closure $next): mixed
+    public function __invoke(RequestScope $scope, Closure $next): mixed
     {
         $inner = $next($scope);
         return 'before:' . $inner . ':after';
-    }
-
-    public function __invoke(RequestScope $scope): mixed
-    {
-        /** @var Scopeable|Executable $next */
-        $next = $scope->attribute('handler.next');
-
-        return $this->handle(
-            $scope,
-            static function (RequestScope $s) use ($next): mixed {
-                return $next($s);
-            },
-        );
     }
 }
 
 /**
  * Middleware that short-circuits the chain without calling $next.
  */
-final class AbortingMiddlewareV2 implements Middleware, Executable
+final class AbortingMiddlewareV2 implements Middleware
 {
-    public function handle(RequestScope $scope, Closure $next): mixed
+    public function __invoke(RequestScope $scope, Closure $next): mixed
     {
         return 'aborted';
-    }
-
-    public function __invoke(RequestScope $scope): mixed
-    {
-        return $this->handle(
-            $scope,
-            static fn(RequestScope $s): mixed => null,
-        );
     }
 }

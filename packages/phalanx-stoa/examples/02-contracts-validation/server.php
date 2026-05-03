@@ -18,7 +18,7 @@ echo <<<BOOT
 Phalanx Server: Stoa contracts and validation demo
 Listening on http://{$listen}
 
-Try these one-line requests:
+Try these examples:
 curl -i '{$baseUrl}/tasks?owner=ops&limit=2'
 curl -i -X POST {$baseUrl}/tasks -H 'Content-Type: application/json' -H 'Idempotency-Key: task-001' -d '{"title":"Review Stoa route contracts","priority":2}'
 curl -i -X POST {$baseUrl}/tasks -H 'Content-Type: application/json' -H 'Idempotency-Key: task-002' -d '{"title":"no","priority":8}'

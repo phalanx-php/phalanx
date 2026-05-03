@@ -28,7 +28,6 @@ final class RuntimePolicyTest extends TestCase
             | Runtime::HOOK_TLS
             | Runtime::HOOK_STREAM_FUNCTION
             | Runtime::HOOK_FILE
-            | Runtime::HOOK_PROC
             | Runtime::HOOK_CURL
             | Runtime::HOOK_NATIVE_CURL
             | Runtime::HOOK_SOCKETS,
@@ -66,7 +65,6 @@ final class RuntimePolicyTest extends TestCase
             $policy->requiredFlags
                 & (Runtime::HOOK_TCP | Runtime::HOOK_NATIVE_CURL | Runtime::HOOK_FILE | Runtime::HOOK_STDIO),
         );
-        self::assertSame(0, $policy->requiredFlags & Runtime::HOOK_PROC);
     }
 
     public function testInvalidCapabilityContextThrowsClearly(): void

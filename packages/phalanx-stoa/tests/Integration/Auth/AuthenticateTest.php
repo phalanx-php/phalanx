@@ -11,7 +11,6 @@ use Phalanx\Auth\AuthenticationException;
 use Phalanx\Auth\Guard;
 use Phalanx\Auth\Identity;
 use Phalanx\Scope\ExecutionScope;
-use Phalanx\Handler\MiddlewareChainLink;
 use Phalanx\Stoa\Auth\Authenticate;
 use Phalanx\Stoa\AuthExecutionContext;
 use Phalanx\Stoa\AuthRequestScope;
@@ -34,21 +33,16 @@ final class AuthenticateTest extends TestCase
         $guard = new TestGuard(AuthContext::authenticated($identity, 'tok_abc'));
 
         $capturedScope = null;
-        $handler = new class ($capturedScope) implements Executable {
-            public function __construct(private mixed &$captured) {}
-
-            public function __invoke(ExecutionScope $scope): mixed
-            {
-                $this->captured = $scope;
-                return 'ok';
-            }
-        };
-
         $middleware = new Authenticate($guard);
-        $chain = new MiddlewareChainLink($middleware, $handler);
 
         $requestScope = $this->createRequestScope();
-        $result = ($chain)($requestScope);
+        $result = $middleware(
+            $requestScope,
+            static function (ExecutionScope $scope) use (&$capturedScope): string {
+                $capturedScope = $scope;
+                return 'ok';
+            },
+        );
 
         $this->assertSame('ok', $result);
         $this->assertInstanceOf(AuthExecutionContext::class, $capturedScope);
@@ -62,18 +56,13 @@ final class AuthenticateTest extends TestCase
     public function authenticate_throws_when_guard_returns_null(): void
     {
         $guard = new TestGuard(null);
-        $handler = new class implements Executable {
-            public function __invoke(ExecutionScope $scope): mixed
-            {
-                return 'should not reach';
-            }
-        };
-
         $middleware = new Authenticate($guard);
-        $chain = new MiddlewareChainLink($middleware, $handler);
 
         $this->expectException(AuthenticationException::class);
-        ($chain)($this->createRequestScope());
+        $middleware(
+            $this->createRequestScope(),
+            static fn(): string => 'should not reach',
+        );
     }
 
     #[Test]
@@ -82,19 +71,14 @@ final class AuthenticateTest extends TestCase
         $guard = new TestGuard(AuthContext::authenticated(new TestIdentity(1)));
 
         $capturedScope = null;
-        $handler = new class ($capturedScope) implements Executable {
-            public function __construct(private mixed &$captured) {}
-
-            public function __invoke(ExecutionScope $scope): mixed
-            {
-                $this->captured = $scope;
-                return null;
-            }
-        };
-
         $middleware = new Authenticate($guard);
-        $chain = new MiddlewareChainLink($middleware, $handler);
-        ($chain)($this->createRequestScope());
+        $middleware(
+            $this->createRequestScope(),
+            static function (ExecutionScope $scope) use (&$capturedScope): null {
+                $capturedScope = $scope;
+                return null;
+            },
+        );
 
         $this->assertSame('GET', $capturedScope->method());
         $this->assertSame('/test', $capturedScope->path());

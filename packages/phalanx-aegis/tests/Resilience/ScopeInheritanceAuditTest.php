@@ -19,8 +19,6 @@ use PHPUnit\Framework\TestCase;
  * installing the parent scope will see a failed test pointing at the
  * exact line.
  *
- * Worker bootstrap files (src/Worker/Worker.php, WorkerRuntime.php) are
- * intentionally excluded — they run before any user scope exists.
  */
 final class ScopeInheritanceAuditTest extends TestCase
 {

@@ -18,7 +18,7 @@ echo <<<BOOT
 Phalanx Server: Stoa basic routing demo
 Listening on http://{$listen}
 
-Try these one-line requests:
+Try these examples:
 curl -i {$baseUrl}/
 curl -i {$baseUrl}/users/42
 curl -i {$baseUrl}/posts/phalanx-stoa

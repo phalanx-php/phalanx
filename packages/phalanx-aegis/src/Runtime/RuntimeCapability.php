@@ -14,7 +14,6 @@ enum RuntimeCapability: string
     case Files = 'files';
     case Sockets = 'sockets';
     case Datagrams = 'datagrams';
-    case Processes = 'processes';
     case InteractiveStdio = 'interactive-stdio';
     case Sleep = 'sleep';
     case BlockingFunctions = 'blocking-functions';

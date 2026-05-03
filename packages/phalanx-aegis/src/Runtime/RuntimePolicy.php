@@ -29,7 +29,6 @@ final readonly class RuntimePolicy
             RuntimeCapability::Files,
             RuntimeCapability::Sockets,
             RuntimeCapability::Datagrams,
-            RuntimeCapability::Processes,
         );
     }
 
@@ -91,7 +90,6 @@ final readonly class RuntimePolicy
             RuntimeCapability::Files => Runtime::HOOK_FILE,
             RuntimeCapability::Sockets => Runtime::HOOK_SOCKETS,
             RuntimeCapability::Datagrams => Runtime::HOOK_UDP | Runtime::HOOK_UDG,
-            RuntimeCapability::Processes => Runtime::HOOK_PROC | Runtime::HOOK_STREAM_FUNCTION,
             RuntimeCapability::InteractiveStdio => Runtime::HOOK_STDIO,
             RuntimeCapability::Sleep => Runtime::HOOK_SLEEP,
             RuntimeCapability::BlockingFunctions => Runtime::HOOK_BLOCKING_FUNCTION,

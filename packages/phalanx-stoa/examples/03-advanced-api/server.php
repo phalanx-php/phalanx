@@ -21,7 +21,7 @@ echo <<<BOOT
 Phalanx Server: Stoa advanced API demo
 Listening on http://{$listen}
 
-Try these one-line requests:
+Try these examples:
 curl -i {$baseUrl}/api/v1/health
 curl -i {$baseUrl}/api/v1/reports/2026/05
 curl -i {$baseUrl}/api/v1/admin/me -H 'Authorization: Bearer demo-token'

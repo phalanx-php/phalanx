@@ -8,30 +8,15 @@ use Acme\StoaDemo\Advanced\Services\AuditLog;
 use Closure;
 use Phalanx\Stoa\Contract\Middleware;
 use Phalanx\Stoa\RequestScope;
-use Phalanx\Task\Executable;
-use Phalanx\Task\Scopeable;
 
-final class AuditMiddleware implements Executable, Middleware
+final class AuditMiddleware implements Middleware
 {
     public function __construct(private readonly AuditLog $audit) {}
 
-    public function handle(RequestScope $scope, Closure $next): mixed
+    public function __invoke(RequestScope $scope, Closure $next): mixed
     {
         $this->audit->record($scope->method(), $scope->path());
 
         return $next($scope);
-    }
-
-    public function __invoke(RequestScope $scope): mixed
-    {
-        /** @var Scopeable|Executable $next */
-        $next = $scope->attribute('handler.next');
-
-        return $this->handle(
-            $scope,
-            static function (RequestScope $nextScope) use ($next): mixed {
-                return $next($nextScope);
-            },
-        );
     }
 }

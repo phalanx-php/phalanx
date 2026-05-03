@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Tests\Fixtures\Handlers;
 
+use Closure;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
-use Phalanx\Task\Scopeable;
 
 /**
  * Test middleware that wraps the inner handler's string result with
@@ -14,11 +14,8 @@ use Phalanx\Task\Scopeable;
  */
 final class InstanceMiddleware implements Executable
 {
-    public function __invoke(ExecutionScope $scope): mixed
+    public function __invoke(ExecutionScope $scope, Closure $next): mixed
     {
-        /** @var Scopeable|Executable $next */
-        $next = $scope->attribute('handler.next');
-
-        return 'instance(' . $scope->execute($next) . ')';
+        return 'instance(' . $next($scope) . ')';
     }
 }

@@ -11,9 +11,9 @@ use Phalanx\Task\Scopeable;
 /**
  * Wraps a handler task with a non-empty middleware chain.
  *
- * Each middleware is a Scopeable|Executable that calls the next handler via
- * `$scope->attribute('handler.next')`. The chain is built once at construction
- * and then invoked. Middleware dispatch is a direct-call chain -- it does NOT
+ * Each middleware receives the current scope and a `$next` closure. The chain
+ * is built once at construction and then invoked. Middleware dispatch is a
+ * direct-call chain -- it does NOT
  * route through `$scope->execute()`, so trace/timeout/retry/Fiber-registry
  * behaviors apply only at the entry point (the HandlerGroup itself when the
  * runner invokes it).
@@ -25,7 +25,7 @@ use Phalanx\Task\Scopeable;
 final readonly class MiddlewareWrapper implements Executable
 {
     /**
-     * @param list<Scopeable|Executable> $middleware
+     * @param list<object> $middleware
      */
     public function __construct(
         private Scopeable|Executable $handler,
@@ -34,14 +34,16 @@ final readonly class MiddlewareWrapper implements Executable
     }
 
     /**
-     * @param list<Scopeable|Executable> $middleware
+     * @param list<object> $middleware
+     * @return \Closure(ExecutionScope): mixed
      */
-    private function buildStack(Scopeable|Executable $handler, array $middleware): Scopeable|Executable
+    private function buildStack(Scopeable|Executable $handler, array $middleware): \Closure
     {
-        $next = $handler;
+        $next = static fn(ExecutionScope $scope): mixed => $handler($scope);
 
         foreach (array_reverse($middleware) as $mw) {
-            $next = new MiddlewareChainLink($mw, $next);
+            $current = $next;
+            $next = static fn(ExecutionScope $scope): mixed => $mw($scope, $current);
         }
 
         return $next;
@@ -51,6 +53,6 @@ final readonly class MiddlewareWrapper implements Executable
     {
         $stack = $this->buildStack($this->handler, $this->middleware);
 
-        return ($stack)($scope);
+        return $stack($scope);
     }
 }
