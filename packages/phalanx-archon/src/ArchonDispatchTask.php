@@ -1,0 +1,29 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Phalanx\Archon;
+
+use Phalanx\Scope\ExecutionScope;
+use Phalanx\Task\Executable;
+use Phalanx\Task\Traceable;
+
+/** @internal */
+final class ArchonDispatchTask implements Executable, Traceable
+{
+    public string $traceName {
+        get => 'archon.application.run';
+    }
+
+    /** @param list<string> $argv */
+    public function __construct(
+        private ArchonApplication $application,
+        private array $argv,
+    ) {
+    }
+
+    public function __invoke(ExecutionScope $scope): int
+    {
+        return $this->application->dispatch($this->argv);
+    }
+}

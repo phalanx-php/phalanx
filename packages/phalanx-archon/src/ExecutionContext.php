@@ -19,6 +19,10 @@ class ExecutionContext implements CommandScope
         get => $this->parsedArgs;
     }
 
+    public string $commandResourceId {
+        get => $this->resourceId;
+    }
+
     public CommandOptions $options {
         get => $this->parsedOptions;
     }
@@ -33,6 +37,7 @@ class ExecutionContext implements CommandScope
         private readonly CommandArgs $parsedArgs,
         private readonly CommandOptions $parsedOptions,
         private readonly CommandConfig $commandConfig,
+        private readonly string $resourceId,
     ) {
     }
 
@@ -44,6 +49,7 @@ class ExecutionContext implements CommandScope
             $this->parsedArgs,
             $this->parsedOptions,
             $this->commandConfig,
+            $this->resourceId,
         );
     }
 

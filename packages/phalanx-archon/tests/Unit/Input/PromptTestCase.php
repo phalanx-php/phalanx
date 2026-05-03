@@ -38,7 +38,12 @@ abstract class PromptTestCase extends TestCase
         );
 
         // Non-TTY memory stream — writes still happen, cursor control is skipped.
-        $this->stream = fopen('php://memory', 'w+');
+        $stream = fopen('php://memory', 'w+');
+        if ($stream === false) {
+            self::fail('Unable to open memory stream.');
+        }
+
+        $this->stream = $stream;
         $terminal = new TerminalEnvironment(columns: 80, lines: 24);
         $this->output = new StreamOutput($this->stream, $terminal);
 

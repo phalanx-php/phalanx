@@ -87,8 +87,7 @@ final class CommandGroup implements Executable
             $subcommand = $args[0] ?? null;
 
             if ($subcommand === null || $subcommand === '--help' || $subcommand === 'help') {
-                echo HelpGenerator::forGroup($name, $this->groups[$name]);
-                return 0;
+                return HelpGenerator::forGroup($name, $this->groups[$name]);
             }
 
             $childScope = $scope

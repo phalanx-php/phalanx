@@ -15,6 +15,10 @@ final class StreamOutputTest extends TestCase
     public function terminalDimensionsComeFromInjectedEnvironment(): void
     {
         $stream = fopen('php://memory', 'w+');
+        if ($stream === false) {
+            self::fail('Unable to open memory stream.');
+        }
+
         $output = new StreamOutput($stream, new TerminalEnvironment(columns: 120, lines: 40));
 
         try {
@@ -29,6 +33,10 @@ final class StreamOutputTest extends TestCase
     public function appleTerminalDisablesSynchronizedOutputFromInjectedEnvironment(): void
     {
         $stream = fopen('php://memory', 'w+');
+        if ($stream === false) {
+            self::fail('Unable to open memory stream.');
+        }
+
         $output = new StreamOutput(
             $stream,
             new TerminalEnvironment(columns: 80, lines: 24, termProgram: 'Apple_Terminal'),

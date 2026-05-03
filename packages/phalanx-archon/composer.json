@@ -16,6 +16,7 @@
         "phalanx-php/aegis": "^0.5"
     },
     "suggest": {
+        "symfony/runtime": "For Symfony Runtime integration via Archon::starting()",
         "phalanx-php/styx": "For streaming data through console commands",
         "phalanx-php/hydra": "For worker process parallelism in CLI tasks"
     },

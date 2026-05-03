@@ -1,0 +1,294 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Phalanx\Archon;
+
+use Phalanx\AppHost;
+use Phalanx\Archon\Output\StreamOutput;
+use Phalanx\Cancellation\Cancelled;
+use Phalanx\Scope\ExecutionScope;
+use Phalanx\Scope\ScopeIdentity;
+use RuntimeException;
+use Throwable;
+
+/** @internal */
+final class CommandDispatcher
+{
+    private ?StreamOutput $output = null;
+
+    private ?StreamOutput $errorOutput = null;
+
+    /** @param array<string, InlineCommand> $inlineCommands */
+    public function __construct(
+        private AppHost $host,
+        private CommandGroup $commands,
+        private ConsoleConfig $config,
+        private array $inlineCommands = [],
+    ) {
+    }
+
+    /** @param list<string> $argv */
+    public function dispatch(array $argv): int
+    {
+        $argv = array_values($argv);
+        $defaultCommand = $argv === [];
+        $command = $argv[0] ?? $this->config->defaultCommand;
+        $args = array_slice($argv, 1);
+        $displayName = $this->displayName($command, $args);
+        $rootScope = $this->host->createScope();
+
+        try {
+            if (!$rootScope instanceof ScopeIdentity) {
+                throw new RuntimeException('Archon command scopes require Aegis scope identity.');
+            }
+
+            $lifecycle = CommandLifecycle::open(
+                scope: $rootScope,
+                name: $displayName,
+                argumentCount: count($args),
+                defaultCommand: $defaultCommand,
+            );
+            $scope = $rootScope
+                ->withAttribute('args', $args)
+                ->withAttribute('command', $command)
+                ->withAttribute(CommandLifecycle::RESOURCE_ATTRIBUTE, $lifecycle->resourceId);
+
+            try {
+                $code = $this->execute($scope, $lifecycle, $command, $args);
+                $lifecycle->close($code);
+
+                return $code;
+            } catch (Cancelled $e) {
+                $lifecycle->abort($e->getMessage());
+                $this->errorOutput()->persist("Cancelled: {$e->getMessage()}");
+
+                return 130;
+            } catch (InvalidInputException $e) {
+                $lifecycle->invalidInput($e->getMessage(), $e);
+                $this->writeInvalidInput($displayName, $e);
+
+                return 1;
+            } catch (UnknownCommand $e) {
+                $lifecycle->unknown($e->command);
+                $this->writeUnknownCommand($e->command);
+
+                return 1;
+            } catch (RuntimeException $e) {
+                $lifecycle->fail('exception', $e->getMessage(), $e);
+                $this->errorOutput()->persist("Error: {$e->getMessage()}");
+
+                return 1;
+            } catch (Throwable $e) {
+                $lifecycle->fail('exception', $e->getMessage(), $e);
+                $this->errorOutput()->persist("Error: {$e->getMessage()}");
+
+                return 1;
+            }
+        } finally {
+            $rootScope->dispose();
+        }
+    }
+
+    /** @param list<string> $args */
+    private function execute(
+        ExecutionScope $scope,
+        CommandLifecycle $lifecycle,
+        string $command,
+        array $args,
+    ): int {
+        if ($command === 'help') {
+            $lifecycle->activate('archon.help');
+            $this->writeHelp($args[0] ?? null);
+
+            return 0;
+        }
+
+        $helpTarget = $this->groupHelpTarget($command, $args);
+        if ($helpTarget !== null) {
+            [$name, $group] = $helpTarget;
+
+            $lifecycle->activate("archon.group.$name.help");
+            $this->output()->persist(HelpGenerator::forGroup($name, $group));
+            return 0;
+        }
+
+        if (isset($this->inlineCommands[$command])) {
+            $lifecycle->activate($this->inlineCommands[$command]->traceName);
+            $result = $scope->execute($this->inlineCommands[$command]);
+
+            return is_int($result) ? $result : 0;
+        }
+
+        if (!in_array($command, $this->commands->keys(), true)) {
+            $lifecycle->activate('archon.unknown');
+            throw UnknownCommand::named($command);
+        }
+
+        $lifecycle->activate("archon.command.$command");
+        $result = $scope->execute($this->commands);
+
+        return is_int($result) ? $result : 0;
+    }
+
+    /** @param list<string> $args */
+    private function displayName(string $command, array $args): string
+    {
+        return implode(' ', $this->commandPath($command, $args));
+    }
+
+    private function writeHelp(?string $name): void
+    {
+        if ($name === null) {
+            $this->output()->persist($this->topLevelHelp());
+            return;
+        }
+
+        if ($this->commands->isGroup($name)) {
+            $group = $this->commands->group($name);
+            assert($group !== null);
+
+            $this->output()->persist(HelpGenerator::forGroup($name, $group));
+            return;
+        }
+
+        $handler = $this->commands->handlers()->get($name);
+        if ($handler !== null && $handler->config instanceof CommandConfig) {
+            $this->output()->persist(HelpGenerator::forCommand($name, $handler->config));
+            return;
+        }
+
+        if (isset($this->inlineCommands[$name])) {
+            $this->output()->persist(HelpGenerator::forCommand($name, $this->inlineCommands[$name]->config));
+            return;
+        }
+
+        throw UnknownCommand::named($name);
+    }
+
+    private function writeInvalidInput(string $command, InvalidInputException $e): void
+    {
+        $message = "Error: {$e->getMessage()}";
+
+        if ($e->config !== null) {
+            $message .= "\n\n" . HelpGenerator::forCommand($command, $e->config);
+        }
+
+        $this->errorOutput()->persist($message);
+    }
+
+    private function writeUnknownCommand(string $command): void
+    {
+        $this->errorOutput()->persist("Unknown command: $command\n" . $this->availableCommands());
+    }
+
+    private function topLevelHelp(): string
+    {
+        if ($this->inlineCommands === []) {
+            return HelpGenerator::forTopLevel($this->commands);
+        }
+
+        return "Available commands:\n\n" . $this->availableCommands();
+    }
+
+    private function availableCommands(): string
+    {
+        $commands = [];
+
+        foreach ($this->commands->commands() as $name => $handler) {
+            $commands[$name] = $handler->config instanceof CommandConfig
+                ? $handler->config->description
+                : '';
+        }
+
+        foreach ($this->commands->groups() as $name => $group) {
+            $commands[$name] = $group->description();
+        }
+
+        foreach ($this->inlineCommands as $name => $command) {
+            $commands[$name] = $command->config->description;
+        }
+
+        ksort($commands);
+        $maxLen = max(array_map(strlen(...), array_keys($commands)) ?: [0]);
+        $lines = [];
+
+        foreach ($commands as $name => $description) {
+            $padding = str_repeat(' ', $maxLen - strlen($name) + 2);
+            $lines[] = $description === '' ? "  $name" : "  $name$padding$description";
+        }
+
+        return implode("\n", $lines);
+    }
+
+    /**
+     * @param list<string> $args
+     * @return list<string>
+     */
+    private function commandPath(string $command, array $args): array
+    {
+        $path = [$command];
+        $group = $this->commands->group($command);
+
+        while ($group !== null && isset($args[0]) && $args[0] !== 'help' && $args[0] !== '--help') {
+            $next = $args[0];
+            if (!in_array($next, $group->keys(), true)) {
+                break;
+            }
+
+            $path[] = $next;
+            $group = $group->group($next);
+            $args = array_slice($args, 1);
+        }
+
+        return $path;
+    }
+
+    /**
+     * @param list<string> $args
+     * @return array{string, CommandGroup}|null
+     */
+    private function groupHelpTarget(string $command, array $args): ?array
+    {
+        $group = $this->commands->group($command);
+        if ($group === null) {
+            return null;
+        }
+
+        $path = [$command];
+        while (true) {
+            $next = $args[0] ?? null;
+            if ($next === null || $next === 'help' || $next === '--help') {
+                return [implode(' ', $path), $group];
+            }
+
+            $child = $group->group($next);
+            if ($child === null) {
+                return null;
+            }
+
+            $path[] = $next;
+            $group = $child;
+            $args = array_slice($args, 1);
+        }
+    }
+
+    private function output(): StreamOutput
+    {
+        if ($this->output === null) {
+            $this->output = $this->config->output
+                ?? new StreamOutput(terminal: $this->config->terminal);
+        }
+
+        return $this->output;
+    }
+
+    private function errorOutput(): StreamOutput
+    {
+        if ($this->errorOutput === null) {
+            $this->errorOutput = $this->config->errorOutput ?? $this->output();
+        }
+
+        return $this->errorOutput;
+    }
+}

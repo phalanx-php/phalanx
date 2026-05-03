@@ -4,59 +4,52 @@ declare(strict_types=1);
 
 namespace Phalanx\Archon\Tests\Integration;
 
-use Phalanx\Application;
+use Phalanx\Archon\Archon;
 use Phalanx\Archon\CommandGroup;
 use Phalanx\Archon\CommandScope;
-use Phalanx\Archon\ConsoleRunner;
-use Phalanx\Scope\ExecutionScope;
-use Phalanx\Task\Executable;
+use Phalanx\Archon\ConsoleConfig;
+use Phalanx\Archon\Output\StreamOutput;
+use Phalanx\Archon\Output\TerminalEnvironment;
 use Phalanx\Task\Scopeable;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
-final class ConsoleRunnerLifecycleTest extends TestCase
+final class ArchonLifecycleTest extends TestCase
 {
     #[Test]
     public function disposesHandlerScopeAfterSuccessfulCommand(): void
     {
-        $app = Application::starting()->compile();
-        $runner = ConsoleRunner::withHandlers($app, CommandGroup::of([
-            'lifecycle' => LifecycleCommand::class,
-        ]));
+        $app = Archon::starting()
+            ->commands(CommandGroup::of([
+                'lifecycle' => LifecycleCommand::class,
+            ]))
+            ->build();
 
-        $code = $runner->run(['cli', 'lifecycle']);
+        $code = $app->dispatch(['lifecycle']);
 
         self::assertSame(0, $code);
         self::assertTrue(LifecycleCommand::$disposed);
+        $app->shutdown();
     }
 
     #[Test]
     public function disposesHandlerScopeAfterThrownCommand(): void
     {
-        $app = Application::starting()->compile();
-        $runner = ConsoleRunner::withHandlers($app, CommandGroup::of([
-            'fail' => ThrowingLifecycleCommand::class,
-        ]));
+        $stream = self::outputStream();
+        $app = Archon::starting()
+            ->commands(CommandGroup::of([
+                'fail' => ThrowingLifecycleCommand::class,
+            ]))
+            ->withConsoleConfig(new ConsoleConfig(errorOutput: self::streamOutput($stream)))
+            ->build();
 
-        ob_start();
-        $code = $runner->run(['cli', 'fail']);
-        ob_end_clean();
+        $code = $app->dispatch(['fail']);
 
         self::assertSame(1, $code);
         self::assertTrue(ThrowingLifecycleCommand::$disposed);
-    }
-
-    #[Test]
-    public function disposesLegacyCommandScope(): void
-    {
-        $app = Application::starting()->compile();
-        $runner = (new ConsoleRunner($app))->withCommand('legacy', new LegacyLifecycleCommand());
-
-        $code = $runner->run(['cli', 'legacy']);
-
-        self::assertSame(0, $code);
-        self::assertTrue(LegacyLifecycleCommand::$disposed);
+        self::assertStringContainsString('expected failure', self::streamContents($stream));
+        $app->shutdown();
     }
 
     #[Test]
@@ -64,29 +57,30 @@ final class ConsoleRunnerLifecycleTest extends TestCase
     {
         $dir = $this->makeCommandDirectory();
 
-        $app = Application::starting()->compile();
-        $runner = ConsoleRunner::withCommands($app, $dir);
+        $app = Archon::starting()
+            ->commands($dir)
+            ->build();
 
         self::assertTrue(LoadedLifecycleState::$loadScopeDisposed);
 
-        $code = $runner->run(['cli', 'loaded']);
+        $code = $app->dispatch(['loaded']);
 
         self::assertSame(0, $code);
         self::assertTrue(LoadedLifecycleState::$executionScopeDisposed);
+        $app->shutdown();
     }
 
     protected function setUp(): void
     {
         LifecycleCommand::$disposed = false;
         ThrowingLifecycleCommand::$disposed = false;
-        LegacyLifecycleCommand::$disposed = false;
         LoadedLifecycleState::$loadScopeDisposed = false;
         LoadedLifecycleState::$executionScopeDisposed = false;
     }
 
     private function makeCommandDirectory(): string
     {
-        $dir = sys_get_temp_dir() . '/phalanx-archon-' . bin2hex(random_bytes(6));
+        $dir = sys_get_temp_dir() . '/' . uniqid('phalanx-archon-', true);
 
         if (!mkdir($dir) && !is_dir($dir)) {
             self::fail("Unable to create command directory: $dir");
@@ -109,6 +103,32 @@ return static function (\Phalanx\Scope\ExecutionScope $scope): \Phalanx\Archon\C
 PHP);
 
         return $dir;
+    }
+
+    /** @return resource */
+    private static function outputStream(): mixed
+    {
+        $stream = fopen('php://temp', 'w+');
+
+        if ($stream === false) {
+            self::fail('Unable to open memory stream.');
+        }
+
+        return $stream;
+    }
+
+    /** @param resource $stream */
+    private static function streamOutput(mixed $stream): StreamOutput
+    {
+        return new StreamOutput($stream, new TerminalEnvironment(columns: 80, lines: 24));
+    }
+
+    /** @param resource $stream */
+    private static function streamContents(mixed $stream): string
+    {
+        rewind($stream);
+
+        return stream_get_contents($stream);
     }
 }
 
@@ -137,20 +157,6 @@ final class ThrowingLifecycleCommand implements Scopeable
         });
 
         throw new RuntimeException('expected failure');
-    }
-}
-
-final class LegacyLifecycleCommand implements Executable
-{
-    public static bool $disposed = false;
-
-    public function __invoke(ExecutionScope $scope): int
-    {
-        $scope->onDispose(static function (): void {
-            self::$disposed = true;
-        });
-
-        return 0;
     }
 }
 

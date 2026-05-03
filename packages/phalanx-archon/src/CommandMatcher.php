@@ -8,7 +8,6 @@ use Phalanx\Scope\ExecutionScope;
 use Phalanx\Handler\Handler;
 use Phalanx\Handler\HandlerMatcher;
 use Phalanx\Handler\MatchResult;
-use RuntimeException;
 
 final class CommandMatcher implements HandlerMatcher
 {
@@ -24,7 +23,7 @@ final class CommandMatcher implements HandlerMatcher
         $handler = $handlers[$name] ?? null;
 
         if ($handler === null) {
-            throw new RuntimeException("Command not found: $name");
+            throw UnknownCommand::named($name);
         }
 
         /** @var list<string> $rawArgs */
@@ -43,6 +42,7 @@ final class CommandMatcher implements HandlerMatcher
             $input->args,
             $input->options,
             $config,
+            (string) $scope->attribute(CommandLifecycle::RESOURCE_ATTRIBUTE, ''),
         );
 
         return new MatchResult($handler, $scope);
