@@ -17,7 +17,7 @@ final readonly class DisconnectProbe implements Scopeable
     /** @return array{status: string} */
     public function __invoke(RequestScope $scope): array
     {
-        $this->events->record('disconnect.started');
+        $this->events->record('disconnect.started', ['path' => $scope->path()]);
         $scope->cancellation()->onCancel(function () use ($scope): void {
             $this->events->record('disconnect.cancelled', ['path' => $scope->path()]);
         });
@@ -31,7 +31,7 @@ final readonly class DisconnectProbe implements Scopeable
 
             return ['status' => 'completed'];
         } finally {
-            $this->events->record('disconnect.finalized');
+            $this->events->record('disconnect.finalized', ['path' => $scope->path()]);
         }
     }
 }

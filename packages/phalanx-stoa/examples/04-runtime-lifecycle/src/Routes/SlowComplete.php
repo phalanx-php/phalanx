@@ -17,9 +17,9 @@ final readonly class SlowComplete implements Scopeable
     /** @return array{status: string} */
     public function __invoke(RequestScope $scope): array
     {
-        $this->events->record('slow.started');
+        $this->events->record('slow.started', ['path' => $scope->path()]);
         $scope->delay(0.15);
-        $this->events->record('slow.completed');
+        $this->events->record('slow.completed', ['path' => $scope->path()]);
 
         return ['status' => 'completed'];
     }
