@@ -8,7 +8,6 @@ use OpenSwoole\Coroutine;
 use OpenSwoole\Coroutine\PostgreSQL;
 use OpenSwoole\Table;
 use Phalanx\Runtime\Memory\RuntimeMemory;
-use Phalanx\Runtime\RuntimeHookNames;
 use Phalanx\Runtime\RuntimeHooks;
 use Phalanx\Runtime\RuntimePolicy;
 use Phalanx\Supervisor\LedgerStorage;
@@ -31,9 +30,7 @@ final readonly class EnvironmentDoctor
     public function check(): DoctorReport
     {
         $policy = $this->runtimePolicy ?? RuntimePolicy::phalanxManaged();
-        $currentFlags = RuntimeHooks::currentFlags();
-        $missingFlags = $policy->missingFlags($currentFlags);
-        $sensitiveFlags = $policy->sensitiveEnabledFlags($currentFlags);
+        $hooks = RuntimeHooks::inspect($policy);
 
         $checks = [
             new DoctorCheck(
@@ -64,24 +61,31 @@ final readonly class EnvironmentDoctor
             new DoctorCheck(
                 'openswoole.runtime_policy',
                 true,
-                $policy->name,
+                $hooks->policyName,
             ),
             new DoctorCheck(
                 'openswoole.hook_flags',
                 true,
-                sprintf('%d (%s)', $currentFlags, self::formatNames(RuntimeHookNames::forMask($currentFlags))),
+                sprintf('%d (%s)', $hooks->currentFlags, self::formatNames($hooks->currentFlagNames())),
             ),
             new DoctorCheck(
                 'openswoole.hooks.required',
-                $missingFlags === 0,
-                $missingFlags === 0
-                    ? self::formatNames(RuntimeHookNames::forMask($policy->requiredFlags))
-                    : 'missing: ' . self::formatNames(RuntimeHookNames::forMask($missingFlags)),
+                true,
+                sprintf('%d (%s)', $hooks->requiredFlags, self::formatNames($hooks->requiredFlagNames())),
+            ),
+            new DoctorCheck(
+                'openswoole.hooks.missing',
+                $hooks->isHealthy(),
+                sprintf('%d (%s)', $hooks->missingFlags, self::formatNames($hooks->missingFlagNames())),
             ),
             new DoctorCheck(
                 'openswoole.hooks.sensitive',
                 true,
-                self::formatNames(RuntimeHookNames::forMask($sensitiveFlags)),
+                sprintf(
+                    '%d (%s)',
+                    $hooks->sensitiveEnabledFlags,
+                    self::formatNames($hooks->sensitiveEnabledFlagNames()),
+                ),
             ),
         ];
 

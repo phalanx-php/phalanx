@@ -26,6 +26,7 @@ final class EnvironmentDoctorTest extends TestCase
         self::assertContains('openswoole.runtime_policy', array_column($checks, 'name'));
         self::assertContains('openswoole.hook_flags', array_column($checks, 'name'));
         self::assertContains('openswoole.hooks.required', array_column($checks, 'name'));
+        self::assertContains('openswoole.hooks.missing', array_column($checks, 'name'));
         self::assertContains('openswoole.hooks.sensitive', array_column($checks, 'name'));
         self::assertContains('supervisor.ledger', array_column($checks, 'name'));
     }

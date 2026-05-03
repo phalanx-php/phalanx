@@ -18,29 +18,33 @@ final class RuntimeHooks
         return Runtime::getHookFlags();
     }
 
+    public static function inspect(RuntimePolicy $policy): RuntimeHookSnapshot
+    {
+        return RuntimeHookSnapshot::capture($policy);
+    }
+
     public static function ensure(RuntimePolicy $policy, bool $strict = true): int
     {
-        $current = self::currentFlags();
-        $missing = $policy->missingFlags($current);
-        if ($missing === 0) {
-            return $current;
+        $before = self::inspect($policy);
+        if ($before->isHealthy()) {
+            return $before->currentFlags;
         }
 
         try {
-            Runtime::enableCoroutine(true, $current | $policy->requiredFlags);
+            Runtime::enableCoroutine(true, $before->currentFlags | $policy->requiredFlags);
         } catch (Throwable $e) {
             if ($strict) {
-                throw RuntimePolicyViolation::enableFailed($policy, $missing, $e);
+                throw RuntimePolicyViolation::enableFailed($policy, $before->missingFlags, $e);
             }
 
             return self::currentFlags();
         }
 
-        $current = self::currentFlags();
-        if ($strict && !$policy->hasRequiredFlags($current)) {
-            throw RuntimePolicyViolation::missingRequiredFlags($policy, $policy->missingFlags($current));
+        $after = self::inspect($policy);
+        if ($strict && !$after->isHealthy()) {
+            throw RuntimePolicyViolation::missingRequiredFlags($policy, $after->missingFlags);
         }
 
-        return $current;
+        return $after->currentFlags;
     }
 }

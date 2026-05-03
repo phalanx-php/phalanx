@@ -9,8 +9,10 @@ use OpenSwoole\Runtime;
 use Phalanx\Application;
 use Phalanx\Runtime\RuntimeCapability;
 use Phalanx\Runtime\RuntimeHookNames;
+use Phalanx\Runtime\RuntimeHookSnapshot;
 use Phalanx\Runtime\RuntimeHooks;
 use Phalanx\Runtime\RuntimePolicy;
+use Phalanx\Scope\ScopeIdentity;
 use PHPUnit\Framework\TestCase;
 
 final class RuntimePolicyTest extends TestCase
@@ -86,9 +88,10 @@ final class RuntimePolicyTest extends TestCase
             ->compile();
 
         $scope = $app->createScope();
-        $scope->dispose();
+        self::assertInstanceOf(ScopeIdentity::class, $scope);
+        self::assertNotSame('', $scope->scopeId);
 
-        self::assertTrue(true);
+        $scope->dispose();
     }
 
     public function testInvalidStrictContextThrowsClearly(): void
@@ -112,6 +115,33 @@ final class RuntimePolicyTest extends TestCase
         self::assertSame($first, $second);
         self::assertSame($before, $first & $before);
         self::assertTrue($policy->hasRequiredFlags($second));
+    }
+
+    public function testRuntimeHooksSnapshotReportsPolicyStateWithoutMutatingHooks(): void
+    {
+        $policy = RuntimePolicy::forCapabilities(
+            RuntimeCapability::Network,
+            RuntimeCapability::Sleep,
+        );
+
+        $snapshot = RuntimeHookSnapshot::fromFlags(
+            $policy,
+            Runtime::HOOK_TCP | Runtime::HOOK_SSL | Runtime::HOOK_SLEEP | Runtime::HOOK_STDIO,
+        );
+
+        self::assertFalse($snapshot->isHealthy());
+        self::assertSame($policy->name, $snapshot->policyName);
+        self::assertSame(['TCP', 'SSL', 'SLEEP', 'STDIO'], $snapshot->currentFlagNames());
+        self::assertSame(['UNIX', 'TLS'], $snapshot->missingFlagNames());
+        self::assertSame(['SLEEP', 'STDIO'], $snapshot->sensitiveEnabledFlagNames());
+        self::assertSame([
+            'policy' => $policy->name,
+            'current' => Runtime::HOOK_TCP | Runtime::HOOK_SSL | Runtime::HOOK_SLEEP | Runtime::HOOK_STDIO,
+            'required' => $policy->requiredFlags,
+            'missing' => $snapshot->missingFlags,
+            'sensitive_enabled' => Runtime::HOOK_SLEEP | Runtime::HOOK_STDIO,
+            'healthy' => false,
+        ], $snapshot->toArray());
     }
 
     public function testHookNamesAreStableForDiagnostics(): void
