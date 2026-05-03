@@ -41,13 +41,30 @@ final readonly class BrainstormCommand implements Executable
         $tasks['admin'] = new ChatAdminTask('ADMIN', new VisionAgent(), $bus, $config);
         $tasks['ui_supervisor'] = new UiSupervisorTask('UI_SUPERVISOR', $bus, $config);
 
-        $scope->concurrent([
-            'swarm' => Task::of(static fn(ExecutionScope $s) => $s->concurrent($tasks)),
-            'ui'    => Task::of(static function (ExecutionScope $s) use ($output, $theme, $bus, $config) {
-                $dashboard = new SwarmDashboard($output, $theme, $bus, $config->workspace);
-                $dashboard->run($s);
-            }),
-        ]);
+        $scope->concurrent(
+            swarm: Task::of(
+                static fn(ExecutionScope $s) => $s->concurrent(...$tasks),
+            ),
+            ui: Task::of(
+                static function (
+                    ExecutionScope $s,
+                ) use (
+                    $bus,
+                    $theme,
+                    $config,
+                    $output,
+                ): void {
+                    $dashboard = new SwarmDashboard(
+                        $output,
+                        $theme,
+                        $bus,
+                        $config->workspace,
+                    );
+
+                    $dashboard->run($s);
+                },
+            ),
+        );
 
         return 0;
     }
