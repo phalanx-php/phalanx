@@ -18,6 +18,7 @@ use Phalanx\Runtime\Memory\RuntimeMemoryConfig;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Task;
 use Phalanx\Testing\PhalanxTestCase;
+use Phalanx\Testing\PhalanxTestExpectations;
 use Throwable;
 
 class RuntimeMemoryResilienceTest extends PhalanxTestCase
@@ -63,10 +64,11 @@ class RuntimeMemoryResilienceTest extends PhalanxTestCase
             self::assertSame(1, $memory->tables->resourceAnnotations->count());
 
             $memory->resources->release($parent->id);
+            $expect = new PhalanxTestExpectations($memory);
 
             self::assertNull($memory->resources->get($parent->id));
             self::assertSame(0, $memory->tables->resourceEdges->count());
-            self::assertSame(0, $memory->tables->resourceLeases->count());
+            $expect->leases()->released();
             self::assertSame(0, $memory->tables->resourceAnnotations->count());
 
             try {

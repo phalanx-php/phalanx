@@ -34,6 +34,7 @@ abstract class PhalanxTestCase extends TestCase
             $this->phalanxRuntime->scope->expect->scope()->disposed();
             $this->phalanxRuntime->scope->expect->work()->finished();
             $this->phalanxRuntime->scope->expect->leases()->released();
+            $this->phalanxRuntime->scope->expect->diagnostics()->healthy();
             $this->phalanxRuntime->scope->expect->runtime()->clean();
         } finally {
             $this->phalanxRuntime->shutdown();

@@ -54,8 +54,8 @@ final class RuntimeMemoryTest extends TestCase
         try {
             $locks->acquire('resource-2');
             self::fail('Expected managed resource transition lock timeout.');
-        } catch (ManagedResourceLockTimeout) {
-            self::assertTrue(true);
+        } catch (ManagedResourceLockTimeout $e) {
+            self::assertStringContainsString("managed resource 'resource-2'", $e->getMessage());
         } finally {
             $held->release();
             $locks->destroy();
@@ -69,8 +69,8 @@ final class RuntimeMemoryTest extends TestCase
         try {
             new ManagedResourceTransitionLocks(stripes: 0, timeout: 1.0);
             self::fail('Expected stripe count validation.');
-        } catch (InvalidArgumentException) {
-            self::assertTrue(true);
+        } catch (InvalidArgumentException $e) {
+            self::assertSame('stripes must be greater than zero.', $e->getMessage());
         }
     }
 

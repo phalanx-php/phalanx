@@ -17,15 +17,29 @@ class DiagnosticsExpectation
 
     public function healthy(): void
     {
+        $this->listenerFailures(0);
+        $this->droppedEvents(0);
+    }
+
+    public function listenerFailures(int $expected): void
+    {
+        $actual = count($this->memory->events->listenerErrors());
+
         PHPUnitAssert::assertSame(
-            [],
-            $this->memory->events->listenerErrors(),
-            'Expected no runtime listener failures.',
+            $expected,
+            $actual,
+            "Expected {$expected} runtime listener failures; saw {$actual}.",
         );
+    }
+
+    public function droppedEvents(int $expected): void
+    {
+        $actual = $this->memory->counters->get(AegisCounterSid::RuntimeEventsDropped);
+
         PHPUnitAssert::assertSame(
-            0,
-            $this->memory->counters->get(AegisCounterSid::RuntimeEventsDropped),
-            'Expected no dropped runtime diagnostic events.',
+            $expected,
+            $actual,
+            "Expected {$expected} dropped runtime diagnostic events; saw {$actual}.",
         );
     }
 }

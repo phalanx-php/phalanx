@@ -16,7 +16,9 @@ class RuntimeExpectation
 
     public function clean(): void
     {
-        PHPUnitAssert::assertSame(0, $this->memory->resources->liveCount(), 'Expected no live runtime handles.');
+        $live = $this->memory->resources->liveCount();
+
+        PHPUnitAssert::assertSame(0, $live, "Expected no live runtime handles; {$live} still live.");
         PHPUnitAssert::assertSame(
             0,
             $this->memory->tables->resources->count(),
