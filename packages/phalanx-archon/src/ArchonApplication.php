@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Phalanx\Archon;
 
 use Phalanx\AppHost;
+use Phalanx\Cancellation\CancellationToken;
+use Phalanx\Scope\ExecutionScope;
 
 final class ArchonApplication
 {
@@ -47,13 +49,37 @@ final class ArchonApplication
         return $this->dispatcher()->dispatch($argv);
     }
 
+    /**
+     * @internal
+     * @param list<string> $argv
+     */
+    public function dispatchScoped(array $argv, ExecutionScope $scope, ?ConsoleSignalState $signals = null): int
+    {
+        return $this->dispatcher()->dispatchScoped(array_values($argv), $scope, $signals);
+    }
+
     /** @param list<string>|null $argv */
     public function run(?array $argv = null): int
     {
-        return (int) $this->host->run(new ArchonDispatchTask(
-            application: $this,
-            argv: array_values($argv ?? $this->consoleConfig->argv),
-        ));
+        $token = CancellationToken::create();
+        $signals = new ConsoleSignalState();
+        $trap = ConsoleSignalTrap::install(
+            $this->consoleConfig->signalPolicy(),
+            static function (ConsoleSignal $signal) use ($signals, $token): void {
+                $signals->record($signal);
+                $token->cancel();
+            },
+        );
+
+        try {
+            return (int) $this->host->run(new ArchonDispatchTask(
+                application: $this,
+                argv: array_values($argv ?? $this->consoleConfig->argv),
+                signals: $signals,
+            ), $token);
+        } finally {
+            $trap->restore();
+        }
     }
 
     public function shutdown(): void

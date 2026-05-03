@@ -19,11 +19,12 @@ final class ArchonDispatchTask implements Executable, Traceable
     public function __construct(
         private ArchonApplication $application,
         private array $argv,
+        private ?ConsoleSignalState $signals = null,
     ) {
     }
 
     public function __invoke(ExecutionScope $scope): int
     {
-        return $this->application->dispatch($this->argv);
+        return $this->application->dispatchScoped($this->argv, $scope, $this->signals);
     }
 }

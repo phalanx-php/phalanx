@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Archon\Input;
 
 use Closure;
+use Phalanx\Scope\ExecutionScope;
 use React\EventLoop\Loop;
 use React\Promise\Deferred;
 use React\Promise\PromiseInterface;
@@ -39,8 +40,17 @@ final class RawInput
 
     private readonly KeyParser $parser;
 
-    public function __construct(private readonly bool $isTty = true)
-    {
+    /** @var Closure(string): string */
+    private Closure $stty;
+
+    /** @param resource|null $stream */
+    public function __construct(
+        private readonly bool $isTty = true,
+        private mixed $stream = null,
+        ?Closure $stty = null,
+    ) {
+        $this->stream = $stream ?? STDIN;
+        $this->stty = $stty ?? static fn(string $command): string => trim((string) shell_exec($command));
         $this->parser = new KeyParser();
     }
 
@@ -57,8 +67,8 @@ final class RawInput
 
         // Blocking shell_exec is acceptable here — called once before the event loop
         // begins processing input, not inside a timer or stream callback.
-        $this->savedStty = trim((string) shell_exec('stty -g 2>/dev/null'));
-        shell_exec('stty -icanon -isig -echo -ixon min 1 time 0 2>/dev/null');
+        $this->savedStty = ($this->stty)('stty -g 2>/dev/null');
+        ($this->stty)('stty -icanon -isig -echo -ixon min 1 time 0 2>/dev/null');
         $this->active = true;
     }
 
@@ -68,7 +78,10 @@ final class RawInput
             return;
         }
 
-        stream_set_blocking(STDIN, false);
+        $stream = $this->stream;
+        assert(is_resource($stream));
+
+        stream_set_blocking($stream, false);
 
         $ref = WeakReference::create($this);
 
@@ -90,7 +103,7 @@ final class RawInput
             self::class,
         );
 
-        Loop::addReadStream(STDIN, $handler);
+        Loop::addReadStream($stream, $handler);
         $this->attached = true;
     }
 
@@ -108,8 +121,11 @@ final class RawInput
             return;
         }
 
-        Loop::removeReadStream(STDIN);
-        stream_set_blocking(STDIN, true);
+        $stream = $this->stream;
+        assert(is_resource($stream));
+
+        Loop::removeReadStream($stream);
+        stream_set_blocking($stream, true);
         $this->attached = false;
     }
 
@@ -120,11 +136,37 @@ final class RawInput
         }
 
         if ($this->savedStty !== '') {
-            shell_exec("stty {$this->savedStty} 2>/dev/null");
+            ($this->stty)("stty {$this->savedStty} 2>/dev/null");
         }
 
         $this->active    = false;
         $this->savedStty = '';
+    }
+
+    public function restore(): void
+    {
+        $this->detach();
+        $this->disable();
+    }
+
+    public function restoreOnDispose(ExecutionScope $scope): self
+    {
+        $input = $this;
+        $scope->onDispose(static function () use ($input): void {
+            $input->restore();
+        });
+
+        return $this;
+    }
+
+    public function isActive(): bool
+    {
+        return $this->active;
+    }
+
+    public function isAttached(): bool
+    {
+        return $this->attached;
     }
 
     public function isTty(): bool

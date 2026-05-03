@@ -32,58 +32,79 @@ final class CommandDispatcher
     public function dispatch(array $argv): int
     {
         $argv = array_values($argv);
+        $rootScope = $this->host->createScope();
+
+        try {
+            return $this->dispatchInScope($argv, $rootScope);
+        } finally {
+            $rootScope->dispose();
+        }
+    }
+
+    /**
+     * @internal
+     * @param list<string> $argv
+     */
+    public function dispatchScoped(array $argv, ExecutionScope $rootScope, ?ConsoleSignalState $signals = null): int
+    {
+        return $this->dispatchInScope(array_values($argv), $rootScope, $signals);
+    }
+
+    /** @param list<string> $argv */
+    private function dispatchInScope(array $argv, ExecutionScope $rootScope, ?ConsoleSignalState $signals = null): int
+    {
         $defaultCommand = $argv === [];
         $command = $argv[0] ?? $this->config->defaultCommand;
         $args = array_slice($argv, 1);
         $displayName = $this->displayName($command, $args);
-        $rootScope = $this->host->createScope();
+
+        if (!$rootScope instanceof ScopeIdentity) {
+            throw new RuntimeException('Archon command scopes require Aegis scope identity.');
+        }
+
+        $lifecycle = CommandLifecycle::open(
+            scope: $rootScope,
+            name: $displayName,
+            argumentCount: count($args),
+            defaultCommand: $defaultCommand,
+        );
+        $scope = $rootScope
+            ->withAttribute('args', $args)
+            ->withAttribute('command', $command)
+            ->withAttribute(CommandLifecycle::RESOURCE_ATTRIBUTE, $lifecycle->resourceId);
 
         try {
-            if (!$rootScope instanceof ScopeIdentity) {
-                throw new RuntimeException('Archon command scopes require Aegis scope identity.');
-            }
+            $scope->throwIfCancelled();
+            $code = $this->execute($scope, $lifecycle, $command, $args);
+            $lifecycle->close($code);
 
-            $lifecycle = CommandLifecycle::open(
-                scope: $rootScope,
-                name: $displayName,
-                argumentCount: count($args),
-                defaultCommand: $defaultCommand,
-            );
-            $scope = $rootScope
-                ->withAttribute('args', $args)
-                ->withAttribute('command', $command)
-                ->withAttribute(CommandLifecycle::RESOURCE_ATTRIBUTE, $lifecycle->resourceId);
+            return $code;
+        } catch (Cancelled $e) {
+            $signal = $signals === null ? null : $signals->current();
+            $reason = $signal instanceof ConsoleSignal ? $signal->reason : $e->getMessage();
+            $exitCode = $signal instanceof ConsoleSignal ? $signal->exitCode : 130;
 
-            try {
-                $code = $this->execute($scope, $lifecycle, $command, $args);
-                $lifecycle->close($code);
+            $lifecycle->abort($reason, $exitCode);
+            $this->errorOutput()->persist("Cancelled: $reason");
 
-                return $code;
-            } catch (Cancelled $e) {
-                $lifecycle->abort($e->getMessage());
-                $this->errorOutput()->persist("Cancelled: {$e->getMessage()}");
+            return $exitCode;
+        } catch (InvalidInputException $e) {
+            $lifecycle->invalidInput($e->getMessage(), $e);
+            $this->writeInvalidInput($displayName, $e);
 
-                return 130;
-            } catch (InvalidInputException $e) {
-                $lifecycle->invalidInput($e->getMessage(), $e);
-                $this->writeInvalidInput($displayName, $e);
+            return 1;
+        } catch (UnknownCommand $e) {
+            $unknown = $command === 'help' ? $e->command : $displayName;
 
-                return 1;
-            } catch (UnknownCommand $e) {
-                $unknown = $command === 'help' ? $e->command : $displayName;
+            $lifecycle->unknown($unknown);
+            $this->writeUnknownCommand($unknown);
 
-                $lifecycle->unknown($unknown);
-                $this->writeUnknownCommand($unknown);
+            return 1;
+        } catch (Throwable $e) {
+            $lifecycle->fail('exception', $e->getMessage(), $e);
+            $this->errorOutput()->persist("Error: {$e->getMessage()}");
 
-                return 1;
-            } catch (Throwable $e) {
-                $lifecycle->fail('exception', $e->getMessage(), $e);
-                $this->errorOutput()->persist("Error: {$e->getMessage()}");
-
-                return 1;
-            }
-        } finally {
-            $rootScope->dispose();
+            return 1;
         }
     }
 

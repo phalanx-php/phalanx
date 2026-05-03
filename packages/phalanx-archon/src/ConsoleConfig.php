@@ -19,6 +19,7 @@ final readonly class ConsoleConfig
         public ?StreamOutput $output = null,
         public ?StreamOutput $errorOutput = null,
         public ?TerminalEnvironment $terminal = null,
+        public ?ConsoleSignalPolicy $signalPolicy = null,
     ) {
     }
 
@@ -28,6 +29,7 @@ final readonly class ConsoleConfig
         return new self(
             argv: self::argvFromContext($context),
             terminal: TerminalEnvironment::fromContext($context),
+            signalPolicy: ConsoleSignalPolicy::default(),
         );
     }
 
@@ -54,6 +56,11 @@ final readonly class ConsoleConfig
         return $args;
     }
 
+    public function signalPolicy(): ConsoleSignalPolicy
+    {
+        return $this->signalPolicy ?? ConsoleSignalPolicy::default();
+    }
+
     /** @param list<string> $argv */
     public function withArgv(array $argv): self
     {
@@ -64,6 +71,7 @@ final readonly class ConsoleConfig
             output: $this->output,
             errorOutput: $this->errorOutput,
             terminal: $this->terminal,
+            signalPolicy: $this->signalPolicy,
         );
     }
 
@@ -76,6 +84,7 @@ final readonly class ConsoleConfig
             output: $this->output,
             errorOutput: $this->errorOutput,
             terminal: $this->terminal,
+            signalPolicy: $this->signalPolicy,
         );
     }
 }

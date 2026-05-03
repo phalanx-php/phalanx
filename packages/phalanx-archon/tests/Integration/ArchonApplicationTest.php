@@ -10,11 +10,14 @@ use Phalanx\Archon\CommandConfig;
 use Phalanx\Archon\CommandGroup;
 use Phalanx\Archon\CommandScope;
 use Phalanx\Archon\ConsoleConfig;
+use Phalanx\Archon\ConsoleSignalPolicy;
+use Phalanx\Archon\ConsoleSignalState;
 use Phalanx\Archon\Identity\ArchonAnnotationSid;
 use Phalanx\Archon\Identity\ArchonResourceSid;
 use Phalanx\Archon\Opt;
 use Phalanx\Archon\Output\StreamOutput;
 use Phalanx\Archon\Output\TerminalEnvironment;
+use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Runtime\Identity\AegisResourceSid;
 use Phalanx\Runtime\Memory\ManagedResourceState;
@@ -27,6 +30,32 @@ use PHPUnit\Framework\Attributes\Test;
 
 final class ArchonApplicationTest extends CoroutineTestCase
 {
+    /** @return resource */
+    private static function outputStream(): mixed
+    {
+        $stream = fopen('php://temp', 'w+');
+
+        if ($stream === false) {
+            self::fail('Unable to open memory stream.');
+        }
+
+        return $stream;
+    }
+
+    /** @param resource $stream */
+    private static function streamOutput(mixed $stream): StreamOutput
+    {
+        return new StreamOutput($stream, new TerminalEnvironment(columns: 80, lines: 24));
+    }
+
+    /** @param resource $stream */
+    private static function streamContents(mixed $stream): string
+    {
+        rewind($stream);
+
+        return stream_get_contents($stream);
+    }
+
     #[Test]
     public function facadeBuildsDispatchableCommandFirstApplication(): void
     {
@@ -43,7 +72,9 @@ final class ArchonApplicationTest extends CoroutineTestCase
         self::assertSame('probe', ArchonApplicationProbeCommand::$commandName);
         self::assertNotSame('', ArchonApplicationProbeCommand::$commandResourceId);
         self::assertSame('task:probe', ArchonApplicationProbeCommand::$taskResult);
-        self::assertSame(ManagedResourceState::Closed, $app->host()->runtime()->memory->resources->all(ArchonResourceSid::Command)[0]->state);
+        $resource = $app->host()->runtime()->memory->resources->all(ArchonResourceSid::Command)[0];
+
+        self::assertSame(ManagedResourceState::Closed, $resource->state);
         self::assertSame(0, $app->host()->runtime()->memory->resources->liveCount(AegisResourceSid::Scope));
         PhalanxAssert::assertNoLiveTasks($app->host()->supervisor());
         $app->shutdown();
@@ -147,7 +178,9 @@ final class ArchonApplicationTest extends CoroutineTestCase
         });
 
         self::assertTrue($disposed);
-        self::assertSame(ManagedResourceState::Failed, $app->host()->runtime()->memory->resources->all(ArchonResourceSid::Command)[0]->state);
+        $resource = $app->host()->runtime()->memory->resources->all(ArchonResourceSid::Command)[0];
+
+        self::assertSame(ManagedResourceState::Failed, $resource->state);
         PhalanxAssert::assertNoLiveTasks($app->host()->supervisor());
         $app->shutdown();
     }
@@ -168,9 +201,11 @@ final class ArchonApplicationTest extends CoroutineTestCase
             self::assertStringContainsString('known', self::streamContents($stream));
         });
 
-        self::assertSame(ManagedResourceState::Failed, $app->host()->runtime()->memory->resources->all(ArchonResourceSid::Command)[0]->state);
+        $resource = $app->host()->runtime()->memory->resources->all(ArchonResourceSid::Command)[0];
+
+        self::assertSame(ManagedResourceState::Failed, $resource->state);
         self::assertSame('unknown_command', $app->host()->runtime()->memory->resources->annotations(
-            $app->host()->runtime()->memory->resources->all(ArchonResourceSid::Command)[0]->id,
+            $resource->id,
         )[ArchonAnnotationSid::ErrorKind->value()]);
         $app->shutdown();
     }
@@ -249,6 +284,125 @@ final class ArchonApplicationTest extends CoroutineTestCase
     }
 
     #[Test]
+    public function scopedDispatchUsesBorrowedCancellationToken(): void
+    {
+        $stream = self::outputStream();
+        $token = null;
+        $app = Archon::command(
+            'cancel',
+            static function (CommandScope $scope) use (&$token): int {
+                self::assertSame($token, $scope->cancellation());
+                $scope->cancellation()->cancel();
+                $scope->throwIfCancelled();
+
+                return 0;
+            },
+        )
+            ->withConsoleConfig(new ConsoleConfig(errorOutput: self::streamOutput($stream)))
+            ->build();
+
+        $this->runInCoroutine(static function () use ($app, $stream, &$token): void {
+            $token = CancellationToken::create();
+            $scope = $app->host()->createScope($token);
+
+            try {
+                $code = $app->dispatchScoped(['cancel'], $scope);
+
+                self::assertSame(130, $code);
+                self::assertStringContainsString('Cancelled: scope cancelled', self::streamContents($stream));
+            } finally {
+                $scope->dispose();
+            }
+        });
+
+        $resource = $app->host()->runtime()->memory->resources->all(ArchonResourceSid::Command)[0];
+
+        self::assertSame(ManagedResourceState::Aborted, $resource->state);
+        self::assertSame('130', $app->host()->runtime()->memory->resources->annotations(
+            $resource->id,
+        )[ArchonAnnotationSid::ExitCode->value()]);
+        self::assertSame(0, $app->host()->runtime()->memory->resources->liveCount(AegisResourceSid::Scope));
+        PhalanxAssert::assertNoLiveTasks($app->host()->supervisor());
+        $app->shutdown();
+    }
+
+    #[Test]
+    public function signalCancellationUsesSignalExitCodeAndReason(): void
+    {
+        $stream = self::outputStream();
+        $signals = new ConsoleSignalState();
+        $signal = ConsoleSignalPolicy::forSignals([15 => 143])->signal(15);
+        self::assertNotNull($signal);
+        $signals->record($signal);
+
+        $app = Archon::command(
+            'cancel',
+            static function (CommandScope $scope): int {
+                $scope->cancellation()->cancel();
+                $scope->throwIfCancelled();
+
+                return 0;
+            },
+        )
+            ->withConsoleConfig(new ConsoleConfig(errorOutput: self::streamOutput($stream)))
+            ->build();
+
+        $this->runInCoroutine(static function () use ($app, $signals, $stream): void {
+            $token = CancellationToken::create();
+            $scope = $app->host()->createScope($token);
+
+            try {
+                $code = $app->dispatchScoped(['cancel'], $scope, $signals);
+
+                self::assertSame(143, $code);
+                self::assertStringContainsString('Cancelled: signal:term', self::streamContents($stream));
+            } finally {
+                $scope->dispose();
+            }
+        });
+
+        $resource = $app->host()->runtime()->memory->resources->all(ArchonResourceSid::Command)[0];
+
+        self::assertSame(ManagedResourceState::Aborted, $resource->state);
+        self::assertSame('143', $app->host()->runtime()->memory->resources->annotations(
+            $resource->id,
+        )[ArchonAnnotationSid::ExitCode->value()]);
+        $app->shutdown();
+    }
+
+    #[Test]
+    public function runCancelsThroughConfiguredSignalTrap(): void
+    {
+        if (!defined('SIGUSR1') || !function_exists('posix_kill') || !function_exists('pcntl_signal_dispatch')) {
+            self::markTestSkipped('Signal integration requires SIGUSR1, posix_kill, and pcntl_signal_dispatch.');
+        }
+
+        $stream = self::outputStream();
+        $app = Archon::command(
+            'signal',
+            static function (CommandScope $scope): int {
+                $pid = getmypid();
+                self::assertIsInt($pid);
+
+                posix_kill($pid, SIGUSR1);
+                pcntl_signal_dispatch();
+                $scope->throwIfCancelled();
+
+                return 0;
+            },
+        )
+            ->withConsoleConfig(new ConsoleConfig(
+                argv: ['signal'],
+                errorOutput: self::streamOutput($stream),
+                signalPolicy: ConsoleSignalPolicy::forSignals([SIGUSR1 => 138]),
+            ))
+            ->build();
+
+        self::assertSame(138, $app->run());
+        self::assertStringContainsString('Cancelled: signal:' . SIGUSR1, self::streamContents($stream));
+    }
+
+    #[Test]
     public function oneOffCommandFacadeRejectsNonStaticClosures(): void
     {
         $this->expectException(\RuntimeException::class);
@@ -265,32 +419,6 @@ final class ArchonApplicationTest extends CoroutineTestCase
         ArchonApplicationProbeCommand::$commandResourceId = null;
         ArchonApplicationProbeCommand::$taskResult = null;
         CoroutineRuntimeProbeCommand::$ran = false;
-    }
-
-    /** @return resource */
-    private static function outputStream(): mixed
-    {
-        $stream = fopen('php://temp', 'w+');
-
-        if ($stream === false) {
-            self::fail('Unable to open memory stream.');
-        }
-
-        return $stream;
-    }
-
-    /** @param resource $stream */
-    private static function streamOutput(mixed $stream): StreamOutput
-    {
-        return new StreamOutput($stream, new TerminalEnvironment(columns: 80, lines: 24));
-    }
-
-    /** @param resource $stream */
-    private static function streamContents(mixed $stream): string
-    {
-        rewind($stream);
-
-        return stream_get_contents($stream);
     }
 }
 

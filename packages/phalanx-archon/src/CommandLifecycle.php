@@ -10,6 +10,7 @@ use Phalanx\Archon\Identity\ArchonResourceSid;
 use Phalanx\Runtime\Identity\RuntimeAnnotationId;
 use Phalanx\Runtime\Identity\RuntimeEventId;
 use Phalanx\Runtime\Memory\ManagedResourceHandle;
+use Phalanx\Runtime\RuntimeContext;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\ScopeIdentity;
 use Throwable;
@@ -24,7 +25,7 @@ final class CommandLifecycle
     }
 
     private function __construct(
-        private ExecutionScope $scope,
+        private RuntimeContext $runtime,
         private ManagedResourceHandle $handle,
     ) {
     }
@@ -35,7 +36,8 @@ final class CommandLifecycle
         int $argumentCount,
         bool $defaultCommand,
     ): self {
-        $memory = $scope->runtime->memory;
+        $runtime = $scope->runtime;
+        $memory = $runtime->memory;
         $resourceId = $memory->ids->nextRuntime('archon-command');
         $handle = $memory->resources->open(
             type: ArchonResourceSid::Command,
@@ -44,7 +46,7 @@ final class CommandLifecycle
             ownerScopeId: $scope->scopeId,
         );
 
-        $lifecycle = new self($scope, $handle);
+        $lifecycle = new self($runtime, $handle);
         $lifecycle->annotate(ArchonAnnotationSid::CommandName, $name);
         $lifecycle->annotate(ArchonAnnotationSid::ArgumentCount, $argumentCount);
         $lifecycle->annotate(ArchonAnnotationSid::DefaultCommand, $defaultCommand);
@@ -53,17 +55,22 @@ final class CommandLifecycle
         return $lifecycle;
     }
 
+    private static function fit(string $value, int $length = 240): string
+    {
+        return mb_strlen($value) <= $length ? $value : mb_substr($value, 0, $length);
+    }
+
     public function activate(string $handler): void
     {
         $this->annotate(ArchonAnnotationSid::Handler, $handler);
-        $this->handle = $this->scope->runtime->memory->resources->activate($this->handle);
+        $this->handle = $this->runtime->memory->resources->activate($this->handle);
         $this->record(ArchonEventSid::CommandMatched, $handler);
     }
 
     public function close(int $exitCode): void
     {
         $this->annotate(ArchonAnnotationSid::ExitCode, $exitCode);
-        $this->handle = $this->scope->runtime->memory->resources->close($this->handle, "exit:$exitCode");
+        $this->handle = $this->runtime->memory->resources->close($this->handle, "exit:$exitCode");
         $this->record(ArchonEventSid::CommandCompleted, (string) $exitCode);
     }
 
@@ -77,7 +84,7 @@ final class CommandLifecycle
         }
 
         $reason = self::fit($reason);
-        $this->handle = $this->scope->runtime->memory->resources->fail($this->handle, $reason);
+        $this->handle = $this->runtime->memory->resources->fail($this->handle, $reason);
         $this->record(ArchonEventSid::CommandFailed, $kind, $reason);
     }
 
@@ -93,18 +100,13 @@ final class CommandLifecycle
         $this->record(ArchonEventSid::CommandUnknown, $command);
     }
 
-    public function abort(string $reason): void
+    public function abort(string $reason, int $exitCode = 130): void
     {
         $reason = self::fit($reason);
-        $this->annotate(ArchonAnnotationSid::ExitCode, 130);
+        $this->annotate(ArchonAnnotationSid::ExitCode, $exitCode);
         $this->annotate(ArchonAnnotationSid::ErrorKind, 'cancelled');
-        $this->handle = $this->scope->runtime->memory->resources->abort($this->handle, $reason);
+        $this->handle = $this->runtime->memory->resources->abort($this->handle, $reason);
         $this->record(ArchonEventSid::CommandAborted, 'cancelled', $reason);
-    }
-
-    private static function fit(string $value, int $length = 240): string
-    {
-        return mb_strlen($value) <= $length ? $value : mb_substr($value, 0, $length);
     }
 
     private function annotate(RuntimeAnnotationId $key, string|int|float|bool|null $value): void
@@ -113,12 +115,12 @@ final class CommandLifecycle
             $value = self::fit($value);
         }
 
-        $this->scope->runtime->memory->resources->annotate($this->handle, $key, $value);
+        $this->runtime->memory->resources->annotate($this->handle, $key, $value);
     }
 
     private function record(RuntimeEventId $type, string $valueA = '', string $valueB = ''): void
     {
-        $this->scope->runtime->memory->resources->recordEvent(
+        $this->runtime->memory->resources->recordEvent(
             resource: $this->handle,
             type: $type,
             valueA: self::fit($valueA),
