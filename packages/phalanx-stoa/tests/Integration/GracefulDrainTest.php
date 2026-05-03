@@ -8,11 +8,13 @@ use GuzzleHttp\Psr7\ServerRequest;
 use OpenSwoole\Coroutine;
 use OpenSwoole\Coroutine\Channel;
 use Phalanx\Application;
+use Phalanx\Cancellation\Cancelled;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
-use Phalanx\Stoa\StoaRunner;
 use Phalanx\Stoa\RequestScope;
 use Phalanx\Stoa\RouteGroup;
+use Phalanx\Stoa\Runtime\Identity\StoaEventSid;
+use Phalanx\Stoa\StoaRunner;
 use Phalanx\Stoa\StoaServerConfig;
 use Phalanx\Tests\Stoa\Fixtures\EventTrackingSlowHandler;
 use Phalanx\Tests\Stoa\Fixtures\Routes\StatusOk;
@@ -55,7 +57,13 @@ final class GracefulDrainTest extends CoroutineTestCase
     public function drain_timeout_cancels_stuck_request(): void
     {
         $this->runInCoroutine(function (): void {
+            DrainStuckHandler::$cancelled = false;
+            DrainStuckHandler::$resourceId = '';
             $app = Application::starting()->compile()->startup();
+            $events = [];
+            $app->runtime()->memory->events->listen(static function ($event) use (&$events): void {
+                $events[] = $event;
+            });
             $runner = StoaRunner::from($app, new StoaServerConfig(requestTimeout: 10.0, drainTimeout: 0.05))
                 ->withRoutes(RouteGroup::of([
                     'GET /stuck' => DrainStuckHandler::class,
@@ -77,6 +85,16 @@ final class GracefulDrainTest extends CoroutineTestCase
             self::assertInstanceOf(ResponseInterface::class, $response);
             self::assertSame(500, $response->getStatusCode());
             self::assertLessThan(0.5, $elapsed, 'Drain timeout should cancel stuck request quickly');
+            self::assertTrue(DrainStuckHandler::$cancelled);
+            self::assertNotSame('', DrainStuckHandler::$resourceId);
+            self::assertContains(
+                StoaEventSid::RequestAborted->value(),
+                self::eventTypesForResource($events, DrainStuckHandler::$resourceId),
+            );
+            self::assertNotContains(
+                StoaEventSid::RequestFailed->value(),
+                self::eventTypesForResource($events, DrainStuckHandler::$resourceId),
+            );
             self::assertSame(0, $runner->activeRequests());
         });
     }
@@ -151,13 +169,39 @@ final class GracefulDrainTest extends CoroutineTestCase
             self::assertTrue($shutdownFired, 'Service shutdown hook should have fired');
         });
     }
+
+    /**
+     * @param list<\Phalanx\Runtime\Memory\RuntimeLifecycleEvent> $events
+     * @return list<string>
+     */
+    private static function eventTypesForResource(array $events, string $resourceId): array
+    {
+        $types = [];
+        foreach ($events as $event) {
+            if ($event->resourceId === $resourceId) {
+                $types[] = $event->type;
+            }
+        }
+
+        return $types;
+    }
 }
 
 final class DrainStuckHandler implements Scopeable
 {
+    public static bool $cancelled = false;
+    public static string $resourceId = '';
+
     public function __invoke(RequestScope $scope): string
     {
-        $scope->delay(1.5);
+        self::$resourceId = $scope->resourceId;
+
+        try {
+            $scope->delay(1.5);
+        } catch (Cancelled $e) {
+            self::$cancelled = true;
+            throw $e;
+        }
 
         return 'completed';
     }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Stoa;
 
 use Phalanx\Scope\ExecutionScope;
+use Phalanx\Stoa\Runtime\StoaScopeKey;
 use Phalanx\Support\ExecutionScopeDelegate;
 use Psr\Http\Message\ServerRequestInterface;
 
@@ -15,7 +16,15 @@ class ExecutionContext implements RequestScope
     private ?RequestBody $requestBody = null;
 
     public string $resourceId {
-        get => (string) $this->attribute('stoa.resource_id', '');
+        get {
+            $id = $this->attribute(StoaScopeKey::ResourceId->value);
+
+            if (!is_string($id) || $id === '') {
+                throw MissingRequestResource::forScopeKey(StoaScopeKey::ResourceId->value);
+            }
+
+            return $id;
+        }
     }
 
     public ServerRequestInterface $request {
@@ -39,11 +48,11 @@ class ExecutionContext implements RequestScope
     }
 
     public function __construct(
-        private readonly ExecutionScope $inner,
-        private readonly ServerRequestInterface $serverRequest,
-        private readonly RouteParams $routeParams,
-        private readonly QueryParams $queryParams,
-        private readonly RouteConfig $routeConfig,
+        private(set) ExecutionScope $inner,
+        private(set) ServerRequestInterface $serverRequest,
+        private(set) RouteParams $routeParams,
+        private(set) QueryParams $queryParams,
+        private(set) RouteConfig $routeConfig,
     ) {
     }
 

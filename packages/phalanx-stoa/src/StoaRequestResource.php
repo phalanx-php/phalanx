@@ -4,17 +4,24 @@ declare(strict_types=1);
 
 namespace Phalanx\Stoa;
 
+use Phalanx\Cancellation\Cancelled;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Runtime\Memory\ManagedResource;
 use Phalanx\Runtime\Memory\ManagedResourceHandle;
 use Phalanx\Runtime\Memory\ManagedResourceState;
 use Phalanx\Runtime\RuntimeContext;
+use Phalanx\Scope\ExecutionScope;
+use Phalanx\Stoa\Runtime\Identity\StoaAnnotationSid;
+use Phalanx\Stoa\Runtime\Identity\StoaEventSid;
+use Phalanx\Stoa\Runtime\Identity\StoaResourceSid;
+use Phalanx\Stoa\Runtime\StoaScopeKey;
 use Psr\Http\Message\ServerRequestInterface;
 use Throwable;
 
 final class StoaRequestResource
 {
-    public const string TYPE = 'stoa.http_request';
+    private const int ANNOTATION_LIMIT = 240;
+    private const int EVENT_LIMIT = 120;
 
     private function __construct(
         private readonly RuntimeContext $runtime,
@@ -34,30 +41,48 @@ final class StoaRequestResource
         ?int $fd = null,
         ?string $ownerScopeId = null,
     ): self {
+        $resource = null;
         $handle = $runtime->memory->resources->open(
-            type: self::TYPE,
+            type: StoaResourceSid::HttpRequest,
             id: $runtime->memory->ids->nextRuntime('stoa-request'),
             parentResourceId: $ownerScopeId,
             ownerScopeId: $ownerScopeId,
         );
 
-        $resource = new self(
-            runtime: $runtime,
-            token: $token,
-            handle: $handle,
-            fd: $fd,
-            id: $handle->id,
-            path: $request->getUri()->getPath(),
-            method: $request->getMethod(),
-        );
+        try {
+            $resource = new self(
+                runtime: $runtime,
+                token: $token,
+                handle: $handle,
+                fd: $fd,
+                id: $handle->id,
+                path: $request->getUri()->getPath(),
+                method: $request->getMethod(),
+            );
 
-        $resource->annotate('stoa.method', $resource->method);
-        $resource->annotate('stoa.path', $resource->path);
-        if ($fd !== null) {
-            $resource->annotate('stoa.fd', $fd);
+            $resource->annotate(StoaAnnotationSid::Method, $resource->method);
+            $resource->annotate(StoaAnnotationSid::Path, $resource->path);
+            if ($fd !== null) {
+                $resource->annotate(StoaAnnotationSid::Fd, $fd);
+            }
+        } catch (Throwable $e) {
+            if ($resource !== null) {
+                $resource->release();
+            } else {
+                $runtime->memory->resources->release($handle->id);
+            }
+
+            throw $e;
         }
 
         return $resource;
+    }
+
+    public static function fromScope(ExecutionScope $scope): ?self
+    {
+        $resource = $scope->attribute(StoaScopeKey::RequestResource->value);
+
+        return $resource instanceof self ? $resource : null;
     }
 
     public function activate(): void
@@ -67,23 +92,23 @@ final class StoaRequestResource
 
     public function routeMatched(string $route): void
     {
-        $this->annotate('stoa.route', $route);
-        $this->event('stoa.route_matched', $route);
+        $this->annotate(StoaAnnotationSid::Route, $route);
+        $this->event(StoaEventSid::RouteMatched, $route);
     }
 
     public function responseStatus(int $status): void
     {
-        $this->annotate('stoa.status', $status);
+        $this->annotate(StoaAnnotationSid::Status, $status);
     }
 
     public function headersStarted(): void
     {
-        $this->event('stoa.response.headers_started');
+        $this->event(StoaEventSid::ResponseHeadersStarted);
     }
 
     public function bodyStarted(): void
     {
-        $this->event('stoa.response.body_started');
+        $this->event(StoaEventSid::ResponseBodyStarted);
     }
 
     public function complete(int $status): void
@@ -99,24 +124,29 @@ final class StoaRequestResource
 
     public function fail(Throwable $failure): void
     {
-        $this->event('stoa.request_failed', $failure::class);
-
-        if ($this->state()?->isTerminal() === true) {
+        if ($this->snapshot() === null || $this->isTerminal()) {
             return;
         }
 
-        $this->runtime->memory->resources->fail($this->id, $failure::class);
+        $reason = self::fit($failure::class, self::EVENT_LIMIT);
+        $this->recordDiagnostic(StoaEventSid::RequestFailed, $reason);
+
+        if ($this->snapshot() !== null && !$this->isTerminal()) {
+            $this->runtime->memory->resources->fail($this->id, $reason);
+        }
     }
 
     public function abort(string $reason): void
     {
-        $this->event('stoa.request_aborted', $reason);
-
-        if ($this->state()?->isTerminal() !== true) {
-            $this->runtime->memory->resources->abort($this->id, $reason);
+        try {
+            if ($this->snapshot() !== null && !$this->isTerminal()) {
+                $reason = self::fit($reason, self::EVENT_LIMIT);
+                $this->recordDiagnostic(StoaEventSid::RequestAborted, $reason);
+                $this->runtime->memory->resources->abort($this->id, $reason);
+            }
+        } finally {
+            $this->token->cancel();
         }
-
-        $this->token->cancel();
     }
 
     public function release(): void
@@ -128,13 +158,22 @@ final class StoaRequestResource
         $this->runtime->memory->resources->release($this->id);
     }
 
-    public function event(string $type, string $valueA = '', string $valueB = ''): void
+    public function event(StoaEventSid $type, string $valueA = '', string $valueB = ''): void
     {
-        $this->runtime->memory->resources->recordEvent($this->id, $type, $valueA, $valueB);
+        $this->runtime->memory->resources->recordEvent(
+            $this->id,
+            $type,
+            self::fit($valueA, self::EVENT_LIMIT),
+            self::fit($valueB, self::EVENT_LIMIT),
+        );
     }
 
-    public function annotate(string $key, string|int|float|bool|null $value): void
+    public function annotate(StoaAnnotationSid $key, string|int|float|bool|null $value): void
     {
+        if (is_string($value)) {
+            $value = self::fit($value, self::ANNOTATION_LIMIT);
+        }
+
         $this->runtime->memory->resources->annotate($this->id, $key, $value);
     }
 
@@ -155,8 +194,23 @@ final class StoaRequestResource
         return $snapshot === null ? 'released' : $snapshot->state->value;
     }
 
-    private function isTerminal(): bool
+    public function isTerminal(): bool
     {
         return $this->state()?->isTerminal() === true;
+    }
+
+    private static function fit(string $value, int $limit): string
+    {
+        return mb_strlen($value) <= $limit ? $value : mb_substr($value, 0, $limit);
+    }
+
+    private function recordDiagnostic(StoaEventSid $type, string $valueA = '', string $valueB = ''): void
+    {
+        try {
+            $this->event($type, $valueA, $valueB);
+        } catch (Cancelled $e) {
+            throw $e;
+        } catch (Throwable) {
+        }
     }
 }
