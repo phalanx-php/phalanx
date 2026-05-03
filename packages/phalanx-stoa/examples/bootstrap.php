@@ -21,6 +21,7 @@ $demoNamespaces = [
     'Acme\\StoaDemo\\Basic\\' => __DIR__ . '/01-basic-routing/src/',
     'Acme\\StoaDemo\\Contracts\\' => __DIR__ . '/02-contracts-validation/src/',
     'Acme\\StoaDemo\\Advanced\\' => __DIR__ . '/03-advanced-api/src/',
+    'Acme\\StoaDemo\\Runtime\\' => __DIR__ . '/04-runtime-lifecycle/src/',
 ];
 
 spl_autoload_register(static function (string $class) use ($demoNamespaces): void {

@@ -1,0 +1,37 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Acme\StoaDemo\Runtime\Routes;
+
+use Acme\StoaDemo\Runtime\Support\RuntimeEvents;
+use Phalanx\Stoa\RequestScope;
+use Phalanx\Task\Scopeable;
+
+final readonly class DisconnectProbe implements Scopeable
+{
+    public function __construct(private RuntimeEvents $events)
+    {
+    }
+
+    /** @return array{status: string} */
+    public function __invoke(RequestScope $scope): array
+    {
+        $this->events->record('disconnect.started');
+        $scope->cancellation()->onCancel(function () use ($scope): void {
+            $this->events->record('disconnect.cancelled', ['path' => $scope->path()]);
+        });
+
+        try {
+            for ($tick = 0; $tick < 100; $tick++) {
+                $scope->delay(0.05);
+            }
+
+            $this->events->record('disconnect.completed');
+
+            return ['status' => 'completed'];
+        } finally {
+            $this->events->record('disconnect.finalized');
+        }
+    }
+}

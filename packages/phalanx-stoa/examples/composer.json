@@ -17,17 +17,20 @@
         "psr-4": {
             "Acme\\StoaDemo\\Advanced\\": "03-advanced-api/src/",
             "Acme\\StoaDemo\\Basic\\": "01-basic-routing/src/",
-            "Acme\\StoaDemo\\Contracts\\": "02-contracts-validation/src/"
+            "Acme\\StoaDemo\\Contracts\\": "02-contracts-validation/src/",
+            "Acme\\StoaDemo\\Runtime\\": "04-runtime-lifecycle/src/"
         }
     },
     "scripts": {
-        "demo": ["@demo:basic", "@demo:contracts", "@demo:advanced"],
+        "demo": ["@demo:basic", "@demo:contracts", "@demo:advanced", "@demo:runtime"],
         "demo:basic": "php 01-basic-routing/demo.php",
         "demo:contracts": "php 02-contracts-validation/demo.php",
         "demo:advanced": "php 03-advanced-api/demo.php",
+        "demo:runtime": "php 04-runtime-lifecycle/demo.php",
         "serve:basic": "php 01-basic-routing/server.php",
         "serve:contracts": "php 02-contracts-validation/server.php",
-        "serve:advanced": "php 03-advanced-api/server.php"
+        "serve:advanced": "php 03-advanced-api/server.php",
+        "serve:runtime": "php 04-runtime-lifecycle/server.php"
     },
     "minimum-stability": "dev",
     "prefer-stable": true
