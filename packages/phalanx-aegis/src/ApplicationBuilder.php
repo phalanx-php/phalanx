@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx;
 
+use Closure;
 use InvalidArgumentException;
+use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Handler\HandlerResolver;
 use Phalanx\Middleware\ServiceTransformationMiddleware;
 use Phalanx\Middleware\TaskMiddleware;
@@ -15,6 +17,8 @@ use Phalanx\Service\ServiceCatalog;
 use Phalanx\Supervisor\InProcessLedger;
 use Phalanx\Supervisor\LedgerStorage;
 use Phalanx\Supervisor\Supervisor;
+use Phalanx\Task\Executable;
+use Phalanx\Task\Scopeable;
 use Phalanx\Trace\Trace;
 use Phalanx\Worker\WorkerDispatch;
 
@@ -151,5 +155,10 @@ class ApplicationBuilder
             $runtimePolicy,
             $strictRuntimeHooks,
         );
+    }
+
+    public function run(Scopeable|Executable|Closure $task, ?CancellationToken $token = null): mixed
+    {
+        return $this->compile()->run($task, $token);
     }
 }

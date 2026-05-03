@@ -2,6 +2,8 @@ parameters:
     level: 8
     paths:
         - src
+    bootstrapFiles:
+        - phpstan-bootstrap.php
     excludePaths:
         analyseAndScan:
             - src/Parallel (?)

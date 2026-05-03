@@ -28,6 +28,7 @@
     "phalanx-php/archon": "^0.5",
     "phalanx-php/stoa": "^0.5",
     "phalanx-php/hydra": "^0.5",
+    "openswoole/ide-helper": "^26.2",
     "phpstan/phpstan": "^2.0",
     "phpunit/phpunit": "^11.0",
     "rector/rector": "^2.0",
@@ -35,6 +36,11 @@
     "squizlabs/php_codesniffer": "^3.10"
   },
   "scripts": {
+    "demo": ["@demo:runtime", "@demo:supervision", "@demo:cancellation", "@demo:singleflight"],
+    "demo:runtime": "php examples/01-runtime-policy/demo.php",
+    "demo:supervision": "php examples/02-scope-supervision/demo.php",
+    "demo:cancellation": "php examples/03-cancellation/demo.php",
+    "demo:singleflight": "php examples/04-singleflight/demo.php",
     "rector": "rector process",
     "rector:dry": "rector process --dry-run",
     "cs": "phpcs",

@@ -31,14 +31,14 @@
     },
     "require-dev": {
         "clue/docker-react": "^1.6",
+        "openswoole/ide-helper": "^26.2",
         "phpstan/phpstan": "^2.0",
         "phpunit/phpunit": "^11.0",
         "rector/rector": "^2.0",
         "rector/swiss-knife": "^2.3",
         "slevomat/coding-standard": "^8.15",
         "squizlabs/php_codesniffer": "^3.10",
-        "symplify/monorepo-builder": "^11.0",
-        "wyrihaximus/phpstan-react": "^2.0"
+        "symplify/monorepo-builder": "^11.0"
     },
     "autoload": {
         "psr-4": {
@@ -109,6 +109,11 @@
         "cs": "php vendor/bin/phpcs --standard=packages/phalanx-aegis/phpcs.xml",
         "cs:fix": "php vendor/bin/phpcbf --standard=packages/phalanx-aegis/phpcs.xml",
         "bench:aegis": "php -d memory_limit=512M benchmarks/kernel/run.php",
+        "demo:aegis": ["@demo:aegis:runtime", "@demo:aegis:supervision", "@demo:aegis:cancellation", "@demo:aegis:singleflight"],
+        "demo:aegis:runtime": "php packages/phalanx-aegis/examples/01-runtime-policy/demo.php",
+        "demo:aegis:supervision": "php packages/phalanx-aegis/examples/02-scope-supervision/demo.php",
+        "demo:aegis:cancellation": "php packages/phalanx-aegis/examples/03-cancellation/demo.php",
+        "demo:aegis:singleflight": "php packages/phalanx-aegis/examples/04-singleflight/demo.php",
         "demo:stoa": ["@demo:stoa:basic", "@demo:stoa:contracts", "@demo:stoa:advanced"],
         "demo:stoa:basic": "php packages/phalanx-stoa/examples/01-basic-routing/demo.php",
         "demo:stoa:contracts": "php packages/phalanx-stoa/examples/02-contracts-validation/demo.php",
@@ -116,7 +121,7 @@
         "demo:stoa:serve:basic": "php packages/phalanx-stoa/examples/01-basic-routing/server.php",
         "demo:stoa:serve:contracts": "php packages/phalanx-stoa/examples/02-contracts-validation/server.php",
         "demo:stoa:serve:advanced": "php packages/phalanx-stoa/examples/03-advanced-api/server.php",
-        "examples:lint": "find examples packages/phalanx-athena/examples packages/phalanx-stoa/examples -name '*.php' -not -path '*/vendor/*' -print0 | xargs -0 -n1 php -l > /dev/null",
+        "examples:lint": "find examples packages/phalanx-aegis/examples packages/phalanx-athena/examples packages/phalanx-stoa/examples -name '*.php' -not -path '*/vendor/*' -print0 | xargs -0 -n1 php -l > /dev/null",
         "check": ["@analyse", "@rector:dry", "@test", "@examples:lint"]
     },
     "config": {

@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Phalanx;
 
+use Closure;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Middleware\ServiceTransformationMiddleware;
 use Phalanx\Middleware\TaskMiddleware;
+use Phalanx\Runtime\CoroutineRuntime;
 use Phalanx\Runtime\RuntimeHooks;
 use Phalanx\Runtime\RuntimePolicy;
 use Phalanx\Scope\ExecutionLifecycleScope;
@@ -16,6 +18,8 @@ use Phalanx\Service\LazySingleton;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\ServiceGraph;
 use Phalanx\Supervisor\Supervisor;
+use Phalanx\Task\Executable;
+use Phalanx\Task\Scopeable;
 use Phalanx\Trace\Trace;
 use Phalanx\Worker\WorkerDispatch;
 
@@ -82,6 +86,36 @@ class Application implements AppHost
         return $this->createScope();
     }
 
+    public function run(Scopeable|Executable|Closure $task, ?CancellationToken $token = null): mixed
+    {
+        return CoroutineRuntime::run(
+            $this->runtimePolicy,
+            function () use ($task, $token): mixed {
+                $this->startup();
+
+                try {
+                    return $this->executeScoped($task, $token);
+                } finally {
+                    $this->shutdown();
+                }
+            },
+            $this->strictRuntimeHooks,
+        );
+    }
+
+    public function scoped(Scopeable|Executable|Closure $task, ?CancellationToken $token = null): mixed
+    {
+        return CoroutineRuntime::run(
+            $this->runtimePolicy,
+            function () use ($task, $token): mixed {
+                $this->startup();
+
+                return $this->executeScoped($task, $token);
+            },
+            $this->strictRuntimeHooks,
+        );
+    }
+
     public function startup(): static
     {
         if ($this->started) {
@@ -113,5 +147,16 @@ class Application implements AppHost
     private function ensureRuntimeHooks(): void
     {
         RuntimeHooks::ensure($this->runtimePolicy, $this->strictRuntimeHooks);
+    }
+
+    private function executeScoped(Scopeable|Executable|Closure $task, ?CancellationToken $token): mixed
+    {
+        $scope = $this->createScope($token);
+
+        try {
+            return $scope->execute($task);
+        } finally {
+            $scope->dispose();
+        }
     }
 }
