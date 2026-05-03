@@ -70,13 +70,10 @@ final class CommandDispatcher
 
                 return 1;
             } catch (UnknownCommand $e) {
-                $lifecycle->unknown($e->command);
-                $this->writeUnknownCommand($e->command);
+                $unknown = $command === 'help' ? $e->command : $displayName;
 
-                return 1;
-            } catch (RuntimeException $e) {
-                $lifecycle->fail('exception', $e->getMessage(), $e);
-                $this->errorOutput()->persist("Error: {$e->getMessage()}");
+                $lifecycle->unknown($unknown);
+                $this->writeUnknownCommand($unknown);
 
                 return 1;
             } catch (Throwable $e) {
@@ -110,6 +107,15 @@ final class CommandDispatcher
 
             $lifecycle->activate("archon.group.$name.help");
             $this->output()->persist(HelpGenerator::forGroup($name, $group));
+            return 0;
+        }
+
+        $commandHelpPath = $this->commandHelpPath($command, $args);
+        if ($commandHelpPath !== null) {
+            $name = implode(' ', $commandHelpPath);
+
+            $lifecycle->activate("archon.command.$name.help");
+            $this->writeHelp($commandHelpPath);
             return 0;
         }
 
@@ -155,19 +161,23 @@ final class CommandDispatcher
             return;
         }
 
-        if ($path !== []) {
-            throw UnknownCommand::named(implode(' ', [$name, ...$path]));
-        }
-
         $handler = $this->commands->handlers()->get($name);
-        if ($handler !== null && $handler->config instanceof CommandConfig) {
+        if (
+            $handler !== null
+            && $handler->config instanceof CommandConfig
+            && $this->isHelpSuffix($path)
+        ) {
             $this->output()->persist(HelpGenerator::forCommand($name, $handler->config));
             return;
         }
 
-        if (isset($this->inlineCommands[$name])) {
+        if (isset($this->inlineCommands[$name]) && $this->isHelpSuffix($path)) {
             $this->output()->persist(HelpGenerator::forCommand($name, $this->inlineCommands[$name]->config));
             return;
+        }
+
+        if ($path !== []) {
+            throw UnknownCommand::named(implode(' ', [$name, ...$path]));
         }
 
         throw UnknownCommand::named($name);
@@ -213,6 +223,55 @@ final class CommandDispatcher
     private function isHelpSuffix(array $path): bool
     {
         return $path === [] || $path === ['help'] || $path === ['--help'];
+    }
+
+    /**
+     * @param list<string> $args
+     * @return list<string>|null
+     */
+    private function commandHelpPath(string $command, array $args): ?array
+    {
+        if (
+            $this->commands->handlers()->get($command) !== null
+            || isset($this->inlineCommands[$command])
+        ) {
+            return $this->isExplicitHelpSuffix($args) ? [$command] : null;
+        }
+
+        $group = $this->commands->group($command);
+        if ($group === null) {
+            return null;
+        }
+
+        $path = [$command];
+
+        while ($args !== []) {
+            $next = array_shift($args);
+
+            if ($next === 'help' || $next === '--help') {
+                return null;
+            }
+
+            $path[] = $next;
+            $handler = $group->handlers()->get($next);
+
+            if ($handler !== null && $handler->config instanceof CommandConfig) {
+                return $this->isExplicitHelpSuffix($args) ? $path : null;
+            }
+
+            $group = $group->group($next);
+            if ($group === null) {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    /** @param list<string> $path */
+    private function isExplicitHelpSuffix(array $path): bool
+    {
+        return $path === ['help'] || $path === ['--help'];
     }
 
     private function writeInvalidInput(string $command, InvalidInputException $e): void
@@ -282,6 +341,7 @@ final class CommandDispatcher
         while ($group !== null && isset($args[0]) && $args[0] !== 'help' && $args[0] !== '--help') {
             $next = $args[0];
             if (!in_array($next, $group->keys(), true)) {
+                $path[] = $next;
                 break;
             }
 

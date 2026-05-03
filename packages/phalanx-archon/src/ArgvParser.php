@@ -40,6 +40,7 @@ final class ArgvParser
         }
 
         self::applyOptionDefaults($config, $parsedOptions);
+        self::rejectUnexpectedArgs($positional, $config);
         $args = self::matchPositionalArgs($positional, $config);
 
         return new CommandInput(
@@ -69,6 +70,10 @@ final class ArgvParser
 
             if (!isset($optionsByName[$name])) {
                 throw new InvalidInputException("Unknown option: --$name", $config);
+            }
+
+            if (!$optionsByName[$name]->requiresValue) {
+                throw new InvalidInputException("Option --$name does not accept a value", $config);
             }
 
             $parsedOptions[$name] = $value;
@@ -152,6 +157,16 @@ final class ArgvParser
             if (!array_key_exists($option->name, $parsedOptions) && $option->default !== null) {
                 $parsedOptions[$option->name] = $option->default;
             }
+        }
+    }
+
+    /** @param list<string> $positional */
+    private static function rejectUnexpectedArgs(array $positional, CommandConfig $config): void
+    {
+        $unexpected = $positional[count($config->arguments)] ?? null;
+
+        if ($unexpected !== null) {
+            throw new InvalidInputException("Unexpected argument: $unexpected", $config);
         }
     }
 

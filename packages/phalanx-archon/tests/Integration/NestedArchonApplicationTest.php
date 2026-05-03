@@ -11,6 +11,7 @@ use Phalanx\Archon\CommandGroup;
 use Phalanx\Archon\ConsoleConfig;
 use Phalanx\Archon\Identity\ArchonAnnotationSid;
 use Phalanx\Archon\Identity\ArchonResourceSid;
+use Phalanx\Archon\Opt;
 use Phalanx\Archon\Output\StreamOutput;
 use Phalanx\Archon\Output\TerminalEnvironment;
 use Phalanx\Archon\Tests\Fixtures\Commands\FlatRanCommand;
@@ -188,6 +189,100 @@ final class NestedArchonApplicationTest extends AsyncTestCase
     }
 
     #[Test]
+    public function topLevelCommandHelpFlagShowsUsageWithoutRunningCommand(): void
+    {
+        $stream = $this->outputStream();
+        $commands = CommandGroup::of([
+            'scan' => [
+                ScanCommand::class,
+                new CommandConfig(
+                    description: 'Scan network',
+                    arguments: [Arg::required('target', 'CIDR range')],
+                ),
+            ],
+        ]);
+
+        $app = Archon::starting()
+            ->commands($commands)
+            ->withConsoleConfig(new ConsoleConfig(output: $this->streamOutput($stream)))
+            ->build();
+
+        $code = $app->dispatch(['scan', '--help']);
+        $output = $this->streamContents($stream);
+
+        $this->assertSame(0, $code);
+        $this->assertNull(ScanCommand::$lastTarget);
+        $this->assertStringContainsString('Scan network', $output);
+        $this->assertStringContainsString('scan <target>', $output);
+        $this->assertSame(ManagedResourceState::Closed, $app->host()->runtime()->memory->resources->all(
+            ArchonResourceSid::Command,
+        )[0]->state);
+        $app->shutdown();
+    }
+
+    #[Test]
+    public function nestedCommandHelpFlagShowsUsageWithoutRunningCommand(): void
+    {
+        $stream = $this->outputStream();
+        $commands = CommandGroup::of([
+            'net' => CommandGroup::of([
+                'scan' => [
+                    ScanCommand::class,
+                    new CommandConfig(
+                        description: 'Scan network',
+                        arguments: [Arg::required('target', 'CIDR range')],
+                    ),
+                ],
+            ], description: 'Network operations'),
+        ]);
+
+        $app = Archon::starting()
+            ->commands($commands)
+            ->withConsoleConfig(new ConsoleConfig(output: $this->streamOutput($stream)))
+            ->build();
+
+        $code = $app->dispatch(['net', 'scan', '--help']);
+        $output = $this->streamContents($stream);
+
+        $this->assertSame(0, $code);
+        $this->assertNull(ScanCommand::$lastTarget);
+        $this->assertStringContainsString('Scan network', $output);
+        $this->assertStringContainsString('net scan <target>', $output);
+        $this->assertSame(ManagedResourceState::Closed, $app->host()->runtime()->memory->resources->all(
+            ArchonResourceSid::Command,
+        )[0]->state);
+        $app->shutdown();
+    }
+
+    #[Test]
+    public function directCommandHelpAcceptsHelpSuffix(): void
+    {
+        $stream = $this->outputStream();
+        $commands = CommandGroup::of([
+            'scan' => [
+                ScanCommand::class,
+                new CommandConfig(
+                    description: 'Scan network',
+                    arguments: [Arg::required('target', 'CIDR range')],
+                ),
+            ],
+        ]);
+
+        $app = Archon::starting()
+            ->commands($commands)
+            ->withConsoleConfig(new ConsoleConfig(output: $this->streamOutput($stream)))
+            ->build();
+
+        $code = $app->dispatch(['help', 'scan', '--help']);
+        $output = $this->streamContents($stream);
+
+        $this->assertSame(0, $code);
+        $this->assertStringContainsString('Scan network', $output);
+        $this->assertStringContainsString('scan <target>', $output);
+        $app->shutdown();
+    }
+
+    #[Test]
     public function directHelpForUnknownNestedCommandFailsCommandResource(): void
     {
         $stream = $this->outputStream();
@@ -212,6 +307,34 @@ final class NestedArchonApplicationTest extends AsyncTestCase
         $this->assertSame('unknown_command', $app->host()->runtime()->memory->resources->annotations(
             $resource->id,
         )[ArchonAnnotationSid::ErrorKind->value()]);
+        $app->shutdown();
+    }
+
+    #[Test]
+    public function nestedUnknownCommandFailsWithFullCommandPath(): void
+    {
+        $stream = $this->outputStream();
+        $commands = CommandGroup::of([
+            'net' => CommandGroup::of([
+                'scan' => [NoopCommand::class, new CommandConfig(description: 'Scan network')],
+            ], description: 'Network operations'),
+        ]);
+
+        $app = Archon::starting()
+            ->commands($commands)
+            ->withConsoleConfig(new ConsoleConfig(errorOutput: $this->streamOutput($stream)))
+            ->build();
+
+        $code = $app->dispatch(['net', 'missing']);
+        $output = $this->streamContents($stream);
+        $resource = $app->host()->runtime()->memory->resources->all(ArchonResourceSid::Command)[0];
+        $annotations = $app->host()->runtime()->memory->resources->annotations($resource->id);
+
+        $this->assertSame(1, $code);
+        $this->assertStringContainsString('Unknown command: net missing', $output);
+        $this->assertSame(ManagedResourceState::Failed, $resource->state);
+        $this->assertSame('net missing', $annotations[ArchonAnnotationSid::CommandName->value()]);
+        $this->assertSame('unknown_command', $annotations[ArchonAnnotationSid::ErrorKind->value()]);
         $app->shutdown();
     }
 
@@ -243,6 +366,71 @@ final class NestedArchonApplicationTest extends AsyncTestCase
         $this->assertStringContainsString('Error:', $output);
         $this->assertStringContainsString('Usage:', $output);
         $this->assertStringContainsString('net scan <target>', $output);
+        $app->shutdown();
+    }
+
+    #[Test]
+    public function unexpectedNestedArgumentFailsWithFullCommandPath(): void
+    {
+        $stream = $this->outputStream();
+        $commands = CommandGroup::of([
+            'net' => CommandGroup::of([
+                'scan' => [
+                    ScanCommand::class,
+                    new CommandConfig(
+                        description: 'Scan network',
+                        arguments: [Arg::required('target', 'CIDR range')],
+                    ),
+                ],
+            ], description: 'Network operations'),
+        ]);
+
+        $app = Archon::starting()
+            ->commands($commands)
+            ->withConsoleConfig(new ConsoleConfig(errorOutput: $this->streamOutput($stream)))
+            ->build();
+
+        $code = $app->dispatch(['net', 'scan', '192.168.1.0/24', 'extra']);
+        $output = $this->streamContents($stream);
+        $resource = $app->host()->runtime()->memory->resources->all(ArchonResourceSid::Command)[0];
+
+        $this->assertSame(1, $code);
+        $this->assertNull(ScanCommand::$lastTarget);
+        $this->assertStringContainsString('Error: Unexpected argument: extra', $output);
+        $this->assertStringContainsString('net scan <target>', $output);
+        $this->assertSame(ManagedResourceState::Failed, $resource->state);
+        $app->shutdown();
+    }
+
+    #[Test]
+    public function flagOptionWithValueFailsBeforeCommandRuns(): void
+    {
+        $stream = $this->outputStream();
+        $commands = CommandGroup::of([
+            'scan' => [
+                ScanCommand::class,
+                new CommandConfig(
+                    description: 'Scan network',
+                    arguments: [Arg::required('target', 'CIDR range')],
+                    options: [Opt::flag('detach')],
+                ),
+            ],
+        ]);
+
+        $app = Archon::starting()
+            ->commands($commands)
+            ->withConsoleConfig(new ConsoleConfig(errorOutput: $this->streamOutput($stream)))
+            ->build();
+
+        $code = $app->dispatch(['scan', '--detach=false', '192.168.1.0/24']);
+        $output = $this->streamContents($stream);
+        $resource = $app->host()->runtime()->memory->resources->all(ArchonResourceSid::Command)[0];
+
+        $this->assertSame(1, $code);
+        $this->assertNull(ScanCommand::$lastTarget);
+        $this->assertStringContainsString('Error: Option --detach does not accept a value', $output);
+        $this->assertStringContainsString('scan <target> [options]', $output);
+        $this->assertSame(ManagedResourceState::Failed, $resource->state);
         $app->shutdown();
     }
 
