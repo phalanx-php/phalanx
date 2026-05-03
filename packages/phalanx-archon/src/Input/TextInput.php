@@ -131,6 +131,12 @@ class TextInput extends BasePrompt
         return $this->transform !== null ? (string) ($this->transform)($val) : $val;
     }
 
+    #[\Override]
+    protected function hints(): string
+    {
+        return 'alt-← → word  ctrl-w del word  ctrl-k del to end';
+    }
+
     private function insertChar(string $key): void
     {
         if (mb_strlen($key) !== 1 || mb_ord($key) < 32) {
@@ -161,12 +167,6 @@ class TextInput extends BasePrompt
         }
         array_splice($chars, $this->cursor, 1);
         $this->value = implode('', $chars);
-    }
-
-    #[\Override]
-    protected function hints(): string
-    {
-        return 'alt-← → word  ctrl-w del word  ctrl-k del to end';
     }
 
     private function moveWordLeft(): void

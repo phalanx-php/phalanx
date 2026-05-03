@@ -18,7 +18,8 @@ final class Style
         private readonly ?Color $fg = null,
         private readonly ?Color $bg = null,
         private readonly array $modifiers = [],
-    ) {}
+    ) {
+    }
 
     public static function new(): self
     {

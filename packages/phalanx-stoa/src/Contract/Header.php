@@ -16,7 +16,8 @@ final readonly class Header
         public string $name,
         public ?string $pattern = null,
         public bool $required = true,
-    ) {}
+    ) {
+    }
 
     public static function required(string $name, ?string $pattern = null): self
     {

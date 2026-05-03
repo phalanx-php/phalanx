@@ -60,6 +60,15 @@ final class RawInput
         return new self(stream_isatty(STDIN));
     }
 
+    /** @param resource $stream */
+    private static function isBlocking(mixed $stream): bool
+    {
+        /** @var array<string, mixed> $metadata */
+        $metadata = stream_get_meta_data($stream);
+
+        return ($metadata['blocked'] ?? true) === true;
+    }
+
     public function enable(): void
     {
         if (!$this->isTty || $this->active) {
@@ -192,14 +201,5 @@ final class RawInput
             }
             array_shift($this->pending)->resolve($key);
         }
-    }
-
-    /** @param resource $stream */
-    private static function isBlocking(mixed $stream): bool
-    {
-        /** @var array<string, mixed> $metadata */
-        $metadata = stream_get_meta_data($stream);
-
-        return ($metadata['blocked'] ?? true) === true;
     }
 }

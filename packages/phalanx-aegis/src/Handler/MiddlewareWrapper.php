@@ -33,6 +33,13 @@ final readonly class MiddlewareWrapper implements Executable
     ) {
     }
 
+    public function __invoke(ExecutionScope $scope): mixed
+    {
+        $stack = $this->buildStack($this->handler, $this->middleware);
+
+        return $stack($scope);
+    }
+
     /**
      * @param list<object> $middleware
      * @return \Closure(ExecutionScope): mixed
@@ -47,12 +54,5 @@ final readonly class MiddlewareWrapper implements Executable
         }
 
         return $next;
-    }
-
-    public function __invoke(ExecutionScope $scope): mixed
-    {
-        $stack = $this->buildStack($this->handler, $this->middleware);
-
-        return $stack($scope);
     }
 }

@@ -241,5 +241,4 @@ final class SearchInput extends BasePrompt
 
         return '  ' . implode('', $chars);
     }
-
 }

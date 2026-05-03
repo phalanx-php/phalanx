@@ -20,7 +20,8 @@ final class Theme
         public readonly Style $hint,
         public readonly Style $border,
         public readonly Style $active,
-    ) {}
+    ) {
+    }
 
     public static function default(): self
     {

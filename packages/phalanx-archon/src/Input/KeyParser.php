@@ -27,6 +27,37 @@ final class KeyParser
         $this->parser = new EventParser();
     }
 
+    private static function keyEventToString(KeyEvent $event): ?string
+    {
+        $key = $event->key;
+
+        if ($event->ctrl && is_string($key) && mb_strlen($key) === 1) {
+            return 'ctrl-' . $key;
+        }
+
+        // Alt+arrow word motion — handle both terminal encodings:
+        //   Terminal.app sends ESC+b/f  → KeyEvent('b'/'f', alt: true)
+        //   iTerm2 sends ESC[1;3D/C     → KeyEvent(Key::Left/Right, alt: true)
+        if ($event->alt) {
+            if ($key === Key::Left  || $key === 'b') {
+                return 'alt-left';
+            }
+            if ($key === Key::Right || $key === 'f') {
+                return 'alt-right';
+            }
+        }
+
+        if ($key instanceof Key) {
+            return $key->value;
+        }
+
+        if (is_string($key) && mb_strlen($key) === 1 && mb_ord($key) >= 32) { // @phpstan-ignore function.alreadyNarrowedType
+            return $key;
+        }
+
+        return null;
+    }
+
     /** @return list<string> */
     public function parse(string $data): array
     {
@@ -56,32 +87,5 @@ final class KeyParser
         }
 
         return $keys;
-    }
-
-    private static function keyEventToString(KeyEvent $event): ?string
-    {
-        $key = $event->key;
-
-        if ($event->ctrl && is_string($key) && mb_strlen($key) === 1) {
-            return 'ctrl-' . $key;
-        }
-
-        // Alt+arrow word motion — handle both terminal encodings:
-        //   Terminal.app sends ESC+b/f  → KeyEvent('b'/'f', alt: true)
-        //   iTerm2 sends ESC[1;3D/C     → KeyEvent(Key::Left/Right, alt: true)
-        if ($event->alt) {
-            if ($key === Key::Left  || $key === 'b') return 'alt-left';
-            if ($key === Key::Right || $key === 'f') return 'alt-right';
-        }
-
-        if ($key instanceof Key) {
-            return $key->value;
-        }
-
-        if (is_string($key) && mb_strlen($key) === 1 && mb_ord($key) >= 32) { // @phpstan-ignore function.alreadyNarrowedType
-            return $key;
-        }
-
-        return null;
     }
 }

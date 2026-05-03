@@ -17,7 +17,8 @@ final class IntInRange implements RouteParamValidator
     public function __construct(
         private readonly int $min = PHP_INT_MIN,
         private readonly int $max = PHP_INT_MAX,
-    ) {}
+    ) {
+    }
 
     public function validate(string $name, string $value): ?string
     {

@@ -73,6 +73,26 @@ final class HandlerGroup implements Executable
         return new self([]);
     }
 
+    public function __invoke(ExecutionScope $scope): mixed
+    {
+        if ($scope->attribute('handler.key') !== null) {
+            return $this->dispatchByKey($scope);
+        }
+
+        foreach ($this->matchers as $matcher) {
+            $result = $matcher->match($scope, $this->handlers);
+
+            if ($result !== null) {
+                return $this->executeHandler($result->handler, $result->scope);
+            }
+        }
+
+        throw new RuntimeException(
+            'HandlerGroup: no matcher could handle this scope. '
+            . 'Register matchers via withMatcher() or set handler.key attribute.'
+        );
+    }
+
     /**
      * @return Closure(Scopeable|Executable, ExecutionScope): mixed
      */
@@ -235,25 +255,5 @@ final class HandlerGroup implements Executable
         $terminal = new HandlerInvocationAdapter($instance, $invoker);
 
         return (new MiddlewareWrapper($terminal, $resolved))($scope);
-    }
-
-    public function __invoke(ExecutionScope $scope): mixed
-    {
-        if ($scope->attribute('handler.key') !== null) {
-            return $this->dispatchByKey($scope);
-        }
-
-        foreach ($this->matchers as $matcher) {
-            $result = $matcher->match($scope, $this->handlers);
-
-            if ($result !== null) {
-                return $this->executeHandler($result->handler, $result->scope);
-            }
-        }
-
-        throw new RuntimeException(
-            'HandlerGroup: no matcher could handle this scope. '
-            . 'Register matchers via withMatcher() or set handler.key attribute.'
-        );
     }
 }

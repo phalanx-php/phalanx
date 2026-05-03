@@ -75,10 +75,12 @@ final class NumberInput extends TextInput
             return;
         }
 
-        if (in_array($key, [
+        if (
+            in_array($key, [
             'left', 'right', 'home', 'end', 'backspace', 'delete',
             'ctrl-a', 'ctrl-e', 'ctrl-b', 'ctrl-f', 'ctrl-w', 'ctrl-k',
-        ], true)) {
+            ], true)
+        ) {
             parent::handleKey($key);
             return;
         }

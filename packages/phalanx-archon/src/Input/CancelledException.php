@@ -6,4 +6,6 @@ namespace Phalanx\Archon\Input;
 
 use RuntimeException;
 
-final class CancelledException extends RuntimeException {}
+final class CancelledException extends RuntimeException
+{
+}

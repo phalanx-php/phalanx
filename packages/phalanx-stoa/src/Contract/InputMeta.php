@@ -10,5 +10,6 @@ final readonly class InputMeta
     public function __construct(
         public string $inputClass,
         public string $paramName,
-    ) {}
+    ) {
+    }
 }

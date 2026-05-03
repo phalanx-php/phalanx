@@ -13,32 +13,6 @@ use Psr\Http\Message\UploadedFileInterface;
 
 final readonly class StoaRequestFactory
 {
-    public function create(Request $request): ServerRequestInterface
-    {
-        $server = self::arrayValue($request->server);
-        $headers = self::arrayValue($request->header);
-        $query = self::arrayValue($request->get);
-        $files = self::arrayValue($request->files);
-        $cookies = self::arrayValue($request->cookie);
-        $post = self::arrayValue($request->post);
-        $parsedBody = $post === [] ? null : $post;
-
-        $method = strtoupper((string) ($server['request_method'] ?? 'GET'));
-        $path = (string) ($server['request_uri'] ?? '/');
-        $queryString = (string) ($server['query_string'] ?? '');
-        $uri = $queryString === '' ? $path : "{$path}?{$queryString}";
-        $protocol = str_replace('HTTP/', '', (string) ($server['server_protocol'] ?? '1.1'));
-        $body = $request->fd > 0
-            ? (string) $request->rawContent()
-            : '';
-
-        return (new ServerRequest($method, $uri, $headers, Utils::streamFor($body), $protocol, $server))
-            ->withQueryParams($query)
-            ->withCookieParams($cookies)
-            ->withParsedBody($parsedBody)
-            ->withUploadedFiles(self::uploadedFiles($files));
-    }
-
     /** @return array<string, mixed> */
     private static function arrayValue(mixed $value): array
     {
@@ -116,5 +90,31 @@ final readonly class StoaRequestFactory
             isset($file['name']) ? (string) $file['name'] : null,
             isset($file['type']) ? (string) $file['type'] : null,
         );
+    }
+
+    public function create(Request $request): ServerRequestInterface
+    {
+        $server = self::arrayValue($request->server);
+        $headers = self::arrayValue($request->header);
+        $query = self::arrayValue($request->get);
+        $files = self::arrayValue($request->files);
+        $cookies = self::arrayValue($request->cookie);
+        $post = self::arrayValue($request->post);
+        $parsedBody = $post === [] ? null : $post;
+
+        $method = strtoupper((string) ($server['request_method'] ?? 'GET'));
+        $path = (string) ($server['request_uri'] ?? '/');
+        $queryString = (string) ($server['query_string'] ?? '');
+        $uri = $queryString === '' ? $path : "{$path}?{$queryString}";
+        $protocol = str_replace('HTTP/', '', (string) ($server['server_protocol'] ?? '1.1'));
+        $body = $request->fd > 0
+            ? (string) $request->rawContent()
+            : '';
+
+        return (new ServerRequest($method, $uri, $headers, Utils::streamFor($body), $protocol, $server))
+            ->withQueryParams($query)
+            ->withCookieParams($cookies)
+            ->withParsedBody($parsedBody)
+            ->withUploadedFiles(self::uploadedFiles($files));
     }
 }

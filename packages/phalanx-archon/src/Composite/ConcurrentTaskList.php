@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Phalanx\Archon\Composite;
 
-use Phalanx\Scope\ExecutionScope;
 use Phalanx\Archon\Output\StreamOutput;
 use Phalanx\Archon\Style\Theme;
 use Phalanx\Archon\Widget\TaskList;
 use Phalanx\Archon\Widget\TaskState;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 use React\EventLoop\Loop;
@@ -40,7 +40,8 @@ final class ConcurrentTaskList
         private readonly StreamOutput $output,
         private readonly Theme $theme,
         private readonly int $spinnerFps = 10,
-    ) {}
+    ) {
+    }
 
     public function add(string $id, string $name, Executable|Scopeable $task): self
     {

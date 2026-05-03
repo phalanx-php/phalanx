@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Stoa\Contract;
 
+use Phalanx\Scope\Scope;
 use Phalanx\Stoa\RequestScope;
 use Phalanx\Stoa\ValidationException;
-use Phalanx\Scope\Scope;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 use ReflectionClass;

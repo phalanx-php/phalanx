@@ -22,7 +22,9 @@ use Phalanx\Archon\Style\Theme;
  */
 final class Table
 {
-    public function __construct(private readonly Theme $theme) {}
+    public function __construct(private readonly Theme $theme)
+    {
+    }
 
     /**
      * Compute optimal column widths constrained to $terminalWidth.

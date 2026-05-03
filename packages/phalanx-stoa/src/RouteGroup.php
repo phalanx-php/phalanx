@@ -102,6 +102,11 @@ final class RouteGroup implements Executable
         return $instance;
     }
 
+    public function __invoke(ExecutionScope $scope): mixed
+    {
+        return ($this->inner)($scope);
+    }
+
     /**
      * HTTP-specific invoker. When the dispatch scope is a RequestScope, runs
      * (in order): header checks, input hydration, then business validators
@@ -387,10 +392,5 @@ final class RouteGroup implements Executable
     public function routes(): array
     {
         return $this->inner->filterByConfig(RouteConfig::class);
-    }
-
-    public function __invoke(ExecutionScope $scope): mixed
-    {
-        return ($this->inner)($scope);
     }
 }

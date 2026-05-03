@@ -51,7 +51,8 @@ abstract class BasePrompt
     public function __construct(
         protected readonly Theme $theme,
         protected readonly ?Closure $validate = null,
-    ) {}
+    ) {
+    }
 
     /** @return PromiseInterface<mixed> */
     final public function prompt(StreamOutput $output, RawInput $input): PromiseInterface
@@ -140,25 +141,6 @@ abstract class BasePrompt
         return $this->cachedInnerWidth;
     }
 
-    abstract protected function renderActive(): string;
-    abstract protected function renderAnswered(): string;
-    abstract protected function handleKey(string $key): void;
-
-    protected function defaultValue(): mixed
-    {
-        return null;
-    }
-
-    protected function currentValue(): mixed
-    {
-        return null;
-    }
-
-    protected function hints(): string
-    {
-        return '';
-    }
-
     final protected function hintLine(): string
     {
         $h = $this->hints();
@@ -228,6 +210,25 @@ abstract class BasePrompt
                 $this->loop();
             }
         });
+    }
+
+    abstract protected function renderActive(): string;
+    abstract protected function renderAnswered(): string;
+    abstract protected function handleKey(string $key): void;
+
+    protected function defaultValue(): mixed
+    {
+        return null;
+    }
+
+    protected function currentValue(): mixed
+    {
+        return null;
+    }
+
+    protected function hints(): string
+    {
+        return '';
     }
 
     private function renderFrame(): void

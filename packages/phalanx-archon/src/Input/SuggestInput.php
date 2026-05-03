@@ -213,5 +213,4 @@ final class SuggestInput extends BasePrompt
     {
         return $this->value;
     }
-
 }

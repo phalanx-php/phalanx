@@ -34,6 +34,10 @@ final class Ansi
     public const string SYNC_START   = "\033[?2026h";
     public const string SYNC_END     = "\033[?2026l";
 
+    private function __construct()
+    {
+    }
+
     public static function up(int $n): string
     {
         return $n > 0 ? "\033[{$n}A" : '';
@@ -59,6 +63,4 @@ final class Ansi
     {
         return "\033[{$n}G";
     }
-
-    private function __construct() {}
 }

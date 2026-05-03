@@ -75,9 +75,16 @@ final class Accordion
         $runSection   = null;
 
         $runSection = static function (int $index) use ( // @phpstan-ignore closure.unusedUse
-            &$runSection, &$listenForNav,
-            &$cursor, &$expanded, &$values, &$sections,
-            $output, $input, $deferred, $render,
+            &$runSection,
+            &$listenForNav,
+            &$cursor,
+            &$expanded,
+            &$values,
+            &$sections,
+            $output,
+            $input,
+            $deferred,
+            $render,
         ): void {
             $section  = $sections[$index];
             $id       = $section['id'];
@@ -87,8 +94,15 @@ final class Accordion
             $form = ($section['factory'])();
             $form->submit($output, $input)->then(
                 static function (mixed $value) use (
-                    &$listenForNav, &$cursor, &$expanded, &$values, &$sections,
-                    $id, $index, $deferred, $render,
+                    &$listenForNav,
+                    &$cursor,
+                    &$expanded,
+                    &$values,
+                    &$sections,
+                    $id,
+                    $index,
+                    $deferred,
+                    $render,
                 ): void {
                     $values[$id] = $value;
                     $expanded    = null;
@@ -110,15 +124,23 @@ final class Accordion
         };
 
         $listenForNav = static function () use (
-            &$listenForNav, &$runSection,
-            &$cursor, &$sections,
-            $render, $input, $deferred,
+            &$listenForNav,
+            &$runSection,
+            &$cursor,
+            &$sections,
+            $render,
+            $input,
+            $deferred,
         ): void {
             $input->nextKey()->then(
                 static function (string $key) use ( // @phpstan-ignore closure.unusedUse
-                    &$listenForNav, &$runSection,
-                    &$cursor, &$sections,
-                    $render, $input, $deferred,
+                    &$listenForNav,
+                    &$runSection,
+                    &$cursor,
+                    &$sections,
+                    $render,
+                    $input,
+                    $deferred,
                 ): void {
                     if ($key === 'ctrl-c') {
                         $deferred->reject(new CancelledException('Accordion cancelled'));

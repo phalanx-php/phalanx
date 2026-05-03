@@ -20,7 +20,9 @@ final class EnumValue implements RouteParamValidator
     /**
      * @param class-string<T> $enum
      */
-    public function __construct(private readonly string $enum) {}
+    public function __construct(private readonly string $enum)
+    {
+    }
 
     public function validate(string $name, string $value): ?string
     {

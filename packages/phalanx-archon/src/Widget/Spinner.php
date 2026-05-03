@@ -34,7 +34,8 @@ final class Spinner
     public function __construct(
         private readonly Theme $theme,
         private readonly array $frames = self::DOTS,
-    ) {}
+    ) {
+    }
 
     public function frame(int $tick, string $label = ''): string
     {

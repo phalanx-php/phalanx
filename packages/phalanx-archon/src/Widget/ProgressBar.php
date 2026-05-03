@@ -19,7 +19,8 @@ final class ProgressBar
         private readonly Theme $theme,
         private readonly string $filledChar = '█',
         private readonly string $emptyChar = '░',
-    ) {}
+    ) {
+    }
 
     public function render(int $value, int $total, int $width, string $label = ''): string
     {

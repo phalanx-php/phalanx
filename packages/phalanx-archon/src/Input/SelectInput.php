@@ -157,5 +157,4 @@ class SelectInput extends BasePrompt
             $this->firstVisible = $this->highlighted - $scroll + 1;
         }
     }
-
 }

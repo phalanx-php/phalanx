@@ -57,6 +57,11 @@ class Task implements Executable
         return $task;
     }
 
+    public function __invoke(ExecutionScope $scope): mixed
+    {
+        return ($this->fn)($scope);
+    }
+
     private static function deriveLocation(ReflectionFunction $reflection): string
     {
         $file = $reflection->getFileName();
@@ -64,10 +69,5 @@ class Task implements Executable
             return self::class;
         }
         return basename($file) . ':' . $reflection->getStartLine();
-    }
-
-    public function __invoke(ExecutionScope $scope): mixed
-    {
-        return ($this->fn)($scope);
     }
 }

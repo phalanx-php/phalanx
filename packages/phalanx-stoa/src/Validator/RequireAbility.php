@@ -23,7 +23,9 @@ use Phalanx\Stoa\RequestScope;
  */
 final class RequireAbility implements RouteValidator
 {
-    public function __construct(private readonly string $ability) {}
+    public function __construct(private readonly string $ability)
+    {
+    }
 
     public function validate(object|null $input, RequestScope $scope): array
     {

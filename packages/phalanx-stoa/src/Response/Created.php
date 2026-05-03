@@ -16,7 +16,8 @@ class Created implements ToResponse
 
     public function __construct(
         public readonly mixed $data,
-    ) {}
+    ) {
+    }
 
     public function toResponse(): ResponseInterface
     {

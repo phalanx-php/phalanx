@@ -13,7 +13,9 @@ use Phalanx\Stoa\RequestScope;
 
 final class Authenticate implements Middleware
 {
-    public function __construct(private readonly Guard $guard) {}
+    public function __construct(private readonly Guard $guard)
+    {
+    }
 
     public function __invoke(RequestScope $scope, Closure $next): mixed
     {

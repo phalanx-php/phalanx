@@ -6,10 +6,10 @@ namespace Phalanx\Archon;
 
 use Closure;
 use Phalanx\Archon\Output\StreamOutput;
+use Phalanx\Archon\Style\Theme;
 use Phalanx\Archon\Widget\ProgressBar;
 use Phalanx\Archon\Widget\Spinner;
 use Phalanx\Archon\Widget\Table;
-use Phalanx\Archon\Style\Theme;
 use React\EventLoop\Loop;
 use React\EventLoop\TimerInterface;
 use WeakReference;

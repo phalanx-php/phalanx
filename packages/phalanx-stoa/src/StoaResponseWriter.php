@@ -10,6 +10,20 @@ use ReflectionMethod;
 
 final readonly class StoaResponseWriter
 {
+    private static function targetIsWritable(Response $target): bool
+    {
+        $method = new ReflectionMethod($target, 'isWritable');
+
+        return $method->invoke($target) === true;
+    }
+
+    private static function targetIsWritableAfterHeaders(Response $target): bool
+    {
+        $method = new ReflectionMethod($target, 'isWritable');
+
+        return $method->invoke($target) === true;
+    }
+
     public function write(ResponseInterface $source, Response $target, StoaRequestResource $request): void
     {
         if (!self::targetIsWritable($target)) {
@@ -41,19 +55,5 @@ final readonly class StoaResponseWriter
         if (!$target->end((string) $source->getBody())) {
             throw new ResponseWriteFailure('OpenSwoole failed to finish response body.');
         }
-    }
-
-    private static function targetIsWritable(Response $target): bool
-    {
-        $method = new ReflectionMethod($target, 'isWritable');
-
-        return $method->invoke($target) === true;
-    }
-
-    private static function targetIsWritableAfterHeaders(Response $target): bool
-    {
-        $method = new ReflectionMethod($target, 'isWritable');
-
-        return $method->invoke($target) === true;
     }
 }

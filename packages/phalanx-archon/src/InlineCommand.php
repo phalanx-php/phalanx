@@ -42,6 +42,13 @@ final class InlineCommand implements Executable, Traceable
         return new self($name, $handler, $config ?? new CommandConfig());
     }
 
+    public function __invoke(ExecutionScope $scope): mixed
+    {
+        $context = ExecutionContext::fromScope($scope, $this->name, $this->commandConfig);
+
+        return ($this->handler)($context);
+    }
+
     private static function assertStaticClosure(Closure $handler): void
     {
         if (new ReflectionFunction($handler)->isStatic()) {
@@ -52,12 +59,5 @@ final class InlineCommand implements Executable, Traceable
             'Archon inline commands require static closures. Non-static closures capture $this '
             . 'and leak in long-running console runtimes.',
         );
-    }
-
-    public function __invoke(ExecutionScope $scope): mixed
-    {
-        $context = ExecutionContext::fromScope($scope, $this->name, $this->commandConfig);
-
-        return ($this->handler)($context);
     }
 }

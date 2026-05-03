@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Archon;
 
-use Phalanx\Scope\ExecutionScope;
 use Phalanx\Handler\Handler;
 use Phalanx\Handler\HandlerGroup;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 

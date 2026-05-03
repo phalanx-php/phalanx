@@ -23,11 +23,18 @@
         <exclude-pattern>*/ExecutionScope.php</exclude-pattern>
         <exclude-pattern>*/DeferredScope.php</exclude-pattern>
         <exclude-pattern>*/CancellationToken.php</exclude-pattern>
+        <exclude-pattern>*/ExecutionContext.php</exclude-pattern>
     </rule>
 
     <!-- PHP 8.4 property hooks: spacing rules misfire on hook syntax -->
     <rule ref="PSR2.Classes.PropertyDeclaration.SpacingAfterType">
         <exclude-pattern>*/SettlementBag.php</exclude-pattern>
+        <exclude-pattern>*/ExecutionContext.php</exclude-pattern>
+    </rule>
+
+    <!-- PHP 8.4 property hooks: indentation rule misfires on hook bodies -->
+    <rule ref="Generic.WhiteSpace.ScopeIndent.IncorrectExact">
+        <exclude-pattern>*/ExecutionContext.php</exclude-pattern>
     </rule>
 
     <!-- Slevomat: Member ordering -->
@@ -47,6 +54,7 @@
                 <element value="private properties"/>
                 <element value="constructor"/>
                 <element value="static constructors"/>
+                <element value="magic methods"/>
                 <element value="destructor"/>
                 <element value="public static final methods"/>
                 <element value="public static abstract methods"/>
@@ -62,7 +70,6 @@
                 <element value="protected abstract methods"/>
                 <element value="protected methods"/>
                 <element value="private methods"/>
-                <element value="magic methods"/>
             </property>
         </properties>
     </rule>

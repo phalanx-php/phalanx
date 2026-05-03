@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Stoa;
 
-use Phalanx\Cancellation\Cancelled;
 use Phalanx\Cancellation\CancellationToken;
+use Phalanx\Cancellation\Cancelled;
 use Phalanx\Runtime\Memory\ManagedResource;
 use Phalanx\Runtime\Memory\ManagedResourceHandle;
 use Phalanx\Runtime\Memory\ManagedResourceState;
@@ -83,6 +83,11 @@ final class StoaRequestResource
         $resource = $scope->attribute(StoaScopeKey::RequestResource->value);
 
         return $resource instanceof self ? $resource : null;
+    }
+
+    private static function fit(string $value, int $limit): string
+    {
+        return mb_strlen($value) <= $limit ? $value : mb_substr($value, 0, $limit);
     }
 
     public function activate(): void
@@ -197,11 +202,6 @@ final class StoaRequestResource
     public function isTerminal(): bool
     {
         return $this->state()?->isTerminal() === true;
-    }
-
-    private static function fit(string $value, int $limit): string
-    {
-        return mb_strlen($value) <= $limit ? $value : mb_substr($value, 0, $limit);
     }
 
     private function recordDiagnostic(StoaEventSid $type, string $valueA = '', string $valueB = ''): void
