@@ -6,7 +6,7 @@ require __DIR__ . '/../bootstrap.php';
 
 use Phalanx\Stoa\Stoa;
 
-$listen = $argv[1] ?? '127.0.0.1:8081';
+$listen = $argv[1] ?? '127.0.0.1:8188';
 $exampleHost = str_starts_with($listen, '0.0.0.0:')
     ? '127.0.0.1:' . substr($listen, strlen('0.0.0.0:'))
     : $listen;

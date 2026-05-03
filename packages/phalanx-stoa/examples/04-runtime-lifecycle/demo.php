@@ -9,6 +9,7 @@ use OpenSwoole\Constant;
 use OpenSwoole\Coroutine;
 use OpenSwoole\Coroutine\Client;
 use OpenSwoole\Process;
+use Phalanx\Stoa\Runtime\Identity\StoaEventSid;
 use Phalanx\Stoa\Stoa;
 
 $host = '127.0.0.1';
@@ -55,20 +56,21 @@ try {
 
         $client = openRawRequest($host, $port, '/runtime/disconnect');
         $started = waitForEvent($host, $port, 'disconnect.started', 2.0);
+        $disconnectResource = (string) (firstEvent($host, $port, 'disconnect.started')['context']['resource'] ?? '');
         $client?->close();
 
-        $disconnected = waitForEvent($host, $port, 'stoa.client_disconnected', 2.0);
-        $aborted = waitForEvent($host, $port, 'resource.aborted', 2.0);
-        $released = waitForEvent($host, $port, 'resource.released', 2.0);
-        $didNotComplete = !containsEvent($host, $port, 'disconnect.completed');
+        $disconnected = waitForEvent($host, $port, StoaEventSid::ClientDisconnected->value, 2.0, $disconnectResource);
+        $aborted = waitForEvent($host, $port, 'resource.aborted', 2.0, $disconnectResource);
+        $released = waitForEvent($host, $port, 'resource.released', 2.0, $disconnectResource);
+        $didNotComplete = !containsEvent($host, $port, 'disconnect.completed', $disconnectResource);
         $healthyAfterDisconnect = waitForHttpStatus($host, $port, '/runtime/health', 200);
 
         printTimeline('client disconnect', [
             ['request', $started ? 'GET /runtime/disconnect opened' : 'request did not reach handler'],
             ['client', 'closed socket before response'],
-            ['runtime', eventText($host, $port, 'stoa.client_disconnected', 'detected closed client socket')],
-            ['resource', eventText($host, $port, 'resource.aborted', 'marked request resource aborted')],
-            ['cleanup', eventText($host, $port, 'resource.released', 'released runtime resource row')],
+            ['runtime', eventText($host, $port, StoaEventSid::ClientDisconnected->value, 'detected closed client socket', $disconnectResource)],
+            ['resource', eventText($host, $port, 'resource.aborted', 'marked request resource aborted', $disconnectResource)],
+            ['cleanup', eventText($host, $port, 'resource.released', 'released runtime resource row', $disconnectResource)],
             ['work', $didNotComplete ? 'did not complete after cancellation' : 'completed unexpectedly'],
             ['server', $healthyAfterDisconnect ? 'accepted next health check' : 'did not answer next health check'],
         ]);
@@ -120,9 +122,9 @@ function printTimeline(string $title, array $rows): void
     echo "\n";
 }
 
-function eventText(string $host, int $port, string $event, string $fallback): string
+function eventText(string $host, int $port, string $event, string $fallback, ?string $resource = null): string
 {
-    $entry = firstEvent($host, $port, $event);
+    $entry = firstEvent($host, $port, $event, $resource);
 
     if ($entry === null) {
         return "missing {$event}";
@@ -136,10 +138,10 @@ function eventText(string $host, int $port, string $event, string $fallback): st
 }
 
 /** @return array{event: string, context: array<string, mixed>, at: float}|null */
-function firstEvent(string $host, int $port, string $event): ?array
+function firstEvent(string $host, int $port, string $event, ?string $resource = null): ?array
 {
     foreach (events($host, $port) as $entry) {
-        if ($entry['event'] === $event) {
+        if ($entry['event'] === $event && eventMatchesResource($entry, $resource)) {
             return $entry;
         }
     }
@@ -163,12 +165,12 @@ function waitForHttpStatus(string $host, int $port, string $path, int $status): 
     return false;
 }
 
-function waitForEvent(string $host, int $port, string $event, float $timeout): bool
+function waitForEvent(string $host, int $port, string $event, float $timeout, ?string $resource = null): bool
 {
     $deadline = microtime(true) + $timeout;
 
     do {
-        if (containsEvent($host, $port, $event)) {
+        if (containsEvent($host, $port, $event, $resource)) {
             return true;
         }
 
@@ -178,9 +180,19 @@ function waitForEvent(string $host, int $port, string $event, float $timeout): b
     return false;
 }
 
-function containsEvent(string $host, int $port, string $event): bool
+function containsEvent(string $host, int $port, string $event, ?string $resource = null): bool
 {
-    return firstEvent($host, $port, $event) !== null;
+    return firstEvent($host, $port, $event, $resource) !== null;
+}
+
+/** @param array{event: string, context: array<string, mixed>, at: float} $entry */
+function eventMatchesResource(array $entry, ?string $resource): bool
+{
+    if ($resource === null || $resource === '') {
+        return true;
+    }
+
+    return ($entry['context']['resource'] ?? null) === $resource;
 }
 
 /** @return list<array{event: string, context: array<string, mixed>, at: float}> */

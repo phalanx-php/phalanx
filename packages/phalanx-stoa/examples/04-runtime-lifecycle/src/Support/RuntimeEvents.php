@@ -34,9 +34,11 @@ final readonly class RuntimeEvents
         return [
             'event' => $event->type,
             'context' => [
+                'path' => $event->valueA,
                 'run' => $event->runId,
                 'state' => $event->state,
                 'scope' => $event->scopeId,
+                'detail' => $event->valueB,
                 'value_a' => $event->valueA,
                 'value_b' => $event->valueB,
                 'resource' => $event->resourceId,
