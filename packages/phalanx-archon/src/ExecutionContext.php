@@ -41,6 +41,26 @@ class ExecutionContext implements CommandScope
     ) {
     }
 
+    public static function fromScope(ExecutionScope $scope, string $name, CommandConfig $config): self
+    {
+        /** @var list<string> $rawArgs */
+        $rawArgs = $scope->attribute('args', []);
+        $input = ArgvParser::parse($rawArgs, $config);
+
+        foreach ($config->validators as $validator) {
+            $validator->validate($input, $config);
+        }
+
+        return new self(
+            $scope,
+            $name,
+            $input->args,
+            $input->options,
+            $config,
+            (string) $scope->attribute(CommandLifecycle::RESOURCE_ATTRIBUTE, ''),
+        );
+    }
+
     public function withAttribute(string $key, mixed $value): CommandScope
     {
         return new self(

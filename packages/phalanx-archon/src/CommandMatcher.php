@@ -26,25 +26,8 @@ final class CommandMatcher implements HandlerMatcher
             throw UnknownCommand::named($name);
         }
 
-        /** @var list<string> $rawArgs */
-        $rawArgs = $scope->attribute('args', []);
         $config = $handler->config instanceof CommandConfig ? $handler->config : new CommandConfig();
 
-        $input = ArgvParser::parse($rawArgs, $config);
-
-        foreach ($config->validators as $validator) {
-            $validator->validate($input, $config);
-        }
-
-        $scope = new ExecutionContext(
-            $scope,
-            $name,
-            $input->args,
-            $input->options,
-            $config,
-            (string) $scope->attribute(CommandLifecycle::RESOURCE_ATTRIBUTE, ''),
-        );
-
-        return new MatchResult($handler, $scope);
+        return new MatchResult($handler, ExecutionContext::fromScope($scope, $name, $config));
     }
 }

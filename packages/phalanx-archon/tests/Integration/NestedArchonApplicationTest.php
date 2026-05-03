@@ -434,6 +434,166 @@ final class NestedArchonApplicationTest extends AsyncTestCase
         $app->shutdown();
     }
 
+    #[Test]
+    public function groupHelpFlagShowsGroupHelpWithoutSubcommand(): void
+    {
+        $stream = $this->outputStream();
+        $commands = CommandGroup::of([
+            'net' => CommandGroup::of([
+                'scan' => [NoopCommand::class, new CommandConfig(description: 'Scan network')],
+                'probe' => [NoopCommand::class, new CommandConfig(description: 'Probe host')],
+            ], description: 'Network operations'),
+        ]);
+
+        $app = Archon::starting()
+            ->commands($commands)
+            ->withConsoleConfig(new ConsoleConfig(output: $this->streamOutput($stream)))
+            ->build();
+
+        $code = $app->dispatch(['net', '--help']);
+        $output = $this->streamContents($stream);
+
+        $this->assertSame(0, $code);
+        $this->assertStringContainsString('Network operations', $output);
+        $this->assertStringContainsString('net <command>', $output);
+        $this->assertStringContainsString('scan', $output);
+        $this->assertStringContainsString('probe', $output);
+        $app->shutdown();
+    }
+
+    #[Test]
+    public function bareHelpSuffixOnFlatCommandShowsCommandHelp(): void
+    {
+        $stream = $this->outputStream();
+        $commands = CommandGroup::of([
+            'scan' => [
+                ScanCommand::class,
+                new CommandConfig(
+                    description: 'Scan network',
+                    arguments: [Arg::required('target', 'CIDR range')],
+                ),
+            ],
+        ]);
+
+        $app = Archon::starting()
+            ->commands($commands)
+            ->withConsoleConfig(new ConsoleConfig(output: $this->streamOutput($stream)))
+            ->build();
+
+        $code = $app->dispatch(['scan', 'help']);
+        $output = $this->streamContents($stream);
+
+        $this->assertSame(0, $code);
+        $this->assertNull(ScanCommand::$lastTarget);
+        $this->assertStringContainsString('Scan network', $output);
+        $this->assertStringContainsString('scan <target>', $output);
+        $app->shutdown();
+    }
+
+    #[Test]
+    public function bareHelpSuffixOnNestedCommandShowsCommandHelp(): void
+    {
+        $stream = $this->outputStream();
+        $commands = CommandGroup::of([
+            'net' => CommandGroup::of([
+                'scan' => [
+                    ScanCommand::class,
+                    new CommandConfig(
+                        description: 'Scan network',
+                        arguments: [Arg::required('target', 'CIDR range')],
+                    ),
+                ],
+            ], description: 'Network operations'),
+        ]);
+
+        $app = Archon::starting()
+            ->commands($commands)
+            ->withConsoleConfig(new ConsoleConfig(output: $this->streamOutput($stream)))
+            ->build();
+
+        $code = $app->dispatch(['net', 'scan', 'help']);
+        $output = $this->streamContents($stream);
+
+        $this->assertSame(0, $code);
+        $this->assertNull(ScanCommand::$lastTarget);
+        $this->assertStringContainsString('Scan network', $output);
+        $this->assertStringContainsString('net scan <target>', $output);
+        $app->shutdown();
+    }
+
+    #[Test]
+    public function helpForUnknownFlatCommandFails(): void
+    {
+        $stream = $this->outputStream();
+        $commands = CommandGroup::of([
+            'scan' => [NoopCommand::class, new CommandConfig(description: 'Scan network')],
+        ]);
+
+        $app = Archon::starting()
+            ->commands($commands)
+            ->withConsoleConfig(new ConsoleConfig(errorOutput: $this->streamOutput($stream)))
+            ->build();
+
+        $code = $app->dispatch(['help', 'missing']);
+        $output = $this->streamContents($stream);
+        $resource = $app->host()->runtime()->memory->resources->all(ArchonResourceSid::Command)[0];
+
+        $this->assertSame(1, $code);
+        $this->assertStringContainsString('Unknown command: missing', $output);
+        $this->assertSame(ManagedResourceState::Failed, $resource->state);
+        $app->shutdown();
+    }
+
+    #[Test]
+    public function bareHelpRendersTopLevelOverview(): void
+    {
+        $stream = $this->outputStream();
+        $commands = CommandGroup::of([
+            'serve' => [NoopCommand::class, new CommandConfig(description: 'Start server')],
+            'net' => CommandGroup::of([
+                'scan' => [NoopCommand::class, new CommandConfig(description: 'Scan')],
+            ], description: 'Network operations'),
+        ]);
+
+        $app = Archon::starting()
+            ->commands($commands)
+            ->withConsoleConfig(new ConsoleConfig(output: $this->streamOutput($stream)))
+            ->build();
+
+        $code = $app->dispatch(['help']);
+        $output = $this->streamContents($stream);
+
+        $this->assertSame(0, $code);
+        $this->assertStringContainsString('serve', $output);
+        $this->assertStringContainsString('Start server', $output);
+        $this->assertStringContainsString('net', $output);
+        $this->assertStringContainsString('Network operations', $output);
+        $app->shutdown();
+    }
+
+    #[Test]
+    public function helpWithExtraPositionalAfterCommandFails(): void
+    {
+        $stream = $this->outputStream();
+        $commands = CommandGroup::of([
+            'scan' => [NoopCommand::class, new CommandConfig(description: 'Scan network')],
+        ]);
+
+        $app = Archon::starting()
+            ->commands($commands)
+            ->withConsoleConfig(new ConsoleConfig(errorOutput: $this->streamOutput($stream)))
+            ->build();
+
+        $code = $app->dispatch(['help', 'scan', 'extra']);
+        $output = $this->streamContents($stream);
+        $resource = $app->host()->runtime()->memory->resources->all(ArchonResourceSid::Command)[0];
+
+        $this->assertSame(1, $code);
+        $this->assertStringContainsString('Unknown command: scan extra', $output);
+        $this->assertSame(ManagedResourceState::Failed, $resource->state);
+        $app->shutdown();
+    }
+
     protected function setUp(): void
     {
         parent::setUp();

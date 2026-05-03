@@ -56,23 +56,8 @@ final class InlineCommand implements Executable, Traceable
 
     public function __invoke(ExecutionScope $scope): mixed
     {
-        /** @var list<string> $rawArgs */
-        $rawArgs = $scope->attribute('args', []);
-        $input = ArgvParser::parse($rawArgs, $this->commandConfig);
+        $context = ExecutionContext::fromScope($scope, $this->name, $this->commandConfig);
 
-        foreach ($this->commandConfig->validators as $validator) {
-            $validator->validate($input, $this->commandConfig);
-        }
-
-        $scope = new ExecutionContext(
-            $scope,
-            $this->name,
-            $input->args,
-            $input->options,
-            $this->commandConfig,
-            (string) $scope->attribute(CommandLifecycle::RESOURCE_ATTRIBUTE, ''),
-        );
-
-        return ($this->handler)($scope);
+        return ($this->handler)($context);
     }
 }
