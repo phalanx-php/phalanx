@@ -8,8 +8,6 @@ use Phalanx\Archon\Application\Archon;
 use Phalanx\Archon\Command\CommandGroup;
 use Phalanx\Archon\Command\CommandScope;
 use Phalanx\Archon\Application\ConsoleConfig;
-use Phalanx\Archon\Console\Output\StreamOutput;
-use Phalanx\Archon\Console\Output\TerminalEnvironment;
 use Phalanx\Task\Scopeable;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -36,19 +34,19 @@ final class ArchonLifecycleTest extends TestCase
     #[Test]
     public function disposesHandlerScopeAfterThrownCommand(): void
     {
-        $stream = self::outputStream();
+        $stream = StreamOutputHelper::open();
         $app = Archon::starting()
             ->commands(CommandGroup::of([
                 'fail' => ThrowingLifecycleCommand::class,
             ]))
-            ->withConsoleConfig(new ConsoleConfig(errorOutput: self::streamOutput($stream)))
+            ->withConsoleConfig(new ConsoleConfig(errorOutput: StreamOutputHelper::output($stream)))
             ->build();
 
         $code = $app->dispatch(['fail']);
 
         self::assertSame(1, $code);
         self::assertTrue(ThrowingLifecycleCommand::$disposed);
-        self::assertStringContainsString('expected failure', self::streamContents($stream));
+        self::assertStringContainsString('expected failure', StreamOutputHelper::contents($stream));
         $app->shutdown();
     }
 
@@ -105,31 +103,6 @@ PHP);
         return $dir;
     }
 
-    /** @return resource */
-    private static function outputStream(): mixed
-    {
-        $stream = fopen('php://temp', 'w+');
-
-        if ($stream === false) {
-            self::fail('Unable to open memory stream.');
-        }
-
-        return $stream;
-    }
-
-    /** @param resource $stream */
-    private static function streamOutput(mixed $stream): StreamOutput
-    {
-        return new StreamOutput($stream, new TerminalEnvironment(columns: 80, lines: 24));
-    }
-
-    /** @param resource $stream */
-    private static function streamContents(mixed $stream): string
-    {
-        rewind($stream);
-
-        return stream_get_contents($stream);
-    }
 }
 
 final class LifecycleCommand implements Scopeable

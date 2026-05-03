@@ -15,8 +15,6 @@ use Phalanx\Archon\Runtime\Identity\ConsoleSignalState;
 use Phalanx\Archon\Runtime\Identity\ArchonAnnotationSid;
 use Phalanx\Archon\Runtime\Identity\ArchonResourceSid;
 use Phalanx\Archon\Command\Opt;
-use Phalanx\Archon\Console\Output\StreamOutput;
-use Phalanx\Archon\Console\Output\TerminalEnvironment;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Runtime\Identity\AegisResourceSid;
@@ -30,32 +28,6 @@ use PHPUnit\Framework\Attributes\Test;
 
 final class ArchonApplicationTest extends CoroutineTestCase
 {
-    /** @return resource */
-    private static function outputStream(): mixed
-    {
-        $stream = fopen('php://temp', 'w+');
-
-        if ($stream === false) {
-            self::fail('Unable to open memory stream.');
-        }
-
-        return $stream;
-    }
-
-    /** @param resource $stream */
-    private static function streamOutput(mixed $stream): StreamOutput
-    {
-        return new StreamOutput($stream, new TerminalEnvironment(columns: 80, lines: 24));
-    }
-
-    /** @param resource $stream */
-    private static function streamContents(mixed $stream): string
-    {
-        rewind($stream);
-
-        return stream_get_contents($stream);
-    }
-
     #[Test]
     public function facadeBuildsDispatchableCommandFirstApplication(): void
     {
@@ -156,7 +128,7 @@ final class ArchonApplicationTest extends CoroutineTestCase
     public function throwingOneOffCommandReturnsNonZeroAndDisposesScope(): void
     {
         $disposed = false;
-        $stream = self::outputStream();
+        $stream = StreamOutputHelper::open();
         $app = Archon::command(
             'fail',
             static function (CommandScope $scope) use (&$disposed): int {
@@ -167,14 +139,14 @@ final class ArchonApplicationTest extends CoroutineTestCase
                 throw new \RuntimeException('expected failure');
             },
         )
-            ->withConsoleConfig(new ConsoleConfig(errorOutput: self::streamOutput($stream)))
+            ->withConsoleConfig(new ConsoleConfig(errorOutput: StreamOutputHelper::output($stream)))
             ->build();
 
         $this->runInCoroutine(static function () use ($app, $stream): void {
             $code = $app->dispatch(['fail']);
 
             self::assertSame(1, $code);
-            self::assertStringContainsString('Error: expected failure', self::streamContents($stream));
+            self::assertStringContainsString('Error: expected failure', StreamOutputHelper::contents($stream));
         });
 
         self::assertTrue($disposed);
@@ -188,17 +160,17 @@ final class ArchonApplicationTest extends CoroutineTestCase
     #[Test]
     public function unknownCommandReturnsNonZeroWithAvailableCommands(): void
     {
-        $stream = self::outputStream();
+        $stream = StreamOutputHelper::open();
         $app = Archon::command('known', static fn(CommandScope $scope): int => 0)
-            ->withConsoleConfig(new ConsoleConfig(errorOutput: self::streamOutput($stream)))
+            ->withConsoleConfig(new ConsoleConfig(errorOutput: StreamOutputHelper::output($stream)))
             ->build();
 
         $this->runInCoroutine(static function () use ($app, $stream): void {
             $code = $app->dispatch(['missing']);
 
             self::assertSame(1, $code);
-            self::assertStringContainsString('Unknown command: missing', self::streamContents($stream));
-            self::assertStringContainsString('known', self::streamContents($stream));
+            self::assertStringContainsString('Unknown command: missing', StreamOutputHelper::contents($stream));
+            self::assertStringContainsString('known', StreamOutputHelper::contents($stream));
         });
 
         $resource = $app->host()->runtime()->memory->resources->all(ArchonResourceSid::Command)[0];
@@ -213,16 +185,16 @@ final class ArchonApplicationTest extends CoroutineTestCase
     #[Test]
     public function helpForMissingCommandReturnsNonZero(): void
     {
-        $stream = self::outputStream();
+        $stream = StreamOutputHelper::open();
         $app = Archon::command('known', static fn(CommandScope $scope): int => 0)
-            ->withConsoleConfig(new ConsoleConfig(errorOutput: self::streamOutput($stream)))
+            ->withConsoleConfig(new ConsoleConfig(errorOutput: StreamOutputHelper::output($stream)))
             ->build();
 
         $this->runInCoroutine(static function () use ($app, $stream): void {
             $code = $app->dispatch(['help', 'missing']);
 
             self::assertSame(1, $code);
-            self::assertStringContainsString('Unknown command: missing', self::streamContents($stream));
+            self::assertStringContainsString('Unknown command: missing', StreamOutputHelper::contents($stream));
         });
 
         $resource = $app->host()->runtime()->memory->resources->all(ArchonResourceSid::Command)[0];
@@ -237,10 +209,10 @@ final class ArchonApplicationTest extends CoroutineTestCase
     #[Test]
     public function longUnknownCommandCannotOverflowManagedResourceAnnotations(): void
     {
-        $stream = self::outputStream();
+        $stream = StreamOutputHelper::open();
         $missing = str_repeat('x', 400);
         $app = Archon::command('known', static fn(CommandScope $scope): int => 0)
-            ->withConsoleConfig(new ConsoleConfig(errorOutput: self::streamOutput($stream)))
+            ->withConsoleConfig(new ConsoleConfig(errorOutput: StreamOutputHelper::output($stream)))
             ->build();
 
         $this->runInCoroutine(static function () use ($app, $missing): void {
@@ -259,19 +231,19 @@ final class ArchonApplicationTest extends CoroutineTestCase
     #[Test]
     public function cancelledCommandAbortsManagedCommandResource(): void
     {
-        $stream = self::outputStream();
+        $stream = StreamOutputHelper::open();
         $app = Archon::command(
             'cancel',
             static function (CommandScope $scope): int {
                 throw new Cancelled('signal:int');
             },
         )
-            ->withConsoleConfig(new ConsoleConfig(errorOutput: self::streamOutput($stream)))
+            ->withConsoleConfig(new ConsoleConfig(errorOutput: StreamOutputHelper::output($stream)))
             ->build();
 
         $this->runInCoroutine(static function () use ($app, $stream): void {
             self::assertSame(130, $app->dispatch(['cancel']));
-            self::assertStringContainsString('Cancelled: signal:int', self::streamContents($stream));
+            self::assertStringContainsString('Cancelled: signal:int', StreamOutputHelper::contents($stream));
         });
 
         $resource = $app->host()->runtime()->memory->resources->all(ArchonResourceSid::Command)[0];
@@ -286,7 +258,7 @@ final class ArchonApplicationTest extends CoroutineTestCase
     #[Test]
     public function scopedDispatchUsesBorrowedCancellationToken(): void
     {
-        $stream = self::outputStream();
+        $stream = StreamOutputHelper::open();
         $token = null;
         $app = Archon::command(
             'cancel',
@@ -298,7 +270,7 @@ final class ArchonApplicationTest extends CoroutineTestCase
                 return 0;
             },
         )
-            ->withConsoleConfig(new ConsoleConfig(errorOutput: self::streamOutput($stream)))
+            ->withConsoleConfig(new ConsoleConfig(errorOutput: StreamOutputHelper::output($stream)))
             ->build();
 
         $this->runInCoroutine(static function () use ($app, $stream, &$token): void {
@@ -309,7 +281,7 @@ final class ArchonApplicationTest extends CoroutineTestCase
                 $code = $app->dispatchScoped(['cancel'], $scope);
 
                 self::assertSame(130, $code);
-                self::assertStringContainsString('Cancelled: scope cancelled', self::streamContents($stream));
+                self::assertStringContainsString('Cancelled: scope cancelled', StreamOutputHelper::contents($stream));
             } finally {
                 $scope->dispose();
             }
@@ -329,7 +301,7 @@ final class ArchonApplicationTest extends CoroutineTestCase
     #[Test]
     public function signalCancellationUsesSignalExitCodeAndReason(): void
     {
-        $stream = self::outputStream();
+        $stream = StreamOutputHelper::open();
         $signals = new ConsoleSignalState();
         $signal = ConsoleSignalPolicy::forSignals([15 => 143])->signal(15);
         self::assertNotNull($signal);
@@ -344,7 +316,7 @@ final class ArchonApplicationTest extends CoroutineTestCase
                 return 0;
             },
         )
-            ->withConsoleConfig(new ConsoleConfig(errorOutput: self::streamOutput($stream)))
+            ->withConsoleConfig(new ConsoleConfig(errorOutput: StreamOutputHelper::output($stream)))
             ->build();
 
         $this->runInCoroutine(static function () use ($app, $signals, $stream): void {
@@ -355,7 +327,7 @@ final class ArchonApplicationTest extends CoroutineTestCase
                 $code = $app->dispatchScoped(['cancel'], $scope, $signals);
 
                 self::assertSame(143, $code);
-                self::assertStringContainsString('Cancelled: signal:term', self::streamContents($stream));
+                self::assertStringContainsString('Cancelled: signal:term', StreamOutputHelper::contents($stream));
             } finally {
                 $scope->dispose();
             }
@@ -377,7 +349,7 @@ final class ArchonApplicationTest extends CoroutineTestCase
             self::markTestSkipped('Signal integration requires SIGUSR1, posix_kill, and pcntl_signal_dispatch.');
         }
 
-        $stream = self::outputStream();
+        $stream = StreamOutputHelper::open();
         $app = Archon::command(
             'signal',
             static function (CommandScope $scope): int {
@@ -393,13 +365,13 @@ final class ArchonApplicationTest extends CoroutineTestCase
         )
             ->withConsoleConfig(new ConsoleConfig(
                 argv: ['signal'],
-                errorOutput: self::streamOutput($stream),
+                errorOutput: StreamOutputHelper::output($stream),
                 signalPolicy: ConsoleSignalPolicy::forSignals([SIGUSR1 => 138]),
             ))
             ->build();
 
         self::assertSame(138, $app->run());
-        self::assertStringContainsString('Cancelled: signal:' . SIGUSR1, self::streamContents($stream));
+        self::assertStringContainsString('Cancelled: signal:' . SIGUSR1, StreamOutputHelper::contents($stream));
     }
 
     #[Test]

@@ -12,8 +12,6 @@ use Phalanx\Archon\Application\ConsoleConfig;
 use Phalanx\Archon\Runtime\Identity\ArchonAnnotationSid;
 use Phalanx\Archon\Runtime\Identity\ArchonResourceSid;
 use Phalanx\Archon\Command\Opt;
-use Phalanx\Archon\Console\Output\StreamOutput;
-use Phalanx\Archon\Console\Output\TerminalEnvironment;
 use Phalanx\Archon\Tests\Fixtures\Commands\FlatRanCommand;
 use Phalanx\Archon\Tests\Fixtures\Commands\NestedRanCommand;
 use Phalanx\Archon\Tests\Fixtures\Commands\NoopCommand;
@@ -79,7 +77,7 @@ final class NestedArchonApplicationTest extends AsyncTestCase
     #[Test]
     public function groupWithoutSubcommandShowsHelp(): void
     {
-        $stream = $this->outputStream();
+        $stream = StreamOutputHelper::open();
         $commands = CommandGroup::of([
             'net' => CommandGroup::of([
                 'scan' => [NoopCommand::class, new CommandConfig(description: 'Scan network')],
@@ -89,11 +87,11 @@ final class NestedArchonApplicationTest extends AsyncTestCase
 
         $app = Archon::starting()
             ->commands($commands)
-            ->withConsoleConfig(new ConsoleConfig(output: $this->streamOutput($stream)))
+            ->withConsoleConfig(new ConsoleConfig(output: StreamOutputHelper::output($stream)))
             ->build();
 
         $code = $app->dispatch(['net']);
-        $output = $this->streamContents($stream);
+        $output = StreamOutputHelper::contents($stream);
 
         $this->assertSame(0, $code);
         $this->assertStringContainsString('Network operations', $output);
@@ -105,7 +103,7 @@ final class NestedArchonApplicationTest extends AsyncTestCase
     #[Test]
     public function nestedGroupWithoutSubcommandShowsNestedHelp(): void
     {
-        $stream = $this->outputStream();
+        $stream = StreamOutputHelper::open();
         $commands = CommandGroup::of([
             'net' => CommandGroup::of([
                 'deep' => CommandGroup::of([
@@ -116,11 +114,11 @@ final class NestedArchonApplicationTest extends AsyncTestCase
 
         $app = Archon::starting()
             ->commands($commands)
-            ->withConsoleConfig(new ConsoleConfig(output: $this->streamOutput($stream)))
+            ->withConsoleConfig(new ConsoleConfig(output: StreamOutputHelper::output($stream)))
             ->build();
 
         $code = $app->dispatch(['net', 'deep']);
-        $output = $this->streamContents($stream);
+        $output = StreamOutputHelper::contents($stream);
 
         $this->assertSame(0, $code);
         $this->assertStringContainsString('Deep network operations', $output);
@@ -133,7 +131,7 @@ final class NestedArchonApplicationTest extends AsyncTestCase
     #[Test]
     public function directHelpForNestedGroupShowsNestedHelp(): void
     {
-        $stream = $this->outputStream();
+        $stream = StreamOutputHelper::open();
         $commands = CommandGroup::of([
             'net' => CommandGroup::of([
                 'deep' => CommandGroup::of([
@@ -144,11 +142,11 @@ final class NestedArchonApplicationTest extends AsyncTestCase
 
         $app = Archon::starting()
             ->commands($commands)
-            ->withConsoleConfig(new ConsoleConfig(output: $this->streamOutput($stream)))
+            ->withConsoleConfig(new ConsoleConfig(output: StreamOutputHelper::output($stream)))
             ->build();
 
         $code = $app->dispatch(['help', 'net', 'deep']);
-        $output = $this->streamContents($stream);
+        $output = StreamOutputHelper::contents($stream);
 
         $this->assertSame(0, $code);
         $this->assertStringContainsString('Deep network operations', $output);
@@ -160,7 +158,7 @@ final class NestedArchonApplicationTest extends AsyncTestCase
     #[Test]
     public function directHelpForNestedCommandShowsFullCommandUsage(): void
     {
-        $stream = $this->outputStream();
+        $stream = StreamOutputHelper::open();
         $commands = CommandGroup::of([
             'net' => CommandGroup::of([
                 'scan' => [
@@ -175,11 +173,11 @@ final class NestedArchonApplicationTest extends AsyncTestCase
 
         $app = Archon::starting()
             ->commands($commands)
-            ->withConsoleConfig(new ConsoleConfig(output: $this->streamOutput($stream)))
+            ->withConsoleConfig(new ConsoleConfig(output: StreamOutputHelper::output($stream)))
             ->build();
 
         $code = $app->dispatch(['help', 'net', 'scan']);
-        $output = $this->streamContents($stream);
+        $output = StreamOutputHelper::contents($stream);
 
         $this->assertSame(0, $code);
         $this->assertStringContainsString('Scan network', $output);
@@ -191,7 +189,7 @@ final class NestedArchonApplicationTest extends AsyncTestCase
     #[Test]
     public function topLevelCommandHelpFlagShowsUsageWithoutRunningCommand(): void
     {
-        $stream = $this->outputStream();
+        $stream = StreamOutputHelper::open();
         $commands = CommandGroup::of([
             'scan' => [
                 ScanCommand::class,
@@ -204,11 +202,11 @@ final class NestedArchonApplicationTest extends AsyncTestCase
 
         $app = Archon::starting()
             ->commands($commands)
-            ->withConsoleConfig(new ConsoleConfig(output: $this->streamOutput($stream)))
+            ->withConsoleConfig(new ConsoleConfig(output: StreamOutputHelper::output($stream)))
             ->build();
 
         $code = $app->dispatch(['scan', '--help']);
-        $output = $this->streamContents($stream);
+        $output = StreamOutputHelper::contents($stream);
 
         $this->assertSame(0, $code);
         $this->assertNull(ScanCommand::$lastTarget);
@@ -223,7 +221,7 @@ final class NestedArchonApplicationTest extends AsyncTestCase
     #[Test]
     public function nestedCommandHelpFlagShowsUsageWithoutRunningCommand(): void
     {
-        $stream = $this->outputStream();
+        $stream = StreamOutputHelper::open();
         $commands = CommandGroup::of([
             'net' => CommandGroup::of([
                 'scan' => [
@@ -238,11 +236,11 @@ final class NestedArchonApplicationTest extends AsyncTestCase
 
         $app = Archon::starting()
             ->commands($commands)
-            ->withConsoleConfig(new ConsoleConfig(output: $this->streamOutput($stream)))
+            ->withConsoleConfig(new ConsoleConfig(output: StreamOutputHelper::output($stream)))
             ->build();
 
         $code = $app->dispatch(['net', 'scan', '--help']);
-        $output = $this->streamContents($stream);
+        $output = StreamOutputHelper::contents($stream);
 
         $this->assertSame(0, $code);
         $this->assertNull(ScanCommand::$lastTarget);
@@ -257,7 +255,7 @@ final class NestedArchonApplicationTest extends AsyncTestCase
     #[Test]
     public function directCommandHelpAcceptsHelpSuffix(): void
     {
-        $stream = $this->outputStream();
+        $stream = StreamOutputHelper::open();
         $commands = CommandGroup::of([
             'scan' => [
                 ScanCommand::class,
@@ -270,11 +268,11 @@ final class NestedArchonApplicationTest extends AsyncTestCase
 
         $app = Archon::starting()
             ->commands($commands)
-            ->withConsoleConfig(new ConsoleConfig(output: $this->streamOutput($stream)))
+            ->withConsoleConfig(new ConsoleConfig(output: StreamOutputHelper::output($stream)))
             ->build();
 
         $code = $app->dispatch(['help', 'scan', '--help']);
-        $output = $this->streamContents($stream);
+        $output = StreamOutputHelper::contents($stream);
 
         $this->assertSame(0, $code);
         $this->assertStringContainsString('Scan network', $output);
@@ -285,7 +283,7 @@ final class NestedArchonApplicationTest extends AsyncTestCase
     #[Test]
     public function directHelpForUnknownNestedCommandFailsCommandResource(): void
     {
-        $stream = $this->outputStream();
+        $stream = StreamOutputHelper::open();
         $commands = CommandGroup::of([
             'net' => CommandGroup::of([
                 'scan' => [NoopCommand::class, new CommandConfig(description: 'Scan network')],
@@ -294,11 +292,11 @@ final class NestedArchonApplicationTest extends AsyncTestCase
 
         $app = Archon::starting()
             ->commands($commands)
-            ->withConsoleConfig(new ConsoleConfig(errorOutput: $this->streamOutput($stream)))
+            ->withConsoleConfig(new ConsoleConfig(errorOutput: StreamOutputHelper::output($stream)))
             ->build();
 
         $code = $app->dispatch(['help', 'net', 'missing']);
-        $output = $this->streamContents($stream);
+        $output = StreamOutputHelper::contents($stream);
         $resource = $app->host()->runtime()->memory->resources->all(ArchonResourceSid::Command)[0];
 
         $this->assertSame(1, $code);
@@ -313,7 +311,7 @@ final class NestedArchonApplicationTest extends AsyncTestCase
     #[Test]
     public function nestedUnknownCommandFailsWithFullCommandPath(): void
     {
-        $stream = $this->outputStream();
+        $stream = StreamOutputHelper::open();
         $commands = CommandGroup::of([
             'net' => CommandGroup::of([
                 'scan' => [NoopCommand::class, new CommandConfig(description: 'Scan network')],
@@ -322,11 +320,11 @@ final class NestedArchonApplicationTest extends AsyncTestCase
 
         $app = Archon::starting()
             ->commands($commands)
-            ->withConsoleConfig(new ConsoleConfig(errorOutput: $this->streamOutput($stream)))
+            ->withConsoleConfig(new ConsoleConfig(errorOutput: StreamOutputHelper::output($stream)))
             ->build();
 
         $code = $app->dispatch(['net', 'missing']);
-        $output = $this->streamContents($stream);
+        $output = StreamOutputHelper::contents($stream);
         $resource = $app->host()->runtime()->memory->resources->all(ArchonResourceSid::Command)[0];
         $annotations = $app->host()->runtime()->memory->resources->annotations($resource->id);
 
@@ -341,7 +339,7 @@ final class NestedArchonApplicationTest extends AsyncTestCase
     #[Test]
     public function nestedInvalidInputPrintsFullCommandPath(): void
     {
-        $stream = $this->outputStream();
+        $stream = StreamOutputHelper::open();
         $commands = CommandGroup::of([
             'net' => CommandGroup::of([
                 'scan' => [
@@ -356,11 +354,11 @@ final class NestedArchonApplicationTest extends AsyncTestCase
 
         $app = Archon::starting()
             ->commands($commands)
-            ->withConsoleConfig(new ConsoleConfig(errorOutput: $this->streamOutput($stream)))
+            ->withConsoleConfig(new ConsoleConfig(errorOutput: StreamOutputHelper::output($stream)))
             ->build();
 
         $code = $app->dispatch(['net', 'scan']);
-        $output = $this->streamContents($stream);
+        $output = StreamOutputHelper::contents($stream);
 
         $this->assertSame(1, $code);
         $this->assertStringContainsString('Error:', $output);
@@ -372,7 +370,7 @@ final class NestedArchonApplicationTest extends AsyncTestCase
     #[Test]
     public function unexpectedNestedArgumentFailsWithFullCommandPath(): void
     {
-        $stream = $this->outputStream();
+        $stream = StreamOutputHelper::open();
         $commands = CommandGroup::of([
             'net' => CommandGroup::of([
                 'scan' => [
@@ -387,11 +385,11 @@ final class NestedArchonApplicationTest extends AsyncTestCase
 
         $app = Archon::starting()
             ->commands($commands)
-            ->withConsoleConfig(new ConsoleConfig(errorOutput: $this->streamOutput($stream)))
+            ->withConsoleConfig(new ConsoleConfig(errorOutput: StreamOutputHelper::output($stream)))
             ->build();
 
         $code = $app->dispatch(['net', 'scan', '192.168.1.0/24', 'extra']);
-        $output = $this->streamContents($stream);
+        $output = StreamOutputHelper::contents($stream);
         $resource = $app->host()->runtime()->memory->resources->all(ArchonResourceSid::Command)[0];
 
         $this->assertSame(1, $code);
@@ -405,7 +403,7 @@ final class NestedArchonApplicationTest extends AsyncTestCase
     #[Test]
     public function flagOptionWithValueFailsBeforeCommandRuns(): void
     {
-        $stream = $this->outputStream();
+        $stream = StreamOutputHelper::open();
         $commands = CommandGroup::of([
             'scan' => [
                 ScanCommand::class,
@@ -419,11 +417,11 @@ final class NestedArchonApplicationTest extends AsyncTestCase
 
         $app = Archon::starting()
             ->commands($commands)
-            ->withConsoleConfig(new ConsoleConfig(errorOutput: $this->streamOutput($stream)))
+            ->withConsoleConfig(new ConsoleConfig(errorOutput: StreamOutputHelper::output($stream)))
             ->build();
 
         $code = $app->dispatch(['scan', '--detach=false', '192.168.1.0/24']);
-        $output = $this->streamContents($stream);
+        $output = StreamOutputHelper::contents($stream);
         $resource = $app->host()->runtime()->memory->resources->all(ArchonResourceSid::Command)[0];
 
         $this->assertSame(1, $code);
@@ -437,7 +435,7 @@ final class NestedArchonApplicationTest extends AsyncTestCase
     #[Test]
     public function groupHelpFlagShowsGroupHelpWithoutSubcommand(): void
     {
-        $stream = $this->outputStream();
+        $stream = StreamOutputHelper::open();
         $commands = CommandGroup::of([
             'net' => CommandGroup::of([
                 'scan' => [NoopCommand::class, new CommandConfig(description: 'Scan network')],
@@ -447,11 +445,11 @@ final class NestedArchonApplicationTest extends AsyncTestCase
 
         $app = Archon::starting()
             ->commands($commands)
-            ->withConsoleConfig(new ConsoleConfig(output: $this->streamOutput($stream)))
+            ->withConsoleConfig(new ConsoleConfig(output: StreamOutputHelper::output($stream)))
             ->build();
 
         $code = $app->dispatch(['net', '--help']);
-        $output = $this->streamContents($stream);
+        $output = StreamOutputHelper::contents($stream);
 
         $this->assertSame(0, $code);
         $this->assertStringContainsString('Network operations', $output);
@@ -464,7 +462,7 @@ final class NestedArchonApplicationTest extends AsyncTestCase
     #[Test]
     public function bareHelpSuffixOnFlatCommandShowsCommandHelp(): void
     {
-        $stream = $this->outputStream();
+        $stream = StreamOutputHelper::open();
         $commands = CommandGroup::of([
             'scan' => [
                 ScanCommand::class,
@@ -477,11 +475,11 @@ final class NestedArchonApplicationTest extends AsyncTestCase
 
         $app = Archon::starting()
             ->commands($commands)
-            ->withConsoleConfig(new ConsoleConfig(output: $this->streamOutput($stream)))
+            ->withConsoleConfig(new ConsoleConfig(output: StreamOutputHelper::output($stream)))
             ->build();
 
         $code = $app->dispatch(['scan', 'help']);
-        $output = $this->streamContents($stream);
+        $output = StreamOutputHelper::contents($stream);
 
         $this->assertSame(0, $code);
         $this->assertNull(ScanCommand::$lastTarget);
@@ -496,7 +494,7 @@ final class NestedArchonApplicationTest extends AsyncTestCase
     #[Test]
     public function bareHelpSuffixOnNestedCommandShowsCommandHelp(): void
     {
-        $stream = $this->outputStream();
+        $stream = StreamOutputHelper::open();
         $commands = CommandGroup::of([
             'net' => CommandGroup::of([
                 'scan' => [
@@ -511,11 +509,11 @@ final class NestedArchonApplicationTest extends AsyncTestCase
 
         $app = Archon::starting()
             ->commands($commands)
-            ->withConsoleConfig(new ConsoleConfig(output: $this->streamOutput($stream)))
+            ->withConsoleConfig(new ConsoleConfig(output: StreamOutputHelper::output($stream)))
             ->build();
 
         $code = $app->dispatch(['net', 'scan', 'help']);
-        $output = $this->streamContents($stream);
+        $output = StreamOutputHelper::contents($stream);
 
         $this->assertSame(0, $code);
         $this->assertNull(ScanCommand::$lastTarget);
@@ -530,18 +528,18 @@ final class NestedArchonApplicationTest extends AsyncTestCase
     #[Test]
     public function helpForUnknownFlatCommandFails(): void
     {
-        $stream = $this->outputStream();
+        $stream = StreamOutputHelper::open();
         $commands = CommandGroup::of([
             'scan' => [NoopCommand::class, new CommandConfig(description: 'Scan network')],
         ]);
 
         $app = Archon::starting()
             ->commands($commands)
-            ->withConsoleConfig(new ConsoleConfig(errorOutput: $this->streamOutput($stream)))
+            ->withConsoleConfig(new ConsoleConfig(errorOutput: StreamOutputHelper::output($stream)))
             ->build();
 
         $code = $app->dispatch(['help', 'missing']);
-        $output = $this->streamContents($stream);
+        $output = StreamOutputHelper::contents($stream);
         $resource = $app->host()->runtime()->memory->resources->all(ArchonResourceSid::Command)[0];
 
         $this->assertSame(1, $code);
@@ -553,7 +551,7 @@ final class NestedArchonApplicationTest extends AsyncTestCase
     #[Test]
     public function bareHelpRendersTopLevelOverview(): void
     {
-        $stream = $this->outputStream();
+        $stream = StreamOutputHelper::open();
         $commands = CommandGroup::of([
             'serve' => [NoopCommand::class, new CommandConfig(description: 'Start server')],
             'net' => CommandGroup::of([
@@ -563,11 +561,11 @@ final class NestedArchonApplicationTest extends AsyncTestCase
 
         $app = Archon::starting()
             ->commands($commands)
-            ->withConsoleConfig(new ConsoleConfig(output: $this->streamOutput($stream)))
+            ->withConsoleConfig(new ConsoleConfig(output: StreamOutputHelper::output($stream)))
             ->build();
 
         $code = $app->dispatch(['help']);
-        $output = $this->streamContents($stream);
+        $output = StreamOutputHelper::contents($stream);
 
         $this->assertSame(0, $code);
         $this->assertStringContainsString('serve', $output);
@@ -580,18 +578,18 @@ final class NestedArchonApplicationTest extends AsyncTestCase
     #[Test]
     public function helpWithExtraPositionalAfterCommandFails(): void
     {
-        $stream = $this->outputStream();
+        $stream = StreamOutputHelper::open();
         $commands = CommandGroup::of([
             'scan' => [NoopCommand::class, new CommandConfig(description: 'Scan network')],
         ]);
 
         $app = Archon::starting()
             ->commands($commands)
-            ->withConsoleConfig(new ConsoleConfig(errorOutput: $this->streamOutput($stream)))
+            ->withConsoleConfig(new ConsoleConfig(errorOutput: StreamOutputHelper::output($stream)))
             ->build();
 
         $code = $app->dispatch(['help', 'scan', 'extra']);
-        $output = $this->streamContents($stream);
+        $output = StreamOutputHelper::contents($stream);
         $resource = $app->host()->runtime()->memory->resources->all(ArchonResourceSid::Command)[0];
 
         $this->assertSame(1, $code);
@@ -608,29 +606,4 @@ final class NestedArchonApplicationTest extends AsyncTestCase
         NestedRanCommand::$ran = false;
     }
 
-    /** @return resource */
-    private function outputStream(): mixed
-    {
-        $stream = fopen('php://temp', 'w+');
-
-        if ($stream === false) {
-            self::fail('Unable to open memory stream.');
-        }
-
-        return $stream;
-    }
-
-    /** @param resource $stream */
-    private function streamOutput(mixed $stream): StreamOutput
-    {
-        return new StreamOutput($stream, new TerminalEnvironment(columns: 80, lines: 24));
-    }
-
-    /** @param resource $stream */
-    private function streamContents(mixed $stream): string
-    {
-        rewind($stream);
-
-        return stream_get_contents($stream);
-    }
 }
