@@ -9,6 +9,7 @@ use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Middleware\ServiceTransformationMiddleware;
 use Phalanx\Middleware\TaskMiddleware;
 use Phalanx\Runtime\CoroutineRuntime;
+use Phalanx\Runtime\RuntimeContext;
 use Phalanx\Runtime\RuntimeHooks;
 use Phalanx\Runtime\RuntimePolicy;
 use Phalanx\Scope\ExecutionLifecycleScope;
@@ -35,6 +36,7 @@ class Application implements AppHost
      * @param list<TaskMiddleware> $taskMiddlewares
      */
     public function __construct(
+        private readonly RuntimeContext $runtime,
         private readonly ServiceGraph $graph,
         private readonly LazySingleton $singletons,
         private readonly Trace $traceLog,
@@ -63,6 +65,11 @@ class Application implements AppHost
     public function supervisor(): Supervisor
     {
         return $this->supervisor;
+    }
+
+    public function runtime(): RuntimeContext
+    {
+        return $this->runtime;
     }
 
     public function createScope(?CancellationToken $token = null): ExecutionScope
@@ -136,6 +143,7 @@ class Application implements AppHost
     {
         $this->workerDispatch?->shutdown();
         $this->singletons->shutdown();
+        $this->runtime->memory->shutdown();
         $this->started = false;
     }
 

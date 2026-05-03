@@ -6,6 +6,7 @@ namespace Phalanx;
 
 use Closure;
 use Phalanx\Cancellation\CancellationToken;
+use Phalanx\Runtime\RuntimeContext;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\Scope;
 use Phalanx\Supervisor\Supervisor;
@@ -19,6 +20,8 @@ interface AppHost
     public function providers(): array;
 
     public function supervisor(): Supervisor;
+
+    public function runtime(): RuntimeContext;
 
     public function createScope(?CancellationToken $token = null): ExecutionScope;
 

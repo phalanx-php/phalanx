@@ -13,29 +13,30 @@ namespace Phalanx\Supervisor;
  * Powers `Supervisor::tree()` and the future `phalanx doctor` /
  * `phalanx ps` style introspection commands.
  */
-final readonly class TaskRunSnapshot
+class TaskRunSnapshot
 {
     /**
      * @param list<string> $childIds
      * @param list<array{domain: string, key: string, mode: string, acquiredAt: float}> $leases
      */
     public function __construct(
-        public string $id,
-        public string $name,
-        public ?string $parentId,
-        public DispatchMode $mode,
-        public RunState $state,
-        public ?WaitReason $currentWait,
-        public array $childIds,
-        public array $leases,
-        public float $startedAt,
-        public ?float $endedAt,
+        protected(set) string $id,
+        protected(set) string $name,
+        protected(set) ?string $parentId,
+        protected(set) DispatchMode $mode,
+        protected(set) RunState $state,
+        protected(set) ?WaitReason $currentWait,
+        protected(set) array $childIds,
+        protected(set) array $leases,
+        protected(set) float $startedAt,
+        protected(set) ?float $endedAt,
     ) {
     }
 
     public function elapsed(): float
     {
         $end = $this->endedAt ?? microtime(true);
+
         return $end - $this->startedAt;
     }
 }

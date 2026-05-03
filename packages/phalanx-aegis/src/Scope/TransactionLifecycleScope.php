@@ -6,6 +6,7 @@ namespace Phalanx\Scope;
 
 use Closure;
 use Phalanx\Cancellation\CancellationToken;
+use Phalanx\Runtime\RuntimeContext;
 use Phalanx\Supervisor\TransactionLease;
 use Phalanx\Supervisor\WaitReason;
 use Phalanx\Trace\Trace;
@@ -15,6 +16,10 @@ final class TransactionLifecycleScope implements TransactionScope
 {
     public bool $isCancelled {
         get => $this->scope->isCancelled;
+    }
+
+    public RuntimeContext $runtime {
+        get => $this->scope->runtime;
     }
 
     public function __construct(

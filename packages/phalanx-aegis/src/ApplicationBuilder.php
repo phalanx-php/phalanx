@@ -10,13 +10,15 @@ use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Handler\HandlerResolver;
 use Phalanx\Middleware\ServiceTransformationMiddleware;
 use Phalanx\Middleware\TaskMiddleware;
+use Phalanx\Runtime\Memory\RuntimeMemory;
+use Phalanx\Runtime\RuntimeContext;
 use Phalanx\Runtime\RuntimePolicy;
 use Phalanx\Service\LazySingleton;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\ServiceCatalog;
-use Phalanx\Supervisor\InProcessLedger;
 use Phalanx\Supervisor\LedgerStorage;
 use Phalanx\Supervisor\Supervisor;
+use Phalanx\Supervisor\SwooleTableLedger;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 use Phalanx\Trace\Trace;
@@ -117,10 +119,8 @@ class ApplicationBuilder
     }
 
     /**
-     * Override the supervisor's ledger backend. Defaults to InProcessLedger
-     * (PHP array, lock-free under cooperative scheduling). Swap to
-     * SwooleTableLedger (when implemented) for cross-process worker
-     * visibility into the live TaskRun graph.
+     * Override the supervisor's ledger backend. The runtime default is the
+     * primitive Swoole table ledger; InProcessLedger is only for narrow tests.
      */
     public function withLedger(LedgerStorage $ledger): self
     {
@@ -130,7 +130,10 @@ class ApplicationBuilder
 
     public function compile(): Application
     {
+        $runtimeContext = new RuntimeContext(RuntimeMemory::fromContext($this->context));
         $catalog = new ServiceCatalog($this->context);
+        $catalog->singleton(RuntimeContext::class)
+            ->factory(static fn(): RuntimeContext => $runtimeContext);
         $catalog->singleton(HandlerResolver::class)
             ->factory(static fn(): HandlerResolver => new HandlerResolver());
         foreach ($this->providers as $provider) {
@@ -139,11 +142,27 @@ class ApplicationBuilder
         $graph = $catalog->compile();
         $singletons = new LazySingleton($graph);
         $trace = $this->trace ?? new Trace();
-        $supervisor = new Supervisor($this->ledger ?? new InProcessLedger(), $trace);
+        $ledger = $this->ledger ?? new SwooleTableLedger(memory: $runtimeContext->memory);
+        $runtimeContext->memory->events->listen(static function ($event) use ($trace): void {
+            $trace->log(
+                \Phalanx\Trace\TraceType::Lifecycle,
+                $event->type,
+                [
+                    'sequence' => $event->sequence,
+                    'scope' => $event->scopeId,
+                    'run' => $event->runId,
+                    'state' => $event->state,
+                    'value_a' => $event->valueA,
+                    'value_b' => $event->valueB,
+                ],
+            );
+        });
+        $supervisor = new Supervisor($ledger, $trace);
         $runtimePolicy = $this->runtimePolicy ?? RuntimePolicy::fromContext($this->context);
         $strictRuntimeHooks = $this->strictRuntimeHooks ?? self::strictRuntimeHooksFromContext($this->context);
 
         return new Application(
+            $runtimeContext,
             $graph,
             $singletons,
             $trace,

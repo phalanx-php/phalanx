@@ -33,7 +33,7 @@ final class ExecuteWiringTest extends TestCase
         $scope = $app->createScope();
 
         $observed = [];
-        $task = Task::of(static function (ExecutionScope $s) use (&$observed): string {
+        $task = Task::of(static function () use (&$observed): string {
             $observed[] = 'inside body';
             return 'ok';
         });
@@ -54,7 +54,7 @@ final class ExecuteWiringTest extends TestCase
         $app = $this->buildApp($ledger);
         $scope = $app->createScope();
 
-        $task = Task::of(static function (ExecutionScope $s) use ($ledger, &$observedRun): never {
+        $task = Task::of(static function () use ($ledger, &$observedRun): never {
             // While the body runs, exactly one run should be live.
             self::assertSame(1, $ledger->liveCount());
             $observedRun = $ledger->tree()[0] ?? null;
@@ -83,7 +83,7 @@ final class ExecuteWiringTest extends TestCase
         $app = $this->buildApp($ledger);
         $scope = $app->createScope();
 
-        $task = Task::of(static function (ExecutionScope $s): never {
+        $task = Task::of(static function (): never {
             throw new Cancelled('mid-flight cancel');
         });
 
@@ -107,7 +107,7 @@ final class ExecuteWiringTest extends TestCase
         /** @var array<string, ?string> $observedParents */
         $observedParents = [];
 
-        $inner = Task::of(static function (ExecutionScope $s) use ($ledger, &$observedParents): string {
+        $inner = Task::of(static function () use ($ledger, &$observedParents): string {
             $tree = $ledger->tree();
             // Two live runs while inner is executing: outer (Running) and inner (Running)
             self::assertCount(2, $tree);

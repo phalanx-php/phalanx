@@ -1,5 +1,4 @@
 includes:
-    - vendor/wyrihaximus/phpstan-react/extension.neon
     - packages/phalanx-phpstan/extension.neon
 
 parameters:
@@ -22,6 +21,8 @@ parameters:
         - packages/phalanx-grammata/src
         - packages/phalanx-phpstan/src
         - packages/phalanx-skopos/src
+    scanDirectories:
+        - vendor/openswoole/ide-helper
     phalanxInternalPaths:
         - packages/phalanx-aegis/src/Concurrency/Co.php
         - packages/phalanx-aegis/src/Scope/ExecutionLifecycleScope.php
@@ -45,11 +46,3 @@ parameters:
         # Scopeable and Executable are marker interfaces. Implementations
         # always declare __invoke; the dispatcher invokes them via call syntax.
         - identifier: callable.nonCallable
-        - identifier: wyrihaximus.reactphp.blocking.function.fileExists
-        - identifier: wyrihaximus.reactphp.blocking.function.isDir
-        - identifier: wyrihaximus.reactphp.blocking.function.isFile
-        - identifier: wyrihaximus.reactphp.blocking.function.filePutContents
-        - identifier: wyrihaximus.reactphp.blocking.function.fwrite
-        - identifier: wyrihaximus.reactphp.blocking.function.fread
-        - identifier: wyrihaximus.reactphp.blocking.function.usleep
-        - identifier: wyrihaximus.reactphp.blocking.function.mkdir

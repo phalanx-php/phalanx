@@ -8,6 +8,7 @@ use Closure;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Concurrency\RetryPolicy;
 use Phalanx\Concurrency\SettlementBag;
+use Phalanx\Runtime\RuntimeContext;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Supervisor\TaskRun;
 use Phalanx\Supervisor\TransactionLease;
@@ -20,6 +21,10 @@ trait ExecutionScopeDelegate
 {
     public bool $isCancelled {
         get => $this->innerScope()->isCancelled;
+    }
+
+    public RuntimeContext $runtime {
+        get => $this->innerScope()->runtime;
     }
 
     /**

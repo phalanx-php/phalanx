@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Phalanx\Scope;
 
+use Phalanx\Runtime\RuntimeContext;
 use Phalanx\Trace\Trace;
 
 interface Scope
 {
+    public RuntimeContext $runtime { get; }
+
     /**
      * @template T of object
      * @param class-string<T> $type

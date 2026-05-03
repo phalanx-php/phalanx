@@ -302,6 +302,14 @@ final class NoopTask implements \Phalanx\Task\Executable
  */
 final class BareScopeStub implements \Phalanx\Scope\Scope
 {
+    private \Phalanx\Runtime\RuntimeContext $runtimeContext;
+
+    public \Phalanx\Runtime\RuntimeContext $runtime {
+        get => $this->runtimeContext ??= new \Phalanx\Runtime\RuntimeContext(
+            \Phalanx\Runtime\Memory\RuntimeMemory::forLedgerSize(16),
+        );
+    }
+
     public function service(string $type): object
     {
         throw new \RuntimeException('BareScopeStub: service resolution not supported');

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Supervisor;
 
-use Closure;
 use Throwable;
 
 /**
@@ -23,8 +22,15 @@ use Throwable;
  */
 final class InProcessLedger implements LedgerStorage
 {
+    private int $runSeq = 0;
+
+    private int $scopeSeq = 0;
+
     /** @var array<string, TaskRun> */
     private array $runs = [];
+
+    /** @var array<string, bool> */
+    private array $scopes = [];
 
     private static function project(TaskRun $run): TaskRunSnapshot
     {
@@ -52,47 +58,131 @@ final class InProcessLedger implements LedgerStorage
         );
     }
 
+    public function nextRunId(): string
+    {
+        return 'run-' . str_pad((string) ++$this->runSeq, 6, '0', STR_PAD_LEFT);
+    }
+
+    public function nextScopeId(): string
+    {
+        return 'scope-' . str_pad((string) ++$this->scopeSeq, 6, '0', STR_PAD_LEFT);
+    }
+
+    public function registerScope(
+        string $scopeId,
+        ?string $parentScopeId,
+        string $fqcn,
+        int $coroutineId,
+    ): void {
+        $this->scopes[$scopeId] = true;
+    }
+
+    public function disposeScope(string $scopeId): void
+    {
+        unset($this->scopes[$scopeId]);
+    }
+
+    public function liveScopeCount(): int
+    {
+        return count($this->scopes);
+    }
+
     public function register(TaskRun $run): void
     {
         $this->runs[$run->id] = $run;
     }
 
-    public function update(string $runId, Closure $patch): void
+    public function addChild(string $parentRunId, string $childRunId): void
+    {
+        $run = $this->runs[$parentRunId] ?? null;
+        if ($run === null) {
+            return;
+        }
+        $run->childIds[] = $childRunId;
+    }
+
+    public function markRunning(string $runId): void
+    {
+        $run = $this->runs[$runId] ?? null;
+        if ($run !== null) {
+            $run->state = RunState::Running;
+        }
+    }
+
+    public function beginWait(string $runId, WaitReason $reason): void
+    {
+        $run = $this->runs[$runId] ?? null;
+        if ($run !== null) {
+            $run->state = RunState::Suspended;
+            $run->currentWait = $reason;
+        }
+    }
+
+    public function clearWait(string $runId): void
+    {
+        $run = $this->runs[$runId] ?? null;
+        if ($run !== null && $run->state === RunState::Suspended) {
+            $run->state = RunState::Running;
+            $run->currentWait = null;
+        }
+    }
+
+    public function addLease(string $runId, Lease $lease): void
+    {
+        $run = $this->runs[$runId] ?? null;
+        if ($run !== null) {
+            $run->leases[] = $lease;
+        }
+    }
+
+    public function releaseLease(string $runId, Lease $lease): void
     {
         $run = $this->runs[$runId] ?? null;
         if ($run === null) {
             return;
         }
-        $patch($run);
+
+        foreach ($run->leases as $i => $held) {
+            if ($held === $lease) {
+                array_splice($run->leases, $i, 1);
+                return;
+            }
+        }
     }
 
     public function complete(string $runId, mixed $value): void
     {
-        $this->update($runId, static function (TaskRun $run) use ($value): void {
-            $run->state = RunState::Completed;
-            $run->value = $value;
-            $run->endedAt = microtime(true);
-            $run->currentWait = null;
-        });
+        $run = $this->runs[$runId] ?? null;
+        if ($run === null) {
+            return;
+        }
+        $run->state = RunState::Completed;
+        $run->value = $value;
+        $run->endedAt = microtime(true);
+        $run->currentWait = null;
     }
 
     public function fail(string $runId, Throwable $error): void
     {
-        $this->update($runId, static function (TaskRun $run) use ($error): void {
-            $run->state = RunState::Failed;
-            $run->error = $error;
-            $run->endedAt = microtime(true);
-            $run->currentWait = null;
-        });
+        $run = $this->runs[$runId] ?? null;
+        if ($run === null) {
+            return;
+        }
+        $run->state = RunState::Failed;
+        $run->error = $error;
+        $run->endedAt = microtime(true);
+        $run->currentWait = null;
     }
 
     public function cancel(string $runId): void
     {
-        $this->update($runId, static function (TaskRun $run): void {
-            $run->state = RunState::Cancelled;
-            $run->endedAt = microtime(true);
-            $run->currentWait = null;
-        });
+        $run = $this->runs[$runId] ?? null;
+        if ($run === null) {
+            return;
+        }
+        $run->state = RunState::Cancelled;
+        $run->endedAt = microtime(true);
+        $run->currentWait = null;
     }
 
     public function find(string $runId): ?TaskRun

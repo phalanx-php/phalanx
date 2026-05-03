@@ -18,6 +18,7 @@ use Phalanx\Concurrency\SettlementBag;
 use Phalanx\Concurrency\SingleflightGroup;
 use Phalanx\Middleware\ServiceTransformationMiddleware;
 use Phalanx\Middleware\TaskMiddleware;
+use Phalanx\Runtime\RuntimeContext;
 use Phalanx\Service\CompiledServiceConfig;
 use Phalanx\Service\LazySingleton;
 use Phalanx\Service\ServiceGraph;
@@ -51,10 +52,18 @@ use Throwable;
  * isCanceled() to true. Co::sleep and concurrency primitive child wrappers
  * check this and translate to Cancelled.
  */
-class ExecutionLifecycleScope implements ExecutionScope
+class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
 {
     public bool $isCancelled {
         get => $this->cancellation->isCancelled;
+    }
+
+    public string $scopeId {
+        get => $this->scopeIdValue;
+    }
+
+    public RuntimeContext $runtime {
+        get => $this->service(RuntimeContext::class);
     }
 
     /**
@@ -88,6 +97,8 @@ class ExecutionLifecycleScope implements ExecutionScope
 
     private bool $disposed = false;
 
+    private readonly string $scopeIdValue;
+
     private readonly SingleflightGroup $singleflightGroup;
 
     /**
@@ -106,8 +117,16 @@ class ExecutionLifecycleScope implements ExecutionScope
         private readonly array $serviceMiddlewares = [],
         private readonly array $taskMiddlewares = [],
         private readonly ?WorkerDispatch $workerDispatch = null,
+        private readonly ?string $parentScopeId = null,
     ) {
         $this->singleflightGroup = $singleflight ?? new SingleflightGroup();
+        $this->scopeIdValue = $this->supervisor->nextScopeId();
+        $this->supervisor->registerScope(
+            $this->scopeIdValue,
+            $this->parentScopeId,
+            self::class,
+            Coroutine::getCid(),
+        );
     }
 
     /**
@@ -238,6 +257,7 @@ class ExecutionLifecycleScope implements ExecutionScope
             $this->serviceMiddlewares,
             $this->taskMiddlewares,
             $this->workerDispatch,
+            parentScopeId: $this->scopeIdValue,
         );
         $this->onDispose(static function () use ($child): void {
             $child->dispose();
@@ -335,6 +355,7 @@ class ExecutionLifecycleScope implements ExecutionScope
         }
         $this->scopedInstances = [];
         $this->scopedCreationOrder = [];
+        $this->supervisor->disposeScope($this->scopeIdValue);
     }
 
     public function call(Closure $fn, ?\Phalanx\Supervisor\WaitReason $waitReason = null): mixed
@@ -405,6 +426,7 @@ class ExecutionLifecycleScope implements ExecutionScope
             $this->serviceMiddlewares,
             $this->taskMiddlewares,
             $this->workerDispatch,
+            parentScopeId: $this->scopeIdValue,
         );
         try {
             return $child->execute($task);
@@ -840,6 +862,7 @@ class ExecutionLifecycleScope implements ExecutionScope
             $this->serviceMiddlewares,
             $this->taskMiddlewares,
             $this->workerDispatch,
+            parentScopeId: $this->scopeIdValue,
         );
 
         try {
@@ -1095,6 +1118,7 @@ class ExecutionLifecycleScope implements ExecutionScope
             $this->serviceMiddlewares,
             $this->taskMiddlewares,
             $this->workerDispatch,
+            parentScopeId: $this->scopeIdValue,
         );
         $child->currentRun = $inheritParent;
         return $child;

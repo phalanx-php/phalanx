@@ -50,6 +50,10 @@ final class TaskRun
         public readonly DispatchMode $mode,
         public readonly CancellationToken $cancellation,
         public readonly float $startedAt,
+        public readonly ?string $scopeId = null,
+        public readonly ?string $taskFqcn = null,
+        public readonly ?string $sourcePath = null,
+        public readonly ?int $sourceLine = null,
     ) {
         $this->state = RunState::Pending;
     }

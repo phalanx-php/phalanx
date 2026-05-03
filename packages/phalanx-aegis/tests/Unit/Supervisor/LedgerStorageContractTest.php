@@ -23,19 +23,17 @@ final class LedgerStorageContractTest extends TestCase
     #[DataProvider('ledgers')]
     public function testRegisterUpdateSnapshotTreeAndReap(LedgerStorage $ledger): void
     {
+        $scopeId = $ledger->nextScopeId();
         $parent = self::taskRun('run-parent', null);
         $child = self::taskRun('run-child', 'run-parent');
 
+        $ledger->registerScope($scopeId, null, self::class, -1);
         $ledger->register($parent);
         $ledger->register($child);
-
-        $ledger->update('run-parent', static function (TaskRun $run): void {
-            $run->state = RunState::Suspended;
-            $run->currentWait = WaitReason::singleflight('user:42');
-            $run->childIds[] = 'run-child';
-            $run->leases[] = PoolLease::open('postgres/main', 'conn#1');
-            $run->leases[] = LockLease::read('cache', 'user:42');
-        });
+        $ledger->addChild('run-parent', 'run-child');
+        $ledger->beginWait('run-parent', WaitReason::singleflight('user:42'));
+        $ledger->addLease('run-parent', PoolLease::open('postgres/main', 'conn#1'));
+        $ledger->addLease('run-parent', LockLease::read('cache', 'user:42'));
 
         $snapshot = $ledger->snapshot('run-parent');
         self::assertNotNull($snapshot);
@@ -55,6 +53,9 @@ final class LedgerStorageContractTest extends TestCase
 
         $ledger->reap('run-child');
         self::assertNull($ledger->find('run-child'));
+
+        $ledger->disposeScope($scopeId);
+        self::assertSame(0, $ledger->liveScopeCount());
     }
 
     /** @return iterable<string, array{LedgerStorage}> */
@@ -62,6 +63,28 @@ final class LedgerStorageContractTest extends TestCase
     {
         yield 'in-process' => [new InProcessLedger()];
         yield 'swoole-table' => [new SwooleTableLedger(64)];
+    }
+
+    public function testSwooleTableLedgerStoresRelationshipsAsPrimitiveResourceRows(): void
+    {
+        $ledger = new SwooleTableLedger(32);
+        $parent = self::taskRun('run-parent', null);
+        $child = self::taskRun('run-child', 'run-parent');
+
+        $ledger->register($parent);
+        $ledger->register($child);
+        $ledger->addChild('run-parent', 'run-child');
+        $ledger->addLease('run-parent', PoolLease::open('postgres/main', 'conn#1'));
+
+        $resourceRow = $ledger->memory->tables->resources->get('run-parent');
+        self::assertIsArray($resourceRow);
+        self::assertArrayNotHasKey('child_ids', $resourceRow);
+        self::assertArrayNotHasKey('leases', $resourceRow);
+        self::assertArrayNotHasKey('current_wait', $resourceRow);
+        self::assertSame(1, $ledger->memory->tables->resourceEdges->count());
+        self::assertSame(1, $ledger->memory->tables->resourceLeases->count());
+
+        $ledger->memory->shutdown();
     }
 
     private static function taskRun(string $id, ?string $parentId): TaskRun

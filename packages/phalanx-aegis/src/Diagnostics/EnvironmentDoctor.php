@@ -7,6 +7,7 @@ namespace Phalanx\Diagnostics;
 use OpenSwoole\Coroutine;
 use OpenSwoole\Coroutine\PostgreSQL;
 use OpenSwoole\Table;
+use Phalanx\Runtime\Memory\RuntimeMemory;
 use Phalanx\Runtime\RuntimeHookNames;
 use Phalanx\Runtime\RuntimeHooks;
 use Phalanx\Runtime\RuntimePolicy;
@@ -17,6 +18,7 @@ final readonly class EnvironmentDoctor
     public function __construct(
         private ?LedgerStorage $ledger = null,
         private ?RuntimePolicy $runtimePolicy = null,
+        private ?RuntimeMemory $memory = null,
     ) {
     }
 
@@ -89,6 +91,33 @@ final readonly class EnvironmentDoctor
                 true,
                 $this->ledger::class,
             );
+        }
+
+        if ($this->memory !== null) {
+            $checks[] = new DoctorCheck(
+                'runtime.resources.live',
+                true,
+                (string) $this->memory->resources->liveCount(),
+            );
+            $checks[] = new DoctorCheck(
+                'runtime.events.dropped',
+                true,
+                (string) $this->memory->counters->get('aegis.runtime.events.dropped'),
+            );
+
+            foreach ($this->memory->stats() as $stats) {
+                $checks[] = new DoctorCheck(
+                    'runtime.memory.' . $stats->name,
+                    $stats->currentRows <= $stats->configuredRows,
+                    sprintf(
+                        '%d/%d rows, %d bytes, high-water %d',
+                        $stats->currentRows,
+                        $stats->configuredRows,
+                        $stats->memorySize,
+                        $stats->highWaterRows,
+                    ),
+                );
+            }
         }
 
         return new DoctorReport($checks);

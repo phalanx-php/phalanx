@@ -15,8 +15,6 @@ use RuntimeException;
  * installed* scope via CoroutineScopeRegistry, which the framework re-installs
  * on every coroutine spawn.
  *
- * Aegis-equivalent: phalanx-aegis's DeferredScope using FiberScopeRegistry.
- *
  * The POC implements only the methods HttpClient and friends actually need:
  * `call(Closure)` (Suspendable) plus a passthrough to the underlying scope's
  * cancellation helpers. Add more delegations here as services demand them.

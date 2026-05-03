@@ -6,9 +6,12 @@ namespace Phalanx\Supervisor;
 
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Scope\Scope;
+use Phalanx\Scope\ScopeIdentity;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
+use Phalanx\Task\Task;
 use Phalanx\Trace\Trace;
+use ReflectionFunction;
 use Throwable;
 
 /**
@@ -42,17 +45,10 @@ use Throwable;
  */
 final class Supervisor
 {
-    private static int $idSeq = 0;
-
     public function __construct(
         public readonly LedgerStorage $ledger,
         public readonly Trace $trace,
     ) {
-    }
-
-    private static function nextId(): string
-    {
-        return 'run-' . str_pad((string) ++self::$idSeq, 6, '0', STR_PAD_LEFT);
     }
 
     private static function isExternalWait(WaitReason $reason): bool
@@ -101,6 +97,56 @@ final class Supervisor
     }
 
     /**
+     * @return array{fqcn: string, sourcePath: string, sourceLine: int}
+     */
+    private static function resolveMetadata(Scopeable|Executable|\Closure $task): array
+    {
+        if ($task instanceof \Closure) {
+            try {
+                $reflection = new ReflectionFunction($task);
+                $file = $reflection->getFileName();
+
+                return [
+                    'fqcn' => \Closure::class,
+                    'sourcePath' => $file === false ? '' : $file,
+                    'sourceLine' => (int) $reflection->getStartLine(),
+                ];
+            } catch (Throwable) {
+                return ['fqcn' => \Closure::class, 'sourcePath' => '', 'sourceLine' => 0];
+            }
+        }
+
+        if ($task instanceof Task) {
+            return [
+                'fqcn' => Task::class,
+                'sourcePath' => $task->sourceLocation,
+                'sourceLine' => 0,
+            ];
+        }
+
+        return ['fqcn' => $task::class, 'sourcePath' => '', 'sourceLine' => 0];
+    }
+
+    public function registerScope(
+        string $scopeId,
+        ?string $parentScopeId,
+        string $fqcn,
+        int $coroutineId,
+    ): void {
+        $this->ledger->registerScope($scopeId, $parentScopeId, $fqcn, $coroutineId);
+    }
+
+    public function disposeScope(string $scopeId): void
+    {
+        $this->ledger->disposeScope($scopeId);
+    }
+
+    public function nextScopeId(): string
+    {
+        return $this->ledger->nextScopeId();
+    }
+
+    /**
      * Open a new TaskRun. Creates the run record, derives the child's
      * cancellation token from the parent's, opens a trace span, returns
      * the handle. The caller is responsible for invoking the task body
@@ -123,8 +169,10 @@ final class Supervisor
         ?string $name = null,
         ?string $parentRunId = null,
     ): TaskRun {
-        $id = self::nextId();
+        $id = $this->ledger->nextRunId();
         $resolvedName = $name ?? self::resolveName($task, $id);
+        $metadata = self::resolveMetadata($task);
+        $scopeId = $parent instanceof ScopeIdentity ? $parent->scopeId : null;
 
         $parentToken = $parent instanceof \Phalanx\Scope\Cancellable
             ? $parent->cancellation()
@@ -137,14 +185,16 @@ final class Supervisor
             mode: $mode,
             cancellation: CancellationToken::composite($parentToken),
             startedAt: microtime(true),
+            scopeId: $scopeId,
+            taskFqcn: $metadata['fqcn'],
+            sourcePath: $metadata['sourcePath'],
+            sourceLine: $metadata['sourceLine'],
         );
 
         $this->ledger->register($run);
 
         if ($parentRunId !== null) {
-            $this->ledger->update($parentRunId, static function (TaskRun $parent) use ($id): void {
-                $parent->childIds[] = $id;
-            });
+            $this->ledger->addChild($parentRunId, $id);
         }
 
         return $run;
@@ -156,9 +206,7 @@ final class Supervisor
      */
     public function markRunning(TaskRun $run): void
     {
-        $this->ledger->update($run->id, static function (TaskRun $r): void {
-            $r->state = RunState::Running;
-        });
+        $this->ledger->markRunning($run->id);
     }
 
     /**
@@ -177,20 +225,12 @@ final class Supervisor
     {
         $this->assertCanWait($run, $reason);
 
-        $this->ledger->update($run->id, static function (TaskRun $r) use ($reason): void {
-            $r->state = RunState::Suspended;
-            $r->currentWait = $reason;
-        });
+        $this->ledger->beginWait($run->id, $reason);
 
         $ledger = $this->ledger;
         $runId = $run->id;
         return static function () use ($ledger, $runId): void {
-            $ledger->update($runId, static function (TaskRun $r): void {
-                if ($r->state === RunState::Suspended) {
-                    $r->state = RunState::Running;
-                    $r->currentWait = null;
-                }
-            });
+            $ledger->clearWait($runId);
         };
     }
 
@@ -319,9 +359,7 @@ final class Supervisor
             }
         }
 
-        $this->ledger->update($run->id, static function (TaskRun $r) use ($lease): void {
-            $r->leases[] = $lease;
-        });
+        $this->ledger->addLease($run->id, $lease);
     }
 
     /**
@@ -390,14 +428,7 @@ final class Supervisor
      */
     public function releaseLease(TaskRun $run, Lease $lease): void
     {
-        $this->ledger->update($run->id, static function (TaskRun $r) use ($lease): void {
-            foreach ($r->leases as $i => $held) {
-                if ($held === $lease) {
-                    array_splice($r->leases, $i, 1);
-                    return;
-                }
-            }
-        });
+        $this->ledger->releaseLease($run->id, $lease);
     }
 
     /**
@@ -432,5 +463,10 @@ final class Supervisor
     public function liveCount(): int
     {
         return $this->ledger->liveCount();
+    }
+
+    public function liveScopeCount(): int
+    {
+        return $this->ledger->liveScopeCount();
     }
 }

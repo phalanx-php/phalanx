@@ -7,6 +7,7 @@ namespace Phalanx\Tests\Unit\Supervisor;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Supervisor\DispatchMode;
 use Phalanx\Supervisor\InProcessLedger;
+use Phalanx\Supervisor\PoolLease;
 use Phalanx\Supervisor\RunState;
 use Phalanx\Supervisor\TaskRun;
 use Phalanx\Supervisor\WaitReason;
@@ -71,32 +72,22 @@ final class InProcessLedgerTest extends TestCase
         self::assertNotNull($run->endedAt);
     }
 
-    public function testUpdateAppliesPatchClosure(): void
+    public function testIntentOperationsUpdateRunState(): void
     {
         $ledger = new InProcessLedger();
         $run = $this->makeRun('run-005', 'PatchMe');
         $ledger->register($run);
 
-        $ledger->update('run-005', static function (TaskRun $r): void {
-            $r->state = RunState::Running;
-            $r->currentWait = WaitReason::custom('warming up');
-        });
+        $ledger->markRunning('run-005');
+        $ledger->beginWait('run-005', WaitReason::custom('warming up'));
 
-        self::assertSame(RunState::Running, $run->state);
+        self::assertSame(RunState::Suspended, $run->state);
         self::assertNotNull($run->currentWait);
         self::assertSame('warming up', $run->currentWait->detail);
-    }
 
-    public function testUpdateOnUnknownRunIsNoop(): void
-    {
-        $ledger = new InProcessLedger();
-        $invoked = false;
-
-        $ledger->update('does-not-exist', static function () use (&$invoked): void {
-            $invoked = true;
-        });
-
-        self::assertFalse($invoked);
+        $ledger->clearWait('run-005');
+        self::assertSame(RunState::Running, $run->state);
+        self::assertNull($run->currentWait);
     }
 
     public function testLiveCountExcludesTerminalRuns(): void
@@ -133,9 +124,7 @@ final class InProcessLedgerTest extends TestCase
         $ledger = new InProcessLedger();
         $run = $this->makeRun('run-007', 'Snap');
         $ledger->register($run);
-        $ledger->update('run-007', static function (TaskRun $r): void {
-            $r->state = RunState::Running;
-        });
+        $ledger->markRunning('run-007');
 
         $snap = $ledger->snapshot('run-007');
 
@@ -168,12 +157,11 @@ final class InProcessLedgerTest extends TestCase
         $child = $this->makeRun('child', 'Child');
         $grand = $this->makeRun('grand', 'Grand');
 
-        $root->childIds[] = 'child';
-        $child->childIds[] = 'grand';
-
         $ledger->register($root);
         $ledger->register($child);
         $ledger->register($grand);
+        $ledger->addChild('root', 'child');
+        $ledger->addChild('child', 'grand');
 
         $tree = $ledger->tree('root');
 
@@ -181,6 +169,22 @@ final class InProcessLedgerTest extends TestCase
         self::assertSame('root', $tree[0]->id);
         self::assertSame('child', $tree[1]->id);
         self::assertSame('grand', $tree[2]->id);
+    }
+
+    public function testLeaseOperationsUpdateRunLeases(): void
+    {
+        $ledger = new InProcessLedger();
+        $run = $this->makeRun('run-008', 'LeaseMe');
+        $lease = PoolLease::open('postgres/main', 'conn#1');
+
+        $ledger->register($run);
+        $ledger->addLease('run-008', $lease);
+
+        self::assertCount(1, $ledger->snapshot('run-008')?->leases);
+
+        $ledger->releaseLease('run-008', $lease);
+
+        self::assertSame([], $ledger->snapshot('run-008')?->leases);
     }
 
     private function makeRun(string $id, string $name): TaskRun

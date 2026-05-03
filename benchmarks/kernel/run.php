@@ -6,6 +6,8 @@ declare(strict_types=1);
 namespace Phalanx\Benchmarks\Kernel;
 
 use OpenSwoole\Coroutine;
+use Phalanx\Runtime\RuntimeHooks;
+use Phalanx\Runtime\RuntimePolicy;
 use Throwable;
 
 use function Phalanx\Benchmarks\Kernel\Cases\aegisKernelCases;
@@ -14,14 +16,18 @@ require __DIR__ . '/../../vendor/autoload.php';
 require __DIR__ . '/BenchmarkCase.php';
 require __DIR__ . '/cases/CoreCases.php';
 
-Coroutine::set(['hook_flags' => SWOOLE_HOOK_ALL]);
+$context = [
+    'argv' => $argv ?? [],
+];
+
+RuntimeHooks::ensure(RuntimePolicy::fromContext($context));
 
 $caught = null;
 $exitCode = 0;
 
-Coroutine::run(static function () use (&$caught, &$exitCode): void {
+Coroutine::run(static function () use ($context, &$caught, &$exitCode): void {
     try {
-        $exitCode = (new Runner($_SERVER['argv'] ?? []))->run();
+        $exitCode = (new Runner($context['argv']))->run();
     } catch (Throwable $e) {
         $caught = $e;
         $exitCode = 1;
