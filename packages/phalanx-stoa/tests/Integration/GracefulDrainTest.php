@@ -40,6 +40,7 @@ final class GracefulDrainTest extends CoroutineTestCase
             });
 
             Coroutine::usleep(50_000);
+            self::assertSame(1, $runner->activeRequests());
             $runner->stop();
 
             $response = $responses->pop(3.0);
@@ -66,6 +67,7 @@ final class GracefulDrainTest extends CoroutineTestCase
             });
 
             Coroutine::usleep(10_000);
+            self::assertSame(1, $runner->activeRequests());
             $start = hrtime(true);
             $runner->stop();
 

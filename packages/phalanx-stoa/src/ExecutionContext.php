@@ -14,6 +14,10 @@ class ExecutionContext implements RequestScope
 
     private ?RequestBody $requestBody = null;
 
+    public string $resourceId {
+        get => (string) $this->attribute('stoa.resource_id', '');
+    }
+
     public ServerRequestInterface $request {
         get => $this->serverRequest;
     }

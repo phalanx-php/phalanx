@@ -89,6 +89,35 @@ final class StoaRunnerTest extends TestCase
     }
 
     #[Test]
+    public function request_scope_exposes_aegis_managed_resource_identity(): void
+    {
+        $app = Application::starting()->compile()->startup();
+        $runner = StoaRunner::from($app)->withRoutes(RouteGroup::of([
+            'GET /resource/{id:int}' => ResourceAwareStoaRoute::class,
+        ]));
+
+        try {
+            $response = $runner->dispatch(new ServerRequest('GET', '/resource/42'));
+            $body = json_decode((string) $response->getBody(), true, 512, JSON_THROW_ON_ERROR);
+            $events = $app->runtime()->memory->events->recent();
+            $released = $app->runtime()->memory->resources->get((string) $body['resource_id']) === null;
+        } finally {
+            $app->shutdown();
+        }
+
+        self::assertSame(200, $response->getStatusCode());
+        self::assertIsString($body['resource_id']);
+        self::assertStringStartsWith('stoa-request-', $body['resource_id']);
+        self::assertSame('/resource/{id:int}', $body['route']);
+        self::assertSame('42', $body['param']);
+        self::assertTrue($released);
+        self::assertContains('resource.opened', array_map(static fn($event): string => $event->type, $events));
+        self::assertContains('stoa.route_matched', array_map(static fn($event): string => $event->type, $events));
+        self::assertContains('resource.closed', array_map(static fn($event): string => $event->type, $events));
+        self::assertContains('resource.released', array_map(static fn($event): string => $event->type, $events));
+    }
+
+    #[Test]
     public function disposes_scope_after_handler_exception(): void
     {
         $app = Application::starting()->compile()->startup();
@@ -164,6 +193,19 @@ final class JsonStoaRoute implements Scopeable
         return [
             'path' => $scope->path(),
             'name' => (string) $scope->query->get('name'),
+        ];
+    }
+}
+
+final class ResourceAwareStoaRoute implements Scopeable
+{
+    /** @return array{resource_id: string, route: string, param: string} */
+    public function __invoke(RequestScope $scope): array
+    {
+        return [
+            'resource_id' => $scope->resourceId,
+            'route' => $scope->runtime->memory->resources->annotation($scope->resourceId, 'stoa.route'),
+            'param' => $scope->params->required('id'),
         ];
     }
 }

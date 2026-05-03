@@ -4,51 +4,45 @@ declare(strict_types=1);
 
 namespace Acme\StoaDemo\Runtime\Support;
 
+use Phalanx\Runtime\Memory\RuntimeLifecycleEvent;
+use Phalanx\Stoa\RequestScope;
+
 final readonly class RuntimeEvents
 {
-    public function __construct(private string $path)
+    /** @param array<string, string|int|float|bool|null> $context */
+    public function record(RequestScope $scope, string $event, array $context = []): void
     {
-    }
-
-    /** @param array<string, mixed> $context */
-    public function record(string $event, array $context = []): void
-    {
-        file_put_contents(
-            $this->path,
-            json_encode(
-                ['event' => $event, 'context' => $context, 'at' => microtime(true)],
-                JSON_THROW_ON_ERROR,
-            ) . PHP_EOL,
-            FILE_APPEND | LOCK_EX,
+        $scope->runtime->memory->resources->recordEvent(
+            $scope->resourceId,
+            $event,
+            (string) ($context['path'] ?? $scope->path()),
+            (string) ($context['detail'] ?? ''),
         );
     }
 
     /** @return list<array{event: string, context: array<string, mixed>, at: float}> */
-    public function all(): array
+    public function all(RequestScope $scope): array
     {
-        if (!is_file($this->path)) {
-            return [];
-        }
-
-        $events = [];
-        foreach (file($this->path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [] as $line) {
-            $decoded = json_decode($line, true, 512, JSON_THROW_ON_ERROR);
-            if (is_array($decoded) && isset($decoded['event'], $decoded['context'], $decoded['at'])) {
-                $events[] = $decoded;
-            }
-        }
-
-        return $events;
+        return array_map(
+            self::format(...),
+            $scope->runtime->memory->events->recent(),
+        );
     }
 
-    public function contains(string $event): bool
+    private static function format(RuntimeLifecycleEvent $event): array
     {
-        foreach ($this->all() as $entry) {
-            if ($entry['event'] === $event) {
-                return true;
-            }
-        }
-
-        return false;
+        return [
+            'event' => $event->type,
+            'context' => [
+                'run' => $event->runId,
+                'state' => $event->state,
+                'scope' => $event->scopeId,
+                'value_a' => $event->valueA,
+                'value_b' => $event->valueB,
+                'resource' => $event->resourceId,
+                'sequence' => $event->sequence,
+            ],
+            'at' => $event->occurredAt,
+        ];
     }
 }

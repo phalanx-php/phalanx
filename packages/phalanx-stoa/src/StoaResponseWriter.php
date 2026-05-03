@@ -9,40 +9,41 @@ use Psr\Http\Message\ResponseInterface;
 
 final readonly class StoaResponseWriter
 {
-    public function write(ResponseInterface $source, Response $target, RequestLifecycle $lifecycle): void
+    public function write(ResponseInterface $source, Response $target, StoaRequestResource $request): void
     {
         if (!$target->isWritable()) {
-            $lifecycle->abort('response is not writable before headers');
+            $request->abort('response is not writable before headers');
             throw new ResponseWriteFailure('OpenSwoole response is not writable before headers.');
         }
 
         if (!$target->status($source->getStatusCode(), $source->getReasonPhrase())) {
-            $lifecycle->fail(new ResponseWriteFailure('OpenSwoole failed to set response status.'));
-            throw new ResponseWriteFailure('OpenSwoole failed to set response status.');
+            $failure = new ResponseWriteFailure('OpenSwoole failed to set response status.');
+            $request->fail($failure);
+            throw $failure;
         }
 
-        $lifecycle->headersStarted();
+        $request->headersStarted();
 
         foreach ($source->getHeaders() as $name => $values) {
             foreach ($values as $value) {
                 if (!$target->header($name, $value)) {
                     $failure = new ResponseWriteFailure("OpenSwoole failed to write response header '{$name}'.");
-                    $lifecycle->fail($failure);
+                    $request->fail($failure);
                     throw $failure;
                 }
             }
         }
 
-        if (!$target->isWritable()) {
-            $lifecycle->abort('response closed before body');
+        if (!$target->isWritable()) { // @phpstan-ignore booleanNot.alwaysFalse
+            $request->abort('response closed before body');
             throw new ResponseWriteFailure('OpenSwoole response closed before body.');
         }
 
-        $lifecycle->bodyStarted();
+        $request->bodyStarted();
 
         if (!$target->end((string) $source->getBody())) {
             $failure = new ResponseWriteFailure('OpenSwoole failed to finish response body.');
-            $lifecycle->fail($failure);
+            $request->fail($failure);
             throw $failure;
         }
     }

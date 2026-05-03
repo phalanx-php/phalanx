@@ -17,6 +17,6 @@ final readonly class Events implements Scopeable
     /** @return array{events: list<array{event: string, context: array<string, mixed>, at: float}>} */
     public function __invoke(RequestScope $scope): array
     {
-        return ['events' => $this->events->all()];
+        return ['events' => $this->events->all($scope)];
     }
 }

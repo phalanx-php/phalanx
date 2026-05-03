@@ -39,6 +39,11 @@ final class RouteMatcher implements HandlerMatcher
         }
 
         assert($handler->config instanceof RouteConfig);
+        $resource = $scope->attribute('stoa.request_resource');
+        if ($resource instanceof StoaRequestResource) {
+            $resource->routeMatched($handler->config->path);
+        }
+
         $scope = new ExecutionContext(
             $scope,
             $request,

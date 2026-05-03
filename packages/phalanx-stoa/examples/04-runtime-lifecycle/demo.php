@@ -5,7 +5,6 @@ declare(strict_types=1);
 require __DIR__ . '/../bootstrap.php';
 
 use Acme\StoaDemo\Runtime\RuntimeLifecycleBundle;
-use Acme\StoaDemo\Runtime\Support\RuntimeEvents;
 use OpenSwoole\Constant;
 use OpenSwoole\Coroutine;
 use OpenSwoole\Coroutine\Client;
@@ -15,13 +14,9 @@ use Phalanx\Stoa\Stoa;
 $host = '127.0.0.1';
 $port = isset($argv[1]) ? (int) $argv[1] : random_int(20_000, 45_000);
 $listen = "{$host}:{$port}";
-$eventLog = sys_get_temp_dir() . '/phalanx-stoa-runtime-lifecycle-demo-' . getmypid() . '.jsonl';
-$events = new RuntimeEvents($eventLog);
 
-@unlink($eventLog);
-
-$server = new Process(static function () use ($eventLog, $listen): void {
-    Stoa::starting(['runtime_event_log' => $eventLog])
+$server = new Process(static function () use ($listen): void {
+    Stoa::starting()
         ->providers(new RuntimeLifecycleBundle())
         ->routes(__DIR__ . '/routes.php')
         ->listen($listen)
@@ -41,16 +36,16 @@ try {
     echo "Phalanx Runtime Lifecycle Demo\n";
     echo "server        starting {$listen}\n\n";
 
-    Coroutine::run(static function () use ($events, $host, $port, &$failed): void {
+    Coroutine::run(static function () use ($host, $port, &$failed): void {
         $ready = waitForHttpStatus($host, $port, '/runtime/health', 200);
         $slowOk = waitForHttpStatus($host, $port, '/runtime/slow', 200);
-        $slowCompleted = waitForEvent($events, 'slow.completed', 2.0);
+        $slowCompleted = waitForEvent($host, $port, 'slow.completed', 2.0);
 
         printTimeline('normal request', [
             ['server', $ready ? 'accepted health check' : 'did not answer health check'],
             ['request', 'GET /runtime/slow opened'],
-            ['handler', eventText($events, 'slow.started', 'started cooperative work')],
-            ['handler', eventText($events, 'slow.completed', 'completed cooperative work')],
+            ['handler', eventText($host, $port, 'slow.started', 'started cooperative work')],
+            ['handler', eventText($host, $port, 'slow.completed', 'completed cooperative work')],
             ['response', $slowOk ? '200 OK' : 'missing expected response'],
         ]);
 
@@ -59,26 +54,29 @@ try {
         $failed = !check('slow request completed', $slowCompleted) || $failed;
 
         $client = openRawRequest($host, $port, '/runtime/disconnect');
-        $started = waitForEvent($events, 'disconnect.started', 2.0);
+        $started = waitForEvent($host, $port, 'disconnect.started', 2.0);
         $client?->close();
 
-        $cancelled = waitForEvent($events, 'disconnect.cancelled', 2.0);
-        $finalized = waitForEvent($events, 'disconnect.finalized', 2.0);
-        $didNotComplete = !$events->contains('disconnect.completed');
+        $disconnected = waitForEvent($host, $port, 'stoa.client_disconnected', 2.0);
+        $aborted = waitForEvent($host, $port, 'resource.aborted', 2.0);
+        $released = waitForEvent($host, $port, 'resource.released', 2.0);
+        $didNotComplete = !containsEvent($host, $port, 'disconnect.completed');
         $healthyAfterDisconnect = waitForHttpStatus($host, $port, '/runtime/health', 200);
 
         printTimeline('client disconnect', [
             ['request', $started ? 'GET /runtime/disconnect opened' : 'request did not reach handler'],
             ['client', 'closed socket before response'],
-            ['scope', eventText($events, 'disconnect.cancelled', 'cancelled by Stoa close event')],
-            ['handler', eventText($events, 'disconnect.finalized', 'ran cleanup in finally')],
+            ['runtime', eventText($host, $port, 'stoa.client_disconnected', 'detected closed client socket')],
+            ['resource', eventText($host, $port, 'resource.aborted', 'marked request resource aborted')],
+            ['cleanup', eventText($host, $port, 'resource.released', 'released runtime resource row')],
             ['work', $didNotComplete ? 'did not complete after cancellation' : 'completed unexpectedly'],
             ['server', $healthyAfterDisconnect ? 'accepted next health check' : 'did not answer next health check'],
         ]);
 
         $failed = !check('disconnect request started', $started) || $failed;
-        $failed = !check('client disconnect cancelled request', $cancelled) || $failed;
-        $failed = !check('disconnect handler finalized', $finalized) || $failed;
+        $failed = !check('client disconnect detected', $disconnected) || $failed;
+        $failed = !check('request resource aborted', $aborted) || $failed;
+        $failed = !check('request resource released', $released) || $failed;
         $failed = !check('disconnect did not complete work', $didNotComplete) || $failed;
         $failed = !check('server still responds after disconnect', $healthyAfterDisconnect) || $failed;
     });
@@ -99,7 +97,6 @@ try {
         Process::wait(false);
     }
 
-    @unlink($eventLog);
 }
 
 exit($failed ? 1 : 0);
@@ -123,9 +120,9 @@ function printTimeline(string $title, array $rows): void
     echo "\n";
 }
 
-function eventText(RuntimeEvents $events, string $event, string $fallback): string
+function eventText(string $host, int $port, string $event, string $fallback): string
 {
-    $entry = firstEvent($events, $event);
+    $entry = firstEvent($host, $port, $event);
 
     if ($entry === null) {
         return "missing {$event}";
@@ -139,9 +136,9 @@ function eventText(RuntimeEvents $events, string $event, string $fallback): stri
 }
 
 /** @return array{event: string, context: array<string, mixed>, at: float}|null */
-function firstEvent(RuntimeEvents $events, string $event): ?array
+function firstEvent(string $host, int $port, string $event): ?array
 {
-    foreach ($events->all() as $entry) {
+    foreach (events($host, $port) as $entry) {
         if ($entry['event'] === $event) {
             return $entry;
         }
@@ -166,12 +163,12 @@ function waitForHttpStatus(string $host, int $port, string $path, int $status): 
     return false;
 }
 
-function waitForEvent(RuntimeEvents $events, string $event, float $timeout): bool
+function waitForEvent(string $host, int $port, string $event, float $timeout): bool
 {
     $deadline = microtime(true) + $timeout;
 
     do {
-        if ($events->contains($event)) {
+        if (containsEvent($host, $port, $event)) {
             return true;
         }
 
@@ -179,6 +176,27 @@ function waitForEvent(RuntimeEvents $events, string $event, float $timeout): boo
     } while (microtime(true) < $deadline);
 
     return false;
+}
+
+function containsEvent(string $host, int $port, string $event): bool
+{
+    return firstEvent($host, $port, $event) !== null;
+}
+
+/** @return list<array{event: string, context: array<string, mixed>, at: float}> */
+function events(string $host, int $port): array
+{
+    $response = httpGet($host, $port, '/runtime/events');
+    if ($response['status'] !== 200) {
+        return [];
+    }
+
+    $decoded = json_decode($response['body'], true);
+    if (!is_array($decoded) || !isset($decoded['events']) || !is_array($decoded['events'])) {
+        return [];
+    }
+
+    return $decoded['events'];
 }
 
 /** @return array{status: int, body: string} */

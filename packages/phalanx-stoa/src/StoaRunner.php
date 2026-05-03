@@ -13,6 +13,7 @@ use OpenSwoole\Http\Server;
 use OpenSwoole\Timer;
 use Phalanx\AppHost;
 use Phalanx\Cancellation\CancellationToken;
+use Phalanx\Scope\ScopeIdentity;
 use Phalanx\Supervisor\TaskTreeFormatter;
 use Phalanx\Support\SignalHandler;
 use Phalanx\Trace\TraceType;
@@ -27,16 +28,16 @@ final class StoaRunner
     private bool $draining = false;
     private bool $serverShutdownRequested = false;
     private bool $workerStarted = false;
-    private int $nextRequestId = 0;
+    private bool $appShutdown = false;
     private ?int $drainTimer = null;
     private ?Server $server = null;
     private ?RouteGroup $routes = null;
 
-    /** @var array<int, RequestLifecycle> */
-    private array $activeRuns = [];
+    /** @var array<string, StoaRequestResource> */
+    private array $activeRequestsById = [];
 
-    /** @var array<int, RequestLifecycle> */
-    private array $activeRunsByFd = [];
+    /** @var array<int, StoaRequestResource> */
+    private array $activeRequestsByFd = [];
 
     private function __construct(
         private readonly AppHost $app,
@@ -191,10 +192,11 @@ final class StoaRunner
 
         $timerId = Timer::after(max(1, (int) round($this->config->drainTimeout * 1000)), function (): void {
             $this->drainTimer = null;
-            foreach ($this->activeRuns as $run) {
-                $run->abort('drain timeout');
+            foreach ($this->activeRequestsById as $request) {
+                $request->event('stoa.drain_timeout');
+                $request->abort('drain timeout');
             }
-            $this->finalize();
+            $this->checkDrainComplete();
         });
         $this->drainTimer = is_int($timerId) ? $timerId : null;
 
@@ -214,7 +216,11 @@ final class StoaRunner
 
     public function activeRequests(): int
     {
-        return count($this->activeRuns);
+        if ($this->activeRequestsById === []) {
+            return 0;
+        }
+
+        return $this->app->runtime()->memory->resources->liveCount(StoaRequestResource::TYPE);
     }
 
     public function isDraining(): bool
@@ -230,6 +236,7 @@ final class StoaRunner
 
         SignalHandler::register($this->stop(...));
         $this->app->startup();
+        $this->appShutdown = false;
         $this->workerStarted = true;
         $this->app->trace()->log(TraceType::LifecycleStartup, 'worker', ['worker' => $workerId]);
     }
@@ -241,7 +248,7 @@ final class StoaRunner
         }
 
         $this->app->trace()->log(TraceType::LifecycleShutdown, 'worker', ['worker' => $workerId]);
-        $this->app->shutdown();
+        $this->shutdownAppOnce();
         $this->workerStarted = false;
     }
 
@@ -256,13 +263,14 @@ final class StoaRunner
 
     private function handleClose(Server $server, int $fd): void
     {
-        $run = $this->activeRunsByFd[$fd] ?? null;
+        $request = $this->activeRequestsByFd[$fd] ?? null;
 
-        if ($run === null) {
+        if ($request === null) {
             return;
         }
 
-        $run->abort('client disconnected');
+        $request->event('stoa.client_disconnected');
+        $request->abort('client disconnected');
     }
 
     private function handleRequest(
@@ -270,32 +278,39 @@ final class StoaRunner
         ?int $fd = null,
         ?Response $target = null,
     ): ?ResponseInterface {
-        $run = RequestLifecycle::open(++$this->nextRequestId, $request, $fd);
-
-        if ($this->draining) {
-            $response = $this->jsonResponse(503, ['error' => 'Server Shutting Down']);
-            $run->complete();
-            return $this->finish($response, $target, $run);
-        }
-
-        $routes = $this->routes;
-        if ($routes === null) {
-            $response = $this->jsonResponse(404, ['error' => 'Not Found']);
-            $run->complete();
-            return $this->finish($response, $target, $run);
-        }
-
         $token = CancellationToken::timeout($this->config->requestTimeout);
-        $run->attach($token);
-        $this->registerRun($run);
+        $rootScope = $this->app->createScope($token);
+        $scope = $rootScope->withAttribute('request', $request);
+        $ownerScopeId = $scope instanceof ScopeIdentity ? $scope->scopeId : null;
+        $resource = StoaRequestResource::open($this->app->runtime(), $request, $token, $fd, $ownerScopeId);
+        $resource->activate();
+        $this->registerRequest($resource);
 
-        $scope = $this->app->createScope($token)
-            ->withAttribute('request', $request)
-            ->withAttribute('stoa.request_lifecycle', $run);
+        $scope = $scope
+            ->withAttribute('stoa.resource_id', $resource->id)
+            ->withAttribute('stoa.request_resource', $resource);
         $trace = $scope->trace();
         $trace->clear();
 
         try {
+            if ($this->draining) {
+                $resource->event('stoa.server_draining_rejected');
+                return $this->finish(
+                    $this->jsonResponse(503, ['error' => 'Server Shutting Down']),
+                    $target,
+                    $resource,
+                );
+            }
+
+            $routes = $this->routes;
+            if ($routes === null) {
+                return $this->finish(
+                    $this->jsonResponse(404, ['error' => 'Not Found']),
+                    $target,
+                    $resource,
+                );
+            }
+
             try {
                 $result = $scope->execute($routes);
                 $response = $result instanceof ResponseInterface
@@ -305,41 +320,44 @@ final class StoaRunner
                 if ($e instanceof ToResponse) {
                     $response = $e->toResponse();
                 } else {
-                    $run->fail($e);
+                    $resource->fail($e);
                     $trace->log(TraceType::Failed, 'request', ['error' => $e->getMessage()]);
-                    $response = $this->errorResponse($e, $run);
+                    $response = $this->errorResponse($e, $resource);
                 }
             }
 
-            return $this->finish($response, $target, $run);
+            return $this->finish($response, $target, $resource);
         } finally {
-            $this->unregisterRun($run);
-            $scope->dispose();
+            $this->unregisterRequest($resource);
+            $rootScope->dispose();
             $token->cancel();
+            $resource->release();
             $this->checkDrainComplete();
         }
     }
 
-    private function finish(ResponseInterface $response, ?Response $target, RequestLifecycle $run): ?ResponseInterface
+    private function finish(ResponseInterface $response, ?Response $target, StoaRequestResource $request): ?ResponseInterface
     {
-        $response = $this->normalizeResponseForMethod($response, $run);
+        $response = $this->normalizeResponseForMethod($response, $request);
         $response = $this->applyResponseDefaults($response);
+        $request->responseStatus($response->getStatusCode());
 
         if ($target === null) {
-            $run->complete();
+            $request->complete($response->getStatusCode());
             return $response;
         }
 
         try {
-            $this->responseWriter->write($response, $target, $run);
-            $run->complete();
+            $this->responseWriter->write($response, $target, $request);
+            $request->complete($response->getStatusCode());
         } catch (ResponseWriteFailure $e) {
-            $run->fail($e);
+            $request->event('stoa.response.write_failed', $e::class);
+            $request->fail($e);
             $this->app->trace()->log(TraceType::Failed, 'response', [
-                'path' => $run->path,
-                'state' => $run->state->value,
+                'path' => $request->path,
+                'state' => $request->stateValue(),
                 'error' => $e->getMessage(),
-                'method' => $run->method,
+                'method' => $request->method,
             ]);
 
             if ($target->isWritable()) {
@@ -350,9 +368,9 @@ final class StoaRunner
         return null;
     }
 
-    private function normalizeResponseForMethod(ResponseInterface $response, RequestLifecycle $run): ResponseInterface
+    private function normalizeResponseForMethod(ResponseInterface $response, StoaRequestResource $request): ResponseInterface
     {
-        if ($run->method !== 'HEAD') {
+        if ($request->method !== 'HEAD') {
             return $response;
         }
 
@@ -368,27 +386,27 @@ final class StoaRunner
         return $response->withHeader('X-Powered-By', $this->config->poweredBy);
     }
 
-    private function registerRun(RequestLifecycle $run): void
+    private function registerRequest(StoaRequestResource $request): void
     {
-        $this->activeRuns[$run->id] = $run;
+        $this->activeRequestsById[$request->id] = $request;
 
-        if ($run->fd !== null) {
-            $this->activeRunsByFd[$run->fd] = $run;
+        if ($request->fd !== null) {
+            $this->activeRequestsByFd[$request->fd] = $request;
         }
     }
 
-    private function unregisterRun(RequestLifecycle $run): void
+    private function unregisterRequest(StoaRequestResource $request): void
     {
-        unset($this->activeRuns[$run->id]);
+        unset($this->activeRequestsById[$request->id]);
 
-        if ($run->fd !== null) {
-            unset($this->activeRunsByFd[$run->fd]);
+        if ($request->fd !== null) {
+            unset($this->activeRequestsByFd[$request->fd]);
         }
     }
 
     private function checkDrainComplete(): void
     {
-        if (!$this->draining || $this->activeRuns !== []) {
+        if (!$this->draining || $this->activeRequestsById !== []) {
             return;
         }
 
@@ -412,15 +430,18 @@ final class StoaRunner
             $this->drainTimer = null;
         }
 
-        foreach ($this->activeRuns as $run) {
-            $run->abort('server shutdown');
+        foreach ($this->activeRequestsById as $request) {
+            $request->event('stoa.server_shutdown');
+            $request->abort('server shutdown');
         }
-        $this->activeRuns = [];
-        $this->activeRunsByFd = [];
+        $this->activeRequestsById = [];
+        $this->activeRequestsByFd = [];
 
         $this->app->trace()->log(TraceType::LifecycleShutdown, 'shutdown');
-        $this->app->shutdown();
-        $this->workerStarted = false;
+        if ($server === null || $this->workerStarted) {
+            $this->shutdownAppOnce();
+            $this->workerStarted = false;
+        }
         $this->server = null;
 
         if ($shouldShutdownServer) {
@@ -438,6 +459,16 @@ final class StoaRunner
         ($server ?? $this->server)?->shutdown();
     }
 
+    private function shutdownAppOnce(): void
+    {
+        if ($this->appShutdown) {
+            return;
+        }
+
+        $this->app->shutdown();
+        $this->appShutdown = true;
+    }
+
     /** @param array<string, mixed> $body */
     private function jsonResponse(int $status, array $body): ResponseInterface
     {
@@ -448,7 +479,7 @@ final class StoaRunner
         );
     }
 
-    private function errorResponse(Throwable $e, RequestLifecycle $run): ResponseInterface
+    private function errorResponse(Throwable $e, StoaRequestResource $request): ResponseInterface
     {
         $body = [
             'error' => 'Internal Server Error',
@@ -457,9 +488,10 @@ final class StoaRunner
         if ($this->config->debug) {
             $body['message'] = $e->getMessage();
             $body['request'] = [
-                'path' => $run->path,
-                'state' => $run->state->value,
-                'method' => $run->method,
+                'id' => $request->id,
+                'path' => $request->path,
+                'state' => $request->stateValue(),
+                'method' => $request->method,
             ];
             $body['trace'] = $this->formatTrace($e);
             $body['tasks'] = (new TaskTreeFormatter())->format($this->app->supervisor()->tree());

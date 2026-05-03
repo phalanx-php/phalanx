@@ -13,6 +13,10 @@ class AuthExecutionContext implements AuthRequestScope
 {
     use ExecutionScopeDelegate;
 
+    public string $resourceId {
+        get => $this->inner->resourceId;
+    }
+
     public ServerRequestInterface $request {
         get => $this->inner->request;
     }
