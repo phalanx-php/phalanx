@@ -26,6 +26,7 @@ curl -i {$baseUrl}/runtime/health
 curl -i {$baseUrl}/runtime/slow
 curl -i --max-time 0.2 {$baseUrl}/runtime/disconnect
 curl -i {$baseUrl}/runtime/events
+curl -s {$baseUrl}/runtime/events | php -r 'echo json_encode(json_decode(stream_get_contents(STDIN), true), JSON_PRETTY_PRINT) . PHP_EOL;'
 
 BOOT;
 
