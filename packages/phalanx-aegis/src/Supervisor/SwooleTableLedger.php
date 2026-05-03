@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Phalanx\Supervisor;
 
 use Phalanx\Cancellation\CancellationToken;
+use Phalanx\Runtime\Identity\AegisAnnotationSid;
+use Phalanx\Runtime\Identity\AegisEventSid;
+use Phalanx\Runtime\Identity\AegisResourceSid;
 use Phalanx\Runtime\Memory\ManagedResource;
 use Phalanx\Runtime\Memory\ManagedResourceState;
 use Phalanx\Runtime\Memory\RuntimeMemory;
@@ -19,10 +22,6 @@ use Throwable;
  */
 final class SwooleTableLedger implements LedgerStorage
 {
-    private const string SCOPE_TYPE = 'aegis.scope';
-
-    private const string TASK_RUN_TYPE = 'aegis.task_run';
-
     public readonly RuntimeMemory $memory;
 
     /** @var array<string, CancellationToken> */
@@ -64,7 +63,7 @@ final class SwooleTableLedger implements LedgerStorage
     /** @param array<string, string> $annotations */
     private static function runState(ManagedResource $resource, array $annotations): RunState
     {
-        $state = $annotations['aegis.run_state'] ?? '';
+        $state = $annotations[AegisAnnotationSid::RunState->value()] ?? '';
         if ($state !== '') {
             return RunState::from($state);
         }
@@ -103,19 +102,19 @@ final class SwooleTableLedger implements LedgerStorage
         int $coroutineId,
     ): void {
         $this->memory->resources->open(
-            type: self::SCOPE_TYPE,
+            type: AegisResourceSid::Scope,
             id: $scopeId,
             parentResourceId: $parentScopeId,
             ownerScopeId: $scopeId,
             state: ManagedResourceState::Active,
         );
-        $this->memory->resources->annotate($scopeId, 'aegis.scope_fqcn', self::fit($fqcn, 256));
+        $this->memory->resources->annotate($scopeId, AegisAnnotationSid::ScopeFqcn, self::fit($fqcn, 256));
         $this->memory->resources->annotate(
             $scopeId,
-            'aegis.project_path',
+            AegisAnnotationSid::ProjectPath,
             self::fit($this->memory->config->projectPath, 256),
         );
-        $this->memory->resources->annotate($scopeId, 'aegis.coroutine_id', $coroutineId);
+        $this->memory->resources->annotate($scopeId, AegisAnnotationSid::CoroutineId, $coroutineId);
     }
 
     public function disposeScope(string $scopeId): void
@@ -130,32 +129,32 @@ final class SwooleTableLedger implements LedgerStorage
 
     public function liveScopeCount(): int
     {
-        return $this->memory->resources->liveCount(self::SCOPE_TYPE);
+        return $this->memory->resources->liveCount(AegisResourceSid::Scope);
     }
 
     public function register(TaskRun $run): void
     {
         $this->tokens[$run->id] = $run->cancellation;
         $this->memory->resources->open(
-            type: self::TASK_RUN_TYPE,
+            type: AegisResourceSid::TaskRun,
             id: $run->id,
             parentResourceId: $run->parentId,
             ownerScopeId: $run->scopeId,
             ownerRunId: $run->id,
         );
         $this->annotateRun($run->id, [
-            'aegis.run_name' => $run->name,
-            'aegis.run_mode' => $run->mode->value,
-            'aegis.run_state' => RunState::Pending->value,
-            'aegis.parent_run_id' => $run->parentId ?? '',
-            'aegis.scope_id' => $run->scopeId ?? '',
-            'aegis.task_fqcn' => $run->taskFqcn ?? '',
-            'aegis.source_path' => $run->sourcePath ?? '',
-            'aegis.source_line' => (string) ($run->sourceLine ?? 0),
-            'aegis.started_at' => (string) $run->startedAt,
-            'aegis.ended_at' => '',
-            'aegis.wait_kind' => '',
-            'aegis.wait_detail' => '',
+            AegisAnnotationSid::RunName->value() => $run->name,
+            AegisAnnotationSid::RunMode->value() => $run->mode->value,
+            AegisAnnotationSid::RunState->value() => RunState::Pending->value,
+            AegisAnnotationSid::ParentRunId->value() => $run->parentId ?? '',
+            AegisAnnotationSid::ScopeId->value() => $run->scopeId ?? '',
+            AegisAnnotationSid::TaskFqcn->value() => $run->taskFqcn ?? '',
+            AegisAnnotationSid::SourcePath->value() => $run->sourcePath ?? '',
+            AegisAnnotationSid::SourceLine->value() => (string) ($run->sourceLine ?? 0),
+            AegisAnnotationSid::StartedAt->value() => (string) $run->startedAt,
+            AegisAnnotationSid::EndedAt->value() => '',
+            AegisAnnotationSid::WaitKind->value() => '',
+            AegisAnnotationSid::WaitDetail->value() => '',
         ]);
     }
 
@@ -167,20 +166,25 @@ final class SwooleTableLedger implements LedgerStorage
     public function markRunning(string $runId): void
     {
         $this->activateIfOpening($runId);
-        $this->memory->resources->annotate($runId, 'aegis.run_state', RunState::Running->value);
-        $this->memory->resources->recordEvent($runId, 'run.running');
+        $this->memory->resources->annotate($runId, AegisAnnotationSid::RunState, RunState::Running->value);
+        $this->memory->resources->recordEvent($runId, AegisEventSid::RunRunning);
     }
 
     public function beginWait(string $runId, WaitReason $reason): void
     {
         $this->activateIfOpening($runId);
         $this->annotateRun($runId, [
-            'aegis.run_state' => RunState::Suspended->value,
-            'aegis.wait_kind' => $reason->kind->value,
-            'aegis.wait_detail' => $reason->detail,
-            'aegis.wait_since' => (string) $reason->startedAt,
+            AegisAnnotationSid::RunState->value() => RunState::Suspended->value,
+            AegisAnnotationSid::WaitKind->value() => $reason->kind->value,
+            AegisAnnotationSid::WaitDetail->value() => $reason->detail,
+            AegisAnnotationSid::WaitSince->value() => (string) $reason->startedAt,
         ]);
-        $this->memory->resources->recordEvent($runId, 'run.suspended', $reason->kind->value, $reason->detail);
+        $this->memory->resources->recordEvent(
+            $runId,
+            AegisEventSid::RunSuspended,
+            $reason->kind->value,
+            $reason->detail,
+        );
     }
 
     public function clearWait(string $runId): void
@@ -191,12 +195,12 @@ final class SwooleTableLedger implements LedgerStorage
         }
 
         $this->annotateRun($runId, [
-            'aegis.run_state' => RunState::Running->value,
-            'aegis.wait_kind' => '',
-            'aegis.wait_detail' => '',
-            'aegis.wait_since' => '',
+            AegisAnnotationSid::RunState->value() => RunState::Running->value,
+            AegisAnnotationSid::WaitKind->value() => '',
+            AegisAnnotationSid::WaitDetail->value() => '',
+            AegisAnnotationSid::WaitSince->value() => '',
         ]);
-        $this->memory->resources->recordEvent($runId, 'run.resumed');
+        $this->memory->resources->recordEvent($runId, AegisEventSid::RunResumed);
     }
 
     public function addLease(string $runId, Lease $lease): void
@@ -238,7 +242,7 @@ final class SwooleTableLedger implements LedgerStorage
     public function find(string $runId): ?TaskRun
     {
         $resource = $this->memory->resources->get($runId);
-        if ($resource === null || $resource->type !== self::TASK_RUN_TYPE) {
+        if ($resource === null || $resource->type !== AegisResourceSid::TaskRun->value()) {
             return null;
         }
 
@@ -255,7 +259,7 @@ final class SwooleTableLedger implements LedgerStorage
     {
         if ($rootRunId === null) {
             $out = [];
-            foreach ($this->memory->resources->all(self::TASK_RUN_TYPE) as $resource) {
+            foreach ($this->memory->resources->all(AegisResourceSid::TaskRun) as $resource) {
                 $out[] = self::project($this->hydrate($resource));
             }
 
@@ -279,7 +283,7 @@ final class SwooleTableLedger implements LedgerStorage
 
     public function liveCount(): int
     {
-        return $this->memory->resources->liveCount(self::TASK_RUN_TYPE);
+        return $this->memory->resources->liveCount(AegisResourceSid::TaskRun);
     }
 
     public function reap(string $runId): void
@@ -314,10 +318,10 @@ final class SwooleTableLedger implements LedgerStorage
             return;
         }
 
-        $this->memory->resources->annotate($runId, 'aegis.run_state', $runState->value);
-        $this->memory->resources->annotate($runId, 'aegis.ended_at', (string) microtime(true));
-        $this->memory->resources->annotate($runId, 'aegis.wait_kind', '');
-        $this->memory->resources->annotate($runId, 'aegis.wait_detail', '');
+        $this->memory->resources->annotate($runId, AegisAnnotationSid::RunState, $runState->value);
+        $this->memory->resources->annotate($runId, AegisAnnotationSid::EndedAt, (string) microtime(true));
+        $this->memory->resources->annotate($runId, AegisAnnotationSid::WaitKind, '');
+        $this->memory->resources->annotate($runId, AegisAnnotationSid::WaitDetail, '');
 
         match ($resourceState) {
             ManagedResourceState::Closed => $this->memory->resources->close($runId, $reason),
@@ -330,32 +334,40 @@ final class SwooleTableLedger implements LedgerStorage
     private function hydrate(ManagedResource $resource): TaskRun
     {
         $annotations = $this->memory->resources->annotations($resource->id);
-        $waitKind = $annotations['aegis.wait_kind'] ?? '';
+        $waitKind = $annotations[AegisAnnotationSid::WaitKind->value()] ?? '';
         $wait = $waitKind === ''
             ? null
             : new WaitReason(
                 WaitKind::from($waitKind),
-                $annotations['aegis.wait_detail'] ?? '',
-                (float) ($annotations['aegis.wait_since'] ?? $resource->updatedAt),
+                $annotations[AegisAnnotationSid::WaitDetail->value()] ?? '',
+                (float) ($annotations[AegisAnnotationSid::WaitSince->value()] ?? $resource->updatedAt),
             );
 
         $run = new TaskRun(
             id: $resource->id,
-            name: $annotations['aegis.run_name'] ?? $resource->id,
-            parentId: ($annotations['aegis.parent_run_id'] ?? '') === '' ? null : $annotations['aegis.parent_run_id'],
-            mode: DispatchMode::from($annotations['aegis.run_mode'] ?? DispatchMode::Inline->value),
+            name: $annotations[AegisAnnotationSid::RunName->value()] ?? $resource->id,
+            parentId: ($annotations[AegisAnnotationSid::ParentRunId->value()] ?? '') === ''
+                ? null
+                : $annotations[AegisAnnotationSid::ParentRunId->value()],
+            mode: DispatchMode::from($annotations[AegisAnnotationSid::RunMode->value()] ?? DispatchMode::Inline->value),
             cancellation: $this->tokens[$resource->id] ?? CancellationToken::none(),
-            startedAt: (float) ($annotations['aegis.started_at'] ?? $resource->createdAt),
-            scopeId: ($annotations['aegis.scope_id'] ?? '') === '' ? null : $annotations['aegis.scope_id'],
-            taskFqcn: ($annotations['aegis.task_fqcn'] ?? '') === '' ? null : $annotations['aegis.task_fqcn'],
-            sourcePath: ($annotations['aegis.source_path'] ?? '') === '' ? null : $annotations['aegis.source_path'],
-            sourceLine: (int) ($annotations['aegis.source_line'] ?? 0) ?: null,
+            startedAt: (float) ($annotations[AegisAnnotationSid::StartedAt->value()] ?? $resource->createdAt),
+            scopeId: ($annotations[AegisAnnotationSid::ScopeId->value()] ?? '') === ''
+                ? null
+                : $annotations[AegisAnnotationSid::ScopeId->value()],
+            taskFqcn: ($annotations[AegisAnnotationSid::TaskFqcn->value()] ?? '') === ''
+                ? null
+                : $annotations[AegisAnnotationSid::TaskFqcn->value()],
+            sourcePath: ($annotations[AegisAnnotationSid::SourcePath->value()] ?? '') === ''
+                ? null
+                : $annotations[AegisAnnotationSid::SourcePath->value()],
+            sourceLine: (int) ($annotations[AegisAnnotationSid::SourceLine->value()] ?? 0) ?: null,
         );
         $run->state = self::runState($resource, $annotations);
         $run->currentWait = $wait;
         $run->childIds = $this->memory->resources->childIds($resource->id);
         $run->leases = $this->leases($resource->id);
-        $endedAt = $annotations['aegis.ended_at'] ?? '';
+        $endedAt = $annotations[AegisAnnotationSid::EndedAt->value()] ?? '';
         $run->endedAt = $endedAt === '' ? $resource->terminalAt : (float) $endedAt;
 
         return $run;

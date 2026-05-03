@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Phalanx\Runtime\Memory;
 
 use OpenSwoole\Atomic\Long;
+use Phalanx\Cancellation\Cancelled;
+use Phalanx\Runtime\Identity\AegisCounterSid;
+use Phalanx\Runtime\Identity\RuntimeEventId;
 use Throwable;
 
 final class RuntimeLifecycleEvents
@@ -36,7 +39,7 @@ final class RuntimeLifecycleEvents
     }
 
     public function record(
-        string $type,
+        RuntimeEventId|string $type,
         string $resourceId = '',
         string $resourceType = '',
         string $scopeId = '',
@@ -46,6 +49,7 @@ final class RuntimeLifecycleEvents
         string $valueB = '',
         float $expiresAt = 0.0,
     ): RuntimeLifecycleEvent {
+        $type = $type instanceof RuntimeEventId ? $type->value() : $type;
         $sequence = (int) $this->sequence->add();
         $event = new RuntimeLifecycleEvent(
             sequence: $sequence,
@@ -62,7 +66,7 @@ final class RuntimeLifecycleEvents
         $key = (string) ($sequence % $this->tables->config->eventRows);
         $existing = $this->tables->resourceEvents->get($key);
         if (is_array($existing) && (int) $existing['sequence'] > 0) {
-            $this->counters?->incr('aegis.runtime.events.dropped');
+            $this->counters?->incr(AegisCounterSid::RuntimeEventsDropped);
         }
 
         $this->tables->resourceEvents->set($key, [
@@ -84,6 +88,10 @@ final class RuntimeLifecycleEvents
             try {
                 $listener($event);
             } catch (Throwable $e) {
+                if ($e instanceof Cancelled) {
+                    throw $e;
+                }
+
                 $this->listenerErrors[] = ['event' => $event, 'error' => $e];
             }
         }

@@ -5,6 +5,11 @@ declare(strict_types=1);
 namespace Phalanx\Runtime\Memory;
 
 use OpenSwoole\Coroutine;
+use OpenSwoole\Exception as OpenSwooleException;
+use Phalanx\Runtime\Identity\AegisEventSid;
+use Phalanx\Runtime\Identity\RuntimeAnnotationId;
+use Phalanx\Runtime\Identity\RuntimeEventId;
+use Phalanx\Runtime\Identity\RuntimeResourceId;
 
 final readonly class ManagedResourceRegistry
 {
@@ -17,8 +22,24 @@ final readonly class ManagedResourceRegistry
     ) {
     }
 
-    private static function assertResourceType(string $type): string
+    private static function resourceType(RuntimeResourceId|string $type): string
     {
+        return $type instanceof RuntimeResourceId ? $type->value() : $type;
+    }
+
+    private static function annotationKey(RuntimeAnnotationId|string $key): string
+    {
+        return $key instanceof RuntimeAnnotationId ? $key->value() : $key;
+    }
+
+    private static function eventType(RuntimeEventId|string $type): string
+    {
+        return $type instanceof RuntimeEventId ? $type->value() : $type;
+    }
+
+    private static function assertResourceType(RuntimeResourceId|string $type): string
+    {
+        $type = self::resourceType($type);
         if (!str_contains($type, '.') || mb_strlen($type) > 96) {
             throw RuntimeAnnotationRejected::forKey($type);
         }
@@ -26,8 +47,9 @@ final readonly class ManagedResourceRegistry
         return $type;
     }
 
-    private static function assertAnnotationKey(string $key): string
+    private static function assertAnnotationKey(RuntimeAnnotationId|string $key): string
     {
+        $key = self::annotationKey($key);
         if (!str_contains($key, '.') || mb_strlen($key) > 128) {
             throw RuntimeAnnotationRejected::forKey($key);
         }
@@ -61,7 +83,7 @@ final readonly class ManagedResourceRegistry
     }
 
     public function open(
-        string $type,
+        RuntimeResourceId|string $type,
         ?string $id = null,
         ?string $parentResourceId = null,
         ?string $ownerScopeId = null,
@@ -116,7 +138,7 @@ final readonly class ManagedResourceRegistry
 
     public function annotate(
         ManagedResourceHandle|string $resource,
-        string $key,
+        RuntimeAnnotationId|string $key,
         string|int|float|bool|null $value,
         float $ttl = 0.0,
     ): void {
@@ -124,13 +146,17 @@ final readonly class ManagedResourceRegistry
         $key = self::assertAnnotationKey($key);
         $value = self::annotationValue($key, $value);
         $rowId = self::annotationRowId($resourceId, $key);
-        $ok = $this->tables->resourceAnnotations->set($rowId, [
-            'resource_id' => $resourceId,
-            'key_symbol' => $this->symbols->idFor('annotation.key', $key),
-            'value' => $value,
-            'updated_at' => microtime(true),
-            'expires_at' => $ttl > 0.0 ? microtime(true) + $ttl : 0.0,
-        ]);
+        try {
+            $ok = $this->tables->resourceAnnotations->set($rowId, [
+                'resource_id' => $resourceId,
+                'key_symbol' => $this->symbols->idFor('annotation.key', $key),
+                'value' => $value,
+                'updated_at' => microtime(true),
+                'expires_at' => $ttl > 0.0 ? microtime(true) + $ttl : 0.0,
+            ]);
+        } catch (OpenSwooleException) {
+            throw RuntimeMemoryCapacityExceeded::forTable('resource_annotations', $rowId);
+        }
 
         if (!$ok) {
             throw RuntimeMemoryCapacityExceeded::forTable('resource_annotations', $rowId);
@@ -139,8 +165,9 @@ final readonly class ManagedResourceRegistry
         $this->tables->mark('resource_annotations');
     }
 
-    public function annotation(string $resourceId, string $key, string $default = ''): string
+    public function annotation(string $resourceId, RuntimeAnnotationId|string $key, string $default = ''): string
     {
+        $key = self::annotationKey($key);
         $row = $this->tables->resourceAnnotations->get(self::annotationRowId($resourceId, $key));
 
         return is_array($row) ? (string) $row['value'] : $default;
@@ -163,12 +190,13 @@ final readonly class ManagedResourceRegistry
 
     public function recordEvent(
         ManagedResourceHandle|string $resource,
-        string $type,
+        RuntimeEventId|string $type,
         string $valueA = '',
         string $valueB = '',
     ): RuntimeLifecycleEvent {
         $resourceId = $resource instanceof ManagedResourceHandle ? $resource->id : $resource;
         $snapshot = $this->get($resourceId);
+        $type = self::eventType($type);
 
         return $this->events->record(
             type: $type,
@@ -185,20 +213,29 @@ final readonly class ManagedResourceRegistry
     public function addEdge(string $parentResourceId, string $childResourceId, string $type = 'child'): void
     {
         $edgeId = $this->ids->nextRuntime('edge');
-        $ok = $this->tables->resourceEdges->set($edgeId, [
-            'parent_resource_id' => $parentResourceId,
-            'child_resource_id' => $childResourceId,
-            'edge_type' => self::fit($type, 32),
-            'created_at' => microtime(true),
-            'expires_at' => 0.0,
-        ]);
+        try {
+            $ok = $this->tables->resourceEdges->set($edgeId, [
+                'parent_resource_id' => $parentResourceId,
+                'child_resource_id' => $childResourceId,
+                'edge_type' => self::fit($type, 32),
+                'created_at' => microtime(true),
+                'expires_at' => 0.0,
+            ]);
+        } catch (OpenSwooleException) {
+            throw RuntimeMemoryCapacityExceeded::forTable('resource_edges', $edgeId);
+        }
 
         if (!$ok) {
             throw RuntimeMemoryCapacityExceeded::forTable('resource_edges', $edgeId);
         }
 
         $this->tables->mark('resource_edges');
-        $this->events->record('resource.edge', resourceId: $parentResourceId, valueA: $childResourceId, valueB: $type);
+        $this->events->record(
+            AegisEventSid::ResourceEdge,
+            resourceId: $parentResourceId,
+            valueA: $childResourceId,
+            valueB: $type,
+        );
     }
 
     /** @return list<string> */
@@ -218,16 +255,20 @@ final readonly class ManagedResourceRegistry
     public function addLease(string $ownerResourceId, string $ownerRunId, array $lease): void
     {
         $leaseId = $this->ids->nextRuntime('lease');
-        $ok = $this->tables->resourceLeases->set($leaseId, [
-            'owner_resource_id' => $ownerResourceId,
-            'owner_run_id' => $ownerRunId,
-            'lease_type' => self::fit((string) $lease['lease_type'], 64),
-            'domain' => self::fit((string) $lease['domain'], 128),
-            'resource_key' => self::fit((string) $lease['resource_key'], 128),
-            'mode' => self::fit((string) $lease['mode'], 16),
-            'acquired_at' => (float) $lease['acquired_at'],
-            'expires_at' => 0.0,
-        ]);
+        try {
+            $ok = $this->tables->resourceLeases->set($leaseId, [
+                'owner_resource_id' => $ownerResourceId,
+                'owner_run_id' => $ownerRunId,
+                'lease_type' => self::fit((string) $lease['lease_type'], 64),
+                'domain' => self::fit((string) $lease['domain'], 128),
+                'resource_key' => self::fit((string) $lease['resource_key'], 128),
+                'mode' => self::fit((string) $lease['mode'], 16),
+                'acquired_at' => (float) $lease['acquired_at'],
+                'expires_at' => 0.0,
+            ]);
+        } catch (OpenSwooleException) {
+            throw RuntimeMemoryCapacityExceeded::forTable('resource_leases', $leaseId);
+        }
 
         if (!$ok) {
             throw RuntimeMemoryCapacityExceeded::forTable('resource_leases', $leaseId);
@@ -235,7 +276,7 @@ final readonly class ManagedResourceRegistry
 
         $this->tables->mark('resource_leases');
         $this->events->record(
-            'resource.lease_acquired',
+            AegisEventSid::ResourceLeaseAcquired,
             resourceId: $ownerResourceId,
             runId: $ownerRunId,
             valueA: (string) $lease['domain'],
@@ -262,7 +303,7 @@ final readonly class ManagedResourceRegistry
 
             $this->tables->resourceLeases->del((string) $leaseId);
             $this->events->record(
-                'resource.lease_released',
+                AegisEventSid::ResourceLeaseReleased,
                 resourceId: $ownerResourceId,
                 valueA: $domain,
                 valueB: $resourceKey,
@@ -300,8 +341,9 @@ final readonly class ManagedResourceRegistry
     }
 
     /** @return list<ManagedResource> */
-    public function all(?string $type = null): array
+    public function all(RuntimeResourceId|string|null $type = null): array
     {
+        $type = $type === null ? null : self::resourceType($type);
         $resources = [];
         foreach ($this->tables->resources as $id => $row) {
             if (!is_array($row)) {
@@ -317,7 +359,7 @@ final readonly class ManagedResourceRegistry
         return $resources;
     }
 
-    public function liveCount(?string $type = null): int
+    public function liveCount(RuntimeResourceId|string|null $type = null): int
     {
         $live = 0;
         foreach ($this->all($type) as $resource) {
@@ -354,7 +396,7 @@ final readonly class ManagedResourceRegistry
             }
         }
 
-        $this->events->record('resource.released', resourceId: $id);
+        $this->events->record(AegisEventSid::ResourceReleased, resourceId: $id);
     }
 
     /** @param array<string, mixed> $row */

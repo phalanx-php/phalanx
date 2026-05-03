@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Runtime\Memory;
 
 use OpenSwoole\Atomic\Long;
+use OpenSwoole\Exception as OpenSwooleException;
 
 final class RuntimeSymbols
 {
@@ -44,12 +45,21 @@ final class RuntimeSymbols
 
         $id = (int) $this->ids->add();
         $stored = self::fit($value, 512);
-        $this->tables->symbols->set($key, [
-            'id' => $id,
-            'kind' => self::fit($kind, 32),
-            'value' => $stored,
-            'created_at' => microtime(true),
-        ]);
+        try {
+            $ok = $this->tables->symbols->set($key, [
+                'id' => $id,
+                'kind' => self::fit($kind, 32),
+                'value' => $stored,
+                'created_at' => microtime(true),
+            ]);
+        } catch (OpenSwooleException) {
+            throw RuntimeMemoryCapacityExceeded::forTable('symbols', $key);
+        }
+
+        if (!$ok) {
+            throw RuntimeMemoryCapacityExceeded::forTable('symbols', $key);
+        }
+
         $this->tables->mark('symbols');
         $this->local[$id] = $stored;
 

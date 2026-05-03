@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Phalanx\Runtime\Memory;
 
+use OpenSwoole\Exception as OpenSwooleException;
+use Phalanx\Runtime\Identity\AegisEventSid;
+use Phalanx\Runtime\Identity\RuntimeEventId;
+
 final readonly class ManagedResourceTransitionGate
 {
     public function __construct(
@@ -83,23 +87,27 @@ final readonly class ManagedResourceTransitionGate
         int $coroutineId = -1,
     ): ManagedResourceHandle {
         $now = microtime(true);
-        $ok = $this->tables->resources->set($id, [
-            'type_symbol' => $this->symbols->idFor('resource.type', $type),
-            'parent_resource_id' => $parentResourceId ?? '',
-            'owner_scope_id' => $ownerScopeId ?? '',
-            'owner_run_id' => $ownerRunId ?? '',
-            'state' => $state->value,
-            'generation' => 1,
-            'worker_id' => $workerId,
-            'coroutine_id' => $coroutineId,
-            'created_at' => $now,
-            'updated_at' => $now,
-            'terminal_at' => $state->isTerminal() ? $now : 0.0,
-            'expires_at' => 0.0,
-            'outcome' => '',
-            'reason_symbol' => 0,
-            'cancel_requested' => 0,
-        ]);
+        try {
+            $ok = $this->tables->resources->set($id, [
+                'type_symbol' => $this->symbols->idFor('resource.type', $type),
+                'parent_resource_id' => $parentResourceId ?? '',
+                'owner_scope_id' => $ownerScopeId ?? '',
+                'owner_run_id' => $ownerRunId ?? '',
+                'state' => $state->value,
+                'generation' => 1,
+                'worker_id' => $workerId,
+                'coroutine_id' => $coroutineId,
+                'created_at' => $now,
+                'updated_at' => $now,
+                'terminal_at' => $state->isTerminal() ? $now : 0.0,
+                'expires_at' => 0.0,
+                'outcome' => '',
+                'reason_symbol' => 0,
+                'cancel_requested' => 0,
+            ]);
+        } catch (OpenSwooleException) {
+            throw RuntimeMemoryCapacityExceeded::forTable('resources', $id);
+        }
 
         if (!$ok) {
             throw RuntimeMemoryCapacityExceeded::forTable('resources', $id);
@@ -108,7 +116,7 @@ final readonly class ManagedResourceTransitionGate
         $this->tables->mark('resources');
         $this->counters->incr("aegis.resources.{$type}.opened");
         $this->events->record(
-            'resource.opened',
+            AegisEventSid::ResourceOpened,
             resourceId: $id,
             resourceType: $type,
             scopeId: $ownerScopeId ?? '',
@@ -125,7 +133,7 @@ final readonly class ManagedResourceTransitionGate
         ManagedResourceState $to,
         string $outcome = '',
         string $reason = '',
-        string $eventType = '',
+        RuntimeEventId|string $eventType = '',
     ): ManagedResourceHandle {
         $id = $resource instanceof ManagedResourceHandle ? $resource->id : $resource;
         $row = $this->tables->resources->get($id);
@@ -143,7 +151,7 @@ final readonly class ManagedResourceTransitionGate
         if ($from->isTerminal()) {
             if ($from !== $to) {
                 $this->events->record(
-                    'resource.late_transition',
+                    AegisEventSid::ResourceLateTransition,
                     resourceId: $id,
                     resourceType: $type,
                     scopeId: (string) $row['owner_scope_id'],
@@ -171,7 +179,13 @@ final readonly class ManagedResourceTransitionGate
         $cancelRequested = $to === ManagedResourceState::Aborting || $to === ManagedResourceState::Aborted;
         $row['cancel_requested'] = $cancelRequested ? 1 : 0;
 
-        if (!$this->tables->resources->set($id, $row)) {
+        try {
+            $ok = $this->tables->resources->set($id, $row);
+        } catch (OpenSwooleException) {
+            throw RuntimeMemoryCapacityExceeded::forTable('resources', $id);
+        }
+
+        if (!$ok) {
             throw RuntimeMemoryCapacityExceeded::forTable('resources', $id);
         }
 

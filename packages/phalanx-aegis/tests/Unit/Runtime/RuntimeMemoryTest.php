@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace Phalanx\Tests\Unit\Runtime;
 
 use Phalanx\Application;
+use Phalanx\Runtime\Identity\AegisResourceSid;
+use Phalanx\Runtime\Identity\RuntimeAnnotationId;
+use Phalanx\Runtime\Identity\RuntimeResourceId;
 use Phalanx\Runtime\Memory\ManagedResourceState;
-use Phalanx\Runtime\Memory\RuntimeMemory;
 use Phalanx\Runtime\Memory\RuntimeAnnotationRejected;
+use Phalanx\Runtime\Memory\RuntimeMemory;
 use Phalanx\Runtime\Memory\RuntimeMemoryConfig;
 use Phalanx\Runtime\Memory\StaleManagedResourceHandle;
 use Phalanx\Task\Task;
@@ -59,13 +62,13 @@ final class RuntimeMemoryTest extends TestCase
     {
         $memory = RuntimeMemory::forLedgerSize(16);
 
-        $opened = $memory->resources->open('stoa.http_request', id: 'request-1');
+        $opened = $memory->resources->open(RuntimeMemoryResourceSid::HttpRequest, id: 'request-1');
         $active = $memory->resources->activate($opened);
-        $memory->resources->annotate($active, 'stoa.route', 'users.show');
+        $memory->resources->annotate($active, RuntimeMemoryAnnotationSid::Route, 'users.show');
         $closed = $memory->resources->close($active, 'status:200');
 
-        self::assertSame(ManagedResourceState::Closed, $memory->resources->get('request-1')?->state);
-        self::assertSame('users.show', $memory->resources->annotation('request-1', 'stoa.route'));
+        self::assertSame(ManagedResourceState::Closed, $memory->resources->get('request-1')->state);
+        self::assertSame('users.show', $memory->resources->annotation('request-1', RuntimeMemoryAnnotationSid::Route));
 
         $late = $memory->resources->abort('request-1', 'client_disconnected');
         self::assertSame($closed->generation, $late->generation);
@@ -77,7 +80,7 @@ final class RuntimeMemoryTest extends TestCase
     public function testManagedResourcesRejectStaleHandlesAndUnboundedAnnotations(): void
     {
         $memory = RuntimeMemory::forLedgerSize(16);
-        $opened = $memory->resources->open('archon.command', id: 'command-1');
+        $opened = $memory->resources->open(RuntimeMemoryResourceSid::Command, id: 'command-1');
         $memory->resources->activate($opened);
 
         try {
@@ -93,7 +96,7 @@ final class RuntimeMemoryTest extends TestCase
     public function testManagedResourcesRejectNonNamespacedAnnotations(): void
     {
         $memory = RuntimeMemory::forLedgerSize(16);
-        $resource = $memory->resources->open('aegis.test', id: 'test-1');
+        $resource = $memory->resources->open(AegisResourceSid::Test, id: 'test-1');
 
         try {
             $memory->resources->annotate($resource, 'route', 'users.show');
@@ -132,5 +135,36 @@ final class RuntimeMemoryTest extends TestCase
         ));
 
         self::assertSame(['id' => 1, 'counter' => 1, 'claim' => true], $result);
+    }
+}
+
+enum RuntimeMemoryResourceSid: string implements RuntimeResourceId
+{
+    case Command = 'archon.command';
+    case HttpRequest = 'stoa.http_request';
+
+    public function key(): string
+    {
+        return $this->name;
+    }
+
+    public function value(): string
+    {
+        return $this->value;
+    }
+}
+
+enum RuntimeMemoryAnnotationSid: string implements RuntimeAnnotationId
+{
+    case Route = 'stoa.route';
+
+    public function key(): string
+    {
+        return $this->name;
+    }
+
+    public function value(): string
+    {
+        return $this->value;
     }
 }

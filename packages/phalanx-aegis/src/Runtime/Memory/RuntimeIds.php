@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Runtime\Memory;
 
 use OpenSwoole\Atomic\Long;
+use Phalanx\Runtime\Identity\RuntimeCounterId;
 use Symfony\Component\Uid\Ulid;
 
 final class RuntimeIds
@@ -16,9 +17,11 @@ final class RuntimeIds
         $this->internal = new Long();
     }
 
-    public function next(string $name): int
+    public function next(RuntimeCounterId|string $name): int
     {
-        return $this->counters->incr('ids.' . $name);
+        $value = $name instanceof RuntimeCounterId ? $name->value() : $name;
+
+        return $this->counters->incr('ids.' . $value);
     }
 
     public function nextRuntime(string $prefix): string
