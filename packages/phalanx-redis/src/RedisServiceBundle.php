@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Redis;
 
 use Clue\React\Redis\Factory as RedisFactory;
-use Phalanx\Suspendable;
+use Phalanx\Scope\Suspendable;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 

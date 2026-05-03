@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace Phalanx\Redis;
 
 use Clue\React\Redis\Client;
-use Phalanx\Suspendable;
+use Phalanx\Scope\Suspendable;
+use Phalanx\Supervisor\WaitReason;
 use React\Promise\PromiseInterface;
+
+use function React\Async\await;
 
 final class RedisClient
 {
@@ -17,44 +20,44 @@ final class RedisClient
 
     public function get(string $key): mixed
     {
-        return $this->scope->await($this->inner->__call('get', [$key]));
+        return $this->awaitCommand('get', $key);
     }
 
     public function set(string $key, string $value, ?int $ttl = null): void
     {
         if ($ttl !== null) {
-            $this->scope->await($this->inner->__call('setex', [$key, (string) $ttl, $value]));
+            $this->awaitCommand('setex', $key, (string) $ttl, $value);
         } else {
-            $this->scope->await($this->inner->__call('set', [$key, $value]));
+            $this->awaitCommand('set', $key, $value);
         }
     }
 
     public function del(string ...$keys): int
     {
         /** @var int */
-        return $this->scope->await($this->inner->__call('del', $keys));
+        return $this->awaitCommand('del', ...$keys);
     }
 
     public function exists(string $key): bool
     {
-        return (bool) $this->scope->await($this->inner->__call('exists', [$key]));
+        return (bool) $this->awaitCommand('exists', $key);
     }
 
     public function expire(string $key, int $seconds): bool
     {
-        return (bool) $this->scope->await($this->inner->__call('expire', [$key, (string) $seconds]));
+        return (bool) $this->awaitCommand('expire', $key, (string) $seconds);
     }
 
     public function incr(string $key): int
     {
         /** @var int */
-        return $this->scope->await($this->inner->__call('incr', [$key]));
+        return $this->awaitCommand('incr', $key);
     }
 
     public function decr(string $key): int
     {
         /** @var int */
-        return $this->scope->await($this->inner->__call('decr', [$key]));
+        return $this->awaitCommand('decr', $key);
     }
 
     /** @return PromiseInterface<mixed> */
@@ -66,5 +69,15 @@ final class RedisClient
     public function close(): void
     {
         $this->inner->end();
+    }
+
+    private function awaitCommand(string $command, mixed ...$args): mixed
+    {
+        $client = $this->inner;
+
+        return $this->scope->call(
+            static fn(): mixed => await($client->__call($command, $args)),
+            WaitReason::redis($command),
+        );
     }
 }
