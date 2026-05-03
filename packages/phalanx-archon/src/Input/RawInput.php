@@ -34,6 +34,7 @@ final class RawInput
     private string $savedStty = '';
     private bool $active      = false;
     private bool $attached    = false;
+    private ?bool $previousBlocking = null;
 
     /** @var list<Deferred<string>> */
     private array $pending = [];
@@ -65,9 +66,15 @@ final class RawInput
             return;
         }
 
-        // Blocking shell_exec is acceptable here — called once before the event loop
-        // begins processing input, not inside a timer or stream callback.
+        /**
+         * Blocking shell_exec is acceptable here because raw mode is entered once
+         * before the input loop starts, not inside a timer or stream callback.
+         */
         $this->savedStty = ($this->stty)('stty -g 2>/dev/null');
+        if ($this->savedStty === '') {
+            return;
+        }
+
         ($this->stty)('stty -icanon -isig -echo -ixon min 1 time 0 2>/dev/null');
         $this->active = true;
     }
@@ -81,13 +88,15 @@ final class RawInput
         $stream = $this->stream;
         assert(is_resource($stream));
 
+        $this->previousBlocking = self::isBlocking($stream);
         stream_set_blocking($stream, false);
 
         $ref = WeakReference::create($this);
 
-        // Static closure bound to RawInput class scope via Closure::bind so it can
-        // access private dispatch() without capturing $this — breaks the reference
-        // cycle between the loop's stream listener registry and this object.
+        /**
+         * Bind a static closure to RawInput scope so it can call dispatch()
+         * without capturing this object through the loop listener registry.
+         */
         $handler = Closure::bind(
             static function ($stream) use ($ref): void {
                 $self = $ref->get();
@@ -125,8 +134,9 @@ final class RawInput
         assert(is_resource($stream));
 
         Loop::removeReadStream($stream);
-        stream_set_blocking($stream, true);
+        stream_set_blocking($stream, $this->previousBlocking ?? true);
         $this->attached = false;
+        $this->previousBlocking = null;
     }
 
     public function disable(): void
@@ -182,5 +192,14 @@ final class RawInput
             }
             array_shift($this->pending)->resolve($key);
         }
+    }
+
+    /** @param resource $stream */
+    private static function isBlocking(mixed $stream): bool
+    {
+        /** @var array<string, mixed> $metadata */
+        $metadata = stream_get_meta_data($stream);
+
+        return ($metadata['blocked'] ?? true) === true;
     }
 }

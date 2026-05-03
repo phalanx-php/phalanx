@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Archon;
 
 use InvalidArgumentException;
+use ValueError;
 
 final readonly class ConsoleSignalPolicy
 {
@@ -42,9 +43,24 @@ final readonly class ConsoleSignalPolicy
             if (!is_int($signal) || !is_int($exitCode) || $signal <= 0 || $exitCode <= 0) {
                 throw new InvalidArgumentException('Signal policies require positive integer signals and exit codes.');
             }
+
+            self::assertSupportedSignal($signal);
         }
 
         return new self($exitCodes);
+    }
+
+    private static function assertSupportedSignal(int $signal): void
+    {
+        if (!function_exists('pcntl_signal_get_handler')) {
+            return;
+        }
+
+        try {
+            pcntl_signal_get_handler($signal);
+        } catch (ValueError) {
+            throw new InvalidArgumentException('Signal policies require signals supported by pcntl.');
+        }
     }
 
     private static function reason(int $number): string

@@ -56,4 +56,16 @@ final class ConsoleSignalPolicyTest extends TestCase
 
         ConsoleSignalPolicy::forSignals([0 => 130]);
     }
+
+    #[Test]
+    public function customPolicyRejectsSignalsUnsupportedByPcntl(): void
+    {
+        if (!function_exists('pcntl_signal_get_handler')) {
+            self::markTestSkipped('Unsupported signal validation requires pcntl.');
+        }
+
+        $this->expectException(InvalidArgumentException::class);
+
+        ConsoleSignalPolicy::forSignals([999 => 130]);
+    }
 }
