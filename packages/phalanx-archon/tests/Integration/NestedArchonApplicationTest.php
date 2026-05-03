@@ -487,6 +487,9 @@ final class NestedArchonApplicationTest extends AsyncTestCase
         $this->assertNull(ScanCommand::$lastTarget);
         $this->assertStringContainsString('Scan network', $output);
         $this->assertStringContainsString('scan <target>', $output);
+        $this->assertSame(ManagedResourceState::Closed, $app->host()->runtime()->memory->resources->all(
+            ArchonResourceSid::Command,
+        )[0]->state);
         $app->shutdown();
     }
 
@@ -518,6 +521,9 @@ final class NestedArchonApplicationTest extends AsyncTestCase
         $this->assertNull(ScanCommand::$lastTarget);
         $this->assertStringContainsString('Scan network', $output);
         $this->assertStringContainsString('net scan <target>', $output);
+        $this->assertSame(ManagedResourceState::Closed, $app->host()->runtime()->memory->resources->all(
+            ArchonResourceSid::Command,
+        )[0]->state);
         $app->shutdown();
     }
 

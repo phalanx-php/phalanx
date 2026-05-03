@@ -198,4 +198,65 @@ final class ArgvParserTest extends TestCase
             self::assertSame('Test command', $e->config->description);
         }
     }
+
+    #[Test]
+    public function throws_when_flag_option_receives_value_via_equals(): void
+    {
+        $config = new CommandConfig(
+            options: [Opt::flag('verbose')],
+        );
+
+        $this->expectException(InvalidInputException::class);
+        $this->expectExceptionMessage('Option --verbose does not accept a value');
+
+        ArgvParser::parse(['--verbose=true'], $config);
+    }
+
+    #[Test]
+    public function parses_long_option_with_empty_value_via_equals(): void
+    {
+        $config = new CommandConfig(
+            options: [Opt::value('name')],
+        );
+
+        $input = ArgvParser::parse(['--name='], $config);
+
+        self::assertSame('', $input->options->get('name'));
+    }
+
+    #[Test]
+    public function repeated_long_option_keeps_last_value(): void
+    {
+        $config = new CommandConfig(
+            options: [Opt::value('name')],
+        );
+
+        $input = ArgvParser::parse(['--name=a', '--name=b'], $config);
+
+        self::assertSame('b', $input->options->get('name'));
+    }
+
+    #[Test]
+    public function throws_when_short_option_missing_value(): void
+    {
+        $config = new CommandConfig(
+            options: [Opt::value('name', 'n')],
+        );
+
+        $this->expectException(InvalidInputException::class);
+        $this->expectExceptionMessage('Option -n (--name) requires a value');
+
+        ArgvParser::parse(['-n'], $config);
+    }
+
+    #[Test]
+    public function throws_on_unknown_short_option(): void
+    {
+        $config = new CommandConfig();
+
+        $this->expectException(InvalidInputException::class);
+        $this->expectExceptionMessage('Unknown option: -x');
+
+        ArgvParser::parse(['-x'], $config);
+    }
 }

@@ -58,4 +58,45 @@ final class HelpGeneratorTest extends TestCase
 
         self::assertStringContainsString('run', $help);
     }
+
+    #[Test]
+    public function command_with_options_only_omits_arguments_section(): void
+    {
+        $config = new CommandConfig(
+            options: [Opt::flag('verbose', 'v', 'Verbose output')],
+        );
+
+        $help = HelpGenerator::forCommand('serve', $config);
+
+        self::assertStringContainsString('Options:', $help);
+        self::assertStringContainsString('[options]', $help);
+        self::assertStringNotContainsString('Arguments:', $help);
+    }
+
+    #[Test]
+    public function command_with_arguments_only_omits_options_section(): void
+    {
+        $config = new CommandConfig(
+            arguments: [Arg::required('image', 'Docker image')],
+        );
+
+        $help = HelpGenerator::forCommand('pull', $config);
+
+        self::assertStringContainsString('Arguments:', $help);
+        self::assertStringNotContainsString('Options:', $help);
+        self::assertStringNotContainsString('[options]', $help);
+    }
+
+    #[Test]
+    public function option_without_shorthand_renders_long_form_only(): void
+    {
+        $config = new CommandConfig(
+            options: [Opt::value('format', desc: 'Output format')],
+        );
+
+        $help = HelpGenerator::forCommand('ps', $config);
+
+        self::assertStringContainsString('--format=<value>', $help);
+        self::assertStringNotContainsString(', --format', $help);
+    }
 }
