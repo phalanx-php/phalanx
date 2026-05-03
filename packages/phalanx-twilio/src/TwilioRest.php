@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Phalanx\Twilio;
 
-use Phalanx\Suspendable;
+use Phalanx\Scope\Suspendable;
+use Phalanx\Supervisor\WaitReason;
 use Psr\Http\Message\ResponseInterface;
 use React\Http\Browser;
+
+use function React\Async\await;
 
 final class TwilioRest
 {
@@ -60,11 +63,15 @@ final class TwilioRest
         }
 
         $auth = base64_encode("{$this->config->accountSid}:{$this->config->authToken}");
+        $browser = $this->browser;
 
         /** @var ResponseInterface $response */
-        $response = $this->scope->await($this->browser->get($url, [
-            'Authorization' => "Basic {$auth}",
-        ]));
+        $response = $this->scope->call(
+            static fn(): mixed => await($browser->get($url, [
+                'Authorization' => "Basic {$auth}",
+            ])),
+            WaitReason::http('GET', $url),
+        );
 
         $status = $response->getStatusCode();
         $body = (string) $response->getBody();
@@ -84,16 +91,20 @@ final class TwilioRest
     {
         $url = $this->config->apiBase . $path;
         $auth = base64_encode("{$this->config->accountSid}:{$this->config->authToken}");
+        $browser = $this->browser;
 
         /** @var ResponseInterface $response */
-        $response = $this->scope->await($this->browser->post(
-            $url,
-            [
-                'Content-Type' => 'application/x-www-form-urlencoded',
-                'Authorization' => "Basic {$auth}",
-            ],
-            http_build_query($params),
-        ));
+        $response = $this->scope->call(
+            static fn(): mixed => await($browser->post(
+                $url,
+                [
+                    'Content-Type' => 'application/x-www-form-urlencoded',
+                    'Authorization' => "Basic {$auth}",
+                ],
+                http_build_query($params),
+            )),
+            WaitReason::http('POST', $url),
+        );
 
         $status = $response->getStatusCode();
         $body = (string) $response->getBody();

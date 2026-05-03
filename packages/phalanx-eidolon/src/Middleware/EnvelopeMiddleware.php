@@ -5,12 +5,11 @@ declare(strict_types=1);
 namespace Phalanx\Eidolon\Middleware;
 
 use Closure;
+use Phalanx\Eidolon\Signal\Envelope;
+use Phalanx\Eidolon\Signal\SignalCollector;
 use Phalanx\Stoa\Contract\Middleware;
 use Phalanx\Stoa\RequestScope;
 use Phalanx\Task\Executable;
-use Phalanx\Task\Scopeable;
-use Phalanx\Eidolon\Signal\Envelope;
-use Phalanx\Eidolon\Signal\SignalCollector;
 
 final class EnvelopeMiddleware implements Middleware, Executable
 {
@@ -32,16 +31,8 @@ final class EnvelopeMiddleware implements Middleware, Executable
         return Envelope::wrap($result, $collector, is_string($traceId) ? $traceId : null);
     }
 
-    public function __invoke(RequestScope $scope): mixed
+    public function __invoke(RequestScope $scope, Closure $next): mixed
     {
-        /** @var Scopeable|Executable $next */
-        $next = $scope->attribute('handler.next');
-
-        return $this->handle(
-            $scope,
-            static function (RequestScope $s) use ($next): mixed {
-                return $next($s);
-            },
-        );
+        return $this->handle($scope, $next);
     }
 }

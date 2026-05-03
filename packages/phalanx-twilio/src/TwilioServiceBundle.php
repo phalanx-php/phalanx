@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Twilio;
 
-use Phalanx\Suspendable;
+use Phalanx\Scope\Suspendable;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 
