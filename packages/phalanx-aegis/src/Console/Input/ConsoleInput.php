@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Console\Input;
 
+use OpenSwoole\Coroutine\Socket;
 use OpenSwoole\Coroutine\System;
 use Phalanx\Scope\Suspendable;
 use Phalanx\Supervisor\WaitReason;
@@ -13,23 +14,34 @@ use RuntimeException;
 /**
  * Aegis-managed console input capability.
  *
- * Reads from a stdin-shaped resource in a coroutine-aware way without
- * requiring SWOOLE_HOOK_STDIO to be enabled globally. The read path is:
+ * Reads from a kernel-tracked input source in a coroutine-aware way
+ * without requiring SWOOLE_HOOK_STDIO to be enabled globally. The
+ * source can be either:
+ *   - a PHP stream resource backed by a real fd (STDIN, proc_open
+ *     pipes, file streams). The read path yields via
+ *     OpenSwoole\Coroutine\System::waitEvent($resource, READ, $timeout)
+ *     and drains via non-blocking fread().
+ *   - an OpenSwoole\Coroutine\Socket. The read path yields via
+ *     $socket->recv($bytes, $timeout), which is reactor-native.
  *
- *   1. Yield via OpenSwoole\Coroutine\System::waitEvent($fd, READ, $timeout)
- *      under $scope->call(..., WaitReason::input(...)) so the supervisor
- *      sees a typed "input" wait and cancellation propagates.
- *   2. Once readable, call non-blocking fread() to drain available bytes.
+ * Both paths are wrapped in $scope->call(..., WaitReason::input()) so
+ * the supervisor sees a typed "input" wait and cancellation propagates.
  *
  * Lifecycle: callers who switch the terminal to raw mode via
  * enableRawMode() must ensure restore() runs on scope teardown. Register
- * the restore via $scope->onDispose(...) at the call site, or use the
- * ConsoleInputServiceBundle which wires it as a singleton onShutdown.
+ * the restore via $scope->onDispose(...) at the call site.
  *
- * Non-TTY behaviour: when $resource is not a tty (piped input, redirected
- * file), enableRawMode() throws NonInteractiveTtyException. read() still
- * works on non-tty streams — pipes deliver bytes the same way, and the
- * supervisor wait/cancel semantics are identical.
+ * Non-TTY behaviour: when the source is not a tty (piped input, redirected
+ * file, Coroutine\Socket), enableRawMode() throws NonInteractiveTtyException.
+ * read() still works on non-tty sources — pipes deliver bytes the same way,
+ * and the supervisor wait/cancel semantics are identical.
+ *
+ * About the fd handling: PHP's int-cast on a stream resource returns the
+ * PHP resource ID, NOT the underlying kernel fd. Earlier revisions of this
+ * class did the int-cast and passed the wrong number to waitEvent, which
+ * the kqueue/epoll reactor rejected with "Bad file descriptor". The fix is
+ * to pass the resource itself; OpenSwoole's waitEvent handles stream→fd
+ * extraction internally via php_stream_cast(PHP_STREAM_AS_FD).
  */
 final class ConsoleInput
 {
@@ -37,10 +49,10 @@ final class ConsoleInput
         get => $this->interactive;
     }
 
-    /** @var resource */
-    private $resource;
+    /** @var resource|null */
+    private mixed $stream = null;
 
-    private readonly int $fd;
+    private readonly ?Socket $socket;
 
     private readonly bool $interactive;
 
@@ -48,18 +60,26 @@ final class ConsoleInput
 
     private ?string $savedSttyState = null;
 
-    /** @param resource|null $resource */
-    public function __construct($resource = null)
+    /** @param resource|Socket|null $source */
+    public function __construct(mixed $source = null)
     {
-        $this->resource = $resource ?? STDIN;
-        $fd = (int) $this->resource;
-        $this->fd = $fd;
-        $this->interactive = stream_isatty($this->resource);
+        $source ??= STDIN;
 
-        // Set the resource non-blocking so fread() never blocks the worker
-        // when waitEvent has already returned readiness. Best-effort: some
-        // wrappers (php://memory, php://temp) silently ignore this.
-        @stream_set_blocking($this->resource, false);
+        if ($source instanceof Socket) {
+            $this->socket = $source;
+            $this->interactive = false;
+            return;
+        }
+
+        // PHP stream resource path. waitEvent receives the resource directly;
+        // OpenSwoole extracts the kernel fd internally. Mark the stream
+        // non-blocking so fread() never blocks the worker once waitEvent
+        // signals readiness. Best-effort: some wrappers (php://memory)
+        // silently ignore this.
+        $this->stream = $source;
+        $this->socket = null;
+        $this->interactive = stream_isatty($source);
+        @stream_set_blocking($source, false);
     }
 
     public function read(Suspendable $scope, int $bytes = 1024, ?float $timeout = null): string
@@ -68,12 +88,22 @@ final class ConsoleInput
             return '';
         }
 
-        $resource = $this->resource;
-        $fd = $this->fd;
         $waitTimeout = $timeout ?? -1.0;
 
+        if ($this->socket !== null) {
+            $socket = $this->socket;
+            $payload = $scope->call(
+                static fn(): bool|string => $socket->recv($bytes, $waitTimeout),
+                WaitReason::input(),
+            );
+            return is_string($payload) ? $payload : '';
+        }
+
+        $stream = $this->stream;
+        assert($stream !== null, 'ConsoleInput invariant: stream is set when socket is null');
+
         $ready = $scope->call(
-            static fn(): bool|int => System::waitEvent($fd, SWOOLE_EVENT_READ, $waitTimeout),
+            static fn(): bool|int => System::waitEvent($stream, SWOOLE_EVENT_READ, $waitTimeout),
             WaitReason::input(),
         );
 
@@ -81,12 +111,12 @@ final class ConsoleInput
             return '';
         }
 
-        $chunk = fread($resource, $bytes);
+        $chunk = fread($stream, $bytes);
         return $chunk === false ? '' : $chunk;
     }
 
     /**
-     * Read one line ("\n"-terminated) from the input stream.
+     * Read one line ("\n"-terminated) from the input source.
      *
      * Note: $timeout applies to the wait-for-readiness on each individual
      * byte, not to the line as a whole. A user typing slowly with a 1s
@@ -116,7 +146,7 @@ final class ConsoleInput
         }
         if (!$this->interactive) {
             throw new NonInteractiveTtyException(
-                'Cannot enable raw mode: input stream is not a TTY.',
+                'Cannot enable raw mode: input source is not a TTY.',
             );
         }
 
