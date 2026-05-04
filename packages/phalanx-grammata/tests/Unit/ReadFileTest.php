@@ -17,6 +17,7 @@ final class ReadFileTest extends TestCase
 
         try {
             $task = new ReadFile($tmpFile);
+            /** @var \Phalanx\ExecutionScope&\PHPUnit\Framework\MockObject\MockObject $scope */
             $scope = $this->createMock(\Phalanx\ExecutionScope::class);
             $result = $task($scope);
 
@@ -31,6 +32,7 @@ final class ReadFileTest extends TestCase
         $this->expectException(FilesystemException::class);
 
         $task = new ReadFile('/nonexistent/path/file.txt');
+        /** @var \Phalanx\ExecutionScope&\PHPUnit\Framework\MockObject\MockObject $scope */
         $scope = $this->createMock(\Phalanx\ExecutionScope::class);
         $task($scope);
     }

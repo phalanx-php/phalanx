@@ -13,10 +13,11 @@ final class DirectoryTest extends TestCase
 {
     public function test_create_directory(): void
     {
-        $tmpDir = sys_get_temp_dir() . '/phalanx_test_' . bin2hex(random_bytes(4));
+        $tmpDir = sys_get_temp_dir() . '/phalanx_test_' . uniqid();
 
         try {
             $task = new CreateDirectory($tmpDir);
+            /** @var \Phalanx\ExecutionScope&\PHPUnit\Framework\MockObject\MockObject $scope */
             $scope = $this->createMock(\Phalanx\ExecutionScope::class);
             $task($scope);
 
@@ -28,10 +29,11 @@ final class DirectoryTest extends TestCase
 
     public function test_create_directory_recursive(): void
     {
-        $tmpDir = sys_get_temp_dir() . '/phalanx_test_' . bin2hex(random_bytes(4)) . '/nested/deep';
+        $tmpDir = sys_get_temp_dir() . '/phalanx_test_' . uniqid() . '/nested/deep';
 
         try {
             $task = new CreateDirectory($tmpDir, recursive: true);
+            /** @var \Phalanx\ExecutionScope&\PHPUnit\Framework\MockObject\MockObject $scope */
             $scope = $this->createMock(\Phalanx\ExecutionScope::class);
             $task($scope);
 
@@ -45,13 +47,15 @@ final class DirectoryTest extends TestCase
 
     public function test_list_directory(): void
     {
-        $tmpDir = sys_get_temp_dir() . '/phalanx_test_' . bin2hex(random_bytes(4));
+        $tmpDir = sys_get_temp_dir() . '/phalanx_test_' . uniqid();
         mkdir($tmpDir);
         touch($tmpDir . '/a.txt');
         touch($tmpDir . '/b.txt');
 
         try {
             $task = new ListDirectory($tmpDir);
+
+            /** @var \Phalanx\ExecutionScope&\PHPUnit\Framework\MockObject\MockObject $scope */
             $scope = $this->createMock(\Phalanx\ExecutionScope::class);
             $entries = $task($scope);
 
@@ -69,6 +73,7 @@ final class DirectoryTest extends TestCase
 
     public function test_exists_file(): void
     {
+        /** @var \Phalanx\ExecutionScope&\PHPUnit\Framework\MockObject\MockObject $scope */
         $scope = $this->createMock(\Phalanx\ExecutionScope::class);
 
         $this->assertTrue((new ExistsFile(__FILE__))($scope));

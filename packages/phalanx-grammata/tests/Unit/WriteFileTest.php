@@ -16,6 +16,7 @@ final class WriteFileTest extends TestCase
 
         try {
             $task = new WriteFile($tmpFile, 'test content');
+            /** @var \Phalanx\ExecutionScope&\PHPUnit\Framework\MockObject\MockObject $scope */
             $scope = $this->createMock(\Phalanx\ExecutionScope::class);
             $task($scope);
 
@@ -30,6 +31,7 @@ final class WriteFileTest extends TestCase
         $this->expectException(FilesystemException::class);
 
         $task = new WriteFile('/nonexistent/dir/file.txt', 'data');
+        /** @var \Phalanx\ExecutionScope&\PHPUnit\Framework\MockObject\MockObject $scope */
         $scope = $this->createMock(\Phalanx\ExecutionScope::class);
         $task($scope);
     }
