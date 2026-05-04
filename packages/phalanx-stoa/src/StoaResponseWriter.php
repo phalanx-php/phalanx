@@ -7,22 +7,14 @@ namespace Phalanx\Stoa;
 use OpenSwoole\Core\Psr\Response as PsrResponseHelper;
 use OpenSwoole\Http\Response;
 use Psr\Http\Message\ResponseInterface;
-use ReflectionMethod;
 
 final readonly class StoaResponseWriter
 {
     private const int CHUNK_SIZE = PsrResponseHelper::CHUNK_SIZE;
 
-    private static function targetIsWritable(Response $target): bool
-    {
-        $method = new ReflectionMethod($target, 'isWritable');
-
-        return $method->invoke($target) === true;
-    }
-
     public function write(ResponseInterface $source, Response $target, StoaRequestResource $request): void
     {
-        if (!self::targetIsWritable($target)) {
+        if (!$target->isWritable()) {
             $request->abort('response is not writable before headers');
             throw new ResponseWriteFailure('OpenSwoole response is not writable before headers.');
         }
@@ -41,7 +33,7 @@ final readonly class StoaResponseWriter
             }
         }
 
-        if (!self::targetIsWritable($target)) {
+        if (!$target->isWritable()) {
             $request->abort('response closed before body');
             throw new ResponseWriteFailure('OpenSwoole response closed before body.');
         }

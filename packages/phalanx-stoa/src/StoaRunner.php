@@ -389,16 +389,17 @@ final class StoaRunner
             }
 
             $upgradeToken = self::upgradeToken($request);
-            if ($upgradeToken !== null && $target !== null) {
+            if ($upgradeToken !== null) {
                 $upgradeable = $this->upgrades->resolve($upgradeToken);
-                if ($upgradeable === null) {
+
+                if ($upgradeable === null || $target === null) {
                     $resource->event(StoaEventSid::HttpUpgradeRejected, $upgradeToken);
-                    return $this->finish(
-                        $this->jsonResponse(426, ['error' => 'Upgrade Required'])
-                            ->withHeader('Upgrade', implode(', ', $this->upgrades->tokens())),
-                        $target,
-                        $resource,
-                    );
+                    $rejection = $this->jsonResponse(426, ['error' => 'Upgrade Required']);
+                    $advertised = implode(', ', $this->upgrades->tokens());
+                    if ($advertised !== '') {
+                        $rejection = $rejection->withHeader('Upgrade', $advertised);
+                    }
+                    return $this->finish($rejection, $target, $resource);
                 }
 
                 $resource->event(StoaEventSid::HttpUpgradeRequested, $upgradeToken);
