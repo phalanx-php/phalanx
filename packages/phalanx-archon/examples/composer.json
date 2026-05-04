@@ -1,0 +1,33 @@
+{
+    "name": "phalanx-php/archon-examples",
+    "description": "Runnable Phalanx Archon demos",
+    "license": "MIT",
+    "type": "project",
+    "require": {
+        "php": "^8.4",
+        "phalanx-php/archon": "dev-main"
+    },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../../*"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Acme\\ArchonDemo\\Basic\\":       "01-basic-commands/src/",
+            "Acme\\ArchonDemo\\Interactive\\": "02-interactive-input/src/",
+            "Acme\\ArchonDemo\\Concurrency\\": "03-supervised-concurrency/src/",
+            "Acme\\ArchonDemo\\Lifecycle\\":   "04-runtime-lifecycle/src/"
+        }
+    },
+    "scripts": {
+        "demo": ["@demo:basic", "@demo:interactive", "@demo:concurrency", "@demo:lifecycle"],
+        "demo:basic":       "php 01-basic-commands/demo.php",
+        "demo:interactive": "php 02-interactive-input/demo.php",
+        "demo:concurrency": "php 03-supervised-concurrency/demo.php",
+        "demo:lifecycle":   "php 04-runtime-lifecycle/demo.php"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

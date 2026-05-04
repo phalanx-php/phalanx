@@ -122,7 +122,12 @@
         "demo:stoa:serve:api": "php packages/phalanx-stoa/examples/02-api/server.php",
         "demo:stoa:serve:realtime": "php packages/phalanx-stoa/examples/03-realtime/server.php",
         "demo:stoa:serve:runtime": "php packages/phalanx-stoa/examples/04-runtime-lifecycle/server.php",
-        "examples:lint": "find examples packages/phalanx-aegis/examples packages/phalanx-athena/examples packages/phalanx-stoa/examples -name '*.php' -not -path '*/vendor/*' -print0 | xargs -0 -n1 php -l > /dev/null",
+        "demo:archon": ["@demo:archon:basic", "@demo:archon:interactive", "@demo:archon:concurrency", "@demo:archon:lifecycle"],
+        "demo:archon:basic": "php packages/phalanx-archon/examples/01-basic-commands/demo.php",
+        "demo:archon:interactive": "php packages/phalanx-archon/examples/02-interactive-input/demo.php",
+        "demo:archon:concurrency": "php packages/phalanx-archon/examples/03-supervised-concurrency/demo.php",
+        "demo:archon:lifecycle": "php packages/phalanx-archon/examples/04-runtime-lifecycle/demo.php",
+        "examples:lint": "find examples packages/phalanx-aegis/examples packages/phalanx-archon/examples packages/phalanx-athena/examples packages/phalanx-stoa/examples -name '*.php' -not -path '*/vendor/*' -print0 | xargs -0 -n1 php -l > /dev/null",
         "check": ["@analyse", "@rector:dry", "@test", "@examples:lint"]
     },
     "config": {
