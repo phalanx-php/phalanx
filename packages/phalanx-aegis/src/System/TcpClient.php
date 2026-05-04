@@ -12,11 +12,17 @@ use RuntimeException;
 /**
  * Aegis-managed TCP client primitive.
  *
- * Wraps OpenSwoole\Coroutine\Client(SWOOLE_SOCK_TCP) under the scope's
- * supervised call() so cancellation flows through scope teardown, the
- * supervisor records the wait, and downstream consumers (Argos ProbePort
- * port scans, future Hermes outbound TCP, custom protocol clients) share
- * one coroutine-aware TCP path.
+ * Wraps OpenSwoole\Coroutine\Client(SWOOLE_SOCK_TCP[ | SWOOLE_SSL]) under
+ * the scope's supervised call() so cancellation flows through scope
+ * teardown, the supervisor records the wait, and downstream consumers
+ * (Argos ProbePort port scans, future Hermes outbound TCP, custom protocol
+ * clients) share one coroutine-aware TCP path.
+ *
+ * TLS is opt-in at construction via `$tls = true` so the SSL flag is
+ * baked into the underlying socket type from the start. SSL options
+ * (verify_peer, ca paths, cert/key files, ciphers) are passed via the
+ * typed TlsOptions value object, keeping SSL config out of the stringly-
+ * typed setOption() surface.
  */
 final class TcpClient
 {
@@ -24,16 +30,36 @@ final class TcpClient
         get => $this->client->isConnected();
     }
 
+    public bool $tls {
+        get => $this->tlsEnabled;
+    }
+
     private readonly Client $client;
 
-    public function __construct(?Client $client = null)
+    private readonly bool $tlsEnabled;
+
+    public function __construct(?Client $client = null, bool $tls = false, ?TlsOptions $tlsOptions = null)
     {
-        $this->client = $client ?? new Client(SWOOLE_SOCK_TCP);
+        $this->tlsEnabled = $tls;
+        $this->client = $client ?? new Client($tls ? SWOOLE_SOCK_TCP | SWOOLE_SSL : SWOOLE_SOCK_TCP);
+        if ($tls && $tlsOptions !== null) {
+            $this->client->set($tlsOptions->toClientOptions());
+        }
     }
 
     public function setOption(string $key, string|int|bool $value): void
     {
         $this->client->set([$key => $value]);
+    }
+
+    public function setTlsOptions(TlsOptions $options): void
+    {
+        if (!$this->tlsEnabled) {
+            throw new RuntimeException(
+                'TcpClient::setTlsOptions(): TLS not enabled at construction. Pass $tls=true to apply SSL options.',
+            );
+        }
+        $this->client->set($options->toClientOptions());
     }
 
     public function connect(Suspendable $scope, string $host, int $port, float $timeout = 1.0): bool

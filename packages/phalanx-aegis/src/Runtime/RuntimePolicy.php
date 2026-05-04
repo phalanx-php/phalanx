@@ -17,6 +17,8 @@ final readonly class RuntimePolicy
         public string $name,
         public int $requiredFlags,
         public int $sensitiveFlags,
+        public bool $useFiberContext = true,
+        public ReactorType $reactorType = ReactorType::Auto,
     ) {
     }
 
@@ -131,5 +133,20 @@ final readonly class RuntimePolicy
     public function sensitiveEnabledFlags(int $currentFlags): int
     {
         return $currentFlags & $this->sensitiveFlags;
+    }
+
+    /**
+     * Render coroutine-level options for OpenSwoole\Coroutine::set().
+     *
+     * `use_fiber_context` routes coroutine context through PHP's native
+     * zend_fiber API (OpenSwoole 26 default-ready). This makes Xdebug step
+     * debugging work across coroutines and prevents context drift when
+     * Phalanx code shares a process with other Fiber-aware libraries.
+     *
+     * @return array<string, bool>
+     */
+    public function coroutineOptions(): array
+    {
+        return ['use_fiber_context' => $this->useFiberContext];
     }
 }

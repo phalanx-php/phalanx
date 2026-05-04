@@ -6,7 +6,7 @@ declare(strict_types=1);
 require __DIR__ . '/vendor/autoload.php';
 
 use Phalanx\Application;
-use Phalanx\Archon\CommandGroup;
+use Phalanx\Archon\Command\CommandGroup;
 use Phalanx\Archon\ConsoleRunner;
 use Phalanx\Archon\Style\ConsoleServiceBundle;
 use Phalanx\Athena\AiServiceBundle;

@@ -10,6 +10,7 @@ use Phalanx\Runtime\Identity\AegisEventSid;
 use Phalanx\Runtime\Identity\RuntimeAnnotationId;
 use Phalanx\Runtime\Identity\RuntimeEventId;
 use Phalanx\Runtime\Identity\RuntimeResourceId;
+use RuntimeException;
 
 final readonly class ManagedResourceRegistry
 {
@@ -135,6 +136,85 @@ final readonly class ManagedResourceRegistry
             outcome: 'failed',
             reason: $reason,
         );
+    }
+
+    /**
+     * Retag the resource's type without changing its lifecycle state. Used
+     * when a connection's protocol identity changes mid-stream — e.g. an
+     * incoming HTTP request upgrades to WebSocket on handshake, or an
+     * HTTP response decides to keep the connection open as an SSE stream.
+     *
+     * Generation bumps so any held handle becomes stale; callers receive
+     * the new typed handle. A `resource.upgraded` lifecycle event records
+     * old type → new type so audits and diagnostics can trace the
+     * transition. Terminal resources cannot be upgraded.
+     */
+    public function upgrade(
+        ManagedResourceHandle|string $resource,
+        RuntimeResourceId|string $toType,
+    ): ManagedResourceHandle {
+        $id = $resource instanceof ManagedResourceHandle ? $resource->id : $resource;
+        $newType = self::assertResourceType($toType);
+
+        $lock = $this->locks->acquire($id);
+        $event = null;
+        try {
+            $row = $this->tables->resources->get($id);
+            if (!is_array($row)) {
+                throw new ManagedResourceException("managed resource '{$id}' does not exist");
+            }
+
+            $generation = (int) $row['generation'];
+            if ($resource instanceof ManagedResourceHandle && $resource->generation !== $generation) {
+                throw StaleManagedResourceHandle::forGeneration($id, $resource->generation, $generation);
+            }
+
+            $state = ManagedResourceState::from((string) $row['state']);
+            if ($state->isTerminal()) {
+                throw new RuntimeException(
+                    "managed resource '{$id}' is terminal ({$state->value}); cannot upgrade type.",
+                );
+            }
+
+            $fromType = $this->symbols->valueFor((int) $row['type_symbol'], 'unknown');
+            if ($fromType === $newType) {
+                return new ManagedResourceHandle($id, $newType, $generation);
+            }
+
+            $now = microtime(true);
+            $row['type_symbol'] = $this->symbols->idFor('resource.type', $newType);
+            $row['generation'] = $generation + 1;
+            $row['updated_at'] = $now;
+
+            try {
+                $ok = $this->tables->resources->set($id, $row);
+            } catch (OpenSwooleException) {
+                throw RuntimeMemoryCapacityExceeded::forTable('resources', $id);
+            }
+
+            if (!$ok) {
+                throw RuntimeMemoryCapacityExceeded::forTable('resources', $id);
+            }
+
+            $event = $this->events->record(
+                AegisEventSid::ResourceUpgraded,
+                resourceId: $id,
+                resourceType: $newType,
+                scopeId: (string) $row['owner_scope_id'],
+                runId: (string) $row['owner_run_id'],
+                state: $state->value,
+                valueA: $fromType,
+                valueB: $newType,
+                dispatchListeners: false,
+            );
+
+            return new ManagedResourceHandle($id, $newType, $generation + 1);
+        } finally {
+            $lock->release();
+            if ($event !== null) {
+                $this->events->dispatch($event);
+            }
+        }
     }
 
     public function annotate(

@@ -89,6 +89,30 @@ final readonly class WaitReason
         return new self(WaitKind::Input, $body, microtime(true));
     }
 
+    public static function streamWrite(string $domain, int $bytes = 0): self
+    {
+        $body = $bytes > 0 ? "{$domain} ({$bytes}B)" : $domain;
+        return new self(WaitKind::StreamWrite, $body, microtime(true));
+    }
+
+    public static function wsFrameWrite(string $domain = '', int $bytes = 0): self
+    {
+        $head = $domain !== '' ? $domain : 'ws.frame';
+        $body = $bytes > 0 ? "{$head} ({$bytes}B)" : $head;
+        return new self(WaitKind::WsFrameWrite, $body, microtime(true));
+    }
+
+    public static function wsFrameRead(string $domain = ''): self
+    {
+        return new self(WaitKind::WsFrameRead, $domain, microtime(true));
+    }
+
+    public static function udpReceive(string $host = '', int $port = 0): self
+    {
+        $body = $host !== '' && $port > 0 ? "{$host}:{$port}" : $host;
+        return new self(WaitKind::UdpReceive, $body, microtime(true));
+    }
+
     public static function custom(string $detail): self
     {
         return new self(WaitKind::Custom, $detail, microtime(true));

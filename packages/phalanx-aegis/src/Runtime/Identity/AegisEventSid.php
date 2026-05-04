@@ -12,6 +12,7 @@ enum AegisEventSid: string implements RuntimeEventId
     case ResourceLeaseReleased = 'resource.lease_released';
     case ResourceOpened = 'resource.opened';
     case ResourceReleased = 'resource.released';
+    case ResourceUpgraded = 'resource.upgraded';
     case RunResumed = 'run.resumed';
     case RunRunning = 'run.running';
     case RunSuspended = 'run.suspended';

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Grammata;
 
+use Phalanx\Grammata\NativeFastPath\NativeFastPath;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 use Phalanx\Scope\TaskScope;
@@ -25,5 +26,8 @@ final class FilesystemServiceBundle implements ServiceBundle
 
         $services->scoped(Files::class)
             ->factory(static fn(TaskScope $scope) => new Files($scope));
+
+        $services->singleton(NativeFastPath::class)
+            ->factory(static fn() => new NativeFastPath());
     }
 }

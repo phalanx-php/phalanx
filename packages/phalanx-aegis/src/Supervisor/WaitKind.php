@@ -22,5 +22,9 @@ enum WaitKind: string
     case Channel = 'channel';
     case Process = 'process';
     case Input = 'input';
+    case StreamWrite = 'stream.write';
+    case WsFrameWrite = 'ws.frame.write';
+    case WsFrameRead = 'ws.frame.read';
+    case UdpReceive = 'udp.receive';
     case Custom = 'custom';
 }
