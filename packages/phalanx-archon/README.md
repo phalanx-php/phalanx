@@ -122,3 +122,30 @@ final class AskCommand implements Scopeable
 ```
 
 Non-TTY runs (CI, redirected stdin) short-circuit to the prompt's configured default — no key reads, no rendering.
+
+## Diagnostics
+
+Operator escape hatch for a stuck Phalanx process: snapshot every parked coroutine's backtrace via `Phalanx\Diagnostics\DeadlockReport`. Wire it into a command for a `phalanx debug:deadlock` entry point:
+
+```php
+<?php
+
+use Phalanx\Archon\Command\CommandScope;
+use Phalanx\Archon\Console\Output\StreamOutput;
+use Phalanx\Diagnostics\DeadlockReport;
+use Phalanx\Task\Scopeable;
+
+final class DebugDeadlockCommand implements Scopeable
+{
+    public function __invoke(CommandScope $scope): int
+    {
+        $scope->service(StreamOutput::class)->persist(
+            DeadlockReport::collect()->format(),
+        );
+
+        return 0;
+    }
+}
+```
+
+`DeadlockReport::collect()` works whether or not the runtime has live work — outside an OpenSwoole coroutine the report is empty and the command exits 0.
