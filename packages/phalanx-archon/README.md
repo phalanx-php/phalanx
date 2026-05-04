@@ -87,3 +87,38 @@ exit(Archon::starting(['argv' => $argv])
 - `CommandScope` exposes parsed args/options, command identity, managed resource id, services, cancellation, and supervised task execution.
 
 Interactive prompts (`Console\Input\BasePrompt` and friends), composite widgets (`Console\Widget\Form`, `Accordion`, `ConcurrentTaskList`), and `Scan\ScanProgress` run on the Aegis-managed runtime: each `prompt()`, `submit()`, and `run()` accepts `Suspendable&Disposable` plus a `KeyReader`, suspending through `$scope->call(...)` under typed `WaitReason::input()` waits and tying any periodic redraw to a scope-owned `Subscription`.
+
+## Prompts
+
+`ConsoleServiceBundle` registers `KeyReader` (scoped) alongside `Theme` (singleton) and `StreamOutput` (singleton). A command resolves the three from its scope and drives any prompt synchronously:
+
+```php
+<?php
+
+use Phalanx\Archon\Command\CommandScope;
+use Phalanx\Archon\Console\Input\KeyReader;
+use Phalanx\Archon\Console\Input\TextInput;
+use Phalanx\Archon\Console\Output\StreamOutput;
+use Phalanx\Archon\Console\Style\Theme;
+use Phalanx\Task\Scopeable;
+
+final class AskCommand implements Scopeable
+{
+    public function __invoke(CommandScope $scope): int
+    {
+        $name = (new TextInput(
+            theme:   $scope->service(Theme::class),
+            label:   'What is your name?',
+            default: 'operator',
+        ))->prompt(
+            $scope,
+            $scope->service(StreamOutput::class),
+            $scope->service(KeyReader::class),
+        );
+
+        return 0;
+    }
+}
+```
+
+Non-TTY runs (CI, redirected stdin) short-circuit to the prompt's configured default — no key reads, no rendering.

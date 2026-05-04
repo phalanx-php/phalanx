@@ -6,6 +6,7 @@ namespace Phalanx\Archon\Tests\Unit\Console\Input;
 
 use Closure;
 use Phalanx\Archon\Console\Input\SearchInput;
+use Phalanx\Cancellation\Cancelled;
 use PHPUnit\Framework\Attributes\Test;
 
 final class SearchInputTest extends PromptTestCase
@@ -74,5 +75,19 @@ final class SearchInputTest extends PromptTestCase
         $result = $this->search($closure)->prompt($this->scope, $this->output, $reader);
 
         self::assertNull($result);
+    }
+
+    #[Test]
+    public function asyncClosureCancellationPropagatesOutOfPrompt(): void
+    {
+        $closure = static fn(string $q): Closure
+            => static fn(): array => throw new Cancelled('search aborted');
+
+        $reader = $this->reader(['q']);
+
+        $this->expectException(Cancelled::class);
+        $this->expectExceptionMessage('search aborted');
+
+        $this->search($closure)->prompt($this->scope, $this->output, $reader);
     }
 }
