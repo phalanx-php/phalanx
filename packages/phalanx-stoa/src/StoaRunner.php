@@ -17,6 +17,7 @@ use Phalanx\Cancellation\Cancelled;
 use Phalanx\Registry\RegistryScope;
 use Phalanx\Scope\ScopeIdentity;
 use Phalanx\Server\ServerStats;
+use Phalanx\Stoa\Http\Upgrade\UpgradeRegistry;
 use Phalanx\Stoa\Response\BufferEventDispatcher;
 use Phalanx\Stoa\Runtime\Identity\StoaEventSid;
 use Phalanx\Stoa\Sse\SseStream;
@@ -49,6 +50,8 @@ final class StoaRunner
     /** @var array<int, StoaRequestResource> */
     private array $activeRequestsByFd = [];
 
+    private readonly UpgradeRegistry $upgrades;
+
     private function __construct(
         private readonly AppHost $app,
         private readonly StoaServerConfig $config = new StoaServerConfig(),
@@ -56,6 +59,7 @@ final class StoaRunner
         private readonly StoaResponseWriter $responseWriter = new StoaResponseWriter(),
     ) {
         $this->bufferEvents = new BufferEventDispatcher();
+        $this->upgrades = new UpgradeRegistry();
     }
 
     public static function from(
@@ -111,6 +115,21 @@ final class StoaRunner
         }
 
         return $options;
+    }
+
+    private static function upgradeToken(ServerRequestInterface $request): ?string
+    {
+        $upgrade = $request->getHeaderLine('Upgrade');
+        if ($upgrade === '') {
+            return null;
+        }
+
+        $connection = strtolower($request->getHeaderLine('Connection'));
+        if (!str_contains($connection, 'upgrade')) {
+            return null;
+        }
+
+        return strtolower(trim(explode(',', $upgrade)[0]));
     }
 
     /** @return array{string, int} */
@@ -257,6 +276,11 @@ final class StoaRunner
         return $this;
     }
 
+    public function upgrades(): UpgradeRegistry
+    {
+        return $this->upgrades;
+    }
+
     public function isDraining(): bool
     {
         return $this->draining;
@@ -362,6 +386,27 @@ final class StoaRunner
                     $target,
                     $resource,
                 );
+            }
+
+            $upgradeToken = self::upgradeToken($request);
+            if ($upgradeToken !== null && $target !== null) {
+                $upgradeable = $this->upgrades->resolve($upgradeToken);
+                if ($upgradeable === null) {
+                    $resource->event(StoaEventSid::HttpUpgradeRejected, $upgradeToken);
+                    return $this->finish(
+                        $this->jsonResponse(426, ['error' => 'Upgrade Required'])
+                            ->withHeader('Upgrade', implode(', ', $this->upgrades->tokens())),
+                        $target,
+                        $resource,
+                    );
+                }
+
+                $resource->event(StoaEventSid::HttpUpgradeRequested, $upgradeToken);
+                $upgradeable->upgrade($request, $target, $resource);
+                if (!$resource->isTerminal()) {
+                    $resource->complete(101);
+                }
+                return null;
             }
 
             $routes = $this->routes;

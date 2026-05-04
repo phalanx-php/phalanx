@@ -12,6 +12,8 @@ enum StoaEventSid: string implements RuntimeEventId
     case BufferFull = 'stoa.buffer.full';
     case ClientDisconnected = 'stoa.client_disconnected';
     case DrainTimeout = 'stoa.drain_timeout';
+    case HttpUpgradeRejected = 'stoa.http_upgrade_rejected';
+    case HttpUpgradeRequested = 'stoa.http_upgrade_requested';
     case RequestAborted = 'stoa.request_aborted';
     case RequestFailed = 'stoa.request_failed';
     case ResponseBodyStarted = 'stoa.response.body_started';
