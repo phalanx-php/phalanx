@@ -67,12 +67,25 @@ function runCase(string $label, array $argv, string $expectedSubstring, CommandG
     $capture = new StreamOutput($stream, new TerminalEnvironment(columns: 80, lines: 24));
     $theme   = Theme::default();
 
-    // Pull ConsoleInput from the scope (Archon auto-registers it bound to STDIN,
-    // which is non-interactive under composer's pipe so prompts return defaults).
-    $bundle = new class($capture, $theme) implements ServiceBundle {
+    // Bind KeyReader to a /dev/null-backed ConsoleInput so prompts short-circuit
+    // to their configured defaults. The auto-registered ConsoleInput defaults to
+    // STDIN — under composer-from-a-TTY that's a real terminal fd, which the
+    // OpenSwoole reactor cannot kqueue-watch ("ReactorKqueue::add: Invalid
+    // argument [22]"). Routing the demo through /dev/null avoids the read path
+    // entirely and produces deterministic output.
+    $nullStream = fopen('/dev/null', 'r');
+    if ($nullStream === false) {
+        fclose($stream);
+        return false;
+    }
+
+    $reader = new RawInput(new ConsoleInput($nullStream));
+
+    $bundle = new class($capture, $theme, $reader) implements ServiceBundle {
         public function __construct(
             private StreamOutput $output,
             private Theme $theme,
+            private RawInput $reader,
         ) {
         }
 
@@ -80,9 +93,7 @@ function runCase(string $label, array $argv, string $expectedSubstring, CommandG
         {
             $services->singleton(StreamOutput::class)->factory(fn() => $this->output);
             $services->singleton(Theme::class)->factory(fn() => $this->theme);
-            $services->scoped(KeyReader::class)
-                ->needs(ConsoleInput::class)
-                ->factory(static fn(ConsoleInput $input): KeyReader => new RawInput($input));
+            $services->scoped(KeyReader::class)->factory(fn() => $this->reader);
         }
     };
 
@@ -97,6 +108,7 @@ function runCase(string $label, array $argv, string $expectedSubstring, CommandG
     rewind($stream);
     $captured = (string) stream_get_contents($stream);
     fclose($stream);
+    fclose($nullStream);
 
     $passed = $code === 0 && str_contains($captured, $expectedSubstring);
 
