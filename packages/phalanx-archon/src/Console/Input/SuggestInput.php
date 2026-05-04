@@ -192,14 +192,12 @@ final class SuggestInput extends BasePrompt
 
         if ($result instanceof Closure) {
             assert($this->scope !== null);
-            /** @var Closure(): mixed $deferred */
+            /** @var Closure(): list<mixed> $deferred */
             $deferred = $result;
-            $result = $this->scope->call($deferred, WaitReason::input('suggest', $this->value));
+            $result   = $this->scope->call($deferred, WaitReason::input('suggest', $this->value));
         }
 
-        /** @var list<mixed> $suggestions */
-        $suggestions = is_array($result) ? array_values($result) : [];
-        $this->suggestions = $suggestions;
+        $this->suggestions = is_array($result) ? array_values($result) : [];
         $this->highlighted = 0;
     }
 

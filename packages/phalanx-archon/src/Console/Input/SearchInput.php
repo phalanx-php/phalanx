@@ -207,14 +207,12 @@ final class SearchInput extends BasePrompt
 
         if ($result instanceof Closure) {
             assert($this->scope !== null);
-            /** @var Closure(): mixed $deferred */
+            /** @var Closure(): list<mixed> $deferred */
             $deferred = $result;
-            $result = $this->scope->call($deferred, WaitReason::input('search', $this->query));
+            $result   = $this->scope->call($deferred, WaitReason::input('search', $this->query));
         }
 
-        /** @var list<mixed> $matches */
-        $matches = is_array($result) ? array_values($result) : [];
-        $this->matches = $matches;
+        $this->matches = is_array($result) ? array_values($result) : [];
         $this->state   = 'active';
     }
 
