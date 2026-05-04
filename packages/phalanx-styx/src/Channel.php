@@ -4,42 +4,44 @@ declare(strict_types=1);
 
 namespace Phalanx\Styx;
 
+use Closure;
 use Generator;
-use Phalanx\Service\FiberScopeRegistry;
-use React\EventLoop\Loop;
-use React\Promise\Deferred;
-use React\Promise\PromiseInterface;
+use OpenSwoole\Coroutine\Channel as SwooleChannel;
 use Throwable;
 
-use function React\Async\await;
-
+/**
+ * Coroutine-aware channel: bounded, FIFO, suspending on full/empty.
+ *
+ * Backed by OpenSwoole\Coroutine\Channel. The producer's emit() suspends when
+ * the buffer fills; the consumer's consume() suspends when the buffer empties.
+ * Both wakeups are coroutine-scheduler driven — no manual deferred plumbing.
+ *
+ * The withPressure(callable) hook is for external producers that need to be
+ * told to pause feeding work in (e.g. a network source you don't want
+ * buffering megabytes of data while your consumer is slow). It fires once on
+ * the fill→full transition and again on the full→half-drained transition.
+ */
 final class Channel
 {
-    private bool $open = true;
-
-    /** @var list<mixed> */
-    private array $buffer = [];
-
-    /** @var Deferred<mixed>|null */
-    private ?Deferred $consumerWaiting = null;
-
-    /** @var Deferred<mixed>|null */
-    private ?Deferred $producerWaiting = null;
-
-    private ?Throwable $error = null;
-
-    /** @var ?callable(bool): void */
-    private $pressureCallback = null;
-
-    private bool $paused = false;
-
     public bool $isOpen {
         get => $this->open;
     }
 
+    private readonly SwooleChannel $chan;
+
+    private bool $open = true;
+
+    private ?Throwable $error = null;
+
+    /** @var ?Closure(bool): void */
+    private ?Closure $pressureCallback = null;
+
+    private bool $paused = false;
+
     public function __construct(
         private readonly int $bufferSize = 32,
     ) {
+        $this->chan = new SwooleChannel($bufferSize);
     }
 
     public function emit(mixed ...$args): void
@@ -50,51 +52,23 @@ final class Channel
 
         $value = count($args) === 1 ? $args[0] : $args;
 
-        $this->buffer[] = $value;
-
-        if ($this->consumerWaiting !== null) {
-            $deferred = $this->consumerWaiting;
-            $this->consumerWaiting = null;
-            Loop::futureTick(static fn() => $deferred->resolve(true));
-        }
-
-        if (count($this->buffer) >= $this->bufferSize) {
-            if ($this->pressureCallback !== null && !$this->paused) {
-                $this->paused = true;
-                ($this->pressureCallback)(true);
-            }
-
-            // Both conditions are re-checked here because scopeAwait() suspends the fiber,
-            // allowing another fiber to drain the buffer or close the channel before we resume.
-            // @phpstan-ignore booleanAnd.leftAlwaysTrue
-            if ($this->open && count($this->buffer) >= $this->bufferSize) {
-                $this->producerWaiting = new Deferred();
-                $this->scopeAwait($this->producerWaiting->promise());
-            }
-        }
+        $this->firePauseIfFilling();
+        $this->chan->push($value);
     }
 
     public function tryEmit(mixed ...$args): bool
     {
-        if (!$this->open || count($this->buffer) >= $this->bufferSize) {
+        if (!$this->open || $this->chan->length() >= $this->bufferSize) {
             return false;
         }
 
         $value = count($args) === 1 ? $args[0] : $args;
 
-        $this->buffer[] = $value;
-
-        if ($this->consumerWaiting !== null) {
-            $deferred = $this->consumerWaiting;
-            $this->consumerWaiting = null;
-            Loop::futureTick(static fn() => $deferred->resolve(true));
+        if (!$this->chan->push($value, 0)) {
+            return false;
         }
 
-        if (count($this->buffer) >= $this->bufferSize && $this->pressureCallback !== null && !$this->paused) {
-            $this->paused = true;
-            ($this->pressureCallback)(true);
-        }
-
+        $this->firePauseIfFilling();
         return true;
     }
 
@@ -103,14 +77,8 @@ final class Channel
         if (!$this->open) {
             return;
         }
-
         $this->open = false;
-
-        if ($this->consumerWaiting !== null) {
-            $deferred = $this->consumerWaiting;
-            $this->consumerWaiting = null;
-            Loop::futureTick(static fn() => $deferred->resolve(false));
-        }
+        $this->chan->close();
     }
 
     public function error(Throwable $e): void
@@ -118,75 +86,53 @@ final class Channel
         if (!$this->open) {
             return;
         }
-
         $this->error = $e;
         $this->open = false;
-
-        if ($this->consumerWaiting !== null) {
-            $deferred = $this->consumerWaiting;
-            $this->consumerWaiting = null;
-            Loop::futureTick(static fn() => $deferred->resolve(false));
-        }
+        $this->chan->close();
     }
 
     public function consume(): Generator
     {
+        $halfFull = (int) ($this->bufferSize / 2);
+
         while (true) {
-            while ($this->buffer !== []) {
-                $value = array_shift($this->buffer);
+            $value = $this->chan->pop();
 
-                if (count($this->buffer) < (int) ($this->bufferSize * 0.5)) {
-                    if ($this->paused && $this->pressureCallback !== null) {
-                        $this->paused = false;
-                        ($this->pressureCallback)(false);
-                    }
-
-                    if ($this->producerWaiting !== null) {
-                        $deferred = $this->producerWaiting;
-                        $this->producerWaiting = null;
-                        Loop::futureTick(static fn() => $deferred->resolve(null));
-                    }
-                }
-
-                yield $value;
-            }
-
-            if ($this->error !== null) {
-                throw $this->error;
-            }
-
-            if (!$this->open) {
-                return;
-            }
-
-            $this->consumerWaiting = new Deferred();
-            $hasData = $this->scopeAwait($this->consumerWaiting->promise());
-
-            // scopeAwait() suspended the fiber; $buffer and $error may have changed.
-            if (!$hasData && $this->buffer === []) { // @phpstan-ignore identical.alwaysTrue
-                if ($this->error !== null) { // @phpstan-ignore notIdentical.alwaysFalse
+            if ($value === false && $this->chan->errCode === SwooleChannel::CHANNEL_CLOSED) {
+                if ($this->error !== null) {
                     throw $this->error;
                 }
-
                 return;
             }
+
+            if ($this->paused
+                && $this->pressureCallback !== null
+                && $this->chan->length() <= $halfFull
+            ) {
+                $this->paused = false;
+                ($this->pressureCallback)(false);
+            }
+
+            yield $value;
         }
     }
 
-    public function withPressure(callable $fn): self
+    /** @param Closure(bool): void $fn */
+    public function withPressure(Closure $fn): self
     {
         $this->pressureCallback = $fn;
-
         return $this;
     }
 
-    /** @param PromiseInterface<mixed> $promise */
-    private function scopeAwait(PromiseInterface $promise): mixed
+    private function firePauseIfFilling(): void
     {
-        $scope = FiberScopeRegistry::current();
-
-        return $scope !== null
-            ? $scope->await($promise)
-            : await($promise);
+        if ($this->paused
+            || $this->pressureCallback === null
+            || $this->chan->length() < $this->bufferSize - 1
+        ) {
+            return;
+        }
+        $this->paused = true;
+        ($this->pressureCallback)(true);
     }
 }

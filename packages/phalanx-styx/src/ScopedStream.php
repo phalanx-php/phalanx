@@ -5,18 +5,21 @@ declare(strict_types=1);
 namespace Phalanx\Styx;
 
 use Closure;
-use Phalanx\ExecutionScope;
-use Phalanx\Stream\Contract\StreamContext;
-use Phalanx\Stream\Contract\StreamSource;
-use Phalanx\Stream\Terminal;
-use React\Stream\ReadableStreamInterface;
+use Phalanx\Scope\ExecutionScope;
+use Phalanx\Scope\Stream\StreamContext;
+use Phalanx\Scope\Stream\StreamSource;
+use Phalanx\Styx\Terminal\Collect;
+use Phalanx\Styx\Terminal\Drain;
+use Phalanx\Styx\Terminal\First;
+use Phalanx\Styx\Terminal\Reduce;
 
 final class ScopedStream
 {
     private readonly Emitter $emitter;
 
+    /** @param StreamSource<mixed>|Closure(Channel, StreamContext): void $source */
     public function __construct(
-        ReadableStreamInterface|StreamSource|Closure $source,
+        StreamSource|Closure $source,
         private readonly StreamContext $ctx,
     ) {
         $this->emitter = match (true) {
@@ -28,24 +31,24 @@ final class ScopedStream
                     }
                 },
             ),
-            $source instanceof ReadableStreamInterface => Emitter::stream($source),
             $source instanceof Closure => Emitter::produce($source),
         };
     }
 
-    public static function from(ExecutionScope $scope, ReadableStreamInterface|StreamSource|Closure $source): self
+    /** @param StreamSource<mixed>|Closure(Channel, StreamContext): void $source */
+    public static function from(ExecutionScope $scope, StreamSource|Closure $source): self
     {
         return new self($source, $scope);
     }
 
-    /** @param callable(mixed): mixed $fn */
-    public function map(callable $fn): self
+    /** @param Closure(mixed): mixed $fn */
+    public function map(Closure $fn): self
     {
         return new self($this->emitter->map($fn), $this->ctx);
     }
 
-    /** @param callable(mixed): bool $predicate */
-    public function filter(callable $predicate): self
+    /** @param Closure(mixed): bool $predicate */
+    public function filter(Closure $predicate): self
     {
         return new self($this->emitter->filter($predicate), $this->ctx);
     }
@@ -80,8 +83,8 @@ final class ScopedStream
         return new self($this->emitter->distinct(), $this->ctx);
     }
 
-    /** @param callable(mixed): mixed $keyFn */
-    public function distinctBy(callable $keyFn): self
+    /** @param Closure(mixed): mixed $keyFn */
+    public function distinctBy(Closure $keyFn): self
     {
         return new self($this->emitter->distinctBy($keyFn), $this->ctx);
     }
@@ -91,54 +94,60 @@ final class ScopedStream
         return new self($this->emitter->sample($seconds), $this->ctx);
     }
 
-    /** @param callable(StreamContext): void $fn */
-    public function onStart(callable $fn): self
+    /** @param Closure(StreamContext): void $fn */
+    public function onStart(Closure $fn): self
     {
-        return new self($this->emitter->onStart($fn), $this->ctx);
+        $this->emitter->onStart($fn);
+        return $this;
     }
 
-    /** @param callable(mixed, StreamContext): void $fn */
-    public function onEach(callable $fn): self
+    /** @param Closure(mixed, StreamContext): void $fn */
+    public function onEach(Closure $fn): self
     {
-        return new self($this->emitter->onEach($fn), $this->ctx);
+        $this->emitter->onEach($fn);
+        return $this;
     }
 
-    /** @param callable(\Throwable, StreamContext): void $fn */
-    public function onError(callable $fn): self
+    /** @param Closure(\Throwable, StreamContext): void $fn */
+    public function onError(Closure $fn): self
     {
-        return new self($this->emitter->onError($fn), $this->ctx);
+        $this->emitter->onError($fn);
+        return $this;
     }
 
-    /** @param callable(StreamContext): void $fn */
-    public function onComplete(callable $fn): self
+    /** @param Closure(StreamContext): void $fn */
+    public function onComplete(Closure $fn): self
     {
-        return new self($this->emitter->onComplete($fn), $this->ctx);
+        $this->emitter->onComplete($fn);
+        return $this;
     }
 
-    /** @param callable(StreamContext): void $fn */
-    public function onDispose(callable $fn): self
+    /** @param Closure(StreamContext): void $fn */
+    public function onDispose(Closure $fn): self
     {
-        return new self($this->emitter->onDispose($fn), $this->ctx);
+        $this->emitter->onDispose($fn);
+        return $this;
     }
 
     public function consume(): void
     {
-        (new Terminal\Drain($this->emitter))($this->ctx);
+        (new Drain($this->emitter))($this->ctx);
     }
 
-    /** @return array<mixed> */
+    /** @return list<mixed> */
     public function toArray(): array
     {
-        return (new Terminal\Collect($this->emitter))($this->ctx);
+        return (new Collect($this->emitter))($this->ctx);
     }
 
-    public function reduce(callable $fn, mixed $initial = null): mixed
+    /** @param Closure(mixed, mixed): mixed $fn */
+    public function reduce(Closure $fn, mixed $initial = null): mixed
     {
-        return (new Terminal\Reduce($this->emitter, $fn, $initial))($this->ctx);
+        return (new Reduce($this->emitter, $fn, $initial))($this->ctx);
     }
 
     public function first(): mixed
     {
-        return (new Terminal\First($this->emitter))($this->ctx);
+        return (new First($this->emitter))($this->ctx);
     }
 }

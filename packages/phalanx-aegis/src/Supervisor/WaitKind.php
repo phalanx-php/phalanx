@@ -20,5 +20,7 @@ enum WaitKind: string
     case Singleflight = 'singleflight';
     case Lock = 'lock';
     case Channel = 'channel';
+    case Process = 'process';
+    case Input = 'input';
     case Custom = 'custom';
 }

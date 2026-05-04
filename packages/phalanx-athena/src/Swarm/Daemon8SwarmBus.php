@@ -11,7 +11,7 @@ use React\Stream\ReadableStreamInterface;
 use React\Promise\Deferred;
 use Phalanx\Athena\Stream\SseParser;
 use Phalanx\Support\ErrorHandler;
-use Phalanx\Stream\Contract\StreamContext;
+use Phalanx\Scope\Stream\StreamContext;
 
 /**
  * Swarm bus implementation using Daemon8 as the central blackboard.

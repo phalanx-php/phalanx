@@ -9,7 +9,7 @@ use Phalanx\ExecutionScope;
 use Phalanx\Styx\Emitter;
 use Phalanx\Task\Task;
 use Phalanx\Styx\Channel;
-use Phalanx\Stream\Contract\StreamContext;
+use Phalanx\Scope\Stream\StreamContext;
 
 final readonly class Swarm
 {

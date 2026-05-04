@@ -4,87 +4,49 @@ declare(strict_types=1);
 
 namespace Phalanx\Styx;
 
-use Phalanx\Stream\Contract\StreamContext;
-use Phalanx\Stream\Contract\StreamSource;
-use Phalanx\Stream\Contract\Streamable;
-use Evenement\EventEmitterInterface;
+use Closure;
 use Generator;
-use React\EventLoop\Loop;
-use React\Stream\ReadableStreamInterface;
+use OpenSwoole\Coroutine;
+use OpenSwoole\Timer;
+use Phalanx\Scope\CoroutineScopeRegistry;
+use Phalanx\Scope\Stream\StreamContext;
+use Phalanx\Scope\Stream\StreamSource;
+use Phalanx\Scope\Stream\Streamable;
+use Phalanx\Styx\Terminal\Collect;
+use Phalanx\Styx\Terminal\Drain;
+use Phalanx\Styx\Terminal\First;
+use Phalanx\Styx\Terminal\Reduce;
+use Throwable;
 
-use function React\Async\async;
-
+/**
+ * @implements StreamSource<mixed>
+ */
 final class Emitter implements StreamSource
 {
-    use Streamable {
-        onDispose as private traitOnDispose;
-    }
+    use Streamable;
 
-    /** @var callable(Channel, StreamContext): void */
-    private $setup;
+    /** @var Closure(Channel, StreamContext): void */
+    private readonly Closure $setup;
 
-    private function __construct(callable $setup)
+    private function __construct(Closure $setup)
     {
         $this->setup = $setup;
         $this->initStreamState();
     }
 
-    public static function stream(ReadableStreamInterface|callable $source): self
+    /** @param Closure(Channel, StreamContext): void $producer */
+    public static function produce(Closure $producer): self
     {
-        return new self(static function (Channel $ch, StreamContext $ctx) use ($source): void {
-            $stream = is_callable($source) ? $source() : $source;
-
-            $ch->withPressure(static function (bool $pause) use ($stream): void {
-                $pause ? $stream->pause() : $stream->resume();
-            });
-
-            $stream->on('data', static function (mixed $data) use ($ch): void {
-                $ch->emit($data);
-            });
-
-            $stream->on('end', static function () use ($ch): void {
-                $ch->complete();
-            });
-
-            $stream->on('error', static function (\Throwable $e) use ($ch): void {
-                $ch->error($e);
-            });
-
-            $stream->on('close', static function () use ($ch): void {
-                $ch->complete();
-            });
-
-            $ctx->onDispose(static function () use ($stream): void {
-                if ($stream->isReadable()) {
-                    $stream->close();
+        return new self(static function (Channel $ch, StreamContext $ctx) use ($producer): void {
+            self::spawn(static function () use ($producer, $ch, $ctx): void {
+                try {
+                    $producer($ch, $ctx);
+                } catch (Throwable $e) {
+                    $ch->error($e);
+                    return;
                 }
-            });
-        });
-    }
-
-    public static function listen(string $event, EventEmitterInterface|callable $source): self
-    {
-        return new self(static function (Channel $ch, StreamContext $ctx) use ($event, $source): void {
-            /** @var EventEmitterInterface $emitter */
-            $emitter = is_callable($source) ? $source() : $source;
-
-            $emitter->on($event, static function (mixed ...$args) use ($ch): void {
-                $ch->emit(...$args);
-            });
-
-            $emitter->on('error', static function (\Throwable $e) use ($ch): void {
-                $ch->error($e);
-            });
-
-            $emitter->on('close', static function () use ($ch): void {
                 $ch->complete();
             });
-
-            if (method_exists($emitter, 'close')) {
-                $ctx->onDispose(static function () use ($emitter): void {
-                    $emitter->close();
-                });
-            }
         });
     }
 
@@ -92,30 +54,20 @@ final class Emitter implements StreamSource
     {
         return new self(static function (Channel $ch, StreamContext $ctx) use ($seconds): void {
             $tick = 0;
-            $timer = Loop::addPeriodicTimer($seconds, static function () use ($ch, &$tick): void {
+            $ms = max(1, (int) round($seconds * 1000));
+            $timerId = self::startTick($ms, static function () use ($ch, &$tick): void {
                 $ch->emit(++$tick);
             });
 
-            $ctx->onDispose(static function () use ($timer, $ch): void {
-                Loop::cancelTimer($timer);
+            if ($timerId === null) {
+                $ch->complete();
+                return;
+            }
+
+            $ctx->onDispose(static function () use ($timerId, $ch): void {
+                Timer::clear($timerId);
                 $ch->complete();
             });
-        });
-    }
-
-    /** @param callable(Channel, StreamContext): void $producer */
-    public static function produce(callable $producer): self
-    {
-        return new self(static function (Channel $ch, StreamContext $ctx) use ($producer): void {
-            async(static function () use ($producer, $ch, $ctx): void {
-                try {
-                    $producer($ch, $ctx);
-                } catch (\Throwable $e) {
-                    $ch->error($e);
-                } finally {
-                    $ch->complete();
-                }
-            })();
         });
     }
 
@@ -133,41 +85,47 @@ final class Emitter implements StreamSource
                 yield $value;
             }
             $this->fireOnComplete($context);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->fireOnError($e, $context);
             throw $e;
         } finally {
+            // Closing here signals any still-running upstream producer to stop.
+            // Without this, an early `break` (e.g. take, first) would leave the
+            // producer coroutine suspended on a push to a buffer the consumer
+            // has abandoned. complete() is idempotent, so producers that
+            // already finished naturally are unaffected.
+            $channel->complete();
             $this->fireOnDispose($context);
         }
     }
 
-    /** @param callable(mixed): mixed $fn */
-    public function map(callable $fn): self
+    /** @param Closure(mixed): mixed $fn */
+    public function map(Closure $fn): self
     {
         $prev = $this;
 
         return new self(static function (Channel $ch, StreamContext $ctx) use ($prev, $fn): void {
-            async(static function () use ($prev, $ch, $ctx, $fn): void {
+            self::spawn(static function () use ($prev, $ch, $ctx, $fn): void {
                 try {
                     foreach ($prev($ctx) as $value) {
                         $ctx->throwIfCancelled();
                         $ch->emit($fn($value));
                     }
                     $ch->complete();
-                } catch (\Throwable $e) {
+                } catch (Throwable $e) {
                     $ch->error($e);
                 }
-            })();
+            });
         });
     }
 
-    /** @param callable(mixed): bool $predicate */
-    public function filter(callable $predicate): self
+    /** @param Closure(mixed): bool $predicate */
+    public function filter(Closure $predicate): self
     {
         $prev = $this;
 
         return new self(static function (Channel $ch, StreamContext $ctx) use ($prev, $predicate): void {
-            async(static function () use ($prev, $ch, $ctx, $predicate): void {
+            self::spawn(static function () use ($prev, $ch, $ctx, $predicate): void {
                 try {
                     foreach ($prev($ctx) as $value) {
                         $ctx->throwIfCancelled();
@@ -176,10 +134,10 @@ final class Emitter implements StreamSource
                         }
                     }
                     $ch->complete();
-                } catch (\Throwable $e) {
+                } catch (Throwable $e) {
                     $ch->error($e);
                 }
-            })();
+            });
         });
     }
 
@@ -188,7 +146,7 @@ final class Emitter implements StreamSource
         $prev = $this;
 
         return new self(static function (Channel $ch, StreamContext $ctx) use ($prev, $n): void {
-            async(static function () use ($prev, $ch, $ctx, $n): void {
+            self::spawn(static function () use ($prev, $ch, $ctx, $n): void {
                 try {
                     $count = 0;
                     foreach ($prev($ctx) as $value) {
@@ -199,10 +157,10 @@ final class Emitter implements StreamSource
                         }
                     }
                     $ch->complete();
-                } catch (\Throwable $e) {
+                } catch (Throwable $e) {
                     $ch->error($e);
                 }
-            })();
+            });
         });
     }
 
@@ -211,24 +169,24 @@ final class Emitter implements StreamSource
         $prev = $this;
 
         return new self(static function (Channel $ch, StreamContext $ctx) use ($prev, $seconds): void {
-            async(static function () use ($prev, $ch, $ctx, $seconds): void {
-                $lastEmit = 0.0;
+            self::spawn(static function () use ($prev, $ch, $ctx, $seconds): void {
+                $lastEmitNs = 0.0;
                 $intervalNs = $seconds * 1e9;
 
                 try {
                     foreach ($prev($ctx) as $value) {
                         $ctx->throwIfCancelled();
                         $now = (float) hrtime(true);
-                        if (($now - $lastEmit) >= $intervalNs) {
+                        if (($now - $lastEmitNs) >= $intervalNs) {
                             $ch->emit($value);
-                            $lastEmit = $now;
+                            $lastEmitNs = $now;
                         }
                     }
                     $ch->complete();
-                } catch (\Throwable $e) {
+                } catch (Throwable $e) {
                     $ch->error($e);
                 }
-            })();
+            });
         });
     }
 
@@ -237,46 +195,49 @@ final class Emitter implements StreamSource
         $prev = $this;
 
         return new self(static function (Channel $ch, StreamContext $ctx) use ($prev, $seconds): void {
-            async(static function () use ($prev, $ch, $ctx, $seconds): void {
-                $timer = null;
-                $lastValue = null;
-                $hasValue = false;
+            $ms = max(1, (int) round($seconds * 1000));
+
+            self::spawn(static function () use ($prev, $ch, $ctx, $ms): void {
+                /** @var int|null $timerId */
+                $timerId = null;
+                $latest = null;
+                $hasLatest = false;
 
                 try {
                     foreach ($prev($ctx) as $value) {
                         $ctx->throwIfCancelled();
 
-                        if ($timer !== null) {
-                            Loop::cancelTimer($timer);
+                        if ($timerId !== null) {
+                            Timer::clear($timerId);
                         }
 
-                        $lastValue = $value;
-                        $hasValue = true;
+                        $latest = $value;
+                        $hasLatest = true;
 
-                        $timer = Loop::addTimer($seconds, static function () use ($ch, &$lastValue, &$hasValue): void {
-                            if ($hasValue) {
-                                $ch->emit($lastValue);
-                                $hasValue = false;
+                        $timerId = self::startAfter($ms, static function () use ($ch, &$latest, &$hasLatest): void {
+                            if ($hasLatest) {
+                                $ch->emit($latest);
+                                $hasLatest = false;
                             }
                         });
                     }
 
-                    if ($hasValue) {
-                        $ch->emit($lastValue);
+                    if ($hasLatest) {
+                        $ch->emit($latest);
                     }
 
-                    if ($timer !== null) {
-                        Loop::cancelTimer($timer);
+                    if ($timerId !== null) {
+                        Timer::clear($timerId);
                     }
 
                     $ch->complete();
-                } catch (\Throwable $e) {
-                    if ($timer !== null) {
-                        Loop::cancelTimer($timer);
+                } catch (Throwable $e) {
+                    if ($timerId !== null) {
+                        Timer::clear($timerId);
                     }
                     $ch->error($e);
                 }
-            })();
+            });
         });
     }
 
@@ -285,20 +246,22 @@ final class Emitter implements StreamSource
         $prev = $this;
 
         return new self(static function (Channel $ch, StreamContext $ctx) use ($prev, $count, $seconds): void {
-            async(static function () use ($prev, $ch, $ctx, $count, $seconds): void {
+            $ms = max(1, (int) round($seconds * 1000));
+
+            self::spawn(static function () use ($prev, $ch, $ctx, $count, $ms): void {
                 /** @var list<mixed> $buffer */
                 $buffer = [];
-                /** @var \React\EventLoop\TimerInterface|null $timer */
-                $timer = null;
+                /** @var int|null $timerId */
+                $timerId = null;
 
-                $flush = static function () use ($ch, &$buffer, &$timer): void {
+                $flush = static function () use ($ch, &$buffer, &$timerId): void {
                     if ($buffer !== []) {
                         $ch->emit($buffer);
                         $buffer = [];
                     }
-                    if ($timer !== null) {
-                        Loop::cancelTimer($timer);
-                        $timer = null;
+                    if ($timerId !== null) {
+                        Timer::clear($timerId);
+                        $timerId = null;
                     }
                 };
 
@@ -307,8 +270,8 @@ final class Emitter implements StreamSource
                         $ctx->throwIfCancelled();
                         $buffer[] = $value;
 
-                        if ($timer === null) {
-                            $timer = Loop::addTimer($seconds, static function () use ($flush): void {
+                        if ($timerId === null) {
+                            $timerId = self::startAfter($ms, static function () use ($flush): void {
                                 $flush();
                             });
                         }
@@ -320,13 +283,13 @@ final class Emitter implements StreamSource
 
                     $flush();
                     $ch->complete();
-                } catch (\Throwable $e) {
-                    if ($timer !== null) {
-                        Loop::cancelTimer($timer);
+                } catch (Throwable $e) {
+                    if ($timerId !== null) {
+                        Timer::clear($timerId);
                     }
                     $ch->error($e);
                 }
-            })();
+            });
         });
     }
 
@@ -339,7 +302,7 @@ final class Emitter implements StreamSource
             $failed = false;
 
             foreach ($sources as $source) {
-                async(static function () use ($source, $ch, $ctx, &$remaining, &$failed): void {
+                self::spawn(static function () use ($source, $ch, $ctx, &$remaining, &$failed): void {
                     try {
                         foreach ($source($ctx) as $value) {
                             $ctx->throwIfCancelled();
@@ -348,7 +311,7 @@ final class Emitter implements StreamSource
                             }
                             $ch->emit($value);
                         }
-                    } catch (\Throwable $e) {
+                    } catch (Throwable $e) {
                         if (!$failed) {
                             $failed = true;
                             $ch->error($e);
@@ -360,7 +323,7 @@ final class Emitter implements StreamSource
                     if ($remaining <= 0 && !$failed) {
                         $ch->complete();
                     }
-                })();
+                });
             }
         });
     }
@@ -370,7 +333,7 @@ final class Emitter implements StreamSource
         $prev = $this;
 
         return new self(static function (Channel $ch, StreamContext $ctx) use ($prev): void {
-            async(static function () use ($prev, $ch, $ctx): void {
+            self::spawn(static function () use ($prev, $ch, $ctx): void {
                 $hasLast = false;
                 $lastValue = null;
 
@@ -384,20 +347,20 @@ final class Emitter implements StreamSource
                         }
                     }
                     $ch->complete();
-                } catch (\Throwable $e) {
+                } catch (Throwable $e) {
                     $ch->error($e);
                 }
-            })();
+            });
         });
     }
 
-    /** @param callable(mixed): mixed $keyFn */
-    public function distinctBy(callable $keyFn): self
+    /** @param Closure(mixed): mixed $keyFn */
+    public function distinctBy(Closure $keyFn): self
     {
         $prev = $this;
 
         return new self(static function (Channel $ch, StreamContext $ctx) use ($prev, $keyFn): void {
-            async(static function () use ($prev, $ch, $ctx, $keyFn): void {
+            self::spawn(static function () use ($prev, $ch, $ctx, $keyFn): void {
                 $hasLastKey = false;
                 $lastKey = null;
 
@@ -412,10 +375,10 @@ final class Emitter implements StreamSource
                         }
                     }
                     $ch->complete();
-                } catch (\Throwable $e) {
+                } catch (Throwable $e) {
                     $ch->error($e);
                 }
-            })();
+            });
         });
     }
 
@@ -424,54 +387,86 @@ final class Emitter implements StreamSource
         $prev = $this;
 
         return new self(static function (Channel $ch, StreamContext $ctx) use ($prev, $seconds): void {
+            $ms = max(1, (int) round($seconds * 1000));
             $latest = null;
-            /** @var bool $hasLatest */
             $hasLatest = false;
 
-            $timer = Loop::addPeriodicTimer($seconds, static function () use ($ch, &$latest, &$hasLatest): void {
-                if ($hasLatest) {
+            $timerId = self::startTick($ms, static function () use ($ch, &$latest, &$hasLatest): void {
+                if ($hasLatest) { // @phpstan-ignore if.alwaysFalse (mutated by sibling spawn via &reference)
                     $ch->emit($latest);
                     $hasLatest = false;
                 }
             });
 
-            $ctx->onDispose(static function () use ($timer): void {
-                Loop::cancelTimer($timer);
+            if ($timerId === null) {
+                $ch->complete();
+                return;
+            }
+
+            $ctx->onDispose(static function () use ($timerId): void {
+                Timer::clear($timerId);
             });
 
-            async(static function () use ($prev, $ch, $ctx, &$latest, &$hasLatest): void {
+            self::spawn(static function () use ($prev, $ch, $ctx, &$latest, &$hasLatest): void {
                 try {
                     foreach ($prev($ctx) as $value) {
                         $ctx->throwIfCancelled();
                         $latest = $value;
                         $hasLatest = true;
                     }
-
                     $ch->complete();
-                } catch (\Throwable $e) {
+                } catch (Throwable $e) {
                     $ch->error($e);
                 }
-            })();
+            });
         });
     }
 
-    public function toArray(): \Phalanx\Stream\Terminal\Collect
+    public function toArray(): Collect
     {
-        return new \Phalanx\Stream\Terminal\Collect($this);
+        return new Collect($this);
     }
 
-    public function reduce(callable $fn, mixed $initial = null): \Phalanx\Stream\Terminal\Reduce
+    /** @param Closure(mixed, mixed): mixed $fn */
+    public function reduce(Closure $fn, mixed $initial = null): Reduce
     {
-        return new \Phalanx\Stream\Terminal\Reduce($this, $fn, $initial);
+        return new Reduce($this, $fn, $initial);
     }
 
-    public function first(): \Phalanx\Stream\Terminal\First
+    public function first(): First
     {
-        return new \Phalanx\Stream\Terminal\First($this);
+        return new First($this);
     }
 
-    public function consume(): \Phalanx\Stream\Terminal\Drain
+    public function consume(): Drain
     {
-        return new \Phalanx\Stream\Terminal\Drain($this);
+        return new Drain($this);
+    }
+
+    private static function spawn(Closure $body): void
+    {
+        $parentScope = CoroutineScopeRegistry::current();
+        Coroutine::create(static function () use ($parentScope, $body): void {
+            if ($parentScope !== null) {
+                CoroutineScopeRegistry::install($parentScope);
+            }
+            try {
+                $body();
+            } finally {
+                CoroutineScopeRegistry::clear();
+            }
+        });
+    }
+
+    private static function startAfter(int $ms, Closure $callback): ?int
+    {
+        $result = Timer::after($ms, $callback);
+        return is_int($result) ? $result : null;
+    }
+
+    private static function startTick(int $ms, Closure $callback): ?int
+    {
+        $result = Timer::tick($ms, $callback);
+        return is_int($result) ? $result : null;
     }
 }

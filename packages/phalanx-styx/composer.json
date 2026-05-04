@@ -3,7 +3,7 @@
     "description": "Reactive stream primitives for Phalanx",
     "license": "MIT",
     "type": "library",
-    "keywords": ["reactive", "stream", "channel", "emitter", "backpressure", "async", "reactphp"],
+    "keywords": ["reactive", "stream", "channel", "emitter", "backpressure", "async", "openswoole"],
     "authors": [
         {
             "name": "Jonathan Havens",
@@ -13,11 +13,8 @@
     "homepage": "https://github.com/phalanx-php/phalanx-styx",
     "require": {
         "php": "^8.4",
-        "phalanx-php/aegis": "^0.5",
-        "react/async": "^4.3",
-        "react/event-loop": "^1.5",
-        "react/stream": "^1.4",
-        "evenement/evenement": "^3.0"
+        "ext-openswoole": "^26.0",
+        "phalanx-php/aegis": "^0.5"
     },
     "autoload": {
         "psr-4": {

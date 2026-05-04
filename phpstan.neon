@@ -9,8 +9,13 @@ parameters:
     paths:
         - packages/phalanx-aegis/src
         - packages/phalanx-archon/src
+        - packages/phalanx-argos/src
         - packages/phalanx-eidolon/src
+        - packages/phalanx-grammata/src
         - packages/phalanx-phpstan/src
+        - packages/phalanx-postgres/src
+        - packages/phalanx-redis/src
+        - packages/phalanx-styx/src
         - packages/phalanx-twilio/src
     scanDirectories:
         - vendor/openswoole/ide-helper

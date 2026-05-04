@@ -9,7 +9,7 @@ use Phalanx\Athena\Event\AgentEventKind;
 use Phalanx\Athena\Event\TokenUsage;
 use Phalanx\Athena\Tool\ToolCall;
 use Phalanx\Athena\Tool\ToolCallBag;
-use Phalanx\Stream\Contract\StreamContext;
+use Phalanx\Scope\Stream\StreamContext;
 use Phalanx\Styx\Emitter;
 
 final readonly class Generation

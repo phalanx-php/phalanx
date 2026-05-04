@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace Phalanx\Grammata\Task;
 
-use Phalanx\ExecutionScope;
 use Phalanx\Grammata\Exception\FilesystemException;
 use Phalanx\Grammata\FilePool;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Styx\Emitter;
 use Phalanx\Task\Executable;
-use React\Stream\WritableResourceStream;
 
 final readonly class WriteFileStream implements Executable
 {
@@ -30,16 +29,25 @@ final readonly class WriteFileStream implements Executable
             throw new FilesystemException("Failed to open for writing: {$this->path}", $this->path);
         }
 
-        $writable = new WritableResourceStream($handle);
-
-        $scope->onDispose(static function () use ($writable, $pool): void {
-            $writable->close();
+        $scope->onDispose(static function () use ($handle, $pool): void {
+            if (is_resource($handle)) {
+                fclose($handle);
+            }
             $pool->release();
         });
 
-        $this->source->drain($scope, static fn(string $chunk) => $writable->write($chunk));
-        $writable->end();
-        $pool->release();
+        foreach (($this->source)($scope) as $chunk) {
+            $scope->throwIfCancelled();
+            if (!is_string($chunk)) {
+                throw new FilesystemException(
+                    'Stream emitted non-string chunk: ' . get_debug_type($chunk),
+                    $this->path,
+                );
+            }
+            if (@fwrite($handle, $chunk) === false) {
+                throw new FilesystemException("Write failed: {$this->path}", $this->path);
+            }
+        }
 
         return null;
     }

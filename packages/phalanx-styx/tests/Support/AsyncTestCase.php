@@ -4,15 +4,13 @@ declare(strict_types=1);
 
 namespace Phalanx\Styx\Tests\Support;
 
-use PHPUnit\Framework\TestCase;
+use Closure;
+use Phalanx\Tests\Support\CoroutineTestCase;
 
-use function React\Async\await;
-use function React\Promise\resolve;
-
-abstract class AsyncTestCase extends TestCase
+abstract class AsyncTestCase extends CoroutineTestCase
 {
-    protected function runAsync(callable $test): void
+    protected function runAsync(Closure $body): void
     {
-        await(resolve(null)->then($test));
+        $this->runInCoroutine($body);
     }
 }

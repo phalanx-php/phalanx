@@ -6,7 +6,7 @@ namespace Phalanx\Grammata;
 
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
-use Phalanx\TaskScope;
+use Phalanx\Scope\TaskScope;
 
 final class FilesystemServiceBundle implements ServiceBundle
 {

@@ -10,7 +10,7 @@ use Phalanx\Athena\Event\TokenUsage;
 use Phalanx\Athena\Message\Conversation;
 use Phalanx\Athena\Stream\Generation;
 use Phalanx\Athena\Tool\ToolOutcome;
-use Phalanx\Stream\Contract\StreamContext;
+use Phalanx\Scope\Stream\StreamContext;
 use Phalanx\Styx\Emitter;
 
 final readonly class AgentResult

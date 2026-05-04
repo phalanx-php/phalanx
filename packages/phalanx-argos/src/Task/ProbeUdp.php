@@ -4,43 +4,50 @@ declare(strict_types=1);
 
 namespace Phalanx\Argos\Task;
 
-use Phalanx\ExecutionScope;
 use Phalanx\Argos\ProbeResult;
-use Phalanx\Task\Executable;
+use Phalanx\Cancellation\Cancelled;
+use Phalanx\Scope\TaskScope;
+use Phalanx\System\UdpSocket;
 use Phalanx\Task\HasTimeout;
-use React\Datagram\Factory as DatagramFactory;
-use React\Promise\Deferred;
+use Phalanx\Task\Scopeable;
 
-final class ProbeUdp implements Executable, HasTimeout
+final class ProbeUdp implements Scopeable, HasTimeout
 {
-    public float $timeout { get => $this->timeoutSeconds + 0.5; }
+    public float $timeout {
+        get => $this->timeoutSeconds + 0.5;
+    }
 
     public function __construct(
         private readonly string $ip,
         private readonly int $port,
         private readonly string $payload,
         private readonly float $timeoutSeconds = 2.0,
-    ) {}
+    ) {
+    }
 
-    public function __invoke(ExecutionScope $scope): ProbeResult
+    public function __invoke(TaskScope $scope): ProbeResult
     {
-        $factory = $scope->service(DatagramFactory::class);
-
-        $client = $scope->await($factory->createClient("{$this->ip}:{$this->port}"));
-        $start = hrtime(true);
-
-        $deferred = new Deferred();
-
-        $client->on('message', static function (string $data) use ($deferred): void {
-            $deferred->resolve($data);
-        });
-
-        $client->send($this->payload);
+        $client = new UdpSocket();
 
         try {
-            $response = $scope->await($deferred->promise());
-        } catch (\Phalanx\Exception\CancelledException) {
-            $response = null;
+            $client->connect($scope, $this->ip, $this->port, $this->timeoutSeconds);
+        } catch (\Throwable) {
+            return new ProbeResult(
+                ip: $this->ip,
+                reachable: false,
+                method: 'udp',
+                port: $this->port,
+            );
+        }
+
+        $start = hrtime(true);
+        $client->send($scope, $this->payload, $this->timeoutSeconds);
+
+        $response = null;
+        try {
+            $response = $client->recv($scope, $this->timeoutSeconds);
+        } catch (Cancelled) {
+            // scope cancelled mid-recv -- caller already aware; report unreachable
         } finally {
             $client->close();
         }

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Grammata\Task;
 
-use Phalanx\ExecutionScope;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Grammata\Exception\FilesystemException;
 use Phalanx\Task\Executable;
 

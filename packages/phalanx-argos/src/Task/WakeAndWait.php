@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Phalanx\Argos\Task;
 
-use Phalanx\Concurrency\RetryPolicy;
-use Phalanx\ExecutionScope;
 use Phalanx\Argos\Exception\HostUnreachableException;
 use Phalanx\Argos\Host;
 use Phalanx\Argos\ProbeResult;
 use Phalanx\Argos\ProbeStrategy;
+use Phalanx\Concurrency\RetryPolicy;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
 use Phalanx\Task\HasTimeout;
 
@@ -25,7 +25,8 @@ final class WakeAndWait implements Executable, HasTimeout
         private readonly ProbeStrategy $readyCheck,
         private readonly int $maxRetries = 30,
         private readonly float $retryIntervalSeconds = 2.0,
-    ) {}
+    ) {
+    }
 
     public function __invoke(ExecutionScope $scope): Host
     {

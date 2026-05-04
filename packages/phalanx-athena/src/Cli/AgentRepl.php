@@ -13,7 +13,7 @@ use Phalanx\Athena\Memory\ConversationMemory;
 use Phalanx\Athena\Message\Conversation;
 use Phalanx\Athena\Message\Message;
 use Phalanx\Athena\Turn;
-use Phalanx\Archon\CommandScope;
+use Phalanx\Archon\Command\CommandScope;
 
 /**
  * Interactive REPL runner for an AgentDefinition.

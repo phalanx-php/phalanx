@@ -7,16 +7,18 @@ namespace Phalanx\Redis;
 use Closure;
 use Clue\React\Redis\Client;
 use Clue\React\Redis\Factory as RedisFactory;
-use Phalanx\ExecutionScope;
+use Phalanx\Scope\ExecutionScope;
+use Phalanx\Scope\Stream\StreamContext;
 use Phalanx\Styx\Channel;
-use Phalanx\Stream\Contract\StreamContext;
 use Phalanx\Styx\Emitter;
+use Phalanx\Supervisor\WaitReason;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 use Phalanx\Task\Task;
 use React\Promise\Deferred;
+use Throwable;
 
-
+use function React\Async\await;
 
 final class RedisPubSub
 {
@@ -25,7 +27,8 @@ final class RedisPubSub
 
     public function __construct(
         private RedisConfig $config,
-    ) {}
+    ) {
+    }
 
     public function subscribe(string ...$channels): Emitter
     {
@@ -42,7 +45,7 @@ final class RedisPubSub
                 $ch->emit(['channel' => $channel, 'message' => $message]);
             });
 
-            $client->on('error', static function (\Throwable $e) use ($ch): void {
+            $client->on('error', static function (Throwable $e) use ($ch): void {
                 $ch->error($e);
             });
 
@@ -59,7 +62,10 @@ final class RedisPubSub
                 $client->__call('subscribe', [$channel]);
             }
 
-            $ctx->await($done->promise());
+            $ctx->call(
+                static fn(): mixed => await($done->promise()),
+                WaitReason::redis('subscribe'),
+            );
         });
     }
 
@@ -78,7 +84,7 @@ final class RedisPubSub
 
                     return ($handler)($child);
                 }));
-            } catch (\Throwable) {
+            } catch (Throwable) {
                 // Individual message failure must not kill the subscription loop.
                 // Callers needing error visibility should use subscribe() directly.
             }

@@ -15,7 +15,7 @@ use React\Stream\ReadableStreamInterface;
 
 use React\Promise\Deferred;
 
-use Phalanx\Stream\Contract\StreamContext;
+use Phalanx\Scope\Stream\StreamContext;
 
 final class OpenAiProvider implements LlmProvider
 {

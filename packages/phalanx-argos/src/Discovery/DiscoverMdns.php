@@ -4,37 +4,50 @@ declare(strict_types=1);
 
 namespace Phalanx\Argos\Discovery;
 
-use Phalanx\ExecutionScope;
+use Clue\React\Mdns\Factory as MdnsFactory;
 use Phalanx\Argos\DiscoveryResult;
-use Phalanx\Task\Executable;
+use Phalanx\Cancellation\Cancelled;
+use Phalanx\Scope\TaskScope;
+use Phalanx\Supervisor\WaitReason;
 use Phalanx\Task\HasTimeout;
+use Phalanx\Task\Scopeable;
+use React\Dns\Model\Message;
 use React\Promise\Deferred;
+use RuntimeException;
+use Throwable;
 
-final class DiscoverMdns implements Executable, HasTimeout
+use function React\Async\await;
+
+final class DiscoverMdns implements Scopeable, HasTimeout
 {
-    public float $timeout { get => $this->listenSeconds + 1.0; }
+    public float $timeout {
+        get => $this->listenSeconds + 1.0;
+    }
 
     public function __construct(
         private readonly string $serviceType = '_services._dns-sd._udp.local',
         private readonly float $listenSeconds = 5.0,
-    ) {}
+    ) {
+    }
 
     /** @return list<DiscoveryResult> */
-    public function __invoke(ExecutionScope $scope): array
+    public function __invoke(TaskScope $scope): array
     {
-        if (!class_exists(\Clue\React\Mdns\Factory::class)) {
-            throw new \RuntimeException(
+        if (!class_exists(MdnsFactory::class)) {
+            throw new RuntimeException(
                 'mDNS discovery requires clue/mdns-react. Install it: composer require clue/mdns-react',
             );
         }
 
-        $factory = new \Clue\React\Mdns\Factory();
+        $factory = new MdnsFactory();
         $resolver = $factory->createResolver();
 
+        /** @var list<DiscoveryResult> $results */
         $results = [];
         $deferred = new Deferred();
+        $serviceType = $this->serviceType;
 
-        $resolver->resolveAll($this->serviceType, \React\Dns\Model\Message::TYPE_PTR)
+        $resolver->resolveAll($serviceType, Message::TYPE_PTR)
             ->then(
                 static function (array $answers) use (&$results): void {
                     foreach ($answers as $answer) {
@@ -45,7 +58,7 @@ final class DiscoverMdns implements Executable, HasTimeout
                         );
                     }
                 },
-                static function (\Throwable $e): void {
+                static function (Throwable $_e): void {
                     // mDNS queries can timeout without results -- not an error
                 },
             )
@@ -54,8 +67,11 @@ final class DiscoverMdns implements Executable, HasTimeout
             });
 
         try {
-            $scope->await($deferred->promise());
-        } catch (\Phalanx\Exception\CancelledException) {
+            $scope->call(
+                static fn(): mixed => await($deferred->promise()),
+                WaitReason::custom("mdns.resolveAll {$serviceType}"),
+            );
+        } catch (Cancelled) {
             // scope timeout reached -- return whatever we collected
         }
 

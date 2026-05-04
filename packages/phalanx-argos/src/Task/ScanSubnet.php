@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Phalanx\Argos\Task;
 
-use Phalanx\ExecutionScope;
 use Phalanx\Argos\ProbeResult;
 use Phalanx\Argos\ProbeStrategy;
 use Phalanx\Argos\Subnet;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
+use Phalanx\Task\Scopeable;
 
 final readonly class ScanSubnet implements Executable
 {
@@ -16,7 +17,8 @@ final readonly class ScanSubnet implements Executable
         private Subnet $subnet,
         private ProbeStrategy $strategy,
         private int $concurrency = 50,
-    ) {}
+    ) {
+    }
 
     /** @return list<ProbeResult> */
     public function __invoke(ExecutionScope $scope): array
@@ -27,7 +29,7 @@ final readonly class ScanSubnet implements Executable
         /** @var list<ProbeResult> $results */
         $results = $scope->map(
             items: $ips,
-            fn: static fn(string $ip): Executable => $strategy->forHost($ip),
+            fn: static fn(string $ip): Scopeable => $strategy->forHost($ip),
             limit: $this->concurrency,
         );
 

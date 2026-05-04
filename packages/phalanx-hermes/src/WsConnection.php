@@ -7,7 +7,7 @@ namespace Phalanx\Hermes;
 use Phalanx\ExecutionScope;
 use Phalanx\Styx\Channel;
 use Phalanx\Styx\Emitter;
-use Phalanx\Stream\Contract\StreamContext;
+use Phalanx\Scope\Stream\StreamContext;
 use Phalanx\Styx\ScopedStream;
 
 final class WsConnection

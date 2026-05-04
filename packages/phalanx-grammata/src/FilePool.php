@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 namespace Phalanx\Grammata;
 
-use Phalanx\Suspendable;
+use Phalanx\Scope\Suspendable;
+use Phalanx\Supervisor\WaitReason;
 use React\Promise\Deferred;
+
+use function React\Async\await;
 
 final class FilePool
 {
     private int $active = 0;
 
-    /** @var list<Deferred> */
+    /** @var list<Deferred<null>> */
     private array $waiters = [];
 
     public function __construct(
@@ -25,9 +28,13 @@ final class FilePool
             return;
         }
 
+        /** @var Deferred<null> $deferred */
         $deferred = new Deferred();
         $this->waiters[] = $deferred;
-        $scope->await($deferred->promise());
+        $scope->call(
+            static fn(): mixed => await($deferred->promise()),
+            WaitReason::custom('file.pool.acquire'),
+        );
         $this->active++;
     }
 

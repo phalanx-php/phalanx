@@ -7,7 +7,7 @@ namespace Phalanx\Argos;
 use Phalanx\Argos\Task\PingHost;
 use Phalanx\Argos\Task\ProbePort;
 use Phalanx\Argos\Task\ProbeUdp;
-use Phalanx\Task\Executable;
+use Phalanx\Task\Scopeable;
 
 final readonly class ProbeStrategy
 {
@@ -42,9 +42,9 @@ final readonly class ProbeStrategy
         ]);
     }
 
-    public function forHost(string $ip): Executable
+    public function forHost(string $ip): Scopeable
     {
-        /** @var Executable $task */
+        /** @var Scopeable $task */
         $task = new ($this->taskClass)($ip, ...$this->baseParams);
         return $task;
     }

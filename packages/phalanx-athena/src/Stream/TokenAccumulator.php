@@ -9,7 +9,7 @@ use Phalanx\Athena\Event\AgentEvent;
 use Phalanx\Athena\Event\AgentEventKind;
 use Phalanx\Athena\Message\Conversation;
 use Phalanx\Styx\Channel;
-use Phalanx\Stream\Contract\StreamContext;
+use Phalanx\Scope\Stream\StreamContext;
 use Phalanx\Styx\Emitter;
 
 final class TokenAccumulator

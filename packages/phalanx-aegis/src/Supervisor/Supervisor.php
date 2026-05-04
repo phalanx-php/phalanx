@@ -57,12 +57,14 @@ final class Supervisor
             WaitKind::Http,
             WaitKind::Redis,
             WaitKind::Worker,
+            WaitKind::Process,
             WaitKind::Custom => true,
             WaitKind::Delay,
             WaitKind::Postgres,
             WaitKind::Singleflight,
             WaitKind::Lock,
-            WaitKind::Channel => false,
+            WaitKind::Channel,
+            WaitKind::Input => false,
         };
     }
 

@@ -10,6 +10,7 @@ use Phalanx\Concurrency\RetryPolicy;
 use Phalanx\Concurrency\SettlementBag;
 use Phalanx\Runtime\RuntimeContext;
 use Phalanx\Scope\ExecutionScope;
+use Phalanx\Scope\Subscription;
 use Phalanx\Supervisor\TaskRun;
 use Phalanx\Supervisor\TransactionLease;
 use Phalanx\Supervisor\WaitReason;
@@ -107,6 +108,11 @@ trait ExecutionScopeDelegate
     public function delay(float $seconds): void
     {
         $this->innerScope()->delay($seconds);
+    }
+
+    public function periodic(float $interval, Closure $tick): Subscription
+    {
+        return $this->innerScope()->periodic($interval, $tick);
     }
 
     public function defer(Scopeable|Executable|Closure $task): void

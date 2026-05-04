@@ -8,6 +8,7 @@ use Closure;
 use OpenSwoole\Core\Coroutine\WaitGroup;
 use OpenSwoole\Coroutine;
 use OpenSwoole\Coroutine\Channel;
+use OpenSwoole\Timer;
 use Phalanx\Cancellation\AggregateException;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Cancellation\Cancelled;
@@ -916,6 +917,41 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             },
             \Phalanx\Supervisor\WaitReason::delay($seconds),
         );
+    }
+
+    public function periodic(float $interval, Closure $tick): Subscription
+    {
+        if ($this->disposed) {
+            throw new RuntimeException('periodic(): cannot schedule on a disposed scope');
+        }
+
+        $ms = max(1, (int) round($interval * 1000));
+        $self = $this;
+
+        $timerId = Timer::tick($ms, static function () use ($self, $tick): void {
+            if ($self->disposed) {
+                return;
+            }
+            CoroutineScopeRegistry::install($self);
+            try {
+                $tick();
+            } catch (Throwable $e) {
+                $self->traceLog->log(TraceType::Defer, 'periodic.error', ['error' => $e->getMessage()]);
+            } finally {
+                CoroutineScopeRegistry::clear();
+            }
+        });
+
+        if (!is_int($timerId)) {
+            throw new RuntimeException('periodic(): OpenSwoole Timer::tick refused to register');
+        }
+
+        $subscription = new PeriodicSubscription($timerId);
+        $this->onDispose(static function () use ($subscription): void {
+            $subscription->cancel();
+        });
+
+        return $subscription;
     }
 
     public function defer(Scopeable|Executable|Closure $task): void

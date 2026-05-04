@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Phalanx\Hermes\Tests\Integration;
 
-use Phalanx\Hermes\WsGateway;
+use Closure;
+use OpenSwoole\Coroutine;
 use Phalanx\Hermes\WsConnection;
+use Phalanx\Hermes\WsGateway;
 use Phalanx\Hermes\WsMessage;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-
-use function React\Async\async;
-use function React\Async\await;
+use Throwable;
 
 final class WsGatewayBroadcastTest extends TestCase
 {
@@ -48,94 +48,100 @@ final class WsGatewayBroadcastTest extends TestCase
     #[Test]
     public function broadcast_sends_to_all_connections(): void
     {
-        $conn1 = $this->createConnection();
-        $conn2 = $this->createConnection();
-        $conn3 = $this->createConnection();
+        $this->runAsync(function (): void {
+            $conn1 = $this->createConnection();
+            $conn2 = $this->createConnection();
+            $conn3 = $this->createConnection();
 
-        $this->gateway->register($conn1);
-        $this->gateway->register($conn2);
-        $this->gateway->register($conn3);
+            $this->gateway->register($conn1);
+            $this->gateway->register($conn2);
+            $this->gateway->register($conn3);
 
-        $msg = WsMessage::text('hello all');
-        $this->gateway->broadcast($msg);
+            $this->gateway->broadcast(WsMessage::text('hello all'));
 
-        $this->assertOutboundContains($conn1, 'hello all');
-        $this->assertOutboundContains($conn2, 'hello all');
-        $this->assertOutboundContains($conn3, 'hello all');
+            $this->assertOutboundContains($conn1, 'hello all');
+            $this->assertOutboundContains($conn2, 'hello all');
+            $this->assertOutboundContains($conn3, 'hello all');
+        });
     }
 
     #[Test]
     public function broadcast_with_exclude(): void
     {
-        $conn1 = $this->createConnection();
-        $conn2 = $this->createConnection();
+        $this->runAsync(function (): void {
+            $conn1 = $this->createConnection();
+            $conn2 = $this->createConnection();
 
-        $this->gateway->register($conn1);
-        $this->gateway->register($conn2);
+            $this->gateway->register($conn1);
+            $this->gateway->register($conn2);
 
-        $msg = WsMessage::text('not for you');
-        $this->gateway->broadcast($msg, exclude: $conn1);
+            $this->gateway->broadcast(WsMessage::text('not for you'), exclude: $conn1);
 
-        $this->assertOutboundEmpty($conn1);
-        $this->assertOutboundContains($conn2, 'not for you');
+            $this->assertOutboundEmpty($conn1);
+            $this->assertOutboundContains($conn2, 'not for you');
+        });
     }
 
     #[Test]
     public function subscribe_and_publish_to_topic(): void
     {
-        $conn1 = $this->createConnection();
-        $conn2 = $this->createConnection();
-        $conn3 = $this->createConnection();
+        $this->runAsync(function (): void {
+            $conn1 = $this->createConnection();
+            $conn2 = $this->createConnection();
+            $conn3 = $this->createConnection();
 
-        $this->gateway->register($conn1);
-        $this->gateway->register($conn2);
-        $this->gateway->register($conn3);
+            $this->gateway->register($conn1);
+            $this->gateway->register($conn2);
+            $this->gateway->register($conn3);
 
-        $this->gateway->subscribe($conn1, 'room:lobby');
-        $this->gateway->subscribe($conn2, 'room:lobby');
+            $this->gateway->subscribe($conn1, 'room:lobby');
+            $this->gateway->subscribe($conn2, 'room:lobby');
 
-        $msg = WsMessage::text('lobby msg');
-        $this->gateway->publish('room:lobby', $msg);
+            $this->gateway->publish('room:lobby', WsMessage::text('lobby msg'));
 
-        $this->assertOutboundContains($conn1, 'lobby msg');
-        $this->assertOutboundContains($conn2, 'lobby msg');
-        $this->assertOutboundEmpty($conn3);
+            $this->assertOutboundContains($conn1, 'lobby msg');
+            $this->assertOutboundContains($conn2, 'lobby msg');
+            $this->assertOutboundEmpty($conn3);
+        });
     }
 
     #[Test]
     public function publish_with_exclude(): void
     {
-        $conn1 = $this->createConnection();
-        $conn2 = $this->createConnection();
+        $this->runAsync(function (): void {
+            $conn1 = $this->createConnection();
+            $conn2 = $this->createConnection();
 
-        $this->gateway->register($conn1);
-        $this->gateway->register($conn2);
+            $this->gateway->register($conn1);
+            $this->gateway->register($conn2);
 
-        $this->gateway->subscribe($conn1, 'chat');
-        $this->gateway->subscribe($conn2, 'chat');
+            $this->gateway->subscribe($conn1, 'chat');
+            $this->gateway->subscribe($conn2, 'chat');
 
-        $msg = WsMessage::text('echo excluded');
-        $this->gateway->publish('chat', $msg, exclude: $conn1);
+            $this->gateway->publish('chat', WsMessage::text('echo excluded'), exclude: $conn1);
 
-        $this->assertOutboundEmpty($conn1);
-        $this->assertOutboundContains($conn2, 'echo excluded');
+            $this->assertOutboundEmpty($conn1);
+            $this->assertOutboundContains($conn2, 'echo excluded');
+        });
     }
 
     #[Test]
     public function unsubscribe_removes_from_topic(): void
     {
-        $conn = $this->createConnection();
-        $this->gateway->register($conn);
-        $this->gateway->subscribe($conn, 'alerts');
+        $this->runAsync(function (): void {
+            $conn = $this->createConnection();
+            $this->gateway->register($conn);
+            $this->gateway->subscribe($conn, 'alerts');
 
-        $this->assertSame(1, $this->gateway->topicCount('alerts'));
+            $this->assertSame(1, $this->gateway->topicCount('alerts'));
 
-        $this->gateway->unsubscribe($conn, 'alerts');
+            $this->gateway->unsubscribe($conn, 'alerts');
 
-        $this->assertSame(0, $this->gateway->topicCount('alerts'));
+            $this->assertSame(0, $this->gateway->topicCount('alerts'));
 
-        $this->gateway->publish('alerts', WsMessage::text('missed'));
-        $this->assertOutboundEmpty($conn);
+            $this->gateway->publish('alerts', WsMessage::text('missed'));
+            $this->assertOutboundEmpty($conn);
+        });
     }
 
     #[Test]
@@ -164,17 +170,19 @@ final class WsGatewayBroadcastTest extends TestCase
     #[Test]
     public function closed_connections_are_skipped_during_broadcast(): void
     {
-        $conn1 = $this->createConnection();
-        $conn2 = $this->createConnection();
+        $this->runAsync(function (): void {
+            $conn1 = $this->createConnection();
+            $conn2 = $this->createConnection();
 
-        $this->gateway->register($conn1);
-        $this->gateway->register($conn2);
+            $this->gateway->register($conn1);
+            $this->gateway->register($conn2);
 
-        $conn1->close();
+            $conn1->close();
 
-        $this->gateway->broadcast(WsMessage::text('after close'));
+            $this->gateway->broadcast(WsMessage::text('after close'));
 
-        $this->assertOutboundContains($conn2, 'after close');
+            $this->assertOutboundContains($conn2, 'after close');
+        });
     }
 
     private function createConnection(): WsConnection
@@ -182,6 +190,31 @@ final class WsGatewayBroadcastTest extends TestCase
         return new WsConnection(bin2hex(random_bytes(8)));
     }
 
+    /**
+     * Wrap a test body that touches Channel ops in a single OpenSwoole
+     * coroutine. emit, complete, and consume must share a scheduler; without
+     * this wrapping the gateway's broadcast() (which calls outbound->emit)
+     * has no scheduler to push into.
+     */
+    private function runAsync(Closure $body): void
+    {
+        $caught = null;
+        Coroutine::run(static function () use ($body, &$caught): void {
+            try {
+                $body();
+            } catch (Throwable $e) {
+                $caught = $e;
+            }
+        });
+        if ($caught !== null) {
+            throw $caught;
+        }
+    }
+
+    /**
+     * Caller is already inside Coroutine::run. Drain helpers below assume
+     * that and call complete()+consume directly.
+     */
     private function assertOutboundContains(WsConnection $conn, string $expected): void
     {
         $msg = $this->drainOneFromOutbound($conn);
@@ -193,15 +226,13 @@ final class WsGatewayBroadcastTest extends TestCase
     {
         $conn->outbound->complete();
 
-        $messages = await(async(static function () use ($conn): array {
-            $collected = [];
-            foreach ($conn->outbound->consume() as $msg) {
-                if ($msg instanceof WsMessage && !$msg->isClose) {
-                    $collected[] = $msg;
-                }
+        /** @var list<WsMessage> $messages */
+        $messages = [];
+        foreach ($conn->outbound->consume() as $msg) {
+            if ($msg instanceof WsMessage && !$msg->isClose) {
+                $messages[] = $msg;
             }
-            return $collected;
-        })());
+        }
 
         $this->assertEmpty(
             $messages,
@@ -213,13 +244,11 @@ final class WsGatewayBroadcastTest extends TestCase
     {
         $conn->outbound->complete();
 
-        return await(async(static function () use ($conn): ?WsMessage {
-            foreach ($conn->outbound->consume() as $msg) {
-                if ($msg instanceof WsMessage && !$msg->isClose) {
-                    return $msg;
-                }
+        foreach ($conn->outbound->consume() as $msg) {
+            if ($msg instanceof WsMessage && !$msg->isClose) {
+                return $msg;
             }
-            return null;
-        })());
+        }
+        return null;
     }
 }

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Argos\Task;
 
-use Phalanx\ExecutionScope;
 use Phalanx\Argos\ProbeResult;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
 
 final readonly class ScanPorts implements Executable
@@ -16,7 +16,8 @@ final readonly class ScanPorts implements Executable
         private array $ports,
         private float $perPortTimeout = 1.0,
         private int $concurrency = 20,
-    ) {}
+    ) {
+    }
 
     /** @return list<ProbeResult> */
     public function __invoke(ExecutionScope $scope): array

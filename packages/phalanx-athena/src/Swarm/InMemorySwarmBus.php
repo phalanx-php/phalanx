@@ -6,7 +6,7 @@ namespace Phalanx\Athena\Swarm;
 
 use Phalanx\Styx\Emitter;
 use Phalanx\Styx\Channel;
-use Phalanx\Stream\Contract\StreamContext;
+use Phalanx\Scope\Stream\StreamContext;
 
 /**
  * In-memory implementation of the swarm bus.

@@ -4,55 +4,52 @@ declare(strict_types=1);
 
 namespace Phalanx\Argos\Tests\Integration;
 
-use PHPUnit\Framework\TestCase;
-use React\Datagram\Factory as DatagramFactory;
-use React\EventLoop\Loop;
-use React\Promise\Deferred;
+use OpenSwoole\Coroutine;
+use Phalanx\Argos\ProbeResult;
+use Phalanx\Argos\Task\ProbeUdp;
+use Phalanx\Scope\ExecutionScope;
+use Phalanx\Testing\PhalanxTestCase;
 
-use function React\Async\await;
-use function React\Async\async;
-
-final class UdpEchoTest extends TestCase
+final class UdpEchoTest extends PhalanxTestCase
 {
-    public function test_udp_send_and_receive(): void
+    public function testProbeUdpAgainstEchoServer(): void
     {
-        $result = await(async(static function (): mixed {
-            $factory = new DatagramFactory();
+        $server = stream_socket_server(
+            'udp://127.0.0.1:0',
+            $errno,
+            $errstr,
+            STREAM_SERVER_BIND,
+        );
+        self::assertNotFalse($server, "stream_socket_server failed: {$errstr}");
+        stream_set_blocking($server, false);
 
-            // bind a UDP server
-            $server = await($factory->createServer('127.0.0.1:0'));
-            $address = $server->getLocalAddress();
-            preg_match('/:(\d+)$/', $address, $matches);
-            $port = (int) $matches[1];
+        $address = stream_socket_get_name($server, false);
+        self::assertNotFalse($address);
+        $port = (int) substr($address, strrpos($address, ':') + 1);
 
-            // echo back whatever we receive
-            $server->on('message', static function (string $data, string $remote, $server): void {
-                $server->send($data, $remote);
+        $result = $this->scope->run(static function (ExecutionScope $scope) use ($server, $port): ProbeResult {
+            Coroutine::create(static function () use ($server): void {
+                $deadline = microtime(true) + 1.0;
+                while (microtime(true) < $deadline) {
+                    $remote = '';
+                    $payload = @stream_socket_recvfrom($server, 1024, 0, $remote);
+                    if ($payload !== false && $payload !== '' && $remote !== '') {
+                        @stream_socket_sendto($server, "echo:{$payload}", 0, $remote);
+                        return;
+                    }
+                    Coroutine::usleep(10_000);
+                }
             });
 
-            // send from client
-            $client = await($factory->createClient("127.0.0.1:$port"));
+            $task = new ProbeUdp('127.0.0.1', $port, payload: 'hello', timeoutSeconds: 1.0);
+            return $task($scope);
+        });
 
-            $deferred = new Deferred();
-            $client->on('message', static function (string $data) use ($deferred): void {
-                $deferred->resolve($data);
-            });
+        fclose($server);
 
-            $client->send('hello');
-
-            $timer = Loop::addTimer(2.0, static function () use ($deferred): void {
-                $deferred->resolve(null);
-            });
-
-            $response = await($deferred->promise());
-            Loop::cancelTimer($timer);
-
-            $client->close();
-            $server->close();
-
-            return $response;
-        })());
-
-        $this->assertSame('hello', $result);
+        self::assertSame('udp', $result->method);
+        self::assertSame($port, $result->port);
+        self::assertTrue($result->reachable);
+        self::assertSame('echo:hello', $result->responseData);
     }
 }

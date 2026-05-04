@@ -5,144 +5,19 @@ declare(strict_types=1);
 namespace Phalanx\Styx\Tests\Unit;
 
 use Closure;
+use Phalanx\Scope\Stream\StreamContext;
 use Phalanx\Styx\Channel;
-use Phalanx\Stream\Contract\StreamContext;
 use Phalanx\Styx\Emitter;
 use Phalanx\Styx\Tests\Support\AsyncTestCase;
-use Evenement\EventEmitter;
+use Phalanx\Supervisor\WaitReason;
 use PHPUnit\Framework\Attributes\Test;
-use React\EventLoop\Loop;
-use React\Promise\PromiseInterface;
-use React\Stream\ThroughStream;
-
-use function React\Async\async;
+use RuntimeException;
+use Throwable;
 
 final class EmitterTest extends AsyncTestCase
 {
-    private function makeContext(): StreamContext
-    {
-        return new class () implements StreamContext {
-            /** @var list<Closure> */
-            private array $disposeCallbacks = [];
-
-            private bool $cancelled = false;
-
-            public function throwIfCancelled(): void
-            {
-                if ($this->cancelled) {
-                    throw new \RuntimeException('Cancelled');
-                }
-            }
-
-            public function onDispose(Closure $callback): void
-            {
-                $this->disposeCallbacks[] = $callback;
-            }
-
-            public function cancel(): void
-            {
-                $this->cancelled = true;
-            }
-
-            public function await(PromiseInterface $promise): mixed
-            {
-                return \React\Async\await($promise);
-            }
-
-            public function dispose(): void
-            {
-                foreach ($this->disposeCallbacks as $cb) {
-                    $cb();
-                }
-                $this->disposeCallbacks = [];
-            }
-        };
-    }
-
     #[Test]
-    public function testStreamFactoryWiresEvents(): void
-    {
-        $this->runAsync(function (): void {
-            $through = new ThroughStream();
-            $emitter = Emitter::stream($through);
-            $ctx = $this->makeContext();
-
-            Loop::futureTick(static function () use ($through): void {
-                $through->write('hello');
-                $through->write('world');
-                $through->end();
-            });
-
-            $items = [];
-            foreach ($emitter($ctx) as $value) {
-                $items[] = $value;
-            }
-
-            $this->assertSame(['hello', 'world'], $items);
-        });
-    }
-
-    #[Test]
-    public function testStreamFactoryWithCallable(): void
-    {
-        $this->runAsync(function (): void {
-            $emitter = Emitter::stream(static function (): ThroughStream {
-                $stream = new ThroughStream();
-
-                Loop::futureTick(static function () use ($stream): void {
-                    $stream->write('lazy');
-                    $stream->end();
-                });
-
-                return $stream;
-            });
-
-            $ctx = $this->makeContext();
-            $items = iterator_to_array($emitter($ctx));
-
-            $this->assertSame(['lazy'], $items);
-        });
-    }
-
-    #[Test]
-    public function testListenFactoryWithEventName(): void
-    {
-        $this->runAsync(function (): void {
-            $ee = new EventEmitter();
-            $emitter = Emitter::listen('message', $ee);
-            $ctx = $this->makeContext();
-
-            Loop::futureTick(static function () use ($ee): void {
-                $ee->emit('message', ['msg1']);
-                $ee->emit('message', ['msg2']);
-                $ee->emit('close');
-            });
-
-            $items = iterator_to_array($emitter($ctx));
-            $this->assertSame(['msg1', 'msg2'], $items);
-        });
-    }
-
-    #[Test]
-    public function testListenMultiArgEvents(): void
-    {
-        $this->runAsync(function (): void {
-            $ee = new EventEmitter();
-            $emitter = Emitter::listen('data', $ee);
-            $ctx = $this->makeContext();
-
-            Loop::futureTick(static function () use ($ee): void {
-                $ee->emit('data', ['key', 'value', 42]);
-                $ee->emit('close');
-            });
-
-            $items = iterator_to_array($emitter($ctx));
-            $this->assertSame([['key', 'value', 42]], $items);
-        });
-    }
-
-    #[Test]
-    public function testProduceExposesChannel(): void
+    public function produceExposesChannel(): void
     {
         $this->runAsync(function (): void {
             $emitter = Emitter::produce(static function (Channel $ch): void {
@@ -150,15 +25,14 @@ final class EmitterTest extends AsyncTestCase
                 $ch->emit('produced-2');
             });
 
-            $ctx = $this->makeContext();
-            $items = iterator_to_array($emitter($ctx));
+            $items = iterator_to_array($emitter(self::makeContext()));
 
-            $this->assertSame(['produced-1', 'produced-2'], $items);
+            self::assertSame(['produced-1', 'produced-2'], $items);
         });
     }
 
     #[Test]
-    public function testMapOperator(): void
+    public function mapOperator(): void
     {
         $this->runAsync(function (): void {
             $emitter = Emitter::produce(static function (Channel $ch): void {
@@ -169,15 +43,14 @@ final class EmitterTest extends AsyncTestCase
 
             $doubled = $emitter->map(static fn(int $v): int => $v * 2);
 
-            $ctx = $this->makeContext();
-            $items = iterator_to_array($doubled($ctx));
+            $items = iterator_to_array($doubled(self::makeContext()));
 
-            $this->assertSame([2, 4, 6], $items);
+            self::assertSame([2, 4, 6], $items);
         });
     }
 
     #[Test]
-    public function testFilterOperator(): void
+    public function filterOperator(): void
     {
         $this->runAsync(function (): void {
             $emitter = Emitter::produce(static function (Channel $ch): void {
@@ -189,15 +62,14 @@ final class EmitterTest extends AsyncTestCase
 
             $evens = $emitter->filter(static fn(int $v): bool => $v % 2 === 0);
 
-            $ctx = $this->makeContext();
-            $items = iterator_to_array($evens($ctx));
+            $items = iterator_to_array($evens(self::makeContext()));
 
-            $this->assertSame([2, 4], $items);
+            self::assertSame([2, 4], $items);
         });
     }
 
     #[Test]
-    public function testTakeOperator(): void
+    public function takeOperator(): void
     {
         $this->runAsync(function (): void {
             $emitter = Emitter::produce(static function (Channel $ch): void {
@@ -208,15 +80,14 @@ final class EmitterTest extends AsyncTestCase
 
             $first3 = $emitter->take(3);
 
-            $ctx = $this->makeContext();
-            $items = iterator_to_array($first3($ctx));
+            $items = iterator_to_array($first3(self::makeContext()));
 
-            $this->assertSame([1, 2, 3], $items);
+            self::assertSame([1, 2, 3], $items);
         });
     }
 
     #[Test]
-    public function testDistinctOperator(): void
+    public function distinctOperator(): void
     {
         $this->runAsync(function (): void {
             $emitter = Emitter::produce(static function (Channel $ch): void {
@@ -229,15 +100,14 @@ final class EmitterTest extends AsyncTestCase
 
             $distinct = $emitter->distinct();
 
-            $ctx = $this->makeContext();
-            $items = iterator_to_array($distinct($ctx));
+            $items = iterator_to_array($distinct(self::makeContext()));
 
-            $this->assertSame([1, 2, 1], $items);
+            self::assertSame([1, 2, 1], $items);
         });
     }
 
     #[Test]
-    public function testDistinctByOperator(): void
+    public function distinctByOperator(): void
     {
         $this->runAsync(function (): void {
             $emitter = Emitter::produce(static function (Channel $ch): void {
@@ -248,10 +118,9 @@ final class EmitterTest extends AsyncTestCase
 
             $distinct = $emitter->distinctBy(static fn(array $v): string => $v['name']);
 
-            $ctx = $this->makeContext();
-            $items = iterator_to_array($distinct($ctx));
+            $items = iterator_to_array($distinct(self::makeContext()));
 
-            $this->assertSame([
+            self::assertSame([
                 ['name' => 'Alice', 'age' => 30],
                 ['name' => 'Bob', 'age' => 25],
             ], $items);
@@ -259,7 +128,7 @@ final class EmitterTest extends AsyncTestCase
     }
 
     #[Test]
-    public function testMergeInterleaves(): void
+    public function mergeInterleaves(): void
     {
         $this->runAsync(function (): void {
             $a = Emitter::produce(static function (Channel $ch): void {
@@ -274,16 +143,15 @@ final class EmitterTest extends AsyncTestCase
 
             $merged = $a->merge($b);
 
-            $ctx = $this->makeContext();
-            $items = iterator_to_array($merged($ctx));
+            $items = iterator_to_array($merged(self::makeContext()));
 
             sort($items);
-            $this->assertSame(['a1', 'a2', 'b1', 'b2'], $items);
+            self::assertSame(['a1', 'a2', 'b1', 'b2'], $items);
         });
     }
 
     #[Test]
-    public function testLifecycleHooksFire(): void
+    public function lifecycleHooksFire(): void
     {
         $this->runAsync(function (): void {
             $log = [];
@@ -292,43 +160,40 @@ final class EmitterTest extends AsyncTestCase
                 $ch->emit('x');
             })
                 ->onStart(static function () use (&$log): void { $log[] = 'start'; })
-                ->onEach(static function ($v) use (&$log): void { $log[] = "each:$v"; })
+                ->onEach(static function (mixed $v) use (&$log): void { $log[] = "each:{$v}"; })
                 ->onComplete(static function () use (&$log): void { $log[] = 'complete'; })
                 ->onDispose(static function () use (&$log): void { $log[] = 'dispose'; });
 
-            $ctx = $this->makeContext();
-            iterator_to_array($emitter($ctx));
+            iterator_to_array($emitter(self::makeContext()));
 
-            $this->assertSame(['start', 'each:x', 'complete', 'dispose'], $log);
+            self::assertSame(['start', 'each:x', 'complete', 'dispose'], $log);
         });
     }
 
     #[Test]
-    public function testErrorHookFires(): void
+    public function errorHookFires(): void
     {
         $this->runAsync(function (): void {
             $errorLog = [];
 
             $emitter = Emitter::produce(static function (): void {
-                throw new \RuntimeException('boom');
+                throw new RuntimeException('boom');
             })
-                ->onError(static function (\Throwable $e) use (&$errorLog): void {
+                ->onError(static function (Throwable $e) use (&$errorLog): void {
                     $errorLog[] = $e->getMessage();
                 });
 
-            $ctx = $this->makeContext();
-
             try {
-                iterator_to_array($emitter($ctx));
-            } catch (\RuntimeException) {
+                iterator_to_array($emitter(self::makeContext()));
+            } catch (RuntimeException) {
             }
 
-            $this->assertSame(['boom'], $errorLog);
+            self::assertSame(['boom'], $errorLog);
         });
     }
 
     #[Test]
-    public function testToArrayTerminal(): void
+    public function toArrayTerminal(): void
     {
         $this->runAsync(function (): void {
             $emitter = Emitter::produce(static function (Channel $ch): void {
@@ -338,15 +203,12 @@ final class EmitterTest extends AsyncTestCase
 
             $collect = $emitter->toArray();
 
-            $ctx = $this->makeContext();
-            $result = $collect($ctx);
-
-            $this->assertSame([1, 2], $result);
+            self::assertSame([1, 2], $collect(self::makeContext()));
         });
     }
 
     #[Test]
-    public function testReduceTerminal(): void
+    public function reduceTerminal(): void
     {
         $this->runAsync(function (): void {
             $emitter = Emitter::produce(static function (Channel $ch): void {
@@ -357,15 +219,12 @@ final class EmitterTest extends AsyncTestCase
 
             $sum = $emitter->reduce(static fn(int $acc, int $v): int => $acc + $v, 0);
 
-            $ctx = $this->makeContext();
-            $result = $sum($ctx);
-
-            $this->assertSame(6, $result);
+            self::assertSame(6, $sum(self::makeContext()));
         });
     }
 
     #[Test]
-    public function testFirstTerminal(): void
+    public function firstTerminal(): void
     {
         $this->runAsync(function (): void {
             $emitter = Emitter::produce(static function (Channel $ch): void {
@@ -375,37 +234,32 @@ final class EmitterTest extends AsyncTestCase
 
             $first = $emitter->first();
 
-            $ctx = $this->makeContext();
-            $result = $first($ctx);
-
-            $this->assertSame('first', $result);
+            self::assertSame('first', $first(self::makeContext()));
         });
     }
 
     #[Test]
-    public function testConsumeTerminal(): void
+    public function consumeTerminal(): void
     {
         $this->runAsync(function (): void {
             $sideEffects = [];
 
-            $emitter = Emitter::produce(static function (Channel $ch) use (&$sideEffects): void {
+            $emitter = Emitter::produce(static function (Channel $ch): void {
                 $ch->emit('a');
                 $ch->emit('b');
-            })->onEach(static function ($v) use (&$sideEffects): void {
+            })->onEach(static function (mixed $v) use (&$sideEffects): void {
                 $sideEffects[] = $v;
             });
 
             $drain = $emitter->consume();
-            $ctx = $this->makeContext();
-            $result = $drain($ctx);
+            $drain(self::makeContext());
 
-            $this->assertNull($result);
-            $this->assertSame(['a', 'b'], $sideEffects);
+            self::assertSame(['a', 'b'], $sideEffects);
         });
     }
 
     #[Test]
-    public function testBufferWindowByCount(): void
+    public function bufferWindowByCount(): void
     {
         $this->runAsync(function (): void {
             $emitter = Emitter::produce(static function (Channel $ch): void {
@@ -416,15 +270,14 @@ final class EmitterTest extends AsyncTestCase
 
             $buffered = $emitter->bufferWindow(2, 10.0);
 
-            $ctx = $this->makeContext();
-            $items = iterator_to_array($buffered($ctx));
+            $items = iterator_to_array($buffered(self::makeContext()));
 
-            $this->assertSame([[1, 2], [3, 4], [5]], $items);
+            self::assertSame([[1, 2], [3, 4], [5]], $items);
         });
     }
 
     #[Test]
-    public function testThrottleDropsExtraItems(): void
+    public function throttleDropsExtraItems(): void
     {
         $this->runAsync(function (): void {
             $emitter = Emitter::produce(static function (Channel $ch): void {
@@ -435,10 +288,40 @@ final class EmitterTest extends AsyncTestCase
 
             $throttled = $emitter->throttle(100.0);
 
-            $ctx = $this->makeContext();
-            $items = iterator_to_array($throttled($ctx));
+            $items = iterator_to_array($throttled(self::makeContext()));
 
-            $this->assertSame([1], $items);
+            self::assertSame([1], $items);
         });
+    }
+
+    #[Test]
+    public function emptyStreamCompletes(): void
+    {
+        $this->runAsync(function (): void {
+            $emitter = Emitter::produce(static function (): void {
+            });
+
+            $items = iterator_to_array($emitter(self::makeContext()));
+
+            self::assertSame([], $items);
+        });
+    }
+
+    private static function makeContext(): StreamContext
+    {
+        return new class () implements StreamContext {
+            public function call(Closure $fn, ?WaitReason $waitReason = null): mixed
+            {
+                return $fn();
+            }
+
+            public function throwIfCancelled(): void
+            {
+            }
+
+            public function onDispose(Closure $callback): void
+            {
+            }
+        };
     }
 }

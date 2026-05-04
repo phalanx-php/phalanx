@@ -12,7 +12,7 @@ use Phalanx\Styx\Emitter;
 use React\Http\Browser;
 use React\Stream\ReadableStreamInterface;
 use React\Promise\Deferred;
-use Phalanx\Stream\Contract\StreamContext;
+use Phalanx\Scope\Stream\StreamContext;
 
 final class GeminiProvider implements LlmProvider
 {

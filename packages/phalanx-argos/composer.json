@@ -3,7 +3,7 @@
     "description": "Network discovery, probing, and device management for Phalanx",
     "license": "MIT",
     "type": "library",
-    "keywords": ["network", "discovery", "mdns", "ssdp", "wol", "ping", "scan", "async", "reactphp"],
+    "keywords": ["network", "discovery", "mdns", "ssdp", "wol", "ping", "scan", "async", "openswoole"],
     "authors": [
         {
             "name": "Jonathan Havens",
@@ -13,15 +13,9 @@
     "homepage": "https://github.com/phalanx-php/phalanx-argos",
     "require": {
         "php": "^8.4",
+        "ext-openswoole": "*",
         "phalanx-php/aegis": "^0.5",
-        "mlocati/ip-lib": "^1.22",
-        "react/datagram": "^1.10",
-        "react/async": "^4.3",
-        "react/event-loop": "^1.5",
-        "react/promise": "^3.2",
-        "react/child-process": "^0.6",
-        "react/socket": "^1.16",
-        "react/dns": "^1.13"
+        "mlocati/ip-lib": "^1.22"
     },
     "suggest": {
         "clue/multicast-react": "Required for mDNS and SSDP discovery (multicast UDP)",

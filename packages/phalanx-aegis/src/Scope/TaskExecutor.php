@@ -52,6 +52,19 @@ interface TaskExecutor
 
     public function delay(float $seconds): void;
 
+    /**
+     * Run $tick every $interval seconds on a supervised coroutine bound
+     * to the current scope. The returned Subscription stops the timer when
+     * cancel() is called; the timer is also cleared automatically when the
+     * scope is disposed.
+     *
+     * The tick closure must be static — non-static closures capture $this
+     * and create reference cycles in long-running processes.
+     *
+     * @param Closure(): void $tick
+     */
+    public function periodic(float $interval, Closure $tick): Subscription;
+
     public function defer(Scopeable|Executable|Closure $task): void;
 
     public function singleflight(string $key, Scopeable|Executable|Closure $task): mixed;

@@ -18,7 +18,7 @@ use Phalanx\Grammata\Task\WriteFile;
 use Phalanx\Grammata\Task\WriteFileStream;
 use Phalanx\Grammata\Task\WriteJsonFile;
 use Phalanx\Styx\Emitter;
-use Phalanx\TaskScope;
+use Phalanx\Scope\TaskScope;
 
 final class Files
 {

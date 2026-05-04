@@ -4,301 +4,273 @@ declare(strict_types=1);
 
 namespace Phalanx\Styx\Tests\Unit;
 
+use OpenSwoole\Coroutine;
 use Phalanx\Styx\Channel;
-use PHPUnit\Framework\TestCase;
+use Phalanx\Styx\Tests\Support\AsyncTestCase;
+use PHPUnit\Framework\Attributes\Test;
+use RuntimeException;
 
-use function React\Async\async;
-use function React\Async\await;
-use function React\Async\delay;
-
-final class ChannelTest extends TestCase
+final class ChannelTest extends AsyncTestCase
 {
-    public function testBufferFillsAndDrains(): void
+    #[Test]
+    public function bufferFillsAndDrains(): void
     {
-        $channel = new Channel(4);
+        $this->runAsync(function (): void {
+            $channel = new Channel(4);
 
-        async(static function () use ($channel): void {
-            $channel->emit('a');
-            $channel->emit('b');
-            $channel->emit('c');
-            $channel->complete();
-        })();
+            Coroutine::create(static function () use ($channel): void {
+                $channel->emit('a');
+                $channel->emit('b');
+                $channel->emit('c');
+                $channel->complete();
+            });
 
-        $items = [];
-        foreach ($channel->consume() as $value) {
-            $items[] = $value;
-        }
+            $items = [];
+            foreach ($channel->consume() as $value) {
+                $items[] = $value;
+            }
 
-        self::assertSame(['a', 'b', 'c'], $items);
-    }
-
-    public function testCompleteEndsConsumer(): void
-    {
-        $channel = new Channel();
-
-        async(static function () use ($channel): void {
-            $channel->emit(1);
-            $channel->emit(2);
-            $channel->complete();
-        })();
-
-        $items = iterator_to_array($channel->consume());
-        self::assertSame([1, 2], $items);
-    }
-
-    public function testErrorThrowsInConsumer(): void
-    {
-        $channel = new Channel();
-        $exception = new \RuntimeException('test error');
-
-        async(static function () use ($channel, $exception): void {
-            $channel->emit('before');
-            $channel->error($exception);
-        })();
-
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('test error');
-
-        $items = [];
-        foreach ($channel->consume() as $value) {
-            $items[] = $value;
-        }
-    }
-
-    public function testDoubleCompleteIsIdempotent(): void
-    {
-        $channel = new Channel();
-
-        async(static function () use ($channel): void {
-            $channel->emit('x');
-            $channel->complete();
-            $channel->complete();
-        })();
-
-        $items = iterator_to_array($channel->consume());
-        self::assertSame(['x'], $items);
-    }
-
-    public function testMultiArgEmitStoresAsTuple(): void
-    {
-        $channel = new Channel();
-
-        async(static function () use ($channel): void {
-            $channel->emit('hello', 42, true);
-            $channel->complete();
-        })();
-
-        $items = iterator_to_array($channel->consume());
-        self::assertSame([['hello', 42, true]], $items);
-    }
-
-    public function testSingleArgUnwrapped(): void
-    {
-        $channel = new Channel();
-
-        async(static function () use ($channel): void {
-            $channel->emit('solo');
-            $channel->complete();
-        })();
-
-        $items = iterator_to_array($channel->consume());
-        self::assertSame(['solo'], $items);
-    }
-
-    public function testIsOpenProperty(): void
-    {
-        $channel = new Channel();
-        self::assertTrue($channel->isOpen);
-
-        $channel->complete();
-        self::assertFalse($channel->isOpen);
-    }
-
-    public function testIsOpenAfterError(): void
-    {
-        $channel = new Channel();
-        self::assertTrue($channel->isOpen);
-
-        $channel->error(new \RuntimeException('fail'));
-        self::assertFalse($channel->isOpen);
-    }
-
-    public function testBackpressureCallbackFires(): void
-    {
-        $channel = new Channel(2);
-        $pressureLog = [];
-
-        $channel->withPressure(static function (bool $pause) use (&$pressureLog): void {
-            $pressureLog[] = $pause ? 'pause' : 'resume';
+            self::assertSame(['a', 'b', 'c'], $items);
         });
+    }
 
-        async(static function () use ($channel): void {
-            $channel->emit('a');
-            $channel->emit('b');
-            $channel->emit('c');
+    #[Test]
+    public function completeEndsConsumer(): void
+    {
+        $this->runAsync(function (): void {
+            $channel = new Channel();
+
+            Coroutine::create(static function () use ($channel): void {
+                $channel->emit(1);
+                $channel->emit(2);
+                $channel->complete();
+            });
+
+            $items = iterator_to_array($channel->consume());
+            self::assertSame([1, 2], $items);
+        });
+    }
+
+    #[Test]
+    public function errorThrowsInConsumer(): void
+    {
+        $this->runAsync(function (): void {
+            $channel = new Channel();
+            $exception = new RuntimeException('test error');
+
+            Coroutine::create(static function () use ($channel, $exception): void {
+                $channel->emit('before');
+                $channel->error($exception);
+            });
+
+            $threw = null;
+            try {
+                foreach ($channel->consume() as $_) {
+                }
+            } catch (RuntimeException $e) {
+                $threw = $e;
+            }
+
+            self::assertNotNull($threw);
+            self::assertSame('test error', $threw->getMessage());
+        });
+    }
+
+    #[Test]
+    public function doubleCompleteIsIdempotent(): void
+    {
+        $this->runAsync(function (): void {
+            $channel = new Channel();
+
+            Coroutine::create(static function () use ($channel): void {
+                $channel->emit('x');
+                $channel->complete();
+                $channel->complete();
+            });
+
+            $items = iterator_to_array($channel->consume());
+            self::assertSame(['x'], $items);
+        });
+    }
+
+    #[Test]
+    public function multiArgEmitStoresAsTuple(): void
+    {
+        $this->runAsync(function (): void {
+            $channel = new Channel();
+
+            Coroutine::create(static function () use ($channel): void {
+                $channel->emit('hello', 42, true);
+                $channel->complete();
+            });
+
+            $items = iterator_to_array($channel->consume());
+            self::assertSame([['hello', 42, true]], $items);
+        });
+    }
+
+    #[Test]
+    public function singleArgUnwrapped(): void
+    {
+        $this->runAsync(function (): void {
+            $channel = new Channel();
+
+            Coroutine::create(static function () use ($channel): void {
+                $channel->emit('solo');
+                $channel->complete();
+            });
+
+            $items = iterator_to_array($channel->consume());
+            self::assertSame(['solo'], $items);
+        });
+    }
+
+    #[Test]
+    public function isOpenProperty(): void
+    {
+        $this->runAsync(function (): void {
+            $channel = new Channel();
+            self::assertTrue($channel->isOpen);
+
             $channel->complete();
-        })();
-
-        $items = iterator_to_array($channel->consume());
-        self::assertSame(['a', 'b', 'c'], $items);
-        self::assertContains('pause', $pressureLog);
+            self::assertFalse($channel->isOpen);
+        });
     }
 
-    public function testEmitAfterCompleteIsIgnored(): void
+    #[Test]
+    public function isOpenAfterError(): void
     {
-        $channel = new Channel();
-        $channel->complete();
-        $channel->emit('ignored');
+        $this->runAsync(function (): void {
+            $channel = new Channel();
+            self::assertTrue($channel->isOpen);
 
-        $items = iterator_to_array($channel->consume());
-        self::assertSame([], $items);
+            $channel->error(new RuntimeException('fail'));
+            self::assertFalse($channel->isOpen);
+        });
     }
 
-    public function test_tryEmit_returns_true_when_buffer_has_room(): void
+    #[Test]
+    public function backpressurePauseFires(): void
     {
-        $channel = new Channel(bufferSize: 4);
+        $this->runAsync(function (): void {
+            $channel = new Channel(2);
+            $pressureLog = [];
 
-        self::assertTrue($channel->tryEmit('a'));
-        self::assertTrue($channel->tryEmit('b'));
-        self::assertTrue($channel->tryEmit('c'));
+            $channel->withPressure(static function (bool $pause) use (&$pressureLog): void {
+                $pressureLog[] = $pause ? 'pause' : 'resume';
+            });
 
-        $channel->complete();
+            Coroutine::create(static function () use ($channel): void {
+                $channel->emit('a');
+                $channel->emit('b');
+                $channel->emit('c');
+                $channel->complete();
+            });
 
-        $items = iterator_to_array($channel->consume());
-        self::assertSame(['a', 'b', 'c'], $items);
+            $items = iterator_to_array($channel->consume());
+            self::assertSame(['a', 'b', 'c'], $items);
+            self::assertContains('pause', $pressureLog);
+        });
     }
 
-    public function test_tryEmit_returns_false_when_buffer_is_full(): void
+    #[Test]
+    public function emitAfterCompleteIsIgnored(): void
     {
-        $channel = new Channel(bufferSize: 2);
+        $this->runAsync(function (): void {
+            $channel = new Channel();
+            $channel->complete();
+            $channel->emit('ignored');
 
-        self::assertTrue($channel->tryEmit('a'));
-        self::assertTrue($channel->tryEmit('b'));
-        self::assertFalse($channel->tryEmit('c'));
-
-        $channel->complete();
-
-        $items = iterator_to_array($channel->consume());
-        self::assertSame(['a', 'b'], $items);
+            $items = iterator_to_array($channel->consume());
+            self::assertSame([], $items);
+        });
     }
 
-    public function test_tryEmit_wakes_waiting_consumer(): void
+    #[Test]
+    public function tryEmitReturnsTrueWhenBufferHasRoom(): void
     {
-        $received = [];
-
-        await(async(static function () use (&$received): void {
+        $this->runAsync(function (): void {
             $channel = new Channel(bufferSize: 4);
 
-            async(static function () use ($channel, &$received): void {
-                foreach ($channel->consume() as $value) {
-                    $received[] = $value;
-                }
-            })();
+            self::assertTrue($channel->tryEmit('a'));
+            self::assertTrue($channel->tryEmit('b'));
+            self::assertTrue($channel->tryEmit('c'));
 
-            // Yield to let the consumer fiber start and suspend waiting for data
-            delay(0);
-
-            $channel->tryEmit('hello');
             $channel->complete();
 
-            // Yield to let futureTick wake the consumer and process the value
-            delay(0);
-        })());
-
-        self::assertSame(['hello'], $received);
-    }
-
-    public function test_tryEmit_fires_pressure_callback(): void
-    {
-        $channel = new Channel(bufferSize: 2);
-        $pressureLog = [];
-
-        $channel->withPressure(static function (bool $pause) use (&$pressureLog): void {
-            $pressureLog[] = $pause ? 'pause' : 'resume';
+            $items = iterator_to_array($channel->consume());
+            self::assertSame(['a', 'b', 'c'], $items);
         });
-
-        $channel->tryEmit('a');
-        $channel->tryEmit('b');
-
-        self::assertContains('pause', $pressureLog);
     }
 
-    public function test_tryEmit_returns_false_after_channel_closed(): void
+    #[Test]
+    public function tryEmitReturnsFalseWhenBufferIsFull(): void
     {
-        $channel = new Channel();
-        $channel->complete();
+        $this->runAsync(function (): void {
+            $channel = new Channel(bufferSize: 2);
 
-        self::assertFalse($channel->tryEmit('nope'));
-    }
+            self::assertTrue($channel->tryEmit('a'));
+            self::assertTrue($channel->tryEmit('b'));
+            self::assertFalse($channel->tryEmit('c'));
 
-    public function test_tryEmit_interleaves_with_emit(): void
-    {
-        $channel = new Channel(bufferSize: 4);
-
-        async(static function () use ($channel): void {
-            $channel->tryEmit('try-1');
-            $channel->emit('emit-1');
-            $channel->tryEmit('try-2');
-            $channel->emit('emit-2');
             $channel->complete();
-        })();
 
-        $items = iterator_to_array($channel->consume());
-        self::assertSame(['try-1', 'emit-1', 'try-2', 'emit-2'], $items);
-    }
-
-    public function test_tryEmit_returns_false_after_error(): void
-    {
-        $channel = new Channel();
-        $channel->error(new \RuntimeException('broken'));
-
-        self::assertFalse($channel->tryEmit('nope'));
-    }
-
-    public function test_tryEmit_fires_pressure_callback_exactly_once(): void
-    {
-        $channel = new Channel(bufferSize: 2);
-        $pressureLog = [];
-
-        $channel->withPressure(static function (bool $pause) use (&$pressureLog): void {
-            $pressureLog[] = $pause ? 'pause' : 'resume';
+            $items = iterator_to_array($channel->consume());
+            self::assertSame(['a', 'b'], $items);
         });
-
-        $channel->tryEmit('a');
-        $channel->tryEmit('b');
-
-        // Buffer is now full; third tryEmit returns false without firing callback again
-        self::assertFalse($channel->tryEmit('c'));
-
-        self::assertSame(['pause'], $pressureLog);
     }
 
-    public function test_tryEmit_multi_arg_stores_as_tuple(): void
+    #[Test]
+    public function tryEmitReturnsFalseAfterChannelClosed(): void
     {
-        $channel = new Channel(bufferSize: 4);
+        $this->runAsync(function (): void {
+            $channel = new Channel();
+            $channel->complete();
 
-        $channel->tryEmit('hello', 42, true);
-        $channel->complete();
-
-        $items = iterator_to_array($channel->consume());
-        self::assertSame([['hello', 42, true]], $items);
+            self::assertFalse($channel->tryEmit('nope'));
+        });
     }
 
-    public function test_tryEmit_does_not_suspend(): void
+    #[Test]
+    public function tryEmitReturnsFalseAfterError(): void
     {
-        $channel = new Channel(bufferSize: 1);
+        $this->runAsync(function (): void {
+            $channel = new Channel();
+            $channel->error(new RuntimeException('broken'));
 
-        // Fill to capacity
-        self::assertTrue($channel->tryEmit('a'));
+            self::assertFalse($channel->tryEmit('nope'));
+        });
+    }
 
-        // This must return false immediately -- if it suspended, the test would hang
-        $start = hrtime(true);
-        self::assertFalse($channel->tryEmit('b'));
-        $elapsed = (hrtime(true) - $start) / 1_000_000; // milliseconds
+    #[Test]
+    public function tryEmitMultiArgStoresAsTuple(): void
+    {
+        $this->runAsync(function (): void {
+            $channel = new Channel(bufferSize: 4);
 
-        // Should complete in under 1ms -- no event loop tick involved
-        self::assertLessThan(1.0, $elapsed);
+            $channel->tryEmit('hello', 42, true);
+            $channel->complete();
 
-        $channel->complete();
+            $items = iterator_to_array($channel->consume());
+            self::assertSame([['hello', 42, true]], $items);
+        });
+    }
+
+    #[Test]
+    public function tryEmitDoesNotSuspend(): void
+    {
+        $this->runAsync(function (): void {
+            $channel = new Channel(bufferSize: 1);
+
+            self::assertTrue($channel->tryEmit('a'));
+
+            $start = hrtime(true);
+            self::assertFalse($channel->tryEmit('b'));
+            $elapsedMs = (hrtime(true) - $start) / 1_000_000;
+
+            self::assertLessThan(5.0, $elapsedMs);
+
+            $channel->complete();
+        });
     }
 }

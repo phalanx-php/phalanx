@@ -74,9 +74,39 @@ final readonly class WaitReason
         return new self(WaitKind::Channel, $name, microtime(true));
     }
 
+    public static function process(string $command, string $detail = ''): self
+    {
+        $head = self::firstArgument($command);
+        $body = $detail !== '' ? "{$head} ({$detail})" : $head;
+        return new self(WaitKind::Process, $body, microtime(true));
+    }
+
+    public static function input(string $prompt = '', string $detail = ''): self
+    {
+        $body = $prompt !== '' && $detail !== ''
+            ? "{$prompt} ({$detail})"
+            : ($prompt !== '' ? $prompt : $detail);
+        return new self(WaitKind::Input, $body, microtime(true));
+    }
+
     public static function custom(string $detail): self
     {
         return new self(WaitKind::Custom, $detail, microtime(true));
+    }
+
+    /**
+     * Strip a shell command down to the first whitespace-separated token so
+     * the wait detail prints as the binary name rather than the full argv
+     * line. Long argv lines tend to dominate the diagnostic display.
+     */
+    private static function firstArgument(string $command): string
+    {
+        $trimmed = trim($command);
+        if ($trimmed === '') {
+            return '';
+        }
+        $head = strtok($trimmed, " \t\n");
+        return $head === false ? $trimmed : $head;
     }
 
     public function elapsed(): float

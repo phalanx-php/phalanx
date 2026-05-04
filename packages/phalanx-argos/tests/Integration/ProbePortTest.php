@@ -4,53 +4,45 @@ declare(strict_types=1);
 
 namespace Phalanx\Argos\Tests\Integration;
 
-use PHPUnit\Framework\TestCase;
-use React\Socket\SocketServer;
+use Phalanx\Argos\ProbeResult;
+use Phalanx\Argos\Task\ProbePort;
+use Phalanx\Scope\ExecutionScope;
+use Phalanx\Testing\PhalanxTestCase;
 
-use function React\Async\await;
-use function React\Async\async;
-
-final class ProbePortTest extends TestCase
+final class ProbePortTest extends PhalanxTestCase
 {
-    public function test_detects_open_port(): void
+    public function testDetectsOpenPort(): void
     {
-        $server = new SocketServer('127.0.0.1:0');
-        $address = $server->getAddress();
-        preg_match('/\d+$/', (string) $address, $matches);
-        $port = (int) $matches[0];
+        $listener = stream_socket_server('tcp://127.0.0.1:0', $errno, $errstr);
+        self::assertNotFalse($listener, "stream_socket_server failed: {$errstr}");
 
-        $result = await(async(static function () use ($port): mixed {
-            $connector = new \React\Socket\Connector();
+        $address = stream_socket_get_name($listener, false);
+        self::assertNotFalse($address);
+        $port = (int) substr($address, strrpos($address, ':') + 1);
 
-            try {
-                $conn = await($connector->connect("tcp://127.0.0.1:$port"));
-                $conn->close();
-                return true;
-            } catch (\RuntimeException) {
-                return false;
-            }
-        })());
+        $result = $this->scope->run(static function (ExecutionScope $scope) use ($port): ProbeResult {
+            $task = new ProbePort('127.0.0.1', $port, timeoutSeconds: 1.0);
+            return $task($scope);
+        });
 
-        $server->close();
-        $this->assertTrue($result);
+        fclose($listener);
+
+        self::assertSame('tcp', $result->method);
+        self::assertSame($port, $result->port);
+        self::assertTrue($result->reachable);
+        self::assertNotNull($result->latencyMs);
     }
 
-    public function test_detects_closed_port(): void
+    public function testDetectsClosedPort(): void
     {
-        $result = await(async(static function (): mixed {
-            $connector = new \React\Socket\Connector([
-                'timeout' => 1,
-            ]);
+        $result = $this->scope->run(static function (ExecutionScope $scope): ProbeResult {
+            $task = new ProbePort('127.0.0.1', 1, timeoutSeconds: 0.5);
+            return $task($scope);
+        });
 
-            try {
-                $conn = await($connector->connect('tcp://127.0.0.1:19999'));
-                $conn->close();
-                return true;
-            } catch (\RuntimeException) {
-                return false;
-            }
-        })());
-
-        $this->assertFalse($result);
+        self::assertSame('tcp', $result->method);
+        self::assertSame(1, $result->port);
+        self::assertFalse($result->reachable);
+        self::assertNull($result->latencyMs);
     }
 }

@@ -4,15 +4,18 @@ declare(strict_types=1);
 
 namespace Phalanx\Grammata\Task;
 
-use Phalanx\ExecutionScope;
 use Phalanx\Grammata\Exception\FilesystemException;
 use Phalanx\Grammata\FilePool;
+use Phalanx\Scope\ExecutionScope;
+use Phalanx\Scope\Stream\StreamContext;
+use Phalanx\Styx\Channel;
 use Phalanx\Styx\Emitter;
 use Phalanx\Task\Executable;
-use React\Stream\ReadableResourceStream;
 
 final readonly class ReadFileStream implements Executable
 {
+    private const int CHUNK_BYTES = 8192;
+
     public function __construct(
         private string $path,
     ) {}
@@ -29,15 +32,27 @@ final readonly class ReadFileStream implements Executable
             throw new FilesystemException("Failed to open: {$this->path}", $this->path);
         }
 
-        $stream = new ReadableResourceStream($handle);
-
-        $scope->onDispose(static function () use ($stream, $pool): void {
-            $stream->close();
+        $scope->onDispose(static function () use ($handle, $pool): void {
+            if (is_resource($handle)) {
+                fclose($handle);
+            }
             $pool->release();
         });
 
-        $stream->on('close', static fn() => $pool->release());
+        $path = $this->path;
 
-        return Emitter::stream($stream);
+        return Emitter::produce(static function (Channel $ch, StreamContext $ctx) use ($handle, $path): void {
+            while (!feof($handle)) {
+                $ctx->throwIfCancelled();
+                $chunk = @fread($handle, self::CHUNK_BYTES);
+                if ($chunk === false) {
+                    throw new FilesystemException("Read failed: {$path}", $path);
+                }
+                if ($chunk === '') {
+                    break;
+                }
+                $ch->emit($chunk);
+            }
+        });
     }
 }

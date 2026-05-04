@@ -4,15 +4,16 @@ declare(strict_types=1);
 
 namespace Phalanx\Hermes\Client\Tests\Unit;
 
-use Phalanx\Styx\Channel;
+use Closure;
+use OpenSwoole\Coroutine;
 use Phalanx\Hermes\Client\WsClientCodec;
 use Phalanx\Hermes\WsMessage;
+use Phalanx\Styx\Channel;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Ratchet\RFC6455\Messaging\Frame;
-
-use function React\Async\async;
-use function React\Async\await;
+use RuntimeException;
+use Throwable;
 
 final class WsClientCodecTest extends TestCase
 {
@@ -58,11 +59,11 @@ final class WsClientCodecTest extends TestCase
         $inbound = new Channel(bufferSize: 8);
         $codec->attach($inbound, static fn() => null);
 
-        // Server sends unmasked frames
         $serverFrame = new Frame('hello from server', true, Frame::OP_TEXT);
-        $codec->onData($serverFrame->getContents());
 
-        $received = $this->drainOne($inbound);
+        $received = $this->captureFirst($inbound, static function () use ($codec, $serverFrame): void {
+            $codec->onData($serverFrame->getContents());
+        });
 
         $this->assertTrue($received->isText);
         $this->assertSame('hello from server', $received->payload);
@@ -77,9 +78,10 @@ final class WsClientCodecTest extends TestCase
 
         $data = random_bytes(32);
         $serverFrame = new Frame($data, true, Frame::OP_BINARY);
-        $codec->onData($serverFrame->getContents());
 
-        $received = $this->drainOne($inbound);
+        $received = $this->captureFirst($inbound, static function () use ($codec, $serverFrame): void {
+            $codec->onData($serverFrame->getContents());
+        });
 
         $this->assertTrue($received->isBinary);
         $this->assertSame($data, $received->payload);
@@ -148,13 +150,34 @@ final class WsClientCodecTest extends TestCase
         $this->assertTrue(true);
     }
 
-    private function drainOne(Channel $channel): WsMessage
+    /**
+     * Run the producer body and the channel drain inside one OpenSwoole
+     * coroutine so the emit (push) and consume (pop) share a scheduler.
+     */
+    private function captureFirst(Channel $channel, Closure $producer): WsMessage
     {
-        return await(async(static function () use ($channel): WsMessage {
-            foreach ($channel->consume() as $msg) {
-                return $msg;
+        $received = null;
+        $caught = null;
+
+        Coroutine::run(static function () use ($channel, $producer, &$received, &$caught): void {
+            try {
+                $producer();
+                $channel->complete();
+                foreach ($channel->consume() as $msg) {
+                    $received = $msg;
+                    return;
+                }
+            } catch (Throwable $e) {
+                $caught = $e;
             }
-            throw new \RuntimeException('No message received');
-        })());
+        });
+
+        if ($caught !== null) {
+            throw $caught;
+        }
+        if (!$received instanceof WsMessage) {
+            throw new RuntimeException('No message received');
+        }
+        return $received;
     }
 }

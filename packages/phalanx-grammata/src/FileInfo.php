@@ -19,6 +19,7 @@ final readonly class FileInfo
         public ?string $symlinkTarget = null,
     ) {}
 
+    /** @param array<int|string, mixed> $stat */
     public static function fromStat(string $path, array $stat): self
     {
         return new self(

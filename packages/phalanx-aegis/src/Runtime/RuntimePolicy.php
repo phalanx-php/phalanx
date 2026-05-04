@@ -40,6 +40,15 @@ final readonly class RuntimePolicy
             $required |= self::flagsFor($capability);
         }
 
+        // HOOK_STDIO is sensitive, not required: enabling it globally turns
+        // every fread/fwrite (including library code that doesn't expect it)
+        // into a coroutine yield, which is unsafe in long-running pools.
+        // Console input is coroutine-aware via Phalanx\Console\Input\ConsoleInput,
+        // which uses Coroutine\System::waitEvent + non-blocking fread inside
+        // $scope->call(..., WaitReason::input()) — supervised, cancellable,
+        // and isolated to the explicit consumer. HOOK_SLEEP and
+        // HOOK_BLOCKING_FUNCTION are flagged sensitive for the same reason:
+        // their global effect is too coarse for a managed runtime.
         return new self(
             name: self::nameFor($capabilities),
             requiredFlags: $required,
