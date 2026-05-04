@@ -74,4 +74,22 @@ final class SuggestInputTest extends PromptTestCase
         );
         self::assertNotEmpty($inputCalls);
     }
+
+    #[Test]
+    public function escapeDismissesSuggestionsThenTypingReTriggersSearch(): void
+    {
+        $queries = [];
+        $closure = static function (string $q) use (&$queries): array {
+            $queries[] = $q;
+            return $q === '' ? [] : ['hit-' . $q];
+        };
+
+        $reader = $this->reader(['a', self::ESCAPE, 'b', self::TAB, self::ENTER]);
+
+        $result = $this->suggest($closure)->prompt($this->scope, $this->output, $reader);
+
+        self::assertSame('hit-ab', $result);
+        self::assertContains('a', $queries);
+        self::assertContains('ab', $queries);
+    }
 }
