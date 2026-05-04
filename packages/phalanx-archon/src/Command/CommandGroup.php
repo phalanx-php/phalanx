@@ -85,20 +85,8 @@ final class CommandGroup implements Executable
     {
         $name = $scope->attribute('command');
 
-        if ($name !== null && isset($this->groups[$name])) {
-            /** @var list<string> $args */
-            $args = $scope->attribute('args', []);
-            $subcommand = $args[0] ?? null;
-
-            if ($subcommand === null || $subcommand === '--help' || $subcommand === 'help') {
-                return HelpGenerator::forGroup($name, $this->groups[$name]);
-            }
-
-            $childScope = $scope
-                ->withAttribute('command', $subcommand)
-                ->withAttribute('args', array_slice($args, 1));
-
-            return ($this->groups[$name])($childScope);
+        if (is_string($name) && isset($this->groups[$name])) {
+            return $this->dispatchSubcommand($scope, $name, $this->groups[$name]);
         }
 
         return ($this->inner)($scope);
@@ -149,5 +137,22 @@ final class CommandGroup implements Executable
     public function commands(): array
     {
         return $this->inner->filterByConfig(CommandConfig::class);
+    }
+
+    private function dispatchSubcommand(ExecutionScope $scope, string $name, self $group): mixed
+    {
+        /** @var list<string> $args */
+        $args       = $scope->attribute('args', []);
+        $subcommand = $args[0] ?? null;
+
+        if ($subcommand === null || $subcommand === '--help' || $subcommand === 'help') {
+            return HelpGenerator::forGroup($name, $group);
+        }
+
+        $childScope = $scope
+            ->withAttribute('command', $subcommand)
+            ->withAttribute('args', array_slice($args, 1));
+
+        return $group($childScope);
     }
 }
