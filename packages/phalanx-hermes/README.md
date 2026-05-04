@@ -4,10 +4,6 @@
 
 # Phalanx Hermes
 
-> Part of the [Phalanx](https://github.com/phalanx-php/phalanx-aegis) async PHP framework.
+WebSocket server and client support for Phalanx, including handshake, framing, pub/sub patterns, and runtime integration with HTTP upgrade flows.
 
-Production-grade WebSocket server support with RFC 6455 handshake, topic-based pub/sub, and leak-free connection tracking via `WeakMap`. Integrates directly with the Phalanx HTTP runner -- WebSocket and HTTP traffic share a single port.
-
----
-
-Phalanx is getting a facelift, and not an insignificant one. The fun is just getting started.
+Part of the [Phalanx monorepo](https://github.com/phalanx-php/phalanx).

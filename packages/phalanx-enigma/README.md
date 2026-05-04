@@ -4,10 +4,6 @@
 
 # Phalanx Enigma
 
-> Part of the [Phalanx](https://github.com/phalanx-php/phalanx-aegis) async PHP framework.
+Non-blocking SSH command execution, file transfer, and tunnel orchestration as Phalanx tasks, so remote operations compose cleanly with the rest of your async runtime flows.
 
-Non-blocking SSH command execution, file transfer, and tunnel management as Phalanx tasks. Built on `react/child-process` to drive the system `ssh`, `scp`, and `sftp` binaries without blocking the event loop.
-
----
-
-Phalanx is getting a facelift, and not an insignificant one. The fun is just getting started.
+Part of the [Phalanx monorepo](https://github.com/phalanx-php/phalanx).

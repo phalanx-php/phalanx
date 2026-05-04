@@ -4,10 +4,6 @@
 
 # Phalanx Skopos
 
-> Part of the [Phalanx](https://github.com/phalanx-php/phalanx-aegis) async PHP framework.
+Development server orchestrator for Phalanx projects that coordinates process startup, output multiplexing, and file-watch driven workflows from a single config entry point.
 
-PHP-native dev server orchestrator. Manages backend servers, frontend builds, CSS compilation, file watching, and live reload from a single `skopos.php` config file. Uses a `bun` binary under the hood for frontend builds and CSS &mdash; no Node toolchain, no `npx concurrently`.
-
----
-
-Phalanx is getting a facelift, and not an insignificant one. The fun is just getting started.
+Part of the [Phalanx monorepo](https://github.com/phalanx-php/phalanx).

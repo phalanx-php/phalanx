@@ -4,10 +4,6 @@
 
 # Phalanx Styx
 
-> Part of the [Phalanx](https://github.com/phalanx-php/phalanx-aegis) async PHP framework.
+Reactive stream primitives for Phalanx that convert push-based events into composable, pull-friendly stream pipelines for scoped async execution.
 
-Reactive streams that bridge push-based sources into pull-based fiber iteration. WebSocket frames, SSE events, file tails, timers--they all become composable pipelines you consume with `foreach`.
-
----
-
-Phalanx is getting a facelift, and not an insignificant one. The fun is just getting started.
+Part of the [Phalanx monorepo](https://github.com/phalanx-php/phalanx).

@@ -4,10 +4,6 @@
 
 # Phalanx Hydra
 
-> Part of the [Phalanx](https://github.com/phalanx-php/phalanx-aegis) async PHP framework.
+Worker-process parallelism for Phalanx. Hydra offloads CPU-heavy or isolated work to supervised child processes while preserving task-level coordination from the parent runtime.
 
-Offload CPU-heavy work to supervised child processes. Tasks serialize, cross process boundaries via IPC, execute in isolated workers, and return results--all through a single `$scope->inWorker()` call.
-
----
-
-Phalanx is getting a facelift, and not an insignificant one. The fun is just getting started.
+Part of the [Phalanx monorepo](https://github.com/phalanx-php/phalanx).

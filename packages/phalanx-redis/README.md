@@ -4,10 +4,6 @@
 
 # Phalanx Redis
 
-> Part of the [Phalanx](https://github.com/phalanx-php/phalanx-aegis) async PHP framework.
+Async Redis integration for Phalanx via `clue/redis-react`, including command execution and pub/sub patterns that compose with the broader task runtime.
 
-Async Redis with typed commands, pub/sub, and automatic connection management — fully non-blocking, fully integrated with Phalanx scopes and services.
-
----
-
-Phalanx is getting a facelift, and not an insignificant one. The fun is just getting started.
+Part of the [Phalanx monorepo](https://github.com/phalanx-php/phalanx).
