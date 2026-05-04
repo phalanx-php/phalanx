@@ -265,6 +265,9 @@ final class StoaApplicationBuilder
             debug: $this->debug ?? $base->debug,
             quiet: $this->quiet ?? $base->quiet,
             poweredBy: $this->poweredByConfigured ? $this->poweredBy : $base->poweredBy,
+            documentRoot: $base->documentRoot,
+            enableStaticHandler: $base->enableStaticHandler,
+            httpCompression: $base->httpCompression,
         );
     }
 

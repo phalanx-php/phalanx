@@ -14,7 +14,9 @@ use OpenSwoole\Timer;
 use Phalanx\AppHost;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Cancellation\Cancelled;
+use Phalanx\Registry\RegistryScope;
 use Phalanx\Scope\ScopeIdentity;
+use Phalanx\Server\ServerStats;
 use Phalanx\Stoa\Runtime\Identity\StoaEventSid;
 use Phalanx\Stoa\Runtime\StoaScopeKey;
 use Phalanx\Supervisor\TaskTreeFormatter;
@@ -35,6 +37,7 @@ final class StoaRunner
     private ?int $drainTimer = null;
     private ?Server $server = null;
     private ?RouteGroup $routes = null;
+    private ?ServerStats $serverStats = null;
     private string $listenAddress = '';
 
     /** @var array<string, StoaRequestResource> */
@@ -213,9 +216,40 @@ final class StoaRunner
         return $response;
     }
 
-    public function activeRequests(): int
+    public function activeRequests(?RegistryScope $scope = null): int
     {
+        $scope ??= RegistryScope::Worker;
+
+        if ($scope === RegistryScope::Server) {
+            return $this->serverStats?->liveConnections(RegistryScope::Server) ?? count($this->activeRequestsById);
+        }
+
         return count($this->activeRequestsById);
+    }
+
+    /** @return array<string, int> */
+    public function activeRequestsByState(?RegistryScope $scope = null): array
+    {
+        $scope ??= RegistryScope::Worker;
+
+        if ($scope === RegistryScope::Server) {
+            return [];
+        }
+
+        $byState = [];
+
+        foreach ($this->activeRequestsById as $request) {
+            $state = $request->stateValue();
+            $byState[$state] = ($byState[$state] ?? 0) + 1;
+        }
+
+        return $byState;
+    }
+
+    public function withServerStats(ServerStats $serverStats): self
+    {
+        $this->serverStats = $serverStats;
+        return $this;
     }
 
     public function isDraining(): bool
@@ -226,6 +260,7 @@ final class StoaRunner
     private function onServerStart(Server $server): void
     {
         $this->running = true;
+        $this->serverStats ??= ServerStats::fromServer($server);
         $this->app->trace()->log(TraceType::LifecycleStartup, 'ready', ['listen' => $this->listenAddress]);
         if (!$this->config->quiet) {
             printf("Phalanx Server listening on %s\n", $this->listenAddress);
