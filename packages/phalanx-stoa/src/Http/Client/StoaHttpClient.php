@@ -44,6 +44,18 @@ final class StoaHttpClient
         return $this->request($scope, StoaHttpRequest::post($url, $body, $headers));
     }
 
+    public function requestStreaming(Suspendable $scope, StoaHttpRequest $request): StreamingHttpResponse
+    {
+        $response = $this->request($scope, $request);
+
+        return new StreamingHttpResponse(
+            status: $response->status,
+            reasonPhrase: $response->reasonPhrase,
+            headers: $response->headers,
+            body: $response->body,
+        );
+    }
+
     public function request(Suspendable $scope, StoaHttpRequest $request): StoaHttpResponse
     {
         $encoded = HttpRequestEncoder::encode($request, $this->config->userAgent);
