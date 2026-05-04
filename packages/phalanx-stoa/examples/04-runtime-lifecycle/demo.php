@@ -81,6 +81,20 @@ try {
         $failed = !check('request resource released', $released) || $failed;
         $failed = !check('disconnect did not complete work', $didNotComplete) || $failed;
         $failed = !check('server still responds after disconnect', $healthyAfterDisconnect) || $failed;
+
+        // Lock-down claims: response leases released, no resource leak after dispatch.
+        $scope = httpGet($host, $port, '/runtime/admin/scope');
+        $scopeBody = $scope['status'] === 200 ? json_decode($scope['body'], true) : null;
+        $leasesReleased = is_array($scopeBody) && ($scopeBody['response_leases'] ?? null) === [];
+        $resourcesReleased = is_array($scopeBody) && ($scopeBody['request_resources'] ?? null) === 0;
+
+        printTimeline('managed runtime claims', [
+            ['leases', $leasesReleased ? 'no stoa.response leases held idle' : 'leases still held idle'],
+            ['resources', $resourcesReleased ? 'request resources fully released' : 'request resources still tracked'],
+        ]);
+
+        $failed = !check('response leases released after dispatch', $leasesReleased) || $failed;
+        $failed = !check('request resources released after dispatch', $resourcesReleased) || $failed;
     });
 } finally {
     Process::kill($pid, SIGTERM);

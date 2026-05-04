@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Acme\StoaDemo\Runtime\Routes\AdminScope;
 use Acme\StoaDemo\Runtime\Routes\DisconnectProbe;
 use Acme\StoaDemo\Runtime\Routes\Events;
 use Acme\StoaDemo\Runtime\Routes\Health;
@@ -13,4 +14,5 @@ return RouteGroup::of([
     'GET /runtime/health' => Health::class,
     'GET /runtime/slow' => SlowComplete::class,
     'GET /runtime/disconnect' => DisconnectProbe::class,
+    'GET /runtime/admin/scope' => AdminScope::class,
 ]);

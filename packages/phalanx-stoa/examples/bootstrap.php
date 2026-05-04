@@ -19,10 +19,9 @@ require_once $autoload;
 
 $demoNamespaces = [
     'Acme\\StoaDemo\\Basic\\' => __DIR__ . '/01-basic-routing/src/',
-    'Acme\\StoaDemo\\Contracts\\' => __DIR__ . '/02-contracts-validation/src/',
-    'Acme\\StoaDemo\\Advanced\\' => __DIR__ . '/03-advanced-api/src/',
+    'Acme\\StoaDemo\\Api\\' => __DIR__ . '/02-api/src/',
+    'Acme\\StoaDemo\\Realtime\\' => __DIR__ . '/03-realtime/src/',
     'Acme\\StoaDemo\\Runtime\\' => __DIR__ . '/04-runtime-lifecycle/src/',
-    'Acme\\StoaDemo\\ManagedRuntime\\' => __DIR__ . '/05-managed-runtime/src/',
 ];
 
 spl_autoload_register(static function (string $class) use ($demoNamespaces): void {
