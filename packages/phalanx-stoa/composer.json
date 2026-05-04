@@ -33,14 +33,14 @@
         }
     },
     "scripts": {
-        "demo": ["@demo:basic", "@demo:contracts", "@demo:advanced", "@demo:runtime"],
-        "demo:basic": "php examples/01-basic-routing/demo.php",
-        "demo:contracts": "php examples/02-contracts-validation/demo.php",
-        "demo:advanced": "php examples/03-advanced-api/demo.php",
+        "demo": ["@demo:quickstart", "@demo:api", "@demo:realtime", "@demo:runtime"],
+        "demo:quickstart": "php examples/01-basic-routing/demo.php",
+        "demo:api": "php examples/02-api/demo.php",
+        "demo:realtime": "php examples/03-realtime/demo.php",
         "demo:runtime": "php examples/04-runtime-lifecycle/demo.php",
-        "demo:serve:basic": "php examples/01-basic-routing/server.php",
-        "demo:serve:contracts": "php examples/02-contracts-validation/server.php",
-        "demo:serve:advanced": "php examples/03-advanced-api/server.php",
+        "demo:serve:quickstart": "php examples/01-basic-routing/server.php",
+        "demo:serve:api": "php examples/02-api/server.php",
+        "demo:serve:realtime": "php examples/03-realtime/server.php",
         "demo:serve:runtime": "php examples/04-runtime-lifecycle/server.php"
     },
     "extra": {
