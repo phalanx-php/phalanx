@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace Phalanx\Archon\Console\Style;
 
+/**
+ * Text-style modifiers applied by Style. Each case maps to its open/close
+ * ANSI SGR pair so styled spans can be safely concatenated and unwound
+ * without leaking attributes onto subsequent output.
+ */
 enum Modifier
 {
     case Bold;

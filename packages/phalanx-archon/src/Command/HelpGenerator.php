@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace Phalanx\Archon\Command;
 
+/**
+ * Pure string formatter for `--help` / `help` output. Renders a single
+ * command (forCommand), a subcommand group (forGroup), or the top-level
+ * application (forTopLevel) from the declarative CommandConfig and
+ * CommandGroup metadata. No I/O, no scope, no service dependencies.
+ */
 final class HelpGenerator
 {
     public static function forCommand(string $name, CommandConfig $config): string

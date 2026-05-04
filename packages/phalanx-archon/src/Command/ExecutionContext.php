@@ -7,6 +7,13 @@ namespace Phalanx\Archon\Command;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Support\ExecutionScopeDelegate;
 
+/**
+ * Concrete CommandScope. Composes a parent ExecutionScope (Aegis-supplied)
+ * with command identity, parsed input, the originating CommandConfig, and
+ * the managed `archon.command` resource id. ExecutionScopeDelegate forwards
+ * scope/cancellation/task primitives to the inner scope so this class only
+ * owns the command-specific surface.
+ */
 class ExecutionContext implements CommandScope
 {
     use ExecutionScopeDelegate;

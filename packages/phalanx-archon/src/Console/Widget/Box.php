@@ -6,6 +6,11 @@ namespace Phalanx\Archon\Console\Widget;
 
 use Phalanx\Archon\Console\Style\Style;
 
+/**
+ * Border character set selector for Box::render. Each case returns its own
+ * top/bottom/left/right glyphs; the rounded variant is the default for
+ * answered prompts and accordion summaries.
+ */
 enum BoxStyle
 {
     case Rounded;

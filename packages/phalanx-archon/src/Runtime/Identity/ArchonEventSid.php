@@ -6,6 +6,12 @@ namespace Phalanx\Archon\Runtime\Identity;
 
 use Phalanx\Runtime\Identity\RuntimeEventId;
 
+/**
+ * Stable identifiers for the lifecycle events Archon emits on the
+ * supervisor's runtime event stream (dispatch, match, completion,
+ * failure, abort). Diagnostics consumers query by these ids rather than
+ * by free-form strings.
+ */
 enum ArchonEventSid: string implements RuntimeEventId
 {
     case CommandAborted = 'archon.command.aborted';

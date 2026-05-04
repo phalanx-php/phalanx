@@ -6,6 +6,12 @@ namespace Phalanx\Archon\Runtime\Identity;
 
 use Phalanx\Runtime\Identity\RuntimeAnnotationId;
 
+/**
+ * Stable identifiers for annotations Archon attaches to managed resources
+ * and trace records (command name, exit code, handler class, etc.). The
+ * `archon.*` prefix matches the convention Aegis uses for its own ids
+ * so cross-package telemetry stays unambiguous.
+ */
 enum ArchonAnnotationSid: string implements RuntimeAnnotationId
 {
     case ArgumentCount = 'archon.argv_count';
