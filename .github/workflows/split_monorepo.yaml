@@ -24,14 +24,10 @@ jobs:
           - phalanx-argos
           - phalanx-grammata
           - phalanx-enigma
-          - phalanx-theatron
           - phalanx-eidolon
           - phalanx-skopos
           # NOT published yet (maturing):
           # - phalanx-redis
-          # - phalanx-twilio
-          # NOT published yet (spec-only):
-          # - phalanx-cdp
 
     steps:
       - uses: actions/checkout@v4

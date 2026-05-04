@@ -16,7 +16,6 @@ parameters:
         - packages/phalanx-postgres/src
         - packages/phalanx-redis/src
         - packages/phalanx-styx/src
-        - packages/phalanx-twilio/src
     scanDirectories:
         - vendor/openswoole/ide-helper
     phalanxInternalPaths:

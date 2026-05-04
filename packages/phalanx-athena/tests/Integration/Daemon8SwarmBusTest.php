@@ -26,7 +26,7 @@ class Daemon8SwarmBusTest extends TestCase
                 'trace_id' => 'trace_1',
                 'causation_id' => null,
                 'workspace' => 'rtntv',
-                'session' => 'phx-agents',
+                'session' => 'swarm-test',
                 'from' => 'VISION',
                 'addressed_to' => ['ADMIN'],
                 'kind' => 'planning_proposal',
