@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Archon\Console\Output;
 
+use OpenSwoole\Process;
 use WeakReference;
 
 /**
@@ -43,18 +44,18 @@ final class StreamOutput
         $this->cachedWidth  = $this->measureWidth();
         $this->cachedHeight = $this->measureHeight();
 
-        if ($this->isTty && function_exists('pcntl_signal')) {
+        if ($this->isTty && extension_loaded('openswoole') && defined('SIGWINCH')) {
             // WeakReference breaks the $this capture cycle. If StreamOutput is ever
             // eligible for GC the signal handler becomes a no-op instead of pinning it.
+            // Process::signal binds at the OpenSwoole reactor level — the handler only
+            // fires while the reactor is processing events, which is exactly when the
+            // prompt loop needs the dimensions to be current.
             $ref = WeakReference::create($this);
-            pcntl_signal(SIGWINCH, static function () use ($ref): void {
+            Process::signal(SIGWINCH, static function () use ($ref): void {
                 $self = $ref->get();
                 if ($self === null) {
                     return;
                 }
-                // Recompute synchronously here so subsequent width()/height() calls
-                // during the next render cycle return the updated values without
-                // issuing any blocking shell_exec inside the event loop.
                 $self->cachedWidth  = $self->measureWidth();
                 $self->cachedHeight = $self->measureHeight();
             });

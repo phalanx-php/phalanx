@@ -5,16 +5,31 @@ declare(strict_types=1);
 namespace Phalanx\Archon\Runtime\Identity;
 
 use Closure;
+use OpenSwoole\Process;
 
-/** @internal */
+/**
+ * Installs a policy's signal handlers on the OpenSwoole reactor.
+ *
+ * Each registered signal forwards to the supplied $onSignal closure with the
+ * matching ConsoleSignal value. restore() clears the registrations by passing
+ * `null` to Process::signal — the OpenSwoole reactor's documented removal
+ * contract. We do not snapshot prior handlers because OpenSwoole exposes no
+ * read API for them; consumers that need to coexist with foreign handlers
+ * must reinstall after restore().
+ *
+ * Skip-guard: install() is a no-op when the policy is empty or the openswoole
+ * extension is not loaded. Process::signal requires a running reactor to
+ * dispatch, but registration itself can occur before Coroutine::run starts —
+ * the binding survives and fires once the loop is up.
+ *
+ * @internal
+ */
 final class ConsoleSignalTrap
 {
     private bool $installed = false;
 
-    private ?bool $previousAsyncSignals = null;
-
-    /** @var array<int, callable|int> */
-    private array $previousHandlers = [];
+    /** @var list<int> */
+    private array $registered = [];
 
     private function __construct()
     {
@@ -24,16 +39,10 @@ final class ConsoleSignalTrap
     public static function install(ConsoleSignalPolicy $policy, Closure $onSignal): self
     {
         $trap = new self();
-        if (
-            $policy->exitCodes() === []
-            || !function_exists('pcntl_signal')
-            || !function_exists('pcntl_signal_get_handler')
-            || !function_exists('pcntl_async_signals')
-        ) {
+
+        if ($policy->exitCodes() === [] || !extension_loaded('openswoole')) {
             return $trap;
         }
-
-        $trap->previousAsyncSignals = pcntl_async_signals(true);
 
         foreach ($policy->exitCodes() as $number => $exitCode) {
             $signal = $policy->signal($number);
@@ -41,13 +50,13 @@ final class ConsoleSignalTrap
                 continue;
             }
 
-            $trap->previousHandlers[$number] = pcntl_signal_get_handler($number);
-            pcntl_signal($number, static function () use ($signal, $onSignal): void {
+            Process::signal($number, static function () use ($signal, $onSignal): void {
                 $onSignal($signal);
             });
+            $trap->registered[] = $number;
         }
 
-        $trap->installed = true;
+        $trap->installed = $trap->registered !== [];
 
         return $trap;
     }
@@ -58,16 +67,11 @@ final class ConsoleSignalTrap
             return;
         }
 
-        foreach ($this->previousHandlers as $number => $handler) {
-            pcntl_signal($number, $handler);
+        foreach ($this->registered as $number) {
+            Process::signal($number, null);
         }
 
-        if ($this->previousAsyncSignals !== null) {
-            pcntl_async_signals($this->previousAsyncSignals);
-        }
-
-        $this->installed = false;
-        $this->previousHandlers = [];
-        $this->previousAsyncSignals = null;
+        $this->installed  = false;
+        $this->registered = [];
     }
 }

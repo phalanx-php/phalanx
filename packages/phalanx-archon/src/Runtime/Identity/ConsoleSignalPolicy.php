@@ -5,8 +5,12 @@ declare(strict_types=1);
 namespace Phalanx\Archon\Runtime\Identity;
 
 use InvalidArgumentException;
-use ValueError;
 
+/**
+ * Declarative SIGINT/SIGTERM/etc → exit-code mapping consumed by
+ * {@see ConsoleSignalTrap}. Constructed via the static factories so the
+ * exit-code map is validated at the boundary.
+ */
 final readonly class ConsoleSignalPolicy
 {
     /** @param array<int, int> $exitCodes */
@@ -16,7 +20,7 @@ final readonly class ConsoleSignalPolicy
 
     public static function default(): self
     {
-        if (!function_exists('pcntl_signal')) {
+        if (!extension_loaded('openswoole')) {
             return self::disabled();
         }
 
@@ -44,23 +48,12 @@ final readonly class ConsoleSignalPolicy
                 throw new InvalidArgumentException('Signal policies require positive integer signals and exit codes.');
             }
 
-            self::assertSupportedSignal($signal);
+            if ($signal > 64) {
+                throw new InvalidArgumentException('Signal policies require POSIX signal numbers (1-64).');
+            }
         }
 
         return new self($exitCodes);
-    }
-
-    private static function assertSupportedSignal(int $signal): void
-    {
-        if (!function_exists('pcntl_signal_get_handler')) {
-            return;
-        }
-
-        try {
-            pcntl_signal_get_handler($signal);
-        } catch (ValueError) {
-            throw new InvalidArgumentException('Signal policies require signals supported by pcntl.');
-        }
     }
 
     private static function reason(int $number): string

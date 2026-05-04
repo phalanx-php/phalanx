@@ -9,10 +9,7 @@ use Phalanx\Archon\Command\ArchonDispatchTask;
 use Phalanx\Archon\Command\CommandDispatcher;
 use Phalanx\Archon\Command\CommandGroup;
 use Phalanx\Archon\Command\InlineCommand;
-use Phalanx\Archon\Runtime\Identity\ConsoleSignal;
 use Phalanx\Archon\Runtime\Identity\ConsoleSignalState;
-use Phalanx\Archon\Runtime\Identity\ConsoleSignalTrap;
-use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Scope\ExecutionScope;
 
 final class ArchonApplication
@@ -68,25 +65,14 @@ final class ArchonApplication
     /** @param list<string>|null $argv */
     public function run(?array $argv = null): int
     {
-        $token = CancellationToken::create();
         $signals = new ConsoleSignalState();
-        $trap = ConsoleSignalTrap::install(
-            $this->consoleConfig->signalPolicy(),
-            static function (ConsoleSignal $signal) use ($signals, $token): void {
-                $signals->record($signal);
-                $token->cancel();
-            },
-        );
 
-        try {
-            return (int) $this->host->run(new ArchonDispatchTask(
-                application: $this,
-                argv: array_values($argv ?? $this->consoleConfig->argv),
-                signals: $signals,
-            ), $token);
-        } finally {
-            $trap->restore();
-        }
+        return (int) $this->host->run(new ArchonDispatchTask(
+            application: $this,
+            argv: array_values($argv ?? $this->consoleConfig->argv),
+            signals: $signals,
+            signalPolicy: $this->consoleConfig->signalPolicy(),
+        ));
     }
 
     public function shutdown(): void

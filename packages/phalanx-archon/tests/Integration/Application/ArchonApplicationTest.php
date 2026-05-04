@@ -345,8 +345,8 @@ final class ArchonApplicationTest extends CoroutineTestCase
     #[Test]
     public function runCancelsThroughConfiguredSignalTrap(): void
     {
-        if (!defined('SIGUSR1') || !function_exists('posix_kill') || !function_exists('pcntl_signal_dispatch')) {
-            self::markTestSkipped('Signal integration requires SIGUSR1, posix_kill, and pcntl_signal_dispatch.');
+        if (!defined('SIGUSR1') || !extension_loaded('openswoole')) {
+            self::markTestSkipped('Signal integration requires SIGUSR1 and OpenSwoole.');
         }
 
         $stream = StreamOutputHelper::open();
@@ -356,8 +356,8 @@ final class ArchonApplicationTest extends CoroutineTestCase
                 $pid = getmypid();
                 self::assertIsInt($pid);
 
-                posix_kill($pid, SIGUSR1);
-                pcntl_signal_dispatch();
+                \OpenSwoole\Process::kill($pid, SIGUSR1);
+                \OpenSwoole\Coroutine::usleep(50_000);
                 $scope->throwIfCancelled();
 
                 return 0;
