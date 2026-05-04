@@ -121,4 +121,103 @@ final class FormTest extends TestCase
 
         self::assertSame([], $form->submit($this->scope, $this->output, $reader));
     }
+
+    #[Test]
+    public function revertFromIndexTwoUnwindsToOneThenAdvancesAgain(): void
+    {
+        $stepTwoPrevSeen = [];
+
+        $form = (new Form())
+            ->text('first', fn(mixed $prev) => new TextInput(
+                $this->theme,
+                'First',
+                '',
+                is_string($prev) ? $prev : '',
+                '',
+                null,
+                null,
+            ))
+            ->text('second', fn(mixed $prev) => new TextInput(
+                $this->theme,
+                'Second',
+                '',
+                is_string($prev) ? $prev : '',
+                '',
+                null,
+                null,
+            ))
+            ->text('third', function (mixed $prev) use (&$stepTwoPrevSeen): TextInput {
+                $stepTwoPrevSeen[] = $prev;
+                return new TextInput($this->theme, 'Third', '', '', '', null, null);
+            });
+
+        $reader = new FakeKeyReader([
+            'a', 'enter',
+            'b', 'enter',
+            'ctrl-u',
+            'enter',
+            'z', 'enter',
+        ]);
+
+        $values = $form->submit($this->scope, $this->output, $reader);
+
+        self::assertSame(['first' => 'a', 'second' => 'b', 'third' => 'z'], $values);
+        self::assertSame([null, null], $stepTwoPrevSeen);
+    }
+
+    #[Test]
+    public function revertChainAllTheWayBackThrowsAtIndexZero(): void
+    {
+        $form = (new Form())
+            ->text('first', fn() => new TextInput($this->theme, 'First', '', '', '', null, null))
+            ->text('second', fn() => new TextInput($this->theme, 'Second', '', '', '', null, null))
+            ->text('third', fn() => new TextInput($this->theme, 'Third', '', '', '', null, null));
+
+        $reader = new FakeKeyReader([
+            'a', 'enter',
+            'b', 'enter',
+            'ctrl-u',
+            'ctrl-u',
+            'ctrl-u',
+        ]);
+
+        $this->expectException(FormRevertedException::class);
+
+        $form->submit($this->scope, $this->output, $reader);
+    }
+
+    #[Test]
+    public function successfulPriorStepsArePreservedAcrossRevert(): void
+    {
+        $stepOnePrevSeen = [];
+
+        $form = (new Form())
+            ->text('first', fn() => new TextInput($this->theme, 'First', '', '', '', null, null))
+            ->text('second', function (mixed $prev) use (&$stepOnePrevSeen): TextInput {
+                $stepOnePrevSeen[] = $prev;
+                return new TextInput(
+                    $this->theme,
+                    'Second',
+                    '',
+                    is_string($prev) ? $prev : '',
+                    '',
+                    null,
+                    null,
+                );
+            })
+            ->text('third', fn() => new TextInput($this->theme, 'Third', '', '', '', null, null));
+
+        $reader = new FakeKeyReader([
+            'a', 'enter',
+            'b', 'enter',
+            'ctrl-u',
+            'enter',
+            'c', 'enter',
+        ]);
+
+        $values = $form->submit($this->scope, $this->output, $reader);
+
+        self::assertSame(['first' => 'a', 'second' => 'b', 'third' => 'c'], $values);
+        self::assertSame([null, 'b'], $stepOnePrevSeen);
+    }
 }

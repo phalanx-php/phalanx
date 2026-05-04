@@ -102,4 +102,61 @@ final class AccordionTest extends TestCase
 
         $accordion->run($this->scope, $this->output, $reader);
     }
+
+    #[Test]
+    public function loopExitsWhenAllSectionsCompletedRegardlessOfCursorPosition(): void
+    {
+        $accordion = (new Accordion())
+            ->section('one', 'One', fn(): Form => (new Form())->text(
+                'value',
+                fn() => new TextInput($this->theme, 'Value', '', '', '', null, null),
+            ))
+            ->section('two', 'Two', fn(): Form => (new Form())->text(
+                'value',
+                fn() => new TextInput($this->theme, 'Value', '', '', '', null, null),
+            ))
+            ->section('three', 'Three', fn(): Form => (new Form())->text(
+                'value',
+                fn() => new TextInput($this->theme, 'Value', '', '', '', null, null),
+            ));
+
+        $reader = new FakeKeyReader([
+            'enter', 'A', 'enter',
+            'enter', 'B', 'enter',
+            'enter', 'C', 'enter',
+        ]);
+
+        $values = $accordion->run($this->scope, $this->output, $reader);
+
+        self::assertSame(
+            ['one' => ['value' => 'A'], 'two' => ['value' => 'B'], 'three' => ['value' => 'C']],
+            $values,
+        );
+    }
+
+    #[Test]
+    public function cursorAdvancesPastCompletedSection(): void
+    {
+        $accordion = (new Accordion())
+            ->section('one', 'One', fn(): Form => (new Form())->text(
+                'value',
+                fn() => new TextInput($this->theme, 'Value', '', '', '', null, null),
+            ))
+            ->section('two', 'Two', fn(): Form => (new Form())->text(
+                'value',
+                fn() => new TextInput($this->theme, 'Value', '', '', '', null, null),
+            ));
+
+        $reader = new FakeKeyReader([
+            'enter', 'A', 'enter',
+            'enter', 'B', 'enter',
+        ]);
+
+        $values = $accordion->run($this->scope, $this->output, $reader);
+
+        self::assertArrayHasKey('one', $values);
+        self::assertArrayHasKey('two', $values);
+        self::assertSame(['value' => 'A'], $values['one']);
+        self::assertSame(['value' => 'B'], $values['two']);
+    }
 }
