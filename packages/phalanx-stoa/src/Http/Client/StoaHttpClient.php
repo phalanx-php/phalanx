@@ -11,6 +11,7 @@ use Phalanx\Stoa\Http\Client\Wire\HttpResponseDecoder;
 use Phalanx\Stoa\Runtime\Identity\StoaResourceSid;
 use Phalanx\System\DnsResolver;
 use Phalanx\System\TcpClient;
+use Phalanx\System\TlsOptions;
 
 /**
  * Native outbound HTTP/1.1 client.
@@ -52,7 +53,7 @@ final class StoaHttpClient
         );
         $this->runtime->memory->resources->activate($resource);
 
-        $client = $this->buildClient($encoded['scheme']);
+        $client = $this->buildClient($encoded['scheme'], $encoded['host']);
         $address = $this->resolveHost($scope, $encoded['host']);
 
         try {
@@ -102,14 +103,32 @@ final class StoaHttpClient
         }
     }
 
-    private function buildClient(string $scheme): TcpClient
+    private function buildClient(string $scheme, string $host): TcpClient
     {
         $tls = $scheme === 'https';
 
-        return new TcpClient(
-            tls: $tls,
-            tlsOptions: $tls ? $this->config->tlsOptions : null,
-        );
+        if (!$tls) {
+            return new TcpClient();
+        }
+
+        $tlsOptions = $this->config->tlsOptions ?? new TlsOptions(verifyPeer: true, hostName: $host);
+
+        if ($tlsOptions->hostName === null) {
+            $tlsOptions = new TlsOptions(
+                verifyPeer: $tlsOptions->verifyPeer,
+                allowSelfSigned: $tlsOptions->allowSelfSigned,
+                hostName: $host,
+                caFile: $tlsOptions->caFile,
+                caPath: $tlsOptions->caPath,
+                certFile: $tlsOptions->certFile,
+                keyFile: $tlsOptions->keyFile,
+                passphrase: $tlsOptions->passphrase,
+                ciphers: $tlsOptions->ciphers,
+                protocols: $tlsOptions->protocols,
+            );
+        }
+
+        return new TcpClient(tls: true, tlsOptions: $tlsOptions);
     }
 
     private function resolveHost(Suspendable $scope, string $host): string
