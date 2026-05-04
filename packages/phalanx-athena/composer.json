@@ -21,7 +21,9 @@
         "phalanx-php/redis": "For conversation memory and pub/sub agent coordination",
         "phalanx-php/postgres": "For persistent conversation storage and LISTEN/NOTIFY tasks",
         "phalanx-php/hermes": "For real-time agent sessions over WebSocket",
-        "phalanx-php/archon": "For CLI agent REPL"
+        "phalanx-php/archon": "For CLI agent REPL",
+        "guzzlehttp/guzzle": "For Guzzle-based SDKs (AWS, Stripe) via CoroutineGuzzleStack",
+        "hyperf/guzzle": "Coroutine-aware Guzzle handler so blocking SDKs cooperate with the OpenSwoole reactor"
     },
     "autoload": {
         "psr-4": {

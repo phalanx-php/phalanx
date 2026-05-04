@@ -41,7 +41,7 @@ final class UiSupervisorTask implements Executable
         ])($scope) as $event) {
             $this->updateState($event);
             
-            $this->bus->emit(new SwarmEvent(
+            $this->bus->emit($scope, new SwarmEvent(
                 from: $this->agentId,
                 kind: SwarmEventKind::UiRender,
                 workspace: $this->config->workspace,

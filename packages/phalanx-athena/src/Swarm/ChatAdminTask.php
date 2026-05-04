@@ -6,10 +6,11 @@ namespace Phalanx\Athena\Swarm;
 
 use Phalanx\Athena\AgentDefinition;
 use Phalanx\Athena\AgentLoop;
+use Phalanx\Athena\Event\AgentEventKind;
 use Phalanx\Athena\Turn;
 use Phalanx\ExecutionScope;
+use Phalanx\Scope\Suspendable;
 use Phalanx\Task\Executable;
-use Phalanx\Athena\Event\AgentEventKind;
 
 final class ChatAdminTask implements Executable
 {
@@ -25,7 +26,7 @@ final class ChatAdminTask implements Executable
 
     public function __invoke(ExecutionScope $scope): mixed
     {
-        $this->emit(SwarmEventKind::Online);
+        $this->emit($scope, SwarmEventKind::Online);
 
         $bus = $this->bus;
         $workspace = $this->config->workspace;
@@ -45,24 +46,34 @@ final class ChatAdminTask implements Executable
                     ],
                 ])($s) as $event) {
                     if ($event->kind === SwarmEventKind::ClearanceRequested) {
-                        $self->handleClearance($event);
+                        $self->handleClearance($s, $event);
                     }
-                    
+
                     $self->synthesize($s);
                 }
-            })
+            }),
         ]);
     }
 
-    public function handleClearance(SwarmEvent $req): void
+    public function handleClearance(Suspendable $scope, SwarmEvent $req): void
     {
         $this->clearanceQueue[$req->traceId] = $req;
-        $this->autoProcessClearance($req);
+        $this->autoProcessClearance($scope, $req);
     }
 
-    private function autoProcessClearance(SwarmEvent $req): void
+    public function synthesize(ExecutionScope $scope): void
     {
         $this->emit(
+            $scope,
+            kind: SwarmEventKind::SummaryUpdate,
+            payload: ['text' => "Monitoring swarm state. Active queue: " . count($this->clearanceQueue)]
+        );
+    }
+
+    private function autoProcessClearance(Suspendable $scope, SwarmEvent $req): void
+    {
+        $this->emit(
+            $scope,
             kind: SwarmEventKind::ClearanceGranted,
             addressedTo: $req->from,
             traceId: $req->traceId
@@ -70,21 +81,13 @@ final class ChatAdminTask implements Executable
         unset($this->clearanceQueue[$req->traceId]);
     }
 
-    public function synthesize(ExecutionScope $scope): void
-    {
-        $this->emit(
-            kind: SwarmEventKind::SummaryUpdate,
-            payload: ['text' => "Monitoring swarm state. Active queue: " . count($this->clearanceQueue)]
-        );
-    }
-
     /**
      * @param array<string, mixed> $payload
      * @param string|list<string>|null $addressedTo
      */
-    private function emit(SwarmEventKind $kind, array $payload = [], ?string $traceId = null, string|array|null $addressedTo = null): void
+    private function emit(Suspendable $scope, SwarmEventKind $kind, array $payload = [], ?string $traceId = null, string|array|null $addressedTo = null): void
     {
-        $this->bus->emit(new SwarmEvent(
+        $this->bus->emit($scope, new SwarmEvent(
             from: $this->agentId,
             kind: $kind,
             workspace: $this->config->workspace,

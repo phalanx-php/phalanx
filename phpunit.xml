@@ -61,6 +61,9 @@
         <testsuite name="Hermes Client Unit">
             <directory>packages/phalanx-hermes/tests/Client/Unit</directory>
         </testsuite>
+        <testsuite name="Athena Unit">
+            <directory>packages/phalanx-athena/tests/Unit</directory>
+        </testsuite>
         <testsuite name="Athena Integration">
             <directory>packages/phalanx-athena/tests/Integration</directory>
         </testsuite>

@@ -8,146 +8,115 @@ use Phalanx\Athena\Event\AgentEvent;
 use Phalanx\Athena\Event\TokenDelta;
 use Phalanx\Athena\Event\TokenUsage;
 use Phalanx\Styx\Emitter;
-use React\Http\Browser;
-use React\Promise\Deferred;
-use React\Stream\ReadableStreamInterface;
+use Phalanx\System\HttpClient;
+use Phalanx\System\HttpRequest;
+use RuntimeException;
 
+/**
+ * Ollama local-LLM streaming provider.
+ *
+ * Talks NDJSON to `/api/chat` over HTTP/2 (OpenSwoole 26's Http2 client
+ * speaks h2c when TLS is off). Each newline-delimited JSON object is one
+ * incremental message frame; the final frame carries `done: true` plus
+ * `prompt_eval_count` / `eval_count` for token accounting.
+ *
+ * Uses {@see HttpStream::lines()} directly — no SSE parser needed.
+ */
 final class OllamaProvider implements LlmProvider
 {
-    private Browser $browser;
+    private readonly HttpClient $client;
 
     public function __construct(
         private readonly OllamaConfig $config,
+        ?HttpClient $client = null,
     ) {
-        $this->browser = new Browser()
-            ->withTimeout(300.0)
-            ->withFollowRedirects(false);
+        $this->client = $client ?? self::buildClient($config);
     }
 
     public function generate(GenerateRequest $request): Emitter
     {
         $config = $this->config;
-        $browser = $this->browser;
+        $client = $this->client;
 
-        return Emitter::produce(static function ($channel, $ctx) use ($request, $config, $browser) {
+        return Emitter::produce(static function ($channel, $ctx) use ($request, $config, $client): void {
             $model = $request->model ?? $config->model;
-            $messages = [];
-
-            if ($request->conversation->systemPrompt !== null) {
-                $messages[] = ['role' => 'system', 'content' => $request->conversation->systemPrompt];
-            }
-
-            foreach ($request->conversation->toArray() as $msg) {
-                $messages[] = $msg;
-            }
-
-            $body = [
-                'model' => $model,
-                'messages' => $messages,
-                'stream' => true,
-            ];
-
+            $body = self::buildRequestBody($request, $model);
             $startTime = hrtime(true);
             $step = 0;
             $usage = TokenUsage::zero();
 
-            $response = $ctx->await($browser->requestStreaming(
-                'POST',
-                $config->baseUrl . '/api/chat',
-                ['Content-Type' => 'application/json'],
-                json_encode($body, JSON_THROW_ON_ERROR),
-            ));
+            $jsonBody = json_encode($body, JSON_THROW_ON_ERROR);
+            $httpRequest = new HttpRequest('POST', '/api/chat', $jsonBody, [
+                'content-type' => 'application/json',
+            ]);
 
-            /** @var ReadableStreamInterface $body */
-            $body = $response->getBody();
-            $ctx->onDispose(static fn() => $body->close());
+            $stream = $client->stream($ctx, $httpRequest);
+            $ctx->onDispose(static fn() => $stream->close());
 
-            $buffer = '';
-            $ended = false;
-            /** @var \React\Promise\Deferred<bool>|null $waiting */
-            $waiting = null;
-            $abandoned = false;
-
-            $body->on('data', static function (string $data) use (&$buffer, &$waiting, &$abandoned): void {
-                if ($abandoned) { // @phpstan-ignore if.alwaysFalse
-                    return;
+            foreach ($stream->lines($ctx) as $line) {
+                $ctx->throwIfCancelled();
+                if ($line === '') {
+                    continue;
                 }
-                $buffer .= $data;
-                if ($waiting !== null) {
-                    $d = $waiting;
-                    $waiting = null;
-                    $d->resolve(true);
+
+                if ($stream->status >= 400) {
+                    throw new RuntimeException("Ollama API {$stream->status}: {$line}");
                 }
-            });
 
-            $body->on('end', static function () use (&$ended, &$waiting, &$abandoned): void {
-                if ($abandoned) { // @phpstan-ignore if.alwaysFalse
-                    return;
+                $parsed = json_decode($line, true, 512, JSON_THROW_ON_ERROR);
+                if (!is_array($parsed)) {
+                    continue;
                 }
-                $ended = true;
-                if ($waiting !== null) {
-                    $d = $waiting;
-                    $waiting = null;
-                    $d->resolve(false);
+                $elapsed = (hrtime(true) - $startTime) / 1e6;
+
+                $message = $parsed['message'] ?? [];
+                $content = is_array($message) ? (string) ($message['content'] ?? '') : '';
+                if ($content !== '') {
+                    $channel->emit(AgentEvent::tokenDelta(
+                        new TokenDelta(text: $content),
+                        $elapsed,
+                        $usage,
+                        $step,
+                    ));
                 }
-            });
 
-            $body->on('error', static function () use (&$ended, &$waiting, &$abandoned): void {
-                if ($abandoned) { // @phpstan-ignore if.alwaysFalse
-                    return;
+                if ($parsed['done'] ?? false) {
+                    $usage = new TokenUsage(
+                        input: (int) ($parsed['prompt_eval_count'] ?? 0),
+                        output: (int) ($parsed['eval_count'] ?? 0),
+                    );
+                    $channel->emit(AgentEvent::tokenComplete($elapsed, $usage, $step));
                 }
-                $ended = true;
-                if ($waiting !== null) {
-                    $d = $waiting;
-                    $waiting = null;
-                    $d->resolve(false);
-                }
-            });
-
-            try {
-                while (!$ended || $buffer !== '') {
-                    $ctx->throwIfCancelled();
-
-                    while (($nlPos = strpos($buffer, "\n")) !== false) {
-                        $line = substr($buffer, 0, $nlPos);
-                        $buffer = substr($buffer, $nlPos + 1);
-
-                        if ($line === '') {
-                            continue;
-                        }
-
-                        $parsed = json_decode($line, true, 512, JSON_THROW_ON_ERROR);
-                        $elapsed = (hrtime(true) - $startTime) / 1e6;
-
-                        $content = $parsed['message']['content'] ?? '';
-
-                        if ($content !== '') {
-                            $channel->emit(AgentEvent::tokenDelta(
-                                new TokenDelta(text: $content),
-                                $elapsed, $usage, $step,
-                            ));
-                        }
-
-                        if ($parsed['done'] ?? false) {
-                            $usage = new TokenUsage(
-                                input: (int) ($parsed['prompt_eval_count'] ?? 0),
-                                output: (int) ($parsed['eval_count'] ?? 0),
-                            );
-                            $channel->emit(AgentEvent::tokenComplete($elapsed, $usage, $step));
-                        }
-                    }
-
-                    if (!$ended) {
-                        $waiting = new Deferred();
-                        $ctx->await($waiting->promise());
-                    }
-                }
-            } finally {
-                $abandoned = true;
-                $waiting = null;
             }
 
             $channel->complete();
         });
+    }
+
+    private static function buildClient(OllamaConfig $config): HttpClient
+    {
+        $parts = parse_url($config->baseUrl);
+        $host = (string) ($parts['host'] ?? 'localhost');
+        $port = (int) ($parts['port'] ?? (($parts['scheme'] ?? 'http') === 'https' ? 443 : 11434));
+        $tls = ($parts['scheme'] ?? 'http') === 'https';
+        return new HttpClient($host, $port, tls: $tls);
+    }
+
+    /** @return array<string, mixed> */
+    private static function buildRequestBody(GenerateRequest $request, string $model): array
+    {
+        $messages = [];
+        if ($request->conversation->systemPrompt !== null) {
+            $messages[] = ['role' => 'system', 'content' => $request->conversation->systemPrompt];
+        }
+        foreach ($request->conversation->toArray() as $msg) {
+            $messages[] = $msg;
+        }
+
+        return [
+            'model' => $model,
+            'messages' => $messages,
+            'stream' => true,
+        ];
     }
 }

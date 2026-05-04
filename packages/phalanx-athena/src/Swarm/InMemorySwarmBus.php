@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Phalanx\Athena\Swarm;
 
-use Phalanx\Styx\Emitter;
-use Phalanx\Styx\Channel;
 use Phalanx\Scope\Stream\StreamContext;
+use Phalanx\Scope\Suspendable;
+use Phalanx\Styx\Channel;
+use Phalanx\Styx\Emitter;
 
 /**
  * In-memory implementation of the swarm bus.
@@ -17,7 +18,7 @@ final class InMemorySwarmBus implements SwarmBus
     /** @var list<Channel> */
     private array $subscribers = [];
 
-    public function emit(SwarmEvent $event): void
+    public function emit(Suspendable $scope, SwarmEvent $event): void
     {
         foreach ($this->subscribers as $channel) {
             $channel->emit($event);

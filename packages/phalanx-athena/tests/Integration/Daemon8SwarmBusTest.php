@@ -8,10 +8,11 @@ use Phalanx\Athena\Swarm\Daemon8SwarmBus;
 use Phalanx\Athena\Swarm\SwarmConfig;
 use Phalanx\Athena\Swarm\SwarmEvent;
 use Phalanx\Athena\Swarm\SwarmEventKind;
+use Phalanx\Scope\ExecutionScope;
+use Phalanx\Tests\Support\CoroutineTestCase;
 use PHPUnit\Framework\Attributes\Group;
-use PHPUnit\Framework\TestCase;
 
-class Daemon8SwarmBusTest extends TestCase
+class Daemon8SwarmBusTest extends CoroutineTestCase
 {
     public function test_it_parses_current_daemon8_custom_channel_shape(): void
     {
@@ -62,8 +63,10 @@ class Daemon8SwarmBusTest extends TestCase
         );
 
         // This will attempt a real network call to localhost:9077
-        $bus->emit($event);
-        
+        $this->runScoped(static function (ExecutionScope $scope) use ($bus, $event): void {
+            $bus->emit($scope, $event);
+        });
+
         $this->assertTrue(true, 'Emit did not crash');
     }
 }

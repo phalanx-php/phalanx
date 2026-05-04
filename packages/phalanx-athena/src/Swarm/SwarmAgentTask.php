@@ -6,14 +6,15 @@ namespace Phalanx\Athena\Swarm;
 
 use Phalanx\Athena\AgentDefinition;
 use Phalanx\Athena\AgentLoop;
-use Phalanx\Athena\Turn;
-use Phalanx\ExecutionScope;
-use Phalanx\Task\Executable;
 use Phalanx\Athena\Event\AgentEvent;
 use Phalanx\Athena\Event\AgentEventKind;
 use Phalanx\Athena\StepAction;
+use Phalanx\Athena\Turn;
+use Phalanx\ExecutionScope;
+use Phalanx\Scope\Suspendable;
+use Phalanx\Task\Executable;
 use Phalanx\Task\Task;
-use React\Promise\Deferred;
+use RuntimeException;
 
 class SwarmAgentTask implements Executable
 {
@@ -26,16 +27,16 @@ class SwarmAgentTask implements Executable
 
     public function __invoke(ExecutionScope $scope): mixed
     {
-        $this->emit(SwarmEventKind::Online);
+        $this->emit($scope, SwarmEventKind::Online);
 
         $turn = Turn::begin($this->agent)->stream();
-        
+
         $turn = $turn->message("IMPORTANT: Speak in 1-2 sentences. Only contribute what your specialty uniquely adds. Do not repeat. End with [PROPOSAL], [QUESTION], or [BLOCKED].");
 
         $self = $this;
         $turn = $turn->onStep(static function ($step, $s) use ($self) {
             if ($self->shouldRequestClearance($step->text)) {
-                 $self->requestClearance($s, "Task: " . substr($step->text, 0, 100));
+                $self->requestClearance($s, "Task: " . substr($step->text, 0, 100));
             }
             return StepAction::continue();
         });
@@ -43,7 +44,7 @@ class SwarmAgentTask implements Executable
         $events = AgentLoop::run($turn, $scope, $this->agentId);
 
         foreach ($events($scope) as $event) {
-            $this->emit(SwarmEventKind::BlackboardPost, self::eventPayload($event), inner: $event);
+            $this->emit($scope, SwarmEventKind::BlackboardPost, self::eventPayload($event), inner: $event);
         }
 
         return null;
@@ -53,9 +54,9 @@ class SwarmAgentTask implements Executable
      * @param array<string, mixed> $payload
      * @param string|list<string>|null $addressedTo
      */
-    public function emit(SwarmEventKind $kind, array $payload = [], ?string $traceId = null, ?AgentEvent $inner = null, string|array|null $addressedTo = null): void
+    public function emit(Suspendable $scope, SwarmEventKind $kind, array $payload = [], ?string $traceId = null, ?AgentEvent $inner = null, string|array|null $addressedTo = null): void
     {
-        $this->bus->emit(new SwarmEvent(
+        $this->bus->emit($scope, new SwarmEvent(
             from: $this->agentId,
             kind: $kind,
             workspace: $this->config->workspace,
@@ -84,33 +85,26 @@ class SwarmAgentTask implements Executable
             'addressed_to' => $agentId,
         ]);
 
-        $deferred = new Deferred();
-
         $this->emit(
+            $scope,
             kind: SwarmEventKind::ClearanceRequested,
             payload: ['description' => $description],
             traceId: $traceId,
-            addressedTo: 'ADMIN'
-        );
-
-        $scope->defer(
-            Task::of(static function (ExecutionScope $s) use ($events, $deferred): void {
-                foreach ($events($s) as $event) {
-                    if ($event->kind === SwarmEventKind::ClearanceGranted) {
-                        $deferred->resolve(true);
-                        return;
-                    }
-                    if ($event->kind === SwarmEventKind::ClearanceDenied) {
-                        $deferred->reject(new \RuntimeException("Clearance denied: " . ($event->payload['reason'] ?? 'No reason')));
-                        return;
-                    }
-                }
-            })
+            addressedTo: 'ADMIN',
         );
 
         $scope->timeout(
             60.0,
-            Task::of(static fn(ExecutionScope $s): mixed => $s->await($deferred->promise())),
+            Task::of(static function (ExecutionScope $s) use ($events): void {
+                foreach ($events($s) as $event) {
+                    if ($event->kind === SwarmEventKind::ClearanceGranted) {
+                        return;
+                    }
+                    if ($event->kind === SwarmEventKind::ClearanceDenied) {
+                        throw new RuntimeException("Clearance denied: " . ($event->payload['reason'] ?? 'No reason'));
+                    }
+                }
+            }),
         );
     }
 
