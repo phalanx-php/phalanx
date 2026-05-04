@@ -98,8 +98,8 @@ final class MultiTenantFleetExampleTest extends TestCase
             contextSummary: 'Customer asked about refund policy for enterprise plan',
         );
 
-        /** @var \Phalanx\Scope&\PHPUnit\Framework\MockObject\MockObject $scope */
-        $scope = $this->createMock(\Phalanx\Scope::class);
+        /** @var \Phalanx\Scope\Scope&\PHPUnit\Framework\MockObject\MockObject $scope */
+        $scope = $this->createStub(\Phalanx\Scope\Scope::class);
         $outcome = $tool($scope);
 
         $this->assertSame(Disposition::Terminate, $outcome->disposition);
@@ -122,8 +122,8 @@ final class MultiTenantFleetExampleTest extends TestCase
     public function tenant_kb_search_returns_articles(): void
     {
         $tool = new TenantKbSearch('how to export', 3);
-        /** @var \Phalanx\Scope&\PHPUnit\Framework\MockObject\MockObject $scope */
-        $scope = $this->createMock(\Phalanx\Scope::class);
+        /** @var \Phalanx\Scope\Scope&\PHPUnit\Framework\MockObject\MockObject $scope */
+        $scope = $this->createStub(\Phalanx\Scope\Scope::class);
 
         $outcome = $tool($scope);
 
@@ -169,8 +169,8 @@ final class MultiTenantFleetExampleTest extends TestCase
 
         $this->assertInstanceOf(TransferToHuman::class, $tool);
 
-        /** @var \Phalanx\Scope&\PHPUnit\Framework\MockObject\MockObject $scope */
-        $scope = $this->createMock(\Phalanx\Scope::class);
+        /** @var \Phalanx\Scope\Scope&\PHPUnit\Framework\MockObject\MockObject $scope */
+        $scope = $this->createStub(\Phalanx\Scope\Scope::class);
         $outcome = $tool($scope);
 
         $this->assertSame(Disposition::Terminate, $outcome->disposition);

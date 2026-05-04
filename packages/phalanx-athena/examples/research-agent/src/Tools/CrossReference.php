@@ -7,7 +7,7 @@ namespace Acme\Tools;
 use Phalanx\Athena\Tool\Param;
 use Phalanx\Athena\Tool\Tool;
 use Phalanx\Athena\Tool\ToolOutcome;
-use Phalanx\Scope;
+use Phalanx\Scope\Scope;
 
 final class CrossReference implements Tool
 {

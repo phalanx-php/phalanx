@@ -4,17 +4,20 @@ declare(strict_types=1);
 
 namespace Phalanx\Athena;
 
+use Closure;
 use Phalanx\Athena\Event\AgentEventKind;
 use Phalanx\Athena\Message\Conversation;
 use Phalanx\Athena\Message\Message;
 use Phalanx\ExecutionScope;
+use ReflectionFunction;
+use RuntimeException;
 
 final readonly class Turn
 {
     /**
      * @param list<Message> $pendingMessages
-     * @param array<string, callable> $hooks
-     * @param ?callable(StepResult, \Phalanx\ExecutionScope): StepAction $onStepHook
+     * @param array<string, Closure> $hooks
+     * @param ?Closure(StepResult, ExecutionScope): StepAction $onStepHook
      */
     private function __construct(
         public AgentDefinition $agent,
@@ -24,7 +27,7 @@ final readonly class Turn
         public ?string $outputClass,
         public array $hooks,
         public bool $streaming,
-        public mixed $onStepHook,
+        public ?Closure $onStepHook,
     ) {}
 
     public static function begin(AgentDefinition $agent): self
@@ -114,8 +117,9 @@ final readonly class Turn
         );
     }
 
-    public function on(AgentEventKind $kind, callable $handler): self
+    public function on(AgentEventKind $kind, Closure $handler): self
     {
+        self::requireStatic($handler, "Turn::on({$kind->value})");
         $hooks = $this->hooks;
         $hooks[$kind->value] = $handler;
 
@@ -131,9 +135,10 @@ final readonly class Turn
         );
     }
 
-    /** @param callable(StepResult, \Phalanx\ExecutionScope): StepAction $callback */
-    public function onStep(callable $callback): self
+    /** @param Closure(StepResult, ExecutionScope): StepAction $callback */
+    public function onStep(Closure $callback): self
     {
+        self::requireStatic($callback, 'Turn::onStep()');
         return new self(
             $this->agent,
             $this->conversation,
@@ -144,6 +149,16 @@ final readonly class Turn
             $this->streaming,
             $callback,
         );
+    }
+
+    private static function requireStatic(Closure $closure, string $context): void
+    {
+        if (!(new ReflectionFunction($closure))->isStatic()) {
+            throw new RuntimeException(
+                "{$context} requires a static closure. Non-static closures capture \$this and "
+                . 'leak in long-running coroutines.',
+            );
+        }
     }
 
     public function buildConversation(): Conversation

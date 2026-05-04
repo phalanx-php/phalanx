@@ -5,18 +5,13 @@ declare(strict_types=1);
 namespace Phalanx\Athena\Swarm;
 
 use Phalanx\Athena\AgentDefinition;
-use Phalanx\Athena\AgentLoop;
-use Phalanx\Athena\Event\AgentEventKind;
-use Phalanx\Athena\Turn;
 use Phalanx\ExecutionScope;
 use Phalanx\Scope\Suspendable;
 use Phalanx\Task\Executable;
+use Phalanx\Task\Task;
 
 final class ChatAdminTask implements Executable
 {
-    /** @var array<string, SwarmEvent> */
-    private array $clearanceQueue = [];
-
     public function __construct(
         public readonly string $agentId,
         public readonly AgentDefinition $agent,
@@ -26,16 +21,22 @@ final class ChatAdminTask implements Executable
 
     public function __invoke(ExecutionScope $scope): mixed
     {
-        $this->emit($scope, SwarmEventKind::Online);
+        self::emitFor($scope, $this->bus, $this->agentId, $this->config, SwarmEventKind::Online);
+
+        // Monitor-task-local state. Captured by reference so the static
+        // closure can mutate it without holding $this and without
+        // creating an instance-property reference cycle.
+        /** @var array<string, SwarmEvent> $clearanceQueue */
+        $clearanceQueue = [];
 
         $bus = $this->bus;
-        $workspace = $this->config->workspace;
-        $self = $this;
+        $agentId = $this->agentId;
+        $config = $this->config;
 
-        return $scope->concurrent(...[
-            'monitor' => \Phalanx\Task\Task::of(static function (ExecutionScope $s) use ($bus, $workspace, $self) {
+        return $scope->concurrent(
+            monitor: Task::of(static function (ExecutionScope $s) use ($bus, $agentId, $config, &$clearanceQueue): void {
                 foreach ($bus->subscribe([
-                    'workspace' => $workspace,
+                    'workspace' => $config->workspace,
                     'kinds' => [
                         SwarmEventKind::ClearanceRequested,
                         SwarmEventKind::BlackboardPost,
@@ -46,55 +47,77 @@ final class ChatAdminTask implements Executable
                     ],
                 ])($s) as $event) {
                     if ($event->kind === SwarmEventKind::ClearanceRequested) {
-                        $self->handleClearance($s, $event);
+                        self::handleClearance($s, $bus, $agentId, $config, $event, $clearanceQueue);
                     }
 
-                    $self->synthesize($s);
+                    self::synthesize($s, $bus, $agentId, $config, $clearanceQueue);
                 }
             }),
-        ]);
-    }
-
-    public function handleClearance(Suspendable $scope, SwarmEvent $req): void
-    {
-        $this->clearanceQueue[$req->traceId] = $req;
-        $this->autoProcessClearance($scope, $req);
-    }
-
-    public function synthesize(ExecutionScope $scope): void
-    {
-        $this->emit(
-            $scope,
-            kind: SwarmEventKind::SummaryUpdate,
-            payload: ['text' => "Monitoring swarm state. Active queue: " . count($this->clearanceQueue)]
         );
     }
 
-    private function autoProcessClearance(Suspendable $scope, SwarmEvent $req): void
-    {
-        $this->emit(
+    /** @param array<string, SwarmEvent> $clearanceQueue */
+    private static function handleClearance(
+        Suspendable $scope,
+        SwarmBus $bus,
+        string $agentId,
+        SwarmConfig $config,
+        SwarmEvent $req,
+        array &$clearanceQueue,
+    ): void {
+        $clearanceQueue[$req->traceId] = $req;
+        self::emitFor(
             $scope,
-            kind: SwarmEventKind::ClearanceGranted,
+            $bus,
+            $agentId,
+            $config,
+            SwarmEventKind::ClearanceGranted,
+            traceId: $req->traceId,
             addressedTo: $req->from,
-            traceId: $req->traceId
         );
-        unset($this->clearanceQueue[$req->traceId]);
+        unset($clearanceQueue[$req->traceId]);
+    }
+
+    /** @param array<string, SwarmEvent> $clearanceQueue */
+    private static function synthesize(
+        Suspendable $scope,
+        SwarmBus $bus,
+        string $agentId,
+        SwarmConfig $config,
+        array $clearanceQueue,
+    ): void {
+        self::emitFor(
+            $scope,
+            $bus,
+            $agentId,
+            $config,
+            SwarmEventKind::SummaryUpdate,
+            payload: ['text' => 'Monitoring swarm state. Active queue: ' . count($clearanceQueue)],
+        );
     }
 
     /**
      * @param array<string, mixed> $payload
      * @param string|list<string>|null $addressedTo
      */
-    private function emit(Suspendable $scope, SwarmEventKind $kind, array $payload = [], ?string $traceId = null, string|array|null $addressedTo = null): void
-    {
-        $this->bus->emit($scope, new SwarmEvent(
-            from: $this->agentId,
+    private static function emitFor(
+        Suspendable $scope,
+        SwarmBus $bus,
+        string $agentId,
+        SwarmConfig $config,
+        SwarmEventKind $kind,
+        array $payload = [],
+        ?string $traceId = null,
+        string|array|null $addressedTo = null,
+    ): void {
+        $bus->emit($scope, new SwarmEvent(
+            from: $agentId,
             kind: $kind,
-            workspace: $this->config->workspace,
-            session: $this->config->session,
+            workspace: $config->workspace,
+            session: $config->session,
             payload: $payload,
             addressedTo: $addressedTo,
-            traceId: $traceId
+            traceId: $traceId,
         ));
     }
 }

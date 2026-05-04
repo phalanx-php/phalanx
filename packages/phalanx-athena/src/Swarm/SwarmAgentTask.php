@@ -33,10 +33,22 @@ class SwarmAgentTask implements Executable
 
         $turn = $turn->message("IMPORTANT: Speak in 1-2 sentences. Only contribute what your specialty uniquely adds. Do not repeat. End with [PROPOSAL], [QUESTION], or [BLOCKED].");
 
-        $self = $this;
-        $turn = $turn->onStep(static function ($step, $s) use ($self) {
-            if ($self->shouldRequestClearance($step->text)) {
-                $self->requestClearance($s, "Task: " . substr($step->text, 0, 100));
+        // Capture only the data the hook needs — never $this. The hook
+        // outlives the call below for the agent's lifetime; capturing $this
+        // creates a reference cycle that prevents disposal in long-running
+        // swarms.
+        $bus = $this->bus;
+        $agentId = $this->agentId;
+        $config = $this->config;
+        $turn = $turn->onStep(static function ($step, $s) use ($bus, $agentId, $config): StepAction {
+            if (self::shouldRequestClearance($step->text)) {
+                self::requestClearanceFor(
+                    $s,
+                    $bus,
+                    $agentId,
+                    $config,
+                    'Task: ' . substr($step->text, 0, 100),
+                );
             }
             return StepAction::continue();
         });
@@ -68,30 +80,35 @@ class SwarmAgentTask implements Executable
         ));
     }
 
-    public function shouldRequestClearance(string $text): bool
+    public static function shouldRequestClearance(string $text): bool
     {
         $lower = strtolower($text);
         return str_contains($lower, 'i will') || str_contains($lower, 'executing') || str_contains($lower, 'starting');
     }
 
-    public function requestClearance(ExecutionScope $scope, string $description): void
-    {
+    private static function requestClearanceFor(
+        ExecutionScope $scope,
+        SwarmBus $bus,
+        string $agentId,
+        SwarmConfig $config,
+        string $description,
+    ): void {
         $traceId = uniqid('clr_');
-        $agentId = $this->agentId;
-        $workspace = $this->config->workspace;
-        $events = $this->bus->subscribe([
-            'workspace' => $workspace,
+        $events = $bus->subscribe([
+            'workspace' => $config->workspace,
             'trace_id' => $traceId,
             'addressed_to' => $agentId,
         ]);
 
-        $this->emit(
-            $scope,
+        $bus->emit($scope, new SwarmEvent(
+            from: $agentId,
             kind: SwarmEventKind::ClearanceRequested,
+            workspace: $config->workspace,
+            session: $config->session,
             payload: ['description' => $description],
-            traceId: $traceId,
             addressedTo: 'ADMIN',
-        );
+            traceId: $traceId,
+        ));
 
         $scope->timeout(
             60.0,
@@ -101,7 +118,7 @@ class SwarmAgentTask implements Executable
                         return;
                     }
                     if ($event->kind === SwarmEventKind::ClearanceDenied) {
-                        throw new RuntimeException("Clearance denied: " . ($event->payload['reason'] ?? 'No reason'));
+                        throw new RuntimeException('Clearance denied: ' . ($event->payload['reason'] ?? 'No reason'));
                     }
                 }
             }),

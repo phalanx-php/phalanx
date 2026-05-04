@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Athena\Tests\Integration;
 
 use Phalanx\Athena\Pipeline\Pipeline;
-use Phalanx\Scope;
+use Phalanx\Scope\Scope;
 use Phalanx\Task\Scopeable;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;

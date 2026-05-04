@@ -17,7 +17,7 @@ use Phalanx\Athena\Tool\ToolCallBag;
 use Phalanx\Athena\Tool\ToolOutcome;
 use Phalanx\Athena\Tool\ToolRegistry;
 use Phalanx\ExecutionScope;
-use Phalanx\Scope;
+use Phalanx\Scope\Scope;
 use Phalanx\Styx\Channel;
 use Phalanx\Styx\Emitter;
 use Phalanx\Task\Task;

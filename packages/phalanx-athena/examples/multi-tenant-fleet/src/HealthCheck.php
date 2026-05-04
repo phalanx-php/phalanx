@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Acme\Fleet;
 
-use Phalanx\Scope;
+use Phalanx\Scope\Scope;
 use Phalanx\Task\Scopeable;
 
 final class HealthCheck implements Scopeable

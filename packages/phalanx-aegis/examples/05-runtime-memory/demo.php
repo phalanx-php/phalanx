@@ -54,6 +54,17 @@ $failed = Application::starting($context)
                 printf("%s -> %s\n", $label, $ok ? 'ok' : 'failed');
             }
 
+            // Lifecycle event ring buffer: persistent within the process,
+            // FIFO-evicted at capacity. clear() truncates explicitly so
+            // a subsequent recent() call gives a fresh view.
+            $before = count($memory->events->recent());
+            $cleared = $memory->events->clear();
+            $after = count($memory->events->recent());
+            printf("events before clear -> %d\n", $before);
+            printf("events cleared      -> %d\n", $cleared);
+            printf("events after clear  -> %d\n", $after);
+            $failed = $failed || $after !== 0 || $cleared !== $before;
+
             return $failed;
         },
     ));

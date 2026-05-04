@@ -144,4 +144,28 @@ final class RuntimeLifecycleEvents
     {
         return $this->listenerErrors;
     }
+
+    /**
+     * Drop every row in the lifecycle event ring buffer and reset the
+     * sequence counter. Useful for demos and tests that want a clean
+     * "fresh view" of subsequent events without restarting the process.
+     *
+     * The table is FIFO-evicted by capacity in normal operation; this is
+     * the explicit truncation handle.
+     */
+    public function clear(): int
+    {
+        $cleared = 0;
+        foreach ($this->tables->resourceEvents as $key => $row) {
+            if (!is_array($row) || (int) $row['sequence'] < 1) {
+                continue;
+            }
+            $this->tables->resourceEvents->del((string) $key);
+            $cleared++;
+        }
+        $this->sequence->set(0);
+        $this->listenerErrors = [];
+        $this->tables->mark('resource_events');
+        return $cleared;
+    }
 }

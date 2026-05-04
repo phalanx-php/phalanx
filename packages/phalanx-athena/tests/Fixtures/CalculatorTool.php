@@ -7,7 +7,7 @@ namespace Phalanx\Athena\Tests\Fixtures;
 use Phalanx\Athena\Tool\Param;
 use Phalanx\Athena\Tool\Tool;
 use Phalanx\Athena\Tool\ToolOutcome;
-use Phalanx\Scope;
+use Phalanx\Scope\Scope;
 
 final class CalculatorTool implements Tool
 {

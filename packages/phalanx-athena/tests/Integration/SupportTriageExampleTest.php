@@ -115,8 +115,8 @@ final class SupportTriageExampleTest extends TestCase
     public function lookup_customer_tool_returns_continue_disposition(): void
     {
         $tool = new LookupCustomer('sarah@example.com');
-        /** @var \Phalanx\Scope&\PHPUnit\Framework\MockObject\MockObject $scope */
-        $scope = $this->createMock(\Phalanx\Scope::class);
+        /** @var \Phalanx\Scope\Scope&\PHPUnit\Framework\MockObject\MockObject $scope */
+        $scope = $this->createStub(\Phalanx\Scope\Scope::class);
 
         $outcome = $tool($scope);
 
@@ -138,8 +138,8 @@ final class SupportTriageExampleTest extends TestCase
     public function check_service_status_returns_operational_data(): void
     {
         $tool = new CheckServiceStatus();
-        /** @var \Phalanx\Scope&\PHPUnit\Framework\MockObject\MockObject $scope */
-        $scope = $this->createMock(\Phalanx\Scope::class);
+        /** @var \Phalanx\Scope\Scope&\PHPUnit\Framework\MockObject\MockObject $scope */
+        $scope = $this->createStub(\Phalanx\Scope\Scope::class);
 
         $outcome = $tool($scope);
 

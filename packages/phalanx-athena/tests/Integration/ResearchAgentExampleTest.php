@@ -48,7 +48,7 @@ final class ResearchAgentExampleTest extends TestCase
         $agent = new ResearchAgent();
 
         $this->assertSame(2, $agent->retryPolicy->attempts);
-        $this->assertSame('exponential', $agent->retryPolicy->backoff);
+        $this->assertSame('exponential', $agent->retryPolicy->strategy);
     }
 
     #[Test]
@@ -104,8 +104,8 @@ final class ResearchAgentExampleTest extends TestCase
     public function extract_document_returns_summary_data(): void
     {
         $tool = new ExtractDocumentContent('/uploads/q1.pdf', 'revenue trends');
-        /** @var \Phalanx\Scope&\PHPUnit\Framework\MockObject\MockObject $scope */
-        $scope = $this->createMock(\Phalanx\Scope::class);
+        /** @var \Phalanx\Scope\Scope&\PHPUnit\Framework\MockObject\MockObject $scope */
+        $scope = $this->createStub(\Phalanx\Scope\Scope::class);
 
         $outcome = $tool($scope);
 
@@ -129,8 +129,8 @@ final class ResearchAgentExampleTest extends TestCase
     public function cross_reference_returns_findings(): void
     {
         $tool = new CrossReference('Compare revenue', ['doc1', 'doc2']);
-        /** @var \Phalanx\Scope&\PHPUnit\Framework\MockObject\MockObject $scope */
-        $scope = $this->createMock(\Phalanx\Scope::class);
+        /** @var \Phalanx\Scope\Scope&\PHPUnit\Framework\MockObject\MockObject $scope */
+        $scope = $this->createStub(\Phalanx\Scope\Scope::class);
 
         $outcome = $tool($scope);
 
@@ -143,8 +143,8 @@ final class ResearchAgentExampleTest extends TestCase
     public function query_spreadsheet_returns_result(): void
     {
         $tool = new QuerySpreadsheet('/uploads/forecast.csv', 'total Q3 revenue');
-        /** @var \Phalanx\Scope&\PHPUnit\Framework\MockObject\MockObject $scope */
-        $scope = $this->createMock(\Phalanx\Scope::class);
+        /** @var \Phalanx\Scope\Scope&\PHPUnit\Framework\MockObject\MockObject $scope */
+        $scope = $this->createStub(\Phalanx\Scope\Scope::class);
 
         $outcome = $tool($scope);
 

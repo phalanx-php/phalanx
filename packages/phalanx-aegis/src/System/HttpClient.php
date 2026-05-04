@@ -4,36 +4,23 @@ declare(strict_types=1);
 
 namespace Phalanx\System;
 
-use OpenSwoole\Coroutine\Http2\Client as Http2Client;
-use OpenSwoole\Http2\Request as Http2Request;
+use Phalanx\Cancellation\Cancelled;
 use Phalanx\Scope\Suspendable;
-use Phalanx\Supervisor\WaitReason;
+use Throwable;
 
 /**
- * Aegis-managed HTTP/2 client primitive.
+ * Aegis-managed HTTP/1.1 client primitive.
  *
- * Backed by `OpenSwoole\Coroutine\Http2\Client`. HTTP/2 is the lingua
- * franca of the upstream LLM APIs Athena talks to (Anthropic, OpenAI,
- * Gemini); Ollama also serves HTTP/2. Using HTTP/2 across the board
- * gives true streaming semantics — each DATA frame can be consumed as
- * it arrives via {@see HttpStream::read()} — without rolling our own
- * HTTP/1.1 chunked parser.
+ * Backed by {@see TcpClient} (TLS-aware) so cancellation, wait reasons,
+ * and lifecycle stay visible through Phalanx scope discipline. HTTP/1.1
+ * with chunked transfer encoding is the canonical streaming path: every
+ * LLM provider Athena targets accepts it (Anthropic / OpenAI / Gemini /
+ * Ollama), the wire format is parser-friendly, and unlike OpenSwoole's
+ * `Coroutine\Http2\Client` the per-frame body delivery actually works.
  *
- * One client instance corresponds to one TCP+TLS connection to the
- * configured host:port. The {@see send()} method is for one-shot
- * request/response cycles; {@see stream()} returns an HttpStream that
- * the caller drains incrementally and must close.
- *
- * The blocking surface — `connect()`, `send()`, `read()` on the
- * underlying client — flows through `$scope->call(...)` so cancellation
- * propagates and the supervisor records typed waits via
- * {@see WaitReason::http()}.
- *
- * Connection pooling is intentionally out of scope here: each call to
- * `send()` or `stream()` opens a fresh connection. Long-lived clients
- * that reuse the same Http2Client across many requests are an opt-in
- * pattern — instantiate once with `keepAlive: true` and the client
- * object survives across calls until `close()`.
+ * One client → one connection → one request. Connection reuse (HTTP
+ * keep-alive across requests) is intentionally out of scope; pool that
+ * one level up if you need it.
  */
 final class HttpClient
 {
@@ -55,122 +42,91 @@ final class HttpClient
 
     public function send(Suspendable $scope, HttpRequest $request): HttpResponse
     {
-        $client = $this->buildClient();
-        $this->connectClient($scope, $client);
-
+        $stream = $this->stream($scope, $request);
         try {
-            $req = $this->buildHttp2Request($request, pipeline: false);
-            $waitReason = WaitReason::http($request->method, $this->urlFor($request->path));
-            $sent = $scope->call(
-                static fn(): mixed => $client->send($req),
-                $waitReason,
-            );
-            if ($sent === false) {
-                throw HttpException::sendFailed(
-                    $request->method,
-                    $request->path,
-                    $client->errCode,
-                    (string) $client->errMsg,
-                );
+            $body = '';
+            while (!$stream->eof) {
+                $chunk = $stream->read($scope);
+                if ($chunk === '') {
+                    break;
+                }
+                $body .= $chunk;
             }
-
-            $response = $scope->call(
-                static fn(): mixed => $client->recv(),
-                WaitReason::custom("http.send.recv {$request->method} {$request->path}"),
-            );
-
-            if (!is_object($response)) {
-                throw HttpException::recvFailed($client->errCode, (string) $client->errMsg);
-            }
-
             return new HttpResponse(
-                status: (int) ($response->statusCode ?? 0),
-                headers: is_array($response->headers) ? $response->headers : [],
-                body: (string) ($response->data ?? ''),
+                status: $stream->status,
+                headers: $stream->headers,
+                body: $body,
             );
         } finally {
-            $client->close();
+            $stream->close();
         }
     }
 
     public function stream(Suspendable $scope, HttpRequest $request): HttpStream
     {
-        $client = $this->buildClient();
-        $this->connectClient($scope, $client);
+        $tcp = $this->openTcp($scope);
+        $payload = $this->encodeRequest($request);
+        $waitDetail = "{$request->method} {$request->path}";
 
-        $req = $this->buildHttp2Request($request, pipeline: true);
-        $waitReason = WaitReason::http($request->method, $this->urlFor($request->path));
-        $sent = $scope->call(
-            static fn(): mixed => $client->send($req),
-            $waitReason,
-        );
-        if ($sent === false) {
-            $errCode = $client->errCode;
-            $errMsg = (string) $client->errMsg;
-            $client->close();
-            throw HttpException::sendFailed($request->method, $request->path, $errCode, $errMsg);
+        try {
+            $tcp->send($scope, $payload, $this->defaultTimeout);
+        } catch (Cancelled $e) {
+            $tcp->close();
+            throw $e;
+        } catch (Throwable $e) {
+            $tcp->close();
+            throw HttpException::sendFailed($request->method, $request->path, 0, $e->getMessage());
         }
 
-        $streamId = is_int($sent) ? $sent : 0;
-        return new HttpStream($client, $streamId, "{$request->method} {$request->path}");
+        return new HttpStream($tcp, $waitDetail);
     }
 
-    private function buildClient(): Http2Client
+    private function openTcp(Suspendable $scope): TcpClient
     {
-        $client = new Http2Client($this->host, $this->port, $this->tlsEnabled);
-        $settings = ['timeout' => $this->defaultTimeout];
-        if ($this->tlsEnabled) {
-            // SNI + cert hostname verification target. Without this OpenSwoole's
-            // Http2 client completes the TLS handshake but cannot read response
-            // frames — the upstream server requires SNI for HTTP/2 routing.
-            $settings['ssl_host_name'] = $this->host;
-            if ($this->tlsOptions !== null) {
-                $settings = array_merge($settings, $this->tlsOptions->toClientOptions());
-            }
+        $tlsOptions = $this->tlsEnabled
+            ? ($this->tlsOptions ?? new TlsOptions(verifyPeer: true, hostName: $this->host))
+            : null;
+
+        $tcp = new TcpClient(tls: $this->tlsEnabled, tlsOptions: $tlsOptions);
+
+        $connected = $tcp->connect($scope, $this->host, $this->port, $this->defaultTimeout);
+        if (!$connected) {
+            $tcp->close();
+            throw HttpException::connectFailed($this->host, $this->port, 0, 'connect returned false');
         }
-        $client->set($settings);
-        return $client;
+        return $tcp;
     }
 
-    private function connectClient(Suspendable $scope, Http2Client $client): void
+    private function encodeRequest(HttpRequest $request): string
     {
-        $host = $this->host;
-        $port = $this->port;
-        $connected = $scope->call(
-            static fn(): mixed => $client->connect(),
-            WaitReason::custom("http.connect {$host}:{$port}"),
-        );
-        if ($connected !== true) {
-            $errCode = $client->errCode;
-            $errMsg = (string) $client->errMsg;
-            $client->close();
-            throw HttpException::connectFailed($host, $port, $errCode, $errMsg);
+        $headers = $this->normalizeHeaders($request);
+        $lines = ["{$request->method} {$request->path} HTTP/1.1"];
+        foreach ($headers as $name => $value) {
+            $lines[] = "{$name}: {$value}";
         }
+        return implode("\r\n", $lines) . "\r\n\r\n" . $request->body;
     }
 
-    private function buildHttp2Request(HttpRequest $request, bool $pipeline): Http2Request
+    /** @return array<string, string> */
+    private function normalizeHeaders(HttpRequest $request): array
     {
-        $req = new Http2Request();
-        $req->method = $request->method;
-        $req->path = $request->path;
-        $req->data = $request->body;
-        $req->pipeline = $pipeline;
-
-        $headers = [
-            ':authority' => $this->host,
-            'host' => $this->host,
-        ];
+        $headers = [];
         foreach ($request->headers as $name => $value) {
             $headers[strtolower($name)] = $value;
         }
-        $req->headers = $headers;
-
-        return $req;
+        $headers['host'] ??= $this->hostHeader();
+        $headers['user-agent'] ??= 'phalanx-aegis/0.5';
+        $headers['accept'] ??= '*/*';
+        $headers['connection'] ??= 'close';
+        if ($request->body !== '' && !isset($headers['content-length'])) {
+            $headers['content-length'] = (string) strlen($request->body);
+        }
+        return $headers;
     }
 
-    private function urlFor(string $path): string
+    private function hostHeader(): string
     {
-        $scheme = $this->tlsEnabled ? 'https' : 'http';
-        return "{$scheme}://{$this->host}:{$this->port}{$path}";
+        $defaultPort = $this->tlsEnabled ? 443 : 80;
+        return $this->port === $defaultPort ? $this->host : "{$this->host}:{$this->port}";
     }
 }
