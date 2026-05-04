@@ -23,6 +23,8 @@ enum StoaEventSid: string implements RuntimeEventId
     case RouteMatched = 'stoa.route_matched';
     case ServerDrainingRejected = 'stoa.server_draining_rejected';
     case ServerShutdown = 'stoa.server_shutdown';
+    case SseStreamClosed = 'stoa.sse.stream_closed';
+    case SseStreamOpened = 'stoa.sse.stream_opened';
 
     public function key(): string
     {

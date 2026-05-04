@@ -19,6 +19,7 @@ use Phalanx\Scope\ScopeIdentity;
 use Phalanx\Server\ServerStats;
 use Phalanx\Stoa\Response\BufferEventDispatcher;
 use Phalanx\Stoa\Runtime\Identity\StoaEventSid;
+use Phalanx\Stoa\Sse\SseStream;
 use Phalanx\Stoa\Runtime\StoaScopeKey;
 use Phalanx\Supervisor\TaskTreeFormatter;
 use Phalanx\Support\SignalHandler;
@@ -348,6 +349,9 @@ final class StoaRunner
             $scope = $scope
                 ->withAttribute(StoaScopeKey::ResourceId->value, $resource->id)
                 ->withAttribute(StoaScopeKey::RequestResource->value, $resource);
+            if ($target !== null) {
+                $scope = $scope->withAttribute(StoaScopeKey::OpenSwooleResponse->value, $target);
+            }
             $trace = $scope->trace();
             $trace->clear();
 
@@ -371,6 +375,17 @@ final class StoaRunner
 
             try {
                 $result = $scope->execute($routes);
+
+                if ($result instanceof SseStream) {
+                    if (!$result->isClosed()) {
+                        $result->close();
+                    }
+                    if (!$resource->isTerminal()) {
+                        $resource->complete(200);
+                    }
+                    return null;
+                }
+
                 $response = $result instanceof ResponseInterface
                     ? $result
                     : self::toResponse($result);
