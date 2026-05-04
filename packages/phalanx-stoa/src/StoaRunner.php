@@ -17,6 +17,7 @@ use Phalanx\Cancellation\Cancelled;
 use Phalanx\Registry\RegistryScope;
 use Phalanx\Scope\ScopeIdentity;
 use Phalanx\Server\ServerStats;
+use Phalanx\Stoa\Response\BufferEventDispatcher;
 use Phalanx\Stoa\Runtime\Identity\StoaEventSid;
 use Phalanx\Stoa\Runtime\StoaScopeKey;
 use Phalanx\Supervisor\TaskTreeFormatter;
@@ -39,6 +40,7 @@ final class StoaRunner
     private ?RouteGroup $routes = null;
     private ?ServerStats $serverStats = null;
     private string $listenAddress = '';
+    private readonly BufferEventDispatcher $bufferEvents;
 
     /** @var array<string, StoaRequestResource> */
     private array $activeRequestsById = [];
@@ -52,6 +54,7 @@ final class StoaRunner
         private readonly StoaRequestFactory $requestFactory = new StoaRequestFactory(),
         private readonly StoaResponseWriter $responseWriter = new StoaResponseWriter(),
     ) {
+        $this->bufferEvents = new BufferEventDispatcher();
     }
 
     public static function from(
@@ -178,6 +181,7 @@ final class StoaRunner
         $this->server->on('request', $this->handleStoaRequest(...));
         $this->server->on('close', $this->handleClose(...));
         $this->server->on('shutdown', $this->onServerShutdown(...));
+        $this->bufferEvents->attach($this->server);
 
         try {
             $this->server->start();
@@ -417,13 +421,20 @@ final class StoaRunner
                 return $response;
             }
 
+            if ($request->fd !== null) {
+                $request->acquireDeliveryLease($request->fd);
+                $this->bufferEvents->track($request->fd, $request);
+            }
+
             $this->responseWriter->write($response, $target, $request);
             $request->complete($response->getStatusCode());
+            $request->releaseDeliveryLease('fulfilled');
         } catch (ResponseWriteFailure $e) {
             if (!$request->isTerminal()) {
                 $this->recordRequestEvent($request, StoaEventSid::ResponseWriteFailed, $e::class);
                 $request->fail($e);
             }
+            $request->releaseDeliveryLease('abandoned:write_failed');
             $this->app->trace()->log(TraceType::Failed, 'response', [
                 'path' => $request->path,
                 'state' => $request->stateValue(),
@@ -439,6 +450,7 @@ final class StoaRunner
                 $request->fail($e);
             }
 
+            $request->releaseDeliveryLease('abandoned:' . $e::class);
             $this->app->trace()->log(TraceType::Failed, 'response', [
                 'path' => $request->path,
                 'state' => $request->stateValue(),
@@ -455,6 +467,10 @@ final class StoaRunner
             }
 
             throw $e;
+        } finally {
+            if ($request->fd !== null) {
+                $this->bufferEvents->untrack($request->fd);
+            }
         }
 
         return null;
@@ -613,6 +629,7 @@ final class StoaRunner
 
         try {
             $request->abort($reason);
+            $request->releaseDeliveryLease('abandoned:' . $reason);
         } catch (Cancelled $e) {
             throw $e;
         } catch (Throwable $e) {
