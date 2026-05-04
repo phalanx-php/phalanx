@@ -39,9 +39,7 @@ parameters:
             - packages/phalanx-athena/src/Cli/AgentRepl.php (?)
     tmpDir: .phpstan-cache
     treatPhpDocTypesAsCertain: false
-    bootstrapFiles:
-        - stubs/Symfony/Component/Runtime/RunnerInterface.php
-        - stubs/Symfony/Component/Runtime/GenericRuntime.php
+    bootstrapFiles: []
     ignoreErrors:
         # Scopeable and Executable are marker interfaces. Implementations
         # always declare __invoke; the dispatcher invokes them via call syntax.
