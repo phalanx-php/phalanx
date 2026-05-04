@@ -87,6 +87,25 @@ final class StoaRunner
         );
     }
 
+    /** @return array<string, mixed> */
+    private static function serverOptions(StoaServerConfig $config): array
+    {
+        $options = [
+            'worker_num' => 1,
+            'enable_coroutine' => true,
+            'log_level' => Constant::LOG_WARNING,
+            'max_wait_time' => max(1, (int) ceil($config->drainTimeout)),
+            'http_compression' => $config->httpCompression,
+        ];
+
+        if ($config->enableStaticHandler && $config->documentRoot !== null) {
+            $options['enable_static_handler'] = true;
+            $options['document_root'] = $config->documentRoot;
+        }
+
+        return $options;
+    }
+
     /** @return array{string, int} */
     private static function parseListen(string $listen): array
     {
@@ -147,12 +166,7 @@ final class StoaRunner
         [$host, $port] = self::parseListen($listen);
         $this->listenAddress = $listen;
         $this->server = new Server($host, $port);
-        $this->server->set([
-            'worker_num' => 1,
-            'enable_coroutine' => true,
-            'log_level' => Constant::LOG_WARNING,
-            'max_wait_time' => max(1, (int) ceil($this->config->drainTimeout)),
-        ]);
+        $this->server->set(self::serverOptions($this->config));
 
         $this->server->on('start', $this->onServerStart(...));
         $this->server->on('managerStart', $this->onManagerStart(...));

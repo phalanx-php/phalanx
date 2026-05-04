@@ -14,6 +14,9 @@ final readonly class StoaServerConfig
         public bool $debug = false,
         public bool $quiet = false,
         public ?string $poweredBy = 'Phalanx',
+        public ?string $documentRoot = null,
+        public bool $enableStaticHandler = false,
+        public bool $httpCompression = true,
     ) {
     }
 
@@ -45,6 +48,9 @@ final readonly class StoaServerConfig
             debug: self::boolValue($values, ['debug', 'PHALANX_DEBUG'], false),
             quiet: self::boolValue($values, ['quiet', 'PHALANX_QUIET'], false),
             poweredBy: self::nullableStringValue($values, ['powered_by', 'PHALANX_POWERED_BY'], 'Phalanx'),
+            documentRoot: self::nullableStringValue($values, ['document_root', 'PHALANX_DOCUMENT_ROOT'], null),
+            enableStaticHandler: self::boolValue($values, ['enable_static_handler', 'PHALANX_ENABLE_STATIC_HANDLER'], false),
+            httpCompression: self::boolValue($values, ['http_compression', 'PHALANX_HTTP_COMPRESSION'], true),
         );
     }
 

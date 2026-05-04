@@ -9,6 +9,11 @@ use Phalanx\Runtime\Identity\RuntimeResourceId;
 enum StoaResourceSid: string implements RuntimeResourceId
 {
     case HttpRequest = 'stoa.http_request';
+    case SseStream = 'stoa.sse_stream';
+    case WsConnection = 'stoa.ws_connection';
+    case OutboundHttpRequest = 'stoa.outbound_http_request';
+    case UdpListener = 'stoa.udp_listener';
+    case UdpSession = 'stoa.udp_session';
 
     public function key(): string
     {

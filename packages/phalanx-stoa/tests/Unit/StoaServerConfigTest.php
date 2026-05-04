@@ -36,6 +36,23 @@ final class StoaServerConfigTest extends TestCase
         self::assertTrue($config->debug);
         self::assertTrue($config->quiet);
         self::assertSame('Custom Runtime', $config->poweredBy);
+        self::assertNull($config->documentRoot);
+        self::assertFalse($config->enableStaticHandler);
+        self::assertTrue($config->httpCompression);
+    }
+
+    #[Test]
+    public function staticHandlerAndCompressionFlowFromContext(): void
+    {
+        $config = StoaServerConfig::fromContext([
+            'PHALANX_DOCUMENT_ROOT' => '/srv/static',
+            'PHALANX_ENABLE_STATIC_HANDLER' => 'true',
+            'PHALANX_HTTP_COMPRESSION' => 'false',
+        ]);
+
+        self::assertSame('/srv/static', $config->documentRoot);
+        self::assertTrue($config->enableStaticHandler);
+        self::assertFalse($config->httpCompression);
     }
 
     #[Test]

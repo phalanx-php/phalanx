@@ -4,20 +4,16 @@ declare(strict_types=1);
 
 namespace Phalanx\Stoa;
 
+use OpenSwoole\Core\Psr\Response as PsrResponseHelper;
 use OpenSwoole\Http\Response;
 use Psr\Http\Message\ResponseInterface;
 use ReflectionMethod;
 
 final readonly class StoaResponseWriter
 {
+    private const int CHUNK_SIZE = PsrResponseHelper::CHUNK_SIZE;
+
     private static function targetIsWritable(Response $target): bool
-    {
-        $method = new ReflectionMethod($target, 'isWritable');
-
-        return $method->invoke($target) === true;
-    }
-
-    private static function targetIsWritableAfterHeaders(Response $target): bool
     {
         $method = new ReflectionMethod($target, 'isWritable');
 
@@ -45,14 +41,42 @@ final readonly class StoaResponseWriter
             }
         }
 
-        if (!self::targetIsWritableAfterHeaders($target)) {
+        if (!self::targetIsWritable($target)) {
             $request->abort('response closed before body');
             throw new ResponseWriteFailure('OpenSwoole response closed before body.');
         }
 
         $request->bodyStarted();
 
-        if (!$target->end((string) $source->getBody())) {
+        $body = $source->getBody();
+
+        if ($body->isSeekable()) {
+            $body->rewind();
+        }
+
+        $size = $body->getSize();
+
+        if ($size !== null && $size <= self::CHUNK_SIZE) {
+            if (!$target->end($body->getContents())) {
+                throw new ResponseWriteFailure('OpenSwoole failed to finish response body.');
+            }
+
+            return;
+        }
+
+        while (!$body->eof()) {
+            $chunk = $body->read(self::CHUNK_SIZE);
+
+            if ($chunk === '') {
+                break;
+            }
+
+            if ($target->write($chunk) === false) {
+                throw new ResponseWriteFailure('OpenSwoole failed to write response body chunk.');
+            }
+        }
+
+        if (!$target->end()) {
             throw new ResponseWriteFailure('OpenSwoole failed to finish response body.');
         }
     }
