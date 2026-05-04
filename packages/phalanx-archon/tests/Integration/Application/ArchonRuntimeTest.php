@@ -16,7 +16,7 @@ final class ArchonRuntimeTest extends TestCase
     #[Test]
     public function returnsArchonRunnerForArchonApplication(): void
     {
-        $runtime = new Runtime();
+        $runtime = new Runtime(['error_handler' => false]);
         $app = Archon::starting()->build();
 
         self::assertInstanceOf(ArchonRuntimeRunner::class, $runtime->getRunner($app));
@@ -25,7 +25,7 @@ final class ArchonRuntimeTest extends TestCase
     #[Test]
     public function rejectsBareAegisApplication(): void
     {
-        $runtime = new Runtime();
+        $runtime = new Runtime(['error_handler' => false]);
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Archon runtime expects an ArchonApplication');
