@@ -4,10 +4,10 @@
  * Concurrent streaming across LLM providers.
  *
  * Boots Aegis, opens a streaming completion against every configured
- * provider in parallel, and prints token deltas to stdout as they
- * arrive. Local Ollama can be enabled through the runtime context.
- * Anthropic and OpenAI are additive: they fan in when their respective
- * keys are present in the runtime context.
+ * provider in parallel, and prints each completed provider response.
+ * Local Ollama can be enabled through the runtime context. Anthropic
+ * and OpenAI are additive: they fan in when their respective keys are
+ * present in the runtime context.
  *
  * Without a configured provider, the demo exits with one actionable fix.
  */
@@ -64,24 +64,27 @@ if ($providers === []) {
     );
 }
 
-echo "Streaming concurrently from: " . implode(', ', array_keys($providers)) . "\n\n";
-
 $prompt = 'Write one short sentence about coroutines.';
 $request = GenerateRequest::from(Conversation::create()->user($prompt))->withMaxTokens(150);
 
+echo "Athena Streaming Providers\n";
+echo "==========================\n";
+echo "Providers: " . implode(', ', array_keys($providers)) . "\n";
+echo "Prompt: {$prompt}\n\n";
+echo "Responses:\n\n";
+
 $tasks = [];
 foreach ($providers as $name => $provider) {
-    $label = str_pad($name, 10);
-    $tasks[$name] = Task::of(static function (ExecutionScope $s) use ($provider, $request, $label): array {
+    $tasks[$name] = Task::of(static function (ExecutionScope $s) use ($provider, $request): array {
         $out = '';
         $usage = null;
+
         try {
             foreach ($provider->generate($request)($s) as $event) {
                 if ($event->kind === AgentEventKind::TokenDelta) {
-                    $delta = (string) ($event->data->text ?? '');
-                    $out .= $delta;
-                    echo "[{$label}] {$delta}";
+                    $out .= (string) ($event->data->text ?? '');
                 }
+
                 if ($event->kind === AgentEventKind::TokenComplete) {
                     $usage = $event->usageSoFar;
                 }
@@ -89,6 +92,7 @@ foreach ($providers as $name => $provider) {
         } catch (\Throwable $e) {
             return ['text' => $out, 'usage' => $usage, 'error' => $e->getMessage()];
         }
+
         return ['text' => $out, 'usage' => $usage, 'error' => null];
     });
 }
@@ -99,15 +103,25 @@ $exitCode = Athena::starting($context)->run(Task::named(
         $results = $scope->concurrent(...$tasks);
         $failed = false;
 
-        echo "\n\n--- summary ---\n";
+        foreach ($results as $name => $r) {
+            echo "[{$name}]\n";
+
+            if ($r['text'] !== '') {
+                echo trim((string) $r['text']) . "\n\n";
+            }
+
+            if ($r['error'] !== null) {
+                $failed = true;
+                printf("Failed: %s\n\n", $r['error']);
+            }
+        }
+
+        echo "Summary:\n";
         foreach ($results as $name => $r) {
             $u = $r['usage'];
             $tokens = $u !== null ? "{$u->input}/{$u->output}" : 'n/a';
-            printf("%-10s tokens(in/out): %s\n", $name, $tokens);
-            if ($r['error'] !== null) {
-                $failed = true;
-                printf("%-10s failed: %s\n", $name, $r['error']);
-            }
+            $status = $r['error'] === null ? 'ok' : 'failed';
+            printf("  %-10s %s, tokens in/out: %s\n", $name, $status, $tokens);
         }
 
         return $failed ? 1 : 0;
