@@ -7,8 +7,8 @@ namespace Phalanx\Athena;
 use Closure;
 use Phalanx\Athena\Event\AgentEvent;
 use Phalanx\Athena\Event\TokenUsage;
-use Phalanx\Athena\Message\Conversation;
 use Phalanx\Athena\Message\Content;
+use Phalanx\Athena\Message\Conversation;
 use Phalanx\Athena\Message\Message;
 use Phalanx\Athena\Provider\GenerateRequest;
 use Phalanx\Athena\Provider\LlmProvider;
@@ -30,7 +30,6 @@ final class AgentLoop
     public static function run(Turn $turn, ExecutionScope $scope, ?string $agentName = null): Emitter
     {
         return Emitter::produce(static function (Channel $channel) use ($turn, $scope, $agentName): void {
-            // Internal relay to tag events with the agent name
             $relay = static function (AgentEvent $e) use ($channel, $agentName): void {
                 $channel->emit($agentName !== null ? $e->withAgent($agentName) : $e);
             };
@@ -85,7 +84,7 @@ final class AgentLoop
                         static fn(ExecutionScope $s) => $s->singleflight(
                             $sfKey,
                             Task::of(static fn(ExecutionScope $inner) => $tool($inner)),
-                        )
+                        ),
                     );
                 }
 
@@ -96,7 +95,7 @@ final class AgentLoop
                     $call = $generation->toolCalls->get($i);
                     $elapsed = (hrtime(true) - $startTime) / 1e6;
 
-                    if (self::applyToolOutcome(
+                    $shouldStop = self::applyToolOutcome(
                         $outcome,
                         $call,
                         $conversation,
@@ -106,7 +105,9 @@ final class AgentLoop
                         $step,
                         $relay,
                         $elapsed,
-                    )) {
+                    );
+
+                    if ($shouldStop) {
                         return;
                     }
                 }

@@ -20,11 +20,11 @@ final class GetRecentTickets implements Tool
         private readonly int $customerId,
         #[Param('Number of recent tickets')]
         private readonly int $limit = 5,
-    ) {}
+    ) {
+    }
 
     public function __invoke(Scope $scope): ToolOutcome
     {
-        // In production: PgPool query
         return ToolOutcome::data([
             ['id' => 501, 'subject' => 'Export timeout', 'status' => 'resolved', 'created_at' => '2026-03-10'],
         ]);

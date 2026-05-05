@@ -6,7 +6,6 @@ namespace Phalanx\Athena\Swarm;
 
 use Phalanx\Athena\AgentDefinition;
 use Phalanx\Scope\ExecutionScope;
-use Phalanx\Scope\Stream\StreamContext;
 use Phalanx\Styx\Channel;
 use Phalanx\Styx\Emitter;
 use Phalanx\Task\Task;
@@ -27,10 +26,7 @@ final readonly class Swarm
         $config = $this->config ?? new SwarmConfig(workspace: 'default', session: 'default');
         $agents = $this->agents;
 
-        return Emitter::produce(static function (
-            Channel $out,
-            StreamContext $ctx,
-        ) use (
+        return Emitter::produce(static function (Channel $out) use (
             $scope,
             $bus,
             $config,

@@ -31,7 +31,7 @@ use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Task;
 
 /** @var array<string, mixed> $context */
-$context = ['argv' => $argv ?? []];
+$context = phalanxAthenaExampleContext($argv ?? []);
 
 $anthropicKey = (string) ($context['ANTHROPIC_API_KEY'] ?? '');
 $openaiKey = (string) ($context['OPENAI_API_KEY'] ?? '');
@@ -60,6 +60,7 @@ if ($providers === []) {
     echo "Streaming-providers demo wired.\n";
     echo "No providers configured in the runtime context.\n";
     echo "Expected context keys: OLLAMA_ENABLED, ANTHROPIC_API_KEY, OPENAI_API_KEY.\n";
+    echo "Live hosted providers require ATHENA_DEMO_LIVE=1.\n";
     exit(0);
 }
 

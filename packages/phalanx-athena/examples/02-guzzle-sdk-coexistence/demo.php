@@ -31,7 +31,7 @@ use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Task;
 
 /** @var array<string, mixed> $context */
-$context = ['argv' => $argv ?? []];
+$context = phalanxAthenaExampleContext($argv ?? []);
 
 $anthropicKey = (string) ($context['ANTHROPIC_API_KEY'] ?? '');
 $guzzleUrl = (string) ($context['GUZZLE_DEMO_URL'] ?? '');
@@ -43,6 +43,7 @@ if ($anthropicKey === '' || $guzzleUrl === '' || !$guzzleAvailable) {
     echo "  ANTHROPIC_API_KEY:                  " . ($anthropicKey === '' ? 'missing' : 'present') . "\n";
     echo "  GUZZLE_DEMO_URL:                    " . ($guzzleUrl === '' ? 'missing' : 'present') . "\n";
     echo "  guzzlehttp/guzzle + hyperf/guzzle:  " . ($guzzleAvailable ? 'present' : 'install both to run live') . "\n";
+    echo "  live hosted calls:                  set ATHENA_DEMO_LIVE=1\n";
     exit(0);
 }
 

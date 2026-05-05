@@ -8,7 +8,7 @@ use Closure;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 
-final readonly class Athena
+final class Athena
 {
     private function __construct()
     {

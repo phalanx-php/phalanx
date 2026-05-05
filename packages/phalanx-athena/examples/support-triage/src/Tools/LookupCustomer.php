@@ -18,11 +18,11 @@ final class LookupCustomer implements Tool
     public function __construct(
         #[Param('Customer email address or account ID')]
         private readonly string $identifier,
-    ) {}
+    ) {
+    }
 
     public function __invoke(Scope $scope): ToolOutcome
     {
-        // In production: $scope->service(PgPool::class)->query(...)
         return ToolOutcome::data([
             'customer' => [
                 'id' => 42,

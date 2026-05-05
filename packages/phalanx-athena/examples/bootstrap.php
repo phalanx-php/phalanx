@@ -22,3 +22,4 @@ if ($autoload === null) {
 }
 
 require_once $autoload;
+require_once __DIR__ . '/context.php';

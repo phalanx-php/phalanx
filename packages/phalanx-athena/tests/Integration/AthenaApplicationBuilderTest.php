@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Athena\Tests\Integration;
 
-use Phalanx\Athena\AiServiceBundle;
 use Phalanx\Athena\Athena;
 use Phalanx\Athena\AthenaApplication;
 use Phalanx\Athena\Provider\ProviderConfig;
@@ -22,15 +21,27 @@ final class AthenaApplicationBuilderTest extends TestCase
         $app = Athena::starting()->build();
 
         try {
-            $providers = $app->providers();
-
             self::assertInstanceOf(AthenaApplication::class, $app);
             self::assertSame($app->aegis(), $app->host());
-            self::assertCount(1, $providers);
-            self::assertInstanceOf(AiServiceBundle::class, $providers[0]);
-            self::assertSame('ok', $app->run(Task::named(
-                'test.athena.facade.run',
-                static fn(): string => 'ok',
+            self::assertSame([
+                'workspace' => 'default',
+                'session' => 'default',
+                'daemon8Url' => 'http://localhost:8888',
+                'app' => 'phalanx-swarm',
+            ], $app->run(Task::named(
+                'test.athena.facade.defaults',
+                static function (ExecutionScope $scope): array {
+                    $swarmConfig = $scope->service(SwarmConfig::class);
+
+                    self::assertInstanceOf(SwarmConfig::class, $swarmConfig);
+
+                    return [
+                        'workspace' => $swarmConfig->workspace,
+                        'session' => $swarmConfig->session,
+                        'daemon8Url' => $swarmConfig->daemon8Url,
+                        'app' => $swarmConfig->app,
+                    ];
+                },
             )));
         } finally {
             $app->shutdown();
@@ -72,5 +83,18 @@ final class AthenaApplicationBuilderTest extends TestCase
             'daemon8Url' => 'http://localhost:9077',
             'app' => 'athena-test',
         ], $result);
+    }
+
+    #[Test]
+    public function facadeRunPassesContextToAthenaServices(): void
+    {
+        $result = Athena::run(Task::named(
+            'test.athena.facade.static-run',
+            static fn(ExecutionScope $scope): string => $scope->service(SwarmConfig::class)->session,
+        ), [
+            'SWARM_SESSION' => 'static-run-session',
+        ]);
+
+        self::assertSame('static-run-session', $result);
     }
 }

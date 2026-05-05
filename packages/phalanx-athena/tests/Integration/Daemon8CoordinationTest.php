@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 #[Group('daemon')]
+#[Group('live')]
 final class Daemon8CoordinationTest extends TestCase
 {
     private static string $runId;
@@ -28,11 +29,11 @@ final class Daemon8CoordinationTest extends TestCase
             self::markTestSkipped('daemon8 not running at ' . self::$baseUrl);
         }
 
-        self::$runId = substr(bin2hex(random_bytes(4)), 0, 8);
+        self::$runId = strtr(uniqid('run-', true), '.', '-');
     }
 
     #[Test]
-    public function agent_sends_message_and_another_agent_reads_it_via_http(): void
+    public function agentSendsMessageAndAnotherAgentReadsItViaHttp(): void
     {
         $checkpoint = daemon8_observe(limit: 1)['checkpoint'];
         $app = self::appName('architect');
@@ -64,16 +65,21 @@ final class Daemon8CoordinationTest extends TestCase
     }
 
     #[Test]
-    public function agent_sends_via_udp_and_another_reads_back(): void
+    public function agentSendsViaUdpAndAnotherReadsBack(): void
     {
         if (!function_exists('socket_create')) {
             self::markTestSkipped('ext-sockets not available');
         }
 
-        // Verify UDP observations are actually indexed by sending a probe and checking.
         $probeCheckpoint = daemon8_observe(limit: 1)['checkpoint'];
         $probeApp = self::appName('udp-probe');
-        daemon8_send_udp(['message' => 'udp-probe'], severity: 'debug', kind: 'custom', channel: 'probe', app: $probeApp);
+        daemon8_send_udp(
+            ['message' => 'udp-probe'],
+            severity: 'debug',
+            kind: 'custom',
+            channel: 'probe',
+            app: $probeApp,
+        );
         usleep(500_000);
         $probe = daemon8_observe(kinds: ['custom'], origins: ["app:$probeApp"], since: $probeCheckpoint);
         if (count($probe['observations']) === 0) {
@@ -111,7 +117,7 @@ final class Daemon8CoordinationTest extends TestCase
     }
 
     #[Test]
-    public function two_agents_exchange_messages_and_each_sees_only_the_other(): void
+    public function twoAgentsExchangeMessagesAndEachSeesOnlyTheOther(): void
     {
         $checkpoint = daemon8_observe(limit: 1)['checkpoint'];
         $alpha = self::appName('alpha');
@@ -146,7 +152,7 @@ final class Daemon8CoordinationTest extends TestCase
     }
 
     #[Test]
-    public function checkpoint_based_incremental_polling(): void
+    public function checkpointBasedIncrementalPolling(): void
     {
         $app = self::appName('poller');
         $cp1 = daemon8_observe(limit: 1)['checkpoint'];

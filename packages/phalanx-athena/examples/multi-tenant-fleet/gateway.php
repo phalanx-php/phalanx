@@ -19,28 +19,34 @@ $customerWs = WsRouteGroup::of([
 $httpRoutes = RouteGroup::of([
     'GET /health' => HealthCheck::class,
 ]);
+/** @var array<string, mixed> $context */
+$context = phalanxAthenaExampleContext($argv ?? []);
 
-echo <<<'BOOT'
+$server = Stoa::starting($context)
+    ->providers(
+        new AiServiceBundle(),
+        new RedisServiceBundle(),
+    )
+    ->routes($httpRoutes)
+    ->listen('0.0.0.0:8080');
+
+$websocketStatus = 'WebSocket: reserved for native Stoa support in a later slice';
+
+try {
+    $server->websockets($customerWs);
+    $websocketStatus = 'WebSocket: ws://localhost:8080/ws/chat/{tenantId}/{sessionId}';
+} catch (\LogicException $e) {
+    $websocketStatus = 'WebSocket: ' . $e->getMessage();
+}
+
+echo <<<BOOT
 Multi-Tenant Fleet - Gateway
 =============================
 Listening on http://0.0.0.0:8080
 
-WebSocket: ws://localhost:8080/ws/chat/{tenantId}/{sessionId}
+$websocketStatus
 Health:    GET http://localhost:8080/health
 
 BOOT;
 
-try {
-    Stoa::starting()
-        ->providers(
-            new AiServiceBundle(),
-            new RedisServiceBundle(),
-        )
-        ->routes($httpRoutes)
-        ->websockets($customerWs)
-        ->listen('0.0.0.0:8080')
-        ->run();
-} catch (\LogicException $e) {
-    echo $e->getMessage() . "\n";
-    exit(0);
-}
+$server->run();

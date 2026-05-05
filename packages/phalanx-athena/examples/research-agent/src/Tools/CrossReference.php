@@ -23,11 +23,11 @@ final class CrossReference implements Tool
         private readonly string $question,
         #[Param('Array of document summary IDs to cross-reference')]
         private readonly array $documentIds,
-    ) {}
+    ) {
+    }
 
     public function __invoke(Scope $scope): ToolOutcome
     {
-        // In production: Redis mget for cached summaries
         return ToolOutcome::data([
             'question' => $this->question,
             'sources' => $this->documentIds,

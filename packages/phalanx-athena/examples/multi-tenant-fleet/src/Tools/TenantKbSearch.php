@@ -27,17 +27,11 @@ final class TenantKbSearch implements Tool
         private readonly string $query,
         #[Param('Maximum results')]
         private readonly int $limit = 3,
-    ) {}
+    ) {
+    }
 
     public function __invoke(Scope $scope): ToolOutcome
     {
-        // In production:
-        //   $tenantId = $scope->attribute('tenant.id');
-        //   $articles = $scope->service(PgPool::class)->query(
-        //       "SELECT ... FROM kb_articles WHERE tenant_id = $1 AND search_vector @@ ...",
-        //       [$tenantId, $this->query, $this->limit]
-        //   );
-
         return ToolOutcome::data([
             'articles' => [
                 ['id' => 1, 'title' => 'Getting Started', 'relevance' => 0.95],

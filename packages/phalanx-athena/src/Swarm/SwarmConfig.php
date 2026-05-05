@@ -10,8 +10,8 @@ namespace Phalanx\Athena\Swarm;
 final readonly class SwarmConfig
 {
     public function __construct(
-        public string $workspace,
-        public string $session,
+        public string $workspace = 'default',
+        public string $session = 'default',
         public string $daemon8Url = 'http://localhost:8888',
         public string $app = 'phalanx-swarm',
     ) {

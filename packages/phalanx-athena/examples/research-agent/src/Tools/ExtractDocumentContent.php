@@ -32,18 +32,11 @@ final class ExtractDocumentContent implements Tool, HasTimeout
         private readonly string $documentPath,
         #[Param('What to focus on when extracting')]
         private readonly string $focus,
-    ) {}
+    ) {
+    }
 
     public function __invoke(Scope $scope): ToolOutcome
     {
-        // In production: $scope->service(DocumentParser::class)->extract()
-        // Then spawn SummarizationAgent via:
-        //   AgentResult::awaitFrom(
-        //       $scope->execute(Turn::begin(new SummarizationAgent())
-        //           ->message(Message::user("Focus: {$this->focus}\n\nDocument: ..."))
-        //           ->output(DocumentSummary::class))
-        //   )
-
         return ToolOutcome::data([
             'document' => $this->documentPath,
             'focus' => $this->focus,

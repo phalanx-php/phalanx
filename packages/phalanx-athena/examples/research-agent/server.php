@@ -12,6 +12,20 @@ use Phalanx\Stoa\Stoa;
 $wsRoutes = WsRouteGroup::of([
     '/research' => ResearchHandler::class,
 ]);
+/** @var array<string, mixed> $context */
+$context = phalanxAthenaExampleContext($argv ?? []);
+
+try {
+    $server = Stoa::starting($context)
+        ->providers(new AiServiceBundle())
+        ->websockets($wsRoutes)
+        ->listen('0.0.0.0:8080');
+} catch (\LogicException $e) {
+    echo "Research Agent Server\n";
+    echo "=====================\n";
+    echo $e->getMessage() . "\n";
+    exit(0);
+}
 
 echo <<<'BOOT'
 Research Agent Server
@@ -23,13 +37,4 @@ Send: {"type":"research","documents":[...],"question":"..."}
 
 BOOT;
 
-try {
-    Stoa::starting()
-        ->providers(new AiServiceBundle())
-        ->websockets($wsRoutes)
-        ->listen('0.0.0.0:8080')
-        ->run();
-} catch (\LogicException $e) {
-    echo $e->getMessage() . "\n";
-    exit(0);
-}
+$server->run();

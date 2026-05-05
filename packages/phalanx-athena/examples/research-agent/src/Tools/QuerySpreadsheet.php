@@ -26,18 +26,11 @@ final class QuerySpreadsheet implements Tool
         private readonly string $filePath,
         #[Param('Natural language description of the calculation or lookup')]
         private readonly string $query,
-    ) {}
+    ) {
+    }
 
     public function __invoke(Scope $scope): ToolOutcome
     {
-        // In production:
-        //   $data = $scope->service(SpreadsheetParser::class)->load($this->filePath);
-        //   $analysis = AgentResult::awaitFrom($scope->execute(
-        //       Turn::begin(new DataAnalyst())
-        //           ->message(Message::user("Query: {$this->query}\n\nHeaders: ..."))
-        //           ->output(SpreadsheetResult::class)
-        //   ));
-
         return ToolOutcome::data([
             'file' => $this->filePath,
             'query' => $this->query,

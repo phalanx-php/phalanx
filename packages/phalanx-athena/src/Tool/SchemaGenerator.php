@@ -70,7 +70,6 @@ final class SchemaGenerator
             try {
                 return $instance->description;
             } catch (\Throwable) {
-                // fall through to legacy extraction
             }
         }
 

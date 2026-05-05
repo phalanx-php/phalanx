@@ -32,13 +32,6 @@ final class TriageHandler implements Scopeable
         $events = AgentLoop::run($turn, $scope);
         $accumulator = TokenAccumulator::from($events, $scope);
 
-        $scope->onDispose(static function () use ($accumulator): void {
-            $result = $accumulator->result();
-            if ($result->structured !== null) {
-                // Save to database via $scope->service(PgPool::class)
-            }
-        });
-
         return SseResponse::from(
             $accumulator->events()
                 ->filter(static fn($e) => $e->kind->isUserFacing())

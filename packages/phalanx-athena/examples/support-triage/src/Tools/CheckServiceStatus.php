@@ -14,11 +14,12 @@ final class CheckServiceStatus implements Tool
         get => 'Check if any services are currently experiencing issues';
     }
 
-    public function __construct() {}
+    public function __construct()
+    {
+    }
 
     public function __invoke(Scope $scope): ToolOutcome
     {
-        // In production: Redis lookup for active incidents
         return ToolOutcome::data([
             'active_incidents' => [],
             'degraded_services' => [],
