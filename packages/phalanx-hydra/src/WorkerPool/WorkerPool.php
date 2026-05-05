@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Phalanx\Hydra\WorkerPool;
 
 use Closure;
-use OpenSwoole\Constant;
 use OpenSwoole\Core\Process\Manager;
 
 /**
@@ -13,11 +12,11 @@ use OpenSwoole\Core\Process\Manager;
  *
  * Wraps `OpenSwoole\Core\Process\Manager` (which itself composes
  * `OpenSwoole\Process\Pool`) with a typed Phalanx-native facade. The
- * existing `Phalanx\Hydra\Agent\Worker` (React-based request/response
- * IPC) remains unchanged for service-call workloads; this WorkerPool
- * targets the simpler "spawn N processes that run a function and stay
- * alive under a supervisor" use case (plx-ops background workers,
- * scheduled job pools, fan-out batch processors).
+ * existing `Phalanx\Hydra\Agent\Worker` request/response IPC serves
+ * service-call workloads; this WorkerPool targets the simpler "spawn N
+ * processes that run a function and stay alive under a supervisor" use
+ * case (plx-ops background workers, scheduled job pools, fan-out batch
+ * processors).
  *
  * The C-level supervisor restarts crashed workers automatically; the
  * pool propagates SIGTERM/SIGINT to children via Process\Pool's built-in
@@ -31,9 +30,7 @@ use OpenSwoole\Core\Process\Manager;
  */
 final class WorkerPool
 {
-    public int $workerCount {
-        get => count($this->factories);
-    }
+    public private(set) int $workerCount = 0;
 
     private readonly Manager $manager;
 
@@ -45,23 +42,24 @@ final class WorkerPool
         $this->manager = new Manager($ipcType, $msgQueueKey);
     }
 
-	/**
-	 * Convenience helper for the most common configuration: one function,
-	 * N coroutine-enabled workers, no IPC.
-	 *
-	 * @param Closure(\OpenSwoole\Process\Pool, int): void $func
-	 */
-	public static function ofSize(int $workerNum, Closure $func): self
-	{
-		$pool = new self(SWOOLE_IPC_NONE, 0);
-		$pool->addBatch($workerNum, $func, enableCoroutine: true);
-		return $pool;
-	}
+    /**
+     * Convenience helper for the most common configuration: one function,
+     * N coroutine-enabled workers, no IPC.
+     *
+     * @param Closure(\OpenSwoole\Process\Pool, int): void $func
+     */
+    public static function ofSize(int $workerNum, Closure $func): self
+    {
+        $pool = new self(SWOOLE_IPC_NONE, 0);
+        $pool->addBatch($workerNum, $func, enableCoroutine: true);
+        return $pool;
+    }
 
-	public static function eventWorkerStart(): string
-	{
-		return Constant::EVENT_WORKER_START;
-	}
+    public static function eventWorkerStart(): string
+    {
+        $constant = 'OpenSwoole\\Constant::EVENT_WORKER_START';
+        return defined($constant) ? (string) constant($constant) : 'workerStart';
+    }
 
     /**
      * Add a single worker function. The function receives the `Pool` and
@@ -74,6 +72,7 @@ final class WorkerPool
     public function add(Closure $func, bool $enableCoroutine = true): self
     {
         $this->factories[] = [$func, $enableCoroutine];
+        $this->workerCount = count($this->factories);
         $this->manager->add($func, $enableCoroutine);
         return $this;
     }
@@ -89,6 +88,7 @@ final class WorkerPool
         for ($i = 0; $i < $workerNum; $i++) {
             $this->factories[] = [$func, $enableCoroutine];
         }
+        $this->workerCount = count($this->factories);
         $this->manager->addBatch($workerNum, $func, $enableCoroutine);
         return $this;
     }

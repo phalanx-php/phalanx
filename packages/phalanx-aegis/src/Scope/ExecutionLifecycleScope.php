@@ -1018,8 +1018,9 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         $dispatch = $this->workerDispatch;
         $token = $this->cancellation;
         $taskName = self::resolveTaskName($task);
+        $scope = $this;
         return $this->call(
-            static fn(): mixed => $dispatch->dispatch($task, $token),
+            static fn(): mixed => $dispatch->dispatch($task, $scope, $token),
             WaitReason::worker('worker', $taskName),
         );
     }

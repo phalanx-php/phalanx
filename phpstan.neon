@@ -12,6 +12,7 @@ parameters:
         - packages/phalanx-argos/src
         - packages/phalanx-eidolon/src
         - packages/phalanx-grammata/src
+        - packages/phalanx-hydra/src
         - packages/phalanx-phpstan/src
         - packages/phalanx-postgres/src
         - packages/phalanx-redis/src

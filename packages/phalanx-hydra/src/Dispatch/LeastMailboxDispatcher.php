@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Phalanx\Hydra\Dispatch;
 
+use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Hydra\Agent\AgentState;
 use Phalanx\Hydra\Agent\Worker;
 use Phalanx\Hydra\Protocol\TaskRequest;
-use React\Promise\PromiseInterface;
-
-use function React\Promise\reject;
+use Phalanx\Scope\TaskExecutor;
+use Phalanx\Scope\TaskScope;
+use RuntimeException;
 
 final class LeastMailboxDispatcher implements Dispatcher
 {
@@ -21,11 +22,10 @@ final class LeastMailboxDispatcher implements Dispatcher
     ) {
     }
 
-    /** @return PromiseInterface<mixed> */
-    public function dispatch(TaskRequest $task): PromiseInterface
+    public function dispatch(TaskRequest $task, TaskScope&TaskExecutor $scope, CancellationToken $token): mixed
     {
         if (count($this->agents) === 0) {
-            return reject(new \RuntimeException('No agents available'));
+            throw new RuntimeException('No agents available');
         }
 
         $bestAgent = null;
@@ -45,9 +45,9 @@ final class LeastMailboxDispatcher implements Dispatcher
         }
 
         if ($bestAgent === null) {
-            return reject(new \RuntimeException('All agents unavailable'));
+            throw new RuntimeException('All agents unavailable');
         }
 
-        return $bestAgent->send($task);
+        return $bestAgent->send($task, $scope, $token);
     }
 }

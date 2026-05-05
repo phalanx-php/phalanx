@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Phalanx\Hydra\Dispatch;
 
+use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Hydra\Protocol\TaskRequest;
-use React\Promise\PromiseInterface;
+use Phalanx\Scope\TaskExecutor;
+use Phalanx\Scope\TaskScope;
 
 interface Dispatcher
 {
-    /** @return PromiseInterface<mixed> */
-    public function dispatch(TaskRequest $task): PromiseInterface;
+    public function dispatch(TaskRequest $task, TaskScope&TaskExecutor $scope, CancellationToken $token): mixed;
 }

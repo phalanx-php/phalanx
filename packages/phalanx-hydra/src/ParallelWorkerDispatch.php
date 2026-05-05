@@ -4,31 +4,54 @@ declare(strict_types=1);
 
 namespace Phalanx\Hydra;
 
-use Phalanx\ExecutionScope;
-use Phalanx\Hydra\Dispatch\Dispatcher;
+use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Hydra\Process\ProcessConfig;
 use Phalanx\Hydra\Protocol\TaskRequest;
 use Phalanx\Hydra\Supervisor\WorkerSupervisor;
-use Phalanx\Service\LazySingleton;
-use Phalanx\Service\ServiceGraph;
+use Phalanx\Scope\TaskExecutor;
+use Phalanx\Scope\TaskScope;
 use Phalanx\Support\ClassNames;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 use Phalanx\Task\Traceable;
 use Phalanx\Trace\TraceType;
-use Phalanx\WorkerDispatch;
-use React\EventLoop\Loop;
+use Phalanx\Worker\WorkerDispatch;
 use ReflectionClass;
+use RuntimeException;
 
-final class ParallelWorkerDispatch implements WorkerDispatch
+class ParallelWorkerDispatch implements WorkerDispatch
 {
     private ?WorkerSupervisor $supervisor = null;
 
     public function __construct(
         private readonly ParallelConfig $config,
-        private readonly ServiceGraph $graph,
-        private readonly LazySingleton $singletons,
     ) {
+    }
+
+    public function dispatch(Scopeable|Executable $task, TaskScope&TaskExecutor $scope, CancellationToken $token): mixed
+    {
+        $token->throwIfCancelled();
+        $scope->throwIfCancelled();
+
+        $name = $task instanceof Traceable ? $task->traceName : ClassNames::short($task::class);
+        $start = hrtime(true);
+
+        $scope->trace()->log(TraceType::Worker, "worker:{$name}", ['state' => 'dispatching']);
+
+        try {
+            $result = $this->supervisor()->dispatch($this->serializeTask($task), $scope, $token);
+            $elapsed = (hrtime(true) - $start) / 1e6;
+            $scope->trace()->log(TraceType::Worker, "worker:{$name}", ['elapsed' => $elapsed, 'state' => 'done']);
+            return $result;
+        } catch (\Throwable $e) {
+            $elapsed = (hrtime(true) - $start) / 1e6;
+            $scope->trace()->log(
+                TraceType::Failed,
+                "worker:{$name}",
+                ['elapsed' => $elapsed, 'error' => $e->getMessage()],
+            );
+            throw $e;
+        }
     }
 
     public function shutdown(): void
@@ -37,71 +60,36 @@ final class ParallelWorkerDispatch implements WorkerDispatch
         $this->supervisor = null;
     }
 
-    public function inWorker(Scopeable|Executable $task, ExecutionScope $scope): mixed
-    {
-        $scope->throwIfCancelled();
-
-        $name = $task instanceof Traceable ? $task->traceName : ClassNames::short($task::class);
-        $start = hrtime(true);
-
-        $scope->trace()->log(TraceType::Executing, "worker:$name", task: $task);
-
-        $dispatcher = $this->getDispatcher($scope);
-        $request = $this->serializeTask($task, $scope);
-        $promise = $dispatcher->dispatch($request);
-
-        try {
-            $result = $scope->await($promise);
-            $elapsed = (hrtime(true) - $start) / 1e6;
-            $scope->trace()->log(TraceType::Done, "worker:$name", ['elapsed' => $elapsed]);
-            return $result;
-        } catch (\Throwable $e) {
-            $elapsed = (hrtime(true) - $start) / 1e6;
-            $scope->trace()->log(TraceType::Failed, "worker:$name", ['elapsed' => $elapsed, 'error' => $e->getMessage()]);
-            throw $e;
-        }
-    }
-
-    private function getDispatcher(ExecutionScope $scope): Dispatcher
+    private function supervisor(): WorkerSupervisor
     {
         if ($this->supervisor !== null) {
-            return $this->supervisor->dispatcher();
+            return $this->supervisor;
         }
-
-        $processConfig = ProcessConfig::detect($this->config->workerScript, $this->config->autoloadPath);
 
         $supervisor = new WorkerSupervisor(
             config: $this->config->toSupervisorConfig(),
-            processConfig: $processConfig,
-            loop: Loop::get(),
-            graph: $this->graph,
-            singletons: $this->singletons,
+            processConfig: ProcessConfig::detect($this->config->workerScript, $this->config->autoloadPath),
         );
-
-        $this->supervisor = $supervisor;
         $supervisor->start();
 
-        return $supervisor->dispatcher();
+        $this->supervisor = $supervisor;
+        return $supervisor;
     }
 
-    private function serializeTask(Scopeable|Executable $task, ExecutionScope $scope): TaskRequest
+    private function serializeTask(Scopeable|Executable $task): TaskRequest
     {
-        $class = $task::class;
-        $args = $this->extractConstructorArgs($task);
-
         return new TaskRequest(
-            id: bin2hex(random_bytes(8)),
-            taskClass: $class,
-            constructorArgs: $args,
+            id: uniqid('task-', true),
+            taskClass: $task::class,
+            constructorArgs: $this->extractConstructorArgs($task),
             contextAttrs: [],
         );
     }
 
-    /**
-     * @return array<string, mixed>
-     */
+    /** @return array<string, mixed> */
     private function extractConstructorArgs(object $task): array
     {
+        $taskClass = $task::class;
         $reflection = new ReflectionClass($task);
         $constructor = $reflection->getConstructor();
 
@@ -122,9 +110,8 @@ final class ParallelWorkerDispatch implements WorkerDispatch
             $value = $prop->getValue($task);
 
             if (!$this->isSerializable($value)) {
-                $taskClass = $task::class;
-                throw new \RuntimeException(
-                    "Cannot serialize task $taskClass: property '$name' is not serializable"
+                throw new RuntimeException(
+                    "Cannot serialize task {$taskClass}: property '{$name}' is not serializable",
                 );
             }
 
@@ -141,18 +128,24 @@ final class ParallelWorkerDispatch implements WorkerDispatch
         }
 
         if (is_array($value)) {
-            return array_all($value, fn($item) => $this->isSerializable($item));
+            foreach ($value as $item) {
+                if (!$this->isSerializable($item)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        if ($value instanceof \Closure) {
+            return false;
+        }
+
+        if ($value instanceof \UnitEnum) {
+            return true;
         }
 
         if (is_object($value)) {
-            if ($value instanceof \Closure) {
-                return false;
-            }
-
-            if ($value instanceof \UnitEnum) {
-                return true;
-            }
-
             try {
                 json_encode($value, JSON_THROW_ON_ERROR);
                 return true;

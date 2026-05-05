@@ -4,13 +4,10 @@ declare(strict_types=1);
 
 namespace Phalanx\Hydra;
 
-use Closure;
 use Phalanx\Hydra\Dispatch\DispatchStrategy;
 use Phalanx\Hydra\Supervisor\SupervisorConfig;
 use Phalanx\Hydra\Supervisor\SupervisorStrategy;
-use Phalanx\Service\LazySingleton;
-use Phalanx\Service\ServiceGraph;
-use Phalanx\WorkerDispatch;
+use Phalanx\Worker\WorkerDispatch;
 
 final readonly class ParallelConfig
 {
@@ -39,12 +36,9 @@ final readonly class ParallelConfig
         return new self(agents: self::detectCores());
     }
 
-    /** @return Closure(ServiceGraph, LazySingleton): WorkerDispatch */
-    public function workerDispatchFactory(): Closure
+    public function workerDispatch(): WorkerDispatch
     {
-        $config = $this;
-        return static fn(ServiceGraph $graph, LazySingleton $singletons): WorkerDispatch
-            => new ParallelWorkerDispatch($config, $graph, $singletons);
+        return new ParallelWorkerDispatch($this);
     }
 
     public function toSupervisorConfig(): SupervisorConfig

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Hydra\Supervisor;
 
+use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Hydra\Agent\AgentState;
 use Phalanx\Hydra\Agent\Worker;
 use Phalanx\Hydra\Dispatch\Dispatcher;
@@ -11,35 +12,25 @@ use Phalanx\Hydra\Dispatch\DispatchStrategy;
 use Phalanx\Hydra\Dispatch\LeastMailboxDispatcher;
 use Phalanx\Hydra\Dispatch\RoundRobinDispatcher;
 use Phalanx\Hydra\Process\ProcessConfig;
-use Phalanx\Hydra\Protocol\ServiceCall;
-use Phalanx\Hydra\Runtime\ParentServiceProxy;
-use Phalanx\Service\LazySingleton;
-use Phalanx\Service\ServiceGraph;
-use React\EventLoop\LoopInterface;
-use React\EventLoop\TimerInterface;
-use React\Promise\PromiseInterface;
+use Phalanx\Hydra\Protocol\TaskRequest;
+use Phalanx\Scope\TaskExecutor;
+use Phalanx\Scope\TaskScope;
 
-use function React\Promise\all;
-
-final class WorkerSupervisor
+class WorkerSupervisor
 {
     private bool $started = false;
-    
+
     /** @var list<Worker> */
     private array $agents = [];
+
     /** @var array<string, list<float>> */
     private array $restartHistory = [];
 
     private ?Dispatcher $dispatcher = null;
-    private ?ParentServiceProxy $serviceProxy = null;
-    private ?TimerInterface $crashMonitorTimer = null;
 
     public function __construct(
         private readonly SupervisorConfig $config,
         private readonly ProcessConfig $processConfig,
-        private readonly LoopInterface $loop,
-        private readonly ServiceGraph $graph,
-        private readonly LazySingleton $singletons,
     ) {
     }
 
@@ -50,76 +41,68 @@ final class WorkerSupervisor
         }
 
         $this->started = true;
-        $this->serviceProxy = new ParentServiceProxy($this->graph, $this->singletons);
 
         for ($i = 0; $i < $this->config->agents; $i++) {
-            $agent = new Worker(
+            $this->agents[] = new Worker(
                 config: $this->processConfig,
-                loop: $this->loop,
-                mailboxLimit: $this->config->mailboxLimit,
                 id: sprintf('agent-%d', $i),
             );
-
-            $serviceProxy = $this->serviceProxy;
-            $agent->setServiceHandler(static fn(ServiceCall $call) => $serviceProxy->handle($call));
-            $this->agents[] = $agent;
         }
 
         $this->dispatcher = $this->createDispatcher();
-        $this->startCrashMonitor();
     }
 
-    /**
-     * @return list<Worker>
-     */
+    /** @return list<Worker> */
     public function agents(): array
     {
         return $this->agents;
     }
 
-    public function dispatcher(): Dispatcher
+    public function dispatch(TaskRequest $task, TaskScope&TaskExecutor $scope, CancellationToken $token): mixed
     {
-        if ($this->dispatcher === null) {
-            throw new \RuntimeException('Supervisor not started');
-        }
+        $this->start();
 
-        return $this->dispatcher;
+        try {
+            return $this->dispatcher()->dispatch($task, $scope, $token);
+        } catch (\Throwable $e) {
+            $this->handleCrashedAgents();
+            throw $e;
+        }
     }
 
-    /** @return PromiseInterface<mixed> */
-    public function shutdown(): PromiseInterface
+    public function shutdown(): void
     {
         if (!$this->started) {
-            return \React\Promise\resolve(null);
+            return;
         }
-
-        $this->stopCrashMonitor();
-
-        $promises = [];
 
         foreach ($this->agents as $agent) {
-            $promises[] = $agent->drain();
+            $agent->drain();
         }
 
-        // Non-static: mutates $this->started, $this->agents, $this->dispatcher.
-        // Cycle is bounded -- finally() fires exactly once when all drain promises settle.
-        return all($promises)->finally(function (): void {
-            $this->started = false;
-            $this->agents = [];
-            $this->dispatcher = null;
-        });
+        $this->started = false;
+        $this->agents = [];
+        $this->dispatcher = null;
     }
 
     public function kill(): void
     {
-        $this->stopCrashMonitor();
-
         foreach ($this->agents as $agent) {
             $agent->kill();
         }
 
         $this->agents = [];
         $this->started = false;
+        $this->dispatcher = null;
+    }
+
+    private function dispatcher(): Dispatcher
+    {
+        if ($this->dispatcher === null) {
+            throw new \RuntimeException('Supervisor not started');
+        }
+
+        return $this->dispatcher;
     }
 
     private function createDispatcher(): Dispatcher
@@ -130,35 +113,19 @@ final class WorkerSupervisor
         };
     }
 
-    private function startCrashMonitor(): void
+    private function handleCrashedAgents(): void
     {
-        // Non-static: iterates mutable $this->agents, calls $this->handleCrash().
-        // Cycle is bounded -- crashMonitorTimer is cancelled in stopCrashMonitor(),
-        // which is called from both shutdown() and kill() before those paths release $this.
-        $this->crashMonitorTimer = $this->loop->addPeriodicTimer(0.5, function (): void {
-            foreach ($this->agents as $agent) {
-                if ($agent->state === AgentState::Crashed) {
-                    $this->handleCrash($agent);
-                }
+        foreach ($this->agents as $agent) {
+            if ($agent->state !== AgentState::Crashed) {
+                continue;
             }
-        });
-    }
 
-    private function stopCrashMonitor(): void
-    {
-        if ($this->crashMonitorTimer !== null) {
-            $this->loop->cancelTimer($this->crashMonitorTimer);
-            $this->crashMonitorTimer = null;
+            match ($this->config->supervision) {
+                SupervisorStrategy::RestartOnCrash => $this->attemptRestart($agent),
+                SupervisorStrategy::StopAll => $this->kill(),
+                SupervisorStrategy::Ignore => null,
+            };
         }
-    }
-
-    private function handleCrash(Worker $agent): void
-    {
-        match ($this->config->supervision) {
-            SupervisorStrategy::RestartOnCrash => $this->attemptRestart($agent),
-            SupervisorStrategy::StopAll => $this->kill(),
-            SupervisorStrategy::Ignore => null,
-        };
     }
 
     private function attemptRestart(Worker $agent): void
@@ -172,11 +139,11 @@ final class WorkerSupervisor
         $windowStart = $now - $this->config->restartWindow;
         $this->restartHistory[$agentId] = array_values(array_filter(
             $this->restartHistory[$agentId],
-            static fn(float $time) => $time >= $windowStart,
+            static fn(float $time): bool => $time >= $windowStart,
         ));
 
         if (count($this->restartHistory[$agentId]) > $this->config->maxRestarts) {
-            error_log("[Supervisor] Agent {$agentId} exceeded max restarts ({$this->config->maxRestarts}), not restarting");
+            error_log("[Supervisor] Agent {$agentId} exceeded max restarts ({$this->config->maxRestarts})");
             return;
         }
 

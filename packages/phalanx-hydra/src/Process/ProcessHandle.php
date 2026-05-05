@@ -9,39 +9,24 @@ use Phalanx\Hydra\Protocol\MessageType;
 use Phalanx\Hydra\Protocol\Response;
 use Phalanx\Hydra\Protocol\ServiceCall;
 use Phalanx\Hydra\Protocol\TaskRequest;
-use React\ChildProcess\Process;
-use React\EventLoop\LoopInterface;
-use React\EventLoop\TimerInterface;
-use React\Promise\Deferred;
-use React\Promise\PromiseInterface;
-use React\Stream\WritableStreamInterface;
+use Phalanx\Scope\TaskExecutor;
+use Phalanx\Scope\TaskScope;
+use Phalanx\System\StreamingProcess;
+use Phalanx\System\StreamingProcessException;
+use Phalanx\System\StreamingProcessHandle;
+use RuntimeException;
 
-use function React\Promise\reject;
-use function React\Promise\resolve;
-
-final class ProcessHandle
+class ProcessHandle
 {
-    private ?Process $process = null;
-    private string $buffer = '';
-    /** @var Deferred<mixed>|null */
-    private ?Deferred $pendingTask = null;
-    private ?string $pendingTaskId = null;
+    private const float READ_TIMEOUT = 0.1;
+
+    private ?StreamingProcessHandle $process = null;
+
     private ProcessState $state = ProcessState::Idle;
-    private bool $drainInProgress = false;
-    private ?TimerInterface $gracefulTimer = null;
-    private ?TimerInterface $forceTimer = null;
-
-    /** @var array<string, Deferred<mixed>> */
-    private array $pendingServiceCalls = [];
-
-    /** @var callable(ServiceCall): PromiseInterface<mixed> */
-    private $serviceHandler;
 
     public function __construct(
         private readonly ProcessConfig $config,
-        private readonly LoopInterface $loop,
     ) {
-        $this->serviceHandler = static fn() => reject(new \RuntimeException('No service handler'));
     }
 
     public function state(): ProcessState
@@ -56,16 +41,10 @@ final class ProcessHandle
 
     public function isRunning(): bool
     {
-        return $this->process !== null && $this->process->isRunning();
+        return $this->process?->isRunning() ?? false;
     }
 
-    /** @param callable(ServiceCall): PromiseInterface<mixed> $handler */
-    public function setServiceHandler(callable $handler): void
-    {
-        $this->serviceHandler = $handler;
-    }
-
-    public function start(): void
+    public function start(TaskScope&TaskExecutor $scope): void
     {
         if ($this->process !== null && $this->process->isRunning()) {
             return;
@@ -73,262 +52,162 @@ final class ProcessHandle
 
         $this->cleanup();
 
-        $cmd = sprintf(
-            'exec php %s --autoload=%s',
-            escapeshellarg($this->config->workerScript),
-            escapeshellarg($this->config->autoloadPath),
-        );
+        $this->process = StreamingProcess::command([
+            PHP_BINARY,
+            $this->config->workerScript,
+            "--autoload={$this->config->autoloadPath}",
+        ])->start($scope);
 
-        $this->process = new Process($cmd);
-        $this->process->start($this->loop);
         $this->state = ProcessState::Idle;
-        $this->buffer = '';
-
-        // Non-static: writes mutable $this->buffer, calls $this->processBuffer().
-        // Cycle is bounded -- listener lives on $this->process, which cleanup() nulls,
-        // detaching all listeners and breaking the cycle on process exit or kill().
         $process = $this->process;
 
-        $process->stdout?->on('data', function (string $data): void {
-            $this->buffer .= $data;
-            $this->processBuffer();
-        });
-
-        $process->stderr?->on('data', static function (string $data): void {
-            error_log("[Worker STDERR] $data");
-        });
-
-        // Non-static: calls $this->onExit() to handle pending task/service call cleanup.
-        // Cycle is bounded -- fires exactly once on process exit, after which $this->process
-        // is nulled by cleanup() in the kill() path or left as a dead handle.
-        $process->on('exit', function (?int $code, $signal): void {
-            $this->onExit($code);
-        });
+        $scope->go(static function () use ($process): void {
+            self::drainStderr($process);
+        }, 'hydra.worker.stderr');
     }
 
-    /** @return PromiseInterface<mixed> */
-    public function execute(TaskRequest $task): PromiseInterface
+    /** @param callable(ServiceCall): mixed $serviceHandler */
+    public function execute(TaskRequest $task, TaskScope&TaskExecutor $scope, callable $serviceHandler): mixed
     {
         if ($this->state !== ProcessState::Idle) {
-            return reject(new \RuntimeException("Process not idle: {$this->state->name}"));
+            throw new RuntimeException("Process not idle: {$this->state->name}");
         }
 
         if ($this->process === null || !$this->process->isRunning()) {
-            return reject(new \RuntimeException('Process not running'));
+            throw new RuntimeException('Process not running');
         }
 
         $this->state = ProcessState::Busy;
-        $this->pendingTaskId = $task->id;
-        $this->pendingTask = new Deferred();
 
-        if ($this->process->stdin instanceof WritableStreamInterface) {
-            $this->process->stdin->write(Codec::encode($task));
-        }
-
-        // Non-static: reads and writes mutable $this->state.
-        // Cycle is bounded -- finally() fires exactly once when the task promise settles.
-        return $this->pendingTask->promise()->finally(function (): void {
-            if ($this->state === ProcessState::Busy) {
+        try {
+            $this->process->write(Codec::encode($task), timeout: 1.0);
+            return $this->readTaskResult($task, $scope, $serviceHandler);
+        } catch (\Throwable $e) {
+            if (!$this->isRunning()) {
+                $this->state = ProcessState::Crashed;
+            } elseif ($this->state === ProcessState::Busy) {
                 $this->state = ProcessState::Idle;
             }
-        });
+
+            throw $e;
+        }
     }
 
-    /** @return PromiseInterface<mixed> */
-    public function drain(): PromiseInterface
+    public function drain(): void
     {
-        if ($this->process === null || !$this->process->isRunning()) {
-            return resolve(null);
+        if ($this->process === null) {
+            return;
         }
 
-        if ($this->drainInProgress) {
-            return resolve(null);
+        if (!$this->process->isRunning()) {
+            $this->cleanup();
+            return;
         }
 
-        $this->drainInProgress = true;
         $this->state = ProcessState::Draining;
-        $deferred = new Deferred();
-        $process = $this->process;
-
-        // Non-static: calls $this->cancelDrainTimers() to clean up graceful/force timers.
-        // Cycle is bounded -- fires exactly once on process exit.
-        $process->on('exit', function () use ($deferred): void {
-            $this->cancelDrainTimers();
-            $deferred->resolve(null);
-        });
-
-        if ($process->stdin instanceof WritableStreamInterface) {
-            $process->stdin->end();
-        }
-
-        // Non-static: reads nullable $this->gracefulTimer and $this->process.
-        // Cycle is bounded -- addTimer fires once; the timer reference is nulled on entry.
-        $this->gracefulTimer = $this->loop->addTimer($this->config->gracefulTimeout, function (): void {
-            $this->gracefulTimer = null;
-            if ($this->process?->isRunning()) {
-                $this->process->terminate(SIGTERM);
-            }
-        });
-
-        // Non-static: same pattern as gracefulTimer above.
-        $this->forceTimer = $this->loop->addTimer($this->config->forceTimeout, function (): void {
-            $this->forceTimer = null;
-            if ($this->process?->isRunning()) {
-                $this->process->terminate(SIGKILL);
-            }
-        });
-
-        return $deferred->promise();
+        $this->process->stop(
+            gracefulTimeout: $this->config->gracefulTimeout,
+            forceTimeout: $this->config->forceTimeout,
+        );
+        $this->cleanup();
     }
 
     public function kill(): void
     {
-        $this->cancelDrainTimers();
-
-        if ($this->process?->isRunning()) {
-            $this->process->terminate(SIGKILL);
+        if ($this->process !== null) {
+            $this->process->close('hydra.kill');
         }
 
         $this->state = ProcessState::Crashed;
         $this->cleanup();
     }
 
-    private function onExit(?int $code): void
+    private static function drainStderr(StreamingProcessHandle $process): void
     {
-        $this->cancelDrainTimers();
+        while ($process->isRunning()) {
+            try {
+                $chunk = $process->readError(8192, self::READ_TIMEOUT);
+            } catch (\Throwable) {
+                return;
+            }
 
-        if ($this->state !== ProcessState::Draining) {
-            $this->state = ProcessState::Crashed;
+            if ($chunk !== '') {
+                error_log("[Worker STDERR] {$chunk}");
+            }
         }
-
-        if ($this->pendingTask !== null) {
-            $this->pendingTask->reject(
-                new \RuntimeException("Worker exited with code $code")
-            );
-            $this->pendingTask = null;
-            $this->pendingTaskId = null;
-        }
-
-        foreach ($this->pendingServiceCalls as $deferred) {
-            $deferred->reject(new \RuntimeException('Worker exited'));
-        }
-        $this->pendingServiceCalls = [];
     }
 
-    private function cancelDrainTimers(): void
+    /** @param callable(ServiceCall): mixed $serviceHandler */
+    private function readTaskResult(TaskRequest $task, TaskScope&TaskExecutor $scope, callable $serviceHandler): mixed
     {
-        if ($this->gracefulTimer !== null) {
-            $this->loop->cancelTimer($this->gracefulTimer);
-            $this->gracefulTimer = null;
+        while (true) {
+            $scope->throwIfCancelled();
+
+            $line = $this->readLine();
+            if ($line === '') {
+                if (!$this->isRunning()) {
+                    $this->state = ProcessState::Crashed;
+                    throw new RuntimeException('Worker exited before returning a task response');
+                }
+                continue;
+            }
+
+            $message = Codec::decode($line);
+
+            if ($message instanceof ServiceCall) {
+                $this->handleServiceCall($message, $serviceHandler);
+                continue;
+            }
+
+            if ($message instanceof Response && $message->type === MessageType::TaskResponse) {
+                if ($message->id !== $task->id) {
+                    continue;
+                }
+
+                $this->state = ProcessState::Idle;
+                return $message->unwrap();
+            }
+        }
+    }
+
+    private function readLine(): string
+    {
+        if ($this->process === null) {
+            throw new RuntimeException('Process not running');
         }
 
-        if ($this->forceTimer !== null) {
-            $this->loop->cancelTimer($this->forceTimer);
-            $this->forceTimer = null;
+        try {
+            return $this->process->readLine(self::READ_TIMEOUT);
+        } catch (StreamingProcessException $e) {
+            if (!$this->isRunning()) {
+                return '';
+            }
+
+            throw $e;
         }
+    }
+
+    /** @param callable(ServiceCall): mixed $serviceHandler */
+    private function handleServiceCall(ServiceCall $call, callable $serviceHandler): void
+    {
+        if ($this->process === null) {
+            throw new RuntimeException('Process not running');
+        }
+
+        try {
+            $response = Response::serviceOk($call->id, $serviceHandler($call));
+        } catch (\Throwable $e) {
+            $response = Response::serviceErr($call->id, $e);
+        }
+
+        $this->process->write(Codec::encode($response), timeout: 1.0);
     }
 
     private function cleanup(): void
     {
-        $this->cancelDrainTimers();
-        $this->drainInProgress = false;
-        $this->buffer = '';
         $this->process = null;
-    }
-
-    private function processBuffer(): void
-    {
-        while (($pos = strpos($this->buffer, "\n")) !== false) {
-            $line = substr($this->buffer, 0, $pos);
-            $this->buffer = substr($this->buffer, $pos + 1);
-
-            if (trim($line) === '') {
-                continue;
-            }
-
-            try {
-                $message = Codec::decode($line);
-                $this->handleMessage($message);
-            } catch (\Throwable $e) {
-                error_log("[Worker] Failed to decode message: {$e->getMessage()}");
-            }
-        }
-    }
-
-    private function handleMessage(TaskRequest|ServiceCall|Response $message): void
-    {
-        if ($message instanceof ServiceCall) {
-            $this->handleServiceCall($message);
-            return;
-        }
-
-        if ($message instanceof Response) {
-            if ($message->type === MessageType::ServiceResponse) {
-                $this->handleServiceResponse($message);
-                return;
-            }
-
-            if ($message->type === MessageType::TaskResponse) {
-                $this->handleTaskResponse($message);
-                return;
-            }
-        }
-    }
-
-    private function handleServiceCall(ServiceCall $call): void
-    {
-        $handler = $this->serviceHandler;
-        // Non-static: writes response back via $this->process->stdin.
-        // Cycle is bounded -- both callbacks fire exactly once when the service handler promise settles.
-        $handler($call)->then(
-            function (mixed $result) use ($call): void {
-                $response = Response::serviceOk($call->id, $result);
-                $stdin = $this->process?->stdin;
-                if ($stdin instanceof WritableStreamInterface) {
-                    $stdin->write(Codec::encode($response));
-                }
-            },
-            function (\Throwable $e) use ($call): void {
-                $response = Response::serviceErr($call->id, $e);
-                $stdin = $this->process?->stdin;
-                if ($stdin instanceof WritableStreamInterface) {
-                    $stdin->write(Codec::encode($response));
-                }
-            },
-        );
-    }
-
-    private function handleServiceResponse(Response $response): void
-    {
-        $deferred = $this->pendingServiceCalls[$response->id] ?? null;
-
-        if ($deferred === null) {
-            return;
-        }
-
-        unset($this->pendingServiceCalls[$response->id]);
-
-        if ($response->ok) {
-            $deferred->resolve($response->result);
-        } else {
-            $deferred->reject(new \RuntimeException($response->errorMessage ?? 'Service call failed'));
-        }
-    }
-
-    private function handleTaskResponse(Response $response): void
-    {
-        if ($this->pendingTask === null || $this->pendingTaskId !== $response->id) {
-            return;
-        }
-
-        $deferred = $this->pendingTask;
-        $this->pendingTask = null;
-        $this->pendingTaskId = null;
-
-        if ($response->ok) {
-            $deferred->resolve($response->result);
-        } else {
-            $deferred->reject(new \RuntimeException($response->errorMessage ?? 'Task failed'));
+        if ($this->state !== ProcessState::Crashed) {
+            $this->state = ProcessState::Idle;
         }
     }
 }

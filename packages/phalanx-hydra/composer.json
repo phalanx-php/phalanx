@@ -3,7 +3,7 @@
     "description": "Worker process parallelism for Phalanx",
     "license": "MIT",
     "type": "library",
-    "keywords": ["parallel", "worker", "process", "async", "ipc", "reactphp"],
+    "keywords": ["parallel", "worker", "process", "ipc", "openswoole"],
     "authors": [
         {
             "name": "Jonathan Havens",
@@ -13,11 +13,7 @@
     "homepage": "https://github.com/phalanx-php/phalanx-hydra",
     "require": {
         "php": "^8.4",
-        "phalanx-php/aegis": "^0.5",
-        "react/child-process": "^0.6",
-        "react/async": "^4.3",
-        "react/event-loop": "^1.5",
-        "react/promise": "^3.2"
+        "phalanx-php/aegis": "^0.5"
     },
     "autoload": {
         "psr-4": {

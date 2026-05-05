@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Phalanx\Hydra\Tests\Integration;
 
 use Phalanx\Application;
-use Phalanx\ExecutionScope;
 use Phalanx\Hydra\ParallelConfig;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Task;
 use Phalanx\Tests\Support\AsyncTestCase;
 use Phalanx\Tests\Support\Fixtures\AddNumbers;
@@ -20,7 +20,7 @@ final class InWorkerTest extends AsyncTestCase
     private Application $app;
 
     #[Test]
-    public function executes_simple_task_in_worker(): void
+    public function executesSimpleTaskInWorker(): void
     {
         $this->runAsync(function (): void {
             $scope = $this->app->createScope();
@@ -34,7 +34,7 @@ final class InWorkerTest extends AsyncTestCase
     }
 
     #[Test]
-    public function executes_cpu_intensive_task(): void
+    public function executesCpuIntensiveTask(): void
     {
         $this->runAsync(function (): void {
             $scope = $this->app->createScope();
@@ -48,7 +48,7 @@ final class InWorkerTest extends AsyncTestCase
     }
 
     #[Test]
-    public function propagates_exceptions_from_worker(): void
+    public function propagatesExceptionsFromWorker(): void
     {
         $this->runAsync(function (): void {
             $scope = $this->app->createScope();
@@ -65,7 +65,7 @@ final class InWorkerTest extends AsyncTestCase
     }
 
     #[Test]
-    public function multiple_tasks_execute_sequentially(): void
+    public function multipleTasksExecuteSequentially(): void
     {
         $this->runAsync(function (): void {
             $scope = $this->app->createScope();
@@ -83,7 +83,7 @@ final class InWorkerTest extends AsyncTestCase
     }
 
     #[Test]
-    public function parallel_tasks_execute_concurrently(): void
+    public function parallelTasksExecuteConcurrently(): void
     {
         $this->runAsync(function (): void {
             $scope = $this->app->createScope();
@@ -109,7 +109,7 @@ final class InWorkerTest extends AsyncTestCase
 
         $this->app = Application::starting()
             ->providers($bundle)
-            ->withWorkerDispatch($config->workerDispatchFactory())
+            ->withWorkerDispatch($config->workerDispatch())
             ->compile();
 
         $this->app->startup();

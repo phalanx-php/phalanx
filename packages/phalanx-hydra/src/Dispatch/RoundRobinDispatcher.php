@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Phalanx\Hydra\Dispatch;
 
+use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Hydra\Agent\AgentState;
 use Phalanx\Hydra\Agent\Worker;
 use Phalanx\Hydra\Protocol\TaskRequest;
-use React\Promise\PromiseInterface;
-
-use function React\Promise\reject;
+use Phalanx\Scope\TaskExecutor;
+use Phalanx\Scope\TaskScope;
+use RuntimeException;
 
 final class RoundRobinDispatcher implements Dispatcher
 {
@@ -23,13 +24,12 @@ final class RoundRobinDispatcher implements Dispatcher
     ) {
     }
 
-    /** @return PromiseInterface<mixed> */
-    public function dispatch(TaskRequest $task): PromiseInterface
+    public function dispatch(TaskRequest $task, TaskScope&TaskExecutor $scope, CancellationToken $token): mixed
     {
         $count = count($this->agents);
 
         if ($count === 0) {
-            return reject(new \RuntimeException('No agents available'));
+            throw new RuntimeException('No agents available');
         }
 
         $attempts = 0;
@@ -40,10 +40,10 @@ final class RoundRobinDispatcher implements Dispatcher
             $attempts++;
 
             if ($agent->state !== AgentState::Crashed && $agent->state !== AgentState::Draining) {
-                return $agent->send($task);
+                return $agent->send($task, $scope, $token);
             }
         }
 
-        return reject(new \RuntimeException('All agents unavailable'));
+        throw new RuntimeException('All agents unavailable');
     }
 }

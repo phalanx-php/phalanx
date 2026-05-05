@@ -7,12 +7,16 @@ namespace Phalanx\Hydra\Runtime;
 use Phalanx\Hydra\Protocol\Codec;
 use Phalanx\Hydra\Protocol\Response;
 use Phalanx\Hydra\Protocol\ServiceCall;
-use Phalanx\Scope;
+use Phalanx\Runtime\RuntimeContext;
+use Phalanx\Scope\Scope;
 use Phalanx\Trace\Trace;
+use RuntimeException;
 
-final class WorkerScope implements Scope
+class WorkerScope implements Scope
 {
-    private string $buffer = '';
+    public RuntimeContext $runtime {
+        get => throw new RuntimeException('WorkerScope does not expose parent runtime context.');
+    }
 
     /**
      * @param resource $stdin
@@ -23,9 +27,8 @@ final class WorkerScope implements Scope
         private array $attributes,
         private readonly Trace $trace,
         private $stdin = STDIN,
-        private $stdout = STDOUT
-    )
-    {
+        private $stdout = STDOUT,
+    ) {
     }
 
     /**
@@ -35,8 +38,7 @@ final class WorkerScope implements Scope
      */
     public function service(string $type): object
     {
-        $id = bin2hex(random_bytes(8));
-
+        $id = uniqid('service-', true);
         $call = new ServiceCall(
             id: $id,
             serviceClass: $type,
@@ -44,13 +46,11 @@ final class WorkerScope implements Scope
             args: [],
         );
 
-        fwrite($this->stdout, Codec::encode($call));
-        fflush($this->stdout);
+        $this->write($call);
 
         $response = $this->waitForResponse($id);
-
         if (!$response->ok) {
-            throw new \RuntimeException($response->errorMessage ?? "Failed to resolve service: $type");
+            throw new RuntimeException($response->errorMessage ?? "Failed to resolve service: {$type}");
         }
 
         return new ServiceProxy($type, $this); // @phpstan-ignore return.type
@@ -74,13 +74,10 @@ final class WorkerScope implements Scope
         return $this->trace;
     }
 
-    /**
-     * @param list<mixed> $args
-     */
+    /** @param list<mixed> $args */
     public function callService(string $serviceClass, string $method, array $args): mixed
     {
-        $id = bin2hex(random_bytes(8));
-
+        $id = uniqid('service-', true);
         $call = new ServiceCall(
             id: $id,
             serviceClass: $serviceClass,
@@ -88,8 +85,7 @@ final class WorkerScope implements Scope
             args: array_values($args),
         );
 
-        fwrite($this->stdout, Codec::encode($call));
-        fflush($this->stdout);
+        $this->write($call);
 
         return $this->waitForResponse($id)->unwrap();
     }
@@ -97,10 +93,10 @@ final class WorkerScope implements Scope
     private function waitForResponse(string $expectedId): Response
     {
         while (true) {
-            $line = $this->readLine();
+            $line = fgets($this->stdin);
 
-            if ($line === null) {
-                throw new \RuntimeException('Worker stdin closed unexpectedly');
+            if ($line === false) {
+                throw new RuntimeException('Worker stdin closed unexpectedly');
             }
 
             $response = Codec::decodeResponse($line);
@@ -111,26 +107,9 @@ final class WorkerScope implements Scope
         }
     }
 
-    private function readLine(): ?string
+    private function write(ServiceCall $call): void
     {
-        while (($pos = strpos($this->buffer, "\n")) === false) {
-            $chunk = fread($this->stdin, 8192);
-
-            if ($chunk === false || $chunk === '') {
-                if (feof($this->stdin)) {
-                    return null;
-                }
-                usleep(1000);
-                continue;
-            }
-
-            $this->buffer .= $chunk;
-        }
-
-        assert(is_int($pos));
-        $line = substr($this->buffer, 0, $pos);
-        $this->buffer = substr($this->buffer, $pos + 1);
-
-        return $line;
+        fwrite($this->stdout, Codec::encode($call));
+        fflush($this->stdout);
     }
 }

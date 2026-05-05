@@ -9,7 +9,8 @@ final class ServiceProxy
     public function __construct(
         private readonly string $serviceClass,
         private readonly WorkerScope $scope,
-    ) {}
+    ) {
+    }
 
     /**
      * @param list<mixed> $args
