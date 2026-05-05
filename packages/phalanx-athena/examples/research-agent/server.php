@@ -21,20 +21,46 @@ try {
         ->websockets($wsRoutes)
         ->listen('0.0.0.0:8080');
 } catch (\LogicException $e) {
-    echo "Research Agent Server\n";
-    echo "=====================\n";
-    echo $e->getMessage() . "\n";
+    echo <<<'BOOT'
+Research Agent Server
+=====================
+Status: unavailable
+
+Nothing is wrong with Athena. This demo needs native Stoa WebSocket support,
+which is reserved for a later runtime slice.
+
+Current blocker:
+
+BOOT;
+
+    printf("  %s\n", $e->getMessage());
+
+    echo <<<'BOOT'
+
+No environment variable can fix this in the current source tree.
+
+BOOT;
     exit(0);
 }
 
 echo <<<'BOOT'
 Research Agent Server
 =====================
+Status: starting
+
 Listening on http://0.0.0.0:8080
 
-WebSocket: ws://localhost:8080/research
-Send: {"type":"research","documents":[...],"question":"..."}
+WebSocket endpoint:
+  ws://localhost:8080/research
+
+Example JSON:
+  {"type":"research","documents":[...],"question":"..."}
 
 BOOT;
 
-$server->run();
+try {
+    $server->run();
+} catch (\Throwable $e) {
+    phalanxAthenaExamplePrintServerFailure($e, '0.0.0.0:8080');
+    exit(1);
+}

@@ -8,7 +8,7 @@ declare(strict_types=1);
  */
 function phalanxAthenaExampleContext(array $argv = []): array
 {
-    $live = filter_var(getenv('ATHENA_DEMO_LIVE') ?: false, FILTER_VALIDATE_BOOL);
+    $live = phalanxAthenaExampleLiveMode();
     $context = [
         'argv' => $argv,
         'ATHENA_DEMO_LIVE' => $live,
@@ -31,6 +31,51 @@ function phalanxAthenaExampleContext(array $argv = []): array
     }
 
     return $context;
+}
+
+function phalanxAthenaExampleLiveMode(): bool
+{
+    return filter_var(getenv('ATHENA_DEMO_LIVE') ?: false, FILTER_VALIDATE_BOOL);
+}
+
+function phalanxAthenaExampleEnvStatus(string $env, bool $requiresLive = false): string
+{
+    $value = getenv($env);
+
+    if ($value === false || $value === '') {
+        return 'missing';
+    }
+
+    if ($requiresLive && !phalanxAthenaExampleLiveMode()) {
+        return 'set but ignored; set ATHENA_DEMO_LIVE=1';
+    }
+
+    return 'present';
+}
+
+function phalanxAthenaExampleComposerCommand(string $rootScript, string $packageScript): string
+{
+    $packageRoot = realpath(dirname(__DIR__));
+    $workingDirectory = realpath(getcwd() ?: '.');
+
+    if ($packageRoot !== false && $workingDirectory === $packageRoot) {
+        return 'composer ' . $packageScript;
+    }
+
+    return 'composer ' . $rootScript;
+}
+
+function phalanxAthenaExamplePrintServerFailure(\Throwable $e, string $listen): void
+{
+    echo "\nServer failed before accepting requests.\n\n";
+
+    if (str_contains($e->getMessage(), 'Address already in use')) {
+        printf("Cause: %s is already in use.\n", $listen);
+        echo "Action: stop the other server using that port, then rerun this demo.\n";
+        return;
+    }
+
+    printf("Cause: %s\n", $e->getMessage());
 }
 
 /** @return list<string> */

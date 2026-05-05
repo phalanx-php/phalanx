@@ -31,10 +31,12 @@ $server = Stoa::starting($context)
     ->listen('0.0.0.0:8080');
 
 $websocketStatus = 'WebSocket: reserved for native Stoa support in a later slice';
+$websocketReady = false;
 
 try {
     $server->websockets($customerWs);
     $websocketStatus = 'WebSocket: ws://localhost:8080/ws/chat/{tenantId}/{sessionId}';
+    $websocketReady = true;
 } catch (\LogicException $e) {
     $websocketStatus = 'WebSocket: ' . $e->getMessage();
 }
@@ -42,11 +44,30 @@ try {
 echo <<<BOOT
 Multi-Tenant Fleet - Gateway
 =============================
+Status: starting
+
 Listening on http://0.0.0.0:8080
 
-$websocketStatus
-Health:    GET http://localhost:8080/health
+Available endpoint:
+  GET http://localhost:8080/health
+
+WebSocket status:
 
 BOOT;
 
-$server->run();
+printf("  %s\n", $websocketReady ? 'ready' : 'unavailable');
+printf("  %s\n", $websocketStatus);
+
+echo <<<'BOOT'
+
+If WebSocket is unavailable, nothing is wrong with Athena or Redis; native Stoa
+WebSocket support is reserved for a later runtime slice.
+
+BOOT;
+
+try {
+    $server->run();
+} catch (\Throwable $e) {
+    phalanxAthenaExamplePrintServerFailure($e, '0.0.0.0:8080');
+    exit(1);
+}

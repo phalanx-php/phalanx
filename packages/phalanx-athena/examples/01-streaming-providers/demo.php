@@ -57,10 +57,39 @@ if ($openaiKey !== '') {
 }
 
 if ($providers === []) {
-    echo "Streaming-providers demo wired.\n";
-    echo "No providers configured in the runtime context.\n";
-    echo "Expected context keys: OLLAMA_ENABLED, ANTHROPIC_API_KEY, OPENAI_API_KEY.\n";
-    echo "Live hosted providers require ATHENA_DEMO_LIVE=1.\n";
+    echo <<<'TEXT'
+Athena Streaming Providers
+==========================
+Status: skipped
+
+Nothing is wrong with the demo wiring. No provider is enabled for this run.
+
+Current configuration:
+
+TEXT;
+    printf("  %-18s %s\n", 'OLLAMA_ENABLED', phalanxAthenaExampleEnvStatus('OLLAMA_ENABLED'));
+    printf("  %-18s %s\n", 'OLLAMA_MODEL', phalanxAthenaExampleEnvStatus('OLLAMA_MODEL'));
+    printf("  %-18s %s\n", 'OLLAMA_BASE_URL', phalanxAthenaExampleEnvStatus('OLLAMA_BASE_URL'));
+    printf("  %-18s %s\n", 'ANTHROPIC_API_KEY', phalanxAthenaExampleEnvStatus('ANTHROPIC_API_KEY', requiresLive: true));
+    printf("  %-18s %s\n", 'OPENAI_API_KEY', phalanxAthenaExampleEnvStatus('OPENAI_API_KEY', requiresLive: true));
+    $command = phalanxAthenaExampleComposerCommand('demo:athena:streaming', 'demo:streaming');
+    $instructions = <<<'TEXT'
+
+Run locally with Ollama:
+  OLLAMA_ENABLED=true %s
+
+Run with hosted providers:
+  ATHENA_DEMO_LIVE=1 ANTHROPIC_API_KEY=... %s
+  ATHENA_DEMO_LIVE=1 OPENAI_API_KEY=... %s
+
+TEXT;
+
+    printf(
+        $instructions,
+        $command,
+        $command,
+        $command,
+    );
     exit(0);
 }
 

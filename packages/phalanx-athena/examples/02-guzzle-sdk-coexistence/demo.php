@@ -38,12 +38,35 @@ $guzzleUrl = (string) ($context['GUZZLE_DEMO_URL'] ?? '');
 $guzzleAvailable = class_exists(\GuzzleHttp\Client::class) && class_exists(\Hyperf\Guzzle\CoroutineHandler::class);
 
 if ($anthropicKey === '' || $guzzleUrl === '' || !$guzzleAvailable) {
-    echo "Guzzle SDK coexistence demo wired.\n";
-    echo "Requirements:\n";
-    echo "  ANTHROPIC_API_KEY:                  " . ($anthropicKey === '' ? 'missing' : 'present') . "\n";
-    echo "  GUZZLE_DEMO_URL:                    " . ($guzzleUrl === '' ? 'missing' : 'present') . "\n";
-    echo "  guzzlehttp/guzzle + hyperf/guzzle:  " . ($guzzleAvailable ? 'present' : 'install both to run live') . "\n";
-    echo "  live hosted calls:                  set ATHENA_DEMO_LIVE=1\n";
+    echo <<<'TEXT'
+Athena Guzzle SDK Coexistence
+=============================
+Status: skipped
+
+Nothing is wrong with the demo wiring. This demo needs a live Anthropic call,
+a target URL, and the optional Guzzle packages.
+
+Current configuration:
+
+TEXT;
+    printf("  %-32s %s\n", 'ATHENA_DEMO_LIVE', phalanxAthenaExampleLiveMode() ? 'enabled' : 'disabled');
+    printf("  %-32s %s\n", 'ANTHROPIC_API_KEY', phalanxAthenaExampleEnvStatus('ANTHROPIC_API_KEY', requiresLive: true));
+    printf("  %-32s %s\n", 'GUZZLE_DEMO_URL', phalanxAthenaExampleEnvStatus('GUZZLE_DEMO_URL', requiresLive: true));
+    printf("  %-32s %s\n", 'guzzlehttp/guzzle + hyperf/guzzle', $guzzleAvailable ? 'present' : 'missing');
+    $instructions = <<<'TEXT'
+
+Install optional packages if missing:
+  composer require guzzlehttp/guzzle hyperf/guzzle
+
+Run the live demo:
+  ATHENA_DEMO_LIVE=1 ANTHROPIC_API_KEY=... GUZZLE_DEMO_URL=https://example.com %s
+
+TEXT;
+
+    printf(
+        $instructions,
+        phalanxAthenaExampleComposerCommand('demo:athena:guzzle', 'demo:guzzle'),
+    );
     exit(0);
 }
 
