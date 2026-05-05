@@ -19,7 +19,7 @@ final class TestStage implements Executable
 
     public function __invoke(ExecutionScope $scope): string
     {
-        $scope->delay(0.10);
+        $scope->delay(0.35);
 
         self::$attempts++;
         if (self::$attempts < 3) {

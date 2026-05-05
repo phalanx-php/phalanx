@@ -15,7 +15,7 @@ final class BuildStage implements Executable
 {
     public function __invoke(ExecutionScope $scope): string
     {
-        $scope->delay(0.20);
+        $scope->delay(1.20);
 
         return 'build: artifact-1.0.tar.gz';
     }

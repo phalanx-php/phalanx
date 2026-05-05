@@ -16,7 +16,7 @@ final class ShipStage implements Executable
 {
     public function __invoke(ExecutionScope $scope): string
     {
-        $scope->delay(0.25);
+        $scope->delay(1.60);
 
         return 'ship: deployed to staging.archon.local';
     }

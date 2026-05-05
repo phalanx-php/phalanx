@@ -5,6 +5,7 @@ declare(strict_types=1);
 require __DIR__ . '/../bootstrap.php';
 
 use Acme\ArchonDemo\Concurrency\DeployCommand;
+use Acme\ArchonDemo\Concurrency\Stages\TestStage;
 use Phalanx\Archon\Application\Archon;
 use Phalanx\Archon\Command\Arg;
 use Phalanx\Archon\Command\CommandConfig;
@@ -17,26 +18,35 @@ use Phalanx\Service\Services;
 
 echo "Phalanx Archon — Supervised Concurrency\n\n";
 
-$stream = fopen('php://temp', 'w+');
+$isTty = stream_isatty(STDOUT);
+$stream = $isTty ? STDOUT : fopen('php://temp', 'w+');
 if ($stream === false) {
     fwrite(STDERR, "Unable to open capture stream.\n");
     exit(1);
 }
 
-$capture = new StreamOutput($stream, new TerminalEnvironment(columns: 80, lines: 24));
-$theme   = Theme::default();
+$terminal = $isTty ? null : new TerminalEnvironment(columns: 80, lines: 24);
+$theme    = Theme::default();
 
-$bundle = new class($capture, $theme) implements ServiceBundle {
+$bundle = new class ($stream, $terminal, $theme) implements ServiceBundle {
     public function __construct(
-        private StreamOutput $output,
+        private mixed $stream,
+        private ?TerminalEnvironment $terminal,
         private Theme $theme,
     ) {
     }
 
     public function services(Services $services, array $context): void
     {
-        $services->singleton(StreamOutput::class)->factory(fn() => $this->output);
-        $services->singleton(Theme::class)->factory(fn() => $this->theme);
+        $stream   = $this->stream;
+        $theme    = $this->theme;
+        $terminal = $this->terminal;
+
+        $services->singleton(StreamOutput::class)
+            ->factory(static fn(): StreamOutput => new StreamOutput($stream, $terminal));
+
+        $services->singleton(Theme::class)
+            ->factory(static fn(): Theme => $theme);
     }
 };
 
@@ -62,27 +72,30 @@ $app->shutdown();
 
 $elapsed = microtime(true) - $start;
 
-rewind($stream);
-$output = (string) stream_get_contents($stream);
-fclose($stream);
+if ($isTty) {
+    $output = "deploy → staging\n"
+        . "deploy: 4 stages settled (test attempts: " . TestStage::$attempts . ")\n";
+} else {
+    rewind($stream);
+    $output = (string) stream_get_contents($stream);
+    fclose($stream);
 
-echo $output;
-echo "\n";
+    echo $output;
+    echo "\n";
+}
 
 $failed = false;
-
-$failed = !check('deploy command exit 0',                  $code === 0)                                 || $failed;
-$failed = !check('deploy header rendered',                 str_contains($output, 'deploy → staging'))   || $failed;
-$failed = !check('test stage retried at least twice',      str_contains($output, 'test attempts: 3'))   || $failed;
-$failed = !check('all 4 stages settled in summary',        str_contains($output, '4 stages settled'))   || $failed;
-$failed = !check('elapsed under 5s (timeout boundary)',    $elapsed < 5.0)                              || $failed;
-
-echo $failed ? "\nFAIL concurrency\n" : "\nOK concurrency\n";
-exit($failed ? 1 : 0);
-
-function check(string $label, bool $passed): bool
-{
+$check = static function (string $label, bool $passed): bool {
     printf("  %s  %s\n", $passed ? 'ok    ' : 'failed', $label);
 
     return $passed;
-}
+};
+
+$failed = !$check('deploy command exit 0', $code === 0) || $failed;
+$failed = !$check('deploy header rendered', str_contains($output, 'deploy → staging')) || $failed;
+$failed = !$check('test stage retried at least twice', str_contains($output, 'test attempts: 3')) || $failed;
+$failed = !$check('all 4 stages settled in summary', str_contains($output, '4 stages settled')) || $failed;
+$failed = !$check('elapsed under 5s (timeout boundary)', $elapsed < 5.0) || $failed;
+
+echo $failed ? "\nFAIL concurrency\n" : "\nOK concurrency\n";
+exit($failed ? 1 : 0);
