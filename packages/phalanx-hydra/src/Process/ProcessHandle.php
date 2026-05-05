@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Hydra\Process;
 
+use Phalanx\Cancellation\Cancelled;
 use Phalanx\Hydra\Protocol\Codec;
 use Phalanx\Hydra\Protocol\MessageType;
 use Phalanx\Hydra\Protocol\Response;
@@ -56,7 +57,7 @@ class ProcessHandle
             PHP_BINARY,
             $this->config->workerScript,
             "--autoload={$this->config->autoloadPath}",
-        ])->start($scope);
+        ])->start($scope, closeOnScopeDispose: false);
 
         $this->state = ProcessState::Idle;
         $process = $this->process;
@@ -82,6 +83,9 @@ class ProcessHandle
         try {
             $this->process->write(Codec::encode($task), timeout: 1.0);
             return $this->readTaskResult($task, $scope, $serviceHandler);
+        } catch (Cancelled $e) {
+            $this->kill();
+            throw $e;
         } catch (\Throwable $e) {
             if (!$this->isRunning()) {
                 $this->state = ProcessState::Crashed;
@@ -127,6 +131,8 @@ class ProcessHandle
         while ($process->isRunning()) {
             try {
                 $chunk = $process->readError(8192, self::READ_TIMEOUT);
+            } catch (Cancelled $e) {
+                throw $e;
             } catch (\Throwable) {
                 return;
             }
@@ -196,6 +202,8 @@ class ProcessHandle
 
         try {
             $response = Response::serviceOk($call->id, $serviceHandler($call));
+        } catch (Cancelled $e) {
+            throw $e;
         } catch (\Throwable $e) {
             $response = Response::serviceErr($call->id, $e);
         }

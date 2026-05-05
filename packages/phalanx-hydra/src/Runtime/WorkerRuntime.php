@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Hydra\Runtime;
 
+use Phalanx\Cancellation\Cancelled;
 use Phalanx\Hydra\Protocol\Codec;
 use Phalanx\Hydra\Protocol\MessageType;
 use Phalanx\Hydra\Protocol\Response;
@@ -12,7 +13,10 @@ use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 use Phalanx\Trace\Trace;
 use ReflectionClass;
+use ReflectionNamedType;
 use ReflectionParameter;
+use ReflectionType;
+use ReflectionUnionType;
 use RuntimeException;
 
 class WorkerRuntime
@@ -43,10 +47,58 @@ class WorkerRuntime
                 if ($message instanceof Response && $message->type === MessageType::ServiceResponse) {
                     fwrite($this->stderr, "[Worker] Unexpected ServiceResponse - should be handled by WorkerScope\n");
                 }
+            } catch (Cancelled $e) {
+                throw $e;
             } catch (\Throwable $e) {
                 fwrite($this->stderr, "[Worker] Failed to process message: {$e->getMessage()}\n");
             }
         }
+    }
+
+    private static function assertAcceptsWorkerScope(Scopeable|Executable $task): void
+    {
+        $taskClass = $task::class;
+        $reflection = new ReflectionClass($task);
+        if (!$reflection->hasMethod('__invoke')) {
+            throw new RuntimeException("Task must be invokable: {$taskClass}");
+        }
+
+        $parameter = $reflection->getMethod('__invoke')->getParameters()[0] ?? null;
+        if ($parameter === null || self::typeAcceptsWorkerScope($parameter->getType())) {
+            return;
+        }
+
+        $type = $parameter->getType();
+        $expected = $type instanceof ReflectionType ? (string) $type : 'unknown';
+        throw new RuntimeException(
+            "Hydra worker task {$taskClass} requires {$expected}; "
+            . 'the current worker runtime exposes ' . WorkerScope::class . ' only.',
+        );
+    }
+
+    private static function typeAcceptsWorkerScope(?ReflectionType $type): bool
+    {
+        if ($type === null) {
+            return true;
+        }
+
+        if ($type instanceof ReflectionNamedType) {
+            if ($type->isBuiltin()) {
+                return $type->getName() === 'mixed';
+            }
+
+            return is_a(WorkerScope::class, $type->getName(), true);
+        }
+
+        if ($type instanceof ReflectionUnionType) {
+            foreach ($type->getTypes() as $unionType) {
+                if (self::typeAcceptsWorkerScope($unionType)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private function handleTask(TaskRequest $request): void
@@ -60,7 +112,10 @@ class WorkerRuntime
                 stdout: $this->stdout,
             );
 
+            self::assertAcceptsWorkerScope($task);
             $this->writeResponse(Response::taskOk($request->id, $task($scope)));
+        } catch (Cancelled $e) {
+            throw $e;
         } catch (\Throwable $e) {
             $this->writeResponse(Response::taskErr($request->id, $e));
         }

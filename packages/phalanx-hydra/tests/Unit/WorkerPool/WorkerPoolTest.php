@@ -21,8 +21,10 @@ final class WorkerPoolTest extends TestCase
     public function testAddAccumulatesWorkerCount(): void
     {
         $pool = new WorkerPool();
-        $pool->add(static function (): void {});
-        $pool->add(static function (): void {});
+        $pool->add(static function (): void {
+        });
+        $pool->add(static function (): void {
+        });
 
         self::assertSame(2, $pool->workerCount);
     }
@@ -30,14 +32,16 @@ final class WorkerPoolTest extends TestCase
     public function testAddBatchRegistersWorkers(): void
     {
         $pool = new WorkerPool();
-        $pool->addBatch(4, static function (): void {});
+        $pool->addBatch(4, static function (): void {
+        });
 
         self::assertSame(4, $pool->workerCount);
     }
 
     public function testOfSizeBuildsBatchPool(): void
     {
-        $pool = WorkerPool::ofSize(3, static function (): void {});
+        $pool = WorkerPool::ofSize(3, static function (): void {
+        });
 
         self::assertSame(3, $pool->workerCount);
     }

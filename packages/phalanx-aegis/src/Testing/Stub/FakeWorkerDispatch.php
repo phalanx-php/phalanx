@@ -18,10 +18,16 @@ final class FakeWorkerDispatch implements WorkerDispatch
 
     public private(set) int $dispatchCount = 0;
 
+    public private(set) mixed $lastScope = null;
+
+    public private(set) ?CancellationToken $lastToken = null;
+
     public function dispatch(Scopeable|Executable $task, TaskScope&TaskExecutor $scope, CancellationToken $token): mixed
     {
         $this->dispatched[] = $task;
         $this->dispatchCount++;
+        $this->lastScope = $scope;
+        $this->lastToken = $token;
 
         return null;
     }

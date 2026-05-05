@@ -33,6 +33,12 @@ class ParallelWorkerDispatch implements WorkerDispatch
         $token->throwIfCancelled();
         $scope->throwIfCancelled();
 
+        if (!$task instanceof Scopeable) {
+            throw new RuntimeException(
+                'Hydra worker dispatch supports Scopeable tasks only; Executable tasks require ExecutionScope.',
+            );
+        }
+
         $name = $task instanceof Traceable ? $task->traceName : ClassNames::short($task::class);
         $start = hrtime(true);
 

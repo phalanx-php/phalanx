@@ -55,7 +55,7 @@ class StreamingProcess
         return new self($argv);
     }
 
-    public function start(TaskScope&TaskExecutor $scope): StreamingProcessHandle
+    public function start(TaskScope&TaskExecutor $scope, bool $closeOnScopeDispose = true): StreamingProcessHandle
     {
         if (DIRECTORY_SEPARATOR === '\\') {
             throw StreamingProcessException::unsupportedPlatform();
@@ -134,9 +134,11 @@ class StreamingProcess
                 maxLineBytes: $this->maxLineBytes,
             );
 
-            $scope->onDispose(static function () use ($handle): void {
-                $handle->close('scope.dispose');
-            });
+            if ($closeOnScopeDispose) {
+                $scope->onDispose(static function () use ($handle): void {
+                    $handle->close('scope.dispose');
+                });
+            }
 
             return $handle;
         } catch (Throwable $e) {

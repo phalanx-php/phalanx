@@ -30,6 +30,7 @@ parameters:
         - packages/phalanx-aegis/src/Worker/
     phalanxEnforcedPaths:
         - packages/phalanx-aegis/src
+        - packages/phalanx-hydra/src
     phalanxAuditPaths: []
     excludePaths:
         analyseAndScan:

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Hydra\Agent;
 
+use OpenSwoole\Coroutine;
 use OpenSwoole\Coroutine\Channel;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Hydra\Process\ProcessConfig;
@@ -14,6 +15,7 @@ use Phalanx\Hydra\Protocol\TaskRequest;
 use Phalanx\Hydra\Runtime\ParentServiceProxy;
 use Phalanx\Scope\TaskExecutor;
 use Phalanx\Scope\TaskScope;
+use Phalanx\Supervisor\WaitReason;
 use RuntimeException;
 
 class Worker
@@ -51,7 +53,7 @@ class Worker
         $token->throwIfCancelled();
         $scope->throwIfCancelled();
 
-        $this->acquire();
+        $this->acquire($scope, $token);
 
         try {
             if ($this->state === AgentState::Crashed) {
@@ -94,9 +96,25 @@ class Worker
             return;
         }
 
-        $this->state = AgentState::Draining;
-        $this->process->drain();
-        $this->state = AgentState::Idle;
+        if (Coroutine::getCid() < 0) {
+            $self = $this;
+            Coroutine::run(static function () use ($self): void {
+                $self->drain();
+            });
+            return;
+        }
+
+        if (!$this->acquireForDrain()) {
+            return;
+        }
+
+        try {
+            $this->state = AgentState::Draining;
+            $this->process->drain();
+            $this->state = AgentState::Idle;
+        } finally {
+            $this->release();
+        }
     }
 
     public function kill(): void
@@ -114,11 +132,41 @@ class Worker
         $this->state = AgentState::Idle;
     }
 
-    private function acquire(): void
+    private function acquire(TaskScope&TaskExecutor $scope, CancellationToken $token): void
     {
-        $acquired = $this->lock->pop();
-        if ($acquired === false) {
-            throw new RuntimeException("Agent {$this->id} lock closed");
+        while (true) {
+            $token->throwIfCancelled();
+            $scope->throwIfCancelled();
+
+            $lock = $this->lock;
+            $id = $this->id;
+            $acquired = $scope->call(
+                static fn(): mixed => $lock->pop(0.05),
+                WaitReason::worker('worker', "{$id}.lock"),
+            );
+
+            if ($acquired !== false) {
+                return;
+            }
+
+            if ($this->lock->errCode === Channel::CHANNEL_CLOSED) {
+                throw new RuntimeException("Agent {$this->id} lock closed");
+            }
+        }
+    }
+
+    private function acquireForDrain(): bool
+    {
+        while (true) {
+            $acquired = $this->lock->pop(0.05);
+
+            if ($acquired !== false) {
+                return true;
+            }
+
+            if ($this->lock->errCode === Channel::CHANNEL_CLOSED) {
+                return false;
+            }
         }
     }
 
