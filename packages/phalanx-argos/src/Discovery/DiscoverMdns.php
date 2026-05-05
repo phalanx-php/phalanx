@@ -4,22 +4,29 @@ declare(strict_types=1);
 
 namespace Phalanx\Argos\Discovery;
 
-use Clue\React\Mdns\Factory as MdnsFactory;
 use Phalanx\Argos\DiscoveryResult;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Scope\TaskScope;
-use Phalanx\Supervisor\WaitReason;
+use Phalanx\System\UdpSocket;
 use Phalanx\Task\HasTimeout;
 use Phalanx\Task\Scopeable;
 use React\Dns\Model\Message;
-use React\Promise\Deferred;
-use RuntimeException;
+use React\Dns\Protocol\BinaryDumper;
+use React\Dns\Protocol\Parser;
+use React\Dns\Query\Query;
 use Throwable;
 
-use function React\Async\await;
-
+/**
+ * mDNS (Multicast DNS) implementation.
+ *
+ * Discovers services on the local network using UDP multicast (224.0.0.251:5353)
+ * via the managed Aegis UdpSocket primitive and React\Dns message components.
+ */
 final class DiscoverMdns implements Scopeable, HasTimeout
 {
+    private const string MULTICAST_ADDRESS = '224.0.0.251';
+    private const int MULTICAST_PORT = 5353;
+
     public float $timeout {
         get => $this->listenSeconds + 1.0;
     }
@@ -33,48 +40,63 @@ final class DiscoverMdns implements Scopeable, HasTimeout
     /** @return list<DiscoveryResult> */
     public function __invoke(TaskScope $scope): array
     {
-        if (!class_exists(MdnsFactory::class)) {
-            throw new RuntimeException(
-                'mDNS discovery requires clue/mdns-react. Install it: composer require clue/mdns-react',
-            );
-        }
-
-        $factory = new MdnsFactory();
-        $resolver = $factory->createResolver();
-
-        /** @var list<DiscoveryResult> $results */
-        $results = [];
-        $deferred = new Deferred();
-        $serviceType = $this->serviceType;
-
-        $resolver->resolveAll($serviceType, Message::TYPE_PTR)
-            ->then(
-                static function (array $answers) use (&$results): void {
-                    foreach ($answers as $answer) {
-                        $results[] = new DiscoveryResult(
-                            ip: is_string($answer) ? $answer : ($answer['ip'] ?? 'unknown'),
-                            protocol: 'mdns',
-                            metadata: is_array($answer) ? $answer : ['name' => $answer],
-                        );
-                    }
-                },
-                static function (Throwable $_e): void {
-                    // mDNS queries can timeout without results -- not an error
-                },
-            )
-            ->always(static function () use ($deferred): void {
-                $deferred->resolve(true);
-            });
+        $socket = new UdpSocket();
+        $socket->setBroadcast(true);
 
         try {
-            $scope->call(
-                static fn(): mixed => await($deferred->promise()),
-                WaitReason::custom("mdns.resolveAll {$serviceType}"),
-            );
-        } catch (Cancelled) {
-            // scope timeout reached -- return whatever we collected
-        }
+            $socket->connect($scope, self::MULTICAST_ADDRESS, self::MULTICAST_PORT);
 
-        return $results;
+            $message = new Message();
+            $message->id = 0;
+            $message->qr = false;
+            $message->questions[] = new Query($this->serviceType, Message::TYPE_PTR, Message::CLASS_IN);
+
+            $dumper = new BinaryDumper();
+            $packet = $dumper->toBinary($message);
+
+            $socket->send($scope, $packet);
+
+            $results = [];
+            $parser = new Parser();
+            $start = microtime(true);
+            $deadline = $start + $this->listenSeconds;
+
+            while (microtime(true) < $deadline) {
+                $remaining = $deadline - microtime(true);
+                if ($remaining <= 0) {
+                    break;
+                }
+
+                try {
+                    $response = $socket->recv($scope, $remaining);
+                    if ($response) {
+                        $responseMessage = $parser->parseMessage($response);
+                        foreach ($responseMessage->answers as $answer) {
+                            if ($answer->type === Message::TYPE_PTR) {
+                                $results[] = new DiscoveryResult(
+                                    ip: is_string($answer->data) ? $answer->data : 'unknown',
+                                    protocol: 'mdns',
+                                    metadata: [
+                                        'name' => $answer->name,
+                                        'data' => $answer->data,
+                                    ],
+                                );
+                            }
+                        }
+                    }
+                } catch (Cancelled) {
+                    break;
+                } catch (Throwable) {
+                    /**
+                     * Discovery tolerates noisy local-network traffic and
+                     * keeps collecting usable answers until the deadline.
+                     */
+                }
+            }
+
+            return $results;
+        } finally {
+            $socket->close();
+        }
     }
 }
