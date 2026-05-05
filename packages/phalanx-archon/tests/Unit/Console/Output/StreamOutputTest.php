@@ -51,4 +51,26 @@ final class StreamOutputTest extends TestCase
             fclose($stream);
         }
     }
+
+    #[Test]
+    public function nonTtyUpdatesRemainTransient(): void
+    {
+        $stream = fopen('php://memory', 'w+');
+        if ($stream === false) {
+            self::fail('Unable to open memory stream.');
+        }
+
+        $output = new StreamOutput($stream, new TerminalEnvironment(columns: 80, lines: 24));
+
+        try {
+            $output->update('frame 1');
+            $output->update('frame 2');
+            $output->persist('done');
+            rewind($stream);
+
+            self::assertSame("done\n", stream_get_contents($stream));
+        } finally {
+            fclose($stream);
+        }
+    }
 }

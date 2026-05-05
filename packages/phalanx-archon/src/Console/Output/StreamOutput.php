@@ -17,7 +17,9 @@ use WeakReference;
  * All writes are wrapped in synchronized output mode (\033[?2026h/l) so
  * terminal emulators paint atomically and eliminate flicker.
  *
- * Non-TTY: update() degrades to persist(), clear() is a no-op. Safe for pipes/CI.
+ * Non-TTY: update() is transient and clear() is a no-op. Permanent output
+ * still goes through persist(), so pipes/CI get stable lines instead of every
+ * spinner frame.
  */
 final class StreamOutput
 {
@@ -68,13 +70,13 @@ final class StreamOutput
      */
     public function persist(string ...$lines): void
     {
-        if ($this->syncSupported) {
+        if ($this->isTty && $this->syncSupported) {
             fwrite($this->stream, "\033[?2026h");
         }
         $this->eraseRegion();
         fwrite($this->stream, implode("\n", $lines));
         fwrite($this->stream, "\n");
-        if ($this->syncSupported) {
+        if ($this->isTty && $this->syncSupported) {
             fwrite($this->stream, "\033[?2026l");
         }
 
@@ -85,12 +87,12 @@ final class StreamOutput
      * Rewrite the live region in place — no trailing newline.
      * Cursor stays on the last line so the next update() knows where to erase from.
      *
-     * Non-TTY: delegates to persist() so piped output is still readable.
+     * Non-TTY: drops the transient frame. Callers should persist the final
+     * state or explicit checkpoints they want in logs.
      */
     public function update(string ...$lines): void
     {
         if (!$this->isTty) {
-            $this->persist(...$lines);
             return;
         }
 
