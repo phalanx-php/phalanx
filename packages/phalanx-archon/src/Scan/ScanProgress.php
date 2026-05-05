@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Archon\Scan;
 
 use Closure;
+use Phalanx\Archon\Console\Output\LiveRegionRenderer;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Archon\Console\Style\Theme;
 use Phalanx\Archon\Console\Widget\ProgressBar;
@@ -42,6 +43,7 @@ final class ScanProgress implements ScanObserver
 
     private ?Subscription $subscription = null;
     private Spinner $spinner;
+    private LiveRegionRenderer $renderer;
 
     /**
      * @param Closure(mixed): array{0: string, 1: string} $formatHit
@@ -59,6 +61,7 @@ final class ScanProgress implements ScanObserver
         private readonly array $headers = ['Result', 'Detail'],
     ) {
         $this->spinner = new Spinner($theme, Spinner::DOTS);
+        $this->renderer = new LiveRegionRenderer($output);
     }
 
     public function onStart(int $total): void
@@ -66,7 +69,7 @@ final class ScanProgress implements ScanObserver
         $this->total  = $total;
         $this->widths = Table::computeWidths($this->headers, [], $this->output->width());
 
-        $this->output->persist($this->table->header($this->headers, $this->widths));
+        $this->renderer->persist($this->table->header($this->headers, $this->widths));
         $this->startTimer();
     }
 
@@ -81,8 +84,8 @@ final class ScanProgress implements ScanObserver
         // This prevents the tick from firing mid-write and producing a
         // torn frame where both the row and the live line change simultaneously.
         $this->stopTimer();
-        $this->output->persist($this->table->row([$label, $detail], $this->widths));
-        $this->output->update($this->buildLiveLine());
+        $this->renderer->persist($this->table->row([$label, $detail], $this->widths));
+        $this->renderer->update($this->buildLiveLine());
         $this->startTimer();
     }
 
@@ -92,20 +95,20 @@ final class ScanProgress implements ScanObserver
         // The periodic subscription handles live line updates for TTY.
         // For non-TTY (CI / pipes) emit a count line every 10 items so
         // there's some visible progress without spamming every miss.
-        if (!$this->output->isTty() && $this->checked % 10 === 0) {
-            $this->output->persist($this->countLine());
+        if (!$this->renderer->isTty() && $this->checked % 10 === 0) {
+            $this->renderer->persist($this->countLine());
         }
     }
 
     public function onDone(float $elapsed): void
     {
         $this->stopTimer();
-        $this->output->clear();
+        $this->renderer->clear();
 
         $denominator = $this->total !== null ? "/{$this->total}" : '';
         $summary     = sprintf('Found %d%s in %.1fs', $this->found, $denominator, $elapsed);
 
-        $this->output->persist($this->table->footer($this->widths, $summary));
+        $this->renderer->persist($this->table->footer($this->widths, $summary));
     }
 
     private function buildLiveLine(): string
@@ -141,7 +144,7 @@ final class ScanProgress implements ScanObserver
             0.08,
             static function () use ($self): void {
                 $self->spinnerTick++;
-                $self->output->update($self->buildLiveLine());
+                $self->renderer->update($self->buildLiveLine());
             },
         );
     }

@@ -21,7 +21,7 @@ use WeakReference;
  * still goes through persist(), so pipes/CI get stable lines instead of every
  * spinner frame.
  */
-final class StreamOutput
+final class StreamOutput implements LiveRegionWriter
 {
     private int $lastLineCount = 0;
     private bool $isTty;

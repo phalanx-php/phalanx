@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Archon\Console\Widget;
 
+use Phalanx\Archon\Console\Output\LiveRegionRenderer;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Archon\Console\Style\Theme;
 use Phalanx\Archon\Console\Widget\TaskList;
@@ -60,19 +61,19 @@ final class ConcurrentTaskList
 
         $taskList    = $this->buildTaskList();
         $spinnerTick = 0;
-        $output      = $this->output;
+        $renderer    = new LiveRegionRenderer($this->output);
 
         foreach (array_keys($this->tasks) as $id) {
             $taskList->setState($id, TaskState::Running);
         }
 
-        $output->update($taskList->render(0));
+        $renderer->update($taskList->render(0));
 
         $subscription = $this->scope->periodic(
             1.0 / $this->spinnerFps,
-            static function () use ($taskList, &$spinnerTick, $output): void {
+            static function () use ($taskList, &$spinnerTick, $renderer): void {
                 $spinnerTick++;
-                $output->update($taskList->render($spinnerTick));
+                $renderer->update($taskList->render($spinnerTick));
             },
         );
 
@@ -90,7 +91,7 @@ final class ConcurrentTaskList
             }
         } finally {
             $subscription->cancel();
-            $output->persist($taskList->render($spinnerTick));
+            $renderer->settle($taskList->render($spinnerTick));
         }
     }
 

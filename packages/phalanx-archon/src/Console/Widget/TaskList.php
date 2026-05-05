@@ -8,7 +8,7 @@ use Phalanx\Archon\Console\Style\Theme;
 
 /**
  * Single-shot task list renderer. No async — renders current state to a string.
- * Caller calls $output->update($taskList->render($tick)) on each tick/state change.
+ * Caller passes render($tick) frames to a LiveRegionRenderer on each tick/state change.
  *
  * ConcurrentTaskList (Phase 4) builds on top of this for async task tracking.
  */
