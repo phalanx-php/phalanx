@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Phalanx\Athena\Stream;
 
 use Generator;
-use Phalanx\Scope\Suspendable;
-use Phalanx\System\HttpStream;
+use Phalanx\Iris\HttpStream;
+use Phalanx\Scope\Stream\StreamContext;
 
 /**
  * Adapts a coroutine-readable {@see HttpStream} into the SSE event
@@ -17,7 +17,7 @@ use Phalanx\System\HttpStream;
  * each parsed event as `{event: ?string, data: string}`. EOF on the
  * upstream HttpStream terminates the iteration.
  *
- * Lifecycle: the caller owns the HttpStream — it must close the stream
+ * Lifecycle: the caller owns the HttpStream; it must close the stream
  * after the iterator finishes (typically via try/finally inside the
  * provider's __invoke). HttpSseSource does not close the stream itself
  * because providers may want to inspect status/headers post-iteration.
@@ -31,7 +31,7 @@ final class HttpSseSource
     /**
      * @return Generator<int, array{event: ?string, data: string}>
      */
-    public function events(Suspendable $scope): Generator
+    public function events(StreamContext $scope): Generator
     {
         $parser = new SseParser();
         while (!$this->stream->eof) {

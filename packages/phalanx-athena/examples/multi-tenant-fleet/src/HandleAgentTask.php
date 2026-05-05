@@ -10,7 +10,7 @@ use Phalanx\Athena\Event\AgentEventKind;
 use Phalanx\Athena\Memory\ConversationMemory;
 use Phalanx\Athena\Message\Message;
 use Phalanx\Athena\Turn;
-use Phalanx\ExecutionScope;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Redis\RedisPubSub;
 use Phalanx\Task\Executable;
 use Phalanx\Hermes\WsMessage;

@@ -8,7 +8,7 @@ use Closure;
 use Phalanx\Athena\Event\AgentEventKind;
 use Phalanx\Athena\Message\Conversation;
 use Phalanx\Athena\Message\Message;
-use Phalanx\ExecutionScope;
+use Phalanx\Scope\ExecutionScope;
 use ReflectionFunction;
 use RuntimeException;
 

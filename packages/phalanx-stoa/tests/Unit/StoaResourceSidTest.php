@@ -18,7 +18,6 @@ final class StoaResourceSidTest extends TestCase
             'HttpRequest' => 'stoa.http_request',
             'SseStream' => 'stoa.sse_stream',
             'WsConnection' => 'stoa.ws_connection',
-            'OutboundHttpRequest' => 'stoa.outbound_http_request',
             'UdpListener' => 'stoa.udp_listener',
             'UdpSession' => 'stoa.udp_session',
         ];

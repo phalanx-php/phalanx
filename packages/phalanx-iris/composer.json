@@ -1,0 +1,36 @@
+{
+    "name": "phalanx-php/iris",
+    "description": "Outbound HTTP client for Phalanx",
+    "license": "MIT",
+    "type": "library",
+    "keywords": ["http", "client", "outbound", "openswoole"],
+    "authors": [
+        {
+            "name": "Jonathan Havens",
+            "email": "mail@phalanx-php.com"
+        }
+    ],
+    "homepage": "https://github.com/phalanx-php/phalanx-iris",
+    "require": {
+        "php": "^8.4",
+        "openswoole/core": "^26.2",
+        "phalanx-php/aegis": "^0.6"
+    },
+    "autoload": {
+        "psr-4": {
+            "Phalanx\\Iris\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Phalanx\\Iris\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "0.6-dev"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

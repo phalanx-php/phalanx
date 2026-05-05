@@ -7,7 +7,7 @@ namespace Acme;
 use Phalanx\Athena\AgentDefinition;
 use Phalanx\Athena\AgentLoop;
 use Phalanx\Athena\Turn;
-use Phalanx\ExecutionScope;
+use Phalanx\Scope\ExecutionScope;
 
 /**
  * A tenant-specific support agent with runtime-configured tools and prompt.

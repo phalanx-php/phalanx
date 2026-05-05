@@ -11,7 +11,7 @@ use Phalanx\Athena\AgentDefinition;
 use Phalanx\Athena\AgentLoop;
 use Phalanx\Athena\Turn;
 use Phalanx\Concurrency\RetryPolicy;
-use Phalanx\ExecutionScope;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\HasTimeout;
 use Phalanx\Task\Retryable;
 

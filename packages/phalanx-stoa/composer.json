@@ -16,7 +16,10 @@
         "guzzlehttp/psr7": "^2.0",
         "nikic/fast-route": "^2.0",
         "openswoole/core": "^26.2",
-        "phalanx-php/aegis": "^0.5"
+        "phalanx-php/aegis": "^0.6"
+    },
+    "require-dev": {
+        "phalanx-php/iris": "^0.6"
     },
     "suggest": {
         "symfony/runtime": "For Symfony Runtime integration via Stoa::starting()",
@@ -45,7 +48,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-main": "0.5-dev"
+            "dev-main": "0.6-dev"
         }
     },
     "minimum-stability": "dev",

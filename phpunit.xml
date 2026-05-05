@@ -46,6 +46,12 @@
         <testsuite name="Stoa Integration">
             <directory>packages/phalanx-stoa/tests/Integration</directory>
         </testsuite>
+        <testsuite name="Iris Unit">
+            <directory>packages/phalanx-iris/tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Iris Integration">
+            <directory>packages/phalanx-iris/tests/Integration</directory>
+        </testsuite>
         <testsuite name="Hydra Unit">
             <directory>packages/phalanx-hydra/tests/Unit</directory>
         </testsuite>

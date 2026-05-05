@@ -30,7 +30,7 @@ final class CoroutineGuzzleStack
     /**
      * Build a coroutine-aware Guzzle handler stack.
      *
-     * @return object \GuzzleHttp\HandlerStack — typed as object so this file
+     * @return object \GuzzleHttp\HandlerStack - typed as object so this file
      *               parses cleanly even when Guzzle is not installed.
      */
     public static function create(): object

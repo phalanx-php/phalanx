@@ -11,5 +11,6 @@ final readonly class OpenAiConfig
         public string $model = 'gpt-4o',
         public string $baseUrl = 'https://api.openai.com',
         public int $maxTokens = 4096,
-    ) {}
+    ) {
+    }
 }

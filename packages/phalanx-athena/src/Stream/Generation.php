@@ -21,12 +21,13 @@ final readonly class Generation
         public string $text,
         public ToolCallBag $toolCalls,
         public TokenUsage $usage,
-    ) {}
+    ) {
+    }
 
     /** @param ?Closure(AgentEvent): void $onEvent */
     public static function collect(Emitter $events, StreamContext $ctx, ?Closure $onEvent = null): self
     {
-        if ($onEvent !== null && !(new ReflectionFunction($onEvent))->isStatic()) {
+        if ($onEvent !== null && !new ReflectionFunction($onEvent)->isStatic()) {
             throw new RuntimeException(
                 'Generation::collect() $onEvent must be a static closure. Non-static '
                 . 'closures capture $this and leak in long-running coroutines.',

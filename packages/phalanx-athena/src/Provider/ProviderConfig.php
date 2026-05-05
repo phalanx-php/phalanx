@@ -12,15 +12,20 @@ final class ProviderConfig
     private ?string $defaultProvider = null;
     private Strategy $strategy = Strategy::Fallback;
 
-    private function __construct() {}
+    private function __construct()
+    {
+    }
 
     public static function create(): self
     {
         return new self();
     }
 
-    public function anthropic(string $apiKey, string $model = 'claude-sonnet-4-20250514', string $baseUrl = 'https://api.anthropic.com'): self
-    {
+    public function anthropic(
+        string $apiKey,
+        string $model = 'claude-sonnet-4-20250514',
+        string $baseUrl = 'https://api.anthropic.com',
+    ): self {
         $this->providers['anthropic'] = new AnthropicProvider(new AnthropicConfig(
             apiKey: $apiKey,
             model: $model,
@@ -30,8 +35,11 @@ final class ProviderConfig
         return $this;
     }
 
-    public function openai(string $apiKey, string $model = 'gpt-4o', string $baseUrl = 'https://api.openai.com'): self
-    {
+    public function openai(
+        string $apiKey,
+        string $model = 'gpt-4o',
+        string $baseUrl = 'https://api.openai.com',
+    ): self {
         $this->providers['openai'] = new OpenAiProvider(new OpenAiConfig(
             apiKey: $apiKey,
             model: $model,
@@ -41,8 +49,11 @@ final class ProviderConfig
         return $this;
     }
 
-    public function gemini(string $apiKey, string $model = 'gemini-1.5-flash', string $baseUrl = 'https://generativelanguage.googleapis.com'): self
-    {
+    public function gemini(
+        string $apiKey,
+        string $model = 'gemini-1.5-flash',
+        string $baseUrl = 'https://generativelanguage.googleapis.com',
+    ): self {
         $this->providers['gemini'] = new GeminiProvider(new GeminiConfig(
             apiKey: $apiKey,
             model: $model,

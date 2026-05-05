@@ -8,101 +8,34 @@ use Phalanx\Athena\Event\AgentEvent;
 use Phalanx\Athena\Event\TokenDelta;
 use Phalanx\Athena\Event\TokenUsage;
 use Phalanx\Athena\Event\ToolCallData;
+use Phalanx\Athena\Http\Url;
 use Phalanx\Athena\Stream\HttpSseSource;
+use Phalanx\Iris\HttpClient;
+use Phalanx\Iris\HttpRequest;
+use Phalanx\Scope\Stream\StreamContext;
+use Phalanx\Styx\Channel;
 use Phalanx\Styx\Emitter;
-use Phalanx\System\HttpClient;
-use Phalanx\System\HttpRequest;
 use RuntimeException;
 
 /**
  * OpenAI Chat Completions streaming provider.
  *
- * Speaks the `/v1/chat/completions` SSE endpoint over HTTP/2 via the
- * Aegis-managed {@see HttpClient}. Mirrors {@see AnthropicProvider} in
+ * Speaks the `/v1/chat/completions` SSE endpoint through Iris outbound
+ * HTTP. Mirrors {@see AnthropicProvider} in
  * shape: synchronous-coroutine body, byte stream into {@see HttpSseSource},
  * match-dispatch on event payload type.
  *
- * OpenAI's stream is chunk-flavored — each SSE `data:` line carries a
+ * OpenAI's stream is chunk-flavored: each SSE `data:` line carries a
  * `choices[0].delta` object with incremental `content`, `tool_calls`,
  * and an optional `finish_reason`. Token usage rides on a final chunk
  * when `stream_options.include_usage` is set.
  */
 final class OpenAiProvider implements LlmProvider
 {
-    private readonly HttpClient $client;
-
     public function __construct(
         private readonly OpenAiConfig $config,
-        ?HttpClient $client = null,
+        private readonly HttpClient $client = new HttpClient(),
     ) {
-        $this->client = $client ?? self::buildClient($config);
-    }
-
-    public function generate(GenerateRequest $request): Emitter
-    {
-        $config = $this->config;
-        $client = $this->client;
-
-        return Emitter::produce(static function ($channel, $ctx) use ($request, $config, $client): void {
-            $model = $request->model ?? $config->model;
-            $body = self::buildRequestBody($request, $model);
-            $headers = self::buildHeaders($config);
-            $startTime = hrtime(true);
-            $step = 0;
-            $usage = TokenUsage::zero();
-
-            $jsonBody = json_encode($body, JSON_THROW_ON_ERROR);
-            $httpRequest = new HttpRequest('POST', '/v1/chat/completions', $jsonBody, $headers);
-            $stream = $client->stream($ctx, $httpRequest);
-            $ctx->onDispose(static fn() => $stream->close());
-
-            $source = new HttpSseSource($stream);
-            $toolCalls = [];
-
-            foreach ($source->events($ctx) as $sseEvent) {
-                $ctx->throwIfCancelled();
-                $data = $sseEvent['data'];
-                if ($data === '[DONE]') {
-                    break;
-                }
-
-                if ($stream->status >= 400) {
-                    throw new RuntimeException("OpenAI API {$stream->status}: {$data}");
-                }
-
-                $parsed = json_decode($data, true, 512, JSON_THROW_ON_ERROR);
-                if (!is_array($parsed)) {
-                    continue;
-                }
-
-                $elapsed = (hrtime(true) - $startTime) / 1e6;
-                self::onUsage($parsed, $usage);
-
-                $choice = $parsed['choices'][0] ?? [];
-                if (!is_array($choice)) {
-                    continue;
-                }
-                $delta = is_array($choice['delta'] ?? null) ? $choice['delta'] : [];
-
-                self::onContentDelta($delta, $channel, $elapsed, $usage, $step);
-                self::onToolCallDeltas($delta, $toolCalls, $channel, $elapsed, $usage, $step);
-
-                if (($choice['finish_reason'] ?? null) !== null) {
-                    self::onFinish($toolCalls, $channel, $elapsed, $usage, $step);
-                }
-            }
-
-            $channel->complete();
-        });
-    }
-
-    private static function buildClient(OpenAiConfig $config): HttpClient
-    {
-        $parts = parse_url($config->baseUrl);
-        $host = (string) ($parts['host'] ?? 'api.openai.com');
-        $port = (int) ($parts['port'] ?? (($parts['scheme'] ?? 'https') === 'https' ? 443 : 80));
-        $tls = ($parts['scheme'] ?? 'https') === 'https';
-        return new HttpClient($host, $port, tls: $tls);
     }
 
     /** @return array<string, mixed> */
@@ -149,13 +82,13 @@ final class OpenAiProvider implements LlmProvider
         return $body;
     }
 
-    /** @return array<string, string> */
+    /** @return array<string, list<string>> */
     private static function buildHeaders(OpenAiConfig $config): array
     {
         return [
-            'content-type' => 'application/json',
-            'authorization' => "Bearer {$config->apiKey}",
-            'accept' => 'text/event-stream',
+            'content-type' => ['application/json'],
+            'authorization' => ["Bearer {$config->apiKey}"],
+            'accept' => ['text/event-stream'],
         ];
     }
 
@@ -174,7 +107,7 @@ final class OpenAiProvider implements LlmProvider
     /** @param array<string, mixed> $delta */
     private static function onContentDelta(
         array $delta,
-        mixed $channel,
+        Channel $channel,
         float $elapsed,
         TokenUsage $usage,
         int $step,
@@ -198,7 +131,7 @@ final class OpenAiProvider implements LlmProvider
     private static function onToolCallDeltas(
         array $delta,
         array &$toolCalls,
-        mixed $channel,
+        Channel $channel,
         float $elapsed,
         TokenUsage $usage,
         int $step,
@@ -236,7 +169,7 @@ final class OpenAiProvider implements LlmProvider
      */
     private static function onFinish(
         array $toolCalls,
-        mixed $channel,
+        Channel $channel,
         float $elapsed,
         TokenUsage $usage,
         int $step,
@@ -253,5 +186,70 @@ final class OpenAiProvider implements LlmProvider
             ));
         }
         $channel->emit(AgentEvent::tokenComplete($elapsed, $usage, $step));
+    }
+
+    public function generate(GenerateRequest $request): Emitter
+    {
+        $config = $this->config;
+        $client = $this->client;
+
+        return Emitter::produce(static function (
+            Channel $channel,
+            StreamContext $ctx,
+        ) use (
+            $request,
+            $config,
+            $client,
+        ): void {
+            $model = $request->model ?? $config->model;
+            $body = self::buildRequestBody($request, $model);
+            $headers = self::buildHeaders($config);
+            $startTime = hrtime(true);
+            $step = 0;
+            $usage = TokenUsage::zero();
+
+            $jsonBody = json_encode($body, JSON_THROW_ON_ERROR);
+            $httpRequest = HttpRequest::post(Url::join($config->baseUrl, '/v1/chat/completions'), $jsonBody, $headers);
+            $stream = $client->stream($ctx, $httpRequest);
+            $ctx->onDispose(static fn() => $stream->close());
+
+            $source = new HttpSseSource($stream);
+            $toolCalls = [];
+
+            foreach ($source->events($ctx) as $sseEvent) {
+                $ctx->throwIfCancelled();
+                $data = $sseEvent['data'];
+                if ($data === '[DONE]') {
+                    break;
+                }
+
+                if ($stream->status >= 400) {
+                    throw new RuntimeException("OpenAI API {$stream->status}: {$data}");
+                }
+
+                $parsed = json_decode($data, true, 512, JSON_THROW_ON_ERROR);
+                if (!is_array($parsed)) {
+                    continue;
+                }
+
+                $elapsed = (hrtime(true) - $startTime) / 1e6;
+                self::onUsage($parsed, $usage);
+
+                $choice = $parsed['choices'][0] ?? [];
+                if (!is_array($choice)) {
+                    continue;
+                }
+                $delta = is_array($choice['delta'] ?? null) ? $choice['delta'] : [];
+
+                self::onContentDelta($delta, $channel, $elapsed, $usage, $step);
+                self::onToolCallDeltas($delta, $toolCalls, $channel, $elapsed, $usage, $step);
+
+                if (($choice['finish_reason'] ?? null) !== null) {
+                    self::onFinish($toolCalls, $channel, $elapsed, $usage, $step);
+                }
+            }
+
+            $channel->complete();
+        });
     }
 }

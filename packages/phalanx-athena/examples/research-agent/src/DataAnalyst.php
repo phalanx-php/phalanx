@@ -7,7 +7,7 @@ namespace Acme;
 use Phalanx\Athena\AgentDefinition;
 use Phalanx\Athena\AgentLoop;
 use Phalanx\Athena\Turn;
-use Phalanx\ExecutionScope;
+use Phalanx\Scope\ExecutionScope;
 
 /**
  * A focused sub-agent for spreadsheet analysis.

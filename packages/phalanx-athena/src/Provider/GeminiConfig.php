@@ -11,5 +11,6 @@ final readonly class GeminiConfig
         public string $model = 'gemini-1.5-flash',
         public string $baseUrl = 'https://generativelanguage.googleapis.com',
         public int $maxTokens = 4096,
-    ) {}
+    ) {
+    }
 }

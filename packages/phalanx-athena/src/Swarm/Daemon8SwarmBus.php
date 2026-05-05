@@ -4,102 +4,32 @@ declare(strict_types=1);
 
 namespace Phalanx\Athena\Swarm;
 
+use Phalanx\Athena\Http\Url;
 use Phalanx\Athena\Stream\HttpSseSource;
+use Phalanx\Iris\HttpClient;
+use Phalanx\Iris\HttpClientException;
+use Phalanx\Iris\HttpRequest;
+use Phalanx\Scope\Scope;
 use Phalanx\Scope\Stream\StreamContext;
 use Phalanx\Scope\Suspendable;
 use Phalanx\Styx\Channel;
 use Phalanx\Styx\Emitter;
 use Phalanx\Support\ErrorHandler;
-use Phalanx\System\HttpClient;
-use Phalanx\System\HttpException;
-use Phalanx\System\HttpRequest;
 use RuntimeException;
 
 /**
  * Swarm bus implementation using Daemon8 as the central blackboard.
  *
  * `emit` POSTs to `/ingest`; `subscribe` opens an SSE stream against
- * `/api/stream`. Both flow through the Aegis-managed {@see HttpClient}
+ * `/api/stream`. Both flow through Iris outbound {@see HttpClient}
  * so cancellation, wait reasons, and disposal stay visible.
  */
 final class Daemon8SwarmBus implements SwarmBus
 {
-    private readonly HttpClient $client;
-
     public function __construct(
         private readonly SwarmConfig $config,
-        ?HttpClient $client = null,
+        private readonly HttpClient $client = new HttpClient(),
     ) {
-        $this->client = $client ?? self::buildClient($config);
-    }
-
-    public function emit(Suspendable $scope, SwarmEvent $event): void
-    {
-        $payload = [
-            'kind' => 'custom',
-            'channel' => 'swarm_message',
-            'severity' => 'info',
-            'app' => $this->config->app,
-            'data' => $event->toArray(),
-        ];
-
-        try {
-            $this->client->send($scope, new HttpRequest(
-                method: 'POST',
-                path: '/ingest',
-                body: json_encode($payload, JSON_THROW_ON_ERROR),
-                headers: ['content-type' => 'application/json'],
-            ));
-        } catch (HttpException $e) {
-            ErrorHandler::report('Daemon8 swarm ingest failed: ' . $e->getMessage());
-        }
-    }
-
-    public function subscribe(array $filters = []): Emitter
-    {
-        $client = $this->client;
-        $config = $this->config;
-
-        $query = http_build_query([
-            'kinds' => 'custom',
-            'origins' => 'app:' . $config->app,
-        ]);
-        $path = "/api/stream?{$query}";
-
-        return Emitter::produce(static function (Channel $channel, StreamContext $ctx) use ($client, $path, $filters): void {
-            $stream = $client->stream($ctx, new HttpRequest(
-                method: 'GET',
-                path: $path,
-                headers: ['accept' => 'text/event-stream'],
-            ));
-            $ctx->onDispose(static fn() => $stream->close());
-
-            if ($stream->status >= 400) {
-                throw new RuntimeException("Daemon8 stream error {$stream->status}");
-            }
-
-            $source = new HttpSseSource($stream);
-
-            foreach ($source->events($ctx) as $sseEvent) {
-                $ctx->throwIfCancelled();
-                $data = $sseEvent['data'];
-                if ($data === '' || $data === '[DONE]') {
-                    continue;
-                }
-
-                $obs = json_decode($data, true);
-                if (!is_array($obs)) {
-                    continue;
-                }
-
-                $event = self::eventFromObservation($obs, $filters);
-                if ($event !== null) {
-                    $channel->emit($event);
-                }
-            }
-
-            $channel->complete();
-        });
     }
 
     /**
@@ -134,15 +64,6 @@ final class Daemon8SwarmBus implements SwarmBus
             causationId: is_string($swarmData['causation_id'] ?? null) ? $swarmData['causation_id'] : null,
             eventId: is_string($swarmData['event_id'] ?? null) ? $swarmData['event_id'] : null,
         );
-    }
-
-    private static function buildClient(SwarmConfig $config): HttpClient
-    {
-        $parts = parse_url($config->daemon8Url);
-        $host = (string) ($parts['host'] ?? 'localhost');
-        $tls = ($parts['scheme'] ?? 'http') === 'https';
-        $port = (int) ($parts['port'] ?? ($tls ? 443 : 8888));
-        return new HttpClient($host, $port, tls: $tls);
     }
 
     /**
@@ -222,5 +143,86 @@ final class Daemon8SwarmBus implements SwarmBus
         $addresses = array_values(array_filter($value, is_string(...)));
 
         return $addresses === [] ? null : $addresses;
+    }
+
+    public function emit(Scope&Suspendable $scope, SwarmEvent $event): void
+    {
+        $payload = [
+            'kind' => 'custom',
+            'channel' => 'swarm_message',
+            'severity' => 'info',
+            'app' => $this->config->app,
+            'data' => $event->toArray(),
+        ];
+
+        try {
+            $stream = $this->client->stream($scope, HttpRequest::post(
+                Url::join($this->config->daemon8Url, '/ingest'),
+                json_encode($payload, JSON_THROW_ON_ERROR),
+                ['content-type' => ['application/json']],
+            ));
+            try {
+                while (!$stream->eof) {
+                    $stream->read($scope);
+                }
+                if ($stream->status >= 400) {
+                    ErrorHandler::report("Daemon8 swarm ingest failed: HTTP {$stream->status}");
+                }
+            } finally {
+                $stream->close();
+            }
+        } catch (HttpClientException $e) {
+            ErrorHandler::report('Daemon8 swarm ingest failed: ' . $e->getMessage());
+        }
+    }
+
+    public function subscribe(array $filters = []): Emitter
+    {
+        $client = $this->client;
+        $config = $this->config;
+
+        $query = http_build_query([
+            'kinds' => 'custom',
+            'origins' => 'app:' . $config->app,
+        ]);
+        $url = Url::join($config->daemon8Url, "/api/stream?{$query}");
+
+        return Emitter::produce(static function (
+            Channel $channel,
+            StreamContext $ctx,
+        ) use (
+            $client,
+            $url,
+            $filters,
+        ): void {
+            $stream = $client->stream($ctx, HttpRequest::get($url, ['accept' => ['text/event-stream']]));
+            $ctx->onDispose(static fn() => $stream->close());
+
+            if ($stream->status >= 400) {
+                throw new RuntimeException("Daemon8 stream error {$stream->status}");
+            }
+
+            $source = new HttpSseSource($stream);
+
+            foreach ($source->events($ctx) as $sseEvent) {
+                $ctx->throwIfCancelled();
+                $data = $sseEvent['data'];
+                if ($data === '' || $data === '[DONE]') {
+                    continue;
+                }
+
+                $obs = json_decode($data, true);
+                if (!is_array($obs)) {
+                    continue;
+                }
+
+                $event = self::eventFromObservation($obs, $filters);
+                if ($event !== null) {
+                    $channel->emit($event);
+                }
+            }
+
+            $channel->complete();
+        });
     }
 }

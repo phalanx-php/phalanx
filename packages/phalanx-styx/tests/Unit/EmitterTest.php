@@ -5,21 +5,66 @@ declare(strict_types=1);
 namespace Phalanx\Styx\Tests\Unit;
 
 use Closure;
+use Phalanx\Runtime\RuntimeContext;
+use Phalanx\Scope\Scope;
 use Phalanx\Scope\Stream\StreamContext;
 use Phalanx\Styx\Channel;
 use Phalanx\Styx\Emitter;
 use Phalanx\Styx\Tests\Support\AsyncTestCase;
 use Phalanx\Supervisor\WaitReason;
+use Phalanx\Trace\Trace;
 use PHPUnit\Framework\Attributes\Test;
 use RuntimeException;
 use Throwable;
 
 final class EmitterTest extends AsyncTestCase
 {
+    private static function makeContext(): StreamContext
+    {
+        return new class () implements StreamContext {
+            public RuntimeContext $runtime {
+                get => throw new RuntimeException('Test stream context has no runtime.');
+            }
+
+            public function call(Closure $fn, ?WaitReason $waitReason = null): mixed
+            {
+                return $fn();
+            }
+
+            public function throwIfCancelled(): void
+            {
+            }
+
+            public function onDispose(Closure $callback): void
+            {
+            }
+
+            public function service(string $type): object
+            {
+                throw new RuntimeException("Test stream context has no service '{$type}'.");
+            }
+
+            public function attribute(string $key, mixed $default = null): mixed
+            {
+                return $default;
+            }
+
+            public function withAttribute(string $key, mixed $value): Scope
+            {
+                return $this;
+            }
+
+            public function trace(): Trace
+            {
+                return new Trace();
+            }
+        };
+    }
+
     #[Test]
     public function produceExposesChannel(): void
     {
-        $this->runAsync(function (): void {
+        $this->runAsync(static function (): void {
             $emitter = Emitter::produce(static function (Channel $ch): void {
                 $ch->emit('produced-1');
                 $ch->emit('produced-2');
@@ -34,7 +79,7 @@ final class EmitterTest extends AsyncTestCase
     #[Test]
     public function mapOperator(): void
     {
-        $this->runAsync(function (): void {
+        $this->runAsync(static function (): void {
             $emitter = Emitter::produce(static function (Channel $ch): void {
                 $ch->emit(1);
                 $ch->emit(2);
@@ -52,7 +97,7 @@ final class EmitterTest extends AsyncTestCase
     #[Test]
     public function filterOperator(): void
     {
-        $this->runAsync(function (): void {
+        $this->runAsync(static function (): void {
             $emitter = Emitter::produce(static function (Channel $ch): void {
                 $ch->emit(1);
                 $ch->emit(2);
@@ -71,7 +116,7 @@ final class EmitterTest extends AsyncTestCase
     #[Test]
     public function takeOperator(): void
     {
-        $this->runAsync(function (): void {
+        $this->runAsync(static function (): void {
             $emitter = Emitter::produce(static function (Channel $ch): void {
                 for ($i = 1; $i <= 100; $i++) {
                     $ch->emit($i);
@@ -89,7 +134,7 @@ final class EmitterTest extends AsyncTestCase
     #[Test]
     public function distinctOperator(): void
     {
-        $this->runAsync(function (): void {
+        $this->runAsync(static function (): void {
             $emitter = Emitter::produce(static function (Channel $ch): void {
                 $ch->emit(1);
                 $ch->emit(1);
@@ -109,7 +154,7 @@ final class EmitterTest extends AsyncTestCase
     #[Test]
     public function distinctByOperator(): void
     {
-        $this->runAsync(function (): void {
+        $this->runAsync(static function (): void {
             $emitter = Emitter::produce(static function (Channel $ch): void {
                 $ch->emit(['name' => 'Alice', 'age' => 30]);
                 $ch->emit(['name' => 'Alice', 'age' => 31]);
@@ -130,7 +175,7 @@ final class EmitterTest extends AsyncTestCase
     #[Test]
     public function mergeInterleaves(): void
     {
-        $this->runAsync(function (): void {
+        $this->runAsync(static function (): void {
             $a = Emitter::produce(static function (Channel $ch): void {
                 $ch->emit('a1');
                 $ch->emit('a2');
@@ -153,16 +198,24 @@ final class EmitterTest extends AsyncTestCase
     #[Test]
     public function lifecycleHooksFire(): void
     {
-        $this->runAsync(function (): void {
+        $this->runAsync(static function (): void {
             $log = [];
 
             $emitter = Emitter::produce(static function (Channel $ch): void {
                 $ch->emit('x');
             })
-                ->onStart(static function () use (&$log): void { $log[] = 'start'; })
-                ->onEach(static function (mixed $v) use (&$log): void { $log[] = "each:{$v}"; })
-                ->onComplete(static function () use (&$log): void { $log[] = 'complete'; })
-                ->onDispose(static function () use (&$log): void { $log[] = 'dispose'; });
+                ->onStart(static function () use (&$log): void {
+                    $log[] = 'start';
+                })
+                ->onEach(static function (mixed $v) use (&$log): void {
+                    $log[] = "each:{$v}";
+                })
+                ->onComplete(static function () use (&$log): void {
+                    $log[] = 'complete';
+                })
+                ->onDispose(static function () use (&$log): void {
+                    $log[] = 'dispose';
+                });
 
             iterator_to_array($emitter(self::makeContext()));
 
@@ -173,7 +226,7 @@ final class EmitterTest extends AsyncTestCase
     #[Test]
     public function errorHookFires(): void
     {
-        $this->runAsync(function (): void {
+        $this->runAsync(static function (): void {
             $errorLog = [];
 
             $emitter = Emitter::produce(static function (): void {
@@ -195,7 +248,7 @@ final class EmitterTest extends AsyncTestCase
     #[Test]
     public function toArrayTerminal(): void
     {
-        $this->runAsync(function (): void {
+        $this->runAsync(static function (): void {
             $emitter = Emitter::produce(static function (Channel $ch): void {
                 $ch->emit(1);
                 $ch->emit(2);
@@ -210,7 +263,7 @@ final class EmitterTest extends AsyncTestCase
     #[Test]
     public function reduceTerminal(): void
     {
-        $this->runAsync(function (): void {
+        $this->runAsync(static function (): void {
             $emitter = Emitter::produce(static function (Channel $ch): void {
                 $ch->emit(1);
                 $ch->emit(2);
@@ -226,7 +279,7 @@ final class EmitterTest extends AsyncTestCase
     #[Test]
     public function firstTerminal(): void
     {
-        $this->runAsync(function (): void {
+        $this->runAsync(static function (): void {
             $emitter = Emitter::produce(static function (Channel $ch): void {
                 $ch->emit('first');
                 $ch->emit('second');
@@ -241,7 +294,7 @@ final class EmitterTest extends AsyncTestCase
     #[Test]
     public function consumeTerminal(): void
     {
-        $this->runAsync(function (): void {
+        $this->runAsync(static function (): void {
             $sideEffects = [];
 
             $emitter = Emitter::produce(static function (Channel $ch): void {
@@ -261,7 +314,7 @@ final class EmitterTest extends AsyncTestCase
     #[Test]
     public function bufferWindowByCount(): void
     {
-        $this->runAsync(function (): void {
+        $this->runAsync(static function (): void {
             $emitter = Emitter::produce(static function (Channel $ch): void {
                 for ($i = 1; $i <= 5; $i++) {
                     $ch->emit($i);
@@ -279,7 +332,7 @@ final class EmitterTest extends AsyncTestCase
     #[Test]
     public function throttleDropsExtraItems(): void
     {
-        $this->runAsync(function (): void {
+        $this->runAsync(static function (): void {
             $emitter = Emitter::produce(static function (Channel $ch): void {
                 $ch->emit(1);
                 $ch->emit(2);
@@ -297,7 +350,7 @@ final class EmitterTest extends AsyncTestCase
     #[Test]
     public function emptyStreamCompletes(): void
     {
-        $this->runAsync(function (): void {
+        $this->runAsync(static function (): void {
             $emitter = Emitter::produce(static function (): void {
             });
 
@@ -305,23 +358,5 @@ final class EmitterTest extends AsyncTestCase
 
             self::assertSame([], $items);
         });
-    }
-
-    private static function makeContext(): StreamContext
-    {
-        return new class () implements StreamContext {
-            public function call(Closure $fn, ?WaitReason $waitReason = null): mixed
-            {
-                return $fn();
-            }
-
-            public function throwIfCancelled(): void
-            {
-            }
-
-            public function onDispose(Closure $callback): void
-            {
-            }
-        };
     }
 }

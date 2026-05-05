@@ -14,5 +14,6 @@ final readonly class SwarmConfig
         public string $session,
         public string $daemon8Url = 'http://localhost:8888',
         public string $app = 'phalanx-swarm',
-    ) {}
+    ) {
+    }
 }

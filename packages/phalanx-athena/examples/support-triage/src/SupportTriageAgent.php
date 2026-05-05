@@ -11,7 +11,7 @@ use Acme\Tools\SearchKnowledgeBase;
 use Phalanx\Athena\AgentDefinition;
 use Phalanx\Athena\AgentLoop;
 use Phalanx\Athena\Turn;
-use Phalanx\ExecutionScope;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\HasTimeout;
 
 final class SupportTriageAgent implements AgentDefinition, HasTimeout

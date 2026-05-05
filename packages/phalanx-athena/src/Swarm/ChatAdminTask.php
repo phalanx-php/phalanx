@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace Phalanx\Athena\Swarm;
 
 use Phalanx\Athena\AgentDefinition;
-use Phalanx\ExecutionScope;
+use Phalanx\Scope\ExecutionScope;
+use Phalanx\Scope\Scope;
 use Phalanx\Scope\Suspendable;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Task;
@@ -17,35 +18,42 @@ final class ChatAdminTask implements Executable
         public readonly AgentDefinition $agent,
         public readonly SwarmBus $bus,
         public readonly SwarmConfig $config,
-    ) {}
+    ) {
+    }
 
     public function __invoke(ExecutionScope $scope): mixed
     {
         self::emitFor($scope, $this->bus, $this->agentId, $this->config, SwarmEventKind::Online);
 
-        // Monitor-task-local state. Captured by reference so the static
-        // closure can mutate it without holding $this and without
-        // creating an instance-property reference cycle.
         /** @var array<string, SwarmEvent> $clearanceQueue */
         $clearanceQueue = [];
 
         $bus = $this->bus;
         $agentId = $this->agentId;
         $config = $this->config;
+        $events = $bus->subscribe([
+            'workspace' => $config->workspace,
+            'kinds' => [
+                SwarmEventKind::ClearanceRequested,
+                SwarmEventKind::BlackboardPost,
+                SwarmEventKind::PlanningProposal,
+                SwarmEventKind::PlanningQuestion,
+                SwarmEventKind::PlanningBlocked,
+                SwarmEventKind::FinalPlanRequested,
+            ],
+        ]);
 
         return $scope->concurrent(
-            monitor: Task::of(static function (ExecutionScope $s) use ($bus, $agentId, $config, &$clearanceQueue): void {
-                foreach ($bus->subscribe([
-                    'workspace' => $config->workspace,
-                    'kinds' => [
-                        SwarmEventKind::ClearanceRequested,
-                        SwarmEventKind::BlackboardPost,
-                        SwarmEventKind::PlanningProposal,
-                        SwarmEventKind::PlanningQuestion,
-                        SwarmEventKind::PlanningBlocked,
-                        SwarmEventKind::FinalPlanRequested,
-                    ],
-                ])($s) as $event) {
+            monitor: Task::of(static function (
+                ExecutionScope $s,
+            ) use (
+                $bus,
+                $events,
+                $agentId,
+                $config,
+                &$clearanceQueue
+            ): void {
+                foreach ($events($s) as $event) {
                     if ($event->kind === SwarmEventKind::ClearanceRequested) {
                         self::handleClearance($s, $bus, $agentId, $config, $event, $clearanceQueue);
                     }
@@ -58,7 +66,7 @@ final class ChatAdminTask implements Executable
 
     /** @param array<string, SwarmEvent> $clearanceQueue */
     private static function handleClearance(
-        Suspendable $scope,
+        Scope&Suspendable $scope,
         SwarmBus $bus,
         string $agentId,
         SwarmConfig $config,
@@ -80,7 +88,7 @@ final class ChatAdminTask implements Executable
 
     /** @param array<string, SwarmEvent> $clearanceQueue */
     private static function synthesize(
-        Suspendable $scope,
+        Scope&Suspendable $scope,
         SwarmBus $bus,
         string $agentId,
         SwarmConfig $config,
@@ -101,7 +109,7 @@ final class ChatAdminTask implements Executable
      * @param string|list<string>|null $addressedTo
      */
     private static function emitFor(
-        Suspendable $scope,
+        Scope&Suspendable $scope,
         SwarmBus $bus,
         string $agentId,
         SwarmConfig $config,

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Athena;
 
-use Phalanx\ExecutionScope;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Styx\Emitter;
 
 final class QuickAgent implements AgentDefinition

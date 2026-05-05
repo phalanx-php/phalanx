@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Athena\Swarm;
 
-use Phalanx\ExecutionScope;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
 
 final class UiSupervisorTask implements Executable
@@ -20,14 +20,16 @@ final class UiSupervisorTask implements Executable
         public readonly string $agentId,
         public readonly SwarmBus $bus,
         public readonly SwarmConfig $config,
-    ) {}
+    ) {
+    }
 
     public function __invoke(ExecutionScope $scope): mixed
     {
         $bus = $this->bus;
         $workspace = $this->config->workspace;
 
-        foreach ($bus->subscribe([
+        foreach (
+            $bus->subscribe([
             'workspace' => $workspace,
             'kinds' => [
                 SwarmEventKind::Online,
@@ -38,9 +40,10 @@ final class UiSupervisorTask implements Executable
                 SwarmEventKind::ClearanceDenied,
                 SwarmEventKind::UiIntent,
             ],
-        ])($scope) as $event) {
+            ])($scope) as $event
+        ) {
             $this->updateState($event);
-            
+
             $this->bus->emit($scope, new SwarmEvent(
                 from: $this->agentId,
                 kind: SwarmEventKind::UiRender,
@@ -49,7 +52,7 @@ final class UiSupervisorTask implements Executable
                 payload: $this->state
             ));
         }
-        
+
         return null;
     }
 

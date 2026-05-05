@@ -29,7 +29,8 @@ final readonly class SwarmEvent
         public ?string $causationId = null,
         public ?string $eventId = null,
         public ?AgentEvent $inner = null,
-    ) {}
+    ) {
+    }
 
     /** @return array<string, mixed> */
     public function toArray(): array

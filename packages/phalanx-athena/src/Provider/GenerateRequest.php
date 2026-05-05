@@ -20,7 +20,8 @@ final readonly class GenerateRequest
         public int $maxTokens = 4096,
         public ?float $temperature = null,
         public ?array $stopSequences = null,
-    ) {}
+    ) {
+    }
 
     /** @param list<array{name: string, description: string, input_schema: array<string, mixed>}> $tools */
     public static function from(Conversation $conversation, array $tools = [], ?string $outputSchema = null): self

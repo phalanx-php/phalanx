@@ -5,36 +5,35 @@ declare(strict_types=1);
 namespace Phalanx\Athena\Tests\Unit\Stream;
 
 use Phalanx\Athena\Stream\HttpSseSource;
+use Phalanx\Iris\HttpStream;
 use Phalanx\Scope\ExecutionScope;
-use Phalanx\System\HttpStream;
+use Phalanx\Scope\Suspendable;
 use Phalanx\Tests\Support\CoroutineTestCase;
 
 /**
- * Test double feeding canned chunks instead of HTTP/2 frames. HttpStream
- * is non-final so tests can extend it without reflection — production
+ * Test double feeding canned HTTP response bytes. HttpStream is
+ * non-final so tests can extend it without reflection; production
  * has exactly one implementation; the open hierarchy serves tests.
  */
 final class FakeHttpStream extends HttpStream
 {
-    /** @var list<string> */
-    private array $chunks;
-
-    /** @param list<string> $chunks */
-    public function __construct(array $chunks)
-    {
-        $this->chunks = $chunks;
+    public bool $eof {
+        get => $this->chunks === [];
     }
 
-    public function read(\Phalanx\Scope\Suspendable $scope, int $bytes = 8192): string
+    /** @param list<string> $chunks */
+    public function __construct(
+        private array $chunks,
+    ) {
+    }
+
+    #[\Override]
+    public function read(Suspendable $scope, int $bytes = 8192): string
     {
         if ($this->chunks === []) {
             return '';
         }
         return array_shift($this->chunks);
-    }
-
-    public bool $eof {
-        get => $this->chunks === [];
     }
 }
 
@@ -42,7 +41,7 @@ final class FakeHttpStream extends HttpStream
  * HttpSseSource is the bridge between the OpenSwoole-native HttpStream
  * (byte-level coroutine reads) and the existing Athena SseParser
  * (event-level structured output). Coverage drives chunked input
- * patterns — including events split across read boundaries — so the
+ * patterns, including events split across read boundaries, so the
  * provider integration is robust against real-world TCP framing.
  */
 final class HttpSseSourceTest extends CoroutineTestCase
@@ -86,8 +85,6 @@ final class HttpSseSourceTest extends CoroutineTestCase
 
         $events = $this->collect($source);
 
-        // The keep-alive comment + empty-data ping yields nothing;
-        // only the second block produces an event.
         self::assertCount(1, $events);
         self::assertSame('data', $events[0]['event']);
         self::assertSame('payload', $events[0]['data']);
