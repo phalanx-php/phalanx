@@ -7,6 +7,7 @@ namespace Phalanx\Grammata\Tests\Unit;
 use Phalanx\Grammata\Task\CreateDirectory;
 use Phalanx\Grammata\Task\ExistsFile;
 use Phalanx\Grammata\Task\ListDirectory;
+use Phalanx\Scope\ExecutionScope;
 use PHPUnit\Framework\TestCase;
 
 final class DirectoryTest extends TestCase
@@ -17,8 +18,7 @@ final class DirectoryTest extends TestCase
 
         try {
             $task = new CreateDirectory($tmpDir);
-            /** @var \Phalanx\ExecutionScope&\PHPUnit\Framework\MockObject\MockObject $scope */
-            $scope = $this->createMock(\Phalanx\ExecutionScope::class);
+            $scope = $this->createStub(ExecutionScope::class);
             $task($scope);
 
             $this->assertTrue(is_dir($tmpDir));
@@ -33,8 +33,7 @@ final class DirectoryTest extends TestCase
 
         try {
             $task = new CreateDirectory($tmpDir, recursive: true);
-            /** @var \Phalanx\ExecutionScope&\PHPUnit\Framework\MockObject\MockObject $scope */
-            $scope = $this->createMock(\Phalanx\ExecutionScope::class);
+            $scope = $this->createStub(ExecutionScope::class);
             $task($scope);
 
             $this->assertTrue(is_dir($tmpDir));
@@ -55,8 +54,7 @@ final class DirectoryTest extends TestCase
         try {
             $task = new ListDirectory($tmpDir);
 
-            /** @var \Phalanx\ExecutionScope&\PHPUnit\Framework\MockObject\MockObject $scope */
-            $scope = $this->createMock(\Phalanx\ExecutionScope::class);
+            $scope = $this->createStub(ExecutionScope::class);
             $entries = $task($scope);
 
             $this->assertCount(2, $entries);
@@ -73,8 +71,7 @@ final class DirectoryTest extends TestCase
 
     public function test_exists_file(): void
     {
-        /** @var \Phalanx\ExecutionScope&\PHPUnit\Framework\MockObject\MockObject $scope */
-        $scope = $this->createMock(\Phalanx\ExecutionScope::class);
+        $scope = $this->createStub(ExecutionScope::class);
 
         $this->assertTrue((new ExistsFile(__FILE__))($scope));
         $this->assertFalse((new ExistsFile('/nonexistent'))($scope));

@@ -30,8 +30,8 @@ final class DeployCommand implements Executable
     {
         $env = (string) $scope->args->get('env', 'staging');
 
-        $output = $scope->service(StreamOutput::class);
         $theme  = $scope->service(Theme::class);
+        $output = $scope->service(StreamOutput::class);
 
         $output->persist("deploy → {$env}");
 

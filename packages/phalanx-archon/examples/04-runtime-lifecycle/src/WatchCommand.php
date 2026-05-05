@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Acme\ArchonDemo\Lifecycle;
 
-use OpenSwoole\Coroutine;
 use Phalanx\Archon\Command\CommandScope;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Cancellation\Cancelled;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
 use RuntimeException;
 
@@ -17,9 +17,9 @@ use RuntimeException;
  *   - open a ManagedCounter resource
  *   - register $scope->onDispose so the close() banner fires even on abort
  *   - spawn three ticker workers via $scope->go (TaskRun supervision)
- *   - park the main coroutine on Coroutine::usleep checkpoints with
- *     throwIfCancelled between each — Cancelled reaches the body when the
- *     scope token is cancelled (signal trap, cooperative timeout, manual)
+ *   - park the main coroutine on $scope->delay() checkpoints — Cancelled
+ *     reaches the body when the scope token is cancelled (signal trap,
+ *     cooperative timeout, manual)
  *
  * Flags:
  *   --fail-worker=N    inject a RuntimeException inside ticker N
@@ -43,16 +43,16 @@ final class WatchCommand implements Executable
 
         for ($id = 1; $id <= 3; $id++) {
             $shouldFail = $id === $failWorker;
-            $scope->go(static function () use ($scope, $output, $id, $shouldFail): void {
+            $scope->go(static function (ExecutionScope $workerScope) use ($output, $id, $shouldFail): void {
                 for ($n = 1; $n <= 100; $n++) {
-                    if ($scope->isCancelled) {
+                    if ($workerScope->isCancelled) {
                         return;
                     }
                     $output->persist("[tick {$id} {$n}]");
                     if ($shouldFail && $n === 2) {
                         throw new RuntimeException("worker {$id} crashed");
                     }
-                    Coroutine::usleep(50_000);
+                    $workerScope->delay(0.05);
                 }
             }, name: "tick-{$id}");
         }
@@ -62,7 +62,7 @@ final class WatchCommand implements Executable
 
         try {
             while (microtime(true) < $deadline) {
-                Coroutine::usleep(50_000);
+                $scope->delay(0.05);
                 $scope->throwIfCancelled();
             }
             $output->persist('[completed normally]');
