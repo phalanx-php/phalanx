@@ -16,16 +16,6 @@ final class CommandDispatchTest extends TestCase
 {
     private Application $app;
 
-    protected function setUp(): void
-    {
-        $this->app = Application::starting()->compile();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->app->shutdown();
-    }
-
     #[Test]
     public function dispatches_command_by_command_attribute(): void
     {
@@ -90,4 +80,13 @@ final class CommandDispatchTest extends TestCase
         $this->assertSame('Run migrations', $handler->config->description);
     }
 
+    protected function setUp(): void
+    {
+        $this->app = Application::starting()->compile();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->app->shutdown();
+    }
 }

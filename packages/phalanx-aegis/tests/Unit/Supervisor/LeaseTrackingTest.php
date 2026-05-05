@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Tests\Unit\Supervisor;
 
-use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Supervisor\DispatchMode;
 use Phalanx\Supervisor\InProcessLedger;
 use Phalanx\Supervisor\LeaseViolation;
@@ -15,7 +14,6 @@ use Phalanx\Supervisor\TaskRun;
 use Phalanx\Supervisor\TransactionLease;
 use Phalanx\Supervisor\WaitReason;
 use Phalanx\Trace\Trace;
-use Phalanx\Trace\TraceType;
 use PHPUnit\Framework\TestCase;
 
 final class LeaseTrackingTest extends TestCase
@@ -302,13 +300,13 @@ final class NoopTask implements \Phalanx\Task\Executable
  */
 final class BareScopeStub implements \Phalanx\Scope\Scope
 {
-    private \Phalanx\Runtime\RuntimeContext $runtimeContext;
-
     public \Phalanx\Runtime\RuntimeContext $runtime {
         get => $this->runtimeContext ??= new \Phalanx\Runtime\RuntimeContext(
             \Phalanx\Runtime\Memory\RuntimeMemory::forLedgerSize(16),
         );
     }
+
+    private \Phalanx\Runtime\RuntimeContext $runtimeContext;
 
     public function service(string $type): object
     {

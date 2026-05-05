@@ -33,6 +33,11 @@ final class PathPolicy
             || $this->matchesAny($file, $this->auditPaths);
     }
 
+    private static function normalize(string $path): string
+    {
+        return trim(str_replace('\\', '/', $path), '/');
+    }
+
     /**
      * @param list<string> $paths
      */
@@ -60,10 +65,5 @@ final class PathPolicy
         }
 
         return false;
-    }
-
-    private static function normalize(string $path): string
-    {
-        return trim(str_replace('\\', '/', $path), '/');
     }
 }

@@ -15,16 +15,6 @@ final class RuntimeClaims
         $this->lock = new Lock(Lock::MUTEX);
     }
 
-    private static function key(string $key): string
-    {
-        return substr(sha1($key), 0, 32);
-    }
-
-    private static function fit(string $value, int $length): string
-    {
-        return mb_strlen($value) <= $length ? $value : mb_substr($value, 0, $length);
-    }
-
     public function claim(string $key, float $ttl, string $token = ''): bool
     {
         $now = microtime(true);
@@ -76,5 +66,15 @@ final class RuntimeClaims
     public function destroy(): void
     {
         $this->lock->destroy();
+    }
+
+    private static function key(string $key): string
+    {
+        return substr(sha1($key), 0, 32);
+    }
+
+    private static function fit(string $value, int $length): string
+    {
+        return mb_strlen($value) <= $length ? $value : mb_substr($value, 0, $length);
     }
 }

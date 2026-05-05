@@ -19,48 +19,6 @@ use Throwable;
 
 final class EmitterTest extends AsyncTestCase
 {
-    private static function makeContext(): StreamContext
-    {
-        return new class () implements StreamContext {
-            public RuntimeContext $runtime {
-                get => throw new RuntimeException('Test stream context has no runtime.');
-            }
-
-            public function call(Closure $fn, ?WaitReason $waitReason = null): mixed
-            {
-                return $fn();
-            }
-
-            public function throwIfCancelled(): void
-            {
-            }
-
-            public function onDispose(Closure $callback): void
-            {
-            }
-
-            public function service(string $type): object
-            {
-                throw new RuntimeException("Test stream context has no service '{$type}'.");
-            }
-
-            public function attribute(string $key, mixed $default = null): mixed
-            {
-                return $default;
-            }
-
-            public function withAttribute(string $key, mixed $value): Scope
-            {
-                return $this;
-            }
-
-            public function trace(): Trace
-            {
-                return new Trace();
-            }
-        };
-    }
-
     #[Test]
     public function produceExposesChannel(): void
     {
@@ -358,5 +316,47 @@ final class EmitterTest extends AsyncTestCase
 
             self::assertSame([], $items);
         });
+    }
+
+    private static function makeContext(): StreamContext
+    {
+        return new class () implements StreamContext {
+            public RuntimeContext $runtime {
+                get => throw new RuntimeException('Test stream context has no runtime.');
+            }
+
+            public function call(Closure $fn, ?WaitReason $waitReason = null): mixed
+            {
+                return $fn();
+            }
+
+            public function throwIfCancelled(): void
+            {
+            }
+
+            public function onDispose(Closure $callback): void
+            {
+            }
+
+            public function service(string $type): object
+            {
+                throw new RuntimeException("Test stream context has no service '{$type}'.");
+            }
+
+            public function attribute(string $key, mixed $default = null): mixed
+            {
+                return $default;
+            }
+
+            public function withAttribute(string $key, mixed $value): Scope
+            {
+                return $this;
+            }
+
+            public function trace(): Trace
+            {
+                return new Trace();
+            }
+        };
     }
 }

@@ -10,16 +10,6 @@ use PHPUnit\Framework\Attributes\Test;
 
 final class PasswordInputTest extends PromptTestCase
 {
-    private function password(?Closure $validate = null): PasswordInput
-    {
-        return new PasswordInput(
-            theme: $this->theme,
-            label: 'Password',
-            hint: '',
-            validate: $validate,
-        );
-    }
-
     #[Test]
     public function submits_typed_password_as_plain_text(): void
     {
@@ -65,5 +55,15 @@ final class PasswordInputTest extends PromptTestCase
         )->prompt($this->scope, $this->output, $reader);
 
         self::assertSame('abcd', $result);
+    }
+
+    private function password(?Closure $validate = null): PasswordInput
+    {
+        return new PasswordInput(
+            theme: $this->theme,
+            label: 'Password',
+            hint: '',
+            validate: $validate,
+        );
     }
 }

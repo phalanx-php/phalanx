@@ -27,7 +27,15 @@ final class TunnelHandle implements \Stringable
         public readonly ?SshCredential $targetCredential,
         private readonly Process $process,
         private readonly TaskScope $scope,
-    ) {}
+    ) {
+    }
+
+    public function __toString(): string
+    {
+        $arrow = $this->direction === TunnelDirection::Local ? '->' : '<-';
+
+        return "tunnel:{$this->localPort} {$arrow} {$this->remoteHost}:{$this->remotePort}";
+    }
 
     public function execute(Scopeable|Executable $task): mixed
     {
@@ -71,12 +79,5 @@ final class TunnelHandle implements \Stringable
         if ($this->process->isRunning()) {
             $this->process->terminate();
         }
-    }
-
-    public function __toString(): string
-    {
-        $arrow = $this->direction === TunnelDirection::Local ? '->' : '<-';
-
-        return "tunnel:{$this->localPort} {$arrow} {$this->remoteHost}:{$this->remotePort}";
     }
 }

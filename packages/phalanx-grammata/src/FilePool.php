@@ -12,6 +12,10 @@ use function React\Async\await;
 
 final class FilePool
 {
+	public int $activeCount { get => $this->active; }
+
+	public int $waitingCount { get => count($this->waiters); }
+
     private int $active = 0;
 
     /** @var list<Deferred<null>> */
@@ -47,8 +51,4 @@ final class FilePool
             $deferred->resolve(null);
         }
     }
-
-    public int $activeCount { get => $this->active; }
-
-    public int $waitingCount { get => count($this->waiters); }
 }

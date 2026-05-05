@@ -11,18 +11,6 @@ final class MultiSelectInputTest extends PromptTestCase
 {
     private const string CTRL_A = 'ctrl-a';
 
-    /** @param list<string> $defaults */
-    private function multi(array $defaults = []): MultiSelectInput
-    {
-        return new MultiSelectInput(
-            theme: $this->theme,
-            label: 'Pick',
-            options: ['a' => 'Alpha', 'b' => 'Beta', 'c' => 'Gamma'],
-            defaultValues: $defaults,
-            scroll: 5,
-        );
-    }
-
     #[Test]
     public function enter_with_no_selection_returns_empty_array(): void
     {
@@ -91,5 +79,17 @@ final class MultiSelectInputTest extends PromptTestCase
         $result = $this->multi(defaults: ['b'])->prompt($this->scope, $this->output, $reader);
 
         self::assertSame(['b'], $result);
+    }
+
+    /** @param list<string> $defaults */
+    private function multi(array $defaults = []): MultiSelectInput
+    {
+        return new MultiSelectInput(
+            theme: $this->theme,
+            label: 'Pick',
+            options: ['a' => 'Alpha', 'b' => 'Beta', 'c' => 'Gamma'],
+            defaultValues: $defaults,
+            scroll: 5,
+        );
     }
 }

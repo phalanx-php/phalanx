@@ -6,7 +6,6 @@ namespace Phalanx\Hermes\Tests\Integration;
 
 use GuzzleHttp\Psr7\ServerRequest;
 use Phalanx\Application;
-use Phalanx\Stoa\RouteParams;
 use Phalanx\Hermes\Tests\Fixtures\DrainAndFlagPump;
 use Phalanx\Hermes\Tests\Fixtures\ImmediateClosePump;
 use Phalanx\Hermes\Tests\Fixtures\InboundCollectorPump;
@@ -17,6 +16,7 @@ use Phalanx\Hermes\WsConnection;
 use Phalanx\Hermes\WsConnectionHandler;
 use Phalanx\Hermes\WsGateway;
 use Phalanx\Hermes\WsScope;
+use Phalanx\Stoa\RouteParams;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Ratchet\RFC6455\Messaging\Frame;
@@ -29,29 +29,6 @@ use function React\Async\delay;
 final class WsConnectionLifecycleTest extends TestCase
 {
     private Application $app;
-
-    protected function setUp(): void
-    {
-        // OSR-41 Phase B note: WsConnectionHandler still consumes React\EventLoop\Loop
-        // and React\Stream\DuplexStreamInterface. Until that handler is ported off the
-        // React substrate (Hermes-lane work), these integration tests cannot run on the
-        // OpenSwoole Coroutine\Channel internals introduced by the Styx port. Skip
-        // wholesale instead of leaving the suite hanging.
-        self::markTestSkipped('WsConnectionHandler React substrate port pending (Hermes lane).');
-
-        // @phpstan-ignore deadCode.unreachable
-        $this->app = Application::starting()->compile();
-        InboundCollectorPump::$received = [];
-        ScopeCapturePump::$captured = null;
-        DrainAndFlagPump::$completed = false;
-    }
-
-    protected function tearDown(): void
-    {
-        if (isset($this->app)) {
-            $this->app->shutdown();
-        }
-    }
 
     #[Test]
     public function connection_receives_inbound_messages_via_stream(): void
@@ -155,6 +132,29 @@ final class WsConnectionLifecycleTest extends TestCase
         })();
 
         $this->assertSame(1, $gateway->count());
+    }
+
+    protected function setUp(): void
+    {
+        // OSR-41 Phase B note: WsConnectionHandler still consumes React\EventLoop\Loop
+        // and React\Stream\DuplexStreamInterface. Until that handler is ported off the
+        // React substrate (Hermes-lane work), these integration tests cannot run on the
+        // OpenSwoole Coroutine\Channel internals introduced by the Styx port. Skip
+        // wholesale instead of leaving the suite hanging.
+        self::markTestSkipped('WsConnectionHandler React substrate port pending (Hermes lane).');
+
+        // @phpstan-ignore deadCode.unreachable
+        $this->app = Application::starting()->compile();
+        InboundCollectorPump::$received = [];
+        ScopeCapturePump::$captured = null;
+        DrainAndFlagPump::$completed = false;
+    }
+
+    protected function tearDown(): void
+    {
+        if (isset($this->app)) {
+            $this->app->shutdown();
+        }
     }
 
     private function sendMaskedText(ThroughStream $transport, string $payload): void

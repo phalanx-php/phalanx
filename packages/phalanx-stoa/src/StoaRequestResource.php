@@ -90,11 +90,6 @@ final class StoaRequestResource
         return $resource instanceof self ? $resource : null;
     }
 
-    private static function fit(string $value, int $limit): string
-    {
-        return mb_strlen($value) <= $limit ? $value : mb_substr($value, 0, $limit);
-    }
-
     public function activate(): void
     {
         $this->handle = $this->runtime->memory->resources->activate($this->handle);
@@ -251,6 +246,11 @@ final class StoaRequestResource
     public function isTerminal(): bool
     {
         return $this->state()?->isTerminal() === true;
+    }
+
+    private static function fit(string $value, int $limit): string
+    {
+        return mb_strlen($value) <= $limit ? $value : mb_substr($value, 0, $limit);
     }
 
     private function recordDiagnostic(StoaEventSid $type, string $valueA = '', string $valueB = ''): void

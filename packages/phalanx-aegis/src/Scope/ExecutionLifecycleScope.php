@@ -130,63 +130,6 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         );
     }
 
-    /**
-     * Identity for diagnostics (priority order):
-     *   1. Traceable->traceName when set and non-empty
-     *   2. Task::of(...) source location ("file.php:line")
-     *   3. Closure source location via reflection
-     *   4. Class FQCN for invokables
-     *   5. Anonymous-class fallback to the supervisor-generated id
-     */
-    private static function resolveTaskName(Scopeable|Executable|Closure $task): string
-    {
-        if ($task instanceof Traceable) {
-            $hint = $task->traceName;
-            if ($hint !== '') {
-                return $hint;
-            }
-        }
-
-        if ($task instanceof Task) {
-            return $task->sourceLocation;
-        }
-
-        if ($task instanceof Closure) {
-            $location = self::closureLocation($task);
-            return $location ?? Closure::class;
-        }
-
-        $class = $task::class;
-        if (str_contains($class, '@anonymous')) {
-            return preg_replace('/@anonymous.*$/', '@anonymous', $class) ?? 'anonymous';
-        }
-        return $class;
-    }
-
-    private static function closureLocation(Closure $fn): ?string
-    {
-        try {
-            $reflection = new ReflectionFunction($fn);
-            $file = $reflection->getFileName();
-            if ($file === false) {
-                return null;
-            }
-            return basename($file) . ':' . $reflection->getStartLine();
-        } catch (Throwable) {
-            return null;
-        }
-    }
-
-    /** @param list<int> $cids */
-    private static function cancelCoroutines(array $cids): void
-    {
-        foreach ($cids as $cid) {
-            if (Coroutine::exists($cid)) {
-                Coroutine::cancel($cid);
-            }
-        }
-    }
-
     public function supervisor(): Supervisor
     {
         return $this->supervisor;
@@ -1126,6 +1069,63 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                 $mode,
             ),
         );
+    }
+
+    /**
+     * Identity for diagnostics (priority order):
+     *   1. Traceable->traceName when set and non-empty
+     *   2. Task::of(...) source location ("file.php:line")
+     *   3. Closure source location via reflection
+     *   4. Class FQCN for invokables
+     *   5. Anonymous-class fallback to the supervisor-generated id
+     */
+    private static function resolveTaskName(Scopeable|Executable|Closure $task): string
+    {
+        if ($task instanceof Traceable) {
+            $hint = $task->traceName;
+            if ($hint !== '') {
+                return $hint;
+            }
+        }
+
+        if ($task instanceof Task) {
+            return $task->sourceLocation;
+        }
+
+        if ($task instanceof Closure) {
+            $location = self::closureLocation($task);
+            return $location ?? Closure::class;
+        }
+
+        $class = $task::class;
+        if (str_contains($class, '@anonymous')) {
+            return preg_replace('/@anonymous.*$/', '@anonymous', $class) ?? 'anonymous';
+        }
+        return $class;
+    }
+
+    private static function closureLocation(Closure $fn): ?string
+    {
+        try {
+            $reflection = new ReflectionFunction($fn);
+            $file = $reflection->getFileName();
+            if ($file === false) {
+                return null;
+            }
+            return basename($file) . ':' . $reflection->getStartLine();
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    /** @param list<int> $cids */
+    private static function cancelCoroutines(array $cids): void
+    {
+        foreach ($cids as $cid) {
+            if (Coroutine::exists($cid)) {
+                Coroutine::cancel($cid);
+            }
+        }
     }
 
     /**

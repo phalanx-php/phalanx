@@ -46,6 +46,24 @@ final class Color
         return new self($color);
     }
 
+    public function fg(): string
+    {
+        return match (true) {
+            is_string($this->color) => self::namedFg($this->color),
+            is_int($this->color)    => "\033[38;5;{$this->color}m",
+            default                 => "\033[38;2;{$this->color[0]};{$this->color[1]};{$this->color[2]}m",
+        };
+    }
+
+    public function bg(): string
+    {
+        return match (true) {
+            is_string($this->color) => self::namedBg($this->color),
+            is_int($this->color)    => "\033[48;5;{$this->color}m",
+            default                 => "\033[48;2;{$this->color[0]};{$this->color[1]};{$this->color[2]}m",
+        };
+    }
+
     private static function namedFg(string $name): string
     {
         $code = self::NAMED_FG[$name] ?? null;
@@ -63,23 +81,5 @@ final class Color
         }
         // bg codes: 30–37 → 40–47, 90–97 → 100–107 (both ranges shift by +10)
         return "\033[" . ($code + 10) . "m";
-    }
-
-    public function fg(): string
-    {
-        return match (true) {
-            is_string($this->color) => self::namedFg($this->color),
-            is_int($this->color)    => "\033[38;5;{$this->color}m",
-            default                 => "\033[38;2;{$this->color[0]};{$this->color[1]};{$this->color[2]}m",
-        };
-    }
-
-    public function bg(): string
-    {
-        return match (true) {
-            is_string($this->color) => self::namedBg($this->color),
-            is_int($this->color)    => "\033[48;5;{$this->color}m",
-            default                 => "\033[48;2;{$this->color[0]};{$this->color[1]};{$this->color[2]}m",
-        };
     }
 }

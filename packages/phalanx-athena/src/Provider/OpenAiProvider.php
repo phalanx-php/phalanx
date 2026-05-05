@@ -38,6 +38,71 @@ final class OpenAiProvider implements LlmProvider
     ) {
     }
 
+    public function generate(GenerateRequest $request): Emitter
+    {
+        $config = $this->config;
+        $client = $this->client;
+
+        return Emitter::produce(static function (
+            Channel $channel,
+            StreamContext $ctx,
+        ) use (
+            $request,
+            $config,
+            $client,
+        ): void {
+            $model = $request->model ?? $config->model;
+            $body = self::buildRequestBody($request, $model);
+            $headers = self::buildHeaders($config);
+            $startTime = hrtime(true);
+            $step = 0;
+            $usage = TokenUsage::zero();
+
+            $jsonBody = json_encode($body, JSON_THROW_ON_ERROR);
+            $httpRequest = HttpRequest::post(Url::join($config->baseUrl, '/v1/chat/completions'), $jsonBody, $headers);
+            $stream = $client->stream($ctx, $httpRequest);
+            $ctx->onDispose(static fn() => $stream->close());
+
+            $source = new HttpSseSource($stream);
+            $toolCalls = [];
+
+            foreach ($source->events($ctx) as $sseEvent) {
+                $ctx->throwIfCancelled();
+                $data = $sseEvent['data'];
+                if ($data === '[DONE]') {
+                    break;
+                }
+
+                if ($stream->status >= 400) {
+                    throw new RuntimeException("OpenAI API {$stream->status}: {$data}");
+                }
+
+                $parsed = json_decode($data, true, 512, JSON_THROW_ON_ERROR);
+                if (!is_array($parsed)) {
+                    continue;
+                }
+
+                $elapsed = (hrtime(true) - $startTime) / 1e6;
+                self::onUsage($parsed, $usage);
+
+                $choice = $parsed['choices'][0] ?? [];
+                if (!is_array($choice)) {
+                    continue;
+                }
+                $delta = is_array($choice['delta'] ?? null) ? $choice['delta'] : [];
+
+                self::onContentDelta($delta, $channel, $elapsed, $usage, $step);
+                self::onToolCallDeltas($delta, $toolCalls, $channel, $elapsed, $usage, $step);
+
+                if (($choice['finish_reason'] ?? null) !== null) {
+                    self::onFinish($toolCalls, $channel, $elapsed, $usage, $step);
+                }
+            }
+
+            $channel->complete();
+        });
+    }
+
     /** @return array<string, mixed> */
     private static function buildRequestBody(GenerateRequest $request, string $model): array
     {
@@ -186,70 +251,5 @@ final class OpenAiProvider implements LlmProvider
             ));
         }
         $channel->emit(AgentEvent::tokenComplete($elapsed, $usage, $step));
-    }
-
-    public function generate(GenerateRequest $request): Emitter
-    {
-        $config = $this->config;
-        $client = $this->client;
-
-        return Emitter::produce(static function (
-            Channel $channel,
-            StreamContext $ctx,
-        ) use (
-            $request,
-            $config,
-            $client,
-        ): void {
-            $model = $request->model ?? $config->model;
-            $body = self::buildRequestBody($request, $model);
-            $headers = self::buildHeaders($config);
-            $startTime = hrtime(true);
-            $step = 0;
-            $usage = TokenUsage::zero();
-
-            $jsonBody = json_encode($body, JSON_THROW_ON_ERROR);
-            $httpRequest = HttpRequest::post(Url::join($config->baseUrl, '/v1/chat/completions'), $jsonBody, $headers);
-            $stream = $client->stream($ctx, $httpRequest);
-            $ctx->onDispose(static fn() => $stream->close());
-
-            $source = new HttpSseSource($stream);
-            $toolCalls = [];
-
-            foreach ($source->events($ctx) as $sseEvent) {
-                $ctx->throwIfCancelled();
-                $data = $sseEvent['data'];
-                if ($data === '[DONE]') {
-                    break;
-                }
-
-                if ($stream->status >= 400) {
-                    throw new RuntimeException("OpenAI API {$stream->status}: {$data}");
-                }
-
-                $parsed = json_decode($data, true, 512, JSON_THROW_ON_ERROR);
-                if (!is_array($parsed)) {
-                    continue;
-                }
-
-                $elapsed = (hrtime(true) - $startTime) / 1e6;
-                self::onUsage($parsed, $usage);
-
-                $choice = $parsed['choices'][0] ?? [];
-                if (!is_array($choice)) {
-                    continue;
-                }
-                $delta = is_array($choice['delta'] ?? null) ? $choice['delta'] : [];
-
-                self::onContentDelta($delta, $channel, $elapsed, $usage, $step);
-                self::onToolCallDeltas($delta, $toolCalls, $channel, $elapsed, $usage, $step);
-
-                if (($choice['finish_reason'] ?? null) !== null) {
-                    self::onFinish($toolCalls, $channel, $elapsed, $usage, $step);
-                }
-            }
-
-            $channel->complete();
-        });
     }
 }

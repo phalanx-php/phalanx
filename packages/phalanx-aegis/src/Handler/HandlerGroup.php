@@ -93,29 +93,6 @@ final class HandlerGroup implements Executable
         );
     }
 
-    /**
-     * @return Closure(Scopeable|Executable, ExecutionScope): mixed
-     */
-    private static function defaultInvoker(): Closure
-    {
-        return static fn(Scopeable|Executable $instance, ExecutionScope $scope): mixed => $instance($scope);
-    }
-
-    /**
-     * Deduplicate middleware class-strings keeping the LAST occurrence
-     * (innermost declaration wins). The chain is then walked in original
-     * order so the surviving entry runs at its innermost position.
-     *
-     * @param list<class-string> $middleware
-     * @return list<class-string>
-     */
-    private static function dedupMiddleware(array $middleware): array
-    {
-        return array_values(array_reverse(
-            array_unique(array_reverse($middleware))
-        ));
-    }
-
     /** @internal */
     public function add(string $key, Handler $handler): self
     {
@@ -209,6 +186,29 @@ final class HandlerGroup implements Executable
             $this->handlers,
             static fn(Handler $h): bool => $h->config instanceof $configClass,
         );
+    }
+
+    /**
+     * @return Closure(Scopeable|Executable, ExecutionScope): mixed
+     */
+    private static function defaultInvoker(): Closure
+    {
+        return static fn(Scopeable|Executable $instance, ExecutionScope $scope): mixed => $instance($scope);
+    }
+
+    /**
+     * Deduplicate middleware class-strings keeping the LAST occurrence
+     * (innermost declaration wins). The chain is then walked in original
+     * order so the surviving entry runs at its innermost position.
+     *
+     * @param list<class-string> $middleware
+     * @return list<class-string>
+     */
+    private static function dedupMiddleware(array $middleware): array
+    {
+        return array_values(array_reverse(
+            array_unique(array_reverse($middleware))
+        ));
     }
 
     private function dispatchByKey(ExecutionScope $scope): mixed

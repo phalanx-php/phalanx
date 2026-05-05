@@ -123,24 +123,6 @@ final class DevServer
         return 0;
     }
 
-    /** @return list<Process> */
-    private function resolveProcesses(string $cwd): array
-    {
-        $resolved = $this->processes;
-
-        foreach ($this->backends as $backend) {
-            $resolved[] = $backend->resolve();
-        }
-
-        foreach ($this->frontends as $frontend) {
-            foreach ($frontend->resolve($cwd) as $process) {
-                $resolved[] = $process;
-            }
-        }
-
-        return $resolved;
-    }
-
     /**
      * @param list<Process> $configs
      * @return list<ManagedProcess>
@@ -357,5 +339,23 @@ final class DevServer
     {
         $parts = explode(' ', trim($command));
         return basename($parts[0]);
+    }
+
+    /** @return list<Process> */
+    private function resolveProcesses(string $cwd): array
+    {
+        $resolved = $this->processes;
+
+        foreach ($this->backends as $backend) {
+            $resolved[] = $backend->resolve();
+        }
+
+        foreach ($this->frontends as $frontend) {
+            foreach ($frontend->resolve($cwd) as $process) {
+                $resolved[] = $process;
+            }
+        }
+
+        return $resolved;
     }
 }

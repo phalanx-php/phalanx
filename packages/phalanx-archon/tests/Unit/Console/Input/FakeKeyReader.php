@@ -21,11 +21,11 @@ final class FakeKeyReader implements KeyReader
         get => $this->interactive;
     }
 
-    /** @var list<string> */
-    private array $keys;
-
     public int $restoreCalls = 0;
     public int $enableCalls  = 0;
+
+    /** @var list<string> */
+    private array $keys;
 
     /** @param list<string> $keys */
     public function __construct(

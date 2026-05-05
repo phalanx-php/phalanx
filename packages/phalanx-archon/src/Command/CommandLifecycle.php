@@ -55,11 +55,6 @@ final class CommandLifecycle
         return $lifecycle;
     }
 
-    private static function fit(string $value, int $length = 240): string
-    {
-        return mb_strlen($value) <= $length ? $value : mb_substr($value, 0, $length);
-    }
-
     public function activate(string $handler): void
     {
         $this->annotate(ArchonAnnotationSid::Handler, $handler);
@@ -107,6 +102,11 @@ final class CommandLifecycle
         $this->annotate(ArchonAnnotationSid::ErrorKind, 'cancelled');
         $this->handle = $this->runtime->memory->resources->abort($this->handle, $reason);
         $this->record(ArchonEventSid::CommandAborted, 'cancelled', $reason);
+    }
+
+    private static function fit(string $value, int $length = 240): string
+    {
+        return mb_strlen($value) <= $length ? $value : mb_substr($value, 0, $length);
     }
 
     private function annotate(RuntimeAnnotationId $key, string|int|float|bool|null $value): void

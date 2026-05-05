@@ -9,38 +9,6 @@ use PHPUnit\Framework\Attributes\Test;
 
 final class NumberInputTest extends PromptTestCase
 {
-    private function intInput(int $default = 0, ?int $min = null, ?int $max = null): NumberInput
-    {
-        return new NumberInput(
-            theme: $this->theme,
-            label: 'Count',
-            float: false,
-            min: $min,
-            max: $max,
-            step: 1,
-            placeholder: '',
-            default: $default,
-            hint: '',
-            validate: null,
-        );
-    }
-
-    private function floatInput(): NumberInput
-    {
-        return new NumberInput(
-            theme: $this->theme,
-            label: 'Price',
-            float: true,
-            min: null,
-            max: null,
-            step: 0.1,
-            placeholder: '',
-            default: 0,
-            hint: '',
-            validate: null,
-        );
-    }
-
     #[Test]
     public function submits_typed_integer(): void
     {
@@ -119,5 +87,37 @@ final class NumberInputTest extends PromptTestCase
         $result = $this->intInput(min: 10)->prompt($this->scope, $this->output, $reader);
 
         self::assertSame(55, $result);
+    }
+
+    private function intInput(int $default = 0, ?int $min = null, ?int $max = null): NumberInput
+    {
+        return new NumberInput(
+            theme: $this->theme,
+            label: 'Count',
+            float: false,
+            min: $min,
+            max: $max,
+            step: 1,
+            placeholder: '',
+            default: $default,
+            hint: '',
+            validate: null,
+        );
+    }
+
+    private function floatInput(): NumberInput
+    {
+        return new NumberInput(
+            theme: $this->theme,
+            label: 'Price',
+            float: true,
+            min: null,
+            max: null,
+            step: 0.1,
+            placeholder: '',
+            default: 0,
+            hint: '',
+            validate: null,
+        );
     }
 }

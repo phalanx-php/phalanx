@@ -31,6 +31,11 @@ final class SummarizationAgent implements AgentDefinition
             PROMPT;
     }
 
+    public function __invoke(ExecutionScope $scope): mixed
+    {
+        return AgentLoop::run(Turn::begin($this), $scope);
+    }
+
     public function tools(): array
     {
         return [];
@@ -39,10 +44,5 @@ final class SummarizationAgent implements AgentDefinition
     public function provider(): ?string
     {
         return null;
-    }
-
-    public function __invoke(ExecutionScope $scope): mixed
-    {
-        return AgentLoop::run(Turn::begin($this), $scope);
     }
 }

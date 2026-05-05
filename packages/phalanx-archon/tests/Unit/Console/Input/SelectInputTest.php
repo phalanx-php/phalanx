@@ -9,12 +9,6 @@ use PHPUnit\Framework\Attributes\Test;
 
 final class SelectInputTest extends PromptTestCase
 {
-    /** @param array<string, string> $options */
-    private function select(array $options = ['a' => 'Alpha', 'b' => 'Beta', 'c' => 'Gamma']): SelectInput
-    {
-        return new SelectInput(theme: $this->theme, label: 'Choose', options: $options, scroll: 5);
-    }
-
     #[Test]
     public function enter_submits_first_option_by_default(): void
     {
@@ -73,5 +67,11 @@ final class SelectInputTest extends PromptTestCase
         $result = $this->select()->prompt($this->scope, $this->output, $reader);
 
         self::assertSame('a', $result);
+    }
+
+    /** @param array<string, string> $options */
+    private function select(array $options = ['a' => 'Alpha', 'b' => 'Beta', 'c' => 'Gamma']): SelectInput
+    {
+        return new SelectInput(theme: $this->theme, label: 'Choose', options: $options, scroll: 5);
     }
 }

@@ -11,13 +11,9 @@ use Phalanx\Athena\Event\AgentEventKind;
 use Phalanx\Athena\Event\TokenUsage;
 use Phalanx\Athena\Message\Conversation;
 use Phalanx\Athena\Message\Message;
-use Phalanx\Athena\Provider\ProviderConfig;
 use Phalanx\Athena\StepAction;
 use Phalanx\Athena\StepActionKind;
 use Phalanx\Athena\StepResult;
-use Phalanx\Athena\Tests\Fixtures\EchoTool;
-use Phalanx\Athena\Tests\Fixtures\MockProvider;
-use Phalanx\Athena\Tests\Fixtures\TerminateTool;
 use Phalanx\Athena\Tool\Disposition;
 use Phalanx\Athena\Tool\ToolOutcome;
 use Phalanx\Athena\Turn;
@@ -260,17 +256,17 @@ final class SimpleTestAgent implements AgentDefinition
         get => 'You are helpful.';
     }
 
+    public function __invoke(\Phalanx\ExecutionScope $scope): mixed
+    {
+        return null;
+    }
+
     public function tools(): array
     {
         return [];
     }
 
     public function provider(): ?string
-    {
-        return null;
-    }
-
-    public function __invoke(\Phalanx\ExecutionScope $scope): mixed
     {
         return null;
     }

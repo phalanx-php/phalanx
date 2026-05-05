@@ -17,41 +17,6 @@ use RuntimeException;
 
 final class ConcurrentTaskListTest extends CoroutineTestCase
 {
-    private function theme(): Theme
-    {
-        $plain = Style::new();
-        return new Theme(
-            success: $plain,
-            warning: $plain,
-            error:   $plain,
-            muted:   $plain,
-            accent:  $plain,
-            label:   $plain,
-            hint:    $plain,
-            border:  $plain,
-            active:  $plain,
-        );
-    }
-
-    /** @return resource */
-    private function stream(): mixed
-    {
-        $stream = fopen('php://temp', 'w+');
-        self::assertNotFalse($stream);
-        return $stream;
-    }
-
-    private function streamOutput(mixed $stream): StreamOutput
-    {
-        return new StreamOutput($stream, new TerminalEnvironment(columns: 80, lines: 24));
-    }
-
-    private function contents(mixed $stream): string
-    {
-        rewind($stream);
-        return (string) stream_get_contents($stream);
-    }
-
     #[Test]
     public function successPathRendersAllTasksAsSucceeded(): void
     {
@@ -132,5 +97,40 @@ final class ConcurrentTaskListTest extends CoroutineTestCase
         });
 
         self::assertSame('', $this->contents($stream));
+    }
+
+    private function theme(): Theme
+    {
+        $plain = Style::new();
+        return new Theme(
+            success: $plain,
+            warning: $plain,
+            error:   $plain,
+            muted:   $plain,
+            accent:  $plain,
+            label:   $plain,
+            hint:    $plain,
+            border:  $plain,
+            active:  $plain,
+        );
+    }
+
+    /** @return resource */
+    private function stream(): mixed
+    {
+        $stream = fopen('php://temp', 'w+');
+        self::assertNotFalse($stream);
+        return $stream;
+    }
+
+    private function streamOutput(mixed $stream): StreamOutput
+    {
+        return new StreamOutput($stream, new TerminalEnvironment(columns: 80, lines: 24));
+    }
+
+    private function contents(mixed $stream): string
+    {
+        rewind($stream);
+        return (string) stream_get_contents($stream);
     }
 }

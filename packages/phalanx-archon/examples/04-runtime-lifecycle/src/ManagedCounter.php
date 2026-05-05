@@ -13,9 +13,9 @@ use Phalanx\Archon\Console\Output\StreamOutput;
  */
 final class ManagedCounter
 {
-    private static int $sequence = 0;
-
     public readonly int $id;
+
+    private static int $sequence = 0;
     private bool $closed = false;
 
     public function __construct(private readonly StreamOutput $output)

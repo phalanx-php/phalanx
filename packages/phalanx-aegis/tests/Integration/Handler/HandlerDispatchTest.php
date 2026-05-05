@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Phalanx\Tests\Integration\Handler;
 
 use Phalanx\Application;
-use Phalanx\Scope\ExecutionScope;
 use Phalanx\Handler\Handler;
 use Phalanx\Handler\HandlerGroup;
 use Phalanx\Handler\HandlerMatcher;
 use Phalanx\Handler\MatchResult;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Tests\Fixtures\Handlers\HandlerA;
 use Phalanx\Tests\Fixtures\Handlers\HandlerB;
 use Phalanx\Tests\Fixtures\Handlers\PrefixingMiddleware;
@@ -19,16 +19,6 @@ use PHPUnit\Framework\TestCase;
 final class HandlerDispatchTest extends TestCase
 {
     private Application $app;
-
-    protected function setUp(): void
-    {
-        $this->app = Application::starting()->compile();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->app->shutdown();
-    }
 
     #[Test]
     public function dispatches_by_handler_key(): void
@@ -123,5 +113,15 @@ final class HandlerDispatchTest extends TestCase
         $result = $scope->execute($group);
 
         $this->assertSame('before:a:after', $result);
+    }
+
+    protected function setUp(): void
+    {
+        $this->app = Application::starting()->compile();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->app->shutdown();
     }
 }

@@ -56,18 +56,6 @@ final readonly class ConsoleSignalPolicy
         return new self($exitCodes);
     }
 
-    private static function reason(int $number): string
-    {
-        if (defined('SIGINT') && $number === SIGINT) {
-            return 'signal:int';
-        }
-        if (defined('SIGTERM') && $number === SIGTERM) {
-            return 'signal:term';
-        }
-
-        return "signal:$number";
-    }
-
     /** @return array<int, int> */
     public function exitCodes(): array
     {
@@ -86,5 +74,17 @@ final readonly class ConsoleSignalPolicy
             exitCode: $exitCode,
             reason: self::reason($number),
         );
+    }
+
+    private static function reason(int $number): string
+    {
+        if (defined('SIGINT') && $number === SIGINT) {
+            return 'signal:int';
+        }
+        if (defined('SIGTERM') && $number === SIGTERM) {
+            return 'signal:term';
+        }
+
+        return "signal:$number";
     }
 }

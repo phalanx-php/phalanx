@@ -19,23 +19,6 @@ final class InMemorySwarmBus implements SwarmBus
     /** @var list<Channel> */
     private array $subscribers = [];
 
-    private static function matchesValue(mixed $actual, mixed $target, bool $addressed = false): bool
-    {
-        if ($addressed && ($target === 'ALL' || $actual === 'ALL')) {
-            return true;
-        }
-
-        $actuals = array_map(self::normalizeFilterValue(...), (array) $actual);
-        $targets = array_map(self::normalizeFilterValue(...), (array) $target);
-
-        return array_intersect($targets, $actuals) !== [];
-    }
-
-    private static function normalizeFilterValue(mixed $value): string
-    {
-        return $value instanceof \BackedEnum ? (string) $value->value : (string) $value;
-    }
-
     public function emit(Scope&Suspendable $scope, SwarmEvent $event): void
     {
         foreach ($this->subscribers as $channel) {
@@ -66,6 +49,23 @@ final class InMemorySwarmBus implements SwarmBus
                 }
             }
         });
+    }
+
+    private static function matchesValue(mixed $actual, mixed $target, bool $addressed = false): bool
+    {
+        if ($addressed && ($target === 'ALL' || $actual === 'ALL')) {
+            return true;
+        }
+
+        $actuals = array_map(self::normalizeFilterValue(...), (array) $actual);
+        $targets = array_map(self::normalizeFilterValue(...), (array) $target);
+
+        return array_intersect($targets, $actuals) !== [];
+    }
+
+    private static function normalizeFilterValue(mixed $value): string
+    {
+        return $value instanceof \BackedEnum ? (string) $value->value : (string) $value;
     }
 
     /** @param array<string, mixed> $filters */

@@ -33,6 +33,68 @@ final class GeminiProvider implements LlmProvider
     ) {
     }
 
+    public function generate(GenerateRequest $request): Emitter
+    {
+        $config = $this->config;
+        $client = $this->client;
+
+        return Emitter::produce(static function (
+            Channel $channel,
+            StreamContext $ctx,
+        ) use (
+            $request,
+            $config,
+            $client,
+        ): void {
+            $model = $request->model ?? $config->model;
+            $body = self::buildRequestBody($request);
+            $startTime = hrtime(true);
+            $step = 0;
+            $usage = TokenUsage::zero();
+
+            $jsonBody = json_encode($body, JSON_THROW_ON_ERROR);
+            $endpoint = sprintf(
+                '/v1beta/models/%s:streamGenerateContent?alt=sse&key=%s',
+                rawurlencode($model),
+                rawurlencode($config->apiKey),
+            );
+            $httpRequest = HttpRequest::post(Url::join($config->baseUrl, $endpoint), $jsonBody, [
+                'content-type' => ['application/json'],
+                'accept' => ['text/event-stream'],
+            ]);
+
+            $stream = $client->stream($ctx, $httpRequest);
+            $ctx->onDispose(static fn() => $stream->close());
+
+            $source = new HttpSseSource($stream);
+
+            foreach ($source->events($ctx) as $sseEvent) {
+                $ctx->throwIfCancelled();
+                $data = $sseEvent['data'];
+                if ($data === '' || $data === '[DONE]') {
+                    continue;
+                }
+
+                if ($stream->status >= 400) {
+                    throw new RuntimeException("Gemini API {$stream->status} for model {$model}: {$data}");
+                }
+
+                $parsed = json_decode($data, true, 512, JSON_THROW_ON_ERROR);
+                if (!is_array($parsed)) {
+                    continue;
+                }
+                $elapsed = (hrtime(true) - $startTime) / 1e6;
+
+                self::onUsage($parsed, $usage);
+                self::onCandidates($parsed, $channel, $elapsed, $usage, $step);
+            }
+
+            $finalElapsed = (hrtime(true) - $startTime) / 1e6;
+            $channel->emit(AgentEvent::tokenComplete($finalElapsed, $usage, $step));
+            $channel->complete();
+        });
+    }
+
     /** @return array<string, mixed> */
     private static function buildRequestBody(GenerateRequest $request): array
     {
@@ -106,67 +168,5 @@ final class GeminiProvider implements LlmProvider
                 ));
             }
         }
-    }
-
-    public function generate(GenerateRequest $request): Emitter
-    {
-        $config = $this->config;
-        $client = $this->client;
-
-        return Emitter::produce(static function (
-            Channel $channel,
-            StreamContext $ctx,
-        ) use (
-            $request,
-            $config,
-            $client,
-        ): void {
-            $model = $request->model ?? $config->model;
-            $body = self::buildRequestBody($request);
-            $startTime = hrtime(true);
-            $step = 0;
-            $usage = TokenUsage::zero();
-
-            $jsonBody = json_encode($body, JSON_THROW_ON_ERROR);
-            $endpoint = sprintf(
-                '/v1beta/models/%s:streamGenerateContent?alt=sse&key=%s',
-                rawurlencode($model),
-                rawurlencode($config->apiKey),
-            );
-            $httpRequest = HttpRequest::post(Url::join($config->baseUrl, $endpoint), $jsonBody, [
-                'content-type' => ['application/json'],
-                'accept' => ['text/event-stream'],
-            ]);
-
-            $stream = $client->stream($ctx, $httpRequest);
-            $ctx->onDispose(static fn() => $stream->close());
-
-            $source = new HttpSseSource($stream);
-
-            foreach ($source->events($ctx) as $sseEvent) {
-                $ctx->throwIfCancelled();
-                $data = $sseEvent['data'];
-                if ($data === '' || $data === '[DONE]') {
-                    continue;
-                }
-
-                if ($stream->status >= 400) {
-                    throw new RuntimeException("Gemini API {$stream->status} for model {$model}: {$data}");
-                }
-
-                $parsed = json_decode($data, true, 512, JSON_THROW_ON_ERROR);
-                if (!is_array($parsed)) {
-                    continue;
-                }
-                $elapsed = (hrtime(true) - $startTime) / 1e6;
-
-                self::onUsage($parsed, $usage);
-                self::onCandidates($parsed, $channel, $elapsed, $usage, $step);
-            }
-
-            $finalElapsed = (hrtime(true) - $startTime) / 1e6;
-            $channel->emit(AgentEvent::tokenComplete($finalElapsed, $usage, $step));
-            $channel->complete();
-        });
     }
 }

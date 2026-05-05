@@ -11,17 +11,6 @@ use PHPUnit\Framework\Attributes\Test;
 
 final class SearchInputTest extends PromptTestCase
 {
-    private function search(Closure $closure): SearchInput
-    {
-        return new SearchInput(
-            theme: $this->theme,
-            label: 'Search',
-            search: $closure,
-            scroll: 5,
-            placeholder: 'Type…',
-        );
-    }
-
     #[Test]
     public function synchronousSearchReturnsHighlightedMatch(): void
     {
@@ -89,5 +78,16 @@ final class SearchInputTest extends PromptTestCase
         $this->expectExceptionMessage('search aborted');
 
         $this->search($closure)->prompt($this->scope, $this->output, $reader);
+    }
+
+    private function search(Closure $closure): SearchInput
+    {
+        return new SearchInput(
+            theme: $this->theme,
+            label: 'Search',
+            search: $closure,
+            scroll: 5,
+            placeholder: 'Type…',
+        );
     }
 }

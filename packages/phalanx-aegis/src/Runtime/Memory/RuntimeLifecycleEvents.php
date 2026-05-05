@@ -27,11 +27,6 @@ final class RuntimeLifecycleEvents
         $this->sequence = new Long();
     }
 
-    private static function fit(string $value, int $length): string
-    {
-        return mb_strlen($value) <= $length ? $value : mb_substr($value, 0, $length);
-    }
-
     /** @param \Closure(RuntimeLifecycleEvent): void $listener */
     public function listen(\Closure $listener): void
     {
@@ -167,5 +162,10 @@ final class RuntimeLifecycleEvents
         $this->listenerErrors = [];
         $this->tables->mark('resource_events');
         return $cleared;
+    }
+
+    private static function fit(string $value, int $length): string
+    {
+        return mb_strlen($value) <= $length ? $value : mb_substr($value, 0, $length);
     }
 }

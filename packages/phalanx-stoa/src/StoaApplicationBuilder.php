@@ -48,67 +48,6 @@ final class StoaApplicationBuilder
         $this->app = Application::starting($context);
     }
 
-    /** @return array{string, int} */
-    private static function parseListen(string $listen): array
-    {
-        $separator = strrpos($listen, ':');
-
-        if ($separator === false) {
-            throw new InvalidArgumentException("Invalid listen address: {$listen}");
-        }
-
-        $host = substr($listen, 0, $separator);
-        $port = (int) substr($listen, $separator + 1);
-
-        if ($host === '' || $port <= 0) {
-            throw new InvalidArgumentException("Invalid listen address: {$listen}");
-        }
-
-        return [$host, $port];
-    }
-
-    /**
-     * @param RouteGroup|string|list<string>|array<string, class-string> $source
-     */
-    private static function loadRoutes(AppHost $app, RouteGroup|string|array $source): RouteGroup
-    {
-        if ($source instanceof RouteGroup) {
-            return $source;
-        }
-
-        if (is_string($source)) {
-            return self::loadRoutePath($app, $source);
-        }
-
-        if (array_is_list($source)) {
-            $group = RouteGroup::of([]);
-
-            foreach ($source as $path) {
-                $group = $group->merge(self::loadRoutePath($app, $path));
-            }
-
-            return $group;
-        }
-
-        /** @var array<string, class-string<\Phalanx\Task\Scopeable|\Phalanx\Task\Executable>> $source */
-        return RouteGroup::of($source);
-    }
-
-    private static function loadRoutePath(AppHost $app, string $path): RouteGroup
-    {
-        $scope = $app->createScope();
-
-        try {
-            if (is_dir($path)) {
-                return RouteLoader::loadDirectory($path, $scope);
-            }
-
-            return RouteLoader::load($path, $scope);
-        } finally {
-            $scope->dispose();
-        }
-    }
-
     public function providers(ServiceBundle ...$providers): self
     {
         $this->app->providers(...$providers);
@@ -251,6 +190,67 @@ final class StoaApplicationBuilder
     public function run(): int
     {
         return $this->build()->run();
+    }
+
+    /** @return array{string, int} */
+    private static function parseListen(string $listen): array
+    {
+        $separator = strrpos($listen, ':');
+
+        if ($separator === false) {
+            throw new InvalidArgumentException("Invalid listen address: {$listen}");
+        }
+
+        $host = substr($listen, 0, $separator);
+        $port = (int) substr($listen, $separator + 1);
+
+        if ($host === '' || $port <= 0) {
+            throw new InvalidArgumentException("Invalid listen address: {$listen}");
+        }
+
+        return [$host, $port];
+    }
+
+    /**
+     * @param RouteGroup|string|list<string>|array<string, class-string> $source
+     */
+    private static function loadRoutes(AppHost $app, RouteGroup|string|array $source): RouteGroup
+    {
+        if ($source instanceof RouteGroup) {
+            return $source;
+        }
+
+        if (is_string($source)) {
+            return self::loadRoutePath($app, $source);
+        }
+
+        if (array_is_list($source)) {
+            $group = RouteGroup::of([]);
+
+            foreach ($source as $path) {
+                $group = $group->merge(self::loadRoutePath($app, $path));
+            }
+
+            return $group;
+        }
+
+        /** @var array<string, class-string<\Phalanx\Task\Scopeable|\Phalanx\Task\Executable>> $source */
+        return RouteGroup::of($source);
+    }
+
+    private static function loadRoutePath(AppHost $app, string $path): RouteGroup
+    {
+        $scope = $app->createScope();
+
+        try {
+            if (is_dir($path)) {
+                return RouteLoader::loadDirectory($path, $scope);
+            }
+
+            return RouteLoader::load($path, $scope);
+        } finally {
+            $scope->dispose();
+        }
     }
 
     private function resolveServerConfig(): StoaServerConfig

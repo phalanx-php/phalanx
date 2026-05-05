@@ -33,24 +33,6 @@ final class OllamaProvider implements LlmProvider
     ) {
     }
 
-    /** @return array<string, mixed> */
-    private static function buildRequestBody(GenerateRequest $request, string $model): array
-    {
-        $messages = [];
-        if ($request->conversation->systemPrompt !== null) {
-            $messages[] = ['role' => 'system', 'content' => $request->conversation->systemPrompt];
-        }
-        foreach ($request->conversation->toArray() as $msg) {
-            $messages[] = $msg;
-        }
-
-        return [
-            'model' => $model,
-            'messages' => $messages,
-            'stream' => true,
-        ];
-    }
-
     public function generate(GenerateRequest $request): Emitter
     {
         $config = $this->config;
@@ -116,5 +98,23 @@ final class OllamaProvider implements LlmProvider
 
             $channel->complete();
         });
+    }
+
+    /** @return array<string, mixed> */
+    private static function buildRequestBody(GenerateRequest $request, string $model): array
+    {
+        $messages = [];
+        if ($request->conversation->systemPrompt !== null) {
+            $messages[] = ['role' => 'system', 'content' => $request->conversation->systemPrompt];
+        }
+        foreach ($request->conversation->toArray() as $msg) {
+            $messages[] = $msg;
+        }
+
+        return [
+            'model' => $model,
+            'messages' => $messages,
+            'stream' => true,
+        ];
     }
 }

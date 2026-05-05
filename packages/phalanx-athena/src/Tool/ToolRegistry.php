@@ -32,15 +32,6 @@ final class ToolRegistry
         return $registry;
     }
 
-    /** @param class-string<Tool> $class */
-    private function register(string $class): void
-    {
-        $schema = SchemaGenerator::generate($class);
-        $name = $schema['name'];
-        $this->tools[$name] = $class;
-        $this->schemas[$name] = $schema;
-    }
-
     public function has(string $name): bool
     {
         return isset($this->tools[$name]);
@@ -77,5 +68,14 @@ final class ToolRegistry
         }
 
         return RetryPolicy::fixed(1, 0);
+    }
+
+    /** @param class-string<Tool> $class */
+    private function register(string $class): void
+    {
+        $schema = SchemaGenerator::generate($class);
+        $name = $schema['name'];
+        $this->tools[$name] = $class;
+        $this->schemas[$name] = $schema;
     }
 }

@@ -23,6 +23,28 @@ final class Pipeline implements Executable
         return new self();
     }
 
+    public function __invoke(ExecutionScope $scope): mixed
+    {
+        $result = null;
+
+        foreach ($this->steps as $step) {
+            $result = match ($step['type']) {
+                'input' => $step['value'],
+                'step' => $scope->execute($step['value']),
+                'branch' => $scope->execute(($step['value'])($result)),
+                'fan' => $scope->concurrent(
+                    ...array_map(
+                        static fn($task) => Task::of(static fn($s) => $s->execute($task)),
+                        $step['value'],
+                    ),
+                ),
+                default => $result,
+            };
+        }
+
+        return $result;
+    }
+
     public function step(Scopeable|Executable $task): self
     {
         $clone = clone $this;
@@ -55,27 +77,5 @@ final class Pipeline implements Executable
         }
 
         return $this;
-    }
-
-    public function __invoke(ExecutionScope $scope): mixed
-    {
-        $result = null;
-
-        foreach ($this->steps as $step) {
-            $result = match ($step['type']) {
-                'input' => $step['value'],
-                'step' => $scope->execute($step['value']),
-                'branch' => $scope->execute(($step['value'])($result)),
-                'fan' => $scope->concurrent(
-                    ...array_map(
-                        static fn($task) => Task::of(static fn($s) => $s->execute($task)),
-                        $step['value'],
-                    ),
-                ),
-                default => $result,
-            };
-        }
-
-        return $result;
     }
 }

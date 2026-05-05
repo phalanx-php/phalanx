@@ -13,6 +13,11 @@ use Phalanx\Task\Executable;
 
 final class EnvelopeMiddleware implements Middleware, Executable
 {
+    public function __invoke(RequestScope $scope, Closure $next): mixed
+    {
+        return $this->handle($scope, $next);
+    }
+
     public function handle(RequestScope $scope, Closure $next): mixed
     {
         $result = $next($scope);
@@ -29,10 +34,5 @@ final class EnvelopeMiddleware implements Middleware, Executable
         $traceId   = $scope->attribute('trace_id');
 
         return Envelope::wrap($result, $collector, is_string($traceId) ? $traceId : null);
-    }
-
-    public function __invoke(RequestScope $scope, Closure $next): mixed
-    {
-        return $this->handle($scope, $next);
     }
 }

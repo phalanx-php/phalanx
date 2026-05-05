@@ -50,32 +50,6 @@ class ApplicationBuilder
     {
     }
 
-    /** @param array<string, mixed> $context */
-    private static function strictRuntimeHooksFromContext(array $context): bool
-    {
-        $strict = $context[RuntimePolicy::CONTEXT_STRICT_HOOKS] ?? true;
-
-        if (is_bool($strict)) {
-            return $strict;
-        }
-
-        if (is_string($strict)) {
-            return match (strtolower($strict)) {
-                '1', 'true', 'yes', 'on' => true,
-                '0', 'false', 'no', 'off' => false,
-                default => throw new InvalidArgumentException(sprintf(
-                    '%s must be a boolean.',
-                    RuntimePolicy::CONTEXT_STRICT_HOOKS,
-                )),
-            };
-        }
-
-        throw new InvalidArgumentException(sprintf(
-            '%s must be a boolean.',
-            RuntimePolicy::CONTEXT_STRICT_HOOKS,
-        ));
-    }
-
     public function providers(ServiceBundle ...$providers): self
     {
         $this->providers = array_values([...$this->providers, ...$providers]);
@@ -179,5 +153,31 @@ class ApplicationBuilder
     public function run(Scopeable|Executable|Closure $task, ?CancellationToken $token = null): mixed
     {
         return $this->compile()->run($task, $token);
+    }
+
+    /** @param array<string, mixed> $context */
+    private static function strictRuntimeHooksFromContext(array $context): bool
+    {
+        $strict = $context[RuntimePolicy::CONTEXT_STRICT_HOOKS] ?? true;
+
+        if (is_bool($strict)) {
+            return $strict;
+        }
+
+        if (is_string($strict)) {
+            return match (strtolower($strict)) {
+                '1', 'true', 'yes', 'on' => true,
+                '0', 'false', 'no', 'off' => false,
+                default => throw new InvalidArgumentException(sprintf(
+                    '%s must be a boolean.',
+                    RuntimePolicy::CONTEXT_STRICT_HOOKS,
+                )),
+            };
+        }
+
+        throw new InvalidArgumentException(sprintf(
+            '%s must be a boolean.',
+            RuntimePolicy::CONTEXT_STRICT_HOOKS,
+        ));
     }
 }

@@ -19,24 +19,6 @@ final class InWorkerTest extends AsyncTestCase
 {
     private Application $app;
 
-    protected function setUp(): void
-    {
-        $config = new ParallelConfig(agents: 2);
-        $bundle = TestServiceBundle::create();
-
-        $this->app = Application::starting()
-            ->providers($bundle)
-            ->withWorkerDispatch($config->workerDispatchFactory())
-            ->compile();
-
-        $this->app->startup();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->app->shutdown();
-    }
-
     #[Test]
     public function executes_simple_task_in_worker(): void
     {
@@ -118,5 +100,23 @@ final class InWorkerTest extends AsyncTestCase
 
             $scope->dispose();
         });
+    }
+
+    protected function setUp(): void
+    {
+        $config = new ParallelConfig(agents: 2);
+        $bundle = TestServiceBundle::create();
+
+        $this->app = Application::starting()
+            ->providers($bundle)
+            ->withWorkerDispatch($config->workerDispatchFactory())
+            ->compile();
+
+        $this->app->startup();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->app->shutdown();
     }
 }

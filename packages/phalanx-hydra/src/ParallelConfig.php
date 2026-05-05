@@ -39,6 +39,24 @@ final readonly class ParallelConfig
         return new self(agents: self::detectCores());
     }
 
+    /** @return Closure(ServiceGraph, LazySingleton): WorkerDispatch */
+    public function workerDispatchFactory(): Closure
+    {
+        $config = $this;
+        return static fn(ServiceGraph $graph, LazySingleton $singletons): WorkerDispatch
+            => new ParallelWorkerDispatch($config, $graph, $singletons);
+    }
+
+    public function toSupervisorConfig(): SupervisorConfig
+    {
+        return new SupervisorConfig(
+            agents: $this->agents,
+            mailboxLimit: $this->mailboxLimit,
+            dispatchStrategy: $this->dispatcher,
+            supervision: $this->supervision,
+        );
+    }
+
     private static function detectCores(): int
     {
         if (PHP_OS_FAMILY === 'Darwin') {
@@ -56,23 +74,5 @@ final readonly class ParallelConfig
         }
 
         return 4;
-    }
-
-    /** @return Closure(ServiceGraph, LazySingleton): WorkerDispatch */
-    public function workerDispatchFactory(): Closure
-    {
-        $config = $this;
-        return static fn(ServiceGraph $graph, LazySingleton $singletons): WorkerDispatch
-            => new ParallelWorkerDispatch($config, $graph, $singletons);
-    }
-
-    public function toSupervisorConfig(): SupervisorConfig
-    {
-        return new SupervisorConfig(
-            agents: $this->agents,
-            mailboxLimit: $this->mailboxLimit,
-            dispatchStrategy: $this->dispatcher,
-            supervision: $this->supervision,
-        );
     }
 }

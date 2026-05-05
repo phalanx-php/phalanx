@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Phalanx\Archon\Tests\Unit\Console\Widget;
 
-use Phalanx\Archon\Console\Widget\Accordion;
-use Phalanx\Archon\Console\Widget\Form;
 use Phalanx\Archon\Console\Input\CancelledException;
 use Phalanx\Archon\Console\Input\TextInput;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Archon\Console\Output\TerminalEnvironment;
 use Phalanx\Archon\Console\Style\Style;
 use Phalanx\Archon\Console\Style\Theme;
+use Phalanx\Archon\Console\Widget\Accordion;
+use Phalanx\Archon\Console\Widget\Form;
 use Phalanx\Archon\Tests\Unit\Console\Input\FakeKeyReader;
 use Phalanx\Archon\Tests\Unit\Console\Input\StubScope;
 use PHPUnit\Framework\Attributes\Test;
@@ -24,24 +24,6 @@ final class AccordionTest extends TestCase
     private mixed $stream;
     private StreamOutput $output;
     private StubScope $scope;
-
-    protected function setUp(): void
-    {
-        $plain       = Style::new();
-        $this->theme = new Theme($plain, $plain, $plain, $plain, $plain, $plain, $plain, $plain, $plain);
-
-        $stream = fopen('php://memory', 'w+');
-        self::assertNotFalse($stream);
-        $this->stream = $stream;
-
-        $this->output = new StreamOutput($stream, new TerminalEnvironment(columns: 80, lines: 24));
-        $this->scope  = new StubScope();
-    }
-
-    protected function tearDown(): void
-    {
-        fclose($this->stream);
-    }
 
     #[Test]
     public function navigatesAndSubmitsEachSectionForm(): void
@@ -158,5 +140,23 @@ final class AccordionTest extends TestCase
         self::assertArrayHasKey('two', $values);
         self::assertSame(['value' => 'A'], $values['one']);
         self::assertSame(['value' => 'B'], $values['two']);
+    }
+
+    protected function setUp(): void
+    {
+        $plain       = Style::new();
+        $this->theme = new Theme($plain, $plain, $plain, $plain, $plain, $plain, $plain, $plain, $plain);
+
+        $stream = fopen('php://memory', 'w+');
+        self::assertNotFalse($stream);
+        $this->stream = $stream;
+
+        $this->output = new StreamOutput($stream, new TerminalEnvironment(columns: 80, lines: 24));
+        $this->scope  = new StubScope();
+    }
+
+    protected function tearDown(): void
+    {
+        fclose($this->stream);
     }
 }

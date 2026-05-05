@@ -10,17 +10,6 @@ use PHPUnit\Framework\Attributes\Test;
 
 final class SuggestInputTest extends PromptTestCase
 {
-    private function suggest(Closure $closure): SuggestInput
-    {
-        return new SuggestInput(
-            theme: $this->theme,
-            label: 'Suggest',
-            search: $closure,
-            placeholder: 'Type…',
-            hint: '',
-        );
-    }
-
     #[Test]
     public function tabAcceptsHighlightedSuggestion(): void
     {
@@ -91,5 +80,16 @@ final class SuggestInputTest extends PromptTestCase
         self::assertSame('hit-ab', $result);
         self::assertContains('a', $queries);
         self::assertContains('ab', $queries);
+    }
+
+    private function suggest(Closure $closure): SuggestInput
+    {
+        return new SuggestInput(
+            theme: $this->theme,
+            label: 'Suggest',
+            search: $closure,
+            placeholder: 'Type…',
+            hint: '',
+        );
     }
 }

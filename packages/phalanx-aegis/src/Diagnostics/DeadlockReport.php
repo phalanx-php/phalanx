@@ -65,6 +65,22 @@ final readonly class DeadlockReport
         return new self($coroutineCount, $frames, microtime(true));
     }
 
+    public function format(): string
+    {
+        $lines = [
+            '===================================================================',
+            " [DEADLOCK REPORT]: {$this->coroutineCount} coroutines parked",
+            '===================================================================',
+        ];
+        foreach ($this->frames as $frame) {
+            $lines[] = '';
+            $lines[] = " [Coroutine-{$frame->cid}]";
+            $lines[] = '--------------------------------------------------------------------';
+            $lines[] = $frame->backtrace;
+        }
+        return implode(PHP_EOL, $lines) . PHP_EOL;
+    }
+
     /**
      * @param array<int, array<string, mixed>>|false $trace
      */
@@ -82,21 +98,5 @@ final readonly class DeadlockReport
             $lines[] = "#{$depth} {$class}{$function}() at {$file}:{$line}";
         }
         return implode(PHP_EOL, $lines);
-    }
-
-    public function format(): string
-    {
-        $lines = [
-            '===================================================================',
-            " [DEADLOCK REPORT]: {$this->coroutineCount} coroutines parked",
-            '===================================================================',
-        ];
-        foreach ($this->frames as $frame) {
-            $lines[] = '';
-            $lines[] = " [Coroutine-{$frame->cid}]";
-            $lines[] = '--------------------------------------------------------------------';
-            $lines[] = $frame->backtrace;
-        }
-        return implode(PHP_EOL, $lines) . PHP_EOL;
     }
 }

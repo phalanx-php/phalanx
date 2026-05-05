@@ -51,88 +51,6 @@ final class Supervisor
     ) {
     }
 
-    private static function isExternalWait(WaitReason $reason): bool
-    {
-        return match ($reason->kind) {
-            WaitKind::Http,
-            WaitKind::Redis,
-            WaitKind::Worker,
-            WaitKind::Process,
-            WaitKind::StreamWrite,
-            WaitKind::WsFrameWrite,
-            WaitKind::WsFrameRead,
-            WaitKind::UdpReceive,
-            WaitKind::Custom => true,
-            WaitKind::Delay,
-            WaitKind::Postgres,
-            WaitKind::Singleflight,
-            WaitKind::Lock,
-            WaitKind::Channel,
-            WaitKind::Input => false,
-        };
-    }
-
-    private static function resolveName(Scopeable|Executable|\Closure $task, string $fallbackId): string
-    {
-        if ($task instanceof \Closure) {
-            try {
-                $reflection = new \ReflectionFunction($task);
-                $file = $reflection->getFileName();
-                if ($file !== false) {
-                    return basename($file) . ':' . $reflection->getStartLine();
-                }
-            } catch (\Throwable) {
-                // fall through
-            }
-            return $fallbackId;
-        }
-
-        $class = $task::class;
-
-        if (str_contains($class, '@anonymous')) {
-            if (property_exists($task, 'traceName')) {
-                $hint = $task->traceName ?? null;
-                if (is_string($hint) && $hint !== '') {
-                    return $hint;
-                }
-            }
-            return $fallbackId;
-        }
-
-        return $class;
-    }
-
-    /**
-     * @return array{fqcn: string, sourcePath: string, sourceLine: int}
-     */
-    private static function resolveMetadata(Scopeable|Executable|\Closure $task): array
-    {
-        if ($task instanceof \Closure) {
-            try {
-                $reflection = new ReflectionFunction($task);
-                $file = $reflection->getFileName();
-
-                return [
-                    'fqcn' => \Closure::class,
-                    'sourcePath' => $file === false ? '' : $file,
-                    'sourceLine' => (int) $reflection->getStartLine(),
-                ];
-            } catch (Throwable) {
-                return ['fqcn' => \Closure::class, 'sourcePath' => '', 'sourceLine' => 0];
-            }
-        }
-
-        if ($task instanceof Task) {
-            return [
-                'fqcn' => Task::class,
-                'sourcePath' => $task->sourceLocation,
-                'sourceLine' => 0,
-            ];
-        }
-
-        return ['fqcn' => $task::class, 'sourcePath' => '', 'sourceLine' => 0];
-    }
-
     public function registerScope(
         string $scopeId,
         ?string $parentScopeId,
@@ -474,5 +392,87 @@ final class Supervisor
     public function liveScopeCount(): int
     {
         return $this->ledger->liveScopeCount();
+    }
+
+    private static function isExternalWait(WaitReason $reason): bool
+    {
+        return match ($reason->kind) {
+            WaitKind::Http,
+            WaitKind::Redis,
+            WaitKind::Worker,
+            WaitKind::Process,
+            WaitKind::StreamWrite,
+            WaitKind::WsFrameWrite,
+            WaitKind::WsFrameRead,
+            WaitKind::UdpReceive,
+            WaitKind::Custom => true,
+            WaitKind::Delay,
+            WaitKind::Postgres,
+            WaitKind::Singleflight,
+            WaitKind::Lock,
+            WaitKind::Channel,
+            WaitKind::Input => false,
+        };
+    }
+
+    private static function resolveName(Scopeable|Executable|\Closure $task, string $fallbackId): string
+    {
+        if ($task instanceof \Closure) {
+            try {
+                $reflection = new \ReflectionFunction($task);
+                $file = $reflection->getFileName();
+                if ($file !== false) {
+                    return basename($file) . ':' . $reflection->getStartLine();
+                }
+            } catch (\Throwable) {
+                // fall through
+            }
+            return $fallbackId;
+        }
+
+        $class = $task::class;
+
+        if (str_contains($class, '@anonymous')) {
+            if (property_exists($task, 'traceName')) {
+                $hint = $task->traceName ?? null;
+                if (is_string($hint) && $hint !== '') {
+                    return $hint;
+                }
+            }
+            return $fallbackId;
+        }
+
+        return $class;
+    }
+
+    /**
+     * @return array{fqcn: string, sourcePath: string, sourceLine: int}
+     */
+    private static function resolveMetadata(Scopeable|Executable|\Closure $task): array
+    {
+        if ($task instanceof \Closure) {
+            try {
+                $reflection = new ReflectionFunction($task);
+                $file = $reflection->getFileName();
+
+                return [
+                    'fqcn' => \Closure::class,
+                    'sourcePath' => $file === false ? '' : $file,
+                    'sourceLine' => (int) $reflection->getStartLine(),
+                ];
+            } catch (Throwable) {
+                return ['fqcn' => \Closure::class, 'sourcePath' => '', 'sourceLine' => 0];
+            }
+        }
+
+        if ($task instanceof Task) {
+            return [
+                'fqcn' => Task::class,
+                'sourcePath' => $task->sourceLocation,
+                'sourceLine' => 0,
+            ];
+        }
+
+        return ['fqcn' => $task::class, 'sourcePath' => '', 'sourceLine' => 0];
     }
 }

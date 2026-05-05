@@ -24,22 +24,6 @@ final class WidgetRenderTest extends TestCase
 {
     private Theme $theme;
 
-    protected function setUp(): void
-    {
-        $plain = Style::new();
-        $this->theme = new Theme(
-            success: $plain,
-            warning: $plain,
-            error:   $plain,
-            muted:   $plain,
-            accent:  $plain,
-            label:   $plain,
-            hint:    $plain,
-            border:  $plain,
-            active:  $plain,
-        );
-    }
-
     #[Test]
     public function badge_wraps_label_with_padding(): void
     {
@@ -278,5 +262,21 @@ final class WidgetRenderTest extends TestCase
         $list = new TaskList($this->theme);
         $list->setState('nonexistent', TaskState::Success);
         self::assertSame('', $list->render());
+    }
+
+    protected function setUp(): void
+    {
+        $plain = Style::new();
+        $this->theme = new Theme(
+            success: $plain,
+            warning: $plain,
+            error:   $plain,
+            muted:   $plain,
+            accent:  $plain,
+            label:   $plain,
+            hint:    $plain,
+            border:  $plain,
+            active:  $plain,
+        );
     }
 }

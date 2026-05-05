@@ -13,11 +13,21 @@ final class TokenUsage
     public function __construct(
         public private(set) int $input = 0,
         public private(set) int $output = 0,
-    ) {}
+    ) {
+    }
 
     public static function zero(): self
     {
         return new self(0, 0);
+    }
+
+    /** @param array<string, mixed> $data */
+    public static function fromArray(array $data): self
+    {
+        return new self(
+            input: (int) ($data['input'] ?? 0),
+            output: (int) ($data['output'] ?? 0),
+        );
     }
 
     public function add(self $other): self
@@ -36,14 +46,5 @@ final class TokenUsage
             'output' => $this->output,
             'total' => $this->total,
         ];
-    }
-
-    /** @param array<string, mixed> $data */
-    public static function fromArray(array $data): self
-    {
-        return new self(
-            input: (int) ($data['input'] ?? 0),
-            output: (int) ($data['output'] ?? 0),
-        );
     }
 }

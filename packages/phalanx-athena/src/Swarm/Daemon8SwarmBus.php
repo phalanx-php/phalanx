@@ -66,85 +66,6 @@ final class Daemon8SwarmBus implements SwarmBus
         );
     }
 
-    /**
-     * @param array<string, mixed> $data
-     * @param array<string, mixed> $filters
-     */
-    private static function matches(array $data, array $filters): bool
-    {
-        foreach ($filters as $key => $target) {
-            if ($target === null) {
-                continue;
-            }
-
-            $actual = match ($key) {
-                'kinds' => $data['kind'] ?? null,
-                default => $data[$key] ?? null,
-            };
-
-            if ($key === 'addressed_to') {
-                if ($target === 'ALL') {
-                    continue;
-                }
-                if ($actual === 'ALL') {
-                    continue;
-                }
-
-                $targets = array_map(self::normalizeFilterValue(...), (array) $target);
-                $actuals = array_map(self::normalizeFilterValue(...), (array) $actual);
-                if (empty(array_intersect($targets, $actuals))) {
-                    return false;
-                }
-                continue;
-            }
-
-            if (is_array($target)) {
-                $targets = array_map(self::normalizeFilterValue(...), $target);
-                if (!in_array(self::normalizeFilterValue($actual), $targets, true)) {
-                    return false;
-                }
-            } elseif ($actual !== $target) {
-                if (self::normalizeFilterValue($actual) !== self::normalizeFilterValue($target)) {
-                    return false;
-                }
-            }
-        }
-
-        return true;
-    }
-
-    /** @param array<string, mixed> $obs */
-    private static function isSwarmObservation(array $obs): bool
-    {
-        $kind = $obs['kind'] ?? null;
-
-        return is_array($kind)
-            && ($kind['type'] ?? null) === 'custom'
-            && ($kind['channel'] ?? null) === 'swarm_message';
-    }
-
-    private static function normalizeFilterValue(mixed $value): string
-    {
-        return $value instanceof \BackedEnum ? (string) $value->value : (string) $value;
-    }
-
-    /** @return string|list<string>|null */
-    private static function addressedTo(mixed $value): string|array|null
-    {
-        if (is_string($value)) {
-            return $value;
-        }
-
-        if (!is_array($value)) {
-            return null;
-        }
-
-        /** @var list<string> $addresses */
-        $addresses = array_values(array_filter($value, is_string(...)));
-
-        return $addresses === [] ? null : $addresses;
-    }
-
     public function emit(Scope&Suspendable $scope, SwarmEvent $event): void
     {
         $payload = [
@@ -224,5 +145,84 @@ final class Daemon8SwarmBus implements SwarmBus
 
             $channel->complete();
         });
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     * @param array<string, mixed> $filters
+     */
+    private static function matches(array $data, array $filters): bool
+    {
+        foreach ($filters as $key => $target) {
+            if ($target === null) {
+                continue;
+            }
+
+            $actual = match ($key) {
+                'kinds' => $data['kind'] ?? null,
+                default => $data[$key] ?? null,
+            };
+
+            if ($key === 'addressed_to') {
+                if ($target === 'ALL') {
+                    continue;
+                }
+                if ($actual === 'ALL') {
+                    continue;
+                }
+
+                $targets = array_map(self::normalizeFilterValue(...), (array) $target);
+                $actuals = array_map(self::normalizeFilterValue(...), (array) $actual);
+                if (empty(array_intersect($targets, $actuals))) {
+                    return false;
+                }
+                continue;
+            }
+
+            if (is_array($target)) {
+                $targets = array_map(self::normalizeFilterValue(...), $target);
+                if (!in_array(self::normalizeFilterValue($actual), $targets, true)) {
+                    return false;
+                }
+            } elseif ($actual !== $target) {
+                if (self::normalizeFilterValue($actual) !== self::normalizeFilterValue($target)) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /** @param array<string, mixed> $obs */
+    private static function isSwarmObservation(array $obs): bool
+    {
+        $kind = $obs['kind'] ?? null;
+
+        return is_array($kind)
+            && ($kind['type'] ?? null) === 'custom'
+            && ($kind['channel'] ?? null) === 'swarm_message';
+    }
+
+    private static function normalizeFilterValue(mixed $value): string
+    {
+        return $value instanceof \BackedEnum ? (string) $value->value : (string) $value;
+    }
+
+    /** @return string|list<string>|null */
+    private static function addressedTo(mixed $value): string|array|null
+    {
+        if (is_string($value)) {
+            return $value;
+        }
+
+        if (!is_array($value)) {
+            return null;
+        }
+
+        /** @var list<string> $addresses */
+        $addresses = array_values(array_filter($value, is_string(...)));
+
+        return $addresses === [] ? null : $addresses;
     }
 }

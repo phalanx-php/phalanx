@@ -77,6 +77,30 @@ class SwarmAgentTask implements Executable
         return str_contains($lower, 'i will') || str_contains($lower, 'executing') || str_contains($lower, 'starting');
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @param string|list<string>|null $addressedTo
+     */
+    public function emit(
+        Scope&Suspendable $scope,
+        SwarmEventKind $kind,
+        array $payload = [],
+        ?string $traceId = null,
+        ?AgentEvent $inner = null,
+        string|array|null $addressedTo = null,
+    ): void {
+        $this->bus->emit($scope, new SwarmEvent(
+            from: $this->agentId,
+            kind: $kind,
+            workspace: $this->config->workspace,
+            session: $this->config->session,
+            payload: $payload,
+            addressedTo: $addressedTo,
+            traceId: $traceId,
+            inner: $inner
+        ));
+    }
+
     private static function requestClearanceFor(
         ExecutionScope $scope,
         SwarmBus $bus,
@@ -133,29 +157,5 @@ class SwarmAgentTask implements Executable
         }
 
         return $payload;
-    }
-
-    /**
-     * @param array<string, mixed> $payload
-     * @param string|list<string>|null $addressedTo
-     */
-    public function emit(
-        Scope&Suspendable $scope,
-        SwarmEventKind $kind,
-        array $payload = [],
-        ?string $traceId = null,
-        ?AgentEvent $inner = null,
-        string|array|null $addressedTo = null,
-    ): void {
-        $this->bus->emit($scope, new SwarmEvent(
-            from: $this->agentId,
-            kind: $kind,
-            workspace: $this->config->workspace,
-            session: $this->config->session,
-            payload: $payload,
-            addressedTo: $addressedTo,
-            traceId: $traceId,
-            inner: $inner
-        ));
     }
 }

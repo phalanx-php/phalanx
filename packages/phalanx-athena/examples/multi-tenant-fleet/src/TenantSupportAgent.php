@@ -29,7 +29,13 @@ final class TenantSupportAgent implements AgentDefinition
         private readonly string $systemInstructions,
         private readonly string $providerName,
         private readonly array $toolClasses,
-    ) {}
+    ) {
+    }
+
+    public function __invoke(ExecutionScope $scope): mixed
+    {
+        return AgentLoop::run(Turn::begin($this), $scope);
+    }
 
     public function tools(): array
     {
@@ -39,10 +45,5 @@ final class TenantSupportAgent implements AgentDefinition
     public function provider(): ?string
     {
         return $this->providerName;
-    }
-
-    public function __invoke(ExecutionScope $scope): mixed
-    {
-        return AgentLoop::run(Turn::begin($this), $scope);
     }
 }

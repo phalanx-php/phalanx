@@ -22,16 +22,6 @@ final class ManagedResourceUpgradeTest extends TestCase
 {
     private RuntimeMemory $memory;
 
-    protected function setUp(): void
-    {
-        $this->memory = RuntimeMemory::forLedgerSize(64);
-    }
-
-    protected function tearDown(): void
-    {
-        $this->memory->shutdown();
-    }
-
     public function testUpgradeChangesTypeAndBumpsGeneration(): void
     {
         $handle = $this->memory->resources->open(AegisResourceSid::Test, id: 'sse-1');
@@ -109,5 +99,15 @@ final class ManagedResourceUpgradeTest extends TestCase
             $this->memory->tables->resourceEvents->count(),
             'upgrade() should record a resource lifecycle event',
         );
+    }
+
+    protected function setUp(): void
+    {
+        $this->memory = RuntimeMemory::forLedgerSize(64);
+    }
+
+    protected function tearDown(): void
+    {
+        $this->memory->shutdown();
     }
 }

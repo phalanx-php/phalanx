@@ -17,11 +17,6 @@ final class WsGatewayBroadcastTest extends TestCase
 {
     private WsGateway $gateway;
 
-    protected function setUp(): void
-    {
-        $this->gateway = new WsGateway();
-    }
-
     #[Test]
     public function register_and_count(): void
     {
@@ -183,6 +178,11 @@ final class WsGatewayBroadcastTest extends TestCase
 
             $this->assertOutboundContains($conn2, 'after close');
         });
+    }
+
+    protected function setUp(): void
+    {
+        $this->gateway = new WsGateway();
     }
 
     private function createConnection(): WsConnection

@@ -24,35 +24,6 @@ use PHPUnit\Framework\Attributes\Test;
  */
 final class PromptIntegrationTest extends CoroutineTestCase
 {
-    private function theme(): Theme
-    {
-        $plain = Style::new();
-        return new Theme(
-            success: $plain,
-            warning: $plain,
-            error:   $plain,
-            muted:   $plain,
-            accent:  $plain,
-            label:   $plain,
-            hint:    $plain,
-            border:  $plain,
-            active:  $plain,
-        );
-    }
-
-    /** @return resource */
-    private function outStream(): mixed
-    {
-        $stream = fopen('php://temp', 'w+');
-        self::assertNotFalse($stream);
-        return $stream;
-    }
-
-    private function streamOutput(mixed $stream): StreamOutput
-    {
-        return new StreamOutput($stream, new TerminalEnvironment(columns: 80, lines: 24));
-    }
-
     #[Test]
     public function nonInteractiveStreamShortCircuitsToDefault(): void
     {
@@ -168,5 +139,34 @@ final class PromptIntegrationTest extends CoroutineTestCase
         if (is_resource($proc)) {
             proc_close($proc);
         }
+    }
+
+    private function theme(): Theme
+    {
+        $plain = Style::new();
+        return new Theme(
+            success: $plain,
+            warning: $plain,
+            error:   $plain,
+            muted:   $plain,
+            accent:  $plain,
+            label:   $plain,
+            hint:    $plain,
+            border:  $plain,
+            active:  $plain,
+        );
+    }
+
+    /** @return resource */
+    private function outStream(): mixed
+    {
+        $stream = fopen('php://temp', 'w+');
+        self::assertNotFalse($stream);
+        return $stream;
+    }
+
+    private function streamOutput(mixed $stream): StreamOutput
+    {
+        return new StreamOutput($stream, new TerminalEnvironment(columns: 80, lines: 24));
     }
 }

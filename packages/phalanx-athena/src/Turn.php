@@ -28,7 +28,8 @@ final readonly class Turn
         public array $hooks,
         public bool $streaming,
         public ?Closure $onStepHook,
-    ) {}
+    ) {
+    }
 
     public static function begin(AgentDefinition $agent): self
     {
@@ -151,16 +152,6 @@ final readonly class Turn
         );
     }
 
-    private static function requireStatic(Closure $closure, string $context): void
-    {
-        if (!(new ReflectionFunction($closure))->isStatic()) {
-            throw new RuntimeException(
-                "{$context} requires a static closure. Non-static closures capture \$this and "
-                . 'leak in long-running coroutines.',
-            );
-        }
-    }
-
     public function buildConversation(): Conversation
     {
         $conv = $this->conversation ?? Conversation::create();
@@ -174,5 +165,15 @@ final readonly class Turn
         }
 
         return $conv;
+    }
+
+    private static function requireStatic(Closure $closure, string $context): void
+    {
+        if (!(new ReflectionFunction($closure))->isStatic()) {
+            throw new RuntimeException(
+                "{$context} requires a static closure. Non-static closures capture \$this and "
+                . 'leak in long-running coroutines.',
+            );
+        }
     }
 }

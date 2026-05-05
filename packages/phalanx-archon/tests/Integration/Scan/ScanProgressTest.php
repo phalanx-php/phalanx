@@ -17,41 +17,6 @@ use PHPUnit\Framework\Attributes\Test;
 
 final class ScanProgressTest extends CoroutineTestCase
 {
-    private function theme(): Theme
-    {
-        $plain = Style::new();
-        return new Theme(
-            success: $plain,
-            warning: $plain,
-            error:   $plain,
-            muted:   $plain,
-            accent:  $plain,
-            label:   $plain,
-            hint:    $plain,
-            border:  $plain,
-            active:  $plain,
-        );
-    }
-
-    /** @return resource */
-    private function stream(): mixed
-    {
-        $stream = fopen('php://temp', 'w+');
-        self::assertNotFalse($stream);
-        return $stream;
-    }
-
-    private function streamOutput(mixed $stream): StreamOutput
-    {
-        return new StreamOutput($stream, new TerminalEnvironment(columns: 80, lines: 24));
-    }
-
-    private function contents(mixed $stream): string
-    {
-        rewind($stream);
-        return (string) stream_get_contents($stream);
-    }
-
     #[Test]
     public function startThenDonePersistsHeaderAndFooter(): void
     {
@@ -139,5 +104,40 @@ final class ScanProgressTest extends CoroutineTestCase
         $rendered = $this->contents($stream);
         self::assertStringContainsString('Checking... 10/20', $rendered);
         self::assertStringContainsString('Checking... 20/20', $rendered);
+    }
+
+    private function theme(): Theme
+    {
+        $plain = Style::new();
+        return new Theme(
+            success: $plain,
+            warning: $plain,
+            error:   $plain,
+            muted:   $plain,
+            accent:  $plain,
+            label:   $plain,
+            hint:    $plain,
+            border:  $plain,
+            active:  $plain,
+        );
+    }
+
+    /** @return resource */
+    private function stream(): mixed
+    {
+        $stream = fopen('php://temp', 'w+');
+        self::assertNotFalse($stream);
+        return $stream;
+    }
+
+    private function streamOutput(mixed $stream): StreamOutput
+    {
+        return new StreamOutput($stream, new TerminalEnvironment(columns: 80, lines: 24));
+    }
+
+    private function contents(mixed $stream): string
+    {
+        rewind($stream);
+        return (string) stream_get_contents($stream);
     }
 }

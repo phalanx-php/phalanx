@@ -19,16 +19,6 @@ final class RuntimeSymbols
         $this->ids = new Long();
     }
 
-    private static function key(string $kind, string $value): string
-    {
-        return substr(sha1($kind . "\0" . $value), 0, 32);
-    }
-
-    private static function fit(string $value, int $length): string
-    {
-        return mb_strlen($value) <= $length ? $value : mb_substr($value, 0, $length);
-    }
-
     public function idFor(string $kind, string $value): int
     {
         if ($value === '') {
@@ -87,5 +77,15 @@ final class RuntimeSymbols
         }
 
         return $fallback;
+    }
+
+    private static function key(string $kind, string $value): string
+    {
+        return substr(sha1($kind . "\0" . $value), 0, 32);
+    }
+
+    private static function fit(string $value, int $length): string
+    {
+        return mb_strlen($value) <= $length ? $value : mb_substr($value, 0, $length);
     }
 }

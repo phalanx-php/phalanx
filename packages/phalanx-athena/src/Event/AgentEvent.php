@@ -13,11 +13,7 @@ final readonly class AgentEvent
         public TokenUsage $usageSoFar,
         public int $step,
         public ?string $agent = null,
-    ) {}
-
-    public function withAgent(string $name): self
-    {
-        return new self($this->kind, $this->data, $this->elapsed, $this->usageSoFar, $this->step, $name);
+    ) {
     }
 
     public static function llmStart(int $step, float $elapsed): self
@@ -70,18 +66,6 @@ final readonly class AgentEvent
         return new self(AgentEventKind::Escalation, $reason, $elapsed, $usage, $step);
     }
 
-    public function toJson(): string
-    {
-        return json_encode([
-            'kind' => $this->kind->value,
-            'data' => $this->data,
-            'elapsed' => $this->elapsed,
-            'usage' => $this->usageSoFar->toArray(),
-            'step' => $this->step,
-            'agent' => $this->agent,
-        ], JSON_THROW_ON_ERROR);
-    }
-
     public static function fromJson(string $json): self
     {
         $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
@@ -94,5 +78,22 @@ final readonly class AgentEvent
             step: (int) $data['step'],
             agent: $data['agent'] ?? null,
         );
+    }
+
+    public function withAgent(string $name): self
+    {
+        return new self($this->kind, $this->data, $this->elapsed, $this->usageSoFar, $this->step, $name);
+    }
+
+    public function toJson(): string
+    {
+        return json_encode([
+            'kind' => $this->kind->value,
+            'data' => $this->data,
+            'elapsed' => $this->elapsed,
+            'usage' => $this->usageSoFar->toArray(),
+            'step' => $this->step,
+            'agent' => $this->agent,
+        ], JSON_THROW_ON_ERROR);
     }
 }

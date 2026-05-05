@@ -20,8 +20,8 @@ use Phalanx\Server\ServerStats;
 use Phalanx\Stoa\Http\Upgrade\UpgradeRegistry;
 use Phalanx\Stoa\Response\BufferEventDispatcher;
 use Phalanx\Stoa\Runtime\Identity\StoaEventSid;
-use Phalanx\Stoa\Sse\SseStream;
 use Phalanx\Stoa\Runtime\StoaScopeKey;
+use Phalanx\Stoa\Sse\SseStream;
 use Phalanx\Supervisor\TaskTreeFormatter;
 use Phalanx\Support\SignalHandler;
 use Phalanx\Trace\TraceType;
@@ -96,77 +96,6 @@ final class StoaRunner
             ['Content-Type' => 'application/json'],
             json_encode(['result' => $data], JSON_THROW_ON_ERROR),
         );
-    }
-
-    /** @return array<string, mixed> */
-    private static function serverOptions(StoaServerConfig $config): array
-    {
-        $options = [
-            'worker_num' => 1,
-            'enable_coroutine' => true,
-            'log_level' => Constant::LOG_WARNING,
-            'max_wait_time' => max(1, (int) ceil($config->drainTimeout)),
-            'http_compression' => $config->httpCompression,
-        ];
-
-        if ($config->enableStaticHandler && $config->documentRoot !== null) {
-            $options['enable_static_handler'] = true;
-            $options['document_root'] = $config->documentRoot;
-        }
-
-        return $options;
-    }
-
-    private static function upgradeToken(ServerRequestInterface $request): ?string
-    {
-        $upgrade = $request->getHeaderLine('Upgrade');
-        if ($upgrade === '') {
-            return null;
-        }
-
-        $connection = strtolower($request->getHeaderLine('Connection'));
-        if (!str_contains($connection, 'upgrade')) {
-            return null;
-        }
-
-        return strtolower(trim(explode(',', $upgrade)[0]));
-    }
-
-    /** @return array{string, int} */
-    private static function parseListen(string $listen): array
-    {
-        $separator = strrpos($listen, ':');
-
-        if ($separator === false) {
-            throw new RuntimeException("Invalid listen address: {$listen}");
-        }
-
-        $host = substr($listen, 0, $separator);
-        $port = (int) substr($listen, $separator + 1);
-
-        if ($host === '' || $port <= 0) {
-            throw new RuntimeException("Invalid listen address: {$listen}");
-        }
-
-        return [$host, $port];
-    }
-
-    /** @param string|list<string> $paths */
-    private static function loadRoutes(AppHost $app, string|array $paths): RouteGroup
-    {
-        $paths = is_string($paths) ? [$paths] : $paths;
-        $scope = $app->createScope();
-        $group = RouteGroup::of([]);
-
-        try {
-            foreach ($paths as $dir) {
-                $group = $group->merge(RouteLoader::loadDirectory($dir, $scope));
-            }
-        } finally {
-            $scope->dispose();
-        }
-
-        return $group;
     }
 
     /** @param RouteGroup|string|list<string> $routes */
@@ -284,6 +213,77 @@ final class StoaRunner
     public function isDraining(): bool
     {
         return $this->draining;
+    }
+
+    /** @return array<string, mixed> */
+    private static function serverOptions(StoaServerConfig $config): array
+    {
+        $options = [
+            'worker_num' => 1,
+            'enable_coroutine' => true,
+            'log_level' => Constant::LOG_WARNING,
+            'max_wait_time' => max(1, (int) ceil($config->drainTimeout)),
+            'http_compression' => $config->httpCompression,
+        ];
+
+        if ($config->enableStaticHandler && $config->documentRoot !== null) {
+            $options['enable_static_handler'] = true;
+            $options['document_root'] = $config->documentRoot;
+        }
+
+        return $options;
+    }
+
+    private static function upgradeToken(ServerRequestInterface $request): ?string
+    {
+        $upgrade = $request->getHeaderLine('Upgrade');
+        if ($upgrade === '') {
+            return null;
+        }
+
+        $connection = strtolower($request->getHeaderLine('Connection'));
+        if (!str_contains($connection, 'upgrade')) {
+            return null;
+        }
+
+        return strtolower(trim(explode(',', $upgrade)[0]));
+    }
+
+    /** @return array{string, int} */
+    private static function parseListen(string $listen): array
+    {
+        $separator = strrpos($listen, ':');
+
+        if ($separator === false) {
+            throw new RuntimeException("Invalid listen address: {$listen}");
+        }
+
+        $host = substr($listen, 0, $separator);
+        $port = (int) substr($listen, $separator + 1);
+
+        if ($host === '' || $port <= 0) {
+            throw new RuntimeException("Invalid listen address: {$listen}");
+        }
+
+        return [$host, $port];
+    }
+
+    /** @param string|list<string> $paths */
+    private static function loadRoutes(AppHost $app, string|array $paths): RouteGroup
+    {
+        $paths = is_string($paths) ? [$paths] : $paths;
+        $scope = $app->createScope();
+        $group = RouteGroup::of([]);
+
+        try {
+            foreach ($paths as $dir) {
+                $group = $group->merge(RouteLoader::loadDirectory($dir, $scope));
+            }
+        } finally {
+            $scope->dispose();
+        }
+
+        return $group;
     }
 
     private function onServerStart(Server $server): void

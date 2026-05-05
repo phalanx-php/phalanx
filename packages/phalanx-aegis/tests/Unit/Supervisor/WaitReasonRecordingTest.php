@@ -11,7 +11,6 @@ use Phalanx\Scope\ExecutionScope;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 use Phalanx\Supervisor\InProcessLedger;
-use Phalanx\Supervisor\RunState;
 use Phalanx\Supervisor\WaitKind;
 use Phalanx\Supervisor\WaitReason;
 use Phalanx\Task\Task;
@@ -115,6 +114,11 @@ final class WaitReasonRecordingTest extends TestCase
         self::assertNull($observedWait);
     }
 
+    private static function bootRuntimeHooks(): void
+    {
+        RuntimeHooks::ensure(RuntimePolicy::phalanxManaged());
+    }
+
     private function buildApp(InProcessLedger $ledger): Application
     {
         $bundle = new class implements ServiceBundle {
@@ -126,10 +130,5 @@ final class WaitReasonRecordingTest extends TestCase
             ->providers($bundle)
             ->withLedger($ledger)
             ->compile();
-    }
-
-    private static function bootRuntimeHooks(): void
-    {
-        RuntimeHooks::ensure(RuntimePolicy::phalanxManaged());
     }
 }

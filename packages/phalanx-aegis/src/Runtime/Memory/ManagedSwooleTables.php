@@ -56,6 +56,55 @@ final class ManagedSwooleTables
         $this->symbols = self::createSymbolTable($config->symbolRows);
     }
 
+    public function mark(string $name): void
+    {
+        $table = $this->table($name);
+        $this->highWater[$name] = max($this->highWater[$name] ?? 0, $table->count());
+    }
+
+    /** @return list<RuntimeTableStats> */
+    public function stats(): array
+    {
+        $stats = [];
+        foreach (array_keys($this->sizes) as $name) {
+            $table = $this->table($name);
+            $current = $table->count();
+            $this->highWater[$name] = max($this->highWater[$name] ?? 0, $current);
+            $stats[] = new RuntimeTableStats(
+                name: $name,
+                configuredRows: $this->sizes[$name],
+                currentRows: $current,
+                memorySize: $table->getMemorySize(),
+                highWaterRows: $this->highWater[$name],
+            );
+        }
+
+        return $stats;
+    }
+
+    public function destroy(): void
+    {
+        if ($this->destroyed) {
+            return;
+        }
+        $this->destroyed = true;
+
+        foreach (
+            [
+            $this->claims,
+            $this->counters,
+            $this->resourceEvents,
+            $this->resourceAnnotations,
+            $this->resourceLeases,
+            $this->resourceEdges,
+            $this->resources,
+            $this->symbols,
+            ] as $table
+        ) {
+            $table->destroy();
+        }
+    }
+
     private static function createResourceTable(int $rows): Table
     {
         return self::create($rows, static function (Table $table): void {
@@ -168,55 +217,6 @@ final class ManagedSwooleTables
         }
 
         return $table;
-    }
-
-    public function mark(string $name): void
-    {
-        $table = $this->table($name);
-        $this->highWater[$name] = max($this->highWater[$name] ?? 0, $table->count());
-    }
-
-    /** @return list<RuntimeTableStats> */
-    public function stats(): array
-    {
-        $stats = [];
-        foreach (array_keys($this->sizes) as $name) {
-            $table = $this->table($name);
-            $current = $table->count();
-            $this->highWater[$name] = max($this->highWater[$name] ?? 0, $current);
-            $stats[] = new RuntimeTableStats(
-                name: $name,
-                configuredRows: $this->sizes[$name],
-                currentRows: $current,
-                memorySize: $table->getMemorySize(),
-                highWaterRows: $this->highWater[$name],
-            );
-        }
-
-        return $stats;
-    }
-
-    public function destroy(): void
-    {
-        if ($this->destroyed) {
-            return;
-        }
-        $this->destroyed = true;
-
-        foreach (
-            [
-            $this->claims,
-            $this->counters,
-            $this->resourceEvents,
-            $this->resourceAnnotations,
-            $this->resourceLeases,
-            $this->resourceEdges,
-            $this->resources,
-            $this->symbols,
-            ] as $table
-        ) {
-            $table->destroy();
-        }
     }
 
     private function table(string $name): Table

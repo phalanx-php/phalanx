@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Phalanx\Athena;
 
 use Phalanx\Scope\ExecutionScope;
-use Phalanx\Styx\Emitter;
 
 final class QuickAgent implements AgentDefinition
 {
@@ -15,7 +14,13 @@ final class QuickAgent implements AgentDefinition
 
     public function __construct(
         private readonly string $systemPrompt,
-    ) {}
+    ) {
+    }
+
+    public function __invoke(ExecutionScope $scope): mixed
+    {
+        return AgentLoop::run(Turn::begin($this), $scope);
+    }
 
     public function tools(): array
     {
@@ -25,10 +30,5 @@ final class QuickAgent implements AgentDefinition
     public function provider(): ?string
     {
         return null;
-    }
-
-    public function __invoke(ExecutionScope $scope): mixed
-    {
-        return AgentLoop::run(Turn::begin($this), $scope);
     }
 }

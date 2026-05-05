@@ -7,7 +7,6 @@ namespace Phalanx\Tests\Integration\Handler;
 use Phalanx\Application;
 use Phalanx\Handler\Handler;
 use Phalanx\Handler\HandlerGroup;
-use Phalanx\Tests\Fixtures\Handlers\InstanceMiddleware;
 use Phalanx\Tests\Fixtures\Handlers\MiddlewareDeclaringHandler;
 use Phalanx\Tests\Fixtures\Handlers\PrefixingMiddleware;
 use PHPUnit\Framework\Attributes\Test;
@@ -22,16 +21,6 @@ use PHPUnit\Framework\TestCase;
 final class HasMiddlewareDispatchTest extends TestCase
 {
     private Application $app;
-
-    protected function setUp(): void
-    {
-        $this->app = Application::starting()->compile();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->app->shutdown();
-    }
 
     #[Test]
     public function instance_middleware_runs_innermost_around_handler(): void
@@ -64,5 +53,15 @@ final class HasMiddlewareDispatchTest extends TestCase
         $result = $scope->execute($group);
 
         $this->assertSame('instance(core)', $result);
+    }
+
+    protected function setUp(): void
+    {
+        $this->app = Application::starting()->compile();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->app->shutdown();
     }
 }

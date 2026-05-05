@@ -13,16 +13,6 @@ final class RuntimeCounters
     {
     }
 
-    private static function name(RuntimeCounterId|string $name): string
-    {
-        return $name instanceof RuntimeCounterId ? $name->value() : $name;
-    }
-
-    private static function key(RuntimeCounterId|string $name): string
-    {
-        return substr(sha1(self::name($name)), 0, 32);
-    }
-
     public function incr(RuntimeCounterId|string $name, int $by = 1): int
     {
         $key = self::key($name);
@@ -63,5 +53,15 @@ final class RuntimeCounters
         $row = $this->tables->counters->get(self::key($name));
 
         return is_array($row) ? (int) $row['value'] : 0;
+    }
+
+    private static function name(RuntimeCounterId|string $name): string
+    {
+        return $name instanceof RuntimeCounterId ? $name->value() : $name;
+    }
+
+    private static function key(RuntimeCounterId|string $name): string
+    {
+        return substr(sha1(self::name($name)), 0, 32);
     }
 }

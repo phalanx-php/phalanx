@@ -13,11 +13,21 @@ final readonly class SshCredential implements \Stringable
         public ?string $keyPath = null,
         public ?string $passphrase = null,
         public ?string $configAlias = null,
-    ) {}
+    ) {
+    }
 
     public static function fromConfig(string $alias): self
     {
         return new self(host: $alias, configAlias: $alias);
+    }
+
+    public function __toString(): string
+    {
+        if ($this->configAlias !== null) {
+            return $this->configAlias;
+        }
+
+        return "{$this->user}@{$this->host}:{$this->port}";
     }
 
     /**
@@ -74,15 +84,6 @@ final readonly class SshCredential implements \Stringable
         }
 
         return "{$this->user}@{$this->host}:";
-    }
-
-    public function __toString(): string
-    {
-        if ($this->configAlias !== null) {
-            return $this->configAlias;
-        }
-
-        return "{$this->user}@{$this->host}:{$this->port}";
     }
 
     /**

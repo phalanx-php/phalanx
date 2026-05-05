@@ -19,64 +19,6 @@ final readonly class ManagedResourceTransitionGate
     ) {
     }
 
-    private static function canTransition(ManagedResourceState $from, ManagedResourceState $to): bool
-    {
-        if ($from === $to) {
-            return true;
-        }
-
-        return match ($from) {
-            ManagedResourceState::Opening => in_array(
-                $to,
-                [
-                    ManagedResourceState::Active,
-                    ManagedResourceState::Closing,
-                    ManagedResourceState::Closed,
-                    ManagedResourceState::Aborting,
-                    ManagedResourceState::Aborted,
-                    ManagedResourceState::Failing,
-                    ManagedResourceState::Failed,
-                ],
-                true,
-            ),
-            ManagedResourceState::Active => in_array(
-                $to,
-                [
-                    ManagedResourceState::Closing,
-                    ManagedResourceState::Closed,
-                    ManagedResourceState::Aborting,
-                    ManagedResourceState::Aborted,
-                    ManagedResourceState::Failing,
-                    ManagedResourceState::Failed,
-                ],
-                true,
-            ),
-            ManagedResourceState::Closing => in_array(
-                $to,
-                [
-                    ManagedResourceState::Closed,
-                    ManagedResourceState::Aborting,
-                    ManagedResourceState::Aborted,
-                    ManagedResourceState::Failing,
-                    ManagedResourceState::Failed,
-                ],
-                true,
-            ),
-            ManagedResourceState::Aborting => $to === ManagedResourceState::Aborted
-                || $to === ManagedResourceState::Failing
-                || $to === ManagedResourceState::Failed,
-            ManagedResourceState::Failing => $to === ManagedResourceState::Failed,
-            ManagedResourceState::Closed,
-            ManagedResourceState::Aborted,
-            ManagedResourceState::Failed => false,
-        };
-    }
-
-    private static function fit(string $value, int $length): string
-    {
-        return mb_strlen($value) <= $length ? $value : mb_substr($value, 0, $length);
-    }
-
     public function open(
         string $id,
         string $type,
@@ -225,5 +167,63 @@ final readonly class ManagedResourceTransitionGate
                 $this->events->dispatch($event);
             }
         }
+    }
+
+    private static function canTransition(ManagedResourceState $from, ManagedResourceState $to): bool
+    {
+        if ($from === $to) {
+            return true;
+        }
+
+        return match ($from) {
+            ManagedResourceState::Opening => in_array(
+                $to,
+                [
+                    ManagedResourceState::Active,
+                    ManagedResourceState::Closing,
+                    ManagedResourceState::Closed,
+                    ManagedResourceState::Aborting,
+                    ManagedResourceState::Aborted,
+                    ManagedResourceState::Failing,
+                    ManagedResourceState::Failed,
+                ],
+                true,
+            ),
+            ManagedResourceState::Active => in_array(
+                $to,
+                [
+                    ManagedResourceState::Closing,
+                    ManagedResourceState::Closed,
+                    ManagedResourceState::Aborting,
+                    ManagedResourceState::Aborted,
+                    ManagedResourceState::Failing,
+                    ManagedResourceState::Failed,
+                ],
+                true,
+            ),
+            ManagedResourceState::Closing => in_array(
+                $to,
+                [
+                    ManagedResourceState::Closed,
+                    ManagedResourceState::Aborting,
+                    ManagedResourceState::Aborted,
+                    ManagedResourceState::Failing,
+                    ManagedResourceState::Failed,
+                ],
+                true,
+            ),
+            ManagedResourceState::Aborting => $to === ManagedResourceState::Aborted
+                || $to === ManagedResourceState::Failing
+                || $to === ManagedResourceState::Failed,
+            ManagedResourceState::Failing => $to === ManagedResourceState::Failed,
+            ManagedResourceState::Closed,
+            ManagedResourceState::Aborted,
+            ManagedResourceState::Failed => false,
+        };
+    }
+
+    private static function fit(string $value, int $length): string
+    {
+        return mb_strlen($value) <= $length ? $value : mb_substr($value, 0, $length);
     }
 }

@@ -34,29 +34,6 @@ final readonly class ConsoleConfig
         );
     }
 
-    /**
-     * @param array<string, mixed> $context
-     * @return list<string>
-     */
-    private static function argvFromContext(array $context): array
-    {
-        $argv = $context['argv'] ?? [];
-
-        if (!is_array($argv)) {
-            return [];
-        }
-
-        $argv = array_values(array_filter(
-            $argv,
-            is_string(...),
-        ));
-
-        /** @var list<string> $args */
-        $args = array_slice($argv, 1);
-
-        return $args;
-    }
-
     public function signalPolicy(): ConsoleSignalPolicy
     {
         return $this->signalPolicy ?? ConsoleSignalPolicy::default();
@@ -87,5 +64,28 @@ final readonly class ConsoleConfig
             terminal: $this->terminal,
             signalPolicy: $this->signalPolicy,
         );
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     * @return list<string>
+     */
+    private static function argvFromContext(array $context): array
+    {
+        $argv = $context['argv'] ?? [];
+
+        if (!is_array($argv)) {
+            return [];
+        }
+
+        $argv = array_values(array_filter(
+            $argv,
+            is_string(...),
+        ));
+
+        /** @var list<string> $args */
+        $args = array_slice($argv, 1);
+
+        return $args;
     }
 }

@@ -118,6 +118,11 @@ final readonly class WaitReason
         return new self(WaitKind::Custom, $detail, microtime(true));
     }
 
+    public function elapsed(): float
+    {
+        return $this->startedAt > 0.0 ? microtime(true) - $this->startedAt : 0.0;
+    }
+
     /**
      * Strip a shell command down to the first whitespace-separated token so
      * the wait detail prints as the binary name rather than the full argv
@@ -131,10 +136,5 @@ final readonly class WaitReason
         }
         $head = strtok($trimmed, " \t\n");
         return $head === false ? $trimmed : $head;
-    }
-
-    public function elapsed(): float
-    {
-        return $this->startedAt > 0.0 ? microtime(true) - $this->startedAt : 0.0;
     }
 }

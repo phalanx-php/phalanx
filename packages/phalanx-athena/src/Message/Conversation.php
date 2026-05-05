@@ -10,11 +10,32 @@ final readonly class Conversation
     private function __construct(
         public ?string $systemPrompt,
         public array $messages,
-    ) {}
+    ) {
+    }
 
     public static function create(): self
     {
         return new self(null, []);
+    }
+
+    /** @param list<array{role: string, content: mixed}> $data */
+    public static function fromArray(array $data): self
+    {
+        $conv = self::create();
+
+        foreach ($data as $msg) {
+            $role = $msg['role'] ?? 'user';
+            $content = $msg['content'] ?? '';
+
+            $conv = match ($role) {
+                'system' => $conv->system(is_string($content) ? $content : ''),
+                'user' => $conv->user($content),
+                'assistant' => $conv->assistant($content),
+                default => $conv,
+            };
+        }
+
+        return $conv;
     }
 
     public function system(string $prompt): self
@@ -61,25 +82,5 @@ final readonly class Conversation
     public function toArray(): array
     {
         return array_map(static fn(Message $m) => $m->toArray(), $this->messages);
-    }
-
-    /** @param list<array{role: string, content: mixed}> $data */
-    public static function fromArray(array $data): self
-    {
-        $conv = self::create();
-
-        foreach ($data as $msg) {
-            $role = $msg['role'] ?? 'user';
-            $content = $msg['content'] ?? '';
-
-            $conv = match ($role) {
-                'system' => $conv->system(is_string($content) ? $content : ''),
-                'user' => $conv->user($content),
-                'assistant' => $conv->assistant($content),
-                default => $conv,
-            };
-        }
-
-        return $conv;
     }
 }

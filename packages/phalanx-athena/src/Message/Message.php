@@ -6,6 +6,18 @@ namespace Phalanx\Athena\Message;
 
 final class Message
 {
+	public string $text {
+		get {
+			$texts = [];
+			foreach ($this->content as $block) {
+				if ($block->kind === ContentKind::Text && $block->text !== null) {
+					$texts[] = $block->text;
+				}
+			}
+			return implode('', $texts);
+		}
+	}
+
     /** @param list<Content> $content */
     private function __construct(
         public protected(set) Role $role,
@@ -40,18 +52,6 @@ final class Message
     public static function toolResult(string $toolCallId, mixed $result): self
     {
         return new self(Role::User, [Content::toolResult($toolCallId, $result)]);
-    }
-
-    public string $text {
-        get {
-            $texts = [];
-            foreach ($this->content as $block) {
-                if ($block->kind === ContentKind::Text && $block->text !== null) {
-                    $texts[] = $block->text;
-                }
-            }
-            return implode('', $texts);
-        }
     }
 
     /** @return array{role: string, content: string|null|list<array<string, mixed>>} */

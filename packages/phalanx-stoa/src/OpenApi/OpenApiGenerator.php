@@ -20,6 +20,136 @@ class OpenApiGenerator
     ) {
     }
 
+    /** @return array<string, mixed> */
+    public function generate(RouteGroup $routes): array
+    {
+        $paths = [];
+
+        foreach ($routes->handlers()->all() as $handler) {
+            $config = $handler->config;
+
+            if (!$config instanceof RouteConfig) {
+                continue;
+            }
+
+            $handlerClass = $handler->task;
+            $method = strtolower($config->methods[0] ?? 'get');
+            $openApiPath = self::toOpenApiPath($config->path);
+
+            $paths[$openApiPath] ??= [];
+            $paths[$openApiPath][$method] = $this->buildOperation($handlerClass, $config);
+        }
+
+        $info = ['title' => $this->title, 'version' => $this->version];
+        if ($this->description !== null) {
+            $info['description'] = $this->description;
+        }
+
+        return [
+            'openapi' => '3.1.0',
+            'info' => $info,
+            'paths' => $paths !== [] ? $paths : new \stdClass(),
+        ];
+    }
+
+    /**
+     * @param class-string $handlerClass
+     * @return array<string, mixed>
+     */
+    protected function buildOperation(string $handlerClass, RouteConfig $config): array
+    {
+        $operation = [];
+
+        $ref = new ReflectionClass($handlerClass);
+
+        $description = self::readPropertyHook($ref, 'description');
+        if ($description !== null) {
+            $operation['summary'] = $description;
+        }
+
+        $tags = self::readPropertyHook($ref, 'tags');
+        if (is_array($tags) && $tags !== []) {
+            $operation['tags'] = $tags;
+        }
+
+        $pathParams = self::extractPathParams($config);
+        $inputMeta = InputHydrator::meta($handlerClass);
+        $source = InputSource::fromMethod($config->methods[0] ?? 'GET');
+
+        $parameters = $pathParams;
+
+        if ($inputMeta !== null && $source === InputSource::Query) {
+            $queryParams = self::buildQueryParams($inputMeta->inputClass);
+            $parameters = [...$parameters, ...$queryParams];
+        }
+
+        if ($parameters !== []) {
+            $operation['parameters'] = $parameters;
+        }
+
+        if ($inputMeta !== null && $source === InputSource::Body) {
+            $operation['requestBody'] = self::buildRequestBody($inputMeta->inputClass);
+        }
+
+        $operation['responses'] = $this->buildResponses($handlerClass, $config, $inputMeta !== null);
+
+        return $operation;
+    }
+
+    /**
+     * @param class-string $handlerClass
+     * @return array<string, mixed>
+     */
+    protected function buildResponses(
+        string $handlerClass,
+        RouteConfig $config,
+        bool $hasInput,
+    ): array {
+        /** @var array<string, mixed> $responses */
+        $responses = [];
+
+        $ref = self::reflectInvokeReturnType($handlerClass);
+
+        if ($ref instanceof ReflectionNamedType) {
+            [$status, $schema] = SchemaReflector::unwrapResponseWrapper($ref);
+        } else {
+            $status = 200;
+            $schema = null;
+        }
+
+        $successResponse = ['description' => self::statusDescription($status)];
+        if ($schema !== null && $status !== 204) {
+            $successResponse['content'] = [
+                'application/json' => ['schema' => $schema],
+            ];
+        }
+
+        $responses[(string) $status] = $successResponse;
+
+        if ($hasInput) {
+            $responses['422'] = [
+                'description' => 'Validation Failed',
+                'content' => [
+                    'application/json' => [
+                        'schema' => [
+                            'type' => 'object',
+                            'properties' => [
+                                'error' => ['type' => 'string'],
+                                'errors' => ['type' => 'object'],
+                            ],
+                        ],
+                    ],
+                ],
+            ];
+        }
+
+        if ($config->paramNames !== []) {
+            $responses['404'] = ['description' => 'Not Found'];
+        }
+
+        return $responses;
+    }
+
     /** @return list<array<string, mixed>> */
     private static function extractPathParams(RouteConfig $config): array
     {
@@ -155,135 +285,5 @@ class OpenApiGenerator
             204 => 'No Content',
             default => 'Success',
         };
-    }
-
-    /** @return array<string, mixed> */
-    public function generate(RouteGroup $routes): array
-    {
-        $paths = [];
-
-        foreach ($routes->handlers()->all() as $handler) {
-            $config = $handler->config;
-
-            if (!$config instanceof RouteConfig) {
-                continue;
-            }
-
-            $handlerClass = $handler->task;
-            $method = strtolower($config->methods[0] ?? 'get');
-            $openApiPath = self::toOpenApiPath($config->path);
-
-            $paths[$openApiPath] ??= [];
-            $paths[$openApiPath][$method] = $this->buildOperation($handlerClass, $config);
-        }
-
-        $info = ['title' => $this->title, 'version' => $this->version];
-        if ($this->description !== null) {
-            $info['description'] = $this->description;
-        }
-
-        return [
-            'openapi' => '3.1.0',
-            'info' => $info,
-            'paths' => $paths !== [] ? $paths : new \stdClass(),
-        ];
-    }
-
-    /**
-     * @param class-string $handlerClass
-     * @return array<string, mixed>
-     */
-    protected function buildOperation(string $handlerClass, RouteConfig $config): array
-    {
-        $operation = [];
-
-        $ref = new ReflectionClass($handlerClass);
-
-        $description = self::readPropertyHook($ref, 'description');
-        if ($description !== null) {
-            $operation['summary'] = $description;
-        }
-
-        $tags = self::readPropertyHook($ref, 'tags');
-        if (is_array($tags) && $tags !== []) {
-            $operation['tags'] = $tags;
-        }
-
-        $pathParams = self::extractPathParams($config);
-        $inputMeta = InputHydrator::meta($handlerClass);
-        $source = InputSource::fromMethod($config->methods[0] ?? 'GET');
-
-        $parameters = $pathParams;
-
-        if ($inputMeta !== null && $source === InputSource::Query) {
-            $queryParams = self::buildQueryParams($inputMeta->inputClass);
-            $parameters = [...$parameters, ...$queryParams];
-        }
-
-        if ($parameters !== []) {
-            $operation['parameters'] = $parameters;
-        }
-
-        if ($inputMeta !== null && $source === InputSource::Body) {
-            $operation['requestBody'] = self::buildRequestBody($inputMeta->inputClass);
-        }
-
-        $operation['responses'] = $this->buildResponses($handlerClass, $config, $inputMeta !== null);
-
-        return $operation;
-    }
-
-    /**
-     * @param class-string $handlerClass
-     * @return array<string, mixed>
-     */
-    protected function buildResponses(
-        string $handlerClass,
-        RouteConfig $config,
-        bool $hasInput,
-    ): array {
-        /** @var array<string, mixed> $responses */
-        $responses = [];
-
-        $ref = self::reflectInvokeReturnType($handlerClass);
-
-        if ($ref instanceof ReflectionNamedType) {
-            [$status, $schema] = SchemaReflector::unwrapResponseWrapper($ref);
-        } else {
-            $status = 200;
-            $schema = null;
-        }
-
-        $successResponse = ['description' => self::statusDescription($status)];
-        if ($schema !== null && $status !== 204) {
-            $successResponse['content'] = [
-                'application/json' => ['schema' => $schema],
-            ];
-        }
-
-        $responses[(string) $status] = $successResponse;
-
-        if ($hasInput) {
-            $responses['422'] = [
-                'description' => 'Validation Failed',
-                'content' => [
-                    'application/json' => [
-                        'schema' => [
-                            'type' => 'object',
-                            'properties' => [
-                                'error' => ['type' => 'string'],
-                                'errors' => ['type' => 'object'],
-                            ],
-                        ],
-                    ],
-                ],
-            ];
-        }
-
-        if ($config->paramNames !== []) {
-            $responses['404'] = ['description' => 'Not Found'];
-        }
-
-        return $responses;
     }
 }

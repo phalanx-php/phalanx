@@ -19,21 +19,6 @@ use RuntimeException;
 
 final class EnvironmentDoctorTest extends TestCase
 {
-    /**
-     * @param list<array{name: string, ok: bool, detail: string}> $checks
-     * @return array{name: string, ok: bool, detail: string}
-     */
-    private static function check(array $checks, string $name): array
-    {
-        foreach ($checks as $check) {
-            if ($check['name'] === $name) {
-                return $check;
-            }
-        }
-
-        self::fail("Missing doctor check {$name}.");
-    }
-
     public function testReportContainsRuntimeAndLedgerChecks(): void
     {
         $policy = RuntimePolicy::phalanxManaged();
@@ -181,5 +166,20 @@ final class EnvironmentDoctorTest extends TestCase
         } finally {
             $memory->shutdown();
         }
+    }
+
+    /**
+     * @param list<array{name: string, ok: bool, detail: string}> $checks
+     * @return array{name: string, ok: bool, detail: string}
+     */
+    private static function check(array $checks, string $name): array
+    {
+        foreach ($checks as $check) {
+            if ($check['name'] === $name) {
+                return $check;
+            }
+        }
+
+        self::fail("Missing doctor check {$name}.");
     }
 }

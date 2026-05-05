@@ -62,6 +62,33 @@ class RouteConfig extends HandlerConfig
         );
     }
 
+    /** @param string|list<string> $method */
+    public function withMethod(string|array $method): self
+    {
+        $methods = is_array($method) ? $method : [$method];
+        $methods = array_values(array_map(strtoupper(...), $methods));
+
+        $clone = clone $this;
+        $clone->methods = $methods;
+        return $clone;
+    }
+
+    /**
+     * Attach imperative param validators to this route config.
+     *
+     * These run after FastRoute match, against the extracted param values.
+     * Validators that also provide toPattern() should have had their patterns
+     * applied at compile time via RouteGroup::withPatterns().
+     *
+     * @param array<string, RouteParamValidator> $validators
+     */
+    public function withParamValidators(array $validators): self
+    {
+        $clone = clone $this;
+        $clone->paramValidators = $validators;
+        return $clone;
+    }
+
     /**
      * @param array<string, string> $patterns
      * @return array{string, list<string>}
@@ -90,32 +117,5 @@ class RouteConfig extends HandlerConfig
         );
 
         return [$fastRoutePath ?? $path, array_values(array_unique($params))];
-    }
-
-    /** @param string|list<string> $method */
-    public function withMethod(string|array $method): self
-    {
-        $methods = is_array($method) ? $method : [$method];
-        $methods = array_values(array_map(strtoupper(...), $methods));
-
-        $clone = clone $this;
-        $clone->methods = $methods;
-        return $clone;
-    }
-
-    /**
-     * Attach imperative param validators to this route config.
-     *
-     * These run after FastRoute match, against the extracted param values.
-     * Validators that also provide toPattern() should have had their patterns
-     * applied at compile time via RouteGroup::withPatterns().
-     *
-     * @param array<string, RouteParamValidator> $validators
-     */
-    public function withParamValidators(array $validators): self
-    {
-        $clone = clone $this;
-        $clone->paramValidators = $validators;
-        return $clone;
     }
 }

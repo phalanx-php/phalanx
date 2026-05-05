@@ -50,40 +50,6 @@ final class FileWatcher
         }
     }
 
-    /** @return array<string, int> */
-    private function scan(): array
-    {
-        $result = [];
-        $base = $this->cwd ?? getcwd() ?: '.';
-
-        foreach ($this->paths as $path) {
-            $absolute = str_starts_with($path, '/') ? $path : $base . '/' . $path;
-
-            if (!is_dir($absolute)) {
-                continue;
-            }
-
-            $iterator = new \RecursiveIteratorIterator(
-                new \RecursiveDirectoryIterator($absolute, \FilesystemIterator::SKIP_DOTS),
-            );
-
-            /** @var \SplFileInfo $file */
-            foreach ($iterator as $file) {
-                if (!$file->isFile()) {
-                    continue;
-                }
-
-                if (!self::matchesExtension($file->getFilename(), $this->extensions)) {
-                    continue;
-                }
-
-                $result[$file->getPathname()] = $file->getMTime();
-            }
-        }
-
-        return $result;
-    }
-
     /**
      * @param array<string, int> $before
      * @param array<string, int> $after
@@ -118,5 +84,39 @@ final class FileWatcher
         }
 
         return false;
+    }
+
+    /** @return array<string, int> */
+    private function scan(): array
+    {
+        $result = [];
+        $base = $this->cwd ?? getcwd() ?: '.';
+
+        foreach ($this->paths as $path) {
+            $absolute = str_starts_with($path, '/') ? $path : $base . '/' . $path;
+
+            if (!is_dir($absolute)) {
+                continue;
+            }
+
+            $iterator = new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator($absolute, \FilesystemIterator::SKIP_DOTS),
+            );
+
+            /** @var \SplFileInfo $file */
+            foreach ($iterator as $file) {
+                if (!$file->isFile()) {
+                    continue;
+                }
+
+                if (!self::matchesExtension($file->getFilename(), $this->extensions)) {
+                    continue;
+                }
+
+                $result[$file->getPathname()] = $file->getMTime();
+            }
+        }
+
+        return $result;
     }
 }

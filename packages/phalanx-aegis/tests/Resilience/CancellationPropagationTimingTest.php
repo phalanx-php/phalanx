@@ -12,7 +12,6 @@ use Phalanx\Service\Services;
 use Phalanx\Supervisor\InProcessLedger;
 use Phalanx\Task\Task;
 use Phalanx\Tests\Support\CoroutineTestCase;
-use RuntimeException;
 
 /**
  * For each top-level concurrency primitive, schedules a long-sleeping body,
@@ -111,6 +110,19 @@ final class CancellationPropagationTimingTest extends CoroutineTestCase
         });
     }
 
+    private static function buildApp(InProcessLedger $ledger): Application
+    {
+        $bundle = new class implements ServiceBundle {
+            public function services(Services $services, array $context): void
+            {
+            }
+        };
+        return Application::starting([])
+            ->providers($bundle)
+            ->withLedger($ledger)
+            ->compile();
+    }
+
     /**
      * @param \Closure(ExecutionScope): mixed $body
      */
@@ -154,18 +166,5 @@ final class CancellationPropagationTimingTest extends CoroutineTestCase
             );
             self::assertSame(0, $ledger->liveCount(), 'ledger not drained after cancel');
         });
-    }
-
-    private static function buildApp(InProcessLedger $ledger): Application
-    {
-        $bundle = new class implements ServiceBundle {
-            public function services(Services $services, array $context): void
-            {
-            }
-        };
-        return Application::starting([])
-            ->providers($bundle)
-            ->withLedger($ledger)
-            ->compile();
     }
 }

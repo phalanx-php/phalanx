@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Phalanx\Hermes\Client;
 
-use Phalanx\Styx\Channel;
-use Phalanx\Suspendable;
 use Phalanx\Hermes\WsCloseCode;
 use Phalanx\Hermes\WsMessage;
+use Phalanx\Styx\Channel;
+use Phalanx\Suspendable;
 use React\EventLoop\Loop;
 use React\EventLoop\TimerInterface;
 use React\Promise\Deferred;
@@ -20,11 +20,11 @@ final class WsClientConnection
 {
     private const string WEBSOCKET_GUID = '258EAFA5-E914-47DA-95CA-5AB9DC085B7D';
 
-    private ?TimerInterface $pingTimer = null;
-
     public bool $isConnected {
         get => $this->transport->isWritable();
     }
+
+    private ?TimerInterface $pingTimer = null;
 
     private function __construct(
         private DuplexStreamInterface $transport,

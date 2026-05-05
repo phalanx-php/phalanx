@@ -27,85 +27,6 @@ final readonly class EnvironmentDoctor
     ) {
     }
 
-    /** @param list<string> $names */
-    private static function formatNames(array $names): string
-    {
-        return $names === [] ? 'none' : implode(', ', $names);
-    }
-
-    /** @param array<string, int> $counts */
-    private static function formatCounts(array $counts): string
-    {
-        $parts = [];
-        foreach ($counts as $name => $count) {
-            $parts[] = "{$name}={$count}";
-        }
-
-        return implode(', ', $parts);
-    }
-
-    /** @return array<string, int> */
-    private static function resourceStateCounts(ManagedResource ...$resources): array
-    {
-        $counts = [];
-        foreach (ManagedResourceState::cases() as $state) {
-            $counts[$state->value] = 0;
-        }
-
-        foreach ($resources as $resource) {
-            $counts[$resource->state->value]++;
-        }
-
-        return $counts;
-    }
-
-    private static function terminalResourceCount(ManagedResource ...$resources): int
-    {
-        $terminal = 0;
-        foreach ($resources as $resource) {
-            if ($resource->state->isTerminal()) {
-                $terminal++;
-            }
-        }
-
-        return $terminal;
-    }
-
-    private static function listenerFailureDetail(int $count): string
-    {
-        return $count === 1 ? '1 failure' : "{$count} failures";
-    }
-
-    private static function droppedEventDetail(int $count): string
-    {
-        return $count === 1 ? '1 dropped event' : "{$count} dropped events";
-    }
-
-    private static function memoryPressureOk(RuntimeTableStats $stats): bool
-    {
-        if ($stats->currentRows > $stats->configuredRows) {
-            return false;
-        }
-
-        return $stats->highWaterRows < (int) ceil($stats->configuredRows * self::MEMORY_PRESSURE_RATIO);
-    }
-
-    private static function memoryPressureDetail(RuntimeTableStats $stats): string
-    {
-        $highWaterPercent = $stats->configuredRows === 0
-            ? 0.0
-            : ($stats->highWaterRows / $stats->configuredRows) * 100;
-
-        return sprintf(
-            '%d/%d rows, %d bytes, high-water %d (%.2f%%)',
-            $stats->currentRows,
-            $stats->configuredRows,
-            $stats->memorySize,
-            $stats->highWaterRows,
-            $highWaterPercent,
-        );
-    }
-
     public function check(): DoctorReport
     {
         $policy = $this->runtimePolicy ?? RuntimePolicy::phalanxManaged();
@@ -223,5 +144,84 @@ final readonly class EnvironmentDoctor
         }
 
         return new DoctorReport($checks);
+    }
+
+    /** @param list<string> $names */
+    private static function formatNames(array $names): string
+    {
+        return $names === [] ? 'none' : implode(', ', $names);
+    }
+
+    /** @param array<string, int> $counts */
+    private static function formatCounts(array $counts): string
+    {
+        $parts = [];
+        foreach ($counts as $name => $count) {
+            $parts[] = "{$name}={$count}";
+        }
+
+        return implode(', ', $parts);
+    }
+
+    /** @return array<string, int> */
+    private static function resourceStateCounts(ManagedResource ...$resources): array
+    {
+        $counts = [];
+        foreach (ManagedResourceState::cases() as $state) {
+            $counts[$state->value] = 0;
+        }
+
+        foreach ($resources as $resource) {
+            $counts[$resource->state->value]++;
+        }
+
+        return $counts;
+    }
+
+    private static function terminalResourceCount(ManagedResource ...$resources): int
+    {
+        $terminal = 0;
+        foreach ($resources as $resource) {
+            if ($resource->state->isTerminal()) {
+                $terminal++;
+            }
+        }
+
+        return $terminal;
+    }
+
+    private static function listenerFailureDetail(int $count): string
+    {
+        return $count === 1 ? '1 failure' : "{$count} failures";
+    }
+
+    private static function droppedEventDetail(int $count): string
+    {
+        return $count === 1 ? '1 dropped event' : "{$count} dropped events";
+    }
+
+    private static function memoryPressureOk(RuntimeTableStats $stats): bool
+    {
+        if ($stats->currentRows > $stats->configuredRows) {
+            return false;
+        }
+
+        return $stats->highWaterRows < (int) ceil($stats->configuredRows * self::MEMORY_PRESSURE_RATIO);
+    }
+
+    private static function memoryPressureDetail(RuntimeTableStats $stats): string
+    {
+        $highWaterPercent = $stats->configuredRows === 0
+            ? 0.0
+            : ($stats->highWaterRows / $stats->configuredRows) * 100;
+
+        return sprintf(
+            '%d/%d rows, %d bytes, high-water %d (%.2f%%)',
+            $stats->currentRows,
+            $stats->configuredRows,
+            $stats->memorySize,
+            $stats->highWaterRows,
+            $highWaterPercent,
+        );
     }
 }

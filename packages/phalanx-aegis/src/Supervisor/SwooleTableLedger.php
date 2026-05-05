@@ -34,70 +34,6 @@ final class SwooleTableLedger implements LedgerStorage
         $this->memory = $memory ?? RuntimeMemory::forLedgerSize($size);
     }
 
-    private static function project(TaskRun $run): TaskRunSnapshot
-    {
-        $leases = [];
-        foreach ($run->leases as $lease) {
-            $leases[] = [
-                'domain' => $lease->domain,
-                'key' => $lease->key,
-                'mode' => $lease->mode,
-                'acquiredAt' => $lease->acquiredAt,
-            ];
-        }
-
-        return new TaskRunSnapshot(
-            id: $run->id,
-            name: $run->name,
-            parentId: $run->parentId,
-            mode: $run->mode,
-            state: $run->state,
-            currentWait: $run->currentWait,
-            childIds: $run->childIds,
-            leases: $leases,
-            startedAt: $run->startedAt,
-            endedAt: $run->endedAt,
-        );
-    }
-
-    /** @param array<string, string> $annotations */
-    private static function runState(ManagedResource $resource, array $annotations): RunState
-    {
-        if ($resource->state->isTerminal()) {
-            return match ($resource->state) {
-                ManagedResourceState::Closed => RunState::Completed,
-                ManagedResourceState::Aborted => RunState::Cancelled,
-                ManagedResourceState::Failed => RunState::Failed,
-                default => throw new RuntimeException(
-                    "unsupported terminal resource state '{$resource->state->value}'",
-                ),
-            };
-        }
-
-        $state = $annotations[AegisAnnotationSid::RunState->value()] ?? '';
-        if ($state !== '') {
-            return RunState::from($state);
-        }
-
-        return match ($resource->state) {
-            ManagedResourceState::Opening => RunState::Pending,
-            ManagedResourceState::Active,
-            ManagedResourceState::Closing => RunState::Running,
-            ManagedResourceState::Aborting => RunState::Cancelled,
-            ManagedResourceState::Failing => RunState::Failed,
-            ManagedResourceState::Closed,
-            ManagedResourceState::Aborted,
-            ManagedResourceState::Failed => throw new RuntimeException(
-                "unreachable terminal resource state '{$resource->state->value}'",
-            ),
-        };
-    }
-
-    private static function fit(string $value, int $length): string
-    {
-        return mb_strlen($value) <= $length ? $value : mb_substr($value, 0, $length);
-    }
-
     public function nextRunId(): string
     {
         return $this->memory->ids->nextRuntime('run');
@@ -303,6 +239,70 @@ final class SwooleTableLedger implements LedgerStorage
     {
         unset($this->tokens[$runId]);
         $this->memory->resources->release($runId);
+    }
+
+    private static function project(TaskRun $run): TaskRunSnapshot
+    {
+        $leases = [];
+        foreach ($run->leases as $lease) {
+            $leases[] = [
+                'domain' => $lease->domain,
+                'key' => $lease->key,
+                'mode' => $lease->mode,
+                'acquiredAt' => $lease->acquiredAt,
+            ];
+        }
+
+        return new TaskRunSnapshot(
+            id: $run->id,
+            name: $run->name,
+            parentId: $run->parentId,
+            mode: $run->mode,
+            state: $run->state,
+            currentWait: $run->currentWait,
+            childIds: $run->childIds,
+            leases: $leases,
+            startedAt: $run->startedAt,
+            endedAt: $run->endedAt,
+        );
+    }
+
+    /** @param array<string, string> $annotations */
+    private static function runState(ManagedResource $resource, array $annotations): RunState
+    {
+        if ($resource->state->isTerminal()) {
+            return match ($resource->state) {
+                ManagedResourceState::Closed => RunState::Completed,
+                ManagedResourceState::Aborted => RunState::Cancelled,
+                ManagedResourceState::Failed => RunState::Failed,
+                default => throw new RuntimeException(
+                    "unsupported terminal resource state '{$resource->state->value}'",
+                ),
+            };
+        }
+
+        $state = $annotations[AegisAnnotationSid::RunState->value()] ?? '';
+        if ($state !== '') {
+            return RunState::from($state);
+        }
+
+        return match ($resource->state) {
+            ManagedResourceState::Opening => RunState::Pending,
+            ManagedResourceState::Active,
+            ManagedResourceState::Closing => RunState::Running,
+            ManagedResourceState::Aborting => RunState::Cancelled,
+            ManagedResourceState::Failing => RunState::Failed,
+            ManagedResourceState::Closed,
+            ManagedResourceState::Aborted,
+            ManagedResourceState::Failed => throw new RuntimeException(
+                "unreachable terminal resource state '{$resource->state->value}'",
+            ),
+        };
+    }
+
+    private static function fit(string $value, int $length): string
+    {
+        return mb_strlen($value) <= $length ? $value : mb_substr($value, 0, $length);
     }
 
     /** @param array<string, string> $values */

@@ -37,22 +37,6 @@ use RuntimeException;
 
 final class StoaRunnerTest extends TestCase
 {
-    /**
-     * @param list<\Phalanx\Runtime\Memory\RuntimeLifecycleEvent> $events
-     * @return list<string>
-     */
-    private static function eventTypesForResource(array $events, string $resourceId): array
-    {
-        $types = [];
-        foreach ($events as $event) {
-            if ($event->resourceId === $resourceId) {
-                $types[] = $event->type;
-            }
-        }
-
-        return $types;
-    }
-
     #[Test]
     public function stoa_runtime_identities_are_typed_and_stable(): void
     {
@@ -539,6 +523,22 @@ final class StoaRunnerTest extends TestCase
     {
         PlainTextStoaRoute::$disposed = false;
         FailingStoaRoute::$disposed = false;
+    }
+
+    /**
+     * @param list<\Phalanx\Runtime\Memory\RuntimeLifecycleEvent> $events
+     * @return list<string>
+     */
+    private static function eventTypesForResource(array $events, string $resourceId): array
+    {
+        $types = [];
+        foreach ($events as $event) {
+            if ($event->resourceId === $resourceId) {
+                $types[] = $event->type;
+            }
+        }
+
+        return $types;
     }
 }
 

@@ -26,22 +26,6 @@ use Psr\Http\Message\ResponseInterface;
 
 final class GracefulDrainTest extends CoroutineTestCase
 {
-    /**
-     * @param list<\Phalanx\Runtime\Memory\RuntimeLifecycleEvent> $events
-     * @return list<string>
-     */
-    private static function eventTypesForResource(array $events, string $resourceId): array
-    {
-        $types = [];
-        foreach ($events as $event) {
-            if ($event->resourceId === $resourceId) {
-                $types[] = $event->type;
-            }
-        }
-
-        return $types;
-    }
-
     #[Test]
     public function inflight_request_completes_within_drain_timeout(): void
     {
@@ -184,6 +168,22 @@ final class GracefulDrainTest extends CoroutineTestCase
             self::assertContains('handler:complete', EventTrackingSlowHandler::$events);
             self::assertTrue($shutdownFired, 'Service shutdown hook should have fired');
         });
+    }
+
+    /**
+     * @param list<\Phalanx\Runtime\Memory\RuntimeLifecycleEvent> $events
+     * @return list<string>
+     */
+    private static function eventTypesForResource(array $events, string $resourceId): array
+    {
+        $types = [];
+        foreach ($events as $event) {
+            if ($event->resourceId === $resourceId) {
+                $types[] = $event->type;
+            }
+        }
+
+        return $types;
     }
 }
 

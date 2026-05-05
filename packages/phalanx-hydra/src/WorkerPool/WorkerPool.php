@@ -45,6 +45,24 @@ final class WorkerPool
         $this->manager = new Manager($ipcType, $msgQueueKey);
     }
 
+	/**
+	 * Convenience helper for the most common configuration: one function,
+	 * N coroutine-enabled workers, no IPC.
+	 *
+	 * @param Closure(\OpenSwoole\Process\Pool, int): void $func
+	 */
+	public static function ofSize(int $workerNum, Closure $func): self
+	{
+		$pool = new self(SWOOLE_IPC_NONE, 0);
+		$pool->addBatch($workerNum, $func, enableCoroutine: true);
+		return $pool;
+	}
+
+	public static function eventWorkerStart(): string
+	{
+		return Constant::EVENT_WORKER_START;
+	}
+
     /**
      * Add a single worker function. The function receives the `Pool` and
      * its assigned worker id at runtime. When `$enableCoroutine` is true,
@@ -83,23 +101,5 @@ final class WorkerPool
     public function start(): void
     {
         $this->manager->start();
-    }
-
-    /**
-     * Convenience helper for the most common configuration: one function,
-     * N coroutine-enabled workers, no IPC.
-     *
-     * @param Closure(\OpenSwoole\Process\Pool, int): void $func
-     */
-    public static function ofSize(int $workerNum, Closure $func): self
-    {
-        $pool = new self(SWOOLE_IPC_NONE, 0);
-        $pool->addBatch($workerNum, $func, enableCoroutine: true);
-        return $pool;
-    }
-
-    public static function eventWorkerStart(): string
-    {
-        return Constant::EVENT_WORKER_START;
     }
 }

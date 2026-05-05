@@ -12,13 +12,6 @@ use PHPUnit\Framework\TestCase;
 
 abstract class PromptTestCase extends TestCase
 {
-    protected Theme $theme;
-
-    /** @var resource */
-    protected mixed $stream;
-    protected StreamOutput $output;
-    protected StubScope $scope;
-
     protected const string ENTER     = 'enter';
     protected const string BACKSPACE = 'backspace';
     protected const string UP        = 'up';
@@ -30,6 +23,13 @@ abstract class PromptTestCase extends TestCase
     protected const string ESCAPE    = 'escape';
     protected const string CTRL_C    = 'ctrl-c';
     protected const string CTRL_U    = 'ctrl-u';
+
+    protected Theme $theme;
+
+    /** @var resource */
+    protected mixed $stream;
+    protected StreamOutput $output;
+    protected StubScope $scope;
 
     protected function setUp(): void
     {

@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Archon\Tests\Unit\Console\Widget;
 
-use Phalanx\Archon\Console\Widget\Form;
-use Phalanx\Archon\Console\Widget\FormRevertedException;
 use Phalanx\Archon\Console\Input\CancelledException;
 use Phalanx\Archon\Console\Input\ConfirmInput;
 use Phalanx\Archon\Console\Input\TextInput;
@@ -13,6 +11,8 @@ use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Archon\Console\Output\TerminalEnvironment;
 use Phalanx\Archon\Console\Style\Style;
 use Phalanx\Archon\Console\Style\Theme;
+use Phalanx\Archon\Console\Widget\Form;
+use Phalanx\Archon\Console\Widget\FormRevertedException;
 use Phalanx\Archon\Tests\Unit\Console\Input\FakeKeyReader;
 use Phalanx\Archon\Tests\Unit\Console\Input\StubScope;
 use PHPUnit\Framework\Attributes\Test;
@@ -25,24 +25,6 @@ final class FormTest extends TestCase
     private mixed $stream;
     private StreamOutput $output;
     private StubScope $scope;
-
-    protected function setUp(): void
-    {
-        $plain       = Style::new();
-        $this->theme = new Theme($plain, $plain, $plain, $plain, $plain, $plain, $plain, $plain, $plain);
-
-        $stream = fopen('php://memory', 'w+');
-        self::assertNotFalse($stream);
-        $this->stream = $stream;
-
-        $this->output = new StreamOutput($stream, new TerminalEnvironment(columns: 80, lines: 24));
-        $this->scope  = new StubScope();
-    }
-
-    protected function tearDown(): void
-    {
-        fclose($this->stream);
-    }
 
     #[Test]
     public function submitsAggregatedValuesInRegistrationOrder(): void
@@ -219,5 +201,23 @@ final class FormTest extends TestCase
 
         self::assertSame(['first' => 'a', 'second' => 'b', 'third' => 'c'], $values);
         self::assertSame([null, 'b'], $stepOnePrevSeen);
+    }
+
+    protected function setUp(): void
+    {
+        $plain       = Style::new();
+        $this->theme = new Theme($plain, $plain, $plain, $plain, $plain, $plain, $plain, $plain, $plain);
+
+        $stream = fopen('php://memory', 'w+');
+        self::assertNotFalse($stream);
+        $this->stream = $stream;
+
+        $this->output = new StreamOutput($stream, new TerminalEnvironment(columns: 80, lines: 24));
+        $this->scope  = new StubScope();
+    }
+
+    protected function tearDown(): void
+    {
+        fclose($this->stream);
     }
 }

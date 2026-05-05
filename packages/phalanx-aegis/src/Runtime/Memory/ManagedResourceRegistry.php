@@ -24,66 +24,6 @@ final readonly class ManagedResourceRegistry
     ) {
     }
 
-    private static function resourceType(RuntimeResourceId|string $type): string
-    {
-        return $type instanceof RuntimeResourceId ? $type->value() : $type;
-    }
-
-    private static function annotationKey(RuntimeAnnotationId|string $key): string
-    {
-        return $key instanceof RuntimeAnnotationId ? $key->value() : $key;
-    }
-
-    private static function eventType(RuntimeEventId|string $type): string
-    {
-        return $type instanceof RuntimeEventId ? $type->value() : $type;
-    }
-
-    private static function assertResourceType(RuntimeResourceId|string $type): string
-    {
-        $type = self::resourceType($type);
-        if (!str_contains($type, '.') || mb_strlen($type) > 96) {
-            throw RuntimeAnnotationRejected::forKey($type);
-        }
-
-        return $type;
-    }
-
-    private static function assertAnnotationKey(RuntimeAnnotationId|string $key): string
-    {
-        $key = self::annotationKey($key);
-        if (!str_contains($key, '.') || mb_strlen($key) > 128) {
-            throw RuntimeAnnotationRejected::forKey($key);
-        }
-
-        return $key;
-    }
-
-    private static function annotationValue(string $key, string|int|float|bool|null $value): string
-    {
-        $encoded = match (true) {
-            $value === null => '',
-            is_bool($value) => $value ? '1' : '0',
-            default => (string) $value,
-        };
-
-        if (mb_strlen($encoded) > 256) {
-            throw RuntimeAnnotationRejected::forKey($key);
-        }
-
-        return $encoded;
-    }
-
-    private static function annotationRowId(string $resourceId, string $key): string
-    {
-        return substr(sha1($resourceId . "\0" . $key), 0, 32);
-    }
-
-    private static function fit(string $value, int $length): string
-    {
-        return mb_strlen($value) <= $length ? $value : mb_substr($value, 0, $length);
-    }
-
     public function open(
         RuntimeResourceId|string $type,
         ?string $id = null,
@@ -491,6 +431,66 @@ final readonly class ManagedResourceRegistry
                 $this->events->dispatch($event);
             }
         }
+    }
+
+    private static function resourceType(RuntimeResourceId|string $type): string
+    {
+        return $type instanceof RuntimeResourceId ? $type->value() : $type;
+    }
+
+    private static function annotationKey(RuntimeAnnotationId|string $key): string
+    {
+        return $key instanceof RuntimeAnnotationId ? $key->value() : $key;
+    }
+
+    private static function eventType(RuntimeEventId|string $type): string
+    {
+        return $type instanceof RuntimeEventId ? $type->value() : $type;
+    }
+
+    private static function assertResourceType(RuntimeResourceId|string $type): string
+    {
+        $type = self::resourceType($type);
+        if (!str_contains($type, '.') || mb_strlen($type) > 96) {
+            throw RuntimeAnnotationRejected::forKey($type);
+        }
+
+        return $type;
+    }
+
+    private static function assertAnnotationKey(RuntimeAnnotationId|string $key): string
+    {
+        $key = self::annotationKey($key);
+        if (!str_contains($key, '.') || mb_strlen($key) > 128) {
+            throw RuntimeAnnotationRejected::forKey($key);
+        }
+
+        return $key;
+    }
+
+    private static function annotationValue(string $key, string|int|float|bool|null $value): string
+    {
+        $encoded = match (true) {
+            $value === null => '',
+            is_bool($value) => $value ? '1' : '0',
+            default => (string) $value,
+        };
+
+        if (mb_strlen($encoded) > 256) {
+            throw RuntimeAnnotationRejected::forKey($key);
+        }
+
+        return $encoded;
+    }
+
+    private static function annotationRowId(string $resourceId, string $key): string
+    {
+        return substr(sha1($resourceId . "\0" . $key), 0, 32);
+    }
+
+    private static function fit(string $value, int $length): string
+    {
+        return mb_strlen($value) <= $length ? $value : mb_substr($value, 0, $length);
     }
 
     /** @param array<string, mixed> $row */

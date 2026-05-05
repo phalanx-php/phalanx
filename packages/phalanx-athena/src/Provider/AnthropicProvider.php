@@ -36,6 +36,95 @@ final class AnthropicProvider implements LlmProvider
     ) {
     }
 
+    public function generate(GenerateRequest $request): Emitter
+    {
+        $config = $this->config;
+        $client = $this->client;
+
+        return Emitter::produce(static function (
+            Channel $channel,
+            StreamContext $ctx,
+        ) use (
+            $request,
+            $config,
+            $client,
+        ): void {
+            $model = $request->model ?? $config->model;
+            $body = self::buildRequestBody($request, $model);
+            $headers = self::buildHeaders($config);
+            $startTime = hrtime(true);
+            $step = 0;
+            $usage = TokenUsage::zero();
+
+            $jsonBody = json_encode($body, JSON_THROW_ON_ERROR);
+            $httpRequest = HttpRequest::post(Url::join($config->baseUrl, '/v1/messages'), $jsonBody, $headers);
+            $stream = $client->stream($ctx, $httpRequest);
+            $ctx->onDispose(static fn() => $stream->close());
+
+            $source = new HttpSseSource($stream);
+            $accumulatedText = '';
+            $currentToolId = null;
+            $currentToolName = null;
+            $currentToolInput = '';
+
+            foreach ($source->events($ctx) as $sseEvent) {
+                $ctx->throwIfCancelled();
+                $data = $sseEvent['data'];
+                if ($data === '[DONE]') {
+                    break;
+                }
+
+                $parsed = json_decode($data, true, 512, JSON_THROW_ON_ERROR);
+                if (!is_array($parsed)) {
+                    continue;
+                }
+                $type = (string) ($parsed['type'] ?? '');
+                $elapsed = (hrtime(true) - $startTime) / 1e6;
+
+                if ($stream->status >= 400) {
+                    throw new RuntimeException("Anthropic API {$stream->status}: {$data}");
+                }
+
+                match ($type) {
+                    'message_start' => self::onMessageStart($parsed, $usage),
+                    'content_block_start' => self::onContentBlockStart(
+                        $parsed,
+                        $currentToolId,
+                        $currentToolName,
+                        $currentToolInput,
+                        $channel,
+                        $elapsed,
+                        $usage,
+                        $step,
+                    ),
+                    'content_block_delta' => self::onContentBlockDelta(
+                        $parsed,
+                        $accumulatedText,
+                        $currentToolInput,
+                        $channel,
+                        $elapsed,
+                        $usage,
+                        $step,
+                    ),
+                    'content_block_stop' => self::onContentBlockStop(
+                        $currentToolId,
+                        $currentToolName,
+                        $currentToolInput,
+                        $channel,
+                        $elapsed,
+                        $usage,
+                        $step,
+                    ),
+                    'message_delta' => self::onMessageDelta($parsed, $usage),
+                    'message_stop' => $channel->emit(AgentEvent::tokenComplete($elapsed, $usage, $step)),
+                    default => null,
+                };
+            }
+
+            $channel->complete();
+        });
+    }
+
     /** @return array<string, mixed> */
     private static function buildRequestBody(GenerateRequest $request, string $model): array
     {
@@ -180,94 +269,5 @@ final class AnthropicProvider implements LlmProvider
             input: $usage->input,
             output: (int) ($u['output_tokens'] ?? $usage->output),
         );
-    }
-
-    public function generate(GenerateRequest $request): Emitter
-    {
-        $config = $this->config;
-        $client = $this->client;
-
-        return Emitter::produce(static function (
-            Channel $channel,
-            StreamContext $ctx,
-        ) use (
-            $request,
-            $config,
-            $client,
-        ): void {
-            $model = $request->model ?? $config->model;
-            $body = self::buildRequestBody($request, $model);
-            $headers = self::buildHeaders($config);
-            $startTime = hrtime(true);
-            $step = 0;
-            $usage = TokenUsage::zero();
-
-            $jsonBody = json_encode($body, JSON_THROW_ON_ERROR);
-            $httpRequest = HttpRequest::post(Url::join($config->baseUrl, '/v1/messages'), $jsonBody, $headers);
-            $stream = $client->stream($ctx, $httpRequest);
-            $ctx->onDispose(static fn() => $stream->close());
-
-            $source = new HttpSseSource($stream);
-            $accumulatedText = '';
-            $currentToolId = null;
-            $currentToolName = null;
-            $currentToolInput = '';
-
-            foreach ($source->events($ctx) as $sseEvent) {
-                $ctx->throwIfCancelled();
-                $data = $sseEvent['data'];
-                if ($data === '[DONE]') {
-                    break;
-                }
-
-                $parsed = json_decode($data, true, 512, JSON_THROW_ON_ERROR);
-                if (!is_array($parsed)) {
-                    continue;
-                }
-                $type = (string) ($parsed['type'] ?? '');
-                $elapsed = (hrtime(true) - $startTime) / 1e6;
-
-                if ($stream->status >= 400) {
-                    throw new RuntimeException("Anthropic API {$stream->status}: {$data}");
-                }
-
-                match ($type) {
-                    'message_start' => self::onMessageStart($parsed, $usage),
-                    'content_block_start' => self::onContentBlockStart(
-                        $parsed,
-                        $currentToolId,
-                        $currentToolName,
-                        $currentToolInput,
-                        $channel,
-                        $elapsed,
-                        $usage,
-                        $step,
-                    ),
-                    'content_block_delta' => self::onContentBlockDelta(
-                        $parsed,
-                        $accumulatedText,
-                        $currentToolInput,
-                        $channel,
-                        $elapsed,
-                        $usage,
-                        $step,
-                    ),
-                    'content_block_stop' => self::onContentBlockStop(
-                        $currentToolId,
-                        $currentToolName,
-                        $currentToolInput,
-                        $channel,
-                        $elapsed,
-                        $usage,
-                        $step,
-                    ),
-                    'message_delta' => self::onMessageDelta($parsed, $usage),
-                    'message_stop' => $channel->emit(AgentEvent::tokenComplete($elapsed, $usage, $step)),
-                    default => null,
-                };
-            }
-
-            $channel->complete();
-        });
     }
 }

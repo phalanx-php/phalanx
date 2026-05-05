@@ -37,6 +37,11 @@ final class SupportTriageAgent implements AgentDefinition, HasTimeout
         get => 25.0;
     }
 
+    public function __invoke(ExecutionScope $scope): mixed
+    {
+        return AgentLoop::run(Turn::begin($this), $scope);
+    }
+
     public function tools(): array
     {
         return [
@@ -50,10 +55,5 @@ final class SupportTriageAgent implements AgentDefinition, HasTimeout
     public function provider(): ?string
     {
         return 'anthropic';
-    }
-
-    public function __invoke(ExecutionScope $scope): mixed
-    {
-        return AgentLoop::run(Turn::begin($this), $scope);
     }
 }

@@ -85,6 +85,36 @@ final readonly class RuntimePolicy
         return self::forCapabilities(...array_map(RuntimeCapability::fromContextValue(...), $rawCapabilities));
     }
 
+    public function missingFlags(int $currentFlags): int
+    {
+        return $this->requiredFlags & ~$currentFlags;
+    }
+
+    public function hasRequiredFlags(int $currentFlags): bool
+    {
+        return $this->missingFlags($currentFlags) === 0;
+    }
+
+    public function sensitiveEnabledFlags(int $currentFlags): int
+    {
+        return $currentFlags & $this->sensitiveFlags;
+    }
+
+    /**
+     * Render coroutine-level options for OpenSwoole\Coroutine::set().
+     *
+     * `use_fiber_context` routes coroutine context through PHP's native
+     * zend_fiber API (OpenSwoole 26 default-ready). This makes Xdebug step
+     * debugging work across coroutines and prevents context drift when
+     * Phalanx code shares a process with other Fiber-aware libraries.
+     *
+     * @return array<string, bool>
+     */
+    public function coroutineOptions(): array
+    {
+        return ['use_fiber_context' => $this->useFiberContext];
+    }
+
     private static function flagsFor(RuntimeCapability $capability): int
     {
         return match ($capability) {
@@ -118,35 +148,5 @@ final readonly class RuntimePolicy
             ',',
             array_map(static fn(RuntimeCapability $capability): string => $capability->value, $capabilities),
         );
-    }
-
-    public function missingFlags(int $currentFlags): int
-    {
-        return $this->requiredFlags & ~$currentFlags;
-    }
-
-    public function hasRequiredFlags(int $currentFlags): bool
-    {
-        return $this->missingFlags($currentFlags) === 0;
-    }
-
-    public function sensitiveEnabledFlags(int $currentFlags): int
-    {
-        return $currentFlags & $this->sensitiveFlags;
-    }
-
-    /**
-     * Render coroutine-level options for OpenSwoole\Coroutine::set().
-     *
-     * `use_fiber_context` routes coroutine context through PHP's native
-     * zend_fiber API (OpenSwoole 26 default-ready). This makes Xdebug step
-     * debugging work across coroutines and prevents context drift when
-     * Phalanx code shares a process with other Fiber-aware libraries.
-     *
-     * @return array<string, bool>
-     */
-    public function coroutineOptions(): array
-    {
-        return ['use_fiber_context' => $this->useFiberContext];
     }
 }

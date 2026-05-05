@@ -21,33 +21,6 @@ final class NoReactImportsTest extends TestCase
 {
     private const string PACKAGE_ROOT = __DIR__ . '/../..';
 
-    /** @return list<string> */
-    private static function archonPhpFiles(): array
-    {
-        $files = [];
-        $roots = ['/src', '/tests'];
-
-        foreach ($roots as $root) {
-            $dir = self::PACKAGE_ROOT . $root;
-            if (!is_dir($dir)) {
-                continue;
-            }
-
-            $iterator = new RecursiveIteratorIterator(
-                new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS),
-            );
-
-            /** @var SplFileInfo $file */
-            foreach ($iterator as $file) {
-                if ($file->isFile() && $file->getExtension() === 'php') {
-                    $files[] = $file->getPathname();
-                }
-            }
-        }
-
-        return $files;
-    }
-
     #[Test]
     public function archonSourceContainsNoReactImports(): void
     {
@@ -81,5 +54,32 @@ final class NoReactImportsTest extends TestCase
             "React-era imports detected in Archon — these belong to the historical 0.1 substrate:\n  - "
             . implode("\n  - ", $offenders),
         );
+    }
+
+    /** @return list<string> */
+    private static function archonPhpFiles(): array
+    {
+        $files = [];
+        $roots = ['/src', '/tests'];
+
+        foreach ($roots as $root) {
+            $dir = self::PACKAGE_ROOT . $root;
+            if (!is_dir($dir)) {
+                continue;
+            }
+
+            $iterator = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS),
+            );
+
+            /** @var SplFileInfo $file */
+            foreach ($iterator as $file) {
+                if ($file->isFile() && $file->getExtension() === 'php') {
+                    $files[] = $file->getPathname();
+                }
+            }
+        }
+
+        return $files;
     }
 }

@@ -14,21 +14,6 @@ final class HandlerLoaderTest extends TestCase
 {
     private string $fixtureDir;
 
-    protected function setUp(): void
-    {
-        $this->fixtureDir = sys_get_temp_dir() . '/phalanx-handler-test-' . uniqid();
-        mkdir($this->fixtureDir);
-    }
-
-    protected function tearDown(): void
-    {
-        $files = glob($this->fixtureDir . '/*');
-        foreach ($files as $file) {
-            unlink($file);
-        }
-        rmdir($this->fixtureDir);
-    }
-
     #[Test]
     public function loads_handler_group_from_file(): void
     {
@@ -39,7 +24,7 @@ use Phalanx\Handler\HandlerGroup;
 use Phalanx\Tests\Fixtures\Handlers\HandlerA;
 
 return HandlerGroup::of([
-    'task-a' => Handler::of(HandlerA::class),
+	'task-a' => Handler::of(HandlerA::class),
 ]);
 PHP;
 
@@ -76,4 +61,18 @@ PHP;
         HandlerLoader::load($this->fixtureDir . '/invalid.php');
     }
 
+    protected function setUp(): void
+    {
+        $this->fixtureDir = sys_get_temp_dir() . '/phalanx-handler-test-' . uniqid();
+        mkdir($this->fixtureDir);
+    }
+
+    protected function tearDown(): void
+    {
+        $files = glob($this->fixtureDir . '/*');
+        foreach ($files as $file) {
+            unlink($file);
+        }
+        rmdir($this->fixtureDir);
+    }
 }

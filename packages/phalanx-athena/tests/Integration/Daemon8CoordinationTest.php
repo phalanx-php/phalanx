@@ -31,11 +31,6 @@ final class Daemon8CoordinationTest extends TestCase
         self::$runId = substr(bin2hex(random_bytes(4)), 0, 8);
     }
 
-    private static function appName(string $agent): string
-    {
-        return $agent . '-' . self::$runId;
-    }
-
     #[Test]
     public function agent_sends_message_and_another_agent_reads_it_via_http(): void
     {
@@ -169,5 +164,10 @@ final class Daemon8CoordinationTest extends TestCase
         $batch2 = daemon8_observe(kinds: ['custom'], origins: ["app:$app"], since: $cp2);
         $this->assertCount(1, $batch2['observations']);
         $this->assertStringContainsString('message-2', $batch2['observations'][0]['data']['message']);
+    }
+
+    private static function appName(string $agent): string
+    {
+        return $agent . '-' . self::$runId;
     }
 }

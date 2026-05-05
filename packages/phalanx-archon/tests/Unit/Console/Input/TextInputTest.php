@@ -11,19 +11,6 @@ use PHPUnit\Framework\Attributes\Test;
 
 final class TextInputTest extends PromptTestCase
 {
-    private function input(string $label = 'Name', string $default = '', ?Closure $validate = null): TextInput
-    {
-        return new TextInput(
-            theme: $this->theme,
-            label: $label,
-            placeholder: '',
-            default: $default,
-            hint: '',
-            validate: $validate,
-            transform: null,
-        );
-    }
-
     #[Test]
     public function submits_typed_value_on_enter(): void
     {
@@ -90,5 +77,18 @@ final class TextInputTest extends PromptTestCase
         $result = $prompt->prompt($this->scope, $this->output, $reader);
 
         self::assertSame('skip', $result);
+    }
+
+    private function input(string $label = 'Name', string $default = '', ?Closure $validate = null): TextInput
+    {
+        return new TextInput(
+            theme: $this->theme,
+            label: $label,
+            placeholder: '',
+            default: $default,
+            hint: '',
+            validate: $validate,
+            transform: null,
+        );
     }
 }

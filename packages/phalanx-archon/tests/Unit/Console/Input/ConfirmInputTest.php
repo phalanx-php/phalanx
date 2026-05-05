@@ -9,11 +9,6 @@ use PHPUnit\Framework\Attributes\Test;
 
 final class ConfirmInputTest extends PromptTestCase
 {
-    private function confirm(bool $default = true): ConfirmInput
-    {
-        return new ConfirmInput(theme: $this->theme, label: 'Continue?', default: $default);
-    }
-
     #[Test]
     public function y_key_submits_true(): void
     {
@@ -72,5 +67,10 @@ final class ConfirmInputTest extends PromptTestCase
         $result = $this->confirm(default: true)->prompt($this->scope, $this->output, $reader);
 
         self::assertFalse($result);
+    }
+
+    private function confirm(bool $default = true): ConfirmInput
+    {
+        return new ConfirmInput(theme: $this->theme, label: 'Continue?', default: $default);
     }
 }

@@ -20,16 +20,6 @@ final class HandlerResolverTest extends TestCase
 {
     private Application $app;
 
-    protected function setUp(): void
-    {
-        $this->app = Application::starting()->compile();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->app->shutdown();
-    }
-
     #[Test]
     public function resolves_handler_with_no_constructor(): void
     {
@@ -64,14 +54,28 @@ final class HandlerResolverTest extends TestCase
         $this->assertInstanceOf(NullableDepHandler::class, $instance);
         $this->assertNull($instance->dep);
     }
+
+    protected function setUp(): void
+    {
+        $this->app = Application::starting()->compile();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->app->shutdown();
+    }
 }
 
 final class ScalarParamHandler
 {
-    public function __construct(public readonly int $count) {}
+    public function __construct(public readonly int $count)
+    {
+    }
 }
 
 final class NullableDepHandler
 {
-    public function __construct(public readonly ?\stdClass $dep = null) {}
+    public function __construct(public readonly ?\stdClass $dep = null)
+    {
+    }
 }

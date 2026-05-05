@@ -39,6 +39,50 @@ final class HandlerResolver
     private array $paramCache = [];
 
     /**
+     * Construct an instance of $handlerClass with constructor parameters
+     * resolved from the service container via $scope.
+     *
+     * Generic over any object class -- this resolver is used for handlers
+     * (Scopeable / Executable), middleware, route validators, and any other
+     * framework-orchestrated type that needs DI-driven construction.
+     *
+     * @template T of object
+     * @param class-string<T> $handlerClass
+     * @return T
+     */
+    public function resolve(string $handlerClass, Scope $scope): object
+    {
+        $params = $this->paramCache[$handlerClass] ??= self::reflectParams($handlerClass);
+
+        $args = [];
+        foreach ($params as $param) {
+            try {
+                /** @var class-string $type */
+                $type = $param->type;
+                $args[] = $scope->service($type);
+            } catch (ServiceNotFoundException $e) {
+                if ($param->nullable) {
+                    $args[] = null;
+                    continue;
+                }
+                if ($param->hasDefault) {
+                    $args[] = $param->default;
+                    continue;
+                }
+                throw new HandlerDependencyNotResolvable(
+                    $handlerClass,
+                    $param->name,
+                    $param->type,
+                    $e->getMessage(),
+                );
+            }
+        }
+
+        /** @var T */
+        return new $handlerClass(...$args);
+    }
+
+    /**
      * @param class-string $class
      * @return list<HandlerResolverParam>
      */
@@ -92,49 +136,5 @@ final class HandlerResolver
         }
 
         return $param->getDefaultValue();
-    }
-
-    /**
-     * Construct an instance of $handlerClass with constructor parameters
-     * resolved from the service container via $scope.
-     *
-     * Generic over any object class -- this resolver is used for handlers
-     * (Scopeable / Executable), middleware, route validators, and any other
-     * framework-orchestrated type that needs DI-driven construction.
-     *
-     * @template T of object
-     * @param class-string<T> $handlerClass
-     * @return T
-     */
-    public function resolve(string $handlerClass, Scope $scope): object
-    {
-        $params = $this->paramCache[$handlerClass] ??= self::reflectParams($handlerClass);
-
-        $args = [];
-        foreach ($params as $param) {
-            try {
-                /** @var class-string $type */
-                $type = $param->type;
-                $args[] = $scope->service($type);
-            } catch (ServiceNotFoundException $e) {
-                if ($param->nullable) {
-                    $args[] = null;
-                    continue;
-                }
-                if ($param->hasDefault) {
-                    $args[] = $param->default;
-                    continue;
-                }
-                throw new HandlerDependencyNotResolvable(
-                    $handlerClass,
-                    $param->name,
-                    $param->type,
-                    $e->getMessage(),
-                );
-            }
-        }
-
-        /** @var T */
-        return new $handlerClass(...$args);
     }
 }

@@ -17,6 +17,12 @@ enum AgentEventKind: string
     case AgentError = 'agent.error';
     case Escalation = 'escalation';
 
+    /** @return list<self> */
+    public static function any(): array
+    {
+        return self::cases();
+    }
+
     public function isUserFacing(): bool
     {
         return match ($this) {
@@ -37,11 +43,5 @@ enum AgentEventKind: string
             self::ToolCallStart, self::ToolCallComplete => true,
             default => false,
         };
-    }
-
-    /** @return list<self> */
-    public static function any(): array
-    {
-        return self::cases();
     }
 }

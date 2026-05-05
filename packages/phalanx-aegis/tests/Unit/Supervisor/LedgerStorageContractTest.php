@@ -29,18 +29,6 @@ final class LedgerStorageContractTest extends TestCase
         yield 'swoole-table' => [new SwooleTableLedger(64)];
     }
 
-    private static function taskRun(string $id, ?string $parentId): TaskRun
-    {
-        return new TaskRun(
-            id: $id,
-            name: $id,
-            parentId: $parentId,
-            mode: DispatchMode::Inline,
-            cancellation: CancellationToken::create(),
-            startedAt: microtime(true),
-        );
-    }
-
     #[DataProvider('ledgers')]
     public function testRegisterUpdateSnapshotTreeAndReap(LedgerStorage $ledger): void
     {
@@ -121,5 +109,17 @@ final class LedgerStorageContractTest extends TestCase
         self::assertSame(RunState::Completed, $snapshot->state);
 
         $ledger->memory->shutdown();
+    }
+
+    private static function taskRun(string $id, ?string $parentId): TaskRun
+    {
+        return new TaskRun(
+            id: $id,
+            name: $id,
+            parentId: $parentId,
+            mode: DispatchMode::Inline,
+            cancellation: CancellationToken::create(),
+            startedAt: microtime(true),
+        );
     }
 }

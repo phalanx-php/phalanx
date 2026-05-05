@@ -43,51 +43,6 @@ final class ArchonBuilder
         $this->app->providers(new ConsoleInputServiceBundle());
     }
 
-    /**
-     * @param CommandGroup|string|list<string>|array<string, mixed> $source
-     */
-    private static function resolveCommands(AppHost $app, CommandGroup|string|array $source): CommandGroup
-    {
-        if ($source instanceof CommandGroup) {
-            return $source;
-        }
-
-        if (is_string($source)) {
-            return self::loadCommandPath($app, $source);
-        }
-
-        if (array_is_list($source)) {
-            if (!array_all($source, static fn(mixed $value): bool => is_string($value))) {
-                throw new InvalidArgumentException('Command path lists must contain only strings.');
-            }
-
-            $group = CommandGroup::of([]);
-            foreach ($source as $path) {
-                $group = $group->merge(self::loadCommandPath($app, $path));
-            }
-
-            return $group;
-        }
-
-        /** @var array<string, class-string<Scopeable|Executable>|array{class-string<Scopeable|Executable>, CommandConfig}|CommandGroup> $source */
-        return CommandGroup::of($source);
-    }
-
-    private static function loadCommandPath(AppHost $app, string $path): CommandGroup
-    {
-        $scope = $app->createScope();
-
-        try {
-            if (is_dir($path)) {
-                return CommandLoader::loadDirectory($path, $scope);
-            }
-
-            return CommandLoader::load($path, $scope);
-        } finally {
-            $scope->dispose();
-        }
-    }
-
     public function providers(ServiceBundle ...$providers): self
     {
         $this->app->providers(...$providers);
@@ -187,6 +142,51 @@ final class ArchonBuilder
     public function run(?array $argv = null): int
     {
         return $this->build()->run($argv);
+    }
+
+    /**
+     * @param CommandGroup|string|list<string>|array<string, mixed> $source
+     */
+    private static function resolveCommands(AppHost $app, CommandGroup|string|array $source): CommandGroup
+    {
+        if ($source instanceof CommandGroup) {
+            return $source;
+        }
+
+        if (is_string($source)) {
+            return self::loadCommandPath($app, $source);
+        }
+
+        if (array_is_list($source)) {
+            if (!array_all($source, static fn(mixed $value): bool => is_string($value))) {
+                throw new InvalidArgumentException('Command path lists must contain only strings.');
+            }
+
+            $group = CommandGroup::of([]);
+            foreach ($source as $path) {
+                $group = $group->merge(self::loadCommandPath($app, $path));
+            }
+
+            return $group;
+        }
+
+        /** @var array<string, class-string<Scopeable|Executable>|array{class-string<Scopeable|Executable>, CommandConfig}|CommandGroup> $source */
+        return CommandGroup::of($source);
+    }
+
+    private static function loadCommandPath(AppHost $app, string $path): CommandGroup
+    {
+        $scope = $app->createScope();
+
+        try {
+            if (is_dir($path)) {
+                return CommandLoader::loadDirectory($path, $scope);
+            }
+
+            return CommandLoader::load($path, $scope);
+        } finally {
+            $scope->dispose();
+        }
     }
 
     private function resolveConsoleConfig(): ConsoleConfig
