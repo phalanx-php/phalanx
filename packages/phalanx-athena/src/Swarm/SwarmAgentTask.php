@@ -9,8 +9,10 @@ use Phalanx\Athena\AgentLoop;
 use Phalanx\Athena\Event\AgentEvent;
 use Phalanx\Athena\Event\AgentEventKind;
 use Phalanx\Athena\StepAction;
+use Phalanx\Athena\StepResult;
 use Phalanx\Athena\Turn;
-use Phalanx\ExecutionScope;
+use Phalanx\Scope\ExecutionScope;
+use Phalanx\Scope\Scope;
 use Phalanx\Scope\Suspendable;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Task;
@@ -23,7 +25,8 @@ class SwarmAgentTask implements Executable
         public readonly AgentDefinition $agent,
         public readonly SwarmBus $bus,
         public readonly SwarmConfig $config,
-    ) {}
+    ) {
+    }
 
     public function __invoke(ExecutionScope $scope): mixed
     {
@@ -31,16 +34,22 @@ class SwarmAgentTask implements Executable
 
         $turn = Turn::begin($this->agent)->stream();
 
-        $turn = $turn->message("IMPORTANT: Speak in 1-2 sentences. Only contribute what your specialty uniquely adds. Do not repeat. End with [PROPOSAL], [QUESTION], or [BLOCKED].");
+        $prompt = 'IMPORTANT: Speak in 1-2 sentences. Only contribute what your specialty uniquely adds. '
+            . 'Do not repeat. End with [PROPOSAL], [QUESTION], or [BLOCKED].';
 
-        // Capture only the data the hook needs — never $this. The hook
-        // outlives the call below for the agent's lifetime; capturing $this
-        // creates a reference cycle that prevents disposal in long-running
-        // swarms.
+        $turn = $turn->message($prompt);
+
         $bus = $this->bus;
         $agentId = $this->agentId;
         $config = $this->config;
-        $turn = $turn->onStep(static function ($step, $s) use ($bus, $agentId, $config): StepAction {
+        $turn = $turn->onStep(static function (
+            StepResult $step,
+            ExecutionScope $s,
+        ) use (
+            $bus,
+            $agentId,
+            $config,
+        ): StepAction {
             if (self::shouldRequestClearance($step->text)) {
                 self::requestClearanceFor(
                     $s,
@@ -60,24 +69,6 @@ class SwarmAgentTask implements Executable
         }
 
         return null;
-    }
-
-    /**
-     * @param array<string, mixed> $payload
-     * @param string|list<string>|null $addressedTo
-     */
-    public function emit(Suspendable $scope, SwarmEventKind $kind, array $payload = [], ?string $traceId = null, ?AgentEvent $inner = null, string|array|null $addressedTo = null): void
-    {
-        $this->bus->emit($scope, new SwarmEvent(
-            from: $this->agentId,
-            kind: $kind,
-            workspace: $this->config->workspace,
-            session: $this->config->session,
-            payload: $payload,
-            addressedTo: $addressedTo,
-            traceId: $traceId,
-            inner: $inner
-        ));
     }
 
     public static function shouldRequestClearance(string $text): bool
@@ -142,5 +133,29 @@ class SwarmAgentTask implements Executable
         }
 
         return $payload;
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     * @param string|list<string>|null $addressedTo
+     */
+    public function emit(
+        Scope&Suspendable $scope,
+        SwarmEventKind $kind,
+        array $payload = [],
+        ?string $traceId = null,
+        ?AgentEvent $inner = null,
+        string|array|null $addressedTo = null,
+    ): void {
+        $this->bus->emit($scope, new SwarmEvent(
+            from: $this->agentId,
+            kind: $kind,
+            workspace: $this->config->workspace,
+            session: $this->config->session,
+            payload: $payload,
+            addressedTo: $addressedTo,
+            traceId: $traceId,
+            inner: $inner
+        ));
     }
 }

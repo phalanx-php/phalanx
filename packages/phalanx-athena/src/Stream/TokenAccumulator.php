@@ -8,8 +8,8 @@ use Phalanx\Athena\AgentResult;
 use Phalanx\Athena\Event\AgentEvent;
 use Phalanx\Athena\Event\AgentEventKind;
 use Phalanx\Athena\Message\Conversation;
-use Phalanx\Styx\Channel;
 use Phalanx\Scope\Stream\StreamContext;
+use Phalanx\Styx\Channel;
 use Phalanx\Styx\Emitter;
 
 final class TokenAccumulator
@@ -21,7 +21,8 @@ final class TokenAccumulator
         private readonly Emitter $events,
         private readonly Channel $textChannel,
         private readonly StreamContext $ctx,
-    ) {}
+    ) {
+    }
 
     public static function from(Emitter $events, StreamContext $ctx): self
     {
@@ -33,34 +34,11 @@ final class TokenAccumulator
         return $accumulator;
     }
 
-    private function start(): void
-    {
-        $ch = $this->textChannel;
-
-        $emitter = $this->events;
-        foreach ($emitter($this->ctx) as $event) {
-            if (!$event instanceof AgentEvent) {
-                continue;
-            }
-
-            if ($event->kind === AgentEventKind::TokenDelta && $event->data->text !== null) {
-                $ch->emit($event->data->text);
-            }
-
-            if ($event->kind === AgentEventKind::AgentComplete && $event->data instanceof AgentResult) {
-                $this->result = $event->data;
-                $this->conversation = $event->data->conversation;
-            }
-        }
-
-        $ch->complete();
-    }
-
     public function text(): Emitter
     {
         $textChannel = $this->textChannel;
 
-        return Emitter::produce(static function (Channel $ch) use ($textChannel) {
+        return Emitter::produce(static function (Channel $ch) use ($textChannel): void {
             foreach ($textChannel->consume() as $text) {
                 $ch->emit($text);
             }
@@ -89,5 +67,28 @@ final class TokenAccumulator
         }
 
         return $this->conversation;
+    }
+
+    private function start(): void
+    {
+        $ch = $this->textChannel;
+
+        $emitter = $this->events;
+        foreach ($emitter($this->ctx) as $event) {
+            if (!$event instanceof AgentEvent) {
+                continue;
+            }
+
+            if ($event->kind === AgentEventKind::TokenDelta && $event->data->text !== null) {
+                $ch->emit($event->data->text);
+            }
+
+            if ($event->kind === AgentEventKind::AgentComplete && $event->data instanceof AgentResult) {
+                $this->result = $event->data;
+                $this->conversation = $event->data->conversation;
+            }
+        }
+
+        $ch->complete();
     }
 }

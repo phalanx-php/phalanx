@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Phalanx\Athena;
 
+use Closure;
 use Phalanx\Athena\Event\AgentEvent;
 use Phalanx\Athena\Event\TokenUsage;
+use Phalanx\Athena\Message\Conversation;
 use Phalanx\Athena\Message\Content;
 use Phalanx\Athena\Message\Message;
 use Phalanx\Athena\Provider\GenerateRequest;
@@ -13,10 +15,11 @@ use Phalanx\Athena\Provider\LlmProvider;
 use Phalanx\Athena\Provider\ProviderConfig;
 use Phalanx\Athena\Stream\Generation;
 use Phalanx\Athena\Tool\Disposition;
+use Phalanx\Athena\Tool\ToolCall;
 use Phalanx\Athena\Tool\ToolCallBag;
 use Phalanx\Athena\Tool\ToolOutcome;
 use Phalanx\Athena\Tool\ToolRegistry;
-use Phalanx\ExecutionScope;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\Scope;
 use Phalanx\Styx\Channel;
 use Phalanx\Styx\Emitter;
@@ -89,52 +92,21 @@ final class AgentLoop
                 /** @var list<ToolOutcome> $outcomes */
                 $outcomes = array_values($scope->concurrent(...$toolTasks));
 
-                $terminated = false;
                 foreach ($outcomes as $i => $outcome) {
                     $call = $generation->toolCalls->get($i);
                     $elapsed = (hrtime(true) - $startTime) / 1e6;
 
-                    match ($outcome->disposition) {
-                        Disposition::Terminate => (static function () use ($outcome, $conversation, $usage, $step, $relay, $elapsed, &$terminated): void {
-                            $result = AgentResult::fromTool($outcome, $conversation, $usage, $step);
-                            $relay(AgentEvent::complete($result, $elapsed, $usage, $step));
-                            $terminated = true;
-                        })(),
-
-                        Disposition::Delegate => (static function () use ($outcome, $scope, $call, &$conversation): void {
-                            if ($outcome->next === null) {
-                                throw new \RuntimeException('Delegate disposition requires a next task');
-                            }
-                            $childResult = $scope->execute($outcome->next);
-                            $conversation = $conversation->appendToolResult($call->id, $childResult);
-                        })(),
-
-                        Disposition::Escalate => (static function () use ($outcome, $call, &$conversation, $relay, $elapsed, $usage, $step): void {
-                            $reason = $outcome->reason ?? 'No reason provided';
-                            $relay(AgentEvent::escalation($reason, $elapsed, $usage, $step));
-                            $conversation = $conversation->appendToolResult(
-                                $call->id,
-                                'Escalated to human: ' . $reason,
-                            );
-                        })(),
-
-                        Disposition::Retry => (static function () use ($scope, $toolRegistry, $call, $outcome, &$conversation): void {
-                            $retried = $scope->retry(
-                                Task::of(static fn($s) => $toolRegistry->hydrate($call, hint: $outcome->reason)($s)),
-                                $toolRegistry->retryPolicy($call),
-                            );
-                            $conversation = $conversation->appendToolResult($call->id, $retried);
-                        })(),
-
-                        Disposition::Continue => (static function () use ($outcome, $call, &$conversation): void {
-                            $serialized = is_string($outcome->data)
-                                ? $outcome->data
-                                : json_encode($outcome->data, JSON_THROW_ON_ERROR);
-                            $conversation = $conversation->appendToolResult($call->id, $serialized);
-                        })(),
-                    };
-
-                    if ($terminated) {
+                    if (self::applyToolOutcome(
+                        $outcome,
+                        $call,
+                        $conversation,
+                        $toolRegistry,
+                        $scope,
+                        $usage,
+                        $step,
+                        $relay,
+                        $elapsed,
+                    )) {
                         return;
                     }
                 }
@@ -145,23 +117,7 @@ final class AgentLoop
                 $stepAction = self::invokeOnStep($turn, $generation, $step, $usage, $scope);
 
                 if ($stepAction !== null) {
-                    match ($stepAction->kind) {
-                        StepActionKind::Continue => null,
-                        StepActionKind::Finalize => (static function () use ($stepAction, $conversation, $usage, $step, $relay, $startTime): void {
-                            $text = $stepAction->finalText ?? '';
-                            $conversation = $conversation->assistant($text);
-                            $result = new AgentResult($text, null, $conversation, $usage, $step);
-                            $elapsed = (hrtime(true) - $startTime) / 1e6;
-                            $relay(AgentEvent::complete($result, $elapsed, $usage, $step));
-                        })(),
-                        StepActionKind::Inject => (static function () use ($stepAction, &$conversation): void {
-                            if ($stepAction->message !== null) {
-                                $conversation = $conversation->append($stepAction->message);
-                            }
-                        })(),
-                    };
-
-                    if ($stepAction->kind === StepActionKind::Finalize) {
+                    if (self::applyStepAction($stepAction, $conversation, $usage, $step, $relay, $startTime)) {
                         return;
                     }
                 }
@@ -211,6 +167,136 @@ final class AgentLoop
         );
 
         return ($turn->onStepHook)($stepResult, $scope);
+    }
+
+    /** @param Closure(AgentEvent): void $relay */
+    private static function applyToolOutcome(
+        ToolOutcome $outcome,
+        ToolCall $call,
+        Conversation &$conversation,
+        ToolRegistry $toolRegistry,
+        ExecutionScope $scope,
+        TokenUsage $usage,
+        int $step,
+        Closure $relay,
+        float $elapsed,
+    ): bool {
+        match ($outcome->disposition) {
+            Disposition::Terminate => self::completeFromTool($outcome, $conversation, $usage, $step, $relay, $elapsed),
+            Disposition::Delegate => self::appendDelegatedToolResult($outcome, $call, $conversation, $scope),
+            Disposition::Escalate => self::appendEscalationToolResult(
+                $outcome,
+                $call,
+                $conversation,
+                $usage,
+                $step,
+                $relay,
+                $elapsed,
+            ),
+            Disposition::Retry => self::appendRetriedToolResult($outcome, $call, $conversation, $toolRegistry, $scope),
+            Disposition::Continue => self::appendContinuedToolResult($outcome, $call, $conversation),
+        };
+
+        return $outcome->disposition === Disposition::Terminate;
+    }
+
+    /** @param Closure(AgentEvent): void $relay */
+    private static function completeFromTool(
+        ToolOutcome $outcome,
+        Conversation $conversation,
+        TokenUsage $usage,
+        int $step,
+        Closure $relay,
+        float $elapsed,
+    ): void {
+        $result = AgentResult::fromTool($outcome, $conversation, $usage, $step);
+        $relay(AgentEvent::complete($result, $elapsed, $usage, $step));
+    }
+
+    private static function appendDelegatedToolResult(
+        ToolOutcome $outcome,
+        ToolCall $call,
+        Conversation &$conversation,
+        ExecutionScope $scope,
+    ): void {
+        if ($outcome->next === null) {
+            throw new \RuntimeException('Delegate disposition requires a next task');
+        }
+
+        $childResult = $scope->execute($outcome->next);
+        $conversation = $conversation->appendToolResult($call->id, $childResult);
+    }
+
+    /** @param Closure(AgentEvent): void $relay */
+    private static function appendEscalationToolResult(
+        ToolOutcome $outcome,
+        ToolCall $call,
+        Conversation &$conversation,
+        TokenUsage $usage,
+        int $step,
+        Closure $relay,
+        float $elapsed,
+    ): void {
+        $reason = $outcome->reason ?? 'No reason provided';
+        $relay(AgentEvent::escalation($reason, $elapsed, $usage, $step));
+        $conversation = $conversation->appendToolResult($call->id, 'Escalated to human: ' . $reason);
+    }
+
+    private static function appendRetriedToolResult(
+        ToolOutcome $outcome,
+        ToolCall $call,
+        Conversation &$conversation,
+        ToolRegistry $toolRegistry,
+        ExecutionScope $scope,
+    ): void {
+        $retried = $scope->retry(
+            Task::of(static fn(ExecutionScope $s) => $toolRegistry->hydrate($call, hint: $outcome->reason)($s)),
+            $toolRegistry->retryPolicy($call),
+        );
+
+        $conversation = $conversation->appendToolResult($call->id, $retried);
+    }
+
+    private static function appendContinuedToolResult(
+        ToolOutcome $outcome,
+        ToolCall $call,
+        Conversation &$conversation,
+    ): void {
+        $serialized = is_string($outcome->data)
+            ? $outcome->data
+            : json_encode($outcome->data, JSON_THROW_ON_ERROR);
+
+        $conversation = $conversation->appendToolResult($call->id, $serialized);
+    }
+
+    /** @param Closure(AgentEvent): void $relay */
+    private static function applyStepAction(
+        StepAction $stepAction,
+        Conversation &$conversation,
+        TokenUsage $usage,
+        int $step,
+        Closure $relay,
+        int $startTime,
+    ): bool {
+        if ($stepAction->kind === StepActionKind::Continue) {
+            return false;
+        }
+
+        if ($stepAction->kind === StepActionKind::Inject) {
+            if ($stepAction->message !== null) {
+                $conversation = $conversation->append($stepAction->message);
+            }
+
+            return false;
+        }
+
+        $text = $stepAction->finalText ?? '';
+        $conversation = $conversation->assistant($text);
+        $result = new AgentResult($text, null, $conversation, $usage, $step);
+        $elapsed = (hrtime(true) - $startTime) / 1e6;
+        $relay(AgentEvent::complete($result, $elapsed, $usage, $step));
+
+        return true;
     }
 
     private static function assistantWithToolUse(string $text, ToolCallBag $toolCalls): Message

@@ -3,15 +3,13 @@
 /**
  * Concurrent streaming across LLM providers.
  *
- * Boots Aegis, opens a streaming completion against every reachable
+ * Boots Aegis, opens a streaming completion against every configured
  * provider in parallel, and prints token deltas to stdout as they
- * arrive. Local Ollama is the always-available proof — when it's
- * running on http://localhost:11434, the demo streams a real
- * end-to-end answer without any API keys. Anthropic and OpenAI are
- * additive: they fan in when their respective keys are set.
+ * arrive. Local Ollama can be enabled through the runtime context.
+ * Anthropic and OpenAI are additive: they fan in when their respective
+ * keys are present in the runtime context.
  *
- * Without Ollama and without keys, the demo prints what it would have
- * run and exits 0.
+ * Without configured providers, the demo prints what it needs and exits 0.
  */
 
 declare(strict_types=1);
@@ -35,23 +33,21 @@ use Phalanx\Task\Task;
 $context = ['argv' => $argv ?? []];
 $app = Application::starting($context)->compile();
 
-$ollamaUrl = (string) ($_ENV['OLLAMA_HOST'] ?? getenv('OLLAMA_HOST') ?: 'http://localhost:11434');
-$ollamaModel = (string) ($_ENV['OLLAMA_MODEL'] ?? getenv('OLLAMA_MODEL') ?: 'llama3:8b');
-$anthropicKey = (string) ($_ENV['ANTHROPIC_API_KEY'] ?? getenv('ANTHROPIC_API_KEY') ?: '');
-$openaiKey = (string) ($_ENV['OPENAI_API_KEY'] ?? getenv('OPENAI_API_KEY') ?: '');
-
-$ollamaUp = @fsockopen(parse_url($ollamaUrl, PHP_URL_HOST) ?: 'localhost', parse_url($ollamaUrl, PHP_URL_PORT) ?: 11434, $_, $_, 0.5);
-if ($ollamaUp) {
-    fclose($ollamaUp);
-    $ollamaUp = true;
-} else {
-    $ollamaUp = false;
-}
+$anthropicKey = (string) ($context['ANTHROPIC_API_KEY'] ?? '');
+$openaiKey = (string) ($context['OPENAI_API_KEY'] ?? '');
 
 /** @var array<string, LlmProvider> $providers */
 $providers = [];
-if ($ollamaUp) {
-    $providers['ollama'] = new OllamaProvider(new OllamaConfig(model: $ollamaModel, baseUrl: $ollamaUrl));
+if (
+    ($context['OLLAMA_ENABLED'] ?? false) === true
+    || array_key_exists('OLLAMA_MODEL', $context)
+    || array_key_exists('OLLAMA_BASE_URL', $context)
+) {
+    $defaults = new OllamaConfig();
+    $providers['ollama'] = new OllamaProvider(new OllamaConfig(
+        model:   (string) ($context['OLLAMA_MODEL'] ?? $defaults->model),
+        baseUrl: (string) ($context['OLLAMA_BASE_URL'] ?? $defaults->baseUrl),
+    ));
 }
 if ($anthropicKey !== '') {
     $providers['anthropic'] = new AnthropicProvider(new AnthropicConfig(apiKey: $anthropicKey));
@@ -62,10 +58,8 @@ if ($openaiKey !== '') {
 
 if ($providers === []) {
     echo "Streaming-providers demo wired.\n";
-    echo "No reachable providers. Run any of:\n";
-    echo "  - Local Ollama at {$ollamaUrl} (just `ollama serve` and pull a model)\n";
-    echo "  - Set ANTHROPIC_API_KEY for Anthropic streaming\n";
-    echo "  - Set OPENAI_API_KEY for OpenAI streaming\n";
+    echo "No providers configured in the runtime context.\n";
+    echo "Expected context keys: OLLAMA_ENABLED, ANTHROPIC_API_KEY, OPENAI_API_KEY.\n";
     exit(0);
 }
 
@@ -80,17 +74,21 @@ foreach ($providers as $name => $provider) {
     $tasks[$name] = Task::of(static function (ExecutionScope $s) use ($provider, $request, $label): array {
         $out = '';
         $usage = null;
-        foreach ($provider->generate($request)($s) as $event) {
-            if ($event->kind === AgentEventKind::TokenDelta) {
-                $delta = (string) ($event->data->text ?? '');
-                $out .= $delta;
-                echo "[{$label}] {$delta}";
+        try {
+            foreach ($provider->generate($request)($s) as $event) {
+                if ($event->kind === AgentEventKind::TokenDelta) {
+                    $delta = (string) ($event->data->text ?? '');
+                    $out .= $delta;
+                    echo "[{$label}] {$delta}";
+                }
+                if ($event->kind === AgentEventKind::TokenComplete) {
+                    $usage = $event->usageSoFar;
+                }
             }
-            if ($event->kind === AgentEventKind::TokenComplete) {
-                $usage = $event->usageSoFar;
-            }
+        } catch (\Throwable $e) {
+            return ['text' => $out, 'usage' => $usage, 'error' => $e->getMessage()];
         }
-        return ['text' => $out, 'usage' => $usage];
+        return ['text' => $out, 'usage' => $usage, 'error' => null];
     });
 }
 
@@ -104,6 +102,9 @@ $exitCode = $app->run(Task::named(
             $u = $r['usage'];
             $tokens = $u !== null ? "{$u->input}/{$u->output}" : 'n/a';
             printf("%-10s tokens(in/out): %s\n", $name, $tokens);
+            if ($r['error'] !== null) {
+                printf("%-10s error: %s\n", $name, $r['error']);
+            }
         }
 
         return 0;

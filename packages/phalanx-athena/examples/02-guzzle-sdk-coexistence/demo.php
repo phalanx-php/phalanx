@@ -8,11 +8,12 @@
  * reactor; CoroutineGuzzleStack swaps it for hyperf/guzzle's coroutine handler
  * so the SDK cooperates with Phalanx-managed concurrency.
  *
- * The demo runs an Athena native completion alongside a small Guzzle GET
- * via concurrent() — both should make progress without blocking each other.
+ * The demo runs an Athena native completion alongside a configured Guzzle
+ * GET via concurrent() — both should make progress without blocking each
+ * other.
  *
- * Without ANTHROPIC_API_KEY, or without `guzzlehttp/guzzle` + `hyperf/guzzle`
- * installed, the demo prints what would run and exits 0.
+ * Without ANTHROPIC_API_KEY, GUZZLE_DEMO_URL, or `guzzlehttp/guzzle` +
+ * `hyperf/guzzle`, the demo prints what would run and exits 0.
  */
 
 declare(strict_types=1);
@@ -32,13 +33,15 @@ use Phalanx\Task\Task;
 $context = ['argv' => $argv ?? []];
 $app = Application::starting($context)->compile();
 
-$anthropicKey = (string) ($_ENV['ANTHROPIC_API_KEY'] ?? getenv('ANTHROPIC_API_KEY') ?: '');
+$anthropicKey = (string) ($context['ANTHROPIC_API_KEY'] ?? '');
+$guzzleUrl = (string) ($context['GUZZLE_DEMO_URL'] ?? '');
 $guzzleAvailable = class_exists(\GuzzleHttp\Client::class) && class_exists(\Hyperf\Guzzle\CoroutineHandler::class);
 
-if ($anthropicKey === '' || !$guzzleAvailable) {
+if ($anthropicKey === '' || $guzzleUrl === '' || !$guzzleAvailable) {
     echo "Guzzle SDK coexistence demo wired.\n";
     echo "Requirements:\n";
     echo "  ANTHROPIC_API_KEY:                  " . ($anthropicKey === '' ? 'missing' : 'present') . "\n";
+    echo "  GUZZLE_DEMO_URL:                    " . ($guzzleUrl === '' ? 'missing' : 'present') . "\n";
     echo "  guzzlehttp/guzzle + hyperf/guzzle:  " . ($guzzleAvailable ? 'present' : 'install both to run live') . "\n";
     exit(0);
 }
@@ -54,7 +57,7 @@ $guzzle = new \GuzzleHttp\Client(['handler' => $stack, 'timeout' => 10.0]);
 
 $exitCode = $app->run(Task::named(
     'demo.athena.guzzle-sdk-coexistence',
-    static function (ExecutionScope $scope) use ($anthropic, $guzzle, $request): int {
+    static function (ExecutionScope $scope) use ($anthropic, $guzzle, $guzzleUrl, $request): int {
         echo "Running Athena native + Guzzle SDK concurrently...\n\n";
 
         $results = $scope->concurrent(
@@ -67,8 +70,8 @@ $exitCode = $app->run(Task::named(
                 }
                 return $out;
             }),
-            guzzle: Task::of(static function () use ($guzzle): int {
-                $response = $guzzle->get('https://httpbin.org/anything');
+            guzzle: Task::of(static function () use ($guzzle, $guzzleUrl): int {
+                $response = $guzzle->get($guzzleUrl);
                 return $response->getStatusCode();
             }),
         );
