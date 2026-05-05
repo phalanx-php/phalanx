@@ -59,9 +59,10 @@ final class ScanProgress implements ScanObserver
         private readonly Table $table,
         private readonly Theme $theme,
         private readonly array $headers = ['Result', 'Detail'],
+        ?LiveRegionRenderer $renderer = null,
     ) {
         $this->spinner = new Spinner($theme, Spinner::DOTS);
-        $this->renderer = new LiveRegionRenderer($output);
+        $this->renderer = $renderer ?? new LiveRegionRenderer($output);
     }
 
     public function onStart(int $total): void
@@ -80,9 +81,10 @@ final class ScanProgress implements ScanObserver
 
         [$label, $detail] = ($this->formatHit)($result);
 
-        // Cancel the periodic for the duration of the persist+update pair.
-        // This prevents the tick from firing mid-write and producing a
-        // torn frame where both the row and the live line change simultaneously.
+        /**
+         * Pause the spinner across the durable-row + live-line pair so a timer
+         * tick cannot interleave with the write and produce a torn frame.
+         */
         $this->stopTimer();
         $this->renderer->persist($this->table->row([$label, $detail], $this->widths));
         $this->renderer->update($this->buildLiveLine());
@@ -92,9 +94,10 @@ final class ScanProgress implements ScanObserver
     public function onMiss(mixed $result): void
     {
         $this->checked++;
-        // The periodic subscription handles live line updates for TTY.
-        // For non-TTY (CI / pipes) emit a count line every 10 items so
-        // there's some visible progress without spamming every miss.
+        /**
+         * TTY streams repaint through the periodic live line. Non-TTY streams
+         * get sparse durable checkpoints instead of every transient miss.
+         */
         if (!$this->renderer->isTty() && $this->checked % 10 === 0) {
             $this->renderer->persist($this->countLine());
         }
@@ -114,18 +117,21 @@ final class ScanProgress implements ScanObserver
     private function buildLiveLine(): string
     {
         $spinFrame = $this->spinner->frame($this->spinnerTick);
-        // Reserve 4 chars for "  ⠋  " prefix (2 indent + spinner + 2 spaces)
+        $counts = $this->total !== null
+            ? sprintf('  %d/%d', $this->checked, $this->total)
+            : '';
+
+        /** Reserve the spinner prefix when sizing the progress bar. */
+        $barWidth = $this->output->width() - 6 - mb_strwidth($counts);
         $bar = $this->progressBar->render(
             $this->checked,
             $this->total ?? $this->checked,
-            $this->output->width() - 6,
+            max(1, $barWidth),
         );
 
-        if ($this->total !== null) {
-            $counts = $this->theme->muted->apply(
-                sprintf('  %d/%d', $this->checked, $this->total),
-            );
-            return "  {$spinFrame}  {$bar}{$counts}";
+        if ($counts !== '') {
+            $renderedCounts = $this->theme->muted->apply($counts);
+            return "  {$spinFrame}  {$bar}{$renderedCounts}";
         }
 
         return "  {$spinFrame}  {$bar}";

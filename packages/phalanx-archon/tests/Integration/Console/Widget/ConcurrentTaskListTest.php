@@ -4,12 +4,17 @@ declare(strict_types=1);
 
 namespace Phalanx\Archon\Tests\Integration\Console\Widget;
 
+use InvalidArgumentException;
+use Phalanx\Archon\Console\Output\LiveRegionRenderer;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Archon\Console\Output\TerminalEnvironment;
 use Phalanx\Archon\Console\Style\Style;
 use Phalanx\Archon\Console\Style\Theme;
 use Phalanx\Archon\Console\Widget\ConcurrentTaskList;
+use Phalanx\Archon\Tests\Support\RecordingLiveRegionWriter;
 use Phalanx\Scope\ExecutionScope;
+use Phalanx\Scope\Scope;
+use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 use Phalanx\Tests\Support\CoroutineTestCase;
 use PHPUnit\Framework\Attributes\Test;
@@ -23,31 +28,36 @@ final class ConcurrentTaskListTest extends CoroutineTestCase
         $stream = $this->stream();
         $output = $this->streamOutput($stream);
         $theme  = $this->theme();
+        $writer = new RecordingLiveRegionWriter();
+        $renderer = new LiveRegionRenderer($writer);
 
-        $this->runScoped(static function (ExecutionScope $scope) use ($output, $theme): void {
+        $this->runScoped(static function (ExecutionScope $scope) use ($output, $theme, $renderer): void {
             $okOne = new class implements Scopeable {
-                public function __invoke(\Phalanx\Scope\Scope $scope): string
+                public function __invoke(Scope $scope): string
                 {
                     return 'ok-1';
                 }
             };
             $okTwo = new class implements Scopeable {
-                public function __invoke(\Phalanx\Scope\Scope $scope): string
+                public function __invoke(Scope $scope): string
                 {
                     return 'ok-2';
                 }
             };
 
-            (new ConcurrentTaskList($scope, $output, $theme))
+            new ConcurrentTaskList($scope, $output, $theme, renderer: $renderer)
                 ->add('a', 'Alpha', $okOne)
                 ->add('b', 'Beta', $okTwo)
                 ->run();
         });
 
-        $rendered = $this->contents($stream);
+        $rendered = implode("\n", $writer->persists[0]);
+        self::assertNotSame([], $writer->updates);
+        self::assertCount(1, $writer->persists);
         self::assertStringContainsString('Alpha', $rendered);
         self::assertStringContainsString('Beta', $rendered);
-        self::assertStringContainsString('✓', $rendered);
+        self::assertSame(2, substr_count($rendered, '✓'));
+        self::assertStringNotContainsString('✗', $rendered);
     }
 
     #[Test]
@@ -56,10 +66,12 @@ final class ConcurrentTaskListTest extends CoroutineTestCase
         $stream = $this->stream();
         $output = $this->streamOutput($stream);
         $theme  = $this->theme();
+        $writer = new RecordingLiveRegionWriter();
+        $renderer = new LiveRegionRenderer($writer);
 
-        $this->runScoped(static function (ExecutionScope $scope) use ($output, $theme): void {
+        $this->runScoped(static function (ExecutionScope $scope) use ($output, $theme, $renderer): void {
             $okTask = new class implements Scopeable {
-                public function __invoke(\Phalanx\Scope\Scope $scope): string
+                public function __invoke(Scope $scope): string
                 {
                     return 'ok';
                 }
@@ -71,13 +83,13 @@ final class ConcurrentTaskListTest extends CoroutineTestCase
                 }
             };
 
-            (new ConcurrentTaskList($scope, $output, $theme))
+            new ConcurrentTaskList($scope, $output, $theme, renderer: $renderer)
                 ->add('ok', 'OK Task', $okTask)
                 ->add('fail', 'Fail Task', $failTask)
                 ->run();
         });
 
-        $rendered = $this->contents($stream);
+        $rendered = implode("\n", $writer->persists[0]);
         self::assertStringContainsString('OK Task', $rendered);
         self::assertStringContainsString('Fail Task', $rendered);
         self::assertStringContainsString('✓', $rendered);
@@ -86,17 +98,64 @@ final class ConcurrentTaskListTest extends CoroutineTestCase
     }
 
     #[Test]
+    public function delayedTaskAllowsPeriodicLiveUpdatesBeforeFinalSettle(): void
+    {
+        $stream = $this->stream();
+        $output = $this->streamOutput($stream);
+        $theme  = $this->theme();
+        $writer = new RecordingLiveRegionWriter();
+        $renderer = new LiveRegionRenderer($writer);
+
+        $this->runScoped(static function (ExecutionScope $scope) use ($output, $theme, $renderer): void {
+            $task = new class implements Executable {
+                public function __invoke(ExecutionScope $scope): string
+                {
+                    $scope->delay(0.04);
+
+                    return 'ok';
+                }
+            };
+
+            new ConcurrentTaskList($scope, $output, $theme, spinnerFps: 100, renderer: $renderer)
+                ->add('slow', 'Slow Task', $task)
+                ->run();
+        });
+
+        self::assertGreaterThan(1, count($writer->updates));
+        self::assertCount(1, $writer->persists);
+    }
+
+    #[Test]
     public function emptyTaskListIsNoOp(): void
     {
         $stream = $this->stream();
         $output = $this->streamOutput($stream);
         $theme  = $this->theme();
+        $writer = new RecordingLiveRegionWriter();
+        $renderer = new LiveRegionRenderer($writer);
 
-        $this->runScoped(static function (ExecutionScope $scope) use ($output, $theme): void {
-            (new ConcurrentTaskList($scope, $output, $theme))->run();
+        $this->runScoped(static function (ExecutionScope $scope) use ($output, $theme, $renderer): void {
+            new ConcurrentTaskList($scope, $output, $theme, renderer: $renderer)->run();
         });
 
         self::assertSame('', $this->contents($stream));
+        self::assertSame([], $writer->updates);
+        self::assertSame([], $writer->persists);
+    }
+
+    #[Test]
+    public function spinnerFpsMustBeGreaterThanZero(): void
+    {
+        $stream = $this->stream();
+        $output = $this->streamOutput($stream);
+        $theme  = $this->theme();
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('ConcurrentTaskList spinner FPS must be greater than zero.');
+
+        $this->runScoped(static function (ExecutionScope $scope) use ($output, $theme): void {
+            new ConcurrentTaskList($scope, $output, $theme, spinnerFps: 0);
+        });
     }
 
     private function theme(): Theme

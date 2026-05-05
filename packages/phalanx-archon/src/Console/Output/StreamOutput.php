@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Archon\Console\Output;
 
-use OpenSwoole\Process;
-use WeakReference;
-
 /**
  * Single point of contact with the terminal for all console output.
  *
@@ -23,7 +20,7 @@ use WeakReference;
  */
 final class StreamOutput implements LiveRegionWriter
 {
-    private int $lastLineCount = 0;
+    private int $lastVisualRowCount = 0;
     private bool $isTty;
     private bool $syncSupported;
     private int $cachedWidth;
@@ -31,37 +28,25 @@ final class StreamOutput implements LiveRegionWriter
     private TerminalEnvironment $terminal;
 
     /** @param resource $stream */
-    public function __construct(private mixed $stream = STDOUT, ?TerminalEnvironment $terminal = null)
-    {
-        $this->terminal = $terminal ?? new TerminalEnvironment();
-        $this->isTty = stream_isatty($this->stream);
+    public function __construct(
+        private mixed $stream = STDOUT,
+        ?TerminalEnvironment $terminal = null,
+    ) {
+        if ($terminal === null) {
+            $terminal = new TerminalEnvironment();
+        }
 
-        // Apple Terminal does not support CSI ?2026 (synchronized output) and the
-        // sequences appear literally in scrollback history. Suppress them there.
+        $this->terminal = $terminal;
+        $this->isTty = $this->terminal->isTty ?? stream_isatty($this->stream);
+
+        /**
+         * Apple Terminal does not support CSI ?2026 synchronized output. The
+         * sequences appear literally in scrollback history, so suppress them.
+         */
         $this->syncSupported = $this->terminal->termProgram !== 'Apple_Terminal';
 
-        // Compute terminal dimensions once at construction (acceptable blocking call
-        // at boot before the event loop starts). SIGWINCH invalidates and recomputes
-        // synchronously so width()/height() never block during rendering.
         $this->cachedWidth  = $this->measureWidth();
         $this->cachedHeight = $this->measureHeight();
-
-        if ($this->isTty && extension_loaded('openswoole') && defined('SIGWINCH')) {
-            // WeakReference breaks the $this capture cycle. If StreamOutput is ever
-            // eligible for GC the signal handler becomes a no-op instead of pinning it.
-            // Process::signal binds at the OpenSwoole reactor level — the handler only
-            // fires while the reactor is processing events, which is exactly when the
-            // prompt loop needs the dimensions to be current.
-            $ref = WeakReference::create($this);
-            Process::signal(SIGWINCH, static function () use ($ref): void {
-                $self = $ref->get();
-                if ($self === null) {
-                    return;
-                }
-                $self->cachedWidth  = $self->measureWidth();
-                $self->cachedHeight = $self->measureHeight();
-            });
-        }
     }
 
     /**
@@ -80,7 +65,7 @@ final class StreamOutput implements LiveRegionWriter
             fwrite($this->stream, "\033[?2026l");
         }
 
-        $this->lastLineCount = 0;
+        $this->lastVisualRowCount = 0;
     }
 
     /**
@@ -106,7 +91,7 @@ final class StreamOutput implements LiveRegionWriter
             fwrite($this->stream, "\033[?2026l");
         }
 
-        $this->lastLineCount = substr_count($rendered, "\n") + 1;
+        $this->lastVisualRowCount = $this->visualRowCount($rendered);
     }
 
     /**
@@ -115,7 +100,7 @@ final class StreamOutput implements LiveRegionWriter
      */
     public function clear(): void
     {
-        if (!$this->isTty || $this->lastLineCount === 0) {
+        if (!$this->isTty || $this->lastVisualRowCount === 0) {
             return;
         }
 
@@ -128,7 +113,7 @@ final class StreamOutput implements LiveRegionWriter
             fwrite($this->stream, "\033[?2026l");
         }
 
-        $this->lastLineCount = 0;
+        $this->lastVisualRowCount = 0;
     }
 
     public function width(): int
@@ -152,15 +137,35 @@ final class StreamOutput implements LiveRegionWriter
      */
     private function eraseRegion(): void
     {
-        if ($this->lastLineCount === 0) {
+        if ($this->lastVisualRowCount === 0) {
             return;
         }
 
-        if ($this->lastLineCount > 1) {
-            fwrite($this->stream, sprintf("\033[%dA", $this->lastLineCount - 1));
+        if ($this->lastVisualRowCount > 1) {
+            fwrite($this->stream, sprintf("\033[%dA", $this->lastVisualRowCount - 1));
         }
 
         fwrite($this->stream, "\r\033[J");
+    }
+
+    private function visualRowCount(string $rendered): int
+    {
+        $columns = max(1, $this->cachedWidth);
+        $rows = 0;
+
+        foreach (explode("\n", $rendered) as $line) {
+            $width = $this->displayWidth($line);
+            $rows += intdiv(max(0, $width - 1), $columns) + 1;
+        }
+
+        return max(1, $rows);
+    }
+
+    private function displayWidth(string $line): int
+    {
+        $plain = preg_replace('/\x1B(?:[@-Z\\\\-_]|\[[0-?]*[ -\/]*[@-~])/', '', $line) ?? $line;
+
+        return mb_strwidth($plain);
     }
 
     private function measureWidth(): int
@@ -169,8 +174,7 @@ final class StreamOutput implements LiveRegionWriter
             return $this->terminal->columns;
         }
 
-        $cols = (int) shell_exec('tput cols 2>/dev/null');
-        return $cols > 0 ? $cols : 80;
+        return 80;
     }
 
     private function measureHeight(): int
@@ -179,7 +183,6 @@ final class StreamOutput implements LiveRegionWriter
             return $this->terminal->lines;
         }
 
-        $lines = (int) shell_exec('tput lines 2>/dev/null');
-        return $lines > 0 ? $lines : 24;
+        return 24;
     }
 }

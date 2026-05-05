@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Archon\Tests\Integration\Scan;
 
+use Phalanx\Archon\Console\Output\LiveRegionRenderer;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Archon\Console\Output\TerminalEnvironment;
 use Phalanx\Archon\Console\Style\Style;
@@ -11,6 +12,7 @@ use Phalanx\Archon\Console\Style\Theme;
 use Phalanx\Archon\Console\Widget\ProgressBar;
 use Phalanx\Archon\Console\Widget\Table;
 use Phalanx\Archon\Scan\ScanProgress;
+use Phalanx\Archon\Tests\Support\RecordingLiveRegionWriter;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Tests\Support\CoroutineTestCase;
 use PHPUnit\Framework\Attributes\Test;
@@ -23,8 +25,10 @@ final class ScanProgressTest extends CoroutineTestCase
         $stream = $this->stream();
         $output = $this->streamOutput($stream);
         $theme  = $this->theme();
+        $writer = new RecordingLiveRegionWriter();
+        $renderer = new LiveRegionRenderer($writer);
 
-        $this->runScoped(static function (ExecutionScope $scope) use ($output, $theme): void {
+        $this->runScoped(static function (ExecutionScope $scope) use ($output, $theme, $renderer): void {
             $progress = new ScanProgress(
                 $scope,
                 static fn(mixed $hit): array => [(string) $hit, ''],
@@ -33,13 +37,15 @@ final class ScanProgressTest extends CoroutineTestCase
                 new Table($theme),
                 $theme,
                 ['Result'],
+                $renderer,
             );
 
             $progress->onStart(0);
             $progress->onDone(1.5);
         });
 
-        $rendered = $this->contents($stream);
+        $rendered = implode("\n", array_merge(...$writer->persists));
+        self::assertSame(1, $writer->clearCount);
         self::assertStringContainsString('Result', $rendered);
         self::assertStringContainsString('Found 0/0 in 1.5s', $rendered);
     }
@@ -50,8 +56,10 @@ final class ScanProgressTest extends CoroutineTestCase
         $stream = $this->stream();
         $output = $this->streamOutput($stream);
         $theme  = $this->theme();
+        $writer = new RecordingLiveRegionWriter();
+        $renderer = new LiveRegionRenderer($writer);
 
-        $this->runScoped(static function (ExecutionScope $scope) use ($output, $theme): void {
+        $this->runScoped(static function (ExecutionScope $scope) use ($output, $theme, $renderer): void {
             $progress = new ScanProgress(
                 $scope,
                 static fn(mixed $hit): array => [(string) $hit, 'detail'],
@@ -60,6 +68,7 @@ final class ScanProgressTest extends CoroutineTestCase
                 new Table($theme),
                 $theme,
                 ['Result', 'Detail'],
+                $renderer,
             );
 
             $progress->onStart(5);
@@ -70,7 +79,8 @@ final class ScanProgressTest extends CoroutineTestCase
             $progress->onDone(2.0);
         });
 
-        $rendered = $this->contents($stream);
+        $rendered = implode("\n", array_merge(...$writer->persists));
+        self::assertNotSame([], $writer->updates);
         self::assertStringContainsString('alpha', $rendered);
         self::assertStringContainsString('beta', $rendered);
         self::assertStringContainsString('Found 2/5 in 2.0s', $rendered);
@@ -82,8 +92,10 @@ final class ScanProgressTest extends CoroutineTestCase
         $stream = $this->stream();
         $output = $this->streamOutput($stream);
         $theme  = $this->theme();
+        $writer = new RecordingLiveRegionWriter(false);
+        $renderer = new LiveRegionRenderer($writer);
 
-        $this->runScoped(static function (ExecutionScope $scope) use ($output, $theme): void {
+        $this->runScoped(static function (ExecutionScope $scope) use ($output, $theme, $renderer): void {
             $progress = new ScanProgress(
                 $scope,
                 static fn(mixed $hit): array => [(string) $hit, ''],
@@ -92,6 +104,7 @@ final class ScanProgressTest extends CoroutineTestCase
                 new Table($theme),
                 $theme,
                 ['Result'],
+                $renderer,
             );
 
             $progress->onStart(20);
@@ -101,9 +114,12 @@ final class ScanProgressTest extends CoroutineTestCase
             $progress->onDone(0.5);
         });
 
-        $rendered = $this->contents($stream);
+        $rendered = implode("\n", array_merge(...$writer->persists));
+        self::assertSame(2, substr_count($rendered, 'Checking...'));
         self::assertStringContainsString('Checking... 10/20', $rendered);
         self::assertStringContainsString('Checking... 20/20', $rendered);
+        self::assertStringNotContainsString('Checking... 1/20', $rendered);
+        self::assertStringNotContainsString('Checking... 11/20', $rendered);
     }
 
     private function theme(): Theme
@@ -133,11 +149,5 @@ final class ScanProgressTest extends CoroutineTestCase
     private function streamOutput(mixed $stream): StreamOutput
     {
         return new StreamOutput($stream, new TerminalEnvironment(columns: 80, lines: 24));
-    }
-
-    private function contents(mixed $stream): string
-    {
-        rewind($stream);
-        return (string) stream_get_contents($stream);
     }
 }

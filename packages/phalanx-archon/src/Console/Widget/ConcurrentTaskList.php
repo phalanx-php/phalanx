@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Archon\Console\Widget;
 
+use InvalidArgumentException;
 use Phalanx\Archon\Console\Output\LiveRegionRenderer;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Archon\Console\Style\Theme;
@@ -27,9 +28,9 @@ use Phalanx\Task\Scopeable;
  *
  * Usage (from within a command fiber):
  *
- *   (new ConcurrentTaskList($scope, $output, $theme))
+ *   new ConcurrentTaskList($scope, $output, $theme)
  *       ->add('a', 'Download', new DownloadFile($url))
- *       ->add('b', 'Parse',    new ParseData())
+ *       ->add('b', 'Parse', new ParseData())
  *       ->run();
  */
 final class ConcurrentTaskList
@@ -42,7 +43,11 @@ final class ConcurrentTaskList
         private readonly StreamOutput $output,
         private readonly Theme $theme,
         private readonly int $spinnerFps = 10,
+        private readonly ?LiveRegionRenderer $renderer = null,
     ) {
+        if ($this->spinnerFps <= 0) {
+            throw new InvalidArgumentException('ConcurrentTaskList spinner FPS must be greater than zero.');
+        }
     }
 
     public function add(string $id, string $name, Executable|Scopeable $task): self
@@ -61,7 +66,7 @@ final class ConcurrentTaskList
 
         $taskList    = $this->buildTaskList();
         $spinnerTick = 0;
-        $renderer    = new LiveRegionRenderer($this->output);
+        $renderer    = $this->renderer ?? new LiveRegionRenderer($this->output);
 
         foreach (array_keys($this->tasks) as $id) {
             $taskList->setState($id, TaskState::Running);

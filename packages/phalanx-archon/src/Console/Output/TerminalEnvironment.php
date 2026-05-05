@@ -9,6 +9,7 @@ final readonly class TerminalEnvironment
     public function __construct(
         public ?int $columns = null,
         public ?int $lines = null,
+        public ?bool $isTty = null,
         public string $termProgram = '',
     ) {
     }

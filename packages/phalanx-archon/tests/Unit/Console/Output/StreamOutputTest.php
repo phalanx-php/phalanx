@@ -39,7 +39,7 @@ final class StreamOutputTest extends TestCase
 
         $output = new StreamOutput(
             $stream,
-            new TerminalEnvironment(columns: 80, lines: 24, termProgram: 'Apple_Terminal'),
+            new TerminalEnvironment(columns: 80, lines: 24, isTty: true, termProgram: 'Apple_Terminal'),
         );
 
         try {
@@ -47,6 +47,29 @@ final class StreamOutputTest extends TestCase
             rewind($stream);
 
             self::assertSame("hello\n", stream_get_contents($stream));
+        } finally {
+            fclose($stream);
+        }
+    }
+
+    #[Test]
+    public function ttyPersistUsesSynchronizedOutputWhenSupported(): void
+    {
+        $stream = fopen('php://memory', 'w+');
+        if ($stream === false) {
+            self::fail('Unable to open memory stream.');
+        }
+
+        $output = new StreamOutput(
+            $stream,
+            new TerminalEnvironment(columns: 80, lines: 24, isTty: true),
+        );
+
+        try {
+            $output->persist('hello');
+            rewind($stream);
+
+            self::assertSame("\033[?2026hhello\n\033[?2026l", stream_get_contents($stream));
         } finally {
             fclose($stream);
         }
@@ -69,6 +92,30 @@ final class StreamOutputTest extends TestCase
             rewind($stream);
 
             self::assertSame("done\n", stream_get_contents($stream));
+        } finally {
+            fclose($stream);
+        }
+    }
+
+    #[Test]
+    public function ttyUpdatesClearWrappedVisualRows(): void
+    {
+        $stream = fopen('php://memory', 'w+');
+        if ($stream === false) {
+            self::fail('Unable to open memory stream.');
+        }
+
+        $output = new StreamOutput(
+            $stream,
+            new TerminalEnvironment(columns: 5, lines: 24, isTty: true, termProgram: 'Apple_Terminal'),
+        );
+
+        try {
+            $output->update('abcdefghijkl');
+            $output->update('x');
+            rewind($stream);
+
+            self::assertStringContainsString("\033[2A\r\033[Jx", (string) stream_get_contents($stream));
         } finally {
             fclose($stream);
         }

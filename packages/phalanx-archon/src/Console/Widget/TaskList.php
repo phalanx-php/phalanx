@@ -19,8 +19,9 @@ final class TaskList
 
     private Spinner $spinner;
 
-    public function __construct(private readonly Theme $theme)
-    {
+    public function __construct(
+        private readonly Theme $theme,
+    ) {
         $this->spinner = new Spinner($theme, Spinner::BRAILLE);
     }
 

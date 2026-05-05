@@ -15,8 +15,9 @@ class LiveRegionRenderer
     /** @var list<string>|null */
     private ?array $frame = null;
 
-    public function __construct(private readonly LiveRegionWriter $writer)
-    {
+    public function __construct(
+        private readonly LiveRegionWriter $writer,
+    ) {
     }
 
     public function update(string ...$lines): void

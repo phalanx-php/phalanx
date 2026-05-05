@@ -111,8 +111,9 @@ final class SpyLiveRegionWriter implements LiveRegionWriter
 
     public int $clearCount = 0;
 
-    public function __construct(private readonly bool $tty = true)
-    {
+    public function __construct(
+        private readonly bool $tty = true,
+    ) {
     }
 
     public function update(string ...$lines): void
