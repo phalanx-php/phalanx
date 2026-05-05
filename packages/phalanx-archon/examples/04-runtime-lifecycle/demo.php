@@ -27,18 +27,25 @@ function scenarioSigintSubprocess(): bool
 {
     echo "scenario A — SIGINT propagates through subprocess\n";
 
-    $captured = runRunner(['watch', '--duration=30'], static function (Process $proc, int $pid, string $captured): bool {
-        if (str_contains($captured, '[tick 1 1]')) {
-            Process::kill($pid, SIGINT);
-            return true;
-        }
-        return false;
-    }, doneMarker: '[cleanup:');
+    $captured = runRunner(
+        ['watch', '--duration=30'],
+        static function (Process $proc, int $pid, string $captured): bool {
+            if (str_contains($captured, '[tick 1 1]')) {
+                Process::kill($pid, SIGINT);
+                return true;
+            }
+            return false;
+        },
+        doneMarker: '[cleanup:',
+    );
 
     $passed = true;
-    $passed = check('  child opened resource',         str_contains($captured, '[opened resource #1]'))            && $passed;
-    $passed = check('  child emitted at least 1 tick', str_contains($captured, '[tick 1 1]'))                      && $passed;
-    $passed = check('  scope onDispose cleanup ran',   str_contains($captured, '[cleanup: closed resource #1]'))  && $passed;
+    $passed = check('  child opened resource', str_contains($captured, '[opened resource #1]')) && $passed;
+    $passed = check('  child emitted at least 1 tick', str_contains($captured, '[tick 1 1]')) && $passed;
+    $passed = check(
+        '  scope onDispose cleanup ran',
+        str_contains($captured, '[cleanup: closed resource #1]'),
+    ) && $passed;
 
     if (!$passed) {
         echo "  captured output:\n" . indentLines($captured) . "\n";
@@ -60,11 +67,16 @@ function scenarioWorkerFailureIsolated(): bool
     $captured = runRunner(['watch', '--duration=0.4', '--fail-worker=2'], doneMarker: '[completed normally]');
 
     $passed = true;
-    $passed = check('  workers 1 and 3 ticked',         str_contains($captured, '[tick 1 1]')
-                                                        && str_contains($captured, '[tick 3 1]'))            && $passed;
-    $passed = check('  resource opened and cleaned up', str_contains($captured, '[opened resource #')
-                                                        && str_contains($captured, '[cleanup: closed resource #')) && $passed;
-    $passed = check('  body completed normally',        str_contains($captured, '[completed normally]'))    && $passed;
+    $passed = check(
+        '  workers 1 and 3 ticked',
+        str_contains($captured, '[tick 1 1]') && str_contains($captured, '[tick 3 1]'),
+    ) && $passed;
+    $passed = check(
+        '  resource opened and cleaned up',
+        str_contains($captured, '[opened resource #')
+            && str_contains($captured, '[cleanup: closed resource #'),
+    ) && $passed;
+    $passed = check('  body completed normally', str_contains($captured, '[completed normally]')) && $passed;
 
     if (!$passed) {
         echo "  captured output:\n" . indentLines($captured) . "\n";
@@ -84,18 +96,25 @@ function scenarioSignalCancellation(): bool
 {
     echo "scenario C — SIGTERM cancels through the same trap\n";
 
-    $captured = runRunner(['watch', '--duration=30'], static function (Process $proc, int $pid, string $captured): bool {
-        if (str_contains($captured, '[tick 1 1]')) {
-            Process::kill($pid, SIGTERM);
-            return true;
-        }
-        return false;
-    }, doneMarker: '[cleanup:');
+    $captured = runRunner(
+        ['watch', '--duration=30'],
+        static function (Process $proc, int $pid, string $captured): bool {
+            if (str_contains($captured, '[tick 1 1]')) {
+                Process::kill($pid, SIGTERM);
+                return true;
+            }
+            return false;
+        },
+        doneMarker: '[cleanup:',
+    );
 
     $passed = true;
-    $passed = check('  workers ran before cancel',      str_contains($captured, '[tick 1 1]'))               && $passed;
-    $passed = check('  cancelled message reached body', str_contains($captured, '[cancelled:'))              && $passed;
-    $passed = check('  scope onDispose cleanup ran',    str_contains($captured, '[cleanup: closed resource #')) && $passed;
+    $passed = check('  workers ran before cancel', str_contains($captured, '[tick 1 1]')) && $passed;
+    $passed = check('  cancelled message reached body', str_contains($captured, '[cancelled:')) && $passed;
+    $passed = check(
+        '  scope onDispose cleanup ran',
+        str_contains($captured, '[cleanup: closed resource #'),
+    ) && $passed;
 
     if (!$passed) {
         echo "  captured output:\n" . indentLines($captured) . "\n";
@@ -107,7 +126,7 @@ function scenarioSignalCancellation(): bool
 
 /**
  * @param list<string>                              $argv
- * @param ?callable(Process, int, string): bool     $onChunk fires after each read; return true to stop watching.
+ * @param ?callable(Process, int, string): bool $onChunk fires after each read; return true to stop watching.
  */
 function runRunner(array $argv, ?callable $onChunk = null, string $doneMarker = '', float $timeout = 5.0): string
 {
@@ -120,13 +139,14 @@ function runRunner(array $argv, ?callable $onChunk = null, string $doneMarker = 
     if ($pid === false) {
         return '';
     }
+    $proc->setBlocking(false);
 
     $captured = '';
     Coroutine::run(static function () use ($proc, $pid, &$captured, $onChunk, $doneMarker, $timeout): void {
         $deadline = microtime(true) + $timeout;
         $signalled = false;
         while (microtime(true) < $deadline) {
-            $chunk = $proc->read(8192);
+            $chunk = @$proc->read(8192);
             if (is_string($chunk) && $chunk !== '') {
                 $captured .= $chunk;
                 if (!$signalled && $onChunk !== null && $onChunk($proc, $pid, $captured)) {
@@ -141,6 +161,13 @@ function runRunner(array $argv, ?callable $onChunk = null, string $doneMarker = 
     });
 
     Process::wait(true);
+    while (true) {
+        $chunk = @$proc->read(8192);
+        if (!is_string($chunk) || $chunk === '') {
+            break;
+        }
+        $captured .= $chunk;
+    }
 
     return $captured;
 }
