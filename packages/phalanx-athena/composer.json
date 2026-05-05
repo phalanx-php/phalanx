@@ -17,6 +17,10 @@
         "phalanx-php/iris": "^0.6",
         "phalanx-php/styx": "^0.5"
     },
+    "require-dev": {
+        "guzzlehttp/guzzle": "^7.10",
+        "hyperf/guzzle": "^3.1"
+    },
     "suggest": {
         "phalanx-php/redis": "For conversation memory and pub/sub agent coordination",
         "phalanx-php/postgres": "For persistent conversation storage and LISTEN/NOTIFY tasks",
@@ -36,7 +40,7 @@
         }
     },
     "scripts": {
-        "demo": ["@demo:streaming", "@demo:guzzle"],
+        "demo": "@demo:streaming",
         "demo:streaming": "php examples/01-streaming-providers/demo.php",
         "demo:guzzle": "php examples/02-guzzle-sdk-coexistence/demo.php",
         "demo:serve:support-triage": "php examples/support-triage/server.php",

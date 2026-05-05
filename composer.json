@@ -32,6 +32,8 @@
     },
     "require-dev": {
         "clue/docker-react": "^1.6",
+        "guzzlehttp/guzzle": "^7.10",
+        "hyperf/guzzle": "^3.1",
         "openswoole/ide-helper": "^26.2",
         "phpstan/phpstan": "^2.0",
         "phpunit/phpunit": "^13.0",
@@ -130,7 +132,7 @@
         "demo:archon:interactive": "php packages/phalanx-archon/examples/02-interactive-input/demo.php",
         "demo:archon:concurrency": "php packages/phalanx-archon/examples/03-supervised-concurrency/demo.php",
         "demo:archon:lifecycle": "php packages/phalanx-archon/examples/04-runtime-lifecycle/demo.php",
-        "demo:athena": ["@demo:athena:streaming", "@demo:athena:guzzle"],
+        "demo:athena": "@demo:athena:streaming",
         "demo:athena:streaming": "php packages/phalanx-athena/examples/01-streaming-providers/demo.php",
         "demo:athena:guzzle": "php packages/phalanx-athena/examples/02-guzzle-sdk-coexistence/demo.php",
         "demo:athena:serve:support-triage": "php packages/phalanx-athena/examples/support-triage/server.php",

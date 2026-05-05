@@ -9,7 +9,7 @@
  * Anthropic and OpenAI are additive: they fan in when their respective
  * keys are present in the runtime context.
  *
- * Without configured providers, the demo prints what it needs and exits 0.
+ * Without a configured provider, the demo exits with one actionable fix.
  */
 
 declare(strict_types=1);
@@ -57,40 +57,11 @@ if ($openaiKey !== '') {
 }
 
 if ($providers === []) {
-    echo <<<'TEXT'
-Athena Streaming Providers
-==========================
-Status: skipped
-
-Nothing is wrong with the demo wiring. No provider is enabled for this run.
-
-Current configuration:
-
-TEXT;
-    printf("  %-18s %s\n", 'OLLAMA_ENABLED', phalanxAthenaExampleEnvStatus('OLLAMA_ENABLED'));
-    printf("  %-18s %s\n", 'OLLAMA_MODEL', phalanxAthenaExampleEnvStatus('OLLAMA_MODEL'));
-    printf("  %-18s %s\n", 'OLLAMA_BASE_URL', phalanxAthenaExampleEnvStatus('OLLAMA_BASE_URL'));
-    printf("  %-18s %s\n", 'ANTHROPIC_API_KEY', phalanxAthenaExampleEnvStatus('ANTHROPIC_API_KEY', requiresLive: true));
-    printf("  %-18s %s\n", 'OPENAI_API_KEY', phalanxAthenaExampleEnvStatus('OPENAI_API_KEY', requiresLive: true));
-    $command = phalanxAthenaExampleComposerCommand('demo:athena:streaming', 'demo:streaming');
-    $instructions = <<<'TEXT'
-
-Run locally with Ollama:
-  OLLAMA_ENABLED=true %s
-
-Run with hosted providers:
-  ATHENA_DEMO_LIVE=1 ANTHROPIC_API_KEY=... %s
-  ATHENA_DEMO_LIVE=1 OPENAI_API_KEY=... %s
-
-TEXT;
-
-    printf(
-        $instructions,
-        $command,
-        $command,
-        $command,
+    phalanxAthenaExampleCannotRun(
+        'Athena Streaming Providers',
+        'no runnable local Ollama model or live provider credentials were found.',
+        'start Ollama, run `ollama pull llama3:8b`, then rerun this command.',
     );
-    exit(0);
 }
 
 echo "Streaming concurrently from: " . implode(', ', array_keys($providers)) . "\n\n";
@@ -126,6 +97,7 @@ $exitCode = Athena::starting($context)->run(Task::named(
     'demo.athena.streaming-providers',
     static function (ExecutionScope $scope) use ($tasks): int {
         $results = $scope->concurrent(...$tasks);
+        $failed = false;
 
         echo "\n\n--- summary ---\n";
         foreach ($results as $name => $r) {
@@ -133,11 +105,12 @@ $exitCode = Athena::starting($context)->run(Task::named(
             $tokens = $u !== null ? "{$u->input}/{$u->output}" : 'n/a';
             printf("%-10s tokens(in/out): %s\n", $name, $tokens);
             if ($r['error'] !== null) {
-                printf("%-10s error: %s\n", $name, $r['error']);
+                $failed = true;
+                printf("%-10s failed: %s\n", $name, $r['error']);
             }
         }
 
-        return 0;
+        return $failed ? 1 : 0;
     },
 ));
 

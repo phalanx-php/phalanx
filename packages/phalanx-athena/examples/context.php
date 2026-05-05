@@ -30,6 +30,22 @@ function phalanxAthenaExampleContext(array $argv = []): array
             : $value;
     }
 
+    $ollamaBaseUrl = (string) ($context['OLLAMA_BASE_URL'] ?? 'http://localhost:11434');
+
+    if (phalanxAthenaExampleCanConnect($ollamaBaseUrl)) {
+        if (!array_key_exists('OLLAMA_ENABLED', $context)) {
+            $context['OLLAMA_ENABLED'] = true;
+        }
+
+        if (!array_key_exists('OLLAMA_MODEL', $context)) {
+            $model = phalanxAthenaExampleOllamaModel($ollamaBaseUrl);
+
+            if ($model !== null) {
+                $context['OLLAMA_MODEL'] = $model;
+            }
+        }
+    }
+
     return $context;
 }
 
@@ -76,6 +92,81 @@ function phalanxAthenaExamplePrintServerFailure(\Throwable $e, string $listen): 
     }
 
     printf("Cause: %s\n", $e->getMessage());
+}
+
+function phalanxAthenaExampleCannotRun(string $title, string $reason, string $fix): never
+{
+    printf("%s\n", $title);
+    printf("%s\n", str_repeat('=', strlen($title)));
+    echo "Status: cannot run\n\n";
+    printf("Missing requirement: %s\n\n", $reason);
+    printf("Fix: %s\n", $fix);
+    exit(0);
+}
+
+function phalanxAthenaExampleCanConnect(string $url): bool
+{
+    $host = parse_url($url, PHP_URL_HOST);
+    $port = parse_url($url, PHP_URL_PORT);
+
+    if (!is_string($host)) {
+        return false;
+    }
+
+    $socket = @fsockopen(
+        $host,
+        is_int($port) ? $port : 80,
+        $errorCode,
+        $errorMessage,
+        0.15,
+    );
+
+    if ($socket === false) {
+        return false;
+    }
+
+    fclose($socket);
+    return true;
+}
+
+function phalanxAthenaExampleOllamaModel(string $baseUrl): ?string
+{
+    $json = phalanxAthenaExampleHttpGet(rtrim($baseUrl, '/') . '/api/tags');
+
+    if ($json === null) {
+        return null;
+    }
+
+    $payload = json_decode($json, true);
+
+    if (!is_array($payload) || !isset($payload['models']) || !is_array($payload['models'])) {
+        return null;
+    }
+
+    foreach ($payload['models'] as $model) {
+        if (!is_array($model)) {
+            continue;
+        }
+
+        $name = $model['name'] ?? null;
+        $details = $model['details'] ?? [];
+        $family = is_array($details) ? (string) ($details['family'] ?? '') : '';
+
+        if (is_string($name) && $name !== '' && !str_contains($family, 'bert')) {
+            return $name;
+        }
+    }
+
+    return null;
+}
+
+function phalanxAthenaExampleHttpGet(string $url): ?string
+{
+    set_error_handler(static fn() => true);
+    $response = file_get_contents($url);
+    restore_error_handler();
+
+    return is_string($response) ? $response : null;
 }
 
 /** @return list<string> */

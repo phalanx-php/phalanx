@@ -12,8 +12,8 @@
  * GET via concurrent() — both should make progress without blocking each
  * other.
  *
- * Without ANTHROPIC_API_KEY, GUZZLE_DEMO_URL, or `guzzlehttp/guzzle` +
- * `hyperf/guzzle`, the demo prints what would run and exits 0.
+ * Without ANTHROPIC_API_KEY, GUZZLE_DEMO_URL, or the Guzzle bridge
+ * dependencies, the demo exits with one actionable fix.
  */
 
 declare(strict_types=1);
@@ -36,38 +36,30 @@ $context = phalanxAthenaExampleContext($argv ?? []);
 $anthropicKey = (string) ($context['ANTHROPIC_API_KEY'] ?? '');
 $guzzleUrl = (string) ($context['GUZZLE_DEMO_URL'] ?? '');
 $guzzleAvailable = class_exists(\GuzzleHttp\Client::class) && class_exists(\Hyperf\Guzzle\CoroutineHandler::class);
+$command = phalanxAthenaExampleComposerCommand('demo:athena:guzzle', 'demo:guzzle');
 
-if ($anthropicKey === '' || $guzzleUrl === '' || !$guzzleAvailable) {
-    echo <<<'TEXT'
-Athena Guzzle SDK Coexistence
-=============================
-Status: skipped
-
-Nothing is wrong with the demo wiring. This demo needs a live Anthropic call,
-a target URL, and the optional Guzzle packages.
-
-Current configuration:
-
-TEXT;
-    printf("  %-32s %s\n", 'ATHENA_DEMO_LIVE', phalanxAthenaExampleLiveMode() ? 'enabled' : 'disabled');
-    printf("  %-32s %s\n", 'ANTHROPIC_API_KEY', phalanxAthenaExampleEnvStatus('ANTHROPIC_API_KEY', requiresLive: true));
-    printf("  %-32s %s\n", 'GUZZLE_DEMO_URL', phalanxAthenaExampleEnvStatus('GUZZLE_DEMO_URL', requiresLive: true));
-    printf("  %-32s %s\n", 'guzzlehttp/guzzle + hyperf/guzzle', $guzzleAvailable ? 'present' : 'missing');
-    $instructions = <<<'TEXT'
-
-Install optional packages if missing:
-  composer require guzzlehttp/guzzle hyperf/guzzle
-
-Run the live demo:
-  ATHENA_DEMO_LIVE=1 ANTHROPIC_API_KEY=... GUZZLE_DEMO_URL=https://example.com %s
-
-TEXT;
-
-    printf(
-        $instructions,
-        phalanxAthenaExampleComposerCommand('demo:athena:guzzle', 'demo:guzzle'),
+if (!$guzzleAvailable) {
+    phalanxAthenaExampleCannotRun(
+        'Athena Guzzle SDK Coexistence',
+        'guzzlehttp/guzzle and hyperf/guzzle are not installed.',
+        'run `composer install` from the monorepo root.',
     );
-    exit(0);
+}
+
+if ($anthropicKey === '') {
+    phalanxAthenaExampleCannotRun(
+        'Athena Guzzle SDK Coexistence',
+        'a live Anthropic API key was not provided.',
+        'rerun with `ATHENA_DEMO_LIVE=1 ANTHROPIC_API_KEY=... ' . $command . '`.',
+    );
+}
+
+if ($guzzleUrl === '') {
+    phalanxAthenaExampleCannotRun(
+        'Athena Guzzle SDK Coexistence',
+        'a Guzzle target URL was not provided.',
+        'rerun with `GUZZLE_DEMO_URL=https://example.com ' . $command . '` plus the live Anthropic variables.',
+    );
 }
 
 $prompt = 'Reply with the single word "done".';
