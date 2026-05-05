@@ -6,6 +6,12 @@ namespace Phalanx\Runtime\Identity;
 
 enum AegisEventSid: string implements RuntimeEventId
 {
+    case ProcessExited = 'process.exited';
+    case ProcessKilled = 'process.killed';
+    case ProcessReadFailed = 'process.read_failed';
+    case ProcessStarted = 'process.started';
+    case ProcessStopped = 'process.stopped';
+    case ProcessWriteFailed = 'process.write_failed';
     case ResourceEdge = 'resource.edge';
     case ResourceLateTransition = 'resource.late_transition';
     case ResourceLeaseAcquired = 'resource.lease_acquired';

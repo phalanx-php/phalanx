@@ -9,6 +9,12 @@ enum AegisAnnotationSid: string implements RuntimeAnnotationId
     case CoroutineId = 'aegis.coroutine_id';
     case EndedAt = 'aegis.ended_at';
     case ParentRunId = 'aegis.parent_run_id';
+    case ProcessCommand = 'aegis.process_command';
+    case ProcessCwd = 'aegis.process_cwd';
+    case ProcessExitCode = 'aegis.process_exit_code';
+    case ProcessPid = 'aegis.process_pid';
+    case ProcessSignal = 'aegis.process_signal';
+    case ProcessState = 'aegis.process_state';
     case ProjectPath = 'aegis.project_path';
     case RunMode = 'aegis.run_mode';
     case RunName = 'aegis.run_name';

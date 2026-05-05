@@ -7,6 +7,7 @@ namespace Phalanx\Runtime\Identity;
 enum AegisResourceSid: string implements RuntimeResourceId
 {
     case Scope = 'aegis.scope';
+    case StreamingProcess = 'aegis.streaming_process';
     case TaskRun = 'aegis.task_run';
     case Test = 'aegis.test';
 
