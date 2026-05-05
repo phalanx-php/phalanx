@@ -191,7 +191,7 @@ final readonly class ManagedResourceRegistry
         $key = self::annotationKey($key);
         $row = $this->tables->resourceAnnotations->get(self::annotationRowId($resourceId, $key));
 
-        return is_array($row) ? (string) $row['value'] : $default;
+        return is_array($row) && !self::annotationExpired($row) ? (string) $row['value'] : $default;
     }
 
     /** @return array<string, string> */
@@ -200,6 +200,9 @@ final readonly class ManagedResourceRegistry
         $annotations = [];
         foreach ($this->tables->resourceAnnotations as $row) {
             if (!is_array($row) || (string) $row['resource_id'] !== $resourceId) {
+                continue;
+            }
+            if (self::annotationExpired($row)) {
                 continue;
             }
 
@@ -486,6 +489,14 @@ final readonly class ManagedResourceRegistry
     private static function annotationRowId(string $resourceId, string $key): string
     {
         return substr(sha1($resourceId . "\0" . $key), 0, 32);
+    }
+
+    /** @param array<string, mixed> $row */
+    private static function annotationExpired(array $row): bool
+    {
+        $expiresAt = (float) ($row['expires_at'] ?? 0.0);
+
+        return $expiresAt > 0.0 && $expiresAt <= microtime(true);
     }
 
     private static function fit(string $value, int $length): string

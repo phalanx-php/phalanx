@@ -9,10 +9,11 @@ use Phalanx\Runtime\Memory\ManagedResource;
 use Phalanx\Runtime\Memory\ManagedResourceState;
 use Phalanx\Runtime\Memory\RuntimeMemory;
 
-final readonly class QueryScope
+class QueryScope
 {
-    public function __construct(private RuntimeMemory $memory)
-    {
+    public function __construct(
+        private RuntimeMemory $memory,
+    ) {
     }
 
     public function get(string $id): ?ManagedResource
@@ -58,23 +59,41 @@ final readonly class QueryScope
         ));
     }
 
-    /** @return list<ManagedResource> */
+    /**
+     * Return resources related through either canonical parent resource id
+     * or an explicit resource edge, deduplicated by child resource id.
+     *
+     * @return list<ManagedResource>
+     */
     public function childrenOf(string $parentResourceId, RuntimeResourceId|string|null $type = null): array
     {
         $children = [];
+        foreach ($this->all($type) as $child) {
+            if ($child->parentResourceId !== $parentResourceId) {
+                continue;
+            }
+
+            $children[$child->id] = $child;
+        }
+
+        $type = $type === null ? null : self::typeValue($type);
         foreach ($this->memory->resources->childIds($parentResourceId) as $childId) {
+            if (isset($children[$childId])) {
+                continue;
+            }
+
             $child = $this->memory->resources->get($childId);
             if ($child === null) {
                 continue;
             }
-            if ($type !== null && $child->type !== self::typeValue($type)) {
+            if ($type !== null && $child->type !== $type) {
                 continue;
             }
 
-            $children[] = $child;
+            $children[$child->id] = $child;
         }
 
-        return $children;
+        return array_values($children);
     }
 
     /** @return array<string, string> */

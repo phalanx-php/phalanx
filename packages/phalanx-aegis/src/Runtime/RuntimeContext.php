@@ -6,12 +6,16 @@ namespace Phalanx\Runtime;
 
 use Phalanx\Runtime\Memory\RuntimeMemory;
 
-final readonly class RuntimeContext
+class RuntimeContext
 {
-    public QueryScope $query;
+    public private(set) RuntimeMemory $memory;
 
-    public function __construct(public RuntimeMemory $memory)
-    {
+    public private(set) QueryScope $query;
+
+    public function __construct(
+        RuntimeMemory $memory,
+    ) {
+        $this->memory = $memory;
         $this->query = new QueryScope($memory);
     }
 }
