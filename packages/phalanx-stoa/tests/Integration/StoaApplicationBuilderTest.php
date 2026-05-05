@@ -10,43 +10,47 @@ use LogicException;
 use Phalanx\Stoa\RequestScope;
 use Phalanx\Stoa\RouteGroup;
 use Phalanx\Stoa\Stoa;
+use Phalanx\Stoa\StoaApplicationBuilder;
+use Phalanx\Supervisor\InProcessLedger;
 use Phalanx\Task\Scopeable;
+use Phalanx\Tests\Support\CoroutineTestCase;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 
-final class StoaApplicationBuilderTest extends TestCase
+final class StoaApplicationBuilderTest extends CoroutineTestCase
 {
     #[Test]
     public function buildsDispatchableApplicationWithServerConfigAndDefaultPoweredByHeader(): void
     {
-        $app = Stoa::starting([
-            'PHALANX_REQUEST_TIMEOUT' => '2.5',
-        ])
-            ->routes([
-                'GET /hello' => BuilderHelloRoute::class,
+        $this->runInCoroutine(static function (): void {
+            $app = self::stoa([
+                'PHALANX_REQUEST_TIMEOUT' => '2.5',
             ])
-            ->listen('127.0.0.1:9099')
-            ->drainTimeout(4.5)
-            ->build();
+                ->routes([
+                    'GET /hello' => BuilderHelloRoute::class,
+                ])
+                ->listen('127.0.0.1:9099')
+                ->drainTimeout(4.5)
+                ->build();
 
-        try {
-            $response = $app->dispatch(new ServerRequest('GET', '/hello'));
-        } finally {
-            $app->shutdown();
-        }
+            try {
+                $response = $app->dispatch(new ServerRequest('GET', '/hello'));
+            } finally {
+                $app->shutdown();
+            }
 
-        self::assertSame('hello', (string) $response->getBody());
-        self::assertSame('Phalanx', $response->getHeaderLine('X-Powered-By'));
-        self::assertSame('127.0.0.1', $app->serverConfig()->host);
-        self::assertSame(9099, $app->serverConfig()->port);
-        self::assertSame(2.5, $app->serverConfig()->requestTimeout);
-        self::assertSame(4.5, $app->serverConfig()->drainTimeout);
+            self::assertSame('hello', (string) $response->getBody());
+            self::assertSame('Phalanx', $response->getHeaderLine('X-Powered-By'));
+            self::assertSame('127.0.0.1', $app->serverConfig()->host);
+            self::assertSame(9099, $app->serverConfig()->port);
+            self::assertSame(2.5, $app->serverConfig()->requestTimeout);
+            self::assertSame(4.5, $app->serverConfig()->drainTimeout);
+        });
     }
 
     #[Test]
     public function leavesServerConfigToRuntimeFallbackWhenNoServerConfigWasDeclared(): void
     {
-        $app = Stoa::starting()
+        $app = self::stoa()
             ->routes([
                 'GET /hello' => BuilderHelloRoute::class,
             ])
@@ -59,38 +63,50 @@ final class StoaApplicationBuilderTest extends TestCase
     #[Test]
     public function canDisableOrOverridePoweredByWithoutOverwritingHandlerHeader(): void
     {
-        $custom = Stoa::starting()
-            ->routes(['GET /hello' => BuilderHelloRoute::class])
-            ->poweredBy('Custom')
-            ->build();
-        $disabled = Stoa::starting()
-            ->routes(['GET /hello' => BuilderHelloRoute::class])
-            ->poweredBy(false)
-            ->build();
-        $explicit = Stoa::starting()
-            ->routes(['GET /explicit' => BuilderExplicitPoweredByRoute::class])
-            ->poweredBy('Custom')
-            ->build();
+        $this->runInCoroutine(static function (): void {
+            $custom = self::stoa()
+                ->routes(['GET /hello' => BuilderHelloRoute::class])
+                ->poweredBy('Custom')
+                ->build();
+            $disabled = self::stoa()
+                ->routes(['GET /hello' => BuilderHelloRoute::class])
+                ->poweredBy(false)
+                ->build();
+            $explicit = self::stoa()
+                ->routes(['GET /explicit' => BuilderExplicitPoweredByRoute::class])
+                ->poweredBy('Custom')
+                ->build();
 
-        try {
-            self::assertSame('Custom', $custom->dispatch(new ServerRequest('GET', '/hello'))->getHeaderLine('X-Powered-By'));
-            self::assertSame('', $disabled->dispatch(new ServerRequest('GET', '/hello'))->getHeaderLine('X-Powered-By'));
-            self::assertSame('Handler', $explicit->dispatch(new ServerRequest('GET', '/explicit'))->getHeaderLine('X-Powered-By'));
-        } finally {
-            $custom->shutdown();
-            $disabled->shutdown();
-            $explicit->shutdown();
-        }
+            try {
+                self::assertSame(
+                    'Custom',
+                    $custom->dispatch(new ServerRequest('GET', '/hello'))->getHeaderLine('X-Powered-By'),
+                );
+                self::assertSame(
+                    '',
+                    $disabled->dispatch(new ServerRequest('GET', '/hello'))->getHeaderLine('X-Powered-By'),
+                );
+                self::assertSame(
+                    'Handler',
+                    $explicit->dispatch(new ServerRequest('GET', '/explicit'))->getHeaderLine('X-Powered-By'),
+                );
+            } finally {
+                $custom->shutdown();
+                $disabled->shutdown();
+                $explicit->shutdown();
+            }
+        });
     }
 
     #[Test]
     public function loadsRoutesFromAFileOrDirectory(): void
     {
-        $dir = sys_get_temp_dir() . '/stoa-routes-' . bin2hex(random_bytes(4));
-        mkdir($dir);
+        $this->runInCoroutine(static function (): void {
+            $dir = sys_get_temp_dir() . '/' . uniqid('stoa-routes-', true);
+            mkdir($dir);
 
-        $file = $dir . '/routes.php';
-        file_put_contents($file, <<<'PHP'
+            $file = $dir . '/routes.php';
+            file_put_contents($file, <<<'PHP'
 <?php
 
 declare(strict_types=1);
@@ -103,18 +119,25 @@ return RouteGroup::of([
 ]);
 PHP);
 
-        $fromFile = Stoa::starting()->routes($file)->build();
-        $fromDir = Stoa::starting()->routes($dir)->build();
+            $fromFile = self::stoa()->routes($file)->build();
+            $fromDir = self::stoa()->routes($dir)->build();
 
-        try {
-            self::assertSame('loaded', (string) $fromFile->dispatch(new ServerRequest('GET', '/loaded'))->getBody());
-            self::assertSame('loaded', (string) $fromDir->dispatch(new ServerRequest('GET', '/loaded'))->getBody());
-        } finally {
-            $fromFile->shutdown();
-            $fromDir->shutdown();
-            unlink($file);
-            rmdir($dir);
-        }
+            try {
+                self::assertSame(
+                    'loaded',
+                    (string) $fromFile->dispatch(new ServerRequest('GET', '/loaded'))->getBody(),
+                );
+                self::assertSame(
+                    'loaded',
+                    (string) $fromDir->dispatch(new ServerRequest('GET', '/loaded'))->getBody(),
+                );
+            } finally {
+                $fromFile->shutdown();
+                $fromDir->shutdown();
+                unlink($file);
+                rmdir($dir);
+            }
+        });
     }
 
     #[Test]
@@ -123,7 +146,7 @@ PHP);
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('Native WebSocket protocol slots are reserved');
 
-        Stoa::starting()->websockets(RouteGroup::of([]));
+        self::stoa()->websockets(RouteGroup::of([]));
     }
 
     #[Test]
@@ -132,7 +155,13 @@ PHP);
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('Native UDP protocol slots are reserved');
 
-        Stoa::starting()->udp(RouteGroup::of([]));
+        self::stoa()->udp(RouteGroup::of([]));
+    }
+
+    /** @param array<string, mixed> $context */
+    private static function stoa(array $context = []): StoaApplicationBuilder
+    {
+        return Stoa::starting($context)->withLedger(new InProcessLedger());
     }
 }
 

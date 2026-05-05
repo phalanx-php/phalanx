@@ -27,9 +27,9 @@ use Psr\Http\Message\ResponseInterface;
 final class GracefulDrainTest extends CoroutineTestCase
 {
     #[Test]
-    public function inflight_request_completes_within_drain_timeout(): void
+    public function inflightRequestCompletesWithinDrainTimeout(): void
     {
-        $this->runInCoroutine(function (): void {
+        $this->runInCoroutine(static function (): void {
             $app = Application::starting()->compile()->startup();
             $runner = StoaRunner::from($app, new StoaServerConfig(requestTimeout: 5.0, drainTimeout: 2.0))
                 ->withRoutes(RouteGroup::of([
@@ -54,9 +54,9 @@ final class GracefulDrainTest extends CoroutineTestCase
     }
 
     #[Test]
-    public function drain_timeout_cancels_stuck_request(): void
+    public function drainTimeoutCancelsStuckRequest(): void
     {
-        $this->runInCoroutine(function (): void {
+        $this->runInCoroutine(static function (): void {
             DrainStuckHandler::$cancelled = false;
             DrainStuckHandler::$resourceId = '';
             $app = Application::starting()->compile()->startup();
@@ -100,9 +100,9 @@ final class GracefulDrainTest extends CoroutineTestCase
     }
 
     #[Test]
-    public function new_requests_are_rejected_while_draining(): void
+    public function newRequestsAreRejectedWhileDraining(): void
     {
-        $this->runInCoroutine(function (): void {
+        $this->runInCoroutine(static function (): void {
             $app = Application::starting()->compile()->startup();
             $runner = StoaRunner::from($app, new StoaServerConfig(requestTimeout: 5.0, drainTimeout: 2.0))
                 ->withRoutes(RouteGroup::of([
@@ -127,9 +127,9 @@ final class GracefulDrainTest extends CoroutineTestCase
     }
 
     #[Test]
-    public function service_shutdown_hooks_fire_after_drain(): void
+    public function serviceShutdownHooksFireAfterDrain(): void
     {
-        $this->runInCoroutine(function (): void {
+        $this->runInCoroutine(static function (): void {
             $shutdownFired = false;
             $bundle = new class ($shutdownFired) implements ServiceBundle {
                 public function __construct(private bool &$shutdownFired)

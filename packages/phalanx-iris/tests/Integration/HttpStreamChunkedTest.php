@@ -9,6 +9,7 @@ use Phalanx\Iris\HttpClient;
 use Phalanx\Iris\HttpRequest;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Tests\Support\CoroutineTestCase;
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 
 /**
  * End-to-end proof for the HTTP/1.1 + chunked transport.
@@ -28,6 +29,7 @@ final class HttpStreamChunkedTest extends CoroutineTestCase
 {
     private const string HOST = '127.0.0.1';
 
+    #[RunInSeparateProcess]
     public function testChunkedSseStreamYieldsEachChunkInOrder(): void
     {
         $this->runScoped(static function (ExecutionScope $scope): void {
