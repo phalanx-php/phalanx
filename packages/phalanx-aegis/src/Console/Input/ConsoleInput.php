@@ -71,11 +71,8 @@ final class ConsoleInput
             return;
         }
 
-        // PHP stream resource path. waitEvent receives the resource directly;
-        // OpenSwoole extracts the kernel fd internally. Mark the stream
-        // non-blocking so fread() never blocks the worker once waitEvent
-        // signals readiness. Best-effort: some wrappers (php://memory)
-        // silently ignore this.
+        // waitEvent receives PHP streams directly; non-blocking mode keeps
+        // fread from blocking the worker after readiness is signaled.
         $this->stream = $source;
         $this->socket = null;
         $this->interactive = stream_isatty($source);

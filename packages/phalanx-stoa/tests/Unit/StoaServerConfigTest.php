@@ -96,7 +96,11 @@ final class StoaServerConfigTest extends TestCase
         $host = $this->createStub(AppHost::class);
         $application = new StoaApplication($host, RouteGroup::of([]));
 
-        $runner = (new Runtime())->getRunner($application);
+        try {
+            $runner = (new Runtime())->getRunner($application);
+        } finally {
+            restore_error_handler();
+        }
 
         self::assertInstanceOf(StoaRuntimeRunner::class, $runner);
     }
@@ -111,6 +115,10 @@ final class StoaServerConfigTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Stoa runtime expects a StoaApplication');
 
-        (new Runtime())->getRunner($this->createStub(AppHost::class));
+        try {
+            (new Runtime())->getRunner($this->createStub(AppHost::class));
+        } finally {
+            restore_error_handler();
+        }
     }
 }

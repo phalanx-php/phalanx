@@ -448,11 +448,8 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             }
         } finally {
             $unregister();
-            // Dispose every child scope — runs scoped service onDispose hooks,
-            // dispose stack, and cancellation listener cleanup. Sibling
-            // isolation invariant (Pool & Scope Discipline #2): children
-            // don't share scoped instances or dispose stacks with the
-            // parent or siblings.
+            // Child scopes own isolated scoped services, dispose stacks, and
+            // cancellation listeners, so each one is disposed independently.
             foreach ($childScopes as $child) {
                 $child->dispose();
             }

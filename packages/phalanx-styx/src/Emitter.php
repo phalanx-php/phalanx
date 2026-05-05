@@ -90,10 +90,7 @@ final class Emitter implements StreamSource
             throw $e;
         } finally {
             // Closing here signals any still-running upstream producer to stop.
-            // Without this, an early `break` (e.g. take, first) would leave the
-            // producer coroutine suspended on a push to a buffer the consumer
-            // has abandoned. complete() is idempotent, so producers that
-            // already finished naturally are unaffected.
+            // complete is idempotent, so finished producers are unaffected.
             $channel->complete();
             $this->fireOnDispose($context);
         }

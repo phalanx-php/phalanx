@@ -8,9 +8,13 @@ use Phalanx\Application;
 use Phalanx\Athena\Pipeline\Pipeline;
 use Phalanx\Scope\Scope;
 use Phalanx\Task\Scopeable;
+use PHPUnit\Framework\Attributes\PreserveGlobalState;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
+#[PreserveGlobalState(false)]
+#[RunTestsInSeparateProcesses]
 final class PipelineTest extends TestCase
 {
     #[Test]

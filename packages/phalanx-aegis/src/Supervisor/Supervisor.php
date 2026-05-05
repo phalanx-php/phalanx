@@ -199,12 +199,8 @@ final class Supervisor
             $this->cancel($run);
         }
 
-        // Emit PHX-LEASE-001 for any lease still held at reap time —
-        // indicates the lease owner forgot to release in a finally
-        // block. The supervisor doesn't free the underlying resource
-        // (it doesn't own pool connections / locks), but the trace
-        // event makes the leak visible and attributable to a specific
-        // run by name.
+        // PHX-LEASE-001 marks leases still held at reap time; the supervisor
+        // reports the leak but leaves the underlying resource with its owner.
         if ($run->leases !== []) {
             foreach ($run->leases as $orphaned) {
                 $this->trace->log(

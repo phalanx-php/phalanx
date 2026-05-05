@@ -9,12 +9,16 @@ use OpenSwoole\Coroutine;
 use Phalanx\Hermes\WsFrameCodec;
 use Phalanx\Hermes\WsMessage;
 use Phalanx\Styx\Channel;
+use PHPUnit\Framework\Attributes\PreserveGlobalState;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Ratchet\RFC6455\Messaging\Frame;
 use RuntimeException;
 use Throwable;
 
+#[PreserveGlobalState(false)]
+#[RunTestsInSeparateProcesses]
 final class WsFrameCodecTest extends TestCase
 {
     #[Test]

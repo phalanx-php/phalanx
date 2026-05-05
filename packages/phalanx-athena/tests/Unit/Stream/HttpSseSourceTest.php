@@ -9,6 +9,8 @@ use Phalanx\Iris\HttpStream;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\Suspendable;
 use Phalanx\Tests\Support\CoroutineTestCase;
+use PHPUnit\Framework\Attributes\PreserveGlobalState;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Test double feeding canned HTTP response bytes. HttpStream is
@@ -44,6 +46,8 @@ final class FakeHttpStream extends HttpStream
  * patterns, including events split across read boundaries, so the
  * provider integration is robust against real-world TCP framing.
  */
+#[PreserveGlobalState(false)]
+#[RunTestsInSeparateProcesses]
 final class HttpSseSourceTest extends CoroutineTestCase
 {
     public function testYieldsEventsFromSingleChunk(): void
