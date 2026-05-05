@@ -45,7 +45,7 @@ if (
 ) {
     $defaults = new OllamaConfig();
     $providers['ollama'] = new OllamaProvider(new OllamaConfig(
-        model:   (string) ($context['OLLAMA_MODEL'] ?? $defaults->model),
+        model: (string) ($context['OLLAMA_MODEL'] ?? $defaults->model),
         baseUrl: (string) ($context['OLLAMA_BASE_URL'] ?? $defaults->baseUrl),
     ));
 }

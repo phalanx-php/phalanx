@@ -43,9 +43,9 @@ final class AiServiceBundle implements ServiceBundle
             ->factory(static function () use ($context) {
                 return new SwarmConfig(
                     workspace: $context['SWARM_WORKSPACE'] ?? 'default',
-                    session:   $context['SWARM_SESSION'] ?? 'default',
+                    session: $context['SWARM_SESSION'] ?? 'default',
                     daemon8Url: $context['DAEMON8_URL'] ?? 'http://localhost:8888',
-                    app:        $context['DAEMON8_APP'] ?? 'phalanx-swarm',
+                    app: $context['DAEMON8_APP'] ?? 'phalanx-swarm',
                 );
             });
 
