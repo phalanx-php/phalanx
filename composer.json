@@ -132,7 +132,7 @@
         "demo:archon:interactive": "php packages/phalanx-archon/examples/02-interactive-input/demo.php",
         "demo:archon:concurrency": "php packages/phalanx-archon/examples/03-supervised-concurrency/demo.php",
         "demo:archon:lifecycle": "php packages/phalanx-archon/examples/04-runtime-lifecycle/demo.php",
-        "demo:athena": "@demo:athena:streaming",
+        "demo:athena": ["@demo:athena:streaming", "@demo:athena:worker:fleet"],
         "demo:athena:streaming": "php packages/phalanx-athena/examples/01-streaming-providers/demo.php",
         "demo:athena:guzzle": "php packages/phalanx-athena/examples/02-guzzle-sdk-coexistence/demo.php",
         "demo:athena:serve:support-triage": "php packages/phalanx-athena/examples/support-triage/server.php",

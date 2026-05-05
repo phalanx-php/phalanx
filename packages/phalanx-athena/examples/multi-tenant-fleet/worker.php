@@ -19,29 +19,18 @@ if (($context['ATHENA_DEMO_LIVE'] ?? false) !== true) {
     echo <<<'BOOT'
 Multi-Tenant Fleet - Worker
 ============================
-Status: ready
+Status: ready (dry run)
 
-Nothing is wrong with the worker wiring. Redis and Postgres connections are
-skipped by default so the demo does not touch local services unless requested.
+Demonstrates: Athena coordinating agent tasks through managed Redis and
+Postgres resources.
 
-Current configuration:
+Live Redis and Postgres services were not touched.
 
 BOOT;
 
-    printf("  %-18s %s\n", 'ATHENA_DEMO_LIVE', 'disabled');
-    printf("  %-18s %s\n", 'REDIS_URL', phalanxAthenaExampleEnvStatus('REDIS_URL'));
-    printf("  %-18s %s\n", 'REDIS_HOST', phalanxAthenaExampleEnvStatus('REDIS_HOST'));
-    printf("  %-18s %s\n", 'PG_HOST', phalanxAthenaExampleEnvStatus('PG_HOST'));
-    printf("  %-18s %s\n", 'PG_DATABASE', phalanxAthenaExampleEnvStatus('PG_DATABASE'));
-
     $instructions = <<<'BOOT'
 
-Run the live worker:
-  ATHENA_DEMO_LIVE=1 %s
-
-Defaults if unset:
-  Redis 127.0.0.1:6379
-  Postgres localhost:5432
+Run live: ATHENA_DEMO_LIVE=1 %s
 
 BOOT;
 

@@ -40,7 +40,7 @@
         }
     },
     "scripts": {
-        "demo": "@demo:streaming",
+        "demo": ["@demo:streaming", "@demo:worker:fleet"],
         "demo:streaming": "php examples/01-streaming-providers/demo.php",
         "demo:guzzle": "php examples/02-guzzle-sdk-coexistence/demo.php",
         "demo:serve:support-triage": "php examples/support-triage/server.php",

@@ -64,13 +64,13 @@ if ($providers === []) {
     );
 }
 
-$prompt = 'Write one short sentence about coroutines.';
-$request = GenerateRequest::from(Conversation::create()->user($prompt))->withMaxTokens(150);
+$prompt = 'In 18 words or fewer, connect Athena\'s disciplined wisdom and strategic clarity to an AI agent runtime.';
+$request = GenerateRequest::from(Conversation::create()->user($prompt))->withMaxTokens(60);
 
 echo "Athena Streaming Providers\n";
 echo "==========================\n";
 echo "Providers: " . implode(', ', array_keys($providers)) . "\n";
-echo "Prompt: {$prompt}\n\n";
+echo "Topic: Athena's disciplined wisdom and strategic clarity\n\n";
 echo "Responses:\n\n";
 
 $tasks = [];
@@ -123,6 +123,8 @@ $exitCode = Athena::starting($context)->run(Task::named(
             $status = $r['error'] === null ? 'ok' : 'failed';
             printf("  %-10s %s, tokens in/out: %s\n", $name, $status, $tokens);
         }
+
+        echo "\n";
 
         return $failed ? 1 : 0;
     },
