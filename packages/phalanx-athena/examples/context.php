@@ -94,6 +94,21 @@ function phalanxAthenaExamplePrintServerFailure(\Throwable $e, string $listen): 
     printf("Cause: %s\n", $e->getMessage());
 }
 
+function phalanxAthenaExampleThrowableMessage(?\Throwable $e): string
+{
+    if ($e === null) {
+        return 'unknown error';
+    }
+
+    $message = $e->getMessage();
+
+    if ($message === '') {
+        return $e::class;
+    }
+
+    return $message;
+}
+
 function phalanxAthenaExampleCannotRun(string $title, string $reason, string $fix): never
 {
     printf("%s\n", $title);

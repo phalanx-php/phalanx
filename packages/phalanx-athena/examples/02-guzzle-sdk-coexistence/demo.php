@@ -62,6 +62,25 @@ if ($guzzleUrl === '') {
     );
 }
 
+$scheme = parse_url($guzzleUrl, PHP_URL_SCHEME);
+$host = parse_url($guzzleUrl, PHP_URL_HOST);
+
+if (!in_array($scheme, ['http', 'https'], true)) {
+    phalanxAthenaExampleCannotRun(
+        'Athena Guzzle SDK Coexistence',
+        'GUZZLE_DEMO_URL must start with http:// or https://.',
+        'rerun with `GUZZLE_DEMO_URL=https://example.com ' . $command . '` plus the live Anthropic variables.',
+    );
+}
+
+if ($scheme === 'https' && in_array($host, ['localhost', '127.0.0.1', '::1'], true)) {
+    phalanxAthenaExampleCannotRun(
+        'Athena Guzzle SDK Coexistence',
+        'GUZZLE_DEMO_URL points HTTPS at a local address.',
+        'use `http://localhost:8888` for a plain local server, or use a real HTTPS endpoint.',
+    );
+}
+
 $prompt = 'Reply with the single word "done".';
 $conversation = Conversation::create()->user($prompt);
 $request = GenerateRequest::from($conversation)->withMaxTokens(20);
@@ -76,7 +95,7 @@ $exitCode = Athena::starting($context)->run(Task::named(
     static function (ExecutionScope $scope) use ($anthropic, $guzzle, $guzzleUrl, $request): int {
         echo "Running Athena native + Guzzle SDK concurrently...\n\n";
 
-        $results = $scope->concurrent(
+        $settlements = $scope->settle(
             athena: Task::of(static function (ExecutionScope $s) use ($anthropic, $request): string {
                 $out = '';
                 foreach ($anthropic->generate($request)($s) as $event) {
@@ -92,10 +111,29 @@ $exitCode = Athena::starting($context)->run(Task::named(
             }),
         );
 
-        echo "athena reply: {$results['athena']}\n";
-        echo "guzzle GET status: {$results['guzzle']}\n";
+        $athena = $settlements->settlement('athena');
+        $guzzle = $settlements->settlement('guzzle');
+        $failed = false;
 
-        return 0;
+        echo "Results:\n";
+
+        if ($athena?->isOk === true) {
+            printf("  Athena reply: %s\n", trim((string) $athena->value));
+        } else {
+            $failed = true;
+            printf("  Athena failed: %s\n", phalanxAthenaExampleThrowableMessage($athena?->error()));
+        }
+
+        if ($guzzle?->isOk === true) {
+            printf("  Guzzle GET status: %s\n", $guzzle->value);
+        } else {
+            $failed = true;
+            printf("  Guzzle failed: %s\n", phalanxAthenaExampleThrowableMessage($guzzle?->error()));
+            echo "  Fix: verify GUZZLE_DEMO_URL is reachable from this machine.\n";
+            echo "  Hint: if a local endpoint is plain HTTP, use http:// instead of https://.\n";
+        }
+
+        return $failed ? 1 : 0;
     },
 ));
 
