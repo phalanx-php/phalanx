@@ -24,6 +24,12 @@ use Phalanx\Task\Scopeable;
 use Phalanx\Trace\Trace;
 use Phalanx\Worker\WorkerDispatch;
 
+/**
+ * Facade builder for Archon console applications.
+ *
+ * Bootstrap files should enter through `Archon::starting($context)`, not
+ * through the root Aegis ApplicationBuilder plus a manually assembled runner.
+ */
 final class ArchonBuilder
 {
     private ApplicationBuilder $app;

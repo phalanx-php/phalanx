@@ -30,6 +30,13 @@ use Psr\Http\Message\ServerRequestInterface;
 use RuntimeException;
 use Throwable;
 
+/**
+ * Native Stoa HTTP runner assembled by StoaApplication.
+ *
+ * Bootstrap files should use `Stoa::starting($context)->routes(...)->run()`
+ * so route loading, server config, and Aegis host setup stay behind the
+ * Stoa facade.
+ */
 final class StoaRunner
 {
     private bool $running = false;
@@ -470,8 +477,11 @@ final class StoaRunner
         }
     }
 
-    private function finish(ResponseInterface $response, ?Response $target, StoaRequestResource $request): ?ResponseInterface
-    {
+    private function finish(
+        ResponseInterface $response,
+        ?Response $target,
+        StoaRequestResource $request,
+    ): ?ResponseInterface {
         try {
             $response = $this->normalizeResponseBody($response, $request);
             $response = $this->applyResponseDefaults($response);

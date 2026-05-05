@@ -16,7 +16,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/../bootstrap.php';
 
-use Phalanx\Application;
+use Phalanx\Athena\Athena;
 use Phalanx\Athena\Event\AgentEventKind;
 use Phalanx\Athena\Message\Conversation;
 use Phalanx\Athena\Provider\AnthropicConfig;
@@ -30,8 +30,8 @@ use Phalanx\Athena\Provider\OpenAiProvider;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Task;
 
+/** @var array<string, mixed> $context */
 $context = ['argv' => $argv ?? []];
-$app = Application::starting($context)->compile();
 
 $anthropicKey = (string) ($context['ANTHROPIC_API_KEY'] ?? '');
 $openaiKey = (string) ($context['OPENAI_API_KEY'] ?? '');
@@ -92,7 +92,7 @@ foreach ($providers as $name => $provider) {
     });
 }
 
-$exitCode = $app->run(Task::named(
+$exitCode = Athena::starting($context)->run(Task::named(
     'demo.athena.streaming-providers',
     static function (ExecutionScope $scope) use ($tasks): int {
         $results = $scope->concurrent(...$tasks);

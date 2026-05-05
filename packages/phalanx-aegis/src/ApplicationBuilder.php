@@ -24,6 +24,14 @@ use Phalanx\Task\Scopeable;
 use Phalanx\Trace\Trace;
 use Phalanx\Worker\WorkerDispatch;
 
+/**
+ * Low-level Aegis host builder.
+ *
+ * Package and example bootstraps should prefer their package facade builders:
+ * `Phalanx\Athena\Athena::starting()`,
+ * `Phalanx\Archon\Application\Archon::starting()`, or
+ * `Phalanx\Stoa\Stoa::starting()`.
+ */
 class ApplicationBuilder
 {
     /** @var list<ServiceBundle> */

@@ -2,17 +2,12 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/vendor/autoload.php';
+require __DIR__ . '/../bootstrap.php';
 
 use Acme\TriageHandler;
 use Phalanx\Athena\AiServiceBundle;
-use Phalanx\Application;
 use Phalanx\Stoa\RouteGroup;
-use Phalanx\Stoa\Runner;
-
-$app = Application::starting()
-    ->providers(new AiServiceBundle())
-    ->compile();
+use Phalanx\Stoa\Stoa;
 
 $routes = RouteGroup::of([
     'POST /triage' => TriageHandler::class,
@@ -27,6 +22,8 @@ POST /triage  {"ticket_id":123,"customer_email":"sarah@example.com","subject":".
 
 BOOT;
 
-Runner::from($app)
-    ->withRoutes($routes)
-    ->run('0.0.0.0:8080');
+Stoa::starting()
+    ->providers(new AiServiceBundle())
+    ->routes($routes)
+    ->listen('0.0.0.0:8080')
+    ->run();

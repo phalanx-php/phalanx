@@ -256,7 +256,7 @@ final class SimpleTestAgent implements AgentDefinition
         get => 'You are helpful.';
     }
 
-    public function __invoke(\Phalanx\ExecutionScope $scope): mixed
+    public function __invoke(\Phalanx\Scope\ExecutionScope $scope): mixed
     {
         return null;
     }

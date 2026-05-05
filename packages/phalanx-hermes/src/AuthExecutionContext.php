@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Hermes;
 
 use Phalanx\Auth\AuthContext;
-use Phalanx\ExecutionScope as BaseExecutionScope;
+use Phalanx\Scope\ExecutionScope as BaseExecutionScope;
 use Phalanx\Stoa\RouteParams;
 use Phalanx\Support\ExecutionScopeDelegate;
 use Psr\Http\Message\ServerRequestInterface;

@@ -2,22 +2,20 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/vendor/autoload.php';
+require __DIR__ . '/../bootstrap.php';
 
 use Acme\HandleAgentTask;
-use Phalanx\Athena\AiServiceBundle;
-use Phalanx\Application;
+use Phalanx\Athena\Athena;
 use Phalanx\Postgres\PgServiceBundle;
 use Phalanx\Redis\RedisPubSub;
 use Phalanx\Redis\RedisServiceBundle;
 
-$app = Application::starting()
+$app = Athena::starting()
     ->providers(
-        new AiServiceBundle(),
         new RedisServiceBundle(),
         new PgServiceBundle(),
     )
-    ->compile();
+    ->build();
 
 $scope = $app->createScope();
 

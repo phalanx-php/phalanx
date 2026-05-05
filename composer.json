@@ -130,6 +130,13 @@
         "demo:archon:interactive": "php packages/phalanx-archon/examples/02-interactive-input/demo.php",
         "demo:archon:concurrency": "php packages/phalanx-archon/examples/03-supervised-concurrency/demo.php",
         "demo:archon:lifecycle": "php packages/phalanx-archon/examples/04-runtime-lifecycle/demo.php",
+        "demo:athena": ["@demo:athena:streaming", "@demo:athena:guzzle"],
+        "demo:athena:streaming": "php packages/phalanx-athena/examples/01-streaming-providers/demo.php",
+        "demo:athena:guzzle": "php packages/phalanx-athena/examples/02-guzzle-sdk-coexistence/demo.php",
+        "demo:athena:serve:support-triage": "php packages/phalanx-athena/examples/support-triage/server.php",
+        "demo:athena:serve:research-agent": "php packages/phalanx-athena/examples/research-agent/server.php",
+        "demo:athena:serve:fleet-gateway": "php packages/phalanx-athena/examples/multi-tenant-fleet/gateway.php",
+        "demo:athena:worker:fleet": "php packages/phalanx-athena/examples/multi-tenant-fleet/worker.php",
         "examples:lint": "find examples packages/phalanx-aegis/examples packages/phalanx-archon/examples packages/phalanx-athena/examples packages/phalanx-stoa/examples -name '*.php' -not -path '*/vendor/*' -print0 | xargs -0 -n1 php -l > /dev/null",
         "check": ["@analyse", "@rector:dry", "@test", "@examples:lint"]
     },

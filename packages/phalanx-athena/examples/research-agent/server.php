@@ -2,17 +2,12 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/vendor/autoload.php';
+require __DIR__ . '/../bootstrap.php';
 
 use Acme\ResearchHandler;
 use Phalanx\Athena\AiServiceBundle;
-use Phalanx\Application;
-use Phalanx\Stoa\Runner;
 use Phalanx\Hermes\WsRouteGroup;
-
-$app = Application::starting()
-    ->providers(new AiServiceBundle())
-    ->compile();
+use Phalanx\Stoa\Stoa;
 
 $wsRoutes = WsRouteGroup::of([
     '/research' => ResearchHandler::class,
@@ -28,6 +23,13 @@ Send: {"type":"research","documents":[...],"question":"..."}
 
 BOOT;
 
-Runner::from($app)
-    ->withWebsockets($wsRoutes)
-    ->run('0.0.0.0:8080');
+try {
+    Stoa::starting()
+        ->providers(new AiServiceBundle())
+        ->websockets($wsRoutes)
+        ->listen('0.0.0.0:8080')
+        ->run();
+} catch (\LogicException $e) {
+    echo $e->getMessage() . "\n";
+    exit(0);
+}

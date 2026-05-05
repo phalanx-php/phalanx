@@ -20,7 +20,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/../bootstrap.php';
 
-use Phalanx\Application;
+use Phalanx\Athena\Athena;
 use Phalanx\Athena\Event\AgentEventKind;
 use Phalanx\Athena\Http\CoroutineGuzzleStack;
 use Phalanx\Athena\Message\Conversation;
@@ -30,8 +30,8 @@ use Phalanx\Athena\Provider\GenerateRequest;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Task;
 
+/** @var array<string, mixed> $context */
 $context = ['argv' => $argv ?? []];
-$app = Application::starting($context)->compile();
 
 $anthropicKey = (string) ($context['ANTHROPIC_API_KEY'] ?? '');
 $guzzleUrl = (string) ($context['GUZZLE_DEMO_URL'] ?? '');
@@ -55,7 +55,7 @@ $stack = CoroutineGuzzleStack::create();
 /** @var \GuzzleHttp\Client $guzzle */
 $guzzle = new \GuzzleHttp\Client(['handler' => $stack, 'timeout' => 10.0]);
 
-$exitCode = $app->run(Task::named(
+$exitCode = Athena::starting($context)->run(Task::named(
     'demo.athena.guzzle-sdk-coexistence',
     static function (ExecutionScope $scope) use ($anthropic, $guzzle, $guzzleUrl, $request): int {
         echo "Running Athena native + Guzzle SDK concurrently...\n\n";

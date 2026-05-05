@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Hermes;
 
-use Phalanx\ExecutionScope;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Stoa\RouteParams;
 use Psr\Http\Message\ServerRequestInterface;
 

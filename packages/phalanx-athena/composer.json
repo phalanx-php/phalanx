@@ -35,6 +35,15 @@
             "Phalanx\\Athena\\Tests\\": "tests/"
         }
     },
+    "scripts": {
+        "demo": ["@demo:streaming", "@demo:guzzle"],
+        "demo:streaming": "php examples/01-streaming-providers/demo.php",
+        "demo:guzzle": "php examples/02-guzzle-sdk-coexistence/demo.php",
+        "demo:serve:support-triage": "php examples/support-triage/server.php",
+        "demo:serve:research-agent": "php examples/research-agent/server.php",
+        "demo:serve:fleet-gateway": "php examples/multi-tenant-fleet/gateway.php",
+        "demo:worker:fleet": "php examples/multi-tenant-fleet/worker.php"
+    },
     "extra": {
         "branch-alias": {
             "dev-main": "0.6-dev"

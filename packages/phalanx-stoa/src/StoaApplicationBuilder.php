@@ -17,6 +17,12 @@ use Phalanx\Supervisor\LedgerStorage;
 use Phalanx\Trace\Trace;
 use Phalanx\Worker\WorkerDispatch;
 
+/**
+ * Facade builder for Stoa HTTP applications.
+ *
+ * Bootstrap files should enter through `Stoa::starting($context)`, not
+ * through the root Aegis ApplicationBuilder plus a manually assembled runner.
+ */
 final class StoaApplicationBuilder
 {
     private ApplicationBuilder $app;

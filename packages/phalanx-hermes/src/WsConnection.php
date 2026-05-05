@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Phalanx\Hermes;
 
-use Phalanx\ExecutionScope;
+use Phalanx\Scope\ExecutionScope;
+use Phalanx\Scope\Stream\StreamContext;
 use Phalanx\Styx\Channel;
 use Phalanx\Styx\Emitter;
-use Phalanx\Scope\Stream\StreamContext;
 use Phalanx\Styx\ScopedStream;
 
 final class WsConnection
@@ -75,7 +75,12 @@ final class WsConnection
     {
         if ($this->inboundEmitter === null) {
             $inbound = $this->inbound;
-            $this->inboundEmitter = Emitter::produce(static function (Channel $ch, StreamContext $ctx) use ($inbound): void {
+            $this->inboundEmitter = Emitter::produce(static function (
+                Channel $ch,
+                StreamContext $ctx,
+            ) use (
+                $inbound,
+            ): void {
                 foreach ($inbound->consume() as $msg) {
                     $ctx->throwIfCancelled();
                     $ch->emit($msg);

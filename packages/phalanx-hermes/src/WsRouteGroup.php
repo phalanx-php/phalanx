@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Phalanx\Hermes;
 
-use Phalanx\ExecutionScope;
 use Phalanx\Handler\Handler;
 use Phalanx\Handler\HandlerGroup;
 use Phalanx\Handler\HandlerResolver;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Stoa\RouteConfig;
 use Phalanx\Stoa\RouteMatcher;
 use Phalanx\Stoa\RouteParams;
@@ -28,14 +28,15 @@ use function React\Async\async;
  *
  * Handlers are resolved at upgrade time via HandlerResolver with constructor
  * injection from the service container.
+ *
+ * @phpstan-type WsRouteEntry class-string<Scopeable|Executable>|array{class-string<Scopeable|Executable>, WsConfig}
+ * @phpstan-type WsRouteMap array<string, WsRouteEntry>
  */
 final class WsRouteGroup implements Executable
 {
     private(set) HandlerGroup $inner;
 
-    /**
-     * @param array<string, class-string<Scopeable|Executable>|array{class-string<Scopeable|Executable>, WsConfig}> $routes
-     */
+    /** @param WsRouteMap $routes */
     private function __construct(
         array $routes,
         private readonly WsGateway $gateway,
@@ -57,7 +58,7 @@ final class WsRouteGroup implements Executable
                 $wsConfig = new WsConfig();
             }
 
-            $compiled = RouteConfig::compile($parsed, 'GET', 'ws');
+            $compiled = RouteConfig::compile($parsed, 'GET');
             $config = WsRouteConfig::fromCompiled($compiled, $wsConfig);
 
             $handlers[$key] = new Handler($class, $config);
@@ -66,9 +67,7 @@ final class WsRouteGroup implements Executable
         $this->inner = HandlerGroup::of($handlers)->withMatcher(new RouteMatcher());
     }
 
-    /**
-     * @param array<string, class-string<Scopeable|Executable>|array{class-string<Scopeable|Executable>, WsConfig}> $routes
-     */
+    /** @param WsRouteMap $routes */
     public static function of(
         array $routes,
         ?WsGateway $gateway = null,
@@ -91,11 +90,7 @@ final class WsRouteGroup implements Executable
         return $this->gateway;
     }
 
-    /**
-     * Creates the upgrade handler callback used by Runner::withWebsockets().
-     *
-     * @return callable(ExecutionScope, DuplexStreamInterface, ServerRequestInterface): ResponseInterface
-     */
+    /** @return callable(ExecutionScope, DuplexStreamInterface, ServerRequestInterface): ResponseInterface */
     public function upgradeHandler(): callable
     {
         $group = $this;
@@ -119,12 +114,12 @@ final class WsRouteGroup implements Executable
             }
 
             $handler = $match->handler;
-            $routeConfig = $handler->config;
-            $wsConfig = $routeConfig instanceof WsRouteConfig ? $routeConfig->wsConfig : new WsConfig();
+            $wsConfig = $handler->config instanceof WsRouteConfig
+                ? $handler->config->wsConfig
+                : new WsConfig();
 
-            $params = $routeConfig instanceof RouteConfig
-                ? ($routeConfig->matches('GET', $request->getUri()->getPath()) ?? [])
-                : [];
+            $params = $match->scope->attribute('route.params', []);
+            $params = is_array($params) ? $params : [];
 
             /** @var HandlerResolver $resolver */
             $resolver = $match->scope->service(HandlerResolver::class);
