@@ -19,12 +19,13 @@
       "email": "mail@phalanx-php.com"
     }
   ],
-  "require": {
-    "php": "^8.4",
-    "ext-openswoole": "^26.2",
-    "openswoole/core": "^26.2",
-    "symfony/uid": "^7.0"
-  },
+    "require": {
+        "php": "^8.4",
+        "ext-openswoole": "^26.2",
+        "openswoole/core": "^26.2",
+        "symfony/process": "^7.0",
+        "symfony/uid": "^7.0"
+    },
   "require-dev": {
     "phalanx-php/archon": "^0.5",
     "phalanx-php/stoa": "^0.5",
