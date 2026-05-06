@@ -63,21 +63,44 @@ class StreamingProcessHandle
             return 0;
         }
 
-        $pipe = $this->pipe(self::PIPE_STDIN, 'stdin');
-        $expected = strlen($data);
-        $deadline = self::deadline($timeout);
-        $written = 0;
+        // Timeout handling remains at Aegis layer via $scope->call() + WaitReason.
+        // Adapter handles the actual Symfony InputStream write.
+        return $this->adapter->write($data);
+    }
 
-        while ($written < $expected) {
-            $remaining = self::remaining($deadline);
-            if ($remaining === 0.0) {
-                $this->recordFailure(AegisEventSid::ProcessWriteFailed, 'timeout');
-                throw StreamingProcessException::writeTimedOut($written, $expected);
-            }
+    public function close(string $reason = 'manual'): void
+    {
+        if ($this->released) {
+            return;
+        }
 
-            $ready = $this->scope->call(
-                static fn(): bool|int => System::waitEvent($pipe, SWOOLE_EVENT_WRITE, $remaining),
-                WaitReason::process($this->commandHead, "stdin {$expected}B"),
+        $this->released = true;
+        $this->state = StreamingProcessState::Closed;
+
+        $this->adapter->close();
+
+        $this->recordEvent(AegisEventSid::ProcessClosed, $reason);
+        $this->scope->runtime->memory->resources->release($this->resourceId);
+    }
+
+    public function getIncrementalOutput(): string
+    {
+        return $this->adapter->getIncrementalOutput();
+    }
+
+    public function getIncrementalErrorOutput(): string
+    {
+        return $this->adapter->getIncrementalErrorOutput();
+    }
+
+    public function stop(float $timeout = 1.0, ?int $signal = null): void
+    {
+        $this->stopped = true;
+        $this->state = StreamingProcessState::Stopped;
+
+        $this->adapter->stop($timeout, $signal);
+        $this->recordEvent(AegisEventSid::ProcessStopped, (string) ($signal ?? 15));
+    }
             );
             if ($ready === false) {
                 $this->recordFailure(AegisEventSid::ProcessWriteFailed, 'timeout');
