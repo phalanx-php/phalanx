@@ -12,6 +12,7 @@ use Phalanx\Runtime\Memory\ManagedResourceState;
 use Phalanx\Scope\ScopeIdentity;
 use Phalanx\Scope\TaskExecutor;
 use Phalanx\Scope\TaskScope;
+use Phalanx\System\Internal\SymfonyProcessAdapter;
 use Throwable;
 
 class StreamingProcess
@@ -61,47 +62,19 @@ class StreamingProcess
             throw StreamingProcessException::unsupportedPlatform();
         }
 
-        $command = $this->commandLine();
-        $pipes = [];
-        $error = '';
-
-        set_error_handler(static function (int $_, string $message) use (&$error): bool {
-            $error = $message;
-            return true;
-        });
-
-        try {
-            $process = proc_open(
-                $this->argv,
-                [
-                    ['pipe', 'r'],
-                    ['pipe', 'w'],
-                    ['pipe', 'w'],
-                ],
-                $pipes,
-                $this->cwd,
-                $this->env,
-            );
-        } finally {
-            restore_error_handler();
-        }
-
-        if (!is_resource($process)) {
-            throw StreamingProcessException::startFailed($command, $error !== '' ? $error : 'unknown error');
-        }
+        $adapter = new SymfonyProcessAdapter(
+            $this->argv,
+            $this->cwd,
+            $this->env,
+            $this->maxLineBytes,
+        );
 
         $resourceId = null;
 
         try {
-            foreach ($pipes as $pipe) {
-                if (is_resource($pipe)) {
-                    stream_set_blocking($pipe, false);
-                }
-            }
+            $adapter->start();
 
-            $status = proc_get_status($process);
-
-            $pid = (int) $status['pid'];
+            $pid = $adapter->pid();
             $scopeId = $scope instanceof ScopeIdentity ? $scope->scopeId : null;
             $resource = $scope->runtime->memory->resources->open(
                 AegisResourceSid::StreamingProcess,
@@ -125,8 +98,7 @@ class StreamingProcess
             $scope->runtime->memory->resources->recordEvent($active, AegisEventSid::ProcessStarted, (string) $pid);
 
             $handle = new StreamingProcessHandle(
-                process: $process,
-                pipes: $pipes,
+                adapter: $adapter,
                 scope: $scope,
                 resourceId: $active->id,
                 commandHead: $this->commandHead(),
@@ -142,7 +114,7 @@ class StreamingProcess
 
             return $handle;
         } catch (Throwable $e) {
-            self::cleanupStartedProcess($process, $pipes);
+            $adapter->close();
             if ($resourceId !== null) {
                 try {
                     $scope->runtime->memory->resources->fail($resourceId, 'process.start.setup_failed');
