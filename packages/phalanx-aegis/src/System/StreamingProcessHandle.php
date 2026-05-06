@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Phalanx\System;
 
-use OpenSwoole\Coroutine\System;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Runtime\Identity\AegisAnnotationSid;
 use Phalanx\Runtime\Identity\AegisEventSid;
 use Phalanx\Scope\TaskExecutor;
 use Phalanx\Scope\TaskScope;
 use Phalanx\Supervisor\WaitReason;
+use Phalanx\System\Internal\SymfonyProcessAdapter;
 use Throwable;
 
 class StreamingProcessHandle
@@ -24,18 +24,6 @@ class StreamingProcessHandle
 
     public private(set) StreamingProcessState $state = StreamingProcessState::Running;
 
-    /** @var resource|null */
-    private mixed $process;
-
-    /** @var array<int, resource|null> */
-    private array $pipes;
-
-    /** @var array<int, string> */
-    private array $buffers = [
-        1 => '',
-        2 => '',
-    ];
-
     private int $exitCode = -1;
 
     private int $signal = 0;
@@ -48,21 +36,14 @@ class StreamingProcessHandle
 
     private readonly float $startedAt;
 
-    /**
-     * @param resource $process
-     * @param array<int, resource> $pipes
-     */
     public function __construct(
-        mixed $process,
-        array $pipes,
+        private readonly SymfonyProcessAdapter $adapter,
         private readonly TaskScope&TaskExecutor $scope,
         private readonly string $resourceId,
         private readonly string $commandHead,
         private readonly int $pid,
         private readonly int $maxLineBytes,
     ) {
-        $this->process = $process;
-        $this->pipes = $pipes;
         $this->startedAt = microtime(true);
     }
 
@@ -73,8 +54,7 @@ class StreamingProcessHandle
 
     public function isRunning(): bool
     {
-        $status = $this->status();
-        return $status !== null && (bool) $status['running'];
+        return $this->adapter->isRunning();
     }
 
     public function write(string $data, ?float $timeout = null): int
