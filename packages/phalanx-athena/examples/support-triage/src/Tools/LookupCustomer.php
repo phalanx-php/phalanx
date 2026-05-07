@@ -34,7 +34,7 @@ final class LookupCustomer implements Tool
             ],
             'recent_activity' => [
                 ['action' => 'login', 'created_at' => '2026-03-25T14:30:00Z'],
-                ['action' => 'export_report', 'created_at' => '2026-03-25T14:35:00Z'],
+                ['action' => 'view_athena_exhibit_notes', 'created_at' => '2026-03-25T14:35:00Z'],
             ],
         ]);
     }

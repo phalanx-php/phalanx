@@ -104,6 +104,15 @@ final class SymfonyProcessAdapter
     }
 
     /**
+     * Wait for the process to finish (blocking).
+     * This ensures all output is available via getIncrementalOutput().
+     */
+    public function wait(): ?int
+    {
+        return $this->process->wait();
+    }
+
+    /**
      * Stop the process gracefully or forcefully.
      */
     public function stop(float $timeout = 1.0, ?int $signal = null): void

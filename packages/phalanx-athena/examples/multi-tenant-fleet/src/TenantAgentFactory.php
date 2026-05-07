@@ -35,7 +35,7 @@ final class TenantAgentFactory
     public function create(string $tenantId): AgentDefinition
     {
         $config = $this->tenantConfigs[$tenantId] ?? [
-            'system_prompt' => 'You are a helpful support agent.',
+            'system_prompt' => 'You are a helpful Athena mythology support agent.',
             'provider' => 'anthropic',
             'model' => 'claude-sonnet-4-20250514',
             'enabled_tools' => ['knowledge_base', 'transfer_to_human'],

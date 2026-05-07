@@ -54,7 +54,7 @@ WebSocket endpoint:
   ws://localhost:8080/research
 
 Example JSON:
-  {"type":"research","documents":[...],"question":"..."}
+  {"type":"research","documents":[...],"question":"How do Athena's wisdom and warcraft roles differ across these sources?"}
 
 BOOT;
 

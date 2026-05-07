@@ -28,6 +28,7 @@ final class StreamingProcessTest extends PhalanxTestCase
             )->start($scope);
 
             $isRunning = $handle->isRunning();
+            $handle->wait(1.0);
             $output = $handle->getIncrementalOutput();
             $handle->close('test');
 

@@ -34,8 +34,8 @@ final class TenantKbSearch implements Tool
     {
         return ToolOutcome::data([
             'articles' => [
-                ['id' => 1, 'title' => 'Getting Started', 'relevance' => 0.95],
-                ['id' => 2, 'title' => 'FAQ', 'relevance' => 0.82],
+                ['id' => 1, 'title' => 'Athena: Wisdom, Craft, and Strategy', 'relevance' => 0.95],
+                ['id' => 2, 'title' => 'Athena Symbols and Epithets FAQ', 'relevance' => 0.82],
             ],
         ]);
     }

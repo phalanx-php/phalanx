@@ -26,8 +26,8 @@ final class SearchKnowledgeBase implements Tool
     public function __invoke(Scope $scope): ToolOutcome
     {
         return ToolOutcome::data([
-            ['id' => 101, 'title' => 'Export Report Troubleshooting', 'relevance' => 0.92],
-            ['id' => 204, 'title' => 'Data Export Formats Guide', 'relevance' => 0.78],
+            ['id' => 101, 'title' => 'Athena and the Owl Symbol', 'relevance' => 0.92],
+            ['id' => 204, 'title' => 'Athena as Strategist and Patron of Wisdom', 'relevance' => 0.78],
         ]);
     }
 }

@@ -34,7 +34,7 @@ final class QuerySpreadsheet implements Tool
         return ToolOutcome::data([
             'file' => $this->filePath,
             'query' => $this->query,
-            'result' => 'Query result placeholder',
+            'result' => 'Athena appears most often in wisdom, craft, and strategic-war contexts.',
         ]);
     }
 }

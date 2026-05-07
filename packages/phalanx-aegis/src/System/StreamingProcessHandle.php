@@ -82,7 +82,7 @@ final class StreamingProcessHandle
 
         $this->adapter->close();
 
-        $this->recordEvent(AegisEventSid::ProcessClosed, $reason);
+        $this->recordEvent(AegisEventSid::ProcessExited, $reason);
         $this->scope->runtime->memory->resources->release($this->resourceId);
     }
 
@@ -104,7 +104,12 @@ final class StreamingProcessHandle
         $this->recordEvent(AegisEventSid::ProcessKilled, 'SIGKILL');
     }
 
-    private function recordEvent(int $eventId, string $data): void
+    public function wait(): ?int
+    {
+        return $this->adapter->wait();
+    }
+
+    private function recordEvent(AegisEventSid $eventId, string $data): void
     {
         $this->scope->runtime->memory->resources->recordEvent(
             $this->resourceId,

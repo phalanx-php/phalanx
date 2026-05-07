@@ -34,8 +34,8 @@ final class MultiTenantFleetExampleTest extends TestCase
     public function factory_creates_agent_with_custom_config(): void
     {
         $factory = new TenantAgentFactory([
-            'acme_corp' => [
-                'system_prompt' => 'You are the Acme Corp support bot.',
+            'athena_archive' => [
+                'system_prompt' => 'You are the Athena Archive support bot.',
                 'provider' => 'openai',
                 'model' => 'gpt-4o',
                 'enabled_tools' => ['knowledge_base'],
@@ -43,10 +43,10 @@ final class MultiTenantFleetExampleTest extends TestCase
             ],
         ]);
 
-        $agent = $factory->create('acme_corp');
+        $agent = $factory->create('athena_archive');
 
         $this->assertSame('openai', $agent->provider());
-        $this->assertStringContainsString('Acme Corp', $agent->instructions);
+        $this->assertStringContainsString('Athena Archive', $agent->instructions);
     }
 
     #[Test]
@@ -93,9 +93,9 @@ final class MultiTenantFleetExampleTest extends TestCase
     public function transfer_to_human_terminates_agent_loop(): void
     {
         $tool = new TransferToHuman(
-            reason: 'Customer wants refund over $500',
+            reason: 'Customer needs curator review of an Athena attribution',
             department: 'billing',
-            contextSummary: 'Customer asked about refund policy for enterprise plan',
+            contextSummary: 'Customer asked whether an owl symbol should be attributed to Athena',
         );
 
         /** @var \Phalanx\Scope\Scope&\PHPUnit\Framework\MockObject\MockObject $scope */
@@ -121,7 +121,7 @@ final class MultiTenantFleetExampleTest extends TestCase
     #[Test]
     public function tenant_kb_search_returns_articles(): void
     {
-        $tool = new TenantKbSearch('how to export', 3);
+        $tool = new TenantKbSearch('Athena owl symbolism', 3);
         /** @var \Phalanx\Scope\Scope&\PHPUnit\Framework\MockObject\MockObject $scope */
         $scope = $this->createStub(\Phalanx\Scope\Scope::class);
 
@@ -162,7 +162,7 @@ final class MultiTenantFleetExampleTest extends TestCase
         $call = new \Phalanx\Athena\Tool\ToolCall('tc_1', 'transfer_to_human', [
             'reason' => 'Cannot resolve',
             'department' => 'technical',
-            'contextSummary' => 'DNS issue',
+            'contextSummary' => 'Athena epithet mismatch',
         ]);
 
         $tool = $registry->hydrate($call);
@@ -184,7 +184,7 @@ final class MultiTenantFleetExampleTest extends TestCase
         $agent = $factory->create('test_tenant');
 
         $turn = Turn::begin($agent)
-            ->message('I need help with my subscription')
+            ->message('I need help understanding Athena as a goddess of strategy')
             ->maxSteps(6);
 
         $conv = $turn->buildConversation();
@@ -199,14 +199,14 @@ final class MultiTenantFleetExampleTest extends TestCase
     {
         $factory = new TenantAgentFactory([
             'tenant_a' => [
-                'system_prompt' => 'You are Tenant A support.',
+                'system_prompt' => 'You are Athena Archive support.',
                 'provider' => 'anthropic',
                 'model' => 'claude-sonnet-4-20250514',
                 'enabled_tools' => ['knowledge_base'],
                 'escalation' => [],
             ],
             'tenant_b' => [
-                'system_prompt' => 'You are Tenant B support.',
+                'system_prompt' => 'You are Athena Curator support.',
                 'provider' => 'openai',
                 'model' => 'gpt-4o',
                 'enabled_tools' => ['transfer_to_human'],
@@ -217,8 +217,8 @@ final class MultiTenantFleetExampleTest extends TestCase
         $agentA = $factory->create('tenant_a');
         $agentB = $factory->create('tenant_b');
 
-        $this->assertStringContainsString('Tenant A', $agentA->instructions);
-        $this->assertStringContainsString('Tenant B', $agentB->instructions);
+        $this->assertStringContainsString('Athena Archive', $agentA->instructions);
+        $this->assertStringContainsString('Athena Curator', $agentB->instructions);
         $this->assertSame('anthropic', $agentA->provider());
         $this->assertSame('openai', $agentB->provider());
         $this->assertCount(1, $agentA->tools());

@@ -26,7 +26,7 @@ final class GetRecentTickets implements Tool
     public function __invoke(Scope $scope): ToolOutcome
     {
         return ToolOutcome::data([
-            ['id' => 501, 'subject' => 'Export timeout', 'status' => 'resolved', 'created_at' => '2026-03-10'],
+            ['id' => 501, 'subject' => 'Athena epithet clarification', 'status' => 'resolved', 'created_at' => '2026-03-10'],
         ]);
     }
 }

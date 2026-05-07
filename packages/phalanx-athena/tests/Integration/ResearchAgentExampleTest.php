@@ -103,15 +103,15 @@ final class ResearchAgentExampleTest extends TestCase
     #[Test]
     public function extract_document_returns_summary_data(): void
     {
-        $tool = new ExtractDocumentContent('/uploads/q1.pdf', 'revenue trends');
+        $tool = new ExtractDocumentContent('/uploads/athena-hymn.pdf', 'wisdom and strategy');
         /** @var \Phalanx\Scope\Scope&\PHPUnit\Framework\MockObject\MockObject $scope */
         $scope = $this->createStub(\Phalanx\Scope\Scope::class);
 
         $outcome = $tool($scope);
 
         $this->assertSame(Disposition::Continue, $outcome->disposition);
-        $this->assertSame('/uploads/q1.pdf', $outcome->data['document']);
-        $this->assertSame('revenue trends', $outcome->data['focus']);
+        $this->assertSame('/uploads/athena-hymn.pdf', $outcome->data['document']);
+        $this->assertSame('wisdom and strategy', $outcome->data['focus']);
         $this->assertArrayHasKey('key_points', $outcome->data);
     }
 
@@ -128,28 +128,28 @@ final class ResearchAgentExampleTest extends TestCase
     #[Test]
     public function cross_reference_returns_findings(): void
     {
-        $tool = new CrossReference('Compare revenue', ['doc1', 'doc2']);
+        $tool = new CrossReference('Compare Athena epithets', ['doc1', 'doc2']);
         /** @var \Phalanx\Scope\Scope&\PHPUnit\Framework\MockObject\MockObject $scope */
         $scope = $this->createStub(\Phalanx\Scope\Scope::class);
 
         $outcome = $tool($scope);
 
         $this->assertSame(Disposition::Continue, $outcome->disposition);
-        $this->assertSame('Compare revenue', $outcome->data['question']);
+        $this->assertSame('Compare Athena epithets', $outcome->data['question']);
         $this->assertCount(2, $outcome->data['sources']);
     }
 
     #[Test]
     public function query_spreadsheet_returns_result(): void
     {
-        $tool = new QuerySpreadsheet('/uploads/forecast.csv', 'total Q3 revenue');
+        $tool = new QuerySpreadsheet('/uploads/athena-epithets.csv', 'count wisdom epithets');
         /** @var \Phalanx\Scope\Scope&\PHPUnit\Framework\MockObject\MockObject $scope */
         $scope = $this->createStub(\Phalanx\Scope\Scope::class);
 
         $outcome = $tool($scope);
 
         $this->assertSame(Disposition::Continue, $outcome->disposition);
-        $this->assertSame('/uploads/forecast.csv', $outcome->data['file']);
+        $this->assertSame('/uploads/athena-epithets.csv', $outcome->data['file']);
     }
 
     #[Test]
@@ -171,7 +171,7 @@ final class ResearchAgentExampleTest extends TestCase
     public function turn_builds_with_multi_doc_question(): void
     {
         $turn = Turn::begin(new ResearchAgent())
-            ->message("Documents:\n- Q1.pdf\n- Q2.pdf\n\nCompare revenue trends.")
+            ->message("Documents:\n- Homeric Hymn to Athena.pdf\n- Athena Epithets.csv\n\nCompare Athena's wisdom and warcraft roles.")
             ->maxSteps(8);
 
         $conv = $turn->buildConversation();

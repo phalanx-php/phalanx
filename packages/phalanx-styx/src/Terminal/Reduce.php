@@ -11,7 +11,7 @@ use Phalanx\Styx\Emitter;
 final class Reduce
 {
     /**
-     * @param Closure(mixed, mixed): mixed $reducer
+     * @param Closure(mixed, mixed, int): mixed $reducer
      */
     public function __construct(
         private readonly Emitter $source,
@@ -22,9 +22,9 @@ final class Reduce
     public function __invoke(StreamContext $context): mixed
     {
         $accumulator = $this->initial;
-        foreach (($this->source)($context) as $value) {
+        foreach (($this->source)($context) as $key => $value) {
             $context->throwIfCancelled();
-            $accumulator = ($this->reducer)($accumulator, $value);
+            $accumulator = ($this->reducer)($accumulator, $value, $key);
         }
         return $accumulator;
     }

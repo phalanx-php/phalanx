@@ -26,7 +26,7 @@ Endpoint:
   POST http://localhost:8080/triage
 
 Example JSON:
-  {"ticket_id":123,"customer_email":"sarah@example.com","subject":"...","body":"..."}
+  {"ticket_id":123,"customer_email":"sarah@example.com","subject":"Athena exhibit notes","body":"The owl symbolism section needs clearer source guidance."}
 
 Provider configuration:
 

@@ -26,7 +26,7 @@ final class StreamingProcessChannelBackpressureTest extends PhalanxTestCase
         $consumerDelayMs = 35; // slow consumer
 
         $result = $this->scope->run(
-            function (ExecutionScope $scope) use ($linesToProduce, $channelBuffer, $consumerDelayMs): array {
+            static function (ExecutionScope $scope) use ($linesToProduce, $channelBuffer, $consumerDelayMs): array {
             // Fast child process: writes many lines as quickly as possible
             $handle = StreamingProcess::from(
                 PHP_BINARY,

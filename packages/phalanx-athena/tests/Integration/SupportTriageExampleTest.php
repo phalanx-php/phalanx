@@ -186,9 +186,9 @@ final class SupportTriageExampleTest extends TestCase
     {
         $json = json_encode([
             'priority' => 'medium',
-            'category' => 'billing',
-            'summary' => 'Export CSV failing',
-            'draftResponse' => 'Hi Sarah, try clearing your cache...',
+            'category' => 'feature-request',
+            'summary' => 'Athena owl symbolism needs source guidance',
+            'draftResponse' => 'Hi Sarah, use the Athena owl symbol article as the primary source...',
             'autoResolvable' => false,
             'escalationNote' => null,
             'relevantArticleIds' => [101, 204],
@@ -198,8 +198,8 @@ final class SupportTriageExampleTest extends TestCase
 
         $this->assertInstanceOf(TriageResult::class, $result);
         $this->assertSame(TicketPriority::Medium, $result->priority);
-        $this->assertSame(TicketCategory::Billing, $result->category);
-        $this->assertSame('Export CSV failing', $result->summary);
+        $this->assertSame(TicketCategory::FeatureRequest, $result->category);
+        $this->assertSame('Athena owl symbolism needs source guidance', $result->summary);
         $this->assertFalse($result->autoResolvable);
         $this->assertSame([101, 204], $result->relevantArticleIds);
     }
@@ -208,7 +208,7 @@ final class SupportTriageExampleTest extends TestCase
     public function turn_builds_with_triage_agent(): void
     {
         $turn = Turn::begin(new SupportTriageAgent())
-            ->message("Ticket from: sarah@example.com\nSubject: Export failing\n\nCSV export times out")
+            ->message("Ticket from: sarah@example.com\nSubject: Athena exhibit notes\n\nThe owl symbolism section needs clearer source guidance.")
             ->output(TriageResult::class)
             ->maxSteps(4);
 

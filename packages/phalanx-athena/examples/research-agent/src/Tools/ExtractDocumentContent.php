@@ -42,8 +42,8 @@ final class ExtractDocumentContent implements Tool, HasTimeout
             'focus' => $this->focus,
             'summary' => "Extracted key data points from {$this->documentPath} focused on {$this->focus}.",
             'key_points' => [
-                'Revenue increased 15% QoQ',
-                'Customer churn decreased to 2.3%',
+                'Athena is associated with disciplined wisdom and practical craft',
+                'Athena favors strategic warcraft over indiscriminate violence',
             ],
         ]);
     }

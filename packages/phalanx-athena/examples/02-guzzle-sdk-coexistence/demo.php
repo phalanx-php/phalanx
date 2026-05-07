@@ -81,7 +81,7 @@ if ($scheme === 'https' && in_array($host, ['localhost', '127.0.0.1', '::1'], tr
     );
 }
 
-$prompt = 'Reply with the single word "done".';
+$prompt = 'In one short sentence, describe Athena as a strategist and patron of wisdom.';
 $conversation = Conversation::create()->user($prompt);
 $request = GenerateRequest::from($conversation)->withMaxTokens(20);
 $anthropic = new AnthropicProvider(new AnthropicConfig(apiKey: $anthropicKey));
