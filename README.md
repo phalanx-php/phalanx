@@ -55,7 +55,7 @@ Every unit of work in Phalanx executes inside an owned `Scope`. This is the prot
 
 You don't manage fibers or pools. You use the narrowest scope interface you need and let Aegis handle the rest.
 
-### Migrated packages (0.2 so far)
+### Phalanx packages
 
 | Package        | What it gives you |
 |----------------|-------------------|
@@ -69,7 +69,7 @@ You don't manage fibers or pools. You use the narrowest scope interface you need
 | phalanx-redis  | Async Redis client with managed pools |
 | phalanx-grammata | Safe concurrent file operations |
 
-Everything else (TUI, workers, additional protocols) is in flight.
+Everything else (TUI, workers, additional protocols) is actively landing.
 
 ### Why Phalanx exists
 
