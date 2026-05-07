@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\System;
 
-use Phalanx\Runtime\Identity\AegisAnnotationSid;
 use Phalanx\Runtime\Identity\AegisEventSid;
 use Phalanx\Scope\TaskExecutor;
 use Phalanx\Scope\TaskScope;

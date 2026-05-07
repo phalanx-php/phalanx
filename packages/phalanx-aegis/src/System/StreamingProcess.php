@@ -151,11 +151,6 @@ class StreamingProcess
         return $clone;
     }
 
-    public function commandLine(): string
-    {
-        return implode(' ', array_map(self::quoteForDisplay(...), $this->argv));
-    }
-
     public function commandHead(): string
     {
         return basename($this->argv[0]);
@@ -200,40 +195,5 @@ class StreamingProcess
         }
 
         return $normalized;
-    }
-
-    private static function quoteForDisplay(string $arg): string
-    {
-        if ($arg === '') {
-            return "''";
-        }
-        if (preg_match('/^[A-Za-z0-9_.,:\/@%+=-]+$/', $arg) === 1) {
-            return $arg;
-        }
-        return escapeshellarg($arg);
-    }
-
-    /**
-     * @param resource $process
-     * @param array<int, resource> $pipes
-     */
-    private static function cleanupStartedProcess(mixed $process, array $pipes): void
-    {
-        foreach ($pipes as $pipe) {
-            if (is_resource($pipe)) {
-                fclose($pipe);
-            }
-        }
-
-        if (!is_resource($process)) {
-            return;
-        }
-
-        $status = proc_get_status($process);
-        if ((bool) $status['running']) {
-            proc_terminate($process, 9);
-        }
-
-        proc_close($process);
     }
 }
