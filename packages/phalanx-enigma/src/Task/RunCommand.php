@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Phalanx\Enigma\Task;
 
-use Phalanx\ExecutionScope;
 use Phalanx\Enigma\CommandResult;
 use Phalanx\Enigma\Exception\SshConnectionException;
 use Phalanx\Enigma\Exception\SshException;
 use Phalanx\Enigma\SshConfig;
 use Phalanx\Enigma\SshCredential;
 use Phalanx\Enigma\Support\ProcessAwaiter;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
 use Phalanx\Task\HasTimeout;
 
@@ -24,15 +24,20 @@ final class RunCommand implements Executable, HasTimeout
         private readonly SshCredential $credential,
         private readonly string $command,
         private readonly ?float $timeoutSeconds = null,
-    ) {}
+    ) {
+    }
 
     public function __invoke(ExecutionScope $scope): CommandResult
     {
         /** @var SshConfig $config */
         $config = $scope->service(SshConfig::class);
-        $cmdLine = self::buildCommandLine($config, $this->credential, $this->command);
+        $argv = self::argv($config, $this->credential, $this->command);
 
-        [$exitCode, $stdout, $stderr, $durationMs] = ProcessAwaiter::spawn($cmdLine, $scope);
+        [$exitCode, $stdout, $stderr, $durationMs] = ProcessAwaiter::spawn(
+            $argv,
+            $scope,
+            $this->timeoutSeconds ?? $config->defaultTimeoutSeconds,
+        );
 
         $result = new CommandResult(
             exitCode: $exitCode,
@@ -48,16 +53,19 @@ final class RunCommand implements Executable, HasTimeout
         return $result;
     }
 
-    private static function buildCommandLine(
+    /**
+     * @return non-empty-list<string>
+     */
+    private static function argv(
         SshConfig $config,
         SshCredential $credential,
         string $command,
-    ): string {
+    ): array {
         $args = $credential->toConnectionArgs($config);
         $args[] = '--';
         $args[] = $command;
 
-        return ProcessAwaiter::buildCommandLine($config->sshBinaryPath, $args);
+        return ProcessAwaiter::argv($config->sshBinaryPath, $args);
     }
 
     private static function throwConnectionError(string $stderr, CommandResult $result): never

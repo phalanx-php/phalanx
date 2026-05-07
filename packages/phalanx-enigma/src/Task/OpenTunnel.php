@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 namespace Phalanx\Enigma\Task;
 
-use Phalanx\Exception\CancelledException;
-use Phalanx\ExecutionScope;
+use Phalanx\Cancellation\Cancelled;
 use Phalanx\Enigma\Exception\SshConnectionException;
+use Phalanx\Enigma\Exception\SshTimeoutException;
 use Phalanx\Enigma\SshConfig;
 use Phalanx\Enigma\SshCredential;
 use Phalanx\Enigma\Support\ProcessAwaiter;
 use Phalanx\Enigma\TunnelDirection;
 use Phalanx\Enigma\TunnelHandle;
+use Phalanx\Scope\ExecutionScope;
+use Phalanx\System\StreamingProcess;
+use Phalanx\System\StreamingProcessHandle;
 use Phalanx\Task\Executable;
-use React\EventLoop\Loop;
-use React\EventLoop\TimerInterface;
-use React\Promise\Deferred;
-use React\Promise\PromiseInterface;
+use Throwable;
 
 final class OpenTunnel implements Executable
 {
@@ -27,7 +27,8 @@ final class OpenTunnel implements Executable
         private readonly int $remotePort,
         private readonly TunnelDirection $direction = TunnelDirection::Local,
         private readonly ?SshCredential $targetCredential = null,
-    ) {}
+    ) {
+    }
 
     public function __invoke(ExecutionScope $scope): TunnelHandle
     {
@@ -48,35 +49,16 @@ final class OpenTunnel implements Executable
             ...$this->credential->toConnectionArgs($config),
         ];
 
-        $cmdLine = ProcessAwaiter::buildCommandLine($config->sshBinaryPath, $args);
-
-        $process = new \React\ChildProcess\Process($cmdLine);
-        $process->start();
-
-        $stderr = '';
-        $process->stderr?->on('data', static function (string $chunk) use (&$stderr): void {
-            $stderr .= $chunk;
-        });
+        $process = StreamingProcess::command(ProcessAwaiter::argv($config->sshBinaryPath, $args))->start($scope);
 
         try {
-            $established = $scope->await(
-                self::awaitEstablished($process, $config->connectionTimeoutSeconds),
-            );
-        } catch (CancelledException $e) {
-            if ($process->isRunning()) {
-                $process->terminate();
-            }
+            self::waitForTunnel($process, $scope, $config->connectionTimeoutSeconds);
+        } catch (Cancelled $e) {
+            $process->kill();
             throw $e;
-        }
-
-        if (!$established) {
-            if ($process->isRunning()) {
-                $process->terminate();
-            }
-            throw new SshConnectionException(
-                "Failed to establish SSH tunnel: {$stderr}",
-                stderr: $stderr,
-            );
+        } catch (Throwable $e) {
+            $process->kill();
+            throw $e;
         }
 
         $handle = new TunnelHandle(
@@ -94,29 +76,40 @@ final class OpenTunnel implements Executable
         return $handle;
     }
 
-    /** @return PromiseInterface<bool> */
-    private static function awaitEstablished(
-        \React\ChildProcess\Process $process,
+    private static function waitForTunnel(
+        StreamingProcessHandle $process,
+        ExecutionScope $scope,
         float $timeout,
-    ): PromiseInterface {
-        $deferred = new Deferred();
-        /** @var ?TimerInterface $timer */
-        $timer = null;
+    ): void {
+        $stderr = '';
+        $readyAt = microtime(true) + 0.5;
+        $deadline = microtime(true) + max(0.0, $timeout);
 
-        $process->on('exit', static function () use ($deferred, &$timer): void {
-            if ($timer instanceof TimerInterface) {
-                Loop::cancelTimer($timer);
+        while (true) {
+            $scope->throwIfCancelled();
+            $stderr .= $process->getIncrementalErrorOutput();
+
+            if (!$process->isRunning()) {
+                $process->close('enigma.tunnel.failed');
+                throw new SshConnectionException(
+                    "Failed to establish SSH tunnel: {$stderr}",
+                    stderr: $stderr,
+                );
             }
-            $deferred->resolve(false);
-        });
 
-        $timer = Loop::addTimer(0.5, static function () use ($deferred, $process): void {
-            if ($process->isRunning()) {
-                $deferred->resolve(true);
+            if (microtime(true) >= $readyAt) {
+                return;
             }
-        });
 
-        return \React\Promise\Timer\timeout($deferred->promise(), $timeout)
-            ->catch(static fn() => false);
+            if (microtime(true) >= $deadline) {
+                $process->kill();
+                throw new SshTimeoutException(
+                    sprintf('SSH tunnel timed out after %.3f seconds', $timeout),
+                    stderr: $stderr,
+                );
+            }
+
+            $scope->delay(0.01);
+        }
     }
 }

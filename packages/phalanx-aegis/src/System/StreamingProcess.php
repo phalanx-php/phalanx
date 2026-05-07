@@ -99,6 +99,7 @@ class StreamingProcess
             $handle = new StreamingProcessHandle(
                 adapter: $adapter,
                 scope: $scope,
+                memory: $scope->runtime->memory,
                 resourceId: $active->id,
                 pid: $pid,
                 maxLineBytes: $this->maxLineBytes,

@@ -4,54 +4,53 @@ declare(strict_types=1);
 
 namespace Phalanx\Enigma\Support;
 
-use Phalanx\Exception\CancelledException;
-use Phalanx\ExecutionScope;
-use React\ChildProcess\Process;
-use React\Promise\Deferred;
-use React\Promise\PromiseInterface;
+use Phalanx\Cancellation\Cancelled;
+use Phalanx\Enigma\Exception\SshTimeoutException;
+use Phalanx\Scope\ExecutionScope;
+use Phalanx\System\StreamingProcess;
+use Throwable;
 
 final class ProcessAwaiter
 {
-    /** @return PromiseInterface<int> */
-    public static function awaitExit(Process $process): PromiseInterface
-    {
-        $deferred = new Deferred();
-
-        $process->on('exit', static function (?int $code) use ($deferred): void {
-            $deferred->resolve($code ?? 1);
-        });
-
-        return $deferred->promise();
-    }
-
     /**
-     * Spawn a process, collect stdout/stderr, await exit with cancellation support.
-     *
+     * @param non-empty-list<string> $argv
      * @return array{int, string, string, float} [exitCode, stdout, stderr, durationMs]
      */
-    public static function spawn(string $cmdLine, ExecutionScope $scope): array
+    public static function spawn(array $argv, ExecutionScope $scope, ?float $timeoutSeconds = null): array
     {
         $start = hrtime(true);
         $stdout = '';
         $stderr = '';
-
-        $process = new Process($cmdLine);
-        $process->start();
-
-        $process->stdout?->on('data', static function (string $chunk) use (&$stdout): void {
-            $stdout .= $chunk;
-        });
-
-        $process->stderr?->on('data', static function (string $chunk) use (&$stderr): void {
-            $stderr .= $chunk;
-        });
+        $deadline = $timeoutSeconds === null ? null : microtime(true) + max(0.0, $timeoutSeconds);
+        $handle = StreamingProcess::command($argv)->start($scope);
 
         try {
-            $exitCode = $scope->await(self::awaitExit($process));
-        } catch (CancelledException $e) {
-            if ($process->isRunning()) {
-                $process->terminate();
+            while (true) {
+                $stdout .= $handle->getIncrementalOutput();
+                $stderr .= $handle->getIncrementalErrorOutput();
+
+                if ($deadline !== null && microtime(true) >= $deadline) {
+                    $handle->kill();
+                    throw new SshTimeoutException(
+                        sprintf('Process timed out after %.3f seconds', $timeoutSeconds),
+                        stderr: $stderr,
+                    );
+                }
+
+                $exitCode = $handle->wait(0.01);
+                if ($exitCode !== null) {
+                    break;
+                }
             }
+
+            $stdout .= $handle->getIncrementalOutput();
+            $stderr .= $handle->getIncrementalErrorOutput();
+            $handle->close('enigma.process.completed');
+        } catch (Cancelled $e) {
+            $handle->kill();
+            throw $e;
+        } catch (Throwable $e) {
+            $handle->kill();
             throw $e;
         }
 
@@ -61,14 +60,11 @@ final class ProcessAwaiter
     }
 
     /**
-     * Build a shell command line from a binary path and argument list.
-     *
      * @param list<string> $args
+     * @return non-empty-list<string>
      */
-    public static function buildCommandLine(string $binary, array $args): string
+    public static function argv(string $binary, array $args): array
     {
-        return escapeshellarg($binary)
-            . ' '
-            . implode(' ', array_map(escapeshellarg(...), $args));
+        return [$binary, ...$args];
     }
 }

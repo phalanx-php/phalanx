@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Enigma\Task;
 
-use Phalanx\ExecutionScope;
 use Phalanx\Enigma\CommandResult;
 use Phalanx\Enigma\SshCredential;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
 use Phalanx\Task\HasTimeout;
 
@@ -21,11 +21,12 @@ final class RunScript implements Executable, HasTimeout
         private readonly string $scriptContent,
         private readonly string $interpreter = '/bin/bash',
         private readonly ?float $timeoutSeconds = null,
-    ) {}
+    ) {
+    }
 
     public function __invoke(ExecutionScope $scope): CommandResult
     {
-        $remotePath = '/tmp/phalanx-script-' . bin2hex(random_bytes(8));
+        $remotePath = '/tmp/phalanx-script-' . uniqid('', true);
 
         $scope->execute(new SftpUpload(
             credential: $this->credential,

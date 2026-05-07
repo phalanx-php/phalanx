@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\System;
 
 use Phalanx\Runtime\Identity\AegisEventSid;
+use Phalanx\Runtime\Memory\RuntimeMemory;
 use Phalanx\Scope\TaskExecutor;
 use Phalanx\Scope\TaskScope;
 use Phalanx\System\Internal\SymfonyProcessAdapter;
@@ -26,6 +27,7 @@ final class StreamingProcessHandle
     public function __construct(
         private readonly SymfonyProcessAdapter $adapter,
         private readonly TaskScope&TaskExecutor $scope,
+        private readonly RuntimeMemory $memory,
         private readonly string $resourceId,
         private readonly int $pid,
         private readonly int $maxLineBytes,
@@ -122,10 +124,12 @@ final class StreamingProcessHandle
         $this->released = true;
         $this->state = StreamingProcessState::Closed;
 
-        $this->adapter->close();
-
-        $this->recordEvent(AegisEventSid::ProcessExited, $reason);
-        $this->releaseResource();
+        try {
+            $this->adapter->close();
+            $this->recordEvent(AegisEventSid::ProcessExited, $reason);
+        } finally {
+            $this->releaseResource();
+        }
     }
 
     public function stop(float $gracefulTimeout = 1.0, float $forceTimeout = 0.0): void
@@ -136,9 +140,12 @@ final class StreamingProcessHandle
 
         $this->state = StreamingProcessState::Exited;
 
-        $this->adapter->stop($gracefulTimeout, $forceTimeout > 0.0 ? 9 : null);
-        $this->recordEvent(AegisEventSid::ProcessStopped, 'SIGTERM');
-        $this->releaseResource();
+        try {
+            $this->adapter->stop($gracefulTimeout, $forceTimeout > 0.0 ? 9 : null);
+            $this->recordEvent(AegisEventSid::ProcessStopped, 'SIGTERM');
+        } finally {
+            $this->releaseResource();
+        }
     }
 
     public function kill(): void
@@ -149,9 +156,12 @@ final class StreamingProcessHandle
 
         $this->state = StreamingProcessState::Killed;
 
-        $this->adapter->stop(0.0, 9);
-        $this->recordEvent(AegisEventSid::ProcessKilled, 'SIGKILL');
-        $this->releaseResource();
+        try {
+            $this->adapter->stop(0.0, 9);
+            $this->recordEvent(AegisEventSid::ProcessKilled, 'SIGKILL');
+        } finally {
+            $this->releaseResource();
+        }
     }
 
     public function wait(?float $timeout = null): ?int
@@ -181,7 +191,7 @@ final class StreamingProcessHandle
 
     private function recordEvent(AegisEventSid $eventId, string $data): void
     {
-        $this->scope->runtime->memory->resources->recordEvent(
+        $this->memory->resources->recordEvent(
             $this->resourceId,
             $eventId,
             $data,
@@ -260,6 +270,6 @@ final class StreamingProcessHandle
     private function releaseResource(): void
     {
         $this->released = true;
-        $this->scope->runtime->memory->resources->release($this->resourceId);
+        $this->memory->resources->release($this->resourceId);
     }
 }

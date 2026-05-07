@@ -73,6 +73,9 @@
         <testsuite name="Athena Integration">
             <directory>packages/phalanx-athena/tests/Integration</directory>
         </testsuite>
+        <testsuite name="Enigma Unit">
+            <directory>packages/phalanx-enigma/tests/Unit</directory>
+        </testsuite>
         <testsuite name="Eidolon Unit">
             <directory>packages/phalanx-eidolon/tests/Unit</directory>
         </testsuite>

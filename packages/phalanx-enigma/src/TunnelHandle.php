@@ -6,10 +6,10 @@ namespace Phalanx\Enigma;
 
 use Phalanx\Enigma\Exception\SshConnectionException;
 use Phalanx\Enigma\Task\RunCommand;
+use Phalanx\Scope\TaskScope;
+use Phalanx\System\StreamingProcessHandle;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
-use Phalanx\TaskScope;
-use React\ChildProcess\Process;
 
 final class TunnelHandle implements \Stringable
 {
@@ -25,7 +25,7 @@ final class TunnelHandle implements \Stringable
         public readonly int $remotePort,
         public readonly TunnelDirection $direction,
         public readonly ?SshCredential $targetCredential,
-        private readonly Process $process,
+        private readonly StreamingProcessHandle $process,
         private readonly TaskScope $scope,
     ) {
     }
@@ -75,9 +75,6 @@ final class TunnelHandle implements \Stringable
         }
 
         $this->closed = true;
-
-        if ($this->process->isRunning()) {
-            $this->process->terminate();
-        }
+        $this->process->close('enigma.tunnel.close');
     }
 }

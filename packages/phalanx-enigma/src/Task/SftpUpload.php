@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Phalanx\Enigma\Task;
 
-use Phalanx\ExecutionScope;
 use Phalanx\Enigma\Exception\SshException;
 use Phalanx\Enigma\SshConfig;
 use Phalanx\Enigma\SshCredential;
+use Phalanx\Enigma\Support\LocalTempFile;
 use Phalanx\Enigma\Support\ProcessAwaiter;
 use Phalanx\Enigma\TransferResult;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
 use Phalanx\Task\HasTimeout;
 
@@ -43,32 +44,24 @@ final class SftpUpload implements Executable, HasTimeout
         $actualLocalPath = $this->localPath;
 
         if ($this->localContent !== null) {
-            $tempFile = tempnam(sys_get_temp_dir(), 'phalanx-sftp-') ?: sys_get_temp_dir() . '/phalanx-sftp-' . bin2hex(random_bytes(8));
-            file_put_contents($tempFile, $this->localContent);
+            $tempFile = LocalTempFile::write($scope, 'phalanx-sftp-', $this->localContent);
             $actualLocalPath = $tempFile;
-
-            $scope->onDispose(static function () use ($tempFile): void {
-                if (file_exists($tempFile)) {
-                    unlink($tempFile);
-                }
-            });
         }
 
         \assert($actualLocalPath !== null);
 
-        $batchFile = tempnam(sys_get_temp_dir(), 'phalanx-sftp-batch-') ?: sys_get_temp_dir() . '/phalanx-sftp-batch-' . bin2hex(random_bytes(8));
-        file_put_contents($batchFile, "put {$actualLocalPath} {$this->remotePath}\n");
-
-        $scope->onDispose(static function () use ($batchFile): void {
-            if (file_exists($batchFile)) {
-                unlink($batchFile);
-            }
-        });
-
+        $batchFile = LocalTempFile::write(
+            $scope,
+            'phalanx-sftp-batch-',
+            "put {$actualLocalPath} {$this->remotePath}\n",
+        );
         $args = ['-b', $batchFile, ...$this->credential->toSftpArgs($config)];
-        $cmdLine = ProcessAwaiter::buildCommandLine($config->sftpBinaryPath, $args);
 
-        [$exitCode, , , $durationMs] = ProcessAwaiter::spawn($cmdLine, $scope);
+        [$exitCode, , , $durationMs] = ProcessAwaiter::spawn(
+            ProcessAwaiter::argv($config->sftpBinaryPath, $args),
+            $scope,
+            $this->timeoutSeconds ?? $config->defaultTimeoutSeconds,
+        );
 
         if ($exitCode !== 0) {
             throw new SshException("SFTP upload failed (exit {$exitCode})", $exitCode);

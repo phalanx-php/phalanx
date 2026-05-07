@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Phalanx\Enigma\Task;
 
-use Phalanx\ExecutionScope;
 use Phalanx\Enigma\Exception\SshException;
 use Phalanx\Enigma\SshConfig;
 use Phalanx\Enigma\SshCredential;
+use Phalanx\Enigma\Support\LocalTempFile;
 use Phalanx\Enigma\Support\ProcessAwaiter;
 use Phalanx\Enigma\TransferResult;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
 use Phalanx\Task\HasTimeout;
 
@@ -24,26 +25,26 @@ final class SftpDownload implements Executable, HasTimeout
         private readonly string $remotePath,
         private readonly string $localPath,
         private readonly ?float $timeoutSeconds = null,
-    ) {}
+    ) {
+    }
 
     public function __invoke(ExecutionScope $scope): TransferResult
     {
         /** @var SshConfig $config */
         $config = $scope->service(SshConfig::class);
 
-        $batchFile = tempnam(sys_get_temp_dir(), 'phalanx-sftp-batch-') ?: sys_get_temp_dir() . '/phalanx-sftp-batch-' . bin2hex(random_bytes(8));
-        file_put_contents($batchFile, "get {$this->remotePath} {$this->localPath}\n");
-
-        $scope->onDispose(static function () use ($batchFile): void {
-            if (file_exists($batchFile)) {
-                unlink($batchFile);
-            }
-        });
-
+        $batchFile = LocalTempFile::write(
+            $scope,
+            'phalanx-sftp-batch-',
+            "get {$this->remotePath} {$this->localPath}\n",
+        );
         $args = ['-b', $batchFile, ...$this->credential->toSftpArgs($config)];
-        $cmdLine = ProcessAwaiter::buildCommandLine($config->sftpBinaryPath, $args);
 
-        [$exitCode, , , $durationMs] = ProcessAwaiter::spawn($cmdLine, $scope);
+        [$exitCode, , , $durationMs] = ProcessAwaiter::spawn(
+            ProcessAwaiter::argv($config->sftpBinaryPath, $args),
+            $scope,
+            $this->timeoutSeconds ?? $config->defaultTimeoutSeconds,
+        );
 
         if ($exitCode !== 0) {
             throw new SshException("SFTP download failed (exit {$exitCode})", $exitCode);

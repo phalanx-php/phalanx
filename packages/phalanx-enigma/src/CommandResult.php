@@ -6,21 +6,22 @@ namespace Phalanx\Enigma;
 
 final class CommandResult
 {
-	public bool $successful {
-		get => $this->exitCode === 0;
-	}
+    public bool $successful {
+        get => $this->exitCode === 0;
+    }
 
-	/** @var list<string> */
-	public array $lines {
-		get => explode("\n", rtrim($this->stdout, "\n"));
-	}
+    /** @var list<string> */
+    public array $lines {
+        get => explode("\n", rtrim($this->stdout, "\n"));
+    }
 
     public function __construct(
         public readonly int $exitCode,
         public readonly string $stdout,
         public readonly string $stderr,
         public readonly float $durationMs,
-    ) {}
+    ) {
+    }
 
     /**
      * @return $this

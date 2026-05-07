@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Phalanx\Enigma\Task;
 
-use Phalanx\ExecutionScope;
 use Phalanx\Enigma\CommandResult;
 use Phalanx\Enigma\SshCredential;
 use Phalanx\Enigma\TransferDirection;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
 use Phalanx\Task\HasTimeout;
 
@@ -29,7 +29,8 @@ final class Deploy implements Executable, HasTimeout
         private readonly ?string $migrationsCommand = null,
         private readonly ?string $healthCheckCommand = null,
         private readonly ?float $timeoutSeconds = null,
-    ) {}
+    ) {
+    }
 
     public function __invoke(ExecutionScope $scope): CommandResult
     {

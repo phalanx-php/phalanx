@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Enigma\Task;
 
-use Phalanx\ExecutionScope;
 use Phalanx\Enigma\SshCredential;
 use Phalanx\Enigma\TunnelDirection;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 
@@ -27,7 +27,8 @@ final class TunnelThrough implements Executable
         private readonly int $localPort,
         private readonly Scopeable|Executable $innerTask,
         private readonly ?SshCredential $targetCredential = null,
-    ) {}
+    ) {
+    }
 
     public function __invoke(ExecutionScope $scope): mixed
     {
