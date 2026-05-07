@@ -2,11 +2,17 @@ parameters:
     phalanxInternalPaths: []
     phalanxEnforcedPaths: []
     phalanxAuditPaths: []
+    phalanxRuntimeHookInternalPaths: []
+    phalanxProcessInternalPaths: []
+    phalanxCoroutineInternalPaths: []
 
 parametersSchema:
     phalanxInternalPaths: listOf(string())
     phalanxEnforcedPaths: listOf(string())
     phalanxAuditPaths: listOf(string())
+    phalanxRuntimeHookInternalPaths: listOf(string())
+    phalanxProcessInternalPaths: listOf(string())
+    phalanxCoroutineInternalPaths: listOf(string())
 
 services:
     -
@@ -48,5 +54,29 @@ services:
 
     -
         class: Phalanx\PHPStan\Rules\Cancellation\NoCancelledShortcutRule
+        tags:
+            - phpstan.rules.rule
+
+    -
+        class: Phalanx\PHPStan\Rules\Runtime\HookOwnershipRule
+        arguments:
+            - @Phalanx\PHPStan\Support\PathPolicy
+            - %phalanxRuntimeHookInternalPaths%
+        tags:
+            - phpstan.rules.rule
+
+    -
+        class: Phalanx\PHPStan\Rules\Process\ManagedProcessOnlyRule
+        arguments:
+            - @Phalanx\PHPStan\Support\PathPolicy
+            - %phalanxProcessInternalPaths%
+        tags:
+            - phpstan.rules.rule
+
+    -
+        class: Phalanx\PHPStan\Rules\Concurrency\RawCoroutineSpawnRule
+        arguments:
+            - @Phalanx\PHPStan\Support\PathPolicy
+            - %phalanxCoroutineInternalPaths%
         tags:
             - phpstan.rules.rule

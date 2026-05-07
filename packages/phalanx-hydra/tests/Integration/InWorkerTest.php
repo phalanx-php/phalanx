@@ -13,6 +13,7 @@ use Phalanx\Hydra\Tests\Fixtures\SlowWorkerTask;
 use Phalanx\Hydra\Tests\Fixtures\StatefulCounterTask;
 use Phalanx\Hydra\Tests\Fixtures\WorkerGreetingService;
 use Phalanx\Hydra\Tests\Fixtures\WorkerGreetingServiceImpl;
+use Phalanx\Hydra\Tests\Fixtures\WorkerStderrTask;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Task;
 use Phalanx\Tests\Support\AsyncTestCase;
@@ -101,6 +102,27 @@ final class InWorkerTest extends AsyncTestCase
                 $scope->dispose();
             }
         });
+    }
+
+    #[Test]
+    public function drainsWorkerStderrWithoutPoisoningNextDispatch(): void
+    {
+        $app = $this->buildApp(new ParallelConfig(agents: 1));
+
+        try {
+            $this->runAsync(static function () use ($app): void {
+                $scope = $app->createScope();
+
+                try {
+                    self::assertSame('stderr-drained', $scope->inWorker(new WorkerStderrTask('athena-warning')));
+                    self::assertSame(5, $scope->inWorker(new AddNumbers(2, 3)));
+                } finally {
+                    $scope->dispose();
+                }
+            });
+        } finally {
+            $app->shutdown();
+        }
     }
 
     #[Test]

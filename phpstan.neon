@@ -32,6 +32,15 @@ parameters:
         - packages/phalanx-aegis/src
         - packages/phalanx-hydra/src
     phalanxAuditPaths: []
+    phalanxRuntimeHookInternalPaths:
+        - packages/phalanx-aegis/src/Runtime/RuntimeHookNames.php
+        - packages/phalanx-aegis/src/Runtime/RuntimeHooks.php
+        - packages/phalanx-aegis/src/Runtime/RuntimePolicy.php
+    phalanxProcessInternalPaths:
+        - packages/phalanx-aegis/src/System/Internal/SymfonyProcessAdapter.php
+    phalanxCoroutineInternalPaths:
+        - packages/phalanx-aegis/src/Scope/ExecutionLifecycleScope.php
+        - packages/phalanx-styx/src/Emitter.php
     excludePaths:
         analyseAndScan:
             - packages/phalanx-aegis/src/Parallel (?)

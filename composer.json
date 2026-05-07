@@ -107,6 +107,7 @@
         "test:ai": "php vendor/bin/phpunit packages/phalanx-athena/tests/",
         "test:ssh": "php vendor/bin/phpunit packages/phalanx-enigma/tests/",
         "analyse": "php vendor/bin/phpstan analyse --memory-limit=512M",
+        "audit:runtime-risk": "php packages/phalanx-phpstan/bin/runtime-risk-audit packages/*/src",
         "rector": "php vendor/bin/rector process",
         "rector:dry": "php vendor/bin/rector process --dry-run",
         "cs": "php vendor/bin/phpcs --standard=packages/phalanx-aegis/phpcs.xml",

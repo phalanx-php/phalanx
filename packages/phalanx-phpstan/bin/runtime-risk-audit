@@ -1,0 +1,32 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use Phalanx\PHPStan\Audit\RuntimeRisk;
+use Phalanx\PHPStan\Audit\RuntimeRiskScanner;
+
+$autoload = __DIR__ . '/../../../vendor/autoload.php';
+if (!is_file($autoload)) {
+    $autoload = __DIR__ . '/../vendor/autoload.php';
+}
+
+require $autoload;
+
+$paths = array_values(array_slice($argv, 1));
+if ($paths === []) {
+    $paths = ['packages'];
+}
+
+$risks = (new RuntimeRiskScanner())->scanPaths($paths);
+foreach ($risks as $risk) {
+    printf(
+        "%s\t%s:%d\t%s\n",
+        $risk->category,
+        $risk->file,
+        $risk->line,
+        $risk->symbol,
+    );
+}
+
+printf("runtime-risk-audit: %d finding(s)\n", count($risks));

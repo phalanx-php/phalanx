@@ -33,6 +33,12 @@ final class PathPolicy
             || $this->matchesAny($file, $this->auditPaths);
     }
 
+    /** @param list<string> $paths */
+    public function matches(string $file, array $paths): bool
+    {
+        return $this->matchesAny($file, $paths);
+    }
+
     private static function normalize(string $path): string
     {
         return trim(str_replace('\\', '/', $path), '/');

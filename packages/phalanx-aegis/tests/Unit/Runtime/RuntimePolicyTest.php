@@ -71,6 +71,14 @@ final class RuntimePolicyTest extends TestCase
         );
     }
 
+    public function testProcessesCapabilityDoesNotEnableInteractiveStdio(): void
+    {
+        $policy = RuntimePolicy::forCapabilities(RuntimeCapability::Processes);
+
+        self::assertSame(Runtime::HOOK_PROC, $policy->requiredFlags & Runtime::HOOK_PROC);
+        self::assertSame(0, $policy->requiredFlags & Runtime::HOOK_STDIO);
+    }
+
     public function testInvalidCapabilityContextThrowsClearly(): void
     {
         $this->expectException(InvalidArgumentException::class);
@@ -154,5 +162,16 @@ final class RuntimePolicyTest extends TestCase
         );
 
         self::assertSame(['PROC'], RuntimeHookNames::forMask(Runtime::HOOK_PROC));
+    }
+
+    public function testPhalanxManagedPolicyCanNameEveryRequiredHook(): void
+    {
+        $policy = RuntimePolicy::phalanxManaged();
+        $names = RuntimeHookNames::forMask($policy->requiredFlags);
+
+        self::assertContains('PROC', $names);
+        self::assertNotContains('STDIO', $names);
+        self::assertNotContains('SLEEP', $names);
+        self::assertNotContains('BLOCKING_FUNCTION', $names);
     }
 }
