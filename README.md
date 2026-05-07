@@ -4,11 +4,11 @@
 
 # Phalanx
 
-**Async PHP that feels like normal code — with a runtime that protects you.**
+**Async PHP that feels like normal code — protected by a runtime that actually has your back.**
 
 The async PHP landscape is crowded: ReactPHP, Amp, Revolt, FrankenPHP, RoadRunner, multiple Swoole layers. Every option forces you to care about fibers, promises, event loops, manual cancellation, and cleanup in your application code. Average developers either stay away or get burned by leaks, blocked workers, and mysterious production crashes.
 
-**Phalanx gives you what the others don't: a managed async runtime where scopes do the heavy lifting so your business logic stays simple.**
+**Phalanx gives you one thing the others don't: a managed async runtime where the Scope contract does the heavy lifting. Your business logic stays simple. The dangerous parts don't leak into your code.**
 
 ### A full application, one scope at a time
 
@@ -40,6 +40,8 @@ final class AnalyzeRepo implements Command
 
 No `await`. No manual `Coroutine::create()`. No thinking about the event loop. It reads like synchronous PHP.
 
+This isn't just HTTP. The same contract powers CLI commands, WebSocket listeners, background workers, streaming agents, and (soon) native async TUIs — everything lives under one consistent, protected surface.
+
 ### The Scope system is your CYA
 
 Every unit of work in Phalanx executes inside an owned `Scope`. This is the protective layer that makes long-running PHP safe for normal developers:
@@ -57,7 +59,7 @@ You don't manage fibers or pools. You use the narrowest scope interface you need
 
 Most developers want concurrent HTTP, realtime WebSockets, parallel workers, streaming responses, and AI agent loops in their PHP apps — without hiring a runtime specialist or debugging reference cycles at 3am.
 
-Phalanx delivers exactly that surface: powerful under the hood, invisible in your code, and safe by default.
+Phalanx delivers exactly that surface: powerful under the hood, invisible at the call site, and safe by default. No more 3am reference-cycle hunts.
 
 The internals are still evolving, but the contract is stable: **if Phalanx runs your task, Phalanx owns its lifetime**.
 
