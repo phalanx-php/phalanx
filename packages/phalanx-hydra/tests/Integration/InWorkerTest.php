@@ -185,7 +185,7 @@ final class InWorkerTest extends AsyncTestCase
     }
 
     #[Test]
-    public function workerProcessSurvivesCallerScopeDisposalUntilShutdown(): void
+    public function workerProcessRestartsAfterCallerScopeDisposal(): void
     {
         $app = $this->buildApp(new ParallelConfig(agents: 1));
 
@@ -204,7 +204,7 @@ final class InWorkerTest extends AsyncTestCase
                 $scope = $app->createScope();
 
                 try {
-                    self::assertSame(2, $scope->inWorker(new StatefulCounterTask()));
+                    self::assertSame(1, $scope->inWorker(new StatefulCounterTask()));
                 } finally {
                     $scope->dispose();
                 }

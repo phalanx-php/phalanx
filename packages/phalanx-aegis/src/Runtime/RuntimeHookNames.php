@@ -17,6 +17,7 @@ final class RuntimeHookNames
         Runtime::HOOK_TLS => 'TLS',
         Runtime::HOOK_STREAM_FUNCTION => 'STREAM_FUNCTION',
         Runtime::HOOK_FILE => 'FILE',
+        Runtime::HOOK_PROC => 'PROC',
         Runtime::HOOK_SLEEP => 'SLEEP',
         Runtime::HOOK_CURL => 'CURL',
         Runtime::HOOK_NATIVE_CURL => 'NATIVE_CURL',

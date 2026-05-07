@@ -66,7 +66,6 @@ class StreamingProcess
             $this->argv,
             $this->cwd,
             $this->env,
-            $this->maxLineBytes,
         );
 
         $resourceId = null;
@@ -101,7 +100,6 @@ class StreamingProcess
                 adapter: $adapter,
                 scope: $scope,
                 resourceId: $active->id,
-                commandHead: $this->commandHead(),
                 pid: $pid,
                 maxLineBytes: $this->maxLineBytes,
             );

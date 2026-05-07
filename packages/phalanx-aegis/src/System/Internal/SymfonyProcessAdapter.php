@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\System\Internal;
 
+use LogicException;
 use Symfony\Component\Process\InputStream;
 use Symfony\Component\Process\Process;
 
@@ -30,7 +31,6 @@ final class SymfonyProcessAdapter
         private readonly array $argv,
         private readonly ?string $cwd,
         private readonly ?array $env,
-        private readonly int $maxLineBytes,
     ) {
         $this->process = new Process(
             command: $this->argv,
@@ -64,7 +64,7 @@ final class SymfonyProcessAdapter
     public function write(string $data): int
     {
         if ($this->input === null) {
-            throw new \LogicException('Process not started or input closed');
+            throw new LogicException('Process not started or input closed');
         }
 
         $this->input->write($data);
@@ -107,14 +107,12 @@ final class SymfonyProcessAdapter
      * Wait for the process to finish (blocking).
      * This ensures all output is available via getIncrementalOutput().
      */
-    public function wait(): ?int
+    public function wait(): int
     {
         return $this->process->wait();
     }
 
-    /**
-     * Stop the process gracefully or forcefully.
-     */
+    /** Stop the process gracefully or forcefully. */
     public function stop(float $timeout = 1.0, ?int $signal = null): void
     {
         if ($signal !== null) {
@@ -122,17 +120,23 @@ final class SymfonyProcessAdapter
         }
 
         $this->process->stop($timeout, $signal);
+        $this->closeInput();
     }
 
     public function close(): void
     {
-        if ($this->input !== null) {
-            $this->input->close();
-            $this->input = null;
-        }
+        $this->closeInput();
 
         if ($this->process->isRunning()) {
             $this->process->stop(1.0, 9);
+        }
+    }
+
+    private function closeInput(): void
+    {
+        if ($this->input !== null) {
+            $this->input->close();
+            $this->input = null;
         }
     }
 }

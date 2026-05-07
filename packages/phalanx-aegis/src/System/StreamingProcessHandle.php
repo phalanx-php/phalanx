@@ -12,32 +12,24 @@ use Phalanx\System\Internal\SymfonyProcessAdapter;
 /**
  * Handle for a running StreamingProcess.
  *
- * This class now delegates all process lifecycle and I/O to the
- * SymfonyProcessAdapter while retaining the full Aegis resource,
- * cancellation, and diagnostic contract that downstream code depends on.
- *
- * Public API is unchanged from the previous implementation.
+ * The Symfony process object stays behind this handle so Aegis can enforce
+ * scope-owned cleanup before the owning coroutine runtime unwinds.
  */
 final class StreamingProcessHandle
 {
     public private(set) StreamingProcessState $state = StreamingProcessState::Running;
 
-    private int $exitCode = -1;
-    private int $signal = 0;
     private bool $released = false;
-    private bool $stopped = false;
-    private bool $killed = false;
-    private readonly float $startedAt;
+    private string $stderrBuffer = '';
+    private string $stdoutBuffer = '';
 
     public function __construct(
         private readonly SymfonyProcessAdapter $adapter,
         private readonly TaskScope&TaskExecutor $scope,
         private readonly string $resourceId,
-        private readonly string $commandHead,
         private readonly int $pid,
         private readonly int $maxLineBytes,
     ) {
-        $this->startedAt = microtime(true);
     }
 
     public function pid(): int
@@ -56,19 +48,69 @@ final class StreamingProcessHandle
             return 0;
         }
 
-        // Timeout + WaitReason handling remains the responsibility of the caller
-        // (ExecutionScope layer). The adapter performs the physical write.
         return $this->adapter->write($data);
     }
 
     public function getIncrementalOutput(): string
     {
-        return $this->adapter->getIncrementalOutput();
+        $output = $this->stdoutBuffer . $this->adapter->getIncrementalOutput();
+        $this->stdoutBuffer = '';
+
+        return $output;
     }
 
     public function getIncrementalErrorOutput(): string
     {
-        return $this->adapter->getIncrementalErrorOutput();
+        $output = $this->stderrBuffer . $this->adapter->getIncrementalErrorOutput();
+        $this->stderrBuffer = '';
+
+        return $output;
+    }
+
+    public function readLine(?float $timeout = null): string
+    {
+        $deadline = self::deadline($timeout);
+
+        while (true) {
+            $this->scope->throwIfCancelled();
+            $this->drainStdout();
+
+            $line = $this->shiftLine();
+            if ($line !== null) {
+                return $line;
+            }
+
+            if (!$this->isRunning()) {
+                return $this->flushStdoutRemainder();
+            }
+
+            if (self::timedOut($deadline)) {
+                return '';
+            }
+
+            $this->pause($deadline);
+        }
+    }
+
+    public function readError(int $bytes = 8192, ?float $timeout = null): string
+    {
+        $deadline = self::deadline($timeout);
+        $bytes = max(1, $bytes);
+
+        while (true) {
+            $this->scope->throwIfCancelled();
+            $this->stderrBuffer .= $this->adapter->getIncrementalErrorOutput();
+
+            if ($this->stderrBuffer !== '') {
+                return $this->shiftError($bytes);
+            }
+
+            if (!$this->isRunning() || self::timedOut($deadline)) {
+                return '';
+            }
+
+            $this->pause($deadline);
+        }
     }
 
     public function close(string $reason = 'manual'): void
@@ -83,30 +125,59 @@ final class StreamingProcessHandle
         $this->adapter->close();
 
         $this->recordEvent(AegisEventSid::ProcessExited, $reason);
-        $this->scope->runtime->memory->resources->release($this->resourceId);
+        $this->releaseResource();
     }
 
-    public function stop(float $timeout = 1.0, ?int $signal = null): void
+    public function stop(float $gracefulTimeout = 1.0, float $forceTimeout = 0.0): void
     {
-        $this->stopped = true;
-        $this->state = StreamingProcessState::Stopped;
+        if ($this->released) {
+            return;
+        }
 
-        $this->adapter->stop($timeout, $signal);
-        $this->recordEvent(AegisEventSid::ProcessStopped, (string) ($signal ?? 15));
+        $this->state = StreamingProcessState::Exited;
+
+        $this->adapter->stop($gracefulTimeout, $forceTimeout > 0.0 ? 9 : null);
+        $this->recordEvent(AegisEventSid::ProcessStopped, 'SIGTERM');
+        $this->releaseResource();
     }
 
     public function kill(): void
     {
-        $this->killed = true;
+        if ($this->released) {
+            return;
+        }
+
         $this->state = StreamingProcessState::Killed;
 
         $this->adapter->stop(0.0, 9);
         $this->recordEvent(AegisEventSid::ProcessKilled, 'SIGKILL');
+        $this->releaseResource();
     }
 
-    public function wait(): ?int
+    public function wait(?float $timeout = null): ?int
     {
+        if ($timeout !== null) {
+            $deadline = microtime(true) + max(0.0, $timeout);
+            while ($this->isRunning() && !self::timedOut($deadline)) {
+                $this->pause($deadline);
+            }
+
+            if ($this->isRunning()) {
+                return null;
+            }
+        }
+
         return $this->adapter->wait();
+    }
+
+    private static function deadline(?float $timeout): ?float
+    {
+        return $timeout === null ? null : microtime(true) + max(0.0, $timeout);
+    }
+
+    private static function timedOut(?float $deadline): bool
+    {
+        return $deadline !== null && microtime(true) >= $deadline;
     }
 
     private function recordEvent(AegisEventSid $eventId, string $data): void
@@ -116,5 +187,74 @@ final class StreamingProcessHandle
             $eventId,
             $data,
         );
+    }
+
+    private function drainStdout(): void
+    {
+        $this->stdoutBuffer .= $this->adapter->getIncrementalOutput();
+
+        if (!str_contains($this->stdoutBuffer, "\n") && strlen($this->stdoutBuffer) > $this->maxLineBytes) {
+            throw StreamingProcessException::lineTooLong($this->maxLineBytes);
+        }
+    }
+
+    private function shiftLine(): ?string
+    {
+        $position = strpos($this->stdoutBuffer, "\n");
+        if ($position === false) {
+            return null;
+        }
+
+        $length = $position + 1;
+        if ($length > $this->maxLineBytes) {
+            throw StreamingProcessException::lineTooLong($this->maxLineBytes);
+        }
+
+        $line = substr($this->stdoutBuffer, 0, $length);
+        $this->stdoutBuffer = substr($this->stdoutBuffer, $length);
+
+        return $line;
+    }
+
+    private function flushStdoutRemainder(): string
+    {
+        if ($this->stdoutBuffer === '') {
+            return '';
+        }
+
+        if (strlen($this->stdoutBuffer) > $this->maxLineBytes) {
+            throw StreamingProcessException::lineTooLong($this->maxLineBytes);
+        }
+
+        $line = $this->stdoutBuffer;
+        $this->stdoutBuffer = '';
+
+        return $line;
+    }
+
+    private function shiftError(int $bytes): string
+    {
+        $chunk = substr($this->stderrBuffer, 0, $bytes);
+        $this->stderrBuffer = substr($this->stderrBuffer, strlen($chunk));
+
+        return $chunk;
+    }
+
+    private function pause(?float $deadline): void
+    {
+        $delay = 0.001;
+        if ($deadline !== null) {
+            $delay = min($delay, max(0.0, $deadline - microtime(true)));
+        }
+
+        if ($delay > 0.0) {
+            $this->scope->delay($delay);
+        }
+    }
+
+    private function releaseResource(): void
+    {
+        $this->released = true;
+        $this->scope->runtime->memory->resources->release($this->resourceId);
     }
 }

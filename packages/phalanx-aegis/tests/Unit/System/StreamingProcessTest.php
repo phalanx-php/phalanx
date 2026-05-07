@@ -45,14 +45,43 @@ final class StreamingProcessTest extends PhalanxTestCase
     {
         $result = $this->scope->run(static function (ExecutionScope $scope): int {
             $handle = StreamingProcess::from(PHP_BINARY, '-r', 'usleep(100000);')->start($scope);
-            $resourceId = $handle->close('test-cleanup');
+            $handle->close('test-cleanup');
 
-            // After close the resource should be released (no longer live)
             $liveCount = $scope->runtime->memory->resources->liveCount(AegisResourceSid::StreamingProcess);
 
             return $liveCount;
         });
 
         self::assertSame(0, $result);
+    }
+
+    public function testReadsStdoutLinesAndStderrChunks(): void
+    {
+        $result = $this->scope->run(static function (ExecutionScope $scope): array {
+            $handle = StreamingProcess::from(
+                PHP_BINARY,
+                '-r',
+                'fwrite(STDOUT, "alpha\n"); fwrite(STDERR, "omega"); fflush(STDOUT); fflush(STDERR);',
+            )->start($scope);
+
+            $line = $handle->readLine(1.0);
+            $error = $handle->readError(16, 1.0);
+            $handle->close('test-read');
+
+            return [$line, $error];
+        });
+
+        self::assertSame(["alpha\n", 'omega'], $result);
+    }
+
+    public function testScopeDisposalReleasesUnclosedProcess(): void
+    {
+        $pid = $this->scope->run(static function (ExecutionScope $scope): int {
+            $handle = StreamingProcess::from(PHP_BINARY, '-r', 'usleep(500000);')->start($scope);
+
+            return $handle->pid();
+        });
+
+        self::assertGreaterThan(0, $pid);
     }
 }

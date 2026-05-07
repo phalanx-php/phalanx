@@ -57,7 +57,7 @@ class ProcessHandle
             PHP_BINARY,
             $this->config->workerScript,
             "--autoload={$this->config->autoloadPath}",
-        ])->start($scope, closeOnScopeDispose: false);
+        ])->start($scope);
 
         $this->state = ProcessState::Idle;
         $process = $this->process;
@@ -110,8 +110,8 @@ class ProcessHandle
 
         $this->state = ProcessState::Draining;
         $this->process->stop(
-            gracefulTimeout: $this->config->gracefulTimeout,
-            forceTimeout: $this->config->forceTimeout,
+            $this->config->gracefulTimeout,
+            $this->config->forceTimeout,
         );
         $this->cleanup();
     }

@@ -30,6 +30,7 @@ final class RuntimePolicyTest extends TestCase
             | Runtime::HOOK_TLS
             | Runtime::HOOK_STREAM_FUNCTION
             | Runtime::HOOK_FILE
+            | Runtime::HOOK_PROC
             | Runtime::HOOK_CURL
             | Runtime::HOOK_NATIVE_CURL
             | Runtime::HOOK_SOCKETS,
@@ -58,14 +59,15 @@ final class RuntimePolicyTest extends TestCase
             RuntimePolicy::CONTEXT_CAPABILITIES => [
                 RuntimeCapability::HttpClient,
                 'files',
+                'processes',
                 'interactive_stdio',
             ],
         ]);
 
         self::assertSame(
-            Runtime::HOOK_TCP | Runtime::HOOK_NATIVE_CURL | Runtime::HOOK_FILE | Runtime::HOOK_STDIO,
+            Runtime::HOOK_TCP | Runtime::HOOK_NATIVE_CURL | Runtime::HOOK_FILE | Runtime::HOOK_PROC | Runtime::HOOK_STDIO,
             $policy->requiredFlags
-                & (Runtime::HOOK_TCP | Runtime::HOOK_NATIVE_CURL | Runtime::HOOK_FILE | Runtime::HOOK_STDIO),
+                & (Runtime::HOOK_TCP | Runtime::HOOK_NATIVE_CURL | Runtime::HOOK_FILE | Runtime::HOOK_PROC | Runtime::HOOK_STDIO),
         );
     }
 
@@ -150,5 +152,7 @@ final class RuntimePolicyTest extends TestCase
             ['TCP', 'SSL', 'NATIVE_CURL'],
             RuntimeHookNames::forMask(Runtime::HOOK_TCP | Runtime::HOOK_SSL | Runtime::HOOK_NATIVE_CURL),
         );
+
+        self::assertSame(['PROC'], RuntimeHookNames::forMask(Runtime::HOOK_PROC));
     }
 }
