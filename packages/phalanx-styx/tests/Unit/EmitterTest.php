@@ -4,31 +4,27 @@ declare(strict_types=1);
 
 namespace Phalanx\Styx\Tests\Unit;
 
-use Closure;
-use Phalanx\Runtime\RuntimeContext;
-use Phalanx\Scope\Scope;
-use Phalanx\Scope\Stream\StreamContext;
+use Phalanx\Cancellation\Cancelled;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Styx\Channel;
 use Phalanx\Styx\Emitter;
-use Phalanx\Styx\Tests\Support\AsyncTestCase;
-use Phalanx\Supervisor\WaitReason;
-use Phalanx\Trace\Trace;
+use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
 use RuntimeException;
 use Throwable;
 
-final class EmitterTest extends AsyncTestCase
+final class EmitterTest extends PhalanxTestCase
 {
     #[Test]
     public function produceExposesChannel(): void
     {
-        $this->runAsync(static function (): void {
+        $this->scope->run(static function (ExecutionScope $scope): void {
             $emitter = Emitter::produce(static function (Channel $ch): void {
                 $ch->emit('produced-1');
                 $ch->emit('produced-2');
             });
 
-            $items = iterator_to_array($emitter(self::makeContext()));
+            $items = iterator_to_array($emitter($scope));
 
             self::assertSame(['produced-1', 'produced-2'], $items);
         });
@@ -37,7 +33,7 @@ final class EmitterTest extends AsyncTestCase
     #[Test]
     public function mapOperator(): void
     {
-        $this->runAsync(static function (): void {
+        $this->scope->run(static function (ExecutionScope $scope): void {
             $emitter = Emitter::produce(static function (Channel $ch): void {
                 $ch->emit(1);
                 $ch->emit(2);
@@ -45,8 +41,7 @@ final class EmitterTest extends AsyncTestCase
             });
 
             $doubled = $emitter->map(static fn(int $v): int => $v * 2);
-
-            $items = iterator_to_array($doubled(self::makeContext()));
+            $items = iterator_to_array($doubled($scope));
 
             self::assertSame([2, 4, 6], $items);
         });
@@ -55,7 +50,7 @@ final class EmitterTest extends AsyncTestCase
     #[Test]
     public function filterOperator(): void
     {
-        $this->runAsync(static function (): void {
+        $this->scope->run(static function (ExecutionScope $scope): void {
             $emitter = Emitter::produce(static function (Channel $ch): void {
                 $ch->emit(1);
                 $ch->emit(2);
@@ -64,8 +59,7 @@ final class EmitterTest extends AsyncTestCase
             });
 
             $evens = $emitter->filter(static fn(int $v): bool => $v % 2 === 0);
-
-            $items = iterator_to_array($evens(self::makeContext()));
+            $items = iterator_to_array($evens($scope));
 
             self::assertSame([2, 4], $items);
         });
@@ -74,7 +68,7 @@ final class EmitterTest extends AsyncTestCase
     #[Test]
     public function takeOperator(): void
     {
-        $this->runAsync(static function (): void {
+        $this->scope->run(static function (ExecutionScope $scope): void {
             $emitter = Emitter::produce(static function (Channel $ch): void {
                 for ($i = 1; $i <= 100; $i++) {
                     $ch->emit($i);
@@ -82,8 +76,7 @@ final class EmitterTest extends AsyncTestCase
             });
 
             $first3 = $emitter->take(3);
-
-            $items = iterator_to_array($first3(self::makeContext()));
+            $items = iterator_to_array($first3($scope));
 
             self::assertSame([1, 2, 3], $items);
         });
@@ -92,7 +85,7 @@ final class EmitterTest extends AsyncTestCase
     #[Test]
     public function distinctOperator(): void
     {
-        $this->runAsync(static function (): void {
+        $this->scope->run(static function (ExecutionScope $scope): void {
             $emitter = Emitter::produce(static function (Channel $ch): void {
                 $ch->emit(1);
                 $ch->emit(1);
@@ -102,8 +95,7 @@ final class EmitterTest extends AsyncTestCase
             });
 
             $distinct = $emitter->distinct();
-
-            $items = iterator_to_array($distinct(self::makeContext()));
+            $items = iterator_to_array($distinct($scope));
 
             self::assertSame([1, 2, 1], $items);
         });
@@ -112,7 +104,7 @@ final class EmitterTest extends AsyncTestCase
     #[Test]
     public function distinctByOperator(): void
     {
-        $this->runAsync(static function (): void {
+        $this->scope->run(static function (ExecutionScope $scope): void {
             $emitter = Emitter::produce(static function (Channel $ch): void {
                 $ch->emit(['name' => 'Alice', 'age' => 30]);
                 $ch->emit(['name' => 'Alice', 'age' => 31]);
@@ -120,8 +112,7 @@ final class EmitterTest extends AsyncTestCase
             });
 
             $distinct = $emitter->distinctBy(static fn(array $v): string => $v['name']);
-
-            $items = iterator_to_array($distinct(self::makeContext()));
+            $items = iterator_to_array($distinct($scope));
 
             self::assertSame([
                 ['name' => 'Alice', 'age' => 30],
@@ -133,7 +124,7 @@ final class EmitterTest extends AsyncTestCase
     #[Test]
     public function mergeInterleaves(): void
     {
-        $this->runAsync(static function (): void {
+        $this->scope->run(static function (ExecutionScope $scope): void {
             $a = Emitter::produce(static function (Channel $ch): void {
                 $ch->emit('a1');
                 $ch->emit('a2');
@@ -145,8 +136,7 @@ final class EmitterTest extends AsyncTestCase
             });
 
             $merged = $a->merge($b);
-
-            $items = iterator_to_array($merged(self::makeContext()));
+            $items = iterator_to_array($merged($scope));
 
             sort($items);
             self::assertSame(['a1', 'a2', 'b1', 'b2'], $items);
@@ -156,7 +146,7 @@ final class EmitterTest extends AsyncTestCase
     #[Test]
     public function lifecycleHooksFire(): void
     {
-        $this->runAsync(static function (): void {
+        $this->scope->run(static function (ExecutionScope $scope): void {
             $log = [];
 
             $emitter = Emitter::produce(static function (Channel $ch): void {
@@ -175,7 +165,7 @@ final class EmitterTest extends AsyncTestCase
                     $log[] = 'dispose';
                 });
 
-            iterator_to_array($emitter(self::makeContext()));
+            iterator_to_array($emitter($scope));
 
             self::assertSame(['start', 'each:x', 'complete', 'dispose'], $log);
         });
@@ -184,7 +174,7 @@ final class EmitterTest extends AsyncTestCase
     #[Test]
     public function errorHookFires(): void
     {
-        $this->runAsync(static function (): void {
+        $this->scope->run(static function (ExecutionScope $scope): void {
             $errorLog = [];
 
             $emitter = Emitter::produce(static function (): void {
@@ -195,7 +185,7 @@ final class EmitterTest extends AsyncTestCase
                 });
 
             try {
-                iterator_to_array($emitter(self::makeContext()));
+                iterator_to_array($emitter($scope));
             } catch (RuntimeException) {
             }
 
@@ -206,7 +196,7 @@ final class EmitterTest extends AsyncTestCase
     #[Test]
     public function toArrayTerminal(): void
     {
-        $this->runAsync(static function (): void {
+        $this->scope->run(static function (ExecutionScope $scope): void {
             $emitter = Emitter::produce(static function (Channel $ch): void {
                 $ch->emit(1);
                 $ch->emit(2);
@@ -214,14 +204,14 @@ final class EmitterTest extends AsyncTestCase
 
             $collect = $emitter->toArray();
 
-            self::assertSame([1, 2], $collect(self::makeContext()));
+            self::assertSame([1, 2], $collect($scope));
         });
     }
 
     #[Test]
     public function reduceTerminal(): void
     {
-        $this->runAsync(static function (): void {
+        $this->scope->run(static function (ExecutionScope $scope): void {
             $emitter = Emitter::produce(static function (Channel $ch): void {
                 $ch->emit(1);
                 $ch->emit(2);
@@ -230,14 +220,14 @@ final class EmitterTest extends AsyncTestCase
 
             $sum = $emitter->reduce(static fn(int $acc, int $v): int => $acc + $v, 0);
 
-            self::assertSame(6, $sum(self::makeContext()));
+            self::assertSame(6, $sum($scope));
         });
     }
 
     #[Test]
     public function firstTerminal(): void
     {
-        $this->runAsync(static function (): void {
+        $this->scope->run(static function (ExecutionScope $scope): void {
             $emitter = Emitter::produce(static function (Channel $ch): void {
                 $ch->emit('first');
                 $ch->emit('second');
@@ -245,14 +235,40 @@ final class EmitterTest extends AsyncTestCase
 
             $first = $emitter->first();
 
-            self::assertSame('first', $first(self::makeContext()));
+            self::assertSame('first', $first($scope));
+        });
+    }
+
+    #[Test]
+    public function firstTerminalCancelsUpstreamProducer(): void
+    {
+        $this->scope->run(static function (ExecutionScope $scope): void {
+            $cancelled = false;
+
+            $emitter = Emitter::produce(static function (Channel $ch, ExecutionScope $producerScope) use (&$cancelled): void {
+                try {
+                    while (true) {
+                        $ch->emit('tick');
+                        $producerScope->delay(0.01);
+                    }
+                } catch (Cancelled $e) {
+                    $cancelled = true;
+                    throw $e;
+                }
+            })->map(static fn(string $value): string => strtoupper($value));
+
+            self::assertSame('TICK', $emitter->first()($scope));
+
+            $scope->delay(0.02);
+
+            self::assertTrue($cancelled);
         });
     }
 
     #[Test]
     public function consumeTerminal(): void
     {
-        $this->runAsync(static function (): void {
+        $this->scope->run(static function (ExecutionScope $scope): void {
             $sideEffects = [];
 
             $emitter = Emitter::produce(static function (Channel $ch): void {
@@ -263,7 +279,7 @@ final class EmitterTest extends AsyncTestCase
             });
 
             $drain = $emitter->consume();
-            $drain(self::makeContext());
+            $drain($scope);
 
             self::assertSame(['a', 'b'], $sideEffects);
         });
@@ -272,7 +288,7 @@ final class EmitterTest extends AsyncTestCase
     #[Test]
     public function bufferWindowByCount(): void
     {
-        $this->runAsync(static function (): void {
+        $this->scope->run(static function (ExecutionScope $scope): void {
             $emitter = Emitter::produce(static function (Channel $ch): void {
                 for ($i = 1; $i <= 5; $i++) {
                     $ch->emit($i);
@@ -280,8 +296,7 @@ final class EmitterTest extends AsyncTestCase
             });
 
             $buffered = $emitter->bufferWindow(2, 10.0);
-
-            $items = iterator_to_array($buffered(self::makeContext()));
+            $items = iterator_to_array($buffered($scope));
 
             self::assertSame([[1, 2], [3, 4], [5]], $items);
         });
@@ -290,7 +305,7 @@ final class EmitterTest extends AsyncTestCase
     #[Test]
     public function throttleDropsExtraItems(): void
     {
-        $this->runAsync(static function (): void {
+        $this->scope->run(static function (ExecutionScope $scope): void {
             $emitter = Emitter::produce(static function (Channel $ch): void {
                 $ch->emit(1);
                 $ch->emit(2);
@@ -298,8 +313,7 @@ final class EmitterTest extends AsyncTestCase
             });
 
             $throttled = $emitter->throttle(100.0);
-
-            $items = iterator_to_array($throttled(self::makeContext()));
+            $items = iterator_to_array($throttled($scope));
 
             self::assertSame([1], $items);
         });
@@ -308,55 +322,13 @@ final class EmitterTest extends AsyncTestCase
     #[Test]
     public function emptyStreamCompletes(): void
     {
-        $this->runAsync(static function (): void {
+        $this->scope->run(static function (ExecutionScope $scope): void {
             $emitter = Emitter::produce(static function (): void {
             });
 
-            $items = iterator_to_array($emitter(self::makeContext()));
+            $items = iterator_to_array($emitter($scope));
 
             self::assertSame([], $items);
         });
-    }
-
-    private static function makeContext(): StreamContext
-    {
-        return new class () implements StreamContext {
-            public RuntimeContext $runtime {
-                get => throw new RuntimeException('Test stream context has no runtime.');
-            }
-
-            public function call(Closure $fn, ?WaitReason $waitReason = null): mixed
-            {
-                return $fn();
-            }
-
-            public function throwIfCancelled(): void
-            {
-            }
-
-            public function onDispose(Closure $callback): void
-            {
-            }
-
-            public function service(string $type): object
-            {
-                throw new RuntimeException("Test stream context has no service '{$type}'.");
-            }
-
-            public function attribute(string $key, mixed $default = null): mixed
-            {
-                return $default;
-            }
-
-            public function withAttribute(string $key, mixed $value): Scope
-            {
-                return $this;
-            }
-
-            public function trace(): Trace
-            {
-                return new Trace();
-            }
-        };
     }
 }

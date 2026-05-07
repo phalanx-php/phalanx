@@ -4,19 +4,20 @@ declare(strict_types=1);
 
 namespace Phalanx\Styx\Terminal;
 
-use Phalanx\Scope\Stream\StreamContext;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Styx\Emitter;
 
 final class Drain
 {
     public function __construct(
         private readonly Emitter $source,
-    ) {}
+    ) {
+    }
 
-    public function __invoke(StreamContext $context): void
+    public function __invoke(ExecutionScope $scope): void
     {
-        foreach (($this->source)($context) as $_) {
-            $context->throwIfCancelled();
+        foreach (($this->source)($scope) as $_) {
+            $scope->throwIfCancelled();
         }
     }
 }

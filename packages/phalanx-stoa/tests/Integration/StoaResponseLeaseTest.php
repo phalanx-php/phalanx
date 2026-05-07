@@ -17,105 +17,109 @@ use Phalanx\Stoa\StoaRequestResource;
 use Phalanx\Stoa\StoaRunner;
 use Phalanx\Task\Scopeable;
 use Phalanx\Testing\LeaseExpectation;
+use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 
-final class StoaResponseLeaseTest extends TestCase
+final class StoaResponseLeaseTest extends PhalanxTestCase
 {
     #[Test]
     public function acquireRecordsLeaseAndReleaseClearsIt(): void
     {
         $memory = new RuntimeMemory(new RuntimeMemoryConfig());
-        $context = new RuntimeContext($memory);
 
-        $resource = StoaRequestResource::open(
-            runtime: $context,
-            request: new ServerRequest('GET', '/lease'),
-            token: CancellationToken::none(),
-            fd: 99,
-        );
+        try {
+            $context = new RuntimeContext($memory);
+            $resource = StoaRequestResource::open(
+                runtime: $context,
+                request: new ServerRequest('GET', '/lease'),
+                token: CancellationToken::none(),
+                fd: 99,
+            );
 
-        $resource->activate();
-        $resource->acquireDeliveryLease(99);
+            $resource->activate();
+            $resource->acquireDeliveryLease(99);
 
-        self::assertSame(1, self::countLeases($memory, ResponseLeaseDomain::DOMAIN));
+            $expect = new LeaseExpectation($memory);
+            $expect->heldFor(ResponseLeaseDomain::DOMAIN, 1);
 
-        $resource->releaseDeliveryLease('fulfilled');
+            $resource->releaseDeliveryLease('fulfilled');
 
-        (new LeaseExpectation($memory))->releasedFor(ResponseLeaseDomain::DOMAIN);
+            $expect->releasedFor(ResponseLeaseDomain::DOMAIN);
+        } finally {
+            $memory->shutdown();
+        }
     }
 
     #[Test]
     public function acquireIsIdempotentAndReleaseIsIdempotent(): void
     {
         $memory = new RuntimeMemory(new RuntimeMemoryConfig());
-        $context = new RuntimeContext($memory);
 
-        $resource = StoaRequestResource::open(
-            runtime: $context,
-            request: new ServerRequest('GET', '/lease'),
-            token: CancellationToken::none(),
-            fd: 7,
-        );
-        $resource->activate();
+        try {
+            $context = new RuntimeContext($memory);
+            $resource = StoaRequestResource::open(
+                runtime: $context,
+                request: new ServerRequest('GET', '/lease'),
+                token: CancellationToken::none(),
+                fd: 7,
+            );
+            $resource->activate();
 
-        $resource->acquireDeliveryLease(7);
-        $resource->acquireDeliveryLease(7);
-        self::assertSame(1, self::countLeases($memory, ResponseLeaseDomain::DOMAIN));
+            $resource->acquireDeliveryLease(7);
+            $resource->acquireDeliveryLease(7);
+            $expect = new LeaseExpectation($memory);
+            $expect->heldFor(ResponseLeaseDomain::DOMAIN, 1);
 
-        $resource->releaseDeliveryLease('fulfilled');
-        $resource->releaseDeliveryLease('fulfilled');
-        (new LeaseExpectation($memory))->releasedFor(ResponseLeaseDomain::DOMAIN);
+            $resource->releaseDeliveryLease('fulfilled');
+            $resource->releaseDeliveryLease('fulfilled');
+            $expect->releasedFor(ResponseLeaseDomain::DOMAIN);
+        } finally {
+            $memory->shutdown();
+        }
     }
 
     #[Test]
     public function abandonReleasesLeaseEvenWithoutFulfilled(): void
     {
         $memory = new RuntimeMemory(new RuntimeMemoryConfig());
-        $context = new RuntimeContext($memory);
 
-        $resource = StoaRequestResource::open(
-            runtime: $context,
-            request: new ServerRequest('GET', '/lease'),
-            token: CancellationToken::none(),
-            fd: 12,
-        );
-        $resource->activate();
+        try {
+            $context = new RuntimeContext($memory);
+            $resource = StoaRequestResource::open(
+                runtime: $context,
+                request: new ServerRequest('GET', '/lease'),
+                token: CancellationToken::none(),
+                fd: 12,
+            );
+            $resource->activate();
 
-        $resource->acquireDeliveryLease(12);
-        $resource->releaseDeliveryLease('abandoned:test');
+            $resource->acquireDeliveryLease(12);
+            $resource->releaseDeliveryLease('abandoned:test');
 
-        (new LeaseExpectation($memory))->releasedFor(ResponseLeaseDomain::DOMAIN);
+            (new LeaseExpectation($memory))->releasedFor(ResponseLeaseDomain::DOMAIN);
+        } finally {
+            $memory->shutdown();
+        }
     }
 
     #[Test]
     public function dispatchWithoutFdDoesNotAcquireLease(): void
     {
-        $app = Application::starting()->compile()->startup();
+        $this->scope->run(static function (): void {
+            $app = Application::starting()->compile()->startup();
 
-        try {
-            $runner = StoaRunner::from($app)->withRoutes(RouteGroup::of([
-                'GET /no-fd' => OkLeaseRoute::class,
-            ]));
+            try {
+                $runner = StoaRunner::from($app)->withRoutes(RouteGroup::of([
+                    'GET /no-fd' => OkLeaseRoute::class,
+                ]));
 
-            $runner->dispatch(new ServerRequest('GET', '/no-fd'));
+                $runner->dispatch(new ServerRequest('GET', '/no-fd'));
 
-            (new LeaseExpectation($app->runtime()->memory))->releasedFor(ResponseLeaseDomain::DOMAIN);
-        } finally {
-            $app->shutdown();
-        }
-    }
-
-    private static function countLeases(RuntimeMemory $memory, string $domain): int
-    {
-        $count = 0;
-        foreach ($memory->tables->resourceLeases as $row) {
-            if (is_array($row) && (string) $row['domain'] === $domain) {
-                $count++;
+                (new LeaseExpectation($app->runtime()->memory))->releasedFor(ResponseLeaseDomain::DOMAIN);
+            } finally {
+                $app->shutdown();
             }
-        }
-
-        return $count;
+        });
     }
 }
 

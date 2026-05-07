@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Styx\Tests\Unit;
 
-use OpenSwoole\Coroutine;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Styx\Channel;
 use Phalanx\Testing\PhalanxTestCase;
 
@@ -18,33 +18,55 @@ final class ChannelBackpressureTest extends PhalanxTestCase
 {
     public function testBoundedChannelThrottlesFastProducer(): void
     {
-        $channel = new Channel(bufferSize: 4);
-        $produced = 0;
-        $consumed = 0;
-        $slowConsumerDelayMs = 25; // deliberately slow
+        $this->scope->run(static function (ExecutionScope $scope): void {
+            $channel = new Channel(bufferSize: 1);
+            $producerReachedBlockedEmit = false;
+            $producerReleased = new Channel(bufferSize: 1);
+            $producerReady = new Channel(bufferSize: 1);
 
-        // Fast producer coroutine
-        Coroutine::create(static function () use ($channel, &$produced): void {
-            for ($i = 0; $i < 20; $i++) {
-                $channel->emit("item-{$i}");
-                $produced++;
+            $scope->go(static function () use (
+                $channel,
+                $producerReady,
+                $producerReleased,
+                &$producerReachedBlockedEmit,
+            ): void {
+                $channel->emit('first');
+                $producerReady->emit(true);
+                $channel->emit('second');
+                $producerReachedBlockedEmit = true;
+                $producerReleased->emit(true);
+                $channel->complete();
+            });
+
+            self::assertTrue(self::readOne($producerReady));
+            $scope->delay(0.01);
+
+            self::assertFalse($producerReachedBlockedEmit);
+
+            $items = [];
+            foreach ($channel->consume() as $_) {
+                $items[] = $_;
+                break;
             }
-            $channel->complete();
+
+            self::assertSame(['first'], $items);
+            self::assertTrue(self::readOne($producerReleased));
+            self::assertTrue($producerReachedBlockedEmit);
+
+            foreach ($channel->consume() as $_) {
+                $items[] = $_;
+            }
+
+            self::assertSame(['first', 'second'], $items);
         });
+    }
 
-        // Slow consumer
-        $start = microtime(true);
+    private static function readOne(Channel $channel): mixed
+    {
         foreach ($channel->consume() as $value) {
-            Coroutine::usleep($slowConsumerDelayMs * 1000);
-            $consumed++;
+            return $value;
         }
-        $durationMs = (microtime(true) - $start) * 1000;
 
-        // With buffer=4 and 25ms delay, we expect significant throttling.
-        // Without backpressure the total time would be ~20 * 25ms = 500ms.
-        // With backpressure it must be substantially higher because the producer
-        // is forced to wait when the channel is full.
-        self::assertSame(20, $consumed);
-        self::assertGreaterThan(400, $durationMs); // conservative threshold
+        self::fail('Expected channel value.');
     }
 }

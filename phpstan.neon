@@ -43,7 +43,6 @@ parameters:
         - packages/phalanx-hydra/src/WorkerPool/WorkerPool.php
     phalanxCoroutineInternalPaths:
         - packages/phalanx-aegis/src/Scope/ExecutionLifecycleScope.php
-        - packages/phalanx-styx/src/Emitter.php
     excludePaths:
         analyseAndScan:
             - packages/phalanx-aegis/src/Parallel (?)
@@ -54,7 +53,3 @@ parameters:
     tmpDir: .phpstan-cache
     treatPhpDocTypesAsCertain: false
     bootstrapFiles: []
-    ignoreErrors:
-        # Scopeable and Executable are marker interfaces. Implementations
-        # always declare __invoke; the dispatcher invokes them via call syntax.
-        - identifier: callable.nonCallable

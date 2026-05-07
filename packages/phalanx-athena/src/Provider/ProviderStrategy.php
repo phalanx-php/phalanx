@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Athena\Provider;
 
-use Phalanx\Scope\Stream\StreamContext;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Styx\Channel;
 use Phalanx\Styx\Emitter;
 
@@ -26,7 +26,7 @@ final readonly class ProviderStrategy
 
                 return Emitter::produce(static function (
                     Channel $ch,
-                    StreamContext $ctx,
+                    ExecutionScope $ctx,
                 ) use (
                     $request,
                     $providers,
@@ -60,7 +60,7 @@ final readonly class ProviderStrategy
 
                 return Emitter::produce(static function (
                     Channel $ch,
-                    StreamContext $ctx,
+                    ExecutionScope $ctx,
                 ) use (
                     $request,
                     $providers,

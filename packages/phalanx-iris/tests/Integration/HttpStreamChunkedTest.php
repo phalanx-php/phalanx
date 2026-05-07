@@ -4,51 +4,53 @@ declare(strict_types=1);
 
 namespace Phalanx\Iris\Tests\Integration;
 
-use OpenSwoole\Coroutine;
+use OpenSwoole\Coroutine\Channel;
+use OpenSwoole\Coroutine\Socket;
 use Phalanx\Iris\HttpClient;
 use Phalanx\Iris\HttpRequest;
 use Phalanx\Scope\ExecutionScope;
-use Phalanx\Tests\Support\CoroutineTestCase;
-use PHPUnit\Framework\Attributes\RunInSeparateProcess;
+use Phalanx\Testing\PhalanxTestCase;
 
 /**
  * End-to-end proof for the HTTP/1.1 + chunked transport.
  *
- * Spins up an in-process TCP listener (PHP's stream_socket_server, which
- * OpenSwoole's runtime hooks make coroutine-aware), accepts a single
- * connection, hand-crafts an HTTP/1.1 chunked response with three SSE
- * payload chunks emitted at 30ms intervals, then runs HttpClient::stream()
- * against it from a sibling coroutine and asserts each chunk decodes
- * through HttpStream::read() in the order written.
+ * Spins up a coroutine-native TCP listener, accepts a single connection,
+ * hand-crafts an HTTP/1.1 chunked response with three SSE payload chunks
+ * emitted at 30ms intervals, then runs HttpClient::stream() against it
+ * from a sibling coroutine and asserts each chunk decodes through
+ * HttpStream::read() in the order written.
  *
  * This pins the chunked decoder + stream framing against an exact
  * known wire so future regressions show up immediately without
  * standing up a real OpenSwoole HTTP server.
  */
-final class HttpStreamChunkedTest extends CoroutineTestCase
+final class HttpStreamChunkedTest extends PhalanxTestCase
 {
     private const string HOST = '127.0.0.1';
 
-    #[RunInSeparateProcess]
     public function testChunkedSseStreamYieldsEachChunkInOrder(): void
     {
-        $this->runScoped(static function (ExecutionScope $scope): void {
-            $listener = stream_socket_server('tcp://' . self::HOST . ':0', $errno, $errstr);
-            self::assertNotFalse($listener, "stream_socket_server: {$errstr} ({$errno})");
-            $name = stream_socket_get_name($listener, false);
-            self::assertNotFalse($name);
-            $port = (int) substr((string) $name, strrpos((string) $name, ':') + 1);
+        $this->scope->run(static function (ExecutionScope $scope): void {
+            $listener = new Socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
+            self::assertTrue($listener->bind(self::HOST, 0), "socket bind: {$listener->errMsg}");
+            self::assertTrue($listener->listen(), "socket listen: {$listener->errMsg}");
 
-            $serverDone = new Coroutine\Channel(1);
-            Coroutine::create(static function () use ($listener, $serverDone): void {
+            $name = $listener->getsockname();
+            self::assertIsArray($name);
+            self::assertArrayHasKey('port', $name);
+            $port = (int) $name['port'];
+
+            $serverDone = new Channel(1);
+            $scope->go(static function (ExecutionScope $serverScope) use ($listener, $serverDone): void {
                 try {
-                    $conn = stream_socket_accept($listener, 5);
+                    $conn = $listener->accept(5);
                     if ($conn === false) {
                         return;
                     }
+
                     $req = '';
                     while (!str_contains($req, "\r\n\r\n")) {
-                        $piece = fread($conn, 4096);
+                        $piece = $conn->recv(4096, 5);
                         if ($piece === false || $piece === '') {
                             break;
                         }
@@ -59,7 +61,7 @@ final class HttpStreamChunkedTest extends CoroutineTestCase
                         . "content-type: text/event-stream\r\n"
                         . "transfer-encoding: chunked\r\n"
                         . "\r\n";
-                    fwrite($conn, $head);
+                    $conn->sendAll($head);
 
                     $payloads = [
                         "event: tick\ndata: {\"n\":1}\n\n",
@@ -69,13 +71,13 @@ final class HttpStreamChunkedTest extends CoroutineTestCase
                     ];
                     foreach ($payloads as $p) {
                         $size = dechex(strlen($p));
-                        fwrite($conn, "{$size}\r\n{$p}\r\n");
-                        Coroutine::usleep(30_000);
+                        $conn->sendAll("{$size}\r\n{$p}\r\n");
+                        $serverScope->delay(0.03);
                     }
-                    fwrite($conn, "0\r\n\r\n");
-                    fclose($conn);
+                    $conn->sendAll("0\r\n\r\n");
+                    $conn->close();
                 } finally {
-                    fclose($listener);
+                    $listener->close();
                     $serverDone->push(true);
                 }
             });
@@ -111,7 +113,7 @@ final class HttpStreamChunkedTest extends CoroutineTestCase
                 self::assertStringContainsString('"n":3', $events[2]);
                 self::assertStringContainsString('[DONE]', $events[3]);
             } finally {
-                $serverDone->pop(2);
+                self::assertTrue($serverDone->pop(2));
             }
         });
     }

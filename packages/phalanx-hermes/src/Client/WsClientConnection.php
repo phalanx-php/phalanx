@@ -6,14 +6,16 @@ namespace Phalanx\Hermes\Client;
 
 use Phalanx\Hermes\WsCloseCode;
 use Phalanx\Hermes\WsMessage;
+use Phalanx\Scope\Suspendable;
 use Phalanx\Styx\Channel;
-use Phalanx\Suspendable;
+use Phalanx\Supervisor\WaitReason;
 use React\EventLoop\Loop;
 use React\EventLoop\TimerInterface;
 use React\Promise\Deferred;
 use React\Socket\Connector;
 use React\Stream\DuplexStreamInterface;
 
+use function React\Async\await;
 use function React\Promise\Timer\timeout;
 
 final class WsClientConnection
@@ -54,8 +56,9 @@ final class WsClientConnection
         }
 
         /** @var DuplexStreamInterface $transport */
-        $transport = $scope->await(
-            timeout($connector->connect($connectTarget), $config->connectTimeout),
+        $transport = $scope->call(
+            static fn(): mixed => await(timeout($connector->connect($connectTarget), $config->connectTimeout)),
+            WaitReason::custom('websocket.connect'),
         );
 
         $overflow = self::performHandshake($scope, $transport, $parsed, $config);
@@ -238,8 +241,9 @@ final class WsClientConnection
         });
 
         /** @var string */
-        return $scope->await(
-            timeout($deferred->promise(), $config->connectTimeout),
+        return $scope->call(
+            static fn(): mixed => await(timeout($deferred->promise(), $config->connectTimeout)),
+            WaitReason::custom('websocket.handshake'),
         );
     }
 

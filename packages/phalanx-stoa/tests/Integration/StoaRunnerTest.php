@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Tests\Stoa\Integration;
 
+use Closure;
 use GuzzleHttp\Psr7\Response as PsrResponse;
 use GuzzleHttp\Psr7\ServerRequest;
 use OpenSwoole\Http\Request as OpenSwooleRequest;
@@ -30,12 +31,12 @@ use Phalanx\Stoa\StoaRequestResource;
 use Phalanx\Stoa\StoaRunner;
 use Phalanx\Stoa\StoaServerConfig;
 use Phalanx\Task\Scopeable;
+use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\UriInterface;
 use RuntimeException;
 
-final class StoaRunnerTest extends TestCase
+final class StoaRunnerTest extends PhalanxTestCase
 {
     #[Test]
     public function stoa_runtime_identities_are_typed_and_stable(): void
@@ -54,37 +55,27 @@ final class StoaRunnerTest extends TestCase
     #[Test]
     public function dispatches_plaintext_route_and_disposes_scope(): void
     {
-        $app = Application::starting()->compile()->startup();
-        $runner = StoaRunner::from($app)->withRoutes(RouteGroup::of([
+        [$response, $activeRequests] = $this->withStoaRunner(RouteGroup::of([
             'GET /plaintext' => PlainTextStoaRoute::class,
-        ]));
-
-        try {
+        ]), static function (StoaRunner $runner): array {
             $response = $runner->dispatch(new ServerRequest('GET', '/plaintext'));
-        } finally {
-            $app->shutdown();
-        }
+
+            return [$response, $runner->activeRequests()];
+        });
 
         self::assertSame(200, $response->getStatusCode());
         self::assertSame('text/plain', $response->getHeaderLine('Content-Type'));
         self::assertSame('stoa-ok', (string) $response->getBody());
         self::assertTrue(PlainTextStoaRoute::$disposed);
-        self::assertSame(0, $runner->activeRequests());
+        self::assertSame(0, $activeRequests);
     }
 
     #[Test]
     public function head_request_uses_get_route_without_response_body(): void
     {
-        $app = Application::starting()->compile()->startup();
-        $runner = StoaRunner::from($app)->withRoutes(RouteGroup::of([
+        $response = $this->withStoaRunner(RouteGroup::of([
             'GET /head' => HeadStoaRoute::class,
-        ]));
-
-        try {
-            $response = $runner->dispatch(new ServerRequest('HEAD', '/head'));
-        } finally {
-            $app->shutdown();
-        }
+        ]), static fn(StoaRunner $runner) => $runner->dispatch(new ServerRequest('HEAD', '/head')));
 
         self::assertSame(200, $response->getStatusCode());
         self::assertSame('yes', $response->getHeaderLine('X-Head-Proof'));
@@ -94,18 +85,15 @@ final class StoaRunnerTest extends TestCase
     #[Test]
     public function no_content_and_not_modified_responses_do_not_expose_bodies(): void
     {
-        $app = Application::starting()->compile()->startup();
-        $runner = StoaRunner::from($app)->withRoutes(RouteGroup::of([
+        [$empty, $cached] = $this->withStoaRunner(RouteGroup::of([
             'GET /empty' => NoContentStoaRoute::class,
             'GET /cached' => NotModifiedStoaRoute::class,
-        ]));
-
-        try {
+        ]), static function (StoaRunner $runner): array {
             $empty = $runner->dispatch(new ServerRequest('GET', '/empty'));
             $cached = $runner->dispatch(new ServerRequest('GET', '/cached'));
-        } finally {
-            $app->shutdown();
-        }
+
+            return [$empty, $cached];
+        });
 
         self::assertSame(204, $empty->getStatusCode());
         self::assertSame('', (string) $empty->getBody());
@@ -116,39 +104,21 @@ final class StoaRunnerTest extends TestCase
     #[Test]
     public function powered_by_header_is_defaulted_preserved_or_disabled(): void
     {
-        $defaultApp = Application::starting()->compile()->startup();
-        $defaultRunner = StoaRunner::from($defaultApp)->withRoutes(RouteGroup::of([
+        $default = $this->withStoaRunner(RouteGroup::of([
             'GET /plaintext' => PlainTextStoaRoute::class,
-        ]));
+        ]), static fn(StoaRunner $runner) => $runner->dispatch(new ServerRequest('GET', '/plaintext')));
 
-        try {
-            $default = $defaultRunner->dispatch(new ServerRequest('GET', '/plaintext'));
-        } finally {
-            $defaultApp->shutdown();
-        }
-
-        $customApp = Application::starting()->compile()->startup();
-        $customRunner = StoaRunner::from($customApp)->withRoutes(RouteGroup::of([
+        $custom = $this->withStoaRunner(RouteGroup::of([
             'GET /powered' => ExistingPoweredByStoaRoute::class,
-        ]));
+        ]), static fn(StoaRunner $runner) => $runner->dispatch(new ServerRequest('GET', '/powered')));
 
-        try {
-            $custom = $customRunner->dispatch(new ServerRequest('GET', '/powered'));
-        } finally {
-            $customApp->shutdown();
-        }
-
-        $disabledApp = Application::starting()->compile()->startup();
-        $disabledRunner = StoaRunner::from($disabledApp, new StoaServerConfig(poweredBy: null))
-            ->withRoutes(RouteGroup::of([
+        $disabled = $this->withStoaRunner(
+            RouteGroup::of([
                 'GET /plaintext' => PlainTextStoaRoute::class,
-            ]));
-
-        try {
-            $disabled = $disabledRunner->dispatch(new ServerRequest('GET', '/plaintext'));
-        } finally {
-            $disabledApp->shutdown();
-        }
+            ]),
+            static fn(StoaRunner $runner) => $runner->dispatch(new ServerRequest('GET', '/plaintext')),
+            new StoaServerConfig(poweredBy: null),
+        );
 
         self::assertSame('Phalanx', $default->getHeaderLine('X-Powered-By'));
         self::assertSame('Existing', $custom->getHeaderLine('X-Powered-By'));
@@ -158,18 +128,14 @@ final class StoaRunnerTest extends TestCase
     #[Test]
     public function dispatches_json_route_through_existing_route_scope(): void
     {
-        $app = Application::starting()->compile()->startup();
-        $runner = StoaRunner::from($app)->withRoutes(RouteGroup::of([
+        $response = $this->withStoaRunner(RouteGroup::of([
             'GET /json' => JsonStoaRoute::class,
-        ]));
-
-        try {
+        ]), static function (StoaRunner $runner) {
             $request = (new ServerRequest('GET', '/json?name=phalanx'))
                 ->withQueryParams(['name' => 'phalanx']);
-            $response = $runner->dispatch($request);
-        } finally {
-            $app->shutdown();
-        }
+
+            return $runner->dispatch($request);
+        });
 
         self::assertSame(200, $response->getStatusCode());
         self::assertSame('application/json', $response->getHeaderLine('Content-Type'));
@@ -182,20 +148,17 @@ final class StoaRunnerTest extends TestCase
     #[Test]
     public function request_scope_exposes_aegis_managed_resource_identity(): void
     {
-        $app = Application::starting()->compile()->startup();
-        $runner = StoaRunner::from($app)->withRoutes(RouteGroup::of([
+        [$response, $body, $resourceEvents, $released] = $this->withStoaRunner(RouteGroup::of([
             'GET /resource/{id:int}' => ResourceAwareStoaRoute::class,
-        ]));
-
-        try {
+        ]), static function (StoaRunner $runner, Application $app): array {
             $response = $runner->dispatch(new ServerRequest('GET', '/resource/42'));
             $body = json_decode((string) $response->getBody(), true, 512, JSON_THROW_ON_ERROR);
             $events = $app->runtime()->memory->events->recent();
             $resourceEvents = self::eventTypesForResource($events, (string) $body['resource_id']);
             $released = $app->runtime()->memory->resources->get((string) $body['resource_id']) === null;
-        } finally {
-            $app->shutdown();
-        }
+
+            return [$response, $body, $resourceEvents, $released];
+        });
 
         self::assertSame(200, $response->getStatusCode());
         self::assertIsString($body['resource_id']);
@@ -212,20 +175,18 @@ final class StoaRunnerTest extends TestCase
     #[Test]
     public function long_request_path_is_bounded_in_runtime_annotations(): void
     {
-        $app = Application::starting()->compile()->startup();
-        $runner = StoaRunner::from($app)->withRoutes(RouteGroup::of([
-            'GET /long/{slug}' => LongPathStoaRoute::class,
-        ]));
         $path = '/long/' . str_repeat('x', 300);
 
-        try {
+        [$response, $body, $activeRequests, $liveRequests] = $this->withStoaRunner(RouteGroup::of([
+            'GET /long/{slug}' => LongPathStoaRoute::class,
+        ]), static function (StoaRunner $runner, Application $app) use ($path): array {
             $response = $runner->dispatch(new ServerRequest('GET', $path));
             $body = json_decode((string) $response->getBody(), true, 512, JSON_THROW_ON_ERROR);
             $activeRequests = $runner->activeRequests();
             $liveRequests = $app->runtime()->memory->resources->liveCount(StoaResourceSid::HttpRequest);
-        } finally {
-            $app->shutdown();
-        }
+
+            return [$response, $body, $activeRequests, $liveRequests];
+        });
 
         self::assertSame(200, $response->getStatusCode());
         self::assertSame($path, $body['path']);
@@ -237,25 +198,23 @@ final class StoaRunnerTest extends TestCase
     #[Test]
     public function request_setup_failure_disposes_scope_and_leaves_runtime_clean(): void
     {
-        $app = Application::starting()->compile()->startup();
-        $runner = StoaRunner::from($app)->withRoutes(RouteGroup::of([
+        [$caught, $activeRequests, $liveResources] = $this->withStoaRunner(RouteGroup::of([
             'GET /plaintext' => PlainTextStoaRoute::class,
-        ]));
-        $caught = null;
+        ]), static function (StoaRunner $runner, Application $app): array {
+            $caught = null;
 
-        try {
-            $runner->dispatch(new ExplodingPathRequest());
-        } catch (RuntimeException $e) {
-            $caught = $e;
-        }
+            try {
+                $runner->dispatch(new ExplodingPathRequest());
+            } catch (RuntimeException $e) {
+                $caught = $e;
+            }
 
-        try {
-            self::assertInstanceOf(RuntimeException::class, $caught);
-            self::assertSame(0, $runner->activeRequests());
-            self::assertSame(0, $app->runtime()->memory->resources->liveCount());
-        } finally {
-            $app->shutdown();
-        }
+            return [$caught, $runner->activeRequests(), $app->runtime()->memory->resources->liveCount()];
+        });
+
+        self::assertInstanceOf(RuntimeException::class, $caught);
+        self::assertSame(0, $activeRequests);
+        self::assertSame(0, $liveResources);
     }
 
     #[Test]
@@ -285,39 +244,43 @@ final class StoaRunnerTest extends TestCase
     #[Test]
     public function request_scope_resource_id_fails_loud_when_missing(): void
     {
-        $app = Application::starting()->compile()->startup();
-        $scope = $app->createScope();
-        $context = new ExecutionContext(
-            $scope,
-            new ServerRequest('GET', '/missing-resource'),
-            new RouteParams(),
-            new QueryParams(),
-            RouteConfig::compile('/missing-resource'),
-        );
+        $this->expectException(MissingRequestResource::class);
 
-        try {
-            $this->expectException(MissingRequestResource::class);
-            self::assertSame('', $context->resourceId);
-        } finally {
-            $scope->dispose();
-            $app->shutdown();
-        }
+        $this->scope->run(static function (): void {
+            $app = Application::starting()->compile()->startup();
+            $scope = $app->createScope();
+            $context = new ExecutionContext(
+                $scope,
+                new ServerRequest('GET', '/missing-resource'),
+                new RouteParams(),
+                new QueryParams(),
+                RouteConfig::compile('/missing-resource'),
+            );
+
+            try {
+                self::assertSame('', $context->resourceId);
+            } finally {
+                $scope->dispose();
+                $app->shutdown();
+            }
+        });
     }
 
     #[Test]
     public function disposes_scope_after_handler_exception(): void
     {
-        $app = Application::starting()->compile()->startup();
-        $runner = StoaRunner::from($app, new StoaServerConfig(debug: true))->withRoutes(RouteGroup::of([
-            'GET /fail' => FailingStoaRoute::class,
-        ]));
+        [$response, $events] = $this->withStoaRunner(
+            RouteGroup::of([
+                'GET /fail' => FailingStoaRoute::class,
+            ]),
+            static function (StoaRunner $runner, Application $app): array {
+                $response = $runner->dispatch(new ServerRequest('GET', '/fail'));
+                $events = $app->runtime()->memory->events->recent();
 
-        try {
-            $response = $runner->dispatch(new ServerRequest('GET', '/fail'));
-            $events = $app->runtime()->memory->events->recent();
-        } finally {
-            $app->shutdown();
-        }
+                return [$response, $events];
+            },
+            new StoaServerConfig(debug: true),
+        );
 
         self::assertSame(500, $response->getStatusCode());
         $body = json_decode((string) $response->getBody(), true, 512, JSON_THROW_ON_ERROR);
@@ -337,7 +300,6 @@ final class StoaRunnerTest extends TestCase
             self::eventTypesForResource($events, (string) $body['request']['id']),
         );
         self::assertTrue(FailingStoaRoute::$disposed);
-        self::assertSame(0, $runner->activeRequests());
     }
 
     #[Test]
@@ -539,6 +501,30 @@ final class StoaRunnerTest extends TestCase
         }
 
         return $types;
+    }
+
+    /**
+     * @template T
+     * @param Closure(StoaRunner, Application): T $test
+     * @return T
+     */
+    private function withStoaRunner(
+        RouteGroup $routes,
+        Closure $test,
+        ?StoaServerConfig $config = null,
+    ): mixed {
+        return $this->scope->run(static function () use ($routes, $test, $config): mixed {
+            $app = Application::starting()->compile()->startup();
+
+            try {
+                $runner = ($config === null ? StoaRunner::from($app) : StoaRunner::from($app, $config))
+                    ->withRoutes($routes);
+
+                return $test($runner, $app);
+            } finally {
+                $app->shutdown();
+            }
+        });
     }
 }
 

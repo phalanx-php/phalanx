@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Athena\Swarm;
 
 use Phalanx\Scope\Scope;
-use Phalanx\Scope\Stream\StreamContext;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\Suspendable;
 use Phalanx\Styx\Channel;
 use Phalanx\Styx\Emitter;
@@ -30,7 +30,7 @@ final class InMemorySwarmBus implements SwarmBus
     {
         $bus = $this;
 
-        return Emitter::produce(static function (Channel $out, StreamContext $scope) use ($bus, $filters): void {
+        return Emitter::produce(static function (Channel $out, ExecutionScope $scope) use ($bus, $filters): void {
             $subscriber = new Channel();
             $bus->subscribers[] = $subscriber;
 

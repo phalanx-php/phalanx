@@ -10,7 +10,7 @@ use Phalanx\Athena\Event\TokenUsage;
 use Phalanx\Athena\Message\Conversation;
 use Phalanx\Athena\Stream\Generation;
 use Phalanx\Athena\Tool\ToolOutcome;
-use Phalanx\Scope\Stream\StreamContext;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Styx\Emitter;
 
 final readonly class AgentResult
@@ -58,7 +58,7 @@ final readonly class AgentResult
         );
     }
 
-    public static function awaitFrom(Emitter $events, StreamContext $ctx): self
+    public static function awaitFrom(Emitter $events, ExecutionScope $ctx): self
     {
         $lastResult = null;
 

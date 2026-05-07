@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Scope\Stream;
 
 use Closure;
+use Phalanx\Scope\ExecutionScope;
 use Throwable;
 
 /**
@@ -23,50 +24,50 @@ use Throwable;
  */
 trait Streamable
 {
-    /** @var list<Closure(StreamContext): void> */
+    /** @var list<Closure(ExecutionScope): void> */
     private array $onStartHooks = [];
 
-    /** @var list<Closure(mixed, StreamContext): void> */
+    /** @var list<Closure(mixed, ExecutionScope): void> */
     private array $onEachHooks = [];
 
-    /** @var list<Closure(Throwable, StreamContext): void> */
+    /** @var list<Closure(Throwable, ExecutionScope): void> */
     private array $onErrorHooks = [];
 
-    /** @var list<Closure(StreamContext): void> */
+    /** @var list<Closure(ExecutionScope): void> */
     private array $onCompleteHooks = [];
 
-    /** @var list<Closure(StreamContext): void> */
+    /** @var list<Closure(ExecutionScope): void> */
     private array $onDisposeHooks = [];
 
-    /** @param Closure(StreamContext): void $fn */
+    /** @param Closure(ExecutionScope): void $fn */
     public function onStart(Closure $fn): static
     {
         $this->onStartHooks[] = $fn;
         return $this;
     }
 
-    /** @param Closure(mixed, StreamContext): void $fn */
+    /** @param Closure(mixed, ExecutionScope): void $fn */
     public function onEach(Closure $fn): static
     {
         $this->onEachHooks[] = $fn;
         return $this;
     }
 
-    /** @param Closure(Throwable, StreamContext): void $fn */
+    /** @param Closure(Throwable, ExecutionScope): void $fn */
     public function onError(Closure $fn): static
     {
         $this->onErrorHooks[] = $fn;
         return $this;
     }
 
-    /** @param Closure(StreamContext): void $fn */
+    /** @param Closure(ExecutionScope): void $fn */
     public function onComplete(Closure $fn): static
     {
         $this->onCompleteHooks[] = $fn;
         return $this;
     }
 
-    /** @param Closure(StreamContext): void $fn */
+    /** @param Closure(ExecutionScope): void $fn */
     public function onDispose(Closure $fn): static
     {
         $this->onDisposeHooks[] = $fn;
@@ -82,38 +83,38 @@ trait Streamable
         $this->onDisposeHooks = [];
     }
 
-    private function fireOnStart(StreamContext $context): void
+    private function fireOnStart(ExecutionScope $scope): void
     {
         foreach ($this->onStartHooks as $hook) {
-            $hook($context);
+            $hook($scope);
         }
     }
 
-    private function fireOnEach(mixed $value, StreamContext $context): void
+    private function fireOnEach(mixed $value, ExecutionScope $scope): void
     {
         foreach ($this->onEachHooks as $hook) {
-            $hook($value, $context);
+            $hook($value, $scope);
         }
     }
 
-    private function fireOnError(Throwable $error, StreamContext $context): void
+    private function fireOnError(Throwable $error, ExecutionScope $scope): void
     {
         foreach ($this->onErrorHooks as $hook) {
-            $hook($error, $context);
+            $hook($error, $scope);
         }
     }
 
-    private function fireOnComplete(StreamContext $context): void
+    private function fireOnComplete(ExecutionScope $scope): void
     {
         foreach ($this->onCompleteHooks as $hook) {
-            $hook($context);
+            $hook($scope);
         }
     }
 
-    private function fireOnDispose(StreamContext $context): void
+    private function fireOnDispose(ExecutionScope $scope): void
     {
         foreach ($this->onDisposeHooks as $hook) {
-            $hook($context);
+            $hook($scope);
         }
     }
 }

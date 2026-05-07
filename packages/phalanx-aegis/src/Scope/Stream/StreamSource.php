@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace Phalanx\Scope\Stream;
 
 use Generator;
+use Phalanx\Scope\ExecutionScope;
 
 /**
- * A pull-based stream of values produced under a managed StreamContext.
+ * A pull-based stream of values produced under a managed ExecutionScope.
  *
  * Implementations yield values via Generator and honor scope cancellation
- * through $context->throwIfCancelled(). Producer-side cleanup must register
- * with $context->onDispose() so the scope tears the source down whether
- * the stream completes naturally, errors, or is cancelled.
+ * through $scope->throwIfCancelled(). Producer-side work must be spawned
+ * through the same scope so cancellation and cleanup stay supervised.
  *
  * @template TValue
  */
@@ -21,5 +21,5 @@ interface StreamSource
     /**
      * @return Generator<int, TValue>
      */
-    public function __invoke(StreamContext $context): Generator;
+    public function __invoke(ExecutionScope $scope): Generator;
 }

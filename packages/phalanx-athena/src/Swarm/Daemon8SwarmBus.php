@@ -9,8 +9,8 @@ use Phalanx\Athena\Stream\HttpSseSource;
 use Phalanx\Iris\HttpClient;
 use Phalanx\Iris\HttpClientException;
 use Phalanx\Iris\HttpRequest;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\Scope;
-use Phalanx\Scope\Stream\StreamContext;
 use Phalanx\Scope\Suspendable;
 use Phalanx\Styx\Channel;
 use Phalanx\Styx\Emitter;
@@ -110,7 +110,7 @@ final class Daemon8SwarmBus implements SwarmBus
 
         return Emitter::produce(static function (
             Channel $channel,
-            StreamContext $ctx,
+            ExecutionScope $ctx,
         ) use (
             $client,
             $url,

@@ -31,16 +31,32 @@ class LeaseExpectation
      */
     public function releasedFor(string $domain): void
     {
-        $remaining = 0;
-        foreach ($this->memory->tables->resourceLeases as $row) {
-            if (is_array($row) && (string) $row['domain'] === $domain) {
-                $remaining++;
-            }
-        }
+        $remaining = $this->countFor($domain);
         PHPUnitAssert::assertSame(
             0,
             $remaining,
             "Expected every lease for domain '{$domain}' to be released; {$remaining} still held.",
         );
+    }
+
+    public function heldFor(string $domain, int $expected): void
+    {
+        PHPUnitAssert::assertSame(
+            $expected,
+            $this->countFor($domain),
+            "Expected {$expected} lease(s) for domain '{$domain}'.",
+        );
+    }
+
+    private function countFor(string $domain): int
+    {
+        $count = 0;
+        foreach ($this->memory->tables->resourceLeases as $row) {
+            if (is_array($row) && (string) $row['domain'] === $domain) {
+                $count++;
+            }
+        }
+
+        return $count;
     }
 }

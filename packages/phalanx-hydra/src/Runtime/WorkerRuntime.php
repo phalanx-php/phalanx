@@ -113,7 +113,7 @@ class WorkerRuntime
             );
 
             self::assertAcceptsWorkerScope($task);
-            $this->writeResponse(Response::taskOk($request->id, $task($scope)));
+            $this->writeResponse(Response::taskOk($request->id, $task->__invoke($scope)));
         } catch (Cancelled $e) {
             throw $e;
         } catch (\Throwable $e) {

@@ -5,10 +5,9 @@ declare(strict_types=1);
 namespace Phalanx\Tests\Stoa\Integration;
 
 use GuzzleHttp\Psr7\ServerRequest;
-use OpenSwoole\Coroutine;
-use OpenSwoole\Coroutine\Channel;
 use Phalanx\Application;
 use Phalanx\Cancellation\Cancelled;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 use Phalanx\Stoa\RequestScope;
@@ -16,36 +15,38 @@ use Phalanx\Stoa\RouteGroup;
 use Phalanx\Stoa\Runtime\Identity\StoaEventSid;
 use Phalanx\Stoa\StoaRunner;
 use Phalanx\Stoa\StoaServerConfig;
+use Phalanx\Styx\Channel;
 use Phalanx\Task\Scopeable;
-use Phalanx\Tests\Stoa\Fixtures\EventTrackingSlowHandler;
+use Phalanx\Testing\PhalanxTestCase;
 use Phalanx\Tests\Stoa\Fixtures\Routes\StatusOk;
-use Phalanx\Tests\Stoa\Fixtures\SlowHandler;
-use Phalanx\Tests\Support\CoroutineTestCase;
 use PHPUnit\Framework\Attributes\Test;
 use Psr\Http\Message\ResponseInterface;
 
-final class GracefulDrainTest extends CoroutineTestCase
+final class GracefulDrainTest extends PhalanxTestCase
 {
     #[Test]
     public function inflightRequestCompletesWithinDrainTimeout(): void
     {
-        $this->runInCoroutine(static function (): void {
+        $this->scope->run(static function (ExecutionScope $scope): void {
+            DrainCompletingHandler::$entered = new Channel();
             $app = Application::starting()->compile()->startup();
             $runner = StoaRunner::from($app, new StoaServerConfig(requestTimeout: 5.0, drainTimeout: 2.0))
                 ->withRoutes(RouteGroup::of([
-                    'GET /slow' => SlowHandler::class,
+                    'GET /slow' => DrainCompletingHandler::class,
                 ]));
-            $responses = new Channel(1);
 
-            Coroutine::create(static function () use ($runner, $responses): void {
-                $responses->push($runner->dispatch(new ServerRequest('GET', '/slow')));
-            });
+            $results = $scope->concurrent(
+                static fn(): ResponseInterface => $runner->dispatch(new ServerRequest('GET', '/slow')),
+                static function (ExecutionScope $control) use ($runner): null {
+                    self::readSignal(DrainCompletingHandler::$entered);
+                    self::assertSame(1, $runner->activeRequests());
+                    $runner->stop();
 
-            Coroutine::usleep(50_000);
-            self::assertSame(1, $runner->activeRequests());
-            $runner->stop();
+                    return null;
+                },
+            );
 
-            $response = $responses->pop(3.0);
+            $response = $results[0];
             self::assertInstanceOf(ResponseInterface::class, $response);
             self::assertSame(200, $response->getStatusCode());
             self::assertStringContainsString('completed', (string) $response->getBody());
@@ -56,9 +57,10 @@ final class GracefulDrainTest extends CoroutineTestCase
     #[Test]
     public function drainTimeoutCancelsStuckRequest(): void
     {
-        $this->runInCoroutine(static function (): void {
+        $this->scope->run(static function (ExecutionScope $scope): void {
             DrainStuckHandler::$cancelled = false;
             DrainStuckHandler::$resourceId = '';
+            DrainStuckHandler::$entered = new Channel();
             $app = Application::starting()->compile()->startup();
             $events = [];
             $app->runtime()->memory->events->listen(static function ($event) use (&$events): void {
@@ -68,22 +70,30 @@ final class GracefulDrainTest extends CoroutineTestCase
                 ->withRoutes(RouteGroup::of([
                     'GET /stuck' => DrainStuckHandler::class,
                 ]));
-            $responses = new Channel(1);
 
-            Coroutine::create(static function () use ($runner, $responses): void {
-                $responses->push($runner->dispatch(new ServerRequest('GET', '/stuck')));
-            });
-
-            Coroutine::usleep(10_000);
-            self::assertSame(1, $runner->activeRequests());
             $start = hrtime(true);
-            $runner->stop();
+            $results = $scope->settle(...[
+                'request' => static fn(): ResponseInterface => $runner->dispatch(new ServerRequest('GET', '/stuck')),
+                'control' => static function (ExecutionScope $control) use ($runner, &$start): null {
+                    self::readSignal(DrainStuckHandler::$entered);
+                    self::assertSame(1, $runner->activeRequests());
+                    $start = hrtime(true);
+                    $runner->stop();
 
-            $response = $responses->pop(1.0);
+                    return null;
+                },
+            ]);
+
             $elapsed = (hrtime(true) - $start) / 1e9;
 
-            self::assertInstanceOf(ResponseInterface::class, $response);
-            self::assertSame(500, $response->getStatusCode());
+            self::assertTrue($results->isOk('control'));
+            if ($results->isOk('request')) {
+                $response = $results->get('request');
+                self::assertInstanceOf(ResponseInterface::class, $response);
+                self::assertSame(500, $response->getStatusCode());
+            } else {
+                self::assertInstanceOf(Cancelled::class, $results->errors['request']);
+            }
             self::assertLessThan(0.5, $elapsed, 'Drain timeout should cancel stuck request quickly');
             self::assertTrue(DrainStuckHandler::$cancelled);
             self::assertNotSame('', DrainStuckHandler::$resourceId);
@@ -102,26 +112,30 @@ final class GracefulDrainTest extends CoroutineTestCase
     #[Test]
     public function newRequestsAreRejectedWhileDraining(): void
     {
-        $this->runInCoroutine(static function (): void {
+        $this->scope->run(static function (ExecutionScope $scope): void {
+            DrainCompletingHandler::$entered = new Channel();
             $app = Application::starting()->compile()->startup();
             $runner = StoaRunner::from($app, new StoaServerConfig(requestTimeout: 5.0, drainTimeout: 2.0))
                 ->withRoutes(RouteGroup::of([
-                    'GET /slow' => SlowHandler::class,
+                    'GET /slow' => DrainCompletingHandler::class,
                     'GET /health' => StatusOk::class,
                 ]));
-            $responses = new Channel(1);
 
-            Coroutine::create(static function () use ($runner, $responses): void {
-                $responses->push($runner->dispatch(new ServerRequest('GET', '/slow')));
-            });
+            $results = $scope->concurrent(
+                static fn(): ResponseInterface => $runner->dispatch(new ServerRequest('GET', '/slow')),
+                static function (ExecutionScope $control) use ($runner): ResponseInterface {
+                    self::readSignal(DrainCompletingHandler::$entered);
+                    $runner->stop();
 
-            Coroutine::usleep(50_000);
-            $runner->stop();
-            $rejected = $runner->dispatch(new ServerRequest('GET', '/health'));
-            $completed = $responses->pop(3.0);
+                    return $runner->dispatch(new ServerRequest('GET', '/health'));
+                },
+            );
 
-            self::assertSame(503, $rejected->getStatusCode());
+            $completed = $results[0];
+            $rejected = $results[1];
             self::assertInstanceOf(ResponseInterface::class, $completed);
+            self::assertInstanceOf(ResponseInterface::class, $rejected);
+            self::assertSame(503, $rejected->getStatusCode());
             self::assertSame(200, $completed->getStatusCode());
         });
     }
@@ -129,7 +143,7 @@ final class GracefulDrainTest extends CoroutineTestCase
     #[Test]
     public function serviceShutdownHooksFireAfterDrain(): void
     {
-        $this->runInCoroutine(static function (): void {
+        $this->scope->run(static function (ExecutionScope $scope): void {
             $shutdownFired = false;
             $bundle = new class ($shutdownFired) implements ServiceBundle {
                 public function __construct(private bool &$shutdownFired)
@@ -147,25 +161,26 @@ final class GracefulDrainTest extends CoroutineTestCase
                 }
             };
 
-            EventTrackingSlowHandler::$events = [];
+            DrainEventTrackingHandler::$entered = new Channel();
+            DrainEventTrackingHandler::$events = [];
 
             $app = Application::starting()->providers($bundle)->compile()->startup();
             $runner = StoaRunner::from($app, new StoaServerConfig(requestTimeout: 5.0, drainTimeout: 2.0))
                 ->withRoutes(RouteGroup::of([
-                    'GET /slow' => EventTrackingSlowHandler::class,
+                    'GET /slow' => DrainEventTrackingHandler::class,
                 ]));
-            $responses = new Channel(1);
 
-            Coroutine::create(static function () use ($runner, $responses): void {
-                $responses->push($runner->dispatch(new ServerRequest('GET', '/slow')));
-            });
+            $scope->concurrent(
+                static fn(): ResponseInterface => $runner->dispatch(new ServerRequest('GET', '/slow')),
+                static function (ExecutionScope $control) use ($runner): null {
+                    self::readSignal(DrainEventTrackingHandler::$entered);
+                    $runner->stop();
 
-            Coroutine::usleep(50_000);
-            $runner->stop();
-            $responses->pop(3.0);
-            Coroutine::usleep(100_000);
+                    return null;
+                },
+            );
 
-            self::assertContains('handler:complete', EventTrackingSlowHandler::$events);
+            self::assertContains('handler:complete', DrainEventTrackingHandler::$events);
             self::assertTrue($shutdownFired, 'Service shutdown hook should have fired');
         });
     }
@@ -185,16 +200,57 @@ final class GracefulDrainTest extends CoroutineTestCase
 
         return $types;
     }
+
+    private static function readSignal(Channel $channel): mixed
+    {
+        foreach ($channel->consume() as $value) {
+            return $value;
+        }
+
+        self::fail('Expected drain signal.');
+    }
+}
+
+final class DrainCompletingHandler implements Scopeable
+{
+    public static Channel $entered;
+
+    public function __invoke(RequestScope $scope): string
+    {
+        self::$entered->emit(true);
+        $scope->delay(0.3);
+
+        return 'completed';
+    }
+}
+
+final class DrainEventTrackingHandler implements Scopeable
+{
+    public static Channel $entered;
+
+    /** @var list<string> */
+    public static array $events = [];
+
+    public function __invoke(RequestScope $scope): string
+    {
+        self::$entered->emit(true);
+        $scope->delay(0.3);
+        self::$events[] = 'handler:complete';
+
+        return 'done';
+    }
 }
 
 final class DrainStuckHandler implements Scopeable
 {
     public static bool $cancelled = false;
+    public static Channel $entered;
     public static string $resourceId = '';
 
     public function __invoke(RequestScope $scope): string
     {
         self::$resourceId = $scope->resourceId;
+        self::$entered->emit(true);
 
         try {
             $scope->delay(1.5);

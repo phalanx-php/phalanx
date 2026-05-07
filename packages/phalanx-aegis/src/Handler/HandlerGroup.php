@@ -193,7 +193,7 @@ final class HandlerGroup implements Executable
      */
     private static function defaultInvoker(): Closure
     {
-        return static fn(Scopeable|Executable $instance, ExecutionScope $scope): mixed => $instance($scope);
+        return static fn(Scopeable|Executable $instance, ExecutionScope $scope): mixed => $instance->__invoke($scope);
     }
 
     /**

@@ -10,7 +10,7 @@ use Phalanx\Athena\Event\AgentEventKind;
 use Phalanx\Athena\Event\TokenUsage;
 use Phalanx\Athena\Tool\ToolCall;
 use Phalanx\Athena\Tool\ToolCallBag;
-use Phalanx\Scope\Stream\StreamContext;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Styx\Emitter;
 use ReflectionFunction;
 use RuntimeException;
@@ -25,7 +25,7 @@ final readonly class Generation
     }
 
     /** @param ?Closure(AgentEvent): void $onEvent */
-    public static function collect(Emitter $events, StreamContext $ctx, ?Closure $onEvent = null): self
+    public static function collect(Emitter $events, ExecutionScope $ctx, ?Closure $onEvent = null): self
     {
         if ($onEvent !== null && !new ReflectionFunction($onEvent)->isStatic()) {
             throw new RuntimeException(

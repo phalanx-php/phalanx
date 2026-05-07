@@ -10,7 +10,7 @@ use Phalanx\Athena\Event\TokenUsage;
 use Phalanx\Athena\Http\Url;
 use Phalanx\Iris\HttpClient;
 use Phalanx\Iris\HttpRequest;
-use Phalanx\Scope\Stream\StreamContext;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Styx\Channel;
 use Phalanx\Styx\Emitter;
 use RuntimeException;
@@ -40,7 +40,7 @@ final class OllamaProvider implements LlmProvider
 
         return Emitter::produce(static function (
             Channel $channel,
-            StreamContext $ctx,
+            ExecutionScope $ctx,
         ) use (
             $request,
             $config,

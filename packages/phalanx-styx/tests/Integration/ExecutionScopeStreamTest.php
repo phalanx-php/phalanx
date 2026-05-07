@@ -5,26 +5,25 @@ declare(strict_types=1);
 namespace Phalanx\Styx\Tests\Integration;
 
 use Phalanx\Scope\ExecutionScope;
-use Phalanx\Scope\Stream\StreamContext;
 use Phalanx\Styx\Channel;
 use Phalanx\Styx\Emitter;
-use Phalanx\Styx\Tests\Support\AsyncTestCase;
+use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
 
-final class StreamContextWithRealScopeTest extends AsyncTestCase
+final class ExecutionScopeStreamTest extends PhalanxTestCase
 {
     #[Test]
-    public function executionScopeSatisfiesStreamContractContract(): void
+    public function executionScopeIsTheStreamContract(): void
     {
-        $this->runScoped(static function (ExecutionScope $scope): void {
-            self::assertInstanceOf(StreamContext::class, $scope);
+        $this->scope->run(static function (ExecutionScope $scope): void {
+            self::assertInstanceOf(ExecutionScope::class, $scope);
         });
     }
 
     #[Test]
     public function emitterDrivesEndToEndPipelineUnderRealScope(): void
     {
-        $this->runScoped(static function (ExecutionScope $scope): void {
+        $this->scope->run(static function (ExecutionScope $scope): void {
             $emitter = Emitter::produce(static function (Channel $ch): void {
                 foreach (['a', 'b', 'c'] as $val) {
                     $ch->emit($val);

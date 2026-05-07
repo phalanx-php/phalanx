@@ -8,7 +8,6 @@ use Closure;
 use Clue\React\Redis\Client;
 use Clue\React\Redis\Factory as RedisFactory;
 use Phalanx\Scope\ExecutionScope;
-use Phalanx\Scope\Stream\StreamContext;
 use Phalanx\Styx\Channel;
 use Phalanx\Styx\Emitter;
 use Phalanx\Supervisor\WaitReason;
@@ -35,7 +34,7 @@ final class RedisPubSub
         $connString = $this->config->toConnectionString();
         $subscribers = &$this->subscribers;
 
-        return Emitter::produce(static function (Channel $ch, StreamContext $ctx) use ($connString, $channels, &$subscribers): void {
+        return Emitter::produce(static function (Channel $ch, ExecutionScope $ctx) use ($connString, $channels, &$subscribers): void {
             $factory = new RedisFactory();
             $client = $factory->createLazyClient($connString);
             $subscribers[] = $client;
@@ -82,7 +81,11 @@ final class RedisPubSub
                     $child = $child->withAttribute('subscription.message', $item['message']);
                     $child = $child->withAttribute('subscription.channel', $item['channel']);
 
-                    return ($handler)($child);
+                    if ($handler instanceof Closure) {
+                        return $handler($child);
+                    }
+
+                    return $handler->__invoke($child);
                 }));
             } catch (Throwable) {
                 // Individual message failure must not kill the subscription loop.

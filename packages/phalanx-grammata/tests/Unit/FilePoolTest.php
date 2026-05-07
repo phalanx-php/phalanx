@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Grammata\Tests\Unit;
 
 use Phalanx\Grammata\FilePool;
+use Phalanx\Scope\Suspendable;
 use PHPUnit\Framework\TestCase;
 
 final class FilePoolTest extends TestCase
@@ -12,7 +13,7 @@ final class FilePoolTest extends TestCase
     public function test_acquire_within_limit(): void
     {
         $pool = new FilePool(maxOpen: 3);
-        $scope = $this->createStub(\Phalanx\Suspendable::class);
+        $scope = $this->createStub(Suspendable::class);
 
         $pool->acquire($scope);
         $pool->acquire($scope);
@@ -24,7 +25,7 @@ final class FilePoolTest extends TestCase
     public function test_release_decrements(): void
     {
         $pool = new FilePool(maxOpen: 10);
-        $scope = $this->createStub(\Phalanx\Suspendable::class);
+        $scope = $this->createStub(Suspendable::class);
 
         $pool->acquire($scope);
         $pool->acquire($scope);

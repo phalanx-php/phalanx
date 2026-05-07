@@ -7,7 +7,6 @@ namespace Phalanx\Grammata\Task;
 use Phalanx\Grammata\Exception\FilesystemException;
 use Phalanx\Grammata\FilePool;
 use Phalanx\Scope\ExecutionScope;
-use Phalanx\Scope\Stream\StreamContext;
 use Phalanx\Styx\Channel;
 use Phalanx\Styx\Emitter;
 use Phalanx\Task\Executable;
@@ -41,7 +40,7 @@ final readonly class ReadFileStream implements Executable
 
         $path = $this->path;
 
-        return Emitter::produce(static function (Channel $ch, StreamContext $ctx) use ($handle, $path): void {
+        return Emitter::produce(static function (Channel $ch, ExecutionScope $ctx) use ($handle, $path): void {
             while (!feof($handle)) {
                 $ctx->throwIfCancelled();
                 $chunk = @fread($handle, self::CHUNK_BYTES);

@@ -45,7 +45,7 @@ use Throwable;
  *
  * Phase 0+1 surface live: full TaskExecutor (concurrent, race, any, map,
  * series, waterfall, settle, timeout, retry, delay, defer, singleflight)
- * plus Scope/Suspendable/Cancellable/Disposable/StreamContext basics.
+ * plus Scope/Suspendable/Cancellable/Disposable/ExecutionScope basics.
  * inWorker() throws until Phase 4.
  *
  * Cancellation translation (per Phase 0 substrate finding): OpenSwoole's
@@ -941,7 +941,18 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         $supervisor = $this->supervisor;
         $traceLog = $this->traceLog;
 
-        $cid = Coroutine::create(static function () use ($childScope, $fn, $run, $supervisor, $traceLog): void {
+        /** @var Closure(): void $unregisterRunCancel */
+        $unregisterRunCancel = static function (): void {
+        };
+
+        $cid = Coroutine::create(static function () use (
+            $childScope,
+            $fn,
+            $run,
+            $supervisor,
+            $traceLog,
+            &$unregisterRunCancel,
+        ): void {
             CoroutineScopeRegistry::install($childScope);
             $childScope->currentRun = $run;
             $supervisor->markRunning($run);
@@ -964,6 +975,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                     ],
                 );
             } finally {
+                $unregisterRunCancel();
                 $supervisor->reap($run);
                 $childScope->dispose();
                 CoroutineScopeRegistry::clear();
@@ -971,6 +983,14 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         });
 
         if ($cid !== false) {
+            $unregisterRunCancel = $run->cancellation->onCancel(static function () use ($cid): void {
+                if ($cid > 0 && Coroutine::exists($cid)) {
+                    Coroutine::cancel($cid);
+                }
+            });
+            if ($run->cancellation->isCancelled && Coroutine::exists($cid)) {
+                Coroutine::cancel($cid);
+            }
             $this->goSpawns[] = [$cid, $run];
         }
 
@@ -1126,6 +1146,15 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         }
     }
 
+    private static function invokeTask(Scopeable|Executable|Closure $task, self $scope): mixed
+    {
+        if ($task instanceof Closure) {
+            return $task($scope);
+        }
+
+        return $task->__invoke($scope);
+    }
+
     /**
      * Build a sibling-isolated child scope. Child gets:
      *   - own composite cancellation token (linked to parent's as a source)
@@ -1187,7 +1216,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
 
         try {
             $this->supervisor->markRunning($run);
-            $value = ($task)($scope);
+            $value = self::invokeTask($task, $scope);
             $this->supervisor->complete($run, $value);
             return $value;
         } catch (Cancelled $e) {

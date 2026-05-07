@@ -4,21 +4,21 @@ declare(strict_types=1);
 
 namespace Phalanx\Styx\Tests\Unit;
 
-use OpenSwoole\Coroutine;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Styx\Channel;
-use Phalanx\Styx\Tests\Support\AsyncTestCase;
+use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
 use RuntimeException;
 
-final class ChannelTest extends AsyncTestCase
+final class ChannelTest extends PhalanxTestCase
 {
     #[Test]
     public function bufferFillsAndDrains(): void
     {
-        $this->runAsync(function (): void {
+        $this->scope->run(static function (ExecutionScope $scope): void {
             $channel = new Channel(4);
 
-            Coroutine::create(static function () use ($channel): void {
+            $scope->go(static function () use ($channel): void {
                 $channel->emit('a');
                 $channel->emit('b');
                 $channel->emit('c');
@@ -37,10 +37,10 @@ final class ChannelTest extends AsyncTestCase
     #[Test]
     public function completeEndsConsumer(): void
     {
-        $this->runAsync(function (): void {
+        $this->scope->run(static function (ExecutionScope $scope): void {
             $channel = new Channel();
 
-            Coroutine::create(static function () use ($channel): void {
+            $scope->go(static function () use ($channel): void {
                 $channel->emit(1);
                 $channel->emit(2);
                 $channel->complete();
@@ -54,11 +54,11 @@ final class ChannelTest extends AsyncTestCase
     #[Test]
     public function errorThrowsInConsumer(): void
     {
-        $this->runAsync(function (): void {
+        $this->scope->run(static function (ExecutionScope $scope): void {
             $channel = new Channel();
             $exception = new RuntimeException('test error');
 
-            Coroutine::create(static function () use ($channel, $exception): void {
+            $scope->go(static function () use ($channel, $exception): void {
                 $channel->emit('before');
                 $channel->error($exception);
             });
@@ -79,10 +79,10 @@ final class ChannelTest extends AsyncTestCase
     #[Test]
     public function doubleCompleteIsIdempotent(): void
     {
-        $this->runAsync(function (): void {
+        $this->scope->run(static function (ExecutionScope $scope): void {
             $channel = new Channel();
 
-            Coroutine::create(static function () use ($channel): void {
+            $scope->go(static function () use ($channel): void {
                 $channel->emit('x');
                 $channel->complete();
                 $channel->complete();
@@ -96,10 +96,10 @@ final class ChannelTest extends AsyncTestCase
     #[Test]
     public function multiArgEmitStoresAsTuple(): void
     {
-        $this->runAsync(function (): void {
+        $this->scope->run(static function (ExecutionScope $scope): void {
             $channel = new Channel();
 
-            Coroutine::create(static function () use ($channel): void {
+            $scope->go(static function () use ($channel): void {
                 $channel->emit('hello', 42, true);
                 $channel->complete();
             });
@@ -112,10 +112,10 @@ final class ChannelTest extends AsyncTestCase
     #[Test]
     public function singleArgUnwrapped(): void
     {
-        $this->runAsync(function (): void {
+        $this->scope->run(static function (ExecutionScope $scope): void {
             $channel = new Channel();
 
-            Coroutine::create(static function () use ($channel): void {
+            $scope->go(static function () use ($channel): void {
                 $channel->emit('solo');
                 $channel->complete();
             });
@@ -128,7 +128,7 @@ final class ChannelTest extends AsyncTestCase
     #[Test]
     public function isOpenProperty(): void
     {
-        $this->runAsync(function (): void {
+        $this->scope->run(static function (): void {
             $channel = new Channel();
             self::assertTrue($channel->isOpen);
 
@@ -140,7 +140,7 @@ final class ChannelTest extends AsyncTestCase
     #[Test]
     public function isOpenAfterError(): void
     {
-        $this->runAsync(function (): void {
+        $this->scope->run(static function (): void {
             $channel = new Channel();
             self::assertTrue($channel->isOpen);
 
@@ -152,7 +152,7 @@ final class ChannelTest extends AsyncTestCase
     #[Test]
     public function backpressurePauseFires(): void
     {
-        $this->runAsync(function (): void {
+        $this->scope->run(static function (ExecutionScope $scope): void {
             $channel = new Channel(2);
             $pressureLog = [];
 
@@ -160,7 +160,7 @@ final class ChannelTest extends AsyncTestCase
                 $pressureLog[] = $pause ? 'pause' : 'resume';
             });
 
-            Coroutine::create(static function () use ($channel): void {
+            $scope->go(static function () use ($channel): void {
                 $channel->emit('a');
                 $channel->emit('b');
                 $channel->emit('c');
@@ -176,7 +176,7 @@ final class ChannelTest extends AsyncTestCase
     #[Test]
     public function emitAfterCompleteIsIgnored(): void
     {
-        $this->runAsync(function (): void {
+        $this->scope->run(static function (): void {
             $channel = new Channel();
             $channel->complete();
             $channel->emit('ignored');
@@ -189,7 +189,7 @@ final class ChannelTest extends AsyncTestCase
     #[Test]
     public function tryEmitReturnsTrueWhenBufferHasRoom(): void
     {
-        $this->runAsync(function (): void {
+        $this->scope->run(static function (): void {
             $channel = new Channel(bufferSize: 4);
 
             self::assertTrue($channel->tryEmit('a'));
@@ -206,7 +206,7 @@ final class ChannelTest extends AsyncTestCase
     #[Test]
     public function tryEmitReturnsFalseWhenBufferIsFull(): void
     {
-        $this->runAsync(function (): void {
+        $this->scope->run(static function (): void {
             $channel = new Channel(bufferSize: 2);
 
             self::assertTrue($channel->tryEmit('a'));
@@ -223,7 +223,7 @@ final class ChannelTest extends AsyncTestCase
     #[Test]
     public function tryEmitReturnsFalseAfterChannelClosed(): void
     {
-        $this->runAsync(function (): void {
+        $this->scope->run(static function (): void {
             $channel = new Channel();
             $channel->complete();
 
@@ -234,7 +234,7 @@ final class ChannelTest extends AsyncTestCase
     #[Test]
     public function tryEmitReturnsFalseAfterError(): void
     {
-        $this->runAsync(function (): void {
+        $this->scope->run(static function (): void {
             $channel = new Channel();
             $channel->error(new RuntimeException('broken'));
 
@@ -245,7 +245,7 @@ final class ChannelTest extends AsyncTestCase
     #[Test]
     public function tryEmitMultiArgStoresAsTuple(): void
     {
-        $this->runAsync(function (): void {
+        $this->scope->run(static function (): void {
             $channel = new Channel(bufferSize: 4);
 
             $channel->tryEmit('hello', 42, true);
@@ -259,7 +259,7 @@ final class ChannelTest extends AsyncTestCase
     #[Test]
     public function tryEmitDoesNotSuspend(): void
     {
-        $this->runAsync(function (): void {
+        $this->scope->run(static function (): void {
             $channel = new Channel(bufferSize: 1);
 
             self::assertTrue($channel->tryEmit('a'));

@@ -8,7 +8,7 @@ use Phalanx\Athena\AgentResult;
 use Phalanx\Athena\Event\AgentEvent;
 use Phalanx\Athena\Event\AgentEventKind;
 use Phalanx\Athena\Message\Conversation;
-use Phalanx\Scope\Stream\StreamContext;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Styx\Channel;
 use Phalanx\Styx\Emitter;
 
@@ -20,11 +20,11 @@ final class TokenAccumulator
     private function __construct(
         private readonly Emitter $events,
         private readonly Channel $textChannel,
-        private readonly StreamContext $ctx,
+        private readonly ExecutionScope $ctx,
     ) {
     }
 
-    public static function from(Emitter $events, StreamContext $ctx): self
+    public static function from(Emitter $events, ExecutionScope $ctx): self
     {
         $channel = new Channel(bufferSize: 64);
 

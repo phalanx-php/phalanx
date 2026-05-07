@@ -6,7 +6,7 @@ namespace Phalanx\Athena\Stream;
 
 use Generator;
 use Phalanx\Iris\HttpStream;
-use Phalanx\Scope\Stream\StreamContext;
+use Phalanx\Scope\ExecutionScope;
 
 /**
  * Adapts a coroutine-readable {@see HttpStream} into the SSE event
@@ -31,7 +31,7 @@ final class HttpSseSource
     /**
      * @return Generator<int, array{event: ?string, data: string}>
      */
-    public function events(StreamContext $scope): Generator
+    public function events(ExecutionScope $scope): Generator
     {
         $parser = new SseParser();
         while (!$this->stream->eof) {

@@ -105,7 +105,8 @@ final class Channel
                 return;
             }
 
-            if ($this->paused
+            if (
+                $this->paused
                 && $this->pressureCallback !== null
                 && $this->chan->length() <= $halfFull
             ) {
@@ -126,7 +127,8 @@ final class Channel
 
     private function firePauseIfFilling(): void
     {
-        if ($this->paused
+        if (
+            $this->paused
             || $this->pressureCallback === null
             || $this->chan->length() < $this->bufferSize - 1
         ) {

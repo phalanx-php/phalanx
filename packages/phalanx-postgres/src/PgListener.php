@@ -6,8 +6,8 @@ namespace Phalanx\Postgres;
 
 use Amp\Postgres\PostgresListener as AmphpListener;
 use Amp\Postgres\PostgresNotification;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Styx\Channel;
-use Phalanx\Scope\Stream\StreamContext;
 use Phalanx\Styx\Emitter;
 
 final class PgListener
@@ -23,7 +23,7 @@ final class PgListener
         $pool = $this->pool;
         $listeners = &$this->listeners;
 
-        return Emitter::produce(static function (Channel $ch, StreamContext $ctx) use ($pool, $channel, &$listeners): void {
+        return Emitter::produce(static function (Channel $ch, ExecutionScope $ctx) use ($pool, $channel, &$listeners): void {
             $listener = $pool->listen($channel);
             $listeners[$channel] = $listener;
 

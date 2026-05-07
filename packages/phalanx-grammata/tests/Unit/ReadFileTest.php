@@ -6,6 +6,7 @@ namespace Phalanx\Grammata\Tests\Unit;
 
 use Phalanx\Grammata\Exception\FilesystemException;
 use Phalanx\Grammata\Task\ReadFile;
+use Phalanx\Scope\ExecutionScope;
 use PHPUnit\Framework\TestCase;
 
 final class ReadFileTest extends TestCase
@@ -17,8 +18,7 @@ final class ReadFileTest extends TestCase
 
         try {
             $task = new ReadFile($tmpFile);
-            /** @var \Phalanx\ExecutionScope&\PHPUnit\Framework\MockObject\MockObject $scope */
-            $scope = $this->createMock(\Phalanx\ExecutionScope::class);
+            $scope = $this->createStub(ExecutionScope::class);
             $result = $task($scope);
 
             $this->assertSame('hello world', $result);
@@ -32,8 +32,7 @@ final class ReadFileTest extends TestCase
         $this->expectException(FilesystemException::class);
 
         $task = new ReadFile('/nonexistent/path/file.txt');
-        /** @var \Phalanx\ExecutionScope&\PHPUnit\Framework\MockObject\MockObject $scope */
-        $scope = $this->createMock(\Phalanx\ExecutionScope::class);
+        $scope = $this->createStub(ExecutionScope::class);
         $task($scope);
     }
 }

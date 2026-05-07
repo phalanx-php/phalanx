@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Phalanx\Handler;
 
+use Closure;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
+use RuntimeException;
 
 /**
  * Wraps a handler task with a non-empty middleware chain.
@@ -42,15 +44,20 @@ final readonly class MiddlewareWrapper implements Executable
 
     /**
      * @param list<object> $middleware
-     * @return \Closure(ExecutionScope): mixed
+     * @return Closure(ExecutionScope): mixed
      */
-    private function buildStack(Scopeable|Executable $handler, array $middleware): \Closure
+    private function buildStack(Scopeable|Executable $handler, array $middleware): Closure
     {
-        $next = static fn(ExecutionScope $scope): mixed => $handler($scope);
+        $next = static fn(ExecutionScope $scope): mixed => $handler->__invoke($scope);
 
         foreach (array_reverse($middleware) as $mw) {
+            if (!is_callable($mw)) {
+                throw new RuntimeException($mw::class . ' middleware must be invokable.');
+            }
+
+            $middlewareCallable = Closure::fromCallable($mw);
             $current = $next;
-            $next = static fn(ExecutionScope $scope): mixed => $mw($scope, $current);
+            $next = static fn(ExecutionScope $scope): mixed => $middlewareCallable($scope, $current);
         }
 
         return $next;

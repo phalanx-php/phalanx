@@ -5,10 +5,9 @@ declare(strict_types=1);
 namespace Phalanx\Scope;
 
 use Closure;
-use Phalanx\Scope\Stream\StreamContext;
 use Phalanx\Supervisor\TransactionLease;
 
-interface ExecutionScope extends TaskScope, TaskExecutor, StreamContext
+interface ExecutionScope extends TaskScope, TaskExecutor
 {
     public function withAttribute(string $key, mixed $value): ExecutionScope;
 

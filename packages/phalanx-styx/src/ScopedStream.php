@@ -6,7 +6,6 @@ namespace Phalanx\Styx;
 
 use Closure;
 use Phalanx\Scope\ExecutionScope;
-use Phalanx\Scope\Stream\StreamContext;
 use Phalanx\Scope\Stream\StreamSource;
 use Phalanx\Styx\Terminal\Collect;
 use Phalanx\Styx\Terminal\Drain;
@@ -17,16 +16,16 @@ final class ScopedStream
 {
     private readonly Emitter $emitter;
 
-    /** @param StreamSource<mixed>|Closure(Channel, StreamContext): void $source */
+    /** @param StreamSource<mixed>|Closure(Channel, ExecutionScope): void $source */
     public function __construct(
         StreamSource|Closure $source,
-        private readonly StreamContext $ctx,
+        private readonly ExecutionScope $scope,
     ) {
         $this->emitter = match (true) {
             $source instanceof Emitter => $source,
             $source instanceof StreamSource => Emitter::produce(
-                static function (Channel $ch, StreamContext $ctx) use ($source): void {
-                    foreach ($source($ctx) as $value) {
+                static function (Channel $ch, ExecutionScope $scope) use ($source): void {
+                    foreach ($source($scope) as $value) {
                         $ch->emit($value);
                     }
                 },
@@ -35,7 +34,7 @@ final class ScopedStream
         };
     }
 
-    /** @param StreamSource<mixed>|Closure(Channel, StreamContext): void $source */
+    /** @param StreamSource<mixed>|Closure(Channel, ExecutionScope): void $source */
     public static function from(ExecutionScope $scope, StreamSource|Closure $source): self
     {
         return new self($source, $scope);
@@ -44,85 +43,85 @@ final class ScopedStream
     /** @param Closure(mixed): mixed $fn */
     public function map(Closure $fn): self
     {
-        return new self($this->emitter->map($fn), $this->ctx);
+        return new self($this->emitter->map($fn), $this->scope);
     }
 
     /** @param Closure(mixed): bool $predicate */
     public function filter(Closure $predicate): self
     {
-        return new self($this->emitter->filter($predicate), $this->ctx);
+        return new self($this->emitter->filter($predicate), $this->scope);
     }
 
     public function take(int $n): self
     {
-        return new self($this->emitter->take($n), $this->ctx);
+        return new self($this->emitter->take($n), $this->scope);
     }
 
     public function throttle(float $seconds): self
     {
-        return new self($this->emitter->throttle($seconds), $this->ctx);
+        return new self($this->emitter->throttle($seconds), $this->scope);
     }
 
     public function debounce(float $seconds): self
     {
-        return new self($this->emitter->debounce($seconds), $this->ctx);
+        return new self($this->emitter->debounce($seconds), $this->scope);
     }
 
     public function bufferWindow(int $count, float $seconds): self
     {
-        return new self($this->emitter->bufferWindow($count, $seconds), $this->ctx);
+        return new self($this->emitter->bufferWindow($count, $seconds), $this->scope);
     }
 
     public function merge(Emitter ...$others): self
     {
-        return new self($this->emitter->merge(...$others), $this->ctx);
+        return new self($this->emitter->merge(...$others), $this->scope);
     }
 
     public function distinct(): self
     {
-        return new self($this->emitter->distinct(), $this->ctx);
+        return new self($this->emitter->distinct(), $this->scope);
     }
 
     /** @param Closure(mixed): mixed $keyFn */
     public function distinctBy(Closure $keyFn): self
     {
-        return new self($this->emitter->distinctBy($keyFn), $this->ctx);
+        return new self($this->emitter->distinctBy($keyFn), $this->scope);
     }
 
     public function sample(float $seconds): self
     {
-        return new self($this->emitter->sample($seconds), $this->ctx);
+        return new self($this->emitter->sample($seconds), $this->scope);
     }
 
-    /** @param Closure(StreamContext): void $fn */
+    /** @param Closure(ExecutionScope): void $fn */
     public function onStart(Closure $fn): self
     {
         $this->emitter->onStart($fn);
         return $this;
     }
 
-    /** @param Closure(mixed, StreamContext): void $fn */
+    /** @param Closure(mixed, ExecutionScope): void $fn */
     public function onEach(Closure $fn): self
     {
         $this->emitter->onEach($fn);
         return $this;
     }
 
-    /** @param Closure(\Throwable, StreamContext): void $fn */
+    /** @param Closure(\Throwable, ExecutionScope): void $fn */
     public function onError(Closure $fn): self
     {
         $this->emitter->onError($fn);
         return $this;
     }
 
-    /** @param Closure(StreamContext): void $fn */
+    /** @param Closure(ExecutionScope): void $fn */
     public function onComplete(Closure $fn): self
     {
         $this->emitter->onComplete($fn);
         return $this;
     }
 
-    /** @param Closure(StreamContext): void $fn */
+    /** @param Closure(ExecutionScope): void $fn */
     public function onDispose(Closure $fn): self
     {
         $this->emitter->onDispose($fn);
@@ -131,23 +130,23 @@ final class ScopedStream
 
     public function consume(): void
     {
-        (new Drain($this->emitter))($this->ctx);
+        (new Drain($this->emitter))($this->scope);
     }
 
     /** @return list<mixed> */
     public function toArray(): array
     {
-        return (new Collect($this->emitter))($this->ctx);
+        return (new Collect($this->emitter))($this->scope);
     }
 
     /** @param Closure(mixed, mixed): mixed $fn */
     public function reduce(Closure $fn, mixed $initial = null): mixed
     {
-        return (new Reduce($this->emitter, $fn, $initial))($this->ctx);
+        return (new Reduce($this->emitter, $fn, $initial))($this->scope);
     }
 
     public function first(): mixed
     {
-        return (new First($this->emitter))($this->ctx);
+        return (new First($this->emitter))($this->scope);
     }
 }
