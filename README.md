@@ -55,6 +55,22 @@ Every unit of work in Phalanx executes inside an owned `Scope`. This is the prot
 
 You don't manage fibers or pools. You use the narrowest scope interface you need and let Aegis handle the rest.
 
+### Migrated packages (0.2 so far)
+
+| Package        | What it gives you |
+|----------------|-------------------|
+| phalanx-aegis  | The Scope contract + task supervision, cancellation, services, concurrency primitives |
+| phalanx-stoa   | HTTP server, routing, middleware, request lifecycle |
+| phalanx-archon | CLI commands with the exact same Scope surface |
+| phalanx-hermes | WebSocket connection & session management |
+| phalanx-styx   | Backpressure streams, emitters, channels |
+| phalanx-athena | AI agents, tool use, streaming, provider limits |
+| phalanx-postgres | Native async Postgres + pools + transactions |
+| phalanx-redis  | Async Redis client with managed pools |
+| phalanx-grammata | Safe concurrent file operations |
+
+Everything else (TUI, workers, additional protocols) is in flight.
+
 ### Why Phalanx exists
 
 Most developers want concurrent HTTP, realtime WebSockets, parallel workers, streaming responses, and AI agent loops in their PHP apps — without hiring a runtime specialist or debugging reference cycles at 3am.
