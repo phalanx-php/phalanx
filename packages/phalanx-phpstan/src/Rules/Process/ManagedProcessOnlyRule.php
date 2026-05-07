@@ -7,6 +7,7 @@ namespace Phalanx\PHPStan\Rules\Process;
 use PhpParser\Node;
 use PhpParser\Node\Expr\FuncCall;
 use PhpParser\Node\Expr\New_;
+use PhpParser\Node\Expr\StaticCall;
 use Phalanx\PHPStan\Support\NodeNames;
 use Phalanx\PHPStan\Support\PathPolicy;
 use Phalanx\PHPStan\Support\RuleErrors;
@@ -28,6 +29,16 @@ final class ManagedProcessOnlyRule implements Rule
         'proc_close',
         'proc_get_status',
         'proc_terminate',
+    ];
+
+    /** @var list<string> */
+    private const FORBIDDEN_PROCESS_CLASSES = [
+        'OpenSwoole\\Core\\Process\\Manager',
+        'OpenSwoole\\Process',
+        'OpenSwoole\\Process\\Pool',
+        'Swoole\\Process',
+        'Swoole\\Process\\Pool',
+        'Symfony\\Component\\Process\\Process',
     ];
 
     private readonly ScopedRulePolicy $policy;
@@ -62,6 +73,10 @@ final class ManagedProcessOnlyRule implements Rule
             return $this->processNew($node, $scope);
         }
 
+        if ($node instanceof StaticCall) {
+            return $this->processStaticCall($node, $scope);
+        }
+
         return [];
     }
 
@@ -84,11 +99,25 @@ final class ManagedProcessOnlyRule implements Rule
     private function processNew(New_ $node, Scope $scope): array
     {
         $class = NodeNames::newClassName($node, $scope);
-        if ($class !== 'Symfony\\Component\\Process\\Process') {
+        if ($class === null || !in_array($class, self::FORBIDDEN_PROCESS_CLASSES, true)) {
             return [];
         }
 
-        return $this->error('Symfony Process construction', $node->getLine());
+        return $this->error($class . ' construction', $node->getLine());
+    }
+
+    /**
+     * @return list<IdentifierRuleError>
+     */
+    private function processStaticCall(StaticCall $node, Scope $scope): array
+    {
+        $class = NodeNames::calledClassName($node, $scope);
+        $method = NodeNames::calledMethodName($node);
+        if ($class !== 'Symfony\\Component\\Process\\Process' || $method !== 'fromShellCommandline') {
+            return [];
+        }
+
+        return $this->error($class . '::' . $method . '()', $node->getLine());
     }
 
     /**

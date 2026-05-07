@@ -19,7 +19,6 @@ final class ScopedRulePolicy
             return false;
         }
 
-        return !$this->paths->isInternal($file)
-            && !$this->paths->matches($file, $this->internalPaths);
+        return !$this->paths->matches($file, $this->internalPaths);
     }
 }

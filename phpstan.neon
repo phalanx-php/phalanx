@@ -38,6 +38,7 @@ parameters:
         - packages/phalanx-aegis/src/Runtime/RuntimePolicy.php
     phalanxProcessInternalPaths:
         - packages/phalanx-aegis/src/System/Internal/SymfonyProcessAdapter.php
+        - packages/phalanx-hydra/src/WorkerPool/WorkerPool.php
     phalanxCoroutineInternalPaths:
         - packages/phalanx-aegis/src/Scope/ExecutionLifecycleScope.php
         - packages/phalanx-styx/src/Emitter.php

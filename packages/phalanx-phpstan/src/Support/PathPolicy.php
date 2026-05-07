@@ -61,6 +61,10 @@ final class PathPolicy
                 return true;
             }
 
+            if (str_starts_with($normalizedFile, rtrim($normalizedPath, '/') . '/')) {
+                return true;
+            }
+
             if (str_ends_with($normalizedFile, '/' . $normalizedPath)) {
                 return true;
             }

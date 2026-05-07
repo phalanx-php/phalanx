@@ -19,6 +19,16 @@ final class RuntimeRiskScanner
     ];
 
     /** @var list<string> */
+    private const PROCESS_CLASSES = [
+        'OpenSwoole\\Core\\Process\\Manager',
+        'OpenSwoole\\Process',
+        'OpenSwoole\\Process\\Pool',
+        'Swoole\\Process',
+        'Swoole\\Process\\Pool',
+        'Symfony\\Component\\Process\\Process',
+    ];
+
+    /** @var list<string> */
     private const STREAM_FUNCTIONS = [
         'fopen',
         'fread',
@@ -61,6 +71,7 @@ final class RuntimeRiskScanner
         }
 
         $tokens = token_get_all($source);
+        $aliases = $this->aliases($tokens);
         $risks = [];
 
         foreach ($tokens as $i => $token) {
@@ -70,12 +81,12 @@ final class RuntimeRiskScanner
 
             [$id, $text, $line] = $token;
             if ($id === T_STRING) {
-                array_push($risks, ...$this->processStringToken($tokens, $i, $text, $file, $line));
+                array_push($risks, ...$this->processStringToken($tokens, $i, $text, $file, $line, $aliases));
                 continue;
             }
 
             if ($id === T_NEW) {
-                $risk = $this->processNewToken($tokens, $i, $file, $line);
+                $risk = $this->processNewToken($tokens, $i, $file, $line, $aliases);
                 if ($risk !== null) {
                     $risks[] = $risk;
                 }
@@ -83,7 +94,7 @@ final class RuntimeRiskScanner
             }
 
             if ($id === T_NAME_QUALIFIED || $id === T_NAME_FULLY_QUALIFIED) {
-                array_push($risks, ...$this->processQualifiedName($tokens, $i, $text, $file, $line));
+                array_push($risks, ...$this->processQualifiedName($tokens, $i, $text, $file, $line, $aliases));
             }
         }
 
@@ -92,9 +103,10 @@ final class RuntimeRiskScanner
 
     /**
      * @param array<int, mixed> $tokens
+     * @param array<string, string> $aliases
      * @return list<RuntimeRisk>
      */
-    private function processStringToken(array $tokens, int $i, string $text, string $file, int $line): array
+    private function processStringToken(array $tokens, int $i, string $text, string $file, int $line, array $aliases): array
     {
         if (str_starts_with($text, 'SWOOLE_HOOK_')) {
             return [new RuntimeRisk('runtime_hooks', $text, $file, $line)];
@@ -112,7 +124,7 @@ final class RuntimeRiskScanner
         }
 
         if ($this->isStaticAccess($tokens, $i)) {
-            return $this->processStaticAccess($tokens, $i, $text, $file, $line);
+            return $this->processStaticAccess($tokens, $i, $text, $file, $line, $aliases);
         }
 
         return [];
@@ -120,9 +132,10 @@ final class RuntimeRiskScanner
 
     /**
      * @param array<int, mixed> $tokens
+     * @param array<string, string> $aliases
      * @return list<RuntimeRisk>
      */
-    private function processQualifiedName(array $tokens, int $i, string $text, string $file, int $line): array
+    private function processQualifiedName(array $tokens, int $i, string $text, string $file, int $line, array $aliases): array
     {
         if (str_starts_with(ltrim($text, '\\'), 'React\\')
             || str_starts_with(ltrim($text, '\\'), 'Amp\\')
@@ -132,22 +145,25 @@ final class RuntimeRiskScanner
         }
 
         if ($this->isStaticAccess($tokens, $i)) {
-            return $this->processStaticAccess($tokens, $i, $text, $file, $line);
+            return $this->processStaticAccess($tokens, $i, $text, $file, $line, $aliases);
         }
 
         return [];
     }
 
-    /** @param array<int, mixed> $tokens */
-    private function processNewToken(array $tokens, int $i, string $file, int $line): ?RuntimeRisk
+    /**
+     * @param array<int, mixed> $tokens
+     * @param array<string, string> $aliases
+     */
+    private function processNewToken(array $tokens, int $i, string $file, int $line, array $aliases): ?RuntimeRisk
     {
         $class = $this->nextName($tokens, $i);
         if ($class === null) {
             return null;
         }
 
-        $trimmed = ltrim($class, '\\');
-        if ($trimmed === 'Symfony\\Component\\Process\\Process' || $trimmed === 'Process') {
+        $trimmed = $this->resolveAlias($class, $aliases);
+        if (in_array($trimmed, self::PROCESS_CLASSES, true) || $trimmed === 'Process') {
             return new RuntimeRisk('process', 'new ' . $trimmed, $file, $line);
         }
 
@@ -163,16 +179,18 @@ final class RuntimeRiskScanner
 
     /**
      * @param array<int, mixed> $tokens
+     * @param array<string, string> $aliases
      * @return list<RuntimeRisk>
      */
-    private function processStaticAccess(array $tokens, int $i, string $class, string $file, int $line): array
+    private function processStaticAccess(array $tokens, int $i, string $class, string $file, int $line, array $aliases): array
     {
         $member = $this->staticMember($tokens, $i);
         if ($member === null) {
             return [];
         }
 
-        $classBase = $this->basename($class);
+        $resolvedClass = $this->resolveAlias($class, $aliases);
+        $classBase = $this->basename($resolvedClass);
         if ($classBase === 'Runtime' && ($member === 'enableCoroutine' || str_starts_with($member, 'HOOK_'))) {
             return [new RuntimeRisk('runtime_hooks', $class . '::' . $member, $file, $line)];
         }
@@ -183,6 +201,10 @@ final class RuntimeRiskScanner
 
         if ($classBase === 'Coroutine' && $member === 'create') {
             return [new RuntimeRisk('raw_coroutine_spawn', $class . '::create', $file, $line)];
+        }
+
+        if ($classBase === 'Process' && $member === 'fromShellCommandline') {
+            return [new RuntimeRisk('process', $resolvedClass . '::fromShellCommandline', $file, $line)];
         }
 
         return [];
@@ -308,6 +330,55 @@ final class RuntimeRiskScanner
     {
         return is_array($token)
             && in_array($token[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true);
+    }
+
+    /**
+     * @param array<int, mixed> $tokens
+     * @return array<string, string>
+     */
+    private function aliases(array $tokens): array
+    {
+        $aliases = [];
+
+        foreach ($tokens as $i => $token) {
+            if (!is_array($token) || $token[0] !== T_USE || $this->nextSignificant($tokens, $i) === '(') {
+                continue;
+            }
+
+            $nameIndex = $this->nextSignificantIndex($tokens, $i);
+            if ($nameIndex === null || !is_array($tokens[$nameIndex])) {
+                continue;
+            }
+
+            [$id, $name] = $tokens[$nameIndex];
+            if ($id !== T_NAME_QUALIFIED && $id !== T_NAME_FULLY_QUALIFIED) {
+                continue;
+            }
+
+            $alias = $this->basename($name);
+            $afterName = $this->nextSignificantIndex($tokens, $nameIndex);
+            if ($afterName !== null && is_array($tokens[$afterName]) && $tokens[$afterName][0] === T_AS) {
+                $aliasIndex = $this->nextSignificantIndex($tokens, $afterName);
+                if ($aliasIndex !== null && is_array($tokens[$aliasIndex]) && $tokens[$aliasIndex][0] === T_STRING) {
+                    $alias = $tokens[$aliasIndex][1];
+                }
+            }
+
+            $aliases[$alias] = ltrim($name, '\\');
+        }
+
+        return $aliases;
+    }
+
+    /** @param array<string, string> $aliases */
+    private function resolveAlias(string $name, array $aliases): string
+    {
+        $trimmed = ltrim($name, '\\');
+        if (str_contains($trimmed, '\\')) {
+            return $trimmed;
+        }
+
+        return $aliases[$trimmed] ?? $trimmed;
     }
 
     private function basename(string $name): string

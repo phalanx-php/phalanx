@@ -108,20 +108,33 @@ final class InWorkerTest extends AsyncTestCase
     public function drainsWorkerStderrWithoutPoisoningNextDispatch(): void
     {
         $app = $this->buildApp(new ParallelConfig(agents: 1));
+        $stderrLog = tempnam(sys_get_temp_dir(), 'phalanx-worker-stderr-');
+
+        self::assertIsString($stderrLog);
+
+        $previousErrorLog = ini_get('error_log');
+        ini_set('error_log', $stderrLog);
 
         try {
-            $this->runAsync(static function () use ($app): void {
-                $scope = $app->createScope();
+            try {
+                $this->runAsync(static function () use ($app): void {
+                    $scope = $app->createScope();
 
-                try {
-                    self::assertSame('stderr-drained', $scope->inWorker(new WorkerStderrTask('athena-warning')));
-                    self::assertSame(5, $scope->inWorker(new AddNumbers(2, 3)));
-                } finally {
-                    $scope->dispose();
-                }
-            });
+                    try {
+                        self::assertSame('stderr-drained', $scope->inWorker(new WorkerStderrTask('athena-warning')));
+                        self::assertSame(5, $scope->inWorker(new AddNumbers(2, 3)));
+                    } finally {
+                        $scope->dispose();
+                    }
+                });
+            } finally {
+                $app->shutdown();
+            }
+
+            self::assertStringContainsString('athena-warning', file_get_contents($stderrLog) ?: '');
         } finally {
-            $app->shutdown();
+            ini_set('error_log', is_string($previousErrorLog) ? $previousErrorLog : '');
+            unlink($stderrLog);
         }
     }
 

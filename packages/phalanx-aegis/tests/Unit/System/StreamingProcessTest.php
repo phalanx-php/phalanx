@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Tests\Unit\System;
 
-use Phalanx\Runtime\Identity\AegisAnnotationSid;
-use Phalanx\Runtime\Identity\AegisEventSid;
 use Phalanx\Runtime\Identity\AegisResourceSid;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\System\StreamingProcess;
@@ -14,7 +12,7 @@ use Phalanx\Testing\PhalanxTestCase;
 
 /**
  * Mechanism proof for the new OpenSwoole + Symfony Process based StreamingProcess.
- * Old 0.1 rich API (readLine, wait, writeLine, etc.) has been dropped.
+ * The public surface is an Aegis-owned process resource plus a streaming handle.
  */
 final class StreamingProcessTest extends PhalanxTestCase
 {
@@ -103,6 +101,7 @@ final class StreamingProcessTest extends PhalanxTestCase
                 'fwrite(STDERR, "athena"); fflush(STDERR);',
             )->start($scope);
 
+            $handle->wait(1.0);
             $first = $handle->readError(3, 1.0);
             $second = $handle->readError(8, 1.0);
             $handle->close('test-stderr-chunks');
@@ -130,19 +129,43 @@ final class StreamingProcessTest extends PhalanxTestCase
     public function testReadLineTimeoutReturnsEmptyWithoutBlockingScheduler(): void
     {
         $result = $this->scope->run(static function (ExecutionScope $scope): array {
-            $started = microtime(true);
             $handle = StreamingProcess::from(PHP_BINARY, '-r', 'usleep(200000); fwrite(STDOUT, "late\n");')->start($scope);
+            $schedulerAdvanced = false;
 
-            $line = $handle->readLine(0.01);
-            $elapsed = microtime(true) - $started;
+            $scope->go(static function (ExecutionScope $childScope) use (&$schedulerAdvanced): void {
+                $childScope->delay(0.005);
+                $schedulerAdvanced = true;
+            }, 'streaming-process-timeout-probe');
+
+            $line = $handle->readLine(0.05);
             $handle->close('test-read-timeout');
 
-            return [$line, $elapsed < 0.15, $scope->runtime->memory->resources->liveCount(AegisResourceSid::StreamingProcess)];
+            return [$line, $schedulerAdvanced, $scope->runtime->memory->resources->liveCount(AegisResourceSid::StreamingProcess)];
         });
 
         self::assertSame('', $result[0]);
         self::assertTrue($result[1]);
         self::assertSame(0, $result[2]);
+    }
+
+    public function testWaitWithoutTimeoutDoesNotBlockScheduler(): void
+    {
+        $result = $this->scope->run(static function (ExecutionScope $scope): array {
+            $handle = StreamingProcess::from(PHP_BINARY, '-r', 'usleep(50000);')->start($scope);
+            $schedulerAdvanced = false;
+
+            $scope->go(static function (ExecutionScope $childScope) use (&$schedulerAdvanced): void {
+                $childScope->delay(0.005);
+                $schedulerAdvanced = true;
+            }, 'streaming-process-wait-probe');
+
+            $exitCode = $handle->wait();
+            $handle->close('test-wait-null');
+
+            return [$exitCode, $schedulerAdvanced, $scope->runtime->memory->resources->liveCount(AegisResourceSid::StreamingProcess)];
+        });
+
+        self::assertSame([0, true, 0], $result);
     }
 
     public function testWaitTimeoutStopAndCloseAreCleanupSafe(): void

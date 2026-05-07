@@ -13,6 +13,8 @@ use Phalanx\Runtime\RuntimeHookSnapshot;
 use Phalanx\Runtime\RuntimeHooks;
 use Phalanx\Runtime\RuntimePolicy;
 use Phalanx\Scope\ScopeIdentity;
+use PHPUnit\Framework\Attributes\PreserveGlobalState;
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 
 final class RuntimePolicyTest extends TestCase
@@ -89,6 +91,8 @@ final class RuntimePolicyTest extends TestCase
         ]);
     }
 
+    #[PreserveGlobalState(false)]
+    #[RunInSeparateProcess]
     public function testBuilderRuntimePolicyOverrideWinsOverInvalidContext(): void
     {
         $app = Application::starting([
@@ -114,6 +118,8 @@ final class RuntimePolicyTest extends TestCase
         ])->compile();
     }
 
+    #[PreserveGlobalState(false)]
+    #[RunInSeparateProcess]
     public function testRuntimeHooksEnsureIsIdempotentAndPreservesExistingFlags(): void
     {
         $before = RuntimeHooks::currentFlags();

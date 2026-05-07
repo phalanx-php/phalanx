@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\PHPStan\Tests\Audit\Fixtures;
 
+use OpenSwoole\Core\Process\Manager;
 use OpenSwoole\Coroutine;
 use OpenSwoole\Coroutine\Channel;
 use OpenSwoole\Runtime;
@@ -24,6 +25,11 @@ final class RuntimeRiskFixture
 
         new Channel();
         new Process(['php', '-v']);
+        Process::fromShellCommandline('php -v');
+        new \OpenSwoole\Process(static function (): void {
+        });
+        new \OpenSwoole\Process\Pool(1);
+        new Manager();
         Loop::get();
     }
 }

@@ -156,18 +156,17 @@ final class StreamingProcessHandle
 
     public function wait(?float $timeout = null): ?int
     {
-        if ($timeout !== null) {
-            $deadline = microtime(true) + max(0.0, $timeout);
-            while ($this->isRunning() && !self::timedOut($deadline)) {
-                $this->pause($deadline);
-            }
-
-            if ($this->isRunning()) {
-                return null;
-            }
+        $deadline = self::deadline($timeout);
+        while ($this->isRunning() && !self::timedOut($deadline)) {
+            $this->scope->throwIfCancelled();
+            $this->pause($deadline);
         }
 
-        return $this->adapter->wait();
+        if ($this->isRunning()) {
+            return null;
+        }
+
+        return $this->adapter->getExitCode() ?? $this->exitCodeFromSignal() ?? 0;
     }
 
     private static function deadline(?float $timeout): ?float
@@ -238,6 +237,12 @@ final class StreamingProcessHandle
         $this->stderrBuffer = substr($this->stderrBuffer, strlen($chunk));
 
         return $chunk;
+    }
+
+    private function exitCodeFromSignal(): ?int
+    {
+        $signal = $this->adapter->getTermSignal();
+        return $signal === null ? null : 128 + $signal;
     }
 
     private function pause(?float $deadline): void
