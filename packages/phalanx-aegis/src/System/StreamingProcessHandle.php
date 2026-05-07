@@ -121,27 +121,28 @@ final class StreamingProcessHandle
         Channel $channel,
         ?callable $transformer = null
     ): TaskRun {
-        // Synchronous drain within the task for initial stability
-        $this->wait();
+        $self = $this;
 
-        $chunk = $this->getIncrementalOutput();
-        if ($chunk !== '') {
-            $lines = $transformer ? $transformer($chunk) : explode("\n", $chunk);
-            foreach ($lines as $line) {
-                if ($line !== '') {
-                    $channel->emit($line);
-                }
-            }
-        }
+        // Debug logging directly in the target logic
+        echo "[pipeToChannel] Starting reader task for pid=" . $this->pid . "\n";
 
-        $channel->complete();
+        $reader = function (ExecutionScope $scope) use ($self, $channel, $transformer): void {
+            echo "[pipeToChannel] Reader task started\n";
 
-        // Return a completed task run
-        return $this->scope->execute(static fn() => null);
-    }
+            while ($self->isRunning()) {
+                $chunk = $self->getIncrementalOutput();
+                if ($chunk !== '') {
+                    $lines = $transformer ? $transformer($chunk) : explode("\n", $chunk);
+                    foreach ($lines as $line) {
+                        if ($line !== '') {
+                            echo "[pipeToChannel] Emitting line: " . substr($line, 0, 50) . "\n";
+                            $channel->emit($line);
+                        }
                     }
                 }
-                $scope->call(static fn() => true); // cooperative yield
+
+                // Cooperative yield
+                $scope->call(static fn() => usleep(2_000));
             }
 
             // Final drain
@@ -155,7 +156,11 @@ final class StreamingProcessHandle
                 }
             }
 
+            echo "[pipeToChannel] Reader finished. Completing channel.\n";
             $channel->complete();
+
+            // Final cooperative yield
+            $scope->call(static fn() => true);
         };
 
         return $this->scope->execute($reader);
