@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Redis;
 
 use Closure;
-use Clue\React\Redis\Client;
-use Clue\React\Redis\Factory as RedisFactory;
+use Phalanx\Cancellation\Cancelled;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Styx\Channel;
 use Phalanx\Styx\Emitter;
@@ -14,14 +13,11 @@ use Phalanx\Supervisor\WaitReason;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 use Phalanx\Task\Task;
-use React\Promise\Deferred;
 use Throwable;
-
-use function React\Async\await;
 
 final class RedisPubSub
 {
-    /** @var list<Client> */
+    /** @var list<\Redis> */
     private array $subscribers = [];
 
     public function __construct(
@@ -31,41 +27,45 @@ final class RedisPubSub
 
     public function subscribe(string ...$channels): Emitter
     {
-        $connString = $this->config->toConnectionString();
-        $subscribers = &$this->subscribers;
+        $config = $this->config;
+        $subs = &$this->subscribers;
 
-        return Emitter::produce(static function (Channel $ch, ExecutionScope $ctx) use ($connString, $channels, &$subscribers): void {
-            $factory = new RedisFactory();
-            $client = $factory->createLazyClient($connString);
-            $subscribers[] = $client;
-            $done = new Deferred();
+        $producer = static function (
+            Channel $ch,
+            ExecutionScope $ctx,
+        ) use (
+            $config,
+            $channels,
+            &$subs,
+        ): void {
+            $client = RedisClientFactory::connect($config);
+            $subs[] = $client;
 
-            $client->on('message', static function (string $channel, string $message) use ($ch): void {
-                $ch->emit(['channel' => $channel, 'message' => $message]);
-            });
-
-            $client->on('error', static function (Throwable $e) use ($ch): void {
-                $ch->error($e);
-            });
-
-            $client->on('close', static function () use ($done): void {
-                $done->resolve(null);
-            });
-
-            $ctx->onDispose(static function () use ($client, $done): void {
+            $ctx->onDispose(static function () use ($client): void {
                 $client->close();
-                $done->resolve(null);
             });
 
-            foreach ($channels as $channel) {
-                $client->__call('subscribe', [$channel]);
+            try {
+                $ctx->call(
+                    static fn(): mixed => $client->subscribe(
+                        $channels,
+                        static function (\Redis $redis, string $channel, string $message) use ($ch): void {
+                            $ch->emit(['channel' => $channel, 'message' => $message]);
+                        },
+                    ),
+                    WaitReason::redis('subscribe'),
+                );
+            } finally {
+                $client->close();
+                $index = array_search($client, $subs, true);
+                if ($index !== false) {
+                    unset($subs[$index]);
+                    $subs = array_values($subs);
+                }
             }
+        };
 
-            $ctx->call(
-                static fn(): mixed => await($done->promise()),
-                WaitReason::redis('subscribe'),
-            );
-        });
+        return Emitter::produce($producer);
     }
 
     public function subscribeEach(
@@ -87,9 +87,10 @@ final class RedisPubSub
 
                     return $handler->__invoke($child);
                 }));
-            } catch (Throwable) {
-                // Individual message failure must not kill the subscription loop.
-                // Callers needing error visibility should use subscribe() directly.
+            } catch (Throwable $e) {
+                if ($e instanceof Cancelled) {
+                    throw $e;
+                }
             }
         }
     }

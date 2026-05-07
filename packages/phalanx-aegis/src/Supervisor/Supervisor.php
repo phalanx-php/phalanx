@@ -395,6 +395,7 @@ final class Supervisor
         return match ($reason->kind) {
             WaitKind::Http,
             WaitKind::Redis,
+            WaitKind::Surreal,
             WaitKind::Worker,
             WaitKind::Process,
             WaitKind::StreamWrite,

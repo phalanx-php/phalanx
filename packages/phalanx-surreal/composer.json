@@ -1,30 +1,29 @@
 {
-    "name": "phalanx-php/redis",
-    "description": "Native Redis client for Phalanx using ext-redis and Aegis managed pooling",
+    "name": "phalanx-php/surreal",
+    "description": "SurrealDB HTTP RPC client for Phalanx using Iris and Aegis runtime supervision",
     "license": "MIT",
     "type": "library",
-    "keywords": ["redis", "openswoole", "phalanx", "aegis", "pubsub", "cache"],
+    "keywords": ["surrealdb", "phalanx", "aegis", "iris", "http", "rpc"],
     "authors": [
         {
             "name": "Jonathan Havens",
             "email": "mail@phalanx-php.com"
         }
     ],
-    "homepage": "https://github.com/phalanx-php/phalanx-redis",
+    "homepage": "https://github.com/phalanx-php/phalanx-surreal",
     "require": {
         "php": "^8.4",
-        "ext-redis": "*",
         "phalanx-php/aegis": "^0.6",
-        "phalanx-php/styx": "^0.6"
+        "phalanx-php/iris": "^0.6"
     },
     "autoload": {
         "psr-4": {
-            "Phalanx\\Redis\\": "src/"
+            "Phalanx\\Surreal\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Phalanx\\Redis\\Tests\\": "tests/"
+            "Phalanx\\Surreal\\Tests\\": "tests/"
         }
     },
     "extra": {

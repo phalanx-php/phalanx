@@ -4,45 +4,61 @@ declare(strict_types=1);
 
 namespace Phalanx\Redis\Tests\Unit;
 
-use Phalanx\Application;
+use Closure;
+use Phalanx\Redis\Redis;
 use Phalanx\Redis\RedisClient;
 use Phalanx\Redis\RedisConfig;
+use Phalanx\Redis\RedisPool;
 use Phalanx\Redis\RedisPubSub;
 use Phalanx\Redis\RedisServiceBundle;
 use Phalanx\Scope\ExecutionScope;
-use Phalanx\Task\Task;
+use Phalanx\Service\Services;
+use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 
-final class RedisServiceBundleTest extends TestCase
+final class RedisServiceBundleTest extends PhalanxTestCase
 {
     #[Test]
     public function servicesRegisterConfiguredClientAndPubSub(): void
     {
-        $config = new RedisConfig(host: 'redis.test', port: 6380, database: 2);
+        $result = $this->scope->run(
+            static function (ExecutionScope $scope): array {
+                $resolvedConfig = $scope->service(RedisConfig::class);
 
-        $result = Application::starting()
-            ->providers(new RedisServiceBundle($config))
-            ->run(Task::named(
-                'test.redis.service-bundle',
-                static function (ExecutionScope $scope): array {
-                    $resolvedConfig = $scope->service(RedisConfig::class);
+                self::assertInstanceOf(RedisPool::class, $scope->service(RedisPool::class));
+                self::assertInstanceOf(RedisClient::class, Redis::client($scope));
+                self::assertInstanceOf(RedisPubSub::class, Redis::pubsub($scope));
 
-                    self::assertInstanceOf(RedisClient::class, $scope->service(RedisClient::class));
-                    self::assertInstanceOf(RedisPubSub::class, $scope->service(RedisPubSub::class));
-
-                    return [
-                        'host' => $resolvedConfig->host,
-                        'port' => $resolvedConfig->port,
-                        'database' => $resolvedConfig->database,
-                    ];
-                },
-            ));
+                return [
+                    'host' => $resolvedConfig->host,
+                    'port' => $resolvedConfig->port,
+                    'database' => $resolvedConfig->database,
+                ];
+            },
+            'test.redis.service-bundle',
+        );
 
         self::assertSame([
             'host' => 'redis.test',
             'port' => 6380,
             'database' => 2,
         ], $result);
+    }
+
+    #[Test]
+    public function facadeCreatesServiceBundle(): void
+    {
+        self::assertInstanceOf(RedisServiceBundle::class, Redis::services());
+    }
+
+    protected function phalanxServices(): Closure
+    {
+        return static function (Services $services, array $context): void {
+            new RedisServiceBundle(new RedisConfig(
+                host: 'redis.test',
+                port: 6380,
+                database: 2,
+            ))->services($services, $context);
+        };
     }
 }

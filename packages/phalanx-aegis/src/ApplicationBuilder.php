@@ -113,9 +113,12 @@ class ApplicationBuilder
     public function compile(): Application
     {
         $runtimeContext = new RuntimeContext(RuntimeMemory::fromContext($this->context));
+        $trace = $this->trace ?? new Trace();
         $catalog = new ServiceCatalog($this->context);
         $catalog->singleton(RuntimeContext::class)
             ->factory(static fn(): RuntimeContext => $runtimeContext);
+        $catalog->singleton(Trace::class)
+            ->factory(static fn(): Trace => $trace);
         $catalog->singleton(HandlerResolver::class)
             ->factory(static fn(): HandlerResolver => new HandlerResolver());
         foreach ($this->providers as $provider) {
@@ -123,7 +126,6 @@ class ApplicationBuilder
         }
         $graph = $catalog->compile();
         $singletons = new LazySingleton($graph);
-        $trace = $this->trace ?? new Trace();
         $ledger = $this->ledger ?? new SwooleTableLedger(memory: $runtimeContext->memory);
         $runtimeContext->memory->events->listen(static function ($event) use ($trace): void {
             $trace->log(

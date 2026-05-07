@@ -6,6 +6,8 @@ namespace Phalanx\Pool;
 
 use Closure;
 use OpenSwoole\Core\Coroutine\Pool\ClientPool;
+use Phalanx\Runtime\CoroutineRuntime;
+use Phalanx\Runtime\RuntimePolicy;
 use Phalanx\Scope\Suspendable;
 use Phalanx\Supervisor\PoolLease;
 use Phalanx\Supervisor\WaitReason;
@@ -61,6 +63,8 @@ final class ManagedPool
     /** @var array<string, object> */
     private array $checkedOut = [];
 
+    private bool $closed = false;
+
     /**
      * @param class-string $factoryClass class implementing {@see ManagedPoolFactory}
      */
@@ -79,6 +83,10 @@ final class ManagedPool
 
     public function acquire(Suspendable $scope, float $timeout = -1.0): PoolLease
     {
+        if ($this->closed) {
+            throw new RuntimeException("ManagedPool({$this->domain})::acquire(): pool is closed");
+        }
+
         $start = microtime(true);
         $domain = $this->domain;
         $pool = $this->clientPool;
@@ -151,6 +159,21 @@ final class ManagedPool
 
     public function close(): void
     {
+        CoroutineRuntime::run(
+            RuntimePolicy::phalanxManaged(),
+            function (): void {
+                $this->closeInsideCoroutine();
+            },
+        );
+    }
+
+    private function closeInsideCoroutine(): void
+    {
+        if ($this->closed) {
+            return;
+        }
+
+        $this->closed = true;
         $this->clientPool->close();
         $this->checkedOut = [];
     }

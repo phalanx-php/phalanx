@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Phalanx\Redis;
 
-use Clue\React\Redis\Factory as RedisFactory;
 use Phalanx\Scope\Suspendable;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
+use Phalanx\Trace\Trace;
 
 final class RedisServiceBundle implements ServiceBundle
 {
@@ -18,23 +18,19 @@ final class RedisServiceBundle implements ServiceBundle
 
     public function services(Services $services, array $context): void
     {
-        $redisConfig = $this->config ?? (isset($context['redis_url'])
-            ? RedisConfig::fromUrl($context['redis_url'])
-            : new RedisConfig(
-                host: $context['redis_host'] ?? '127.0.0.1',
-                port: (int) ($context['redis_port'] ?? 6379),
-                password: $context['redis_password'] ?? null,
-                database: (int) ($context['redis_database'] ?? 0),
-            ));
+        $redisConfig = $this->config ?? RedisConfig::fromContext($context);
 
         $services->config(RedisConfig::class, static fn(): RedisConfig => $redisConfig);
 
+        $services->singleton(RedisPool::class)
+            ->needs(RedisConfig::class, Trace::class)
+            ->factory(static fn(RedisConfig $config, Trace $trace): RedisPool => new RedisPool($config, $trace))
+            ->onShutdown(static function (RedisPool $pool): void {
+                $pool->close();
+            });
+
         $services->scoped(RedisClient::class)
-            ->factory(static function (RedisConfig $config, Suspendable $scope): RedisClient {
-                $factory = new RedisFactory();
-                $client = $factory->createLazyClient($config->toConnectionString());
-                return new RedisClient($client, $scope);
-            })
+            ->factory(static fn(RedisPool $pool, Suspendable $scope): RedisClient => new RedisClient($pool, $scope))
             ->onDispose(static fn(RedisClient $client) => $client->close());
 
         $services->singleton(RedisPubSub::class)

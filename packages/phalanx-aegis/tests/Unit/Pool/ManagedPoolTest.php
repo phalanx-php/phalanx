@@ -25,6 +25,10 @@ final class ManagedPoolTestFactory implements ManagedPoolFactory
 final class TestPoolClient
 {
     public int $useCount = 0;
+
+    public function close(): void
+    {
+    }
 }
 
 /**
@@ -69,15 +73,22 @@ final class ManagedPoolTest extends CoroutineTestCase
         );
 
         $this->runScoped(static function (ExecutionScope $scope) use ($pool): void {
+            $threw = false;
+
             try {
-                $pool->use($scope, static function (TestPoolClient $client): void {
+                $pool->use($scope, static function (object $client): void {
+                    self::assertInstanceOf(TestPoolClient::class, $client);
                     $client->useCount++;
-                    throw new RuntimeException('boom');
+
+                    if ($client->useCount === 1) {
+                        throw new RuntimeException('boom');
+                    }
                 });
-                self::fail('expected exception');
             } catch (RuntimeException $e) {
+                $threw = true;
                 self::assertSame('boom', $e->getMessage());
             }
+            self::assertTrue($threw);
 
             // The pool returns the same single client immediately —
             // proving release fired in the finally arm.
@@ -98,5 +109,48 @@ final class ManagedPoolTest extends CoroutineTestCase
         );
 
         self::assertSame(4, $pool->size);
+    }
+
+    public function testCloseCanRunOutsideCoroutineAfterCheckout(): void
+    {
+        $pool = new ManagedPool(
+            domain: 'test/close',
+            factoryClass: ManagedPoolTestFactory::class,
+            config: null,
+            trace: new Trace(),
+            size: 1,
+        );
+
+        $this->runScoped(static function (ExecutionScope $scope) use ($pool): void {
+            $pool->use($scope, static function (object $client): int {
+                self::assertInstanceOf(TestPoolClient::class, $client);
+
+                return ++$client->useCount;
+            });
+        });
+
+        $pool->close();
+        $pool->close();
+
+        self::assertSame(1, $pool->size);
+    }
+
+    public function testAcquireAfterCloseFailsClearly(): void
+    {
+        $pool = new ManagedPool(
+            domain: 'test/closed',
+            factoryClass: ManagedPoolTestFactory::class,
+            config: null,
+            trace: new Trace(),
+            size: 1,
+        );
+        $pool->close();
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('ManagedPool(test/closed)::acquire(): pool is closed');
+
+        $this->runScoped(static function (ExecutionScope $scope) use ($pool): void {
+            $pool->acquire($scope);
+        });
     }
 }

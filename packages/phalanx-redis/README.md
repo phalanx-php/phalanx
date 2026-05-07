@@ -4,6 +4,6 @@
 
 # Phalanx Redis
 
-Async Redis integration for Phalanx via `clue/redis-react`, including command execution and pub/sub patterns that compose with the broader task runtime.
+Native Redis integration for Phalanx through `ext-redis`, Aegis managed pooling, and scope-recorded Redis waits.
 
 Part of the [Phalanx monorepo](https://github.com/phalanx-php/phalanx).

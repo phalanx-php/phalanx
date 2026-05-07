@@ -17,6 +17,7 @@ parameters:
         - packages/phalanx-phpstan/src
         - packages/phalanx-postgres/src
         - packages/phalanx-redis/src
+        - packages/phalanx-surreal/src
         - packages/phalanx-styx/src
     scanDirectories:
         - vendor/openswoole/ide-helper
@@ -33,6 +34,8 @@ parameters:
         - packages/phalanx-aegis/src
         - packages/phalanx-enigma/src
         - packages/phalanx-hydra/src
+        - packages/phalanx-redis/src
+        - packages/phalanx-surreal/src
     phalanxAuditPaths: []
     phalanxRuntimeHookInternalPaths:
         - packages/phalanx-aegis/src/Runtime/RuntimeHookNames.php

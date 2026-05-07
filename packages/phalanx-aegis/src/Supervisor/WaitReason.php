@@ -54,6 +54,11 @@ final readonly class WaitReason
         return new self(WaitKind::Redis, $command, microtime(true));
     }
 
+    public static function surreal(string $method): self
+    {
+        return new self(WaitKind::Surreal, $method, microtime(true));
+    }
+
     public static function worker(string $workerId, string $taskName): self
     {
         return new self(WaitKind::Worker, "{$workerId} / {$taskName}", microtime(true));

@@ -16,6 +16,7 @@ enum WaitKind: string
     case Http = 'http';
     case Postgres = 'postgres';
     case Redis = 'redis';
+    case Surreal = 'surreal';
     case Worker = 'worker';
     case Singleflight = 'singleflight';
     case Lock = 'lock';

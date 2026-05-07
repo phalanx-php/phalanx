@@ -11,9 +11,9 @@
     "type": "project",
     "require": {
         "php": "^8.4",
+        "ext-redis": "*",
         "amphp/amp": "^3.0",
         "amphp/postgres": "^2.2",
-        "clue/redis-react": "^2.8",
         "evenement/evenement": "^3.0",
         "mlocati/ip-lib": "^1.22",
         "nikic/fast-route": "^2.0",
@@ -56,6 +56,7 @@
             "Phalanx\\Athena\\": "packages/phalanx-athena/src/",
             "Phalanx\\Postgres\\": "packages/phalanx-postgres/src/",
             "Phalanx\\Redis\\": "packages/phalanx-redis/src/",
+            "Phalanx\\Surreal\\": "packages/phalanx-surreal/src/",
             "Phalanx\\Hermes\\": "packages/phalanx-hermes/src/",
             "Phalanx\\Hermes\\Client\\": "packages/phalanx-hermes/src/Client/",
             "Phalanx\\Argos\\": "packages/phalanx-argos/src/",
@@ -77,6 +78,7 @@
             "Phalanx\\Athena\\Tests\\": "packages/phalanx-athena/tests/",
             "Phalanx\\Postgres\\Tests\\": "packages/phalanx-postgres/tests/",
             "Phalanx\\Redis\\Tests\\": "packages/phalanx-redis/tests/",
+            "Phalanx\\Surreal\\Tests\\": "packages/phalanx-surreal/tests/",
             "Phalanx\\Hermes\\Tests\\": "packages/phalanx-hermes/tests/",
             "Phalanx\\Hermes\\Client\\Tests\\": "packages/phalanx-hermes/tests/Client/",
             "Phalanx\\Argos\\Tests\\": "packages/phalanx-argos/tests/",
@@ -105,6 +107,8 @@
         "test:core": "php vendor/bin/phpunit packages/phalanx-aegis/tests/",
         "test:iris": "php vendor/bin/phpunit packages/phalanx-iris/tests/",
         "test:ai": "php vendor/bin/phpunit packages/phalanx-athena/tests/",
+        "test:redis": "php vendor/bin/phpunit packages/phalanx-redis/tests/",
+        "test:surreal": "php vendor/bin/phpunit packages/phalanx-surreal/tests/",
         "test:ssh": "php vendor/bin/phpunit packages/phalanx-enigma/tests/",
         "analyse": "php vendor/bin/phpstan analyse --memory-limit=512M",
         "audit:runtime-risk": "php packages/phalanx-phpstan/bin/runtime-risk-audit",
@@ -142,7 +146,7 @@
         "demo:athena:serve:fleet-gateway": "php packages/phalanx-athena/examples/multi-tenant-fleet/gateway.php",
         "demo:athena:worker:fleet": "php packages/phalanx-athena/examples/multi-tenant-fleet/worker.php",
         "examples:lint": "find examples packages/phalanx-aegis/examples packages/phalanx-archon/examples packages/phalanx-athena/examples packages/phalanx-stoa/examples -name '*.php' -not -path '*/vendor/*' -print0 | xargs -0 -n1 php -l > /dev/null",
-        "check": ["@analyse", "@rector:dry", "@test", "@examples:lint"]
+        "check": ["@analyse", "@rector:dry", "@cs", "@test", "@test:redis", "@test:surreal", "@examples:lint"]
     },
     "config": {
         "process-timeout": 0,
@@ -168,7 +172,8 @@
         "phalanx-php/redis": "0.6.1",
         "phalanx-php/skopos": "0.6.1",
         "phalanx-php/stoa": "0.6.1",
-        "phalanx-php/styx": "0.6.1"
+        "phalanx-php/styx": "0.6.1",
+        "phalanx-php/surreal": "0.6.1"
     },
     "minimum-stability": "dev",
     "prefer-stable": true

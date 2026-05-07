@@ -76,6 +76,12 @@
         <testsuite name="Enigma Unit">
             <directory>packages/phalanx-enigma/tests/Unit</directory>
         </testsuite>
+        <testsuite name="Redis Unit">
+            <directory>packages/phalanx-redis/tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Surreal Unit">
+            <directory>packages/phalanx-surreal/tests/Unit</directory>
+        </testsuite>
         <testsuite name="Eidolon Unit">
             <directory>packages/phalanx-eidolon/tests/Unit</directory>
         </testsuite>
