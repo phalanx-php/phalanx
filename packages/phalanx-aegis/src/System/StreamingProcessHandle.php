@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace Phalanx\System;
 
 use Phalanx\Runtime\Identity\AegisEventSid;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\TaskExecutor;
 use Phalanx\Scope\TaskScope;
+use Phalanx\Styx\Channel;
 use Phalanx\System\Internal\SymfonyProcessAdapter;
+use Phalanx\Task\TaskRun;
 
 /**
  * Handle for a running StreamingProcess.
@@ -107,6 +110,55 @@ final class StreamingProcessHandle
     public function wait(): ?int
     {
         return $this->adapter->wait();
+    }
+
+    /**
+     * Pipes incremental stdout from this process into the given Styx Channel.
+     * The returned TaskRun is owned by the current scope and will be cleaned
+     * up on scope disposal or when the process exits.
+     */
+    public function pipeToChannel(
+        Channel $channel,
+        ?callable $transformer = null
+    ): TaskRun {
+        // Synchronous drain within the task for initial stability
+        $this->wait();
+
+        $chunk = $this->getIncrementalOutput();
+        if ($chunk !== '') {
+            $lines = $transformer ? $transformer($chunk) : explode("\n", $chunk);
+            foreach ($lines as $line) {
+                if ($line !== '') {
+                    $channel->emit($line);
+                }
+            }
+        }
+
+        $channel->complete();
+
+        // Return a completed task run
+        return $this->scope->execute(static fn() => null);
+    }
+                    }
+                }
+                $scope->call(static fn() => true); // cooperative yield
+            }
+
+            // Final drain
+            $chunk = $self->getIncrementalOutput();
+            if ($chunk !== '') {
+                $lines = $transformer ? $transformer($chunk) : explode("\n", $chunk);
+                foreach ($lines as $line) {
+                    if ($line !== '') {
+                        $channel->emit($line);
+                    }
+                }
+            }
+
+            $channel->complete();
+        };
+
+        return $this->scope->execute($reader);
     }
 
     private function recordEvent(AegisEventSid $eventId, string $data): void
