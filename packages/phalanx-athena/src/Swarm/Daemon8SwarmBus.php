@@ -28,7 +28,7 @@ final class Daemon8SwarmBus implements SwarmBus
 {
     public function __construct(
         private readonly SwarmConfig $config,
-        private readonly HttpClient $client = new HttpClient(),
+        private readonly HttpClient $client,
     ) {
     }
 

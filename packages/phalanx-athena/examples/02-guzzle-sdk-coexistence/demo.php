@@ -24,9 +24,8 @@ use Phalanx\Athena\Athena;
 use Phalanx\Athena\Event\AgentEventKind;
 use Phalanx\Athena\Http\CoroutineGuzzleStack;
 use Phalanx\Athena\Message\Conversation;
-use Phalanx\Athena\Provider\AnthropicConfig;
-use Phalanx\Athena\Provider\AnthropicProvider;
 use Phalanx\Athena\Provider\GenerateRequest;
+use Phalanx\Athena\Provider\ProviderConfig;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Task;
 
@@ -84,7 +83,6 @@ if ($scheme === 'https' && in_array($host, ['localhost', '127.0.0.1', '::1'], tr
 $prompt = 'In one short sentence, describe Athena as a strategist and patron of wisdom.';
 $conversation = Conversation::create()->user($prompt);
 $request = GenerateRequest::from($conversation)->withMaxTokens(20);
-$anthropic = new AnthropicProvider(new AnthropicConfig(apiKey: $anthropicKey));
 
 $stack = CoroutineGuzzleStack::create();
 /** @var \GuzzleHttp\Client $guzzle */
@@ -92,13 +90,15 @@ $guzzle = new \GuzzleHttp\Client(['handler' => $stack, 'timeout' => 10.0]);
 
 $exitCode = Athena::starting($context)->run(Task::named(
     'demo.athena.guzzle-sdk-coexistence',
-    static function (ExecutionScope $scope) use ($anthropic, $guzzle, $guzzleUrl, $request): int {
+    static function (ExecutionScope $scope) use ($guzzle, $guzzleUrl, $request): int {
         echo "Running Athena native + Guzzle SDK concurrently...\n\n";
 
         $settlements = $scope->settle(
-            athena: Task::of(static function (ExecutionScope $s) use ($anthropic, $request): string {
+            athena: Task::of(static function (ExecutionScope $s) use ($request): string {
+                $providerConfig = $s->service(ProviderConfig::class);
+                $provider = $providerConfig->resolve('anthropic');
                 $out = '';
-                foreach ($anthropic->generate($request)($s) as $event) {
+                foreach ($provider->generate($request)($s) as $event) {
                     if ($event->kind === AgentEventKind::TokenDelta) {
                         $out .= (string) ($event->data->text ?? '');
                     }

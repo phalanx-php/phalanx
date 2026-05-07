@@ -18,6 +18,9 @@ interface Services
     public function eager(string $type): ServiceConfig;
 
     /** @param class-string $type */
+    public function has(string $type): bool;
+
+    /** @param class-string $type */
     public function config(string $type, Closure $fromContext): void;
 
     /**

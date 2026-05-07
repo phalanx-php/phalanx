@@ -9,9 +9,14 @@ use Phalanx\Service\Services;
 
 final class PgServiceBundle implements ServiceBundle
 {
+    public function __construct(
+        private readonly ?PgConfig $config = null,
+    ) {
+    }
+
     public function services(Services $services, array $context): void
     {
-        $pgConfig = isset($context['database_url'])
+        $pgConfig = $this->config ?? (isset($context['database_url'])
             ? PgConfig::fromDsn($context['database_url'])
             : new PgConfig(
                 host: $context['pg_host'] ?? 'localhost',
@@ -21,10 +26,12 @@ final class PgServiceBundle implements ServiceBundle
                 database: $context['pg_database'] ?? null,
                 maxConnections: (int) ($context['pg_max_connections'] ?? 10),
                 idleTimeout: (int) ($context['pg_idle_timeout'] ?? 60),
-            );
+            ));
+
+        $services->config(PgConfig::class, static fn(): PgConfig => $pgConfig);
 
         $services->singleton(PgPool::class)
-            ->factory(static fn() => new PgPool($pgConfig))
+            ->factory(static fn(PgConfig $config) => new PgPool($config))
             ->onShutdown(static fn(PgPool $pool) => $pool->close());
 
         $services->singleton(PgListener::class)

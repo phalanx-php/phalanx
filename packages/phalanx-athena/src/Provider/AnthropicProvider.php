@@ -32,7 +32,7 @@ final class AnthropicProvider implements LlmProvider
 {
     public function __construct(
         private readonly AnthropicConfig $config,
-        private readonly HttpClient $client = new HttpClient(),
+        private readonly HttpClient $client,
     ) {
     }
 

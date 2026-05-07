@@ -37,6 +37,8 @@ use Phalanx\Trace\Trace;
 use Phalanx\Trace\TraceType;
 use Phalanx\Worker\WorkerDispatch;
 use ReflectionFunction;
+use ReflectionNamedType;
+use ReflectionParameter;
 use RuntimeException;
 use Throwable;
 
@@ -1285,15 +1287,58 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         if ($config->factoryFn === null) {
             throw new RuntimeException("Service {$config->type} has no factory");
         }
-        $deps = [];
-        foreach ($config->needsTypes as $needed) {
-            $deps[] = $this->service($needed);
-        }
+        $deps = $this->resolveFactoryDependencies($config);
         $this->traceLog->log(TraceType::ServiceResolve, $config->type);
         $instance = ($config->factoryFn)(...$deps);
         foreach ($config->onInitHooks as $hook) {
             $hook($instance);
         }
         return $instance;
+    }
+
+    /** @return list<mixed> */
+    private function resolveFactoryDependencies(CompiledServiceConfig $config): array
+    {
+        $factory = $config->factoryFn;
+        if ($factory === null) {
+            throw new RuntimeException("Service {$config->type} has no factory");
+        }
+
+        if ($config->needsTypes !== []) {
+            $deps = [];
+            foreach ($config->needsTypes as $needed) {
+                $deps[] = $this->service($needed);
+            }
+
+            return $deps;
+        }
+
+        $deps = [];
+        foreach ((new ReflectionFunction($factory))->getParameters() as $parameter) {
+            $deps[] = $this->resolveFactoryParameter($config, $parameter);
+        }
+
+        return $deps;
+    }
+
+    private function resolveFactoryParameter(CompiledServiceConfig $config, ReflectionParameter $parameter): mixed
+    {
+        $type = $parameter->getType();
+        if (!$type instanceof ReflectionNamedType || $type->isBuiltin()) {
+            throw new RuntimeException(sprintf(
+                'Service %s factory parameter $%s must declare a single object type.',
+                $config->type,
+                $parameter->getName(),
+            ));
+        }
+
+        $typeName = $type->getName();
+        if ($this instanceof $typeName) {
+            return $this;
+        }
+
+        /** @var class-string $serviceType */
+        $serviceType = $typeName;
+        return $this->service($serviceType);
     }
 }

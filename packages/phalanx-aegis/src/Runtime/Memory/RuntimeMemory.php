@@ -32,10 +32,12 @@ final class RuntimeMemory
         $this->ids = new RuntimeIds($this->counters);
         $this->claims = new RuntimeClaims($this->tables);
         $this->events = new RuntimeLifecycleEvents($this->tables, $this->counters);
+
         $this->transitionLocks = new ManagedResourceTransitionLocks(
             stripes: $config->transitionLockStripes,
             timeout: $config->transitionLockTimeout,
         );
+
         $this->resources = new ManagedResourceRegistry(
             tables: $this->tables,
             symbols: $this->symbols,

@@ -28,12 +28,13 @@ final class AthenaApplicationBuilder
 {
     private ApplicationBuilder $app;
 
+    private bool $aiServicesAdded = false;
+
     /** @param array<string, mixed> $context */
     public function __construct(
         array $context = [],
     ) {
         $this->app = Application::starting($context);
-        $this->app->providers(new AiServiceBundle());
     }
 
     public function providers(ServiceBundle ...$providers): self
@@ -86,11 +87,22 @@ final class AthenaApplicationBuilder
 
     public function build(): AthenaApplication
     {
+        $this->installAiServices();
         return new AthenaApplication($this->app->compile());
     }
 
     public function run(Scopeable|Executable|Closure $task, ?CancellationToken $token = null): mixed
     {
         return $this->build()->run($task, $token);
+    }
+
+    private function installAiServices(): void
+    {
+        if ($this->aiServicesAdded) {
+            return;
+        }
+
+        $this->app->providers(new AiServiceBundle());
+        $this->aiServicesAdded = true;
     }
 }

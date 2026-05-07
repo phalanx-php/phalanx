@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Athena\Provider;
 
+use Phalanx\Iris\HttpClient;
+
 final class ProviderConfig
 {
     /** @var array<string, LlmProvider> */
@@ -12,13 +14,14 @@ final class ProviderConfig
     private ?string $defaultProvider = null;
     private Strategy $strategy = Strategy::Fallback;
 
-    private function __construct()
-    {
+    private function __construct(
+        private readonly HttpClient $client,
+    ) {
     }
 
-    public static function create(): self
+    public static function create(HttpClient $client): self
     {
-        return new self();
+        return new self($client);
     }
 
     public function anthropic(
@@ -26,11 +29,14 @@ final class ProviderConfig
         string $model = 'claude-sonnet-4-20250514',
         string $baseUrl = 'https://api.anthropic.com',
     ): self {
-        $this->providers['anthropic'] = new AnthropicProvider(new AnthropicConfig(
-            apiKey: $apiKey,
-            model: $model,
-            baseUrl: $baseUrl,
-        ));
+        $this->providers['anthropic'] = new AnthropicProvider(
+            new AnthropicConfig(
+                apiKey: $apiKey,
+                model: $model,
+                baseUrl: $baseUrl,
+            ),
+            $this->client,
+        );
         $this->defaultProvider ??= 'anthropic';
         return $this;
     }
@@ -40,11 +46,14 @@ final class ProviderConfig
         string $model = 'gpt-4o',
         string $baseUrl = 'https://api.openai.com',
     ): self {
-        $this->providers['openai'] = new OpenAiProvider(new OpenAiConfig(
-            apiKey: $apiKey,
-            model: $model,
-            baseUrl: $baseUrl,
-        ));
+        $this->providers['openai'] = new OpenAiProvider(
+            new OpenAiConfig(
+                apiKey: $apiKey,
+                model: $model,
+                baseUrl: $baseUrl,
+            ),
+            $this->client,
+        );
         $this->defaultProvider ??= 'openai';
         return $this;
     }
@@ -54,21 +63,27 @@ final class ProviderConfig
         string $model = 'gemini-1.5-flash',
         string $baseUrl = 'https://generativelanguage.googleapis.com',
     ): self {
-        $this->providers['gemini'] = new GeminiProvider(new GeminiConfig(
-            apiKey: $apiKey,
-            model: $model,
-            baseUrl: $baseUrl,
-        ));
+        $this->providers['gemini'] = new GeminiProvider(
+            new GeminiConfig(
+                apiKey: $apiKey,
+                model: $model,
+                baseUrl: $baseUrl,
+            ),
+            $this->client,
+        );
         $this->defaultProvider ??= 'gemini';
         return $this;
     }
 
     public function ollama(string $model = 'llama3', string $baseUrl = 'http://localhost:11434'): self
     {
-        $this->providers['ollama'] = new OllamaProvider(new OllamaConfig(
-            model: $model,
-            baseUrl: $baseUrl,
-        ));
+        $this->providers['ollama'] = new OllamaProvider(
+            new OllamaConfig(
+                model: $model,
+                baseUrl: $baseUrl,
+            ),
+            $this->client,
+        );
         $this->defaultProvider ??= 'ollama';
         return $this;
     }

@@ -8,6 +8,9 @@ use Phalanx\Athena\Athena;
 use Phalanx\Athena\AthenaApplication;
 use Phalanx\Athena\Provider\ProviderConfig;
 use Phalanx\Athena\Swarm\SwarmConfig;
+use Phalanx\Iris\HttpClient;
+use Phalanx\Iris\HttpClientConfig;
+use Phalanx\Iris\Iris;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Task;
 use PHPUnit\Framework\Attributes\PreserveGlobalState;
@@ -36,8 +39,10 @@ final class AthenaApplicationBuilderTest extends TestCase
                 'test.athena.facade.defaults',
                 static function (ExecutionScope $scope): array {
                     $swarmConfig = $scope->service(SwarmConfig::class);
+                    $httpClient = $scope->service(HttpClient::class);
 
                     self::assertInstanceOf(SwarmConfig::class, $swarmConfig);
+                    self::assertInstanceOf(HttpClient::class, $httpClient);
 
                     return [
                         'workspace' => $swarmConfig->workspace,
@@ -100,5 +105,30 @@ final class AthenaApplicationBuilderTest extends TestCase
         ]);
 
         self::assertSame('static-run-session', $result);
+    }
+
+    #[Test]
+    public function facadeBuilderComposesCallerProvidedIrisServices(): void
+    {
+        $result = Athena::starting()
+            ->providers(Iris::services(new HttpClientConfig(userAgent: 'AthenaCustomIris')))
+            ->run(Task::named(
+                'test.athena.facade.custom-iris',
+                static fn(ExecutionScope $scope): string => $scope->service(HttpClientConfig::class)->userAgent,
+            ));
+
+        self::assertSame('AthenaCustomIris', $result);
+    }
+
+    #[Test]
+    public function facadeBuilderRegistersOllamaFromEnabledFlag(): void
+    {
+        $result = Athena::starting(['OLLAMA_ENABLED' => true])
+            ->run(Task::named(
+                'test.athena.facade.ollama-enabled',
+                static fn(ExecutionScope $scope): array => array_keys($scope->service(ProviderConfig::class)->all()),
+            ));
+
+        self::assertSame(['ollama'], $result);
     }
 }

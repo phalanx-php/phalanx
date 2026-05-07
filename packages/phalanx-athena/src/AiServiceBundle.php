@@ -8,6 +8,8 @@ use Phalanx\Athena\Provider\ProviderConfig;
 use Phalanx\Athena\Swarm\Daemon8SwarmBus;
 use Phalanx\Athena\Swarm\SwarmBus;
 use Phalanx\Athena\Swarm\SwarmConfig;
+use Phalanx\Iris\HttpClient;
+use Phalanx\Iris\Iris;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 
@@ -15,9 +17,11 @@ final class AiServiceBundle implements ServiceBundle
 {
     public function services(Services $services, array $context): void
     {
+        Iris::services()->services($services, $context);
+
         $services->singleton(ProviderConfig::class)
-            ->factory(static function () use ($context) {
-                $config = ProviderConfig::create();
+            ->factory(static function (HttpClient $client) use ($context) {
+                $config = ProviderConfig::create($client);
 
                 if ($anthropicKey = $context['ANTHROPIC_API_KEY'] ?? null) {
                     $config->anthropic(apiKey: $anthropicKey);
@@ -43,8 +47,15 @@ final class AiServiceBundle implements ServiceBundle
                     }
                 }
 
-                if ($ollamaUrl = $context['OLLAMA_BASE_URL'] ?? null) {
-                    $config->ollama(baseUrl: $ollamaUrl);
+                $ollamaEnabled = ($context['OLLAMA_ENABLED'] ?? false) === true
+                    || array_key_exists('OLLAMA_MODEL', $context)
+                    || array_key_exists('OLLAMA_BASE_URL', $context);
+
+                if ($ollamaEnabled) {
+                    $config->ollama(
+                        model: (string) ($context['OLLAMA_MODEL'] ?? 'llama3'),
+                        baseUrl: (string) ($context['OLLAMA_BASE_URL'] ?? 'http://localhost:11434'),
+                    );
                 }
 
                 return $config;
@@ -63,8 +74,8 @@ final class AiServiceBundle implements ServiceBundle
             });
 
         $services->singleton(Daemon8SwarmBus::class)
-            ->needs(SwarmConfig::class)
-            ->factory(static fn(SwarmConfig $config) => new Daemon8SwarmBus($config));
+            ->needs(SwarmConfig::class, HttpClient::class)
+            ->factory(static fn(SwarmConfig $config, HttpClient $client) => new Daemon8SwarmBus($config, $client));
 
         $services->alias(SwarmBus::class, Daemon8SwarmBus::class);
     }

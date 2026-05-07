@@ -34,7 +34,7 @@ final class OpenAiProvider implements LlmProvider
 {
     public function __construct(
         private readonly OpenAiConfig $config,
-        private readonly HttpClient $client = new HttpClient(),
+        private readonly HttpClient $client,
     ) {
     }
 
