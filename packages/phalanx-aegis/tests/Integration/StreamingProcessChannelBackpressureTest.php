@@ -40,9 +40,6 @@ final class StreamingProcessChannelBackpressureTest extends PhalanxTestCase
                     // For this proof we just observe the signal firing.
                 });
 
-            // Use the new pipeToChannel bridge
-            $handle->pipeToChannel($channel);
-
             // Reader coroutine: slow consumer
             $consumed = 0;
             $start = microtime(true);
