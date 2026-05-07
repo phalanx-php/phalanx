@@ -10,6 +10,8 @@ use Phalanx\Enigma\SshCredential;
 use Phalanx\Enigma\Support\LocalTempFile;
 use Phalanx\Enigma\Support\ProcessAwaiter;
 use Phalanx\Enigma\TransferResult;
+use Phalanx\Grammata\Exception\FilesystemException;
+use Phalanx\Grammata\Task\StatFile;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
 use Phalanx\Task\HasTimeout;
@@ -50,7 +52,11 @@ final class SftpDownload implements Executable, HasTimeout
             throw new SshException("SFTP download failed (exit {$exitCode})", $exitCode);
         }
 
-        $bytes = file_exists($this->localPath) ? (int) filesize($this->localPath) : 0;
+        try {
+            $bytes = $scope->execute(new StatFile($this->localPath))->size;
+        } catch (FilesystemException) {
+            $bytes = 0;
+        }
 
         return new TransferResult(
             localPath: $this->localPath,

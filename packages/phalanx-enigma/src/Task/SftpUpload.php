@@ -10,6 +10,7 @@ use Phalanx\Enigma\SshCredential;
 use Phalanx\Enigma\Support\LocalTempFile;
 use Phalanx\Enigma\Support\ProcessAwaiter;
 use Phalanx\Enigma\TransferResult;
+use Phalanx\Grammata\Task\StatFile;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
 use Phalanx\Task\HasTimeout;
@@ -67,7 +68,7 @@ final class SftpUpload implements Executable, HasTimeout
             throw new SshException("SFTP upload failed (exit {$exitCode})", $exitCode);
         }
 
-        $bytes = (int) filesize($actualLocalPath);
+        $bytes = $scope->execute(new StatFile($actualLocalPath))->size;
 
         return new TransferResult(
             localPath: $this->localPath ?? '(content)',

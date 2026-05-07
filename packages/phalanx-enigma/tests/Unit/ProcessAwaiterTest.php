@@ -32,27 +32,37 @@ final class ProcessAwaiterTest extends PhalanxTestCase
 
     public function testProcessTimeoutKillsAndReleasesManagedProcess(): void
     {
-        $this->expectException(SshTimeoutException::class);
+        $marker = self::tempPath();
+        $timedOut = false;
 
         try {
-            $this->scope->run(static function (ExecutionScope $scope): void {
+            $this->scope->run(static function (ExecutionScope $scope) use ($marker): void {
                 ProcessAwaiter::spawn([
                     PHP_BINARY,
                     '-r',
-                    'fwrite(STDERR, "athena waits\n"); usleep(500000);',
+                    'fwrite(STDERR, "athena waits\n"); usleep(150000); file_put_contents($argv[1], "alive");',
+                    $marker,
                 ], $scope, 0.01);
             });
+        } catch (SshTimeoutException) {
+            $timedOut = true;
         } finally {
             self::assertSame(0, $this->scope->memory->resources->liveCount(AegisResourceSid::StreamingProcess));
         }
+
+        usleep(250000);
+
+        self::assertTrue($timedOut);
+        self::assertFileDoesNotExist($marker);
     }
 
     public function testScopeCancellationKillsAndReleasesManagedProcess(): void
     {
-        $this->expectException(Cancelled::class);
+        $marker = self::tempPath();
+        $cancelled = false;
 
         try {
-            $this->scope->run(static function (ExecutionScope $scope): void {
+            $this->scope->run(static function (ExecutionScope $scope) use ($marker): void {
                 $token = $scope->cancellation();
                 $scope->go(static function (ExecutionScope $childScope) use ($token): void {
                     $childScope->delay(0.01);
@@ -62,18 +72,46 @@ final class ProcessAwaiterTest extends PhalanxTestCase
                 ProcessAwaiter::spawn([
                     PHP_BINARY,
                     '-r',
-                    'usleep(500000);',
+                    'usleep(150000); file_put_contents($argv[1], "alive");',
+                    $marker,
                 ], $scope, 1.0);
             });
+        } catch (Cancelled) {
+            $cancelled = true;
         } finally {
             self::assertSame(0, $this->scope->memory->resources->liveCount(AegisResourceSid::StreamingProcess));
         }
+
+        usleep(250000);
+
+        self::assertTrue($cancelled);
+        self::assertFileDoesNotExist($marker);
     }
 
-    public function testArgvKeepsArgumentsSeparatedWithoutShellEscaping(): void
+    public function testArgvExecutesShellMetacharactersAsLiteralArguments(): void
     {
-        $argv = ProcessAwaiter::argv('ssh', ['-p', '22', '--', 'printf "%s" athena']);
+        $result = $this->scope->run(static function (ExecutionScope $scope): array {
+            return ProcessAwaiter::spawn([
+                PHP_BINARY,
+                '-r',
+                'fwrite(STDOUT, $argv[1]);',
+                'athena; echo unsafe',
+            ], $scope, 1.0);
+        });
 
-        self::assertSame(['ssh', '-p', '22', '--', 'printf "%s" athena'], $argv);
+        self::assertSame(0, $result[0]);
+        self::assertSame('athena; echo unsafe', $result[1]);
+    }
+
+    private static function tempPath(): string
+    {
+        $path = tempnam(sys_get_temp_dir(), 'phalanx-enigma-marker-');
+        if ($path === false) {
+            return sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'phalanx-enigma-marker-' . uniqid('', true);
+        }
+
+        unlink($path);
+
+        return $path;
     }
 }

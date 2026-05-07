@@ -10,6 +10,8 @@ use Phalanx\Enigma\SshCredential;
 use Phalanx\Enigma\Support\ProcessAwaiter;
 use Phalanx\Enigma\TransferDirection;
 use Phalanx\Enigma\TransferResult;
+use Phalanx\Grammata\Exception\FilesystemException;
+use Phalanx\Grammata\Task\StatFile;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
 use Phalanx\Task\HasTimeout;
@@ -60,7 +62,11 @@ final class ScpTransfer implements Executable, HasTimeout
             TransferDirection::Upload => $this->from,
             TransferDirection::Download => $this->to,
         };
-        $bytes = file_exists($localFile) ? (int) filesize($localFile) : 0;
+        try {
+            $bytes = $scope->execute(new StatFile($localFile))->size;
+        } catch (FilesystemException) {
+            $bytes = 0;
+        }
 
         [$localPath, $remotePath] = match ($this->direction) {
             TransferDirection::Upload => [$this->from, $this->to],

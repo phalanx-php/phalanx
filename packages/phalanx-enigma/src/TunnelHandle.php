@@ -75,6 +75,12 @@ final class TunnelHandle implements \Stringable
         }
 
         $this->closed = true;
+
+        if ($this->process->isRunning()) {
+            $this->process->stop();
+            return;
+        }
+
         $this->process->close('enigma.tunnel.close');
     }
 }

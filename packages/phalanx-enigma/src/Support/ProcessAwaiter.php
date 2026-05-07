@@ -6,7 +6,8 @@ namespace Phalanx\Enigma\Support;
 
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Enigma\Exception\SshTimeoutException;
-use Phalanx\Scope\ExecutionScope;
+use Phalanx\Scope\TaskExecutor;
+use Phalanx\Scope\TaskScope;
 use Phalanx\System\StreamingProcess;
 use Throwable;
 
@@ -16,7 +17,7 @@ final class ProcessAwaiter
      * @param non-empty-list<string> $argv
      * @return array{int, string, string, float} [exitCode, stdout, stderr, durationMs]
      */
-    public static function spawn(array $argv, ExecutionScope $scope, ?float $timeoutSeconds = null): array
+    public static function spawn(array $argv, TaskScope&TaskExecutor $scope, ?float $timeoutSeconds = null): array
     {
         $start = hrtime(true);
         $stdout = '';

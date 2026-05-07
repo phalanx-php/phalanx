@@ -62,7 +62,7 @@ final class TunnelHandleTest extends PhalanxTestCase
             );
 
             $handle->close();
-            $handle->execute(Task::of(static fn(ExecutionScope $_scope): bool => true));
+            $handle->execute(Task::of(static fn(): bool => true));
         });
     }
 }
