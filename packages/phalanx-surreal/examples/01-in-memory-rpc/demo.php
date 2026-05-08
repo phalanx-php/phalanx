@@ -20,7 +20,7 @@ use Phalanx\Surreal\Examples\Support\SurrealValueChecker;
 use Phalanx\System\StreamingProcess;
 use Phalanx\Task\Task;
 
-return static function (array $context): int {
+return static function (array $context): \Closure {
     $appContext = AppContext::fromSymfonyRuntime($context);
 
     $binary = (new SurrealBinaryLocator())($appContext);
@@ -48,7 +48,7 @@ return static function (array $context): int {
     printf("Endpoint: %s\n", $endpoint);
     echo "Topic: Athena as disciplined wisdom and strategic clarity\n\n";
 
-    return (int) Application::starting($appContext)
+    return static fn (): int => (int) Application::starting($appContext)
         ->providers(new SurrealBundle())
         ->run(Task::named(
             'demo.surreal.in-memory-rpc',

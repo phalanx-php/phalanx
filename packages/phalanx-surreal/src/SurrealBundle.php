@@ -15,7 +15,7 @@ use Phalanx\Scope\ExecutionScope;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 
-class SurrealBundle extends ServiceBundle
+final class SurrealBundle extends ServiceBundle
 {
     /**
      * SurrealConfig::fromContext reads `surreal_namespace`/`SURREAL_NAMESPACE`
@@ -43,6 +43,17 @@ class SurrealBundle extends ServiceBundle
     ) {
     }
 
+    /**
+     * Surreal composes Iris (HttpClient/HttpClientConfig) and Hermes
+     * (WsClient/WsClientConfig). The defensive `$services->has()` guards
+     * are intentional composition boundaries: when a userland app registers
+     * IrisServiceBundle / WsServiceBundle alongside SurrealBundle, those
+     * bundles own the canonical client registrations and Surreal must not
+     * shadow them. Surreal-only services (SurrealConfig, SurrealTransport,
+     * SurrealLiveTransport, Surreal itself) are also guarded for symmetry
+     * and to keep the body uniform; double-registration of those would be
+     * a real userland error and Services would throw without the guard.
+     */
     public function services(Services $services, AppContext $context): void
     {
         $config = $this->config;
