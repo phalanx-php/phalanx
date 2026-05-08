@@ -20,16 +20,22 @@ final readonly class WsServiceBundle implements ServiceBundle
     {
         $clientConfig = $this->clientConfig;
 
-        $services->singleton(WsGateway::class)->factory(static fn() => new WsGateway());
+        if (!$services->has(WsGateway::class)) {
+            $services->singleton(WsGateway::class)->factory(static fn() => new WsGateway());
+        }
 
-        $services->config(
-            WsClientConfig::class,
-            static fn(): WsClientConfig => $clientConfig ?? WsClientConfig::default(),
-        );
+        if (!$services->has(WsClientConfig::class)) {
+            $services->config(
+                WsClientConfig::class,
+                static fn(): WsClientConfig => $clientConfig ?? WsClientConfig::default(),
+            );
+        }
 
-        $services
-            ->singleton(WsClient::class)
-            ->needs(WsClientConfig::class)
-            ->factory(static fn(WsClientConfig $config): WsClient => new WsClient($config));
+        if (!$services->has(WsClient::class)) {
+            $services
+                ->singleton(WsClient::class)
+                ->needs(WsClientConfig::class)
+                ->factory(static fn(WsClientConfig $config): WsClient => new WsClient($config));
+        }
     }
 }
