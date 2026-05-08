@@ -19,7 +19,6 @@
         "nikic/fast-route": "^2.0",
         "openswoole/core": "^26.2",
         "symfony/process": "^7.0",
-        "ratchet/rfc6455": "^0.4.0",
         "react/async": "^4.3",
         "react/child-process": "^0.6",
         "react/datagram": "^1.10",
@@ -64,7 +63,8 @@
             "Phalanx\\Enigma\\": "packages/phalanx-enigma/src/",
             "Phalanx\\Eidolon\\": "packages/phalanx-eidolon/src/",
             "Phalanx\\PHPStan\\": "packages/phalanx-phpstan/src/",
-            "Phalanx\\Skopos\\": "packages/phalanx-skopos/src/"
+            "Phalanx\\Skopos\\": "packages/phalanx-skopos/src/",
+            "Phalanx\\Aegis\\Codegen\\": "packages/phalanx-aegis-codegen/src/"
         }
     },
     "autoload-dev": {
@@ -85,7 +85,8 @@
             "Phalanx\\Grammata\\Tests\\": "packages/phalanx-grammata/tests/",
             "Phalanx\\Enigma\\Tests\\": "packages/phalanx-enigma/tests/",
             "Phalanx\\PHPStan\\Tests\\": "packages/phalanx-phpstan/tests/",
-            "Phalanx\\Tests\\Eidolon\\": "packages/phalanx-eidolon/tests/"
+            "Phalanx\\Tests\\Eidolon\\": "packages/phalanx-eidolon/tests/",
+            "Phalanx\\Aegis\\Codegen\\Tests\\": "packages/phalanx-aegis-codegen/tests/"
         },
         "classmap": [
             "packages/phalanx-aegis/tests/Support/Fixtures/",
@@ -145,9 +146,11 @@
         "demo:athena:serve:research-agent": "php packages/phalanx-athena/examples/research-agent/server.php",
         "demo:athena:serve:fleet-gateway": "php packages/phalanx-athena/examples/multi-tenant-fleet/gateway.php",
         "demo:athena:worker:fleet": "php packages/phalanx-athena/examples/multi-tenant-fleet/worker.php",
-        "demo:surreal": ["@demo:surreal:memory"],
+        "demo:surreal": ["@demo:surreal:memory", "@demo:surreal:live"],
         "demo:surreal:memory": "php packages/phalanx-surreal/examples/01-in-memory-rpc/demo.php",
+        "demo:surreal:live": "php packages/phalanx-surreal/examples/02-live-query/demo.php",
         "examples:lint": "find examples packages/phalanx-aegis/examples packages/phalanx-archon/examples packages/phalanx-athena/examples packages/phalanx-stoa/examples packages/phalanx-surreal/examples -name '*.php' -not -path '*/vendor/*' -print0 | xargs -0 -n1 php -l > /dev/null",
+        "gen:test-accessors": "php packages/phalanx-aegis-codegen/bin/regenerate-accessors",
         "check": ["@analyse", "@rector:dry", "@cs", "@test", "@test:redis", "@test:surreal", "@examples:lint"]
     },
     "config": {
@@ -155,11 +158,13 @@
         "sort-packages": true,
         "allow-plugins": {
             "symfony/runtime": true,
-            "dealerdirect/phpcodesniffer-composer-installer": true
+            "dealerdirect/phpcodesniffer-composer-installer": true,
+            "phalanx-php/aegis-codegen": true
         }
     },
     "replace": {
         "phalanx-php/aegis": "0.6.1",
+        "phalanx-php/aegis-codegen": "0.6.1",
         "phalanx-php/archon": "0.6.1",
         "phalanx-php/argos": "0.6.1",
         "phalanx-php/athena": "0.6.1",

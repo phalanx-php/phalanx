@@ -1,0 +1,49 @@
+{
+    "name": "phalanx-php/aegis-codegen",
+    "description": "Composer plugin that emits the TestApp accessor trait for Phalanx test lenses",
+    "license": "MIT",
+    "type": "composer-plugin",
+    "keywords": [
+        "phalanx",
+        "testing",
+        "composer-plugin",
+        "codegen"
+    ],
+    "homepage": "https://github.com/phalanx-php/phalanx-aegis-codegen",
+    "authors": [
+        {
+            "name": "Jonathan Havens",
+            "email": "mail@phalanx-php.com"
+        }
+    ],
+    "require": {
+        "php": "^8.4",
+        "composer-plugin-api": "^2.3",
+        "phalanx-php/aegis": "^0.6"
+    },
+    "require-dev": {
+        "composer/composer": "^2.3",
+        "phpstan/phpstan": "^2.0",
+        "phpunit/phpunit": "^13.0",
+        "slevomat/coding-standard": "^8.15",
+        "squizlabs/php_codesniffer": "^3.10"
+    },
+    "autoload": {
+        "psr-4": {
+            "Phalanx\\Aegis\\Codegen\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Phalanx\\Aegis\\Codegen\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "class": "Phalanx\\Aegis\\Codegen\\Plugin",
+        "branch-alias": {
+            "dev-main": "0.6.x-dev"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

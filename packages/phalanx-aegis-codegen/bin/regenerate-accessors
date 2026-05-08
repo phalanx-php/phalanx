@@ -1,0 +1,89 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+/**
+ * Regenerate Phalanx\Testing\Generated\TestAppAccessors.
+ *
+ * Standalone entry point for monorepo development; mirrors what the Composer
+ * plugin does on post-autoload-dump in a userland project. Reads root
+ * composer.json `extra.phalanx.bundles` plus every monorepo package's
+ * own `extra.phalanx.bundles`, runs LensDiscovery, and writes the
+ * regenerated trait into packages/phalanx-aegis/src/Testing/Generated/.
+ */
+
+use Phalanx\Aegis\Codegen\AccessorTraitWriter;
+use Phalanx\Aegis\Codegen\LensDiscovery;
+
+$autoloadCandidates = [
+    __DIR__ . '/../vendor/autoload.php',
+    __DIR__ . '/../../../vendor/autoload.php',
+];
+
+foreach ($autoloadCandidates as $candidate) {
+    if (is_file($candidate)) {
+        require $candidate;
+        break;
+    }
+}
+
+if (!class_exists(LensDiscovery::class)) {
+    fwrite(STDERR, "Composer autoloader not found. Run `composer install` from the monorepo root.\n");
+    exit(1);
+}
+
+$rootDir = realpath(__DIR__ . '/../../..');
+if ($rootDir === false) {
+    fwrite(STDERR, "Cannot resolve monorepo root.\n");
+    exit(1);
+}
+
+$bundles = collectBundlesFromMonorepo($rootDir);
+$lenses = (new LensDiscovery())->discover($bundles);
+$target = $rootDir . '/packages/phalanx-aegis/src/Testing/Generated/TestAppAccessors.php';
+
+(new AccessorTraitWriter())->write($lenses, $target);
+
+printf("Wrote %d accessor(s) to %s\n", count($lenses), $target);
+
+/**
+ * @return list<class-string<\Phalanx\Testing\TestableBundle>>
+ */
+function collectBundlesFromMonorepo(string $rootDir): array
+{
+    $sources = [
+        $rootDir . '/composer.json',
+    ];
+
+    foreach (glob($rootDir . '/packages/*/composer.json') ?: [] as $packageJson) {
+        $sources[] = $packageJson;
+    }
+
+    $bundles = [];
+
+    foreach ($sources as $source) {
+        $contents = @file_get_contents($source);
+        if ($contents === false) {
+            continue;
+        }
+
+        $data = json_decode($contents, true);
+        if (!is_array($data)) {
+            continue;
+        }
+
+        $declared = $data['extra']['phalanx']['bundles'] ?? null;
+        if (!is_array($declared)) {
+            continue;
+        }
+
+        foreach ($declared as $bundleClass) {
+            if (is_string($bundleClass)) {
+                $bundles[] = $bundleClass;
+            }
+        }
+    }
+
+    return array_values(array_unique($bundles));
+}
