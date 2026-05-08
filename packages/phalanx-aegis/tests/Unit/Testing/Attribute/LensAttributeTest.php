@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 namespace Phalanx\Tests\Unit\Testing\Attribute;
 
-use Phalanx\Testing\Attribute\TestLens;
+use Phalanx\Testing\Attribute\Lens;
 use Phalanx\Tests\Fixtures\Testing\FixtureLens;
 use Phalanx\Tests\Fixtures\Testing\FixtureLensFactory;
 use PHPUnit\Framework\TestCase;
 use ReflectionAttribute;
 use ReflectionClass;
 
-final class TestLensAttributeTest extends TestCase
+final class LensAttributeTest extends TestCase
 {
     public function testFixtureLensExposesAttributeMetadata(): void
     {
         $reflection = new ReflectionClass(FixtureLens::class);
-        $attributes = $reflection->getAttributes(TestLens::class);
+        $attributes = $reflection->getAttributes(Lens::class);
 
         self::assertCount(1, $attributes);
 
@@ -30,7 +30,7 @@ final class TestLensAttributeTest extends TestCase
 
     public function testAttributeAcceptsRequiresList(): void
     {
-        $attribute = new TestLens(
+        $attribute = new Lens(
             accessor: 'http',
             returns: FixtureLens::class,
             factory: FixtureLensFactory::class,
@@ -44,7 +44,7 @@ final class TestLensAttributeTest extends TestCase
     {
         $reflection = new ReflectionClass(FixtureLens::class);
 
-        $attributes = $reflection->getAttributes(TestLens::class, ReflectionAttribute::IS_INSTANCEOF);
+        $attributes = $reflection->getAttributes(Lens::class, ReflectionAttribute::IS_INSTANCEOF);
 
         self::assertCount(1, $attributes);
     }

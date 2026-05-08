@@ -80,7 +80,7 @@ final class TestAppTest extends TestCase
     {
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage(UnattributedLens::class);
-        $this->expectExceptionMessage('missing the #[\\Phalanx\\Testing\\Attribute\\TestLens] attribute');
+        $this->expectExceptionMessage('missing the #[\\Phalanx\\Testing\\Attribute\\Lens] attribute');
 
         TestApp::boot([], new UnattributedBundle());
     }

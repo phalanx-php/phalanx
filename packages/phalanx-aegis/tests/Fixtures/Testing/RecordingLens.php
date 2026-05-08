@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Tests\Fixtures\Testing;
 
-use Phalanx\Testing\Attribute\TestLens;
+use Phalanx\Testing\Attribute\Lens;
 use Phalanx\Testing\TestApp;
-use Phalanx\Testing\TestLens as TestLensContract;
+use Phalanx\Testing\Lens as LensContract;
 
 /**
  * Lens fixture that exercises the fake/service integration. Construction
@@ -16,13 +16,13 @@ use Phalanx\Testing\TestLens as TestLensContract;
  * lens looks up its dependency via $app->service(...), and reset clears
  * per-test state.
  */
-#[TestLens(
+#[Lens(
     accessor: 'recording',
     returns: self::class,
     factory: RecordingLensFactory::class,
     requires: [RecordingLensTarget::class],
 )]
-final class RecordingLens implements TestLensContract
+final class RecordingLens implements LensContract
 {
     /** @var list<string> */
     public array $observed = [];

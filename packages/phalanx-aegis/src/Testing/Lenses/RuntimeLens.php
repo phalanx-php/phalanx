@@ -6,9 +6,9 @@ namespace Phalanx\Testing\Lenses;
 
 use Phalanx\Diagnostics\DoctorReport;
 use Phalanx\Diagnostics\EnvironmentDoctor;
-use Phalanx\Testing\Attribute\TestLens;
+use Phalanx\Testing\Attribute\Lens;
+use Phalanx\Testing\Lens as LensContract;
 use Phalanx\Testing\TestApp;
-use Phalanx\Testing\TestLens as TestLensContract;
 use PHPUnit\Framework\Assert;
 
 /**
@@ -19,13 +19,13 @@ use PHPUnit\Framework\Assert;
  * failures — but with a test-friendly assertion surface. Use to gate
  * integration tests on a clean OpenSwoole substrate before running work.
  */
-#[TestLens(
+#[Lens(
     accessor: 'runtime',
     returns: self::class,
     factory: RuntimeLensFactory::class,
     requires: [],
 )]
-final class RuntimeLens implements TestLensContract
+final class RuntimeLens implements LensContract
 {
     public function __construct(private readonly TestApp $app)
     {

@@ -14,7 +14,7 @@ final class RecordingBundle implements ServiceBundle, TestableBundle
     {
     }
 
-    /** @return list<class-string<\Phalanx\Testing\TestLens>> */
+    /** @return list<class-string<\Phalanx\Testing\Lens>> */
     public static function testLenses(): array
     {
         return [RecordingLens::class];

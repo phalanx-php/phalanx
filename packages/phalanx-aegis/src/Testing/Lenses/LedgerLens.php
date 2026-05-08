@@ -6,9 +6,9 @@ namespace Phalanx\Testing\Lenses;
 
 use Phalanx\Supervisor\Supervisor;
 use Phalanx\Supervisor\TaskTreeFormatter;
-use Phalanx\Testing\Attribute\TestLens;
+use Phalanx\Testing\Attribute\Lens;
+use Phalanx\Testing\Lens as LensContract;
 use Phalanx\Testing\TestApp;
-use Phalanx\Testing\TestLens as TestLensContract;
 use PHPUnit\Framework\Assert;
 
 /**
@@ -21,13 +21,13 @@ use PHPUnit\Framework\Assert;
  * The lens reads from Supervisor's pass-through to LedgerStorage; it never
  * mutates the ledger.
  */
-#[TestLens(
+#[Lens(
     accessor: 'ledger',
     returns: self::class,
     factory: LedgerLensFactory::class,
     requires: [],
 )]
-final class LedgerLens implements TestLensContract
+final class LedgerLens implements LensContract
 {
     public function __construct(private readonly TestApp $app)
     {

@@ -6,9 +6,9 @@ namespace Phalanx\Testing\Lenses;
 
 use Phalanx\Scope\CoroutineScopeRegistry;
 use Phalanx\Scope\Scope;
-use Phalanx\Testing\Attribute\TestLens;
+use Phalanx\Testing\Attribute\Lens;
+use Phalanx\Testing\Lens as LensContract;
 use Phalanx\Testing\TestApp;
-use Phalanx\Testing\TestLens as TestLensContract;
 use PHPUnit\Framework\Assert;
 
 /**
@@ -19,13 +19,13 @@ use PHPUnit\Framework\Assert;
  * Application's supervisor have been disposed. Useful for tests that drive
  * scope-spawning work and need to confirm cleanup before teardown.
  */
-#[TestLens(
+#[Lens(
     accessor: 'scope',
     returns: self::class,
     factory: ScopeLensFactory::class,
     requires: [],
 )]
-final class ScopeLens implements TestLensContract
+final class ScopeLens implements LensContract
 {
     public function __construct(private readonly TestApp $app)
     {

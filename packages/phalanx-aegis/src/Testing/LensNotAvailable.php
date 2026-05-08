@@ -18,7 +18,7 @@ use LogicException;
 final class LensNotAvailable extends LogicException
 {
     /**
-     * @param class-string<TestLens>             $lens
+     * @param class-string<Lens>             $lens
      * @param list<class-string<TestableBundle>> $providers Bundles known to this
      *        TestApp instance that declare the lens. Empty when no bundle
      *        passed to TestApp::boot() listed it.

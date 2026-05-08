@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Aegis\Codegen;
 
-use Phalanx\Testing\Attribute\TestLens as TestLensAttribute;
+use Phalanx\Testing\Attribute\Lens as LensAttribute;
 use Phalanx\Testing\TestableBundle;
 use Phalanx\Testing\TestApp;
 use ReflectionAttribute;
@@ -20,7 +20,7 @@ use RuntimeException;
  *   2. Lens classes returned by every TestableBundle declared in any
  *      installed package's composer.json `extra.phalanx.bundles`.
  *
- * Each lens class is reflected for #[\Phalanx\Testing\Attribute\TestLens]
+ * Each lens class is reflected for #[\Phalanx\Testing\Attribute\Lens]
  * and converted to LensMetadata. Duplicate accessor names raise a
  * RuntimeException so the codegen output never silently drops a lens.
  */
@@ -60,7 +60,7 @@ final class LensDiscovery
         return array_values($byAccessor);
     }
 
-    /** @return list<class-string<\Phalanx\Testing\TestLens>> */
+    /** @return list<class-string<\Phalanx\Testing\Lens>> */
     private function aegisNativeLenses(): array
     {
         $reflection = new ReflectionClass(TestApp::class);
@@ -75,19 +75,19 @@ final class LensDiscovery
             return [];
         }
 
-        /** @var list<class-string<\Phalanx\Testing\TestLens>> $value */
+        /** @var list<class-string<\Phalanx\Testing\Lens>> $value */
         return array_values($value);
     }
 
-    /** @param class-string<\Phalanx\Testing\TestLens> $lensClass */
+    /** @param class-string<\Phalanx\Testing\Lens> $lensClass */
     private function reflectLens(string $lensClass): LensMetadata
     {
         $reflection = new ReflectionClass($lensClass);
-        $attributes = $reflection->getAttributes(TestLensAttribute::class, ReflectionAttribute::IS_INSTANCEOF);
+        $attributes = $reflection->getAttributes(LensAttribute::class, ReflectionAttribute::IS_INSTANCEOF);
 
         if ($attributes === []) {
             throw new RuntimeException(
-                "Lens {$lensClass} is missing the #[\\Phalanx\\Testing\\Attribute\\TestLens] attribute.",
+                "Lens {$lensClass} is missing the #[\\Phalanx\\Testing\\Attribute\\Lens] attribute.",
             );
         }
 

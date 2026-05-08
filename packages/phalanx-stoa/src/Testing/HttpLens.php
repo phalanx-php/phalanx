@@ -7,9 +7,9 @@ namespace Phalanx\Stoa\Testing;
 use GuzzleHttp\Psr7\ServerRequest;
 use GuzzleHttp\Psr7\Utils;
 use Phalanx\Stoa\StoaApplication;
-use Phalanx\Testing\Attribute\TestLens;
+use Phalanx\Testing\Attribute\Lens;
 use Phalanx\Testing\TestApp;
-use Phalanx\Testing\TestLens as TestLensContract;
+use Phalanx\Testing\Lens as LensContract;
 use Psr\Http\Message\ServerRequestInterface;
 
 /**
@@ -27,13 +27,13 @@ use Psr\Http\Message\ServerRequestInterface;
  *     $app  = $this->testApp($context, new StoaTestableBundle())->withPrimary($stoa);
  *     $app->http->postJson('/api/orders', ['sku' => 'WIDGET'])->assertCreated();
  */
-#[TestLens(
+#[Lens(
     accessor: 'http',
     returns: self::class,
     factory: HttpLensFactory::class,
     requires: [StoaApplication::class],
 )]
-final class HttpLens implements TestLensContract
+final class HttpLens implements LensContract
 {
     /** @var array<string, string> */
     private array $defaultHeaders = [];

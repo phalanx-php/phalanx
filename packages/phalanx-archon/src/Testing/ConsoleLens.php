@@ -11,8 +11,8 @@ use Phalanx\Archon\Command\CommandGroup;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Archon\Console\Output\TerminalEnvironment;
 use Phalanx\Service\ServiceBundle;
-use Phalanx\Testing\Attribute\TestLens;
-use Phalanx\Testing\TestLens as TestLensContract;
+use Phalanx\Testing\Attribute\Lens;
+use Phalanx\Testing\Lens as LensContract;
 use RuntimeException;
 
 /**
@@ -36,13 +36,13 @@ use RuntimeException;
  *         ->assertSuccessful()
  *         ->assertOutputContains('Hello, Ada');
  */
-#[TestLens(
+#[Lens(
     accessor: 'console',
     returns: self::class,
     factory: ConsoleLensFactory::class,
     requires: [],
 )]
-final class ConsoleLens implements TestLensContract
+final class ConsoleLens implements LensContract
 {
     /** @var array<string, mixed> */
     private array $context = [];

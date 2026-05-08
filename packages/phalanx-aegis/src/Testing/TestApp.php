@@ -7,7 +7,7 @@ namespace Phalanx\Testing;
 use Phalanx\Application;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Service\ServiceBundle;
-use Phalanx\Testing\Attribute\TestLens as TestLensAttribute;
+use Phalanx\Testing\Attribute\Lens as LensAttribute;
 use Phalanx\Testing\Fakes\FakeRegistry;
 use Phalanx\Testing\Generated\TestAppAccessors;
 use ReflectionAttribute;
@@ -48,7 +48,7 @@ final class TestApp
      * Lenses Aegis ships unconditionally. Always available on every TestApp
      * because Aegis itself is always present; no bundle declares them.
      *
-     * @var list<class-string<TestLens>>
+     * @var list<class-string<Lens>>
      */
     private const array AEGIS_NATIVE_LENSES = [
         Lenses\LedgerLens::class,
@@ -58,13 +58,13 @@ final class TestApp
 
     public private(set) FakeRegistry $fakes;
 
-    /** @var array<class-string<TestLens>, TestLens> */
+    /** @var array<class-string<Lens>, Lens> */
     private array $instances = [];
 
-    /** @var array<class-string<TestLens>, class-string<TestLensFactory>> */
+    /** @var array<class-string<Lens>, class-string<LensFactory>> */
     private array $factories = [];
 
-    /** @var array<class-string<TestLens>, list<class-string<TestableBundle>>> */
+    /** @var array<class-string<Lens>, list<class-string<TestableBundle>>> */
     private array $providers = [];
 
     /** @var array<class-string, object> */
@@ -180,11 +180,11 @@ final class TestApp
      * Lazily resolve a lens. Called by generated property hooks in the
      * TestAppAccessors trait.
      *
-     * @template T of TestLens
+     * @template T of Lens
      * @param class-string<T> $class
      * @return T
      */
-    public function lens(string $class): TestLens
+    public function lens(string $class): Lens
     {
         if (isset($this->instances[$class])) {
             /** @var T */
@@ -196,7 +196,7 @@ final class TestApp
         }
 
         $factoryClass = $this->factories[$class];
-        /** @var TestLensFactory $factory */
+        /** @var LensFactory $factory */
         $factory = new $factoryClass();
         $lens = $factory->create($this);
         $this->instances[$class] = $lens;
@@ -283,15 +283,15 @@ final class TestApp
         }
     }
 
-    /** @param class-string<TestLens> $lensClass */
-    private static function readLensAttribute(string $lensClass): TestLensAttribute
+    /** @param class-string<Lens> $lensClass */
+    private static function readLensAttribute(string $lensClass): LensAttribute
     {
         $reflection = new ReflectionClass($lensClass);
-        $attributes = $reflection->getAttributes(TestLensAttribute::class, ReflectionAttribute::IS_INSTANCEOF);
+        $attributes = $reflection->getAttributes(LensAttribute::class, ReflectionAttribute::IS_INSTANCEOF);
 
         if ($attributes === []) {
             throw new RuntimeException(
-                "Lens {$lensClass} is missing the #[\\Phalanx\\Testing\\Attribute\\TestLens] attribute.",
+                "Lens {$lensClass} is missing the #[\\Phalanx\\Testing\\Attribute\\Lens] attribute.",
             );
         }
 
@@ -313,7 +313,7 @@ final class TestApp
 
     /**
      * Register all lenses contributed by the given bundles. Each lens class
-     * is reflected for #[TestLens] to recover its factory and exposed accessor.
+     * is reflected for #[Lens] to recover its factory and exposed accessor.
      *
      * Bundles that do not implement TestableBundle are silently ignored —
      * they contribute services but no lens surface.
@@ -334,12 +334,12 @@ final class TestApp
     }
 
     /**
-     * Registration is idempotent. The #[TestLens] attribute on the lens class
+     * Registration is idempotent. The #[Lens] attribute on the lens class
      * fixes the factory, so two bundles declaring the same lens cannot
      * conflict on factory choice; both are recorded as providers for
      * diagnostic purposes.
      *
-     * @param class-string<TestLens>       $lensClass
+     * @param class-string<Lens>       $lensClass
      * @param class-string<TestableBundle> $providerBundle
      */
     private function registerLens(string $lensClass, string $providerBundle): void

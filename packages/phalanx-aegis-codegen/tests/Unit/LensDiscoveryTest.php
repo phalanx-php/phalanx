@@ -73,7 +73,7 @@ final class LensDiscoveryTest extends TestCase
     public function testThrowsWhenLensClassMissingAttribute(): void
     {
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('missing the #[\\Phalanx\\Testing\\Attribute\\TestLens] attribute');
+        $this->expectExceptionMessage('missing the #[\\Phalanx\\Testing\\Attribute\\Lens] attribute');
 
         new LensDiscovery()->discover([UnattributedBundle::class]);
     }

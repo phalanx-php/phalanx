@@ -7,7 +7,7 @@ namespace Phalanx\Archon\Testing;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 use Phalanx\Testing\TestableBundle;
-use Phalanx\Testing\TestLens;
+use Phalanx\Testing\Lens;
 
 /**
  * Marker bundle that activates Archon's ConsoleLens on a TestApp.
@@ -27,7 +27,7 @@ use Phalanx\Testing\TestLens;
  */
 final class ArchonTestableBundle implements ServiceBundle, TestableBundle
 {
-    /** @return list<class-string<TestLens>> */
+    /** @return list<class-string<Lens>> */
     public static function testLenses(): array
     {
         return [ConsoleLens::class];

@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Phalanx\Testing;
 
 /**
- * Builds a TestLens against a live TestApp.
+ * Builds a Lens against a live TestApp.
  *
- * Factories are referenced from the #[TestLens] attribute on the lens class
+ * Factories are referenced from the #[Lens] attribute on the lens class
  * and resolved lazily by TestApp on first property access. They are the
  * single integration point a package exposes to the codegen plugin and to
  * userland — no other test-time wiring is required from a bundle author.
@@ -17,7 +17,7 @@ namespace Phalanx\Testing;
  * by convention and exist solely to defer lens construction until first
  * accessor read.
  */
-interface TestLensFactory
+interface LensFactory
 {
-    public function create(TestApp $app): TestLens;
+    public function create(TestApp $app): Lens;
 }
