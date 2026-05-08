@@ -6,6 +6,8 @@ namespace Phalanx\Surreal\Tests\Unit;
 
 use Closure;
 use Phalanx\Application;
+use Phalanx\Hermes\Client\WsClient;
+use Phalanx\Hermes\Client\WsClientConfig;
 use Phalanx\Iris\HttpClient;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\Scope;
@@ -15,6 +17,7 @@ use Phalanx\Surreal\Surreal;
 use Phalanx\Surreal\SurrealBundle;
 use Phalanx\Surreal\SurrealConfig;
 use Phalanx\Surreal\SurrealException;
+use Phalanx\Surreal\SurrealLiveTransport;
 use Phalanx\Surreal\SurrealTransport;
 use Phalanx\Task\Task;
 use Phalanx\Testing\PhalanxTestCase;
@@ -28,15 +31,20 @@ final class SurrealBundleTest extends PhalanxTestCase
         $result = $this->scope->run(
             static function (ExecutionScope $scope): array {
                 self::assertInstanceOf(HttpClient::class, $scope->service(HttpClient::class));
+                self::assertInstanceOf(WsClient::class, $scope->service(WsClient::class));
                 self::assertInstanceOf(SurrealTransport::class, $scope->service(SurrealTransport::class));
+                self::assertInstanceOf(SurrealLiveTransport::class, $scope->service(SurrealLiveTransport::class));
                 self::assertInstanceOf(Surreal::class, $scope->service(Surreal::class));
 
                 $config = $scope->service(SurrealConfig::class);
+                $wsConfig = $scope->service(WsClientConfig::class);
 
                 return [
                     'namespace' => $config->namespace,
                     'database' => $config->database,
                     'endpoint' => $config->endpoint,
+                    'websocketEndpoint' => $config->websocketEndpoint,
+                    'wsConnectTimeout' => $wsConfig->connectTimeout,
                 ];
             },
             'test.surreal.service-bundle',
@@ -46,6 +54,8 @@ final class SurrealBundleTest extends PhalanxTestCase
             'namespace' => 'athena',
             'database' => 'wisdom',
             'endpoint' => 'http://surreal.test:8000',
+            'websocketEndpoint' => 'ws://surreal.test:8000/rpc',
+            'wsConnectTimeout' => 5.0,
         ], $result);
     }
 

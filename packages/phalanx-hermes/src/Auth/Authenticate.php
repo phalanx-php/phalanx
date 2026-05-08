@@ -6,15 +6,17 @@ namespace Phalanx\Hermes\Auth;
 
 use Phalanx\Auth\AuthenticationException;
 use Phalanx\Auth\Guard;
-use Phalanx\Task\Executable;
 use Phalanx\Hermes\AuthExecutionContext;
 use Phalanx\Hermes\WsScope;
+use Phalanx\Task\Executable;
+use RuntimeException;
 
 final class Authenticate implements Executable
 {
     public function __construct(
         private readonly Guard $guard,
-    ) {}
+    ) {
+    }
 
     public function __invoke(WsScope $scope): mixed
     {
@@ -24,10 +26,13 @@ final class Authenticate implements Executable
             throw new AuthenticationException();
         }
 
-        /** @var Executable $next */
         $next = $scope->attribute('handler.next');
+        if (!is_callable($next)) {
+            throw new RuntimeException('Authenticated WebSocket handler is not callable.');
+        }
+
         $authenticated = new AuthExecutionContext($scope, $auth);
 
-        return ($next)($authenticated);
+        return $next($authenticated);
     }
 }

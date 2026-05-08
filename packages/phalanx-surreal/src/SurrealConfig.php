@@ -10,6 +10,7 @@ class SurrealConfig
         public private(set) string $namespace,
         public private(set) string $database,
         public private(set) string $endpoint = 'http://127.0.0.1:8000',
+        public private(set) ?string $websocketEndpoint = null,
         public private(set) ?string $username = null,
         public private(set) ?string $password = null,
         public private(set) ?string $token = null,
@@ -17,6 +18,8 @@ class SurrealConfig
         public private(set) float $readTimeout = 30.0,
         public private(set) int $maxResponseBytes = 16 * 1024 * 1024,
     ) {
+        $this->endpoint = rtrim($endpoint, '/');
+        $this->websocketEndpoint = rtrim($websocketEndpoint ?? self::deriveWebsocketEndpoint($this->endpoint), '/');
     }
 
     /** @param array<string, mixed> $context */
@@ -25,10 +28,8 @@ class SurrealConfig
         return new self(
             namespace: self::stringValue($context, ['surreal_namespace', 'SURREAL_NAMESPACE'], 'phalanx'),
             database: self::stringValue($context, ['surreal_database', 'SURREAL_DATABASE'], 'app'),
-            endpoint: rtrim(
-                self::stringValue($context, ['surreal_endpoint', 'SURREAL_ENDPOINT'], 'http://127.0.0.1:8000'),
-                '/',
-            ),
+            endpoint: self::stringValue($context, ['surreal_endpoint', 'SURREAL_ENDPOINT'], 'http://127.0.0.1:8000'),
+            websocketEndpoint: self::nullableStringValue($context, ['surreal_ws_endpoint', 'SURREAL_WS_ENDPOINT']),
             username: self::nullableStringValue($context, ['surreal_username', 'SURREAL_USERNAME']),
             password: self::nullableStringValue($context, ['surreal_password', 'SURREAL_PASSWORD']),
             token: self::nullableStringValue($context, ['surreal_token', 'SURREAL_TOKEN']),
@@ -48,6 +49,7 @@ class SurrealConfig
             namespace: $namespace,
             database: $database,
             endpoint: $this->endpoint,
+            websocketEndpoint: $this->websocketEndpoint,
             username: $this->username,
             password: $this->password,
             token: $this->token,
@@ -55,6 +57,19 @@ class SurrealConfig
             readTimeout: $this->readTimeout,
             maxResponseBytes: $this->maxResponseBytes,
         );
+    }
+
+    private static function deriveWebsocketEndpoint(string $endpoint): string
+    {
+        if (str_starts_with($endpoint, 'https://')) {
+            return 'wss://' . substr($endpoint, 8) . '/rpc';
+        }
+
+        if (str_starts_with($endpoint, 'http://')) {
+            return 'ws://' . substr($endpoint, 7) . '/rpc';
+        }
+
+        return $endpoint;
     }
 
     /**

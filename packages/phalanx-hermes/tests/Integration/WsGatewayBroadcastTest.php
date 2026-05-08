@@ -22,7 +22,7 @@ final class WsGatewayBroadcastTest extends TestCase
     private WsGateway $gateway;
 
     #[Test]
-    public function register_and_count(): void
+    public function registerAndCount(): void
     {
         $conn1 = $this->createConnection();
         $conn2 = $this->createConnection();
@@ -34,7 +34,7 @@ final class WsGatewayBroadcastTest extends TestCase
     }
 
     #[Test]
-    public function unregister_removes_connection(): void
+    public function unregisterRemovesConnection(): void
     {
         $conn = $this->createConnection();
         $this->gateway->register($conn);
@@ -45,7 +45,7 @@ final class WsGatewayBroadcastTest extends TestCase
     }
 
     #[Test]
-    public function broadcast_sends_to_all_connections(): void
+    public function broadcastSendsToAllConnections(): void
     {
         $this->runAsync(function (): void {
             $conn1 = $this->createConnection();
@@ -65,7 +65,7 @@ final class WsGatewayBroadcastTest extends TestCase
     }
 
     #[Test]
-    public function broadcast_with_exclude(): void
+    public function broadcastWithExclude(): void
     {
         $this->runAsync(function (): void {
             $conn1 = $this->createConnection();
@@ -82,7 +82,7 @@ final class WsGatewayBroadcastTest extends TestCase
     }
 
     #[Test]
-    public function subscribe_and_publish_to_topic(): void
+    public function subscribeAndPublishToTopic(): void
     {
         $this->runAsync(function (): void {
             $conn1 = $this->createConnection();
@@ -105,7 +105,7 @@ final class WsGatewayBroadcastTest extends TestCase
     }
 
     #[Test]
-    public function publish_with_exclude(): void
+    public function publishWithExclude(): void
     {
         $this->runAsync(function (): void {
             $conn1 = $this->createConnection();
@@ -125,7 +125,7 @@ final class WsGatewayBroadcastTest extends TestCase
     }
 
     #[Test]
-    public function unsubscribe_removes_from_topic(): void
+    public function unsubscribeRemovesFromTopic(): void
     {
         $this->runAsync(function (): void {
             $conn = $this->createConnection();
@@ -144,7 +144,7 @@ final class WsGatewayBroadcastTest extends TestCase
     }
 
     #[Test]
-    public function unregister_cleans_up_topic_subscriptions(): void
+    public function unregisterCleansUpTopicSubscriptions(): void
     {
         $conn = $this->createConnection();
         $this->gateway->register($conn);
@@ -160,14 +160,14 @@ final class WsGatewayBroadcastTest extends TestCase
     }
 
     #[Test]
-    public function publish_to_empty_topic_is_noop(): void
+    public function publishToEmptyTopicIsNoop(): void
     {
         $this->gateway->publish('nonexistent', WsMessage::text('void'));
         $this->assertSame(0, $this->gateway->topicCount('nonexistent'));
     }
 
     #[Test]
-    public function closed_connections_are_skipped_during_broadcast(): void
+    public function closedConnectionsAreSkippedDuringBroadcast(): void
     {
         $this->runAsync(function (): void {
             $conn1 = $this->createConnection();

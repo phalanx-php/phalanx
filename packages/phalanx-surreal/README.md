@@ -1,6 +1,6 @@
 # Phalanx Surreal
 
-Native SurrealDB HTTP JSON RPC integration for Phalanx through Iris and Aegis-managed outbound HTTP waits.
+Native SurrealDB HTTP and live-query RPC integration for Phalanx through Iris, Hermes, and Aegis-managed waits.
 
 ## Usage
 
@@ -33,15 +33,24 @@ The `SurrealBundle` registers `Surreal::class` as the library entry point. Resol
 - Querying: `query`, `queryRaw`, `let`, `unset`
 - Records: `select`, `create`, `insert`, `insertRelation`, `update`, `upsert`, `merge`, `patch`, `delete`, `relate`
 - Functions/live query cleanup: `run`, `kill`, `rpc`
+- Live queries: `live`, `liveQuery`
 
 `let()` and `unset()` manage local HTTP query variables. Those variables are merged into later `query()` calls from this `Surreal` instance; they are not persistent WebSocket session variables.
 
 `withDatabase()` returns a scoped variant for another namespace/database. `use()` sends Surreal's RPC `use` method and then updates this instance's local HTTP header context.
 
-Run the in-memory SurrealDB demo:
+Live queries use Hermes' WebSocket client under the same scoped `Surreal` entry point. Once a live connection is open, session mutation methods such as `signin`, `authenticate`, `use`, `let`, and `unset` are rejected on that instance so the HTTP and WebSocket session state cannot diverge.
+
+Run the in-memory SurrealDB demos:
 
 ```bash
 composer demo:surreal
+```
+
+Run only the live-query demo:
+
+```bash
+composer demo:surreal:live
 ```
 
 Part of the [Phalanx monorepo](https://github.com/phalanx-php/phalanx).

@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Phalanx\Surreal;
 
+use Phalanx\Hermes\Client\WsClient;
+use Phalanx\Hermes\Client\WsClientConfig;
 use Phalanx\Iris\HttpClient;
 use Phalanx\Iris\HttpClientConfig;
-use Phalanx\Scope\TaskScope;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 
@@ -45,13 +47,40 @@ class SurrealBundle implements ServiceBundle
                 ->factory(static fn(HttpClient $http): SurrealTransport => new IrisSurrealTransport($http));
         }
 
+        if (!$services->has(WsClientConfig::class)) {
+            $services->config(
+                WsClientConfig::class,
+                static function (array $context) use ($config): WsClientConfig {
+                    $surreal = $config ?? SurrealConfig::fromContext($context);
+
+                    return new WsClientConfig(
+                        connectTimeout: $surreal->connectTimeout,
+                        recvTimeout: $surreal->readTimeout,
+                    );
+                },
+            );
+        }
+
+        if (!$services->has(WsClient::class)) {
+            $services->singleton(WsClient::class)
+                ->needs(WsClientConfig::class)
+                ->factory(static fn(WsClientConfig $config): WsClient => new WsClient($config));
+        }
+
+        if (!$services->has(SurrealLiveTransport::class)) {
+            $services->singleton(SurrealLiveTransport::class)
+                ->needs(WsClient::class)
+                ->factory(static fn(WsClient $client): SurrealLiveTransport => new HermesSurrealLiveTransport($client));
+        }
+
         if (!$services->has(Surreal::class)) {
             $services->scoped(Surreal::class)
                 ->factory(static fn(
                     SurrealConfig $config,
                     SurrealTransport $transport,
-                    TaskScope $scope,
-                ): Surreal => new Surreal($config, $transport, $scope))
+                    SurrealLiveTransport $liveTransport,
+                    ExecutionScope $scope,
+                ): Surreal => new Surreal($config, $transport, $scope, liveTransport: $liveTransport))
                 ->onDispose(static function (Surreal $surreal): void {
                     $surreal->close();
                 });

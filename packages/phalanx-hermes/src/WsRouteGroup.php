@@ -6,21 +6,13 @@ namespace Phalanx\Hermes;
 
 use Phalanx\Handler\Handler;
 use Phalanx\Handler\HandlerGroup;
-use Phalanx\Handler\HandlerResolver;
-use Phalanx\Scope\ExecutionScope;
 use Phalanx\Stoa\RouteConfig;
 use Phalanx\Stoa\RouteMatcher;
-use Phalanx\Stoa\RouteParams;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
-use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
-use React\Stream\DuplexStreamInterface;
-
-use function React\Async\async;
 
 /**
- * Typed collection of WebSocket routes.
+ * Typed collection of WebSocket routes consumed by {@see \Phalanx\Hermes\Server\WsServerUpgrade}.
  *
  * Each route entry is either:
  *  - a class-string of a Scopeable/Executable handler (uses default WsConfig)
@@ -32,7 +24,7 @@ use function React\Async\async;
  * @phpstan-type WsRouteEntry class-string<Scopeable|Executable>|array{class-string<Scopeable|Executable>, WsConfig}
  * @phpstan-type WsRouteMap array<string, WsRouteEntry>
  */
-final class WsRouteGroup implements Executable
+final class WsRouteGroup
 {
     private(set) HandlerGroup $inner;
 
@@ -40,7 +32,6 @@ final class WsRouteGroup implements Executable
     private function __construct(
         array $routes,
         private readonly WsGateway $gateway,
-        private readonly WsHandshake $handshake,
     ) {
         $handlers = [];
 
@@ -71,77 +62,16 @@ final class WsRouteGroup implements Executable
     public static function of(
         array $routes,
         ?WsGateway $gateway = null,
-        ?WsHandshake $handshake = null,
     ): self {
         return new self(
             $routes,
             $gateway ?? new WsGateway(),
-            $handshake ?? new WsHandshake(),
         );
-    }
-
-    public function __invoke(ExecutionScope $scope): mixed
-    {
-        return ($this->inner)($scope);
     }
 
     public function gateway(): WsGateway
     {
         return $this->gateway;
-    }
-
-    /** @return callable(ExecutionScope, DuplexStreamInterface, ServerRequestInterface): ResponseInterface */
-    public function upgradeHandler(): callable
-    {
-        $group = $this;
-
-        return static function (
-            ExecutionScope $scope,
-            DuplexStreamInterface $transport,
-            ServerRequestInterface $request,
-        ) use ($group): ResponseInterface {
-            $scope = $scope->withAttribute('request', $request);
-            $match = new RouteMatcher()->match($scope, $group->inner->all());
-
-            if ($match === null) {
-                throw new \RuntimeException("No route matches GET {$request->getUri()->getPath()}");
-            }
-
-            $response = $group->handshake->negotiate($request);
-
-            if (!$group->handshake->isSuccessful($response)) {
-                return $response;
-            }
-
-            $handler = $match->handler;
-            $wsConfig = $handler->config instanceof WsRouteConfig
-                ? $handler->config->wsConfig
-                : new WsConfig();
-
-            $params = $match->scope->attribute('route.params', []);
-            $params = is_array($params) ? $params : [];
-
-            /** @var HandlerResolver $resolver */
-            $resolver = $match->scope->service(HandlerResolver::class);
-            $pump = $resolver->resolve($handler->task, $match->scope);
-
-            $connectionHandler = new WsConnectionHandler(
-                $pump,
-                $wsConfig,
-                $group->gateway,
-            );
-
-            async(static function () use ($connectionHandler, $match, $transport, $request, $params): void {
-                $connectionHandler->handle(
-                    $match->scope,
-                    $transport,
-                    $request,
-                    new RouteParams($params),
-                );
-            })();
-
-            return $response;
-        };
     }
 
     private static function parseKey(string $key): ?string

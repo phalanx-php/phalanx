@@ -93,29 +93,39 @@ final class Channel
 
     public function consume(): Generator
     {
-        $halfFull = (int) ($this->bufferSize / 2);
-
         while (true) {
-            $value = $this->chan->pop();
-
-            if ($value === false && $this->chan->errCode === SwooleChannel::CHANNEL_CLOSED) {
-                if ($this->error !== null) {
-                    throw $this->error;
-                }
+            $value = $this->next();
+            if ($value === null && !$this->open) {
                 return;
-            }
-
-            if (
-                $this->paused
-                && $this->pressureCallback !== null
-                && $this->chan->length() <= $halfFull
-            ) {
-                $this->paused = false;
-                ($this->pressureCallback)(false);
             }
 
             yield $value;
         }
+    }
+
+    public function next(?float $timeout = null): mixed
+    {
+        $value = $timeout === null ? $this->chan->pop() : $this->chan->pop($timeout);
+
+        if ($value === false) {
+            if ($this->chan->errCode === SwooleChannel::CHANNEL_CLOSED && $this->error !== null) {
+                throw $this->error;
+            }
+
+            return null;
+        }
+
+        $halfFull = (int) ($this->bufferSize / 2);
+        if (
+            $this->paused
+            && $this->pressureCallback !== null
+            && $this->chan->length() <= $halfFull
+        ) {
+            $this->paused = false;
+            ($this->pressureCallback)(false);
+        }
+
+        return $value;
     }
 
     /** @param Closure(bool): void $fn */

@@ -4,21 +4,22 @@ declare(strict_types=1);
 
 namespace Phalanx\Hermes\Tests\Unit;
 
+use OpenSwoole\WebSocket\Frame;
+use OpenSwoole\WebSocket\Server as WebSocketServer;
 use Phalanx\Hermes\WsCloseCode;
 use Phalanx\Hermes\WsMessage;
-use Ratchet\RFC6455\Messaging\Frame;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class WsMessageTest extends TestCase
 {
     #[Test]
-    public function text_factory_creates_text_message(): void
+    public function textFactoryCreatesTextMessage(): void
     {
         $msg = WsMessage::text('hello');
 
         $this->assertSame('hello', $msg->payload);
-        $this->assertSame(Frame::OP_TEXT, $msg->opcode);
+        $this->assertSame(WebSocketServer::WEBSOCKET_OPCODE_TEXT, $msg->opcode);
         $this->assertTrue($msg->isText);
         $this->assertFalse($msg->isBinary);
         $this->assertFalse($msg->isClose);
@@ -27,7 +28,7 @@ final class WsMessageTest extends TestCase
     }
 
     #[Test]
-    public function binary_factory_creates_binary_message(): void
+    public function binaryFactoryCreatesBinaryMessage(): void
     {
         $data = random_bytes(16);
         $msg = WsMessage::binary($data);
@@ -38,20 +39,21 @@ final class WsMessageTest extends TestCase
     }
 
     #[Test]
-    public function close_factory_encodes_code_and_reason(): void
+    public function closeFactoryEncodesCodeAndReason(): void
     {
         $msg = WsMessage::close(WsCloseCode::Normal, 'goodbye');
 
         $this->assertTrue($msg->isClose);
         $this->assertSame(WsCloseCode::Normal, $msg->closeCode);
 
-        $decoded = unpack('n', substr($msg->payload, 0, 2))[1];
-        $this->assertSame(1000, $decoded);
+        $decoded = unpack('n', substr($msg->payload, 0, 2));
+        $this->assertIsArray($decoded);
+        $this->assertSame(1000, $decoded[1]);
         $this->assertSame('goodbye', substr($msg->payload, 2));
     }
 
     #[Test]
-    public function close_factory_defaults_to_normal(): void
+    public function closeFactoryDefaultsToNormal(): void
     {
         $msg = WsMessage::close();
 
@@ -59,7 +61,7 @@ final class WsMessageTest extends TestCase
     }
 
     #[Test]
-    public function ping_factory_creates_ping(): void
+    public function pingFactoryCreatesPing(): void
     {
         $msg = WsMessage::ping('heartbeat');
 
@@ -68,7 +70,7 @@ final class WsMessageTest extends TestCase
     }
 
     #[Test]
-    public function pong_factory_creates_pong(): void
+    public function pongFactoryCreatesPong(): void
     {
         $msg = WsMessage::pong('heartbeat');
 
@@ -77,7 +79,7 @@ final class WsMessageTest extends TestCase
     }
 
     #[Test]
-    public function decode_decodes_text_payload(): void
+    public function decodeDecodesTextPayload(): void
     {
         $msg = WsMessage::text('{"type":"chat","body":"hi"}');
 
@@ -88,7 +90,7 @@ final class WsMessageTest extends TestCase
     }
 
     #[Test]
-    public function decode_throws_on_invalid_payload(): void
+    public function decodeThrowsOnInvalidPayload(): void
     {
         $msg = WsMessage::text('not json');
 
@@ -97,18 +99,19 @@ final class WsMessageTest extends TestCase
     }
 
     #[Test]
-    public function to_frame_produces_valid_frame(): void
+    public function toFrameProducesValidFrame(): void
     {
         $msg = WsMessage::text('test');
         $frame = $msg->toFrame();
 
         $this->assertInstanceOf(Frame::class, $frame);
-        $this->assertSame(Frame::OP_TEXT, $frame->getOpcode());
-        $this->assertSame('test', $frame->getPayload());
+        $this->assertSame(WebSocketServer::WEBSOCKET_OPCODE_TEXT, $frame->opcode);
+        $this->assertSame('test', $frame->data);
+        $this->assertTrue($frame->finish);
     }
 
     #[Test]
-    public function from_frame_round_trips_text(): void
+    public function fromFrameRoundTripsText(): void
     {
         $original = WsMessage::text('round trip');
         $frame = $original->toFrame();
@@ -120,13 +123,13 @@ final class WsMessageTest extends TestCase
     }
 
     #[Test]
-    public function from_frame_decodes_close_code(): void
+    public function fromFrameDecodesCloseCode(): void
     {
-        $closeFrame = new Frame(
-            pack('n', 1001) . 'going away',
-            true,
-            Frame::OP_CLOSE,
-        );
+        $closeFrame = new Frame();
+        $closeFrame->data = pack('n', 1001) . 'going away';
+        $closeFrame->opcode = WebSocketServer::WEBSOCKET_OPCODE_CLOSE;
+        $closeFrame->flags = WebSocketServer::WEBSOCKET_FLAG_FIN;
+        $closeFrame->finish = true;
 
         $msg = WsMessage::fromFrame($closeFrame);
 
@@ -136,9 +139,14 @@ final class WsMessageTest extends TestCase
     }
 
     #[Test]
-    public function from_frame_handles_close_without_payload(): void
+    public function fromFrameHandlesCloseWithoutPayload(): void
     {
-        $closeFrame = new Frame('', true, Frame::OP_CLOSE);
+        $closeFrame = new Frame();
+        $closeFrame->data = '';
+        $closeFrame->opcode = WebSocketServer::WEBSOCKET_OPCODE_CLOSE;
+        $closeFrame->flags = WebSocketServer::WEBSOCKET_FLAG_FIN;
+        $closeFrame->finish = true;
+
         $msg = WsMessage::fromFrame($closeFrame);
 
         $this->assertTrue($msg->isClose);

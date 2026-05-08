@@ -13,6 +13,7 @@ parameters:
         - packages/phalanx-eidolon/src
         - packages/phalanx-enigma/src
         - packages/phalanx-grammata/src
+        - packages/phalanx-hermes/src
         - packages/phalanx-hydra/src
         - packages/phalanx-phpstan/src
         - packages/phalanx-postgres/src
@@ -33,6 +34,7 @@ parameters:
     phalanxEnforcedPaths:
         - packages/phalanx-aegis/src
         - packages/phalanx-enigma/src
+        - packages/phalanx-hermes/src
         - packages/phalanx-hydra/src
         - packages/phalanx-redis/src
         - packages/phalanx-surreal/src

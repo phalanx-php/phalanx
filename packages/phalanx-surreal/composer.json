@@ -1,6 +1,6 @@
 {
     "name": "phalanx-php/surreal",
-    "description": "SurrealDB HTTP RPC client for Phalanx using Iris and Aegis runtime supervision",
+    "description": "SurrealDB RPC and live-query client for Phalanx using Iris, Hermes, and Aegis runtime supervision",
     "license": "MIT",
     "type": "library",
     "keywords": ["surrealdb", "phalanx", "aegis", "iris", "http", "rpc"],
@@ -14,6 +14,7 @@
     "require": {
         "php": "^8.4",
         "phalanx-php/aegis": "^0.6",
+        "phalanx-php/hermes": "^0.6",
         "phalanx-php/iris": "^0.6"
     },
     "autoload": {
@@ -27,8 +28,9 @@
         }
     },
     "scripts": {
-        "demo": ["@demo:memory"],
-        "demo:memory": "php examples/01-in-memory-rpc/demo.php"
+        "demo": ["@demo:memory", "@demo:live"],
+        "demo:memory": "php examples/01-in-memory-rpc/demo.php",
+        "demo:live": "php examples/02-live-query/demo.php"
     },
     "extra": {
         "branch-alias": {

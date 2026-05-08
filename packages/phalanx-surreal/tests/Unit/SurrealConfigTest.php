@@ -17,6 +17,7 @@ final class SurrealConfigTest extends TestCase
             'surreal_namespace' => 'athena',
             'surreal_database' => 'wisdom',
             'surreal_endpoint' => 'http://surreal.test:8000/',
+            'surreal_ws_endpoint' => 'ws://surreal.test:8000/rpc/',
             'surreal_username' => 'root',
             'surreal_password' => 'secret',
             'surreal_connect_timeout' => '1.5',
@@ -27,6 +28,7 @@ final class SurrealConfigTest extends TestCase
         self::assertSame('athena', $config->namespace);
         self::assertSame('wisdom', $config->database);
         self::assertSame('http://surreal.test:8000', $config->endpoint);
+        self::assertSame('ws://surreal.test:8000/rpc', $config->websocketEndpoint);
         self::assertSame('root', $config->username);
         self::assertSame('secret', $config->password);
         self::assertSame(1.5, $config->connectTimeout);
@@ -47,7 +49,16 @@ final class SurrealConfigTest extends TestCase
         self::assertSame('olympus', $config->namespace);
         self::assertSame('pantheon', $config->database);
         self::assertSame('http://surreal.test:8000', $config->endpoint);
+        self::assertSame('ws://surreal.test:8000/rpc', $config->websocketEndpoint);
         self::assertSame('jwt', $config->token);
+    }
+
+    #[Test]
+    public function websocketEndpointDerivesFromHttpsEndpoint(): void
+    {
+        $config = new SurrealConfig(namespace: 'athena', database: 'wisdom', endpoint: 'https://surreal.test');
+
+        self::assertSame('wss://surreal.test/rpc', $config->websocketEndpoint);
     }
 
     #[Test]
@@ -60,6 +71,7 @@ final class SurrealConfigTest extends TestCase
         self::assertSame('wisdom', $base->database);
         self::assertSame('argos', $alternate->namespace);
         self::assertSame('signals', $alternate->database);
+        self::assertSame($base->websocketEndpoint, $alternate->websocketEndpoint);
         self::assertSame('token', $alternate->token);
     }
 }

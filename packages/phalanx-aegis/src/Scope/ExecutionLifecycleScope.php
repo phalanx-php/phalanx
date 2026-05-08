@@ -253,27 +253,6 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         }
         $this->deferredCids = [];
 
-        foreach ($this->goSpawns as [$cid, $run]) {
-            if ($run->isTerminal()) {
-                continue;
-            }
-            $this->traceLog->log(
-                TraceType::Defer,
-                'PHX-SPAWN-002',
-                [
-                    'run' => $run->id,
-                    'task' => $run->name,
-                    'detail' => 'go()-spawned task still live at scope dispose; force-cancelling',
-                ],
-            );
-            $this->supervisor->cancel($run);
-            if (Coroutine::exists($cid)) {
-                Coroutine::cancel($cid);
-            }
-            $this->supervisor->reap($run);
-        }
-        $this->goSpawns = [];
-
         $callbacks = array_reverse($this->disposeStack);
         $this->disposeStack = [];
         foreach ($callbacks as $cb) {
@@ -301,6 +280,9 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         }
         $this->scopedInstances = [];
         $this->scopedCreationOrder = [];
+
+        $this->forceCancelGoSpawns();
+
         $this->supervisor->disposeScope($this->scopeIdValue);
     }
 
@@ -1155,6 +1137,44 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         }
 
         return $task->__invoke($scope);
+    }
+
+    private function forceCancelGoSpawns(): void
+    {
+        foreach ($this->goSpawns as [$cid, $run]) {
+            if ($run->isTerminal()) {
+                continue;
+            }
+            $this->traceLog->log(
+                TraceType::Defer,
+                'PHX-SPAWN-002',
+                [
+                    'run' => $run->id,
+                    'task' => $run->name,
+                    'detail' => 'go()-spawned task still live at scope dispose; force-cancelling',
+                ],
+            );
+            $this->supervisor->cancel($run);
+            if (Coroutine::exists($cid)) {
+                Coroutine::cancel($cid);
+            }
+        }
+
+        if (Coroutine::getCid() >= 0) {
+            foreach ($this->goSpawns as [$cid, $run]) {
+                for ($attempt = 0; $attempt < 50 && Coroutine::exists($cid); $attempt++) {
+                    Coroutine::usleep(1_000);
+                }
+            }
+        }
+
+        foreach ($this->goSpawns as [$cid, $run]) {
+            if (!$run->isTerminal()) {
+                $this->supervisor->reap($run);
+            }
+        }
+
+        $this->goSpawns = [];
     }
 
     /**

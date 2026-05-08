@@ -13,10 +13,9 @@ use Phalanx\Task\Task;
 $context = [
     'argv' => $argv ?? [],
 ];
-$ledger = new InProcessLedger();
 
 $exitCode = Application::starting($context)
-    ->withLedger($ledger)
+    ->withLedger($ledger = new InProcessLedger())
     ->run(Task::named(
         'demo.cancellation.root',
         static function (ExecutionScope $root) use ($ledger): int {

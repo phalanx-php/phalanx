@@ -7,6 +7,8 @@ use Phalanx\Iris\HttpClient;
 use Phalanx\Iris\HttpRequest;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Surreal\Surreal;
+use Phalanx\Surreal\SurrealLiveAction;
+use Phalanx\Surreal\SurrealLiveNotification;
 use Phalanx\System\StreamingProcessHandle;
 
 function phalanxSurrealExampleBinary(): ?string
@@ -158,6 +160,16 @@ function phalanxSurrealExampleHasValue(mixed $value, mixed $expected): bool
     }
 
     return false;
+}
+
+function phalanxSurrealExampleLiveNotification(
+    ?SurrealLiveNotification $notification,
+    SurrealLiveAction $action,
+    string $signal,
+): bool {
+    return $notification instanceof SurrealLiveNotification
+        && $notification->action === $action
+        && phalanxSurrealExampleHasValue($notification->result, $signal);
 }
 
 function phalanxSurrealExampleCannotRun(string $title, string $reason, string $fix): never

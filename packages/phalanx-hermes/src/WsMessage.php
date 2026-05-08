@@ -4,28 +4,29 @@ declare(strict_types=1);
 
 namespace Phalanx\Hermes;
 
-use Ratchet\RFC6455\Messaging\Frame;
+use OpenSwoole\WebSocket\Frame;
+use OpenSwoole\WebSocket\Server as WebSocketServer;
 
 final class WsMessage
 {
     public bool $isText {
-        get => $this->opcode === Frame::OP_TEXT;
+        get => $this->opcode === WebSocketServer::WEBSOCKET_OPCODE_TEXT;
     }
 
     public bool $isBinary {
-        get => $this->opcode === Frame::OP_BINARY;
+        get => $this->opcode === WebSocketServer::WEBSOCKET_OPCODE_BINARY;
     }
 
     public bool $isClose {
-        get => $this->opcode === Frame::OP_CLOSE;
+        get => $this->opcode === WebSocketServer::WEBSOCKET_OPCODE_CLOSE;
     }
 
     public bool $isPing {
-        get => $this->opcode === Frame::OP_PING;
+        get => $this->opcode === WebSocketServer::WEBSOCKET_OPCODE_PING;
     }
 
     public bool $isPong {
-        get => $this->opcode === Frame::OP_PONG;
+        get => $this->opcode === WebSocketServer::WEBSOCKET_OPCODE_PONG;
     }
 
     public function __construct(
@@ -37,12 +38,12 @@ final class WsMessage
 
     public static function text(string $payload): self
     {
-        return new self($payload, Frame::OP_TEXT);
+        return new self($payload, WebSocketServer::WEBSOCKET_OPCODE_TEXT);
     }
 
     public static function binary(string $payload): self
     {
-        return new self($payload, Frame::OP_BINARY);
+        return new self($payload, WebSocketServer::WEBSOCKET_OPCODE_BINARY);
     }
 
     public static function close(
@@ -51,17 +52,17 @@ final class WsMessage
     ): self {
         $payload = pack('n', $code->value) . $reason;
 
-        return new self($payload, Frame::OP_CLOSE, $code);
+        return new self($payload, WebSocketServer::WEBSOCKET_OPCODE_CLOSE, $code);
     }
 
     public static function ping(string $payload = ''): self
     {
-        return new self($payload, Frame::OP_PING);
+        return new self($payload, WebSocketServer::WEBSOCKET_OPCODE_PING);
     }
 
     public static function pong(string $payload = ''): self
     {
-        return new self($payload, Frame::OP_PONG);
+        return new self($payload, WebSocketServer::WEBSOCKET_OPCODE_PONG);
     }
 
     public static function json(mixed $data, int $flags = 0): self
@@ -71,11 +72,11 @@ final class WsMessage
 
     public static function fromFrame(Frame $frame): self
     {
-        $opcode = $frame->getOpcode();
-        $payload = $frame->getPayload();
+        $opcode = $frame->opcode;
+        $payload = $frame->data ?? '';
         $closeCode = null;
 
-        if ($opcode === Frame::OP_CLOSE && strlen($payload) >= 2) {
+        if ($opcode === WebSocketServer::WEBSOCKET_OPCODE_CLOSE && strlen($payload) >= 2) {
             $unpacked = unpack('n', substr($payload, 0, 2));
             if ($unpacked === false) {
                 return new self($payload, $opcode);
@@ -92,13 +93,13 @@ final class WsMessage
         return json_decode($this->payload, $assoc, 512, $flags | JSON_THROW_ON_ERROR);
     }
 
-    public function toFrame(bool $masked = false): Frame
+    public function toFrame(): Frame
     {
-        $frame = new Frame($this->payload, true, $this->opcode);
-
-        if ($masked) {
-            $frame->maskPayload();
-        }
+        $frame = new Frame();
+        $frame->data = $this->payload;
+        $frame->opcode = $this->opcode;
+        $frame->flags = WebSocketServer::WEBSOCKET_FLAG_FIN;
+        $frame->finish = true;
 
         return $frame;
     }

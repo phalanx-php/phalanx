@@ -62,12 +62,9 @@ final class WsConnection
             return;
         }
 
-        try {
-            $this->outbound->emit(WsMessage::close($code, $reason));
-        } finally {
-            $this->outbound->complete();
-            $this->inbound->complete();
-        }
+        $this->outbound->tryEmit(WsMessage::close($code, $reason));
+        $this->outbound->complete();
+        $this->inbound->complete();
     }
 
     public function stream(ExecutionScope $scope): ScopedStream

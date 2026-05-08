@@ -5,13 +5,12 @@ declare(strict_types=1);
 namespace Phalanx\Tests\Unit\Supervisor;
 
 use OpenSwoole\Coroutine;
+use OpenSwoole\Coroutine\Channel;
 use Phalanx\Application;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 use Phalanx\Supervisor\InProcessLedger;
-use Phalanx\Supervisor\RunState;
-use Phalanx\Task\Task;
 use Phalanx\Tests\Support\CoroutineTestCase;
 use RuntimeException;
 
@@ -91,6 +90,33 @@ final class SpawnHelperTest extends CoroutineTestCase
             self::assertCount(1, $events);
             self::assertSame($run->id, $events[0]->attrs['run']);
 
+            self::assertSame(0, $ledger->liveCount());
+        });
+    }
+
+    public function testDisposeWaitsForCancelledSpawnToUnwind(): void
+    {
+        $this->runInCoroutine(function (): void {
+            $ledger = new InProcessLedger();
+            $app = self::buildApp($ledger);
+            $scope = $app->createScope();
+            $started = new Channel(1);
+            $unwound = false;
+
+            $scope->go(static function (ExecutionScope $s) use ($started, &$unwound): void {
+                try {
+                    $started->push(true);
+                    $s->delay(5.0);
+                } finally {
+                    $unwound = true;
+                }
+            }, name: 'unwind-spawn');
+
+            self::assertTrue($started->pop(1.0));
+
+            $scope->dispose();
+
+            self::assertTrue($unwound);
             self::assertSame(0, $ledger->liveCount());
         });
     }

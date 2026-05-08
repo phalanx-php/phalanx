@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Surreal;
 
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\TaskScope;
+use Phalanx\Styx\Channel;
 
 class Surreal
 {
@@ -13,27 +15,34 @@ class Surreal
 
     private ?string $token;
 
+    private ?SurrealLiveConnection $liveConnection = null;
+
     public function __construct(
         private SurrealConfig $config,
         private readonly SurrealTransport $transport,
         private readonly TaskScope $scope,
         private readonly SurrealScopeGuard $guard = new SurrealScopeGuard(),
+        private readonly ?SurrealLiveTransport $liveTransport = null,
     ) {
         $this->token = $config->token;
     }
 
     public function close(): void
     {
+        $this->liveConnection?->close();
         $this->guard->close();
     }
 
     public function withDatabase(string $namespace, string $database): self
     {
+        $this->assertNoLiveConnection('withDatabase');
+
         $client = new self(
             $this->config->withDatabase($namespace, $database),
             $this->transport,
             $this->scope,
             $this->guard,
+            $this->liveTransport,
         );
         $client->token = $this->token;
         $client->params = $this->params;
@@ -44,6 +53,7 @@ class Surreal
     /** @param array<string, mixed> $credentials */
     public function signin(array $credentials = []): ?string
     {
+        $this->assertNoLiveConnection('signin');
         $payload = $credentials === []
             ? $this->defaultCredentials()
             : $credentials;
@@ -57,6 +67,7 @@ class Surreal
     /** @param array<string, mixed> $credentials */
     public function signup(array $credentials): ?string
     {
+        $this->assertNoLiveConnection('signup');
         $token = self::extractToken($this->rpcRaw('signup', [$credentials]), 'signup');
         $this->token = $token;
 
@@ -65,6 +76,7 @@ class Surreal
 
     public function authenticate(string $token): mixed
     {
+        $this->assertNoLiveConnection('authenticate');
         $result = $this->rpcRaw('authenticate', [$token]);
         $this->token = $token;
 
@@ -73,6 +85,7 @@ class Surreal
 
     public function invalidate(): mixed
     {
+        $this->assertNoLiveConnection('invalidate');
         $result = $this->rpcRaw('invalidate', token: $this->token);
         $this->token = null;
 
@@ -91,6 +104,7 @@ class Surreal
 
     public function reset(): mixed
     {
+        $this->assertNoLiveConnection('reset');
         $result = $this->rpcRaw('reset', token: $this->token);
         $this->token = null;
         $this->params = [];
@@ -160,6 +174,7 @@ class Surreal
      */
     public function let(string $name, mixed $value): void
     {
+        $this->assertNoLiveConnection('let');
         $this->guard->assertOpen();
         $this->params[$name] = $value;
     }
@@ -169,12 +184,14 @@ class Surreal
      */
     public function unset(string $name): void
     {
+        $this->assertNoLiveConnection('unset');
         $this->guard->assertOpen();
         unset($this->params[$name]);
     }
 
     public function use(string $namespace, string $database): mixed
     {
+        $this->assertNoLiveConnection('use');
         $result = $this->rpcRaw('use', [$namespace, $database], $this->token);
         $this->config = $this->config->withDatabase($namespace, $database);
 
@@ -234,6 +251,24 @@ class Surreal
         return $this->rpc('kill', [$queryUuid]);
     }
 
+    public function live(string $table, bool $diff = false): SurrealLiveSubscription
+    {
+        $result = $this->liveConnection()->request('live', [$table, $diff]);
+
+        return $this->subscription(self::extractLiveQueryId($result, 'live'));
+    }
+
+    /** @param array<string, mixed> $params */
+    public function liveQuery(string $query, array $params = []): SurrealLiveSubscription
+    {
+        $merged = [...$this->params, ...$params];
+        $result = $merged === []
+            ? $this->liveConnection()->request('query', [$query])
+            : $this->liveConnection()->request('query', [$query, $merged]);
+
+        return $this->subscription(self::extractLiveQueryId($result, 'live query'));
+    }
+
     /**
      * @param string|list<string> $from
      * @param string|list<string> $to
@@ -260,6 +295,23 @@ class Surreal
         return $this->rpcRaw($method, $params, $this->token);
     }
 
+    private static function extractLiveQueryId(mixed $result, string $method): string
+    {
+        if (is_string($result)) {
+            return $result;
+        }
+
+        if (is_array($result)) {
+            foreach ($result as $item) {
+                if (is_array($item) && isset($item['result']) && is_string($item['result'])) {
+                    return $item['result'];
+                }
+            }
+        }
+
+        throw new SurrealException("Surreal {$method} did not return a live query id.");
+    }
+
     /** @param array<array-key, mixed>|string|null $result */
     private static function extractToken(mixed $result, string $method): ?string
     {
@@ -275,6 +327,43 @@ class Surreal
         }
 
         throw new SurrealException("Surreal {$method} returned a non-token response.");
+    }
+
+    private function liveConnection(): SurrealLiveConnection
+    {
+        $this->guard->assertOpen();
+
+        if ($this->liveConnection?->isOpen === true) {
+            return $this->liveConnection;
+        }
+
+        if ($this->liveTransport === null) {
+            throw new SurrealException('Surreal live queries require a live transport.');
+        }
+
+        if (!$this->scope instanceof ExecutionScope) {
+            throw new SurrealException('Surreal live queries require an execution scope.');
+        }
+
+        $this->liveConnection = $this->liveTransport->open($this->scope, $this->config, $this->token);
+
+        return $this->liveConnection;
+    }
+
+    private function subscription(string $queryId): SurrealLiveSubscription
+    {
+        $channel = new Channel();
+        $connection = $this->liveConnection();
+        $connection->subscribe($queryId, $channel);
+
+        return new SurrealLiveSubscription($queryId, $connection, $channel);
+    }
+
+    private function assertNoLiveConnection(string $method): void
+    {
+        if ($this->liveConnection?->isOpen === true) {
+            throw new SurrealException("Cannot call {$method} while Surreal live subscriptions are open.");
+        }
     }
 
     /** @return array<string, mixed> */

@@ -4,25 +4,25 @@ declare(strict_types=1);
 
 namespace Phalanx\Hermes\Tests\Unit;
 
+use OpenSwoole\WebSocket\Server as WebSocketServer;
 use Phalanx\Hermes\WsMessage;
-use Ratchet\RFC6455\Messaging\Frame;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class WsMessageJsonTest extends TestCase
 {
     #[Test]
-    public function json_factory_creates_text_message_with_encoded_payload(): void
+    public function jsonFactoryCreatesTextMessageWithEncodedPayload(): void
     {
         $msg = WsMessage::json(['type' => 'chat', 'body' => 'hi']);
 
         $this->assertTrue($msg->isText);
-        $this->assertSame(Frame::OP_TEXT, $msg->opcode);
+        $this->assertSame(WebSocketServer::WEBSOCKET_OPCODE_TEXT, $msg->opcode);
         $this->assertSame('{"type":"chat","body":"hi"}', $msg->payload);
     }
 
     #[Test]
-    public function json_factory_encodes_nested_data(): void
+    public function jsonFactoryEncodesNestedData(): void
     {
         $data = ['users' => [['id' => 1, 'name' => 'Alice'], ['id' => 2, 'name' => 'Bob']]];
         $msg = WsMessage::json($data);
@@ -31,7 +31,7 @@ final class WsMessageJsonTest extends TestCase
     }
 
     #[Test]
-    public function json_factory_accepts_flags(): void
+    public function jsonFactoryAcceptsFlags(): void
     {
         $msg = WsMessage::json(['path' => '/foo/bar'], JSON_UNESCAPED_SLASHES);
 
@@ -39,7 +39,7 @@ final class WsMessageJsonTest extends TestCase
     }
 
     #[Test]
-    public function json_factory_throws_on_unencodable_data(): void
+    public function jsonFactoryThrowsOnUnencodableData(): void
     {
         $this->expectException(\JsonException::class);
 
@@ -47,7 +47,7 @@ final class WsMessageJsonTest extends TestCase
     }
 
     #[Test]
-    public function json_factory_round_trips_with_decode(): void
+    public function jsonFactoryRoundTripsWithDecode(): void
     {
         $data = ['type' => 'event', 'count' => 42, 'nested' => ['a' => true]];
         $msg = WsMessage::json($data);
@@ -57,7 +57,7 @@ final class WsMessageJsonTest extends TestCase
     }
 
     #[Test]
-    public function json_factory_encodes_scalar_values(): void
+    public function jsonFactoryEncodesScalarValues(): void
     {
         $msg = WsMessage::json('hello');
         $this->assertSame('"hello"', $msg->payload);
