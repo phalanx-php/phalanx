@@ -2,47 +2,48 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/../bootstrap.php';
+require __DIR__ . '/../../../../vendor/autoload_runtime.php';
 
 use Phalanx\Application;
+use Phalanx\Boot\AppContext;
 use Phalanx\Diagnostics\EnvironmentDoctor;
 use Phalanx\Runtime\RuntimePolicy;
 use Phalanx\Task\Task;
 
-$context = [
-    'argv' => $argv ?? [],
-];
-$policy = RuntimePolicy::fromContext($context);
-$app = Application::starting($context)
-    ->withRuntimePolicy($policy)
-    ->compile();
+return static function (array $context): \Closure {
+    $appContext = AppContext::fromSymfonyRuntime($context);
+    $policy = RuntimePolicy::fromContext($appContext);
+    $app = Application::starting($appContext)
+        ->withRuntimePolicy($policy)
+        ->compile();
 
-$exitCode = $app->run(Task::named(
-    'demo.runtime-policy',
-    static function () use ($app, $policy): int {
-        $report = (new EnvironmentDoctor($app->supervisor()->ledger, $policy, $app->runtime()->memory))->check();
-        $failed = !$report->isHealthy();
+    return static function () use ($app, $policy): int {
+        return (int) $app->run(Task::named(
+            'demo.runtime-policy',
+            static function () use ($app, $policy): int {
+                $report = (new EnvironmentDoctor($app->supervisor()->ledger, $policy, $app->runtime()->memory))->check();
+                $failed = !$report->isHealthy();
 
-        foreach ($report as $check) {
-            if (
-                !str_starts_with($check->name, 'openswoole.')
-                && !str_starts_with($check->name, 'runtime.resources.')
-                && !str_starts_with($check->name, 'runtime.events.')
-                && !str_starts_with($check->name, 'runtime.memory.')
-            ) {
-                continue;
-            }
+                foreach ($report as $check) {
+                    if (
+                        !str_starts_with($check->name, 'openswoole.')
+                        && !str_starts_with($check->name, 'runtime.resources.')
+                        && !str_starts_with($check->name, 'runtime.events.')
+                        && !str_starts_with($check->name, 'runtime.memory.')
+                    ) {
+                        continue;
+                    }
 
-            printf(
-                "%s -> %s %s\n",
-                $check->name,
-                $check->ok ? 'ok' : 'failed',
-                $check->detail,
-            );
-        }
+                    printf(
+                        "%s -> %s %s\n",
+                        $check->name,
+                        $check->ok ? 'ok' : 'failed',
+                        $check->detail,
+                    );
+                }
 
-        return $failed ? 1 : 0;
-    },
-));
-
-exit((int) $exitCode);
+                return $failed ? 1 : 0;
+            },
+        ));
+    };
+};
