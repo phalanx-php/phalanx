@@ -6,7 +6,7 @@ namespace Phalanx\Boot\Exception;
 
 use RuntimeException;
 
-final class MissingContextValue extends RuntimeException
+class MissingContextValue extends RuntimeException
 {
     public static function forKey(string $key): self
     {

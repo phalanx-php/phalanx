@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Boot;
 
-final readonly class BootHarnessReport
+class BootHarnessReport
 {
     /**
      * @param list<BootEvaluationEntry> $passed
@@ -12,9 +12,9 @@ final readonly class BootHarnessReport
      * @param list<BootEvaluationEntry> $failed
      */
     public function __construct(
-        public array $passed = [],
-        public array $warned = [],
-        public array $failed = [],
+        public private(set) array $passed = [],
+        public private(set) array $warned = [],
+        public private(set) array $failed = [],
     ) {
     }
 

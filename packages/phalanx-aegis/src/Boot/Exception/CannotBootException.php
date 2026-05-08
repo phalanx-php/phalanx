@@ -7,9 +7,9 @@ namespace Phalanx\Boot\Exception;
 use Phalanx\Boot\BootHarnessReport;
 use RuntimeException;
 
-final class CannotBootException extends RuntimeException
+class CannotBootException extends RuntimeException
 {
-    public function __construct(public readonly BootHarnessReport $report)
+    public function __construct(public private(set) BootHarnessReport $report)
     {
         parent::__construct(
             "Phalanx cannot boot: required configuration is missing or unreachable.\n\n" . $report->render(),

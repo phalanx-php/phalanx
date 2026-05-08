@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Phalanx\Boot;
 
-final readonly class BootEvaluationEntry
+class BootEvaluationEntry
 {
     public function __construct(
-        public BootRequirement $requirement,
-        public BootEvaluation $evaluation,
+        public private(set) BootRequirement $requirement,
+        public private(set) BootEvaluation $evaluation,
     ) {
     }
 }

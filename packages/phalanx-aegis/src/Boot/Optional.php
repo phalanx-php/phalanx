@@ -6,7 +6,7 @@ namespace Phalanx\Boot;
 
 use Closure;
 
-final readonly class Optional extends BootRequirement
+final class Optional extends BootRequirement
 {
     public const string KIND_ENV = 'optional.env';
     public const string KIND_SERVICE = 'optional.service';

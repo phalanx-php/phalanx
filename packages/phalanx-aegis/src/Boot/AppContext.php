@@ -17,10 +17,10 @@ use Phalanx\Boot\Exception\MissingContextValue;
  *
  * Immutable: every mutation (`with()`) returns a new instance.
  */
-final readonly class AppContext
+class AppContext
 {
     /** @param array<string,mixed> $values */
-    public function __construct(public array $values = [])
+    public function __construct(public private(set) array $values = [])
     {
     }
 

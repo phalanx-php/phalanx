@@ -6,7 +6,7 @@ namespace Phalanx\Boot;
 
 use Closure;
 
-final readonly class Probe extends BootRequirement
+final class Probe extends BootRequirement
 {
     public const string KIND_TCP = 'probe.tcp';
     public const string KIND_HTTP = 'probe.http';
@@ -16,7 +16,7 @@ final readonly class Probe extends BootRequirement
     private function __construct(
         string $kind,
         string $description,
-        public ProbeOutcome $failureMode,
+        public private(set) ProbeOutcome $failureMode,
         private Closure $check,
     ) {
         parent::__construct($kind, $description);

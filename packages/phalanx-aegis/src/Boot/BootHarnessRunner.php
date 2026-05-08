@@ -15,7 +15,7 @@ use Phalanx\Service\ServiceBundle;
  *
  * Stateless: every call to run() or dryRun() is independent.
  */
-final class BootHarnessRunner
+class BootHarnessRunner
 {
     /**
      * Walk all registered bundle classes, merge their static harness()

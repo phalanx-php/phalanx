@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Phalanx\Boot;
 
-final readonly class BootHarness
+class BootHarness
 {
     /** @param list<BootRequirement> $requirements */
-    private function __construct(public array $requirements)
+    private function __construct(public private(set) array $requirements)
     {
     }
 

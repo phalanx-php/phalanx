@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Phalanx\Boot;
 
-final readonly class BootEvaluation
+class BootEvaluation
 {
     /** @param 'pass'|'warn'|'fail' $status */
     private function __construct(
-        public string $status,
-        public string $message,
-        public ?string $remediation = null,
+        public private(set) string $status,
+        public private(set) string $message,
+        public private(set) ?string $remediation = null,
     ) {
     }
 
