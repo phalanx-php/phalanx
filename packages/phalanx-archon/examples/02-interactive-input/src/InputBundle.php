@@ -17,12 +17,12 @@ use Phalanx\Service\Services;
  * so interactive prompts short-circuit to their defaults and the demo
  * produces deterministic output for assertion.
  */
-final class InputBundle extends ServiceBundle
+class InputBundle extends ServiceBundle
 {
     public function __construct(
-        private readonly StreamOutput $output,
-        private readonly Theme $theme,
-        private readonly RawInput $reader,
+        private StreamOutput $output,
+        private Theme $theme,
+        private RawInput $reader,
     ) {
     }
 

@@ -17,7 +17,7 @@ use Phalanx\Athena\AgentDefinition;
  *
  * In production: inject PgPool and RedisClient via constructor.
  */
-final class TenantAgentFactory
+class TenantAgentFactory
 {
     /**
      * @param array<string, array{
@@ -29,7 +29,7 @@ final class TenantAgentFactory
      * }> $tenantConfigs
      */
     public function __construct(
-        private readonly array $tenantConfigs = [],
+        private array $tenantConfigs = [],
     ) {}
 
     public function create(string $tenantId): AgentDefinition

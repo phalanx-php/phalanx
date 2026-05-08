@@ -13,9 +13,9 @@ use Phalanx\Service\Services;
  * Registers a caller-supplied StreamOutput so the demo can capture command
  * output into a php://temp stream for assertion.
  */
-final class OutputBundle extends ServiceBundle
+class OutputBundle extends ServiceBundle
 {
-    public function __construct(private readonly StreamOutput $output)
+    public function __construct(private StreamOutput $output)
     {
     }
 

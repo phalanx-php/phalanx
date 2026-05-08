@@ -16,13 +16,13 @@ use Phalanx\Service\Services;
  * Under a non-TTY the stream is a php://temp capture buffer; under a real
  * terminal STDOUT is passed directly so the live spinner renders inline.
  */
-final class DeployBundle extends ServiceBundle
+class DeployBundle extends ServiceBundle
 {
     public function __construct(
         /** @var resource */
-        private readonly mixed $stream,
-        private readonly ?TerminalEnvironment $terminal,
-        private readonly Theme $theme,
+        private mixed $stream,
+        private ?TerminalEnvironment $terminal,
+        private Theme $theme,
     ) {
     }
 

@@ -11,7 +11,7 @@ use Phalanx\Boot\AppContext;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 
-final class ApiServiceBundle extends ServiceBundle
+class ApiServiceBundle extends ServiceBundle
 {
     public function services(Services $services, AppContext $context): void
     {

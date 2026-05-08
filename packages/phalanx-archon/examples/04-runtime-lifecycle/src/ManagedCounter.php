@@ -11,14 +11,14 @@ use Phalanx\Archon\Console\Output\StreamOutput;
  * banner — paired with $scope->onDispose so the resilience demo can see the
  * cleanup line fire even when the command body is interrupted.
  */
-final class ManagedCounter
+class ManagedCounter
 {
-    public readonly int $id;
+    public private(set) int $id;
 
     private static int $sequence = 0;
     private bool $closed = false;
 
-    public function __construct(private readonly StreamOutput $output)
+    public function __construct(private StreamOutput $output)
     {
         $this->id = ++self::$sequence;
         $this->output->persist("[opened resource #{$this->id}]");

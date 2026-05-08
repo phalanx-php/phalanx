@@ -15,7 +15,7 @@ use Phalanx\Scope\ExecutionScope;
  * Built by TenantAgentFactory from database configuration. Each tenant
  * gets their own system prompt, tool set, and provider preference.
  */
-final class TenantSupportAgent implements AgentDefinition
+class TenantSupportAgent implements AgentDefinition
 {
     public string $instructions {
         get => $this->systemInstructions;
@@ -25,10 +25,10 @@ final class TenantSupportAgent implements AgentDefinition
      * @param list<class-string<\Phalanx\Athena\Tool\Tool>> $toolClasses
      */
     public function __construct(
-        private readonly string $tenantId,
-        private readonly string $systemInstructions,
-        private readonly string $providerName,
-        private readonly array $toolClasses,
+        private string $tenantId,
+        private string $systemInstructions,
+        private string $providerName,
+        private array $toolClasses,
     ) {
     }
 
