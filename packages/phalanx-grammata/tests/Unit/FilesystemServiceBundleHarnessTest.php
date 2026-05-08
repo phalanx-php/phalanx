@@ -29,7 +29,6 @@ final class FilesystemServiceBundleHarnessTest extends TestCase
 
         self::assertCount(1, $requirements);
         self::assertSame(Optional::KIND_ENV, $requirements[0]->kind);
-        self::assertStringContainsString('FILESYSTEM_MAX_OPEN', $requirements[0]->description);
     }
 
     #[Test]

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Tests\Stoa\Unit;
 
 use Phalanx\AppHost;
+use Phalanx\Boot\AppContext;
 use Phalanx\Stoa\RouteGroup;
 use Phalanx\Stoa\Runtime;
 use Phalanx\Stoa\StoaApplication;
@@ -19,7 +20,7 @@ final class StoaServerConfigTest extends TestCase
     #[Test]
     public function buildsFromRuntimeContextWithoutProcessGlobals(): void
     {
-        $config = StoaServerConfig::fromContext([
+        $config = StoaServerConfig::fromContext(AppContext::test([
             'PHALANX_HOST' => '127.0.0.1',
             'PHALANX_PORT' => '9090',
             'PHALANX_REQUEST_TIMEOUT' => '2.5',
@@ -27,7 +28,7 @@ final class StoaServerConfigTest extends TestCase
             'PHALANX_DEBUG' => 'true',
             'PHALANX_QUIET' => 'true',
             'PHALANX_POWERED_BY' => 'Custom Runtime',
-        ]);
+        ]));
 
         self::assertSame('127.0.0.1', $config->host);
         self::assertSame(9090, $config->port);
@@ -44,11 +45,11 @@ final class StoaServerConfigTest extends TestCase
     #[Test]
     public function staticHandlerAndCompressionFlowFromContext(): void
     {
-        $config = StoaServerConfig::fromContext([
+        $config = StoaServerConfig::fromContext(AppContext::test([
             'PHALANX_DOCUMENT_ROOT' => '/srv/static',
             'PHALANX_ENABLE_STATIC_HANDLER' => 'true',
             'PHALANX_HTTP_COMPRESSION' => 'false',
-        ]);
+        ]));
 
         self::assertSame('/srv/static', $config->documentRoot);
         self::assertTrue($config->enableStaticHandler);
@@ -58,9 +59,9 @@ final class StoaServerConfigTest extends TestCase
     #[Test]
     public function poweredByHeaderCanBeDisabledFromContext(): void
     {
-        $config = StoaServerConfig::fromContext([
+        $config = StoaServerConfig::fromContext(AppContext::test([
             'PHALANX_POWERED_BY' => 'off',
-        ]);
+        ]));
 
         self::assertNull($config->poweredBy);
     }

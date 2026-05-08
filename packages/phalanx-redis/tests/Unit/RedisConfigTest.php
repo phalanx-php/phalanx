@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Redis\Tests\Unit;
 
 use InvalidArgumentException;
+use Phalanx\Boot\AppContext;
 use Phalanx\Redis\RedisConfig;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -41,14 +42,14 @@ final class RedisConfigTest extends TestCase
     #[Test]
     public function contextAcceptsEnvironmentStyleKeys(): void
     {
-        $config = RedisConfig::fromContext([
+        $config = RedisConfig::fromContext(AppContext::test([
             'REDIS_HOST' => 'redis.test',
             'REDIS_PORT' => '6380',
             'REDIS_USERNAME' => 'athena',
             'REDIS_PASSWORD' => 'secret',
             'REDIS_DATABASE' => '4',
             'REDIS_POOL_SIZE' => '8',
-        ]);
+        ]));
 
         self::assertSame('redis.test', $config->host);
         self::assertSame(6380, $config->port);

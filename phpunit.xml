@@ -85,6 +85,15 @@
         <testsuite name="Eidolon Unit">
             <directory>packages/phalanx-eidolon/tests/Unit</directory>
         </testsuite>
+        <testsuite name="Postgres Unit">
+            <directory>packages/phalanx-postgres/tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Grammata Unit">
+            <directory>packages/phalanx-grammata/tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Argos Unit">
+            <directory>packages/phalanx-argos/tests/Unit</directory>
+        </testsuite>
         <testsuite name="Architecture">
             <directory>tests/Architecture</directory>
         </testsuite>
