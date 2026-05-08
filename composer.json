@@ -145,7 +145,9 @@
         "demo:athena:serve:research-agent": "php packages/phalanx-athena/examples/research-agent/server.php",
         "demo:athena:serve:fleet-gateway": "php packages/phalanx-athena/examples/multi-tenant-fleet/gateway.php",
         "demo:athena:worker:fleet": "php packages/phalanx-athena/examples/multi-tenant-fleet/worker.php",
-        "examples:lint": "find examples packages/phalanx-aegis/examples packages/phalanx-archon/examples packages/phalanx-athena/examples packages/phalanx-stoa/examples -name '*.php' -not -path '*/vendor/*' -print0 | xargs -0 -n1 php -l > /dev/null",
+        "demo:surreal": ["@demo:surreal:memory"],
+        "demo:surreal:memory": "php packages/phalanx-surreal/examples/01-in-memory-rpc/demo.php",
+        "examples:lint": "find examples packages/phalanx-aegis/examples packages/phalanx-archon/examples packages/phalanx-athena/examples packages/phalanx-stoa/examples packages/phalanx-surreal/examples -name '*.php' -not -path '*/vendor/*' -print0 | xargs -0 -n1 php -l > /dev/null",
         "check": ["@analyse", "@rector:dry", "@cs", "@test", "@test:redis", "@test:surreal", "@examples:lint"]
     },
     "config": {

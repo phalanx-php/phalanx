@@ -8,10 +8,10 @@ use JsonException;
 use Phalanx\Iris\HttpClient;
 use Phalanx\Iris\HttpRequest;
 use Phalanx\Iris\HttpResponse;
-use Phalanx\Scope\ExecutionScope;
-use Phalanx\Supervisor\WaitReason;
+use Phalanx\Scope\Scope;
+use Phalanx\Scope\Suspendable;
 
-final class IrisSurrealTransport implements SurrealTransport
+class IrisSurrealTransport implements SurrealTransport
 {
     private int $nextId = 1;
 
@@ -21,7 +21,7 @@ final class IrisSurrealTransport implements SurrealTransport
     }
 
     public function rpc(
-        ExecutionScope $scope,
+        Scope&Suspendable $scope,
         SurrealConfig $config,
         ?string $token,
         string $method,
@@ -44,12 +44,9 @@ final class IrisSurrealTransport implements SurrealTransport
             readTimeout: $config->readTimeout,
         );
 
-        $response = $scope->call(
-            static fn(): HttpResponse => $http->request($scope, $request),
-            WaitReason::surreal($method),
-        );
+        $response = $http->request($scope, $request);
 
-        $data = $this->decodeResponse($response);
+        $data = $this->decodeResponse($response, $id);
         if (is_array($data) && array_key_exists('error', $data)) {
             throw SurrealException::fromErrorEnvelope($data['error']);
         }
@@ -57,12 +54,12 @@ final class IrisSurrealTransport implements SurrealTransport
         return is_array($data) && array_key_exists('result', $data) ? $data['result'] : $data;
     }
 
-    public function status(ExecutionScope $scope, SurrealConfig $config, ?string $token): int
+    public function status(Scope&Suspendable $scope, SurrealConfig $config, ?string $token): int
     {
         return $this->head($scope, $config, $token, '/status');
     }
 
-    public function health(ExecutionScope $scope, SurrealConfig $config, ?string $token): int
+    public function health(Scope&Suspendable $scope, SurrealConfig $config, ?string $token): int
     {
         return $this->head($scope, $config, $token, '/health');
     }
@@ -98,7 +95,7 @@ final class IrisSurrealTransport implements SurrealTransport
         return $headers;
     }
 
-    private function head(ExecutionScope $scope, SurrealConfig $config, ?string $token, string $path): int
+    private function head(Scope&Suspendable $scope, SurrealConfig $config, ?string $token, string $path): int
     {
         $http = $this->http;
         $request = new HttpRequest(
@@ -109,15 +106,12 @@ final class IrisSurrealTransport implements SurrealTransport
             readTimeout: $config->readTimeout,
         );
 
-        $response = $scope->call(
-            static fn(): HttpResponse => $http->request($scope, $request),
-            WaitReason::surreal(ltrim($path, '/')),
-        );
+        $response = $http->request($scope, $request);
 
         return $response->status;
     }
 
-    private function decodeResponse(HttpResponse $response): mixed
+    private function decodeResponse(HttpResponse $response, int $expectedId): mixed
     {
         if (!$response->successful) {
             throw new SurrealException("Surreal HTTP request failed with status {$response->status}.");
@@ -128,9 +122,23 @@ final class IrisSurrealTransport implements SurrealTransport
         }
 
         try {
-            return json_decode($response->body, true, 512, JSON_THROW_ON_ERROR);
+            $data = json_decode($response->body, true, 512, JSON_THROW_ON_ERROR);
         } catch (JsonException $e) {
             throw new SurrealException("Failed to decode Surreal response: {$e->getMessage()}", previous: $e);
         }
+
+        if (!is_array($data) || array_is_list($data)) {
+            throw new SurrealException('Surreal RPC response was not a JSON object.');
+        }
+
+        if (array_key_exists('id', $data) && (int) $data['id'] !== $expectedId) {
+            throw new SurrealException("Surreal RPC response id mismatch: expected {$expectedId}.");
+        }
+
+        if (!array_key_exists('result', $data) && !array_key_exists('error', $data)) {
+            throw new SurrealException('Surreal RPC response was missing result or error.');
+        }
+
+        return $data;
     }
 }

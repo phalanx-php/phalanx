@@ -55,7 +55,6 @@ final class IrisSurrealTransportTest extends PhalanxTestCase
         );
     }
 
-    #[Test]
     public function rootCredentialsUseBasicAuthWhenNoBearerTokenExists(): void
     {
         $http = new RecordingHttpClient([self::jsonResponse('{"id":1,"result":{"ok":true}}')]);
@@ -130,6 +129,84 @@ final class IrisSurrealTransportTest extends PhalanxTestCase
         $this->scope->run(
             static fn(ExecutionScope $scope): mixed => $transport->rpc($scope, $config, null, 'query', ['BAD']),
             'test.surreal.transport.error',
+        );
+    }
+
+    #[Test]
+    public function rpcResponseWithoutIdIsAcceptedWhenResultEnvelopeIsValid(): void
+    {
+        $transport = new IrisSurrealTransport(new RecordingHttpClient([self::jsonResponse(
+            '{"result":{"ok":true}}',
+        )]));
+        $config = new SurrealConfig(namespace: 'olympus', database: 'pantheon');
+
+        $result = $this->scope->run(
+            static fn(ExecutionScope $scope): mixed => $transport->rpc($scope, $config, null, 'select', ['goddess']),
+            'test.surreal.transport.result-without-id',
+        );
+
+        self::assertSame(['ok' => true], $result);
+    }
+
+    #[Test]
+    public function rpcResponseIdMismatchThrowsSurrealException(): void
+    {
+        $transport = new IrisSurrealTransport(new RecordingHttpClient([self::jsonResponse(
+            '{"id":2,"result":{"ok":true}}',
+        )]));
+        $config = new SurrealConfig(namespace: 'olympus', database: 'pantheon');
+
+        $this->expectException(SurrealException::class);
+        $this->expectExceptionMessage('Surreal RPC response id mismatch: expected 1.');
+
+        $this->scope->run(
+            static fn(ExecutionScope $scope): mixed => $transport->rpc($scope, $config, null, 'select', ['goddess']),
+            'test.surreal.transport.id-mismatch',
+        );
+    }
+
+    #[Test]
+    public function malformedRpcEnvelopeThrowsSurrealException(): void
+    {
+        $transport = new IrisSurrealTransport(new RecordingHttpClient([self::jsonResponse('{"id":1}')]));
+        $config = new SurrealConfig(namespace: 'olympus', database: 'pantheon');
+
+        $this->expectException(SurrealException::class);
+        $this->expectExceptionMessage('Surreal RPC response was missing result or error.');
+
+        $this->scope->run(
+            static fn(ExecutionScope $scope): mixed => $transport->rpc($scope, $config, null, 'select', ['goddess']),
+            'test.surreal.transport.malformed-envelope',
+        );
+    }
+
+    #[Test]
+    public function nonObjectRpcEnvelopeThrowsSurrealException(): void
+    {
+        $transport = new IrisSurrealTransport(new RecordingHttpClient([self::jsonResponse('"ok"')]));
+        $config = new SurrealConfig(namespace: 'olympus', database: 'pantheon');
+
+        $this->expectException(SurrealException::class);
+        $this->expectExceptionMessage('Surreal RPC response was not a JSON object.');
+
+        $this->scope->run(
+            static fn(ExecutionScope $scope): mixed => $transport->rpc($scope, $config, null, 'select', ['goddess']),
+            'test.surreal.transport.non-object-envelope',
+        );
+    }
+
+    #[Test]
+    public function listRpcEnvelopeThrowsSurrealException(): void
+    {
+        $transport = new IrisSurrealTransport(new RecordingHttpClient([self::jsonResponse('[{"result":true}]')]));
+        $config = new SurrealConfig(namespace: 'olympus', database: 'pantheon');
+
+        $this->expectException(SurrealException::class);
+        $this->expectExceptionMessage('Surreal RPC response was not a JSON object.');
+
+        $this->scope->run(
+            static fn(ExecutionScope $scope): mixed => $transport->rpc($scope, $config, null, 'select', ['goddess']),
+            'test.surreal.transport.list-envelope',
         );
     }
 
