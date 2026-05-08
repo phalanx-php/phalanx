@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/../bootstrap.php';
+require __DIR__ . '/../../../../vendor/autoload.php';
 
-use Acme\ArchonDemo\Lifecycle\WatchCommand;
 use Phalanx\Archon\Application\Archon;
-use Phalanx\Boot\AppContext;
 use Phalanx\Archon\Command\CommandConfig;
 use Phalanx\Archon\Command\CommandGroup;
 use Phalanx\Archon\Command\Opt;
 use Phalanx\Archon\Console\Style\ConsoleServiceBundle;
+use Phalanx\Archon\Examples\RuntimeLifecycle\WatchCommand;
+use Phalanx\Boot\AppContext;
 
 exit(Archon::starting(AppContext::test(['argv' => $argv]))
     ->providers(new ConsoleServiceBundle())

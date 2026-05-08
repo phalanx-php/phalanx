@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Acme\ArchonDemo\Concurrency\Stages;
+namespace Phalanx\Archon\Examples\SupervisedConcurrency\Stages;
 
 use Phalanx\Concurrency\RetryPolicy;
 use Phalanx\Scope\ExecutionScope;

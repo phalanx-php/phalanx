@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Acme\ArchonDemo\Lifecycle;
+namespace Phalanx\Archon\Examples\RuntimeLifecycle;
 
 use Phalanx\Archon\Console\Output\StreamOutput;
 

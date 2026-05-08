@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/../bootstrap.php';
+require __DIR__ . '/../../../../vendor/autoload.php';
 
-use Acme\ArchonDemo\Interactive\RegisterCommand;
-use Acme\ArchonDemo\Interactive\SetConfigCommand;
-use Acme\ArchonDemo\Interactive\ShowConfigCommand;
 use Phalanx\Archon\Application\Archon;
 use Phalanx\Archon\Command\Arg;
-use Phalanx\Boot\AppContext;
 use Phalanx\Archon\Command\CommandConfig;
 use Phalanx\Archon\Command\CommandGroup;
 use Phalanx\Archon\Console\Style\ConsoleServiceBundle;
+use Phalanx\Archon\Examples\InteractiveInput\RegisterCommand;
+use Phalanx\Archon\Examples\InteractiveInput\SetConfigCommand;
+use Phalanx\Archon\Examples\InteractiveInput\ShowConfigCommand;
+use Phalanx\Boot\AppContext;
 
 exit(Archon::starting(AppContext::test(['argv' => $argv]))
     ->providers(new ConsoleServiceBundle())

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Acme\ArchonDemo\Interactive;
+namespace Phalanx\Archon\Examples\InteractiveInput;
 
 use Phalanx\Archon\Command\CommandScope;
 use Phalanx\Archon\Console\Output\StreamOutput;

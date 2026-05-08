@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Acme\ArchonDemo\Basic;
+namespace Phalanx\Archon\Examples\BasicCommands;
 
 use Phalanx\Archon\Command\CommandScope;
 use Phalanx\Archon\Console\Output\StreamOutput;

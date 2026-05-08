@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Acme\ArchonDemo\Basic;
+namespace Phalanx\Archon\Examples\BasicCommands;
 
 use JsonException;
 use Phalanx\Archon\Command\CommandScope;

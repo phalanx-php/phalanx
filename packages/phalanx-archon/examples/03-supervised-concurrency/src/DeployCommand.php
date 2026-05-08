@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Acme\ArchonDemo\Concurrency;
+namespace Phalanx\Archon\Examples\SupervisedConcurrency;
 
-use Acme\ArchonDemo\Concurrency\Stages\BuildStage;
-use Acme\ArchonDemo\Concurrency\Stages\PackageStage;
-use Acme\ArchonDemo\Concurrency\Stages\RetryStage;
-use Acme\ArchonDemo\Concurrency\Stages\ShipStage;
-use Acme\ArchonDemo\Concurrency\Stages\TestStage;
-use Acme\ArchonDemo\Concurrency\Stages\TimeoutStage;
+use Phalanx\Archon\Examples\SupervisedConcurrency\Stages\BuildStage;
+use Phalanx\Archon\Examples\SupervisedConcurrency\Stages\PackageStage;
+use Phalanx\Archon\Examples\SupervisedConcurrency\Stages\RetryStage;
+use Phalanx\Archon\Examples\SupervisedConcurrency\Stages\ShipStage;
+use Phalanx\Archon\Examples\SupervisedConcurrency\Stages\TestStage;
+use Phalanx\Archon\Examples\SupervisedConcurrency\Stages\TimeoutStage;
 use Phalanx\Archon\Command\CommandScope;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Archon\Console\Style\Theme;

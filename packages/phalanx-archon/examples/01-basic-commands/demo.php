@@ -2,113 +2,110 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/../bootstrap.php';
+require __DIR__ . '/../../../../vendor/autoload_runtime.php';
 
-use Acme\ArchonDemo\Basic\DebugDeadlockCommand;
-use Acme\ArchonDemo\Basic\GreetCommand;
-use Acme\ArchonDemo\Basic\InfoCommand;
-use Acme\ArchonDemo\Basic\VersionCommand;
 use Phalanx\Archon\Application\Archon;
 use Phalanx\Archon\Command\Arg;
-use Phalanx\Boot\AppContext;
 use Phalanx\Archon\Command\CommandConfig;
 use Phalanx\Archon\Command\CommandGroup;
 use Phalanx\Archon\Command\Opt;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Archon\Console\Output\TerminalEnvironment;
-use Phalanx\Service\ServiceBundle;
-use Phalanx\Service\Services;
+use Phalanx\Archon\Examples\BasicCommands\DebugDeadlockCommand;
+use Phalanx\Archon\Examples\BasicCommands\GreetCommand;
+use Phalanx\Archon\Examples\BasicCommands\InfoCommand;
+use Phalanx\Archon\Examples\BasicCommands\OutputBundle;
+use Phalanx\Archon\Examples\BasicCommands\VersionCommand;
+use Phalanx\Boot\AppContext;
 
-$failed = false;
+return static function (array $context): \Closure {
+    $appContext = AppContext::fromSymfonyRuntime($context);
 
-echo "Phalanx Archon — Basic Commands\n\n";
+    $commands = CommandGroup::of([
+        'greet' => [
+            GreetCommand::class,
+            new CommandConfig(
+                description: 'Greet someone by name.',
+                arguments:   [Arg::required('name', 'Person to greet.')],
+            ),
+        ],
+        'version' => [
+            VersionCommand::class,
+            new CommandConfig(description: 'Print the demo version banner.'),
+        ],
+        'info' => [
+            InfoCommand::class,
+            new CommandConfig(
+                description: 'Print build info; --shout uppercases the body.',
+                options:     [Opt::flag('shout', 's', 'Uppercase the body.')],
+            ),
+        ],
+        'debug:deadlock' => [
+            DebugDeadlockCommand::class,
+            new CommandConfig(
+                description: 'Snapshot every parked coroutine (operator escape hatch).',
+                options:     [Opt::flag('json', '', 'Emit JSON instead of formatted text.')],
+            ),
+        ],
+    ]);
 
-$commands = CommandGroup::of([
-    'greet' => [
-        GreetCommand::class,
-        new CommandConfig(
-            description: 'Greet someone by name.',
-            arguments:   [Arg::required('name', 'Person to greet.')],
-        ),
-    ],
-    'version' => [
-        VersionCommand::class,
-        new CommandConfig(description: 'Print the demo version banner.'),
-    ],
-    'info' => [
-        InfoCommand::class,
-        new CommandConfig(
-            description: 'Print build info; --shout uppercases the body.',
-            options:     [Opt::flag('shout', 's', 'Uppercase the body.')],
-        ),
-    ],
-    'debug:deadlock' => [
-        DebugDeadlockCommand::class,
-        new CommandConfig(
-            description: 'Snapshot every parked coroutine (operator escape hatch).',
-            options:     [Opt::flag('json', '', 'Emit JSON instead of formatted text.')],
-        ),
-    ],
-]);
+    return static function () use ($commands): int {
+        $indent = static function (string $text): string {
+            $lines = explode("\n", $text);
+            foreach ($lines as &$line) {
+                $line = '      ' . $line;
+            }
+            return implode("\n", $lines);
+        };
 
-$failed = !runCase('greet Ada',                ['greet', 'Ada'],          'Hello, Ada.',    $commands) || $failed;
-$failed = !runCase('version',                  ['version'],               'archon-demo 0.1', $commands) || $failed;
-$failed = !runCase('info --shout',             ['info', '--shout'],       'PHALANX ARCHON',  $commands) || $failed;
-$failed = !runCase('debug:deadlock',           ['debug:deadlock'],        '[DEADLOCK REPORT]', $commands) || $failed;
-$failed = !runCase('debug:deadlock --json',    ['debug:deadlock', '--json'], '"coroutineCount":', $commands) || $failed;
-
-echo $failed ? "FAIL basic\n" : "OK basic\n";
-exit($failed ? 1 : 0);
-
-/** @param list<string> $argv */
-function runCase(string $label, array $argv, string $expectedSubstring, CommandGroup $commands): bool
-{
-    $stream = fopen('php://temp', 'w+');
-    if ($stream === false) {
-        fwrite(STDERR, "Unable to open capture stream.\n");
-        return false;
-    }
-
-    $capture = new StreamOutput($stream, new TerminalEnvironment(columns: 80, lines: 24));
-
-    $app = Archon::starting(AppContext::test(['argv' => array_merge(['demo'], $argv)]))
-        ->providers(new class($capture) extends ServiceBundle {
-            public function __construct(private StreamOutput $output)
-            {
+        $runCase = static function (
+            string $label,
+            array $argv,
+            string $expectedSubstring,
+            CommandGroup $commands,
+        ) use ($indent): bool {
+            $stream = fopen('php://temp', 'w+');
+            if ($stream === false) {
+                fwrite(STDERR, "Unable to open capture stream.\n");
+                return false;
             }
 
-            public function services(Services $services, AppContext $context): void
-            {
-                $services->singleton(StreamOutput::class)->factory(fn() => $this->output);
+            $capture = new StreamOutput($stream, new TerminalEnvironment(columns: 80, lines: 24));
+
+            $app = Archon::starting(AppContext::test(['argv' => array_merge(['demo'], $argv)]))
+                ->providers(new OutputBundle($capture))
+                ->commands($commands)
+                ->build();
+
+            $code = $app->run();
+            $app->shutdown();
+
+            rewind($stream);
+            $captured = (string) stream_get_contents($stream);
+            fclose($stream);
+
+            $passed = $code === 0 && str_contains($captured, $expectedSubstring);
+
+            printf("  %-26s %s\n", $label, $passed ? 'ok' : 'failed');
+            if (!$passed) {
+                printf("    expected substring: %s\n", $expectedSubstring);
+                printf("    actual exit code:   %d\n", $code);
+                printf("    actual output:\n%s\n", $indent($captured));
             }
-        })
-        ->commands($commands)
-        ->build();
 
-    $code = $app->run();
-    $app->shutdown();
+            return $passed;
+        };
 
-    rewind($stream);
-    $captured = (string) stream_get_contents($stream);
-    fclose($stream);
+        echo "Phalanx Archon — Basic Commands\n\n";
 
-    $passed = $code === 0 && str_contains($captured, $expectedSubstring);
+        $failed = !$runCase('greet Ada',             ['greet', 'Ada'],             'Hello, Ada.',       $commands) || false;
+        $failed = !$runCase('version',               ['version'],                  'archon-demo 0.1',   $commands) || $failed;
+        $failed = !$runCase('info --shout',          ['info', '--shout'],          'PHALANX ARCHON',    $commands) || $failed;
+        $failed = !$runCase('debug:deadlock',        ['debug:deadlock'],           '[DEADLOCK REPORT]', $commands) || $failed;
+        $failed = !$runCase('debug:deadlock --json', ['debug:deadlock', '--json'], '"coroutineCount":', $commands) || $failed;
 
-    printf("  %-26s %s\n", $label, $passed ? 'ok' : 'failed');
-    if (!$passed) {
-        printf("    expected substring: %s\n", $expectedSubstring);
-        printf("    actual exit code:   %d\n", $code);
-        printf("    actual output:\n%s\n", indent($captured));
-    }
+        echo $failed ? "FAIL basic\n" : "OK basic\n";
 
-    return $passed;
-}
-
-function indent(string $text): string
-{
-    $lines = explode("\n", $text);
-    foreach ($lines as &$line) {
-        $line = '      ' . $line;
-    }
-    return implode("\n", $lines);
-}
+        return $failed ? 1 : 0;
+    };
+};
