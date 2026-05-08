@@ -20,7 +20,7 @@ use Phalanx\Testing\LensFactory;
  * @see \Phalanx\Testing\TestApp
  */
 #[Attribute(Attribute::TARGET_CLASS)]
-final readonly class Lens
+final class Lens
 {
     /**
      * @param string                        $accessor Property name on TestApp (e.g. 'http', 'console', 'ledger').
@@ -30,10 +30,10 @@ final readonly class Lens
      *                                                Surfaced by the LensRequiresBundleRule PHPStan check.
      */
     public function __construct(
-        public string $accessor,
-        public string $returns,
-        public string $factory,
-        public array $requires = [],
+        public private(set) string $accessor,
+        public private(set) string $returns,
+        public private(set) string $factory,
+        public private(set) array $requires = [],
     ) {
     }
 }

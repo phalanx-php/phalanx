@@ -11,10 +11,10 @@ use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 use ReflectionFunction;
 
-final class InlineServiceBundle extends ServiceBundle
+class InlineServiceBundle extends ServiceBundle
 {
     public function __construct(
-        private readonly Closure $registrar,
+        private Closure $registrar,
     ) {
         $rf = new ReflectionFunction($registrar);
         if ($rf->getClosureThis() !== null) {

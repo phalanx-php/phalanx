@@ -11,10 +11,10 @@ namespace Phalanx\Testing;
  * `static lens(): TestLens` hook. The codegen plugin and TestApp
  * iterate the contents through {@see all()}.
  */
-final readonly class TestLens
+class TestLens
 {
     /** @param list<class-string<Lens>> $lenses */
-    private function __construct(public array $lenses)
+    private function __construct(public private(set) array $lenses)
     {
     }
 
