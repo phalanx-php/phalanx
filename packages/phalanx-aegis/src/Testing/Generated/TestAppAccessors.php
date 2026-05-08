@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Testing\Generated;
 
+use Phalanx\Archon\Testing\ConsoleLens;
 use Phalanx\Stoa\Testing\HttpLens;
 use Phalanx\Testing\Lenses\LedgerLens;
 use Phalanx\Testing\Lenses\RuntimeLens;
@@ -17,6 +18,10 @@ use Phalanx\Testing\Lenses\ScopeLens;
  */
 trait TestAppAccessors
 {
+    public ConsoleLens $console {
+        get => $this->lens(ConsoleLens::class);
+    }
+
     public HttpLens $http {
         get => $this->lens(HttpLens::class);
     }

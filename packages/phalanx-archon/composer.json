@@ -33,6 +33,11 @@
     "extra": {
         "branch-alias": {
             "dev-main": "0.5-dev"
+        },
+        "phalanx": {
+            "bundles": [
+                "Phalanx\\Archon\\Testing\\ArchonTestableBundle"
+            ]
         }
     },
     "minimum-stability": "dev",
