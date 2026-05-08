@@ -79,6 +79,7 @@
             "Phalanx\\Postgres\\Tests\\": "packages/phalanx-postgres/tests/",
             "Phalanx\\Redis\\Tests\\": "packages/phalanx-redis/tests/",
             "Phalanx\\Surreal\\Tests\\": "packages/phalanx-surreal/tests/",
+            "Phalanx\\Surreal\\Examples\\": "packages/phalanx-surreal/examples/src/",
             "Phalanx\\Hermes\\Tests\\": "packages/phalanx-hermes/tests/",
             "Phalanx\\Hermes\\Client\\Tests\\": "packages/phalanx-hermes/tests/Client/",
             "Phalanx\\Argos\\Tests\\": "packages/phalanx-argos/tests/",
