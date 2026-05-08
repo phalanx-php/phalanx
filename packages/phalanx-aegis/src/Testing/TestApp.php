@@ -67,6 +67,9 @@ final class TestApp
     /** @var array<class-string<TestLens>, list<class-string<TestableBundle>>> */
     private array $providers = [];
 
+    /** @var array<class-string, object> */
+    private array $primaryApps = [];
+
     private bool $shutdownComplete = false;
 
     private function __construct(public private(set) Application $application)
@@ -92,6 +95,43 @@ final class TestApp
         $instance->registerBundleLenses($bundles);
 
         return $instance;
+    }
+
+    /**
+     * Register an application built outside of TestApp::boot — typically a
+     * package-specific facade like StoaApplication or ArchonApplication that
+     * already wraps an underlying AppHost. Lenses that depend on the
+     * package-specific surface resolve it via primaryApp().
+     *
+     * @template T of object
+     * @param T $primary
+     * @return $this
+     */
+    public function withPrimary(object $primary): self
+    {
+        $this->primaryApps[$primary::class] = $primary;
+
+        return $this;
+    }
+
+    /**
+     * Look up a previously registered primary application by class.
+     *
+     * @template T of object
+     * @param class-string<T> $class
+     * @return T
+     */
+    public function primaryApp(string $class): object
+    {
+        if (!isset($this->primaryApps[$class])) {
+            throw new RuntimeException(
+                "No primary application of type {$class} is registered on this TestApp. "
+                . "Call \$app->withPrimary(\$instance) before resolving the dependent lens.",
+            );
+        }
+
+        /** @var T */
+        return $this->primaryApps[$class];
     }
 
     /**
@@ -238,6 +278,7 @@ final class TestApp
             $this->instances = [];
             $this->factories = [];
             $this->providers = [];
+            $this->primaryApps = [];
             $this->fakes = new FakeRegistry();
         }
     }

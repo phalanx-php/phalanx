@@ -49,6 +49,11 @@
     "extra": {
         "branch-alias": {
             "dev-main": "0.6-dev"
+        },
+        "phalanx": {
+            "bundles": [
+                "Phalanx\\Stoa\\Testing\\StoaTestableBundle"
+            ]
         }
     },
     "minimum-stability": "dev",
