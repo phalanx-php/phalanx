@@ -2,119 +2,124 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/../bootstrap.php';
+require __DIR__ . '/../../../../vendor/autoload_runtime.php';
 
 use Acme\StoaDemo\Runtime\RuntimeLifecycleBundle;
 use OpenSwoole\Constant;
 use OpenSwoole\Coroutine;
 use OpenSwoole\Coroutine\Client;
 use OpenSwoole\Process;
+use Phalanx\Boot\AppContext;
 use Phalanx\Stoa\Runtime\Identity\StoaEventSid;
 use Phalanx\Stoa\Stoa;
 
-$host = '127.0.0.1';
-$port = isset($argv[1]) ? (int) $argv[1] : random_int(20_000, 45_000);
-$listen = "{$host}:{$port}";
+return static function (array $context): \Closure {
+    $appContext = AppContext::fromSymfonyRuntime($context);
 
-$server = new Process(static function () use ($listen): void {
-    Stoa::starting()
-        ->providers(new RuntimeLifecycleBundle())
-        ->routes(__DIR__ . '/routes.php')
-        ->listen($listen)
-        ->quiet()
-        ->run();
-});
-$pid = $server->start();
+    $host = '127.0.0.1';
+    $port = isset($argv[1]) ? (int) $argv[1] : random_int(20_000, 45_000);
+    $listen = "{$host}:{$port}";
 
-if ($pid === false) {
-    fwrite(STDERR, "Unable to start OpenSwoole demo process.\n");
-    exit(1);
-}
-
-$failed = false;
-
-try {
-    echo "Phalanx Runtime Lifecycle Demo\n";
-    echo "server        starting {$listen}\n\n";
-
-    Coroutine::run(static function () use ($host, $port, &$failed): void {
-        $ready = waitForHttpStatus($host, $port, '/runtime/health', 200);
-        $slowOk = waitForHttpStatus($host, $port, '/runtime/slow', 200);
-        $slowCompleted = waitForEvent($host, $port, 'slow.completed', 2.0);
-
-        printTimeline('normal request', [
-            ['server', $ready ? 'accepted health check' : 'did not answer health check'],
-            ['request', 'GET /runtime/slow opened'],
-            ['handler', eventText($host, $port, 'slow.started', 'started cooperative work')],
-            ['handler', eventText($host, $port, 'slow.completed', 'completed cooperative work')],
-            ['response', $slowOk ? '200 OK' : 'missing expected response'],
-        ]);
-
-        $failed = !check('server readiness', $ready);
-        $failed = !check('GET /runtime/slow -> 200', $slowOk) || $failed;
-        $failed = !check('slow request completed', $slowCompleted) || $failed;
-
-        $client = openRawRequest($host, $port, '/runtime/disconnect');
-        $started = waitForEvent($host, $port, 'disconnect.started', 2.0);
-        $disconnectResource = (string) (firstEvent($host, $port, 'disconnect.started')['context']['resource'] ?? '');
-        $client?->close();
-
-        $disconnected = waitForEvent($host, $port, StoaEventSid::ClientDisconnected->value, 2.0, $disconnectResource);
-        $aborted = waitForEvent($host, $port, 'resource.aborted', 2.0, $disconnectResource);
-        $released = waitForEvent($host, $port, 'resource.released', 2.0, $disconnectResource);
-        $didNotComplete = !containsEvent($host, $port, 'disconnect.completed', $disconnectResource);
-        $healthyAfterDisconnect = waitForHttpStatus($host, $port, '/runtime/health', 200);
-
-        printTimeline('client disconnect', [
-            ['request', $started ? 'GET /runtime/disconnect opened' : 'request did not reach handler'],
-            ['client', 'closed socket before response'],
-            ['runtime', eventText($host, $port, StoaEventSid::ClientDisconnected->value, 'detected closed client socket', $disconnectResource)],
-            ['resource', eventText($host, $port, 'resource.aborted', 'marked request resource aborted', $disconnectResource)],
-            ['cleanup', eventText($host, $port, 'resource.released', 'released runtime resource row', $disconnectResource)],
-            ['work', $didNotComplete ? 'did not complete after cancellation' : 'completed unexpectedly'],
-            ['server', $healthyAfterDisconnect ? 'accepted next health check' : 'did not answer next health check'],
-        ]);
-
-        $failed = !check('disconnect request started', $started) || $failed;
-        $failed = !check('client disconnect detected', $disconnected) || $failed;
-        $failed = !check('request resource aborted', $aborted) || $failed;
-        $failed = !check('request resource released', $released) || $failed;
-        $failed = !check('disconnect did not complete work', $didNotComplete) || $failed;
-        $failed = !check('server still responds after disconnect', $healthyAfterDisconnect) || $failed;
-
-        // Lock-down claims: response leases released, no resource leak after dispatch.
-        $scope = httpGet($host, $port, '/runtime/admin/scope');
-        $scopeBody = $scope['status'] === 200 ? json_decode($scope['body'], true) : null;
-        $leasesReleased = is_array($scopeBody) && ($scopeBody['response_leases'] ?? null) === [];
-        $resourcesReleased = is_array($scopeBody) && ($scopeBody['request_resources'] ?? null) === 0;
-
-        printTimeline('managed runtime claims', [
-            ['leases', $leasesReleased ? 'no stoa.response leases held idle' : 'leases still held idle'],
-            ['resources', $resourcesReleased ? 'request resources fully released' : 'request resources still tracked'],
-        ]);
-
-        $failed = !check('response leases released after dispatch', $leasesReleased) || $failed;
-        $failed = !check('request resources released after dispatch', $resourcesReleased) || $failed;
+    $server = new Process(static function () use ($listen, $appContext): void {
+        Stoa::starting($appContext)
+            ->providers(new RuntimeLifecycleBundle())
+            ->routes(__DIR__ . '/routes.php')
+            ->listen($listen)
+            ->quiet()
+            ->run();
     });
-} finally {
-    Process::kill($pid, SIGTERM);
+    $pid = $server->start();
 
-    $deadline = microtime(true) + 3.0;
-    do {
-        $status = Process::wait(false);
-        if ($status !== false) {
-            break;
-        }
-        usleep(20_000);
-    } while (microtime(true) < $deadline);
-
-    if (($status ?? false) === false) {
-        Process::kill($pid, SIGKILL);
-        Process::wait(false);
+    if ($pid === false) {
+        fwrite(STDERR, "Unable to start OpenSwoole demo process.\n");
+        return static fn(): int => 1;
     }
-}
 
-exit($failed ? 1 : 0);
+    $failed = false;
+
+    try {
+        echo "Phalanx Runtime Lifecycle Demo\n";
+        echo "server        starting {$listen}\n\n";
+
+        Coroutine::run(static function () use ($host, $port, &$failed): void {
+            $ready = waitForHttpStatus($host, $port, '/runtime/health', 200);
+            $slowOk = waitForHttpStatus($host, $port, '/runtime/slow', 200);
+            $slowCompleted = waitForEvent($host, $port, 'slow.completed', 2.0);
+
+            printTimeline('normal request', [
+                ['server', $ready ? 'accepted health check' : 'did not answer health check'],
+                ['request', 'GET /runtime/slow opened'],
+                ['handler', eventText($host, $port, 'slow.started', 'started cooperative work')],
+                ['handler', eventText($host, $port, 'slow.completed', 'completed cooperative work')],
+                ['response', $slowOk ? '200 OK' : 'missing expected response'],
+            ]);
+
+            $failed = !check('server readiness', $ready);
+            $failed = !check('GET /runtime/slow -> 200', $slowOk) || $failed;
+            $failed = !check('slow request completed', $slowCompleted) || $failed;
+
+            $client = openRawRequest($host, $port, '/runtime/disconnect');
+            $started = waitForEvent($host, $port, 'disconnect.started', 2.0);
+            $disconnectResource = (string) (firstEvent($host, $port, 'disconnect.started')['context']['resource'] ?? '');
+            $client?->close();
+
+            $disconnected = waitForEvent($host, $port, StoaEventSid::ClientDisconnected->value, 2.0, $disconnectResource);
+            $aborted = waitForEvent($host, $port, 'resource.aborted', 2.0, $disconnectResource);
+            $released = waitForEvent($host, $port, 'resource.released', 2.0, $disconnectResource);
+            $didNotComplete = !containsEvent($host, $port, 'disconnect.completed', $disconnectResource);
+            $healthyAfterDisconnect = waitForHttpStatus($host, $port, '/runtime/health', 200);
+
+            printTimeline('client disconnect', [
+                ['request', $started ? 'GET /runtime/disconnect opened' : 'request did not reach handler'],
+                ['client', 'closed socket before response'],
+                ['runtime', eventText($host, $port, StoaEventSid::ClientDisconnected->value, 'detected closed client socket', $disconnectResource)],
+                ['resource', eventText($host, $port, 'resource.aborted', 'marked request resource aborted', $disconnectResource)],
+                ['cleanup', eventText($host, $port, 'resource.released', 'released runtime resource row', $disconnectResource)],
+                ['work', $didNotComplete ? 'did not complete after cancellation' : 'completed unexpectedly'],
+                ['server', $healthyAfterDisconnect ? 'accepted next health check' : 'did not answer next health check'],
+            ]);
+
+            $failed = !check('disconnect request started', $started) || $failed;
+            $failed = !check('client disconnect detected', $disconnected) || $failed;
+            $failed = !check('request resource aborted', $aborted) || $failed;
+            $failed = !check('request resource released', $released) || $failed;
+            $failed = !check('disconnect did not complete work', $didNotComplete) || $failed;
+            $failed = !check('server still responds after disconnect', $healthyAfterDisconnect) || $failed;
+
+            // Lock-down claims: response leases released, no resource leak after dispatch.
+            $scope = httpGet($host, $port, '/runtime/admin/scope');
+            $scopeBody = $scope['status'] === 200 ? json_decode($scope['body'], true) : null;
+            $leasesReleased = is_array($scopeBody) && ($scopeBody['response_leases'] ?? null) === [];
+            $resourcesReleased = is_array($scopeBody) && ($scopeBody['request_resources'] ?? null) === 0;
+
+            printTimeline('managed runtime claims', [
+                ['leases', $leasesReleased ? 'no stoa.response leases held idle' : 'leases still held idle'],
+                ['resources', $resourcesReleased ? 'request resources fully released' : 'request resources still tracked'],
+            ]);
+
+            $failed = !check('response leases released after dispatch', $leasesReleased) || $failed;
+            $failed = !check('request resources released after dispatch', $resourcesReleased) || $failed;
+        });
+    } finally {
+        Process::kill($pid, SIGTERM);
+
+        $deadline = microtime(true) + 3.0;
+        do {
+            $status = Process::wait(false);
+            if ($status !== false) {
+                break;
+            }
+            usleep(20_000);
+        } while (microtime(true) < $deadline);
+
+        if (($status ?? false) === false) {
+            Process::kill($pid, SIGKILL);
+            Process::wait(false);
+        }
+    }
+
+    return static fn(): int => $failed ? 1 : 0;
+};
 
 function check(string $label, bool $passed): bool
 {
