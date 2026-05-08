@@ -91,6 +91,7 @@
         "classmap": [
             "packages/phalanx-aegis/tests/Support/Fixtures/",
             "packages/phalanx-phpstan/tests/Rules/Fixtures/",
+            "packages/phalanx-phpstan/tests/Integration/Fixtures/",
             "packages/phalanx-athena/examples/support-triage/src/",
             "packages/phalanx-athena/examples/research-agent/src/",
             "packages/phalanx-athena/examples/multi-tenant-fleet/src/"

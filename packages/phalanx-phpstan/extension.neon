@@ -80,3 +80,8 @@ services:
             - %phalanxCoroutineInternalPaths%
         tags:
             - phpstan.rules.rule
+
+    -
+        class: Phalanx\PHPStan\Rules\Testing\UseTestAppRule
+        tags:
+            - phpstan.rules.rule
