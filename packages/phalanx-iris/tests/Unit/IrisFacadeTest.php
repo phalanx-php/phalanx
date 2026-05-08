@@ -12,6 +12,7 @@ use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Task;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 
 final class IrisFacadeTest extends TestCase
 {
@@ -45,17 +46,16 @@ final class IrisFacadeTest extends TestCase
     }
 
     #[Test]
-    public function servicesAreIdempotentAndKeepTheFirstConfiguration(): void
+    public function duplicateBundleRegistrationIsAnError(): void
     {
-        $config = new HttpClientConfig(userAgent: 'IrisPrimaryConfig');
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('already registered');
 
-        $result = Application::starting()
-            ->providers(Iris::services($config), Iris::services())
+        Application::starting()
+            ->providers(Iris::services(), Iris::services())
             ->run(Task::named(
-                'test.iris.facade.idempotent-services',
-                static fn(ExecutionScope $scope): string => $scope->service(HttpClientConfig::class)->userAgent,
+                'test.iris.facade.duplicate-error',
+                static fn(ExecutionScope $scope): null => null,
             ));
-
-        self::assertSame('IrisPrimaryConfig', $result);
     }
 }

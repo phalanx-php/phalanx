@@ -94,6 +94,21 @@ final readonly class AppContext
         throw MissingContextValue::wrongType($key, 'int', get_debug_type($value));
     }
 
+    public function float(string $key, ?float $default = null): float
+    {
+        $value = $this->values[$key] ?? $default;
+        if ($value === null) {
+            throw MissingContextValue::forKey($key);
+        }
+        if (is_float($value) || is_int($value)) {
+            return (float) $value;
+        }
+        if (is_string($value) && is_numeric($value)) {
+            return (float) $value;
+        }
+        throw MissingContextValue::wrongType($key, 'float', get_debug_type($value));
+    }
+
     public function bool(string $key, ?bool $default = null): bool
     {
         if (!array_key_exists($key, $this->values)) {

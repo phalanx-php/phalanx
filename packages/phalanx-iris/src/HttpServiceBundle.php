@@ -8,8 +8,13 @@ use Phalanx\Boot\AppContext;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 
-class HttpServiceBundle extends ServiceBundle
+final class HttpServiceBundle extends ServiceBundle
 {
+    private const float DEFAULT_CONNECT_TIMEOUT = 5.0;
+    private const float DEFAULT_READ_TIMEOUT = 30.0;
+    private const int DEFAULT_MAX_RESPONSE_BYTES = 16 * 1024 * 1024;
+    private const string DEFAULT_USER_AGENT = 'Phalanx-Iris/0.6';
+
     public function __construct(
         private readonly ?HttpClientConfig $config = null,
     ) {
@@ -19,22 +24,18 @@ class HttpServiceBundle extends ServiceBundle
     {
         $config = $this->config;
 
-        if (!$services->has(HttpClientConfig::class)) {
-            $services->config(
-                HttpClientConfig::class,
-                static fn(array $ctx): HttpClientConfig => $config ?? new HttpClientConfig(
-                    connectTimeout: (float) ($ctx['IRIS_CONNECT_TIMEOUT'] ?? 5.0),
-                    readTimeout: (float) ($ctx['IRIS_READ_TIMEOUT'] ?? 30.0),
-                    maxResponseBytes: (int) ($ctx['IRIS_MAX_RESPONSE_BYTES'] ?? 16 * 1024 * 1024),
-                    userAgent: (string) ($ctx['IRIS_USER_AGENT'] ?? 'Phalanx-Iris/0.6'),
-                ),
-            );
-        }
+        $services->config(
+            HttpClientConfig::class,
+            static fn(AppContext $ctx): HttpClientConfig => $config ?? new HttpClientConfig(
+                connectTimeout: $ctx->float('IRIS_CONNECT_TIMEOUT', self::DEFAULT_CONNECT_TIMEOUT),
+                readTimeout: $ctx->float('IRIS_READ_TIMEOUT', self::DEFAULT_READ_TIMEOUT),
+                maxResponseBytes: $ctx->int('IRIS_MAX_RESPONSE_BYTES', self::DEFAULT_MAX_RESPONSE_BYTES),
+                userAgent: $ctx->string('IRIS_USER_AGENT', self::DEFAULT_USER_AGENT),
+            ),
+        );
 
-        if (!$services->has(HttpClient::class)) {
-            $services->singleton(HttpClient::class)
-                ->needs(HttpClientConfig::class)
-                ->factory(static fn(HttpClientConfig $config): HttpClient => new HttpClient($config));
-        }
+        $services->singleton(HttpClient::class)
+            ->needs(HttpClientConfig::class)
+            ->factory(static fn(HttpClientConfig $config): HttpClient => new HttpClient($config));
     }
 }

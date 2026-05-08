@@ -52,7 +52,7 @@ class ServiceCatalog implements Services
     /** @param class-string $type */
     public function config(string $type, Closure $fromContext): void
     {
-        $this->contextConfigs[$type] = $fromContext($this->context->values);
+        $this->contextConfigs[$type] = $fromContext($this->context);
     }
 
     /**

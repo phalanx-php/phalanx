@@ -46,8 +46,8 @@ final class PingHostTest extends PhalanxTestCase
     protected function phalanxServices(): ?Closure
     {
         return static function (Services $services, AppContext $context): void {
-            $services->config(NetworkConfig::class, static fn(array $ctx): NetworkConfig => new NetworkConfig(
-                pingBinary: (string) ($ctx['NETWORK_PING_BINARY'] ?? 'ping'),
+            $services->config(NetworkConfig::class, static fn(AppContext $ctx): NetworkConfig => new NetworkConfig(
+                pingBinary: $ctx->string('NETWORK_PING_BINARY', 'ping'),
             ));
         };
     }

@@ -64,7 +64,7 @@ final class AutoResolvedFactoryBundle extends ServiceBundle
     {
         $services->config(
             AutoResolvedConfig::class,
-            static fn(array $ctx): AutoResolvedConfig => new AutoResolvedConfig((string) $ctx['FACTORY_VALUE']),
+            static fn(AppContext $ctx): AutoResolvedConfig => new AutoResolvedConfig($ctx->string('FACTORY_VALUE')),
         );
 
         $services->singleton(AutoResolvedDependency::class)

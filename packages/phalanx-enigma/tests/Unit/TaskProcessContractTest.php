@@ -113,10 +113,10 @@ PHP);
     protected function phalanxServices(): ?Closure
     {
         return static function (Services $services): void {
-            $services->config(SshConfig::class, static fn(array $context): SshConfig => new SshConfig(
-                sshBinaryPath: (string) $context['sshBinaryPath'],
-                scpBinaryPath: (string) $context['scpBinaryPath'],
-                sftpBinaryPath: (string) $context['sftpBinaryPath'],
+            $services->config(SshConfig::class, static fn(AppContext $ctx): SshConfig => new SshConfig(
+                sshBinaryPath: $ctx->string('sshBinaryPath'),
+                scpBinaryPath: $ctx->string('scpBinaryPath'),
+                sftpBinaryPath: $ctx->string('sftpBinaryPath'),
                 defaultTimeoutSeconds: 1.0,
                 connectionTimeoutSeconds: 1.0,
                 strictHostKeyChecking: false,

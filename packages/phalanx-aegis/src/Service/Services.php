@@ -20,7 +20,12 @@ interface Services
     /** @param class-string $type */
     public function has(string $type): bool;
 
-    /** @param class-string $type */
+    /**
+     * Register a context-derived config value. The closure receives the
+     * AppContext at compile time and returns the typed config object.
+     *
+     * @param class-string $type
+     */
     public function config(string $type, Closure $fromContext): void;
 
     /**

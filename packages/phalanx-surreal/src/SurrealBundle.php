@@ -50,7 +50,7 @@ class SurrealBundle extends ServiceBundle
         if (!$services->has(SurrealConfig::class)) {
             $services->config(
                 SurrealConfig::class,
-                static fn(array $context): SurrealConfig => $config ?? SurrealConfig::fromContext(AppContext::fromSymfonyRuntime($context)),
+                static fn(AppContext $ctx): SurrealConfig => $config ?? SurrealConfig::fromContext($ctx),
             );
         }
 
@@ -74,8 +74,8 @@ class SurrealBundle extends ServiceBundle
         if (!$services->has(WsClientConfig::class)) {
             $services->config(
                 WsClientConfig::class,
-                static function (array $context) use ($config): WsClientConfig {
-                    $surreal = $config ?? SurrealConfig::fromContext(AppContext::fromSymfonyRuntime($context));
+                static function (AppContext $ctx) use ($config): WsClientConfig {
+                    $surreal = $config ?? SurrealConfig::fromContext($ctx);
 
                     return new WsClientConfig(
                         connectTimeout: $surreal->connectTimeout,
