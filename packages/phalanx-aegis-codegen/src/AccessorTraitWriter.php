@@ -14,8 +14,8 @@ use RuntimeException;
  */
 final class AccessorTraitWriter
 {
-    public const string TARGET_NAMESPACE = 'Phalanx\\Testing\\Generated';
     public const string TARGET_TRAIT = 'TestAppAccessors';
+    public const string TARGET_NAMESPACE = 'Phalanx\\Testing\\Generated';
 
     /** @param list<LensMetadata> $lenses */
     public function render(array $lenses): string
