@@ -20,7 +20,7 @@ final class FactoryDependencyResolutionTest extends TestCase
     #[Test]
     public function factoryParametersResolveServicesConfigsAndCurrentScope(): void
     {
-        $result = Application::starting(AppContext::test(['FACTORY_VALUE' => 'athena']))
+        $result = Application::starting(['FACTORY_VALUE' => 'athena'])
             ->providers(new AutoResolvedFactoryBundle())
             ->run(Task::named(
                 'test.service.factory-dependency-resolution',

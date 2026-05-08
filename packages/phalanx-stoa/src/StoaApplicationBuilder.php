@@ -51,7 +51,7 @@ final class StoaApplicationBuilder
 
     public function __construct(private readonly AppContext $context = new AppContext())
     {
-        $this->app = Application::starting($context);
+        $this->app = Application::starting($context->values);
     }
 
     public function providers(ServiceBundle ...$providers): self

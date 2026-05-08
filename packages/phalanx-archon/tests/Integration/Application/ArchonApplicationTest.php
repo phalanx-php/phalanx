@@ -20,7 +20,6 @@ use Phalanx\Cancellation\Cancelled;
 use Phalanx\Runtime\Identity\AegisResourceSid;
 use Phalanx\Runtime\Memory\ManagedResourceState;
 use Phalanx\Scope\ExecutionScope;
-use Phalanx\Boot\AppContext;
 use Phalanx\Task\Scopeable;
 use Phalanx\Task\Task;
 use Phalanx\Testing\Assert as PhalanxAssert;
@@ -56,9 +55,9 @@ final class ArchonApplicationTest extends CoroutineTestCase
     #[Test]
     public function runUsesContextArgvWithoutLeakingScriptNameIntoDispatch(): void
     {
-        $app = Archon::starting(AppContext::test([
+        $app = Archon::starting([
             'argv' => ['bin/phalanx', 'probe'],
-        ]))
+        ])
             ->commands(CommandGroup::of([
                 'probe' => ArchonApplicationProbeCommand::class,
             ]))
@@ -74,9 +73,9 @@ final class ArchonApplicationTest extends CoroutineTestCase
     #[Test]
     public function runEntersTheAegisCoroutineRuntime(): void
     {
-        $app = Archon::starting(AppContext::test([
+        $app = Archon::starting([
             'argv' => ['bin/phalanx', 'delay'],
-        ]))
+        ])
             ->commands(CommandGroup::of([
                 'delay' => CoroutineRuntimeProbeCommand::class,
             ]))

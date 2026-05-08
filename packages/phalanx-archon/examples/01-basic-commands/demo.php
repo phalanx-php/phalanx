@@ -16,11 +16,8 @@ use Phalanx\Archon\Examples\BasicCommands\GreetCommand;
 use Phalanx\Archon\Examples\BasicCommands\InfoCommand;
 use Phalanx\Archon\Examples\BasicCommands\OutputBundle;
 use Phalanx\Archon\Examples\BasicCommands\VersionCommand;
-use Phalanx\Boot\AppContext;
 
 return static function (array $context): \Closure {
-    $appContext = AppContext::fromSymfonyRuntime($context);
-
     $commands = CommandGroup::of([
         'greet' => [
             GreetCommand::class,
@@ -72,7 +69,7 @@ return static function (array $context): \Closure {
 
             $capture = new StreamOutput($stream, new TerminalEnvironment(columns: 80, lines: 24));
 
-            $app = Archon::starting(AppContext::test(['argv' => array_merge(['demo'], $argv)]))
+            $app = Archon::starting(['argv' => array_merge(['demo'], $argv)])
                 ->providers(new OutputBundle($capture))
                 ->commands($commands)
                 ->build();

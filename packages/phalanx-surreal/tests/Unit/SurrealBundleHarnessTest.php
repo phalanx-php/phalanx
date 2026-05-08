@@ -38,7 +38,7 @@ final class SurrealBundleHarnessTest extends TestCase
     #[Test]
     public function evaluationPassesWithFullConfigPresent(): void
     {
-        $context = AppContext::test([
+        $context = new AppContext([
             'SURREAL_ENDPOINT' => 'http://127.0.0.1:8000',
             'SURREAL_NAMESPACE' => 'myns',
             'SURREAL_DATABASE' => 'mydb',
@@ -57,7 +57,7 @@ final class SurrealBundleHarnessTest extends TestCase
     public function evaluationWarnsButDoesNotFailWithNoKeysPresent(): void
     {
         // SurrealDB has defaults for all keys — nothing is required at boot.
-        $context = AppContext::test([]);
+        $context = new AppContext([]);
 
         $report = (new BootHarnessRunner())->run($context, [SurrealBundle::class], vendorDir: null);
 

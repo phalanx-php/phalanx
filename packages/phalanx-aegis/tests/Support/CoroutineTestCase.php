@@ -64,12 +64,12 @@ abstract class CoroutineTestCase extends TestCase
     /**
      * @param Closure(ExecutionScope): void $test
      * @param Closure|null $services
-     * @param AppContext|array<string, mixed> $context
+     * @param array<string, mixed> $context
      */
     protected function runScoped(
         Closure $test,
         ?Closure $services = null,
-        AppContext|array $context = [],
+        array $context = [],
     ): void {
         $this->runScopedWithLedger(new InProcessLedger(), $test, $services, $context);
     }
@@ -77,15 +77,15 @@ abstract class CoroutineTestCase extends TestCase
     /**
      * @param Closure(ExecutionScope): void $test
      * @param Closure|null $services
-     * @param AppContext|array<string, mixed> $context
+     * @param array<string, mixed> $context
      */
     protected function runScopedWithLedger(
         InProcessLedger $ledger,
         Closure $test,
         ?Closure $services = null,
-        AppContext|array $context = [],
+        array $context = [],
     ): void {
-        $ctx = $context instanceof AppContext ? $context : AppContext::test($context);
+        $ctx = new AppContext($context);
         $this->runInCoroutine(static function () use ($ledger, $test, $services, $ctx): void {
             TestScope::compile($services, $ctx, $ledger)
                 ->shutdownAfterRun()

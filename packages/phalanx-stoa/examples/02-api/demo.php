@@ -7,16 +7,13 @@ require __DIR__ . '/../../../../vendor/autoload_runtime.php';
 use Acme\StoaDemo\Api\Bundle\ApiServiceBundle;
 use GuzzleHttp\Psr7\ServerRequest;
 use GuzzleHttp\Psr7\Utils;
-use Phalanx\Boot\AppContext;
 use Phalanx\Stoa\OpenApi\OpenApiGenerator;
 use Phalanx\Stoa\Stoa;
 
 return static function (array $context): \Closure {
-    $appContext = AppContext::fromSymfonyRuntime($context);
-
     $routes = require __DIR__ . '/routes.php';
 
-    $app = Stoa::starting($appContext)
+    $app = Stoa::starting($context)
         ->providers(new ApiServiceBundle())
         ->routes($routes)
         ->build();

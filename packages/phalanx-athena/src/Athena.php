@@ -15,14 +15,18 @@ final class Athena
     {
     }
 
-    public static function starting(AppContext $context = new AppContext()): AthenaApplicationBuilder
+    /** @param array<string,mixed> $context */
+    public static function starting(array $context = []): AthenaApplicationBuilder
     {
-        return new AthenaApplicationBuilder($context);
+        return new AthenaApplicationBuilder(new AppContext($context));
     }
 
+    /**
+     * @param array<string,mixed> $context
+     */
     public static function run(
         Closure|Scopeable|Executable $task,
-        AppContext $context = new AppContext(),
+        array $context = [],
     ): mixed {
         return self::starting($context)->run($task);
     }

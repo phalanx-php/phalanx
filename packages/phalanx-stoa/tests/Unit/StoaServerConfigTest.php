@@ -20,7 +20,7 @@ final class StoaServerConfigTest extends TestCase
     #[Test]
     public function buildsFromRuntimeContextWithoutProcessGlobals(): void
     {
-        $config = StoaServerConfig::fromContext(AppContext::test([
+        $config = StoaServerConfig::fromContext(new AppContext([
             'PHALANX_HOST' => '127.0.0.1',
             'PHALANX_PORT' => '9090',
             'PHALANX_REQUEST_TIMEOUT' => '2.5',
@@ -45,7 +45,7 @@ final class StoaServerConfigTest extends TestCase
     #[Test]
     public function staticHandlerAndCompressionFlowFromContext(): void
     {
-        $config = StoaServerConfig::fromContext(AppContext::test([
+        $config = StoaServerConfig::fromContext(new AppContext([
             'PHALANX_DOCUMENT_ROOT' => '/srv/static',
             'PHALANX_ENABLE_STATIC_HANDLER' => 'true',
             'PHALANX_HTTP_COMPRESSION' => 'false',
@@ -59,7 +59,7 @@ final class StoaServerConfigTest extends TestCase
     #[Test]
     public function poweredByHeaderCanBeDisabledFromContext(): void
     {
-        $config = StoaServerConfig::fromContext(AppContext::test([
+        $config = StoaServerConfig::fromContext(new AppContext([
             'PHALANX_POWERED_BY' => 'off',
         ]));
 

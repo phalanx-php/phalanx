@@ -36,7 +36,7 @@ final class CannotBootRenderingTest extends PhalanxTestCase
     {
         $this->expectException(CannotBootException::class);
 
-        Application::starting(AppContext::test([]))
+        Application::starting([])
             ->providers(new CriticalKeyBundle())
             ->compile();
     }
@@ -49,7 +49,7 @@ final class CannotBootRenderingTest extends PhalanxTestCase
     public function cannotBootExceptionMessageContainsKeyAndRemediation(): void
     {
         try {
-            Application::starting(AppContext::test([]))
+            Application::starting([])
                 ->providers(new CriticalKeyBundle())
                 ->compile();
 
@@ -68,7 +68,7 @@ final class CannotBootRenderingTest extends PhalanxTestCase
     public function cannotBootExceptionExposesMeaningfulReport(): void
     {
         try {
-            Application::starting(AppContext::test([]))
+            Application::starting([])
                 ->providers(new CriticalKeyBundle())
                 ->compile();
 
@@ -93,7 +93,7 @@ final class CannotBootRenderingTest extends PhalanxTestCase
     #[Test]
     public function compilingWithRequiredKeyPresentBootsCleanly(): void
     {
-        $app = Application::starting(AppContext::test(['CRITICAL_KEY' => 'some-value']))
+        $app = Application::starting(['CRITICAL_KEY' => 'some-value'])
             ->providers(new CriticalKeyBundle())
             ->compile();
 
@@ -110,7 +110,7 @@ final class CannotBootRenderingTest extends PhalanxTestCase
     #[Test]
     public function applicationBuilderExposesLastBootReport(): void
     {
-        $builder = Application::starting(AppContext::test(['CRITICAL_KEY' => 'value']))
+        $builder = Application::starting(['CRITICAL_KEY' => 'value'])
             ->providers(new CriticalKeyBundle());
 
         self::assertNull($builder->lastBootReport(), 'Report is null before compile().');

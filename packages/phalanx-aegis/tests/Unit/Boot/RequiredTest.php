@@ -15,7 +15,7 @@ final class RequiredTest extends PhalanxTestCase
     #[Test]
     public function envPassesWhenKeyPresentAndNonEmpty(): void
     {
-        $ctx = AppContext::test(['DB_URL' => 'pgsql://localhost/app']);
+        $ctx = new AppContext(['DB_URL' => 'pgsql://localhost/app']);
         $ev = Required::env('DB_URL')->evaluate($ctx);
 
         self::assertTrue($ev->isPass());
@@ -24,7 +24,7 @@ final class RequiredTest extends PhalanxTestCase
     #[Test]
     public function envFailsWhenKeyAbsent(): void
     {
-        $ctx = AppContext::test([]);
+        $ctx = new AppContext([]);
         $ev = Required::env('DB_URL')->evaluate($ctx);
 
         self::assertTrue($ev->isFail());
@@ -35,7 +35,7 @@ final class RequiredTest extends PhalanxTestCase
     #[Test]
     public function envFailsWhenValueIsEmptyString(): void
     {
-        $ctx = AppContext::test(['DB_URL' => '']);
+        $ctx = new AppContext(['DB_URL' => '']);
         $ev = Required::env('DB_URL')->evaluate($ctx);
 
         self::assertTrue($ev->isFail());
@@ -44,7 +44,7 @@ final class RequiredTest extends PhalanxTestCase
     #[Test]
     public function envFailsWhenValueIsNull(): void
     {
-        $ctx = AppContext::test(['DB_URL' => null]);
+        $ctx = new AppContext(['DB_URL' => null]);
         $ev = Required::env('DB_URL')->evaluate($ctx);
 
         self::assertTrue($ev->isFail());
@@ -69,7 +69,7 @@ final class RequiredTest extends PhalanxTestCase
     #[Test]
     public function serviceAlwaysPassesRegardlessOfContext(): void
     {
-        $ctx = AppContext::test([]);
+        $ctx = new AppContext([]);
         $ev = Required::service('App\\Repository')->evaluate($ctx);
 
         self::assertTrue($ev->isPass());
@@ -86,7 +86,7 @@ final class RequiredTest extends PhalanxTestCase
     #[Test]
     public function callablePassesWhenFnReturnsTrue(): void
     {
-        $ctx = AppContext::test([]);
+        $ctx = new AppContext([]);
         $ev = Required::callable(static fn (AppContext $c): bool => true, 'custom check')->evaluate($ctx);
 
         self::assertTrue($ev->isPass());
@@ -95,7 +95,7 @@ final class RequiredTest extends PhalanxTestCase
     #[Test]
     public function callableFailsWhenFnReturnsFalse(): void
     {
-        $ctx = AppContext::test([]);
+        $ctx = new AppContext([]);
         $ev = Required::callable(static fn (AppContext $c): bool => false, 'custom check')->evaluate($ctx);
 
         self::assertTrue($ev->isFail());
@@ -104,7 +104,7 @@ final class RequiredTest extends PhalanxTestCase
     #[Test]
     public function callableFailsWithStringReasonAsRemediation(): void
     {
-        $ctx = AppContext::test([]);
+        $ctx = new AppContext([]);
         $ev = Required::callable(
             static fn (AppContext $c): string => 'run: composer install',
             'dependency check',
@@ -117,7 +117,7 @@ final class RequiredTest extends PhalanxTestCase
     #[Test]
     public function callablePassThroughsBootEvaluationUnchanged(): void
     {
-        $ctx = AppContext::test([]);
+        $ctx = new AppContext([]);
         $expected = BootEvaluation::warn('already a warning');
         $ev = Required::callable(
             static fn (AppContext $c): BootEvaluation => BootEvaluation::warn('already a warning'),

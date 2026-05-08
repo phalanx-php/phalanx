@@ -15,7 +15,7 @@ final class OptionalTest extends PhalanxTestCase
     #[Test]
     public function envPassesWhenKeyPresentAndNonEmpty(): void
     {
-        $ctx = AppContext::test(['CACHE_URL' => 'redis://localhost']);
+        $ctx = new AppContext(['CACHE_URL' => 'redis://localhost']);
         $ev = Optional::env('CACHE_URL')->evaluate($ctx);
 
         self::assertTrue($ev->isPass());
@@ -24,7 +24,7 @@ final class OptionalTest extends PhalanxTestCase
     #[Test]
     public function envWarnsWhenKeyAbsent(): void
     {
-        $ctx = AppContext::test([]);
+        $ctx = new AppContext([]);
         $ev = Optional::env('CACHE_URL')->evaluate($ctx);
 
         self::assertTrue($ev->isWarn());
@@ -34,7 +34,7 @@ final class OptionalTest extends PhalanxTestCase
     #[Test]
     public function envWarnsWhenValueIsEmptyString(): void
     {
-        $ctx = AppContext::test(['CACHE_URL' => '']);
+        $ctx = new AppContext(['CACHE_URL' => '']);
         $ev = Optional::env('CACHE_URL')->evaluate($ctx);
 
         self::assertTrue($ev->isWarn());
@@ -43,7 +43,7 @@ final class OptionalTest extends PhalanxTestCase
     #[Test]
     public function envWarnsWhenValueIsNull(): void
     {
-        $ctx = AppContext::test(['CACHE_URL' => null]);
+        $ctx = new AppContext(['CACHE_URL' => null]);
         $ev = Optional::env('CACHE_URL')->evaluate($ctx);
 
         self::assertTrue($ev->isWarn());
@@ -52,7 +52,7 @@ final class OptionalTest extends PhalanxTestCase
     #[Test]
     public function envWarnMessageIncludesFallbackWhenProvided(): void
     {
-        $ctx = AppContext::test([]);
+        $ctx = new AppContext([]);
         $ev = Optional::env('CACHE_URL', 'array://')->evaluate($ctx);
 
         self::assertStringContainsString('array://', $ev->message);
@@ -61,7 +61,7 @@ final class OptionalTest extends PhalanxTestCase
     #[Test]
     public function envWarnMessageIncludesNoneWhenNoFallback(): void
     {
-        $ctx = AppContext::test([]);
+        $ctx = new AppContext([]);
         $ev = Optional::env('CACHE_URL')->evaluate($ctx);
 
         self::assertStringContainsString('<none>', $ev->message);
@@ -78,7 +78,7 @@ final class OptionalTest extends PhalanxTestCase
     #[Test]
     public function serviceAlwaysPassesRegardlessOfContext(): void
     {
-        $ctx = AppContext::test([]);
+        $ctx = new AppContext([]);
         $ev = Optional::service('App\\Cache')->evaluate($ctx);
 
         self::assertTrue($ev->isPass());
@@ -95,7 +95,7 @@ final class OptionalTest extends PhalanxTestCase
     #[Test]
     public function callablePassesWhenFnReturnsTrue(): void
     {
-        $ctx = AppContext::test([]);
+        $ctx = new AppContext([]);
         $ev = Optional::callable(static fn (AppContext $c): bool => true, 'optional check')->evaluate($ctx);
 
         self::assertTrue($ev->isPass());
@@ -104,7 +104,7 @@ final class OptionalTest extends PhalanxTestCase
     #[Test]
     public function callableWarnsWhenFnReturnsFalse(): void
     {
-        $ctx = AppContext::test([]);
+        $ctx = new AppContext([]);
         $ev = Optional::callable(static fn (AppContext $c): bool => false, 'optional check')->evaluate($ctx);
 
         self::assertTrue($ev->isWarn());
@@ -114,7 +114,7 @@ final class OptionalTest extends PhalanxTestCase
     #[Test]
     public function callableWarnsWithStringReasonAsRemediation(): void
     {
-        $ctx = AppContext::test([]);
+        $ctx = new AppContext([]);
         $ev = Optional::callable(
             static fn (AppContext $c): string => 'install optional extension',
             'ext check',
@@ -127,7 +127,7 @@ final class OptionalTest extends PhalanxTestCase
     #[Test]
     public function callablePassThroughsBootEvaluationUnchanged(): void
     {
-        $ctx = AppContext::test([]);
+        $ctx = new AppContext([]);
         $ev = Optional::callable(
             static fn (AppContext $c): BootEvaluation => BootEvaluation::fail('hard fail from optional'),
             'passthrough check',

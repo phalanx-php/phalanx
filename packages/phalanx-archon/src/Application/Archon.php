@@ -12,9 +12,10 @@ use Phalanx\Task\Scopeable;
 
 final class Archon
 {
-    public static function starting(AppContext $context = new AppContext()): ArchonBuilder
+    /** @param array<string,mixed> $context */
+    public static function starting(array $context = []): ArchonBuilder
     {
-        return new ArchonBuilder($context);
+        return new ArchonBuilder(new AppContext($context));
     }
 
     public static function command(

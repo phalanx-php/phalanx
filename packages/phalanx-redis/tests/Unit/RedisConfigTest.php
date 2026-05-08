@@ -42,7 +42,7 @@ final class RedisConfigTest extends TestCase
     #[Test]
     public function contextAcceptsEnvironmentStyleKeys(): void
     {
-        $config = RedisConfig::fromContext(AppContext::test([
+        $config = RedisConfig::fromContext(new AppContext([
             'REDIS_HOST' => 'redis.test',
             'REDIS_PORT' => '6380',
             'REDIS_USERNAME' => 'athena',

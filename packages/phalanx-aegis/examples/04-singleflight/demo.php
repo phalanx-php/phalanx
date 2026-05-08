@@ -5,15 +5,13 @@ declare(strict_types=1);
 require __DIR__ . '/../../../../vendor/autoload_runtime.php';
 
 use Phalanx\Application;
-use Phalanx\Boot\AppContext;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Supervisor\InProcessLedger;
 use Phalanx\Task\Task;
 
 return static function (array $context): \Closure {
-    $appContext = AppContext::fromSymfonyRuntime($context);
     $ledger = new InProcessLedger();
-    $app = Application::starting($appContext)
+    $app = Application::starting($context)
         ->withLedger($ledger)
         ->compile();
 

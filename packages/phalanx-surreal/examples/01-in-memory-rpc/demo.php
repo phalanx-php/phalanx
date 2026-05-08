@@ -21,9 +21,7 @@ use Phalanx\System\StreamingProcess;
 use Phalanx\Task\Task;
 
 return static function (array $context): \Closure {
-    $appContext = AppContext::fromSymfonyRuntime($context);
-
-    $binary = (new SurrealBinaryLocator())($appContext);
+    $binary = (new SurrealBinaryLocator())(new AppContext($context));
 
     if ($binary === null) {
         (new SurrealCannotRun())(
@@ -36,19 +34,18 @@ return static function (array $context): \Closure {
     $port = (new SurrealFreePort())();
     $endpoint = "http://127.0.0.1:{$port}";
 
-    $appContext = $appContext
-        ->with('surreal_namespace', 'athena')
-        ->with('surreal_database', 'wisdom')
-        ->with('surreal_endpoint', $endpoint)
-        ->with('surreal_username', 'root')
-        ->with('surreal_password', 'root');
+    $context['surreal_namespace'] = 'athena';
+    $context['surreal_database'] = 'wisdom';
+    $context['surreal_endpoint'] = $endpoint;
+    $context['surreal_username'] = 'root';
+    $context['surreal_password'] = 'root';
 
     echo "Surreal In-Memory RPC\n";
     echo "=====================\n";
     printf("Endpoint: %s\n", $endpoint);
     echo "Topic: Athena as disciplined wisdom and strategic clarity\n\n";
 
-    return static fn (): int => (int) Application::starting($appContext)
+    return static fn (): int => (int) Application::starting($context)
         ->providers(new SurrealBundle())
         ->run(Task::named(
             'demo.surreal.in-memory-rpc',

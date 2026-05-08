@@ -14,7 +14,7 @@ final class SurrealConfigTest extends TestCase
     #[Test]
     public function contextProvidesExplicitDatabaseAndTransportSettings(): void
     {
-        $config = SurrealConfig::fromContext(AppContext::test([
+        $config = SurrealConfig::fromContext(new AppContext([
             'surreal_namespace' => 'athena',
             'surreal_database' => 'wisdom',
             'surreal_endpoint' => 'http://surreal.test:8000/',
@@ -40,7 +40,7 @@ final class SurrealConfigTest extends TestCase
     #[Test]
     public function contextAcceptsEnvironmentStyleKeys(): void
     {
-        $config = SurrealConfig::fromContext(AppContext::test([
+        $config = SurrealConfig::fromContext(new AppContext([
             'SURREAL_NAMESPACE' => 'olympus',
             'SURREAL_DATABASE' => 'pantheon',
             'SURREAL_ENDPOINT' => 'http://surreal.test:8000/',

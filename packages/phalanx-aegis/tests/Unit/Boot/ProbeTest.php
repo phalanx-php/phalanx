@@ -45,7 +45,7 @@ final class ProbeTest extends PhalanxTestCase
     #[Test]
     public function tcpProbePassesWhenListenerIsPresent(): void
     {
-        $ev = Probe::tcp('127.0.0.1', $this->tcpPort)->evaluate(AppContext::test());
+        $ev = Probe::tcp('127.0.0.1', $this->tcpPort)->evaluate(new AppContext());
 
         self::assertTrue($ev->isPass(), sprintf('Expected pass but got %s: %s', $ev->status, $ev->message));
     }
@@ -58,7 +58,7 @@ final class ProbeTest extends PhalanxTestCase
         fclose($this->tcpServer);
         $this->tcpServer = null;
 
-        $ev = Probe::tcp('127.0.0.1', $port, 0.1, ProbeOutcome::FailBoot)->evaluate(AppContext::test());
+        $ev = Probe::tcp('127.0.0.1', $port, 0.1, ProbeOutcome::FailBoot)->evaluate(new AppContext());
 
         self::assertTrue($ev->isFail(), sprintf('Expected fail but got %s: %s', $ev->status, $ev->message));
         self::assertNotNull($ev->remediation);
@@ -71,7 +71,7 @@ final class ProbeTest extends PhalanxTestCase
         fclose($this->tcpServer);
         $this->tcpServer = null;
 
-        $ev = Probe::tcp('127.0.0.1', $port, 0.1, ProbeOutcome::FeatureUnavailable)->evaluate(AppContext::test());
+        $ev = Probe::tcp('127.0.0.1', $port, 0.1, ProbeOutcome::FeatureUnavailable)->evaluate(new AppContext());
 
         self::assertTrue($ev->isWarn(), sprintf('Expected warn but got %s: %s', $ev->status, $ev->message));
     }
@@ -103,7 +103,7 @@ final class ProbeTest extends PhalanxTestCase
             [200],
             0.1,
             ProbeOutcome::FeatureUnavailable,
-        )->evaluate(AppContext::test());
+        )->evaluate(new AppContext());
 
         self::assertTrue($ev->isWarn(), sprintf('Expected warn but got %s: %s', $ev->status, $ev->message));
     }
@@ -116,7 +116,7 @@ final class ProbeTest extends PhalanxTestCase
             [200],
             0.1,
             ProbeOutcome::FailBoot,
-        )->evaluate(AppContext::test());
+        )->evaluate(new AppContext());
 
         self::assertTrue($ev->isFail(), sprintf('Expected fail but got %s: %s', $ev->status, $ev->message));
     }
@@ -134,7 +134,7 @@ final class ProbeTest extends PhalanxTestCase
     #[Test]
     public function callableProbePassesWhenFnReturnsTrue(): void
     {
-        $ctx = AppContext::test();
+        $ctx = new AppContext();
         $ev = Probe::callable(
             static fn (AppContext $c): bool => true,
             'healthy check',
@@ -146,7 +146,7 @@ final class ProbeTest extends PhalanxTestCase
     #[Test]
     public function callableProbeFailsWhenFnReturnsFalseWithFailBoot(): void
     {
-        $ctx = AppContext::test();
+        $ctx = new AppContext();
         $ev = Probe::callable(
             static fn (AppContext $c): bool => false,
             'failing check',
@@ -159,7 +159,7 @@ final class ProbeTest extends PhalanxTestCase
     #[Test]
     public function callableProbeWarnsWhenFnReturnsFalseWithFeatureUnavailable(): void
     {
-        $ctx = AppContext::test();
+        $ctx = new AppContext();
         $ev = Probe::callable(
             static fn (AppContext $c): bool => false,
             'optional feature check',
@@ -172,7 +172,7 @@ final class ProbeTest extends PhalanxTestCase
     #[Test]
     public function callableProbeFailsWithStringReasonAsRemediation(): void
     {
-        $ctx = AppContext::test();
+        $ctx = new AppContext();
         $ev = Probe::callable(
             static fn (AppContext $c): string => 'install the redis extension',
             'redis ext',
@@ -186,7 +186,7 @@ final class ProbeTest extends PhalanxTestCase
     #[Test]
     public function callableProbePassThroughsBootEvaluationUnchanged(): void
     {
-        $ctx = AppContext::test();
+        $ctx = new AppContext();
         $ev = Probe::callable(
             static fn (AppContext $c): BootEvaluation => BootEvaluation::warn('custom warn from probe'),
             'custom',

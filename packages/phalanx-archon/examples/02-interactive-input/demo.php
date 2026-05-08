@@ -16,12 +16,9 @@ use Phalanx\Archon\Examples\InteractiveInput\InputBundle;
 use Phalanx\Archon\Examples\InteractiveInput\RegisterCommand;
 use Phalanx\Archon\Examples\InteractiveInput\SetConfigCommand;
 use Phalanx\Archon\Examples\InteractiveInput\ShowConfigCommand;
-use Phalanx\Boot\AppContext;
 use Phalanx\Console\Input\ConsoleInput;
 
 return static function (array $context): \Closure {
-    $appContext = AppContext::fromSymfonyRuntime($context);
-
     $commands = CommandGroup::of([
         'register' => [
             RegisterCommand::class,
@@ -83,7 +80,7 @@ return static function (array $context): \Closure {
 
             $reader = new RawInput(new ConsoleInput($nullStream));
 
-            $app = Archon::starting(AppContext::test(['argv' => array_merge(['demo'], $argv)]))
+            $app = Archon::starting(['argv' => array_merge(['demo'], $argv)])
                 ->providers(new InputBundle($capture, $theme, $reader))
                 ->commands($commands)
                 ->build();

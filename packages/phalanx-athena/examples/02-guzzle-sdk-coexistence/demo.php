@@ -36,7 +36,7 @@ use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Task;
 
 return static function (array $context): \Closure {
-    $ctx = AppContext::fromSymfonyRuntime($context);
+    $ctx = new AppContext($context);
 
     // Strip live-only keys when ATHENA_DEMO_LIVE is not set.
     $ctx = (new LiveModeFlag($ctx))->effective();
@@ -97,7 +97,7 @@ return static function (array $context): \Closure {
     $stack  = CoroutineGuzzleStack::create();
     $guzzle = new \GuzzleHttp\Client(['handler' => $stack, 'timeout' => 10.0]);
 
-    return static fn (): int => (int) Athena::starting($ctx)->run(Task::named(
+    return static fn (): int => (int) Athena::starting($ctx->values)->run(Task::named(
         'demo.athena.guzzle-sdk-coexistence',
         static function (ExecutionScope $scope) use ($guzzle, $guzzleUrl, $request): int {
             echo "Running Athena native + Guzzle SDK concurrently...\n\n";

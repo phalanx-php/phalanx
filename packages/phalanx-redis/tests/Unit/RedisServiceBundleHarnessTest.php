@@ -32,7 +32,7 @@ final class RedisServiceBundleHarnessTest extends TestCase
     #[Test]
     public function evaluationPassesWithRedisUrlPresent(): void
     {
-        $context = AppContext::test(['REDIS_URL' => 'redis://127.0.0.1:6379']);
+        $context = new AppContext(['REDIS_URL' => 'redis://127.0.0.1:6379']);
 
         $report = (new BootHarnessRunner())->run($context, [RedisServiceBundle::class], vendorDir: null);
 
@@ -43,7 +43,7 @@ final class RedisServiceBundleHarnessTest extends TestCase
     #[Test]
     public function evaluationWarnsWithoutRedisUrlButDoesNotFail(): void
     {
-        $context = AppContext::test([]);
+        $context = new AppContext([]);
 
         $report = (new BootHarnessRunner())->run($context, [RedisServiceBundle::class], vendorDir: null);
 

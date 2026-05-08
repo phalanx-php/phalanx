@@ -59,7 +59,7 @@ final class RuntimePolicyTest extends TestCase
 
     public function testCapabilityContextResolvesToPolicy(): void
     {
-        $policy = RuntimePolicy::fromContext(AppContext::test([
+        $policy = RuntimePolicy::fromContext(new AppContext([
             RuntimePolicy::CONTEXT_CAPABILITIES => [
                 RuntimeCapability::HttpClient,
                 'files',
@@ -88,7 +88,7 @@ final class RuntimePolicyTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Unknown runtime capability: mystery');
 
-        RuntimePolicy::fromContext(AppContext::test([
+        RuntimePolicy::fromContext(new AppContext([
             RuntimePolicy::CONTEXT_CAPABILITIES => ['mystery'],
         ]));
     }
@@ -97,9 +97,9 @@ final class RuntimePolicyTest extends TestCase
     #[RunInSeparateProcess]
     public function testBuilderRuntimePolicyOverrideWinsOverInvalidContext(): void
     {
-        $app = Application::starting(AppContext::test([
+        $app = Application::starting([
             RuntimePolicy::CONTEXT_POLICY => 'invalid',
-        ]))
+        ])
             ->withRuntimePolicy(RuntimePolicy::forCapabilities(RuntimeCapability::Network))
             ->compile();
 
@@ -115,9 +115,9 @@ final class RuntimePolicyTest extends TestCase
         $this->expectException(MissingContextValue::class);
         $this->expectExceptionMessage(RuntimePolicy::CONTEXT_STRICT_HOOKS . '" expected bool, got string');
 
-        Application::starting(AppContext::test([
+        Application::starting([
             RuntimePolicy::CONTEXT_STRICT_HOOKS => 'maybe',
-        ]))->compile();
+        ])->compile();
     }
 
     #[PreserveGlobalState(false)]

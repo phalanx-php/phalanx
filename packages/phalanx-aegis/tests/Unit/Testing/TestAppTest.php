@@ -40,7 +40,7 @@ final class TestAppTest extends TestCase
 
     public function testBootAcceptsContextAndBundles(): void
     {
-        $app = TestApp::boot(AppContext::test(['argv' => ['phpunit']]), new FixtureBundle());
+        $app = TestApp::boot(['argv' => ['phpunit']], new FixtureBundle());
 
         try {
             self::assertInstanceOf(Application::class, $app->application);
@@ -51,7 +51,7 @@ final class TestAppTest extends TestCase
 
     public function testLensFromTestableBundleResolvesLazily(): void
     {
-        $app = TestApp::boot(new AppContext(), new FixtureBundle());
+        $app = TestApp::boot([], new FixtureBundle());
 
         try {
             $lens = $app->lens(FixtureLens::class);
@@ -83,12 +83,12 @@ final class TestAppTest extends TestCase
         $this->expectExceptionMessage(UnattributedLens::class);
         $this->expectExceptionMessage('missing the #[\\Phalanx\\Testing\\Attribute\\Lens] attribute');
 
-        TestApp::boot(new AppContext(), new UnattributedBundle());
+        TestApp::boot([], new UnattributedBundle());
     }
 
     public function testFakeIsResolvableViaServiceFromInsideLens(): void
     {
-        $app = TestApp::boot(new AppContext(), new RecordingBundle());
+        $app = TestApp::boot([], new RecordingBundle());
 
         try {
             $fakeTarget = new RecordingLensTarget('fake');
@@ -119,7 +119,7 @@ final class TestAppTest extends TestCase
 
     public function testResetCallsLensResetAndClearsFakes(): void
     {
-        $app = TestApp::boot(new AppContext(), new FixtureBundle());
+        $app = TestApp::boot([], new FixtureBundle());
 
         try {
             $app->fake(stdClass::class, new stdClass());
@@ -138,7 +138,7 @@ final class TestAppTest extends TestCase
 
     public function testResetContinuesPastLensThrowAndStillClearsFakes(): void
     {
-        $app = TestApp::boot(new AppContext(), new ThrowingResetBundle());
+        $app = TestApp::boot([], new ThrowingResetBundle());
 
         try {
             $app->fake(stdClass::class, new stdClass());
@@ -172,7 +172,7 @@ final class TestAppTest extends TestCase
 
     public function testShutdownResetsAndClearsLenses(): void
     {
-        $app = TestApp::boot(new AppContext(), new FixtureBundle());
+        $app = TestApp::boot([], new FixtureBundle());
         $lens = $app->lens(FixtureLens::class);
 
         $app->shutdown();
@@ -192,7 +192,7 @@ final class TestAppTest extends TestCase
             }
         };
 
-        $app = TestApp::boot(new AppContext(), $bundle);
+        $app = TestApp::boot([], $bundle);
 
         try {
             $this->expectException(LensNotAvailable::class);
@@ -206,7 +206,7 @@ final class TestAppTest extends TestCase
 
     public function testDuplicateLensAcrossBundlesIsIdempotent(): void
     {
-        $app = TestApp::boot(new AppContext(), new FixtureBundle(), new ConflictingFixtureBundle());
+        $app = TestApp::boot([], new FixtureBundle(), new ConflictingFixtureBundle());
 
         try {
             $lens = $app->lens(FixtureLens::class);

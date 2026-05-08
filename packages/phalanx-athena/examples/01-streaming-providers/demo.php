@@ -35,7 +35,7 @@ use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Task;
 
 return static function (array $context): \Closure {
-    $ctx = AppContext::fromSymfonyRuntime($context);
+    $ctx = new AppContext($context);
 
     // Strip live-only keys when ATHENA_DEMO_LIVE is not set, then
     // auto-detect a local Ollama instance and merge it into context.
@@ -81,7 +81,7 @@ return static function (array $context): \Closure {
     echo "Topic: Athena's disciplined wisdom and strategic clarity\n\n";
     echo "Responses:\n\n";
 
-    return static fn (): int => (int) Athena::starting($ctx)->run(Task::named(
+    return static fn (): int => (int) Athena::starting($ctx->values)->run(Task::named(
         'demo.athena.streaming-providers',
         static function (ExecutionScope $scope) use ($request): int {
             $providerConfig = $scope->service(ProviderConfig::class);

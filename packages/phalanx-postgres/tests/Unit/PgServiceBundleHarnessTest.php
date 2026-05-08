@@ -40,7 +40,7 @@ final class PgServiceBundleHarnessTest extends TestCase
     #[Test]
     public function evaluationProducesNoFailuresWithDsnPresent(): void
     {
-        $context = AppContext::test(['database_url' => 'pgsql://user:pass@localhost/mydb']);
+        $context = new AppContext(['database_url' => 'pgsql://user:pass@localhost/mydb']);
 
         $report = (new BootHarnessRunner())->run($context, [PgServiceBundle::class], vendorDir: null);
 
@@ -50,7 +50,7 @@ final class PgServiceBundleHarnessTest extends TestCase
     #[Test]
     public function evaluationProducesNoFailuresWithSplitKeysPresent(): void
     {
-        $context = AppContext::test([
+        $context = new AppContext([
             'pg_host' => 'postgres.local',
             'pg_port' => '5432',
             'pg_database' => 'my_app',
@@ -66,7 +66,7 @@ final class PgServiceBundleHarnessTest extends TestCase
     {
         // Postgres config falls back to localhost defaults when no env is set;
         // absent Optional keys warn but never fail boot.
-        $context = AppContext::test([]);
+        $context = new AppContext([]);
 
         $report = (new BootHarnessRunner())->run($context, [PgServiceBundle::class], vendorDir: null);
 

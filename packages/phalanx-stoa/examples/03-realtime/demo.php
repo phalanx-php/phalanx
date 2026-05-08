@@ -12,18 +12,15 @@ use Acme\StoaDemo\Realtime\Support\SseFrameMatcher;
 use Acme\StoaDemo\Realtime\Support\SseFrameReader;
 use OpenSwoole\Coroutine;
 use OpenSwoole\Process;
-use Phalanx\Boot\AppContext;
 use Phalanx\Stoa\Stoa;
 
 return static function (array $context): \Closure {
-    $appContext = AppContext::fromSymfonyRuntime($context);
-
     $host = '127.0.0.1';
     $port = isset($argv[1]) ? (int) $argv[1] : random_int(20_000, 45_000);
     $listen = "{$host}:{$port}";
 
-    $server = new Process(static function () use ($listen, $appContext): void {
-        Stoa::starting($appContext)
+    $server = new Process(static function () use ($listen, $context): void {
+        Stoa::starting($context)
             ->providers(new RealtimeBundle())
             ->routes(__DIR__ . '/routes.php')
             ->listen($listen)

@@ -52,9 +52,10 @@ class Application implements AppHost
         $this->runtimePolicy = $runtimePolicy ?? RuntimePolicy::phalanxManaged();
     }
 
-    public static function starting(AppContext $context = new AppContext()): ApplicationBuilder
+    /** @param array<string,mixed> $context */
+    public static function starting(array $context = []): ApplicationBuilder
     {
-        return new ApplicationBuilder($context);
+        return new ApplicationBuilder(new AppContext($context));
     }
 
     public function providers(): array

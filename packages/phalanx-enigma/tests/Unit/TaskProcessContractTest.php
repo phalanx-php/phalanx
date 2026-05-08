@@ -124,13 +124,14 @@ PHP);
         };
     }
 
-    protected function phalanxContext(): AppContext
+    /** @return array<string, mixed> */
+    protected function phalanxContext(): array
     {
-        return AppContext::test([
+        return [
             'sshBinaryPath' => $this->sshBinaryPath ?? PHP_BINARY,
             'scpBinaryPath' => $this->scpBinaryPath ?? PHP_BINARY,
             'sftpBinaryPath' => $this->sftpBinaryPath ?? PHP_BINARY,
-        ]);
+        ];
     }
 
     private static function writeExecutable(string $contents): string

@@ -7,13 +7,13 @@ namespace Phalanx\Boot;
 use Phalanx\Boot\Exception\MissingContextValue;
 
 /**
- * Typed wrapper around the application context map produced by
- * symfony/runtime and consumed by every Phalanx ServiceBundle.
+ * Typed wrapper around the application context map consumed by every
+ * Phalanx ServiceBundle.
  *
- * Replaces raw `array $context`. All access is explicit: callers
- * must declare what they read and how (string/int/bool), and missing
- * required keys throw {@see MissingContextValue} instead of silently
- * resolving to null.
+ * Constructed directly from the raw `array $context` passed by symfony/runtime
+ * or by test helpers. All access is explicit: callers must declare what they
+ * read and how (string/int/bool), and missing required keys throw
+ * {@see MissingContextValue} instead of silently resolving to null.
  *
  * Immutable: every mutation (`with()`) returns a new instance.
  */
@@ -22,31 +22,6 @@ final readonly class AppContext
     /** @param array<string,mixed> $values */
     public function __construct(public array $values = [])
     {
-    }
-
-    /**
-     * Build from the raw context array Symfony Runtime hands the entry closure.
-     *
-     * @param array<string,mixed> $context
-     */
-    public static function fromSymfonyRuntime(array $context): self
-    {
-        return new self($context);
-    }
-
-    /**
-     * Test/demo helper for building a context inline without going through Symfony.
-     *
-     * @param array<string,mixed> $values
-     */
-    public static function test(array $values = []): self
-    {
-        return new self($values);
-    }
-
-    public static function empty(): self
-    {
-        return new self([]);
     }
 
     public function has(string $key): bool

@@ -21,7 +21,7 @@ final class TestScope
         AppContext $context = new AppContext(),
         ?LedgerStorage $ledger = null,
     ): ScopedTestApp {
-        $builder = Application::starting($context);
+        $builder = Application::starting($context->values);
 
         if ($services !== null) {
             $builder = $builder->providers(new InlineServiceBundle($services));

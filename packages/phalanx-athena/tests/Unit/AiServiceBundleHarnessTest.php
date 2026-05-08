@@ -40,7 +40,7 @@ final class AiServiceBundleHarnessTest extends TestCase
     #[Test]
     public function evaluationProducesNoFailuresWithAllKeysPresent(): void
     {
-        $context = AppContext::test([
+        $context = new AppContext([
             'ANTHROPIC_API_KEY' => 'sk-ant-test',
             'OPENAI_API_KEY' => 'sk-openai-test',
             'GEMINI_API_KEY' => 'gemini-test',
@@ -57,7 +57,7 @@ final class AiServiceBundleHarnessTest extends TestCase
     #[Test]
     public function evaluationProducesWarningsWithNoKeysPresent(): void
     {
-        $context = AppContext::test([]);
+        $context = new AppContext([]);
 
         $report = (new BootHarnessRunner())->run($context, [AiServiceBundle::class], vendorDir: null);
 
@@ -70,7 +70,7 @@ final class AiServiceBundleHarnessTest extends TestCase
     #[Test]
     public function evaluationProducesNoFailuresWhenOnlyOneProviderKeyPresent(): void
     {
-        $context = AppContext::test(['ANTHROPIC_API_KEY' => 'sk-ant-test']);
+        $context = new AppContext(['ANTHROPIC_API_KEY' => 'sk-ant-test']);
 
         $report = (new BootHarnessRunner())->run($context, [AiServiceBundle::class], vendorDir: null);
 

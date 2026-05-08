@@ -5,13 +5,10 @@ declare(strict_types=1);
 require __DIR__ . '/../../../../vendor/autoload_runtime.php';
 
 use GuzzleHttp\Psr7\ServerRequest;
-use Phalanx\Boot\AppContext;
 use Phalanx\Stoa\Stoa;
 
 return static function (array $context): \Closure {
-    $appContext = AppContext::fromSymfonyRuntime($context);
-
-    $app = Stoa::starting($appContext)
+    $app = Stoa::starting($context)
         ->routes(__DIR__ . '/routes.php')
         ->build();
 

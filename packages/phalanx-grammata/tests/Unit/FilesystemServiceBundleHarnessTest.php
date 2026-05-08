@@ -34,7 +34,7 @@ final class FilesystemServiceBundleHarnessTest extends TestCase
     #[Test]
     public function evaluationPassesWithMaxOpenPresent(): void
     {
-        $context = AppContext::test(['FILESYSTEM_MAX_OPEN' => '32']);
+        $context = new AppContext(['FILESYSTEM_MAX_OPEN' => '32']);
 
         $report = (new BootHarnessRunner())->run($context, [FilesystemServiceBundle::class], vendorDir: null);
 
@@ -45,7 +45,7 @@ final class FilesystemServiceBundleHarnessTest extends TestCase
     #[Test]
     public function evaluationWarnsWithoutMaxOpenButDoesNotFail(): void
     {
-        $context = AppContext::test([]);
+        $context = new AppContext([]);
 
         $report = (new BootHarnessRunner())->run($context, [FilesystemServiceBundle::class], vendorDir: null);
 

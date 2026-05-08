@@ -34,7 +34,7 @@ final class AthenaApplicationBuilder
     public function __construct(
         AppContext $context = new AppContext(),
     ) {
-        $this->app = Application::starting($context);
+        $this->app = Application::starting($context->values);
     }
 
     public function providers(ServiceBundle ...$providers): self

@@ -12,9 +12,9 @@ use PHPUnit\Framework\TestCase;
 final class AppContextTest extends TestCase
 {
     #[Test]
-    public function fromSymfonyRuntimeReturnsStringValue(): void
+    public function constructorReturnsStringValue(): void
     {
-        $ctx = AppContext::fromSymfonyRuntime(['DB_URL' => 'pgsql://localhost/app']);
+        $ctx = new AppContext(['DB_URL' => 'pgsql://localhost/app']);
 
         self::assertSame('pgsql://localhost/app', $ctx->string('DB_URL'));
     }
@@ -22,7 +22,7 @@ final class AppContextTest extends TestCase
     #[Test]
     public function intReturnsNativeIntegerDirectly(): void
     {
-        $ctx = AppContext::test(['n' => 42]);
+        $ctx = new AppContext(['n' => 42]);
 
         self::assertSame(42, $ctx->int('n'));
     }
@@ -30,7 +30,7 @@ final class AppContextTest extends TestCase
     #[Test]
     public function intAcceptsDefaultWhenKeyAbsent(): void
     {
-        $ctx = AppContext::test([]);
+        $ctx = new AppContext([]);
 
         self::assertSame(0, $ctx->int('missing', 0));
     }
@@ -38,7 +38,7 @@ final class AppContextTest extends TestCase
     #[Test]
     public function intCoercesNumericString(): void
     {
-        $ctx = AppContext::test(['port' => '8080']);
+        $ctx = new AppContext(['port' => '8080']);
 
         self::assertSame(8080, $ctx->int('port'));
     }
@@ -46,7 +46,7 @@ final class AppContextTest extends TestCase
     #[Test]
     public function intCoercesNegativeNumericString(): void
     {
-        $ctx = AppContext::test(['offset' => '-5']);
+        $ctx = new AppContext(['offset' => '-5']);
 
         self::assertSame(-5, $ctx->int('offset'));
     }
@@ -55,7 +55,7 @@ final class AppContextTest extends TestCase
     public function boolReturnsTrueForTrueSynonyms(): void
     {
         foreach (['1', 'true', 'on', 'yes', true] as $v) {
-            $ctx = AppContext::test(['flag' => $v]);
+            $ctx = new AppContext(['flag' => $v]);
             self::assertTrue($ctx->bool('flag'), sprintf('Expected true for value: %s', var_export($v, true)));
         }
     }
@@ -64,7 +64,7 @@ final class AppContextTest extends TestCase
     public function boolReturnsFalseForFalseSynonyms(): void
     {
         foreach (['0', 'false', 'off', 'no', '', false] as $v) {
-            $ctx = AppContext::test(['flag' => $v]);
+            $ctx = new AppContext(['flag' => $v]);
             self::assertFalse($ctx->bool('flag'), sprintf('Expected false for value: %s', var_export($v, true)));
         }
     }
@@ -75,7 +75,7 @@ final class AppContextTest extends TestCase
         $this->expectException(MissingContextValue::class);
         $this->expectExceptionMessage('missing');
 
-        AppContext::test([])->require('missing');
+        new AppContext([])->require('missing');
     }
 
     #[Test]
@@ -84,7 +84,7 @@ final class AppContextTest extends TestCase
         $this->expectException(MissingContextValue::class);
         $this->expectExceptionMessage('missing');
 
-        AppContext::test([])->string('missing');
+        new AppContext([])->string('missing');
     }
 
     #[Test]
@@ -93,13 +93,13 @@ final class AppContextTest extends TestCase
         $this->expectException(MissingContextValue::class);
         $this->expectExceptionMessage('array');
 
-        AppContext::test(['x' => []])->string('x');
+        new AppContext(['x' => []])->string('x');
     }
 
     #[Test]
     public function withReturnsNewInstanceWithAddedKeyAndLeavesOriginalUnchanged(): void
     {
-        $original = AppContext::test(['a' => 1]);
+        $original = new AppContext(['a' => 1]);
         $extended = $original->with('b', 2);
 
         self::assertSame(1, $extended->values['a']);
@@ -111,7 +111,7 @@ final class AppContextTest extends TestCase
     #[Test]
     public function withOverwritesExistingKeyInNewInstance(): void
     {
-        $original = AppContext::test(['a' => 1]);
+        $original = new AppContext(['a' => 1]);
         $updated = $original->with('a', 99);
 
         self::assertSame(1, $original->values['a']);
@@ -121,24 +121,24 @@ final class AppContextTest extends TestCase
     #[Test]
     public function hasTrueForPresentKeyFalseForAbsent(): void
     {
-        $ctx = AppContext::test(['present' => 'yes']);
+        $ctx = new AppContext(['present' => 'yes']);
 
         self::assertTrue($ctx->has('present'));
         self::assertFalse($ctx->has('absent'));
     }
 
     #[Test]
-    public function emptyProducesContextWithNoValues(): void
+    public function constructorWithNoArgsProducesEmptyContext(): void
     {
-        $ctx = AppContext::empty();
+        $ctx = new AppContext();
 
         self::assertSame([], $ctx->values);
     }
 
     #[Test]
-    public function testFactoryWithNoArgsProducesEmptyContext(): void
+    public function constructorWithEmptyArrayProducesEmptyContext(): void
     {
-        $ctx = AppContext::test();
+        $ctx = new AppContext([]);
 
         self::assertSame([], $ctx->values);
     }
@@ -146,7 +146,7 @@ final class AppContextTest extends TestCase
     #[Test]
     public function getReturnsDefaultWhenKeyAbsent(): void
     {
-        $ctx = AppContext::test([]);
+        $ctx = new AppContext([]);
 
         self::assertNull($ctx->get('nope'));
         self::assertSame('fallback', $ctx->get('nope', 'fallback'));
@@ -158,13 +158,13 @@ final class AppContextTest extends TestCase
         $this->expectException(MissingContextValue::class);
         $this->expectExceptionMessage('flag');
 
-        AppContext::test([])->bool('flag');
+        new AppContext([])->bool('flag');
     }
 
     #[Test]
     public function boolUsesDefaultWhenKeyAbsentAndDefaultProvided(): void
     {
-        $ctx = AppContext::test([]);
+        $ctx = new AppContext([]);
 
         self::assertTrue($ctx->bool('flag', true));
         self::assertFalse($ctx->bool('flag', false));
@@ -176,7 +176,7 @@ final class AppContextTest extends TestCase
         $this->expectException(MissingContextValue::class);
         $this->expectExceptionMessage('bool');
 
-        AppContext::test(['flag' => []])->bool('flag');
+        new AppContext(['flag' => []])->bool('flag');
     }
 
     #[Test]
@@ -185,7 +185,7 @@ final class AppContextTest extends TestCase
         $this->expectException(MissingContextValue::class);
         $this->expectExceptionMessage('port');
 
-        AppContext::test([])->int('port');
+        new AppContext([])->int('port');
     }
 
     #[Test]
@@ -194,6 +194,6 @@ final class AppContextTest extends TestCase
         $this->expectException(MissingContextValue::class);
         $this->expectExceptionMessage('int');
 
-        AppContext::test(['port' => 'abc'])->int('port');
+        new AppContext(['port' => 'abc'])->int('port');
     }
 }

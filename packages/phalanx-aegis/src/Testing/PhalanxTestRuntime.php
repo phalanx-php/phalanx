@@ -6,7 +6,6 @@ namespace Phalanx\Testing;
 
 use Closure;
 use Phalanx\Application;
-use Phalanx\Boot\AppContext;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Runtime\Memory\RuntimeMemory;
 use Phalanx\Scope\ExecutionScope;
@@ -33,9 +32,12 @@ class PhalanxTestRuntime
     ) {
     }
 
+    /**
+     * @param array<string,mixed> $context
+     */
     public static function start(
         ?Closure $services = null,
-        AppContext $context = new AppContext(),
+        array $context = [],
     ): self {
         $builder = Application::starting($context);
 

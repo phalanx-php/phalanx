@@ -11,9 +11,8 @@ use Phalanx\Runtime\RuntimePolicy;
 use Phalanx\Task\Task;
 
 return static function (array $context): \Closure {
-    $appContext = AppContext::fromSymfonyRuntime($context);
-    $policy = RuntimePolicy::fromContext($appContext);
-    $app = Application::starting($appContext)
+    $policy = RuntimePolicy::fromContext(new AppContext($context));
+    $app = Application::starting($context)
         ->withRuntimePolicy($policy)
         ->compile();
 

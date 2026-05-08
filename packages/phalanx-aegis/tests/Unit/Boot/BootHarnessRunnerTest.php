@@ -62,7 +62,7 @@ final class BootHarnessRunnerTest extends PhalanxTestCase
     public function runWithNoBundlesAndEmptyContextIsClean(): void
     {
         $runner = new BootHarnessRunner();
-        $report = $runner->run(AppContext::test([]), []);
+        $report = $runner->run(new AppContext([]), []);
 
         self::assertTrue($report->isClean());
         self::assertFalse($report->hasFailures());
@@ -81,7 +81,7 @@ final class BootHarnessRunnerTest extends PhalanxTestCase
         $runner = new BootHarnessRunner();
 
         try {
-            $runner->run(AppContext::test([]), [new RequiredEnvBundle()]);
+            $runner->run(new AppContext([]), [new RequiredEnvBundle()]);
             self::fail('Expected CannotBootException was not thrown.');
         } catch (CannotBootException $e) {
             $report = $e->report;
@@ -102,7 +102,7 @@ final class BootHarnessRunnerTest extends PhalanxTestCase
     public function runWithMissingOptionalEnvProducesWarning(): void
     {
         $runner = new BootHarnessRunner();
-        $report = $runner->run(AppContext::test([]), [new OptionalEnvBundle()]);
+        $report = $runner->run(new AppContext([]), [new OptionalEnvBundle()]);
 
         self::assertTrue($report->hasWarnings());
         self::assertFalse($report->hasFailures());
@@ -117,7 +117,7 @@ final class BootHarnessRunnerTest extends PhalanxTestCase
     {
         $runner = new BootHarnessRunner();
         $report = $runner->dryRun(
-            AppContext::test([]),
+            new AppContext([]),
             BootHarness::of(Required::env('MISSING_KEY')),
         );
 
@@ -141,7 +141,7 @@ final class BootHarnessRunnerTest extends PhalanxTestCase
             Optional::env('B'),
         );
         // A present, B absent.
-        $report = $runner->dryRun(AppContext::test(['A' => 'value']), $harness);
+        $report = $runner->dryRun(new AppContext(['A' => 'value']), $harness);
 
         self::assertFalse($report->hasFailures());
         self::assertTrue($report->hasWarnings());
@@ -179,7 +179,7 @@ final class BootHarnessRunnerTest extends PhalanxTestCase
 
         try {
             $runner = new BootHarnessRunner();
-            $runner->run(AppContext::test([]), [], $tmpDir);
+            $runner->run(new AppContext([]), [], $tmpDir);
             self::fail('Expected CannotBootException for FROM_EXTRA was not thrown.');
         } catch (CannotBootException $e) {
             self::assertStringContainsString('FROM_EXTRA', $e->getMessage());
@@ -198,7 +198,7 @@ final class BootHarnessRunnerTest extends PhalanxTestCase
     public function bundlesWithDefaultHarnessAreNoOps(): void
     {
         $runner = new BootHarnessRunner();
-        $report = $runner->run(AppContext::test([]), [
+        $report = $runner->run(new AppContext([]), [
             new DefaultHarnessBundle(),
             new DefaultHarnessBundle(),
         ]);
@@ -217,7 +217,7 @@ final class BootHarnessRunnerTest extends PhalanxTestCase
         $runner = new BootHarnessRunner();
 
         try {
-            $runner->run(AppContext::test([]), [RequiredEnvBundle::class]);
+            $runner->run(new AppContext([]), [RequiredEnvBundle::class]);
             self::fail('Expected CannotBootException was not thrown.');
         } catch (CannotBootException $e) {
             self::assertStringContainsString('CRITICAL_KEY', $e->getMessage());
@@ -233,7 +233,7 @@ final class BootHarnessRunnerTest extends PhalanxTestCase
     {
         $runner = new BootHarnessRunner();
         $report = $runner->run(
-            AppContext::test(['CRITICAL_KEY' => 'present', 'OPTIONAL_KEY' => 'also_present']),
+            new AppContext(['CRITICAL_KEY' => 'present', 'OPTIONAL_KEY' => 'also_present']),
             [new RequiredEnvBundle(), new OptionalEnvBundle()],
         );
 

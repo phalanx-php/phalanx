@@ -56,13 +56,13 @@ final class ConsoleLens implements LensContract
 
     public function __construct()
     {
-        $this->context = AppContext::empty();
+        $this->context = new AppContext();
     }
 
-    /** @param AppContext|array<string, mixed> $context */
-    public function withContext(AppContext|array $context): self
+    /** @param array<string, mixed> $context */
+    public function withContext(array $context): self
     {
-        $this->context = $context instanceof AppContext ? $context : AppContext::test($context);
+        $this->context = new AppContext($context);
 
         return $this;
     }
@@ -125,7 +125,7 @@ final class ConsoleLens implements LensContract
 
     public function reset(): void
     {
-        $this->context = AppContext::empty();
+        $this->context = new AppContext();
         $this->commands = null;
         $this->providers = [];
         $this->consoleConfig = null;
@@ -176,7 +176,7 @@ final class ConsoleLens implements LensContract
     {
         $captureBundle = new ConsoleCaptureBundle($capturedOutput, $nullInput);
 
-        $builder = Archon::starting($this->context)
+        $builder = Archon::starting($this->context->values)
             ->providers($captureBundle, ...$this->providers)
             ->commands($this->commands ?? CommandGroup::of([]));
 

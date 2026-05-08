@@ -12,9 +12,8 @@ use Phalanx\Archon\Console\Style\ConsoleServiceBundle;
 use Phalanx\Archon\Examples\InteractiveInput\RegisterCommand;
 use Phalanx\Archon\Examples\InteractiveInput\SetConfigCommand;
 use Phalanx\Archon\Examples\InteractiveInput\ShowConfigCommand;
-use Phalanx\Boot\AppContext;
 
-exit(Archon::starting(AppContext::test(['argv' => $argv]))
+exit(Archon::starting(['argv' => $argv])
     ->providers(new ConsoleServiceBundle())
     ->commands(CommandGroup::of([
         'register' => [

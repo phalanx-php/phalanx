@@ -13,11 +13,8 @@ use Phalanx\Archon\Console\Style\Theme;
 use Phalanx\Archon\Examples\SupervisedConcurrency\DeployBundle;
 use Phalanx\Archon\Examples\SupervisedConcurrency\DeployCommand;
 use Phalanx\Archon\Examples\SupervisedConcurrency\Stages\TestStage;
-use Phalanx\Boot\AppContext;
 
 return static function (array $context): \Closure {
-    $appContext = AppContext::fromSymfonyRuntime($context);
-
     $isTty = stream_isatty(STDOUT);
     $stream = $isTty ? STDOUT : fopen('php://temp', 'w+');
     if ($stream === false) {
@@ -45,7 +42,7 @@ return static function (array $context): \Closure {
 
         $start = microtime(true);
 
-        $app = Archon::starting(AppContext::test(['argv' => ['demo', 'deploy', 'staging']]))
+        $app = Archon::starting(['argv' => ['demo', 'deploy', 'staging']])
             ->providers($bundle)
             ->commands($commands)
             ->build();

@@ -45,7 +45,7 @@ final class ArchonBuilder
 
     public function __construct(private readonly AppContext $context = new AppContext())
     {
-        $this->app = Application::starting($context);
+        $this->app = Application::starting($context->values);
         $this->app->providers(new ConsoleInputServiceBundle());
     }
 

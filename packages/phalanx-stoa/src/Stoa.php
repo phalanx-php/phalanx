@@ -12,8 +12,9 @@ final readonly class Stoa
     {
     }
 
-    public static function starting(AppContext $context = new AppContext()): StoaApplicationBuilder
+    /** @param array<string,mixed> $context */
+    public static function starting(array $context = []): StoaApplicationBuilder
     {
-        return new StoaApplicationBuilder($context);
+        return new StoaApplicationBuilder(new AppContext($context));
     }
 }

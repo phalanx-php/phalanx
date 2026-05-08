@@ -5,26 +5,22 @@ declare(strict_types=1);
 require __DIR__ . '/../../../../vendor/autoload_runtime.php';
 
 use Phalanx\Application;
-use Phalanx\Boot\AppContext;
 use Phalanx\Runtime\Memory\RuntimeMemoryConfig;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Task;
 
 return static function (array $context): \Closure {
-    $appContext = AppContext::fromSymfonyRuntime($context)->with(
-        RuntimeMemoryConfig::CONTEXT_KEY,
-        [
-            'resource_rows' => 64,
-            'edge_rows' => 64,
-            'lease_rows' => 64,
-            'annotation_rows' => 64,
-            'event_rows' => 64,
-            'counter_rows' => 64,
-            'claim_rows' => 64,
-            'symbol_rows' => 64,
-        ],
-    );
-    $app = Application::starting($appContext)->compile();
+    $context[RuntimeMemoryConfig::CONTEXT_KEY] = [
+        'resource_rows' => 64,
+        'edge_rows' => 64,
+        'lease_rows' => 64,
+        'annotation_rows' => 64,
+        'event_rows' => 64,
+        'counter_rows' => 64,
+        'claim_rows' => 64,
+        'symbol_rows' => 64,
+    ];
+    $app = Application::starting($context)->compile();
 
     return static function () use ($app): int {
         $failed = $app->run(Task::named(
