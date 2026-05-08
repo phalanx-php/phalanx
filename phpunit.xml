@@ -91,5 +91,8 @@
         <testsuite name="PHPStan Extension">
             <directory>packages/phalanx-phpstan/tests</directory>
         </testsuite>
+        <testsuite name="Aegis Codegen">
+            <directory>packages/phalanx-aegis-codegen/tests</directory>
+        </testsuite>
     </testsuites>
 </phpunit>

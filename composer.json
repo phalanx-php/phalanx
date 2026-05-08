@@ -152,7 +152,9 @@
         "demo:surreal:live": "php packages/phalanx-surreal/examples/02-live-query/demo.php",
         "examples:lint": "find examples packages/phalanx-aegis/examples packages/phalanx-archon/examples packages/phalanx-athena/examples packages/phalanx-stoa/examples packages/phalanx-surreal/examples -name '*.php' -not -path '*/vendor/*' -print0 | xargs -0 -n1 php -l > /dev/null",
         "gen:test-accessors": "php packages/phalanx-aegis-codegen/bin/regenerate-accessors",
-        "check": ["@analyse", "@rector:dry", "@cs", "@test", "@test:redis", "@test:surreal", "@examples:lint"]
+        "gen:test-accessors:check": "php packages/phalanx-aegis-codegen/bin/check-accessors-in-sync",
+        "post-autoload-dump": "@gen:test-accessors",
+        "check": ["@analyse", "@rector:dry", "@cs", "@gen:test-accessors:check", "@test", "@test:redis", "@test:surreal", "@examples:lint"]
     },
     "config": {
         "process-timeout": 0,

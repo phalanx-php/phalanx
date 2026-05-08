@@ -1,0 +1,123 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+/**
+ * Verify the committed TestAppAccessors trait matches what regenerate-accessors
+ * would produce right now. Used as a CI gate so a forgotten regeneration
+ * after adding/renaming a lens fails the build instead of merging silently.
+ *
+ * Exits 0 when in sync; exits 1 with a unified diff when out of sync.
+ */
+
+use Phalanx\Aegis\Codegen\AccessorTraitWriter;
+use Phalanx\Aegis\Codegen\LensDiscovery;
+
+$autoloadCandidates = [
+    __DIR__ . '/../vendor/autoload.php',
+    __DIR__ . '/../../../vendor/autoload.php',
+];
+
+foreach ($autoloadCandidates as $candidate) {
+    if (is_file($candidate)) {
+        require $candidate;
+        break;
+    }
+}
+
+if (!class_exists(LensDiscovery::class)) {
+    fwrite(STDERR, "Composer autoloader not found. Run `composer install` from the monorepo root.\n");
+    exit(1);
+}
+
+$rootDir = realpath(__DIR__ . '/../../..');
+if ($rootDir === false) {
+    fwrite(STDERR, "Cannot resolve monorepo root.\n");
+    exit(1);
+}
+
+$bundles = collectBundles($rootDir);
+$lenses = (new LensDiscovery())->discover($bundles);
+$expected = (new AccessorTraitWriter())->render($lenses);
+
+$target = $rootDir . '/packages/phalanx-aegis/src/Testing/Generated/TestAppAccessors.php';
+$actual = @file_get_contents($target);
+
+if ($actual === false) {
+    fwrite(STDERR, "Generated trait not found at {$target}. Run `composer gen:test-accessors` to create it.\n");
+    exit(1);
+}
+
+if ($actual === $expected) {
+    fwrite(STDOUT, "TestAppAccessors trait is in sync (" . count($lenses) . " accessor(s)).\n");
+    exit(0);
+}
+
+fwrite(STDERR, "TestAppAccessors trait is out of sync. Run `composer gen:test-accessors` and commit the result.\n\n");
+fwrite(STDERR, renderDiff($actual, $expected));
+exit(1);
+
+/** @return list<class-string<\Phalanx\Testing\TestableBundle>> */
+function collectBundles(string $rootDir): array
+{
+    $sources = [$rootDir . '/composer.json'];
+
+    foreach (glob($rootDir . '/packages/*/composer.json') ?: [] as $packageJson) {
+        $sources[] = $packageJson;
+    }
+
+    $bundles = [];
+
+    foreach ($sources as $source) {
+        $contents = @file_get_contents($source);
+        if ($contents === false) {
+            continue;
+        }
+
+        $data = json_decode($contents, true);
+        if (!is_array($data)) {
+            continue;
+        }
+
+        $declared = $data['extra']['phalanx']['bundles'] ?? null;
+        if (!is_array($declared)) {
+            continue;
+        }
+
+        foreach ($declared as $bundleClass) {
+            if (is_string($bundleClass)) {
+                $bundles[] = $bundleClass;
+            }
+        }
+    }
+
+    return array_values(array_unique($bundles));
+}
+
+function renderDiff(string $actual, string $expected): string
+{
+    $actualLines = explode("\n", $actual);
+    $expectedLines = explode("\n", $expected);
+    $output = "--- committed (TestAppAccessors.php)\n+++ regenerated\n";
+
+    $max = max(count($actualLines), count($expectedLines));
+
+    for ($i = 0; $i < $max; $i++) {
+        $a = $actualLines[$i] ?? '';
+        $e = $expectedLines[$i] ?? '';
+
+        if ($a === $e) {
+            continue;
+        }
+
+        if ($a !== '') {
+            $output .= "-{$a}\n";
+        }
+        if ($e !== '') {
+            $output .= "+{$e}\n";
+        }
+    }
+
+    return $output;
+}

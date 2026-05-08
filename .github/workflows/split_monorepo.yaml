@@ -14,6 +14,7 @@ jobs:
       matrix:
         package:
           - phalanx-aegis
+          - phalanx-aegis-codegen
           - phalanx-archon
           - phalanx-stoa
           - phalanx-athena
