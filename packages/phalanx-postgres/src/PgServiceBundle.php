@@ -10,7 +10,7 @@ use Phalanx\Boot\Optional;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 
-final class PgServiceBundle extends ServiceBundle
+class PgServiceBundle extends ServiceBundle
 {
     /**
      * The bundle supports two config shapes: a single DSN via `database_url`
@@ -36,7 +36,7 @@ final class PgServiceBundle extends ServiceBundle
 
 
     public function __construct(
-        private readonly ?PgConfig $config = null,
+        private ?PgConfig $config = null,
     ) {
     }
 

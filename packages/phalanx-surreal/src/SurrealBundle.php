@@ -15,7 +15,7 @@ use Phalanx\Scope\ExecutionScope;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 
-final class SurrealBundle extends ServiceBundle
+class SurrealBundle extends ServiceBundle
 {
     /**
      * SurrealConfig::fromContext reads `surreal_namespace`/`SURREAL_NAMESPACE`
@@ -39,9 +39,9 @@ final class SurrealBundle extends ServiceBundle
 
 
     public function __construct(
-        private readonly ?SurrealConfig $config = null,
-        private readonly ?SurrealTransport $transport = null,
-        private readonly ?SurrealLiveTransport $liveTransport = null,
+        private ?SurrealConfig $config = null,
+        private ?SurrealTransport $transport = null,
+        private ?SurrealLiveTransport $liveTransport = null,
     ) {
     }
 

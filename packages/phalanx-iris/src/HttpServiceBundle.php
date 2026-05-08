@@ -8,7 +8,7 @@ use Phalanx\Boot\AppContext;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 
-final class HttpServiceBundle extends ServiceBundle
+class HttpServiceBundle extends ServiceBundle
 {
     private const float DEFAULT_CONNECT_TIMEOUT = 5.0;
     private const float DEFAULT_READ_TIMEOUT = 30.0;
@@ -16,7 +16,7 @@ final class HttpServiceBundle extends ServiceBundle
     private const string DEFAULT_USER_AGENT = 'Phalanx-Iris/0.6';
 
     public function __construct(
-        private readonly ?HttpClientConfig $config = null,
+        private ?HttpClientConfig $config = null,
     ) {
     }
 

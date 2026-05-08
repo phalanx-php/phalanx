@@ -8,7 +8,7 @@ use Phalanx\Boot\AppContext;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 
-final class SshServiceBundle extends ServiceBundle
+class SshServiceBundle extends ServiceBundle
 {
     public function services(Services $services, AppContext $context): void
     {

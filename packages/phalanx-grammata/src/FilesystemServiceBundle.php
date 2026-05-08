@@ -12,7 +12,7 @@ use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 use Phalanx\Scope\TaskScope;
 
-final class FilesystemServiceBundle extends ServiceBundle
+class FilesystemServiceBundle extends ServiceBundle
 {
     /**
      * File pool size is optional — the bundle defaults to 64 concurrent
@@ -27,7 +27,7 @@ final class FilesystemServiceBundle extends ServiceBundle
 
 
     public function __construct(
-        private readonly ?int $maxOpen = null,
+        private ?int $maxOpen = null,
     ) {}
 
     public function services(Services $services, AppContext $context): void

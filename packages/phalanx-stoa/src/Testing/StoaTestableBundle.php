@@ -25,7 +25,7 @@ use Phalanx\Testing\TestLens;
  * HttpLens to TestApp's lens registry. Tests that need additional Stoa-side
  * configuration register their own ServiceBundles alongside.
  */
-final class StoaTestableBundle extends ServiceBundle
+class StoaTestableBundle extends ServiceBundle
 {
     public function services(Services $services, AppContext $context): void
     {

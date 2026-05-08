@@ -22,7 +22,7 @@ use Phalanx\Service\Services;
  *
  * Not for userland direct use — userland reaches through ConsoleLens.
  */
-final class ConsoleCaptureBundle extends ServiceBundle
+class ConsoleCaptureBundle extends ServiceBundle
 {
     /** @param resource $nullInput */
     public function __construct(

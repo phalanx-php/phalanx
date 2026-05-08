@@ -12,7 +12,7 @@ use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 use Phalanx\Trace\Trace;
 
-final class RedisServiceBundle extends ServiceBundle
+class RedisServiceBundle extends ServiceBundle
 {
     /**
      * Redis is optional infrastructure — the bundle boots without any Redis
@@ -30,7 +30,7 @@ final class RedisServiceBundle extends ServiceBundle
 
 
     public function __construct(
-        private readonly ?RedisConfig $config = null,
+        private ?RedisConfig $config = null,
     ) {
     }
 

@@ -9,7 +9,7 @@ use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 use Phalanx\Eidolon\Signal\SignalCollector;
 
-final class SignalServiceBundle extends ServiceBundle
+class SignalServiceBundle extends ServiceBundle
 {
     public function services(Services $services, AppContext $context): void
     {

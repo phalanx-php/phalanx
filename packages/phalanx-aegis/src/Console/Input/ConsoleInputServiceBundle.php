@@ -17,7 +17,7 @@ use Phalanx\Service\Services;
  * paths restore correctly. The singleton's onShutdown is a final guard
  * for processes that exit without disposing the scope cleanly.
  */
-final class ConsoleInputServiceBundle extends ServiceBundle
+class ConsoleInputServiceBundle extends ServiceBundle
 {
     public function services(Services $services, AppContext $context): void
     {

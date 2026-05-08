@@ -25,7 +25,7 @@ use Phalanx\Testing\TestLens;
  * ConsoleLens to TestApp's lens registry. The lens builds its own
  * ArchonApplication internally on each run().
  */
-final class ArchonTestableBundle extends ServiceBundle
+class ArchonTestableBundle extends ServiceBundle
 {
     public static function lens(): TestLens
     {
