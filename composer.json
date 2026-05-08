@@ -69,6 +69,7 @@
     },
     "autoload-dev": {
         "psr-4": {
+            "Phalanx\\Athena\\Examples\\": "packages/phalanx-athena/examples/src/",
             "Phalanx\\Archon\\Tests\\": "packages/phalanx-archon/tests/",
             "Phalanx\\Tests\\Stoa\\": "packages/phalanx-stoa/tests/",
             "Phalanx\\Iris\\Tests\\": "packages/phalanx-iris/tests/",
@@ -95,7 +96,15 @@
             "packages/phalanx-phpstan/tests/Integration/Fixtures/",
             "packages/phalanx-athena/examples/support-triage/src/",
             "packages/phalanx-athena/examples/research-agent/src/",
-            "packages/phalanx-athena/examples/multi-tenant-fleet/src/"
+            "packages/phalanx-athena/examples/multi-tenant-fleet/src/",
+            "packages/phalanx-archon/examples/01-basic-commands/src/",
+            "packages/phalanx-archon/examples/02-interactive-input/src/",
+            "packages/phalanx-archon/examples/03-supervised-concurrency/src/",
+            "packages/phalanx-archon/examples/04-runtime-lifecycle/src/",
+            "packages/phalanx-stoa/examples/01-basic-routing/src/",
+            "packages/phalanx-stoa/examples/02-api/src/",
+            "packages/phalanx-stoa/examples/03-realtime/src/",
+            "packages/phalanx-stoa/examples/04-runtime-lifecycle/src/"
         ]
     },
     "repositories": [
