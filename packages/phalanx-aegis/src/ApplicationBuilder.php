@@ -6,6 +6,8 @@ namespace Phalanx;
 
 use Closure;
 use Phalanx\Boot\AppContext;
+use Phalanx\Boot\BootHarnessReport;
+use Phalanx\Boot\BootHarnessRunner;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Handler\HandlerResolver;
 use Phalanx\Middleware\ServiceTransformationMiddleware;
@@ -52,6 +54,8 @@ class ApplicationBuilder
     private ?RuntimePolicy $runtimePolicy = null;
 
     private ?WorkerDispatch $workerDispatch = null;
+
+    private ?BootHarnessReport $lastBootReport = null;
 
     public function __construct(private readonly AppContext $context)
     {
@@ -109,8 +113,21 @@ class ApplicationBuilder
         return $this;
     }
 
+    /**
+     * The BootHarnessReport from the most recent compile() call.
+     * Null before compile() has been called.
+     */
+    public function lastBootReport(): ?BootHarnessReport
+    {
+        return $this->lastBootReport;
+    }
+
     public function compile(): Application
     {
+        $runner = new BootHarnessRunner();
+        // run() evaluates all requirements and throws CannotBootException on failure.
+        $this->lastBootReport = $runner->run($this->context, $this->providers, $this->vendorDir());
+
         $runtimeContext = new RuntimeContext(RuntimeMemory::fromContext($this->context));
         $trace = $this->trace ?? new Trace();
         $catalog = new ServiceCatalog($this->context);
@@ -165,5 +182,11 @@ class ApplicationBuilder
     public function run(Scopeable|Executable|Closure $task, ?CancellationToken $token = null): mixed
     {
         return $this->compile()->run($task, $token);
+    }
+
+    private function vendorDir(): ?string
+    {
+        $candidate = getcwd() . '/vendor';
+        return is_dir($candidate) ? $candidate : null;
     }
 }
