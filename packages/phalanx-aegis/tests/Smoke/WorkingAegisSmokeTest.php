@@ -46,7 +46,7 @@ final class WorkingAegisSmokeTest extends CoroutineTestCase
             $ledger = new InProcessLedger();
             $disposed = [];
 
-            $bundle = new class ($disposed) implements ServiceBundle {
+            $bundle = new class ($disposed) extends ServiceBundle {
                 /** @param array<string, true> $disposed */
                 public function __construct(public array &$disposed)
                 {
@@ -106,7 +106,7 @@ final class WorkingAegisSmokeTest extends CoroutineTestCase
     {
         $this->runInCoroutine(function (): void {
             $ledger = new InProcessLedger();
-            $bundle = new class implements ServiceBundle {
+            $bundle = new class extends ServiceBundle {
                 public function services(Services $services, array $context): void
                 {
                 }
@@ -139,7 +139,7 @@ final class WorkingAegisSmokeTest extends CoroutineTestCase
     {
         $this->runInCoroutine(function (): void {
             $ledger = new InProcessLedger();
-            $bundle = new class implements ServiceBundle {
+            $bundle = new class extends ServiceBundle {
                 public function services(Services $services, array $context): void
                 {
                 }

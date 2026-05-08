@@ -140,7 +140,7 @@ final class ManagedRunnerProbe
 {
 }
 
-final class ManagedRunnerBundle implements ServiceBundle
+final class ManagedRunnerBundle extends ServiceBundle
 {
     public function __construct(
         private readonly ManagedRunnerEvents $events,

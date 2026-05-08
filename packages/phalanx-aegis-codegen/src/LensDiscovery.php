@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Aegis\Codegen;
 
+use Phalanx\Service\ServiceBundle;
 use Phalanx\Testing\Attribute\Lens as LensAttribute;
-use Phalanx\Testing\TestableBundle;
 use Phalanx\Testing\TestApp;
 use ReflectionAttribute;
 use ReflectionClass;
@@ -17,8 +17,9 @@ use RuntimeException;
  * Two sources, merged in the order Aegis-first, then bundle-declared:
  *
  *   1. Aegis-native lenses listed on TestApp::AEGIS_NATIVE_LENSES.
- *   2. Lens classes returned by every TestableBundle declared in any
- *      installed package's composer.json `extra.phalanx.bundles`.
+ *   2. Lens classes returned by ServiceBundle::lens() for every bundle
+ *      declared in any installed package's composer.json
+ *      `extra.phalanx.bundles`.
  *
  * Each lens class is reflected for #[\Phalanx\Testing\Attribute\Lens]
  * and converted to LensMetadata. Duplicate accessor names raise a
@@ -29,7 +30,7 @@ final class LensDiscovery
     private const string AEGIS_LENSES_CONSTANT = 'AEGIS_NATIVE_LENSES';
 
     /**
-     * @param list<class-string<TestableBundle>> $declaredBundles
+     * @param list<class-string<ServiceBundle>> $declaredBundles
      * @return list<LensMetadata>
      */
     public function discover(array $declaredBundles): array
@@ -42,14 +43,14 @@ final class LensDiscovery
         }
 
         foreach ($declaredBundles as $bundleClass) {
-            if (!is_subclass_of($bundleClass, TestableBundle::class)) {
+            if (!is_subclass_of($bundleClass, ServiceBundle::class)) {
                 throw new RuntimeException(
-                    "{$bundleClass} is declared in extra.phalanx.bundles but does not implement "
-                    . TestableBundle::class . '.',
+                    "{$bundleClass} is declared in extra.phalanx.bundles but does not extend "
+                    . ServiceBundle::class . '.',
                 );
             }
 
-            foreach ($bundleClass::testLenses() as $lensClass) {
+            foreach ($bundleClass::lens()->all() as $lensClass) {
                 $metadata = $this->reflectLens($lensClass);
                 $this->record($byAccessor, $metadata);
             }

@@ -6,6 +6,7 @@ namespace Phalanx\Aegis\Codegen\Tests\Unit;
 
 use Phalanx\Aegis\Codegen\LensDiscovery;
 use Phalanx\Aegis\Codegen\LensMetadata;
+use Phalanx\Service\ServiceBundle;
 use Phalanx\Testing\Lenses\LedgerLens;
 use Phalanx\Testing\Lenses\RuntimeLens;
 use Phalanx\Testing\Lenses\ScopeLens;
@@ -78,10 +79,10 @@ final class LensDiscoveryTest extends TestCase
         new LensDiscovery()->discover([UnattributedBundle::class]);
     }
 
-    public function testThrowsWhenBundleClassDoesNotImplementContract(): void
+    public function testThrowsWhenBundleClassDoesNotExtendServiceBundle(): void
     {
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('does not implement Phalanx\\Testing\\TestableBundle');
+        $this->expectExceptionMessage('does not extend ' . ServiceBundle::class);
 
         $method = new ReflectionMethod(LensDiscovery::class, 'discover');
         $method->invoke(new LensDiscovery(), [\stdClass::class]);

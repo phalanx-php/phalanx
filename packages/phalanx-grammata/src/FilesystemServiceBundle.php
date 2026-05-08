@@ -9,7 +9,7 @@ use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 use Phalanx\Scope\TaskScope;
 
-final class FilesystemServiceBundle implements ServiceBundle
+final class FilesystemServiceBundle extends ServiceBundle
 {
     public function __construct(
         private readonly ?int $maxOpen = null,

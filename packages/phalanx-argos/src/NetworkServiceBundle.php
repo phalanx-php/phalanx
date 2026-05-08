@@ -17,7 +17,7 @@ use Phalanx\Service\Services;
  * NetworkConfig is the only managed service; tasks read it via
  * $scope->service(NetworkConfig::class).
  */
-final class NetworkServiceBundle implements ServiceBundle
+final class NetworkServiceBundle extends ServiceBundle
 {
     public function services(Services $services, array $context): void
     {

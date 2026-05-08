@@ -9,7 +9,7 @@ use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 use Phalanx\Trace\Trace;
 
-final class RedisServiceBundle implements ServiceBundle
+final class RedisServiceBundle extends ServiceBundle
 {
     public function __construct(
         private readonly ?RedisConfig $config = null,

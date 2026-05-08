@@ -13,7 +13,7 @@ use Phalanx\Iris\Iris;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 
-final class AiServiceBundle implements ServiceBundle
+final class AiServiceBundle extends ServiceBundle
 {
     public function services(Services $services, array $context): void
     {

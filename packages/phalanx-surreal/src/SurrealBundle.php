@@ -12,7 +12,7 @@ use Phalanx\Scope\ExecutionScope;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 
-class SurrealBundle implements ServiceBundle
+class SurrealBundle extends ServiceBundle
 {
     public function __construct(
         private readonly ?SurrealConfig $config = null,

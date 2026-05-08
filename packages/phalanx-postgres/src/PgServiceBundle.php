@@ -7,7 +7,7 @@ namespace Phalanx\Postgres;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 
-final class PgServiceBundle implements ServiceBundle
+final class PgServiceBundle extends ServiceBundle
 {
     public function __construct(
         private readonly ?PgConfig $config = null,

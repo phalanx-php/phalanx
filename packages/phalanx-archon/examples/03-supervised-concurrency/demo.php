@@ -28,7 +28,7 @@ if ($stream === false) {
 $terminal = $isTty ? null : new TerminalEnvironment(columns: 80, lines: 24);
 $theme    = Theme::default();
 
-$bundle = new class ($stream, $terminal, $theme) implements ServiceBundle {
+$bundle = new class ($stream, $terminal, $theme) extends ServiceBundle {
     public function __construct(
         private mixed $stream,
         private ?TerminalEnvironment $terminal,

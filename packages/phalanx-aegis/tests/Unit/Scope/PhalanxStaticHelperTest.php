@@ -100,7 +100,7 @@ final class PhalanxStaticHelperTest extends CoroutineTestCase
 
     private static function buildApp(): Application
     {
-        $bundle = new class implements ServiceBundle {
+        $bundle = new class extends ServiceBundle {
             public function services(Services $services, array $context): void
             {
             }

@@ -201,7 +201,7 @@ final class SiblingScopeIsolationTest extends CoroutineTestCase
 
     private function buildAppWithScopedCounter(InProcessLedger $ledger): Application
     {
-        $bundle = new class implements ServiceBundle {
+        $bundle = new class extends ServiceBundle {
             public function services(Services $services, array $context): void
             {
                 $services->scoped(Counter::class)
@@ -216,7 +216,7 @@ final class SiblingScopeIsolationTest extends CoroutineTestCase
 
     private function buildAppWithSingletonPool(InProcessLedger $ledger): Application
     {
-        $bundle = new class implements ServiceBundle {
+        $bundle = new class extends ServiceBundle {
             public function services(Services $services, array $context): void
             {
                 $services->singleton(PoolStub::class)

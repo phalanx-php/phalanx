@@ -6,17 +6,16 @@ namespace Phalanx\Tests\Fixtures\Testing;
 
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
-use Phalanx\Testing\TestableBundle;
+use Phalanx\Testing\TestLens;
 
-final class UnattributedBundle implements ServiceBundle, TestableBundle
+final class UnattributedBundle extends ServiceBundle
 {
     public function services(Services $services, array $context): void
     {
     }
 
-    /** @return list<class-string<\Phalanx\Testing\Lens>> */
-    public static function testLenses(): array
+    public static function lens(): TestLens
     {
-        return [UnattributedLens::class];
+        return TestLens::of(UnattributedLens::class);
     }
 }

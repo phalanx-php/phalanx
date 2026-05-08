@@ -7,7 +7,7 @@ namespace Phalanx\Enigma;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 
-final class SshServiceBundle implements ServiceBundle
+final class SshServiceBundle extends ServiceBundle
 {
     public function services(Services $services, array $context): void
     {

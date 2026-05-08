@@ -57,7 +57,7 @@ final class FactoryDependencyResolutionTest extends TestCase
     }
 }
 
-final class AutoResolvedFactoryBundle implements ServiceBundle
+final class AutoResolvedFactoryBundle extends ServiceBundle
 {
     public function services(Services $services, array $context): void
     {
@@ -107,7 +107,7 @@ final readonly class AutoResolvedConsumer
     }
 }
 
-final class UntypedFactoryBundle implements ServiceBundle
+final class UntypedFactoryBundle extends ServiceBundle
 {
     public function services(Services $services, array $context): void
     {

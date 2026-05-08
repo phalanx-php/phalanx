@@ -9,7 +9,7 @@ use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 use Phalanx\Stoa\Sse\SseStreamFactory;
 
-final class RealtimeBundle implements ServiceBundle
+final class RealtimeBundle extends ServiceBundle
 {
     /** @param array<string, mixed> $context */
     public function services(Services $services, array $context): void

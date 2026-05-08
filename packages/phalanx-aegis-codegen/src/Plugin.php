@@ -102,7 +102,7 @@ final class Plugin implements PluginInterface, EventSubscriberInterface
         return null;
     }
 
-    /** @return list<class-string<\Phalanx\Testing\TestableBundle>> */
+    /** @return list<class-string<\Phalanx\Service\ServiceBundle>> */
     private function collectDeclaredBundles(Composer $composer): array
     {
         $declared = [];
@@ -116,7 +116,7 @@ final class Plugin implements PluginInterface, EventSubscriberInterface
 
             foreach ($extra['phalanx']['bundles'] as $bundleClass) {
                 if (is_string($bundleClass)) {
-                    /** @var class-string<\Phalanx\Testing\TestableBundle> $bundleClass */
+                    /** @var class-string<\Phalanx\Service\ServiceBundle> $bundleClass */
                     $declared[] = $bundleClass;
                 }
             }
@@ -128,7 +128,7 @@ final class Plugin implements PluginInterface, EventSubscriberInterface
         if (isset($rootExtra['phalanx']['bundles']) && is_array($rootExtra['phalanx']['bundles'])) {
             foreach ($rootExtra['phalanx']['bundles'] as $bundleClass) {
                 if (is_string($bundleClass)) {
-                    /** @var class-string<\Phalanx\Testing\TestableBundle> $bundleClass */
+                    /** @var class-string<\Phalanx\Service\ServiceBundle> $bundleClass */
                     $declared[] = $bundleClass;
                 }
             }

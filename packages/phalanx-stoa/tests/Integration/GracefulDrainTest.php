@@ -145,7 +145,7 @@ final class GracefulDrainTest extends PhalanxTestCase
     {
         $this->scope->run(static function (ExecutionScope $scope): void {
             $shutdownFired = false;
-            $bundle = new class ($shutdownFired) implements ServiceBundle {
+            $bundle = new class ($shutdownFired) extends ServiceBundle {
                 public function __construct(private bool &$shutdownFired)
                 {
                 }

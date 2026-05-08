@@ -29,9 +29,9 @@ use Throwable;
  *   $app->reset();                                  // between PHPUnit tests
  *   $app->shutdown();                               // disposes Application
  *
- * Bundles that implement TestableBundle automatically activate their lenses.
- * Aegis-native lenses (LedgerLens, ScopeLens, TimeLens, RuntimeLens, FakeLens)
- * are registered unconditionally; all other lenses require their bundle.
+ * Bundles that override the lens() hook activate their lenses automatically.
+ * Aegis-native lenses (LedgerLens, ScopeLens, RuntimeLens) are registered
+ * unconditionally; all other lenses require their bundle.
  *
  * Hard-fail discipline: accessing $app->http when no Stoa bundle was passed
  * raises LensNotAvailable with a message naming the missing bundle.
@@ -64,7 +64,7 @@ final class TestApp
     /** @var array<class-string<Lens>, class-string<LensFactory>> */
     private array $factories = [];
 
-    /** @var array<class-string<Lens>, list<class-string<TestableBundle>>> */
+    /** @var array<class-string<Lens>, list<class-string<ServiceBundle>>> */
     private array $providers = [];
 
     /** @var array<class-string, object> */
@@ -315,7 +315,7 @@ final class TestApp
      * Register all lenses contributed by the given bundles. Each lens class
      * is reflected for #[Lens] to recover its factory and exposed accessor.
      *
-     * Bundles that do not implement TestableBundle are silently ignored —
+     * Bundles whose lens() returns TestLens::none() are silently skipped —
      * they contribute services but no lens surface.
      *
      * @param array<array-key, ServiceBundle> $bundles
@@ -323,11 +323,9 @@ final class TestApp
     private function registerBundleLenses(array $bundles): void
     {
         foreach ($bundles as $bundle) {
-            if (!$bundle instanceof TestableBundle) {
-                continue;
-            }
+            $collection = ($bundle::class)::lens();
 
-            foreach ($bundle::testLenses() as $lensClass) {
+            foreach ($collection->all() as $lensClass) {
                 $this->registerLens($lensClass, $bundle::class);
             }
         }
@@ -339,8 +337,8 @@ final class TestApp
      * conflict on factory choice; both are recorded as providers for
      * diagnostic purposes.
      *
-     * @param class-string<Lens>       $lensClass
-     * @param class-string<TestableBundle> $providerBundle
+     * @param class-string<Lens>         $lensClass
+     * @param class-string<ServiceBundle> $providerBundle
      */
     private function registerLens(string $lensClass, string $providerBundle): void
     {

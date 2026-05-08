@@ -8,7 +8,7 @@ use Acme\StoaDemo\Runtime\Support\RuntimeEvents;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 
-final readonly class RuntimeLifecycleBundle implements ServiceBundle
+final class RuntimeLifecycleBundle extends ServiceBundle
 {
     /** @param array<string, mixed> $context */
     public function services(Services $services, array $context): void

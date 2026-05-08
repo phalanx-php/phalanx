@@ -7,7 +7,7 @@ namespace Phalanx\Iris;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 
-class HttpServiceBundle implements ServiceBundle
+class HttpServiceBundle extends ServiceBundle
 {
     public function __construct(
         private readonly ?HttpClientConfig $config = null,

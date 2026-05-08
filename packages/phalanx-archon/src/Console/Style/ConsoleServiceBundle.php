@@ -23,7 +23,7 @@ use Phalanx\Service\Services;
  *   and KeyParser state survive across sequential prompts in a single
  *   command without leaking partial multi-byte sequences across scopes.
  */
-final class ConsoleServiceBundle implements ServiceBundle
+final class ConsoleServiceBundle extends ServiceBundle
 {
     public function services(Services $services, array $context): void
     {

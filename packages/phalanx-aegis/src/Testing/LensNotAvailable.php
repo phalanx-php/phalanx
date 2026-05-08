@@ -19,7 +19,7 @@ final class LensNotAvailable extends LogicException
 {
     /**
      * @param class-string<Lens>             $lens
-     * @param list<class-string<TestableBundle>> $providers Bundles known to this
+     * @param list<class-string<\Phalanx\Service\ServiceBundle>> $providers Bundles known to this
      *        TestApp instance that declare the lens. Empty when no bundle
      *        passed to TestApp::boot() listed it.
      */
@@ -31,7 +31,7 @@ final class LensNotAvailable extends LogicException
             $list = implode(', ', $providers);
             $message .= " Pass one of these bundles to TestApp::boot(): {$list}.";
         } else {
-            $message .= ' Pass a TestableBundle that declares this lens to TestApp::boot().';
+            $message .= ' Pass a ServiceBundle that declares this lens via lens() to TestApp::boot().';
         }
 
         parent::__construct($message);

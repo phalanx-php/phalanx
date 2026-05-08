@@ -81,7 +81,7 @@ function runCase(string $label, array $argv, string $expectedSubstring, CommandG
 
     $reader = new RawInput(new ConsoleInput($nullStream));
 
-    $bundle = new class($capture, $theme, $reader) implements ServiceBundle {
+    $bundle = new class($capture, $theme, $reader) extends ServiceBundle {
         public function __construct(
             private StreamOutput $output,
             private Theme $theme,

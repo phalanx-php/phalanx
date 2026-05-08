@@ -71,7 +71,7 @@ function runCase(string $label, array $argv, string $expectedSubstring, CommandG
     $capture = new StreamOutput($stream, new TerminalEnvironment(columns: 80, lines: 24));
 
     $app = Archon::starting(['argv' => array_merge(['demo'], $argv)])
-        ->providers(new class($capture) implements ServiceBundle {
+        ->providers(new class($capture) extends ServiceBundle {
             public function __construct(private StreamOutput $output)
             {
             }

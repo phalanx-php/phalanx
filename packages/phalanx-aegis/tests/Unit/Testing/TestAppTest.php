@@ -183,9 +183,9 @@ final class TestAppTest extends TestCase
         // observable cleanup of the reset itself rather than re-resolving.
     }
 
-    public function testNonTestableBundleDoesNotContributeLenses(): void
+    public function testBundleWithNoLensDoesNotContributeLenses(): void
     {
-        $bundle = new class implements \Phalanx\Service\ServiceBundle {
+        $bundle = new class extends \Phalanx\Service\ServiceBundle {
             public function services(\Phalanx\Service\Services $services, array $context): void
             {
             }
@@ -195,7 +195,7 @@ final class TestAppTest extends TestCase
 
         try {
             $this->expectException(LensNotAvailable::class);
-            $this->expectExceptionMessage('Pass a TestableBundle that declares this lens to TestApp::boot().');
+            $this->expectExceptionMessage('Pass a ServiceBundle that declares this lens via lens() to TestApp::boot().');
 
             $app->lens(FixtureLens::class);
         } finally {

@@ -9,7 +9,7 @@ use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\ServiceCatalog;
 use Phalanx\Service\Services;
 
-final class TestServiceBundle implements ServiceBundle
+final class TestServiceBundle extends ServiceBundle
 {
     /** @var list<Closure(ServiceCatalog, array): void> */
     private array $registrations = [];

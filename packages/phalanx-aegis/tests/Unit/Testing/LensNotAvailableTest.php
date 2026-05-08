@@ -17,7 +17,7 @@ final class LensNotAvailableTest extends TestCase
 
         self::assertStringContainsString(FixtureLens::class, $exception->getMessage());
         self::assertStringContainsString('not registered on this TestApp', $exception->getMessage());
-        self::assertStringContainsString('Pass a TestableBundle that declares this lens to TestApp::boot().', $exception->getMessage());
+        self::assertStringContainsString('Pass a ServiceBundle that declares this lens via lens() to TestApp::boot().', $exception->getMessage());
     }
 
     public function testMessageListsCandidateProviders(): void

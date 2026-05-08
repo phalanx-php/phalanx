@@ -6,22 +6,21 @@ namespace Phalanx\Tests\Fixtures\Testing;
 
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
-use Phalanx\Testing\TestableBundle;
+use Phalanx\Testing\TestLens;
 
 /**
  * Bundle that nominates the same lens class as FixtureBundle but is a
  * distinct provider. Used to prove deduplication of identical-factory
  * registrations.
  */
-final class ConflictingFixtureBundle implements ServiceBundle, TestableBundle
+final class ConflictingFixtureBundle extends ServiceBundle
 {
     public function services(Services $services, array $context): void
     {
     }
 
-    /** @return list<class-string<\Phalanx\Testing\Lens>> */
-    public static function testLenses(): array
+    public static function lens(): TestLens
     {
-        return [FixtureLens::class];
+        return TestLens::of(FixtureLens::class);
     }
 }

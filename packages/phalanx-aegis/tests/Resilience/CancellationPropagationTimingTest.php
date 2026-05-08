@@ -112,7 +112,7 @@ final class CancellationPropagationTimingTest extends CoroutineTestCase
 
     private static function buildApp(InProcessLedger $ledger): Application
     {
-        $bundle = new class implements ServiceBundle {
+        $bundle = new class extends ServiceBundle {
             public function services(Services $services, array $context): void
             {
             }

@@ -6,8 +6,7 @@ namespace Phalanx\Stoa\Testing;
 
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
-use Phalanx\Testing\TestableBundle;
-use Phalanx\Testing\Lens;
+use Phalanx\Testing\TestLens;
 
 /**
  * Marker bundle that activates Stoa's HttpLens on a TestApp.
@@ -25,15 +24,14 @@ use Phalanx\Testing\Lens;
  * HttpLens to TestApp's lens registry. Tests that need additional Stoa-side
  * configuration register their own ServiceBundles alongside.
  */
-final class StoaTestableBundle implements ServiceBundle, TestableBundle
+final class StoaTestableBundle extends ServiceBundle
 {
     public function services(Services $services, array $context): void
     {
     }
 
-    /** @return list<class-string<Lens>> */
-    public static function testLenses(): array
+    public static function lens(): TestLens
     {
-        return [HttpLens::class];
+        return TestLens::of(HttpLens::class);
     }
 }

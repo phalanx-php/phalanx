@@ -9,7 +9,7 @@ use Phalanx\Hermes\Client\WsClientConfig;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 
-final readonly class WsServiceBundle implements ServiceBundle
+final class WsServiceBundle extends ServiceBundle
 {
     public function __construct(
         private ?WsClientConfig $clientConfig = null,

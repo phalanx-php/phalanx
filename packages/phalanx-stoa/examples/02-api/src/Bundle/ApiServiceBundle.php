@@ -10,7 +10,7 @@ use Phalanx\Auth\Guard;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 
-final class ApiServiceBundle implements ServiceBundle
+final class ApiServiceBundle extends ServiceBundle
 {
     /** @param array<string, mixed> $context */
     public function services(Services $services, array $context): void

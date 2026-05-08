@@ -121,7 +121,7 @@ final class WaitReasonRecordingTest extends TestCase
 
     private function buildApp(InProcessLedger $ledger): Application
     {
-        $bundle = new class implements ServiceBundle {
+        $bundle = new class extends ServiceBundle {
             public function services(Services $services, array $context): void
             {
             }
