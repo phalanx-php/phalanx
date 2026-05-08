@@ -40,85 +40,64 @@ final class SurrealBundle extends ServiceBundle
 
     public function __construct(
         private readonly ?SurrealConfig $config = null,
+        private readonly ?SurrealTransport $transport = null,
+        private readonly ?SurrealLiveTransport $liveTransport = null,
     ) {
     }
 
-    /**
-     * Surreal composes Iris (HttpClient/HttpClientConfig) and Hermes
-     * (WsClient/WsClientConfig). The defensive `$services->has()` guards
-     * are intentional composition boundaries: when a userland app registers
-     * IrisServiceBundle / WsServiceBundle alongside SurrealBundle, those
-     * bundles own the canonical client registrations and Surreal must not
-     * shadow them. Surreal-only services (SurrealConfig, SurrealTransport,
-     * SurrealLiveTransport, Surreal itself) are also guarded for symmetry
-     * and to keep the body uniform; double-registration of those would be
-     * a real userland error and Services would throw without the guard.
-     */
     public function services(Services $services, AppContext $context): void
     {
         $config = $this->config;
+        $transport = $this->transport;
+        $liveTransport = $this->liveTransport;
 
-        if (!$services->has(SurrealConfig::class)) {
-            $services->config(
-                SurrealConfig::class,
-                static fn(AppContext $ctx): SurrealConfig => $config ?? SurrealConfig::fromContext($ctx),
-            );
-        }
+        $services->config(
+            SurrealConfig::class,
+            static fn(AppContext $ctx): SurrealConfig => $config ?? SurrealConfig::fromContext($ctx),
+        );
 
-        if (!$services->has(HttpClient::class)) {
-            $services->singleton(HttpClient::class)
-                ->needs(SurrealConfig::class)
-                ->factory(static fn(SurrealConfig $config): HttpClient => new HttpClient(new HttpClientConfig(
-                    connectTimeout: $config->connectTimeout,
-                    readTimeout: $config->readTimeout,
-                    maxResponseBytes: $config->maxResponseBytes,
-                    userAgent: 'Phalanx-Surreal/0.6',
-                )));
-        }
+        $services->singleton(HttpClient::class)
+            ->needs(SurrealConfig::class)
+            ->factory(static fn(SurrealConfig $config): HttpClient => new HttpClient(new HttpClientConfig(
+                connectTimeout: $config->connectTimeout,
+                readTimeout: $config->readTimeout,
+                maxResponseBytes: $config->maxResponseBytes,
+                userAgent: 'Phalanx-Surreal/0.6',
+            )));
 
-        if (!$services->has(SurrealTransport::class)) {
-            $services->singleton(SurrealTransport::class)
-                ->needs(HttpClient::class)
-                ->factory(static fn(HttpClient $http): SurrealTransport => new IrisSurrealTransport($http));
-        }
+        $services->singleton(SurrealTransport::class)
+            ->needs(HttpClient::class)
+            ->factory(static fn(HttpClient $http): SurrealTransport => $transport ?? new IrisSurrealTransport($http));
 
-        if (!$services->has(WsClientConfig::class)) {
-            $services->config(
-                WsClientConfig::class,
-                static function (AppContext $ctx) use ($config): WsClientConfig {
-                    $surreal = $config ?? SurrealConfig::fromContext($ctx);
+        $services->config(
+            WsClientConfig::class,
+            static function (AppContext $ctx) use ($config): WsClientConfig {
+                $surreal = $config ?? SurrealConfig::fromContext($ctx);
 
-                    return new WsClientConfig(
-                        connectTimeout: $surreal->connectTimeout,
-                        recvTimeout: $surreal->readTimeout,
-                    );
-                },
-            );
-        }
+                return new WsClientConfig(
+                    connectTimeout: $surreal->connectTimeout,
+                    recvTimeout: $surreal->readTimeout,
+                );
+            },
+        );
 
-        if (!$services->has(WsClient::class)) {
-            $services->singleton(WsClient::class)
-                ->needs(WsClientConfig::class)
-                ->factory(static fn(WsClientConfig $config): WsClient => new WsClient($config));
-        }
+        $services->singleton(WsClient::class)
+            ->needs(WsClientConfig::class)
+            ->factory(static fn(WsClientConfig $config): WsClient => new WsClient($config));
 
-        if (!$services->has(SurrealLiveTransport::class)) {
-            $services->singleton(SurrealLiveTransport::class)
-                ->needs(WsClient::class)
-                ->factory(static fn(WsClient $client): SurrealLiveTransport => new HermesSurrealLiveTransport($client));
-        }
+        $services->singleton(SurrealLiveTransport::class)
+            ->needs(WsClient::class)
+            ->factory(static fn(WsClient $client): SurrealLiveTransport => $liveTransport ?? new HermesSurrealLiveTransport($client));
 
-        if (!$services->has(Surreal::class)) {
-            $services->scoped(Surreal::class)
-                ->factory(static fn(
-                    SurrealConfig $config,
-                    SurrealTransport $transport,
-                    SurrealLiveTransport $liveTransport,
-                    ExecutionScope $scope,
-                ): Surreal => new Surreal($config, $transport, $scope, liveTransport: $liveTransport))
-                ->onDispose(static function (Surreal $surreal): void {
-                    $surreal->close();
-                });
-        }
+        $services->scoped(Surreal::class)
+            ->factory(static fn(
+                SurrealConfig $config,
+                SurrealTransport $transport,
+                SurrealLiveTransport $liveTransport,
+                ExecutionScope $scope,
+            ): Surreal => new Surreal($config, $transport, $scope, liveTransport: $liveTransport))
+            ->onDispose(static function (Surreal $surreal): void {
+                $surreal->close();
+            });
     }
 }

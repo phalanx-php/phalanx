@@ -37,11 +37,7 @@ final class AiServiceBundle extends ServiceBundle
 
     public function services(Services $services, AppContext $context): void
     {
-        // Compose Iris only if the userland app didn't already register it.
-        // AiServiceBundle depends on Iris's HttpClient; either source works.
-        if (!$services->has(HttpClient::class)) {
-            Iris::services()->services($services, $context);
-        }
+        Iris::services()->services($services, $context);
 
         $services->singleton(ProviderConfig::class)
             ->factory(static function (HttpClient $client) use ($context) {

@@ -109,16 +109,17 @@ final class AthenaApplicationBuilderTest extends TestCase
     }
 
     #[Test]
-    public function facadeBuilderComposesCallerProvidedIrisServices(): void
+    public function registeringIrisExplicitlyAlongsideAthenaIsAnError(): void
     {
-        $result = Athena::starting()
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('already registered');
+
+        Athena::starting()
             ->providers(Iris::services(new HttpClientConfig(userAgent: 'AthenaCustomIris')))
             ->run(Task::named(
-                'test.athena.facade.custom-iris',
-                static fn(ExecutionScope $scope): string => $scope->service(HttpClientConfig::class)->userAgent,
+                'test.athena.facade.duplicate-iris',
+                static fn(ExecutionScope $scope): null => null,
             ));
-
-        self::assertSame('AthenaCustomIris', $result);
     }
 
     #[Test]

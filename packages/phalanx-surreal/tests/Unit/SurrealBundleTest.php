@@ -210,10 +210,8 @@ final class SurrealBundleTest extends PhalanxTestCase
     protected function phalanxServices(): Closure
     {
         return static function (Services $services, AppContext $context): void {
-            $services->singleton(SurrealTransport::class)
-                ->factory(static fn(): SurrealTransport => new BundleSurrealTransport());
-
-            new SurrealBundle()->services($services, $context);
+            new SurrealBundle(transport: new BundleSurrealTransport())
+                ->services($services, $context);
         };
     }
 }
