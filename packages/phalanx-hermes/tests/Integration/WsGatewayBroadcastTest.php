@@ -9,14 +9,10 @@ use OpenSwoole\Coroutine;
 use Phalanx\Hermes\WsConnection;
 use Phalanx\Hermes\WsGateway;
 use Phalanx\Hermes\WsMessage;
-use PHPUnit\Framework\Attributes\PreserveGlobalState;
-use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Throwable;
 
-#[PreserveGlobalState(false)]
-#[RunTestsInSeparateProcesses]
 final class WsGatewayBroadcastTest extends TestCase
 {
     private WsGateway $gateway;

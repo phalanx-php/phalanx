@@ -90,6 +90,17 @@ final class StoaRequestResource
         return $resource instanceof self ? $resource : null;
     }
 
+    /**
+     * Cancellation token bound to this HTTP request lifecycle. Cancels when
+     * Stoa aborts the request (e.g., {@see StoaRunner::handleClose} on fd
+     * disconnect). Exposed so {@see HttpUpgradeable} implementations can chain
+     * downstream session tokens to abrupt-disconnect propagation.
+     */
+    public function cancellation(): CancellationToken
+    {
+        return $this->token;
+    }
+
     public function activate(): void
     {
         $this->handle = $this->runtime->memory->resources->activate($this->handle);
