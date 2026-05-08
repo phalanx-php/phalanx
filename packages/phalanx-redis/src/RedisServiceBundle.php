@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Phalanx\Redis;
 
 use Phalanx\Boot\AppContext;
+use Phalanx\Boot\BootHarness;
+use Phalanx\Boot\Optional;
 use Phalanx\Scope\Suspendable;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
@@ -12,6 +14,21 @@ use Phalanx\Trace\Trace;
 
 final class RedisServiceBundle extends ServiceBundle
 {
+    /**
+     * Redis is optional infrastructure — the bundle boots without any Redis
+     * env and falls back to 127.0.0.1:6379. Unavailability at boot is not
+     * a hard failure; runtime feature flags handle degraded behaviour.
+     * No TCP probe here: connection attempts happen at first pool checkout,
+     * not at boot.
+     */
+    public static function harness(): BootHarness
+    {
+        return BootHarness::of(
+            Optional::env('REDIS_URL', fallback: 'redis://127.0.0.1:6379', description: 'Redis connection URL'),
+        );
+    }
+
+
     public function __construct(
         private readonly ?RedisConfig $config = null,
     ) {

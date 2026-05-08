@@ -9,6 +9,8 @@ use Phalanx\Athena\Swarm\Daemon8SwarmBus;
 use Phalanx\Athena\Swarm\SwarmBus;
 use Phalanx\Athena\Swarm\SwarmConfig;
 use Phalanx\Boot\AppContext;
+use Phalanx\Boot\BootHarness;
+use Phalanx\Boot\Optional;
 use Phalanx\Iris\HttpClient;
 use Phalanx\Iris\Iris;
 use Phalanx\Service\ServiceBundle;
@@ -16,6 +18,23 @@ use Phalanx\Service\Services;
 
 final class AiServiceBundle extends ServiceBundle
 {
+    /**
+     * AI providers are pluggable — at least one provider key should be set,
+     * but the bundle boots regardless and treats absent keys as "provider
+     * unavailable" feature flags rather than hard failures.
+     */
+    public static function harness(): BootHarness
+    {
+        return BootHarness::of(
+            Optional::env('ANTHROPIC_API_KEY', description: 'Anthropic Claude provider API key'),
+            Optional::env('OPENAI_API_KEY', description: 'OpenAI provider API key'),
+            Optional::env('GEMINI_API_KEY', description: 'Google Gemini provider API key'),
+            Optional::env('OLLAMA_BASE_URL', fallback: 'http://localhost:11434', description: 'Ollama base URL'),
+            Optional::env('OLLAMA_MODEL', fallback: 'llama3', description: 'Ollama default model'),
+        );
+    }
+
+
     public function services(Services $services, AppContext $context): void
     {
         Iris::services()->services($services, $context);
