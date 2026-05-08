@@ -1,0 +1,124 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Phalanx\Testing\Lenses;
+
+use Phalanx\Diagnostics\DoctorReport;
+use Phalanx\Diagnostics\EnvironmentDoctor;
+use Phalanx\Testing\Attribute\TestLens;
+use Phalanx\Testing\TestApp;
+use Phalanx\Testing\TestLens as TestLensContract;
+use PHPUnit\Framework\Assert;
+
+/**
+ * Environment health reporting backed by EnvironmentDoctor.
+ *
+ * Surfaces the same checks Aegis runs at boot — runtime hook policy state,
+ * memory pressure on managed tables, dropped runtime events, listener
+ * failures — but with a test-friendly assertion surface. Use to gate
+ * integration tests on a clean OpenSwoole substrate before running work.
+ */
+#[TestLens(
+    accessor: 'runtime',
+    returns: self::class,
+    factory: RuntimeLensFactory::class,
+    requires: [],
+)]
+final class RuntimeLens implements TestLensContract
+{
+    public function __construct(private readonly TestApp $app)
+    {
+    }
+
+    public function report(): DoctorReport
+    {
+        return $this->doctor()->check();
+    }
+
+    /**
+     * Assert every doctor check is green. Only meaningful inside an active
+     * coroutine — runtime hook state is not engaged outside of scoped runs,
+     * so this method should be called from within $app->application->scoped(...)
+     * for it to reflect production health. For post-run teardown checks,
+     * prefer assertResourcesClean().
+     */
+    public function assertHealthy(): self
+    {
+        $report = $this->report();
+
+        if ($report->isHealthy()) {
+            return $this;
+        }
+
+        $details = [];
+        foreach ($report as $check) {
+            if (!$check->ok) {
+                $details[] = "{$check->name}: {$check->detail}";
+            }
+        }
+
+        Assert::fail(
+            'Runtime is not healthy. Failing checks: ' . implode('; ', $details),
+        );
+    }
+
+    /**
+     * Assert that runtime memory and resource tables are empty. Mirrors the
+     * teardown contract Aegis enforces in PhalanxTestCase and is safe to call
+     * outside a coroutine run.
+     */
+    public function assertResourcesClean(): self
+    {
+        $memory = $this->app->application->runtime()->memory;
+        $live = $memory->resources->liveCount();
+
+        Assert::assertSame(
+            0,
+            $live,
+            "Expected no live runtime handles; {$live} still live.",
+        );
+        Assert::assertSame(
+            0,
+            $memory->tables->resources->count(),
+            'Expected no retained runtime handles.',
+        );
+        Assert::assertSame(
+            0,
+            $memory->tables->resourceLeases->count(),
+            'Expected no retained runtime leases.',
+        );
+
+        return $this;
+    }
+
+    public function assertCheckFails(string $name): self
+    {
+        foreach ($this->report() as $check) {
+            if ($check->name !== $name) {
+                continue;
+            }
+
+            Assert::assertFalse(
+                $check->ok,
+                "Expected runtime check '{$name}' to be failing; it reported ok with detail: {$check->detail}.",
+            );
+
+            return $this;
+        }
+
+        Assert::fail("Runtime check '{$name}' was not found in the report.");
+    }
+
+    public function reset(): void
+    {
+    }
+
+    private function doctor(): EnvironmentDoctor
+    {
+        return new EnvironmentDoctor(
+            ledger: $this->app->application->supervisor()->ledger,
+            memory: $this->app->application->runtime()->memory,
+        );
+    }
+}

@@ -44,6 +44,18 @@ final class TestApp
 {
     use TestAppAccessors;
 
+    /**
+     * Lenses Aegis ships unconditionally. Always available on every TestApp
+     * because Aegis itself is always present; no bundle declares them.
+     *
+     * @var list<class-string<TestLens>>
+     */
+    private const array AEGIS_NATIVE_LENSES = [
+        Lenses\LedgerLens::class,
+        Lenses\ScopeLens::class,
+        Lenses\RuntimeLens::class,
+    ];
+
     public private(set) FakeRegistry $fakes;
 
     /** @var array<class-string<TestLens>, TestLens> */
@@ -76,6 +88,7 @@ final class TestApp
         }
 
         $instance = new self($builder->compile());
+        $instance->registerAegisNativeLenses();
         $instance->registerBundleLenses($bundles);
 
         return $instance;
@@ -242,6 +255,19 @@ final class TestApp
         }
 
         return $attributes[0]->newInstance();
+    }
+
+    /**
+     * Register the always-on Aegis-native lenses (LedgerLens, ScopeLens,
+     * RuntimeLens). These are runtime-kernel facts, not optional package
+     * contributions, so no bundle is required to activate them.
+     */
+    private function registerAegisNativeLenses(): void
+    {
+        foreach (self::AEGIS_NATIVE_LENSES as $lensClass) {
+            $this->factories[$lensClass] = self::readLensAttribute($lensClass)->factory;
+            $this->providers[$lensClass] = [];
+        }
     }
 
     /**

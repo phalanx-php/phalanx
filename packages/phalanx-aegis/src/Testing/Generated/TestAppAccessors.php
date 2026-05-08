@@ -4,23 +4,34 @@ declare(strict_types=1);
 
 namespace Phalanx\Testing\Generated;
 
+use Phalanx\Testing\Lenses\LedgerLens;
+use Phalanx\Testing\Lenses\RuntimeLens;
+use Phalanx\Testing\Lenses\ScopeLens;
+
 /**
  * Generated typed-property accessors for TestApp.
  *
  * Emitted by phalanx-aegis-codegen on composer post-autoload-dump. Edits
- * to this file are overwritten on the next dump. The hand-written body
- * checked into the kernel slice is intentionally empty — Aegis-native
- * lenses populate it once they land (Phase A4 of the TestApp rollout),
- * and downstream packages (Stoa, Archon, ...) extend it through the
- * codegen plugin once installed.
+ * to this file are overwritten on the next dump.
  *
- * One property hook per registered lens, sorted alphabetically by
- * accessor name:
+ * The kernel slice ships a hand-written body covering only the Aegis-native
+ * lenses; downstream packages (Stoa's HttpLens, Archon's ConsoleLens, ...)
+ * extend the generated trait once the codegen plugin lands.
  *
- *     public LedgerLens $ledger { get => $this->lens(LedgerLens::class); }
- *     public HttpLens   $http   { get => $this->lens(HttpLens::class); }
- *     ...
+ * Property hooks are sorted alphabetically by accessor name for git
+ * stability across regeneration runs.
  */
 trait TestAppAccessors
 {
+    public LedgerLens $ledger {
+        get => $this->lens(LedgerLens::class);
+    }
+
+    public RuntimeLens $runtime {
+        get => $this->lens(RuntimeLens::class);
+    }
+
+    public ScopeLens $scope {
+        get => $this->lens(ScopeLens::class);
+    }
 }
