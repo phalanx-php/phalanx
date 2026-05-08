@@ -44,9 +44,9 @@ abstract class ServiceBundle
      * from $context. Implementations must be idempotent for a single
      * Services instance (each container builds bundles once at compile
      * time) and must read every config value through AppContext typed
-     * accessors -- never via raw array keys, getenv(), $_ENV, or
-     * $_SERVER. Stateful clients, pools, and connections registered here
-     * own their lifecycle via Services::onShutdown().
+     * accessors -- never via process-environment globals or the
+     * superglobal env arrays. Stateful clients, pools, and connections
+     * registered here own their lifecycle via Services::onShutdown().
      */
     abstract public function services(Services $services, AppContext $context): void;
 }
