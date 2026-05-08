@@ -35,7 +35,7 @@ use Phalanx\Boot\AppContext;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Task;
 
-return static function (array $context): int {
+return static function (array $context): \Closure {
     $ctx = AppContext::fromSymfonyRuntime($context);
 
     // Strip live-only keys when ATHENA_DEMO_LIVE is not set.
@@ -48,7 +48,7 @@ return static function (array $context): int {
         && class_exists(\Hyperf\Guzzle\CoroutineHandler::class);
 
     if (!$guzzleAvailable) {
-        return $renderer->cannotRun(
+        return static fn (): int => $renderer->cannotRun(
             'Athena Guzzle SDK Coexistence',
             'guzzlehttp/guzzle and hyperf/guzzle are not installed.',
             'run `composer install` from the monorepo root.',
@@ -56,7 +56,7 @@ return static function (array $context): int {
     }
 
     if (!is_string($anthropicKey) || $anthropicKey === '') {
-        return $renderer->cannotRun(
+        return static fn (): int => $renderer->cannotRun(
             'Athena Guzzle SDK Coexistence',
             'a live Anthropic API key was not provided.',
             'rerun with `ATHENA_DEMO_LIVE=1 ANTHROPIC_API_KEY=... php demo.php`.',
@@ -64,7 +64,7 @@ return static function (array $context): int {
     }
 
     if (!is_string($guzzleUrl) || $guzzleUrl === '') {
-        return $renderer->cannotRun(
+        return static fn (): int => $renderer->cannotRun(
             'Athena Guzzle SDK Coexistence',
             'a Guzzle target URL was not provided.',
             'rerun with `GUZZLE_DEMO_URL=https://example.com php demo.php` plus the live Anthropic variables.',
@@ -75,7 +75,7 @@ return static function (array $context): int {
     $host   = parse_url($guzzleUrl, PHP_URL_HOST);
 
     if (!in_array($scheme, ['http', 'https'], true)) {
-        return $renderer->cannotRun(
+        return static fn (): int => $renderer->cannotRun(
             'Athena Guzzle SDK Coexistence',
             'GUZZLE_DEMO_URL must start with http:// or https://.',
             'rerun with `GUZZLE_DEMO_URL=https://example.com php demo.php` plus the live Anthropic variables.',
@@ -83,7 +83,7 @@ return static function (array $context): int {
     }
 
     if ($scheme === 'https' && in_array($host, ['localhost', '127.0.0.1', '::1'], true)) {
-        return $renderer->cannotRun(
+        return static fn (): int => $renderer->cannotRun(
             'Athena Guzzle SDK Coexistence',
             'GUZZLE_DEMO_URL points HTTPS at a local address.',
             'use `http://localhost:8888` for a plain local server, or use a real HTTPS endpoint.',
@@ -97,7 +97,7 @@ return static function (array $context): int {
     $stack  = CoroutineGuzzleStack::create();
     $guzzle = new \GuzzleHttp\Client(['handler' => $stack, 'timeout' => 10.0]);
 
-    return (int) Athena::starting($ctx)->run(Task::named(
+    return static fn (): int => (int) Athena::starting($ctx)->run(Task::named(
         'demo.athena.guzzle-sdk-coexistence',
         static function (ExecutionScope $scope) use ($guzzle, $guzzleUrl, $request): int {
             echo "Running Athena native + Guzzle SDK concurrently...\n\n";

@@ -34,7 +34,7 @@ use Phalanx\Boot\AppContext;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Task;
 
-return static function (array $context): int {
+return static function (array $context): \Closure {
     $ctx = AppContext::fromSymfonyRuntime($context);
 
     // Strip live-only keys when ATHENA_DEMO_LIVE is not set, then
@@ -65,7 +65,7 @@ return static function (array $context): int {
     }
 
     if ($providers === []) {
-        return $renderer->cannotRun(
+        return static fn (): int => $renderer->cannotRun(
             'Athena Streaming Providers',
             'no runnable local Ollama model or live provider credentials were found.',
             'start Ollama, run `ollama pull llama3:8b`, then rerun this command.',
@@ -81,7 +81,7 @@ return static function (array $context): int {
     echo "Topic: Athena's disciplined wisdom and strategic clarity\n\n";
     echo "Responses:\n\n";
 
-    return (int) Athena::starting($ctx)->run(Task::named(
+    return static fn (): int => (int) Athena::starting($ctx)->run(Task::named(
         'demo.athena.streaming-providers',
         static function (ExecutionScope $scope) use ($request): int {
             $providerConfig = $scope->service(ProviderConfig::class);
