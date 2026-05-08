@@ -21,6 +21,7 @@ final class OutputBundle extends ServiceBundle
 
     public function services(Services $services, AppContext $context): void
     {
-        $services->singleton(StreamOutput::class)->factory(fn() => $this->output);
+        $output = $this->output;
+        $services->singleton(StreamOutput::class)->factory(static fn(): StreamOutput => $output);
     }
 }

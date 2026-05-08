@@ -28,8 +28,11 @@ final class InputBundle extends ServiceBundle
 
     public function services(Services $services, AppContext $context): void
     {
-        $services->singleton(StreamOutput::class)->factory(fn() => $this->output);
-        $services->singleton(Theme::class)->factory(fn() => $this->theme);
-        $services->scoped(KeyReader::class)->factory(fn() => $this->reader);
+        $output = $this->output;
+        $theme = $this->theme;
+        $reader = $this->reader;
+        $services->singleton(StreamOutput::class)->factory(static fn(): StreamOutput => $output);
+        $services->singleton(Theme::class)->factory(static fn(): Theme => $theme);
+        $services->scoped(KeyReader::class)->factory(static fn(): RawInput => $reader);
     }
 }
