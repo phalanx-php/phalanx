@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Boot;
 
+use Phalanx\Boot\Exception\CannotBootException;
 use Phalanx\Service\ServiceBundle;
 
 /**

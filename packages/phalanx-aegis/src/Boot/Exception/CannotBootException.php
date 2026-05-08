@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Boot;
+namespace Phalanx\Boot\Exception;
 
+use Phalanx\Boot\BootHarnessReport;
 use RuntimeException;
 
 final class CannotBootException extends RuntimeException

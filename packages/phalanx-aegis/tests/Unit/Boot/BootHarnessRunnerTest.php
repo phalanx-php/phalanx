@@ -7,7 +7,7 @@ namespace Phalanx\Tests\Unit\Boot;
 use Phalanx\Boot\AppContext;
 use Phalanx\Boot\BootHarness;
 use Phalanx\Boot\BootHarnessRunner;
-use Phalanx\Boot\CannotBootException;
+use Phalanx\Boot\Exception\CannotBootException;
 use Phalanx\Boot\Optional;
 use Phalanx\Boot\Required;
 use Phalanx\Service\ServiceBundle;
