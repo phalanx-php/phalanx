@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Stoa\Testing;
 
+use Phalanx\Boot\AppContext;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 use Phalanx\Testing\TestLens;
@@ -26,7 +27,7 @@ use Phalanx\Testing\TestLens;
  */
 final class StoaTestableBundle extends ServiceBundle
 {
-    public function services(Services $services, array $context): void
+    public function services(Services $services, AppContext $context): void
     {
     }
 

@@ -13,6 +13,7 @@ use Phalanx\Archon\Command\CommandGroup;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Archon\Console\Output\TerminalEnvironment;
 use Phalanx\Archon\Console\Style\Theme;
+use Phalanx\Boot\AppContext;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 
@@ -36,7 +37,7 @@ $bundle = new class ($stream, $terminal, $theme) extends ServiceBundle {
     ) {
     }
 
-    public function services(Services $services, array $context): void
+    public function services(Services $services, AppContext $context): void
     {
         $stream   = $this->stream;
         $theme    = $this->theme;
@@ -62,7 +63,7 @@ $commands = CommandGroup::of([
 
 $start = microtime(true);
 
-$app = Archon::starting(['argv' => ['demo', 'deploy', 'staging']])
+$app = Archon::starting(AppContext::test(['argv' => ['demo', 'deploy', 'staging']]))
     ->providers($bundle)
     ->commands($commands)
     ->build();

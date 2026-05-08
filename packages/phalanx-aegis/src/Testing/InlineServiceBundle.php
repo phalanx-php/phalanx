@@ -6,6 +6,7 @@ namespace Phalanx\Testing;
 
 use Closure;
 use InvalidArgumentException;
+use Phalanx\Boot\AppContext;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 use ReflectionFunction;
@@ -23,7 +24,7 @@ final class InlineServiceBundle extends ServiceBundle
         }
     }
 
-    public function services(Services $services, array $context): void
+    public function services(Services $services, AppContext $context): void
     {
         ($this->registrar)($services, $context);
     }

@@ -7,6 +7,7 @@ namespace Phalanx\Archon\Application;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Archon\Console\Output\TerminalEnvironment;
 use Phalanx\Archon\Runtime\Identity\ConsoleSignalPolicy;
+use Phalanx\Boot\AppContext;
 
 final readonly class ConsoleConfig
 {
@@ -24,8 +25,7 @@ final readonly class ConsoleConfig
     ) {
     }
 
-    /** @param array<string, mixed> $context */
-    public static function fromContext(array $context): self
+    public static function fromContext(AppContext $context): self
     {
         return new self(
             argv: self::argvFromContext($context),
@@ -66,13 +66,10 @@ final readonly class ConsoleConfig
         );
     }
 
-    /**
-     * @param array<string, mixed> $context
-     * @return list<string>
-     */
-    private static function argvFromContext(array $context): array
+    /** @return list<string> */
+    private static function argvFromContext(AppContext $context): array
     {
-        $argv = $context['argv'] ?? [];
+        $argv = $context->get('argv', []);
 
         if (!is_array($argv)) {
             return [];

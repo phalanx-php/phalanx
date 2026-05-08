@@ -10,6 +10,7 @@ use Phalanx\AppHost;
 use Phalanx\Application;
 use Phalanx\ApplicationBuilder;
 use Phalanx\Archon\Command\CommandConfig;
+use Phalanx\Boot\AppContext;
 use Phalanx\Archon\Command\CommandGroup;
 use Phalanx\Archon\Command\CommandLoader;
 use Phalanx\Archon\Command\InlineCommand;
@@ -42,8 +43,7 @@ final class ArchonBuilder
 
     private ?ConsoleConfig $consoleConfig = null;
 
-    /** @param array<string, mixed> $context */
-    public function __construct(private readonly array $context = [])
+    public function __construct(private readonly AppContext $context = new AppContext())
     {
         $this->app = Application::starting($context);
         $this->app->providers(new ConsoleInputServiceBundle());

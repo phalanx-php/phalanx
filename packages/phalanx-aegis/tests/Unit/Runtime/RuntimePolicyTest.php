@@ -7,6 +7,8 @@ namespace Phalanx\Tests\Unit\Runtime;
 use InvalidArgumentException;
 use OpenSwoole\Runtime;
 use Phalanx\Application;
+use Phalanx\Boot\AppContext;
+use Phalanx\Boot\Exception\MissingContextValue;
 use Phalanx\Runtime\RuntimeCapability;
 use Phalanx\Runtime\RuntimeHookNames;
 use Phalanx\Runtime\RuntimeHookSnapshot;
@@ -57,14 +59,14 @@ final class RuntimePolicyTest extends TestCase
 
     public function testCapabilityContextResolvesToPolicy(): void
     {
-        $policy = RuntimePolicy::fromContext([
+        $policy = RuntimePolicy::fromContext(AppContext::test([
             RuntimePolicy::CONTEXT_CAPABILITIES => [
                 RuntimeCapability::HttpClient,
                 'files',
                 'processes',
                 'interactive_stdio',
             ],
-        ]);
+        ]));
 
         self::assertSame(
             Runtime::HOOK_TCP | Runtime::HOOK_NATIVE_CURL | Runtime::HOOK_FILE | Runtime::HOOK_PROC | Runtime::HOOK_STDIO,
@@ -86,18 +88,18 @@ final class RuntimePolicyTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Unknown runtime capability: mystery');
 
-        RuntimePolicy::fromContext([
+        RuntimePolicy::fromContext(AppContext::test([
             RuntimePolicy::CONTEXT_CAPABILITIES => ['mystery'],
-        ]);
+        ]));
     }
 
     #[PreserveGlobalState(false)]
     #[RunInSeparateProcess]
     public function testBuilderRuntimePolicyOverrideWinsOverInvalidContext(): void
     {
-        $app = Application::starting([
+        $app = Application::starting(AppContext::test([
             RuntimePolicy::CONTEXT_POLICY => 'invalid',
-        ])
+        ]))
             ->withRuntimePolicy(RuntimePolicy::forCapabilities(RuntimeCapability::Network))
             ->compile();
 
@@ -110,12 +112,12 @@ final class RuntimePolicyTest extends TestCase
 
     public function testInvalidStrictContextThrowsClearly(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage(RuntimePolicy::CONTEXT_STRICT_HOOKS . ' must be a boolean.');
+        $this->expectException(MissingContextValue::class);
+        $this->expectExceptionMessage(RuntimePolicy::CONTEXT_STRICT_HOOKS . '" expected bool, got string');
 
-        Application::starting([
+        Application::starting(AppContext::test([
             RuntimePolicy::CONTEXT_STRICT_HOOKS => 'maybe',
-        ])->compile();
+        ]))->compile();
     }
 
     #[PreserveGlobalState(false)]

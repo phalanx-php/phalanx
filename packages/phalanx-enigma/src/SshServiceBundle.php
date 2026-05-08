@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Phalanx\Enigma;
 
+use Phalanx\Boot\AppContext;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 
 final class SshServiceBundle extends ServiceBundle
 {
-    public function services(Services $services, array $context): void
+    public function services(Services $services, AppContext $context): void
     {
         $services->config(SshConfig::class, static fn(array $ctx) => new SshConfig(
             sshBinaryPath: (string) ($ctx['SSH_BINARY_PATH'] ?? 'ssh'),

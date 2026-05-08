@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Service;
 
 use Closure;
+use Phalanx\Boot\AppContext;
 use RuntimeException;
 
 class ServiceCatalog implements Services
@@ -18,8 +19,7 @@ class ServiceCatalog implements Services
     /** @var array<class-string, class-string> */
     private array $aliases = [];
 
-    /** @param array<string, mixed> $context */
-    public function __construct(private readonly array $context = [])
+    public function __construct(private readonly AppContext $context = new AppContext())
     {
     }
 
@@ -52,7 +52,7 @@ class ServiceCatalog implements Services
     /** @param class-string $type */
     public function config(string $type, Closure $fromContext): void
     {
-        $this->contextConfigs[$type] = $fromContext($this->context);
+        $this->contextConfigs[$type] = $fromContext($this->context->values);
     }
 
     /**

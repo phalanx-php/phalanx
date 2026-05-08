@@ -9,6 +9,7 @@ use LogicException;
 use Phalanx\AppHost;
 use Phalanx\Application;
 use Phalanx\ApplicationBuilder;
+use Phalanx\Boot\AppContext;
 use Phalanx\Middleware\ServiceTransformationMiddleware;
 use Phalanx\Middleware\TaskMiddleware;
 use Phalanx\Runtime\RuntimePolicy;
@@ -48,8 +49,7 @@ final class StoaApplicationBuilder
 
     private ?StoaServerConfig $serverConfig = null;
 
-    /** @param array<string, mixed> $context */
-    public function __construct(private readonly array $context = [])
+    public function __construct(private readonly AppContext $context = new AppContext())
     {
         $this->app = Application::starting($context);
     }
@@ -310,7 +310,7 @@ final class StoaApplicationBuilder
             'PHALANX_DRAIN_TIMEOUT',
             ] as $key
         ) {
-            if (array_key_exists($key, $this->context)) {
+            if ($this->context->has($key)) {
                 return true;
             }
         }

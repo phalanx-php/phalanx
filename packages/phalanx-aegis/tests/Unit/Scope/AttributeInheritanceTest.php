@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Tests\Unit\Scope;
 
+use Phalanx\Boot\AppContext;
 use Phalanx\Application;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Service\ServiceBundle;
@@ -168,11 +169,11 @@ final class AttributeInheritanceTest extends CoroutineTestCase
     private static function buildScope(): ExecutionScope
     {
         $bundle = new class extends ServiceBundle {
-            public function services(Services $services, array $context): void
+            public function services(Services $services, AppContext $context): void
             {
             }
         };
-        $app = Application::starting([])
+        $app = Application::starting()
             ->providers($bundle)
             ->withLedger(new InProcessLedger())
             ->compile();

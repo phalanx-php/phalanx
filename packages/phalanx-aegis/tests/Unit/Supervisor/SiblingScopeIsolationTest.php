@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Tests\Unit\Supervisor;
 
+use Phalanx\Boot\AppContext;
 use Phalanx\Application;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Scope\ExecutionScope;
@@ -202,13 +203,13 @@ final class SiblingScopeIsolationTest extends CoroutineTestCase
     private function buildAppWithScopedCounter(InProcessLedger $ledger): Application
     {
         $bundle = new class extends ServiceBundle {
-            public function services(Services $services, array $context): void
+            public function services(Services $services, AppContext $context): void
             {
                 $services->scoped(Counter::class)
                     ->factory(static fn(): Counter => new Counter());
             }
         };
-        return Application::starting([])
+        return Application::starting()
             ->providers($bundle)
             ->withLedger($ledger)
             ->compile();
@@ -217,13 +218,13 @@ final class SiblingScopeIsolationTest extends CoroutineTestCase
     private function buildAppWithSingletonPool(InProcessLedger $ledger): Application
     {
         $bundle = new class extends ServiceBundle {
-            public function services(Services $services, array $context): void
+            public function services(Services $services, AppContext $context): void
             {
                 $services->singleton(PoolStub::class)
                     ->factory(static fn(): PoolStub => new PoolStub());
             }
         };
-        return Application::starting([])
+        return Application::starting()
             ->providers($bundle)
             ->withLedger($ledger)
             ->compile();

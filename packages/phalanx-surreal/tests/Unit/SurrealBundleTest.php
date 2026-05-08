@@ -6,6 +6,7 @@ namespace Phalanx\Surreal\Tests\Unit;
 
 use Closure;
 use Phalanx\Application;
+use Phalanx\Boot\AppContext;
 use Phalanx\Hermes\Client\WsClient;
 use Phalanx\Hermes\Client\WsClientConfig;
 use Phalanx\Iris\HttpClient;
@@ -62,10 +63,10 @@ final class SurrealBundleTest extends PhalanxTestCase
     #[Test]
     public function constructorConfigIsCanonicalForRegisteredSurrealConfig(): void
     {
-        $result = Application::starting([
+        $result = Application::starting(AppContext::test([
             'surreal_namespace' => 'context',
             'surreal_database' => 'context',
-        ])
+        ]))
             ->providers(new SurrealBundle(new SurrealConfig(
                 namespace: 'athena',
                 database: 'wisdom',
@@ -197,19 +198,18 @@ final class SurrealBundleTest extends PhalanxTestCase
         $surreal->select('goddess:athena');
     }
 
-    /** @return array<string, mixed> */
-    protected function phalanxContext(): array
+    protected function phalanxContext(): AppContext
     {
-        return [
+        return AppContext::test([
             'surreal_namespace' => 'athena',
             'surreal_database' => 'wisdom',
             'surreal_endpoint' => 'http://surreal.test:8000',
-        ];
+        ]);
     }
 
     protected function phalanxServices(): Closure
     {
-        return static function (Services $services, array $context): void {
+        return static function (Services $services, AppContext $context): void {
             $services->singleton(SurrealTransport::class)
                 ->factory(static fn(): SurrealTransport => new BundleSurrealTransport());
 

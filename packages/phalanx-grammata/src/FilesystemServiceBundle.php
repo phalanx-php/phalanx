@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Grammata;
 
+use Phalanx\Boot\AppContext;
 use Phalanx\Grammata\NativeFastPath\NativeFastPath;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
@@ -15,9 +16,9 @@ final class FilesystemServiceBundle extends ServiceBundle
         private readonly ?int $maxOpen = null,
     ) {}
 
-    public function services(Services $services, array $context): void
+    public function services(Services $services, AppContext $context): void
     {
-        $maxOpen = $this->maxOpen ?? (int) ($context['FILESYSTEM_MAX_OPEN'] ?? 64);
+        $maxOpen = $this->maxOpen ?? $context->int('FILESYSTEM_MAX_OPEN', 64);
 
         $services->singleton(FilePool::class)
             ->factory(static fn() => new FilePool(

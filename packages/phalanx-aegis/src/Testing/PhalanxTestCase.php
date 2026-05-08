@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Testing;
 
 use Closure;
+use Phalanx\Boot\AppContext;
 use Phalanx\Service\ServiceBundle;
 use PHPUnit\Framework\Attributes\After;
 use PHPUnit\Framework\TestCase;
@@ -32,11 +33,15 @@ abstract class PhalanxTestCase extends TestCase
      * call; each gets its own Application and is torn down in #[After]. Use
      * separate calls to model multi-app scenarios.
      *
-     * @param array<string, mixed> $context
+     * Accepts either an AppContext or a raw array (auto-wrapped with
+     * AppContext::test()) for ergonomic inline test usage.
+     *
+     * @param AppContext|array<string, mixed> $context
      */
-    protected function testApp(array $context = [], ServiceBundle ...$bundles): TestApp
+    protected function testApp(AppContext|array $context = [], ServiceBundle ...$bundles): TestApp
     {
-        $app = TestApp::boot($context, ...$bundles);
+        $ctx = $context instanceof AppContext ? $context : AppContext::test($context);
+        $app = TestApp::boot($ctx, ...$bundles);
         $this->testApps[] = $app;
 
         return $app;
@@ -72,13 +77,12 @@ abstract class PhalanxTestCase extends TestCase
         }
     }
 
-    /** @return array<string, mixed> */
-    protected function phalanxContext(): array
+    protected function phalanxContext(): AppContext
     {
-        return [];
+        return AppContext::empty();
     }
 
-    /** @return null|Closure(\Phalanx\Service\Services, array<string, mixed>): void */
+    /** @return null|Closure(\Phalanx\Service\Services, \Phalanx\Boot\AppContext): void */
     protected function phalanxServices(): ?Closure
     {
         return null;

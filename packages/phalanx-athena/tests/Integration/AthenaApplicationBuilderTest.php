@@ -6,6 +6,7 @@ namespace Phalanx\Athena\Tests\Integration;
 
 use Phalanx\Athena\Athena;
 use Phalanx\Athena\AthenaApplication;
+use Phalanx\Boot\AppContext;
 use Phalanx\Athena\Provider\ProviderConfig;
 use Phalanx\Athena\Swarm\SwarmConfig;
 use Phalanx\Iris\HttpClient;
@@ -60,13 +61,13 @@ final class AthenaApplicationBuilderTest extends TestCase
     #[Test]
     public function facadeBuilderPassesContextToAthenaServices(): void
     {
-        $result = Athena::starting([
+        $result = Athena::starting(AppContext::test([
             'ANTHROPIC_API_KEY' => 'anthropic-test-key',
             'DAEMON8_APP' => 'athena-test',
             'DAEMON8_URL' => 'http://localhost:9077',
             'SWARM_SESSION' => 'session-a',
             'SWARM_WORKSPACE' => 'workspace-a',
-        ])->run(Task::named(
+        ]))->run(Task::named(
             'test.athena.facade.context',
             static function (ExecutionScope $scope): array {
                 $providerConfig = $scope->service(ProviderConfig::class);
@@ -100,9 +101,9 @@ final class AthenaApplicationBuilderTest extends TestCase
         $result = Athena::run(Task::named(
             'test.athena.facade.static-run',
             static fn(ExecutionScope $scope): string => $scope->service(SwarmConfig::class)->session,
-        ), [
+        ), AppContext::test([
             'SWARM_SESSION' => 'static-run-session',
-        ]);
+        ]));
 
         self::assertSame('static-run-session', $result);
     }
@@ -123,7 +124,7 @@ final class AthenaApplicationBuilderTest extends TestCase
     #[Test]
     public function facadeBuilderRegistersOllamaFromEnabledFlag(): void
     {
-        $result = Athena::starting(['OLLAMA_ENABLED' => true])
+        $result = Athena::starting(AppContext::test(['OLLAMA_ENABLED' => true]))
             ->run(Task::named(
                 'test.athena.facade.ollama-enabled',
                 static fn(ExecutionScope $scope): array => array_keys($scope->service(ProviderConfig::class)->all()),

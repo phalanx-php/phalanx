@@ -7,6 +7,7 @@ namespace Phalanx\Tests\Stoa\Integration;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\ServerRequest;
 use LogicException;
+use Phalanx\Boot\AppContext;
 use Phalanx\Stoa\RequestScope;
 use Phalanx\Stoa\RouteGroup;
 use Phalanx\Stoa\Stoa;
@@ -158,10 +159,11 @@ PHP);
         self::stoa()->udp(RouteGroup::of([]));
     }
 
-    /** @param array<string, mixed> $context */
-    private static function stoa(array $context = []): StoaApplicationBuilder
+    /** @param AppContext|array<string, mixed> $context */
+    private static function stoa(AppContext|array $context = []): StoaApplicationBuilder
     {
-        return Stoa::starting($context)->withLedger(new InProcessLedger());
+        $ctx = $context instanceof AppContext ? $context : AppContext::test($context);
+        return Stoa::starting($ctx)->withLedger(new InProcessLedger());
     }
 }
 

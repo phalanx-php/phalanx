@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Testing;
 
 use Phalanx\Application;
+use Phalanx\Boot\AppContext;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Testing\Attribute\Lens as LensAttribute;
@@ -79,10 +80,8 @@ final class TestApp
 
     /**
      * Boot a TestApp around a freshly compiled Application.
-     *
-     * @param array<string, mixed> $context
      */
-    public static function boot(array $context = [], ServiceBundle ...$bundles): self
+    public static function boot(AppContext $context = new AppContext(), ServiceBundle ...$bundles): self
     {
         $builder = Application::starting($context);
 

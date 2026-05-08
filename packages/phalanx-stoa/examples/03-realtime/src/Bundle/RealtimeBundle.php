@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Acme\StoaDemo\Realtime\Bundle;
 
+use Phalanx\Boot\AppContext;
 use Phalanx\Iris\Iris;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
@@ -11,8 +12,7 @@ use Phalanx\Stoa\Sse\SseStreamFactory;
 
 final class RealtimeBundle extends ServiceBundle
 {
-    /** @param array<string, mixed> $context */
-    public function services(Services $services, array $context): void
+    public function services(Services $services, AppContext $context): void
     {
         Iris::services()->services($services, $context);
 

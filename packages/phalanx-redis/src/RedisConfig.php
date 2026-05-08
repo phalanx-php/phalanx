@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Redis;
 
 use InvalidArgumentException;
+use Phalanx\Boot\AppContext;
 
 final class RedisConfig
 {
@@ -41,21 +42,20 @@ final class RedisConfig
         );
     }
 
-    /** @param array<string, mixed> $context */
-    public static function fromContext(array $context): self
+    public static function fromContext(AppContext $context): self
     {
-        $url = self::nullableStringValue($context, ['redis_url', 'REDIS_URL']);
+        $url = self::nullableStringValue($context->values, ['redis_url', 'REDIS_URL']);
         if ($url !== null) {
             return self::fromUrl($url);
         }
 
         return new self(
-            host: self::stringValue($context, ['redis_host', 'REDIS_HOST'], '127.0.0.1'),
-            port: self::intValue($context, ['redis_port', 'REDIS_PORT'], 6379),
-            username: self::nullableStringValue($context, ['redis_username', 'REDIS_USERNAME']),
-            password: self::nullableStringValue($context, ['redis_password', 'REDIS_PASSWORD']),
-            database: self::intValue($context, ['redis_database', 'REDIS_DATABASE'], 0),
-            poolSize: self::intValue($context, ['redis_pool_size', 'REDIS_POOL_SIZE'], 16),
+            host: self::stringValue($context->values, ['redis_host', 'REDIS_HOST'], '127.0.0.1'),
+            port: self::intValue($context->values, ['redis_port', 'REDIS_PORT'], 6379),
+            username: self::nullableStringValue($context->values, ['redis_username', 'REDIS_USERNAME']),
+            password: self::nullableStringValue($context->values, ['redis_password', 'REDIS_PASSWORD']),
+            database: self::intValue($context->values, ['redis_database', 'REDIS_DATABASE'], 0),
+            poolSize: self::intValue($context->values, ['redis_pool_size', 'REDIS_POOL_SIZE'], 16),
         );
     }
 

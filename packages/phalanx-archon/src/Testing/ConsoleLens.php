@@ -10,6 +10,7 @@ use Phalanx\Archon\Application\ConsoleConfig;
 use Phalanx\Archon\Command\CommandGroup;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Archon\Console\Output\TerminalEnvironment;
+use Phalanx\Boot\AppContext;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Testing\Attribute\Lens;
 use Phalanx\Testing\Lens as LensContract;
@@ -44,8 +45,7 @@ use RuntimeException;
 )]
 final class ConsoleLens implements LensContract
 {
-    /** @var array<string, mixed> */
-    private array $context = [];
+    private AppContext $context;
 
     private ?CommandGroup $commands = null;
 
@@ -56,12 +56,13 @@ final class ConsoleLens implements LensContract
 
     public function __construct()
     {
+        $this->context = AppContext::empty();
     }
 
-    /** @param array<string, mixed> $context */
-    public function withContext(array $context): self
+    /** @param AppContext|array<string, mixed> $context */
+    public function withContext(AppContext|array $context): self
     {
-        $this->context = $context;
+        $this->context = $context instanceof AppContext ? $context : AppContext::test($context);
 
         return $this;
     }
@@ -124,7 +125,7 @@ final class ConsoleLens implements LensContract
 
     public function reset(): void
     {
-        $this->context = [];
+        $this->context = AppContext::empty();
         $this->commands = null;
         $this->providers = [];
         $this->consoleConfig = null;

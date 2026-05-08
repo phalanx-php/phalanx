@@ -6,6 +6,7 @@ namespace Phalanx\Tests\Support;
 
 use Closure;
 use OpenSwoole\Coroutine;
+use Phalanx\Boot\AppContext;
 use Phalanx\Runtime\RuntimeHooks;
 use Phalanx\Runtime\RuntimePolicy;
 use Phalanx\Scope\ExecutionScope;
@@ -63,12 +64,12 @@ abstract class CoroutineTestCase extends TestCase
     /**
      * @param Closure(ExecutionScope): void $test
      * @param Closure|null $services
-     * @param array<string, mixed> $context
+     * @param AppContext|array<string, mixed> $context
      */
     protected function runScoped(
         Closure $test,
         ?Closure $services = null,
-        array $context = [],
+        AppContext|array $context = [],
     ): void {
         $this->runScopedWithLedger(new InProcessLedger(), $test, $services, $context);
     }
@@ -76,16 +77,17 @@ abstract class CoroutineTestCase extends TestCase
     /**
      * @param Closure(ExecutionScope): void $test
      * @param Closure|null $services
-     * @param array<string, mixed> $context
+     * @param AppContext|array<string, mixed> $context
      */
     protected function runScopedWithLedger(
         InProcessLedger $ledger,
         Closure $test,
         ?Closure $services = null,
-        array $context = [],
+        AppContext|array $context = [],
     ): void {
-        $this->runInCoroutine(static function () use ($ledger, $test, $services, $context): void {
-            TestScope::compile($services, $context, $ledger)
+        $ctx = $context instanceof AppContext ? $context : AppContext::test($context);
+        $this->runInCoroutine(static function () use ($ledger, $test, $services, $ctx): void {
+            TestScope::compile($services, $ctx, $ledger)
                 ->shutdownAfterRun()
                 ->run($test);
         });

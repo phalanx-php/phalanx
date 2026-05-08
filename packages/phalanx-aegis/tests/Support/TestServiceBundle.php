@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Phalanx\Tests\Support;
 
 use Closure;
+use Phalanx\Boot\AppContext;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\ServiceCatalog;
 use Phalanx\Service\Services;
 
 final class TestServiceBundle extends ServiceBundle
 {
-    /** @var list<Closure(ServiceCatalog, array): void> */
+    /** @var list<Closure(ServiceCatalog, AppContext): void> */
     private array $registrations = [];
 
     /** @var array<string, string> */
@@ -121,7 +122,7 @@ final class TestServiceBundle extends ServiceBundle
         return $this;
     }
 
-    public function services(Services $services, array $context): void
+    public function services(Services $services, AppContext $context): void
     {
         if (!$services instanceof ServiceCatalog) {
             throw new \InvalidArgumentException('TestServiceBundle requires ServiceCatalog');

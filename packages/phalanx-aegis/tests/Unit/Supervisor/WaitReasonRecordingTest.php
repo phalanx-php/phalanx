@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Tests\Unit\Supervisor;
 
+use Phalanx\Boot\AppContext;
 use Phalanx\Application;
 use Phalanx\Runtime\RuntimeHooks;
 use Phalanx\Runtime\RuntimePolicy;
@@ -122,11 +123,11 @@ final class WaitReasonRecordingTest extends TestCase
     private function buildApp(InProcessLedger $ledger): Application
     {
         $bundle = new class extends ServiceBundle {
-            public function services(Services $services, array $context): void
+            public function services(Services $services, AppContext $context): void
             {
             }
         };
-        return Application::starting([])
+        return Application::starting()
             ->providers($bundle)
             ->withLedger($ledger)
             ->compile();

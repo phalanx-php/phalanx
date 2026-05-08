@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Tests\Resilience;
 
+use Phalanx\Boot\AppContext;
 use Phalanx\Application;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Scope\ExecutionScope;
@@ -127,11 +128,11 @@ final class SiblingCancelIsolationStressTest extends CoroutineTestCase
     private static function buildApp(InProcessLedger $ledger): Application
     {
         $bundle = new class extends ServiceBundle {
-            public function services(Services $services, array $context): void
+            public function services(Services $services, AppContext $context): void
             {
             }
         };
-        return Application::starting([])
+        return Application::starting()
             ->providers($bundle)
             ->withLedger($ledger)
             ->compile();

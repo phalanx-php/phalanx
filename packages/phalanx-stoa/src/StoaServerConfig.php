@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Stoa;
 
+use Phalanx\Boot\AppContext;
+
 final readonly class StoaServerConfig
 {
     public function __construct(
@@ -25,10 +27,9 @@ final readonly class StoaServerConfig
         return new self();
     }
 
-    /** @param array<string, mixed> $context */
-    public static function fromContext(array $context): self
+    public static function fromContext(AppContext $context): self
     {
-        return self::fromArray($context);
+        return self::fromArray($context->values);
     }
 
     /** @param array<string, mixed> $options */

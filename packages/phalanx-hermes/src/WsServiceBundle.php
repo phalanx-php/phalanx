@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Hermes;
 
+use Phalanx\Boot\AppContext;
 use Phalanx\Hermes\Client\WsClient;
 use Phalanx\Hermes\Client\WsClientConfig;
 use Phalanx\Service\ServiceBundle;
@@ -16,7 +17,7 @@ final class WsServiceBundle extends ServiceBundle
     ) {
     }
 
-    public function services(Services $services, array $context): void
+    public function services(Services $services, AppContext $context): void
     {
         $clientConfig = $this->clientConfig;
 

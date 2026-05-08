@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx;
 
 use Closure;
-use InvalidArgumentException;
+use Phalanx\Boot\AppContext;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Handler\HandlerResolver;
 use Phalanx\Middleware\ServiceTransformationMiddleware;
@@ -47,14 +47,13 @@ class ApplicationBuilder
 
     private ?LedgerStorage $ledger = null;
 
-    private ?WorkerDispatch $workerDispatch = null;
+    private ?bool $strictRuntimeHooks = null;
 
     private ?RuntimePolicy $runtimePolicy = null;
 
-    private ?bool $strictRuntimeHooks = null;
+    private ?WorkerDispatch $workerDispatch = null;
 
-    /** @param array<string, mixed> $context */
-    public function __construct(private readonly array $context)
+    public function __construct(private readonly AppContext $context)
     {
     }
 
@@ -143,7 +142,10 @@ class ApplicationBuilder
         });
         $supervisor = new Supervisor($ledger, $trace);
         $runtimePolicy = $this->runtimePolicy ?? RuntimePolicy::fromContext($this->context);
-        $strictRuntimeHooks = $this->strictRuntimeHooks ?? self::strictRuntimeHooksFromContext($this->context);
+        $strictRuntimeHooks = $this->strictRuntimeHooks ?? $this->context->bool(
+            RuntimePolicy::CONTEXT_STRICT_HOOKS,
+            true,
+        );
 
         return new Application(
             $runtimeContext,
@@ -163,31 +165,5 @@ class ApplicationBuilder
     public function run(Scopeable|Executable|Closure $task, ?CancellationToken $token = null): mixed
     {
         return $this->compile()->run($task, $token);
-    }
-
-    /** @param array<string, mixed> $context */
-    private static function strictRuntimeHooksFromContext(array $context): bool
-    {
-        $strict = $context[RuntimePolicy::CONTEXT_STRICT_HOOKS] ?? true;
-
-        if (is_bool($strict)) {
-            return $strict;
-        }
-
-        if (is_string($strict)) {
-            return match (strtolower($strict)) {
-                '1', 'true', 'yes', 'on' => true,
-                '0', 'false', 'no', 'off' => false,
-                default => throw new InvalidArgumentException(sprintf(
-                    '%s must be a boolean.',
-                    RuntimePolicy::CONTEXT_STRICT_HOOKS,
-                )),
-            };
-        }
-
-        throw new InvalidArgumentException(sprintf(
-            '%s must be a boolean.',
-            RuntimePolicy::CONTEXT_STRICT_HOOKS,
-        ));
     }
 }

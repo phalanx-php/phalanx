@@ -6,6 +6,7 @@ namespace Phalanx\Tests\Stoa\Integration;
 
 use GuzzleHttp\Psr7\ServerRequest;
 use Phalanx\Application;
+use Phalanx\Boot\AppContext;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Service\ServiceBundle;
@@ -150,7 +151,7 @@ final class GracefulDrainTest extends PhalanxTestCase
                 {
                 }
 
-                public function services(Services $services, array $context): void
+                public function services(Services $services, AppContext $context): void
                 {
                     $fired = &$this->shutdownFired;
                     $services->eager(\stdClass::class)

@@ -7,6 +7,7 @@ namespace Phalanx\Athena;
 use Closure;
 use Phalanx\Application;
 use Phalanx\ApplicationBuilder;
+use Phalanx\Boot\AppContext;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Middleware\ServiceTransformationMiddleware;
 use Phalanx\Middleware\TaskMiddleware;
@@ -30,9 +31,8 @@ final class AthenaApplicationBuilder
 
     private bool $aiServicesAdded = false;
 
-    /** @param array<string, mixed> $context */
     public function __construct(
-        array $context = [],
+        AppContext $context = new AppContext(),
     ) {
         $this->app = Application::starting($context);
     }

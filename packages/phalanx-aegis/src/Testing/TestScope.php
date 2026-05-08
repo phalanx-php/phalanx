@@ -6,6 +6,7 @@ namespace Phalanx\Testing;
 
 use Closure;
 use Phalanx\Application;
+use Phalanx\Boot\AppContext;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Supervisor\LedgerStorage;
 
@@ -15,12 +16,9 @@ final class TestScope
     {
     }
 
-    /**
-     * @param array<string, mixed> $context
-     */
     public static function compile(
         ?Closure $services = null,
-        array $context = [],
+        AppContext $context = new AppContext(),
         ?LedgerStorage $ledger = null,
     ): ScopedTestApp {
         $builder = Application::starting($context);
@@ -38,13 +36,10 @@ final class TestScope
         return new ScopedTestApp($app);
     }
 
-    /**
-     * @param array<string, mixed> $context
-     */
     public static function run(
         Closure $test,
         ?Closure $services = null,
-        array $context = [],
+        AppContext $context = new AppContext(),
         ?CancellationToken $token = null,
     ): void {
         self::compile($services, $context)

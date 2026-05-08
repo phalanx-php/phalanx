@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace Phalanx\Tests\Fixtures\Testing;
 
+use Phalanx\Boot\AppContext;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 use Phalanx\Testing\TestLens;
 
 final class FixtureBundle extends ServiceBundle
 {
-    public function services(Services $services, array $context): void
+    public function services(Services $services, AppContext $context): void
     {
     }
 

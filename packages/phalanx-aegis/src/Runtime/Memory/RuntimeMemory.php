@@ -54,8 +54,7 @@ final class RuntimeMemory
         );
     }
 
-    /** @param array<string, mixed> $context */
-    public static function fromContext(array $context): self
+    public static function fromContext(\Phalanx\Boot\AppContext $context): self
     {
         return new self(RuntimeMemoryConfig::fromContext($context));
     }

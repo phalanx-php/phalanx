@@ -6,6 +6,7 @@ namespace Phalanx\Tests\Unit\Runtime;
 
 use LogicException;
 use OpenSwoole\Coroutine;
+use Phalanx\Boot\AppContext;
 use Phalanx\Application;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Cancellation\Cancelled;
@@ -21,7 +22,7 @@ final class ManagedApplicationRunnerTest extends TestCase
     {
         $ledger = new InProcessLedger();
 
-        $result = Application::starting([])
+        $result = Application::starting()
             ->withLedger($ledger)
             ->run(Task::named(
                 'runner.result',
@@ -35,7 +36,7 @@ final class ManagedApplicationRunnerTest extends TestCase
     public function testApplicationRunStartsAndShutsDownAroundTask(): void
     {
         $events = new ManagedRunnerEvents();
-        $app = Application::starting([])
+        $app = Application::starting()
             ->providers(new ManagedRunnerBundle($events))
             ->compile();
 
@@ -51,7 +52,7 @@ final class ManagedApplicationRunnerTest extends TestCase
     public function testScopedStartsButDoesNotShutDownTheApplication(): void
     {
         $events = new ManagedRunnerEvents();
-        $app = Application::starting([])
+        $app = Application::starting()
             ->providers(new ManagedRunnerBundle($events))
             ->compile();
 
@@ -73,7 +74,7 @@ final class ManagedApplicationRunnerTest extends TestCase
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('boom');
 
-        Application::starting([])->run(Task::named(
+        Application::starting()->run(Task::named(
             'runner.exception',
             static function (): never {
                 throw new LogicException('boom');
@@ -88,7 +89,7 @@ final class ManagedApplicationRunnerTest extends TestCase
         $token->cancel();
 
         try {
-            Application::starting([])
+            Application::starting()
                 ->withLedger($ledger)
                 ->run(Task::named(
                     'runner.cancelled',
@@ -108,7 +109,7 @@ final class ManagedApplicationRunnerTest extends TestCase
 
         Coroutine::run(static function () use (&$caught, &$result): void {
             try {
-                $result = Application::starting([])->run(Task::named(
+                $result = Application::starting()->run(Task::named(
                     'runner.existing-coroutine',
                     static fn(): string => Coroutine::getCid() >= 0 ? 'inside' : 'outside',
                 ));
@@ -147,7 +148,7 @@ final class ManagedRunnerBundle extends ServiceBundle
     ) {
     }
 
-    public function services(Services $services, array $context): void
+    public function services(Services $services, AppContext $context): void
     {
         $events = $this->events;
 

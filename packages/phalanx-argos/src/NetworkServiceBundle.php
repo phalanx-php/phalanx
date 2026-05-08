@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Argos;
 
+use Phalanx\Boot\AppContext;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 
@@ -19,7 +20,7 @@ use Phalanx\Service\Services;
  */
 final class NetworkServiceBundle extends ServiceBundle
 {
-    public function services(Services $services, array $context): void
+    public function services(Services $services, AppContext $context): void
     {
         $services->config(NetworkConfig::class, static fn(array $ctx): NetworkConfig => new NetworkConfig(
             defaultTimeout: (float) ($ctx['NETWORK_DEFAULT_TIMEOUT'] ?? 5.0),

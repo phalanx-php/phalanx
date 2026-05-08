@@ -17,6 +17,7 @@ use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Archon\Console\Output\TerminalEnvironment;
 use Phalanx\Archon\Console\Style\Style;
 use Phalanx\Archon\Console\Style\Theme;
+use Phalanx\Boot\AppContext;
 use Phalanx\Console\Input\ConsoleInput;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
@@ -89,7 +90,7 @@ function runCase(string $label, array $argv, string $expectedSubstring, CommandG
         ) {
         }
 
-        public function services(Services $services, array $context): void
+        public function services(Services $services, AppContext $context): void
         {
             $services->singleton(StreamOutput::class)->factory(fn() => $this->output);
             $services->singleton(Theme::class)->factory(fn() => $this->theme);
@@ -97,7 +98,7 @@ function runCase(string $label, array $argv, string $expectedSubstring, CommandG
         }
     };
 
-    $app = Archon::starting(['argv' => array_merge(['demo'], $argv)])
+    $app = Archon::starting(AppContext::test(['argv' => array_merge(['demo'], $argv)]))
         ->providers($bundle)
         ->commands($commands)
         ->build();

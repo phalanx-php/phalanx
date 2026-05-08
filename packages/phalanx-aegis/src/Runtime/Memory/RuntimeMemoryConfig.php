@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Runtime\Memory;
 
 use InvalidArgumentException;
+use Phalanx\Boot\AppContext;
 
 final readonly class RuntimeMemoryConfig
 {
@@ -46,10 +47,9 @@ final readonly class RuntimeMemoryConfig
         }
     }
 
-    /** @param array<string, mixed> $context */
-    public static function fromContext(array $context): self
+    public static function fromContext(AppContext $context): self
     {
-        $raw = $context[self::CONTEXT_KEY] ?? [];
+        $raw = $context->get(self::CONTEXT_KEY, []);
         if (!is_array($raw)) {
             throw new InvalidArgumentException(self::CONTEXT_KEY . ' must be an array.');
         }

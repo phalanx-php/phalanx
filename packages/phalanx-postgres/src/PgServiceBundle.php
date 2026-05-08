@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Postgres;
 
+use Phalanx\Boot\AppContext;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 
@@ -14,18 +15,18 @@ final class PgServiceBundle extends ServiceBundle
     ) {
     }
 
-    public function services(Services $services, array $context): void
+    public function services(Services $services, AppContext $context): void
     {
-        $pgConfig = $this->config ?? (isset($context['database_url'])
-            ? PgConfig::fromDsn($context['database_url'])
+        $pgConfig = $this->config ?? ($context->has('database_url')
+            ? PgConfig::fromDsn($context->string('database_url'))
             : new PgConfig(
-                host: $context['pg_host'] ?? 'localhost',
-                port: (int) ($context['pg_port'] ?? 5432),
-                user: $context['pg_user'] ?? null,
-                password: $context['pg_password'] ?? null,
-                database: $context['pg_database'] ?? null,
-                maxConnections: (int) ($context['pg_max_connections'] ?? 10),
-                idleTimeout: (int) ($context['pg_idle_timeout'] ?? 60),
+                host: $context->string('pg_host', 'localhost'),
+                port: $context->int('pg_port', 5432),
+                user: $context->get('pg_user'),
+                password: $context->get('pg_password'),
+                database: $context->get('pg_database'),
+                maxConnections: $context->int('pg_max_connections', 10),
+                idleTimeout: $context->int('pg_idle_timeout', 60),
             ));
 
         $services->config(PgConfig::class, static fn(): PgConfig => $pgConfig);

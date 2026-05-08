@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Archon\Testing;
 
+use Phalanx\Boot\AppContext;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 use Phalanx\Testing\TestLens;
@@ -31,7 +32,7 @@ final class ArchonTestableBundle extends ServiceBundle
         return TestLens::of(ConsoleLens::class);
     }
 
-    public function services(Services $services, array $context): void
+    public function services(Services $services, AppContext $context): void
     {
     }
 }

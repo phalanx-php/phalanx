@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Iris;
 
+use Phalanx\Boot\AppContext;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 
@@ -14,7 +15,7 @@ class HttpServiceBundle extends ServiceBundle
     ) {
     }
 
-    public function services(Services $services, array $context): void
+    public function services(Services $services, AppContext $context): void
     {
         $config = $this->config;
 

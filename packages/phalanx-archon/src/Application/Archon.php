@@ -6,13 +6,13 @@ namespace Phalanx\Archon\Application;
 
 use Closure;
 use Phalanx\Archon\Command\CommandConfig;
+use Phalanx\Boot\AppContext;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 
 final class Archon
 {
-    /** @param array<string, mixed> $context */
-    public static function starting(array $context = []): ArchonBuilder
+    public static function starting(AppContext $context = new AppContext()): ArchonBuilder
     {
         return new ArchonBuilder($context);
     }

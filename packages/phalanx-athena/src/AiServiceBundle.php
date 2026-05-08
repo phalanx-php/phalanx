@@ -8,6 +8,7 @@ use Phalanx\Athena\Provider\ProviderConfig;
 use Phalanx\Athena\Swarm\Daemon8SwarmBus;
 use Phalanx\Athena\Swarm\SwarmBus;
 use Phalanx\Athena\Swarm\SwarmConfig;
+use Phalanx\Boot\AppContext;
 use Phalanx\Iris\HttpClient;
 use Phalanx\Iris\Iris;
 use Phalanx\Service\ServiceBundle;
@@ -15,7 +16,7 @@ use Phalanx\Service\Services;
 
 final class AiServiceBundle extends ServiceBundle
 {
-    public function services(Services $services, array $context): void
+    public function services(Services $services, AppContext $context): void
     {
         Iris::services()->services($services, $context);
 
@@ -23,12 +24,12 @@ final class AiServiceBundle extends ServiceBundle
             ->factory(static function (HttpClient $client) use ($context) {
                 $config = ProviderConfig::create($client);
 
-                if ($anthropicKey = $context['ANTHROPIC_API_KEY'] ?? null) {
+                if ($anthropicKey = $context->get('ANTHROPIC_API_KEY')) {
                     $config->anthropic(apiKey: $anthropicKey);
                 }
 
-                if ($openaiKey = $context['OPENAI_API_KEY'] ?? null) {
-                    $openaiBaseUrl = $context['OPENAI_BASE_URL'] ?? null;
+                if ($openaiKey = $context->get('OPENAI_API_KEY')) {
+                    $openaiBaseUrl = $context->get('OPENAI_BASE_URL');
 
                     if ($openaiBaseUrl === null) {
                         $config->openai(apiKey: $openaiKey);
@@ -37,8 +38,8 @@ final class AiServiceBundle extends ServiceBundle
                     }
                 }
 
-                if ($geminiKey = $context['GEMINI_API_KEY'] ?? null) {
-                    $geminiModel = $context['GEMINI_MODEL'] ?? null;
+                if ($geminiKey = $context->get('GEMINI_API_KEY')) {
+                    $geminiModel = $context->get('GEMINI_MODEL');
 
                     if ($geminiModel === null) {
                         $config->gemini(apiKey: $geminiKey);
@@ -47,14 +48,14 @@ final class AiServiceBundle extends ServiceBundle
                     }
                 }
 
-                $ollamaEnabled = ($context['OLLAMA_ENABLED'] ?? false) === true
-                    || array_key_exists('OLLAMA_MODEL', $context)
-                    || array_key_exists('OLLAMA_BASE_URL', $context);
+                $ollamaEnabled = $context->bool('OLLAMA_ENABLED', false)
+                    || $context->has('OLLAMA_MODEL')
+                    || $context->has('OLLAMA_BASE_URL');
 
                 if ($ollamaEnabled) {
                     $config->ollama(
-                        model: (string) ($context['OLLAMA_MODEL'] ?? 'llama3'),
-                        baseUrl: (string) ($context['OLLAMA_BASE_URL'] ?? 'http://localhost:11434'),
+                        model: $context->string('OLLAMA_MODEL', 'llama3'),
+                        baseUrl: $context->string('OLLAMA_BASE_URL', 'http://localhost:11434'),
                     );
                 }
 
@@ -66,10 +67,10 @@ final class AiServiceBundle extends ServiceBundle
                 $defaults = new SwarmConfig();
 
                 return new SwarmConfig(
-                    workspace: $context['SWARM_WORKSPACE'] ?? $defaults->workspace,
-                    session: $context['SWARM_SESSION'] ?? $defaults->session,
-                    daemon8Url: $context['DAEMON8_URL'] ?? $defaults->daemon8Url,
-                    app: $context['DAEMON8_APP'] ?? $defaults->app,
+                    workspace: $context->get('SWARM_WORKSPACE', $defaults->workspace),
+                    session: $context->get('SWARM_SESSION', $defaults->session),
+                    daemon8Url: $context->get('DAEMON8_URL', $defaults->daemon8Url),
+                    app: $context->get('DAEMON8_APP', $defaults->app),
                 );
             });
 

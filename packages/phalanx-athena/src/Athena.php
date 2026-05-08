@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Athena;
 
 use Closure;
+use Phalanx\Boot\AppContext;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 
@@ -14,16 +15,14 @@ final class Athena
     {
     }
 
-    /** @param array<string, mixed> $context */
-    public static function starting(array $context = []): AthenaApplicationBuilder
+    public static function starting(AppContext $context = new AppContext()): AthenaApplicationBuilder
     {
         return new AthenaApplicationBuilder($context);
     }
 
-    /** @param array<string, mixed> $context */
     public static function run(
         Closure|Scopeable|Executable $task,
-        array $context = [],
+        AppContext $context = new AppContext(),
     ): mixed {
         return self::starting($context)->run($task);
     }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Tests\Smoke;
 
+use Phalanx\Boot\AppContext;
 use Phalanx\Application;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Concurrency\RetryPolicy;
@@ -52,7 +53,7 @@ final class WorkingAegisSmokeTest extends CoroutineTestCase
                 {
                 }
 
-                public function services(Services $services, array $context): void
+                public function services(Services $services, AppContext $context): void
                 {
                     // Singleton pool-shaped resource: created once for the app.
                     $services->singleton(SmokePool::class)
@@ -66,7 +67,7 @@ final class WorkingAegisSmokeTest extends CoroutineTestCase
                 }
             };
 
-            $app = Application::starting([])
+            $app = Application::starting()
                 ->providers($bundle)
                 ->withLedger($ledger)
                 ->taskMiddleware(new RetryMiddleware(), new TimeoutMiddleware(), new TraceMiddleware())
@@ -107,12 +108,12 @@ final class WorkingAegisSmokeTest extends CoroutineTestCase
         $this->runInCoroutine(function (): void {
             $ledger = new InProcessLedger();
             $bundle = new class extends ServiceBundle {
-                public function services(Services $services, array $context): void
+                public function services(Services $services, AppContext $context): void
                 {
                 }
             };
 
-            $app = Application::starting([])
+            $app = Application::starting()
                 ->providers($bundle)
                 ->withLedger($ledger)
                 ->taskMiddleware(new RetryMiddleware(), new TimeoutMiddleware(), new TraceMiddleware())
@@ -140,12 +141,12 @@ final class WorkingAegisSmokeTest extends CoroutineTestCase
         $this->runInCoroutine(function (): void {
             $ledger = new InProcessLedger();
             $bundle = new class extends ServiceBundle {
-                public function services(Services $services, array $context): void
+                public function services(Services $services, AppContext $context): void
                 {
                 }
             };
 
-            $app = Application::starting([])
+            $app = Application::starting()
                 ->providers($bundle)
                 ->withLedger($ledger)
                 ->compile();

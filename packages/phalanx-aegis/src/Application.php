@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx;
 
 use Closure;
+use Phalanx\Boot\AppContext;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Middleware\ServiceTransformationMiddleware;
 use Phalanx\Middleware\TaskMiddleware;
@@ -51,8 +52,7 @@ class Application implements AppHost
         $this->runtimePolicy = $runtimePolicy ?? RuntimePolicy::phalanxManaged();
     }
 
-    /** @param array<string, mixed> $context */
-    public static function starting(array $context = []): ApplicationBuilder
+    public static function starting(AppContext $context = new AppContext()): ApplicationBuilder
     {
         return new ApplicationBuilder($context);
     }

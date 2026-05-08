@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Redis\Tests\Unit;
 
 use Closure;
+use Phalanx\Boot\AppContext;
 use Phalanx\Redis\Redis;
 use Phalanx\Redis\RedisClient;
 use Phalanx\Redis\RedisConfig;
@@ -53,7 +54,7 @@ final class RedisServiceBundleTest extends PhalanxTestCase
 
     protected function phalanxServices(): Closure
     {
-        return static function (Services $services, array $context): void {
+        return static function (Services $services, AppContext $context): void {
             new RedisServiceBundle(new RedisConfig(
                 host: 'redis.test',
                 port: 6380,

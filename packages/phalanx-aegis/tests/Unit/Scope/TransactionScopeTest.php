@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Tests\Unit\Scope;
 
+use Phalanx\Boot\AppContext;
 use Phalanx\Application;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\TransactionScope;
@@ -116,12 +117,12 @@ final class TransactionScopeTest extends CoroutineTestCase
     private static function buildScope(InProcessLedger $ledger): ExecutionScope
     {
         $bundle = new class extends ServiceBundle {
-            public function services(Services $services, array $context): void
+            public function services(Services $services, AppContext $context): void
             {
             }
         };
 
-        return Application::starting([])
+        return Application::starting()
             ->providers($bundle)
             ->withLedger($ledger)
             ->compile()

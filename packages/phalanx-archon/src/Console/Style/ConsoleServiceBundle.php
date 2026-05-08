@@ -8,6 +8,7 @@ use Phalanx\Archon\Console\Input\KeyReader;
 use Phalanx\Archon\Console\Input\RawInput;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Archon\Console\Output\TerminalEnvironment;
+use Phalanx\Boot\AppContext;
 use Phalanx\Console\Input\ConsoleInput;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
@@ -25,7 +26,7 @@ use Phalanx\Service\Services;
  */
 final class ConsoleServiceBundle extends ServiceBundle
 {
-    public function services(Services $services, array $context): void
+    public function services(Services $services, AppContext $context): void
     {
         $services->singleton(Theme::class)
             ->factory(static fn() => Theme::default());

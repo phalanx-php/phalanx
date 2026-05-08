@@ -8,6 +8,7 @@ use Phalanx\Archon\Console\Input\KeyReader;
 use Phalanx\Archon\Console\Input\RawInput;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Archon\Console\Style\Theme;
+use Phalanx\Boot\AppContext;
 use Phalanx\Console\Input\ConsoleInput;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
@@ -30,7 +31,7 @@ final class ConsoleCaptureBundle extends ServiceBundle
     ) {
     }
 
-    public function services(Services $services, array $context): void
+    public function services(Services $services, AppContext $context): void
     {
         $output = $this->output;
         $nullInput = $this->nullInput;

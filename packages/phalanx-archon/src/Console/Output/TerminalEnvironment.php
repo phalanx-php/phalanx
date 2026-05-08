@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Archon\Console\Output;
 
+use Phalanx\Boot\AppContext;
+
 final readonly class TerminalEnvironment
 {
     public function __construct(
@@ -14,13 +16,12 @@ final readonly class TerminalEnvironment
     ) {
     }
 
-    /** @param array<string, mixed> $context */
-    public static function fromContext(array $context): self
+    public static function fromContext(AppContext $context): self
     {
         return new self(
-            columns: self::size($context['COLUMNS'] ?? null),
-            lines: self::size($context['LINES'] ?? null),
-            termProgram: (string) ($context['TERM_PROGRAM'] ?? ''),
+            columns: self::size($context->get('COLUMNS')),
+            lines: self::size($context->get('LINES')),
+            termProgram: $context->string('TERM_PROGRAM', ''),
         );
     }
 

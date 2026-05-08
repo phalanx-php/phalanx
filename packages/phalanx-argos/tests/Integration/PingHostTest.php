@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Argos\Tests\Integration;
 
 use Closure;
+use Phalanx\Boot\AppContext;
 use Phalanx\Argos\NetworkConfig;
 use Phalanx\Argos\ProbeResult;
 use Phalanx\Argos\Task\PingHost;
@@ -44,7 +45,7 @@ final class PingHostTest extends PhalanxTestCase
 
     protected function phalanxServices(): ?Closure
     {
-        return static function (Services $services, array $context): void {
+        return static function (Services $services, AppContext $context): void {
             $services->config(NetworkConfig::class, static fn(array $ctx): NetworkConfig => new NetworkConfig(
                 pingBinary: (string) ($ctx['NETWORK_PING_BINARY'] ?? 'ping'),
             ));

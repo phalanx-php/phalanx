@@ -10,6 +10,7 @@ use Acme\ArchonDemo\Basic\InfoCommand;
 use Acme\ArchonDemo\Basic\VersionCommand;
 use Phalanx\Archon\Application\Archon;
 use Phalanx\Archon\Command\Arg;
+use Phalanx\Boot\AppContext;
 use Phalanx\Archon\Command\CommandConfig;
 use Phalanx\Archon\Command\CommandGroup;
 use Phalanx\Archon\Command\Opt;
@@ -70,13 +71,13 @@ function runCase(string $label, array $argv, string $expectedSubstring, CommandG
 
     $capture = new StreamOutput($stream, new TerminalEnvironment(columns: 80, lines: 24));
 
-    $app = Archon::starting(['argv' => array_merge(['demo'], $argv)])
+    $app = Archon::starting(AppContext::test(['argv' => array_merge(['demo'], $argv)]))
         ->providers(new class($capture) extends ServiceBundle {
             public function __construct(private StreamOutput $output)
             {
             }
 
-            public function services(Services $services, array $context): void
+            public function services(Services $services, AppContext $context): void
             {
                 $services->singleton(StreamOutput::class)->factory(fn() => $this->output);
             }

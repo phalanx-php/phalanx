@@ -6,6 +6,7 @@ namespace Phalanx\Tests\Resilience;
 
 use OpenSwoole\Coroutine;
 use OpenSwoole\Coroutine\WaitGroup;
+use Phalanx\Boot\AppContext;
 use Phalanx\Application;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Service\ServiceBundle;
@@ -75,11 +76,11 @@ final class LeaseLedgerConcurrencyTest extends CoroutineTestCase
     private static function buildApp(InProcessLedger $ledger): Application
     {
         $bundle = new class extends ServiceBundle {
-            public function services(Services $services, array $context): void
+            public function services(Services $services, AppContext $context): void
             {
             }
         };
-        return Application::starting([])
+        return Application::starting()
             ->providers($bundle)
             ->withLedger($ledger)
             ->compile();

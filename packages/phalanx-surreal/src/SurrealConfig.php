@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Surreal;
 
+use Phalanx\Boot\AppContext;
+
 class SurrealConfig
 {
     public function __construct(
@@ -22,21 +24,20 @@ class SurrealConfig
         $this->websocketEndpoint = rtrim($websocketEndpoint ?? self::deriveWebsocketEndpoint($this->endpoint), '/');
     }
 
-    /** @param array<string, mixed> $context */
-    public static function fromContext(array $context): self
+    public static function fromContext(AppContext $context): self
     {
         return new self(
-            namespace: self::stringValue($context, ['surreal_namespace', 'SURREAL_NAMESPACE'], 'phalanx'),
-            database: self::stringValue($context, ['surreal_database', 'SURREAL_DATABASE'], 'app'),
-            endpoint: self::stringValue($context, ['surreal_endpoint', 'SURREAL_ENDPOINT'], 'http://127.0.0.1:8000'),
-            websocketEndpoint: self::nullableStringValue($context, ['surreal_ws_endpoint', 'SURREAL_WS_ENDPOINT']),
-            username: self::nullableStringValue($context, ['surreal_username', 'SURREAL_USERNAME']),
-            password: self::nullableStringValue($context, ['surreal_password', 'SURREAL_PASSWORD']),
-            token: self::nullableStringValue($context, ['surreal_token', 'SURREAL_TOKEN']),
-            connectTimeout: self::floatValue($context, ['surreal_connect_timeout', 'SURREAL_CONNECT_TIMEOUT'], 5.0),
-            readTimeout: self::floatValue($context, ['surreal_read_timeout', 'SURREAL_READ_TIMEOUT'], 30.0),
+            namespace: self::stringValue($context->values, ['surreal_namespace', 'SURREAL_NAMESPACE'], 'phalanx'),
+            database: self::stringValue($context->values, ['surreal_database', 'SURREAL_DATABASE'], 'app'),
+            endpoint: self::stringValue($context->values, ['surreal_endpoint', 'SURREAL_ENDPOINT'], 'http://127.0.0.1:8000'),
+            websocketEndpoint: self::nullableStringValue($context->values, ['surreal_ws_endpoint', 'SURREAL_WS_ENDPOINT']),
+            username: self::nullableStringValue($context->values, ['surreal_username', 'SURREAL_USERNAME']),
+            password: self::nullableStringValue($context->values, ['surreal_password', 'SURREAL_PASSWORD']),
+            token: self::nullableStringValue($context->values, ['surreal_token', 'SURREAL_TOKEN']),
+            connectTimeout: self::floatValue($context->values, ['surreal_connect_timeout', 'SURREAL_CONNECT_TIMEOUT'], 5.0),
+            readTimeout: self::floatValue($context->values, ['surreal_read_timeout', 'SURREAL_READ_TIMEOUT'], 30.0),
             maxResponseBytes: self::intValue(
-                $context,
+                $context->values,
                 ['surreal_max_response_bytes', 'SURREAL_MAX_RESPONSE_BYTES'],
                 16 * 1024 * 1024,
             ),

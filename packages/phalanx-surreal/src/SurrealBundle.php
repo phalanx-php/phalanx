@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Surreal;
 
+use Phalanx\Boot\AppContext;
 use Phalanx\Hermes\Client\WsClient;
 use Phalanx\Hermes\Client\WsClientConfig;
 use Phalanx\Iris\HttpClient;
@@ -19,14 +20,14 @@ class SurrealBundle extends ServiceBundle
     ) {
     }
 
-    public function services(Services $services, array $context): void
+    public function services(Services $services, AppContext $context): void
     {
         $config = $this->config;
 
         if (!$services->has(SurrealConfig::class)) {
             $services->config(
                 SurrealConfig::class,
-                static fn(array $context): SurrealConfig => $config ?? SurrealConfig::fromContext($context),
+                static fn(array $context): SurrealConfig => $config ?? SurrealConfig::fromContext(AppContext::fromSymfonyRuntime($context)),
             );
         }
 
@@ -51,7 +52,7 @@ class SurrealBundle extends ServiceBundle
             $services->config(
                 WsClientConfig::class,
                 static function (array $context) use ($config): WsClientConfig {
-                    $surreal = $config ?? SurrealConfig::fromContext($context);
+                    $surreal = $config ?? SurrealConfig::fromContext(AppContext::fromSymfonyRuntime($context));
 
                     return new WsClientConfig(
                         connectTimeout: $surreal->connectTimeout,

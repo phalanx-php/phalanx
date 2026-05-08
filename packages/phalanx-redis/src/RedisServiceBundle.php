@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Redis;
 
+use Phalanx\Boot\AppContext;
 use Phalanx\Scope\Suspendable;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
@@ -16,7 +17,7 @@ final class RedisServiceBundle extends ServiceBundle
     ) {
     }
 
-    public function services(Services $services, array $context): void
+    public function services(Services $services, AppContext $context): void
     {
         $redisConfig = $this->config ?? RedisConfig::fromContext($context);
 

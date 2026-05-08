@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Service;
 
+use Phalanx\Boot\AppContext;
 use Phalanx\Boot\BootHarness;
 use Phalanx\Testing\TestLens;
 
@@ -29,6 +30,5 @@ abstract class ServiceBundle
         return BootHarness::none();
     }
 
-    /** @param array<string, mixed> $context */
-    abstract public function services(Services $services, array $context): void;
+    abstract public function services(Services $services, AppContext $context): void;
 }

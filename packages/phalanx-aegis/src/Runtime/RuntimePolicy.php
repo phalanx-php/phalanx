@@ -6,6 +6,7 @@ namespace Phalanx\Runtime;
 
 use InvalidArgumentException;
 use OpenSwoole\Runtime;
+use Phalanx\Boot\AppContext;
 
 final readonly class RuntimePolicy
 {
@@ -52,10 +53,9 @@ final readonly class RuntimePolicy
         );
     }
 
-    /** @param array<string, mixed> $context */
-    public static function fromContext(array $context): self
+    public static function fromContext(AppContext $context): self
     {
-        $policy = $context[self::CONTEXT_POLICY] ?? null;
+        $policy = $context->get(self::CONTEXT_POLICY);
         if ($policy instanceof self) {
             return $policy;
         }
@@ -67,11 +67,11 @@ final readonly class RuntimePolicy
             ));
         }
 
-        if (!array_key_exists(self::CONTEXT_CAPABILITIES, $context)) {
+        if (!$context->has(self::CONTEXT_CAPABILITIES)) {
             return self::phalanxManaged();
         }
 
-        $rawCapabilities = $context[self::CONTEXT_CAPABILITIES];
+        $rawCapabilities = $context->require(self::CONTEXT_CAPABILITIES);
         if (!is_array($rawCapabilities)) {
             throw new InvalidArgumentException(sprintf('%s must be a list.', self::CONTEXT_CAPABILITIES));
         }

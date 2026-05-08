@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Tests\Unit\Scope;
 
 use OpenSwoole\Coroutine;
+use Phalanx\Boot\AppContext;
 use Phalanx\Application;
 use Phalanx\OutsideScopeException;
 use Phalanx\Phalanx;
@@ -101,11 +102,11 @@ final class PhalanxStaticHelperTest extends CoroutineTestCase
     private static function buildApp(): Application
     {
         $bundle = new class extends ServiceBundle {
-            public function services(Services $services, array $context): void
+            public function services(Services $services, AppContext $context): void
             {
             }
         };
-        return Application::starting([])
+        return Application::starting()
             ->providers($bundle)
             ->withLedger(new InProcessLedger())
             ->compile();

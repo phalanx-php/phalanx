@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Tests\Unit\Service;
 
 use Phalanx\Application;
+use Phalanx\Boot\AppContext;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\Scope;
 use Phalanx\Service\ServiceBundle;
@@ -19,7 +20,7 @@ final class FactoryDependencyResolutionTest extends TestCase
     #[Test]
     public function factoryParametersResolveServicesConfigsAndCurrentScope(): void
     {
-        $result = Application::starting(['FACTORY_VALUE' => 'athena'])
+        $result = Application::starting(AppContext::test(['FACTORY_VALUE' => 'athena']))
             ->providers(new AutoResolvedFactoryBundle())
             ->run(Task::named(
                 'test.service.factory-dependency-resolution',
@@ -59,7 +60,7 @@ final class FactoryDependencyResolutionTest extends TestCase
 
 final class AutoResolvedFactoryBundle extends ServiceBundle
 {
-    public function services(Services $services, array $context): void
+    public function services(Services $services, AppContext $context): void
     {
         $services->config(
             AutoResolvedConfig::class,
@@ -109,7 +110,7 @@ final readonly class AutoResolvedConsumer
 
 final class UntypedFactoryBundle extends ServiceBundle
 {
-    public function services(Services $services, array $context): void
+    public function services(Services $services, AppContext $context): void
     {
         $services->singleton(UntypedFactoryService::class)
             ->factory(static fn($value): UntypedFactoryService => new UntypedFactoryService());

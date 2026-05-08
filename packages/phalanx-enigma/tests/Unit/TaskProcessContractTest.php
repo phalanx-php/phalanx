@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Enigma\Tests\Unit;
 
 use Closure;
+use Phalanx\Boot\AppContext;
 use Phalanx\Enigma\CommandResult;
 use Phalanx\Enigma\SshConfig;
 use Phalanx\Enigma\SshCredential;
@@ -123,14 +124,13 @@ PHP);
         };
     }
 
-    /** @return array<string, mixed> */
-    protected function phalanxContext(): array
+    protected function phalanxContext(): AppContext
     {
-        return [
+        return AppContext::test([
             'sshBinaryPath' => $this->sshBinaryPath ?? PHP_BINARY,
             'scpBinaryPath' => $this->scpBinaryPath ?? PHP_BINARY,
             'sftpBinaryPath' => $this->sftpBinaryPath ?? PHP_BINARY,
-        ];
+        ]);
     }
 
     private static function writeExecutable(string $contents): string

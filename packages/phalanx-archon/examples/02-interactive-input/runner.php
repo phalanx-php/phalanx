@@ -9,11 +9,12 @@ use Acme\ArchonDemo\Interactive\SetConfigCommand;
 use Acme\ArchonDemo\Interactive\ShowConfigCommand;
 use Phalanx\Archon\Application\Archon;
 use Phalanx\Archon\Command\Arg;
+use Phalanx\Boot\AppContext;
 use Phalanx\Archon\Command\CommandConfig;
 use Phalanx\Archon\Command\CommandGroup;
 use Phalanx\Archon\Console\Style\ConsoleServiceBundle;
 
-exit(Archon::starting(['argv' => $argv])
+exit(Archon::starting(AppContext::test(['argv' => $argv]))
     ->providers(new ConsoleServiceBundle())
     ->commands(CommandGroup::of([
         'register' => [

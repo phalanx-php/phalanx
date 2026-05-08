@@ -6,6 +6,7 @@ namespace Phalanx\Tests\Unit\Runtime;
 
 use InvalidArgumentException;
 use Phalanx\Application;
+use Phalanx\Boot\AppContext;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Runtime\Identity\AegisResourceSid;
 use Phalanx\Runtime\Identity\RuntimeAnnotationId;
@@ -168,7 +169,7 @@ final class RuntimeMemoryTest extends TestCase
 
     public function testScopeRuntimePropertyResolvesMemoryBranchFromContainer(): void
     {
-        $app = Application::starting([
+        $app = Application::starting(AppContext::test([
             RuntimeMemoryConfig::CONTEXT_KEY => [
                 'resource_rows' => 64,
                 'edge_rows' => 32,
@@ -179,7 +180,7 @@ final class RuntimeMemoryTest extends TestCase
                 'claim_rows' => 32,
                 'symbol_rows' => 32,
             ],
-        ])->compile();
+        ]))->compile();
 
         $result = $app->run(Task::named(
             'runtime.memory.property',

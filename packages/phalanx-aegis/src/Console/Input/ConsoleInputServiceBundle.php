@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Console\Input;
 
+use Phalanx\Boot\AppContext;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 
@@ -18,7 +19,7 @@ use Phalanx\Service\Services;
  */
 final class ConsoleInputServiceBundle extends ServiceBundle
 {
-    public function services(Services $services, array $context): void
+    public function services(Services $services, AppContext $context): void
     {
         $services->singleton(ConsoleInput::class)
             ->factory(static fn(): ConsoleInput => new ConsoleInput());
