@@ -122,14 +122,17 @@ The OpenSwoole pieces it actually uses:
 - **Graceful drain** via `Server::reload()` with a bounded `max_wait_time` — the same path used for cert hot-swap
 - **HTTP/2 upstream** via `open_http2_protocol` once the Iris keep-alive work lands
 
-And the things it deliberately doesn't do, either because OpenSwoole doesn't expose the hooks for it or because it isn't the job we're signing up for:
+<details>
+<summary><strong>And the things it deliberately doesn't do</strong> — either because OpenSwoole doesn't expose the hooks or because it isn't the job we're signing up for.</summary>
 
 - **No HTTP/3 or QUIC** — not in stable OpenSwoole 26.2; Swoole Lab fork only
-- **Cert renewal is HTTP-01 only** — Let's Encrypt offers a second renewal flow (TLS-ALPN-01) that needs hooks into the raw TLS handshake; OpenSwoole doesn't expose those, so Pharos sticks to the HTTP-01 flow (port 80 has to be reachable)
+- **Cert renewal needs port 80 reachable** — the alternative renewal flow needs hooks into the raw TLS handshake that OpenSwoole doesn't expose
 - **No OCSP stapling** — not in OpenSwoole's TLS config surface
 - **No inbound mTLS yet** — client cert verification on inbound isn't wired through `Server::set()` yet (upstream mTLS works)
 - **Not a static CDN** — `sendfile(2)` is bypassed under TLS; serve assets from a real CDN in front
 - **No L4 proxy, no full WAF, no service mesh control plane** — Pharos is an HTTP/WS edge for Phalanx apps, not a general proxy
+
+</details>
 
 ```php
 return static function (array $context): \Closure {
