@@ -19,7 +19,7 @@ use PHPStan\Rules\Rule;
  */
 final class TaskFactoryStaticClosureOnlyRule implements Rule
 {
-    private const IDENTIFIER = 'phalanx.scope.staticClosureOnly';
+    private const string IDENTIFIER = 'phalanx.scope.staticClosureOnly';
 
     public function __construct(private readonly PathPolicy $paths)
     {

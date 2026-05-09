@@ -17,10 +17,10 @@ use PHPStan\Rules\Rule;
  */
 final class RootScopeAliasRule implements Rule
 {
-    private const IDENTIFIER = 'phalanx.migration.rootScopeAlias';
+    private const string IDENTIFIER = 'phalanx.migration.rootScopeAlias';
 
     /** @var array<string, string> */
-    private const REPLACEMENTS = [
+    private const array REPLACEMENTS = [
         'Phalanx\\Scope' => 'Phalanx\\Scope\\Scope',
         'Phalanx\\ExecutionScope' => 'Phalanx\\Scope\\ExecutionScope',
     ];

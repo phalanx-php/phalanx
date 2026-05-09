@@ -106,6 +106,7 @@ PHP);
     }
 
     /** @return array<string, mixed> */
+    #[\Override]
     protected function phalanxContext(): array
     {
         return [

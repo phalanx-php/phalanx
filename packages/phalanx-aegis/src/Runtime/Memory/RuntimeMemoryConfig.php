@@ -9,7 +9,7 @@ use Phalanx\Boot\AppContext;
 
 final readonly class RuntimeMemoryConfig
 {
-    public const CONTEXT_KEY = 'phalanx.runtime.memory';
+    public const string CONTEXT_KEY = 'phalanx.runtime.memory';
 
     public function __construct(
         public int $resourceRows = 4096,

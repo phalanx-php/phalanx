@@ -22,7 +22,7 @@ final class HermesSurrealLiveConnectionTest extends PhalanxTestCase
     public function requestSendsJsonRpcEnvelopeAndReturnsResult(): void
     {
         $socket = new FakeLiveSocket([
-            static fn(array $payload): array => ['id' => $payload['id'], 'result' => 'athena-live'],
+            static fn(array $payload): array => ['id' => $payload['id'], 'result' => 'olympus-live'],
         ]);
 
         $result = $this->scope->run(
@@ -34,7 +34,7 @@ final class HermesSurrealLiveConnectionTest extends PhalanxTestCase
             'test.surreal.live-connection-request',
         );
 
-        self::assertSame('athena-live', $result);
+        self::assertSame('olympus-live', $result);
         self::assertSame('live', $socket->sent[0]['method']);
         self::assertSame(['event', false], $socket->sent[0]['params']);
     }
@@ -48,13 +48,13 @@ final class HermesSurrealLiveConnectionTest extends PhalanxTestCase
             static function (ExecutionScope $scope) use ($socket): ?SurrealLiveNotification {
                 $connection = new HermesSurrealLiveConnection($scope, $socket, 1.0);
                 $channel = new Channel();
-                $connection->subscribe('athena-live', $channel);
+                $connection->subscribe('olympus-live', $channel);
 
                 $socket->push([
                     'result' => [
                         'action' => 'CREATE',
-                        'id' => 'athena-live',
-                        'result' => ['id' => 'event:athena'],
+                        'id' => 'olympus-live',
+                        'result' => ['id' => 'event:apollo'],
                     ],
                 ]);
 
@@ -65,7 +65,7 @@ final class HermesSurrealLiveConnectionTest extends PhalanxTestCase
 
         self::assertInstanceOf(SurrealLiveNotification::class, $notification);
         self::assertSame(SurrealLiveAction::Create, $notification->action);
-        self::assertSame('event:athena', $notification->result['id'] ?? null);
+        self::assertSame('event:apollo', $notification->result['id'] ?? null);
     }
 
     #[Test]
@@ -103,9 +103,9 @@ final class HermesSurrealLiveConnectionTest extends PhalanxTestCase
             static function (ExecutionScope $scope) use ($socket): mixed {
                 $connection = new HermesSurrealLiveConnection($scope, $socket, 1.0);
                 $channel = new Channel();
-                $connection->subscribe('athena-live', $channel);
+                $connection->subscribe('olympus-live', $channel);
 
-                $socket->push(['result' => ['id' => 'athena-live']]);
+                $socket->push(['result' => ['id' => 'olympus-live']]);
 
                 return $channel->next(1.0);
             },
@@ -119,7 +119,7 @@ final class HermesSurrealLiveConnectionTest extends PhalanxTestCase
         $socket = new FakeLiveSocket();
 
         $this->expectException(SurrealException::class);
-        $this->expectExceptionMessage('Surreal live subscription athena-live buffer is full.');
+        $this->expectExceptionMessage('Surreal live subscription olympus-live buffer is full.');
 
         $this->scope->run(
             static function (ExecutionScope $scope) use ($socket): mixed {
@@ -127,15 +127,15 @@ final class HermesSurrealLiveConnectionTest extends PhalanxTestCase
                 $channel = new Channel(1);
                 $channel->emit(new SurrealLiveNotification(
                     action: SurrealLiveAction::Create,
-                    queryId: 'athena-live',
+                    queryId: 'olympus-live',
                     result: ['id' => 'event:existing'],
                 ));
-                $connection->subscribe('athena-live', $channel);
+                $connection->subscribe('olympus-live', $channel);
 
                 $socket->push([
                     'result' => [
                         'action' => 'CREATE',
-                        'id' => 'athena-live',
+                        'id' => 'olympus-live',
                         'result' => ['id' => 'event:overflow'],
                     ],
                 ]);

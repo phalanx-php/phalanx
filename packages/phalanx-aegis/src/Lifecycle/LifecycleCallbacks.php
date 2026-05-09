@@ -10,15 +10,15 @@ final class LifecycleCallbacks
 {
     public function __construct(
         /** @var list<Closure> */
-        public private(set) array $onInit = [],
+        private(set) array $onInit = [],
         /** @var list<Closure> */
-        public private(set) array $onStartup = [],
+        private(set) array $onStartup = [],
         /** @var list<Closure> */
-        public private(set) array $onReady = [],
+        private(set) array $onReady = [],
         /** @var list<Closure> */
-        public private(set) array $onDispose = [],
+        private(set) array $onDispose = [],
         /** @var list<Closure> */
-        public private(set) array $onShutdown = [],
+        private(set) array $onShutdown = [],
     ) {
     }
 

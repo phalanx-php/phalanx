@@ -11,8 +11,8 @@ final class TokenUsage
     }
 
     public function __construct(
-        public private(set) int $input = 0,
-        public private(set) int $output = 0,
+        private(set) int $input = 0,
+        private(set) int $output = 0,
     ) {
     }
 

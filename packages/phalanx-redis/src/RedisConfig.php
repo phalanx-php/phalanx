@@ -10,14 +10,14 @@ use Phalanx\Boot\AppContext;
 final class RedisConfig
 {
     public function __construct(
-        public private(set) string $host = '127.0.0.1',
-        public private(set) int $port = 6379,
-        public private(set) ?string $username = null,
-        public private(set) ?string $password = null,
-        public private(set) int $database = 0,
-        public private(set) float $connectTimeout = 5.0,
-        public private(set) float $readTimeout = 30.0,
-        public private(set) int $poolSize = 16,
+        private(set) string $host = '127.0.0.1',
+        private(set) int $port = 6379,
+        private(set) ?string $username = null,
+        private(set) ?string $password = null,
+        private(set) int $database = 0,
+        private(set) float $connectTimeout = 5.0,
+        private(set) float $readTimeout = 30.0,
+        private(set) int $poolSize = 16,
     ) {
     }
 

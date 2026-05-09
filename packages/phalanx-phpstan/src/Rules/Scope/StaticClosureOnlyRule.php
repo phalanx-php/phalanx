@@ -23,10 +23,10 @@ use PHPStan\Rules\Rule;
  */
 final class StaticClosureOnlyRule implements Rule
 {
-    private const IDENTIFIER = 'phalanx.scope.staticClosureOnly';
+    private const string IDENTIFIER = 'phalanx.scope.staticClosureOnly';
 
     /** @var list<string> */
-    private const TASK_METHODS = [
+    private const array TASK_METHODS = [
         'any',
         'concurrent',
         'defer',

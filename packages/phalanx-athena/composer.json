@@ -15,7 +15,7 @@
         "php": "^8.4",
         "phalanx-php/aegis": "^0.6",
         "phalanx-php/iris": "^0.6",
-        "phalanx-php/styx": "^0.5"
+        "phalanx-php/styx": "^0.6"
     },
     "require-dev": {
         "guzzlehttp/guzzle": "^7.10",
@@ -23,7 +23,6 @@
     },
     "suggest": {
         "phalanx-php/redis": "For conversation memory and pub/sub agent coordination",
-        "phalanx-php/postgres": "For persistent conversation storage and LISTEN/NOTIFY tasks",
         "phalanx-php/hermes": "For real-time agent sessions over WebSocket",
         "phalanx-php/archon": "For CLI agent REPL",
         "guzzlehttp/guzzle": "For Guzzle-based SDKs (AWS, Stripe) via CoroutineGuzzleStack",
@@ -38,15 +37,6 @@
         "psr-4": {
             "Phalanx\\Athena\\Tests\\": "tests/"
         }
-    },
-    "scripts": {
-        "demo": ["@demo:streaming", "@demo:worker:fleet"],
-        "demo:streaming": "php examples/01-streaming-providers/demo.php",
-        "demo:guzzle": "php examples/02-guzzle-sdk-coexistence/demo.php",
-        "demo:serve:support-triage": "php examples/support-triage/server.php",
-        "demo:serve:research-agent": "php examples/research-agent/server.php",
-        "demo:serve:fleet-gateway": "php examples/multi-tenant-fleet/gateway.php",
-        "demo:worker:fleet": "php examples/multi-tenant-fleet/worker.php"
     },
     "extra": {
         "branch-alias": {

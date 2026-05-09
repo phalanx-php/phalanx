@@ -10,10 +10,10 @@ namespace Phalanx\Archon\Command;
 final class CommandArgument
 {
     public function __construct(
-        public private(set) string $name,
-        public private(set) string $description = '',
-        public private(set) bool $required = true,
-        public private(set) mixed $default = null,
+        private(set) string $name,
+        private(set) string $description = '',
+        private(set) bool $required = true,
+        private(set) mixed $default = null,
     ) {
     }
 }

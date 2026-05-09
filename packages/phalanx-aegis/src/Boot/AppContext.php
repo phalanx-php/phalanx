@@ -20,7 +20,7 @@ use Phalanx\Boot\Exception\MissingContextValue;
 class AppContext
 {
     /** @param array<string,mixed> $values */
-    public function __construct(public private(set) array $values = [])
+    public function __construct(private(set) array $values = [])
     {
     }
 

@@ -17,7 +17,7 @@ use PHPStan\Rules\Rule;
  */
 final class RawSleepRule implements Rule
 {
-    private const IDENTIFIER = 'phalanx.cancellation.rawSleep';
+    private const string IDENTIFIER = 'phalanx.cancellation.rawSleep';
 
     public function __construct(private readonly PathPolicy $paths)
     {

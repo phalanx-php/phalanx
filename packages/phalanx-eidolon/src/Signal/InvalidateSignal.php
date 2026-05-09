@@ -7,7 +7,7 @@ namespace Phalanx\Eidolon\Signal;
 final class InvalidateSignal implements Signal
 {
     /** @var list<string> */
-    public private(set) array $queryKeys;
+    private(set) array $queryKeys;
 
     public SignalType $type {
         get => SignalType::Invalidate;

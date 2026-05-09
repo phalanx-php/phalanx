@@ -17,6 +17,7 @@ use PHPUnit\Framework\Attributes\Test;
 // Bundle that demands CRITICAL_KEY to be present.
 final class CriticalKeyBundle extends ServiceBundle
 {
+    #[\Override]
     public static function harness(): BootHarness
     {
         return BootHarness::of(Required::env('CRITICAL_KEY'));

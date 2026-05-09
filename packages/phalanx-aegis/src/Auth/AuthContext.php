@@ -11,7 +11,7 @@ final class AuthContext
     }
 
     public function __construct(
-        public private(set) ?Identity $identity = null,
+        private(set) ?Identity $identity = null,
         private readonly ?string $accessToken = null,
         /** @var list<string> */
         private readonly array $abilities = [],

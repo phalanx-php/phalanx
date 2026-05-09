@@ -20,6 +20,7 @@ use Symfony\Component\Runtime\RunnerInterface;
  */
 final class Runtime extends GenericRuntime
 {
+    #[\Override]
     public function getRunner(?object $application): RunnerInterface
     {
         if ($application instanceof ArchonApplication) {

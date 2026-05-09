@@ -74,17 +74,17 @@ final class PhalanxStaticHelperTest extends CoroutineTestCase
             $observedA = null;
             $observedB = null;
 
-            $scopeA->concurrent(...[
-                'a' => Task::of(static function (ExecutionScope $s) use (&$observedA): void {
+            $scopeA->concurrent(
+                a: Task::of(static function (ExecutionScope $s) use (&$observedA): void {
                     $observedA = Phalanx::scope();
                 }),
-            ]);
+            );
 
-            $scopeB->concurrent(...[
-                'b' => Task::of(static function (ExecutionScope $s) use (&$observedB): void {
+            $scopeB->concurrent(
+                b: Task::of(static function (ExecutionScope $s) use (&$observedB): void {
                     $observedB = Phalanx::scope();
                 }),
-            ]);
+            );
 
             self::assertNotNull($observedA);
             self::assertNotNull($observedB);

@@ -8,9 +8,9 @@ class BootEvaluation
 {
     /** @param 'pass'|'warn'|'fail' $status */
     private function __construct(
-        public private(set) string $status,
-        public private(set) string $message,
-        public private(set) ?string $remediation = null,
+        private(set) string $status,
+        private(set) string $message,
+        private(set) ?string $remediation = null,
     ) {
     }
 

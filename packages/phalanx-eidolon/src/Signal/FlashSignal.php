@@ -9,8 +9,8 @@ final class FlashSignal implements Signal
     /** @var non-empty-string[] */
     private const array VALID_LEVELS = ['success', 'error', 'warning', 'info'];
 
-    public private(set) string $message;
-    public private(set) string $level;
+    private(set) string $message;
+    private(set) string $level;
 
     public SignalType $type {
         get => SignalType::Flash;

@@ -7,13 +7,13 @@ namespace Phalanx\Hermes\Client;
 final class WsClientConfig
 {
     public function __construct(
-        public private(set) float $connectTimeout = 5.0,
-        public private(set) float $recvTimeout = 1.0,
-        public private(set) int $maxMessageSize = 65536,
-        public private(set) int $maxFrameSize = 65536,
-        public private(set) float $pingInterval = 30.0,
-        public private(set) int $inboundBufferSize = 128,
-        public private(set) int $writeQueueSize = 64,
+        private(set) float $connectTimeout = 5.0,
+        private(set) float $recvTimeout = 1.0,
+        private(set) int $maxMessageSize = 65536,
+        private(set) int $maxFrameSize = 65536,
+        private(set) float $pingInterval = 30.0,
+        private(set) int $inboundBufferSize = 128,
+        private(set) int $writeQueueSize = 64,
     ) {
     }
 

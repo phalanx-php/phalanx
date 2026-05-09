@@ -24,7 +24,7 @@ namespace Phalanx\Supervisor;
  */
 final class TaskTreeFormatter
 {
-    private const LABEL_COLUMN_WIDTH = 44;
+    private const int LABEL_COLUMN_WIDTH = 44;
 
     /**
      * @param list<TaskRunSnapshot> $snapshots

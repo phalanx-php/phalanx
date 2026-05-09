@@ -97,11 +97,11 @@ Phalanx runs on OpenSwoole 26 — native PHP fibers, `io_uring`, `Channel`, `Wai
 
 Real, runnable examples covering the core surface. Each ships with a `.env.example` and runs via `php demo.php`:
 
-- [Aegis kernel](packages/phalanx-aegis/examples) — runtime policy, scope supervision, cancellation, singleflight, runtime memory
-- [Stoa HTTP](packages/phalanx-stoa/examples) — basic routing, JSON API, realtime SSE, runtime lifecycle
-- [Archon CLI](packages/phalanx-archon/examples) — basic commands, interactive input, supervised concurrency, runtime lifecycle
-- [Athena AI](packages/phalanx-athena/examples) — concurrent streaming across providers, Guzzle SDK coexistence
-- [Surreal](packages/phalanx-surreal/examples) — in-memory RPC, live queries
+- [Aegis kernel](demos/aegis) — runtime policy, scope supervision, cancellation, singleflight, runtime memory
+- [Stoa HTTP](demos/stoa) — basic routing, JSON API, realtime SSE, runtime lifecycle
+- [Archon CLI](demos/archon) — basic commands, interactive input, supervised concurrency, runtime lifecycle
+- [Athena AI](demos/athena) — concurrent streaming across providers, Guzzle SDK coexistence
+- [Surreal](demos/surreal) — in-memory RPC, live queries
 
 ### Pharos — the proving ground
 

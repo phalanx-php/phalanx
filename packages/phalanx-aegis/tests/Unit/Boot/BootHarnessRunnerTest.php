@@ -18,6 +18,7 @@ use PHPUnit\Framework\Attributes\Test;
 // Stub bundle whose harness() returns a Required::env check.
 final class RequiredEnvBundle extends ServiceBundle
 {
+    #[\Override]
     public static function harness(): BootHarness
     {
         return BootHarness::of(Required::env('CRITICAL_KEY'));
@@ -29,6 +30,7 @@ final class RequiredEnvBundle extends ServiceBundle
 // Stub bundle whose harness() returns an Optional::env check.
 final class OptionalEnvBundle extends ServiceBundle
 {
+    #[\Override]
     public static function harness(): BootHarness
     {
         return BootHarness::of(Optional::env('OPTIONAL_KEY'));

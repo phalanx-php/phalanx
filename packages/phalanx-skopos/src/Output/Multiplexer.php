@@ -4,78 +4,92 @@ declare(strict_types=1);
 
 namespace Phalanx\Skopos\Output;
 
-use React\Stream\ReadableStreamInterface;
-use React\Stream\WritableStreamInterface;
-
+/**
+ * Color-prefixes per-process output drained from StreamingProcessHandle
+ * incremental buffers and writes to a single output stream. Holds per-process
+ * line buffers so partial chunks across drain ticks coalesce into whole lines
+ * before being emitted with the process label.
+ *
+ * Buffers are stored on the multiplexer rather than captured by reference in
+ * stream-event closures (the React-era shape) — long-running drain loops own
+ * the buffer state explicitly so it survives across periodic ticks and gets
+ * flushed deterministically when a process exits.
+ */
 final class Multiplexer
 {
-    private Palette $palette;
-    private WritableStreamInterface $output;
+    /** @var array<string, string> per-process stdout line buffer */
+    private array $stdoutBuffers = [];
 
-    public function __construct(WritableStreamInterface $output, ?Palette $palette = null)
-    {
-        $this->output = $output;
-        $this->palette = $palette ?? new Palette();
-    }
+    /** @var array<string, string> per-process stderr line buffer */
+    private array $stderrBuffers = [];
 
-    public function attach(string $name, ReadableStreamInterface $stdout, ReadableStreamInterface $stderr): void
-    {
-        $color = $this->palette->colorFor($name);
-        $reset = $this->palette->reset();
-        $stderrColor = $this->palette->stderrPrefix();
-
-        self::attachStream($name, $stdout, $color, $reset, $this->output, false);
-        self::attachStream($name, $stderr, $stderrColor, $reset, $this->output, true);
+    /** @param resource $output */
+    public function __construct(
+        private mixed $output = STDOUT,
+        private(set) Palette $palette = new Palette(),
+    ) {
     }
 
     public function writeLine(string $message): void
     {
-        $this->output->write($message . "\n");
+        fwrite($this->output, $message . "\n");
     }
 
-    private static function attachStream(
-        string $name,
-        ReadableStreamInterface $stream,
-        string $color,
-        string $reset,
-        WritableStreamInterface $output,
-        bool $isStderr,
-    ): void {
-        $buffer = '';
-        $label = $color . '[' . $name . ']' . $reset . ' ';
+    public function writeOutput(string $name, string $chunk): void
+    {
+        $this->emit($name, $chunk, isStderr: false);
+    }
 
-        // Non-static: would need $buffer by ref. Static with explicit ref capture is correct here.
-        // The buffer variable escapes into the closure as a reference — this is intentional and
-        // bounded: the closure lives only as long as the stream, which is cleaned up on process exit.
-        $stream->on('data', static function (string $chunk) use (&$buffer, $label, $output): void {
-            $buffer .= $chunk;
+    public function writeError(string $name, string $chunk): void
+    {
+        $this->emit($name, $chunk, isStderr: true);
+    }
 
-            while (($pos = strpos($buffer, "\n")) !== false) {
-                $line = substr($buffer, 0, $pos);
-                $buffer = substr($buffer, $pos + 1);
+    /**
+     * Flush any unterminated trailing bytes for a process. Call when the
+     * process exits so the last partial line still reaches the output.
+     */
+    public function flush(string $name): void
+    {
+        $stdout = $this->stdoutBuffers[$name] ?? '';
+        if ($stdout !== '') {
+            $label = $this->palette->colorFor($name) . '[' . $name . ']' . $this->palette->reset() . ' ';
+            fwrite($this->output, $label . $stdout . "\n");
+            unset($this->stdoutBuffers[$name]);
+        }
 
-                if ($line !== '') {
-                    $canWrite = $output->write($label . $line . "\n");
+        $stderr = $this->stderrBuffers[$name] ?? '';
+        if ($stderr !== '') {
+            $label = $this->palette->stderrPrefix() . '[' . $name . ']' . $this->palette->reset() . ' ';
+            fwrite($this->output, $label . $stderr . "\n");
+            unset($this->stderrBuffers[$name]);
+        }
+    }
 
-                    // WritableStreamInterface::write() returns false when the buffer is full.
-                    // We intentionally do not back-pressure the child process here — dev output
-                    // is low-volume and the consequence of dropping is worse than buffering.
-                    // Production stream consumers must respect this return value.
-                    unset($canWrite);
-                }
+    private function emit(string $name, string $chunk, bool $isStderr): void
+    {
+        if ($chunk === '') {
+            return;
+        }
+
+        $buffer = ($isStderr ? $this->stderrBuffers[$name] ?? '' : $this->stdoutBuffers[$name] ?? '') . $chunk;
+
+        $color = $isStderr ? $this->palette->stderrPrefix() : $this->palette->colorFor($name);
+        $label = $color . '[' . $name . ']' . $this->palette->reset() . ' ';
+
+        while (($pos = strpos($buffer, "\n")) !== false) {
+            $line = substr($buffer, 0, $pos);
+            $buffer = substr($buffer, $pos + 1);
+
+            if ($line !== '') {
+                fwrite($this->output, $label . $line . "\n");
             }
-        });
+        }
 
-        $stream->on('end', static function () use (&$buffer, $label, $output): void {
-            if ($buffer !== '') {
-                $output->write($label . $buffer . "\n");
-                $buffer = '';
-            }
-        });
-
-        $stream->on('error', static function (\Throwable $e) use ($name, $output, $isStderr): void {
-            $src = $isStderr ? 'stderr' : 'stdout';
-            $output->write("\033[31m[skopos] stream error on {$name} {$src}: {$e->getMessage()}\033[0m\n");
-        });
+        if ($isStderr) {
+            $this->stderrBuffers[$name] = $buffer;
+        } else {
+            $this->stdoutBuffers[$name] = $buffer;
+        }
     }
 }

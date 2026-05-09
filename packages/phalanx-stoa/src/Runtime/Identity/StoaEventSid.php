@@ -24,7 +24,9 @@ enum StoaEventSid: string implements RuntimeEventId
     case ResponseWriteFailed = 'stoa.response.write_failed';
     case RouteMatched = 'stoa.route_matched';
     case ServerDrainingRejected = 'stoa.server_draining_rejected';
+    case ServerListening = 'stoa.server_listening';
     case ServerShutdown = 'stoa.server_shutdown';
+    case ServerShutdownInitiated = 'stoa.server_shutdown_initiated';
     case SseStreamClosed = 'stoa.sse.stream_closed';
     case SseStreamOpened = 'stoa.sse.stream_opened';
 

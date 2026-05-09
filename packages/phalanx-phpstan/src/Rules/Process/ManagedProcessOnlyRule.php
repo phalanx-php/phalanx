@@ -21,10 +21,10 @@ use PHPStan\Rules\Rule;
  */
 final class ManagedProcessOnlyRule implements Rule
 {
-    private const IDENTIFIER = 'phalanx.process.managedOnly';
+    private const string IDENTIFIER = 'phalanx.process.managedOnly';
 
     /** @var list<string> */
-    private const FORBIDDEN_FUNCTIONS = [
+    private const array FORBIDDEN_FUNCTIONS = [
         'proc_open',
         'proc_close',
         'proc_get_status',
@@ -32,7 +32,7 @@ final class ManagedProcessOnlyRule implements Rule
     ];
 
     /** @var list<string> */
-    private const FORBIDDEN_PROCESS_CLASSES = [
+    private const array FORBIDDEN_PROCESS_CLASSES = [
         'OpenSwoole\\Core\\Process\\Manager',
         'OpenSwoole\\Process',
         'OpenSwoole\\Process\\Pool',

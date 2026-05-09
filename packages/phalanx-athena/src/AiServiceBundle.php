@@ -23,6 +23,7 @@ class AiServiceBundle extends ServiceBundle
      * but the bundle boots regardless and treats absent keys as "provider
      * unavailable" feature flags rather than hard failures.
      */
+    #[\Override]
     public static function harness(): BootHarness
     {
         return BootHarness::of(

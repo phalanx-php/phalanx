@@ -11,7 +11,7 @@ use SplFileInfo;
 final class RuntimeRiskScanner
 {
     /** @var list<string> */
-    private const PROCESS_FUNCTIONS = [
+    private const array PROCESS_FUNCTIONS = [
         'proc_open',
         'proc_close',
         'proc_get_status',
@@ -19,7 +19,7 @@ final class RuntimeRiskScanner
     ];
 
     /** @var list<string> */
-    private const PROCESS_CLASSES = [
+    private const array PROCESS_CLASSES = [
         'OpenSwoole\\Core\\Process\\Manager',
         'OpenSwoole\\Process',
         'OpenSwoole\\Process\\Pool',
@@ -29,7 +29,7 @@ final class RuntimeRiskScanner
     ];
 
     /** @var list<string> */
-    private const STREAM_FUNCTIONS = [
+    private const array STREAM_FUNCTIONS = [
         'fopen',
         'fread',
         'fgets',

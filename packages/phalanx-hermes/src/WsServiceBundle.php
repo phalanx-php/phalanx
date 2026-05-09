@@ -19,6 +19,7 @@ final class WsServiceBundle extends ServiceBundle
      * env keys must not block boot. Both entries warn on missing rather
      * than failing.
      */
+    #[\Override]
     public static function harness(): BootHarness
     {
         return BootHarness::of(

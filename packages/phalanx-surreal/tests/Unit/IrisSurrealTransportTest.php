@@ -22,7 +22,7 @@ final class IrisSurrealTransportTest extends PhalanxTestCase
     public function rpcUsesIrisWithSurrealHeadersAndJsonEnvelope(): void
     {
         $http = new RecordingHttpClient([self::jsonResponse(
-            '{"id":1,"result":[{"status":"OK","result":[{"id":"goddess:athena"}]}]}',
+            '{"id":1,"result":[{"status":"OK","result":[{"id":"oracle:apollo"}]}]}',
         )]);
         $transport = new IrisSurrealTransport($http);
         $config = new SurrealConfig(
@@ -37,12 +37,12 @@ final class IrisSurrealTransportTest extends PhalanxTestCase
                 $config,
                 'jwt-token',
                 'query',
-                ['SELECT * FROM goddess WHERE name = $name', ['name' => 'Athena']],
+                ['SELECT * FROM oracle WHERE name = $name', ['name' => 'Apollo']],
             ),
             'test.surreal.transport.rpc',
         );
 
-        self::assertSame([['status' => 'OK', 'result' => [['id' => 'goddess:athena']]]], $result);
+        self::assertSame([['status' => 'OK', 'result' => [['id' => 'oracle:apollo']]]], $result);
         $request = $http->requests[0];
         self::assertSame('POST', $request->method);
         self::assertSame('http://surreal.test:8000/rpc', $request->url);
@@ -50,11 +50,12 @@ final class IrisSurrealTransportTest extends PhalanxTestCase
         self::assertSame(['pantheon'], $request->headers['surreal-db']);
         self::assertSame(['Bearer jwt-token'], $request->headers['authorization']);
         self::assertJsonStringEqualsJsonString(
-            '{"id":1,"method":"query","params":["SELECT * FROM goddess WHERE name = $name",{"name":"Athena"}]}',
+            '{"id":1,"method":"query","params":["SELECT * FROM oracle WHERE name = $name",{"name":"Apollo"}]}',
             (string) $request->body,
         );
     }
 
+    #[Test]
     public function rootCredentialsUseBasicAuthWhenNoBearerTokenExists(): void
     {
         $http = new RecordingHttpClient([self::jsonResponse('{"id":1,"result":{"ok":true}}')]);
@@ -67,7 +68,7 @@ final class IrisSurrealTransportTest extends PhalanxTestCase
         );
 
         $this->scope->run(
-            static fn(ExecutionScope $scope): mixed => $transport->rpc($scope, $config, null, 'select', ['goddess']),
+            static fn(ExecutionScope $scope): mixed => $transport->rpc($scope, $config, null, 'select', ['oracle']),
             'test.surreal.transport.basic-auth',
         );
 
@@ -92,7 +93,7 @@ final class IrisSurrealTransportTest extends PhalanxTestCase
                 $config,
                 'jwt-token',
                 'select',
-                ['goddess'],
+                ['oracle'],
             ),
             'test.surreal.transport.bearer-auth',
         );
@@ -108,7 +109,7 @@ final class IrisSurrealTransportTest extends PhalanxTestCase
         $config = new SurrealConfig(namespace: 'olympus', database: 'pantheon');
 
         $this->scope->run(
-            static fn(ExecutionScope $scope): mixed => $transport->rpc($scope, $config, null, 'select', ['goddess']),
+            static fn(ExecutionScope $scope): mixed => $transport->rpc($scope, $config, null, 'select', ['oracle']),
             'test.surreal.transport.no-auth',
         );
 
@@ -141,7 +142,7 @@ final class IrisSurrealTransportTest extends PhalanxTestCase
         $config = new SurrealConfig(namespace: 'olympus', database: 'pantheon');
 
         $result = $this->scope->run(
-            static fn(ExecutionScope $scope): mixed => $transport->rpc($scope, $config, null, 'select', ['goddess']),
+            static fn(ExecutionScope $scope): mixed => $transport->rpc($scope, $config, null, 'select', ['oracle']),
             'test.surreal.transport.result-without-id',
         );
 
@@ -160,7 +161,7 @@ final class IrisSurrealTransportTest extends PhalanxTestCase
         $this->expectExceptionMessage('Surreal RPC response id mismatch: expected 1.');
 
         $this->scope->run(
-            static fn(ExecutionScope $scope): mixed => $transport->rpc($scope, $config, null, 'select', ['goddess']),
+            static fn(ExecutionScope $scope): mixed => $transport->rpc($scope, $config, null, 'select', ['oracle']),
             'test.surreal.transport.id-mismatch',
         );
     }
@@ -175,7 +176,7 @@ final class IrisSurrealTransportTest extends PhalanxTestCase
         $this->expectExceptionMessage('Surreal RPC response was missing result or error.');
 
         $this->scope->run(
-            static fn(ExecutionScope $scope): mixed => $transport->rpc($scope, $config, null, 'select', ['goddess']),
+            static fn(ExecutionScope $scope): mixed => $transport->rpc($scope, $config, null, 'select', ['oracle']),
             'test.surreal.transport.malformed-envelope',
         );
     }
@@ -190,7 +191,7 @@ final class IrisSurrealTransportTest extends PhalanxTestCase
         $this->expectExceptionMessage('Surreal RPC response was not a JSON object.');
 
         $this->scope->run(
-            static fn(ExecutionScope $scope): mixed => $transport->rpc($scope, $config, null, 'select', ['goddess']),
+            static fn(ExecutionScope $scope): mixed => $transport->rpc($scope, $config, null, 'select', ['oracle']),
             'test.surreal.transport.non-object-envelope',
         );
     }
@@ -205,7 +206,7 @@ final class IrisSurrealTransportTest extends PhalanxTestCase
         $this->expectExceptionMessage('Surreal RPC response was not a JSON object.');
 
         $this->scope->run(
-            static fn(ExecutionScope $scope): mixed => $transport->rpc($scope, $config, null, 'select', ['goddess']),
+            static fn(ExecutionScope $scope): mixed => $transport->rpc($scope, $config, null, 'select', ['oracle']),
             'test.surreal.transport.list-envelope',
         );
     }
@@ -281,14 +282,14 @@ final class IrisSurrealTransportTest extends PhalanxTestCase
 
         $this->scope->run(
             static function (ExecutionScope $scope) use ($transport, $config): void {
-                $transport->rpc($scope, $config, null, 'select', ['goddess']);
+                $transport->rpc($scope, $config, null, 'select', ['oracle']);
                 $transport->rpc($scope, $config, null, 'select', ['city']);
             },
             'test.surreal.transport.request-ids',
         );
 
         self::assertJsonStringEqualsJsonString(
-            '{"id":1,"method":"select","params":["goddess"]}',
+            '{"id":1,"method":"select","params":["oracle"]}',
             (string) $http->requests[0]->body,
         );
         self::assertJsonStringEqualsJsonString(

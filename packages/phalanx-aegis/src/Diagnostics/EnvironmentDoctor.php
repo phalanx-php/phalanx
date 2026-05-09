@@ -18,7 +18,7 @@ use Phalanx\Supervisor\LedgerStorage;
 
 final readonly class EnvironmentDoctor
 {
-    private const MEMORY_PRESSURE_RATIO = 0.9;
+    private const float MEMORY_PRESSURE_RATIO = 0.9;
 
     public function __construct(
         private ?LedgerStorage $ledger = null,

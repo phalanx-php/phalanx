@@ -21,16 +21,16 @@ use PHPStan\Rules\Rule;
  */
 final class HookOwnershipRule implements Rule
 {
-    private const IDENTIFIER = 'phalanx.runtime.hookOwnership';
+    private const string IDENTIFIER = 'phalanx.runtime.hookOwnership';
 
     /** @var list<string> */
-    private const RUNTIME_CLASSES = [
+    private const array RUNTIME_CLASSES = [
         'OpenSwoole\\Runtime',
         'Swoole\\Runtime',
     ];
 
     /** @var list<string> */
-    private const COROUTINE_CLASSES = [
+    private const array COROUTINE_CLASSES = [
         'OpenSwoole\\Coroutine',
         'Swoole\\Coroutine',
     ];

@@ -98,8 +98,9 @@ final readonly class ManagedResourceTransitionGate
                 throw new ManagedResourceException("managed resource '{$id}' does not exist");
             }
 
-            $from = ManagedResourceState::from((string) $row['state']);
             $generation = (int) $row['generation'];
+            $from = ManagedResourceState::from((string) $row['state']);
+
             if ($resource instanceof ManagedResourceHandle && $resource->generation !== $generation) {
                 throw StaleManagedResourceHandle::forGeneration($id, $resource->generation, $generation);
             }

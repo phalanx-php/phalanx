@@ -10,7 +10,7 @@ use PHPUnit\Framework\Assert;
 final class DisposalProbe
 {
     /** @var list<string> */
-    public private(set) array $log = [];
+    private(set) array $log = [];
 
     public function track(string $label): Closure
     {

@@ -30,10 +30,10 @@ final class Lens
      *                                                Surfaced by the LensRequiresBundleRule PHPStan check.
      */
     public function __construct(
-        public private(set) string $accessor,
-        public private(set) string $returns,
-        public private(set) string $factory,
-        public private(set) array $requires = [],
+        private(set) string $accessor,
+        private(set) string $returns,
+        private(set) string $factory,
+        private(set) array $requires = [],
     ) {
     }
 }

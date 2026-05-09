@@ -75,11 +75,11 @@ final class LedgerChurnTest extends CoroutineTestCase
 
             for ($i = 0; $i < $iterations; $i++) {
                 $scope = $app->createScope();
-                $results = $scope->concurrent(...[
-                    'a' => Task::of(static fn(ExecutionScope $s): int => 1),
-                    'b' => Task::of(static fn(ExecutionScope $s): int => 2),
-                    'c' => Task::of(static fn(ExecutionScope $s): int => 3),
-                ]);
+                $results = $scope->concurrent(
+                    a: Task::of(static fn(ExecutionScope $s): int => 1),
+                    b: Task::of(static fn(ExecutionScope $s): int => 2),
+                    c: Task::of(static fn(ExecutionScope $s): int => 3),
+                );
                 self::assertSame(['a' => 1, 'b' => 2, 'c' => 3], $results);
                 $scope->dispose();
                 self::assertSame(0, $ledger->liveCount(), "iteration {$i}");

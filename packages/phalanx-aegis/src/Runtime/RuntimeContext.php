@@ -8,9 +8,9 @@ use Phalanx\Runtime\Memory\RuntimeMemory;
 
 class RuntimeContext
 {
-    public private(set) RuntimeMemory $memory;
+    private(set) RuntimeMemory $memory;
 
-    public private(set) QueryScope $query;
+    private(set) QueryScope $query;
 
     public function __construct(
         RuntimeMemory $memory,

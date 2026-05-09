@@ -4,35 +4,45 @@ declare(strict_types=1);
 
 namespace Phalanx\Skopos;
 
+use Closure;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Skopos\Output\Multiplexer;
-use React\ChildProcess\Process as ChildProcess;
-use React\EventLoop\Loop;
-use React\EventLoop\TimerInterface;
-use React\Promise\Deferred;
-use React\Promise\PromiseInterface;
+use Phalanx\System\StreamingProcess;
+use Phalanx\System\StreamingProcessHandle;
 
-use function React\Promise\resolve;
-
+/**
+ * One supervised dev process. Wraps a StreamingProcessHandle and runs a
+ * single drain coroutine per start() that:
+ *
+ *   - copies stdout/stderr increments into the Multiplexer
+ *   - matches the readiness probe to flip Starting -> Running
+ *   - matches the reload probe to fire onOutput callbacks
+ *   - detects exit, transitions to Stopped or Crashed, fires onCrash
+ *
+ * Cleanup is scope-owned: StreamingProcess::start() registers an onDispose
+ * close on the supplied scope, so abandoned ManagedProcesses are reaped
+ * when the scope tears down even if stop() is never called.
+ */
 final class ManagedProcess
 {
-    public private(set) Process $config;
-    public private(set) ProcessState $state = ProcessState::Starting;
-    public private(set) ?int $pid = null;
+    private(set) Process $config;
+
+    private(set) ProcessState $state = ProcessState::Starting;
+
+    private(set) ?int $pid = null;
 
     public bool $isReady {
-        get => $this->state === ProcessState::Ready || $this->state === ProcessState::Running;
+        get => $this->state === ProcessState::Running;
     }
 
-    private ?ChildProcess $process = null;
-    /** @var Deferred<null>|null */
-    private ?Deferred $readinessDeferred = null;
-    private ?TimerInterface $gracefulTimer = null;
-    private ?TimerInterface $forceTimer = null;
-    /** @var list<\Closure(): void> */
+    private ?StreamingProcessHandle $handle = null;
+
+    /** @var list<Closure(): void> */
     private array $crashCallbacks = [];
-    /** @var list<\Closure(string): void> */
+
+    /** @var list<Closure(string): void> */
     private array $outputCallbacks = [];
-    // Tracks whether stop() was intentionally called so onExit() does not fire crash callbacks.
+
     private bool $stopping = false;
 
     public function __construct(Process $config)
@@ -40,220 +50,190 @@ final class ManagedProcess
         $this->config = $config;
     }
 
-    public function start(Multiplexer $output): void
+    public function start(ExecutionScope $scope, Multiplexer $output): void
     {
         $this->state = ProcessState::Starting;
-        $this->readinessDeferred = new Deferred();
+        $this->stopping = false;
 
+        $argv = self::buildArgv($this->config->command);
         $env = $this->config->env !== [] ? $this->config->env : null;
-        // exec: replaces the shell wrapper so $process->getPid() returns the real PID
-        // and signals reach the actual command, not just the shell.
-        $command = PHP_OS_FAMILY !== 'Windows'
-            ? 'exec ' . $this->config->command
-            : $this->config->command;
-        $process = new ChildProcess($command, $this->config->cwd, $env);
-        $process->start(Loop::get());
-        $this->process = $process;
 
-        $this->pid = $process->getPid();
+        $process = StreamingProcess::command($argv);
+        if ($this->config->cwd !== null) {
+            $process = $process->withCwd($this->config->cwd);
+        }
+        if ($env !== null) {
+            $process = $process->withEnv($env);
+        }
+
+        $handle = $process->start($scope);
+        $this->handle = $handle;
+        $this->pid = $handle->pid();
 
         if ($this->config->readinessProbe->isImmediate()) {
-            $this->transitionReady();
+            $this->state = ProcessState::Running;
         }
 
-        /** @var \React\Stream\ReadableStreamInterface|null $stdout */
-        $stdout = $process->stdout;
-        /** @var \React\Stream\ReadableStreamInterface|null $stderr */
-        $stderr = $process->stderr;
+        $self = $this;
+        $name = $this->config->name;
+        $readinessProbe = $this->config->readinessProbe;
+        $reloadProbe = $this->config->reloadProbe;
 
-        if ($stdout !== null && $stderr !== null) {
-            $output->attach($this->config->name, $stdout, $stderr);
-        }
+        $scope->go(static function () use ($self, $scope, $handle, $output, $name, $readinessProbe, $reloadProbe): void {
+            $lineBuffer = '';
 
-        $deferred = $this->readinessDeferred;
+            while ($handle->isRunning() && !$scope->isCancelled) {
+                $stdoutChunk = $handle->getIncrementalOutput();
+                $stderrChunk = $handle->getIncrementalErrorOutput();
 
-        if (!$this->config->readinessProbe->isImmediate() && $stdout !== null && $deferred !== null) {
-            $this->watchReadiness($stdout, $this->config->readinessProbe, $deferred);
-        }
+                if ($stdoutChunk !== '') {
+                    $output->writeOutput($name, $stdoutChunk);
+                    $lineBuffer .= $stdoutChunk;
 
-        if ($this->config->reloadProbe !== null && $stdout !== null) {
-            $this->watchReloadProbe($stdout, $this->config->reloadProbe, $this->outputCallbacks);
-        }
+                    while (($pos = strpos($lineBuffer, "\n")) !== false) {
+                        $line = substr($lineBuffer, 0, $pos);
+                        $lineBuffer = substr($lineBuffer, $pos + 1);
 
-        // Non-static: calls $this->onExit() to handle state transition and readiness rejection.
-        // Cycle is bounded — 'exit' fires exactly once, after which $this->process is a dead handle.
-        $process->on('exit', function (?int $code, mixed $signal): void {
-            $this->onExit($code);
-        });
+                        if (
+                            !$readinessProbe->isImmediate()
+                            && $self->state === ProcessState::Starting
+                            && $readinessProbe->matches($line)
+                        ) {
+                            $self->state = ProcessState::Running;
+                        }
+
+                        if ($reloadProbe !== null && $reloadProbe->matches($line)) {
+                            foreach ($self->outputCallbacks as $cb) {
+                                $cb($line);
+                            }
+                        }
+                    }
+                }
+
+                if ($stderrChunk !== '') {
+                    $output->writeError($name, $stderrChunk);
+                }
+
+                $scope->delay(0.02);
+            }
+
+            // Final drain — capture any bytes that arrived between the last
+            // poll and the exit detection, then flush remaining buffers.
+            $stdoutChunk = $handle->getIncrementalOutput();
+            if ($stdoutChunk !== '') {
+                $output->writeOutput($name, $stdoutChunk);
+            }
+            $stderrChunk = $handle->getIncrementalErrorOutput();
+            if ($stderrChunk !== '') {
+                $output->writeError($name, $stderrChunk);
+            }
+            $output->flush($name);
+
+            $self->onProcessExit($handle);
+        }, name: 'skopos.drain.' . $name);
     }
 
-    public function onCrash(\Closure $callback): void
+    public function onCrash(Closure $callback): void
     {
         $this->crashCallbacks[] = $callback;
     }
 
-    /** @param \Closure(string): void $callback */
-    public function onOutput(\Closure $callback): void
+    /** @param Closure(string): void $callback */
+    public function onOutput(Closure $callback): void
     {
         $this->outputCallbacks[] = $callback;
     }
 
-    /** @return PromiseInterface<null> */
-    public function readiness(): PromiseInterface
+    public function waitUntilReady(ExecutionScope $scope, float $timeout = 30.0): void
     {
-        if ($this->readinessDeferred === null) {
-            return resolve(null);
+        $deadline = microtime(true) + $timeout;
+
+        while ($this->state === ProcessState::Starting) {
+            $scope->throwIfCancelled();
+
+            if (microtime(true) >= $deadline) {
+                throw new \RuntimeException(
+                    "Process '{$this->config->name}' did not become ready within {$timeout}s"
+                );
+            }
+
+            $scope->delay(0.02);
         }
 
-        return $this->readinessDeferred->promise();
-    }
-
-    /** @return PromiseInterface<null> */
-    public function restart(Multiplexer $output): PromiseInterface
-    {
-        $this->stopping = true;
-
-        return $this->stop(gracefulTimeout: 2.0, forceTimeout: 5.0)->then(function () use ($output): null {
-            $this->stopping = false;
-            $this->start($output);
-            return null;
-        });
-    }
-
-    /** @return PromiseInterface<null> */
-    public function stop(float $gracefulTimeout = 5.0, float $forceTimeout = 10.0): PromiseInterface
-    {
-        if ($this->process === null || !$this->process->isRunning()) {
-            $this->state = ProcessState::Stopped;
-            return resolve(null);
-        }
-
-        $this->stopping = true;
-
-        /** @var Deferred<null> $deferred */
-        $deferred = new Deferred(static function (): void {
-        });
-
-        $process = $this->process;
-
-        // Non-static: resolves $deferred on exit, accesses $this->cancelStopTimers().
-        // Cycle is bounded — fires exactly once on process exit.
-        $process->on('exit', function () use ($deferred): void {
-            $this->cancelStopTimers();
-            $this->state = ProcessState::Stopped;
-            $deferred->resolve(null);
-        });
-
-        $process->terminate(\SIGTERM);
-
-        $this->gracefulTimer = Loop::addTimer($gracefulTimeout, static function () use ($process): void {
-            if ($process->isRunning()) {
-                $process->terminate(\SIGTERM);
-            }
-        });
-
-        $this->forceTimer = Loop::addTimer($forceTimeout, static function () use ($process): void {
-            if ($process->isRunning()) {
-                $process->terminate(\SIGKILL);
-            }
-        });
-
-        return $deferred->promise();
-    }
-
-    /** @param Deferred<null> $deferred */
-    private function watchReadiness(
-        \React\Stream\ReadableStreamInterface $stdout,
-        ReadinessProbe $probe,
-        Deferred $deferred,
-    ): void {
-        $resolved = false;
-
-        $stdout->on('data', static function (string $chunk) use ($probe, $deferred, &$resolved): void {
-            if ($resolved) {
-                return;
-            }
-
-            foreach (explode("\n", $chunk) as $line) {
-                if ($probe->matches($line)) {
-                    $resolved = true;
-                    $deferred->resolve(null);
-                    return;
-                }
-            }
-        });
-    }
-
-    /** @param list<\Closure(string): void> $callbacks */
-    private function watchReloadProbe(
-        \React\Stream\ReadableStreamInterface $stdout,
-        ReadinessProbe $probe,
-        array &$callbacks,
-    ): void {
-        $stdout->on('data', static function (string $chunk) use ($probe, &$callbacks): void {
-            foreach (explode("\n", $chunk) as $line) {
-                if ($probe->matches($line)) {
-                    foreach ($callbacks as $callback) {
-                        $callback($line);
-                    }
-                    return;
-                }
-            }
-        });
-    }
-
-    private function transitionReady(): void
-    {
-        $this->state = ProcessState::Ready;
-
-        $deferred = $this->readinessDeferred;
-        $this->readinessDeferred = null;
-
-        Loop::futureTick(static function () use ($deferred): void {
-            $deferred?->resolve(null);
-        });
-
-        $this->state = ProcessState::Running;
-    }
-
-    private function onExit(?int $code): void
-    {
-        $this->cancelStopTimers();
-        $this->pid = null;
-
-        $pendingDeferred = $this->readinessDeferred;
-        $this->readinessDeferred = null;
-
-        if ($pendingDeferred !== null) {
-            $pendingDeferred->reject(
-                new \RuntimeException(
-                    "Process '{$this->config->name}' exited (code {$code}) before becoming ready"
-                )
+        if ($this->state === ProcessState::Crashed || $this->state === ProcessState::Stopped) {
+            throw new \RuntimeException(
+                "Process '{$this->config->name}' exited before becoming ready (state: {$this->state->name})"
             );
         }
+    }
 
-        if ($this->state !== ProcessState::Stopped) {
-            $this->state = ($code === 0 || $this->stopping) ? ProcessState::Stopped : ProcessState::Crashed;
+    public function restart(ExecutionScope $scope, Multiplexer $output): void
+    {
+        $this->stop();
+        $this->start($scope, $output);
+    }
+
+    public function stop(float $gracefulTimeout = 2.0, float $forceTimeout = 5.0): void
+    {
+        $handle = $this->handle;
+        if ($handle === null) {
+            $this->state = ProcessState::Stopped;
+            return;
         }
 
-        if ($this->state === ProcessState::Crashed && !$this->stopping) {
-            foreach ($this->crashCallbacks as $callback) {
-                $callback();
-            }
-            $this->crashCallbacks = [];
+        $this->stopping = true;
+        $this->handle = null;
+
+        if ($handle->isRunning()) {
+            $handle->stop($gracefulTimeout, $forceTimeout);
+        } else {
+            $handle->close('skopos.stop');
         }
     }
 
-    private function cancelStopTimers(): void
+    /**
+     * Internal: invoked by the drain coroutine when the underlying handle
+     * stops running. Public-but-internal because the closure cannot reach
+     * a private method on $self after PHP's scope binding rules apply to
+     * static closures.
+     */
+    public function onProcessExit(StreamingProcessHandle $handle): void
     {
-        if ($this->gracefulTimer !== null) {
-            Loop::cancelTimer($this->gracefulTimer);
-            $this->gracefulTimer = null;
+        if ($handle !== $this->handle && $this->handle !== null) {
+            // A newer handle has taken over — old drain coroutine for a
+            // restarted process is exiting. Don't transition state.
+            return;
         }
 
-        if ($this->forceTimer !== null) {
-            Loop::cancelTimer($this->forceTimer);
-            $this->forceTimer = null;
+        $this->pid = null;
+        $wasStopping = $this->stopping;
+
+        if ($this->state !== ProcessState::Stopped) {
+            $this->state = $wasStopping ? ProcessState::Stopped : ProcessState::Crashed;
         }
+
+        if (!$wasStopping && $this->state === ProcessState::Crashed) {
+            $callbacks = $this->crashCallbacks;
+            $this->crashCallbacks = [];
+            foreach ($callbacks as $cb) {
+                $cb();
+            }
+        }
+
+        $this->handle = null;
+    }
+
+    /** @return non-empty-list<string> */
+    private static function buildArgv(string $command): array
+    {
+        $trimmed = trim($command);
+        if ($trimmed === '') {
+            throw new \RuntimeException('Skopos: empty command');
+        }
+
+        // Use a shell to preserve operator/quoting semantics that dev
+        // configs commonly rely on (env VAR=val cmd, redirects, &&). exec
+        // replaces the shell with the command so signals reach the real PID.
+        return ['sh', '-c', 'exec ' . $trimmed];
     }
 }

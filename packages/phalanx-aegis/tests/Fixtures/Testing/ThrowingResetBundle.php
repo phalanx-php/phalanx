@@ -15,6 +15,7 @@ final class ThrowingResetBundle extends ServiceBundle
     {
     }
 
+    #[\Override]
     public static function lens(): TestLens
     {
         return TestLens::of(ThrowingResetLens::class);

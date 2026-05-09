@@ -9,7 +9,7 @@ use PHPUnit\Framework\Assert;
 final class InterleavingProbe
 {
     /** @var list<string> */
-    public private(set) array $events = [];
+    private(set) array $events = [];
 
     public function checkpoint(string $label): void
     {

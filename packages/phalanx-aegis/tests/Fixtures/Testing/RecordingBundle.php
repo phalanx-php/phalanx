@@ -15,6 +15,7 @@ final class RecordingBundle extends ServiceBundle
     {
     }
 
+    #[\Override]
     public static function lens(): TestLens
     {
         return TestLens::of(RecordingLens::class);

@@ -42,10 +42,10 @@ final class CapabilityInterfacesTest extends TestCase
     #[Test]
     public function responds_satisfies_interface_with_backed_property(): void
     {
-        // Preferred form: backed property with public private(set), no hook ceremony.
+        // Preferred form: backed property with private(set), no hook ceremony.
         $handler = new class implements Responds {
             /** @var array<int, class-string> */
-            public private(set) array $responseTypes = [
+            private(set) array $responseTypes = [
                 201 => \stdClass::class,
                 409 => \RuntimeException::class,
             ];

@@ -6,10 +6,10 @@ namespace Phalanx\Eidolon\Signal;
 
 final class EventSignal implements Signal
 {
-    public private(set) string $name;
+    private(set) string $name;
 
     /** @var array<string, mixed> */
-    public private(set) array $payload;
+    private(set) array $payload;
 
     public SignalType $type {
         get => SignalType::Event;

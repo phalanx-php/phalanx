@@ -35,11 +35,11 @@ final class CancellationPropagationTimingTest extends CoroutineTestCase
     public function testConcurrentCancelsWithinBudget(): void
     {
         $this->assertCancelTimingOf(static function (ExecutionScope $scope): void {
-            $scope->concurrent(...[
-                'a' => Task::of(static fn(ExecutionScope $s) => $s->delay(5.0)),
-                'b' => Task::of(static fn(ExecutionScope $s) => $s->delay(5.0)),
-                'c' => Task::of(static fn(ExecutionScope $s) => $s->delay(5.0)),
-            ]);
+            $scope->concurrent(
+                a: Task::of(static fn(ExecutionScope $s) => $s->delay(5.0)),
+                b: Task::of(static fn(ExecutionScope $s) => $s->delay(5.0)),
+                c: Task::of(static fn(ExecutionScope $s) => $s->delay(5.0)),
+            );
         });
     }
 
@@ -147,7 +147,7 @@ final class CancellationPropagationTimingTest extends CoroutineTestCase
                 $body($scope);
             } catch (Cancelled) {
                 $cancelled = true;
-            } catch (\Throwable $e) {
+            } catch (\Throwable) {
                 // Some primitives (settle) wrap, some throw; either way we care
                 // that elapsed is under budget and ledger drains.
                 $cancelled = true;

@@ -13,9 +13,9 @@
     "homepage": "https://github.com/phalanx-php/phalanx-eidolon",
     "require": {
         "php": "^8.4",
-        "phalanx-php/aegis": "^0.5",
-        "phalanx-php/stoa": "^0.5",
-        "phalanx-php/styx": "^0.5"
+        "phalanx-php/aegis": "^0.6",
+        "phalanx-php/stoa": "^0.6",
+        "phalanx-php/styx": "^0.6"
     },
     "suggest": {
         "phalanx-php/hermes": "For WebSocket signal transport",
@@ -33,7 +33,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-main": "0.5-dev"
+            "dev-main": "0.6-dev"
         }
     },
     "minimum-stability": "dev",

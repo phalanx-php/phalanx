@@ -15,11 +15,11 @@ final class HttpResponse
 
     /** @param HeaderMap $headers */
     public function __construct(
-        public private(set) int $status,
-        public private(set) string $reasonPhrase,
-        public private(set) array $headers,
-        public private(set) string $body,
-        public private(set) string $protocolVersion = '1.1',
+        private(set) int $status,
+        private(set) string $reasonPhrase,
+        private(set) array $headers,
+        private(set) string $body,
+        private(set) string $protocolVersion = '1.1',
     ) {
     }
 

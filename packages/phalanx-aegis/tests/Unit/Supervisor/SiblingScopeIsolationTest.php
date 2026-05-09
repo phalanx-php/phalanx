@@ -45,10 +45,10 @@ final class SiblingScopeIsolationTest extends CoroutineTestCase
             });
 
             $scope = $app->createScope();
-            $results = $scope->concurrent(...[
-                'a' => $task1,
-                'b' => $task2,
-            ]);
+            $results = $scope->concurrent(
+                a: $task1,
+                b: $task2,
+            );
             $scope->dispose();
 
             // Each child has its own scoped Counter — different object ids.
@@ -76,7 +76,7 @@ final class SiblingScopeIsolationTest extends CoroutineTestCase
             });
 
             $scope = $app->createScope();
-            $scope->concurrent(...['a' => $task1, 'b' => $task2]);
+            $scope->concurrent(a: $task1, b: $task2);
             $scope->dispose();
 
             // Same singleton object — pool depth is not amplified.
@@ -108,7 +108,7 @@ final class SiblingScopeIsolationTest extends CoroutineTestCase
             $start = microtime(true);
             $caught = null;
             try {
-                $scope->concurrent(...['only' => $task]);
+                $scope->concurrent(only: $task);
             } catch (Cancelled $e) {
                 $caught = $e;
             } finally {
@@ -143,7 +143,7 @@ final class SiblingScopeIsolationTest extends CoroutineTestCase
             });
 
             $scope = $app->createScope();
-            $value = $scope->race(...['fast' => $winner, 'slow' => $loser]);
+            $value = $scope->race(fast: $winner, slow: $loser);
             $scope->dispose();
 
             self::assertSame('winner', $value);
@@ -165,7 +165,7 @@ final class SiblingScopeIsolationTest extends CoroutineTestCase
                 return 'ok';
             });
             $outer = Task::of(static function (ExecutionScope $s) use ($inner): array {
-                return $s->concurrent(...['a' => $inner, 'b' => $inner]);
+                return $s->concurrent(a: $inner, b: $inner);
             });
 
             $scope = $app->createScope();

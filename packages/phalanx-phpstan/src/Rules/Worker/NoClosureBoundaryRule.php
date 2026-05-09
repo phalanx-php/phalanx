@@ -21,7 +21,7 @@ use PHPStan\Type\ObjectType;
  */
 final class NoClosureBoundaryRule implements Rule
 {
-    private const IDENTIFIER = 'phalanx.worker.noClosureBoundary';
+    private const string IDENTIFIER = 'phalanx.worker.noClosureBoundary';
 
     public function __construct(private readonly PathPolicy $paths)
     {

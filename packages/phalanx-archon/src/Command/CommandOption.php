@@ -12,11 +12,11 @@ namespace Phalanx\Archon\Command;
 final class CommandOption
 {
     public function __construct(
-        public private(set) string $name,
-        public private(set) string $shorthand = '',
-        public private(set) string $description = '',
-        public private(set) bool $requiresValue = false,
-        public private(set) mixed $default = null,
+        private(set) string $name,
+        private(set) string $shorthand = '',
+        private(set) string $description = '',
+        private(set) bool $requiresValue = false,
+        private(set) mixed $default = null,
     ) {
     }
 }

@@ -22,6 +22,7 @@ final class Runtime extends GenericRuntime
         parent::__construct($options);
     }
 
+    #[\Override]
     public function getRunner(?object $application): RunnerInterface
     {
         if ($application instanceof StoaApplication) {

@@ -141,19 +141,19 @@ PHP);
     }
 
     #[Test]
-    public function protocolSlotsFailClearlyUntilNativeImplementationsLand(): void
+    public function websocketsRedirectsCallersToHermes(): void
     {
         $this->expectException(LogicException::class);
-        $this->expectExceptionMessage('Native WebSocket protocol slots are reserved');
+        $this->expectExceptionMessage('Use the Hermes WebSocket integration directly');
 
         self::stoa()->websockets(RouteGroup::of([]));
     }
 
     #[Test]
-    public function udpProtocolSlotFailsClearlyUntilNativeImplementationLands(): void
+    public function udpRedirectsCallersToUdpListener(): void
     {
         $this->expectException(LogicException::class);
-        $this->expectExceptionMessage('Native UDP protocol slots are reserved');
+        $this->expectExceptionMessage('Use Phalanx\\Stoa\\Udp\\UdpListener directly');
 
         self::stoa()->udp(RouteGroup::of([]));
     }

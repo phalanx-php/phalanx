@@ -4,100 +4,140 @@ declare(strict_types=1);
 
 namespace Phalanx\Skopos\LiveReload;
 
-use React\Http\HttpServer;
-use React\Http\Message\Response;
-use React\Socket\SocketServer;
-use React\Stream\ThroughStream;
+use OpenSwoole\Coroutine\Http\Server as CoroutineHttpServer;
+use OpenSwoole\Http\Request;
+use OpenSwoole\Http\Response;
+use Phalanx\Cancellation\Cancelled;
+use Phalanx\Scope\ExecutionScope;
+use Throwable;
 
-use Psr\Http\Message\ServerRequestInterface;
-
+/**
+ * In-process LiveReload HTTP server using OpenSwoole's coroutine HTTP
+ * server primitive. Lives inside the Skopos main coroutine context as a
+ * supervised task — the server's start() blocks the calling coroutine,
+ * so callers should run it via $scope->go() / $scope->defer().
+ *
+ * Two endpoints:
+ *
+ *   GET /livereload.js  — serves the EventSource client (CORS *)
+ *   GET /sse            — opens an SSE channel; handler holds the response
+ *                         open and registers it with BroadcasterChannel
+ *
+ * Cancellation: stop() drains BroadcasterChannel, calls shutdown() on the
+ * underlying server. The SSE handler coroutines unblock when their parent
+ * scope is cancelled; the heartbeat loop is sized so disconnects are
+ * detected within ~5s.
+ */
 final class Server
 {
-    /** @var \SplObjectStorage<ThroughStream, true> */
-    private \SplObjectStorage $clients;
-    private ?HttpServer $httpServer = null;
-    private ?SocketServer $socket = null;
-    private int $port;
-
-    private function __construct(int $port)
-    {
-        $this->port = $port;
-        $this->clients = new \SplObjectStorage();
+    public bool $isStopping {
+        get => $this->stopping;
     }
 
-    public static function on(int $port = 35729): self
-    {
-        return new self($port);
+    private ?CoroutineHttpServer $server = null;
+
+    private bool $stopping = false;
+
+    public function __construct(
+        private(set) int $port,
+        private readonly BroadcasterChannel $broadcaster,
+        private readonly string $host = '0.0.0.0',
+    ) {
     }
 
-    public function start(): void
+    public static function on(int $port, BroadcasterChannel $broadcaster): self
     {
-        $clients = $this->clients;
+        return new self($port, $broadcaster);
+    }
+
+    /**
+     * Blocks the calling coroutine until stop() is invoked. Run inside
+     * $scope->go() so the server runs alongside other supervised tasks.
+     */
+    public function start(ExecutionScope $scope): void
+    {
+        $server = new CoroutineHttpServer($this->host, $this->port);
+        $this->server = $server;
+        $this->stopping = false;
+
+        $broadcaster = $this->broadcaster;
         $port = $this->port;
 
-        $this->httpServer = new HttpServer(static function (ServerRequestInterface $request) use ($clients, $port): Response {
-            $path = $request->getUri()->getPath();
+        $server->handle(
+            '/livereload.js',
+            static function (Request $request, Response $response) use ($port): void {
+                $method = $request->server['request_method'] ?? 'GET';
 
-            if ($path === '/livereload.js') {
-                return new Response(
-                    200,
-                    [
-                        'Content-Type' => 'application/javascript',
-                        'Access-Control-Allow-Origin' => '*',
-                    ],
-                    ClientScript::js($port),
-                );
-            }
+                $response->status(200);
+                $response->header('Content-Type', 'application/javascript');
+                $response->header('Access-Control-Allow-Origin', '*');
+                $response->end($method === 'HEAD' ? '' : ClientScript::js($port));
+            },
+        );
 
-            if ($path === '/sse') {
-                $stream = new ThroughStream();
-                $clients->attach($stream, true);
+        $server->handle(
+            '/sse',
+            static function (Request $request, Response $response) use ($broadcaster, $scope): void {
+                $method = $request->server['request_method'] ?? 'GET';
+                if ($method !== 'GET') {
+                    $response->status(405);
+                    $response->end('Method Not Allowed');
+                    return;
+                }
 
-                $stream->on('close', static function () use ($clients, $stream): void {
-                    $clients->detach($stream);
-                });
+                $response->status(200);
+                $response->header('Content-Type', 'text/event-stream');
+                $response->header('Cache-Control', 'no-cache');
+                $response->header('Connection', 'keep-alive');
+                $response->header('X-Accel-Buffering', 'no');
+                $response->header('Access-Control-Allow-Origin', '*');
 
-                return new Response(
-                    200,
-                    [
-                        'Content-Type' => 'text/event-stream',
-                        'Cache-Control' => 'no-cache',
-                        'Connection' => 'keep-alive',
-                        'Access-Control-Allow-Origin' => '*',
-                    ],
-                    $stream,
-                );
-            }
+                if ($response->write(": connected\n\n") === false) {
+                    return;
+                }
 
-            return new Response(404, [], 'Not Found');
+                $id = $broadcaster->subscribe($response);
+
+                try {
+                    while (!$scope->isCancelled && $response->isWritable()) {
+                        $scope->delay(5.0);
+                        if ($response->write(": heartbeat\n\n") === false) {
+                            break;
+                        }
+                    }
+                } catch (Cancelled $e) {
+                    throw $e;
+                } catch (Throwable) {
+                } finally {
+                    $broadcaster->unsubscribe($id);
+
+                    try {
+                        if ($response->isWritable()) {
+                            $response->end();
+                        }
+                    } catch (Cancelled $e) {
+                        throw $e;
+                    } catch (Throwable) {
+                    }
+                }
+            },
+        );
+
+        $server->handle('/', static function (Request $request, Response $response): void {
+            $path = $request->server['request_uri'] ?? '/';
+
+            $response->status(404);
+            $response->end("Not Found: {$path}");
         });
 
-        $this->socket = new SocketServer("0.0.0.0:{$this->port}");
-        $this->httpServer->listen($this->socket);
-    }
-
-    public function reload(): void
-    {
-        /** @var list<ThroughStream> $streams */
-        $streams = iterator_to_array($this->clients);
-
-        foreach ($streams as $stream) {
-            $stream->write("data: reload\n\n");
-        }
+        $server->start();
     }
 
     public function stop(): void
     {
-        /** @var list<ThroughStream> $streams */
-        $streams = iterator_to_array($this->clients);
-        $this->clients = new \SplObjectStorage();
-
-        foreach ($streams as $stream) {
-            $stream->end();
-        }
-
-        $this->socket?->close();
-        $this->socket = null;
-        $this->httpServer = null;
+        $this->stopping = true;
+        $this->broadcaster->closeAll();
+        $this->server?->shutdown();
+        $this->server = null;
     }
 }

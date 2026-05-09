@@ -5,12 +5,16 @@ declare(strict_types=1);
 namespace Phalanx\Grammata\Tests\Unit;
 
 use Phalanx\Grammata\FilePool;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\Suspendable;
-use PHPUnit\Framework\TestCase;
+use Phalanx\Styx\Channel;
+use Phalanx\Testing\PhalanxTestCase;
+use PHPUnit\Framework\Attributes\Test;
 
-final class FilePoolTest extends TestCase
+final class FilePoolTest extends PhalanxTestCase
 {
-    public function test_acquire_within_limit(): void
+    #[Test]
+    public function acquireWithinLimit(): void
     {
         $pool = new FilePool(maxOpen: 3);
         $scope = $this->createStub(Suspendable::class);
@@ -22,7 +26,8 @@ final class FilePoolTest extends TestCase
         $this->assertSame(3, $pool->activeCount);
     }
 
-    public function test_release_decrements(): void
+    #[Test]
+    public function releaseDecrements(): void
     {
         $pool = new FilePool(maxOpen: 10);
         $scope = $this->createStub(Suspendable::class);
@@ -35,7 +40,53 @@ final class FilePoolTest extends TestCase
         $this->assertSame(1, $pool->activeCount);
     }
 
-    public function test_waiting_count(): void
+    #[Test]
+    public function waitingAcquireResumesWhenSlotIsReleased(): void
+    {
+        $this->scope->run(static function (ExecutionScope $scope): void {
+            $pool = new FilePool(maxOpen: 1);
+            $started = new Channel(bufferSize: 1);
+            $resumed = new Channel(bufferSize: 1);
+            $finish = new Channel(bufferSize: 1);
+            $released = new Channel(bufferSize: 1);
+
+            $pool->acquire($scope);
+
+            $scope->go(static function (ExecutionScope $childScope) use (
+                $pool,
+                $finish,
+                $started,
+                $resumed,
+                $released,
+            ): void {
+                $started->emit(true);
+                $pool->acquire($childScope);
+                $resumed->emit(true);
+                $finish->next();
+                $pool->release();
+                $released->emit(true);
+            });
+
+            $started->next();
+
+            self::assertSame(1, $pool->activeCount);
+            self::assertSame(1, $pool->waitingCount);
+
+            $pool->release();
+            $resumed->next();
+
+            self::assertSame(1, $pool->activeCount);
+            self::assertSame(0, $pool->waitingCount);
+
+            $finish->emit(true);
+            $released->next();
+
+            self::assertSame(0, $pool->activeCount);
+        });
+    }
+
+    #[Test]
+    public function waitingCount(): void
     {
         $pool = new FilePool(maxOpen: 1);
 

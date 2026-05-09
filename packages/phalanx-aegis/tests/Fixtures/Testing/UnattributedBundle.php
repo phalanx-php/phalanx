@@ -15,6 +15,7 @@ final class UnattributedBundle extends ServiceBundle
     {
     }
 
+    #[\Override]
     public static function lens(): TestLens
     {
         return TestLens::of(UnattributedLens::class);

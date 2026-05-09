@@ -21,6 +21,7 @@ class RedisServiceBundle extends ServiceBundle
      * No TCP probe here: connection attempts happen at first pool checkout,
      * not at boot.
      */
+    #[\Override]
     public static function harness(): BootHarness
     {
         return BootHarness::of(

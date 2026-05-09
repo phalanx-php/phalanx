@@ -4,50 +4,56 @@ declare(strict_types=1);
 
 namespace Phalanx\Skopos;
 
-use React\EventLoop\Loop;
-use React\EventLoop\TimerInterface;
+use Closure;
+use Phalanx\Scope\Subscription;
+use Phalanx\Scope\TaskExecutor;
 
+/**
+ * Periodic mtime poller. Schedules a tick on the supplied scope; the
+ * Subscription returned by scope.periodic() also auto-cancels on scope
+ * disposal, so even callers that never invoke stop() leak nothing.
+ */
 final class FileWatcher
 {
-    private ?TimerInterface $pollTimer = null;
+    private ?Subscription $subscription = null;
+
     /** @var array<string, int> path => mtime */
     private array $snapshot = [];
 
     /**
      * @param list<string> $paths
      * @param list<string> $extensions
-     * @param \Closure(list<string>): void $onChange
+     * @param Closure(list<string>): void $onChange
      */
     public function __construct(
         private readonly array $paths,
         private readonly array $extensions,
-        private readonly \Closure $onChange,
+        private readonly Closure $onChange,
         private readonly float $interval = 1.0,
         private readonly ?string $cwd = null,
     ) {
     }
 
-    public function start(): void
+    public function start(TaskExecutor $scope): void
     {
         $this->snapshot = $this->scan();
 
-        $this->pollTimer = Loop::addPeriodicTimer($this->interval, function (): void {
-            $current = $this->scan();
-            $changed = self::diff($this->snapshot, $current);
-            $this->snapshot = $current;
+        $self = $this;
+        $this->subscription = $scope->periodic($this->interval, static function () use ($self): void {
+            $current = $self->scan();
+            $changed = self::diff($self->snapshot, $current);
+            $self->snapshot = $current;
 
             if ($changed !== []) {
-                ($this->onChange)($changed);
+                ($self->onChange)($changed);
             }
         });
     }
 
     public function stop(): void
     {
-        if ($this->pollTimer !== null) {
-            Loop::cancelTimer($this->pollTimer);
-            $this->pollTimer = null;
-        }
+        $this->subscription?->cancel();
+        $this->subscription = null;
     }
 
     /**

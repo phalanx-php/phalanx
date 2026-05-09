@@ -14,11 +14,11 @@ final class WsConfig extends HandlerConfig
      * @param list<class-string> $middleware
      */
     public function __construct(
-        public private(set) int $maxMessageSize = 65536,
-        public private(set) int $maxFrameSize = 65536,
-        public private(set) float $pingInterval = 30.0,
-        public private(set) float $closeTimeout = 5.0,
-        public private(set) array $subprotocols = [],
+        private(set) int $maxMessageSize = 65536,
+        private(set) int $maxFrameSize = 65536,
+        private(set) float $pingInterval = 30.0,
+        private(set) float $closeTimeout = 5.0,
+        private(set) array $subprotocols = [],
         array $tags = [],
         int $priority = 0,
         array $middleware = [],

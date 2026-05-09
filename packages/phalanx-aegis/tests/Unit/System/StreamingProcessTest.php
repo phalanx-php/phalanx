@@ -62,7 +62,7 @@ final class StreamingProcessTest extends PhalanxTestCase
                 '$line = fgets(STDIN); fwrite(STDOUT, strtoupper($line)); fflush(STDOUT);',
             )->start($scope);
 
-            $written = $handle->write("athena\n");
+            $written = $handle->write("sparta\n");
             $line = $handle->readLine(1.0);
             $exitCode = $handle->wait(1.0);
             $handle->close('test-stdin');
@@ -70,7 +70,7 @@ final class StreamingProcessTest extends PhalanxTestCase
             return [$written, $line, $exitCode, $scope->runtime->memory->resources->liveCount(AegisResourceSid::StreamingProcess)];
         });
 
-        self::assertSame([7, "ATHENA\n", 0, 0], $result);
+        self::assertSame([7, "SPARTA\n", 0, 0], $result);
     }
 
     public function testReadsStdoutLinesAndStderrChunks(): void
@@ -98,7 +98,7 @@ final class StreamingProcessTest extends PhalanxTestCase
             $handle = StreamingProcess::from(
                 PHP_BINARY,
                 '-r',
-                'fwrite(STDERR, "athena"); fflush(STDERR);',
+                'fwrite(STDERR, "sparta"); fflush(STDERR);',
             )->start($scope);
 
             $handle->wait(1.0);
@@ -109,13 +109,13 @@ final class StreamingProcessTest extends PhalanxTestCase
             return [$first, $second];
         });
 
-        self::assertSame(['ath', 'ena'], $result);
+        self::assertSame(['spa', 'rta'], $result);
     }
 
     public function testReadLineReturnsFinalUnterminatedOutputAtEof(): void
     {
         $result = $this->scope->run(static function (ExecutionScope $scope): string {
-            $handle = StreamingProcess::from(PHP_BINARY, '-r', 'fwrite(STDOUT, "athena");')->start($scope);
+            $handle = StreamingProcess::from(PHP_BINARY, '-r', 'fwrite(STDOUT, "sparta");')->start($scope);
             $handle->wait(1.0);
             $line = $handle->readLine(1.0);
             $handle->close('test-unterminated');
@@ -123,7 +123,7 @@ final class StreamingProcessTest extends PhalanxTestCase
             return $line;
         });
 
-        self::assertSame('athena', $result);
+        self::assertSame('sparta', $result);
     }
 
     public function testReadLineTimeoutReturnsEmptyWithoutBlockingScheduler(): void

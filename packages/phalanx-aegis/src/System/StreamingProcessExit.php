@@ -11,12 +11,12 @@ class StreamingProcessExit
     }
 
     public function __construct(
-        public private(set) int $pid,
-        public private(set) int $exitCode,
-        public private(set) int $signal,
-        public private(set) float $durationMs,
-        public private(set) bool $stopped = false,
-        public private(set) bool $killed = false,
+        private(set) int $pid,
+        private(set) int $exitCode,
+        private(set) int $signal,
+        private(set) float $durationMs,
+        private(set) bool $stopped = false,
+        private(set) bool $killed = false,
     ) {
     }
 }

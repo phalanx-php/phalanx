@@ -9,16 +9,16 @@ use Phalanx\Boot\AppContext;
 class SurrealConfig
 {
     public function __construct(
-        public private(set) string $namespace,
-        public private(set) string $database,
-        public private(set) string $endpoint = 'http://127.0.0.1:8000',
-        public private(set) ?string $websocketEndpoint = null,
-        public private(set) ?string $username = null,
-        public private(set) ?string $password = null,
-        public private(set) ?string $token = null,
-        public private(set) float $connectTimeout = 5.0,
-        public private(set) float $readTimeout = 30.0,
-        public private(set) int $maxResponseBytes = 16 * 1024 * 1024,
+        private(set) string $namespace,
+        private(set) string $database,
+        private(set) string $endpoint = 'http://127.0.0.1:8000',
+        private(set) ?string $websocketEndpoint = null,
+        private(set) ?string $username = null,
+        private(set) ?string $password = null,
+        private(set) ?string $token = null,
+        private(set) float $connectTimeout = 5.0,
+        private(set) float $readTimeout = 30.0,
+        private(set) int $maxResponseBytes = 16 * 1024 * 1024,
     ) {
         $this->endpoint = rtrim($endpoint, '/');
         $this->websocketEndpoint = rtrim($websocketEndpoint ?? self::deriveWebsocketEndpoint($this->endpoint), '/');

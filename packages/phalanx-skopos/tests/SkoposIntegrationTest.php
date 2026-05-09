@@ -1,0 +1,178 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Phalanx\Skopos\Tests;
+
+use Phalanx\Runtime\Identity\AegisResourceSid;
+use Phalanx\Scope\ExecutionScope;
+use Phalanx\Skopos\FileWatcher;
+use Phalanx\Skopos\LiveReload\BroadcasterChannel;
+use Phalanx\Skopos\ManagedProcess;
+use Phalanx\Skopos\Output\Multiplexer;
+use Phalanx\Skopos\Process;
+use Phalanx\Skopos\ProcessState;
+use Phalanx\Testing\PhalanxTestCase;
+
+final class SkoposIntegrationTest extends PhalanxTestCase
+{
+    public function testManagedProcessReachesRunningOnReadinessMatch(): void
+    {
+        $config = Process::named('readiness-fixture')
+            ->command(PHP_BINARY . ' -r ' . escapeshellarg('echo "ready\n"; for ($i = 0; $i < 50; $i++) { usleep(20000); }'))
+            ->ready('/ready/');
+
+        $finalState = $this->scope->run(static function (ExecutionScope $scope) use ($config): ProcessState {
+            $output = self::nullMultiplexer();
+            $mp = new ManagedProcess($config);
+            $mp->start($scope, $output);
+            $mp->waitUntilReady($scope, timeout: 5.0);
+            $state = $mp->state;
+            $mp->stop(0.5, 1.0);
+            $scope->delay(0.1);
+            return $state;
+        });
+
+        self::assertSame(ProcessState::Running, $finalState);
+        self::assertSame(0, $this->scope->memory->resources->liveCount(AegisResourceSid::StreamingProcess));
+    }
+
+    public function testManagedProcessImmediateReadinessRunsWithoutPattern(): void
+    {
+        $config = Process::named('immediate-fixture')
+            ->command(PHP_BINARY . ' -r ' . escapeshellarg('for ($i = 0; $i < 50; $i++) { usleep(20000); }'));
+
+        $state = $this->scope->run(static function (ExecutionScope $scope) use ($config): ProcessState {
+            $output = self::nullMultiplexer();
+            $mp = new ManagedProcess($config);
+            $mp->start($scope, $output);
+            $scope->delay(0.05);
+            $observed = $mp->state;
+            $mp->stop(0.5, 1.0);
+            $scope->delay(0.1);
+            return $observed;
+        });
+
+        self::assertSame(ProcessState::Running, $state);
+        self::assertSame(0, $this->scope->memory->resources->liveCount(AegisResourceSid::StreamingProcess));
+    }
+
+    public function testManagedProcessCrashFiresCallback(): void
+    {
+        $config = Process::named('crash-fixture')
+            ->command(PHP_BINARY . ' -r ' . escapeshellarg('exit(2);'));
+
+        $crashed = $this->scope->run(static function (ExecutionScope $scope) use ($config): bool {
+            $output = self::nullMultiplexer();
+            $mp = new ManagedProcess($config);
+            $captured = false;
+            $mp->onCrash(static function () use (&$captured): void {
+                $captured = true;
+            });
+            $mp->start($scope, $output);
+
+            $deadline = microtime(true) + 2.0;
+            while ($mp->state !== ProcessState::Crashed && microtime(true) < $deadline) {
+                $scope->delay(0.02);
+            }
+
+            return $captured;
+        });
+
+        self::assertTrue($crashed);
+        self::assertSame(0, $this->scope->memory->resources->liveCount(AegisResourceSid::StreamingProcess));
+    }
+
+    public function testFileWatcherDetectsMtimeChange(): void
+    {
+        $tmpDir = self::tempDir();
+        $file = $tmpDir . '/probe.php';
+        file_put_contents($file, "<?php\n// initial\n");
+
+        $changes = $this->scope->run(static function (ExecutionScope $scope) use ($tmpDir, $file): array {
+            $captured = [];
+            $watcher = new FileWatcher(
+                paths: [$tmpDir],
+                extensions: ['php'],
+                onChange: static function (array $changed) use (&$captured): void {
+                    foreach ($changed as $c) {
+                        $captured[] = $c;
+                    }
+                },
+                interval: 0.1,
+            );
+            $watcher->start($scope);
+            $scope->delay(0.2);
+
+            // touch file with new mtime
+            touch($file, time() + 5);
+            $scope->delay(0.3);
+            $watcher->stop();
+
+            return $captured;
+        });
+
+        self::assertContains($file, $changes);
+
+        // cleanup
+        @unlink($file);
+        @rmdir($tmpDir);
+    }
+
+    public function testBroadcasterChannelHandlesEmptySubscriberSet(): void
+    {
+        $broadcaster = new BroadcasterChannel();
+        self::assertSame(0, $broadcaster->clientCount());
+
+        // Should not throw with no clients
+        $broadcaster->reload();
+        $broadcaster->closeAll();
+
+        self::assertSame(0, $broadcaster->clientCount());
+    }
+
+    public function testManagedProcessRestartsCleanly(): void
+    {
+        $config = Process::named('restart-fixture')
+            ->command(PHP_BINARY . ' -r ' . escapeshellarg('echo "ready\n"; for ($i = 0; $i < 50; $i++) { usleep(20000); }'))
+            ->ready('/ready/');
+
+        $pids = $this->scope->run(static function (ExecutionScope $scope) use ($config): array {
+            $output = self::nullMultiplexer();
+            $mp = new ManagedProcess($config);
+            $mp->start($scope, $output);
+            $mp->waitUntilReady($scope, timeout: 5.0);
+            $first = $mp->pid;
+
+            $mp->restart($scope, $output);
+            $mp->waitUntilReady($scope, timeout: 5.0);
+            $second = $mp->pid;
+
+            $mp->stop(0.5, 1.0);
+            $scope->delay(0.1);
+
+            return [$first, $second];
+        });
+
+        self::assertNotNull($pids[0]);
+        self::assertNotNull($pids[1]);
+        self::assertNotSame($pids[0], $pids[1]);
+        self::assertSame(0, $this->scope->memory->resources->liveCount(AegisResourceSid::StreamingProcess));
+    }
+
+    private static function nullMultiplexer(): Multiplexer
+    {
+        $stream = fopen('php://temp', 'wb+');
+        if ($stream === false) {
+            throw new \RuntimeException('php://temp unavailable');
+        }
+        return new Multiplexer($stream);
+    }
+
+    private static function tempDir(): string
+    {
+        $dir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'skopos-test-' . uniqid('', true);
+        mkdir($dir, 0o755, true);
+        return $dir;
+    }
+}

@@ -7,8 +7,8 @@ namespace Phalanx\Boot;
 abstract class BootRequirement
 {
     protected function __construct(
-        public private(set) string $kind,
-        public private(set) string $description,
+        private(set) string $kind,
+        private(set) string $description,
     ) {
     }
 

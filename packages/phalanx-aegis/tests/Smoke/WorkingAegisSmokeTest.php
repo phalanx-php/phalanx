@@ -76,11 +76,11 @@ final class WorkingAegisSmokeTest extends CoroutineTestCase
             $scope = $app->createScope();
             $startPool = $scope->service(SmokePool::class);
 
-            $results = $scope->concurrent(...[
-                'fetch' => new FetchUserSummary(7),
-                'audit' => new AuditWrite('login', 'user-7'),
-                'compute' => Task::of(static fn(ExecutionScope $s): int => 21 * 2),
-            ]);
+            $results = $scope->concurrent(
+                fetch: new FetchUserSummary(7),
+                audit: new AuditWrite('login', 'user-7'),
+                compute: Task::of(static fn(ExecutionScope $s): int => 21 * 2),
+            );
 
             self::assertSame('user-7 summary', $results['fetch']);
             self::assertSame('audit:login@user-7', $results['audit']);
@@ -162,16 +162,16 @@ final class WorkingAegisSmokeTest extends CoroutineTestCase
             $start = microtime(true);
             $caught = null;
             try {
-                $scope->concurrent(...[
-                    'a' => Task::of(static function (ExecutionScope $s): never {
+                $scope->concurrent(
+                    a: Task::of(static function (ExecutionScope $s): never {
                         $s->delay(5.0);
                         throw new RuntimeException('should not reach');
                     }),
-                    'b' => Task::of(static function (ExecutionScope $s): never {
+                    b: Task::of(static function (ExecutionScope $s): never {
                         $s->delay(5.0);
                         throw new RuntimeException('should not reach');
                     }),
-                ]);
+                );
             } catch (Cancelled $e) {
                 $caught = $e;
             }

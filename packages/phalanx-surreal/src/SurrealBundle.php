@@ -25,6 +25,7 @@ class SurrealBundle extends ServiceBundle
      * No TCP probe: SurrealDB may be unavailable at boot (dev containers,
      * lazy-start, etc.) — connection failures surface at query time.
      */
+    #[\Override]
     public static function harness(): BootHarness
     {
         return BootHarness::of(

@@ -52,8 +52,8 @@ final class SurrealBundleTest extends PhalanxTestCase
         );
 
         self::assertSame([
-            'namespace' => 'athena',
-            'database' => 'wisdom',
+            'namespace' => 'olympus',
+            'database' => 'pantheon',
             'endpoint' => 'http://surreal.test:8000',
             'websocketEndpoint' => 'ws://surreal.test:8000/rpc',
             'wsConnectTimeout' => 5.0,
@@ -68,8 +68,8 @@ final class SurrealBundleTest extends PhalanxTestCase
             'surreal_database' => 'context',
         ])
             ->providers(new SurrealBundle(new SurrealConfig(
-                namespace: 'athena',
-                database: 'wisdom',
+                namespace: 'olympus',
+                database: 'pantheon',
                 endpoint: 'http://surreal.test:9000',
                 connectTimeout: 1.5,
                 readTimeout: 7.5,
@@ -92,8 +92,8 @@ final class SurrealBundleTest extends PhalanxTestCase
             ));
 
         self::assertSame([
-            'namespace' => 'athena',
-            'database' => 'wisdom',
+            'namespace' => 'olympus',
+            'database' => 'pantheon',
             'endpoint' => 'http://surreal.test:9000',
             'connectTimeout' => 1.5,
             'readTimeout' => 7.5,
@@ -104,14 +104,14 @@ final class SurrealBundleTest extends PhalanxTestCase
     #[Test]
     public function surrealLocalQueryVariablesAreScopedToOneExecutionScope(): void
     {
-        $query = 'SELECT * FROM goddess WHERE name = $topic';
+        $query = 'SELECT * FROM oracle WHERE name = $topic';
         $firstParams = $this->phalanx->app->scoped(
             Task::named(
                 'test.surreal.scoped-service.first',
                 static function (ExecutionScope $scope) use ($query): array {
                     $surreal = $scope->service(Surreal::class);
 
-                    $surreal->let('topic', 'Athena');
+                    $surreal->let('topic', 'Apollo');
                     $surreal->query($query);
 
                     $transport = $scope->service(SurrealTransport::class);
@@ -135,7 +135,7 @@ final class SurrealBundleTest extends PhalanxTestCase
             ),
         );
 
-        self::assertSame([$query, ['topic' => 'Athena']], $firstParams);
+        self::assertSame([$query, ['topic' => 'Apollo']], $firstParams);
         self::assertSame([$query], $secondParams);
     }
 
@@ -177,7 +177,7 @@ final class SurrealBundleTest extends PhalanxTestCase
         $this->expectException(SurrealException::class);
         $this->expectExceptionMessage('Surreal service was used after its owning scope was disposed.');
 
-        $surreal->select('goddess:athena');
+        $surreal->select('oracle:apollo');
     }
 
     #[Test]
@@ -195,15 +195,16 @@ final class SurrealBundleTest extends PhalanxTestCase
         $this->expectException(SurrealException::class);
         $this->expectExceptionMessage('Surreal service was used after its owning scope was disposed.');
 
-        $surreal->select('goddess:athena');
+        $surreal->select('oracle:apollo');
     }
 
     /** @return array<string, mixed> */
+    #[\Override]
     protected function phalanxContext(): array
     {
         return [
-            'surreal_namespace' => 'athena',
-            'surreal_database' => 'wisdom',
+            'surreal_namespace' => 'olympus',
+            'surreal_database' => 'pantheon',
             'surreal_endpoint' => 'http://surreal.test:8000',
         ];
     }

@@ -31,6 +31,7 @@ class StoaTestableBundle extends ServiceBundle
     {
     }
 
+    #[\Override]
     public static function lens(): TestLens
     {
         return TestLens::of(HttpLens::class);

@@ -73,9 +73,9 @@ final class GracefulDrainTest extends PhalanxTestCase
                 ]));
 
             $start = hrtime(true);
-            $results = $scope->settle(...[
-                'request' => static fn(): ResponseInterface => $runner->dispatch(new ServerRequest('GET', '/stuck')),
-                'control' => static function (ExecutionScope $control) use ($runner, &$start): null {
+            $results = $scope->settle(
+                request: static fn(): ResponseInterface => $runner->dispatch(new ServerRequest('GET', '/stuck')),
+                control: static function (ExecutionScope $control) use ($runner, &$start): null {
                     self::readSignal(DrainStuckHandler::$entered);
                     self::assertSame(1, $runner->activeRequests());
                     $start = hrtime(true);
@@ -83,7 +83,7 @@ final class GracefulDrainTest extends PhalanxTestCase
 
                     return null;
                 },
-            ]);
+            );
 
             $elapsed = (hrtime(true) - $start) / 1e9;
 

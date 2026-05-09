@@ -16,7 +16,7 @@ final class Probe extends BootRequirement
     private function __construct(
         string $kind,
         string $description,
-        public private(set) ProbeOutcome $failureMode,
+        private(set) ProbeOutcome $failureMode,
         private Closure $check,
     ) {
         parent::__construct($kind, $description);

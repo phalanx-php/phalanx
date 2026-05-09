@@ -14,7 +14,7 @@
     "require": {
         "php": "^8.4",
         "ext-openswoole": "^26.0",
-        "phalanx-php/aegis": "^0.5"
+        "phalanx-php/aegis": "^0.6"
     },
     "autoload": {
         "psr-4": {
@@ -28,7 +28,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-main": "0.5-dev"
+            "dev-main": "0.6-dev"
         }
     },
     "minimum-stability": "dev",

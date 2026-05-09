@@ -14,16 +14,16 @@ final class TaskExecutorVariadicTest extends CoroutineTestCase
     public function testSettlePreservesKeysForValuesAndErrors(): void
     {
         $this->runScoped(static function (ExecutionScope $scope): void {
-            $bag = $scope->settle(...[
-                'ok.task' => Task::of(static fn(): string => 'done'),
-                'bad-task' => Task::of(static function (): never {
+            $bag = $scope->settle(
+                okTask: Task::of(static fn(): string => 'done'),
+                badTask: Task::of(static function (): never {
                     throw new RuntimeException('failed');
                 }),
-            ]);
+            );
 
-            self::assertSame(['ok.task' => 'done'], $bag->values);
-            self::assertSame(['bad-task'], $bag->errKeys);
-            self::assertSame('failed', $bag->errors['bad-task']->getMessage());
+            self::assertSame(['okTask' => 'done'], $bag->values);
+            self::assertSame(['badTask'], $bag->errKeys);
+            self::assertSame('failed', $bag->errors['badTask']->getMessage());
         });
     }
 

@@ -16,6 +16,7 @@ final class StoaResourceSidTest extends TestCase
     {
         $expected = [
             'HttpRequest' => 'stoa.http_request',
+            'HttpServer' => 'stoa.http_server',
             'SseStream' => 'stoa.sse_stream',
             'WsConnection' => 'stoa.ws_connection',
             'UdpListener' => 'stoa.udp_listener',

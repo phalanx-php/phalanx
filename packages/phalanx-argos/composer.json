@@ -14,7 +14,7 @@
     "require": {
         "php": "^8.4",
         "ext-openswoole": "*",
-        "phalanx-php/aegis": "^0.5",
+        "phalanx-php/aegis": "^0.6",
         "mlocati/ip-lib": "^1.22"
     },
     "suggest": {
@@ -34,7 +34,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-main": "0.5-dev"
+            "dev-main": "0.6-dev"
         }
     },
     "minimum-stability": "dev",

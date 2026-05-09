@@ -13,7 +13,7 @@ final class NoCancelledShortcutFixture
     {
         try {
             $this->work();
-        } catch (Throwable $e) {
+        } catch (Throwable) {
             return;
         }
     }

@@ -6,18 +6,18 @@ namespace Phalanx\Skopos;
 
 final class Process
 {
-    public private(set) string $name;
-    public private(set) string $command = '';
-    public private(set) ?string $cwd = null;
+    private(set) string $name;
+    private(set) string $command = '';
+    private(set) ?string $cwd = null;
     /** @var array<string, string> */
-    public private(set) array $env = [];
-    public private(set) ReadinessProbe $readinessProbe;
-    public private(set) bool $isServer = false;
+    private(set) array $env = [];
+    private(set) ReadinessProbe $readinessProbe;
+    private(set) bool $isServer = false;
     /** @var list<string> */
-    public private(set) array $watchPaths = [];
+    private(set) array $watchPaths = [];
     /** @var list<string> */
-    public private(set) array $watchExtensions = ['php'];
-    public private(set) ?ReadinessProbe $reloadProbe = null;
+    private(set) array $watchExtensions = ['php'];
+    private(set) ?ReadinessProbe $reloadProbe = null;
 
     private function __construct(string $name)
     {

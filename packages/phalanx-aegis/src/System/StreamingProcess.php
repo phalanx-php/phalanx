@@ -20,12 +20,12 @@ class StreamingProcess
     public const int DEFAULT_MAX_LINE_BYTES = 1_048_576;
 
     /** @var non-empty-list<string> */
-    public private(set) array $argv;
+    private(set) array $argv;
 
     /** @var array<string, string>|null */
-    public private(set) ?array $env;
+    private(set) ?array $env;
 
-    public private(set) int $maxLineBytes;
+    private(set) int $maxLineBytes;
 
     /**
      * @param list<string> $argv
@@ -33,7 +33,7 @@ class StreamingProcess
      */
     public function __construct(
         array $argv,
-        public private(set) ?string $cwd = null,
+        private(set) ?string $cwd = null,
         ?array $env = null,
         int $maxLineBytes = self::DEFAULT_MAX_LINE_BYTES,
     ) {

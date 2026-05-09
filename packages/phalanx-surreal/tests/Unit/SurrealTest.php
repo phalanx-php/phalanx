@@ -17,9 +17,9 @@ final class SurrealTest extends PhalanxTestCase
     public function queryUnwrapsStatementResultsAndMergesLetParameters(): void
     {
         $transport = new FakeSurrealTransport([
-            [['status' => 'OK', 'result' => [['id' => 'goddess:athena']]]],
+            [['status' => 'OK', 'result' => [['id' => 'oracle:apollo']]]],
         ]);
-        $query = 'SELECT * FROM goddess WHERE name = $topic';
+        $query = 'SELECT * FROM oracle WHERE name = $topic';
 
         $result = $this->scope->run(
             static function (ExecutionScope $scope) use ($transport, $query): mixed {
@@ -28,17 +28,17 @@ final class SurrealTest extends PhalanxTestCase
                     $transport,
                     $scope,
                 );
-                $surreal->let('topic', 'Athena');
+                $surreal->let('topic', 'Apollo');
 
                 return $surreal->query($query);
             },
             'test.surreal.query',
         );
 
-        self::assertSame([[['id' => 'goddess:athena']]], $result);
+        self::assertSame([[['id' => 'oracle:apollo']]], $result);
         self::assertSame('query', $transport->calls[0]['method']);
         self::assertSame(
-            [$query, ['topic' => 'Athena']],
+            [$query, ['topic' => 'Apollo']],
             $transport->calls[0]['params'],
         );
     }
@@ -56,21 +56,21 @@ final class SurrealTest extends PhalanxTestCase
                     $scope,
                 );
 
-                $surreal->select('goddess:athena');
-                $surreal->create('goddess', ['name' => 'Athena']);
-                $surreal->insert('goddess', [['name' => 'Athena']]);
-                $surreal->insertRelation('guides', ['in' => 'goddess:athena', 'out' => 'city:athens']);
-                $surreal->update('goddess:athena', ['domain' => 'wisdom']);
-                $surreal->upsert('goddess:athena', ['domain' => 'strategy']);
-                $surreal->merge('goddess:athena', ['symbol' => 'aegis']);
+                $surreal->select('oracle:apollo');
+                $surreal->create('oracle', ['name' => 'Apollo']);
+                $surreal->insert('oracle', [['name' => 'Apollo']]);
+                $surreal->insertRelation('guides', ['in' => 'oracle:apollo', 'out' => 'city:delphi']);
+                $surreal->update('oracle:apollo', ['domain' => 'prophecy']);
+                $surreal->upsert('oracle:apollo', ['domain' => 'strategy']);
+                $surreal->merge('oracle:apollo', ['symbol' => 'laurel']);
                 $surreal->patch(
-                    'goddess:athena',
+                    'oracle:apollo',
                     [['op' => 'replace', 'path' => '/domain', 'value' => 'strategy']],
                     diff: true,
                 );
-                $surreal->delete('goddess:athena');
-                $surreal->relate(['goddess:athena'], 'guides', ['city:athens'], ['lesson' => 'strategy']);
-                $surreal->run('fn::wisdom', '1.0.0', ['Athena']);
+                $surreal->delete('oracle:apollo');
+                $surreal->relate(['oracle:apollo'], 'guides', ['city:delphi'], ['lesson' => 'strategy']);
+                $surreal->run('fn::prophecy', '1.0.0', ['Apollo']);
             },
             'test.surreal.records',
         );
@@ -91,16 +91,16 @@ final class SurrealTest extends PhalanxTestCase
             ],
             array_column($transport->calls, 'method'),
         );
-        self::assertSame(['goddess:athena'], $transport->calls[0]['params']);
+        self::assertSame(['oracle:apollo'], $transport->calls[0]['params']);
         self::assertSame(
-            ['goddess:athena', [['op' => 'replace', 'path' => '/domain', 'value' => 'strategy']], true],
+            ['oracle:apollo', [['op' => 'replace', 'path' => '/domain', 'value' => 'strategy']], true],
             $transport->calls[7]['params'],
         );
         self::assertSame(
-            [['goddess:athena'], 'guides', ['city:athens'], ['lesson' => 'strategy']],
+            [['oracle:apollo'], 'guides', ['city:delphi'], ['lesson' => 'strategy']],
             $transport->calls[9]['params'],
         );
-        self::assertSame(['fn::wisdom', '1.0.0', ['Athena']], $transport->calls[10]['params']);
+        self::assertSame(['fn::prophecy', '1.0.0', ['Apollo']], $transport->calls[10]['params']);
         self::assertSame(array_fill(0, 11, 'jwt'), array_column($transport->calls, 'token'));
     }
 
@@ -120,7 +120,7 @@ final class SurrealTest extends PhalanxTestCase
                 $surreal->ping();
                 $surreal->kill('0189d6e3-8eac-703a-9a48-d9faa78b44b9');
                 $surreal->use('athens', 'academy');
-                $surreal->select('goddess:athena');
+                $surreal->select('oracle:apollo');
             },
             'test.surreal.connection-methods',
         );
@@ -135,7 +135,7 @@ final class SurrealTest extends PhalanxTestCase
     #[Test]
     public function resetClearsTokenAndLocalQueryVariables(): void
     {
-        $query = 'SELECT * FROM goddess WHERE name = $topic';
+        $query = 'SELECT * FROM oracle WHERE name = $topic';
         $transport = new FakeSurrealTransport([
             null,
             [['status' => 'OK', 'result' => []]],
@@ -149,7 +149,7 @@ final class SurrealTest extends PhalanxTestCase
                     $scope,
                 );
 
-                $surreal->let('topic', 'Athena');
+                $surreal->let('topic', 'Apollo');
                 $surreal->reset();
                 $surreal->query($query);
             },
@@ -177,7 +177,7 @@ final class SurrealTest extends PhalanxTestCase
                 $alternate = $base->withDatabase('athens', 'library');
 
                 $alternate->select('scroll');
-                $base->select('goddess');
+                $base->select('oracle');
             },
             'test.surreal.with-database',
         );
@@ -204,12 +204,12 @@ final class SurrealTest extends PhalanxTestCase
                     'NS' => 'olympus',
                     'DB' => 'pantheon',
                     'AC' => 'reader',
-                    'user' => 'athena',
+                    'user' => 'apollo',
                     'pass' => 'shield',
                 ]);
 
                 self::assertSame('jwt-token', $token);
-                $surreal->select('goddess');
+                $surreal->select('oracle');
             },
             'test.surreal.record-signin',
         );
@@ -222,7 +222,7 @@ final class SurrealTest extends PhalanxTestCase
                 'NS' => 'olympus',
                 'DB' => 'pantheon',
                 'AC' => 'reader',
-                'user' => 'athena',
+                'user' => 'apollo',
                 'pass' => 'shield',
             ]],
             $transport->calls[0]['params'],
@@ -245,12 +245,12 @@ final class SurrealTest extends PhalanxTestCase
                     'NS' => 'olympus',
                     'DB' => 'pantheon',
                     'AC' => 'reader',
-                    'user' => 'athena',
+                    'user' => 'apollo',
                     'pass' => 'shield',
                 ]);
 
                 self::assertSame('jwt-token', $token);
-                $surreal->select('goddess');
+                $surreal->select('oracle');
             },
             'test.surreal.record-signup',
         );
@@ -274,7 +274,7 @@ final class SurrealTest extends PhalanxTestCase
                     password: 'root',
                 ), $transport, $scope);
 
-                $surreal->select('goddess');
+                $surreal->select('oracle');
             },
             'test.surreal.root-credentials',
         );
@@ -317,7 +317,7 @@ final class SurrealTest extends PhalanxTestCase
                     $scope,
                 );
 
-                return $surreal->signin(['user' => 'athena']);
+                return $surreal->signin(['user' => 'apollo']);
             },
             'test.surreal.signin-non-token',
         );
@@ -337,9 +337,9 @@ final class SurrealTest extends PhalanxTestCase
                 );
 
                 $surreal->authenticate('jwt-token');
-                $surreal->select('goddess');
+                $surreal->select('oracle');
                 $surreal->invalidate();
-                $surreal->select('goddess');
+                $surreal->select('oracle');
             },
             'test.surreal.token-state',
         );

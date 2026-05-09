@@ -30,7 +30,7 @@ use OpenSwoole\Core\Process\Manager;
  */
 final class WorkerPool
 {
-    public private(set) int $workerCount = 0;
+    private(set) int $workerCount = 0;
 
     private readonly Manager $manager;
 

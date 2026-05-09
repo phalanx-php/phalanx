@@ -13,8 +13,8 @@ namespace Phalanx\Archon\Command;
 final class CommandInput
 {
     public function __construct(
-        public private(set) CommandArgs $args,
-        public private(set) CommandOptions $options,
+        private(set) CommandArgs $args,
+        private(set) CommandOptions $options,
     ) {
     }
 }

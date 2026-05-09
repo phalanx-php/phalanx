@@ -27,6 +27,7 @@ use Phalanx\Testing\TestLens;
  */
 class ArchonTestableBundle extends ServiceBundle
 {
+    #[\Override]
     public static function lens(): TestLens
     {
         return TestLens::of(ConsoleLens::class);

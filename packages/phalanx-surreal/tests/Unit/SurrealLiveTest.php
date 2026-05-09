@@ -21,13 +21,13 @@ final class SurrealLiveTest extends PhalanxTestCase
     #[Test]
     public function liveCreatesManagedSubscription(): void
     {
-        $connection = new FakeLiveConnection(['athena-live']);
+        $connection = new FakeLiveConnection(['olympus-live']);
         $transport = new FakeLiveTransport($connection);
 
         $subscription = $this->scope->run(
             static function (ExecutionScope $scope) use ($transport): mixed {
                 $surreal = new Surreal(
-                    new SurrealConfig(namespace: 'athena', database: 'wisdom'),
+                    new SurrealConfig(namespace: 'olympus', database: 'pantheon'),
                     new FakeSurrealTransport([]),
                     $scope,
                     liveTransport: $transport,
@@ -38,17 +38,17 @@ final class SurrealLiveTest extends PhalanxTestCase
             'test.surreal.live',
         );
 
-        self::assertSame('athena-live', $subscription->id());
+        self::assertSame('olympus-live', $subscription->id());
         self::assertSame(['live'], array_column($connection->requests, 'method'));
         self::assertSame(['event', true], $connection->requests[0]['params']);
-        self::assertArrayHasKey('athena-live', $connection->subscriptions);
+        self::assertArrayHasKey('olympus-live', $connection->subscriptions);
     }
 
     #[Test]
     public function liveQueryMergesLocalAndCallParameters(): void
     {
         $connection = new FakeLiveConnection([
-            [['status' => 'OK', 'result' => 'athena-live']],
+            [['status' => 'OK', 'result' => 'olympus-live']],
         ]);
         $transport = new FakeLiveTransport($connection);
         $query = 'LIVE SELECT * FROM event WHERE topic = $topic AND source = $source';
@@ -56,7 +56,7 @@ final class SurrealLiveTest extends PhalanxTestCase
         $subscription = $this->scope->run(
             static function (ExecutionScope $scope) use ($transport, $query): mixed {
                 $surreal = new Surreal(
-                    new SurrealConfig(namespace: 'athena', database: 'wisdom'),
+                    new SurrealConfig(namespace: 'olympus', database: 'pantheon'),
                     new FakeSurrealTransport([]),
                     $scope,
                     liveTransport: $transport,
@@ -69,7 +69,7 @@ final class SurrealLiveTest extends PhalanxTestCase
             'test.surreal.live-query',
         );
 
-        self::assertSame('athena-live', $subscription->id());
+        self::assertSame('olympus-live', $subscription->id());
         self::assertSame('query', $connection->requests[0]['method']);
         self::assertSame(
             [$query, ['topic' => 'strategy', 'source' => 'oracle']],
@@ -80,23 +80,23 @@ final class SurrealLiveTest extends PhalanxTestCase
     #[Test]
     public function subscriptionReceivesNotificationsAndKillsQuery(): void
     {
-        $connection = new FakeLiveConnection(['athena-live', null]);
+        $connection = new FakeLiveConnection(['olympus-live', null]);
         $transport = new FakeLiveTransport($connection);
 
         $result = $this->scope->run(
             static function (ExecutionScope $scope) use ($connection, $transport): array {
                 $surreal = new Surreal(
-                    new SurrealConfig(namespace: 'athena', database: 'wisdom'),
+                    new SurrealConfig(namespace: 'olympus', database: 'pantheon'),
                     new FakeSurrealTransport([]),
                     $scope,
                     liveTransport: $transport,
                 );
 
                 $subscription = $surreal->live('event');
-                $connection->emit('athena-live', new SurrealLiveNotification(
+                $connection->emit('olympus-live', new SurrealLiveNotification(
                     action: SurrealLiveAction::Create,
-                    queryId: 'athena-live',
-                    result: ['id' => 'event:athena'],
+                    queryId: 'olympus-live',
+                    result: ['id' => 'event:apollo'],
                 ));
                 $notification = $subscription->next(0.1);
                 $subscription->kill();
@@ -111,16 +111,16 @@ final class SurrealLiveTest extends PhalanxTestCase
         );
 
         self::assertSame(SurrealLiveAction::Create, $result['action']);
-        self::assertSame('event:athena', $result['record']);
+        self::assertSame('event:apollo', $result['record']);
         self::assertFalse($result['open']);
         self::assertSame(['live', 'kill'], array_column($connection->requests, 'method'));
-        self::assertSame(['athena-live'], $connection->requests[1]['params']);
+        self::assertSame(['olympus-live'], $connection->requests[1]['params']);
     }
 
     #[Test]
     public function connectionStateMutationFailsWhileLiveSubscriptionsAreOpen(): void
     {
-        $connection = new FakeLiveConnection(['athena-live']);
+        $connection = new FakeLiveConnection(['olympus-live']);
         $transport = new FakeLiveTransport($connection);
 
         $this->expectException(SurrealException::class);
@@ -129,7 +129,7 @@ final class SurrealLiveTest extends PhalanxTestCase
         $this->scope->run(
             static function (ExecutionScope $scope) use ($transport): void {
                 $surreal = new Surreal(
-                    new SurrealConfig(namespace: 'athena', database: 'wisdom'),
+                    new SurrealConfig(namespace: 'olympus', database: 'pantheon'),
                     new FakeSurrealTransport([]),
                     $scope,
                     liveTransport: $transport,
@@ -145,7 +145,7 @@ final class SurrealLiveTest extends PhalanxTestCase
     #[Test]
     public function withDatabaseFailsWhileLiveSubscriptionsAreOpen(): void
     {
-        $connection = new FakeLiveConnection(['athena-live']);
+        $connection = new FakeLiveConnection(['olympus-live']);
         $transport = new FakeLiveTransport($connection);
 
         $this->expectException(SurrealException::class);
@@ -154,14 +154,14 @@ final class SurrealLiveTest extends PhalanxTestCase
         $this->scope->run(
             static function (ExecutionScope $scope) use ($transport): void {
                 $surreal = new Surreal(
-                    new SurrealConfig(namespace: 'athena', database: 'wisdom'),
+                    new SurrealConfig(namespace: 'olympus', database: 'pantheon'),
                     new FakeSurrealTransport([]),
                     $scope,
                     liveTransport: $transport,
                 );
 
                 $surreal->live('event');
-                $surreal->withDatabase('athena', 'archive');
+                $surreal->withDatabase('olympus', 'archive');
             },
             'test.surreal.live-database-guard',
         );

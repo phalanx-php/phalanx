@@ -15,12 +15,12 @@ use Phalanx\Task\Task;
 
 Application::starting([])
     ->providers(new SurrealBundle())
-    ->run(Task::named('athena.query', static function (ExecutionScope $scope): void {
+    ->run(Task::named('olympus.query', static function (ExecutionScope $scope): void {
         $surreal = $scope->service(Surreal::class);
 
-        $surreal->create('goddess:athena', [
-            'name' => 'Athena',
-            'domain' => 'wisdom',
+        $surreal->create('oracle:apollo', [
+            'name' => 'Apollo',
+            'domain' => 'prophecy',
         ]);
     }));
 ```

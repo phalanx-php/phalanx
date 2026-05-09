@@ -30,9 +30,9 @@ final class WsMessage
     }
 
     public function __construct(
-        public private(set) string $payload,
-        public private(set) int $opcode,
-        public private(set) ?WsCloseCode $closeCode = null,
+        private(set) string $payload,
+        private(set) int $opcode,
+        private(set) ?WsCloseCode $closeCode = null,
     ) {
     }
 

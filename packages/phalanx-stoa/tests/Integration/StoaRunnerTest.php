@@ -635,6 +635,7 @@ final class ExplodingPathRequest extends ServerRequest
         parent::__construct('GET', '/unavailable');
     }
 
+    #[\Override]
     public function getUri(): UriInterface
     {
         throw new RuntimeException('request path unavailable');

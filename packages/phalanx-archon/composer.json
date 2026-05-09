@@ -13,7 +13,7 @@
     ],
     "require": {
         "php": "^8.4",
-        "phalanx-php/aegis": "^0.5"
+        "phalanx-php/aegis": "^0.6"
     },
     "suggest": {
         "symfony/runtime": "For Symfony Runtime integration via Archon::starting()",
@@ -32,7 +32,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-main": "0.5-dev"
+            "dev-main": "0.6-dev"
         },
         "phalanx": {
             "bundles": [

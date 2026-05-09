@@ -26,7 +26,7 @@ use PHPStan\Rules\Rule;
  */
 final class NoCancelledShortcutRule implements Rule
 {
-    private const IDENTIFIER = 'phalanx.cancellation.noCancelledShortcut';
+    private const string IDENTIFIER = 'phalanx.cancellation.noCancelledShortcut';
 
     public function __construct(private readonly PathPolicy $paths)
     {

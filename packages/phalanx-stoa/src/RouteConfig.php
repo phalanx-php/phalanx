@@ -23,14 +23,14 @@ class RouteConfig extends HandlerConfig
      * @param array<string, RouteParamValidator> $paramValidators
      */
     public function __construct(
-        public private(set) array $methods = ['GET'],
-        public private(set) string $path = '',
-        public private(set) string $fastRoutePath = '',
-        public private(set) array $paramNames = [],
+        private(set) array $methods = ['GET'],
+        private(set) string $path = '',
+        private(set) string $fastRoutePath = '',
+        private(set) array $paramNames = [],
         array $middleware = [],
         array $tags = [],
         int $priority = 0,
-        public private(set) array $paramValidators = [],
+        private(set) array $paramValidators = [],
     ) {
         parent::__construct($tags, $priority, $middleware);
     }

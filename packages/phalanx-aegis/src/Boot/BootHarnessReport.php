@@ -12,9 +12,9 @@ class BootHarnessReport
      * @param list<BootEvaluationEntry> $failed
      */
     public function __construct(
-        public private(set) array $passed = [],
-        public private(set) array $warned = [],
-        public private(set) array $failed = [],
+        private(set) array $passed = [],
+        private(set) array $warned = [],
+        private(set) array $failed = [],
     ) {
     }
 

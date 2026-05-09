@@ -12,8 +12,8 @@
     ],
     "require": {
         "php": "^8.4",
-        "phalanx-php/aegis": "^0.5",
-        "phalanx-php/grammata": "^0.5"
+        "phalanx-php/aegis": "^0.6",
+        "phalanx-php/grammata": "^0.6"
     },
     "require-dev": {
         "phpunit/phpunit": "^13.0"

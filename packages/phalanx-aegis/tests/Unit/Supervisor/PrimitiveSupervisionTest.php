@@ -119,15 +119,15 @@ final class PrimitiveSupervisionTest extends CoroutineTestCase
         $this->runInCoroutine(function (): void {
             $scope = self::buildScope(new InProcessLedger());
 
-            $bag = $scope->settle(...[
-                'owner' => Task::of(static fn(ExecutionScope $s): mixed => $s->singleflight(
+            $bag = $scope->settle(
+                owner: Task::of(static fn(ExecutionScope $s): mixed => $s->singleflight(
                     'shared',
                     Task::of(static function (ExecutionScope $owner): string {
                         $owner->delay(0.05);
                         return 'owner-result';
                     }),
                 )),
-                'waiter' => Task::of(static function (ExecutionScope $s): string {
+                waiter: Task::of(static function (ExecutionScope $s): string {
                     \OpenSwoole\Coroutine::create(static function () use ($s): void {
                         \OpenSwoole\Coroutine::usleep(10_000);
                         $s->cancellation()->cancel();
@@ -144,7 +144,7 @@ final class PrimitiveSupervisionTest extends CoroutineTestCase
 
                     return 'unexpected';
                 }),
-            ]);
+            );
 
             self::assertSame('owner-result', $bag->get('owner'));
             self::assertSame('waiter-cancelled', $bag->get('waiter'));

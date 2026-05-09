@@ -12,11 +12,8 @@
     ],
     "require": {
         "php": "^8.4",
-        "phalanx-php/aegis": "^0.5",
-        "phalanx-php/styx": "^0.5",
-        "react/child-process": "^0.6",
-        "react/http": "^1.10",
-        "react/socket": "^1.16"
+        "ext-openswoole": "^26.0",
+        "phalanx-php/aegis": "^0.6"
     },
     "bin": ["bin/skopos"],
     "autoload": {

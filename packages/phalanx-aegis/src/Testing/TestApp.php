@@ -56,7 +56,7 @@ final class TestApp
         Lenses\RuntimeLens::class,
     ];
 
-    public private(set) FakeRegistry $fakes;
+    private(set) FakeRegistry $fakes;
 
     /** @var array<class-string<Lens>, Lens> */
     private array $instances = [];
@@ -72,7 +72,7 @@ final class TestApp
 
     private bool $shutdownComplete = false;
 
-    private function __construct(public private(set) Application $application)
+    private function __construct(private(set) Application $application)
     {
         $this->fakes = new FakeRegistry();
     }

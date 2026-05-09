@@ -10,17 +10,13 @@ use Phalanx\Scope\TaskScope;
 use Phalanx\System\UdpSocket;
 use Phalanx\Task\HasTimeout;
 use Phalanx\Task\Scopeable;
-use React\Dns\Model\Message;
-use React\Dns\Protocol\BinaryDumper;
-use React\Dns\Protocol\Parser;
-use React\Dns\Query\Query;
 use Throwable;
 
 /**
  * mDNS (Multicast DNS) implementation.
  *
  * Discovers services on the local network using UDP multicast (224.0.0.251:5353)
- * via the managed Aegis UdpSocket primitive and React\Dns message components.
+ * via the managed Aegis UdpSocket primitive.
  */
 final class DiscoverMdns implements Scopeable, HasTimeout
 {
@@ -46,18 +42,9 @@ final class DiscoverMdns implements Scopeable, HasTimeout
         try {
             $socket->connect($scope, self::MULTICAST_ADDRESS, self::MULTICAST_PORT);
 
-            $message = new Message();
-            $message->id = 0;
-            $message->qr = false;
-            $message->questions[] = new Query($this->serviceType, Message::TYPE_PTR, Message::CLASS_IN);
-
-            $dumper = new BinaryDumper();
-            $packet = $dumper->toBinary($message);
-
-            $socket->send($scope, $packet);
+            $socket->send($scope, MdnsPacket::ptrQuery($this->serviceType));
 
             $results = [];
-            $parser = new Parser();
             $start = microtime(true);
             $deadline = $start + $this->listenSeconds;
 
@@ -70,18 +57,12 @@ final class DiscoverMdns implements Scopeable, HasTimeout
                 try {
                     $response = $socket->recv($scope, $remaining);
                     if ($response) {
-                        $responseMessage = $parser->parseMessage($response);
-                        foreach ($responseMessage->answers as $answer) {
-                            if ($answer->type === Message::TYPE_PTR) {
-                                $results[] = new DiscoveryResult(
-                                    ip: is_string($answer->data) ? $answer->data : 'unknown',
-                                    protocol: 'mdns',
-                                    metadata: [
-                                        'name' => $answer->name,
-                                        'data' => $answer->data,
-                                    ],
-                                );
-                            }
+                        foreach (MdnsPacket::ptrAnswers($response) as $answer) {
+                            $results[] = new DiscoveryResult(
+                                ip: $answer['data'],
+                                protocol: 'mdns',
+                                metadata: $answer,
+                            );
                         }
                     }
                 } catch (Cancelled) {

@@ -6,8 +6,8 @@ namespace Phalanx\Eidolon\Signal;
 
 final class RedirectSignal implements Signal
 {
-    public private(set) string $url;
-    public private(set) bool $replace;
+    private(set) string $url;
+    private(set) bool $replace;
 
     public SignalType $type {
         get => SignalType::Redirect;

@@ -118,14 +118,14 @@ final class StoaApplicationBuilder
     public function websockets(mixed $routes): self
     {
         throw new LogicException(
-            'Native WebSocket protocol slots are reserved for Stoa but are not implemented in this slice.'
+            'StoaApplicationBuilder does not register WebSocket routes. Use the Hermes WebSocket integration directly.'
         );
     }
 
     public function udp(mixed $routes): self
     {
         throw new LogicException(
-            'Native UDP protocol slots are reserved for Stoa but are not implemented in this slice.'
+            'StoaApplicationBuilder does not register UDP routes. Use Phalanx\\Stoa\\Udp\\UdpListener directly.'
         );
     }
 

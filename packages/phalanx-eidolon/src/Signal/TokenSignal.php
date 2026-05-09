@@ -6,8 +6,8 @@ namespace Phalanx\Eidolon\Signal;
 
 final class TokenSignal implements Signal
 {
-    public private(set) ?string $token;
-    public private(set) ?int $expiresIn;
+    private(set) ?string $token;
+    private(set) ?int $expiresIn;
 
     public SignalType $type {
         get => SignalType::Token;

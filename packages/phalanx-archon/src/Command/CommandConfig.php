@@ -15,10 +15,10 @@ final class CommandConfig extends HandlerConfig
      * @param list<string> $tags
      */
     public function __construct(
-        public private(set) string $description = '',
-        public private(set) array $arguments = [],
-        public private(set) array $options = [],
-        public private(set) array $validators = [],
+        private(set) string $description = '',
+        private(set) array $arguments = [],
+        private(set) array $options = [],
+        private(set) array $validators = [],
         array $tags = [],
         int $priority = 0,
     ) {

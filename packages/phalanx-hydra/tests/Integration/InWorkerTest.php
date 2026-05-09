@@ -186,11 +186,11 @@ final class InWorkerTest extends AsyncTestCase
                 $scope = $app->createScope();
 
                 try {
-                    $settled = $scope->settle(...[
-                        'busy' => Task::of(
+                    $settled = $scope->settle(
+                        busy: Task::of(
                             static fn(ExecutionScope $s): mixed => $s->inWorker(new SlowWorkerTask(250_000)),
                         ),
-                        'waiter' => Task::of(
+                        waiter: Task::of(
                             static fn(ExecutionScope $s): mixed => $s->timeout(
                                 0.05,
                                 Task::of(
@@ -198,7 +198,7 @@ final class InWorkerTest extends AsyncTestCase
                                 ),
                             ),
                         ),
-                    ]);
+                    );
 
                     $waiterError = $settled->errors['waiter'] ?? null;
 
@@ -281,10 +281,10 @@ final class InWorkerTest extends AsyncTestCase
 
             try {
                 $results = $scope->execute(Task::of(
-                    static fn(ExecutionScope $es): array => $es->concurrent(...[
-                        'a' => Task::of(static fn(ExecutionScope $s): mixed => $s->inWorker(new AddNumbers(1, 2))),
-                        'b' => Task::of(static fn(ExecutionScope $s): mixed => $s->inWorker(new AddNumbers(3, 4))),
-                    ])
+                    static fn(ExecutionScope $es): array => $es->concurrent(
+                        a: Task::of(static fn(ExecutionScope $s): mixed => $s->inWorker(new AddNumbers(1, 2))),
+                        b: Task::of(static fn(ExecutionScope $s): mixed => $s->inWorker(new AddNumbers(3, 4))),
+                    )
                 ));
 
                 self::assertSame(3, $results['a']);

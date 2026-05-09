@@ -14,13 +14,13 @@ use Phalanx\Worker\WorkerDispatch;
 final class FakeWorkerDispatch implements WorkerDispatch
 {
     /** @var list<Scopeable|Executable> */
-    public private(set) array $dispatched = [];
+    private(set) array $dispatched = [];
 
-    public private(set) int $dispatchCount = 0;
+    private(set) int $dispatchCount = 0;
 
-    public private(set) mixed $lastScope = null;
+    private(set) mixed $lastScope = null;
 
-    public private(set) ?CancellationToken $lastToken = null;
+    private(set) ?CancellationToken $lastToken = null;
 
     public function dispatch(Scopeable|Executable $task, TaskScope&TaskExecutor $scope, CancellationToken $token): mixed
     {

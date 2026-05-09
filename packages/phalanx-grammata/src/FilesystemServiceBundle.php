@@ -18,6 +18,7 @@ class FilesystemServiceBundle extends ServiceBundle
      * File pool size is optional — the bundle defaults to 64 concurrent
      * file handles when the env var is absent.
      */
+    #[\Override]
     public static function harness(): BootHarness
     {
         return BootHarness::of(

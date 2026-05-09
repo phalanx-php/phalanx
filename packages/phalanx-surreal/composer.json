@@ -27,11 +27,6 @@
             "Phalanx\\Surreal\\Tests\\": "tests/"
         }
     },
-    "scripts": {
-        "demo": ["@demo:memory", "@demo:live"],
-        "demo:memory": "php examples/01-in-memory-rpc/demo.php",
-        "demo:live": "php examples/02-live-query/demo.php"
-    },
     "extra": {
         "branch-alias": {
             "dev-main": "0.6-dev"

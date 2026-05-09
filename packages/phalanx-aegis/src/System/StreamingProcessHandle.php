@@ -18,7 +18,7 @@ use Phalanx\System\Internal\SymfonyProcessAdapter;
  */
 final class StreamingProcessHandle
 {
-    public private(set) StreamingProcessState $state = StreamingProcessState::Running;
+    private(set) StreamingProcessState $state = StreamingProcessState::Running;
 
     private bool $released = false;
     private string $stderrBuffer = '';

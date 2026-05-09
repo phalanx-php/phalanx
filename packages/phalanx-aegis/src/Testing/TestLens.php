@@ -14,7 +14,7 @@ namespace Phalanx\Testing;
 class TestLens
 {
     /** @param list<class-string<Lens>> $lenses */
-    private function __construct(public private(set) array $lenses)
+    private function __construct(private(set) array $lenses)
     {
     }
 

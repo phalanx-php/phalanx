@@ -30,10 +30,10 @@ final class AttributeInheritanceTest extends CoroutineTestCase
         $this->runScoped(static function (ExecutionScope $scope): void {
             $scope = $scope->withAttribute('request.id', 'req-7');
 
-            $observed = $scope->concurrent(...[
-                'a' => Task::of(static fn(ExecutionScope $s) => $s->attribute('request.id')),
-                'b' => Task::of(static fn(ExecutionScope $s) => $s->attribute('request.id')),
-            ]);
+            $observed = $scope->concurrent(
+                a: Task::of(static fn(ExecutionScope $s) => $s->attribute('request.id')),
+                b: Task::of(static fn(ExecutionScope $s) => $s->attribute('request.id')),
+            );
 
             self::assertSame(['a' => 'req-7', 'b' => 'req-7'], $observed);
         });
@@ -105,10 +105,10 @@ final class AttributeInheritanceTest extends CoroutineTestCase
         $this->runInCoroutine(function (): void {
             $scope = self::buildScope()->withAttribute('region', 'us-west');
 
-            $bag = $scope->settle(...[
-                'a' => Task::of(static fn(ExecutionScope $s) => $s->attribute('region')),
-                'b' => Task::of(static fn(ExecutionScope $s) => $s->attribute('region')),
-            ]);
+            $bag = $scope->settle(
+                a: Task::of(static fn(ExecutionScope $s) => $s->attribute('region')),
+                b: Task::of(static fn(ExecutionScope $s) => $s->attribute('region')),
+            );
 
             self::assertSame('us-west', $bag->get('a'));
             self::assertSame('us-west', $bag->get('b'));
@@ -137,11 +137,11 @@ final class AttributeInheritanceTest extends CoroutineTestCase
         $this->runInCoroutine(function (): void {
             $scope = self::buildScope()->withAttribute('chain', 'root');
 
-            $observed = $scope->concurrent(...[
-                'outer' => Task::of(static fn(ExecutionScope $outer): array => $outer->concurrent(...[
-                    'inner' => Task::of(static fn(ExecutionScope $inner) => $inner->attribute('chain')),
-                ])),
-            ]);
+            $observed = $scope->concurrent(
+                outer: Task::of(static fn(ExecutionScope $outer): array => $outer->concurrent(
+                    inner: Task::of(static fn(ExecutionScope $inner) => $inner->attribute('chain')),
+                )),
+            );
 
             self::assertSame('root', $observed['outer']['inner']);
         });
@@ -152,15 +152,15 @@ final class AttributeInheritanceTest extends CoroutineTestCase
         $this->runInCoroutine(function (): void {
             $scope = self::buildScope()->withAttribute('mutable', 'parent-value');
 
-            $scope->concurrent(...[
-                'child' => Task::of(static function (ExecutionScope $s): void {
+            $scope->concurrent(
+                child: Task::of(static function (ExecutionScope $s): void {
                     // Local override on a derived scope; parent must not see it.
                     $derived = $s->withAttribute('mutable', 'child-value');
                     if ($derived->attribute('mutable') !== 'child-value') {
                         throw new \RuntimeException('child should see its own override');
                     }
                 }),
-            ]);
+            );
 
             self::assertSame('parent-value', $scope->attribute('mutable'));
         });

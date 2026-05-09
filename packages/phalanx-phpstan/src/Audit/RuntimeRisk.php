@@ -7,10 +7,10 @@ namespace Phalanx\PHPStan\Audit;
 final class RuntimeRisk
 {
     public function __construct(
-        public private(set) string $category,
-        public private(set) string $symbol,
-        public private(set) string $file,
-        public private(set) int $line,
+        private(set) string $category,
+        private(set) string $symbol,
+        private(set) string $file,
+        private(set) int $line,
     ) {
     }
 }

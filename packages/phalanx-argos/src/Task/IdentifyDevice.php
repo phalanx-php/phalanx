@@ -26,10 +26,10 @@ final class IdentifyDevice implements Executable, HasTimeout
 
     public function __invoke(ExecutionScope $scope): Host
     {
-        ['ping' => $ping, 'ports' => $openPorts] = $scope->concurrent(...[
-            'ping' => new PingHost($this->ip, 2.0),
-            'ports' => new ScanPorts($this->ip, $this->tcpPorts, $this->perPortTimeout, count($this->tcpPorts)),
-        ]);
+        ['ping' => $ping, 'ports' => $openPorts] = $scope->concurrent(
+            ping: new PingHost($this->ip, 2.0),
+            ports: new ScanPorts($this->ip, $this->tcpPorts, $this->perPortTimeout, count($this->tcpPorts)),
+        );
 
         $services = array_values(array_map(
             static fn(ProbeResult $r): string => "tcp/{$r->port}",

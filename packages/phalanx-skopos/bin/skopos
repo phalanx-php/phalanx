@@ -31,14 +31,14 @@ namespace Phalanx\Skopos;
 
     if (!file_exists($configFile)) {
         fwrite(STDERR, "No skopos.php found in " . getcwd() . "\n");
-        fwrite(STDERR, "Create a skopos.php that returns a DevServer instance.\n");
+        fwrite(STDERR, "Create a skopos.php that returns a " . SkoposApplicationBuilder::class . " from Skopos::starting().\n");
         exit(1);
     }
 
     $result = require $configFile;
 
-    if (!$result instanceof DevServer) {
-        fwrite(STDERR, "skopos.php must return an instance of " . DevServer::class . "\n");
+    if (!$result instanceof SkoposApplicationBuilder) {
+        fwrite(STDERR, "skopos.php must return an instance of " . SkoposApplicationBuilder::class . "\n");
         exit(1);
     }
 

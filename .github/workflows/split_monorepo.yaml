@@ -17,18 +17,15 @@ jobs:
           - phalanx-aegis-codegen
           - phalanx-archon
           - phalanx-stoa
-          - phalanx-athena
           - phalanx-hydra
-          - phalanx-postgres
           - phalanx-styx
           - phalanx-hermes
-          - phalanx-argos
+          - phalanx-iris
           - phalanx-grammata
           - phalanx-enigma
-          - phalanx-eidolon
-          - phalanx-skopos
-          # NOT published yet (maturing):
-          # - phalanx-redis
+          - phalanx-redis
+          - phalanx-surreal
+          - phalanx-phpstan
 
     steps:
       - uses: actions/checkout@v4

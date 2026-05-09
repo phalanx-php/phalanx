@@ -41,9 +41,9 @@ final class HandlerGroup implements Executable
      * @param Closure(Scopeable|Executable, ExecutionScope): mixed|null $invoker
      */
     private function __construct(
-        public private(set) array $handlers,
-        public private(set) array $middleware = [],
-        public private(set) array $matchers = [],
+        private(set) array $handlers,
+        private(set) array $middleware = [],
+        private(set) array $matchers = [],
         private ?Closure $invoker = null,
     ) {
     }

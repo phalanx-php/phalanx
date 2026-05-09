@@ -15,8 +15,8 @@ final class SurrealConfigTest extends TestCase
     public function contextProvidesExplicitDatabaseAndTransportSettings(): void
     {
         $config = SurrealConfig::fromContext(new AppContext([
-            'surreal_namespace' => 'athena',
-            'surreal_database' => 'wisdom',
+            'surreal_namespace' => 'olympus',
+            'surreal_database' => 'pantheon',
             'surreal_endpoint' => 'http://surreal.test:8000/',
             'surreal_ws_endpoint' => 'ws://surreal.test:8000/rpc/',
             'surreal_username' => 'root',
@@ -26,8 +26,8 @@ final class SurrealConfigTest extends TestCase
             'surreal_max_response_bytes' => '4096',
         ]));
 
-        self::assertSame('athena', $config->namespace);
-        self::assertSame('wisdom', $config->database);
+        self::assertSame('olympus', $config->namespace);
+        self::assertSame('pantheon', $config->database);
         self::assertSame('http://surreal.test:8000', $config->endpoint);
         self::assertSame('ws://surreal.test:8000/rpc', $config->websocketEndpoint);
         self::assertSame('root', $config->username);
@@ -57,7 +57,7 @@ final class SurrealConfigTest extends TestCase
     #[Test]
     public function websocketEndpointDerivesFromHttpsEndpoint(): void
     {
-        $config = new SurrealConfig(namespace: 'athena', database: 'wisdom', endpoint: 'https://surreal.test');
+        $config = new SurrealConfig(namespace: 'olympus', database: 'pantheon', endpoint: 'https://surreal.test');
 
         self::assertSame('wss://surreal.test/rpc', $config->websocketEndpoint);
     }
@@ -65,11 +65,11 @@ final class SurrealConfigTest extends TestCase
     #[Test]
     public function withDatabaseDoesNotMutateBaseConfig(): void
     {
-        $base = new SurrealConfig(namespace: 'athena', database: 'wisdom', token: 'token');
+        $base = new SurrealConfig(namespace: 'olympus', database: 'pantheon', token: 'token');
         $alternate = $base->withDatabase('argos', 'signals');
 
-        self::assertSame('athena', $base->namespace);
-        self::assertSame('wisdom', $base->database);
+        self::assertSame('olympus', $base->namespace);
+        self::assertSame('pantheon', $base->database);
         self::assertSame('argos', $alternate->namespace);
         self::assertSame('signals', $alternate->database);
         self::assertSame($base->websocketEndpoint, $alternate->websocketEndpoint);

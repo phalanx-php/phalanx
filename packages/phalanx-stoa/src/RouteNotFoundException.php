@@ -12,8 +12,8 @@ final class RouteNotFoundException extends \RuntimeException implements ToRespon
     public int $status { get => 404; }
 
     public function __construct(
-        public private(set) string $method,
-        public private(set) string $path,
+        private(set) string $method,
+        private(set) string $path,
     ) {
         parent::__construct("No route matches {$method} {$path}");
     }

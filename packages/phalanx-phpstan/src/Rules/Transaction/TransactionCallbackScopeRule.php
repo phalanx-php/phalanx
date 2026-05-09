@@ -18,7 +18,7 @@ use PHPStan\Rules\Rule;
  */
 final class TransactionCallbackScopeRule implements Rule
 {
-    private const IDENTIFIER = 'phalanx.transaction.callbackScope';
+    private const string IDENTIFIER = 'phalanx.transaction.callbackScope';
 
     public function __construct(private readonly PathPolicy $paths)
     {

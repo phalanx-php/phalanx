@@ -7,7 +7,7 @@ namespace Phalanx\Boot;
 class BootHarness
 {
     /** @param list<BootRequirement> $requirements */
-    private function __construct(public private(set) array $requirements)
+    private function __construct(private(set) array $requirements)
     {
     }
 
