@@ -27,6 +27,27 @@ final class TaskExecutorVariadicTest extends CoroutineTestCase
         });
     }
 
+    public function testSettlePreservesExoticKeysViaArraySpread(): void
+    {
+        // Named args require valid PHP identifiers, but variable-array spread is
+        // the sanctioned escape hatch for runtime-built task maps. The receiving
+        // foreach must still preserve exotic string keys end-to-end.
+        $this->runScoped(static function (ExecutionScope $scope): void {
+            $tasks = [
+                'k.dot'  => Task::of(static fn(): string => 'ok'),
+                'k-dash' => Task::of(static function (): never {
+                    throw new RuntimeException('boom');
+                }),
+            ];
+
+            $bag = $scope->settle(...$tasks);
+
+            self::assertSame(['k.dot' => 'ok'], $bag->values);
+            self::assertSame(['k-dash'], $bag->errKeys);
+            self::assertSame('boom', $bag->errors['k-dash']->getMessage());
+        });
+    }
+
     public function testEmptyTaskListSemanticsArePreserved(): void
     {
         $this->runScoped(static function (ExecutionScope $scope): void {
