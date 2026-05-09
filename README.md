@@ -6,43 +6,81 @@
 
 **Async PHP that feels like normal code — protected by a runtime that actually has your back.**
 
-The async PHP landscape is crowded: ReactPHP, Amp, Revolt, FrankenPHP, RoadRunner, multiple Swoole layers. Every option forces you to care about fibers, promises, event loops, manual cancellation, and cleanup in your application code. Average developers either stay away or get burned by leaks, blocked workers, and mysterious production crashes.
+PHP can power concurrent HTTP, realtime WebSockets, parallel workers, streaming responses, and AI agent loops without `await`, manual `Coroutine::create()`, or 3am reference-cycle hunts. Phalanx gives you a managed async runtime where the Scope contract does the heavy lifting. Your business logic stays simple. The dangerous parts don't leak into your code.
 
-**Phalanx gives you one thing the others don't: a managed async runtime where the Scope contract does the heavy lifting. Your business logic stays simple. The dangerous parts don't leak into your code.**
+If this resonates, **a star helps us gauge whether to keep pushing**. We're early; signal matters.
 
-### A full application, one scope at a time
+### A working HTTP app, top to bottom
 
 ```php
-// HTTP route, CLI command, WebSocket handler, background agent
-// All written as plain invokable classes that receive a Scope
+#!/usr/bin/env php
+<?php
 
-final class GetUser implements Route
+declare(strict_types=1);
+
+require __DIR__ . '/../vendor/autoload_runtime.php';
+
+use Phalanx\Boot\AppContext;
+use Phalanx\Service\ServiceBundle;
+use Phalanx\Service\Services;
+use Phalanx\Stoa\RequestScope;
+use Phalanx\Stoa\RouteGroup;
+use Phalanx\Stoa\Stoa;
+use Phalanx\Task\Scopeable;
+
+class UserRepo
 {
-    public function __invoke(Scope $scope, int $id): User
+    public function find(int $id): array
     {
-        return $scope->service(UserRepo::class)->find($id);
+        return ['id' => $id, 'name' => "User {$id}"];
     }
 }
 
-final class AnalyzeRepo implements Command
+class AppBundle extends ServiceBundle
 {
-    public function __invoke(ExecutionScope $scope, string $url): Report
+    public function services(Services $services, AppContext $context): void
     {
-        // concurrent, race, retry, timeout, worker dispatch — all on the scope
-        return $scope->concurrent(
-            new CloneRepo($url),
-            new RunStaticAnalysis(),
-            new GenerateAiSummary()
-        );
+        $services->singleton(UserRepo::class)->factory(static fn() => new UserRepo());
     }
 }
+
+class Home implements Scopeable
+{
+    public function __invoke(RequestScope $scope): array
+    {
+        return ['ok' => true, 'service' => 'phalanx'];
+    }
+}
+
+class ShowUser implements Scopeable
+{
+    public function __invoke(RequestScope $scope): array
+    {
+        $id = (int) $scope->params->get('id');
+        $user = $scope->service(UserRepo::class)->find($id);
+
+        return ['user' => $user];
+    }
+}
+
+return static function (array $context): \Closure {
+    $app = Stoa::starting($context)
+        ->bundles(new AppBundle())
+        ->routes(RouteGroup::of([
+            'GET /'              => Home::class,
+            'GET /users/{id:int}' => ShowUser::class,
+        ]))
+        ->build();
+
+    return static fn (): int => $app->run();
+};
 ```
 
-No `await`. No manual `Coroutine::create()`. No thinking about the event loop. It reads like synchronous PHP.
+That's the whole thing — entry, controllers, routing, a service lookup. The handlers are plain invokable classes. The `RequestScope` they receive is the protected execution context: it knows the route params, the request, the active services, and what to clean up. No `await`. No fiber bookkeeping. It reads like synchronous PHP.
 
-This isn't just HTTP. The same contract powers CLI commands, WebSocket listeners, background workers, streaming agents, and (soon) native async TUIs — everything lives under one consistent, protected surface.
+The same contract powers CLI commands, WebSocket handlers, background workers, and streaming agents — one consistent surface across transports.
 
-### The Scope system is your CYA
+### The CYA system
 
 Every unit of work in Phalanx executes inside an owned `Scope`. This is the protective layer that makes long-running PHP safe for normal developers:
 
@@ -55,33 +93,52 @@ Every unit of work in Phalanx executes inside an owned `Scope`. This is the prot
 
 You don't manage fibers or pools. You use the narrowest scope interface you need and let Aegis handle the rest.
 
-### Phalanx packages
+### Built on OpenSwoole 26
 
-| Package        | What it gives you |
-|----------------|-------------------|
-| phalanx-aegis  | The Scope contract + task supervision, cancellation, services, concurrency primitives |
-| phalanx-stoa   | HTTP server, routing, middleware, request lifecycle |
-| phalanx-archon | CLI commands with the exact same Scope surface |
-| phalanx-hermes | WebSocket connection & session management |
-| phalanx-styx   | Backpressure streams, emitters, channels |
-| phalanx-athena | AI agents, tool use, streaming, provider limits |
-| phalanx-postgres | Native async Postgres + pools + transactions |
-| phalanx-redis  | Async Redis client with managed pools |
-| phalanx-grammata | Safe concurrent file operations |
+We're actively building Phalanx on the OpenSwoole 26 substrate — native fibers, `io_uring`, `Channel`, `WaitGroup`, `ClientPool`. Early results are very promising: the runtime kernel benchmarks are healthy, the boot harness catches misconfiguration before workers spin up, and the test surface is stabilizing fast. If you have an OpenSwoole environment lying around, **try it out** — feedback on real workloads is exactly what we need right now.
 
-Everything else (TUI, workers, additional protocols) is actively landing.
+### Demos
 
-### Why Phalanx exists
+Real, runnable examples covering the core surface. Each ships with a `.env.example` and runs via `php demo.php`:
 
-Most developers want concurrent HTTP, realtime WebSockets, parallel workers, streaming responses, and AI agent loops in their PHP apps — without hiring a runtime specialist or debugging reference cycles at 3am.
+- [Aegis kernel](packages/phalanx-aegis/examples) — runtime policy, scope supervision, cancellation, singleflight, runtime memory
+- [Stoa HTTP](packages/phalanx-stoa/examples) — basic routing, JSON API, realtime SSE, runtime lifecycle
+- [Archon CLI](packages/phalanx-archon/examples) — basic commands, interactive input, supervised concurrency, runtime lifecycle
+- [Athena AI](packages/phalanx-athena/examples) — concurrent streaming across providers, Guzzle SDK coexistence
+- [Surreal](packages/phalanx-surreal/examples) — in-memory RPC, live queries
 
-Phalanx delivers exactly that surface: powerful under the hood, invisible at the call site, and safe by default. No more 3am reference-cycle hunts.
+### Pharos — the proving ground
 
-The internals are still evolving, but the contract is stable: **if Phalanx runs your task, Phalanx owns its lifetime**.
+<details>
+<summary><strong>The next big bet: a Phalanx-native edge runtime that lets PHP own its own request flow.</strong></summary>
+
+Phalanx Pharos will replace the nginx + PHP-FPM model with a managed edge runtime built for PHP, by PHP, on the same Aegis substrate that owns the application. Every proxied connection becomes a supervised `TaskRun`. Cancellation tied to the client FD. Leases on upstream connections. Trace events for every state transition. Drain semantics that propagate end-to-end.
+
+The bigger idea: when PHP can talk directly to the edge instead of fighting through opaque proxy boundaries, the typical PHP app gets superpowers it has never had. mTLS identity propagated as a scope annotation. Lease starvation visible in the same trace as your handler. Hot-reloadable config in pure PHP. Audit trails minted at the wire instead of bolted on as middleware. Things nginx structurally cannot do because nginx doesn't know what an Aegis scope is.
+
+```php
+return static function (array $context): \Closure {
+    $app = Pharos::starting($context)
+        ->upstreams([
+            'app' => UpstreamPool::of('http://127.0.0.1:8080', weight: 10),
+        ])
+        ->routes(RouteGroup::of([
+            'GET /healthz'  => Healthz::class,
+            '* /api/{...}'  => ProxyTo::pool('app'),
+        ]))
+        ->build();
+
+    return static fn (): int => $app->run();
+};
+```
+
+Pharos is also the proving ground of the Phalanx promise — if a managed-runtime PHP framework can replace the proxy in front of itself, the rest is detail.
+
+</details>
 
 ---
 
-Monorepo with automatic read-only package splits.  
+Monorepo with automatic read-only package splits.
 All development happens here → https://github.com/phalanx-php/phalanx
 
-Work in progress. More examples and package-level documentation arriving as the 0.2 OpenSwoole foundation stabilizes.
+Work in progress. The 0.2 OpenSwoole foundation is stabilizing; more examples and package documentation arriving as the surface settles.
