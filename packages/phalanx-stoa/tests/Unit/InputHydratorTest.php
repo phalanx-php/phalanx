@@ -66,8 +66,8 @@ final class InputHydratorTest extends TestCase
     {
         $data = ['title' => 'Test Task', 'description' => 'A description', 'priority' => 'high'];
 
-        $ref = new \ReflectionMethod(InputHydrator::class, 'hydrate');
-        $dto = $ref->invoke(null, CreateTaskInput::class, $data);
+        $scope = $this->mockScope('POST', $data);
+        [, $dto] = InputHydrator::resolve(CreateTaskHandler::class, $scope);
 
         $this->assertInstanceOf(CreateTaskInput::class, $dto);
         $this->assertSame('Test Task', $dto->title);
@@ -80,8 +80,8 @@ final class InputHydratorTest extends TestCase
     {
         $data = ['title' => 'Minimal'];
 
-        $ref = new \ReflectionMethod(InputHydrator::class, 'hydrate');
-        $dto = $ref->invoke(null, CreateTaskInput::class, $data);
+        $scope = $this->mockScope('POST', $data);
+        [, $dto] = InputHydrator::resolve(CreateTaskHandler::class, $scope);
 
         $this->assertInstanceOf(CreateTaskInput::class, $dto);
         $this->assertSame('Minimal', $dto->title);
@@ -90,18 +90,40 @@ final class InputHydratorTest extends TestCase
     }
 
     #[Test]
+    public function resolve_hydrates_dto_before_return(): void
+    {
+        $data = ['title' => 'Test Task'];
+        $scope = $this->mockScope('POST', $data);
+
+        [, $dto] = InputHydrator::resolve(CreateTaskHandler::class, $scope);
+
+        $this->assertInstanceOf(CreateTaskInput::class, $dto);
+        $this->assertSame('Test Task', $dto->title);
+    }
+
+    #[Test]
+    public function resolve_validates_before_return(): void
+    {
+        $data = ['title' => ''];
+        $scope = $this->mockScope('POST', $data);
+
+        $this->expectException(ValidationException::class);
+        InputHydrator::resolve(CreateTaskHandler::class, $scope);
+    }
+
+    #[Test]
     public function throws_for_missing_required_field(): void
     {
         $data = ['description' => 'no title'];
+        $scope = $this->mockScope('POST', $data);
 
-        $ref = new \ReflectionMethod(InputHydrator::class, 'hydrate');
-
+        $this->expectException(ValidationException::class);
         try {
-            $ref->invoke(null, CreateTaskInput::class, $data);
-            $this->fail('Expected ValidationException');
+            InputHydrator::resolve(CreateTaskHandler::class, $scope);
         } catch (ValidationException $e) {
             $this->assertArrayHasKey('title', $e->errors);
             $this->assertSame('This field is required', $e->errors['title'][0]);
+            throw $e;
         }
     }
 
@@ -109,16 +131,16 @@ final class InputHydratorTest extends TestCase
     public function throws_for_invalid_enum_value(): void
     {
         $data = ['title' => 'Test', 'priority' => 'urgent'];
+        $scope = $this->mockScope('POST', $data);
 
-        $ref = new \ReflectionMethod(InputHydrator::class, 'hydrate');
-
+        $this->expectException(ValidationException::class);
         try {
-            $ref->invoke(null, CreateTaskInput::class, $data);
-            $this->fail('Expected ValidationException');
+            InputHydrator::resolve(CreateTaskHandler::class, $scope);
         } catch (ValidationException $e) {
             $this->assertArrayHasKey('priority', $e->errors);
             $this->assertStringContainsString('urgent', $e->errors['priority'][0]);
             $this->assertStringContainsString('low, normal, high, critical', $e->errors['priority'][0]);
+            throw $e;
         }
     }
 
@@ -126,9 +148,9 @@ final class InputHydratorTest extends TestCase
     public function nullable_field_accepts_null(): void
     {
         $data = ['title' => 'Test', 'description' => null];
+        $scope = $this->mockScope('POST', $data);
 
-        $ref = new \ReflectionMethod(InputHydrator::class, 'hydrate');
-        $dto = $ref->invoke(null, CreateTaskInput::class, $data);
+        [, $dto] = InputHydrator::resolve(CreateTaskHandler::class, $scope);
 
         $this->assertNull($dto->description);
     }
@@ -137,9 +159,9 @@ final class InputHydratorTest extends TestCase
     public function hydrates_query_dto_with_int_coercion(): void
     {
         $data = ['page' => '3', 'limit' => '50'];
+        $scope = $this->mockScope('GET', $data);
 
-        $ref = new \ReflectionMethod(InputHydrator::class, 'hydrate');
-        $dto = $ref->invoke(null, ListTasksQuery::class, $data);
+        [, $dto] = InputHydrator::resolve(ListTasksHandler::class, $scope);
 
         $this->assertInstanceOf(ListTasksQuery::class, $dto);
         $this->assertSame(3, $dto->page);
@@ -152,15 +174,40 @@ final class InputHydratorTest extends TestCase
     public function runs_validatable_after_hydration(): void
     {
         $data = ['title' => ''];
+        $scope = $this->mockScope('POST', $data);
 
-        $ref = new \ReflectionMethod(InputHydrator::class, 'hydrate');
-
+        $this->expectException(ValidationException::class);
         try {
-            $ref->invoke(null, CreateTaskInput::class, $data);
-            $this->fail('Expected ValidationException');
+            InputHydrator::resolve(CreateTaskHandler::class, $scope);
         } catch (ValidationException $e) {
             $this->assertArrayHasKey('title', $e->errors);
             $this->assertSame('Title is required', $e->errors['title'][0]);
+            throw $e;
         }
+    }
+
+    private function mockScope(string $method, array $data): \Phalanx\Stoa\RequestScope
+    {
+        $inner = $this->createMock(\Phalanx\Scope\ExecutionScope::class);
+        $request = $this->createMock(\Psr\Http\Message\ServerRequestInterface::class);
+        $request->method('getMethod')->willReturn($method);
+
+        if ($method === 'POST') {
+            $stream = $this->createMock(\Psr\Http\Message\StreamInterface::class);
+            $stream->method('__toString')->willReturn(json_encode($data));
+            $request->method('getBody')->willReturn($stream);
+        } else {
+            $stream = $this->createMock(\Psr\Http\Message\StreamInterface::class);
+            $stream->method('__toString')->willReturn('');
+            $request->method('getBody')->willReturn($stream);
+        }
+
+        return new \Phalanx\Stoa\ExecutionContext(
+            $inner,
+            $request,
+            new \Phalanx\Stoa\RouteParams([]),
+            new \Phalanx\Stoa\QueryParams($method === 'GET' ? $data : []),
+            \Phalanx\Stoa\RouteConfig::compile('/')
+        );
     }
 }

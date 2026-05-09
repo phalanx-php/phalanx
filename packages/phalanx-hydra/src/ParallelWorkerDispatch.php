@@ -10,14 +10,12 @@ use Phalanx\Hydra\Protocol\TaskRequest;
 use Phalanx\Hydra\Supervisor\WorkerSupervisor;
 use Phalanx\Scope\TaskExecutor;
 use Phalanx\Scope\TaskScope;
-use Phalanx\Support\ClassNames;
-use Phalanx\Task\Executable;
-use Phalanx\Task\Scopeable;
-use Phalanx\Task\Traceable;
 use Phalanx\Trace\TraceType;
 use Phalanx\Worker\WorkerDispatch;
+use Phalanx\Worker\WorkerTask;
 use ReflectionClass;
 use RuntimeException;
+use UnitEnum;
 
 class ParallelWorkerDispatch implements WorkerDispatch
 {
@@ -28,18 +26,12 @@ class ParallelWorkerDispatch implements WorkerDispatch
     ) {
     }
 
-    public function dispatch(Scopeable|Executable $task, TaskScope&TaskExecutor $scope, CancellationToken $token): mixed
+    public function dispatch(WorkerTask $task, TaskScope&TaskExecutor $scope, CancellationToken $token): mixed
     {
         $token->throwIfCancelled();
         $scope->throwIfCancelled();
 
-        if (!$task instanceof Scopeable) {
-            throw new RuntimeException(
-                'Hydra worker dispatch supports Scopeable tasks only; Executable tasks require ExecutionScope.',
-            );
-        }
-
-        $name = $task instanceof Traceable ? $task->traceName : ClassNames::short($task::class);
+        $name = $task->traceName;
         $start = hrtime(true);
 
         $scope->trace()->log(TraceType::Worker, "worker:{$name}", ['state' => 'dispatching']);
@@ -82,7 +74,7 @@ class ParallelWorkerDispatch implements WorkerDispatch
         return $supervisor;
     }
 
-    private function serializeTask(Scopeable|Executable $task): TaskRequest
+    private function serializeTask(WorkerTask $task): TaskRequest
     {
         return new TaskRequest(
             id: uniqid('task-', true),
@@ -109,10 +101,30 @@ class ParallelWorkerDispatch implements WorkerDispatch
             $name = $param->getName();
 
             if (!$reflection->hasProperty($name)) {
-                continue;
+                if ($param->isDefaultValueAvailable()) {
+                    continue;
+                }
+
+                throw new RuntimeException(
+                    "Cannot serialize task {$taskClass}: constructor parameter '{$name}' has no matching property",
+                );
             }
 
             $prop = $reflection->getProperty($name);
+            if (!$prop->isInitialized($task)) {
+                if ($param->isDefaultValueAvailable()) {
+                    continue;
+                }
+
+                throw new RuntimeException(
+                    "Cannot serialize task {$taskClass}: property '{$name}' is uninitialized",
+                );
+            }
+
+            if ($prop->isStatic()) {
+                continue;
+            }
+
             $value = $prop->getValue($task);
 
             if (!$this->isSerializable($value)) {
@@ -147,19 +159,10 @@ class ParallelWorkerDispatch implements WorkerDispatch
             return false;
         }
 
-        if ($value instanceof \UnitEnum) {
+        if ($value instanceof UnitEnum) {
             return true;
         }
 
-        if (is_object($value)) {
-            try {
-                json_encode($value, JSON_THROW_ON_ERROR);
-                return true;
-            } catch (\JsonException) {
-                return false;
-            }
-        }
-
-        return false;
+        return !is_object($value) && !is_resource($value);
     }
 }

@@ -36,6 +36,7 @@ use Phalanx\Task\Traceable;
 use Phalanx\Trace\Trace;
 use Phalanx\Trace\TraceType;
 use Phalanx\Worker\WorkerDispatch;
+use Phalanx\Worker\WorkerTask;
 use ReflectionFunction;
 use ReflectionNamedType;
 use ReflectionParameter;
@@ -137,6 +138,11 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         return $this->supervisor;
     }
 
+    public function currentTaskRun(): ?TaskRun
+    {
+        return $this->currentRun;
+    }
+
     /**
      * @template T of object
      * @param class-string<T> $type
@@ -156,13 +162,14 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
 
         $config = $this->graph->resolve($type);
 
-        $build = (fn(): object => $this->build($config));
+        $scope = $this;
+        $build = static fn(): object => self::build($config, $scope);
 
         if ($config->lifetime === ServiceLifetime::Singleton) {
             /** @var T $instance */
             $instance = $this->singletons->get(
                 $resolved,
-                fn(): object => $this->runMiddleware($resolved, $build),
+                static fn(): object => self::runMiddleware($resolved, $build, $scope),
             );
 
             return $instance;
@@ -175,7 +182,19 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             return $instance;
         }
 
-        $instance = $this->runMiddleware($resolved, $build);
+        if ($config->lazy) {
+            /** @var T $instance */
+            $instance = $config->reflection()->newLazyProxy(static function () use ($scope, $resolved, $build): object {
+                return self::runMiddleware($resolved, $build, $scope);
+            });
+
+            $this->scopedInstances[$resolved] = $instance;
+            $this->scopedCreationOrder[] = $resolved;
+
+            return $instance;
+        }
+
+        $instance = self::runMiddleware($resolved, $build, $this);
         $this->scopedInstances[$resolved] = $instance;
         $this->scopedCreationOrder[] = $resolved;
 
@@ -999,31 +1018,315 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         );
     }
 
-    public function inWorker(Scopeable|Executable|Closure $task): mixed
+    public function inWorker(WorkerTask $task): mixed
     {
         if ($this->workerDispatch === null) {
             throw new RuntimeException(
                 'inWorker(): no WorkerDispatch configured. Use ApplicationBuilder::withWorkerDispatch().',
             );
         }
-        if ($task instanceof Closure) {
+
+        return $this->dispatchWorkerSupervised($task);
+    }
+
+    /** @return array<string|int, mixed> */
+    public function parallel(WorkerTask ...$tasks): array
+    {
+        $this->throwIfCancelled();
+        if ($this->workerDispatch === null) {
             throw new RuntimeException(
-                'inWorker(): Closure cannot cross process boundary; pass a Scopeable|Executable instance.',
+                'parallel(): no WorkerDispatch configured. Use ApplicationBuilder::withWorkerDispatch().',
+            );
+        }
+        if ($tasks === []) {
+            return [];
+        }
+
+        $wg = new WaitGroup();
+        $results = [];
+        $errors = [];
+        $firstError = null;
+        $cids = [];
+        /** @var list<self> $childScopes */
+        $childScopes = [];
+        $parentRun = $this->currentRun;
+
+        $unregister = $this->cancellation->onCancel(static function () use (&$cids, &$childScopes): void {
+            self::cancelWorkerBatch($childScopes, $cids);
+        });
+
+        try {
+            foreach ($tasks as $key => $task) {
+                if ($firstError !== null) {
+                    break;
+                }
+
+                $childScope = $this->makeChildScope($parentRun);
+                $childScopes[] = $childScope;
+                $wg->add(1);
+
+                $cid = Coroutine::create(static function () use (
+                    $childScope,
+                    $task,
+                    $key,
+                    $wg,
+                    &$results,
+                    &$errors,
+                    &$firstError,
+                    &$childScopes,
+                    &$cids,
+                ): void {
+                    CoroutineScopeRegistry::install($childScope);
+                    try {
+                        $results[$key] = $childScope->dispatchWorkerSupervised($task);
+                        if (Coroutine::isCanceled()) {
+                            unset($results[$key]);
+                            $errors[$key] = new Cancelled("parallel[{$key}] cancelled");
+                        }
+                    } catch (Cancelled $e) {
+                        $errors[$key] = $e;
+                        $firstError = self::failWorkerBatch($e, $firstError, $childScopes, $cids);
+                    } catch (Throwable $e) {
+                        $errors[$key] = Coroutine::isCanceled()
+                            ? new Cancelled("parallel[{$key}] cancelled: {$e->getMessage()}")
+                            : $e;
+                        $firstError = self::failWorkerBatch($errors[$key], $firstError, $childScopes, $cids);
+                    } finally {
+                        CoroutineScopeRegistry::clear();
+                        $wg->done();
+                    }
+                });
+                if ($cid !== false) {
+                    $cids[] = $cid;
+                } else {
+                    $errors[$key] = new RuntimeException("parallel[{$key}] failed to create worker coroutine");
+                    $firstError = self::failWorkerBatch($errors[$key], $firstError, $childScopes, $cids);
+                    $wg->done();
+                    break;
+                }
+            }
+
+            $wg->wait();
+
+            if ($firstError !== null) {
+                throw $firstError;
+            }
+        } finally {
+            $unregister();
+            foreach ($childScopes as $child) {
+                $child->dispose();
+            }
+        }
+
+        $ordered = [];
+        foreach (array_keys($tasks) as $key) {
+            if (array_key_exists($key, $results)) {
+                $ordered[$key] = $results[$key];
+            }
+        }
+        return $ordered;
+    }
+
+    public function settleParallel(WorkerTask ...$tasks): SettlementBag
+    {
+        $this->throwIfCancelled();
+        if ($this->workerDispatch === null) {
+            throw new RuntimeException(
+                'settleParallel(): no WorkerDispatch configured. Use ApplicationBuilder::withWorkerDispatch().',
+            );
+        }
+        if ($tasks === []) {
+            return new SettlementBag([]);
+        }
+
+        $wg = new WaitGroup();
+        $bag = [];
+        $cids = [];
+        /** @var list<self> $childScopes */
+        $childScopes = [];
+        $parentRun = $this->currentRun;
+
+        $unregister = $this->cancellation->onCancel(static function () use (&$cids): void {
+            self::cancelCoroutines($cids);
+        });
+
+        try {
+            foreach ($tasks as $key => $task) {
+                $childScope = $this->makeChildScope($parentRun);
+                $childScopes[] = $childScope;
+                $wg->add(1);
+
+                $cid = Coroutine::create(static function () use ($childScope, $task, $key, $wg, &$bag): void {
+                    CoroutineScopeRegistry::install($childScope);
+                    try {
+                        $value = $childScope->dispatchWorkerSupervised($task);
+                        if (Coroutine::isCanceled()) {
+                            $bag[$key] = Settlement::err(new Cancelled("settleParallel[{$key}] cancelled"));
+                        } else {
+                            $bag[$key] = Settlement::ok($value);
+                        }
+                    } catch (Throwable $e) {
+                        $bag[$key] = Settlement::err(
+                            Coroutine::isCanceled()
+                                ? new Cancelled("settleParallel[{$key}] cancelled: {$e->getMessage()}")
+                                : $e,
+                        );
+                    } finally {
+                        CoroutineScopeRegistry::clear();
+                        $wg->done();
+                    }
+                });
+                if ($cid !== false) {
+                    $cids[] = $cid;
+                } else {
+                    $bag[$key] = Settlement::err(
+                        new RuntimeException("settleParallel[{$key}] failed to create worker coroutine"),
+                    );
+                    $wg->done();
+                }
+            }
+
+            $wg->wait();
+        } finally {
+            $unregister();
+            foreach ($childScopes as $child) {
+                $child->dispose();
+            }
+        }
+
+        $ordered = [];
+        foreach (array_keys($tasks) as $key) {
+            if (array_key_exists($key, $bag)) {
+                $ordered[$key] = $bag[$key];
+            }
+        }
+        return new SettlementBag($ordered);
+    }
+
+    public function mapParallel(iterable $items, Closure $fn, int $limit = 10, ?Closure $onEach = null): array
+    {
+        $this->throwIfCancelled();
+        if ($this->workerDispatch === null) {
+            throw new RuntimeException(
+                'mapParallel(): no WorkerDispatch configured. Use ApplicationBuilder::withWorkerDispatch().',
             );
         }
 
-        if ($this->currentRun !== null) {
-            $this->supervisor->assertCanEnterWorker($this->currentRun);
+        $itemsArr = is_array($items) ? $items : iterator_to_array($items);
+        if ($itemsArr === []) {
+            return [];
         }
 
-        $dispatch = $this->workerDispatch;
-        $token = $this->cancellation;
-        $taskName = self::resolveTaskName($task);
-        $scope = $this;
-        return $this->call(
-            static fn(): mixed => $dispatch->dispatch($task, $scope, $token),
-            WaitReason::worker('worker', $taskName),
-        );
+        $entries = [];
+        foreach ($itemsArr as $key => $item) {
+            $entries[] = [$key, $item];
+        }
+
+        $effectiveLimit = max(1, min($limit, count($entries)));
+        $wg = new WaitGroup();
+        $results = [];
+        $errors = [];
+        $firstError = null;
+        $cids = [];
+        $next = 0;
+        /** @var list<self> $childScopes */
+        $childScopes = [];
+        $parentRun = $this->currentRun;
+
+        $unregister = $this->cancellation->onCancel(static function () use (&$cids, &$childScopes): void {
+            self::cancelWorkerBatch($childScopes, $cids);
+        });
+
+        try {
+            for ($slot = 0; $slot < $effectiveLimit; $slot++) {
+                if ($firstError !== null) {
+                    break;
+                }
+
+                $childScope = $this->makeChildScope($parentRun);
+                $childScopes[] = $childScope;
+                $wg->add(1);
+
+                $cid = Coroutine::create(static function () use (
+                    $childScope,
+                    $fn,
+                    $onEach,
+                    $wg,
+                    $entries,
+                    &$results,
+                    &$errors,
+                    &$firstError,
+                    &$next,
+                    &$childScopes,
+                    &$cids,
+                ): void {
+                    CoroutineScopeRegistry::install($childScope);
+                    try {
+                        while ($firstError === null && !$childScope->cancellation->isCancelled) {
+                            $index = $next++;
+                            if (!array_key_exists($index, $entries)) {
+                                break;
+                            }
+
+                            [$key, $item] = $entries[$index];
+                            try {
+                                $task = $fn($item);
+                                if (!$task instanceof WorkerTask) {
+                                    throw new RuntimeException('mapParallel() task factory must return a WorkerTask.');
+                                }
+                                $value = $childScope->dispatchWorkerSupervised($task);
+                                if (Coroutine::isCanceled()) {
+                                    $errors[$key] = new Cancelled("mapParallel[{$key}] cancelled");
+                                } else {
+                                    $results[$key] = $value;
+                                    if ($onEach !== null) {
+                                        $onEach($key, $value);
+                                    }
+                                }
+                            } catch (Cancelled $e) {
+                                $errors[$key] = $e;
+                                $firstError = self::failWorkerBatch($e, $firstError, $childScopes, $cids);
+                            } catch (Throwable $e) {
+                                $errors[$key] = Coroutine::isCanceled()
+                                    ? new Cancelled("mapParallel[{$key}] cancelled: {$e->getMessage()}")
+                                    : $e;
+                                $firstError = self::failWorkerBatch($errors[$key], $firstError, $childScopes, $cids);
+                            }
+                        }
+                    } finally {
+                        CoroutineScopeRegistry::clear();
+                        $wg->done();
+                    }
+                });
+                if ($cid !== false) {
+                    $cids[] = $cid;
+                } else {
+                    $errors[$slot] = new RuntimeException("mapParallel worker {$slot} failed to create coroutine");
+                    $firstError = self::failWorkerBatch($errors[$slot], $firstError, $childScopes, $cids);
+                    $wg->done();
+                    break;
+                }
+            }
+
+            $wg->wait();
+
+            if ($firstError !== null) {
+                throw $firstError;
+            }
+        } finally {
+            $unregister();
+            foreach ($childScopes as $child) {
+                $child->dispose();
+            }
+        }
+
+        $ordered = [];
+        foreach (array_keys($itemsArr) as $key) {
+            if (array_key_exists($key, $results)) {
+                $ordered[$key] = $results[$key];
+            }
+        }
+        return $ordered;
     }
 
     public function transaction(TransactionLease $lease, Closure $body): mixed
@@ -1063,13 +1366,28 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
     ): mixed {
         $this->throwIfCancelled();
         $self = $this;
-        return $this->runTaskMiddleware(
+        return self::runTaskMiddleware(
             $task,
             static fn(ExecutionScope $scope): mixed => $self->runSupervised(
                 $task,
                 $scope instanceof self ? $scope : $self,
                 $mode,
             ),
+            $this,
+        );
+    }
+
+    protected function dispatchWorkerSupervised(WorkerTask $task): mixed
+    {
+        $this->throwIfCancelled();
+        $self = $this;
+        return self::runTaskMiddleware(
+            $task,
+            static fn(ExecutionScope $scope): mixed => $self->runWorkerSupervised(
+                $task,
+                $scope instanceof self ? $scope : $self,
+            ),
+            $this,
         );
     }
 
@@ -1123,11 +1441,46 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
     /** @param list<int> $cids */
     private static function cancelCoroutines(array $cids): void
     {
+        $current = Coroutine::getCid();
         foreach ($cids as $cid) {
+            if ($cid === $current) {
+                continue;
+            }
+
             if (Coroutine::exists($cid)) {
                 Coroutine::cancel($cid);
             }
         }
+    }
+
+    /**
+     * @param list<self> $childScopes
+     * @param list<int> $cids
+     */
+    private static function cancelWorkerBatch(array $childScopes, array $cids): void
+    {
+        foreach ($childScopes as $child) {
+            $child->cancellation->cancel();
+        }
+        self::cancelCoroutines($cids);
+    }
+
+    /**
+     * @param list<self> $childScopes
+     * @param list<int> $cids
+     */
+    private static function failWorkerBatch(
+        Throwable $error,
+        ?Throwable $firstError,
+        array $childScopes,
+        array $cids,
+    ): Throwable {
+        if ($firstError !== null) {
+            return $firstError;
+        }
+
+        self::cancelWorkerBatch($childScopes, $cids);
+        return $error;
     }
 
     private static function invokeTask(Scopeable|Executable|Closure $task, self $scope): mixed
@@ -1258,6 +1611,62 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         }
     }
 
+    private function runWorkerSupervised(WorkerTask $task, self $scope): mixed
+    {
+        if ($this->workerDispatch === null) {
+            throw new RuntimeException('worker dispatch unavailable');
+        }
+
+        $name = self::resolveTaskName($task);
+        $parentRun = $scope->currentRun;
+        if ($parentRun !== null) {
+            $this->supervisor->assertCanEnterWorker($parentRun);
+        }
+
+        $run = $this->supervisor->start(
+            $task,
+            $scope,
+            DispatchMode::Worker,
+            $name,
+            $parentRun?->id,
+        );
+
+        $previousScope = CoroutineScopeRegistry::current();
+        $previousRun = $scope->currentRun;
+        $clearWait = null;
+
+        CoroutineScopeRegistry::install($scope);
+        $scope->currentRun = $run;
+
+        try {
+            $this->supervisor->markRunning($run);
+            $clearWait = $this->supervisor->beginWait($run, WaitReason::worker('worker', $name));
+            $value = $this->workerDispatch->dispatch($task, $scope, $run->cancellation);
+            if ($run->cancellation->isCancelled || Coroutine::isCanceled()) {
+                throw new Cancelled("worker task {$name} cancelled");
+            }
+            $this->supervisor->complete($run, $value);
+            return $value;
+        } catch (Cancelled $e) {
+            $this->supervisor->cancel($run);
+            throw $e;
+        } catch (Throwable $e) {
+            $this->supervisor->fail($run, $e);
+            throw $e;
+        } finally {
+            if ($clearWait !== null) {
+                $clearWait();
+            }
+            $scope->currentRun = $previousRun;
+            $this->supervisor->reap($run);
+            if ($previousScope !== null) {
+                CoroutineScopeRegistry::install($previousScope);
+            } else {
+                CoroutineScopeRegistry::clear();
+            }
+        }
+    }
+
     /**
      * Wrap the build closure in the middleware chain. Middlewares are invoked
      * in registration order (first-registered runs outermost). Each calls
@@ -1265,15 +1674,14 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
      *
      * @param Closure(): object $build
      */
-    private function runMiddleware(string $type, Closure $build): object
+    private static function runMiddleware(string $type, Closure $build, self $scope): object
     {
-        if ($this->serviceMiddlewares === []) {
+        if ($scope->serviceMiddlewares === []) {
             return $build();
         }
 
-        $scope = $this;
         $next = $build;
-        foreach (array_reverse($this->serviceMiddlewares) as $middleware) {
+        foreach (array_reverse($scope->serviceMiddlewares) as $middleware) {
             $current = $next;
             $next = static fn(): object => $middleware->transform($type, $current, $scope);
         }
@@ -1288,27 +1696,27 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
      *
      * @param Closure(ExecutionScope): mixed $invoke
      */
-    private function runTaskMiddleware(Scopeable|Executable|Closure $task, Closure $invoke): mixed
+    private static function runTaskMiddleware(Scopeable|Executable|Closure $task, Closure $invoke, self $scope): mixed
     {
-        if ($this->taskMiddlewares === []) {
-            return $invoke($this);
+        if ($scope->taskMiddlewares === []) {
+            return $invoke($scope);
         }
 
         $next = $invoke;
-        foreach (array_reverse($this->taskMiddlewares) as $middleware) {
+        foreach (array_reverse($scope->taskMiddlewares) as $middleware) {
             $current = $next;
             $next = static fn(ExecutionScope $s): mixed => $middleware->handle($task, $s, $current);
         }
-        return $next($this);
+        return $next($scope);
     }
 
-    private function build(CompiledServiceConfig $config): object
+    private static function build(CompiledServiceConfig $config, self $scope): object
     {
         if ($config->factoryFn === null) {
             throw new RuntimeException("Service {$config->type} has no factory");
         }
-        $deps = $this->resolveFactoryDependencies($config);
-        $this->traceLog->log(TraceType::ServiceResolve, $config->type);
+        $deps = self::resolveFactoryDependencies($config, $scope);
+        $scope->traceLog->log(TraceType::ServiceResolve, $config->type);
         $instance = ($config->factoryFn)(...$deps);
         foreach ($config->onInitHooks as $hook) {
             $hook($instance);
@@ -1317,7 +1725,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
     }
 
     /** @return list<mixed> */
-    private function resolveFactoryDependencies(CompiledServiceConfig $config): array
+    private static function resolveFactoryDependencies(CompiledServiceConfig $config, self $scope): array
     {
         $factory = $config->factoryFn;
         if ($factory === null) {
@@ -1327,7 +1735,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         if ($config->needsTypes !== []) {
             $deps = [];
             foreach ($config->needsTypes as $needed) {
-                $deps[] = $this->service($needed);
+                $deps[] = $scope->service($needed);
             }
 
             return $deps;
@@ -1335,13 +1743,13 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
 
         $deps = [];
         foreach ((new ReflectionFunction($factory))->getParameters() as $parameter) {
-            $deps[] = $this->resolveFactoryParameter($config, $parameter);
+            $deps[] = self::resolveFactoryParameter($config, $parameter, $scope);
         }
 
         return $deps;
     }
 
-    private function resolveFactoryParameter(CompiledServiceConfig $config, ReflectionParameter $parameter): mixed
+    private static function resolveFactoryParameter(CompiledServiceConfig $config, ReflectionParameter $parameter, self $scope): mixed
     {
         $type = $parameter->getType();
         if (!$type instanceof ReflectionNamedType || $type->isBuiltin()) {
@@ -1353,12 +1761,12 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         }
 
         $typeName = $type->getName();
-        if ($this instanceof $typeName) {
-            return $this;
+        if ($scope instanceof $typeName) {
+            return $scope;
         }
 
         /** @var class-string $serviceType */
         $serviceType = $typeName;
-        return $this->service($serviceType);
+        return $scope->service($serviceType);
     }
 }

@@ -9,9 +9,8 @@ use Phalanx\Hydra\Protocol\Codec;
 use Phalanx\Hydra\Protocol\MessageType;
 use Phalanx\Hydra\Protocol\Response;
 use Phalanx\Hydra\Protocol\TaskRequest;
-use Phalanx\Task\Executable;
-use Phalanx\Task\Scopeable;
 use Phalanx\Trace\Trace;
+use Phalanx\Worker\WorkerTask;
 use ReflectionClass;
 use ReflectionNamedType;
 use ReflectionParameter;
@@ -55,7 +54,7 @@ class WorkerRuntime
         }
     }
 
-    private static function assertAcceptsWorkerScope(Scopeable|Executable $task): void
+    private static function assertAcceptsWorkerScope(WorkerTask $task): void
     {
         $taskClass = $task::class;
         $reflection = new ReflectionClass($task);
@@ -121,7 +120,7 @@ class WorkerRuntime
         }
     }
 
-    private function instantiateTask(TaskRequest $request): Scopeable|Executable
+    private function instantiateTask(TaskRequest $request): WorkerTask
     {
         if (!class_exists($request->taskClass)) {
             throw new RuntimeException("Task class not found: {$request->taskClass}");
@@ -129,25 +128,22 @@ class WorkerRuntime
 
         $reflection = new ReflectionClass($request->taskClass);
 
-        if (
-            !$reflection->implementsInterface(Scopeable::class)
-            && !$reflection->implementsInterface(Executable::class)
-        ) {
-            throw new RuntimeException("Task must implement Scopeable or Executable: {$request->taskClass}");
+        if (!$reflection->implementsInterface(WorkerTask::class)) {
+            throw new RuntimeException("Task must implement WorkerTask: {$request->taskClass}");
         }
 
         $constructor = $reflection->getConstructor();
 
         if ($constructor === null) {
             $instance = $reflection->newInstance();
-            assert($instance instanceof Scopeable || $instance instanceof Executable);
+            assert($instance instanceof WorkerTask);
             return $instance;
         }
 
         $instance = $reflection->newInstanceArgs(
             $this->resolveConstructorArgs($constructor->getParameters(), $request->constructorArgs),
         );
-        assert($instance instanceof Scopeable || $instance instanceof Executable);
+        assert($instance instanceof WorkerTask);
         return $instance;
     }
 

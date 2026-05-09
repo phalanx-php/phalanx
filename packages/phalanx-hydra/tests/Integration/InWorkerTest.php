@@ -6,6 +6,7 @@ namespace Phalanx\Hydra\Tests\Integration;
 
 use Phalanx\Application;
 use Phalanx\Cancellation\Cancelled;
+use Phalanx\Hydra\Hydra;
 use Phalanx\Hydra\ParallelConfig;
 use Phalanx\Hydra\Tests\Fixtures\GreetThroughWorkerService;
 use Phalanx\Hydra\Tests\Fixtures\NeedsExecutionScope;
@@ -269,6 +270,35 @@ final class InWorkerTest extends AsyncTestCase
                 $scope->dispose();
             }
         });
+    }
+
+    #[Test]
+    public function serviceBundleSuppliesWorkerDispatch(): void
+    {
+        $bundle = TestServiceBundle::create()
+            ->singleton(
+                WorkerGreetingService::class,
+                static fn(): WorkerGreetingService => new WorkerGreetingServiceImpl(),
+            );
+
+        $app = Application::starting()
+            ->providers($bundle, Hydra::services(new ParallelConfig(agents: 1)))
+            ->compile();
+        $app->startup();
+
+        try {
+            $this->runAsync(static function () use ($app): void {
+                $scope = $app->createScope();
+
+                try {
+                    self::assertSame(5, $scope->inWorker(new AddNumbers(2, 3)));
+                } finally {
+                    $scope->dispose();
+                }
+            });
+        } finally {
+            $app->shutdown();
+        }
     }
 
     #[Test]

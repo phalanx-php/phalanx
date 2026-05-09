@@ -134,11 +134,38 @@ class InputHydrator
      */
     protected static function hydrate(string $class, array $data): object
     {
+        [$args, $errors] = self::resolveArgs($class, $data);
+
+        if ($errors !== []) {
+            throw new ValidationException($errors);
+        }
+
+        $dto = new $class(...$args);
+
+        if ($dto instanceof Validatable) {
+            $validationErrors = $dto->validate();
+            if ($validationErrors !== []) {
+                throw new ValidationException($validationErrors);
+            }
+        }
+
+        return $dto;
+    }
+
+    /**
+     * Resolve constructor arguments from raw data.
+     *
+     * @param class-string $class
+     * @param array<string, mixed> $data
+     * @return array{0: array<string, mixed>, 1: array<string, list<string>>}
+     */
+    protected static function resolveArgs(string $class, array $data): array
+    {
         $ref = new ReflectionClass($class);
         $constructor = $ref->getConstructor();
 
         if ($constructor === null) {
-            return new $class();
+            return [[], []];
         }
 
         $args = [];
@@ -181,20 +208,7 @@ class InputHydrator
             }
         }
 
-        if ($errors !== []) {
-            throw new ValidationException($errors);
-        }
-
-        $dto = new $class(...$args);
-
-        if ($dto instanceof Validatable) {
-            $validationErrors = $dto->validate();
-            if ($validationErrors !== []) {
-                throw new ValidationException($validationErrors);
-            }
-        }
-
-        return $dto;
+        return [$args, $errors];
     }
 
     /**

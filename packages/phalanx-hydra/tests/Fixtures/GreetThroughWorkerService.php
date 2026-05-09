@@ -5,10 +5,14 @@ declare(strict_types=1);
 namespace Phalanx\Hydra\Tests\Fixtures;
 
 use Phalanx\Scope\Scope;
-use Phalanx\Task\Scopeable;
+use Phalanx\Worker\WorkerTask;
 
-final readonly class GreetThroughWorkerService implements Scopeable
+final class GreetThroughWorkerService implements WorkerTask
 {
+    public string $traceName {
+        get => self::class;
+    }
+
     public function __construct(
         public string $name,
     ) {

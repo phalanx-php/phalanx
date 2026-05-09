@@ -10,6 +10,7 @@ use Phalanx\Concurrency\SettlementBag;
 use Phalanx\Supervisor\TaskRun;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
+use Phalanx\Worker\WorkerTask;
 
 interface TaskExecutor
 {
@@ -69,7 +70,25 @@ interface TaskExecutor
 
     public function singleflight(string $key, Scopeable|Executable|Closure $task): mixed;
 
-    public function inWorker(Scopeable|Executable|Closure $task): mixed;
+    public function inWorker(WorkerTask $task): mixed;
+
+    /**
+     * @param WorkerTask ...$tasks
+     * @return array<string|int, mixed>
+     */
+    public function parallel(WorkerTask ...$tasks): array;
+
+    /** @param WorkerTask ...$tasks */
+    public function settleParallel(WorkerTask ...$tasks): SettlementBag;
+
+    /**
+     * @template TItem
+     * @param iterable<string|int, TItem> $items
+     * @param Closure(TItem): WorkerTask $fn
+     * @param ?Closure(string|int, mixed): void $onEach
+     * @return array<string|int, mixed>
+     */
+    public function mapParallel(iterable $items, Closure $fn, int $limit = 10, ?Closure $onEach = null): array;
 
     /**
      * Spawn a supervisor-tracked background task and return immediately.

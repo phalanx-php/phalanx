@@ -5,10 +5,14 @@ declare(strict_types=1);
 namespace Phalanx\Tests\Support\Fixtures;
 
 use Phalanx\Scope\Scope;
-use Phalanx\Task\Scopeable;
+use Phalanx\Worker\WorkerTask;
 
-final readonly class AddNumbers implements Scopeable
+final class AddNumbers implements WorkerTask
 {
+    public string $traceName {
+        get => self::class;
+    }
+
     public function __construct(
         public int $a,
         public int $b,
@@ -21,8 +25,12 @@ final readonly class AddNumbers implements Scopeable
     }
 }
 
-final readonly class CpuIntensiveTask implements Scopeable
+final class CpuIntensiveTask implements WorkerTask
 {
+    public string $traceName {
+        get => self::class;
+    }
+
     public function __construct(
         public int $iterations,
     ) {
@@ -38,8 +46,12 @@ final readonly class CpuIntensiveTask implements Scopeable
     }
 }
 
-final readonly class TaskThatThrows implements Scopeable
+final class TaskThatThrows implements WorkerTask
 {
+    public string $traceName {
+        get => self::class;
+    }
+
     public function __construct(
         public string $message,
     ) {

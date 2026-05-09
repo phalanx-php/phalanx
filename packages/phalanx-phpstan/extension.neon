@@ -48,6 +48,24 @@ services:
             - phpstan.rules.rule
 
     -
+        class: Phalanx\PHPStan\Rules\Worker\WorkerTaskOnlyRule
+        tags:
+            - phpstan.rules.rule
+
+    -
+        class: Phalanx\PHPStan\Rules\Worker\WorkerTaskScopeContractRule
+        arguments:
+            - @Phalanx\PHPStan\Support\PathPolicy
+            - @PHPStan\Reflection\ReflectionProvider
+        tags:
+            - phpstan.rules.rule
+
+    -
+        class: Phalanx\PHPStan\Rules\Worker\WorkerTaskSerializableStateRule
+        tags:
+            - phpstan.rules.rule
+
+    -
         class: Phalanx\PHPStan\Rules\Transaction\TransactionCallbackScopeRule
         tags:
             - phpstan.rules.rule

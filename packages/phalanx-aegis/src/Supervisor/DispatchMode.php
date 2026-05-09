@@ -16,8 +16,9 @@ namespace Phalanx\Supervisor;
  *             `race()`, `any()`, `map()`, `settle()`, `defer()`.
  *
  * Worker      Crosses a process boundary via serialize(). Used by
- *             `inWorker()`. The dispatched task must be a Scopeable or
- *             Executable instance — bare closures cannot cross.
+ *             `inWorker()`, `parallel()`, `settleParallel()`, and
+ *             `mapParallel()`. The dispatched task must be a WorkerTask
+ *             instance — bare closures cannot cross.
  */
 enum DispatchMode: string
 {

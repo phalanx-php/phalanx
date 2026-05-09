@@ -7,13 +7,12 @@ namespace Phalanx\Testing\Stub;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Scope\TaskExecutor;
 use Phalanx\Scope\TaskScope;
-use Phalanx\Task\Executable;
-use Phalanx\Task\Scopeable;
 use Phalanx\Worker\WorkerDispatch;
+use Phalanx\Worker\WorkerTask;
 
 final class FakeWorkerDispatch implements WorkerDispatch
 {
-    /** @var list<Scopeable|Executable> */
+    /** @var list<WorkerTask> */
     private(set) array $dispatched = [];
 
     private(set) int $dispatchCount = 0;
@@ -22,7 +21,7 @@ final class FakeWorkerDispatch implements WorkerDispatch
 
     private(set) ?CancellationToken $lastToken = null;
 
-    public function dispatch(Scopeable|Executable $task, TaskScope&TaskExecutor $scope, CancellationToken $token): mixed
+    public function dispatch(WorkerTask $task, TaskScope&TaskExecutor $scope, CancellationToken $token): mixed
     {
         $this->dispatched[] = $task;
         $this->dispatchCount++;

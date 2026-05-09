@@ -8,11 +8,11 @@ use Phalanx\Hydra\Protocol\Codec;
 use Phalanx\Hydra\Protocol\Response;
 use Phalanx\Hydra\Protocol\ServiceCall;
 use Phalanx\Runtime\RuntimeContext;
-use Phalanx\Scope\Scope;
 use Phalanx\Trace\Trace;
+use Phalanx\Worker\WorkerScope as AegisWorkerScope;
 use RuntimeException;
 
-class WorkerScope implements Scope
+class WorkerScope implements AegisWorkerScope
 {
     public RuntimeContext $runtime {
         get => throw new RuntimeException('WorkerScope does not expose parent runtime context.');
@@ -61,7 +61,7 @@ class WorkerScope implements Scope
         return $this->attributes[$key] ?? $default;
     }
 
-    public function withAttribute(string $key, mixed $value): Scope
+    public function withAttribute(string $key, mixed $value): AegisWorkerScope
     {
         $attributes = $this->attributes;
         $attributes[$key] = $value;

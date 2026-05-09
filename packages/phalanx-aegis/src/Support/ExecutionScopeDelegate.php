@@ -17,6 +17,7 @@ use Phalanx\Supervisor\WaitReason;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 use Phalanx\Trace\Trace;
+use Phalanx\Worker\WorkerTask;
 
 trait ExecutionScopeDelegate
 {
@@ -125,9 +126,25 @@ trait ExecutionScopeDelegate
         return $this->innerScope()->singleflight($key, $task);
     }
 
-    public function inWorker(Scopeable|Executable|Closure $task): mixed
+    public function inWorker(WorkerTask $task): mixed
     {
         return $this->innerScope()->inWorker($task);
+    }
+
+    /** @return array<string|int, mixed> */
+    public function parallel(WorkerTask ...$tasks): array
+    {
+        return $this->innerScope()->parallel(...$tasks);
+    }
+
+    public function settleParallel(WorkerTask ...$tasks): SettlementBag
+    {
+        return $this->innerScope()->settleParallel(...$tasks);
+    }
+
+    public function mapParallel(iterable $items, Closure $fn, int $limit = 10, ?Closure $onEach = null): array
+    {
+        return $this->innerScope()->mapParallel($items, $fn, $limit, $onEach);
     }
 
     public function go(Closure $fn, ?string $name = null): TaskRun

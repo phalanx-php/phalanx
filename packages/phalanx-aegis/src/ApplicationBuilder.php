@@ -15,9 +15,11 @@ use Phalanx\Middleware\TaskMiddleware;
 use Phalanx\Runtime\Memory\RuntimeMemory;
 use Phalanx\Runtime\RuntimeContext;
 use Phalanx\Runtime\RuntimePolicy;
+use Phalanx\Scope\ExecutionLifecycleScope;
 use Phalanx\Service\LazySingleton;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\ServiceCatalog;
+use Phalanx\Service\ServiceLifetime;
 use Phalanx\Supervisor\LedgerStorage;
 use Phalanx\Supervisor\Supervisor;
 use Phalanx\Supervisor\SwooleTableLedger;
@@ -158,6 +160,29 @@ class ApplicationBuilder
             );
         });
         $supervisor = new Supervisor($ledger, $trace);
+        $resolvedWorkerDispatch = $this->workerDispatch;
+        $workerDispatchType = $graph->alias(WorkerDispatch::class);
+        $workerDispatchConfig = $graph->configs[$workerDispatchType] ?? null;
+        if ($resolvedWorkerDispatch === null && $workerDispatchConfig !== null) {
+            if ($workerDispatchConfig->lifetime !== ServiceLifetime::Singleton) {
+                throw new \RuntimeException(
+                    'WorkerDispatch services must be registered as singletons so the process pool is application-owned.',
+                );
+            }
+
+            $resolverScope = new ExecutionLifecycleScope(
+                $graph,
+                $singletons,
+                CancellationToken::create(),
+                $trace,
+                $supervisor,
+            );
+            try {
+                $resolvedWorkerDispatch = $resolverScope->service(WorkerDispatch::class);
+            } finally {
+                $resolverScope->dispose();
+            }
+        }
         $runtimePolicy = $this->runtimePolicy ?? RuntimePolicy::fromContext($this->context);
         $strictRuntimeHooks = $this->strictRuntimeHooks ?? $this->context->bool(
             RuntimePolicy::CONTEXT_STRICT_HOOKS,
@@ -173,7 +198,7 @@ class ApplicationBuilder
             $this->providers,
             $this->serviceMiddlewares,
             $this->taskMiddlewares,
-            $this->workerDispatch,
+            $resolvedWorkerDispatch,
             $runtimePolicy,
             $strictRuntimeHooks,
         );

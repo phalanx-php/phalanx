@@ -36,12 +36,19 @@ final class CompiledServiceConfig implements ServiceConfig
     /** @var list<Closure(object): void> */
     public array $onShutdownHooks = [];
 
+    private ?\ReflectionClass $reflection = null;
+
     /** @param class-string $type */
     public function __construct(
         public readonly string $type,
         public ServiceLifetime $lifetime,
         public bool $lazy = true,
     ) {
+    }
+
+    public function reflection(): \ReflectionClass
+    {
+        return $this->reflection ??= new \ReflectionClass($this->type);
     }
 
     public function lazy(): self

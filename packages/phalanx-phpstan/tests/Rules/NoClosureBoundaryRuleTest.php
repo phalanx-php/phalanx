@@ -19,9 +19,12 @@ final class NoClosureBoundaryRuleTest extends RuleTestCase
         $this->analyse(
             [__DIR__ . '/Fixtures/no-closure-boundary.php'],
             [
-                ['inWorker() cannot receive a closure or Task::of() closure adapter; pass a serializable Scopeable|Executable task object.', 20],
-                ['inWorker() cannot receive a closure or Task::of() closure adapter; pass a serializable Scopeable|Executable task object.', 21],
-                ['inWorker() cannot receive a closure or Task::of() closure adapter; pass a serializable Scopeable|Executable task object.', 23],
+                ['inWorker() cannot receive a closure or Task::of() closure adapter; pass serializable WorkerTask objects.', 20],
+                ['inWorker() cannot receive a closure or Task::of() closure adapter; pass serializable WorkerTask objects.', 21],
+                ['inWorker() cannot receive a closure or Task::of() closure adapter; pass serializable WorkerTask objects.', 23],
+                ['parallel() cannot receive a closure or Task::of() closure adapter; pass serializable WorkerTask objects.', 24],
+                ['settleParallel() cannot receive a closure or Task::of() closure adapter; pass serializable WorkerTask objects.', 25],
+                ['parallel() cannot receive a closure or Task::of() closure adapter; pass serializable WorkerTask objects.', 26],
             ],
         );
     }
