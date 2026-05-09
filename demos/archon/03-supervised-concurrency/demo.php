@@ -20,7 +20,14 @@ return DemoReport::demo(
     'Archon Supervised Concurrency',
     static function (DemoReport $report, AppContext $context): void {
         $isTty = stream_isatty(STDOUT);
-        $stream = $isTty ? STDOUT : fopen('php://temp', 'w+');
+        if ($isTty) {
+            $stream = STDOUT;
+        } else {
+            $stream = fopen('php://temp', 'w+');
+            if ($stream === false) {
+                throw new \RuntimeException('php://temp unavailable');
+            }
+        }
         $terminal = $isTty ? null : new TerminalEnvironment(columns: 80, lines: 24);
         $theme = Theme::default();
 

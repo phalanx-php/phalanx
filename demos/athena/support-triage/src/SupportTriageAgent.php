@@ -52,7 +52,7 @@ final class SupportTriageAgent implements AgentDefinition, HasTimeout
         ];
     }
 
-    public function provider(): ?string
+    public function provider(): string
     {
         return 'anthropic';
     }

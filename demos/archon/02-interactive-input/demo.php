@@ -48,6 +48,9 @@ return DemoReport::demo(
 
         $runCase = static function (string $label, array $argv, string $expected) use ($commands, $report): void {
             $stream = fopen('php://temp', 'w+');
+            if ($stream === false) {
+                throw new \RuntimeException('php://temp unavailable');
+            }
             $capture = new StreamOutput($stream, new TerminalEnvironment(columns: 80, lines: 24));
             $theme = Theme::default();
 
@@ -56,6 +59,9 @@ return DemoReport::demo(
             // /dev/null avoids the OpenSwoole reactor's kqueue path on real
             // terminal fds and produces deterministic output.
             $nullStream = fopen('/dev/null', 'r');
+            if ($nullStream === false) {
+                throw new \RuntimeException('/dev/null unavailable');
+            }
             $reader = new RawInput(new ConsoleInput($nullStream));
 
             $app = Archon::starting(['argv' => array_merge(['demo'], $argv)])

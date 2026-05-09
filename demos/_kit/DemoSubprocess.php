@@ -46,14 +46,14 @@ final class DemoSubprocess
         $process = new Process($worker);
         $pid = $process->start();
 
-        return $pid === false ? null : new self($process, $pid);
+        return is_int($pid) ? new self($process, $pid) : null;
     }
 
     public static function capture(Closure $worker): ?self
     {
         $process = new Process($worker, true, 1, true);
         $pid = $process->start();
-        if ($pid === false) {
+        if (!is_int($pid)) {
             return null;
         }
         $process->setBlocking(false);
@@ -81,8 +81,8 @@ final class DemoSubprocess
         $signalled = false;
 
         while (microtime(true) < $deadline) {
-            $chunk = @$this->process->read(8192);
-            if (is_string($chunk) && $chunk !== '') {
+            $chunk = (string) @$this->process->read(8192);
+            if ($chunk !== '') {
                 $captured .= $chunk;
 
                 if (!$signalled && $onChunk !== null && $onChunk($this->process, $this->pid, $captured)) {
@@ -104,8 +104,8 @@ final class DemoSubprocess
     {
         $captured = '';
         while (true) {
-            $chunk = @$this->process->read(8192);
-            if (!is_string($chunk) || $chunk === '') {
+            $chunk = (string) @$this->process->read(8192);
+            if ($chunk === '') {
                 break;
             }
             $captured .= $chunk;

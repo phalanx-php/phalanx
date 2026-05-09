@@ -45,8 +45,9 @@ final readonly class RawHttpRequest
     /** @return array{status: int, headers: string, body: string} */
     private static function parseResponse(string $raw): array
     {
-        [$head, $body] = str_contains($raw, "\r\n\r\n")
-            ? [substr($raw, 0, strpos($raw, "\r\n\r\n")), substr($raw, strpos($raw, "\r\n\r\n") + 4)]
+        $sep = strpos($raw, "\r\n\r\n");
+        [$head, $body] = $sep !== false
+            ? [substr($raw, 0, $sep), substr($raw, $sep + 4)]
             : [$raw, ''];
         preg_match('#^HTTP/\d(?:\.\d)?\s+(\d{3})#', $head, $m);
         return ['status' => (int) ($m[1] ?? 0), 'headers' => $head, 'body' => $body];

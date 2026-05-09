@@ -47,16 +47,17 @@ final readonly class SseFrameReader
             }
             $raw .= $chunk;
 
-            if (!$headersComplete && str_contains($raw, "\r\n\r\n")) {
+            if (!$headersComplete) {
                 $boundary = strpos($raw, "\r\n\r\n");
-                $head = substr($raw, 0, $boundary);
-                $raw = substr($raw, $boundary + 4);
-                $headersComplete = true;
+                if ($boundary !== false) {
+                    $head = substr($raw, 0, $boundary);
+                    $raw = substr($raw, $boundary + 4);
+                    $headersComplete = true;
+                }
             }
 
             if ($headersComplete) {
-                while (str_contains($raw, "\n\n")) {
-                    $boundary = strpos($raw, "\n\n");
+                while (($boundary = strpos($raw, "\n\n")) !== false) {
                     $frameText = substr($raw, 0, $boundary);
                     $raw = substr($raw, $boundary + 2);
                     $frame = $parseFrame($frameText);

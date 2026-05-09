@@ -52,6 +52,9 @@ return DemoReport::demo(
 
         $runCase = static function (string $label, array $argv, string $expected) use ($commands, $report): void {
             $stream = fopen('php://temp', 'w+');
+            if ($stream === false) {
+                throw new \RuntimeException('php://temp unavailable');
+            }
             $capture = new StreamOutput($stream, new TerminalEnvironment(columns: 80, lines: 24));
 
             $app = Archon::starting(['argv' => array_merge(['demo'], $argv)])

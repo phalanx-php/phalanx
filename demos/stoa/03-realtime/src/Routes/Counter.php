@@ -40,7 +40,10 @@ final class Counter implements Scopeable
 
             $stream->writeEvent("tick {$i}", event: 'count', id: (string) $i);
             $scope->call(
-                static fn(): bool => Coroutine::usleep(100_000) === null,
+                static function (): bool {
+                    Coroutine::usleep(100_000);
+                    return true;
+                },
                 WaitReason::delay(0.1),
             );
         }

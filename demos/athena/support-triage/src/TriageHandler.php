@@ -4,20 +4,43 @@ declare(strict_types=1);
 
 namespace Acme;
 
+use GuzzleHttp\Psr7\Response;
 use Phalanx\Athena\AgentLoop;
 use Phalanx\Athena\Event\AgentEventKind;
 use Phalanx\Athena\Message\Message;
-use Phalanx\Athena\Stream\TokenAccumulator;
+use Phalanx\Athena\Provider\ProviderConfig;
 use Phalanx\Athena\Turn;
+use Phalanx\Stoa\Runtime\StoaScopeKey;
 use Phalanx\Stoa\RequestScope;
-use Phalanx\Stoa\Sse\SseResponse;
+use Phalanx\Stoa\Sse\SseStream;
+use Phalanx\Stoa\Sse\SseStreamFactory;
+use Phalanx\Stoa\StoaRequestResource;
 use Phalanx\Task\Scopeable;
+use OpenSwoole\Http\Response as OpenSwooleResponse;
 use Psr\Http\Message\ResponseInterface;
+use RuntimeException;
+use Throwable;
 
 final class TriageHandler implements Scopeable
 {
-    public function __invoke(RequestScope $scope): ResponseInterface
+    public function __construct(
+        private readonly ProviderConfig $providers,
+    ) {
+    }
+
+    public function __invoke(RequestScope $scope): ResponseInterface|SseStream
     {
+        if (!array_key_exists('anthropic', $this->providers->all())) {
+            return new Response(
+                503,
+                ['Content-Type' => 'application/json'],
+                json_encode([
+                    'error' => 'Anthropic provider is not configured.',
+                    'hint' => 'Run with ATHENA_DEMO_LIVE=1 and ANTHROPIC_API_KEY set.',
+                ], JSON_THROW_ON_ERROR),
+            );
+        }
+
         $body = $scope->body->json();
 
         $turn = Turn::begin(new SupportTriageAgent())
@@ -29,36 +52,67 @@ final class TriageHandler implements Scopeable
             ->output(TriageResult::class)
             ->maxSteps(4);
 
-        $events = AgentLoop::run($turn, $scope);
-        $accumulator = TokenAccumulator::from($events, $scope);
+        $stream = $this->openStream($scope);
 
-        return SseResponse::from(
-            $accumulator->events()
-                ->filter(static fn($e) => $e->kind->isUserFacing())
-                ->map(static fn($e) => json_encode(match ($e->kind) {
+        try {
+            foreach (AgentLoop::run($turn, $scope)($scope) as $event) {
+                if (!$event->kind->isUserFacing()) {
+                    continue;
+                }
+
+                $stream->writeEvent(
+                    json_encode(match ($event->kind) {
                     AgentEventKind::TokenDelta => [
                         'type' => 'token',
-                        'text' => $e->data->text,
+                        'text' => $event->data->text,
                     ],
                     AgentEventKind::ToolCallStart => [
                         'type' => 'tool_start',
-                        'tool' => $e->data->toolName,
+                        'tool' => $event->data->toolName,
                     ],
                     AgentEventKind::ToolCallComplete => [
                         'type' => 'tool_done',
-                        'tool' => $e->data->toolName,
-                        'ms' => $e->elapsed,
+                        'ms' => $event->elapsed,
+                        'tool' => $event->data->toolName,
                     ],
                     AgentEventKind::StructuredOutput => [
                         'type' => 'triage',
-                        'priority' => $e->data->value->priority->value,
-                        'category' => $e->data->value->category->value,
-                        'auto_resolvable' => $e->data->value->autoResolvable,
+                        'priority' => $event->data->value->priority->value,
+                        'category' => $event->data->value->category->value,
+                        'auto_resolvable' => $event->data->value->autoResolvable,
                     ],
-                    default => ['type' => 'event', 'kind' => $e->kind->value],
-                })),
-            $scope,
-            event: 'triage',
-        );
+                    default => [
+                        'type' => 'event',
+                        'kind' => $event->kind->value,
+                    ],
+                }, JSON_THROW_ON_ERROR),
+                    event: 'triage',
+                );
+            }
+        } catch (Throwable $e) {
+            $stream->writeEvent(
+                json_encode([
+                    'type' => 'error',
+                    'message' => $e->getMessage(),
+                ], JSON_THROW_ON_ERROR),
+                event: 'triage',
+            );
+        }
+
+        $stream->close();
+
+        return $stream;
+    }
+
+    private function openStream(RequestScope $scope): SseStream
+    {
+        $response = $scope->attribute(StoaScopeKey::OpenSwooleResponse->value);
+        $resource = $scope->attribute(StoaScopeKey::RequestResource->value);
+
+        if (!$response instanceof OpenSwooleResponse || !$resource instanceof StoaRequestResource) {
+            throw new RuntimeException('Triage requires a live OpenSwoole request target.');
+        }
+
+        return (new SseStreamFactory())->open($scope, $response, $resource, $scope->cancellation());
     }
 }

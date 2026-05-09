@@ -117,9 +117,7 @@ final class Css
             ->env($this->env);
 
         if ($this->reloadPattern !== null) {
-            $process = $process
-                ->ready($this->reloadPattern)
-                ->reloadOn($this->reloadPattern);
+            $process = $process->ready($this->reloadPattern);
         }
 
         return $process;

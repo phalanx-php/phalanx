@@ -23,6 +23,27 @@ final readonly class RuntimeEventReader
             return [];
         }
 
-        return $decoded['events'];
+        $events = [];
+        foreach ($decoded['events'] as $event) {
+            if (!is_array($event)) {
+                continue;
+            }
+
+            $name = $event['event'] ?? null;
+            $context = $event['context'] ?? null;
+            $at = $event['at'] ?? null;
+
+            if (!is_string($name) || !is_array($context) || !is_float($at)) {
+                continue;
+            }
+
+            $events[] = [
+                'event' => $name,
+                'context' => $context,
+                'at' => $at,
+            ];
+        }
+
+        return $events;
     }
 }

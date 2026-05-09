@@ -17,17 +17,23 @@ final class SearchKnowledgeBase implements Tool
 
     public function __construct(
         #[Param('Search query describing the issue')]
-        private readonly string $query,
+        private(set) string $query,
         #[Param('Maximum articles to return')]
-        private readonly int $limit = 3,
+        private(set) int $limit = 3,
     ) {
     }
 
     public function __invoke(Scope $scope): ToolOutcome
     {
-        return ToolOutcome::data([
+        $articles = [
             ['id' => 101, 'title' => 'Athena and the Owl Symbol', 'relevance' => 0.92],
             ['id' => 204, 'title' => 'Athena as Strategist and Patron of Wisdom', 'relevance' => 0.78],
+            ['id' => 337, 'title' => 'Explaining Greek Epithets in Museum Copy', 'relevance' => 0.64],
+        ];
+
+        return ToolOutcome::data([
+            'query' => $this->query,
+            'articles' => array_slice($articles, 0, $this->limit),
         ]);
     }
 }

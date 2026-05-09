@@ -20,6 +20,7 @@ parameters:
         - packages/phalanx-skopos/src
         - packages/phalanx-surreal/src
         - packages/phalanx-styx/src
+        - demos
     scanDirectories:
         - vendor/openswoole/ide-helper
     phalanxInternalPaths:

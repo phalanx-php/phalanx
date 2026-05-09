@@ -7,7 +7,6 @@ namespace Phalanx\Skopos\Tests;
 use Phalanx\Runtime\Identity\AegisResourceSid;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Skopos\FileWatcher;
-use Phalanx\Skopos\LiveReload\BroadcasterChannel;
 use Phalanx\Skopos\ManagedProcess;
 use Phalanx\Skopos\Output\Multiplexer;
 use Phalanx\Skopos\Process;
@@ -20,6 +19,27 @@ final class SkoposIntegrationTest extends PhalanxTestCase
     {
         $config = Process::named('readiness-fixture')
             ->command(PHP_BINARY . ' -r ' . escapeshellarg('echo "ready\n"; for ($i = 0; $i < 50; $i++) { usleep(20000); }'))
+            ->ready('/ready/');
+
+        $finalState = $this->scope->run(static function (ExecutionScope $scope) use ($config): ProcessState {
+            $output = self::nullMultiplexer();
+            $mp = new ManagedProcess($config);
+            $mp->start($scope, $output);
+            $mp->waitUntilReady($scope, timeout: 5.0);
+            $state = $mp->state;
+            $mp->stop(0.5, 1.0);
+            $scope->delay(0.1);
+            return $state;
+        });
+
+        self::assertSame(ProcessState::Running, $finalState);
+        self::assertSame(0, $this->scope->memory->resources->liveCount(AegisResourceSid::StreamingProcess));
+    }
+
+    public function testManagedProcessReachesRunningOnStderrReadinessMatch(): void
+    {
+        $config = Process::named('stderr-readiness-fixture')
+            ->command(PHP_BINARY . ' -r ' . escapeshellarg('fwrite(STDERR, "ready\n"); for ($i = 0; $i < 50; $i++) { usleep(20000); }'))
             ->ready('/ready/');
 
         $finalState = $this->scope->run(static function (ExecutionScope $scope) use ($config): ProcessState {
@@ -119,18 +139,6 @@ final class SkoposIntegrationTest extends PhalanxTestCase
         @rmdir($tmpDir);
     }
 
-    public function testBroadcasterChannelHandlesEmptySubscriberSet(): void
-    {
-        $broadcaster = new BroadcasterChannel();
-        self::assertSame(0, $broadcaster->clientCount());
-
-        // Should not throw with no clients
-        $broadcaster->reload();
-        $broadcaster->closeAll();
-
-        self::assertSame(0, $broadcaster->clientCount());
-    }
-
     public function testManagedProcessRestartsCleanly(): void
     {
         $config = Process::named('restart-fixture')
@@ -158,6 +166,66 @@ final class SkoposIntegrationTest extends PhalanxTestCase
         self::assertNotNull($pids[1]);
         self::assertNotSame($pids[0], $pids[1]);
         self::assertSame(0, $this->scope->memory->resources->liveCount(AegisResourceSid::StreamingProcess));
+    }
+
+    public function testManagedProcessStopIsIdempotent(): void
+    {
+        $config = Process::named('idempotent-stop-fixture')
+            ->command(PHP_BINARY . ' -r ' . escapeshellarg('echo "ready\n"; for ($i = 0; $i < 50; $i++) { usleep(20000); }'))
+            ->ready('/ready/');
+
+        $stoppedState = $this->scope->run(static function (ExecutionScope $scope) use ($config): ProcessState {
+            $output = self::nullMultiplexer();
+            $mp = new ManagedProcess($config);
+            $mp->start($scope, $output);
+            $mp->waitUntilReady($scope, timeout: 5.0);
+
+            $mp->stop(0.5, 1.0);
+            $mp->stop(0.5, 1.0);
+            $mp->stop(0.5, 1.0);
+
+            $scope->delay(0.1);
+
+            return $mp->state;
+        });
+
+        self::assertSame(ProcessState::Stopped, $stoppedState);
+        self::assertSame(0, $this->scope->memory->resources->liveCount(AegisResourceSid::StreamingProcess));
+    }
+
+    public function testManagedProcessStopBeforeStartIsSafe(): void
+    {
+        $config = Process::named('stop-before-start-fixture')
+            ->command(PHP_BINARY . ' -r ' . escapeshellarg('echo "ready\n";'));
+
+        $state = $this->scope->run(static function (ExecutionScope $scope) use ($config): ProcessState {
+            $mp = new ManagedProcess($config);
+            $mp->stop(0.5, 1.0);
+            return $mp->state;
+        });
+
+        self::assertSame(ProcessState::Stopped, $state);
+        self::assertSame(0, $this->scope->memory->resources->liveCount(AegisResourceSid::StreamingProcess));
+    }
+
+    public function testFileWatcherStopWithoutStartIsSafe(): void
+    {
+        $tmpDir = self::tempDir();
+
+        $this->scope->run(static function () use ($tmpDir): void {
+            $watcher = new FileWatcher(
+                paths: [$tmpDir],
+                extensions: ['php'],
+                onChange: static function (): void {},
+                interval: 1.0,
+            );
+            $watcher->stop();
+            $watcher->stop();
+        });
+
+        @rmdir($tmpDir);
+
+        self::assertTrue(true);
     }
 
     private static function nullMultiplexer(): Multiplexer

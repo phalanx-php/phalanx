@@ -17,7 +17,6 @@ final class Process
     private(set) array $watchPaths = [];
     /** @var list<string> */
     private(set) array $watchExtensions = ['php'];
-    private(set) ?ReadinessProbe $reloadProbe = null;
 
     private function __construct(string $name)
     {
@@ -82,13 +81,6 @@ final class Process
         $clone = clone $this;
         $clone->watchPaths = $paths;
         $clone->watchExtensions = array_values($extensions);
-        return $clone;
-    }
-
-    public function reloadOn(string $pattern): self
-    {
-        $clone = clone $this;
-        $clone->reloadProbe = ReadinessProbe::outputMatches($pattern);
         return $clone;
     }
 }

@@ -23,12 +23,13 @@ final readonly class RuntimeEvents
     /** @return list<array{event: string, context: array<string, mixed>, at: float}> */
     public function all(RequestScope $scope): array
     {
-        return array_map(
+        return array_values(array_map(
             self::format(...),
             $scope->runtime->memory->events->recent(),
-        );
+        ));
     }
 
+    /** @return array{event: string, context: array<string, mixed>, at: float} */
     private static function format(RuntimeLifecycleEvent $event): array
     {
         return [

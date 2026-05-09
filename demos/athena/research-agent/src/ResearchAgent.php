@@ -56,7 +56,7 @@ final class ResearchAgent implements AgentDefinition, Retryable, HasTimeout
         ];
     }
 
-    public function provider(): ?string
+    public function provider(): string
     {
         return 'anthropic';
     }

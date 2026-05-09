@@ -16,7 +16,6 @@ use Phalanx\System\StreamingProcessHandle;
  *
  *   - copies stdout/stderr increments into the Multiplexer
  *   - matches the readiness probe to flip Starting -> Running
- *   - matches the reload probe to fire onOutput callbacks
  *   - detects exit, transitions to Stopped or Crashed, fires onCrash
  *
  * Cleanup is scope-owned: StreamingProcess::start() registers an onDispose
@@ -39,9 +38,6 @@ final class ManagedProcess
 
     /** @var list<Closure(): void> */
     private array $crashCallbacks = [];
-
-    /** @var list<Closure(string): void> */
-    private array $outputCallbacks = [];
 
     private bool $stopping = false;
 
@@ -77,10 +73,25 @@ final class ManagedProcess
         $self = $this;
         $name = $this->config->name;
         $readinessProbe = $this->config->readinessProbe;
-        $reloadProbe = $this->config->reloadProbe;
 
-        $scope->go(static function () use ($self, $scope, $handle, $output, $name, $readinessProbe, $reloadProbe): void {
+        $scope->go(static function () use ($self, $scope, $handle, $output, $name, $readinessProbe): void {
             $lineBuffer = '';
+            $scanReadiness = static function (string $chunk) use ($self, $readinessProbe, &$lineBuffer): void {
+                $lineBuffer .= $chunk;
+
+                while (($pos = strpos($lineBuffer, "\n")) !== false) {
+                    $line = substr($lineBuffer, 0, $pos);
+                    $lineBuffer = substr($lineBuffer, $pos + 1);
+
+                    if (
+                        !$readinessProbe->isImmediate()
+                        && $self->state === ProcessState::Starting
+                        && $readinessProbe->matches($line)
+                    ) {
+                        $self->state = ProcessState::Running;
+                    }
+                }
+            };
 
             while ($handle->isRunning() && !$scope->isCancelled) {
                 $stdoutChunk = $handle->getIncrementalOutput();
@@ -88,44 +99,26 @@ final class ManagedProcess
 
                 if ($stdoutChunk !== '') {
                     $output->writeOutput($name, $stdoutChunk);
-                    $lineBuffer .= $stdoutChunk;
-
-                    while (($pos = strpos($lineBuffer, "\n")) !== false) {
-                        $line = substr($lineBuffer, 0, $pos);
-                        $lineBuffer = substr($lineBuffer, $pos + 1);
-
-                        if (
-                            !$readinessProbe->isImmediate()
-                            && $self->state === ProcessState::Starting
-                            && $readinessProbe->matches($line)
-                        ) {
-                            $self->state = ProcessState::Running;
-                        }
-
-                        if ($reloadProbe !== null && $reloadProbe->matches($line)) {
-                            foreach ($self->outputCallbacks as $cb) {
-                                $cb($line);
-                            }
-                        }
-                    }
+                    $scanReadiness($stdoutChunk);
                 }
 
                 if ($stderrChunk !== '') {
                     $output->writeError($name, $stderrChunk);
+                    $scanReadiness($stderrChunk);
                 }
 
                 $scope->delay(0.02);
             }
 
-            // Final drain — capture any bytes that arrived between the last
-            // poll and the exit detection, then flush remaining buffers.
             $stdoutChunk = $handle->getIncrementalOutput();
             if ($stdoutChunk !== '') {
                 $output->writeOutput($name, $stdoutChunk);
+                $scanReadiness($stdoutChunk);
             }
             $stderrChunk = $handle->getIncrementalErrorOutput();
             if ($stderrChunk !== '') {
                 $output->writeError($name, $stderrChunk);
+                $scanReadiness($stderrChunk);
             }
             $output->flush($name);
 
@@ -136,12 +129,6 @@ final class ManagedProcess
     public function onCrash(Closure $callback): void
     {
         $this->crashCallbacks[] = $callback;
-    }
-
-    /** @param Closure(string): void $callback */
-    public function onOutput(Closure $callback): void
-    {
-        $this->outputCallbacks[] = $callback;
     }
 
     public function waitUntilReady(ExecutionScope $scope, float $timeout = 30.0): void
@@ -231,9 +218,6 @@ final class ManagedProcess
             throw new \RuntimeException('Skopos: empty command');
         }
 
-        // Use a shell to preserve operator/quoting semantics that dev
-        // configs commonly rely on (env VAR=val cmd, redirects, &&). exec
-        // replaces the shell with the command so signals reach the real PID.
         return ['sh', '-c', 'exec ' . $trimmed];
     }
 }

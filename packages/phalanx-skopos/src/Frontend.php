@@ -139,7 +139,7 @@ final class Frontend
                 ->env($this->env);
 
             if ($this->reloadPattern !== null) {
-                $process = $process->reloadOn($this->reloadPattern);
+                $process = $process->ready($this->reloadPattern);
             }
 
             $processes[] = $process;
@@ -197,8 +197,7 @@ final class Frontend
             ->command(implode(' ', $parts))
             ->cwd($cwd)
             ->env($this->env)
-            ->ready($reloadPattern)
-            ->reloadOn($reloadPattern);
+            ->ready($reloadPattern);
     }
 
     private function buildPluginProcess(string $cwd): Process
@@ -220,7 +219,6 @@ final class Frontend
             ->command("{$bin} run --watch {$scriptPath}")
             ->cwd($cwd)
             ->env($this->env)
-            ->ready($reloadPattern)
-            ->reloadOn($reloadPattern);
+            ->ready($reloadPattern);
     }
 }

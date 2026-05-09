@@ -6,7 +6,7 @@ namespace Phalanx\Skopos;
 
 use Phalanx\Boot\AppContext;
 
-final readonly class Skopos
+final class Skopos
 {
     private function __construct()
     {

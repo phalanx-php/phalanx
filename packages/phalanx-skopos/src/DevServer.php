@@ -5,11 +5,8 @@ declare(strict_types=1);
 namespace Phalanx\Skopos;
 
 use Closure;
-use OpenSwoole\Coroutine\Channel;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Scope\ExecutionScope;
-use Phalanx\Skopos\LiveReload\BroadcasterChannel;
-use Phalanx\Skopos\LiveReload\Server as LiveReloadServer;
 use Phalanx\Skopos\Output\Multiplexer;
 use Phalanx\Support\SignalHandler;
 use Phalanx\Task\Executable;
@@ -18,33 +15,53 @@ use Throwable;
 /**
  * Runtime driver dispatched by SkoposApplicationBuilder onto the Aegis
  * root scope. Owns the long-running supervisor coroutines: managed
- * processes, file watchers, the LiveReload SSE server, and signal-driven
- * shutdown.
+ * processes, file watchers, and signal-driven shutdown.
  *
- * The shutdown channel is the single rendezvous point for all exit
- * conditions: signal, server crash, or external scope cancellation. Once
- * triggered, cleanup runs synchronously in __invoke before returning the
- * exit code, then control returns through Application::run() which
- * disposes the root scope (which in turn closes any still-open Streaming
- * Process handles via onDispose hooks).
+ * Shutdown rendezvous is the parent scope's cancellation token. Three
+ * sources can trigger it:
+ *
+ *   1. SIGINT/SIGTERM via {@see SignalHandler}
+ *   2. Crash callback on a server-class managed process
+ *   3. External cancellation propagated from above
+ *
+ * The main task waits in a `$scope->delay()` loop that exits cleanly
+ * when the cancellation token cancels — either on the next iteration's
+ * loop check or via `Cancelled` thrown from inside `delay()`. Cleanup
+ * runs synchronously after that: `$mp->stop()` does not suspend, and
+ * the Aegis scope dispose (after this method returns) re-runs the
+ * shutdown via the `onDispose` hooks `StreamingProcessHandle` registers
+ * for each managed process — both shutdown paths are idempotent.
+ *
+ * LiveReload (SSE broadcast channel on file change) is intentionally
+ * not implemented at this layer: OpenSwoole 26.2 does not ship a
+ * coroutine-mode HTTP server and Skopos refuses to embed raw OpenSwoole
+ * HTTP server constructs without Aegis lifecycle wrapping. The feature
+ * returns when a Stoa coroutine runner lands. File watchers still
+ * trigger process restarts in the meantime.
  */
 final class DevServer implements Executable
 {
     /** @param list<Process> $processes */
     public function __construct(
-        private readonly array $processes,
-        private readonly ?int $liveReloadPort = null,
-        private readonly bool $quiet = false,
+        private array $processes,
+        private bool $quiet = false,
     ) {
     }
 
     public function __invoke(ExecutionScope $scope): int
     {
         $multiplexer = new Multiplexer();
-        $broadcaster = new BroadcasterChannel();
         $managed = self::buildManagedProcesses($this->processes);
 
-        $reloadServer = $this->startLiveReload($scope, $broadcaster, $multiplexer);
+        /**
+         * Register before readiness waits so SIGINT flows through the
+         * cancellation token instead of the default OS handler.
+         */
+        SignalHandler::register(static function () use ($scope): void {
+            if (!$scope->isCancelled) {
+                $scope->cancellation()->cancel();
+            }
+        });
 
         if (!$this->quiet) {
             self::printProcessTable($managed, $multiplexer);
@@ -59,12 +76,10 @@ final class DevServer implements Executable
                 $mp->waitUntilReady($scope, timeout: 30.0);
             }
         } catch (Cancelled $e) {
-            $reloadServer?->stop();
             self::shutdownProcesses($managed, $multiplexer, $this->quiet);
             throw $e;
         } catch (Throwable $e) {
             $multiplexer->writeLine("\033[31m[skopos] Readiness failed: {$e->getMessage()}\033[0m");
-            $reloadServer?->stop();
             self::shutdownProcesses($managed, $multiplexer, $this->quiet);
             return 1;
         }
@@ -75,34 +90,21 @@ final class DevServer implements Executable
             $multiplexer->writeLine('');
         }
 
-        if ($reloadServer !== null) {
-            self::wireReloadCallbacks($managed, $multiplexer, $broadcaster);
-        }
+        $this->startWatchers($scope, $managed, $multiplexer);
+        self::wireServerCrashWatchdog($managed, $multiplexer, $scope);
 
-        $shutdownChannel = new Channel(1);
-
-        $this->startWatchers($scope, $managed, $multiplexer, $broadcaster);
-        self::wireServerCrashWatchdog($managed, $multiplexer, $shutdownChannel);
-
-        SignalHandler::register(static function () use ($shutdownChannel): void {
-            $shutdownChannel->push('signal');
-        });
-
-        $scope->go(static function () use ($scope, $shutdownChannel): void {
+        try {
             while (!$scope->isCancelled) {
-                $scope->delay(0.1);
+                $scope->delay(0.5);
             }
-            $shutdownChannel->push('cancelled');
-        }, name: 'skopos.shutdown.cancellation-watch');
-
-        $shutdownChannel->pop();
+        } catch (Cancelled) {
+        }
 
         if (!$this->quiet) {
             $multiplexer->writeLine('');
             $multiplexer->writeLine("\033[33m[skopos] Shutting down...\033[0m");
         }
 
-        $reloadServer?->stop();
         self::shutdownProcesses($managed, $multiplexer, $this->quiet);
 
         if (!$this->quiet) {
@@ -139,33 +141,10 @@ final class DevServer implements Executable
     }
 
     /** @param list<ManagedProcess> $managed */
-    private static function wireReloadCallbacks(
-        array $managed,
-        Multiplexer $multiplexer,
-        BroadcasterChannel $broadcaster,
-    ): void {
-        foreach ($managed as $mp) {
-            if ($mp->config->reloadProbe === null) {
-                continue;
-            }
-
-            $name = $mp->config->name;
-
-            $mp->onOutput(static function (string $line) use ($name, $multiplexer, $broadcaster): void {
-                $multiplexer->writeLine("\033[2m[skopos] Reload triggered by {$name}: {$line}\033[0m");
-                $broadcaster->reload();
-            });
-        }
-    }
-
-    /**
-     * @param list<ManagedProcess> $managed
-     * @param Channel $shutdownChannel
-     */
     private static function wireServerCrashWatchdog(
         array $managed,
         Multiplexer $multiplexer,
-        Channel $shutdownChannel,
+        ExecutionScope $scope,
     ): void {
         foreach ($managed as $mp) {
             if (!$mp->config->isServer) {
@@ -174,11 +153,13 @@ final class DevServer implements Executable
 
             $name = $mp->config->name;
 
-            $mp->onCrash(static function () use ($name, $multiplexer, $shutdownChannel): void {
+            $mp->onCrash(static function () use ($name, $multiplexer, $scope): void {
                 $multiplexer->writeLine(
                     "\033[31m[skopos] Server process '{$name}' crashed. Shutting down.\033[0m"
                 );
-                $shutdownChannel->push('crash');
+                if (!$scope->isCancelled) {
+                    $scope->cancellation()->cancel();
+                }
             });
         }
     }
@@ -198,10 +179,9 @@ final class DevServer implements Executable
         ManagedProcess $mp,
         string $name,
         Multiplexer $multiplexer,
-        BroadcasterChannel $broadcaster,
         ExecutionScope $scope,
     ): Closure {
-        return static function (array $changed) use ($mp, $name, $multiplexer, $broadcaster, $scope): void {
+        return static function (array $changed) use ($mp, $name, $multiplexer, $scope): void {
             $short = array_map(static fn(string $path): string => basename($path), $changed);
             $label = count($short) <= 3
                 ? implode(', ', $short)
@@ -214,7 +194,6 @@ final class DevServer implements Executable
             try {
                 $mp->restart($scope, $multiplexer);
                 $multiplexer->writeLine("\033[32m[skopos] {$name} restarted.\033[0m");
-                $broadcaster->reload();
             } catch (Cancelled $e) {
                 throw $e;
             } catch (Throwable $e) {
@@ -223,43 +202,11 @@ final class DevServer implements Executable
         };
     }
 
-    private function startLiveReload(
-        ExecutionScope $scope,
-        BroadcasterChannel $broadcaster,
-        Multiplexer $multiplexer,
-    ): ?LiveReloadServer {
-        if ($this->liveReloadPort === null) {
-            return null;
-        }
-
-        $server = new LiveReloadServer($this->liveReloadPort, $broadcaster);
-        $port = $this->liveReloadPort;
-
-        $scope->go(static function () use ($server, $scope): void {
-            try {
-                $server->start($scope);
-            } catch (Cancelled $e) {
-                throw $e;
-            } catch (Throwable $e) {
-                if (!$server->isStopping) {
-                    throw $e;
-                }
-            }
-        }, name: 'skopos.livereload.server');
-
-        if (!$this->quiet) {
-            $multiplexer->writeLine("\033[2m[skopos] Live reload server on port {$port}\033[0m");
-        }
-
-        return $server;
-    }
-
     /** @param list<ManagedProcess> $managed */
     private function startWatchers(
         ExecutionScope $scope,
         array $managed,
         Multiplexer $multiplexer,
-        BroadcasterChannel $broadcaster,
     ): void {
         foreach ($managed as $mp) {
             if ($mp->config->watchPaths === []) {
@@ -286,7 +233,7 @@ final class DevServer implements Executable
             $watcher = new FileWatcher(
                 $mp->config->watchPaths,
                 $mp->config->watchExtensions,
-                self::makeWatchCallback($mp, $name, $multiplexer, $broadcaster, $scope),
+                self::makeWatchCallback($mp, $name, $multiplexer, $scope),
                 cwd: $cwdValue,
             );
 

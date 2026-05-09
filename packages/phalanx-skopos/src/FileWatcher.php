@@ -12,10 +12,18 @@ use Phalanx\Scope\TaskExecutor;
  * Periodic mtime poller. Schedules a tick on the supplied scope; the
  * Subscription returned by scope.periodic() also auto-cancels on scope
  * disposal, so even callers that never invoke stop() leak nothing.
+ *
+ * The periodic tick fires on OpenSwoole's Timer thread, which is the
+ * reactor thread — not a coroutine context. A synchronous filesystem
+ * walk inside the tick stalls every other coroutine for the duration
+ * of the walk. Each tick therefore dispatches the scan into a fresh
+ * scope.go() coroutine so the work is suspended and yields cleanly.
  */
 final class FileWatcher
 {
     private ?Subscription $subscription = null;
+
+    private bool $scanInFlight = false;
 
     /** @var array<string, int> path => mtime */
     private array $snapshot = [];
@@ -26,11 +34,11 @@ final class FileWatcher
      * @param Closure(list<string>): void $onChange
      */
     public function __construct(
-        private readonly array $paths,
-        private readonly array $extensions,
-        private readonly Closure $onChange,
-        private readonly float $interval = 1.0,
-        private readonly ?string $cwd = null,
+        private array $paths,
+        private array $extensions,
+        private Closure $onChange,
+        private float $interval = 1.0,
+        private ?string $cwd = null,
     ) {
     }
 
@@ -39,14 +47,28 @@ final class FileWatcher
         $this->snapshot = $this->scan();
 
         $self = $this;
-        $this->subscription = $scope->periodic($this->interval, static function () use ($self): void {
-            $current = $self->scan();
-            $changed = self::diff($self->snapshot, $current);
-            $self->snapshot = $current;
-
-            if ($changed !== []) {
-                ($self->onChange)($changed);
+        $this->subscription = $scope->periodic($this->interval, static function () use ($self, $scope): void {
+            // Drop overlapping scans: if a previous tick is still in flight
+            // (slow filesystem, large tree), let it finish before queuing
+            // another. Prevents unbounded coroutine fan-out under load.
+            if ($self->scanInFlight) {
+                return;
             }
+            $self->scanInFlight = true;
+
+            $scope->go(static function () use ($self): void {
+                try {
+                    $current = $self->scan();
+                    $changed = self::diff($self->snapshot, $current);
+                    $self->snapshot = $current;
+
+                    if ($changed !== []) {
+                        ($self->onChange)($changed);
+                    }
+                } finally {
+                    $self->scanInFlight = false;
+                }
+            }, name: 'skopos.filewatcher.scan');
         });
     }
 

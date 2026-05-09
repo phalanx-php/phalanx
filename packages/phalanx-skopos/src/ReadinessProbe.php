@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Phalanx\Skopos;
 
-final readonly class ReadinessProbe
+final class ReadinessProbe
 {
     private function __construct(
-        public ?string $pattern,
+        public private(set) ?string $pattern,
     ) {
     }
 

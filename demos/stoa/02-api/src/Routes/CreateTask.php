@@ -14,7 +14,7 @@ use Phalanx\Task\Scopeable;
 
 final class CreateTask implements HasValidators, RequiresHeaders, Scopeable
 {
-    /** @var list<class-string> */
+    /** @var list<class-string<\Phalanx\Stoa\Contract\RouteValidator>> */
     public array $validators {
         get => [];
     }

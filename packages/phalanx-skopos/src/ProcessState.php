@@ -7,7 +7,6 @@ namespace Phalanx\Skopos;
 enum ProcessState
 {
     case Starting;
-    case Ready;
     case Running;
     case Crashed;
     case Stopped;

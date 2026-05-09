@@ -14,16 +14,20 @@ $routes = RouteGroup::of([
 ]);
 /** @var array<string, mixed> $context */
 $context = phalanxAthenaExampleContext($argv ?? []);
+$listen = $argv[1] ?? '0.0.0.0:8080';
+$exampleHost = str_starts_with($listen, '0.0.0.0:')
+    ? 'localhost:' . substr($listen, strlen('0.0.0.0:'))
+    : $listen;
 
-echo <<<'BOOT'
+echo <<<BOOT
 Support Triage Server
 =====================
 Status: starting
 
-Listening on http://0.0.0.0:8080
+Listening on http://{$listen}
 
 Endpoint:
-  POST http://localhost:8080/triage
+  POST http://{$exampleHost}/triage
 
 Example JSON:
   {"ticket_id":123,"customer_email":"sarah@example.com","subject":"Athena exhibit notes","body":"The owl symbolism section needs clearer source guidance."}
@@ -45,19 +49,16 @@ BOOT;
 
 printf(
     $instructions,
-    phalanxAthenaExampleComposerCommand(
-        'demo:athena:serve:support-triage',
-        'demo:serve:support-triage',
-    ),
+    phalanxAthenaExampleComposerCommand('demo:athena:serve:support-triage'),
 );
 
 try {
     Stoa::starting($context)
         ->providers(new AiServiceBundle())
         ->routes($routes)
-        ->listen('0.0.0.0:8080')
+        ->listen($listen)
         ->run();
 } catch (\Throwable $e) {
-    phalanxAthenaExamplePrintServerFailure($e, '0.0.0.0:8080');
+    phalanxAthenaExamplePrintServerFailure($e, $listen);
     exit(1);
 }

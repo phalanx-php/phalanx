@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Demos\Kit;
 
+use Closure;
+use Phalanx\Boot\AppContext;
+
 /**
  * Single shared primitive replacing the per-demo "check tally + printf +
  * exit code" pattern. Records each check as it runs (printed live so demos
@@ -12,6 +15,17 @@ namespace Phalanx\Demos\Kit;
  */
 final class DemoReport
 {
+    /** @var list<array{label: string, ok: bool}> */
+    private array $records = [];
+
+    private bool $headerPrinted = false;
+
+    private bool $preempted = false;
+
+    public function __construct(private(set) string $title)
+    {
+    }
+
     /**
      * Report-only demo entry, for demos that don't need to boot an Aegis
      * kernel (Athena, Stoa, Archon all build their own facades that
@@ -22,28 +36,17 @@ final class DemoReport
      * calls the body with (report, AppContext), yields the report's exit
      * code.
      *
-     * @param \Closure(self, \Phalanx\Boot\AppContext): void $body
+     * @param Closure(self, AppContext): void $body
      */
-    public static function demo(string $title, \Closure $body): \Closure
+    public static function demo(string $title, Closure $body): Closure
     {
-        return static fn (array $context): \Closure =>
+        return static fn (array $context): Closure =>
             static function () use ($context, $title, $body): int {
                 $report = new self($title);
-                $body($report, new \Phalanx\Boot\AppContext($context));
+                $body($report, new AppContext($context));
 
                 return $report->exitCode();
             };
-    }
-
-    /** @var list<array{label: string, ok: bool}> */
-    private array $records = [];
-
-    private bool $headerPrinted = false;
-
-    private bool $preempted = false;
-
-    public function __construct(private(set) string $title)
-    {
     }
 
     public function record(string $label, bool $ok, string $detail = ''): bool

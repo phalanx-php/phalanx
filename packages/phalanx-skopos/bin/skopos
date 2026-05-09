@@ -5,6 +5,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Skopos;
 
+use Phalanx\Cancellation\Cancelled;
+
 (static function (): never {
     $autoloadCandidates = [
         __DIR__ . '/../vendor/autoload.php',
@@ -42,5 +44,9 @@ namespace Phalanx\Skopos;
         exit(1);
     }
 
-    exit($result->run());
+    try {
+        exit($result->run());
+    } catch (Cancelled) {
+        exit(130);
+    }
 })();

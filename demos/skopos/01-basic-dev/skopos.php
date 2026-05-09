@@ -14,5 +14,4 @@ return Skopos::starting()
             ->ready('/Development Server.*started/i')
             ->asServer()
             ->watch([__DIR__ . '/public'], ['php']),
-    )
-    ->liveReload(35729);
+    );

@@ -173,6 +173,7 @@
         "demo:surreal": ["@demo:surreal:memory", "@demo:surreal:live"],
         "demo:surreal:memory": "php demos/surreal/01-in-memory-rpc/demo.php",
         "demo:surreal:live": "php demos/surreal/02-live-query/demo.php",
+        "demo:skopos:basic-dev": "php demos/skopos/01-basic-dev/skopos.php",
         "examples:lint": "find demos -name '*.php' -not -path '*/vendor/*' -print0 | xargs -0 -n1 php -l > /dev/null",
         "gen:test-accessors": "php packages/phalanx-aegis-codegen/bin/regenerate-accessors",
         "gen:test-accessors:check": "php packages/phalanx-aegis-codegen/bin/check-accessors-in-sync",

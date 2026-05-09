@@ -13,9 +13,17 @@ use Phalanx\Service\ServiceBundle;
  * Facade builder for Skopos dev-server applications.
  *
  * Bootstrap files should enter through `Skopos::starting($context)`. The
- * builder accumulates managed-process configuration, backends, frontends,
- * and the LiveReload port, then on run() compiles a Phalanx Application
- * and dispatches the long-running DevServer task on its root scope.
+ * builder accumulates managed-process configuration plus backends and
+ * frontends; on run() it compiles a Phalanx Application and dispatches
+ * the long-running DevServer task on its root scope.
+ *
+ * LiveReload (an SSE broadcast channel that fires on file change) is not
+ * exposed at this layer — Phalanx does not yet ship a coroutine-mode
+ * HTTP server primitive, and Skopos refuses to embed raw OpenSwoole HTTP
+ * server constructs in package code. The feature returns when a Stoa
+ * coroutine runner lands behind the native runtime migration gates.
+ * Until then, file watchers still trigger process restarts; clients that
+ * want auto-reload can run their own watcher of choice.
  */
 final class SkoposApplicationBuilder
 {
@@ -29,8 +37,6 @@ final class SkoposApplicationBuilder
 
     /** @var list<Frontend> */
     private array $frontends = [];
-
-    private ?int $liveReloadPort = null;
 
     private bool $quiet = false;
 
@@ -91,12 +97,6 @@ final class SkoposApplicationBuilder
         return $this;
     }
 
-    public function liveReload(int $port = 35729): self
-    {
-        $this->liveReloadPort = $port;
-        return $this;
-    }
-
     public function quiet(bool $quiet = true): self
     {
         $this->quiet = $quiet;
@@ -107,7 +107,6 @@ final class SkoposApplicationBuilder
     {
         $devServer = new DevServer(
             processes: $this->resolveProcesses(),
-            liveReloadPort: $this->liveReloadPort,
             quiet: $this->quiet,
         );
 
