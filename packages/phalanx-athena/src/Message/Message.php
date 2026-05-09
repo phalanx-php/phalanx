@@ -20,8 +20,8 @@ final class Message
 
     /** @param list<Content> $content */
     private function __construct(
-        public protected(set) Role $role,
-        public protected(set) array $content,
+        protected(set) Role $role,
+        protected(set) array $content,
     ) {}
 
     public static function system(string $text): self

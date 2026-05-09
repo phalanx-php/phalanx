@@ -18,9 +18,9 @@ class HandlerConfig
      * @param list<class-string> $middleware
      */
     public function __construct(
-        public protected(set) array $tags = [],
-        public protected(set) int $priority = 0,
-        public protected(set) array $middleware = [],
+        protected(set) array $tags = [],
+        protected(set) int $priority = 0,
+        protected(set) array $middleware = [],
     ) {
     }
 
