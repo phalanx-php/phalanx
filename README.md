@@ -6,7 +6,7 @@
 
 **Async PHP that feels like normal code — protected by a runtime that actually has your back.**
 
-PHP can power concurrent HTTP, realtime WebSockets, parallel workers, streaming responses, and AI agent loops without `await`, manual `Coroutine::create()`, or 3am reference-cycle hunts. Phalanx gives you a managed async runtime where the Scope contract does the heavy lifting. Your business logic stays simple. The dangerous parts don't leak into your code.
+Managed concurrency, surfaced as plain PHP. Underneath, a small kernel tracks every resource in a ledger and nests scopes inside scopes — Russian-doll style — so cleanup and control propagate through every layer.
 
 If this resonates, **a star helps us gauge whether to keep pushing**. We're early; signal matters.
 
@@ -30,9 +30,14 @@ use Phalanx\Task\Scopeable;
 
 class UserRepo
 {
-    public function find(int $id): array
+    private array $users = [
+        1 => ['id' => 1, 'name' => 'Ada Lovelace'],
+        2 => ['id' => 2, 'name' => 'Alan Turing'],
+    ];
+
+    public function find(int $id): ?array
     {
-        return ['id' => $id, 'name' => "User {$id}"];
+        return $this->users[$id] ?? null;
     }
 }
 
@@ -41,14 +46,6 @@ class AppBundle extends ServiceBundle
     public function services(Services $services, AppContext $context): void
     {
         $services->singleton(UserRepo::class)->factory(static fn() => new UserRepo());
-    }
-}
-
-class Home implements Scopeable
-{
-    public function __invoke(RequestScope $scope): array
-    {
-        return ['ok' => true, 'service' => 'phalanx'];
     }
 }
 
@@ -67,7 +64,6 @@ return static function (array $context): \Closure {
     $app = Stoa::starting($context)
         ->bundles(new AppBundle())
         ->routes(RouteGroup::of([
-            'GET /'              => Home::class,
             'GET /users/{id:int}' => ShowUser::class,
         ]))
         ->build();
