@@ -108,11 +108,11 @@ Real, runnable examples covering the core surface. Each ships with a `.env.examp
 <details>
 <summary><strong>The next big bet: replace nginx in front of your PHP app with PHP itself.</strong></summary>
 
-Let's be straight up front. Will Pharos out-RPS a tuned nginx serving static files? No. nginx is C, decades of tuning, and it doesn't have to think. Will Pharos handle the traffic the average PHP app actually sees — TLS termination, vhost routing, upstream proxying, WebSockets, ACME — at speeds that disappear into the noise of your handler? Absolutely. The bottleneck in a real app is almost never the proxy hop.
+Let's be straight up front. Will Pharos out-RPS a tuned nginx serving static files? No. nginx is C, decades of tuning, and it doesn't have to think. Will Pharos handle the traffic the average PHP app actually sees — HTTPS termination, vhost routing, upstream proxying, WebSockets, automatic Let's Encrypt cert renewal — at speeds that disappear into the noise of your handler? Absolutely. The bottleneck in a real app is almost never the proxy hop.
 
-What Pharos gives up in raw throughput it earns back by knowing what's running behind it. Today the typical PHP deploy is four moving parts that don't talk to each other: nginx, certbot, PHP-FPM, supervisord. Four configs, two daemons, a cron, and a front door that has no idea what your app is doing. When a client hangs up, the upstream PHP request keeps grinding. When a pool starves, you find out from a 504 in a log file. When you want to roll a route, you reload nginx and hope.
+What Pharos gives up in raw throughput it earns back by knowing what's running behind it. Today the typical PHP deploy is four moving parts that don't talk to each other: nginx out front, certbot on a cron renewing your HTTPS certificates, PHP-FPM running the app, supervisord keeping it all alive. Four configs, two daemons, a cron, and a front door that has no idea what your app is doing. When a client hangs up, the upstream PHP request keeps grinding. When a pool starves, you find out from a 504 in a log file. When you want to roll a route, you reload nginx and hope.
 
-Pharos collapses all of that into one Phalanx process running alongside your app — same kernel, same scopes, same trace stream. Every proxied connection is a supervised `TaskRun`. Client disconnect cancels the upstream request mid-flight. Pool leases, circuit state, and per-vhost rate limits show up in the same trace as your handler. Config is a PHP value tree — hot-reload swaps it atomically without recycling workers. ACME renewals run as supervised tasks, not cron jobs.
+Pharos collapses all of that into one Phalanx process running alongside your app — same kernel, same scopes, same trace stream. Every proxied connection is a supervised `TaskRun`. Client disconnect cancels the upstream request mid-flight. Pool leases, circuit state, and per-vhost rate limits show up in the same trace as your handler. Config is a PHP value tree — hot-reload swaps it atomically without recycling workers. Cert renewals (the certbot job) run as supervised tasks inside the same process, not as a separate cron.
 
 The OpenSwoole pieces it actually uses:
 
@@ -125,7 +125,7 @@ The OpenSwoole pieces it actually uses:
 And the things it deliberately doesn't do, either because OpenSwoole doesn't expose the hooks for it or because it isn't the job we're signing up for:
 
 - **No HTTP/3 or QUIC** — not in stable OpenSwoole 26.2; Swoole Lab fork only
-- **No TLS-ALPN-01 ACME** — requires raw TLS handshake interception that OpenSwoole's PHP surface doesn't expose; HTTP-01 is the supported challenge
+- **Cert renewal is HTTP-01 only** — Let's Encrypt offers a second renewal flow (TLS-ALPN-01) that needs hooks into the raw TLS handshake; OpenSwoole doesn't expose those, so Pharos sticks to the HTTP-01 flow (port 80 has to be reachable)
 - **No OCSP stapling** — not in OpenSwoole's TLS config surface
 - **No inbound mTLS yet** — client cert verification on inbound isn't wired through `Server::set()` yet (upstream mTLS works)
 - **Not a static CDN** — `sendfile(2)` is bypassed under TLS; serve assets from a real CDN in front
