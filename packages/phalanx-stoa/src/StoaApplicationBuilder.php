@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Phalanx\Stoa;
 
 use InvalidArgumentException;
-use LogicException;
 use Phalanx\AppHost;
 use Phalanx\Application;
 use Phalanx\ApplicationBuilder;
@@ -113,20 +112,6 @@ final class StoaApplicationBuilder
     {
         $this->routeSources[] = $routes;
         return $this;
-    }
-
-    public function websockets(mixed $routes): self
-    {
-        throw new LogicException(
-            'StoaApplicationBuilder does not register WebSocket routes. Use the Hermes WebSocket integration directly.'
-        );
-    }
-
-    public function udp(mixed $routes): self
-    {
-        throw new LogicException(
-            'StoaApplicationBuilder does not register UDP routes. Use Phalanx\\Stoa\\Udp\\UdpListener directly.'
-        );
     }
 
     public function listen(string $listen): self

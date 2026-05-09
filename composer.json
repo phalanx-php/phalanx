@@ -170,7 +170,6 @@
         "demo:athena:streaming": "php demos/athena/01-streaming-providers/demo.php",
         "demo:athena:guzzle": "php demos/athena/02-guzzle-sdk-coexistence/demo.php",
         "demo:athena:serve:support-triage": "php demos/athena/support-triage/server.php",
-        "demo:athena:serve:research-agent": "php demos/athena/research-agent/server.php",
         "demo:surreal": ["@demo:surreal:memory", "@demo:surreal:live"],
         "demo:surreal:memory": "php demos/surreal/01-in-memory-rpc/demo.php",
         "demo:surreal:live": "php demos/surreal/02-live-query/demo.php",

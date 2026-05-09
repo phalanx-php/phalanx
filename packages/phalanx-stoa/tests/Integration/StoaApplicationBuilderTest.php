@@ -6,7 +6,6 @@ namespace Phalanx\Tests\Stoa\Integration;
 
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\ServerRequest;
-use LogicException;
 use Phalanx\Stoa\RequestScope;
 use Phalanx\Stoa\RouteGroup;
 use Phalanx\Stoa\Stoa;
@@ -138,24 +137,6 @@ PHP);
                 rmdir($dir);
             }
         });
-    }
-
-    #[Test]
-    public function websocketsRedirectsCallersToHermes(): void
-    {
-        $this->expectException(LogicException::class);
-        $this->expectExceptionMessage('Use the Hermes WebSocket integration directly');
-
-        self::stoa()->websockets(RouteGroup::of([]));
-    }
-
-    #[Test]
-    public function udpRedirectsCallersToUdpListener(): void
-    {
-        $this->expectException(LogicException::class);
-        $this->expectExceptionMessage('Use Phalanx\\Stoa\\Udp\\UdpListener directly');
-
-        self::stoa()->udp(RouteGroup::of([]));
     }
 
     /** @param array<string, mixed> $context */
