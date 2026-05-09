@@ -36,6 +36,7 @@ final class CompiledServiceConfig implements ServiceConfig
     /** @var list<Closure(object): void> */
     public array $onShutdownHooks = [];
 
+    /** @var ?\ReflectionClass<object> */
     private ?\ReflectionClass $reflection = null;
 
     /** @param class-string $type */
@@ -46,6 +47,7 @@ final class CompiledServiceConfig implements ServiceConfig
     ) {
     }
 
+    /** @return \ReflectionClass<object> */
     public function reflection(): \ReflectionClass
     {
         return $this->reflection ??= new \ReflectionClass($this->type);

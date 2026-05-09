@@ -19,6 +19,7 @@ parameters:
         - packages/phalanx-redis/src
         - packages/phalanx-skopos/src
         - packages/phalanx-surreal/src
+        - demos/hydra
         - packages/phalanx-styx/src
         - demos
     scanDirectories:
