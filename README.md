@@ -153,7 +153,6 @@ Pharos is also the proving ground of the Phalanx promise — if a managed-runtim
 
 ---
 
-Monorepo with automatic read-only package splits.
-All development happens here → https://github.com/phalanx-php/phalanx
+Monorepo with automatic read-only package splits — all development happens here.
 
 Work in progress. The 0.2 OpenSwoole foundation is stabilizing; more examples and package documentation arriving as the surface settles.
