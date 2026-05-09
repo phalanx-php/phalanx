@@ -91,7 +91,7 @@ You don't manage fibers or pools. You use the narrowest scope interface you need
 
 ### Built on OpenSwoole 26
 
-We're actively building Phalanx on the OpenSwoole 26 substrate — native fibers, `io_uring`, `Channel`, `WaitGroup`, `ClientPool`. Early results are very promising: the runtime kernel benchmarks are healthy, the boot harness catches misconfiguration before workers spin up, and the test surface is stabilizing fast. If you have an OpenSwoole environment lying around, **try it out** — feedback on real workloads is exactly what we need right now.
+Phalanx runs on OpenSwoole 26 — native PHP fibers, `io_uring`, `Channel`, `WaitGroup`, `ClientPool`. Early results are very promising: the runtime kernel benchmarks are healthy, the boot harness catches misconfiguration before workers spin up, and the test surface is stabilizing fast. If you have an OpenSwoole environment lying around, **try it out** — feedback on real workloads is exactly what we need right now.
 
 ### Demos
 
@@ -106,11 +106,30 @@ Real, runnable examples covering the core surface. Each ships with a `.env.examp
 ### Pharos — the proving ground
 
 <details>
-<summary><strong>The next big bet: a Phalanx-native edge runtime that lets PHP own its own request flow.</strong></summary>
+<summary><strong>The next big bet: replace nginx in front of your PHP app with PHP itself.</strong></summary>
 
-Phalanx Pharos will replace the nginx + PHP-FPM model with a managed edge runtime built for PHP, by PHP, on the same Aegis substrate that owns the application. Every proxied connection becomes a supervised `TaskRun`. Cancellation tied to the client FD. Leases on upstream connections. Trace events for every state transition. Drain semantics that propagate end-to-end.
+Let's be straight up front. Will Pharos out-RPS a tuned nginx serving static files? No. nginx is C, decades of tuning, and it doesn't have to think. Will Pharos handle the traffic the average PHP app actually sees — TLS termination, vhost routing, upstream proxying, WebSockets, ACME — at speeds that disappear into the noise of your handler? Absolutely. The bottleneck in a real app is almost never the proxy hop.
 
-The bigger idea: when PHP can talk directly to the edge instead of fighting through opaque proxy boundaries, the typical PHP app gets superpowers it has never had. mTLS identity propagated as a scope annotation. Lease starvation visible in the same trace as your handler. Hot-reloadable config in pure PHP. Audit trails minted at the wire instead of bolted on as middleware. Things nginx structurally cannot do because nginx doesn't know what an Aegis scope is.
+What Pharos gives up in raw throughput it earns back by knowing what's running behind it. Today the typical PHP deploy is four moving parts that don't talk to each other: nginx, certbot, PHP-FPM, supervisord. Four configs, two daemons, a cron, and a front door that has no idea what your app is doing. When a client hangs up, the upstream PHP request keeps grinding. When a pool starves, you find out from a 504 in a log file. When you want to roll a route, you reload nginx and hope.
+
+Pharos collapses all of that into one Phalanx process running alongside your app — same kernel, same scopes, same trace stream. Every proxied connection is a supervised `TaskRun`. Client disconnect cancels the upstream request mid-flight. Pool leases, circuit state, and per-vhost rate limits show up in the same trace as your handler. Config is a PHP value tree — hot-reload swaps it atomically without recycling workers. ACME renewals run as supervised tasks, not cron jobs.
+
+The OpenSwoole pieces it actually uses:
+
+- **TLS termination** via `ssl_cert_file` / `ssl_key_file` and the `sslSniCerts` map for multi-vhost SNI — set at `Server::set()` time
+- **Upstream pooling** through `ManagedPool` over `OpenSwoole\ConnectionPool`, with leases held for the life of the proxied request
+- **Per-worker shared state** for circuit breakers and rate limit buckets via `OpenSwoole\Atomic` (cross-worker via `OpenSwoole\Table` lands later)
+- **Graceful drain** via `Server::reload()` with a bounded `max_wait_time` — the same path used for cert hot-swap
+- **HTTP/2 upstream** via `open_http2_protocol` once the Iris keep-alive work lands
+
+And the things it deliberately doesn't do, either because OpenSwoole doesn't expose the hooks for it or because it isn't the job we're signing up for:
+
+- **No HTTP/3 or QUIC** — not in stable OpenSwoole 26.2; Swoole Lab fork only
+- **No TLS-ALPN-01 ACME** — requires raw TLS handshake interception that OpenSwoole's PHP surface doesn't expose; HTTP-01 is the supported challenge
+- **No OCSP stapling** — not in OpenSwoole's TLS config surface
+- **No inbound mTLS yet** — client cert verification on inbound isn't wired through `Server::set()` yet (upstream mTLS works)
+- **Not a static CDN** — `sendfile(2)` is bypassed under TLS; serve assets from a real CDN in front
+- **No L4 proxy, no full WAF, no service mesh control plane** — Pharos is an HTTP/WS edge for Phalanx apps, not a general proxy
 
 ```php
 return static function (array $context): \Closure {
