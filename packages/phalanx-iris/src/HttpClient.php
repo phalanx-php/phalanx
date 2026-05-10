@@ -120,6 +120,8 @@ class HttpClient
             waitDetail: strtoupper($request->method) . ' ' . $encoded['path'],
             runtime: $scope->runtime,
             resource: $resource,
+            recvTimeout: $request->readTimeout > 0.0 ? $request->readTimeout : $this->config->readTimeout,
+            maxResponseBytes: $this->config->maxResponseBytes,
         );
     }
 

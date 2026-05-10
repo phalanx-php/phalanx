@@ -61,6 +61,17 @@ final class AnthropicProvider implements LlmProvider
             $stream = $client->stream($ctx, $httpRequest);
             $ctx->onDispose(static fn() => $stream->close());
 
+            // Force header parsing so status is available before entering the SSE loop.
+            $stream->read($ctx, 0);
+
+            if ($stream->status >= 400) {
+                $errorBody = '';
+                while (!$stream->eof) {
+                    $errorBody .= $stream->read($ctx);
+                }
+                throw new RuntimeException("Anthropic API {$stream->status}: {$errorBody}");
+            }
+
             $source = new HttpSseSource($stream);
             $accumulatedText = '';
             $currentToolId = null;
@@ -80,10 +91,6 @@ final class AnthropicProvider implements LlmProvider
                 }
                 $type = (string) ($parsed['type'] ?? '');
                 $elapsed = (hrtime(true) - $startTime) / 1e6;
-
-                if ($stream->status >= 400) {
-                    throw new RuntimeException("Anthropic API {$stream->status}: {$data}");
-                }
 
                 match ($type) {
                     'message_start' => self::onMessageStart($parsed, $usage),

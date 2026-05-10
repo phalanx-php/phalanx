@@ -35,9 +35,16 @@ final class AgentRepl
         echo "Agent: " . $agent::class . "\n\n";
 
         while (true) {
-            $input = readline('> ');
+            fwrite(STDOUT, '> ');
+            $raw = fgets(STDIN);
 
-            if ($input === false || $input === 'exit') {
+            if ($raw === false) {
+                break;
+            }
+
+            $input = rtrim($raw, "\n\r");
+
+            if ($input === 'exit') {
                 break;
             }
 

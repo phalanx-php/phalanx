@@ -38,8 +38,6 @@ use Phalanx\System\TcpClient;
  */
 class HttpStream
 {
-    private const float RECV_TIMEOUT = 60.0;
-
     private const int MODE_HEADERS = 0;
     private const int MODE_CHUNKED = 1;
     private const int MODE_LENGTH = 2;
@@ -103,6 +101,8 @@ class HttpStream
         private readonly string $waitDetail,
         private readonly RuntimeContext $runtime,
         private readonly ManagedResourceHandle $resource,
+        private readonly float $recvTimeout = 60.0,
+        private readonly ?int $maxResponseBytes = null,
     ) {
     }
 
@@ -248,6 +248,11 @@ class HttpStream
                 $this->isEof = true;
                 return self::MODE_EOF;
             }
+            if ($this->maxResponseBytes !== null && $this->contentLengthRemaining > $this->maxResponseBytes) {
+                throw new HttpClientException(
+                    "Response Content-Length ({$this->contentLengthRemaining}) exceeds maxResponseBytes ({$this->maxResponseBytes}).",
+                );
+            }
             return self::MODE_LENGTH;
         }
 
@@ -306,13 +311,20 @@ class HttpStream
 
             case self::MODE_CLOSE:
                 $this->decoded .= $bytes;
+                if ($this->maxResponseBytes !== null && strlen($this->decoded) > $this->maxResponseBytes) {
+                    $this->isEof = true;
+                    $this->mode = self::MODE_EOF;
+                    throw new HttpClientException(
+                        "Response body exceeded maxResponseBytes ({$this->maxResponseBytes}) in unbounded read.",
+                    );
+                }
                 break;
         }
     }
 
     private function fillBuffer(Suspendable $scope): bool
     {
-        $chunk = $this->client->recv($scope, self::RECV_TIMEOUT);
+        $chunk = $this->client->recv($scope, $this->recvTimeout);
         if ($chunk === null || $chunk === '') {
             return false;
         }

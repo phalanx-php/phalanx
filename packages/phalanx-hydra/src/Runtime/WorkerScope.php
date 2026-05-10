@@ -90,12 +90,18 @@ class WorkerScope implements AegisWorkerScope
         return $this->waitForResponse($id)->unwrap();
     }
 
-    private function waitForResponse(string $expectedId): Response
+    private function waitForResponse(string $expectedId, int $timeoutSeconds = 30): Response
     {
+        stream_set_timeout($this->stdin, $timeoutSeconds);
+
         while (true) {
             $line = fgets($this->stdin);
 
             if ($line === false) {
+                $meta = stream_get_meta_data($this->stdin);
+                if ($meta['timed_out']) {
+                    throw new RuntimeException("Parent process unresponsive (no response after {$timeoutSeconds}s)");
+                }
                 throw new RuntimeException('Worker stdin closed unexpectedly');
             }
 
