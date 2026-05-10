@@ -510,6 +510,10 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                 }
             }
 
+            if ($cids === []) {
+                throw new RuntimeException('race(): all coroutine spawns failed (resource exhaustion)');
+            }
+
             $first = $channel->pop();
 
             // Cancel losers via their own child cancellation tokens so each
@@ -580,6 +584,10 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                 if ($cid !== false) {
                     $cids[] = $cid;
                 }
+            }
+
+            if ($cids === []) {
+                throw new RuntimeException('any(): all coroutine spawns failed (resource exhaustion)');
             }
 
             while ($remaining-- > 0) {

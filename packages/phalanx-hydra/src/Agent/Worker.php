@@ -6,6 +6,8 @@ namespace Phalanx\Hydra\Agent;
 
 use OpenSwoole\Coroutine;
 use OpenSwoole\Coroutine\Channel;
+use Phalanx\Runtime\CoroutineRuntime;
+use Phalanx\Runtime\RuntimePolicy;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Hydra\Process\ProcessConfig;
 use Phalanx\Hydra\Process\ProcessHandle;
@@ -98,9 +100,12 @@ class Worker
 
         if (Coroutine::getCid() < 0) {
             $self = $this;
-            Coroutine::run(static function () use ($self): void {
-                $self->drain();
-            });
+            CoroutineRuntime::run(
+                RuntimePolicy::phalanxManaged(),
+                static function () use ($self): void {
+                    $self->drain();
+                },
+            );
             return;
         }
 

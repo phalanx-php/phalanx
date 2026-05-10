@@ -40,9 +40,15 @@ final class Deploy implements Executable, HasTimeout
         $currentLink = "{$this->remoteBasePath}/current";
         $remoteTarball = "/tmp/phalanx-release-{$timestamp}.tar.gz";
 
+        $eReleasesDir    = escapeshellarg($releasesDir);
+        $eReleaseDir     = escapeshellarg($releaseDir);
+        $eCurrentLink    = escapeshellarg($currentLink);
+        $eRemoteTarball  = escapeshellarg($remoteTarball);
+        $eSharedDir      = escapeshellarg("{$this->remoteBasePath}/shared");
+
         $scope->execute(new RunCommand(
             credential: $this->credential,
-            command: "mkdir -p {$releaseDir} {$this->remoteBasePath}/shared",
+            command: "mkdir -p {$eReleaseDir} {$eSharedDir}",
         ));
 
         $scope->execute(new ScpTransfer(
@@ -54,27 +60,31 @@ final class Deploy implements Executable, HasTimeout
 
         $scope->execute(new RunCommand(
             credential: $this->credential,
-            command: "tar -xzf {$remoteTarball} -C {$releaseDir} && rm -f {$remoteTarball}",
+            command: "tar -xzf {$eRemoteTarball} -C {$eReleaseDir} && rm -f {$eRemoteTarball}",
         ));
 
+        // $migrationsCommand is a caller-supplied shell command string, not a path argument.
+        // It is the caller's responsibility to ensure this value is trusted/sanitised.
         if ($this->migrationsCommand !== null) {
             $scope->execute(new RunCommand(
                 credential: $this->credential,
-                command: "cd {$releaseDir} && {$this->migrationsCommand}",
+                command: "cd {$eReleaseDir} && {$this->migrationsCommand}",
             ));
         }
 
         $previousResult = $scope->execute(new RunCommand(
             credential: $this->credential,
-            command: "readlink -f {$currentLink} 2>/dev/null || echo ''",
+            command: "readlink -f {$eCurrentLink} 2>/dev/null || echo ''",
         ));
         $previousRelease = trim((string) $previousResult->stdout);
 
         $scope->execute(new RunCommand(
             credential: $this->credential,
-            command: "ln -sfn {$releaseDir} {$currentLink}",
+            command: "ln -sfn {$eReleaseDir} {$eCurrentLink}",
         ));
 
+        // $healthCheckCommand is a caller-supplied shell command string, not a path argument.
+        // It is the caller's responsibility to ensure this value is trusted/sanitised.
         if ($this->healthCheckCommand !== null) {
             $healthResult = $scope->execute(new RunCommand(
                 credential: $this->credential,
@@ -82,9 +92,10 @@ final class Deploy implements Executable, HasTimeout
             ));
 
             if (!$healthResult->successful && $previousRelease !== '') {
+                $ePreviousRelease = escapeshellarg($previousRelease);
                 $scope->execute(new RunCommand(
                     credential: $this->credential,
-                    command: "ln -sfn {$previousRelease} {$currentLink}",
+                    command: "ln -sfn {$ePreviousRelease} {$eCurrentLink}",
                 ));
 
                 $healthResult->throwIfFailed();
@@ -94,12 +105,12 @@ final class Deploy implements Executable, HasTimeout
         $keep = $this->keep;
         $scope->execute(new RunCommand(
             credential: $this->credential,
-            command: "cd {$releasesDir} && ls -1t | tail -n +{$keep} | xargs -I{} rm -rf {}",
+            command: "cd {$eReleasesDir} && ls -1t | tail -n +{$keep} | xargs -I{} rm -rf {}",
         ));
 
         return $scope->execute(new RunCommand(
             credential: $this->credential,
-            command: "readlink -f {$currentLink}",
+            command: "readlink -f {$eCurrentLink}",
         ));
     }
 }

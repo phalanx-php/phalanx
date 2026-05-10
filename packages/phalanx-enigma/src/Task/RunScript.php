@@ -34,7 +34,8 @@ final class RunScript implements Executable, HasTimeout
             localContent: $this->scriptContent,
         ));
 
-        $command = "chmod +x {$remotePath} && {$this->interpreter} {$remotePath}; EXIT_CODE=\$?; rm -f {$remotePath}; exit \$EXIT_CODE";
+        $escaped = escapeshellarg($remotePath);
+        $command = "chmod +x {$escaped} && {$this->interpreter} {$escaped}; EXIT_CODE=\$?; rm -f {$escaped}; exit \$EXIT_CODE";
 
         return $scope->execute(new RunCommand(
             credential: $this->credential,

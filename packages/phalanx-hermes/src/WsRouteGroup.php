@@ -61,11 +61,11 @@ final class WsRouteGroup
     /** @param WsRouteMap $routes */
     public static function of(
         array $routes,
-        ?WsGateway $gateway = null,
+        WsGateway $gateway,
     ): self {
         return new self(
             $routes,
-            $gateway ?? new WsGateway(),
+            $gateway,
         );
     }
 

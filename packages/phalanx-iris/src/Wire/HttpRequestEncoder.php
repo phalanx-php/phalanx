@@ -44,6 +44,11 @@ final class HttpRequestEncoder
         foreach ($headers as $name => $values) {
             $canonical = self::canonicalize($name);
             foreach ($values as $value) {
+                if (str_contains($value, "\r") || str_contains($value, "\n")) {
+                    throw new \InvalidArgumentException(
+                        "Header value for '{$name}' contains invalid characters (CR/LF)"
+                    );
+                }
                 $headerLines .= "{$canonical}: {$value}\r\n";
             }
         }

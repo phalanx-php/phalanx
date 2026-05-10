@@ -36,6 +36,10 @@ final class SftpUpload implements Executable, HasTimeout
         if ($this->localPath === null && $this->localContent === null) {
             throw new \InvalidArgumentException('Either localPath or localContent must be provided');
         }
+
+        if (str_contains($this->remotePath, "\n") || str_contains($this->remotePath, "\r")) {
+            throw new \InvalidArgumentException('remotePath must not contain newline characters');
+        }
     }
 
     public function __invoke(ExecutionScope $scope): TransferResult

@@ -20,7 +20,6 @@ final class TokenAccumulator
     private function __construct(
         private readonly Emitter $events,
         private readonly Channel $textChannel,
-        private readonly ExecutionScope $ctx,
     ) {
     }
 
@@ -28,8 +27,15 @@ final class TokenAccumulator
     {
         $channel = new Channel(bufferSize: 64);
 
-        $accumulator = new self($events, $channel, $ctx);
-        $accumulator->start();
+        $accumulator = new self($events, $channel);
+
+        // Spawn the event loop iteration as a background coroutine so that
+        // from() returns the accumulator immediately. Tokens and the final
+        // AgentResult arrive asynchronously; callers stream via text() and
+        // wait on result() only when they actually need the final value.
+        $ctx->go(static function (ExecutionScope $es) use ($accumulator): void {
+            $accumulator->start($es);
+        }, 'token-accumulator');
 
         return $accumulator;
     }
@@ -69,12 +75,12 @@ final class TokenAccumulator
         return $this->conversation;
     }
 
-    private function start(): void
+    private function start(ExecutionScope $scope): void
     {
         $ch = $this->textChannel;
 
         $emitter = $this->events;
-        foreach ($emitter($this->ctx) as $event) {
+        foreach ($emitter($scope) as $event) {
             if (!$event instanceof AgentEvent) {
                 continue;
             }

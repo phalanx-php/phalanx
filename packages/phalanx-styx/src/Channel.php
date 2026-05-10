@@ -23,6 +23,9 @@ use Throwable;
  */
 final class Channel
 {
+    /** Identity sentinel that marks channel exhaustion; never a valid emitted value. */
+    private const SENTINEL = new \stdClass();
+
     public bool $isOpen {
         get => $this->open;
     }
@@ -95,7 +98,7 @@ final class Channel
     {
         while (true) {
             $value = $this->next();
-            if ($value === null && !$this->open) {
+            if ($value === self::SENTINEL) {
                 return;
             }
 
@@ -112,7 +115,7 @@ final class Channel
                 throw $this->error;
             }
 
-            return null;
+            return self::SENTINEL;
         }
 
         $halfFull = (int) ($this->bufferSize / 2);
