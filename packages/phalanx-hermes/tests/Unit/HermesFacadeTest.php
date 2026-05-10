@@ -79,7 +79,7 @@ final class HermesFacadeTest extends TestCase
             self::assertNull($runner->upgrades()->resolve(Hermes::UPGRADE_TOKEN));
             self::assertNotContains(Hermes::UPGRADE_TOKEN, $runner->upgrades()->tokens());
 
-            Hermes::install($runner, $app, WsRouteGroup::of([]));
+            Hermes::install($runner, $app, WsRouteGroup::of([], new WsGateway()));
 
             self::assertContains(Hermes::UPGRADE_TOKEN, $runner->upgrades()->tokens());
             self::assertInstanceOf(

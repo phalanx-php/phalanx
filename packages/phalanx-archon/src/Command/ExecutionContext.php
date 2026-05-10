@@ -54,10 +54,6 @@ class ExecutionContext implements CommandScope
         $rawArgs = $scope->attribute('args', []);
         $input = ArgvParser::parse($rawArgs, $config);
 
-        foreach ($config->validators as $validator) {
-            $validator->validate($input, $config);
-        }
-
         return new self(
             $scope,
             $name,

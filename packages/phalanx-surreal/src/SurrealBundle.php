@@ -57,33 +57,38 @@ class SurrealBundle extends ServiceBundle
             static fn(AppContext $ctx): SurrealConfig => $config ?? SurrealConfig::fromContext($ctx),
         );
 
-        $services->singleton(SurrealTransport::class)
+        $services->singleton(HttpClient::class)
             ->needs(SurrealConfig::class)
-            ->factory(static function (SurrealConfig $config) use ($transport): SurrealTransport {
-                return $transport ?? new IrisSurrealTransport(
-                    new HttpClient(new HttpClientConfig(
-                        connectTimeout: $config->connectTimeout,
-                        readTimeout: $config->readTimeout,
-                        maxResponseBytes: $config->maxResponseBytes,
-                        userAgent: 'Phalanx-Surreal/0.6',
-                    )),
+            ->factory(static fn(SurrealConfig $config): HttpClient => new HttpClient(new HttpClientConfig(
+                connectTimeout: $config->connectTimeout,
+                readTimeout: $config->readTimeout,
+                maxResponseBytes: $config->maxResponseBytes,
+                userAgent: 'Phalanx-Surreal/0.6',
+            )));
+
+        $services->singleton(SurrealTransport::class)
+            ->needs(HttpClient::class)
+            ->factory(static fn(HttpClient $http): SurrealTransport => $transport ?? new IrisSurrealTransport($http));
+
+        $services->config(
+            WsClientConfig::class,
+            static function (AppContext $ctx) use ($config): WsClientConfig {
+                $surreal = $config ?? SurrealConfig::fromContext($ctx);
+
+                return new WsClientConfig(
+                    connectTimeout: $surreal->connectTimeout,
+                    recvTimeout: $surreal->readTimeout,
                 );
-            });
+            },
+        );
+
+        $services->singleton(WsClient::class)
+            ->needs(WsClientConfig::class)
+            ->factory(static fn(WsClientConfig $config): WsClient => new WsClient($config));
 
         $services->singleton(SurrealLiveTransport::class)
-            ->needs(SurrealConfig::class)
-            ->factory(static function (SurrealConfig $config) use ($liveTransport): SurrealLiveTransport {
-                if ($liveTransport !== null) {
-                    return $liveTransport;
-                }
-
-                return new HermesSurrealLiveTransport(
-                    new WsClient(new WsClientConfig(
-                        connectTimeout: $config->connectTimeout,
-                        recvTimeout: $config->readTimeout,
-                    )),
-                );
-            });
+            ->needs(WsClient::class)
+            ->factory(static fn(WsClient $client): SurrealLiveTransport => $liveTransport ?? new HermesSurrealLiveTransport($client));
 
         $services->scoped(Surreal::class)
             ->factory(static fn(

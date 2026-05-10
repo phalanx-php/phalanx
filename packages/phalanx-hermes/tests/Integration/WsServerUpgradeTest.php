@@ -8,6 +8,7 @@ use GuzzleHttp\Psr7\ServerRequest;
 use Phalanx\Application;
 use Phalanx\Hermes\Hermes;
 use Phalanx\Hermes\Server\WsServerUpgrade;
+use Phalanx\Hermes\WsGateway;
 use Phalanx\Hermes\WsRouteGroup;
 use Phalanx\Stoa\RouteGroup;
 use Phalanx\Stoa\StoaRunner;
@@ -51,7 +52,7 @@ final class WsServerUpgradeTest extends CoroutineTestCase
                 );
                 self::assertCount(0, $runner->upgrades()->tokens());
 
-                Hermes::install($runner, $app, WsRouteGroup::of([]));
+                Hermes::install($runner, $app, WsRouteGroup::of([], new WsGateway()));
 
                 $resolved = $runner->upgrades()->resolve(Hermes::UPGRADE_TOKEN);
                 self::assertInstanceOf(WsServerUpgrade::class, $resolved);
@@ -116,7 +117,7 @@ final class WsServerUpgradeTest extends CoroutineTestCase
 
             try {
                 $runner = StoaRunner::from($app)->withRoutes(RouteGroup::of([]));
-                Hermes::install($runner, $app, WsRouteGroup::of([]));
+                Hermes::install($runner, $app, WsRouteGroup::of([], new WsGateway()));
 
                 $resolvedFirst = $runner->upgrades()->resolve(Hermes::UPGRADE_TOKEN);
                 $resolvedSecond = $runner->upgrades()->resolve(Hermes::UPGRADE_TOKEN);

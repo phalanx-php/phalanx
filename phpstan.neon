@@ -10,14 +10,17 @@ parameters:
         - packages/phalanx-aegis/src
         - packages/phalanx-archon/src
         - packages/phalanx-argos/src
+        - packages/phalanx-athena/src
         - packages/phalanx-eidolon/src
         - packages/phalanx-enigma/src
         - packages/phalanx-grammata/src
         - packages/phalanx-hermes/src
         - packages/phalanx-hydra/src
+        - packages/phalanx-iris/src
         - packages/phalanx-phpstan/src
         - packages/phalanx-redis/src
         - packages/phalanx-skopos/src
+        - packages/phalanx-stoa/src
         - packages/phalanx-surreal/src
         - demos/hydra
         - packages/phalanx-styx/src
@@ -35,11 +38,14 @@ parameters:
         - packages/phalanx-aegis/src/Worker/
     phalanxEnforcedPaths:
         - packages/phalanx-aegis/src
+        - packages/phalanx-athena/src
         - packages/phalanx-enigma/src
         - packages/phalanx-hermes/src
         - packages/phalanx-hydra/src
+        - packages/phalanx-iris/src
         - packages/phalanx-redis/src
         - packages/phalanx-skopos/src
+        - packages/phalanx-stoa/src
         - packages/phalanx-surreal/src
     phalanxAuditPaths: []
     phalanxRuntimeHookInternalPaths:
@@ -53,11 +59,7 @@ parameters:
         - packages/phalanx-aegis/src/Scope/ExecutionLifecycleScope.php
     excludePaths:
         analyseAndScan:
-            - packages/phalanx-aegis/src/Parallel (?)
-            - packages/phalanx-aegis/src/Stream/ (?)
-            - packages/phalanx-aegis/src/Runtime/PhalanxRuntime.php (?)
-            - packages/phalanx-aegis/src/Runtime/PhalanxHttpRunner.php (?)
-            - packages/phalanx-athena/src/Cli/AgentRepl.php (?)
+            - packages/phalanx-athena/src/Cli/AgentRepl.php
     tmpDir: .phpstan-cache
     treatPhpDocTypesAsCertain: false
     bootstrapFiles: []

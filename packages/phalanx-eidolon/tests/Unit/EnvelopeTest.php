@@ -88,6 +88,7 @@ final class EnvelopeTest extends TestCase
     public function is_envelope_detects_null_data_envelope(): void
     {
         $this->assertTrue(Envelope::isEnvelope([
+            '__envelope' => true,
             'data' => null,
             'meta' => ['signals' => [], 'timestamp' => 0, 'trace_id' => null],
         ]));

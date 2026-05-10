@@ -19,6 +19,7 @@ use Phalanx\Scope\ScopeIdentity;
 use Phalanx\Server\ServerStats;
 use Phalanx\Stoa\Http\Upgrade\UpgradeRegistry;
 use Phalanx\Stoa\Response\BufferEventDispatcher;
+use Phalanx\Stoa\Response\ErrorResponseRenderer;
 use Phalanx\Stoa\Runtime\Identity\StoaEventSid;
 use Phalanx\Stoa\Runtime\StoaScopeKey;
 use Phalanx\Stoa\Sse\SseStream;
@@ -59,7 +60,7 @@ final class StoaRunner
 
     private readonly UpgradeRegistry $upgrades;
 
-    /** @var list<Response\ErrorResponseRenderer> */
+    /** @var list<ErrorResponseRenderer> */
     private array $errorRenderers = [];
 
     private function __construct(
@@ -67,13 +68,15 @@ final class StoaRunner
         private readonly StoaServerConfig $config = new StoaServerConfig(),
         private readonly StoaRequestFactory $requestFactory = new StoaRequestFactory(),
         private readonly StoaResponseWriter $responseWriter = new StoaResponseWriter(),
+        /** @var list<ErrorResponseRenderer> */
         array $errorRenderers = [],
     ) {
         $this->bufferEvents = new BufferEventDispatcher();
         $this->upgrades = new UpgradeRegistry();
-        $this->errorRenderers = $errorRenderers;
+        $this->errorRenderers = array_values($errorRenderers);
     }
 
+    /** @param list<ErrorResponseRenderer> $errorRenderers */
     public static function from(
         AppHost $app,
         StoaServerConfig $config = new StoaServerConfig(),
@@ -803,25 +806,11 @@ final class StoaRunner
                 RouteConfig::compile('/'),
             );
 
-            return $defaultRenderer->render($dummy, $e);
+            return $defaultRenderer->render($dummy, $e)
+                ?? $this->jsonResponse(500, ['error' => 'Internal Server Error']);
         } finally {
             $ownedScope?->dispose();
         }
     }
 
-    /** @return list<string> */
-    private function formatTrace(Throwable $e): array
-    {
-        $trace = [];
-
-        foreach ($e->getTrace() as $frame) {
-            $file = $frame['file'] ?? 'unknown';
-            $line = $frame['line'] ?? 0;
-            $func = $frame['function'];
-            $class = isset($frame['class']) ? $frame['class'] . '::' : '';
-            $trace[] = "{$class}{$func} at {$file}:{$line}";
-        }
-
-        return array_slice($trace, 0, 10);
-    }
 }

@@ -19,8 +19,8 @@ final class NoCancelledShortcutRuleTest extends RuleTestCase
         $this->analyse(
             [__DIR__ . '/Fixtures/no-cancelled-shortcut.php'],
             [
-                ['catch (Throwable) must rethrow or explicitly preserve Phalanx\Cancellation\Cancelled; swallowed cancellation makes a cancelled task look successful.', 16],
-                ['catch (Throwable) must rethrow or explicitly preserve Phalanx\Cancellation\Cancelled; swallowed cancellation makes a cancelled task look successful.', 58],
+                ['catch (Throwable|\Exception) must rethrow or explicitly preserve Phalanx\Cancellation\Cancelled; swallowed cancellation makes a cancelled task look successful.', 16],
+                ['catch (Throwable|\Exception) must rethrow or explicitly preserve Phalanx\Cancellation\Cancelled; swallowed cancellation makes a cancelled task look successful.', 58],
             ],
         );
     }

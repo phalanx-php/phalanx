@@ -28,8 +28,6 @@ final class WorkerTaskScopeContractRule implements Rule
     private const array ALLOWED_SCOPE_TYPES = [
         'Phalanx\\Scope\\Scope',
         'Phalanx\\Worker\\WorkerScope',
-        'Phalanx\\Worker\\CoordinatedWorkerScope',
-        'Phalanx\\Actor\\ActorContext',
     ];
 
     /** @var list<string> */

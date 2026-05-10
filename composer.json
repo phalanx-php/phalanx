@@ -43,7 +43,6 @@
             "Phalanx\\Redis\\": "packages/phalanx-redis/src/",
             "Phalanx\\Surreal\\": "packages/phalanx-surreal/src/",
             "Phalanx\\Hermes\\": "packages/phalanx-hermes/src/",
-            "Phalanx\\Hermes\\Client\\": "packages/phalanx-hermes/src/Client/",
             "Phalanx\\Argos\\": "packages/phalanx-argos/src/",
             "Phalanx\\Grammata\\": "packages/phalanx-grammata/src/",
             "Phalanx\\Enigma\\": "packages/phalanx-enigma/src/",
@@ -69,7 +68,6 @@
             "Phalanx\\Surreal\\Tests\\": "packages/phalanx-surreal/tests/",
             "Phalanx\\Demos\\Surreal\\": "demos/surreal/",
             "Phalanx\\Hermes\\Tests\\": "packages/phalanx-hermes/tests/",
-            "Phalanx\\Hermes\\Client\\Tests\\": "packages/phalanx-hermes/tests/Client/",
             "Phalanx\\Argos\\Tests\\": "packages/phalanx-argos/tests/",
             "Phalanx\\Grammata\\Tests\\": "packages/phalanx-grammata/tests/",
             "Phalanx\\Enigma\\Tests\\": "packages/phalanx-enigma/tests/",
@@ -103,7 +101,7 @@
         }
     ],
     "scripts": {
-        "test": "php vendor/bin/phpunit packages/phalanx-aegis/tests/",
+        "test": "@test:all",
         "test:all": [
             "@test:aegis",
             "@test:aegis-codegen",
@@ -185,7 +183,7 @@
         "gen:test-accessors": "php packages/phalanx-aegis-codegen/bin/regenerate-accessors",
         "gen:test-accessors:check": "php packages/phalanx-aegis-codegen/bin/check-accessors-in-sync",
         "post-autoload-dump": "@gen:test-accessors",
-        "check": ["@analyse", "@rector:dry", "@cs", "@gen:test-accessors:check", "@test", "@test:redis", "@test:surreal", "@examples:lint"]
+        "check": ["@analyse", "@rector:dry", "@cs", "@gen:test-accessors:check", "@test", "@examples:lint"]
     },
     "config": {
         "process-timeout": 0,

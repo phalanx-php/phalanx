@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Tests\Stoa\Integration;
 
 use Phalanx\Stoa\RequestBody;
+use Phalanx\Stoa\ValidationException;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ServerRequestInterface;
@@ -70,9 +71,13 @@ final class RequestBodyTest extends TestCase
 
         $this->assertSame(1, $body->required('a'));
 
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('Missing required body parameter: b');
-        $body->required('b');
+        try {
+            $body->required('b');
+            $this->fail('Expected ValidationException');
+        } catch (ValidationException $e) {
+            $this->assertArrayHasKey('b', $e->errors);
+            $this->assertSame(['Missing required body parameter: b'], $e->errors['b']);
+        }
     }
 
     #[Test]
