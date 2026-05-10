@@ -27,7 +27,7 @@ final class AgentRepl
 {
     public static function run(AgentDefinition $agent, CommandScope $scope, ?ConversationMemory $memory = null): int
     {
-        $sessionId = $scope->options->get('session', uniqid('cli_'));
+        $sessionId = $scope->options->get('session', uniqid('athena_'));
         $conversation = $memory?->load($sessionId) ?? Conversation::create();
         $verbose = $scope->options->has('verbose');
 
