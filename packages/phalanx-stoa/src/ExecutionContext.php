@@ -76,6 +76,11 @@ class ExecutionContext implements RequestScope
         return str_contains($this->header('Content-Type'), 'application/json');
     }
 
+    public function acceptsHtml(): bool
+    {
+        return str_contains($this->header('Accept'), 'text/html');
+    }
+
     public function bearerToken(): ?string
     {
         $header = $this->header('Authorization');

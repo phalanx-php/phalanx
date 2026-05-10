@@ -10,6 +10,15 @@ use Phalanx\Supervisor\WaitReason;
 
 final class RedisClient
 {
+    /** @var list<string> */
+    private const array ALLOWED_RAW_COMMANDS = [
+        'get', 'set', 'del', 'exists', 'expire', 'ttl', 'incr', 'decr',
+        'hget', 'hset', 'hdel', 'hgetall', 'lpush', 'rpush', 'lpop', 'rpop',
+        'lrange', 'sadd', 'srem', 'smembers', 'zadd', 'zrem', 'zrange',
+        'zrangebyscore', 'keys', 'scan', 'type', 'info', 'ping', 'dbsize',
+        'flushdb', 'mget', 'mset', 'setnx', 'setex', 'psetex', 'append', 'strlen',
+    ];
+
     public function __construct(
         private readonly RedisPool $pool,
         private readonly Suspendable $scope,
@@ -104,7 +113,13 @@ final class RedisClient
 
     public function raw(string $command, mixed ...$args): mixed
     {
-        return $this->command($command, static fn(\Redis $redis): mixed => $redis->{$command}(...$args));
+        $normalized = strtolower($command);
+
+        if (!in_array($normalized, self::ALLOWED_RAW_COMMANDS, true)) {
+            throw new \InvalidArgumentException("Redis command '{$command}' is not permitted via raw().");
+        }
+
+        return $this->command($normalized, static fn(\Redis $redis): mixed => $redis->{$normalized}(...$args));
     }
 
     public function close(): void

@@ -41,11 +41,15 @@ final class TaskFactoryStaticClosureOnlyRule implements Rule
 
         $class = NodeNames::calledClassName($node, $scope);
         $method = NodeNames::calledMethodName($node);
-        if ($class !== 'Phalanx\\Task\\Task' || !in_array($method, ['named', 'of'], true)) {
+
+        $isTask = $class === 'Phalanx\\Task\\Task' && in_array($method, ['named', 'of'], true);
+        $isEmitter = $class === 'Phalanx\\Styx\\Emitter' && $method === 'produce';
+
+        if (!$isTask && !$isEmitter) {
             return [];
         }
 
-        $closure = $method === 'named'
+        $closure = ($isTask && $method === 'named')
             ? ($node->args[1]->value ?? null)
             : ($node->args[0]->value ?? null);
 
@@ -53,10 +57,12 @@ final class TaskFactoryStaticClosureOnlyRule implements Rule
             return [];
         }
 
+        $label = $isEmitter ? "Emitter::{$method}" : "Task::{$method}";
+
         return RuleErrors::build(
             sprintf(
-                'Closure passed to Task::%s() must be static so it cannot capture $this in a long-running coroutine.',
-                $method,
+                'Closure passed to %s() must be static so it cannot capture $this in a long-running coroutine.',
+                $label,
             ),
             self::IDENTIFIER,
             $closure->getLine(),

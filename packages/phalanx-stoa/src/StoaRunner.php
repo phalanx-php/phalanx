@@ -372,10 +372,13 @@ final class StoaRunner
         $rootScope = null;
         $resource = null;
         $token = null;
+        $errorScope = null;
 
         try {
             $token = CancellationToken::timeout($this->config->requestTimeout);
             $rootScope = $this->app->createScope($token);
+            $errorScope = $rootScope;
+
             $scope = $rootScope->withAttribute('request', $request);
             $ownerScopeId = $scope instanceof ScopeIdentity ? $scope->scopeId : null;
             $resource = StoaRequestResource::open($this->app->runtime(), $request, $token, $fd, $ownerScopeId);
@@ -399,6 +402,7 @@ final class StoaRunner
                 new QueryParams($request->getQueryParams()),
                 RouteConfig::compile('/'),
             );
+            $errorScope = $scope;
 
             if ($this->draining) {
                 $resource->event(StoaEventSid::ServerDrainingRejected);
@@ -462,14 +466,14 @@ final class StoaRunner
                 if ($target !== null) {
                     return null;
                 }
-                $response = $this->errorResponse($scope, $e, $resource);
+                $response = $this->errorResponse($errorScope, $e, $resource);
             } catch (Throwable $e) {
                 if ($e instanceof ToResponse) {
                     $response = $e->toResponse();
                 } else {
                     $resource->fail($e);
                     $trace->log(TraceType::Failed, 'request', ['error' => $e->getMessage()]);
-                    $response = $this->errorResponse($scope, $e, $resource);
+                    $response = $this->errorResponse($errorScope, $e, $resource);
                 }
             }
 
@@ -780,17 +784,29 @@ final class StoaRunner
             }
         }
 
-        // Extremely rare edge case: create a minimal context for the default renderer
-        $inner = $scope instanceof \Phalanx\Scope\ExecutionScope ? $scope : $this->app->createScope();
-        $dummy = new ExecutionContext(
-            $inner,
-            new \GuzzleHttp\Psr7\ServerRequest('GET', $request->path),
-            new RouteParams([]),
-            new QueryParams([]),
-            RouteConfig::compile('/'),
-        );
+        // Extremely rare edge case: create a minimal context for the default renderer.
+        // When we must allocate a fresh scope here, dispose it after the render completes.
+        $ownedScope = null;
+        if ($scope instanceof \Phalanx\Scope\ExecutionScope) {
+            $inner = $scope;
+        } else {
+            $ownedScope = $this->app->createScope();
+            $inner      = $ownedScope;
+        }
 
-        return $defaultRenderer->render($dummy, $e);
+        try {
+            $dummy = new ExecutionContext(
+                $inner,
+                new \GuzzleHttp\Psr7\ServerRequest('GET', $request->path),
+                new RouteParams([]),
+                new QueryParams([]),
+                RouteConfig::compile('/'),
+            );
+
+            return $defaultRenderer->render($dummy, $e);
+        } finally {
+            $ownedScope?->dispose();
+        }
     }
 
     /** @return list<string> */

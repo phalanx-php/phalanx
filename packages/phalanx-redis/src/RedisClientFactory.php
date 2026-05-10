@@ -23,8 +23,16 @@ final class RedisClientFactory implements ManagedPoolFactory
     public static function connect(RedisConfig $config): \Redis
     {
         $redis = new \Redis();
-        if (!$redis->connect($config->host, $config->port, $config->connectTimeout)) {
-            throw new \RuntimeException('Redis connection failed.');
+        try {
+            $connected = $redis->connect($config->host, $config->port, $config->connectTimeout);
+        } catch (\RedisException $e) {
+            throw new \RuntimeException(
+                "Redis connection failed ({$config->host}:{$config->port}): {$e->getMessage()}",
+                previous: $e,
+            );
+        }
+        if (!$connected) {
+            throw new \RuntimeException("Redis connection failed ({$config->host}:{$config->port}).");
         }
 
         $redis->setOption(\Redis::OPT_READ_TIMEOUT, $config->readTimeout);

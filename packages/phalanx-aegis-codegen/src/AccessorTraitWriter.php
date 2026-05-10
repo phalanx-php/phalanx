@@ -65,23 +65,69 @@ final class AccessorTraitWriter
         }
     }
 
+    /**
+     * Returns a map of FQCN => import alias (alias equals short name unless there is a collision).
+     *
+     * @param list<LensMetadata> $lenses
+     * @return array<string,string> fqcn => alias
+     */
+    private static function buildAliasMap(array $lenses): array
+    {
+        $fqcns = array_unique(array_column($lenses, 'lensClass'));
+
+        // First pass: record which short names appear more than once.
+        $shortNameCount = [];
+        foreach ($fqcns as $fqcn) {
+            $short = self::shortName($fqcn);
+            $shortNameCount[$short] = ($shortNameCount[$short] ?? 0) + 1;
+        }
+
+        $aliasMap = [];
+        $usedAliases = [];
+
+        foreach ($fqcns as $fqcn) {
+            $short = self::shortName($fqcn);
+
+            if ($shortNameCount[$short] === 1 && !isset($usedAliases[$short])) {
+                $aliasMap[$fqcn] = $short;
+                $usedAliases[$short] = true;
+                continue;
+            }
+
+            // Collision: build a unique alias from the namespace segments.
+            $parts = explode('\\', $fqcn);
+            $alias = implode('', array_slice($parts, -2));
+            $base = $alias;
+            $i = 2;
+            while (isset($usedAliases[$alias])) {
+                $alias = $base . $i++;
+            }
+
+            $aliasMap[$fqcn] = $alias;
+            $usedAliases[$alias] = true;
+        }
+
+        return $aliasMap;
+    }
+
     /** @param list<LensMetadata> $lenses */
     private static function collectUseStatements(array $lenses): string
     {
-        $imports = [];
+        $aliasMap = self::buildAliasMap($lenses);
 
-        foreach ($lenses as $lens) {
-            $imports[$lens->lensClass] = true;
+        $lines = [];
+        foreach ($aliasMap as $fqcn => $alias) {
+            $short = self::shortName($fqcn);
+            $lines[] = $alias === $short
+                ? 'use ' . $fqcn . ';'
+                : 'use ' . $fqcn . ' as ' . $alias . ';';
         }
 
-        $names = array_keys($imports);
-        sort($names);
+        sort($lines);
 
-        if ($names === []) {
+        if ($lines === []) {
             return '';
         }
-
-        $lines = array_map(static fn(string $fqcn): string => 'use ' . $fqcn . ';', $names);
 
         return implode("\n", $lines) . "\n";
     }
@@ -89,15 +135,17 @@ final class AccessorTraitWriter
     /** @param list<LensMetadata> $lenses */
     private static function renderAccessors(array $lenses): string
     {
+        $aliasMap = self::buildAliasMap($lenses);
+
         $sorted = $lenses;
         usort($sorted, static fn(LensMetadata $a, LensMetadata $b): int => $a->accessor <=> $b->accessor);
 
         $blocks = [];
 
         foreach ($sorted as $lens) {
-            $shortName = self::shortName($lens->lensClass);
-            $blocks[] = "    public {$shortName} \${$lens->accessor} {\n"
-                . "        get => \$this->lens({$shortName}::class);\n"
+            $alias = $aliasMap[$lens->lensClass] ?? self::shortName($lens->lensClass);
+            $blocks[] = "    public {$alias} \${$lens->accessor} {\n"
+                . "        get => \$this->lens({$alias}::class);\n"
                 . "    }\n";
         }
 

@@ -75,11 +75,18 @@ final class StaticClosureOnlyRule implements Rule
                 continue;
             }
 
-            return RuleErrors::build(
-                sprintf(
+            $message = $closure instanceof ArrowFunction
+                ? sprintf(
+                    'Arrow function passed to %s() must be declared static (static fn() =>) so it cannot capture $this in a long-running coroutine.',
+                    $method,
+                )
+                : sprintf(
                     'Closure passed to %s() must be static so it cannot capture $this in a long-running coroutine.',
                     $method,
-                ),
+                );
+
+            return RuleErrors::build(
+                $message,
                 self::IDENTIFIER,
                 $closure->getLine(),
             );

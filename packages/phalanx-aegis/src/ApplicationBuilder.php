@@ -211,7 +211,17 @@ class ApplicationBuilder
 
     private function vendorDir(): ?string
     {
-        $candidate = getcwd() . '/vendor';
-        return is_dir($candidate) ? $candidate : null;
+        // Resolve from the Composer autoloader registration point so the path
+        // is stable regardless of the process working directory.
+        foreach ([
+            dirname(__DIR__, 3) . '/vendor',
+            dirname(__DIR__, 5) . '/vendor',
+        ] as $candidate) {
+            if (is_dir($candidate)) {
+                return $candidate;
+            }
+        }
+
+        return null;
     }
 }

@@ -118,7 +118,7 @@ final class HookOwnershipRule implements Rule
     private function processConstant(ConstFetch $node): array
     {
         $constant = $node->name->toString();
-        if (!str_starts_with($constant, 'SWOOLE_HOOK_')) {
+        if (!str_starts_with($constant, 'SWOOLE_HOOK_') && !str_starts_with($constant, 'OPENSWOOLE_HOOK_')) {
             return [];
         }
 

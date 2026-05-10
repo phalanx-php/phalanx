@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\PHPStan\Rules\Transaction;
 
+use PhpParser\Node\Expr\ArrowFunction;
 use PhpParser\Node\Expr\Closure;
 use PhpParser\Node\Expr\MethodCall;
 use Phalanx\PHPStan\Support\NodeNames;
@@ -39,7 +40,7 @@ final class TransactionCallbackScopeRule implements Rule
         }
 
         $callback = $node->args[1]->value ?? null;
-        if (!$callback instanceof Closure) {
+        if (!$callback instanceof Closure && !$callback instanceof ArrowFunction) {
             return [];
         }
 

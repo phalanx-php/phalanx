@@ -13,8 +13,9 @@ final class Envelope
     public static function wrap(mixed $data, SignalCollector $collector, ?string $traceId = null): array
     {
         return [
-            'data' => $data,
-            'meta' => [
+            '__envelope' => true,
+            'data'       => $data,
+            'meta'       => [
                 'signals'   => $collector->drain(),
                 'timestamp' => (int) (microtime(true) * 1000),
                 'trace_id'  => $traceId,
@@ -32,7 +33,8 @@ final class Envelope
             return false;
         }
 
-        return array_key_exists('data', $data)
+        return ($data['__envelope'] ?? false) === true
+            && array_key_exists('data', $data)
             && isset($data['meta'])
             && is_array($data['meta'])
             && array_key_exists('signals', $data['meta']);

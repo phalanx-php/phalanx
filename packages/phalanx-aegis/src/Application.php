@@ -96,15 +96,17 @@ class Application implements AppHost
 
     public function run(Scopeable|Executable|Closure $task, ?CancellationToken $token = null): mixed
     {
+        $self = $this;
+
         return CoroutineRuntime::run(
             $this->runtimePolicy,
-            function () use ($task, $token): mixed {
-                $this->startup();
+            static function () use ($self, $task, $token): mixed {
+                $self->startup();
 
                 try {
-                    return $this->executeScoped($task, $token);
+                    return $self->executeScoped($task, $token);
                 } finally {
-                    $this->shutdown();
+                    $self->shutdown();
                 }
             },
             $this->strictRuntimeHooks,
@@ -113,12 +115,14 @@ class Application implements AppHost
 
     public function scoped(Scopeable|Executable|Closure $task, ?CancellationToken $token = null): mixed
     {
+        $self = $this;
+
         return CoroutineRuntime::run(
             $this->runtimePolicy,
-            function () use ($task, $token): mixed {
-                $this->startup();
+            static function () use ($self, $task, $token): mixed {
+                $self->startup();
 
-                return $this->executeScoped($task, $token);
+                return $self->executeScoped($task, $token);
             },
             $this->strictRuntimeHooks,
         );

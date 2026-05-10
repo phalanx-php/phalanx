@@ -114,11 +114,11 @@ final class RequestBody
         return $value;
     }
 
-    /** @throws \RuntimeException|ValidationException */
+    /** @throws ValidationException */
     public function required(string $key, ?RequestValidator $validate = null): mixed
     {
         if (!$this->has($key)) {
-            throw new \RuntimeException("Missing required body parameter: {$key}");
+            throw ValidationException::single($key, "Missing required body parameter: {$key}");
         }
 
         $value = $this->values[$key];

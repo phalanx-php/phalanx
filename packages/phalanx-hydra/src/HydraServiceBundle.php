@@ -9,7 +9,7 @@ use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 use Phalanx\Worker\WorkerDispatch;
 
-class HydraServiceBundle extends ServiceBundle
+final class HydraServiceBundle extends ServiceBundle
 {
     public function __construct(
         private ?ParallelConfig $config = null,

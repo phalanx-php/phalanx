@@ -67,7 +67,7 @@ final class NoCancelledShortcutRule implements Rule
             }
 
             return RuleErrors::build(
-                'catch (Throwable) must rethrow or explicitly preserve Phalanx\\Cancellation\\Cancelled; swallowed cancellation makes a cancelled task look successful.',
+                'catch (Throwable|\Exception) must rethrow or explicitly preserve Phalanx\\Cancellation\\Cancelled; swallowed cancellation makes a cancelled task look successful.',
                 self::IDENTIFIER,
                 $catch->getLine(),
             );
@@ -79,7 +79,8 @@ final class NoCancelledShortcutRule implements Rule
     private function catchesThrowable(Catch_ $catch, Scope $scope): bool
     {
         foreach ($catch->types as $type) {
-            if ($scope->resolveName($type) === 'Throwable') {
+            $resolved = $scope->resolveName($type);
+            if ($resolved === 'Throwable' || $resolved === 'Exception') {
                 return true;
             }
         }

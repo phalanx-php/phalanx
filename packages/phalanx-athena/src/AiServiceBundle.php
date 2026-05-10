@@ -16,7 +16,7 @@ use Phalanx\Iris\Iris;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 
-class AiServiceBundle extends ServiceBundle
+final class AiServiceBundle extends ServiceBundle
 {
     /**
      * AI providers are pluggable — at least one provider key should be set,

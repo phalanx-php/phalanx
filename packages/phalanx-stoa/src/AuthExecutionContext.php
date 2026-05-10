@@ -67,6 +67,11 @@ class AuthExecutionContext implements AuthRequestScope
         return $this->inner->isJson();
     }
 
+    public function acceptsHtml(): bool
+    {
+        return $this->inner->acceptsHtml();
+    }
+
     public function bearerToken(): ?string
     {
         return $this->inner->bearerToken();

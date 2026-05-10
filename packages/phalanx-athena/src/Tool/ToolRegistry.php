@@ -62,9 +62,13 @@ final class ToolRegistry
         $class = $this->tools[$call->name] ?? null;
 
         if ($class !== null && is_subclass_of($class, \Phalanx\Task\Retryable::class)) {
-            $ref = new \ReflectionClass($class);
-            $instance = $ref->newInstanceWithoutConstructor();
-            return $instance->retryPolicy;
+            // Prefer a class-declared static default over instantiating an
+            // uninitialized object (newInstanceWithoutConstructor fatals on hooked properties).
+            if (method_exists($class, 'defaultRetryPolicy')) {
+                return $class::defaultRetryPolicy();
+            }
+
+            return RetryPolicy::fixed(1, 0);
         }
 
         return RetryPolicy::fixed(1, 0);

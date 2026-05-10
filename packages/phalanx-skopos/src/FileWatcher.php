@@ -31,7 +31,7 @@ final class FileWatcher
     /**
      * @param list<string> $paths
      * @param list<string> $extensions
-     * @param Closure(list<string>): void $onChange
+     * @param \Closure(list<string>): void $onChange Must be a static closure; captures in timer callbacks cause reference-cycle leaks.
      */
     public function __construct(
         private array $paths,

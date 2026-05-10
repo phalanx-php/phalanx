@@ -78,11 +78,16 @@ abstract class BasePrompt
             $this->processKey($key);
         }
 
-        return match ($this->state) {
-            'submit' => $this->submittedValue,
-            'revert' => throw new FormRevertedException(),
-            default => throw new CancelledException('Prompt cancelled'),
-        };
+        try {
+            return match ($this->state) {
+                'submit' => $this->submittedValue,
+                'revert' => throw new FormRevertedException(),
+                default => throw new CancelledException('Prompt cancelled'),
+            };
+        } finally {
+            $this->scope  = null;
+            $this->output = null;
+        }
     }
 
     final protected function render(): void

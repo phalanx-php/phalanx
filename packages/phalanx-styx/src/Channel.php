@@ -131,7 +131,7 @@ final class Channel
         return $value;
     }
 
-    /** @param Closure(bool): void $fn */
+    /** @param \Closure(bool): void $fn Must be a static closure; non-static closures in channel pressure callbacks cause reference-cycle leaks. */
     public function withPressure(Closure $fn): self
     {
         $this->pressureCallback = $fn;

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Phalanx\Redis;
 
 use Closure;
-use Phalanx\Cancellation\Cancelled;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Styx\Channel;
 use Phalanx\Styx\Emitter;
@@ -13,7 +12,6 @@ use Phalanx\Supervisor\WaitReason;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 use Phalanx\Task\Task;
-use Throwable;
 
 final class RedisPubSub
 {
@@ -87,22 +85,16 @@ final class RedisPubSub
         $emitter = $this->subscribe($channel);
 
         foreach ($emitter($scope) as $item) {
-            try {
-                $scope->executeFresh(Task::of(static function (ExecutionScope $child) use ($handler, $item): mixed {
-                    $child = $child->withAttribute('subscription.message', $item['message']);
-                    $child = $child->withAttribute('subscription.channel', $item['channel']);
+            $scope->executeFresh(Task::of(static function (ExecutionScope $child) use ($handler, $item): mixed {
+                $child = $child->withAttribute('subscription.message', $item['message']);
+                $child = $child->withAttribute('subscription.channel', $item['channel']);
 
-                    if ($handler instanceof Closure) {
-                        return $handler($child);
-                    }
-
-                    return $handler->__invoke($child);
-                }));
-            } catch (Throwable $e) {
-                if ($e instanceof Cancelled) {
-                    throw $e;
+                if ($handler instanceof Closure) {
+                    return $handler($child);
                 }
-            }
+
+                return $handler->__invoke($child);
+            }));
         }
     }
 

@@ -24,6 +24,8 @@ interface RequestScope extends ExecutionScope
 
     public function isJson(): bool;
 
+    public function acceptsHtml(): bool;
+
     public function bearerToken(): ?string;
 
     public function server(string $key, string $default = ''): string;
