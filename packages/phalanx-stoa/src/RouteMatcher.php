@@ -26,8 +26,8 @@ final class RouteMatcher implements HandlerMatcher
         $method = $request->getMethod();
         $path = $request->getUri()->getPath();
 
-        $compiler = $this->getCompiler($handlers);
-        $result = $compiler->dispatch($method, $path);
+        $this->compiler ??= new FastRouteCompiler($handlers);
+        $result = $this->compiler->dispatch($method, $path);
 
         $handler = $result['handler'];
         $params = $result['params'];
@@ -55,17 +55,4 @@ final class RouteMatcher implements HandlerMatcher
         return new MatchResult($handler, $scope);
     }
 
-    /**
-     * @param array<string, Handler> $handlers
-     */
-    private function getCompiler(array $handlers): FastRouteCompiler
-    {
-        if ($this->compiler !== null) {
-            return $this->compiler;
-        }
-
-        $this->compiler = new FastRouteCompiler($handlers);
-
-        return $this->compiler;
-    }
 }

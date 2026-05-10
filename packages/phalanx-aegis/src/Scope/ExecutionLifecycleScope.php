@@ -722,13 +722,21 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
     {
         $previous = null;
         $first = true;
+        $stepScope = null;
         foreach ($tasks as $task) {
             $this->throwIfCancelled();
+            $previousStepScope = $stepScope;
             $stepScope = $first
                 ? $this
                 : $this->withAttribute('_waterfall_previous', $previous);
             $first = false;
             $previous = $stepScope->executeFresh($task);
+            if ($previousStepScope !== null && $previousStepScope !== $this) {
+                $previousStepScope->dispose();
+            }
+        }
+        if ($stepScope !== null && $stepScope !== $this) {
+            $stepScope->dispose();
         }
         return $previous;
     }
@@ -1002,6 +1010,10 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             if ($run->cancellation->isCancelled && Coroutine::exists($cid)) {
                 Coroutine::cancel($cid);
             }
+            $this->goSpawns = array_values(array_filter(
+                $this->goSpawns,
+                static fn(array $entry): bool => !$entry[1]->isTerminal(),
+            ));
             $this->goSpawns[] = [$cid, $run];
         }
 
@@ -1522,8 +1534,9 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         }
 
         if (Coroutine::getCid() >= 0) {
+            $deadline = hrtime(true) + 50_000_000;
             foreach ($this->goSpawns as [$cid, $run]) {
-                for ($attempt = 0; $attempt < 50 && Coroutine::exists($cid); $attempt++) {
+                while (Coroutine::exists($cid) && hrtime(true) < $deadline) {
                     Coroutine::usleep(1_000);
                 }
             }

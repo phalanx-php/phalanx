@@ -59,21 +59,27 @@ final class StoaRunner
 
     private readonly UpgradeRegistry $upgrades;
 
+    /** @var list<Response\ErrorResponseRenderer> */
+    private array $errorRenderers = [];
+
     private function __construct(
         private readonly AppHost $app,
         private readonly StoaServerConfig $config = new StoaServerConfig(),
         private readonly StoaRequestFactory $requestFactory = new StoaRequestFactory(),
         private readonly StoaResponseWriter $responseWriter = new StoaResponseWriter(),
+        array $errorRenderers = [],
     ) {
         $this->bufferEvents = new BufferEventDispatcher();
         $this->upgrades = new UpgradeRegistry();
+        $this->errorRenderers = $errorRenderers;
     }
 
     public static function from(
         AppHost $app,
         StoaServerConfig $config = new StoaServerConfig(),
+        array $errorRenderers = [],
     ): self {
-        return new self($app, $config);
+        return new self($app, $config, errorRenderers: $errorRenderers);
     }
 
     public static function toResponse(mixed $data): ResponseInterface
@@ -373,9 +379,9 @@ final class StoaRunner
             $scope = $rootScope->withAttribute('request', $request);
             $ownerScopeId = $scope instanceof ScopeIdentity ? $scope->scopeId : null;
             $resource = StoaRequestResource::open($this->app->runtime(), $request, $token, $fd, $ownerScopeId);
-            $resource->activate();
             $this->registerRequest($resource);
             $registered = true;
+            $resource->activate();
 
             $scope = $scope
                 ->withAttribute(StoaScopeKey::ResourceId->value, $resource->id)
@@ -385,6 +391,14 @@ final class StoaRunner
             }
             $trace = $scope->trace();
             $trace->clear();
+
+            $scope = new ExecutionContext(
+                $scope instanceof \Phalanx\Scope\ExecutionScope ? $scope : $rootScope,
+                $request,
+                new RouteParams([]),
+                new QueryParams($request->getQueryParams()),
+                RouteConfig::compile('/'),
+            );
 
             if ($this->draining) {
                 $resource->event(StoaEventSid::ServerDrainingRejected);
@@ -448,14 +462,14 @@ final class StoaRunner
                 if ($target !== null) {
                     return null;
                 }
-                $response = $this->errorResponse($e, $resource);
+                $response = $this->errorResponse($scope, $e, $resource);
             } catch (Throwable $e) {
                 if ($e instanceof ToResponse) {
                     $response = $e->toResponse();
                 } else {
                     $resource->fail($e);
                     $trace->log(TraceType::Failed, 'request', ['error' => $e->getMessage()]);
-                    $response = $this->errorResponse($e, $resource);
+                    $response = $this->errorResponse($scope, $e, $resource);
                 }
             }
 
@@ -746,25 +760,37 @@ final class StoaRunner
         );
     }
 
-    private function errorResponse(Throwable $e, StoaRequestResource $request): ResponseInterface
+    private function errorResponse(\Phalanx\Scope\Scope $scope, Throwable $e, StoaRequestResource $request): ResponseInterface
     {
-        $body = [
-            'error' => 'Internal Server Error',
-        ];
+        $requestScope = $scope instanceof RequestScope ? $scope : null;
+        $defaultRenderer = new \Phalanx\Stoa\Response\DefaultErrorResponseRenderer($this->config->debug);
 
-        if ($this->config->debug) {
-            $body['message'] = $e->getMessage();
-            $body['request'] = [
-                'id' => $request->id,
-                'path' => $request->path,
-                'state' => $request->stateValue(),
-                'method' => $request->method,
-            ];
-            $body['trace'] = $this->formatTrace($e);
-            $body['tasks'] = (new TaskTreeFormatter())->format($this->app->supervisor()->tree());
+        if ($requestScope !== null) {
+            $renderers = array_values([
+                ...$this->errorRenderers,
+                new \Phalanx\Stoa\Response\HtmlErrorResponseRenderer($this->config->debug),
+                $defaultRenderer,
+            ]);
+
+            foreach ($renderers as $renderer) {
+                $response = $renderer->render($requestScope, $e);
+                if ($response !== null) {
+                    return $response;
+                }
+            }
         }
 
-        return $this->jsonResponse(500, $body);
+        // Extremely rare edge case: create a minimal context for the default renderer
+        $inner = $scope instanceof \Phalanx\Scope\ExecutionScope ? $scope : $this->app->createScope();
+        $dummy = new ExecutionContext(
+            $inner,
+            new \GuzzleHttp\Psr7\ServerRequest('GET', $request->path),
+            new RouteParams([]),
+            new QueryParams([]),
+            RouteConfig::compile('/'),
+        );
+
+        return $defaultRenderer->render($dummy, $e);
     }
 
     /** @return list<string> */

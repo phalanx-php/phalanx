@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Surreal;
 
 use JsonException;
+use OpenSwoole\Atomic;
 use Phalanx\Iris\HttpClient;
 use Phalanx\Iris\HttpRequest;
 use Phalanx\Iris\HttpResponse;
@@ -13,11 +14,12 @@ use Phalanx\Scope\Suspendable;
 
 class IrisSurrealTransport implements SurrealTransport
 {
-    private int $nextId = 1;
+    private Atomic $nextId;
 
     public function __construct(
         private readonly HttpClient $http,
     ) {
+        $this->nextId = new Atomic(0);
     }
 
     public function rpc(
@@ -27,7 +29,11 @@ class IrisSurrealTransport implements SurrealTransport
         string $method,
         array $params = [],
     ): mixed {
-        $id = $this->nextId++;
+        $next = $this->nextId->add(1);
+        if (!is_int($next)) {
+            throw new SurrealException('Atomic RPC counter overflow.');
+        }
+        $id = $next;
         $body = self::encodeJson([
             'id' => $id,
             'method' => $method,

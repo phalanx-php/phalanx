@@ -68,22 +68,32 @@ class CancellationToken
 
     /**
      * Composite token. Cancels when any source cancels. Pre-cancels if any source
-     * is already cancelled. Subscriptions on sources are not unregistered if the
-     * composite is GC'd before its sources, but since the listener only flips
-     * an already-flipped flag (idempotent cancel), this is benign.
+     * is already cancelled. Listeners registered on source tokens are unregistered
+     * when the composite cancels, preventing proportional listener accumulation
+     * across concurrent timeout usage.
      */
     public static function composite(self ...$sources): self
     {
         $composite = new self();
+        $unregisters = [];
         foreach ($sources as $source) {
             if ($source->cancelled) {
                 $composite->cancel();
                 return $composite;
             }
-            $source->onCancel(static function () use ($composite): void {
+            $unregisters[] = $source->onCancel(static function () use ($composite): void {
                 $composite->cancel();
             });
         }
+
+        if ($unregisters !== []) {
+            $composite->onCancel(static function () use ($unregisters): void {
+                foreach ($unregisters as $unregister) {
+                    $unregister();
+                }
+            });
+        }
+
         return $composite;
     }
 
@@ -133,8 +143,9 @@ class CancellationToken
         $key = $this->listenerSeq++;
         $this->listeners[$key] = $listener;
 
-        return function () use ($key): void {
-            unset($this->listeners[$key]);
+        $listeners = &$this->listeners;
+        return static function () use (&$listeners, $key): void {
+            unset($listeners[$key]);
         };
     }
 }

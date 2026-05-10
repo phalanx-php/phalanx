@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Hydra\Supervisor;
 
+use OpenSwoole\Atomic;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Hydra\Agent\AgentState;
 use Phalanx\Hydra\Agent\Worker;
@@ -18,7 +19,7 @@ use Phalanx\Scope\TaskScope;
 
 class WorkerSupervisor
 {
-    private bool $started = false;
+    private Atomic $started;
 
     /** @var list<Worker> */
     private array $agents = [];
@@ -32,15 +33,14 @@ class WorkerSupervisor
         private readonly SupervisorConfig $config,
         private readonly ProcessConfig $processConfig,
     ) {
+        $this->started = new Atomic(0);
     }
 
     public function start(): void
     {
-        if ($this->started) {
+        if (!$this->started->cmpset(0, 1)) {
             return;
         }
-
-        $this->started = true;
 
         for ($i = 0; $i < $this->config->agents; $i++) {
             $this->agents[] = new Worker(
@@ -72,7 +72,7 @@ class WorkerSupervisor
 
     public function shutdown(): void
     {
-        if (!$this->started) {
+        if (!$this->started->cmpset(1, 0)) {
             return;
         }
 
@@ -80,7 +80,6 @@ class WorkerSupervisor
             $agent->drain();
         }
 
-        $this->started = false;
         $this->agents = [];
         $this->dispatcher = null;
     }
@@ -92,7 +91,7 @@ class WorkerSupervisor
         }
 
         $this->agents = [];
-        $this->started = false;
+        $this->started->set(0);
         $this->dispatcher = null;
     }
 

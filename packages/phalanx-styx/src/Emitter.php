@@ -361,6 +361,7 @@ final class Emitter implements StreamSource
         return new self(static function (Channel $ch, ExecutionScope $scope) use ($sources): Closure {
             $remaining = count($sources);
             $failed = false;
+            $completed = false;
             /** @var list<TaskRun> $runs */
             $runs = [];
 
@@ -370,6 +371,7 @@ final class Emitter implements StreamSource
                     $ch,
                     &$remaining,
                     &$failed,
+                    &$completed,
                 ): void {
                     try {
                         foreach ($source($childScope) as $value) {
@@ -390,7 +392,8 @@ final class Emitter implements StreamSource
                     }
 
                     $remaining--;
-                    if ($remaining <= 0 && !$failed) {
+                    if ($remaining <= 0 && !$failed && !$completed) {
+                        $completed = true;
                         $ch->complete();
                     }
                 }, 'styx.merge');

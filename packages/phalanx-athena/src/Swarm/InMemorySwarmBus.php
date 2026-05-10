@@ -26,6 +26,14 @@ final class InMemorySwarmBus implements SwarmBus
         }
     }
 
+    public function close(): void
+    {
+        foreach ($this->subscribers as $channel) {
+            $channel->complete();
+        }
+        $this->subscribers = [];
+    }
+
     public function subscribe(array $filters = []): Emitter
     {
         $bus = $this;

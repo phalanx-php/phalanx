@@ -97,8 +97,12 @@ final readonly class HtmlErrorResponseRenderer implements ErrorResponseRenderer
 
     private function getLogo(): string
     {
-        // monorepo/packages/phalanx-stoa/src/Response/HtmlErrorResponseRenderer.php
-        $path = dirname(__DIR__, 5) . '/logo.svg';
+        // packages/phalanx-stoa/src/Response/HtmlErrorResponseRenderer.php
+        // dirname(__DIR__, 1) => packages/phalanx-stoa/src
+        // dirname(__DIR__, 2) => packages/phalanx-stoa
+        // dirname(__DIR__, 3) => packages
+        // dirname(__DIR__, 4) => phalanx (ROOT)
+        $path = dirname(__DIR__, 4) . '/logo.svg';
         if (is_file($path)) {
             $svg = file_get_contents($path);
             if ($svg) {
@@ -125,7 +129,7 @@ final readonly class HtmlErrorResponseRenderer implements ErrorResponseRenderer
         $escapedCode = htmlspecialchars($code, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         
         $sourceContent = $code !== '' 
-            ? "<pre class='language-php line-numbers' data-line='{$line}' id='copy-source-content'><code class='language-php'>{$escapedCode}</code></pre>"
+            ? "<pre class='line-numbers language-php' data-line='{$line}' id='copy-source-content'><code class='language-php'>{$escapedCode}</code></pre>"
             : "<div class='empty-state'><i data-lucide='file-x' size='48'></i><div>Source code unavailable for this frame</div></div>";
 
         return <<<HTML
@@ -139,7 +143,7 @@ final readonly class HtmlErrorResponseRenderer implements ErrorResponseRenderer
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     
-    <!-- Prism.js for Elite Syntax Highlighting -->
+    <!-- Prism.js Assets -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-highlight/prism-line-highlight.min.css" rel="stylesheet" />
@@ -172,8 +176,7 @@ final readonly class HtmlErrorResponseRenderer implements ErrorResponseRenderer
         .container { width: 100%; max-width: 1200px; padding: 3rem 2rem; margin: 0 auto; box-sizing: border-box; }
         
         .nav-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 3rem; }
-        .logo-wrap { height: 32px; filter: grayscale(0.2); transition: filter 0.3s; }
-        .logo-wrap:hover { filter: grayscale(0); }
+        .logo-wrap { height: 32px; }
         .logo-wrap svg { height: 100%; width: auto; }
         .runtime-badge { background: var(--card-bg); border: 1px solid var(--border); padding: 0.3rem 0.8rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; color: var(--muted); letter-spacing: 0.05em; }
 
@@ -264,11 +267,11 @@ final readonly class HtmlErrorResponseRenderer implements ErrorResponseRenderer
         }
         .copy-btn:hover { background: var(--border); color: var(--text); border-color: var(--muted); }
 
-        pre { margin: 0; padding: 1.5rem; overflow-x: auto; font-family: var(--mono); font-size: 0.85rem; color: #d1d1d6; line-height: 1.7; }
+        pre { margin: 0 !important; padding: 1.5rem !important; overflow-x: auto; font-family: var(--mono) !important; font-size: 0.85rem !important; color: #d1d1d6; line-height: 1.7; }
         
-        /* Prism Overrides for Professional Dark Zinc Theme */
+        /* Prism Overrides */
         pre[class*="language-"] { background: #000 !important; border: none !important; margin: 0 !important; border-radius: 0 !important; }
-        .line-numbers .line-numbers-rows { border-right: 1px solid #18181b !important; padding-top: 1.5rem !important; }
+        .line-numbers .line-numbers-rows { border-right: 1px solid #18181b !important; padding-top: 1.5rem !important; left: 0 !important; }
         .line-highlight { background: rgba(255, 59, 48, 0.15) !important; border-left: 2px solid var(--red) !important; }
 
         ul.trace-list { list-style: none; padding: 0; margin: 0; }
@@ -365,8 +368,8 @@ final readonly class HtmlErrorResponseRenderer implements ErrorResponseRenderer
         </footer>
     </div>
 
-    <!-- Prism JS for Elite Code Experience -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <!-- Prism JS Bundle -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-php.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-highlight/prism-line-highlight.min.js"></script>
@@ -375,14 +378,15 @@ final readonly class HtmlErrorResponseRenderer implements ErrorResponseRenderer
         lucide.createIcons();
 
         function switchTab(tabId, btn) {
+            console.log('Switching to tab: ' + tabId);
             document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             
             document.getElementById('tab-' + tabId).classList.add('active');
             btn.classList.add('active');
             
-            // Re-highlight Prism if it's the source tab
             if (tabId === 'source' && typeof Prism !== 'undefined') {
+                console.log('Triggering Prism highlight');
                 Prism.highlightAll();
             }
         }
@@ -414,8 +418,12 @@ final readonly class HtmlErrorResponseRenderer implements ErrorResponseRenderer
             }
         }
         
-        // Auto-scroll to highlight
         window.addEventListener('load', () => {
+            console.log('Page loaded');
+            if (typeof Prism !== 'undefined') {
+                console.log('Prism found, highlighting...');
+                Prism.highlightAll();
+            }
             setTimeout(() => {
                 const highlight = document.querySelector('.line-highlight');
                 if (highlight) {

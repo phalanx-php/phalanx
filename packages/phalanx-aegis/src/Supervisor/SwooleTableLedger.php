@@ -347,6 +347,7 @@ final class SwooleTableLedger implements LedgerStorage
         $this->memory->resources->annotate($runId, AegisAnnotationSid::EndedAt, (string) microtime(true));
         $this->memory->resources->annotate($runId, AegisAnnotationSid::WaitKind, '');
         $this->memory->resources->annotate($runId, AegisAnnotationSid::WaitDetail, '');
+        unset($this->tokens[$runId]);
     }
 
     private function hydrate(ManagedResource $resource): TaskRun

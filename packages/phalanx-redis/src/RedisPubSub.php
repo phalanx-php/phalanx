@@ -28,7 +28,7 @@ final class RedisPubSub
     public function subscribe(string ...$channels): Emitter
     {
         $config = $this->config;
-        $subs = &$this->subscribers;
+        $pubsub = $this;
 
         $producer = static function (
             Channel $ch,
@@ -36,10 +36,10 @@ final class RedisPubSub
         ) use (
             $config,
             $channels,
-            &$subs,
+            $pubsub,
         ): void {
             $client = RedisClientFactory::connect($config);
-            $subs[] = $client;
+            $pubsub->addSubscriber($client);
 
             $ctx->onDispose(static function () use ($client): void {
                 $client->close();
@@ -57,15 +57,26 @@ final class RedisPubSub
                 );
             } finally {
                 $client->close();
-                $index = array_search($client, $subs, true);
-                if ($index !== false) {
-                    unset($subs[$index]);
-                    $subs = array_values($subs);
-                }
+                $pubsub->removeSubscriber($client);
             }
         };
 
         return Emitter::produce($producer);
+    }
+
+    /** @internal */
+    public function addSubscriber(\Redis $client): void
+    {
+        $this->subscribers[] = $client;
+    }
+
+    /** @internal */
+    public function removeSubscriber(\Redis $client): void
+    {
+        $this->subscribers = array_values(array_filter(
+            $this->subscribers,
+            static fn(\Redis $c): bool => $c !== $client,
+        ));
     }
 
     public function subscribeEach(

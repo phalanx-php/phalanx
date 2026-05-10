@@ -6,6 +6,8 @@ namespace Phalanx\Trace;
 
 class Trace
 {
+    private const MAX_EVENTS = 10_000;
+
     /** @var list<TraceEvent> */
     private array $events = [];
 
@@ -13,6 +15,10 @@ class Trace
     public function log(TraceType $type, string $name, array $attrs = []): void
     {
         $this->events[] = new TraceEvent($type, $name, microtime(true), $attrs);
+
+        if (count($this->events) > self::MAX_EVENTS) {
+            $this->events = array_slice($this->events, (int) (self::MAX_EVENTS * 0.25));
+        }
     }
 
     /** @return list<TraceEvent> */
