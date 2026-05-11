@@ -73,15 +73,15 @@ final class TaskTreeFormatterTest extends TestCase
         $supervisor = $this->buildSupervisor();
         $root = $this->openRun($supervisor, 'Root');
         $childA = $supervisor->start(
-            new NoopTask(),
-            new BareScopeStub(),
+            new FormatterNoopTask(),
+            new FormatterBareScopeStub(),
             DispatchMode::Concurrent,
             'ChildA',
             $root->id,
         );
         $childB = $supervisor->start(
-            new NoopTask(),
-            new BareScopeStub(),
+            new FormatterNoopTask(),
+            new FormatterBareScopeStub(),
             DispatchMode::Concurrent,
             'ChildB',
             $root->id,
@@ -125,8 +125,8 @@ final class TaskTreeFormatterTest extends TestCase
     private function openRun(Supervisor $supervisor, string $name): TaskRun
     {
         return $supervisor->start(
-            new NoopTask(),
-            new BareScopeStub(),
+            new FormatterNoopTask(),
+            new FormatterBareScopeStub(),
             DispatchMode::Inline,
             $name,
         );
@@ -134,11 +134,11 @@ final class TaskTreeFormatterTest extends TestCase
 }
 
 /** Dummies for testing */
-class NoopTask implements Executable {
+class FormatterNoopTask implements Executable {
     public function __invoke(\Phalanx\Scope\ExecutionScope $scope): mixed { return null; }
 }
 
-class BareScopeStub implements Scope {
+class FormatterBareScopeStub implements Scope {
     public \Phalanx\Runtime\RuntimeContext $runtime { get { throw new \Exception(); } }
     public function service(string $id): object { throw new \Exception(); }
     public function attribute(string $key, mixed $default = null): mixed { return $default; }

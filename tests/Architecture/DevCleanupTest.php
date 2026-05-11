@@ -7,10 +7,13 @@ namespace Phalanx\Tests\Architecture;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Process\Process;
 
 #[Group('architecture')]
 final class DevCleanupTest extends TestCase
 {
+    private const int LINE_LIMIT = 3;
+
     #[Test]
     public function no_commented_code_in_source(): void
     {
@@ -23,21 +26,48 @@ final class DevCleanupTest extends TestCase
             $dirs,
         );
 
-        $command = implode(' ', [
-            'php',
-            'vendor/bin/swiss-knife',
-            'check-commented-code',
-            ...$relativeDirs,
-        ]);
+        $process = new Process(
+            command: [
+                'php', 'vendor/bin/swiss-knife',
+                'check-commented-code',
+                ...$relativeDirs,
+                '--line-limit', (string) self::LINE_LIMIT,
+            ],
+            cwd: $root,
+            timeout: 30,
+        );
 
-        $output = [];
-        $exitCode = 0;
-        exec("cd $root && $command 2>&1", $output, $exitCode);
+        $process->run();
+
+        $errorOutput = trim($process->getErrorOutput());
+        if ($errorOutput !== '') {
+            $before = strstr($errorOutput, 'check-commented-code', before_needle: true);
+            self::fail(rtrim($before !== false ? $before : $errorOutput));
+        }
+
+        $output = $process->getOutput();
+        $files = self::extractFiles($output);
 
         self::assertSame(
             0,
-            $exitCode,
-            "Commented-out code found:\n" . implode("\n", $output),
+            $process->getExitCode(),
+            "[Commented Code Was Found]\n\nDouble-check the following files:\n" . $files,
         );
+    }
+
+    private static function extractFiles(string $output): string
+    {
+        $after = strstr($output, '*.php files');
+        if ($after === false) {
+            return trim($output);
+        }
+
+        $after = substr($after, strlen('*.php files'));
+        $errorPos = strrpos($after, '[ERROR]');
+        if ($errorPos !== false) {
+            $after = substr($after, 0, $errorPos);
+        }
+
+        return trim($after);
     }
 }

@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace Phalanx\Stoa\Response;
 
 use GuzzleHttp\Psr7\Response as PsrResponse;
+use Phalanx\Cancellation\Cancelled;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Stoa\RequestScope;
 use Phalanx\Stoa\StoaRequestResource;
 use Phalanx\Stoa\Runtime\StoaScopeKey;
+use Phalanx\Supervisor\Supervisor;
 use Phalanx\Supervisor\TaskTreeFormatter;
 use Psr\Http\Message\ResponseInterface;
 use Throwable;
@@ -54,13 +57,13 @@ final readonly class DefaultErrorResponseRenderer implements ErrorResponseRender
             $body['trace'] = $this->formatTrace($e);
             $body['tasks'] = '';
 
-            if ($scope instanceof \Phalanx\Scope\ExecutionScope) {
-                try {
-                    $body['tasks'] = (new TaskTreeFormatter())->format($scope->supervisor()->tree());
-                } catch (\Phalanx\Cancellation\Cancelled $c) {
-                    throw $c;
-                } catch (\Throwable) {
-                }
+            try {
+                $body['tasks'] = (new TaskTreeFormatter())->format(
+                    $scope->service(Supervisor::class)->tree(),
+                );
+            } catch (Cancelled $c) {
+                throw $c;
+            } catch (\Throwable) {
             }
         }
 

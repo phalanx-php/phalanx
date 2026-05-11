@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Stoa\OpenApi;
 
+use Phalanx\Cancellation\Cancelled;
 use Phalanx\Stoa\Contract\InputHydrator;
 use Phalanx\Stoa\Contract\InputSource;
 use Phalanx\Stoa\RouteConfig;
@@ -263,6 +264,8 @@ class OpenApiGenerator
                 $instance = $ref->newInstance();
                 $prop = $ref->getProperty($name);
                 return $prop->getValue($instance);
+            } catch (Cancelled $c) {
+                throw $c;
             } catch (\Throwable) {
                 return null;
             }

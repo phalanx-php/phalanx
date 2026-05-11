@@ -24,7 +24,6 @@ return DemoReport::demo(
         $report->note('This demo triggers a failure at level 15 to showcase hierarchy panning and the ⇗ connector.');
 
         $app = Archon::starting($context->values)
-            ->debug()
             ->command('demo:ultra-deep', static function (CommandScope $scope) {
                 
                 $buildDeepTree = static function (ExecutionScope $scope, int $depth, int $maxDepth, Closure $self): void {

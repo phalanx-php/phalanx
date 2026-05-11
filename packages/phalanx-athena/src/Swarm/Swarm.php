@@ -40,10 +40,7 @@ final readonly class Swarm
                 });
             }
 
-            // race() lets the workers task drive the lifetime: when all agents
-            // finish the workers task returns, race() cancels the relay coroutine,
-            // and the emitter closes cleanly. Without this the relay iterates the
-            // bus subscription indefinitely after all agents have completed.
+            // @dev-cleanup-ignore — race() ties relay lifetime to workers; without it the relay loops forever after agents finish
             $scope->race(
                 workers: Task::of(static function (ExecutionScope $es) use ($tasks): void {
                     $es->concurrent(...$tasks);

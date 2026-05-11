@@ -189,7 +189,7 @@ final class RecordingParallelDispatch implements WorkerDispatch
         $this->modes[] = $run?->mode;
 
         if ($task instanceof ValueWorkerTask || $task instanceof FailingWorkerTask) {
-            return $task->__invoke($scope);
+            return $task($scope);
         }
 
         throw new \RuntimeException('Unexpected worker task in recording dispatch.');
@@ -234,7 +234,7 @@ final class CoordinatedFailFastDispatch implements WorkerDispatch
         }
 
         if ($task instanceof FailingWorkerTask) {
-            return $task->__invoke($scope);
+            return $task($scope);
         }
 
         throw new \RuntimeException('Unexpected worker task in fail-fast dispatch.');
@@ -280,7 +280,7 @@ final class LimitRecordingDispatch implements WorkerDispatch
 
         try {
             if ($task instanceof ValueWorkerTask) {
-                return $task->__invoke($scope);
+                return $task($scope);
             }
 
             throw new \RuntimeException('Unexpected worker task in limit dispatch.');

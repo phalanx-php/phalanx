@@ -46,11 +46,7 @@ final class InlineCommand implements Executable, Traceable
     {
         $context = ExecutionContext::fromScope($scope, $this->name, $this->commandConfig);
 
-        if ($this->handler instanceof Closure) {
-            return ($this->handler)($context);
-        }
-
-        return $this->handler->__invoke($context);
+        return ($this->handler)($context);
     }
 
     private static function assertStaticClosure(Closure $handler): void

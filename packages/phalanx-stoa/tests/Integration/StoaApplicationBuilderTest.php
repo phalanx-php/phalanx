@@ -10,6 +10,7 @@ use Phalanx\Stoa\RequestScope;
 use Phalanx\Stoa\RouteGroup;
 use Phalanx\Stoa\Stoa;
 use Phalanx\Stoa\StoaApplicationBuilder;
+use Phalanx\Stoa\StoaServerConfig;
 use Phalanx\Supervisor\InProcessLedger;
 use Phalanx\Task\Scopeable;
 use Phalanx\Tests\Support\CoroutineTestCase;
@@ -65,15 +66,15 @@ final class StoaApplicationBuilderTest extends CoroutineTestCase
         $this->runInCoroutine(static function (): void {
             $custom = self::stoa()
                 ->routes(['GET /hello' => BuilderHelloRoute::class])
-                ->poweredBy('Custom')
+                ->withServerConfig(new StoaServerConfig(poweredBy: 'Custom'))
                 ->build();
             $disabled = self::stoa()
                 ->routes(['GET /hello' => BuilderHelloRoute::class])
-                ->poweredBy(false)
+                ->withServerConfig(new StoaServerConfig(poweredBy: null))
                 ->build();
             $explicit = self::stoa()
                 ->routes(['GET /explicit' => BuilderExplicitPoweredByRoute::class])
-                ->poweredBy('Custom')
+                ->withServerConfig(new StoaServerConfig(poweredBy: 'Custom'))
                 ->build();
 
             try {

@@ -46,7 +46,6 @@ final readonly class SourcePreview
             $gutter = str_pad((string) $currentLine, 4, ' ', STR_PAD_LEFT);
             $content = rtrim($lines[$i]);
 
-            // Unify the margin with the rest of the console renderer
             $styledGutter = $isActive ? $activeLineStyle->apply($gutter) : $gutterStyle->apply($gutter);
             $styledPrefix = $isActive ? $activeLineStyle->apply($prefix) : $gutterStyle->apply($prefix);
             $styledContent = $isActive ? $codeStyle->apply($content) : $this->theme->muted->apply($content);

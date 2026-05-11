@@ -43,6 +43,9 @@ final class TaskRun
 
     public ?\Throwable $error = null;
 
+    /** @var list<TaskRunSnapshot>|null */
+    public ?array $failureTree = null;
+
     public function __construct(
         public readonly string $id,
         public readonly string $name,

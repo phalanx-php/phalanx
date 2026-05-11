@@ -13,12 +13,18 @@ final readonly class StoaServerConfig
         public int $port = 8080,
         public float $requestTimeout = 30.0,
         public float $drainTimeout = 30.0,
-        public bool $debug = false,
+        public bool $ignitionEnabled = false,
         public bool $quiet = false,
         public ?string $poweredBy = 'Phalanx',
         public ?string $documentRoot = null,
         public bool $enableStaticHandler = false,
         public bool $httpCompression = true,
+        public string $logoPath = '/logo.svg',
+        public string $faviconPath = '/favicon.ico',
+        public string $tagline = 'Expression-based async coordination for PHP 8.4+',
+        public string $docsUrl = 'https://github.com/phalanx-php/phalanx',
+        public string $githubUrl = 'https://github.com/phalanx-php/phalanx',
+        public string $openswooleDocsUrl = 'https://openswoole.com/docs',
     ) {
     }
 
@@ -46,12 +52,18 @@ final readonly class StoaServerConfig
             port: self::intValue($values, ['port', 'PHALANX_PORT'], 8080),
             requestTimeout: self::floatValue($values, ['request_timeout', 'PHALANX_REQUEST_TIMEOUT'], 30.0),
             drainTimeout: self::floatValue($values, ['drain_timeout', 'PHALANX_DRAIN_TIMEOUT'], 30.0),
-            debug: self::boolValue($values, ['debug', 'PHALANX_DEBUG'], false),
+            ignitionEnabled: self::boolValue($values, ['ignition_enabled', 'PHALANX_IGNITION_ENABLED'], false),
             quiet: self::boolValue($values, ['quiet', 'PHALANX_QUIET'], false),
             poweredBy: self::nullableStringValue($values, ['powered_by', 'PHALANX_POWERED_BY'], 'Phalanx'),
             documentRoot: self::nullableStringValue($values, ['document_root', 'PHALANX_DOCUMENT_ROOT'], null),
             enableStaticHandler: self::boolValue($values, ['enable_static_handler', 'PHALANX_ENABLE_STATIC_HANDLER'], false),
             httpCompression: self::boolValue($values, ['http_compression', 'PHALANX_HTTP_COMPRESSION'], true),
+            logoPath: self::stringValue($values, ['logo_path', 'PHALANX_LOGO_PATH'], '/logo.svg'),
+            faviconPath: self::stringValue($values, ['favicon_path', 'PHALANX_FAVICON_PATH'], '/favicon.ico'),
+            tagline: self::stringValue($values, ['tagline', 'PHALANX_TAGLINE'], 'Expression-based async coordination for PHP 8.4+'),
+            docsUrl: self::stringValue($values, ['docs_url', 'PHALANX_DOCS_URL'], 'https://github.com/phalanx-php/phalanx'),
+            githubUrl: self::stringValue($values, ['github_url', 'PHALANX_GITHUB_URL'], 'https://github.com/phalanx-php/phalanx'),
+            openswooleDocsUrl: self::stringValue($values, ['openswoole_docs_url', 'PHALANX_OPENSWOOLE_DOCS_URL'], 'https://openswoole.com/docs'),
         );
     }
 

@@ -38,11 +38,7 @@ final class StoaApplicationBuilder
 
     private ?float $drainTimeout = null;
 
-    private ?string $poweredBy = null;
-
-    private bool $poweredByConfigured = false;
-
-    private ?bool $debug = null;
+    private ?bool $ignitionEnabled = null;
 
     private ?bool $quiet = null;
 
@@ -136,23 +132,15 @@ final class StoaApplicationBuilder
         return $this;
     }
 
-    public function debug(bool $debug = true): self
+    public function ignition(bool $enabled = true): self
     {
-        $this->debug = $debug;
+        $this->ignitionEnabled = $enabled;
         return $this;
     }
 
     public function quiet(bool $quiet = true): self
     {
         $this->quiet = $quiet;
-        return $this;
-    }
-
-    public function poweredBy(string|false|null $value): self
-    {
-        $this->poweredBy = $value === false ? null : $value;
-        $this->poweredByConfigured = true;
-
         return $this;
     }
 
@@ -253,12 +241,18 @@ final class StoaApplicationBuilder
             port: $this->port ?? $base->port,
             requestTimeout: $this->requestTimeout ?? $base->requestTimeout,
             drainTimeout: $this->drainTimeout ?? $base->drainTimeout,
-            debug: $this->debug ?? $base->debug,
+            ignitionEnabled: $this->ignitionEnabled ?? $base->ignitionEnabled,
             quiet: $this->quiet ?? $base->quiet,
-            poweredBy: $this->poweredByConfigured ? $this->poweredBy : $base->poweredBy,
+            poweredBy: $base->poweredBy,
             documentRoot: $base->documentRoot,
             enableStaticHandler: $base->enableStaticHandler,
             httpCompression: $base->httpCompression,
+            logoPath: $base->logoPath,
+            faviconPath: $base->faviconPath,
+            tagline: $base->tagline,
+            docsUrl: $base->docsUrl,
+            githubUrl: $base->githubUrl,
+            openswooleDocsUrl: $base->openswooleDocsUrl,
         );
     }
 
@@ -270,9 +264,8 @@ final class StoaApplicationBuilder
             || $this->port !== null
             || $this->requestTimeout !== null
             || $this->drainTimeout !== null
-            || $this->debug !== null
+            || $this->ignitionEnabled !== null
             || $this->quiet !== null
-            || $this->poweredByConfigured
         ) {
             return true;
         }
@@ -281,16 +274,14 @@ final class StoaApplicationBuilder
             [
             'host',
             'port',
-            'debug',
+            'ignition_enabled',
             'quiet',
-            'powered_by',
             'PHALANX_HOST',
             'PHALANX_PORT',
-            'PHALANX_DEBUG',
+            'PHALANX_IGNITION_ENABLED',
             'PHALANX_QUIET',
             'request_timeout',
             'drain_timeout',
-            'PHALANX_POWERED_BY',
             'PHALANX_REQUEST_TIMEOUT',
             'PHALANX_DRAIN_TIMEOUT',
             ] as $key

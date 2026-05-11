@@ -48,7 +48,7 @@ final readonly class MiddlewareWrapper implements Executable
      */
     private function buildStack(Scopeable|Executable $handler, array $middleware): Closure
     {
-        $next = static fn(ExecutionScope $scope): mixed => $handler->__invoke($scope);
+        $next = static fn(ExecutionScope $scope): mixed => $handler($scope);
 
         foreach (array_reverse($middleware) as $mw) {
             if (!is_callable($mw)) {

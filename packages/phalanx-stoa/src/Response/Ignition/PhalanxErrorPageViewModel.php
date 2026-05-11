@@ -13,8 +13,6 @@ final class PhalanxErrorPageViewModel extends ErrorPageViewModel
 {
     public function getAssetContents(string $asset): string
     {
-        // packages/phalanx-stoa/src/Response/Ignition/PhalanxErrorPageViewModel.php
-        // dirname(__DIR__, 3) => packages/phalanx-stoa
         $assetPath = dirname(__DIR__, 3) . "/resources/ignition/compiled/{$asset}";
 
         if (!is_file($assetPath)) {

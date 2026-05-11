@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace Phalanx\Scope;
 
 use Closure;
+use Phalanx\Supervisor\TaskRun;
 use Phalanx\Supervisor\TransactionLease;
 
 interface ExecutionScope extends TaskScope, TaskExecutor
 {
+    public ?TaskRun $currentRun { get; set; }
+
     public function withAttribute(string $key, mixed $value): ExecutionScope;
 
     /**

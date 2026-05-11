@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Runtime\Memory;
 
+use Phalanx\Boot\AppContext;
+
 final class RuntimeMemory
 {
     public readonly ManagedSwooleTables $tables;
@@ -54,7 +56,7 @@ final class RuntimeMemory
         );
     }
 
-    public static function fromContext(\Phalanx\Boot\AppContext $context): self
+    public static function fromContext(AppContext $context): self
     {
         return new self(RuntimeMemoryConfig::fromContext($context));
     }

@@ -65,9 +65,7 @@ final class BinaryResolver
 
     private static function which(string $binary): ?string
     {
-        // Defensive: although call sites today supply hardcoded binary names,
-        // the helper must escape its argument so future call sites can pass
-        // user-derived input safely.
+        // @dev-cleanup-ignore — escapeshellarg guards against future call sites passing user-derived input
         $result = shell_exec('command -v ' . escapeshellarg($binary) . ' 2>/dev/null');
 
         if ($result === null || $result === '' || $result === false) {

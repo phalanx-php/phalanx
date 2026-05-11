@@ -163,9 +163,7 @@ final class ConsoleInput
         }
 
         $savedState = $this->savedSttyState;
-        // Clear state up-front so a failing stty doesn't leave the object
-        // in a "still raw, can't retry" zombie. Caller can re-enableRawMode
-        // afresh if they need to recover.
+        // @dev-cleanup-ignore — clear state before stty restore to avoid "still raw" zombie on failure
         $this->rawModeActive = false;
         $this->savedSttyState = null;
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Exception;
 
 use Phalanx\Cancellation\AggregateException;
+use Phalanx\Cancellation\Cancelled;
 use Phalanx\Scope\Scope;
 use Throwable;
 
@@ -56,7 +57,7 @@ final class ErrorRegistry
         foreach ($this->handlers as $handler) {
             try {
                 $handler->report($scope, $e);
-            } catch (\Phalanx\Cancellation\Cancelled $c) {
+            } catch (Cancelled $c) {
                 throw $c;
             } catch (Throwable) {
             }

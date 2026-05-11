@@ -75,7 +75,6 @@ final class AccessorTraitWriter
     {
         $fqcns = array_unique(array_column($lenses, 'lensClass'));
 
-        // First pass: record which short names appear more than once.
         $shortNameCount = [];
         foreach ($fqcns as $fqcn) {
             $short = self::shortName($fqcn);
@@ -94,7 +93,6 @@ final class AccessorTraitWriter
                 continue;
             }
 
-            // Collision: build a unique alias from the namespace segments.
             $parts = explode('\\', $fqcn);
             $alias = implode('', array_slice($parts, -2));
             $base = $alias;

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Athena\Schema;
 
 use Phalanx\Athena\Tool\Param;
+use Phalanx\Cancellation\Cancelled;
 use ReflectionClass;
 use ReflectionNamedType;
 
@@ -107,6 +108,8 @@ final class StructuredOutputParser
             self::hydrate($class, $json);
         } catch (StructuredOutputException $e) {
             return $e->validationErrors;
+        } catch (Cancelled $c) {
+            throw $c;
         } catch (\Throwable $e) {
             $errors[] = $e->getMessage();
         }

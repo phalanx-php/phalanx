@@ -3,7 +3,7 @@
     "description": "Frontend bridge for Phalanx — typed route contracts, OpenAPI generation, Kubb integration, and signal-based reactivity",
     "license": "MIT",
     "type": "library",
-    "keywords": ["frontend", "openapi", "kubb", "tanstack", "react", "ssr", "signals", "async", "reactphp"],
+    "keywords": ["frontend", "openapi", "kubb", "tanstack", "ssr", "signals", "async", "openswoole"],
     "authors": [
         {
             "name": "Jonathan Havens",
@@ -33,7 +33,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-main": "0.6.x-dev"
+            "dev-main": "0.2.x-dev"
         }
     },
     "minimum-stability": "dev",

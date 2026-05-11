@@ -11,9 +11,9 @@ namespace Phalanx\Skopos\Output;
  * before being emitted with the process label.
  *
  * Buffers are stored on the multiplexer rather than captured by reference in
- * stream-event closures (the React-era shape) — long-running drain loops own
- * the buffer state explicitly so it survives across periodic ticks and gets
- * flushed deterministically when a process exits.
+ * stream-event closures — long-running drain loops own the buffer state
+ * explicitly so it survives across periodic ticks and gets flushed
+ * deterministically when a process exits.
  */
 final class Multiplexer
 {

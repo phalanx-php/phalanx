@@ -122,7 +122,6 @@ final class Plugin implements PluginInterface, EventSubscriberInterface
             }
         }
 
-        // Root package's own bundle declarations
         $rootExtra = $composer->getPackage()->getExtra();
 
         if (isset($rootExtra['phalanx']['bundles']) && is_array($rootExtra['phalanx']['bundles'])) {
@@ -145,9 +144,8 @@ final class Plugin implements PluginInterface, EventSubscriberInterface
             throw new RuntimeException('Composer vendor-dir is not configured.');
         }
 
-        // Inside the Phalanx monorepo, phalanx-aegis is replaced rather than
-        // installed under vendor/. Fall back to the in-repo path so codegen
-        // still updates the source file during development.
+        // @dev-cleanup-ignore — monorepo `replace` means aegis isn't in vendor/; fall back to in-repo path
+
         $vendorTarget = $vendorDir . DIRECTORY_SEPARATOR . self::TARGET_RELATIVE_PATH;
 
         if (is_dir(dirname($vendorTarget))) {

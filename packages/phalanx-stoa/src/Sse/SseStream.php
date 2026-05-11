@@ -94,6 +94,8 @@ final class SseStream
             if ($this->response->isWritable()) {
                 $this->response->end();
             }
+        } catch (Cancelled $c) {
+            throw $c;
         } catch (Throwable) {
             // best-effort close; the request will mark itself failed elsewhere.
         }

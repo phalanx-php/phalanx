@@ -48,9 +48,7 @@ final class FileWatcher
 
         $self = $this;
         $this->subscription = $scope->periodic($this->interval, static function () use ($self, $scope): void {
-            // Drop overlapping scans: if a previous tick is still in flight
-            // (slow filesystem, large tree), let it finish before queuing
-            // another. Prevents unbounded coroutine fan-out under load.
+            // @dev-cleanup-ignore — prevent unbounded coroutine fan-out when previous scan is still in flight
             if ($self->scanInFlight) {
                 return;
             }

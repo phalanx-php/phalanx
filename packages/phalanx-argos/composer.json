@@ -17,11 +17,7 @@
         "phalanx-php/aegis": "^0.6",
         "mlocati/ip-lib": "^1.22"
     },
-    "suggest": {
-        "clue/multicast-react": "Required for mDNS and SSDP discovery (multicast UDP)",
-        "clue/mdns-react": "Required for mDNS zeroconf discovery",
-        "clue/ssdp-react": "Required for SSDP/UPnP device discovery"
-    },
+    "suggest": {},
     "autoload": {
         "psr-4": {
             "Phalanx\\Argos\\": "src/"
@@ -34,7 +30,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-main": "0.6.x-dev"
+            "dev-main": "0.2.x-dev"
         }
     },
     "minimum-stability": "dev",

@@ -16,17 +16,20 @@ jobs:
           - phalanx-aegis
           - phalanx-aegis-codegen
           - phalanx-archon
-          - phalanx-stoa
-          - phalanx-hydra
-          - phalanx-styx
-          - phalanx-hermes
-          - phalanx-iris
-          - phalanx-grammata
-          - phalanx-enigma
-          - phalanx-redis
-          - phalanx-surreal
-          - phalanx-phpstan
+          - phalanx-argos
+          - phalanx-athena
           - phalanx-cli
+          - phalanx-eidolon
+          - phalanx-enigma
+          - phalanx-grammata
+          - phalanx-hermes
+          - phalanx-hydra
+          - phalanx-iris
+          - phalanx-phpstan
+          - phalanx-skopos
+          - phalanx-stoa
+          - phalanx-styx
+          - phalanx-surreal
 
     steps:
       - uses: actions/checkout@v4

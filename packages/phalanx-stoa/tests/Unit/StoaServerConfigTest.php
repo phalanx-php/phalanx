@@ -25,7 +25,7 @@ final class StoaServerConfigTest extends TestCase
             'PHALANX_PORT' => '9090',
             'PHALANX_REQUEST_TIMEOUT' => '2.5',
             'PHALANX_DRAIN_TIMEOUT' => '4.5',
-            'PHALANX_DEBUG' => 'true',
+            'PHALANX_IGNITION_ENABLED' => 'true',
             'PHALANX_QUIET' => 'true',
             'PHALANX_POWERED_BY' => 'Custom Runtime',
         ]));
@@ -34,7 +34,7 @@ final class StoaServerConfigTest extends TestCase
         self::assertSame(9090, $config->port);
         self::assertSame(2.5, $config->requestTimeout);
         self::assertSame(4.5, $config->drainTimeout);
-        self::assertTrue($config->debug);
+        self::assertTrue($config->ignitionEnabled);
         self::assertTrue($config->quiet);
         self::assertSame('Custom Runtime', $config->poweredBy);
         self::assertNull($config->documentRoot);

@@ -36,9 +36,9 @@ final class StoaApplication
         return $this->routes;
     }
 
-    public function debug(): bool
+    public function ignitionEnabled(): bool
     {
-        return $this->serverConfig()->debug;
+        return $this->serverConfig()->ignitionEnabled;
     }
 
     public function serverConfig(?StoaServerConfig $fallback = null): StoaServerConfig

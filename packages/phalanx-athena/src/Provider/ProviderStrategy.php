@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Athena\Provider;
 
+use Phalanx\Cancellation\Cancelled;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Styx\Channel;
 use Phalanx\Styx\Emitter;
@@ -71,6 +72,8 @@ final readonly class ProviderStrategy
                                 $ch->emit($event);
                             }
                             return;
+                        } catch (Cancelled $c) {
+                            throw $c;
                         } catch (\Throwable) {
                             continue;
                         }

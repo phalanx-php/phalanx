@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Athena\Tool;
 
+use Phalanx\Cancellation\Cancelled;
 use Phalanx\SelfDescribed;
 use ReflectionClass;
 use ReflectionNamedType;
@@ -69,6 +70,8 @@ final class SchemaGenerator
             $instance = $ref->newInstanceWithoutConstructor();
             try {
                 return $instance->description;
+            } catch (Cancelled $c) {
+                throw $c;
             } catch (\Throwable) {
             }
         }
@@ -85,6 +88,8 @@ final class SchemaGenerator
                 $instance ??= $ref->newInstanceWithoutConstructor();
                 try {
                     return $instance->description;
+                } catch (Cancelled $c) {
+                    throw $c;
                 } catch (\Throwable) {
                     return $ref->getShortName();
                 }

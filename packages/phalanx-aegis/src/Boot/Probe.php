@@ -30,7 +30,7 @@ final class Probe extends BootRequirement
         ?string $description = null,
     ): self {
         $message = $description ?? sprintf('TCP probe %s:%d', $host, $port);
-        // Verbose closure: arrow fn cannot carry use() captures; multi-statement body needs them.
+
         return new self(
             self::KIND_TCP,
             $message,
@@ -69,7 +69,7 @@ final class Probe extends BootRequirement
     ): self {
         $msg = $description ?? sprintf('HTTP probe %s', $url);
         $expected = $expectStatus;
-        // Verbose closure: arrow fn cannot carry use() captures; multi-statement body needs them.
+
         $check = static function (AppContext $ctx) use ($url, $expected, $timeout, $failureMode, $msg): BootEvaluation {
             $context = stream_context_create([
                 'http' => ['method' => 'HEAD', 'timeout' => $timeout, 'ignore_errors' => true],
@@ -103,7 +103,7 @@ final class Probe extends BootRequirement
         string $description,
         ProbeOutcome $failureMode = ProbeOutcome::FailBoot,
     ): self {
-        // Verbose closure: arrow fn cannot carry use() captures; multi-statement body needs them.
+
         return new self(
             self::KIND_CALLABLE,
             $description,

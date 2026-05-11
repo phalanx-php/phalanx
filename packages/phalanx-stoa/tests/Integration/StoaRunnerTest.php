@@ -279,7 +279,7 @@ final class StoaRunnerTest extends PhalanxTestCase
 
                 return [$response, $events];
             },
-            new StoaServerConfig(debug: true),
+            new StoaServerConfig(ignitionEnabled: true),
         );
 
         self::assertSame(500, $response->getStatusCode());

@@ -24,7 +24,6 @@ return DemoReport::demo(
         $report->note('This demo triggers an expected RuntimeException to showcase rich error rendering.');
         
         $app = Archon::starting($context->values)
-            ->debug()
             ->command('demo:deep-error', static function (CommandScope $scope) {
                 
                 // Spawn a complex background tree

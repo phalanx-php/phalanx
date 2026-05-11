@@ -3,6 +3,13 @@
     "description": "Phalanx CLI: environment doctor, OpenSwoole installer, and project scaffolding",
     "license": "MIT",
     "type": "library",
+    "homepage": "https://github.com/phalanx-php/phalanx-cli",
+    "authors": [
+        {
+            "name": "Jordan Havens",
+            "email": "mail@jhavens.tech"
+        }
+    ],
     "keywords": [
         "cli",
         "phalanx",
@@ -30,7 +37,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-main": "0.6.x-dev"
+            "dev-main": "0.2.x-dev"
         }
     },
     "minimum-stability": "dev",

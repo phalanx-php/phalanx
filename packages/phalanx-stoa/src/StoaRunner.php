@@ -15,14 +15,20 @@ use Phalanx\AppHost;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Registry\RegistryScope;
+use Phalanx\Scope\ExecutionScope;
+use Phalanx\Scope\Scope;
 use Phalanx\Scope\ScopeIdentity;
 use Phalanx\Server\ServerStats;
 use Phalanx\Stoa\Http\Upgrade\UpgradeRegistry;
 use Phalanx\Stoa\Response\BufferEventDispatcher;
+use Phalanx\Stoa\Response\DefaultErrorResponseRenderer;
 use Phalanx\Stoa\Response\ErrorResponseRenderer;
+use Phalanx\Stoa\Response\HtmlErrorResponseRenderer;
+use Phalanx\Stoa\Response\IgnitionErrorResponseRenderer;
 use Phalanx\Stoa\Runtime\Identity\StoaEventSid;
 use Phalanx\Stoa\Runtime\StoaScopeKey;
 use Phalanx\Stoa\Sse\SseStream;
+use Phalanx\Supervisor\DispatchMode;
 use Phalanx\Supervisor\TaskTreeFormatter;
 use Phalanx\Support\SignalHandler;
 use Phalanx\Trace\TraceType;
@@ -399,7 +405,7 @@ final class StoaRunner
             $trace->clear();
 
             $scope = new ExecutionContext(
-                $scope instanceof \Phalanx\Scope\ExecutionScope ? $scope : $rootScope,
+                $scope instanceof ExecutionScope ? $scope : $rootScope,
                 $request,
                 new RouteParams([]),
                 new QueryParams($request->getQueryParams()),
@@ -448,21 +454,44 @@ final class StoaRunner
             }
 
             try {
-                $result = $scope->execute($routes);
+                $supervisor = $this->app->supervisor();
+                $requestRun = $supervisor->start(
+                    task: static fn() => null, 
+                    parent: $rootScope, 
+                    mode: DispatchMode::Inline, 
+                    name: 'StoaRequest: ' . $resource->path
+                );
+                $supervisor->markRunning($requestRun);
+                $scope->currentRun = $requestRun;
 
-                if ($result instanceof SseStream) {
-                    if (!$result->isClosed()) {
-                        $result->close();
+                try {
+                    $result = $scope->execute($routes);
+
+                    if ($result instanceof SseStream) {
+                        if (!$result->isClosed()) {
+                            $result->close();
+                        }
+                        if (!$resource->isTerminal()) {
+                            $resource->complete(200);
+                        }
+                        $supervisor->complete($requestRun, null);
+                        return null;
                     }
-                    if (!$resource->isTerminal()) {
-                        $resource->complete(200);
-                    }
-                    return null;
+
+                    $response = $result instanceof ResponseInterface
+                        ? $result
+                        : self::toResponse($result);
+                    
+                    $supervisor->complete($requestRun, $response);
+                } catch (Cancelled $e) {
+                    $supervisor->cancel($requestRun);
+                    throw $e;
+                } catch (Throwable $e) {
+                    $supervisor->fail($requestRun, $e);
+                    throw $e;
+                } finally {
+                    $supervisor->reap($requestRun);
                 }
-
-                $response = $result instanceof ResponseInterface
-                    ? $result
-                    : self::toResponse($result);
             } catch (Cancelled $e) {
                 $resource->abort($e->getMessage() === '' ? 'cancelled' : $e->getMessage());
                 $trace->log(TraceType::Lifecycle, 'request.cancelled', ['path' => $resource->path]);
@@ -470,8 +499,8 @@ final class StoaRunner
                     return null;
                 }
                 
-                // Snapshot ledger before task is reaped in finally
-                $errorScope = $errorScope->withAttribute('phx.error_ledger', $this->app->supervisor()->tree());
+                $tree = $requestRun->failureTree ?? $this->app->supervisor()->tree();
+                $errorScope = $errorScope->withAttribute('phx.error_ledger', $tree);
                 $response = $this->errorResponse($errorScope, $e, $resource);
             } catch (Throwable $e) {
                 if ($e instanceof ToResponse) {
@@ -479,9 +508,10 @@ final class StoaRunner
                 } else {
                     $resource->fail($e);
                     $trace->log(TraceType::Failed, 'request', ['error' => $e->getMessage()]);
-                    
-                    // Snapshot ledger before task is reaped in finally
-                    $errorScope = $errorScope->withAttribute('phx.error_ledger', $this->app->supervisor()->tree());
+
+                    // Snapshot ledger while tasks are still active
+                    $tree = $requestRun->failureTree ?? $this->app->supervisor()->tree();
+                    $errorScope = $errorScope->withAttribute('phx.error_ledger', $tree);
                     $response = $this->errorResponse($errorScope, $e, $resource);
                 }
             }
@@ -773,16 +803,16 @@ final class StoaRunner
         );
     }
 
-    private function errorResponse(\Phalanx\Scope\Scope $scope, Throwable $e, StoaRequestResource $request): ResponseInterface
+    private function errorResponse(Scope $scope, Throwable $e, StoaRequestResource $request): ResponseInterface
     {
         $requestScope = $scope instanceof RequestScope ? $scope : null;
-        $defaultRenderer = new \Phalanx\Stoa\Response\DefaultErrorResponseRenderer($this->config->debug);
+        $defaultRenderer = new DefaultErrorResponseRenderer($this->config->ignitionEnabled);
 
         if ($requestScope !== null) {
             $renderers = array_values([
                 ...$this->errorRenderers,
-                new \Phalanx\Stoa\Response\IgnitionErrorResponseRenderer($this->config->debug),
-                new \Phalanx\Stoa\Response\HtmlErrorResponseRenderer($this->config->debug),
+                new IgnitionErrorResponseRenderer($this->config),
+                new HtmlErrorResponseRenderer($this->config->ignitionEnabled),
                 $defaultRenderer,
             ]);
 
@@ -797,7 +827,7 @@ final class StoaRunner
         // Extremely rare edge case: create a minimal context for the default renderer.
         // When we must allocate a fresh scope here, dispose it after the render completes.
         $ownedScope = null;
-        if ($scope instanceof \Phalanx\Scope\ExecutionScope) {
+        if ($scope instanceof ExecutionScope) {
             $inner = $scope;
         } else {
             $ownedScope = $this->app->createScope();

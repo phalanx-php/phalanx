@@ -305,7 +305,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         $this->supervisor->disposeScope($this->scopeIdValue);
     }
 
-    public function call(Closure $fn, ?\Phalanx\Supervisor\WaitReason $waitReason = null): mixed
+    public function call(Closure $fn, ?WaitReason $waitReason = null): mixed
     {
         $this->throwIfCancelled();
         $cid = Coroutine::getCid();
@@ -874,7 +874,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             static function () use ($seconds): void {
                 Co::sleep($seconds);
             },
-            \Phalanx\Supervisor\WaitReason::delay($seconds),
+            WaitReason::delay($seconds),
         );
     }
 
@@ -918,9 +918,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         if ($this->disposed) {
             return;
         }
-        // Deferred task gets its own child scope. Disposed when the deferred
-        // body completes (success or error). The parent's onDispose still
-        // owns waiting/cancelling on shutdown via the deferredCids list.
+        // @dev-cleanup-ignore — child scope disposed on completion; parent onDispose owns cancellation via deferredCids
         $childScope = $this->makeChildScope($this->currentRun);
         $traceLog = $this->traceLog;
         $cid = Coroutine::create(static function () use ($childScope, $task, $traceLog): void {
@@ -1505,11 +1503,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
 
     private static function invokeTask(Scopeable|Executable|Closure $task, self $scope): mixed
     {
-        if ($task instanceof Closure) {
-            return $task($scope);
-        }
-
-        return $task->__invoke($scope);
+        return $task($scope);
     }
 
     private function forceCancelGoSpawns(): void

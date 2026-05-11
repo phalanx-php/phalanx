@@ -34,10 +34,7 @@ class LazySingleton
         if (!isset($this->instances[$resolved])) {
             /** @var T $instance */
             $instance = $build();
-            // Re-check after $build returns: if $build re-entered get() for the
-            // same type (factory chain went via Scope::service() which calls back
-            // into this method), the instance is already cached. Skip the second
-            // assignment + creationOrder append to avoid duplicate dispose hooks.
+            // @dev-cleanup-ignore — guard against re-entrant factory chains that recurse through service()
             if (!isset($this->instances[$resolved])) {
                 $this->instances[$resolved] = $instance;
                 $this->creationOrder[] = $resolved;

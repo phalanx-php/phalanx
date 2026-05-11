@@ -193,7 +193,7 @@ final class HandlerGroup implements Executable
      */
     private static function defaultInvoker(): Closure
     {
-        return static fn(Scopeable|Executable $instance, ExecutionScope $scope): mixed => $instance->__invoke($scope);
+        return static fn(Scopeable|Executable $instance, ExecutionScope $scope): mixed => ($instance)($scope);
     }
 
     /**
@@ -231,9 +231,7 @@ final class HandlerGroup implements Executable
 
         $invoker = $this->invoker ?? self::defaultInvoker();
 
-        // Three-layer middleware composition (outermost first):
-        //   group -> handler-config -> handler-instance HasMiddleware
-        // Dedup keeps the LAST occurrence so the innermost declaration wins.
+        // @dev-cleanup-ignore — dedup keeps LAST occurrence so innermost middleware declaration wins
         $instanceMiddleware = $instance instanceof HasMiddleware ? $instance->middleware : [];
 
         $combined = self::dedupMiddleware([

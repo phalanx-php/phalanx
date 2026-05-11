@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Phalanx\Supervisor;
 
 use Phalanx\Cancellation\CancellationToken;
+use Phalanx\Scope\Cancellable;
 use Phalanx\Scope\Scope;
 use Phalanx\Scope\ScopeIdentity;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 use Phalanx\Task\Task;
 use Phalanx\Trace\Trace;
+use Phalanx\Trace\TraceType;
 use ReflectionFunction;
 use Throwable;
 
@@ -98,7 +100,7 @@ final class Supervisor
         $metadata = self::resolveMetadata($task);
         $scopeId = $parent instanceof ScopeIdentity ? $parent->scopeId : null;
 
-        $parentToken = $parent instanceof \Phalanx\Scope\Cancellable
+        $parentToken = $parent instanceof Cancellable
             ? $parent->cancellation()
             : CancellationToken::none();
 
@@ -172,6 +174,7 @@ final class Supervisor
      */
     public function fail(TaskRun $run, Throwable $error): void
     {
+        $run->failureTree = $this->tree();
         $this->ledger->fail($run->id, $error);
     }
 
@@ -204,7 +207,7 @@ final class Supervisor
         if ($run->leases !== []) {
             foreach ($run->leases as $orphaned) {
                 $this->trace->log(
-                    \Phalanx\Trace\TraceType::Defer,
+                    TraceType::Defer,
                     'PHX-LEASE-001',
                     [
                         'run' => $run->id,
@@ -260,9 +263,7 @@ final class Supervisor
                 if ($held->domain !== $lease->domain) {
                     continue;
                 }
-                // Re-entry on the same key is allowed (read after read,
-                // upgrade-style write after read on same key is held by
-                // the lock manager, not us).
+                // @dev-cleanup-ignore — re-entry on same key is allowed; lock manager handles upgrades
                 if ($held->key === $lease->key) {
                     continue;
                 }
@@ -422,7 +423,6 @@ final class Supervisor
                     return basename($file) . ':' . $reflection->getStartLine();
                 }
             } catch (\Throwable) {
-                // fall through
             }
             return $fallbackId;
         }

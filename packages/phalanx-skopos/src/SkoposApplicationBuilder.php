@@ -17,13 +17,6 @@ use Phalanx\Service\ServiceBundle;
  * frontends; on run() it compiles a Phalanx Application and dispatches
  * the long-running DevServer task on its root scope.
  *
- * LiveReload (an SSE broadcast channel that fires on file change) is not
- * exposed at this layer — Phalanx does not yet ship a coroutine-mode
- * HTTP server primitive, and Skopos refuses to embed raw OpenSwoole HTTP
- * server constructs in package code. The feature returns when a Stoa
- * coroutine runner lands behind the native runtime migration gates.
- * Until then, file watchers still trigger process restarts; clients that
- * want auto-reload can run their own watcher of choice.
  */
 final class SkoposApplicationBuilder
 {

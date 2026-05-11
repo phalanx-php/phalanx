@@ -29,10 +29,7 @@ final class TokenAccumulator
 
         $accumulator = new self($events, $channel);
 
-        // Spawn the event loop iteration as a background coroutine so that
-        // from() returns the accumulator immediately. Tokens and the final
-        // AgentResult arrive asynchronously; callers stream via text() and
-        // wait on result() only when they actually need the final value.
+        // @dev-cleanup-ignore — background coroutine so from() returns immediately; callers stream via text()
         $ctx->go(static function (ExecutionScope $es) use ($accumulator): void {
             $accumulator->start($es);
         }, 'token-accumulator');

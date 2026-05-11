@@ -19,15 +19,12 @@ use Phalanx\Task\Task;
 
 final class FailingDemoHandler implements Scopeable
 {
-    public function __invoke(RequestScope $scope)
+    public function __invoke(RequestScope $scope): mixed
     {
-        // Layer 1
-        $scope->execute(Task::named('business_logic.process', static function (ExecutionScope $scope) {
-            // Layer 2
+        return $scope->execute(Task::named('business_logic.process', static function (ExecutionScope $scope) {
             return $scope->execute(Task::named('gateway.external_api', static function (ExecutionScope $scope) {
-                // Background noise
                 $scope->go(static fn(ExecutionScope $s) => $s->delay(10.0), 'stats.collector');
-                
+
                 $scope->delay(0.1);
                 throw new \RuntimeException("External API Timeout: Service 'auth-provider' unavailable.");
             }));
@@ -49,7 +46,7 @@ return DemoReport::demo(
 
         $app = Stoa::starting($context->values)
             ->routes($routes)
-            ->debug()
+            ->ignition()
             ->build();
 
         $request = new ServerRequest('GET', '/fail', ['Accept' => 'text/html']);

@@ -80,7 +80,6 @@ final class LensRequiresBundleRule implements Rule
             return [];
         }
 
-        // The fetched object must be (or extend) TestApp.
         $objectType = $scope->getType($node->var);
         if (!(new ObjectType(self::TEST_APP_CLASS))->isSuperTypeOf($objectType)->yes()) {
             return [];
@@ -104,29 +103,21 @@ final class LensRequiresBundleRule implements Rule
             return [];
         }
 
-        // Find the enclosing method name via PHPStan's scope.
         $methodName = self::enclosingMethodName($scope);
         if ($methodName === null) {
-            // Not inside a method — cannot determine context.
             return [];
         }
 
-        // Parse the file and find the method body.
         $method = $this->findMethodInFile($scope->getFile(), $methodName);
         if ($method === null) {
-            // Method not found in file — stay silent.
             return [];
         }
 
-        // Find testApp(...) call inside that method and collect bundle classes.
         $bundleClasses = self::collectBundleClasses($method);
-
         if ($bundleClasses === null) {
-            // testApp() not found in the method — cannot determine bundle state.
             return [];
         }
 
-        // Aggregate all lenses provided by the registered bundles.
         $availableLenses = self::aggregateLenses($bundleClasses);
 
         if (in_array($lensFqcn, $availableLenses, true)) {
@@ -144,10 +135,6 @@ final class LensRequiresBundleRule implements Rule
             $node->getStartLine(),
         );
     }
-
-    // -------------------------------------------------------------------------
-    // Private static helpers (must precede private instance methods per CS)
-    // -------------------------------------------------------------------------
 
     private static function enclosingMethodName(Scope $scope): ?string
     {
@@ -261,10 +248,7 @@ final class LensRequiresBundleRule implements Rule
 
                 $this->found = true;
 
-                // Scan all args for `new BundleClass()` where the class is a
-                // ServiceBundle subclass. The optional first arg (AppContext|array)
-                // is not a ServiceBundle and is skipped naturally.
-                // VariadicPlaceholder nodes carry no $value — skip them.
+                // @dev-cleanup-ignore — VariadicPlaceholder nodes have no $value; skip non-Arg entries
                 foreach ($node->args as $arg) {
                     if (!$arg instanceof \PhpParser\Node\Arg) {
                         continue;
@@ -339,7 +323,6 @@ final class LensRequiresBundleRule implements Rule
                     $lenses[] = $lensFqcn;
                 }
             } catch (\Throwable) {
-                // If lens() throws during static analysis, skip the bundle.
             }
         }
 
@@ -358,10 +341,6 @@ final class LensRequiresBundleRule implements Rule
 
         return false;
     }
-
-    // -------------------------------------------------------------------------
-    // Private instance methods (after all private static methods)
-    // -------------------------------------------------------------------------
 
     /**
      * Build the propertyName -> lensFqcn map once by parsing the generated

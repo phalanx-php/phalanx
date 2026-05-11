@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Athena\Tool;
 
 use Phalanx\Concurrency\RetryPolicy;
+use Phalanx\Task\Retryable;
 
 final class ToolRegistry
 {
@@ -61,7 +62,7 @@ final class ToolRegistry
     {
         $class = $this->tools[$call->name] ?? null;
 
-        if ($class !== null && is_subclass_of($class, \Phalanx\Task\Retryable::class)) {
+        if ($class !== null && is_subclass_of($class, Retryable::class)) {
             // Prefer a class-declared static default over instantiating an
             // uninitialized object (newInstanceWithoutConstructor fatals on hooked properties).
             if (method_exists($class, 'defaultRetryPolicy')) {

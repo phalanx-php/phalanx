@@ -21,6 +21,11 @@ use Phalanx\Worker\WorkerTask;
 
 trait ExecutionScopeDelegate
 {
+    public ?TaskRun $currentRun {
+        get => $this->innerScope()->currentRun;
+        set { $this->innerScope()->currentRun = $value; }
+    }
+
     public bool $isCancelled {
         get => $this->innerScope()->isCancelled;
     }

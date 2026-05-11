@@ -19,11 +19,9 @@ parameters:
         - packages/phalanx-hydra/src
         - packages/phalanx-iris/src
         - packages/phalanx-phpstan/src
-        - packages/phalanx-redis/src
         - packages/phalanx-skopos/src
         - packages/phalanx-stoa/src
         - packages/phalanx-surreal/src
-        - demos/hydra
         - packages/phalanx-styx/src
         - demos
     scanDirectories:
@@ -44,7 +42,6 @@ parameters:
         - packages/phalanx-hermes/src
         - packages/phalanx-hydra/src
         - packages/phalanx-iris/src
-        - packages/phalanx-redis/src
         - packages/phalanx-skopos/src
         - packages/phalanx-stoa/src
         - packages/phalanx-surreal/src

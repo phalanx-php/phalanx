@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Phalanx\Stoa\ExecutionContext;
 use Phalanx\Stoa\Response\IgnitionErrorResponseRenderer;
 use Phalanx\Stoa\StoaRequestResource;
+use Phalanx\Stoa\StoaServerConfig;
 use Phalanx\Stoa\Runtime\StoaScopeKey;
 use Phalanx\Scope\ExecutionScope;
 use RuntimeException;
@@ -20,17 +21,17 @@ final class IgnitionErrorResponseRendererTest extends TestCase
 {
     public function test_it_returns_null_when_debug_is_off(): void
     {
-        $renderer = new IgnitionErrorResponseRenderer(debug: false);
+        $renderer = new IgnitionErrorResponseRenderer(new StoaServerConfig(ignitionEnabled: false));
         $scope = $this->createExecutionContext();
-        
+
         $response = $renderer->render($scope, new RuntimeException('fail'));
-        
+
         $this->assertNull($response);
     }
 
     public function test_it_renders_html_with_branding_and_ledger_placeholder(): void
     {
-        $renderer = new IgnitionErrorResponseRenderer(debug: true);
+        $renderer = new IgnitionErrorResponseRenderer(new StoaServerConfig(ignitionEnabled: true));
         $scope = $this->createExecutionContext();
         
         $response = $renderer->render($scope, new RuntimeException('test error'));

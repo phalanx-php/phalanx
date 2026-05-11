@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Phalanx\Stoa\Response;
 
 use GuzzleHttp\Psr7\Response as PsrResponse;
+use Phalanx\Cancellation\Cancelled;
 use Phalanx\Stoa\RequestScope;
 use Phalanx\Stoa\StoaRequestResource;
 use Phalanx\Stoa\Runtime\StoaScopeKey;
+use Phalanx\Supervisor\Supervisor;
 use Phalanx\Supervisor\TaskTreeFormatter;
 use Psr\Http\Message\ResponseInterface;
 use Throwable;
@@ -37,7 +39,11 @@ final readonly class HtmlErrorResponseRenderer implements ErrorResponseRenderer
         
         $ledger = '';
         try {
-            $ledger = (new TaskTreeFormatter())->format($scope->supervisor->tree());
+            $ledger = (new TaskTreeFormatter())->format(
+                $scope->service(Supervisor::class)->tree(),
+            );
+        } catch (Cancelled $c) {
+            throw $c;
         } catch (Throwable) {
             $ledger = '(Ledger snapshot unavailable)';
         }
@@ -97,16 +103,11 @@ final readonly class HtmlErrorResponseRenderer implements ErrorResponseRenderer
 
     private function getLogo(): string
     {
-        // packages/phalanx-stoa/src/Response/HtmlErrorResponseRenderer.php
-        // dirname(__DIR__, 1) => packages/phalanx-stoa/src
-        // dirname(__DIR__, 2) => packages/phalanx-stoa
-        // dirname(__DIR__, 3) => packages
-        // dirname(__DIR__, 4) => phalanx (ROOT)
         $path = dirname(__DIR__, 4) . '/logo.svg';
         if (is_file($path)) {
             $svg = file_get_contents($path);
             if ($svg) {
-                $svg = preg_replace('#<text.*?</text>#s', '', $svg);
+                $svg = preg_replace('#<text.*?</text>#s', '', $svg) ?? $svg;
                 $svg = str_replace('viewBox="0 0 520 120"', 'viewBox="0 0 110 120"', $svg);
                 return $svg;
             }

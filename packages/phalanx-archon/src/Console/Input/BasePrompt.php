@@ -143,8 +143,6 @@ abstract class BasePrompt
         return $this->output?->height() ?? 24;
     }
 
-    // Computed once on first render and reused. Caps at 72 so prompts don't
-    // sprawl across ultra-wide terminals.
     final protected function innerWidth(): int
     {
         if ($this->cachedInnerWidth === null) {

@@ -3,6 +3,20 @@
     "description": "PHPStan safety rules for Phalanx concurrent and parallel PHP",
     "license": "MIT",
     "type": "phpstan-extension",
+    "homepage": "https://github.com/phalanx-php/phalanx-phpstan",
+    "authors": [
+        {
+            "name": "Jordan Havens",
+            "email": "mail@jhavens.tech"
+        }
+    ],
+    "keywords": [
+        "phpstan",
+        "phalanx",
+        "openswoole",
+        "static-analysis",
+        "async"
+    ],
     "require": {
         "php": "^8.4",
         "phpstan/phpstan": "^2.0"
@@ -14,7 +28,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-main": "0.6.x-dev"
+            "dev-main": "0.2.x-dev"
         },
         "phpstan": {
             "includes": [

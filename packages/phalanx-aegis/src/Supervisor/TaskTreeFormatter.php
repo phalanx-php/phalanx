@@ -67,7 +67,6 @@ final class TaskTreeFormatter
         array $byId,
         int $depth,
     ): string {
-        // Safety guard for cycles or extreme depth
         if ($depth > 50) {
             return str_repeat('  ', 10) . "... (max depth reached)\n";
         }
@@ -77,7 +76,6 @@ final class TaskTreeFormatter
 
         $line = $this->formatLine($node, $depth, $isFirstChildAtDepth) . "\n";
 
-        // Reset child trackers for children of THIS node
         $childDepth = $depth + 1;
         $this->depthHasChild[$childDepth] = false;
 

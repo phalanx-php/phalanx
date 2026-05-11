@@ -26,6 +26,7 @@ use Phalanx\Supervisor\SwooleTableLedger;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 use Phalanx\Trace\Trace;
+use Phalanx\Trace\TraceType;
 use Phalanx\Worker\WorkerDispatch;
 
 /**
@@ -127,7 +128,6 @@ class ApplicationBuilder
     public function compile(): Application
     {
         $runner = new BootHarnessRunner();
-        // run() evaluates all requirements and throws CannotBootException on failure.
         $this->lastBootReport = $runner->run($this->context, $this->providers, $this->vendorDir());
 
         $runtimeContext = new RuntimeContext(RuntimeMemory::fromContext($this->context));
@@ -147,7 +147,7 @@ class ApplicationBuilder
         $ledger = $this->ledger ?? new SwooleTableLedger(memory: $runtimeContext->memory);
         $runtimeContext->memory->events->listen(static function ($event) use ($trace): void {
             $trace->log(
-                \Phalanx\Trace\TraceType::Lifecycle,
+                TraceType::Lifecycle,
                 $event->type,
                 [
                     'sequence' => $event->sequence,
