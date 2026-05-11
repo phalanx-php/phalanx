@@ -45,6 +45,7 @@ final class ExtensionCheckTest extends TestCase
         $check = (new ExtensionCheck('nonexistent_ext_xyz', required: true))();
 
         self::assertSame(CheckStatus::Fail, $check->status);
+        self::assertIsString($check->remediation);
         self::assertStringContainsString('nonexistent_ext_xyz', $check->remediation);
         self::assertStringContainsString((string) PHP_MAJOR_VERSION, $check->remediation);
     }

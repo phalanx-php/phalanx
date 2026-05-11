@@ -26,10 +26,6 @@ final class PlatformDetectorTest extends TestCase
     #[Test]
     public function detectsUbuntu(): void
     {
-        if (PHP_OS_FAMILY !== 'Linux') {
-            self::markTestSkipped('Linux-only test');
-        }
-
         $content = "ID=ubuntu\nVERSION_ID=\"22.04\"\n";
         $platform = (new PlatformDetector())($content);
 
@@ -39,10 +35,6 @@ final class PlatformDetectorTest extends TestCase
     #[Test]
     public function detectsDebian(): void
     {
-        if (PHP_OS_FAMILY !== 'Linux') {
-            self::markTestSkipped('Linux-only test');
-        }
-
         $content = "ID=debian\nVERSION_ID=\"12\"\n";
         $platform = (new PlatformDetector())($content);
 
@@ -52,10 +44,6 @@ final class PlatformDetectorTest extends TestCase
     #[Test]
     public function detectsFedora(): void
     {
-        if (PHP_OS_FAMILY !== 'Linux') {
-            self::markTestSkipped('Linux-only test');
-        }
-
         $content = "ID=fedora\nVERSION_ID=\"39\"\n";
         $platform = (new PlatformDetector())($content);
 
@@ -65,10 +53,6 @@ final class PlatformDetectorTest extends TestCase
     #[Test]
     public function detectsAlmalinux(): void
     {
-        if (PHP_OS_FAMILY !== 'Linux') {
-            self::markTestSkipped('Linux-only test');
-        }
-
         $content = "ID=\"almalinux\"\nVERSION_ID=\"9.3\"\n";
         $platform = (new PlatformDetector())($content);
 
@@ -78,10 +62,6 @@ final class PlatformDetectorTest extends TestCase
     #[Test]
     public function detectsAlpine(): void
     {
-        if (PHP_OS_FAMILY !== 'Linux') {
-            self::markTestSkipped('Linux-only test');
-        }
-
         $content = "ID=alpine\nVERSION_ID=3.19\n";
         $platform = (new PlatformDetector())($content);
 
@@ -91,10 +71,6 @@ final class PlatformDetectorTest extends TestCase
     #[Test]
     public function fallsBackToIdLikeForDebianDerivative(): void
     {
-        if (PHP_OS_FAMILY !== 'Linux') {
-            self::markTestSkipped('Linux-only test');
-        }
-
         $content = "ID=zorin\nID_LIKE=\"ubuntu debian\"\n";
         $platform = (new PlatformDetector())($content);
 
@@ -104,10 +80,6 @@ final class PlatformDetectorTest extends TestCase
     #[Test]
     public function fallsBackToIdLikeForRhelDerivative(): void
     {
-        if (PHP_OS_FAMILY !== 'Linux') {
-            self::markTestSkipped('Linux-only test');
-        }
-
         $content = "ID=nobara\nID_LIKE=\"rhel fedora\"\n";
         $platform = (new PlatformDetector())($content);
 
@@ -117,10 +89,6 @@ final class PlatformDetectorTest extends TestCase
     #[Test]
     public function unknownWithNoIdMatch(): void
     {
-        if (PHP_OS_FAMILY !== 'Linux') {
-            self::markTestSkipped('Linux-only test');
-        }
-
         $content = "NAME=\"Custom OS\"\nVERSION=1.0\n";
         $platform = (new PlatformDetector())($content);
 
@@ -130,10 +98,6 @@ final class PlatformDetectorTest extends TestCase
     #[Test]
     public function unknownForUnrecognizedDistroWithoutIdLike(): void
     {
-        if (PHP_OS_FAMILY !== 'Linux') {
-            self::markTestSkipped('Linux-only test');
-        }
-
         $content = "ID=niche_distro\nVERSION_ID=\"1.0\"\n";
         $platform = (new PlatformDetector())($content);
 

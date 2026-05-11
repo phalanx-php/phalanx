@@ -8,12 +8,14 @@ final class PlatformDetector
 {
     public function __invoke(?string $osReleaseContent = null): Platform
     {
-        if (PHP_OS_FAMILY === 'Darwin') {
-            return Platform::MacOS;
-        }
+        if ($osReleaseContent === null) {
+            if (PHP_OS_FAMILY === 'Darwin') {
+                return Platform::MacOS;
+            }
 
-        if (PHP_OS_FAMILY !== 'Linux') {
-            return Platform::Unknown;
+            if (PHP_OS_FAMILY !== 'Linux') {
+                return Platform::Unknown;
+            }
         }
 
         $osRelease = $osReleaseContent ?? @file_get_contents('/etc/os-release');

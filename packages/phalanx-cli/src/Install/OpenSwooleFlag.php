@@ -16,6 +16,16 @@ enum OpenSwooleFlag: string
     case EnableCares = 'enable-cares';
     case EnableIoUring = 'enable-io-uring';
 
+    /** @return list<self> */
+    public static function interactiveChoices(): array
+    {
+        return array_values(array_filter(
+            self::cases(),
+            static fn (self $flag): bool => !$flag->needsValue()
+                && !($flag === self::EnableIoUring && \PHP_OS_FAMILY === 'Darwin'),
+        ));
+    }
+
     public function description(): string
     {
         return match ($this) {
@@ -85,14 +95,5 @@ enum OpenSwooleFlag: string
             ],
             default => [],
         };
-    }
-
-    /** @return list<self> */
-    public static function interactiveChoices(): array
-    {
-        return array_values(array_filter(
-            self::cases(),
-            static fn (self $flag): bool => !$flag->needsValue(),
-        ));
     }
 }

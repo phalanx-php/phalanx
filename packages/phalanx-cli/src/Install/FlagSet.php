@@ -6,18 +6,14 @@ namespace Phalanx\Cli\Install;
 
 final class FlagSet
 {
-    /** @var array<string, string> */
-    private(set) array $values;
-
     /**
      * @param list<OpenSwooleFlag> $flags
      * @param array<string, string> $values
      */
     public function __construct(
         private(set) array $flags,
-        array $values = [],
+        private(set) array $values = [],
     ) {
-        $this->values = $values;
     }
 
     public static function defaults(): self

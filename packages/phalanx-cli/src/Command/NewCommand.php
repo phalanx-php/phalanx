@@ -7,6 +7,7 @@ namespace Phalanx\Cli\Command;
 use Phalanx\Cli\Scaffold\ProjectGenerator;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -27,12 +28,16 @@ final class NewCommand extends Command
     {
         $name = $input->getArgument('name');
 
-        if (!preg_match('/^[a-zA-Z][a-zA-Z0-9-]*$/', $name)) {
-            $output->writeln('<error>Project name must start with a letter and contain only letters, numbers, and hyphens.</error>');
+        if (!preg_match('/^[a-zA-Z][a-zA-Z0-9]*(?:-[a-zA-Z0-9]+)*$/', $name)) {
+            $output->writeln(
+                '<error>Project name must start with a letter, contain only letters,'
+                . ' numbers, and hyphens, and not end with a hyphen.</error>',
+            );
             return Command::FAILURE;
         }
 
-        $parentDir = $input->getOption('dir') ?? getcwd();
+        $parentDir = $input->getOption('dir');
+        $parentDir = ($parentDir !== null && $parentDir !== '') ? $parentDir : getcwd();
 
         if ($parentDir === false) {
             $output->writeln('<error>Unable to determine current working directory.</error>');
@@ -54,7 +59,13 @@ final class NewCommand extends Command
         $output->writeln("<info>Creating Phalanx project: {$name}</info>");
         $output->writeln('');
 
-        (new ProjectGenerator())($name, $directory, $output);
+        try {
+            (new ProjectGenerator())($name, $directory, $output);
+        } catch (\RuntimeException $e) {
+            $output->writeln('');
+            $output->writeln('<error>' . OutputFormatter::escape($e->getMessage()) . '</error>');
+            return Command::FAILURE;
+        }
 
         if (!$input->getOption('no-install')) {
             $output->writeln('');
@@ -69,7 +80,9 @@ final class NewCommand extends Command
 
             if ($exitCode !== 0) {
                 $output->writeln('');
-                $output->writeln('<comment>composer install failed. Run it manually in the project directory.</comment>');
+                $output->writeln(
+                    '<comment>composer install failed. Run it manually in the project directory.</comment>',
+                );
             }
         }
 

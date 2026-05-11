@@ -24,10 +24,12 @@ final class InstallCommand extends Command
     protected function configure(): void
     {
         foreach (OpenSwooleFlag::interactiveChoices() as $flag) {
+            $this->addOption($flag->value, null, InputOption::VALUE_NONE, $flag->description());
+        }
+
+        foreach (OpenSwooleFlag::cases() as $flag) {
             if ($flag->needsValue()) {
                 $this->addOption($flag->value, null, InputOption::VALUE_REQUIRED, $flag->description());
-            } else {
-                $this->addOption($flag->value, null, InputOption::VALUE_NONE, $flag->description());
             }
         }
 
@@ -105,39 +107,12 @@ final class InstallCommand extends Command
         return Command::SUCCESS;
     }
 
-    private function resolveFlags(InputInterface $input, OutputInterface $output): FlagSet
-    {
-        if ($input->getOption('defaults')) {
-            $flagSet = FlagSet::defaults();
-            $output->writeln('Using default flags: ' . implode(', ', array_map(
-                static fn (OpenSwooleFlag $f): string => $f->value,
-                $flagSet->flags,
-            )));
-            return $flagSet;
-        }
-
-        $explicitFlags = self::collectExplicitFlags($input);
-
-        if ($explicitFlags !== []) {
-            return new FlagSet(
-                array_map(static fn (array $pair): OpenSwooleFlag => $pair[0], $explicitFlags),
-                self::collectFlagValues($explicitFlags),
-            );
-        }
-
-        if (!$input->isInteractive()) {
-            return FlagSet::defaults();
-        }
-
-        return $this->promptForFlags($input, $output);
-    }
-
     /** @return list<array{OpenSwooleFlag, ?string}> */
     private static function collectExplicitFlags(InputInterface $input): array
     {
         $flags = [];
 
-        foreach (OpenSwooleFlag::interactiveChoices() as $flag) {
+        foreach (OpenSwooleFlag::cases() as $flag) {
             $value = $input->getOption($flag->value);
 
             if ($value === false || $value === null) {
@@ -165,6 +140,61 @@ final class InstallCommand extends Command
         }
 
         return $values;
+    }
+
+    private static function detectOpensslDir(
+        InputInterface $input,
+        OutputInterface $output,
+        QuestionHelper $helper,
+    ): ?string {
+        $brewPaths = ['/opt/homebrew/opt/openssl', '/usr/local/opt/openssl'];
+
+        foreach ($brewPaths as $path) {
+            if (is_dir($path)) {
+                $output->writeln('');
+                $output->writeln("<info>Homebrew OpenSSL detected at {$path}</info>");
+
+                $confirm = new ConfirmationQuestion(
+                    "Use --with-openssl-dir={$path}? [Y/n] ",
+                    true,
+                );
+
+                if ($helper->ask($input, $output, $confirm)) {
+                    return $path;
+                }
+
+                continue;
+            }
+        }
+
+        return null;
+    }
+
+    private function resolveFlags(InputInterface $input, OutputInterface $output): FlagSet
+    {
+        if ($input->getOption('defaults')) {
+            $flagSet = FlagSet::defaults();
+            $output->writeln('Using default flags: ' . implode(', ', array_map(
+                static fn (OpenSwooleFlag $f): string => $f->value,
+                $flagSet->flags,
+            )));
+            return $flagSet;
+        }
+
+        $explicitFlags = self::collectExplicitFlags($input);
+
+        if ($explicitFlags !== []) {
+            return new FlagSet(
+                array_map(static fn (array $pair): OpenSwooleFlag => $pair[0], $explicitFlags),
+                self::collectFlagValues($explicitFlags),
+            );
+        }
+
+        if (!$input->isInteractive()) {
+            return FlagSet::defaults();
+        }
+
+        return $this->promptForFlags($input, $output);
     }
 
     private function promptForFlags(InputInterface $input, OutputInterface $output): FlagSet
@@ -224,34 +254,6 @@ final class InstallCommand extends Command
         }
 
         return new FlagSet($selectedFlags, $values);
-    }
-
-    private static function detectOpensslDir(
-        InputInterface $input,
-        OutputInterface $output,
-        QuestionHelper $helper,
-    ): ?string {
-        $brewPaths = ['/opt/homebrew/opt/openssl', '/usr/local/opt/openssl'];
-
-        foreach ($brewPaths as $path) {
-            if (is_dir($path)) {
-                $output->writeln('');
-                $output->writeln("<info>Homebrew OpenSSL detected at {$path}</info>");
-
-                $confirm = new ConfirmationQuestion(
-                    "Use --with-openssl-dir={$path}? [Y/n] ",
-                    true,
-                );
-
-                if ($helper->ask($input, $output, $confirm)) {
-                    return $path;
-                }
-
-                continue;
-            }
-        }
-
-        return null;
     }
 
     private function showSystemDependencies(OutputInterface $output, FlagSet $flagSet, Platform $platform): void

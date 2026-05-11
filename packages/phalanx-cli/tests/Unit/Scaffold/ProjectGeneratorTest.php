@@ -50,6 +50,7 @@ final class ProjectGeneratorTest extends TestCase
         (new ProjectGenerator())('my-app', $this->tempDir, $output);
 
         $content = file_get_contents($this->tempDir . '/composer.json');
+        self::assertIsString($content);
         self::assertStringContainsString('"app/my-app"', $content);
     }
 
@@ -61,9 +62,11 @@ final class ProjectGeneratorTest extends TestCase
         (new ProjectGenerator())('my-cool-app', $this->tempDir, $output);
 
         $home = file_get_contents($this->tempDir . '/src/Routes/Home.php');
+        self::assertIsString($home);
         self::assertStringContainsString('namespace App\MyCoolApp\Routes;', $home);
 
         $routes = file_get_contents($this->tempDir . '/routes.php');
+        self::assertIsString($routes);
         self::assertStringContainsString('use App\MyCoolApp\Routes\Home;', $routes);
     }
 
@@ -75,6 +78,7 @@ final class ProjectGeneratorTest extends TestCase
         (new ProjectGenerator())('myapp', $this->tempDir, $output);
 
         $home = file_get_contents($this->tempDir . '/src/Routes/Home.php');
+        self::assertIsString($home);
         self::assertStringContainsString('namespace App\Myapp\Routes;', $home);
     }
 
@@ -86,6 +90,7 @@ final class ProjectGeneratorTest extends TestCase
         (new ProjectGenerator())('my-app', $this->tempDir, $output);
 
         $content = file_get_contents($this->tempDir . '/composer.json');
+        self::assertIsString($content);
         self::assertStringContainsString('"App\\\\MyApp\\\\": "src/"', $content);
     }
 
@@ -97,6 +102,7 @@ final class ProjectGeneratorTest extends TestCase
         (new ProjectGenerator())('test-project', $this->tempDir, $output);
 
         $routes = file_get_contents($this->tempDir . '/routes.php');
+        self::assertIsString($routes);
         self::assertStringContainsString('use Phalanx\Stoa\RouteGroup;', $routes);
         self::assertStringNotContainsString('Routing\RouteGroup', $routes);
     }
@@ -122,7 +128,9 @@ final class ProjectGeneratorTest extends TestCase
         (new ProjectGenerator())('my-app', $this->tempDir, $output);
 
         $index = file_get_contents($this->tempDir . '/public/index.php');
-        self::assertStringContainsString('Stoa::starting()', $index);
+        self::assertIsString($index);
+        self::assertStringContainsString('autoload_runtime.php', $index);
+        self::assertStringContainsString('Stoa::starting($context)', $index);
         self::assertStringContainsString("->listen('127.0.0.1:8080')", $index);
     }
 
@@ -134,6 +142,7 @@ final class ProjectGeneratorTest extends TestCase
         (new ProjectGenerator())('my-app', $this->tempDir, $output);
 
         $gitignore = file_get_contents($this->tempDir . '/.gitignore');
+        self::assertIsString($gitignore);
         self::assertStringContainsString('/vendor/', $gitignore);
     }
 }

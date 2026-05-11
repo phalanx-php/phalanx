@@ -42,7 +42,7 @@ final class ProjectGenerator
     ): void {
         $dir = dirname($path);
 
-        if (!is_dir($dir) && !mkdir($dir, 0755, true)) {
+        if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir)) {
             throw new \RuntimeException("Failed to create directory: {$dir}");
         }
 
@@ -68,7 +68,8 @@ final class ProjectGenerator
         "php": "^8.4",
         "ext-openswoole": "^26.0",
         "phalanx-php/aegis": "^0.6",
-        "phalanx-php/stoa": "^0.6"
+        "phalanx-php/stoa": "^0.6",
+        "symfony/runtime": "^7.0"
     },
     "autoload": {
         "psr-4": {
@@ -88,14 +89,16 @@ TEMPLATE;
 
 declare(strict_types=1);
 
-require __DIR__ . '/../vendor/autoload.php';
+require __DIR__ . '/../vendor/autoload_runtime.php';
 
 use Phalanx\Stoa\Stoa;
 
-Stoa::starting()
-    ->routes(__DIR__ . '/../routes.php')
-    ->listen('127.0.0.1:8080')
-    ->run();
+return static function (array $context): void {
+    Stoa::starting($context)
+        ->routes(__DIR__ . '/../routes.php')
+        ->listen('127.0.0.1:8080')
+        ->run();
+};
 TEMPLATE;
     }
 
@@ -125,8 +128,9 @@ declare(strict_types=1);
 namespace {{namespace}}\Routes;
 
 use Phalanx\Scope\Scope;
+use Phalanx\Task\Scopeable;
 
-final class Home
+final class Home implements Scopeable
 {
     public function __invoke(Scope $scope): array
     {

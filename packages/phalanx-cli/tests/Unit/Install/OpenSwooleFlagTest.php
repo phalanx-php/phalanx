@@ -56,11 +56,12 @@ final class OpenSwooleFlagTest extends TestCase
         self::assertNotContains(OpenSwooleFlag::WithPostgres, $choices);
         self::assertContains(OpenSwooleFlag::EnableOpenssl, $choices);
 
-        $valueBearingCount = count(array_filter(
+        $excludedCount = count(array_filter(
             OpenSwooleFlag::cases(),
-            static fn (OpenSwooleFlag $f): bool => $f->needsValue(),
+            static fn (OpenSwooleFlag $f): bool => $f->needsValue()
+                || ($f === OpenSwooleFlag::EnableIoUring && \PHP_OS_FAMILY === 'Darwin'),
         ));
-        self::assertCount(count(OpenSwooleFlag::cases()) - $valueBearingCount, $choices);
+        self::assertCount(count(OpenSwooleFlag::cases()) - $excludedCount, $choices);
     }
 
     #[Test]
@@ -77,6 +78,17 @@ final class OpenSwooleFlagTest extends TestCase
         self::assertContains(Platform::Debian, $platforms);
         self::assertContains(Platform::Rhel, $platforms);
         self::assertContains(Platform::Alpine, $platforms);
+    }
+
+    #[Test]
+    public function ioUringExcludedFromInteractiveOnDarwin(): void
+    {
+        if (\PHP_OS_FAMILY !== 'Darwin') {
+            self::assertContains(OpenSwooleFlag::EnableIoUring, OpenSwooleFlag::interactiveChoices());
+            return;
+        }
+
+        self::assertNotContains(OpenSwooleFlag::EnableIoUring, OpenSwooleFlag::interactiveChoices());
     }
 
     #[Test]

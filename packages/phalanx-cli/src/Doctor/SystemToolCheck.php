@@ -45,6 +45,7 @@ final class SystemToolCheck
         if (PHP_OS_FAMILY === 'Darwin') {
             return match ($tool) {
                 'gcc', 'make' => 'xcode-select --install',
+                'phpize' => 'brew install php (phpize is included with PHP)',
                 default => "brew install {$tool}",
             };
         }

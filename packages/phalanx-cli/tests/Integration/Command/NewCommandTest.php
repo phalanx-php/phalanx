@@ -125,5 +125,52 @@ final class NewCommandTest extends TestCase
         ]);
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode());
+        self::assertFileExists($this->tempDir . '/my-cool-app/composer.json');
+    }
+
+    #[Test]
+    public function rejectsTrailingHyphen(): void
+    {
+        $tester = new CommandTester(new NewCommand());
+        $tester->execute([
+            'name' => 'bad-name-',
+            '--dir' => $this->tempDir,
+            '--no-install' => true,
+        ]);
+
+        self::assertSame(Command::FAILURE, $tester->getStatusCode());
+        self::assertStringContainsString('not end with a hyphen', $tester->getDisplay());
+    }
+
+    #[Test]
+    public function rejectsConsecutiveHyphens(): void
+    {
+        $tester = new CommandTester(new NewCommand());
+        $tester->execute([
+            'name' => 'bad--name',
+            '--dir' => $this->tempDir,
+            '--no-install' => true,
+        ]);
+
+        self::assertSame(Command::FAILURE, $tester->getStatusCode());
+    }
+
+    #[Test]
+    public function handlesFilesystemError(): void
+    {
+        $readOnlyDir = $this->tempDir . '/readonly';
+        mkdir($readOnlyDir, 0555, true);
+
+        $tester = new CommandTester(new NewCommand());
+        $tester->execute([
+            'name' => 'my-app',
+            '--dir' => $readOnlyDir,
+            '--no-install' => true,
+        ]);
+
+        self::assertSame(Command::FAILURE, $tester->getStatusCode());
+        self::assertStringContainsString('Failed to create directory', $tester->getDisplay());
+
+        chmod($readOnlyDir, 0755);
     }
 }
