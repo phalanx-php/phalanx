@@ -161,17 +161,19 @@ final class NewCommandTest extends TestCase
         $readOnlyDir = $this->tempDir . '/readonly';
         mkdir($readOnlyDir, 0555, true);
 
-        $tester = new CommandTester(new NewCommand());
-        $tester->execute([
-            'name' => 'my-app',
-            '--dir' => $readOnlyDir,
-            '--no-install' => true,
-        ]);
+        try {
+            $tester = new CommandTester(new NewCommand());
+            $tester->execute([
+                'name' => 'my-app',
+                '--dir' => $readOnlyDir,
+                '--no-install' => true,
+            ]);
 
-        self::assertSame(Command::FAILURE, $tester->getStatusCode());
-        self::assertStringContainsString('Failed to create directory', $tester->getDisplay());
-
-        chmod($readOnlyDir, 0755);
+            self::assertSame(Command::FAILURE, $tester->getStatusCode());
+            self::assertStringContainsString('Failed to create directory', $tester->getDisplay());
+        } finally {
+            chmod($readOnlyDir, 0755);
+        }
     }
 
     #[Test]

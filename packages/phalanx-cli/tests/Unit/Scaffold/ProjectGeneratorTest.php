@@ -204,6 +204,7 @@ final class ProjectGeneratorTest extends TestCase
         self::assertStringContainsString('use Phalanx\Archon\Command\CommandScope;', $hello);
         self::assertStringContainsString('$scope->args->required(', $hello);
         self::assertStringContainsString('$scope->service(StreamOutput::class)', $hello);
+        self::assertStringNotContainsString('Phalanx\Stoa', $hello);
     }
 
     #[Test]
