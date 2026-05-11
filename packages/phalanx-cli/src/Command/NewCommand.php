@@ -77,7 +77,7 @@ final class NewCommand extends Command
         $output->writeln('<info>Project created.</info>');
         $output->writeln('');
         $output->writeln('Next steps:');
-        $output->writeln("  cd {$name}");
+        $output->writeln("  cd {$directory}");
         $output->writeln('  php public/index.php');
         $output->writeln('');
 

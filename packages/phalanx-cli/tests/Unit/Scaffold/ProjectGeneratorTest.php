@@ -5,17 +5,20 @@ declare(strict_types=1);
 namespace Phalanx\Cli\Tests\Unit\Scaffold;
 
 use Phalanx\Cli\Scaffold\ProjectGenerator;
+use Phalanx\Cli\Tests\Support\RemovesDirectories;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Output\BufferedOutput;
 
 final class ProjectGeneratorTest extends TestCase
 {
+    use RemovesDirectories;
+
     private string $tempDir;
 
     protected function setUp(): void
     {
-        $this->tempDir = sys_get_temp_dir() . '/phalanx-test-' . bin2hex(random_bytes(4));
+        $this->tempDir = sys_get_temp_dir() . '/phalanx-test-' . uniqid();
     }
 
     protected function tearDown(): void
@@ -62,6 +65,17 @@ final class ProjectGeneratorTest extends TestCase
 
         $routes = file_get_contents($this->tempDir . '/routes.php');
         self::assertStringContainsString('use App\MyCoolApp\Routes\Home;', $routes);
+    }
+
+    #[Test]
+    public function singleWordNameProducesCorrectNamespace(): void
+    {
+        $output = new BufferedOutput();
+
+        (new ProjectGenerator())('myapp', $this->tempDir, $output);
+
+        $home = file_get_contents($this->tempDir . '/src/Routes/Home.php');
+        self::assertStringContainsString('namespace App\Myapp\Routes;', $home);
     }
 
     #[Test]
@@ -121,30 +135,5 @@ final class ProjectGeneratorTest extends TestCase
 
         $gitignore = file_get_contents($this->tempDir . '/.gitignore');
         self::assertStringContainsString('/vendor/', $gitignore);
-    }
-
-    private static function removeDir(string $dir): void
-    {
-        $items = scandir($dir);
-
-        if ($items === false) {
-            return;
-        }
-
-        foreach ($items as $item) {
-            if ($item === '.' || $item === '..') {
-                continue;
-            }
-
-            $path = $dir . '/' . $item;
-
-            if (is_dir($path)) {
-                self::removeDir($path);
-            } else {
-                unlink($path);
-            }
-        }
-
-        rmdir($dir);
     }
 }

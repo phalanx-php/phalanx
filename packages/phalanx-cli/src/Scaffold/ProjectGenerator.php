@@ -42,12 +42,15 @@ final class ProjectGenerator
     ): void {
         $dir = dirname($path);
 
-        if (!is_dir($dir)) {
-            mkdir($dir, 0755, true);
+        if (!is_dir($dir) && !mkdir($dir, 0755, true)) {
+            throw new \RuntimeException("Failed to create directory: {$dir}");
         }
 
         $content = TemplateRenderer::render($template, $variables);
-        file_put_contents($path, $content);
+
+        if (file_put_contents($path, $content) === false) {
+            throw new \RuntimeException("Failed to write file: {$path}");
+        }
 
         $relative = ltrim(substr($path, strlen($projectDir)), '/');
         $output->writeln("  Created {$relative}");

@@ -18,6 +18,6 @@ final class PhpVersionCheckTest extends TestCase
 
         self::assertSame('PHP Version', $check->name);
         self::assertSame(CheckStatus::Pass, $check->status);
-        self::assertStringContainsString(PHP_VERSION, $check->message);
+        self::assertSame('PHP ' . PHP_VERSION, $check->message);
     }
 }

@@ -36,11 +36,22 @@ final class SystemToolCheck
         return Check::warn(
             $tool,
             'Not found (needed for PIE compilation)',
-            match (PHP_OS_FAMILY) {
-                'Darwin' => "brew install {$tool}",
-                'Linux' => "sudo apt install {$tool}  (or equivalent for your distro)",
-                default => "Install {$tool} for your platform",
-            },
+            self::remediation($tool),
         );
+    }
+
+    private static function remediation(string $tool): string
+    {
+        if (PHP_OS_FAMILY === 'Darwin') {
+            return match ($tool) {
+                'gcc', 'make' => 'xcode-select --install',
+                default => "brew install {$tool}",
+            };
+        }
+
+        return match (PHP_OS_FAMILY) {
+            'Linux' => "sudo apt install {$tool}  (or equivalent for your distro)",
+            default => "Install {$tool} for your platform",
+        };
     }
 }

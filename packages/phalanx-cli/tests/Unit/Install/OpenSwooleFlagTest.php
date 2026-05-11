@@ -48,12 +48,19 @@ final class OpenSwooleFlagTest extends TestCase
     }
 
     #[Test]
-    public function interactiveChoicesExcludesOpensslDir(): void
+    public function interactiveChoicesExcludesValueBearingFlags(): void
     {
         $choices = OpenSwooleFlag::interactiveChoices();
 
         self::assertNotContains(OpenSwooleFlag::WithOpensslDir, $choices);
+        self::assertNotContains(OpenSwooleFlag::WithPostgres, $choices);
         self::assertContains(OpenSwooleFlag::EnableOpenssl, $choices);
+
+        $valueBearingCount = count(array_filter(
+            OpenSwooleFlag::cases(),
+            static fn (OpenSwooleFlag $f): bool => $f->needsValue(),
+        ));
+        self::assertCount(count(OpenSwooleFlag::cases()) - $valueBearingCount, $choices);
     }
 
     #[Test]

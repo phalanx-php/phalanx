@@ -54,11 +54,11 @@ final class FlagSetTest extends TestCase
     }
 
     #[Test]
-    public function valueBearingFlagWithoutValueEmitsBareName(): void
+    public function valueBearingFlagWithoutValueIsSkipped(): void
     {
         $flagSet = new FlagSet([OpenSwooleFlag::WithPostgres]);
 
-        self::assertSame(['--with-postgres'], $flagSet->toPieArgs());
+        self::assertSame([], $flagSet->toPieArgs());
     }
 
     #[Test]

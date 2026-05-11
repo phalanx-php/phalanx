@@ -23,14 +23,13 @@ final class PieCheck
             return self::notFound();
         }
 
-        $output = trim($process->getOutput());
-        $version = $output;
+        $raw = trim($process->getOutput());
 
-        if (preg_match('/(\d+\.\d+\.\d+)/', $output, $m)) {
-            $version = "v{$m[1]}";
+        if (preg_match('/(\d+\.\d+\.\d+)/', $raw, $m)) {
+            return Check::pass('PIE', "v{$m[1]}");
         }
 
-        return Check::pass('PIE', $version);
+        return Check::pass('PIE', $raw !== '' ? $raw : 'installed');
     }
 
     private static function notFound(): Check

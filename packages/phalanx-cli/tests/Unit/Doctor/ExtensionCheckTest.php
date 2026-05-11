@@ -21,6 +21,14 @@ final class ExtensionCheckTest extends TestCase
     }
 
     #[Test]
+    public function showsVersionForLoadedExtension(): void
+    {
+        $check = (new ExtensionCheck('json'))();
+
+        self::assertSame(phpversion('json'), $check->message);
+    }
+
+    #[Test]
     public function warnsForMissingOptionalExtension(): void
     {
         $check = (new ExtensionCheck('nonexistent_ext_xyz'))();
@@ -28,6 +36,7 @@ final class ExtensionCheckTest extends TestCase
         self::assertSame('ext-nonexistent_ext_xyz', $check->name);
         self::assertSame(CheckStatus::Warn, $check->status);
         self::assertStringContainsString('optional', $check->message);
+        self::assertNull($check->remediation);
     }
 
     #[Test]
@@ -36,14 +45,7 @@ final class ExtensionCheckTest extends TestCase
         $check = (new ExtensionCheck('nonexistent_ext_xyz', required: true))();
 
         self::assertSame(CheckStatus::Fail, $check->status);
-        self::assertNotNull($check->remediation);
-    }
-
-    #[Test]
-    public function showsVersionWhenAvailable(): void
-    {
-        $check = (new ExtensionCheck('json'))();
-
-        self::assertNotSame('loaded', $check->message);
+        self::assertStringContainsString('nonexistent_ext_xyz', $check->remediation);
+        self::assertStringContainsString((string) PHP_MAJOR_VERSION, $check->remediation);
     }
 }

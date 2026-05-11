@@ -247,7 +247,7 @@ final class InstallCommand extends Command
                     return $path;
                 }
 
-                break;
+                continue;
             }
         }
 

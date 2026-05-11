@@ -92,7 +92,7 @@ enum OpenSwooleFlag: string
     {
         return array_values(array_filter(
             self::cases(),
-            static fn (self $flag): bool => $flag !== self::WithOpensslDir,
+            static fn (self $flag): bool => !$flag->needsValue(),
         ));
     }
 }

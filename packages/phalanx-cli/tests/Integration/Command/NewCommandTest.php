@@ -5,17 +5,21 @@ declare(strict_types=1);
 namespace Phalanx\Cli\Tests\Integration\Command;
 
 use Phalanx\Cli\Command\NewCommand;
+use Phalanx\Cli\Tests\Support\RemovesDirectories;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 
 final class NewCommandTest extends TestCase
 {
+    use RemovesDirectories;
+
     private string $tempDir;
 
     protected function setUp(): void
     {
-        $this->tempDir = sys_get_temp_dir() . '/phalanx-cmd-test-' . bin2hex(random_bytes(4));
+        $this->tempDir = sys_get_temp_dir() . '/phalanx-cmd-test-' . uniqid();
         mkdir($this->tempDir, 0755, true);
     }
 
@@ -36,7 +40,7 @@ final class NewCommandTest extends TestCase
             '--no-install' => true,
         ]);
 
-        self::assertSame(0, $tester->getStatusCode());
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode());
 
         $projectDir = $this->tempDir . '/test-project';
         self::assertFileExists($projectDir . '/composer.json');
@@ -56,7 +60,7 @@ final class NewCommandTest extends TestCase
             '--no-install' => true,
         ]);
 
-        self::assertSame(1, $tester->getStatusCode());
+        self::assertSame(Command::FAILURE, $tester->getStatusCode());
         self::assertStringContainsString('must start with a letter', $tester->getDisplay());
     }
 
@@ -74,12 +78,29 @@ final class NewCommandTest extends TestCase
             '--no-install' => true,
         ]);
 
-        self::assertSame(1, $tester->getStatusCode());
+        self::assertSame(Command::FAILURE, $tester->getStatusCode());
         self::assertStringContainsString('already exists and is not empty', $tester->getDisplay());
     }
 
     #[Test]
-    public function showsNextStepsAfterCreation(): void
+    public function allowsEmptyExistingDirectory(): void
+    {
+        $projectDir = $this->tempDir . '/empty-project';
+        mkdir($projectDir, 0755, true);
+
+        $tester = new CommandTester(new NewCommand());
+        $tester->execute([
+            'name' => 'empty-project',
+            '--dir' => $this->tempDir,
+            '--no-install' => true,
+        ]);
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode());
+        self::assertFileExists($projectDir . '/composer.json');
+    }
+
+    #[Test]
+    public function showsFullPathInNextSteps(): void
     {
         $tester = new CommandTester(new NewCommand());
         $tester->execute([
@@ -89,7 +110,7 @@ final class NewCommandTest extends TestCase
         ]);
 
         $output = $tester->getDisplay();
-        self::assertStringContainsString('cd my-app', $output);
+        self::assertStringContainsString("cd {$this->tempDir}/my-app", $output);
         self::assertStringContainsString('php public/index.php', $output);
     }
 
@@ -103,31 +124,6 @@ final class NewCommandTest extends TestCase
             '--no-install' => true,
         ]);
 
-        self::assertSame(0, $tester->getStatusCode());
-    }
-
-    private static function removeDir(string $dir): void
-    {
-        $items = scandir($dir);
-
-        if ($items === false) {
-            return;
-        }
-
-        foreach ($items as $item) {
-            if ($item === '.' || $item === '..') {
-                continue;
-            }
-
-            $path = $dir . '/' . $item;
-
-            if (is_dir($path)) {
-                self::removeDir($path);
-            } else {
-                unlink($path);
-            }
-        }
-
-        rmdir($dir);
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode());
     }
 }

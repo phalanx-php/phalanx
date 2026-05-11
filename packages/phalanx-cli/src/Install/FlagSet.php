@@ -34,11 +34,14 @@ final class FlagSet
         $args = [];
 
         foreach ($this->flags as $flag) {
-            if ($flag->needsValue() && isset($this->values[$flag->value])) {
-                $args[] = '--' . $flag->value . '=' . $this->values[$flag->value];
-            } else {
-                $args[] = '--' . $flag->value;
+            if ($flag->needsValue()) {
+                if (isset($this->values[$flag->value])) {
+                    $args[] = '--' . $flag->value . '=' . $this->values[$flag->value];
+                }
+                continue;
             }
+
+            $args[] = '--' . $flag->value;
         }
 
         return $args;

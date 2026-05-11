@@ -39,7 +39,7 @@ final class DoctorCommand extends Command
 
             $output->writeln("  {$icon} {$check->name}: {$message}");
 
-            if ($check->remediation !== null && !$check->isPass()) {
+            if ($check->remediation !== null) {
                 foreach (explode("\n", $check->remediation) as $line) {
                     $output->writeln("      {$line}");
                 }

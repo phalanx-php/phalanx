@@ -6,7 +6,7 @@ namespace Phalanx\Cli\Install;
 
 final class PlatformDetector
 {
-    public function __invoke(): Platform
+    public function __invoke(?string $osReleaseContent = null): Platform
     {
         if (PHP_OS_FAMILY === 'Darwin') {
             return Platform::MacOS;
@@ -16,7 +16,7 @@ final class PlatformDetector
             return Platform::Unknown;
         }
 
-        $osRelease = @file_get_contents('/etc/os-release');
+        $osRelease = $osReleaseContent ?? @file_get_contents('/etc/os-release');
 
         if ($osRelease === false) {
             return Platform::Unknown;
@@ -27,7 +27,7 @@ final class PlatformDetector
 
             return match ($id) {
                 'debian', 'ubuntu', 'linuxmint', 'pop' => Platform::Debian,
-                'rhel', 'fedora', 'centos', 'rocky', 'alma' => Platform::Rhel,
+                'rhel', 'fedora', 'centos', 'rocky', 'almalinux' => Platform::Rhel,
                 'alpine' => Platform::Alpine,
                 default => self::fromIdLike($osRelease),
             };
