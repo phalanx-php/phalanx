@@ -11,6 +11,7 @@ parameters:
         - packages/phalanx-archon/src
         - packages/phalanx-argos/src
         - packages/phalanx-athena/src
+        - packages/phalanx-cli/src
         - packages/phalanx-eidolon/src
         - packages/phalanx-enigma/src
         - packages/phalanx-grammata/src

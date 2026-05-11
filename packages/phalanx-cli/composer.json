@@ -1,0 +1,38 @@
+{
+    "name": "phalanx-php/cli",
+    "description": "Phalanx CLI: environment doctor, OpenSwoole installer, and project scaffolding",
+    "license": "MIT",
+    "type": "library",
+    "keywords": [
+        "cli",
+        "phalanx",
+        "openswoole",
+        "installer",
+        "doctor"
+    ],
+    "require": {
+        "php": "^8.4",
+        "symfony/console": "^7.0",
+        "symfony/process": "^7.0"
+    },
+    "bin": [
+        "bin/phalanx"
+    ],
+    "autoload": {
+        "psr-4": {
+            "Phalanx\\Cli\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Phalanx\\Cli\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "0.6.x-dev"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

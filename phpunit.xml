@@ -103,5 +103,11 @@
         <testsuite name="Aegis Codegen">
             <directory>packages/phalanx-aegis-codegen/tests</directory>
         </testsuite>
+        <testsuite name="CLI Unit">
+            <directory>packages/phalanx-cli/tests/Unit</directory>
+        </testsuite>
+        <testsuite name="CLI Integration">
+            <directory>packages/phalanx-cli/tests/Integration</directory>
+        </testsuite>
     </testsuites>
 </phpunit>

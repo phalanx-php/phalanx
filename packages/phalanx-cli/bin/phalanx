@@ -1,0 +1,32 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use Phalanx\Cli\PhalanxApplication;
+
+(static function (): never {
+    $autoloadCandidates = [
+        __DIR__ . '/../vendor/autoload.php',
+        __DIR__ . '/../../../vendor/autoload.php',
+        __DIR__ . '/../../../../vendor/autoload.php',
+    ];
+
+    $autoloaded = false;
+
+    foreach ($autoloadCandidates as $file) {
+        if (file_exists($file)) {
+            require $file;
+            $autoloaded = true;
+            break;
+        }
+    }
+
+    if (!$autoloaded) {
+        fwrite(STDERR, "Could not find autoload.php. Run 'composer install' first.\n");
+        exit(1);
+    }
+
+    $app = new PhalanxApplication();
+    exit($app->run());
+})();
