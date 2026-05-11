@@ -173,4 +173,57 @@ final class NewCommandTest extends TestCase
 
         chmod($readOnlyDir, 0755);
     }
+
+    #[Test]
+    public function createsConsoleProjectWithNoInstall(): void
+    {
+        $tester = new CommandTester(new NewCommand());
+        $tester->execute([
+            'name' => 'my-tool',
+            '--type' => 'console',
+            '--dir' => $this->tempDir,
+            '--no-install' => true,
+        ]);
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode());
+
+        $projectDir = $this->tempDir . '/my-tool';
+        self::assertFileExists($projectDir . '/composer.json');
+        self::assertFileExists($projectDir . '/bin/app');
+        self::assertFileExists($projectDir . '/commands.php');
+        self::assertFileExists($projectDir . '/src/Commands/Hello.php');
+        self::assertFileExists($projectDir . '/.gitignore');
+        self::assertFileDoesNotExist($projectDir . '/public/index.php');
+    }
+
+    #[Test]
+    public function consoleProjectShowsCorrectNextSteps(): void
+    {
+        $tester = new CommandTester(new NewCommand());
+        $tester->execute([
+            'name' => 'my-tool',
+            '--type' => 'console',
+            '--dir' => $this->tempDir,
+            '--no-install' => true,
+        ]);
+
+        $output = $tester->getDisplay();
+        self::assertStringContainsString('php bin/app hello Leonidas', $output);
+        self::assertStringNotContainsString('php public/index.php', $output);
+    }
+
+    #[Test]
+    public function rejectsInvalidProjectType(): void
+    {
+        $tester = new CommandTester(new NewCommand());
+        $tester->execute([
+            'name' => 'my-app',
+            '--type' => 'invalid',
+            '--dir' => $this->tempDir,
+            '--no-install' => true,
+        ]);
+
+        self::assertSame(Command::FAILURE, $tester->getStatusCode());
+        self::assertStringContainsString('Invalid project type', $tester->getDisplay());
+    }
 }

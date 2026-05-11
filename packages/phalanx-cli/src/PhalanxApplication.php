@@ -15,8 +15,8 @@ final class PhalanxApplication extends Application
     {
         parent::__construct('phalanx', '0.6.1');
 
-        $this->add(new DoctorCommand());
-        $this->add(new InstallCommand());
-        $this->add(new NewCommand());
+        $this->addCommand(new DoctorCommand());
+        $this->addCommand(new InstallCommand());
+        $this->addCommand(new NewCommand());
     }
 }

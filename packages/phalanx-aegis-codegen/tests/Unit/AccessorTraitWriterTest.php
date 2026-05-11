@@ -80,7 +80,7 @@ final class AccessorTraitWriterTest extends TestCase
     {
         $target = sys_get_temp_dir()
             . '/phalanx-codegen-test-'
-            . bin2hex(random_bytes(4))
+            . uniqid()
             . '/Generated/TestAppAccessors.php';
 
         try {
@@ -104,7 +104,7 @@ final class AccessorTraitWriterTest extends TestCase
 
     public function testWriteCreatesMissingParentDirectories(): void
     {
-        $base = sys_get_temp_dir() . '/phalanx-codegen-test-' . bin2hex(random_bytes(4));
+        $base = sys_get_temp_dir() . '/phalanx-codegen-test-' . uniqid();
         $target = $base . '/deeply/nested/Generated/TestAppAccessors.php';
 
         try {

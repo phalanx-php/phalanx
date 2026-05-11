@@ -5,34 +5,28 @@ declare(strict_types=1);
 namespace Phalanx\Supervisor;
 
 /**
- * ASCII formatter for live task-tree snapshots produced by
- * Supervisor::tree(). Powers the future `phalanx ps` / `phalanx doctor`
- * surfaces and the leak / hang diagnostic reports.
+ * Formats a hierarchy of task snapshots into a human-readable CLI ledger.
  *
- * Output shape (left-edge indent absorbs into a fixed name column so that
- * status, elapsed, and detail all align in the same vertical position
- * regardless of depth):
- *
- *   AppHandler                                Running    12.4ms
- *     ↳ FetchUser(7)                          Suspended   8.1ms  wait: postgres SELECT...
- *     ↳ AuditWrite(login)                     Running     6.2ms
- *       ↳ FlushBuffer                         Running     1.0ms  [holds: redis/cache#3/shared]
- *
- * The snapshot list is the flat `Supervisor::tree()` projection. The
- * formatter rebuilds the parent/child structure from `parentId` and the
- * declared root (or roots, when `$rootRunId` is null).
+ * Implements "Elite" diagnostic features:
+ * 1. Sibling logic (↳ only for first-born child at each level)
+ * 2. High-depth panning (at level 10+, shifts left and adds '... ' prefix)
+ * 3. Break arrow (⇗) for panned levels.
  */
 final class TaskTreeFormatter
 {
-    private const int LABEL_COLUMN_WIDTH = 44;
+    private const int LABEL_COLUMN_WIDTH = 50;
+    private const int MAX_DEPTH_LEVEL = 10;
+
+    /** @var array<int, bool> Tracks if a depth has already seen a child (for sibling logic) */
+    private array $depthHasChild = [];
 
     /**
      * @param list<TaskRunSnapshot> $snapshots
      */
-    public function format(array $snapshots, ?string $rootRunId = null): string
+    public function format(array $snapshots): string
     {
         if ($snapshots === []) {
-            return "(no live tasks)\n";
+            return '(no active tasks)';
         }
 
         $byId = [];
@@ -40,23 +34,18 @@ final class TaskTreeFormatter
             $byId[$snap->id] = $snap;
         }
 
-        $roots = $rootRunId !== null
-            ? (isset($byId[$rootRunId]) ? [$byId[$rootRunId]] : [])
-            : self::findRoots($byId);
-
-        if ($roots === []) {
-            return "(no matching tasks)\n";
-        }
-
+        $roots = self::findRoots($byId);
+        $this->depthHasChild = [];
+        
         $out = '';
         foreach ($roots as $root) {
-            $out .= self::renderNode($root, $byId, 0);
+            $out .= $this->renderNode($root, $byId, 0);
         }
-        return $out;
+
+        return rtrim($out);
     }
 
     /**
-     * @param array<string, TaskRunSnapshot> $byId
      * @return list<TaskRunSnapshot>
      */
     private static function findRoots(array $byId): array
@@ -73,29 +62,51 @@ final class TaskTreeFormatter
     /**
      * @param array<string, TaskRunSnapshot> $byId
      */
-    private static function renderNode(
+    private function renderNode(
         TaskRunSnapshot $node,
         array $byId,
         int $depth,
     ): string {
-        $line = self::formatLine($node, $depth) . "\n";
+        // Safety guard for cycles or extreme depth
+        if ($depth > 50) {
+            return str_repeat('  ', 10) . "... (max depth reached)\n";
+        }
+
+        $isFirstChildAtDepth = !($this->depthHasChild[$depth] ?? false);
+        $this->depthHasChild[$depth] = true;
+
+        $line = $this->formatLine($node, $depth, $isFirstChildAtDepth) . "\n";
+
+        // Reset child trackers for children of THIS node
+        $childDepth = $depth + 1;
+        $this->depthHasChild[$childDepth] = false;
 
         foreach ($node->childIds as $childId) {
             if (isset($byId[$childId])) {
-                $line .= self::renderNode($byId[$childId], $byId, $depth + 1);
+                $line .= $this->renderNode($byId[$childId], $byId, $childDepth);
             }
         }
 
         return $line;
     }
 
-    private static function formatLine(TaskRunSnapshot $snap, int $depth): string
+    private function formatLine(TaskRunSnapshot $snap, int $depth, bool $isFirstChild): string
     {
-        $prefix = $depth > 0 ? str_repeat('  ', $depth) . '↳ ' : '';
-        $prefixWidth = mb_strlen($prefix);
+        $panningOffset = max(0, $depth - self::MAX_DEPTH_LEVEL);
+        $visualDepth = min($depth, self::MAX_DEPTH_LEVEL);
+        
+        $indent = str_repeat('  ', $visualDepth);
+        $prefixChars = $panningOffset > 0 ? '... ' : '';
+
+        $arrowChar = ($panningOffset > 0 && $visualDepth === self::MAX_DEPTH_LEVEL) ? '⇗ ' : '↳ ';
+        $arrow = ($depth > 0 && $isFirstChild) ? $arrowChar : ($depth > 0 ? '  ' : '');
+
+        $fullPrefix = $prefixChars . $indent . $arrow;
+        $prefixWidth = mb_strlen($fullPrefix);
+        
         $nameBudget = max(8, self::LABEL_COLUMN_WIDTH - $prefixWidth);
         $name = self::truncate($snap->name, $nameBudget);
-        $label = $prefix . str_pad($name, $nameBudget);
+        $label = $fullPrefix . str_pad($name, $nameBudget);
 
         $state = str_pad($snap->state->value, 10);
         $elapsed = self::formatElapsed($snap->elapsed());
@@ -149,6 +160,7 @@ final class TaskTreeFormatter
         if (mb_strlen($s) <= $max) {
             return $s;
         }
-        return mb_substr($s, 0, $max - 3) . '...';
+
+        return mb_substr($s, 0, $max - 1) . '…';
     }
 }

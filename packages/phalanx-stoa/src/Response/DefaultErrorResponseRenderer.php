@@ -44,7 +44,7 @@ final readonly class DefaultErrorResponseRenderer implements ErrorResponseRender
                 ];
             } else {
                 $body['request'] = [
-                    'id' => 'err-' . bin2hex(random_bytes(4)),
+                    'id' => 'err-' . uniqid('plx_'),
                     'path' => $scope->path(),
                     'state' => 'failed',
                     'method' => $scope->method(),

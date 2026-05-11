@@ -469,6 +469,9 @@ final class StoaRunner
                 if ($target !== null) {
                     return null;
                 }
+                
+                // Snapshot ledger before task is reaped in finally
+                $errorScope = $errorScope->withAttribute('phx.error_ledger', $this->app->supervisor()->tree());
                 $response = $this->errorResponse($errorScope, $e, $resource);
             } catch (Throwable $e) {
                 if ($e instanceof ToResponse) {
@@ -476,6 +479,9 @@ final class StoaRunner
                 } else {
                     $resource->fail($e);
                     $trace->log(TraceType::Failed, 'request', ['error' => $e->getMessage()]);
+                    
+                    // Snapshot ledger before task is reaped in finally
+                    $errorScope = $errorScope->withAttribute('phx.error_ledger', $this->app->supervisor()->tree());
                     $response = $this->errorResponse($errorScope, $e, $resource);
                 }
             }
@@ -775,6 +781,7 @@ final class StoaRunner
         if ($requestScope !== null) {
             $renderers = array_values([
                 ...$this->errorRenderers,
+                new \Phalanx\Stoa\Response\IgnitionErrorResponseRenderer($this->config->debug),
                 new \Phalanx\Stoa\Response\HtmlErrorResponseRenderer($this->config->debug),
                 $defaultRenderer,
             ]);

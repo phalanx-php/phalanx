@@ -158,7 +158,7 @@ final class BootHarnessRunnerTest extends PhalanxTestCase
     #[Test]
     public function runPicksUpComposerExtraHarness(): void
     {
-        $tmpDir = sys_get_temp_dir() . '/phalanx_harness_runner_' . bin2hex(random_bytes(4));
+        $tmpDir = sys_get_temp_dir() . '/phalanx_harness_runner_' . uniqid('plx_');
         mkdir($tmpDir . '/composer', recursive: true);
 
         $stub = ComposerExtraHarnessStub::class;

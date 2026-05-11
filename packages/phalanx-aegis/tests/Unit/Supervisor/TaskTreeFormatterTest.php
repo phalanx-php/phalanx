@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Phalanx\Tests\Unit\Supervisor;
 
-use Phalanx\Cancellation\CancellationToken;
+use Phalanx\Scope\Scope;
 use Phalanx\Supervisor\DispatchMode;
 use Phalanx\Supervisor\InProcessLedger;
 use Phalanx\Supervisor\PoolLease;
-use Phalanx\Supervisor\RunState;
 use Phalanx\Supervisor\Supervisor;
 use Phalanx\Supervisor\TaskRun;
 use Phalanx\Supervisor\TaskTreeFormatter;
 use Phalanx\Supervisor\WaitReason;
+use Phalanx\Task\Executable;
 use Phalanx\Trace\Trace;
 use PHPUnit\Framework\TestCase;
 
@@ -21,7 +21,7 @@ final class TaskTreeFormatterTest extends TestCase
     public function testEmptyTreeRendersPlaceholder(): void
     {
         $out = (new TaskTreeFormatter())->format([]);
-        self::assertStringContainsString('no live tasks', $out);
+        self::assertStringContainsString('no active tasks', $out);
     }
 
     public function testSingleNodeRendersNameStateAndElapsed(): void
@@ -95,11 +95,12 @@ final class TaskTreeFormatterTest extends TestCase
         self::assertStringContainsString('Root', $out);
         self::assertStringContainsString('ChildA', $out);
         self::assertStringContainsString('ChildB', $out);
-        // Children indented and prefixed with the child arrow.
+        
         $lines = explode("\n", trim($out));
-        self::assertStringStartsWith('Root', $lines[0]);
-        self::assertStringStartsWith('  ↳ ', $lines[1]);
-        self::assertStringStartsWith('  ↳ ', $lines[2]);
+        self::assertStringContainsString('Root', $lines[0]);
+        // Sibling logic: only the first child gets the arrow
+        self::assertStringContainsString('↳ ChildA', $lines[1]);
+        self::assertStringContainsString('  ChildB', $lines[2]);
     }
 
     public function testRendersAllRootsWhenNoRootIdGiven(): void
@@ -130,4 +131,17 @@ final class TaskTreeFormatterTest extends TestCase
             $name,
         );
     }
+}
+
+/** Dummies for testing */
+class NoopTask implements Executable {
+    public function __invoke(\Phalanx\Scope\ExecutionScope $scope): mixed { return null; }
+}
+
+class BareScopeStub implements Scope {
+    public \Phalanx\Runtime\RuntimeContext $runtime { get { throw new \Exception(); } }
+    public function service(string $id): object { throw new \Exception(); }
+    public function attribute(string $key, mixed $default = null): mixed { return $default; }
+    public function withAttribute(string $key, mixed $value): static { return $this; }
+    public function trace(): \Phalanx\Trace\Trace { throw new \Exception(); }
 }

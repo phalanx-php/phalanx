@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Cli\Command;
 
 use Phalanx\Cli\Scaffold\ProjectGenerator;
+use Phalanx\Cli\Scaffold\ProjectType;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Formatter\OutputFormatter;
@@ -20,6 +21,7 @@ final class NewCommand extends Command
     protected function configure(): void
     {
         $this->addArgument('name', InputArgument::REQUIRED, 'Project name (used as directory name)');
+        $this->addOption('type', 't', InputOption::VALUE_REQUIRED, 'Project type (api, console)', 'api');
         $this->addOption('dir', 'd', InputOption::VALUE_REQUIRED, 'Parent directory');
         $this->addOption('no-install', null, InputOption::VALUE_NONE, 'Skip composer install');
     }
@@ -32,6 +34,15 @@ final class NewCommand extends Command
             $output->writeln(
                 '<error>Project name must start with a letter, contain only letters,'
                 . ' numbers, and hyphens, and not end with a hyphen.</error>',
+            );
+            return Command::FAILURE;
+        }
+
+        $type = ProjectType::tryFrom($input->getOption('type'));
+
+        if ($type === null) {
+            $output->writeln(
+                '<error>Invalid project type. Valid types: api, console.</error>',
             );
             return Command::FAILURE;
         }
@@ -60,7 +71,7 @@ final class NewCommand extends Command
         $output->writeln('');
 
         try {
-            (new ProjectGenerator())($name, $directory, $output);
+            (new ProjectGenerator())($name, $directory, $output, $type);
         } catch (\RuntimeException $e) {
             $output->writeln('');
             $output->writeln('<error>' . OutputFormatter::escape($e->getMessage()) . '</error>');
@@ -91,7 +102,12 @@ final class NewCommand extends Command
         $output->writeln('');
         $output->writeln('Next steps:');
         $output->writeln("  cd {$directory}");
-        $output->writeln('  php public/index.php');
+
+        match ($type) {
+            ProjectType::Api => $output->writeln('  php public/index.php'),
+            ProjectType::Console => $output->writeln('  php bin/app hello Leonidas'),
+        };
+
         $output->writeln('');
 
         return Command::SUCCESS;

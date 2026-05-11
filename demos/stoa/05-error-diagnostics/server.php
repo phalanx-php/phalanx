@@ -2,38 +2,45 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/../../../vendor/autoload_runtime.php';
-
-use Phalanx\Scope\ExecutionScope;
+use Phalanx\Stoa\ExecutionContext;
 use Phalanx\Stoa\RequestScope;
 use Phalanx\Stoa\Stoa;
-use Phalanx\Task\Scopeable;
 use Phalanx\Task\Task;
 
+require __DIR__ . '/../../../vendor/autoload.php';
+
 /**
- * Failing handler that triggers the rich HTML error page.
+ * Demo handler that deliberately fails to trigger diagnostics.
  */
-final class FailingWebHandler implements Scopeable
+final class IgnitionDemoHandler
 {
-    public function __invoke(RequestScope $scope): never
+    public function __invoke(ExecutionContext $scope): mixed
     {
-        // Layer 1
-        $scope->execute(Task::named('business_logic.process', static function (ExecutionScope $scope) {
-            // Layer 2
-            return $scope->execute(Task::named('gateway.external_api', static function (ExecutionScope $scope) {
-                // Background noise to show in the Ledger
-                $scope->go(static fn(ExecutionScope $s) => $s->delay(10.0), 'stats.collector');
-                
-                $scope->delay(0.1);
-                throw new \RuntimeException("External API Timeout: Service 'auth-provider' unavailable.");
-            }));
+        // 1. A deep nested task tree for Ledger visualization
+        return $scope->execute(Task::of(static function (RequestScope $es) {
+            
+            // 2. Parallel tasks to show concurrency in Ledger
+            return $es->concurrent(
+                Task::of(static function (RequestScope $es) {
+                    $es->call(static fn() => usleep(10000), 'simulating remote fetch');
+                    return $es->execute(Task::of(static function (RequestScope $es) {
+                         // 3. The actual point of failure
+                         throw new RuntimeException(
+                             "Stripe API unreachable: Peer certificate cannot be authenticated with given CA certificates."
+                         );
+                    }));
+                }),
+                Task::of(static function (RequestScope $es) {
+                    $es->call(static fn() => usleep(5000), 'processing audit log');
+                })
+            );
         }));
     }
 }
 
 return static function (array $context) {
     echo <<<BOOT
-Phalanx Server: Stoa Error Diagnostics
+Phalanx Server: Spatie Ignition Diagnostics
 Listening on http://127.0.0.1:8189
 
 Try this URL in your browser:
@@ -42,8 +49,8 @@ http://127.0.0.1:8189/fail
 BOOT;
 
     return Stoa::starting($context)
-        ->routes(['GET /fail' => FailingWebHandler::class])
-        ->debug() // Enable high-fidelity error rendering
+        ->routes(['GET /fail' => IgnitionDemoHandler::class])
+        ->debug() // Enable Ignition
         ->listen('127.0.0.1:8189')
         ->run();
 };

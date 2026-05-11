@@ -187,7 +187,7 @@ final class WsGatewayBroadcastTest extends TestCase
 
     private function createConnection(): WsConnection
     {
-        return new WsConnection(bin2hex(random_bytes(8)));
+        return new WsConnection(uniqid('plx_ws_'));
     }
 
     /**
