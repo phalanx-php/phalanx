@@ -1,6 +1,9 @@
 name: 'Monorepo Split'
 
 on:
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
 
 env:
