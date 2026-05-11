@@ -31,35 +31,23 @@ final class OpenSwooleCheck
     /** @return list<string> */
     private static function detectBuildFlags(): array
     {
-        ob_start();
-        phpinfo(INFO_MODULES);
-        $info = ob_get_clean();
-
-        if ($info === false) {
+        if (!class_exists(\OpenSwoole\Constant::class)) {
             return [];
         }
 
-        $inSection = false;
         $flags = [];
 
-        foreach (explode("\n", $info) as $line) {
-            $trimmed = trim($line);
-
-            if (!$inSection) {
-                if (strcasecmp($trimmed, 'openswoole') === 0) {
-                    $inSection = true;
-                }
+        foreach ((new \ReflectionClass(\OpenSwoole\Constant::class))->getConstants() as $name => $value) {
+            if ($value !== 1) {
                 continue;
             }
 
-            if ($trimmed === '') {
-                break;
-            }
-
-            if (preg_match('/^([\w][\w\s-]+?)\s+=>\s+enabled$/i', $trimmed, $m)) {
-                $flags[] = strtolower(trim($m[1]));
+            if (str_starts_with($name, 'HAVE_') || str_starts_with($name, 'USE_')) {
+                $flags[] = strtolower(substr($name, (int) strpos($name, '_') + 1));
             }
         }
+
+        sort($flags);
 
         return $flags;
     }
