@@ -8,6 +8,7 @@ use Phalanx\Cli\Doctor\CheckStatus;
 use Phalanx\Cli\Doctor\EnvironmentChecker;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -31,10 +32,12 @@ final class DoctorCommand extends Command
                 CheckStatus::Fail => '<error>✗</error>',
             };
 
+            $escaped = OutputFormatter::escape($check->message);
+
             $message = match ($check->status) {
-                CheckStatus::Pass => "<info>{$check->message}</info>",
-                CheckStatus::Warn => "<comment>{$check->message}</comment>",
-                CheckStatus::Fail => "<error>{$check->message}</error>",
+                CheckStatus::Pass => "<info>{$escaped}</info>",
+                CheckStatus::Warn => "<comment>{$escaped}</comment>",
+                CheckStatus::Fail => "<error>{$escaped}</error>",
             };
 
             $output->writeln("  {$icon} {$check->name}: {$message}");

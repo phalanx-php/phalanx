@@ -61,7 +61,8 @@ final class NewCommand extends Command
             $entries = scandir($directory);
 
             if ($entries !== false && count($entries) > 2) {
-                $output->writeln("<error>Directory {$directory} already exists and is not empty.</error>");
+                $escaped = OutputFormatter::escape($directory);
+                $output->writeln("<error>Directory {$escaped} already exists and is not empty.</error>");
                 return Command::FAILURE;
             }
         }
