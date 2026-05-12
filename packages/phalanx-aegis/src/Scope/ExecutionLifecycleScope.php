@@ -311,7 +311,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
     {
         $this->throwIfCancelled();
         $cid = Coroutine::getCid();
-        $unregister = $this->cancellation->onCancel(static function () use ($cid): void {
+        $cancelKey = $this->cancellation->onCancel(static function () use ($cid): void {
             if ($cid > 0 && Coroutine::exists($cid)) {
                 Coroutine::cancel($cid);
             }
@@ -333,7 +333,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             }
             throw $e;
         } finally {
-            $unregister();
+            $this->cancellation->offCancel($cancelKey);
             if ($clearWait !== null) {
                 $clearWait();
             }
@@ -401,7 +401,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         $childScopes = [];
         $parentRun = $this->currentRun;
 
-        $unregister = $this->cancellation->onCancel(static function () use (&$cids): void {
+        $cancelKey = $this->cancellation->onCancel(static function () use (&$cids): void {
             self::cancelCoroutines($cids);
         });
 
@@ -452,7 +452,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                 throw reset($errors);
             }
         } finally {
-            $unregister();
+            $this->cancellation->offCancel($cancelKey);
             // Child scopes own isolated scoped services, dispose stacks, and
             // cancellation listeners, so each one is disposed independently.
             foreach ($childScopes as $child) {
@@ -483,7 +483,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         $childScopes = [];
         $parentRun = $this->currentRun;
 
-        $unregister = $this->cancellation->onCancel(static function () use (&$cids): void {
+        $cancelKey = $this->cancellation->onCancel(static function () use (&$cids): void {
             self::cancelCoroutines($cids);
         });
 
@@ -535,7 +535,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             }
             return $value;
         } finally {
-            $unregister();
+            $this->cancellation->offCancel($cancelKey);
             $channel->close();
             foreach ($childScopes as $child) {
                 $child->dispose();
@@ -559,7 +559,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         $childScopes = [];
         $parentRun = $this->currentRun;
 
-        $unregister = $this->cancellation->onCancel(static function () use (&$cids): void {
+        $cancelKey = $this->cancellation->onCancel(static function () use (&$cids): void {
             self::cancelCoroutines($cids);
         });
 
@@ -610,7 +610,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
 
             throw new AggregateException($errors);
         } finally {
-            $unregister();
+            $this->cancellation->offCancel($cancelKey);
             $channel->close();
             foreach ($childScopes as $child) {
                 $child->dispose();
@@ -637,7 +637,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         $childScopes = [];
         $parentRun = $this->currentRun;
 
-        $unregister = $this->cancellation->onCancel(static function () use (&$cids): void {
+        $cancelKey = $this->cancellation->onCancel(static function () use (&$cids): void {
             self::cancelCoroutines($cids);
         });
 
@@ -693,7 +693,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                 throw reset($errors);
             }
         } finally {
-            $unregister();
+            $this->cancellation->offCancel($cancelKey);
             $sem->close();
             foreach ($childScopes as $child) {
                 $child->dispose();
@@ -758,7 +758,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         $childScopes = [];
         $parentRun = $this->currentRun;
 
-        $unregister = $this->cancellation->onCancel(static function () use (&$cids): void {
+        $cancelKey = $this->cancellation->onCancel(static function () use (&$cids): void {
             self::cancelCoroutines($cids);
         });
 
@@ -794,7 +794,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
 
             $wg->wait();
         } finally {
-            $unregister();
+            $this->cancellation->offCancel($cancelKey);
             foreach ($childScopes as $child) {
                 $child->dispose();
             }
@@ -872,12 +872,24 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
 
     public function delay(float $seconds): void
     {
-        $this->call(
-            static function () use ($seconds): void {
-                Co::sleep($seconds);
-            },
-            WaitReason::delay($seconds),
-        );
+        $this->throwIfCancelled();
+        $cid = Coroutine::getCid();
+        $cancelKey = $this->cancellation->onCancel(static function () use ($cid): void {
+            if ($cid > 0 && Coroutine::exists($cid)) {
+                Coroutine::cancel($cid);
+            }
+        });
+        $clearWait = ($this->currentRun !== null)
+            ? $this->supervisor->beginWait($this->currentRun, WaitReason::delay($seconds))
+            : null;
+        try {
+            Co::sleep($seconds);
+        } finally {
+            $this->cancellation->offCancel($cancelKey);
+            if ($clearWait !== null) {
+                $clearWait();
+            }
+        }
     }
 
     public function periodic(float $interval, Closure $tick): Subscription
@@ -963,9 +975,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         $goSpawns = &$this->goSpawns;
         $spawnKey = $this->goSpawnSeq++;
 
-        /** @var Closure(): void $unregisterRunCancel */
-        $unregisterRunCancel = static function (): void {
-        };
+        $runCancelKey = -1;
 
         $cid = Coroutine::create(static function () use (
             $childScope,
@@ -973,7 +983,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             $run,
             $supervisor,
             $traceLog,
-            &$unregisterRunCancel,
+            &$runCancelKey,
             &$goSpawns,
             $spawnKey,
         ): void {
@@ -999,7 +1009,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                     ],
                 );
             } finally {
-                $unregisterRunCancel();
+                $run->cancellation->offCancel($runCancelKey);
                 $run->cancellation->release();
                 $supervisor->reap($run);
                 $childScope->dispose();
@@ -1009,7 +1019,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         });
 
         if ($cid !== false) {
-            $unregisterRunCancel = $run->cancellation->onCancel(static function () use ($cid): void {
+            $runCancelKey = $run->cancellation->onCancel(static function () use ($cid): void {
                 if ($cid > 0 && Coroutine::exists($cid)) {
                     Coroutine::cancel($cid);
                 }
@@ -1074,7 +1084,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         $childScopes = [];
         $parentRun = $this->currentRun;
 
-        $unregister = $this->cancellation->onCancel(static function () use (&$cids, &$childScopes): void {
+        $cancelKey = $this->cancellation->onCancel(static function () use (&$cids, &$childScopes): void {
             self::cancelWorkerBatch($childScopes, $cids);
         });
 
@@ -1135,7 +1145,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                 throw $firstError;
             }
         } finally {
-            $unregister();
+            $this->cancellation->offCancel($cancelKey);
             foreach ($childScopes as $child) {
                 $child->dispose();
             }
@@ -1169,7 +1179,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         $childScopes = [];
         $parentRun = $this->currentRun;
 
-        $unregister = $this->cancellation->onCancel(static function () use (&$cids): void {
+        $cancelKey = $this->cancellation->onCancel(static function () use (&$cids): void {
             self::cancelCoroutines($cids);
         });
 
@@ -1211,7 +1221,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
 
             $wg->wait();
         } finally {
-            $unregister();
+            $this->cancellation->offCancel($cancelKey);
             foreach ($childScopes as $child) {
                 $child->dispose();
             }
@@ -1256,7 +1266,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         $childScopes = [];
         $parentRun = $this->currentRun;
 
-        $unregister = $this->cancellation->onCancel(static function () use (&$cids, &$childScopes): void {
+        $cancelKey = $this->cancellation->onCancel(static function () use (&$cids, &$childScopes): void {
             self::cancelWorkerBatch($childScopes, $cids);
         });
 
@@ -1337,7 +1347,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                 throw $firstError;
             }
         } finally {
-            $unregister();
+            $this->cancellation->offCancel($cancelKey);
             foreach ($childScopes as $child) {
                 $child->dispose();
             }

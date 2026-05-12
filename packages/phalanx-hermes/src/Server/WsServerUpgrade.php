@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Hermes\Server;
 
-use Closure;
 use OpenSwoole\Http\Response as SwooleHttpResponse;
 use Phalanx\AppHost;
 use Phalanx\Cancellation\CancellationToken;
@@ -97,7 +96,8 @@ final readonly class WsServerUpgrade implements HttpUpgradeable
         $resources->recordEvent($wsHandle, HermesEventSid::ServerUpgradeAccepted);
         $resources->recordEvent($wsHandle, HermesEventSid::ConnectionOpened, $request->getUri()->getPath());
 
-        $unlinkRequestToken = $requestResource->cancellation()->onCancel(
+        $requestCancellation = $requestResource->cancellation();
+        $cancelKey = $requestCancellation->onCancel(
             static function () use ($sessionToken): void {
                 $sessionToken->cancel();
             },
@@ -121,7 +121,7 @@ final readonly class WsServerUpgrade implements HttpUpgradeable
         $resolver = $sessionScopeForHandler->service(HandlerResolver::class);
         $pump = $resolver->resolve($handler->task, $sessionScopeForHandler);
         if (!is_callable($pump)) {
-            self::unlink($unlinkRequestToken);
+            self::unlink($requestCancellation, $cancelKey);
             $server->close();
             $sessionScope->dispose();
             $resources->recordEvent($wsHandle, HermesEventSid::ConnectionFailed, 'handler_not_callable');
@@ -140,20 +140,20 @@ final readonly class WsServerUpgrade implements HttpUpgradeable
             $pump($wsScope);
         } catch (Cancelled $cancelled) {
             $resources->recordEvent($wsHandle, HermesEventSid::ConnectionAborted, 'cancelled');
-            self::unlink($unlinkRequestToken);
+            self::unlink($requestCancellation, $cancelKey);
             $server->close();
             $sessionScope->dispose();
             $resources->abort($wsHandle, 'cancelled');
             throw $cancelled;
         } catch (Throwable $e) {
             $resources->recordEvent($wsHandle, HermesEventSid::ConnectionFailed, $e::class);
-            self::unlink($unlinkRequestToken);
+            self::unlink($requestCancellation, $cancelKey);
             $server->close();
             $sessionScope->dispose();
             return $resources->fail($wsHandle, $e::class);
         }
 
-        self::unlink($unlinkRequestToken);
+        self::unlink($requestCancellation, $cancelKey);
         $server->close();
 
         try {
@@ -175,19 +175,17 @@ final readonly class WsServerUpgrade implements HttpUpgradeable
     }
 
     /**
-     * Invoke a CancellationToken::onCancel unsubscribe closure.
+     * Remove a cancellation listener registered via CancellationToken::onCancel().
      *
      * The de-registration is a pure in-memory list operation and should not
      * throw. Any Throwable other than Cancelled is treated as a non-fatal
      * teardown anomaly and swallowed — the WS session has already terminated
      * by the time this runs and there is no caller to surface the error to.
-     *
-     * @param Closure(): void $unsub
      */
-    private static function unlink(Closure $unsub): void
+    private static function unlink(CancellationToken $token, int $key): void
     {
         try {
-            $unsub();
+            $token->offCancel($key);
         } catch (Cancelled $cancelled) {
             throw $cancelled;
         } catch (Throwable) {

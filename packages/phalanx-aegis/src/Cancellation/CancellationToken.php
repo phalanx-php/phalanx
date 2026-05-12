@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Cancellation;
 
-use Closure;
 use OpenSwoole\Timer;
 
 /**
@@ -29,14 +28,14 @@ class CancellationToken
 
     private bool $cancelled = false;
 
-    /** @var array<int, Closure(): void> */
+    /** @var array<int, \Closure(): void> */
     private array $listeners = [];
 
     private int $listenerSeq = 0;
 
     private ?int $timerId = null;
 
-    /** @var list<Closure(): void> */
+    /** @var list<array{self, int}> */
     private array $unregisters = [];
 
     private bool $immutableNone = false;
@@ -83,9 +82,10 @@ class CancellationToken
                 $composite->cancel();
                 return $composite;
             }
-            $composite->unregisters[] = $source->onCancel(static function () use ($composite): void {
+            $key = $source->onCancel(static function () use ($composite): void {
                 $composite->cancel();
             });
+            $composite->unregisters[] = [$source, $key];
         }
 
         return $composite;
@@ -110,11 +110,8 @@ class CancellationToken
             $this->timerId = null;
         }
 
-        foreach ($this->unregisters as $unregister) {
-            try {
-                $unregister();
-            } catch (\Throwable) {
-            }
+        foreach ($this->unregisters as [$source, $key]) {
+            $source->offCancel($key);
         }
         $this->unregisters = [];
 
@@ -130,36 +127,35 @@ class CancellationToken
 
     public function release(): void
     {
-        foreach ($this->unregisters as $unregister) {
-            try {
-                $unregister();
-            } catch (\Throwable) {
-            }
+        foreach ($this->unregisters as [$source, $key]) {
+            $source->offCancel($key);
         }
         $this->unregisters = [];
         $this->listeners = [];
     }
 
-    /**
-     * @param Closure(): void $listener
-     * @return Closure(): void  unregister handle
-     */
-    public function onCancel(Closure $listener): Closure
+    /** @param \Closure(): void $listener */
+    public function onCancel(\Closure $listener): int
     {
         if ($this->cancelled) {
             try {
                 $listener();
             } catch (\Throwable) {
             }
-            return static fn() => null;
+            return -1;
         }
 
         $key = $this->listenerSeq++;
         $this->listeners[$key] = $listener;
 
-        $listeners = &$this->listeners;
-        return static function () use (&$listeners, $key): void {
-            unset($listeners[$key]);
-        };
+        return $key;
+    }
+
+    public function offCancel(int $key): void
+    {
+        if ($key < 0) {
+            return;
+        }
+        unset($this->listeners[$key]);
     }
 }

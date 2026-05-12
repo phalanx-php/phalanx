@@ -82,7 +82,7 @@ class SingleflightGroup
         $this->state[$key]['waiters'][$waiterId] = $waiter;
 
         $group = $this;
-        $unregisterCancel = $token->onCancel(static function () use ($group, $key, $waiterId, $waiter): void {
+        $cancelKey = $token->onCancel(static function () use ($group, $key, $waiterId, $waiter): void {
             $group->removeWaiter($key, $waiterId);
             $waiter->push(['cancelled', new Cancelled("singleflight '{$key}' cancelled")], 0.001);
         });
@@ -98,7 +98,7 @@ class SingleflightGroup
             }
             return $msg[1];
         } finally {
-            $unregisterCancel();
+            $token->offCancel($cancelKey);
             if ($clearWait !== null) {
                 $clearWait();
             }
