@@ -43,6 +43,11 @@ final class TransactionLifecycleScope implements TransactionScope
         return $this->scope->attribute($key, $default);
     }
 
+    public function resource(string $key, mixed $default = null): mixed
+    {
+        return $this->scope->resource($key, $default);
+    }
+
     public function withAttribute(string $key, mixed $value): TransactionScope
     {
         $scope = $this->scope->withAttribute($key, $value);

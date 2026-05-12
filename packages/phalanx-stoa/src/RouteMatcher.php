@@ -17,7 +17,7 @@ final class RouteMatcher implements HandlerMatcher
     /** @param array<string, Handler> $handlers */
     public function match(ExecutionScope $scope, array $handlers): ?MatchResult
     {
-        $request = $scope->attribute('request');
+        $request = $scope->resource('request');
 
         if (!$request instanceof ServerRequestInterface) {
             return null;

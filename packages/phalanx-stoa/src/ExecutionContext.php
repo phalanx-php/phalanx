@@ -17,7 +17,7 @@ class ExecutionContext implements RequestScope
 
     public string $resourceId {
         get {
-            $id = $this->attribute(StoaScopeKey::ResourceId->value);
+            $id = $this->resource(StoaScopeKey::ResourceId->value);
 
             if (!is_string($id) || $id === '') {
                 throw MissingRequestResource::forScopeKey(StoaScopeKey::ResourceId->value);

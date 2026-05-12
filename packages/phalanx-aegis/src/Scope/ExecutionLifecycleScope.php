@@ -107,8 +107,12 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
 
     private readonly SingleflightGroup $singleflightGroup;
 
+    /** @var array<string, mixed> */
+    private array $resources;
+
     /**
      * @param array<string, mixed> $attributes
+     * @param array<string, mixed> $resources
      * @param list<ServiceTransformationMiddleware> $serviceMiddlewares
      * @param list<TaskMiddleware> $taskMiddlewares
      */
@@ -124,7 +128,9 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         private readonly array $taskMiddlewares = [],
         private readonly ?WorkerDispatch $workerDispatch = null,
         private readonly ?string $parentScopeId = null,
+        array &$resources = [],
     ) {
+        $this->resources = &$resources;
         $this->singleflightGroup = $singleflight ?? new SingleflightGroup();
         $this->scopeIdValue = $this->supervisor->nextScopeId();
         $this->supervisor->registerScope(
@@ -209,6 +215,16 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         return $this->attributes[$key] ?? $default;
     }
 
+    public function resource(string $key, mixed $default = null): mixed
+    {
+        return $this->resources[$key] ?? $default;
+    }
+
+    public function setResource(string $key, mixed $value): void
+    {
+        $this->resources[$key] = $value;
+    }
+
     public function withAttribute(string $key, mixed $value): ExecutionScope
     {
         $attributes = $this->attributes;
@@ -225,6 +241,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             $this->taskMiddlewares,
             $this->workerDispatch,
             parentScopeId: $this->scopeIdValue,
+            resources: $this->resources,
         );
         $this->onDispose(static function () use ($child): void {
             $child->dispose();
@@ -376,6 +393,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             $this->taskMiddlewares,
             $this->workerDispatch,
             parentScopeId: $this->scopeIdValue,
+            resources: $this->resources,
         );
         try {
             return $child->execute($task);
@@ -827,6 +845,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             $this->taskMiddlewares,
             $this->workerDispatch,
             parentScopeId: $this->scopeIdValue,
+            resources: $this->resources,
         );
 
         try {
@@ -1521,6 +1540,109 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         return $task($scope);
     }
 
+    /**
+     * Wrap the build closure in the middleware chain. Middlewares are invoked
+     * in registration order (first-registered runs outermost). Each calls
+     * $next() to descend; the innermost call invokes $build directly.
+     *
+     * @param Closure(): object $build
+     */
+    private static function runMiddleware(string $type, Closure $build, self $scope): object
+    {
+        if ($scope->serviceMiddlewares === []) {
+            return $build();
+        }
+
+        $next = $build;
+        foreach (array_reverse($scope->serviceMiddlewares) as $middleware) {
+            $current = $next;
+            $next = static fn(): object => $middleware->transform($type, $current, $scope);
+        }
+        return $next();
+    }
+
+    /**
+     * Wrap task execution in the registered TaskMiddleware chain. First-registered
+     * runs outermost. Each middleware decides whether to honor a behavioral
+     * interface on $task (Retryable, HasTimeout, Traceable, ...) and wrap the
+     * inner closure or just delegate.
+     *
+     * @param Closure(ExecutionScope): mixed $invoke
+     */
+    private static function runTaskMiddleware(Scopeable|Executable|Closure $task, Closure $invoke, self $scope): mixed
+    {
+        if ($scope->taskMiddlewares === []) {
+            return $invoke($scope);
+        }
+
+        $next = $invoke;
+        foreach (array_reverse($scope->taskMiddlewares) as $middleware) {
+            $current = $next;
+            $next = static fn(ExecutionScope $s): mixed => $middleware->handle($task, $s, $current);
+        }
+        return $next($scope);
+    }
+
+    private static function build(CompiledServiceConfig $config, self $scope): object
+    {
+        if ($config->factoryFn === null) {
+            throw new RuntimeException("Service {$config->type} has no factory");
+        }
+        $deps = self::resolveFactoryDependencies($config, $scope);
+        $scope->traceLog->log(TraceType::ServiceResolve, $config->type);
+        $instance = ($config->factoryFn)(...$deps);
+        foreach ($config->onInitHooks as $hook) {
+            $hook($instance);
+        }
+        return $instance;
+    }
+
+    /** @return list<mixed> */
+    private static function resolveFactoryDependencies(CompiledServiceConfig $config, self $scope): array
+    {
+        $factory = $config->factoryFn;
+        if ($factory === null) {
+            throw new RuntimeException("Service {$config->type} has no factory");
+        }
+
+        if ($config->needsTypes !== []) {
+            $deps = [];
+            foreach ($config->needsTypes as $needed) {
+                $deps[] = $scope->service($needed);
+            }
+
+            return $deps;
+        }
+
+        $deps = [];
+        foreach ((new ReflectionFunction($factory))->getParameters() as $parameter) {
+            $deps[] = self::resolveFactoryParameter($config, $parameter, $scope);
+        }
+
+        return $deps;
+    }
+
+    private static function resolveFactoryParameter(CompiledServiceConfig $config, ReflectionParameter $parameter, self $scope): mixed
+    {
+        $type = $parameter->getType();
+        if (!$type instanceof ReflectionNamedType || $type->isBuiltin()) {
+            throw new RuntimeException(sprintf(
+                'Service %s factory parameter $%s must declare a single object type.',
+                $config->type,
+                $parameter->getName(),
+            ));
+        }
+
+        $typeName = $type->getName();
+        if ($scope instanceof $typeName) {
+            return $scope;
+        }
+
+        /** @var class-string $serviceType */
+        $serviceType = $typeName;
+        return $scope->service($serviceType);
+    }
+
     private function forceCancelGoSpawns(): void
     {
         foreach ($this->goSpawns as [$cid, $run]) {
@@ -1589,6 +1711,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             $this->taskMiddlewares,
             $this->workerDispatch,
             parentScopeId: $this->scopeIdValue,
+            resources: $this->resources,
         );
         $child->currentRun = $inheritParent;
         return $child;
@@ -1698,108 +1821,5 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                 CoroutineScopeRegistry::clear();
             }
         }
-    }
-
-    /**
-     * Wrap the build closure in the middleware chain. Middlewares are invoked
-     * in registration order (first-registered runs outermost). Each calls
-     * $next() to descend; the innermost call invokes $build directly.
-     *
-     * @param Closure(): object $build
-     */
-    private static function runMiddleware(string $type, Closure $build, self $scope): object
-    {
-        if ($scope->serviceMiddlewares === []) {
-            return $build();
-        }
-
-        $next = $build;
-        foreach (array_reverse($scope->serviceMiddlewares) as $middleware) {
-            $current = $next;
-            $next = static fn(): object => $middleware->transform($type, $current, $scope);
-        }
-        return $next();
-    }
-
-    /**
-     * Wrap task execution in the registered TaskMiddleware chain. First-registered
-     * runs outermost. Each middleware decides whether to honor a behavioral
-     * interface on $task (Retryable, HasTimeout, Traceable, ...) and wrap the
-     * inner closure or just delegate.
-     *
-     * @param Closure(ExecutionScope): mixed $invoke
-     */
-    private static function runTaskMiddleware(Scopeable|Executable|Closure $task, Closure $invoke, self $scope): mixed
-    {
-        if ($scope->taskMiddlewares === []) {
-            return $invoke($scope);
-        }
-
-        $next = $invoke;
-        foreach (array_reverse($scope->taskMiddlewares) as $middleware) {
-            $current = $next;
-            $next = static fn(ExecutionScope $s): mixed => $middleware->handle($task, $s, $current);
-        }
-        return $next($scope);
-    }
-
-    private static function build(CompiledServiceConfig $config, self $scope): object
-    {
-        if ($config->factoryFn === null) {
-            throw new RuntimeException("Service {$config->type} has no factory");
-        }
-        $deps = self::resolveFactoryDependencies($config, $scope);
-        $scope->traceLog->log(TraceType::ServiceResolve, $config->type);
-        $instance = ($config->factoryFn)(...$deps);
-        foreach ($config->onInitHooks as $hook) {
-            $hook($instance);
-        }
-        return $instance;
-    }
-
-    /** @return list<mixed> */
-    private static function resolveFactoryDependencies(CompiledServiceConfig $config, self $scope): array
-    {
-        $factory = $config->factoryFn;
-        if ($factory === null) {
-            throw new RuntimeException("Service {$config->type} has no factory");
-        }
-
-        if ($config->needsTypes !== []) {
-            $deps = [];
-            foreach ($config->needsTypes as $needed) {
-                $deps[] = $scope->service($needed);
-            }
-
-            return $deps;
-        }
-
-        $deps = [];
-        foreach ((new ReflectionFunction($factory))->getParameters() as $parameter) {
-            $deps[] = self::resolveFactoryParameter($config, $parameter, $scope);
-        }
-
-        return $deps;
-    }
-
-    private static function resolveFactoryParameter(CompiledServiceConfig $config, ReflectionParameter $parameter, self $scope): mixed
-    {
-        $type = $parameter->getType();
-        if (!$type instanceof ReflectionNamedType || $type->isBuiltin()) {
-            throw new RuntimeException(sprintf(
-                'Service %s factory parameter $%s must declare a single object type.',
-                $config->type,
-                $parameter->getName(),
-            ));
-        }
-
-        $typeName = $type->getName();
-        if ($scope instanceof $typeName) {
-            return $scope;
-        }
-
-        /** @var class-string $serviceType */
-        $serviceType = $typeName;
-        return $scope->service($serviceType);
     }
 }

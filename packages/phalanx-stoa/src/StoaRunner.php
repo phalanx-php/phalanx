@@ -15,9 +15,9 @@ use Phalanx\AppHost;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Registry\RegistryScope;
+use Phalanx\Scope\ExecutionLifecycleScope;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\Scope;
-use Phalanx\Scope\ScopeIdentity;
 use Phalanx\Server\ServerStats;
 use Phalanx\Stoa\Http\Upgrade\UpgradeRegistry;
 use Phalanx\Stoa\Response\BufferEventDispatcher;
@@ -29,7 +29,6 @@ use Phalanx\Stoa\Runtime\Identity\StoaEventSid;
 use Phalanx\Stoa\Runtime\StoaScopeKey;
 use Phalanx\Stoa\Sse\SseStream;
 use Phalanx\Supervisor\DispatchMode;
-use Phalanx\Supervisor\TaskTreeFormatter;
 use Phalanx\Support\SignalHandler;
 use Phalanx\Trace\TraceType;
 use Psr\Http\Message\ResponseInterface;
@@ -386,26 +385,29 @@ final class StoaRunner
         try {
             $token = CancellationToken::timeout($this->config->requestTimeout);
             $rootScope = $this->app->createScope($token);
+            if (!$rootScope instanceof ExecutionLifecycleScope) {
+                throw new RuntimeException('createScope() must return ExecutionLifecycleScope');
+            }
             $errorScope = $rootScope;
 
-            $scope = $rootScope->withAttribute('request', $request);
-            $ownerScopeId = $scope instanceof ScopeIdentity ? $scope->scopeId : null;
+            $rootScope->setResource('request', $request);
+            $ownerScopeId = $rootScope->scopeId;
             $resource = StoaRequestResource::open($this->app->runtime(), $request, $token, $fd, $ownerScopeId);
             $this->registerRequest($resource);
             $registered = true;
             $resource->activate();
 
-            $scope = $scope
-                ->withAttribute(StoaScopeKey::ResourceId->value, $resource->id)
-                ->withAttribute(StoaScopeKey::RequestResource->value, $resource);
+            $rootScope->setResource(StoaScopeKey::ResourceId->value, $resource->id);
+            $rootScope->setResource(StoaScopeKey::RequestResource->value, $resource);
             if ($target !== null) {
-                $scope = $scope->withAttribute(StoaScopeKey::OpenSwooleResponse->value, $target);
+                $rootScope->setResource(StoaScopeKey::OpenSwooleResponse->value, $target);
             }
+            $scope = $rootScope;
             $trace = $scope->trace();
             $trace->clear();
 
             $scope = new ExecutionContext(
-                $scope instanceof ExecutionScope ? $scope : $rootScope,
+                $rootScope,
                 $request,
                 new RouteParams([]),
                 new QueryParams($request->getQueryParams()),
@@ -456,9 +458,9 @@ final class StoaRunner
             try {
                 $supervisor = $this->app->supervisor();
                 $requestRun = $supervisor->start(
-                    task: static fn() => null, 
-                    parent: $rootScope, 
-                    mode: DispatchMode::Inline, 
+                    task: static fn() => null,
+                    parent: $rootScope,
+                    mode: DispatchMode::Inline,
                     name: 'StoaRequest: ' . $resource->path
                 );
                 $supervisor->markRunning($requestRun);
@@ -481,7 +483,7 @@ final class StoaRunner
                     $response = $result instanceof ResponseInterface
                         ? $result
                         : self::toResponse($result);
-                    
+
                     $supervisor->complete($requestRun, $response);
                 } catch (Cancelled $e) {
                     $supervisor->cancel($requestRun);
@@ -498,9 +500,9 @@ final class StoaRunner
                 if ($target !== null) {
                     return null;
                 }
-                
+
                 $tree = $requestRun->failureTree ?? $this->app->supervisor()->tree();
-                $errorScope = $errorScope->withAttribute('phx.error_ledger', $tree);
+                $rootScope->setResource('phx.error_ledger', $tree);
                 $response = $this->errorResponse($errorScope, $e, $resource);
             } catch (Throwable $e) {
                 if ($e instanceof ToResponse) {
@@ -509,9 +511,8 @@ final class StoaRunner
                     $resource->fail($e);
                     $trace->log(TraceType::Failed, 'request', ['error' => $e->getMessage()]);
 
-                    // Snapshot ledger while tasks are still active
                     $tree = $requestRun->failureTree ?? $this->app->supervisor()->tree();
-                    $errorScope = $errorScope->withAttribute('phx.error_ledger', $tree);
+                    $rootScope->setResource('phx.error_ledger', $tree);
                     $response = $this->errorResponse($errorScope, $e, $resource);
                 }
             }
@@ -849,5 +850,4 @@ final class StoaRunner
             $ownedScope?->dispose();
         }
     }
-
 }

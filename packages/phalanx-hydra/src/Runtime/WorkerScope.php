@@ -61,6 +61,11 @@ class WorkerScope implements AegisWorkerScope
         return $this->attributes[$key] ?? $default;
     }
 
+    public function resource(string $key, mixed $default = null): mixed
+    {
+        return $default;
+    }
+
     public function withAttribute(string $key, mixed $value): AegisWorkerScope
     {
         $attributes = $this->attributes;

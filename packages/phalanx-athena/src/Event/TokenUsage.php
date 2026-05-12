@@ -38,6 +38,12 @@ final class TokenUsage
         );
     }
 
+    public function accumulate(self $other): void
+    {
+        $this->input += $other->input;
+        $this->output += $other->output;
+    }
+
     /** @return array{input: int, output: int, total: int} */
     public function toArray(): array
     {

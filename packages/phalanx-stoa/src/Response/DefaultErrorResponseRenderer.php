@@ -29,7 +29,7 @@ final readonly class DefaultErrorResponseRenderer implements ErrorResponseRender
 
     public function render(RequestScope $scope, Throwable $e): ?ResponseInterface
     {
-        $resource = $scope->attribute(StoaScopeKey::RequestResource->value);
+        $resource = $scope->resource(StoaScopeKey::RequestResource->value);
 
         $body = [
             'error' => 'Internal Server Error',

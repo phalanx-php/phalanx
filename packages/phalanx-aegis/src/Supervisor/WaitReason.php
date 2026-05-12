@@ -23,12 +23,12 @@ namespace Phalanx\Supervisor;
  * Wait reasons are immutable value objects; the supervisor pairs them
  * with a TaskRun id when storing in the ledger.
  */
-final readonly class WaitReason
+final class WaitReason
 {
     public function __construct(
-        public WaitKind $kind,
-        public string $detail = '',
-        public float $startedAt = 0.0,
+        private(set) WaitKind $kind,
+        private(set) string $detail = '',
+        private(set) float $startedAt = 0.0,
     ) {
     }
 

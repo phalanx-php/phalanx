@@ -49,6 +49,11 @@ trait ExecutionScopeDelegate
         return $this->innerScope()->attribute($key, $default);
     }
 
+    public function resource(string $key, mixed $default = null): mixed
+    {
+        return $this->innerScope()->resource($key, $default);
+    }
+
     public function trace(): Trace
     {
         return $this->innerScope()->trace();

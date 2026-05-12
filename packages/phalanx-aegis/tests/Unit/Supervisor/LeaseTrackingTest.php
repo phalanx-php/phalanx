@@ -318,6 +318,11 @@ final class BareScopeStub implements \Phalanx\Scope\Scope
         return $default;
     }
 
+    public function resource(string $key, mixed $default = null): mixed
+    {
+        return $default;
+    }
+
     public function withAttribute(string $key, mixed $value): \Phalanx\Scope\Scope
     {
         return $this;

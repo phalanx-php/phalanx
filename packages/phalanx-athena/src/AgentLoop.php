@@ -60,7 +60,7 @@ final class AgentLoop
                     $relay,
                 );
 
-                $usage = $usage->add($generation->usage);
+                $usage->accumulate($generation->usage);
 
                 if ($generation->toolCalls->isEmpty()) {
                     $conversation = $conversation->assistant($generation->text);

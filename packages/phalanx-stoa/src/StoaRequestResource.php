@@ -85,7 +85,7 @@ final class StoaRequestResource
 
     public static function fromScope(ExecutionScope $scope): ?self
     {
-        $resource = $scope->attribute(StoaScopeKey::RequestResource->value);
+        $resource = $scope->resource(StoaScopeKey::RequestResource->value);
 
         return $resource instanceof self ? $resource : null;
     }

@@ -15,7 +15,7 @@ final class EchoJsonHandler implements Executable
 {
     public function __invoke(ExecutionScope $scope): ResponseInterface
     {
-        $request = $scope->attribute('request');
+        $request = $scope->resource('request');
 
         if (!$request instanceof ServerRequestInterface) {
             return new Response(500, [], 'no request in scope');

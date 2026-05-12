@@ -25,6 +25,9 @@ use Throwable;
  */
 class HttpClient
 {
+    /** @var array<string, TlsOptions> */
+    private array $tlsCache = [];
+
     public function __construct(
         private readonly HttpClientConfig $config = new HttpClientConfig(),
         private readonly DnsResolver $dns = new DnsResolver(),
@@ -142,21 +145,27 @@ class HttpClient
             return new TcpClient();
         }
 
-        $tlsOptions = $this->config->tlsOptions ?? new TlsOptions(verifyPeer: true, hostName: $host);
+        $tlsOptions = $this->tlsCache[$host] ?? null;
 
-        if ($tlsOptions->hostName === null) {
-            $tlsOptions = new TlsOptions(
-                verifyPeer: $tlsOptions->verifyPeer,
-                allowSelfSigned: $tlsOptions->allowSelfSigned,
-                hostName: $host,
-                caFile: $tlsOptions->caFile,
-                caPath: $tlsOptions->caPath,
-                certFile: $tlsOptions->certFile,
-                keyFile: $tlsOptions->keyFile,
-                passphrase: $tlsOptions->passphrase,
-                ciphers: $tlsOptions->ciphers,
-                protocols: $tlsOptions->protocols,
-            );
+        if ($tlsOptions === null) {
+            $tlsOptions = $this->config->tlsOptions ?? new TlsOptions(verifyPeer: true, hostName: $host);
+
+            if ($tlsOptions->hostName === null) {
+                $tlsOptions = new TlsOptions(
+                    verifyPeer: $tlsOptions->verifyPeer,
+                    allowSelfSigned: $tlsOptions->allowSelfSigned,
+                    hostName: $host,
+                    caFile: $tlsOptions->caFile,
+                    caPath: $tlsOptions->caPath,
+                    certFile: $tlsOptions->certFile,
+                    keyFile: $tlsOptions->keyFile,
+                    passphrase: $tlsOptions->passphrase,
+                    ciphers: $tlsOptions->ciphers,
+                    protocols: $tlsOptions->protocols,
+                );
+            }
+
+            $this->tlsCache[$host] = $tlsOptions;
         }
 
         return new TcpClient(tls: true, tlsOptions: $tlsOptions);

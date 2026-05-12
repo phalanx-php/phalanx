@@ -32,10 +32,10 @@ final readonly class IgnitionErrorResponseRenderer implements ErrorResponseRende
         }
 
         try {
-            $resource = $scope->attribute(StoaScopeKey::RequestResource->value);
+            $resource = $scope->resource(StoaScopeKey::RequestResource->value);
             $requestId = ($resource instanceof StoaRequestResource) ? $resource->id : 'unknown';
-            
-            $snapshots = $scope->attribute('phx.error_ledger', []);
+
+            $snapshots = $scope->resource('phx.error_ledger', []);
             $ledger = '(no active tasks captured)';
             if ($snapshots !== []) {
                 try {

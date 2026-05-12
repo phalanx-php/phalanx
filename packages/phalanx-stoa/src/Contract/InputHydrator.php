@@ -21,6 +21,9 @@ class InputHydrator
     /** @var array<class-string, int> */
     private static array $paramCountCache = [];
 
+    /** @phpstan-var array<string, ReflectionClass<object>> */
+    private static array $reflectionCache = [];
+
     /** @var list<class-string> */
     private static array $scopeTypes = [
         Scope::class,
@@ -42,7 +45,8 @@ class InputHydrator
             return self::$paramCountCache[$key];
         }
 
-        $count = (new ReflectionClass($key))->getMethod('__invoke')->getNumberOfParameters();
+        $ref = self::$reflectionCache[$key] ??= new ReflectionClass($key); // @phpstan-ignore assign.propertyType
+        $count = $ref->getMethod('__invoke')->getNumberOfParameters();
         self::$paramCountCache[$key] = $count;
 
         return $count;
@@ -61,7 +65,8 @@ class InputHydrator
             return self::$metaCache[$key];
         }
 
-        $ref = (new ReflectionClass($key))->getMethod('__invoke');
+        $cls = self::$reflectionCache[$key] ??= new ReflectionClass($key);
+        $ref = $cls->getMethod('__invoke');
         $meta = null;
 
         foreach ($ref->getParameters() as $param) {
@@ -161,7 +166,7 @@ class InputHydrator
      */
     protected static function resolveArgs(string $class, array $data): array
     {
-        $ref = new ReflectionClass($class);
+        $ref = self::$reflectionCache[$class] ??= new ReflectionClass($class);
         $constructor = $ref->getConstructor();
 
         if ($constructor === null) {

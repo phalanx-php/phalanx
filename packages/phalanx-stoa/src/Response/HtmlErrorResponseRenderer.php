@@ -33,7 +33,7 @@ final readonly class HtmlErrorResponseRenderer implements ErrorResponseRenderer
             return null;
         }
 
-        $resource = $scope->attribute(StoaScopeKey::RequestResource->value);
+        $resource = $scope->resource(StoaScopeKey::RequestResource->value);
         $file = $e->getFile();
         $line = $e->getLine();
         

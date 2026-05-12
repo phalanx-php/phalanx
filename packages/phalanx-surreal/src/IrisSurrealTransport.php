@@ -12,12 +12,19 @@ use Phalanx\Iris\HttpResponse;
 use Phalanx\Scope\Scope;
 use Phalanx\Scope\Suspendable;
 
-class IrisSurrealTransport implements SurrealTransport
+final class IrisSurrealTransport implements SurrealTransport
 {
     private Atomic $nextId;
 
+    /** @var array<string, list<string>>|null */
+    private ?array $cachedHeaders = null;
+
+    private ?string $cachedToken = null;
+
+    private ?string $cachedConfigKey = null;
+
     public function __construct(
-        private readonly HttpClient $http,
+        private HttpClient $http,
     ) {
         $this->nextId = new Atomic(0);
     }
@@ -83,6 +90,12 @@ class IrisSurrealTransport implements SurrealTransport
     /** @return array<string, list<string>> */
     private function headers(SurrealConfig $config, ?string $token): array
     {
+        $configKey = $config->database . "\0" . $config->namespace . "\0" . ($config->username ?? '') . "\0" . ($config->password ?? '');
+
+        if ($this->cachedHeaders !== null && $this->cachedToken === $token && $this->cachedConfigKey === $configKey) {
+            return $this->cachedHeaders;
+        }
+
         $headers = [
             'accept' => ['application/json'],
             'content-type' => ['application/json'],
@@ -97,6 +110,10 @@ class IrisSurrealTransport implements SurrealTransport
                 'Basic ' . base64_encode("{$config->username}:{$config->password}"),
             ];
         }
+
+        $this->cachedHeaders = $headers;
+        $this->cachedToken = $token;
+        $this->cachedConfigKey = $configKey;
 
         return $headers;
     }

@@ -18,11 +18,13 @@ use Phalanx\Hermes\WsGateway;
 use Phalanx\Hermes\WsRouteConfig;
 use Phalanx\Hermes\WsRouteGroup;
 use Phalanx\Runtime\Memory\ManagedResourceHandle;
+use Phalanx\Scope\ExecutionLifecycleScope;
 use Phalanx\Stoa\Http\Upgrade\HttpUpgradeable;
 use Phalanx\Stoa\RouteMatcher;
 use Phalanx\Stoa\RouteParams;
 use Phalanx\Stoa\StoaRequestResource;
 use Psr\Http\Message\ServerRequestInterface;
+use RuntimeException;
 use Throwable;
 
 /**
@@ -34,12 +36,13 @@ use Throwable;
  * converted to a terminal-resource state and a clean return — never
  * propagated back to Stoa.
  */
-final readonly class WsServerUpgrade implements HttpUpgradeable
+final class WsServerUpgrade implements HttpUpgradeable
 {
     public function __construct(
         private AppHost $app,
         private WsRouteGroup $routes,
         private WsGateway $gateway,
+        private(set) RouteMatcher $routeMatcher = new RouteMatcher(),
     ) {
     }
 
@@ -51,10 +54,13 @@ final readonly class WsServerUpgrade implements HttpUpgradeable
         $resources = $this->app->runtime()->memory->resources;
 
         $sessionToken = CancellationToken::create();
-        $sessionScope = $this->app->createScope($sessionToken)
-            ->withAttribute('request', $request);
+        $sessionScope = $this->app->createScope($sessionToken);
+        if (!$sessionScope instanceof ExecutionLifecycleScope) {
+            throw new RuntimeException('createScope() must return ExecutionLifecycleScope');
+        }
+        $sessionScope->setResource('request', $request);
 
-        $match = new RouteMatcher()->match($sessionScope, $this->routes->inner->all());
+        $match = $this->routeMatcher->match($sessionScope, $this->routes->inner->all());
         if ($match === null) {
             $sessionScope->dispose();
             $resources->recordEvent($requestResource->id, HermesEventSid::ServerUpgradeRejected, 'no_route');

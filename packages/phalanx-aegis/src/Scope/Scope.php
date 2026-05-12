@@ -25,6 +25,8 @@ interface Scope
 
     public function attribute(string $key, mixed $default = null): mixed;
 
+    public function resource(string $key, mixed $default = null): mixed;
+
     public function withAttribute(string $key, mixed $value): Scope;
 
     public function trace(): Trace;
