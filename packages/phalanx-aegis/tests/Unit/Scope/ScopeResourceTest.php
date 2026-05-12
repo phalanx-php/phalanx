@@ -89,6 +89,20 @@ final class ScopeResourceTest extends PhalanxTestCase
         });
     }
 
+    public function testChildResourceMutationVisibleOnParent(): void
+    {
+        $this->scope->run(static function (ExecutionScope $scope): void {
+            self::assertInstanceOf(ExecutionLifecycleScope::class, $scope);
+            $scope->setResource('counter', 0);
+
+            $child = $scope->withAttribute('label', 'child');
+            self::assertInstanceOf(ExecutionLifecycleScope::class, $child);
+            $child->setResource('counter', 99);
+
+            self::assertSame(99, $scope->resource('counter'));
+        });
+    }
+
     public function testResourcesIndependentFromAttributes(): void
     {
         $this->scope->run(static function (ExecutionScope $scope): void {

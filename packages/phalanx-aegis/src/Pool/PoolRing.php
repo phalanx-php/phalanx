@@ -44,6 +44,7 @@ final class PoolRing
     {
         $slot = $this->slots[$this->cursor];
 
+        // Required on first pass AND after reset() — both leave slots as uninitialized ghosts
         if ($this->reflector->isUninitializedLazyObject($slot)) {
             $this->reflector->initializeLazyObject($slot);
         }
