@@ -8,31 +8,33 @@ use Phalanx\Boot\AppContext;
 
 final class RuntimeMemory
 {
-    public readonly ManagedSwooleTables $tables;
+    private(set) RuntimeIds $ids;
 
-    public readonly RuntimeSymbols $symbols;
+    private(set) RuntimeClaims $claims;
 
-    public readonly RuntimeCounters $counters;
+    private(set) RuntimeSymbols $symbols;
 
-    public readonly RuntimeIds $ids;
+    private(set) RuntimeCounters $counters;
 
-    public readonly RuntimeClaims $claims;
+    private(set) ManagedSwooleTables $tables;
 
-    public readonly RuntimeLifecycleEvents $events;
+    private(set) RuntimeLifecycleEvents $events;
 
-    public readonly ManagedResourceRegistry $resources;
+    private(set) ManagedResourceRegistry $resources;
 
     private ManagedResourceTransitionLocks $transitionLocks;
 
     private bool $shutdown = false;
 
-    public function __construct(public readonly RuntimeMemoryConfig $config)
-    {
+    public function __construct(
+        public readonly RuntimeMemoryConfig $config
+    ) {
         $this->tables = new ManagedSwooleTables($config);
+        $this->claims = new RuntimeClaims($this->tables);
         $this->symbols = new RuntimeSymbols($this->tables);
         $this->counters = new RuntimeCounters($this->tables);
         $this->ids = new RuntimeIds($this->counters);
-        $this->claims = new RuntimeClaims($this->tables);
+
         $this->events = new RuntimeLifecycleEvents($this->tables, $this->counters);
 
         $this->transitionLocks = new ManagedResourceTransitionLocks(

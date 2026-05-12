@@ -10,7 +10,8 @@ use Phalanx\Supervisor\TransactionLease;
 
 interface ExecutionScope extends TaskScope, TaskExecutor
 {
-    public ?TaskRun $currentRun { get; set; }
+    public ?TaskRun $currentRun { get;
+    set; }
 
     public function withAttribute(string $key, mixed $value): ExecutionScope;
 

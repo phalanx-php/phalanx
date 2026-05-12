@@ -213,10 +213,12 @@ class ApplicationBuilder
     {
         // Resolve from the Composer autoloader registration point so the path
         // is stable regardless of the process working directory.
-        foreach ([
+        foreach (
+            [
             dirname(__DIR__, 3) . '/vendor',
             dirname(__DIR__, 5) . '/vendor',
-        ] as $candidate) {
+            ] as $candidate
+        ) {
             if (is_dir($candidate)) {
                 return $candidate;
             }

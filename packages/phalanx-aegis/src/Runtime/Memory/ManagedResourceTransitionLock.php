@@ -10,8 +10,9 @@ final class ManagedResourceTransitionLock
 {
     private bool $released = false;
 
-    public function __construct(private readonly Lock $lock)
-    {
+    public function __construct(
+        private readonly Lock $lock
+    ) {
     }
 
     public function release(): void

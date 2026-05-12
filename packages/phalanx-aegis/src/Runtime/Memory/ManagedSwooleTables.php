@@ -9,21 +9,21 @@ use RuntimeException;
 
 final class ManagedSwooleTables
 {
+    public readonly Table $claims;
+
+    public readonly Table $symbols;
+
+    public readonly Table $counters;
+
     public readonly Table $resources;
 
     public readonly Table $resourceEdges;
 
     public readonly Table $resourceLeases;
 
-    public readonly Table $resourceAnnotations;
-
     public readonly Table $resourceEvents;
 
-    public readonly Table $counters;
-
-    public readonly Table $claims;
-
-    public readonly Table $symbols;
+    public readonly Table $resourceAnnotations;
 
     private bool $destroyed = false;
 
