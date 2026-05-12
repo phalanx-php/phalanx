@@ -56,9 +56,10 @@ final class CommandDispatcher
     /** @param list<string> $argv */
     private function dispatchInScope(array $argv, ExecutionScope $rootScope, ?ConsoleSignalState $signals = null): int
     {
-        $defaultCommand = $argv === [];
-        $command = $argv[0] ?? $this->config->defaultCommand;
-        $args = array_slice($argv, 1);
+        $isOption = isset($argv[0]) && str_starts_with($argv[0], '-');
+        $defaultCommand = $argv === [] || $isOption;
+        $command = $defaultCommand ? $this->config->defaultCommand : $argv[0];
+        $args = $defaultCommand ? $argv : array_slice($argv, 1);
         $displayName = $this->displayName($command, $args);
 
         if (!$rootScope instanceof ScopeIdentity) {
