@@ -22,7 +22,7 @@ use Throwable;
  */
 final class SwooleTableLedger implements LedgerStorage
 {
-    public readonly RuntimeMemory $memory;
+    private(set) RuntimeMemory $memory;
 
     /** @var array<string, CancellationToken> */
     private array $tokens = [];
@@ -127,12 +127,14 @@ final class SwooleTableLedger implements LedgerStorage
             AegisAnnotationSid::WaitDetail->value() => $reason->detail,
             AegisAnnotationSid::WaitSince->value() => (string) $reason->startedAt,
         ]);
-        $this->memory->resources->recordEvent(
-            $runId,
-            AegisEventSid::RunSuspended,
-            $reason->kind->value,
-            $reason->detail,
-        );
+        if ($reason->kind !== WaitKind::Delay) {
+            $this->memory->resources->recordEvent(
+                $runId,
+                AegisEventSid::RunSuspended,
+                $reason->kind->value,
+                $reason->detail,
+            );
+        }
     }
 
     public function clearWait(string $runId): void
@@ -142,13 +144,20 @@ final class SwooleTableLedger implements LedgerStorage
             return;
         }
 
+        $wasDelay = $this->memory->resources->annotation(
+            $runId,
+            AegisAnnotationSid::WaitKind,
+        ) === WaitKind::Delay->value;
+
         $this->annotateRun($runId, [
             AegisAnnotationSid::RunState->value() => RunState::Running->value,
             AegisAnnotationSid::WaitKind->value() => '',
             AegisAnnotationSid::WaitDetail->value() => '',
             AegisAnnotationSid::WaitSince->value() => '',
         ]);
-        $this->memory->resources->recordEvent($runId, AegisEventSid::RunResumed);
+        if (!$wasDelay) {
+            $this->memory->resources->recordEvent($runId, AegisEventSid::RunResumed);
+        }
     }
 
     public function addLease(string $runId, Lease $lease): void
