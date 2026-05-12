@@ -22,7 +22,7 @@ use Phalanx\Demos\Kit\DemoReport;
 
 return DemoReport::demo(
     'Archon Interactive Input (non-TTY default fallback)',
-    static function (DemoReport $report, AppContext $context): void {
+    static function (DemoReport $report, AppContext $_context): void {
         $commands = CommandGroup::of([
             'register' => [
                 RegisterCommand::class,

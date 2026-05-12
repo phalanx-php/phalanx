@@ -18,7 +18,7 @@ use Phalanx\Demos\Kit\DemoReport;
 
 return DemoReport::demo(
     'Archon Supervised Concurrency',
-    static function (DemoReport $report, AppContext $context): void {
+    static function (DemoReport $report, AppContext $_context): void {
         $isTty = stream_isatty(STDOUT);
         if ($isTty) {
             $stream = STDOUT;

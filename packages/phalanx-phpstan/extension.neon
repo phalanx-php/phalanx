@@ -108,3 +108,8 @@ services:
         class: Phalanx\PHPStan\Rules\Testing\LensRequiresBundleRule
         tags:
             - phpstan.rules.rule
+
+    -
+        class: Phalanx\PHPStan\Rules\Scope\UnusedClosureParameterRule
+        tags:
+            - phpstan.rules.rule

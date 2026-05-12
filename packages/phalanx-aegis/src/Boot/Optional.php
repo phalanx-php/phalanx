@@ -42,7 +42,7 @@ final class Optional extends BootRequirement
         return new self(
             self::KIND_SERVICE,
             $message,
-            static fn (AppContext $ctx): BootEvaluation =>
+            static fn (AppContext $_ctx): BootEvaluation =>
                 BootEvaluation::pass(sprintf('Service "%s" optional (resolved at runtime if present)', $id)),
         );
     }

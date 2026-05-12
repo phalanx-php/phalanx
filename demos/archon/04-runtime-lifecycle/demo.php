@@ -12,7 +12,7 @@ use Phalanx\Demos\Kit\DemoSubprocess;
 
 return DemoReport::demo(
     'Archon Runtime Lifecycle',
-    static function (DemoReport $report, AppContext $context): void {
+    static function (DemoReport $report, AppContext $_context): void {
         $runnerPath = __DIR__ . '/runner.php';
 
         $runScenario = static function (
@@ -43,7 +43,7 @@ return DemoReport::demo(
         // Scenario A: SIGINT propagates through subprocess; scope onDispose runs.
         $captured = $runScenario(
             ['watch', '--duration=30'],
-            static function (Process $proc, int $pid, string $captured): bool {
+            static function (Process $_proc, int $pid, string $captured): bool {
                 if (str_contains($captured, '[tick 1 1]')) {
                     Process::kill($pid, SIGINT);
 
@@ -76,7 +76,7 @@ return DemoReport::demo(
         // Scenario C: SIGTERM cancels through the same trap; body sees Cancelled.
         $captured = $runScenario(
             ['watch', '--duration=30'],
-            static function (Process $proc, int $pid, string $captured): bool {
+            static function (Process $_proc, int $pid, string $captured): bool {
                 if (str_contains($captured, '[tick 1 1]')) {
                     Process::kill($pid, SIGTERM);
 

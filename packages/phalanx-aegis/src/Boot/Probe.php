@@ -35,7 +35,7 @@ final class Probe extends BootRequirement
             self::KIND_TCP,
             $message,
             $failureMode,
-            static function (AppContext $ctx) use ($host, $port, $timeout, $failureMode, $message): BootEvaluation {
+            static function (AppContext $_ctx) use ($host, $port, $timeout, $failureMode, $message): BootEvaluation {
                 $errno = 0;
                 $errstr = '';
                 $socket = @fsockopen($host, $port, $errno, $errstr, $timeout);
@@ -70,7 +70,7 @@ final class Probe extends BootRequirement
         $msg = $description ?? sprintf('HTTP probe %s', $url);
         $expected = $expectStatus;
 
-        $check = static function (AppContext $ctx) use ($url, $expected, $timeout, $failureMode, $msg): BootEvaluation {
+        $check = static function (AppContext $_ctx) use ($url, $expected, $timeout, $failureMode, $msg): BootEvaluation {
             $context = stream_context_create([
                 'http' => ['method' => 'HEAD', 'timeout' => $timeout, 'ignore_errors' => true],
             ]);

@@ -27,7 +27,7 @@ if (!class_exists('IgnitionDemoHandler')) {
                 return $es->concurrent(
                     Task::of(static function (\Phalanx\Scope\ExecutionScope $es) {
                         $es->call(static fn() => usleep(10000), \Phalanx\Supervisor\WaitReason::custom('remote fetch: simulating'));
-                        return $es->execute(Task::of(static function (\Phalanx\Scope\ExecutionScope $es) {
+                        return $es->execute(Task::of(static function (\Phalanx\Scope\ExecutionScope $_es) {
                              // Ledger lvl 3
                              throw new RuntimeException(
                                  "Stripe API unreachable: Peer certificate cannot be authenticated with given CA certificates."

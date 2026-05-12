@@ -86,7 +86,7 @@ final class NewCommand extends Command
             $process = new Process(['composer', 'install', '--no-interaction'], $directory);
             $process->setTimeout(120);
 
-            $exitCode = $process->run(static function (string $pipe, string $buffer) use ($output): void {
+            $exitCode = $process->run(static function (string $_pipe, string $buffer) use ($output): void {
                 $output->write($buffer);
             });
 

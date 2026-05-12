@@ -21,7 +21,7 @@ use Phalanx\Demos\Kit\DemoReport;
 
 return DemoReport::demo(
     'Archon Basic Commands',
-    static function (DemoReport $report, AppContext $context): void {
+    static function (DemoReport $report, AppContext $_context): void {
         $commands = CommandGroup::of([
             'greet' => [
                 GreetCommand::class,

@@ -43,7 +43,7 @@ final class Required extends BootRequirement
         return new self(
             self::KIND_SERVICE,
             $message,
-            static fn (AppContext $ctx): BootEvaluation =>
+            static fn (AppContext $_ctx): BootEvaluation =>
                 BootEvaluation::pass(sprintf('Service "%s" required (resolved at runtime)', $id)),
         );
     }
