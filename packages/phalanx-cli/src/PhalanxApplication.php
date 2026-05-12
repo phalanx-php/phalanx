@@ -13,10 +13,10 @@ final class PhalanxApplication extends Application
 {
     public function __construct()
     {
-        parent::__construct('phalanx', '0.6.1');
+        parent::__construct('phalanx', '0.2.0');
 
-        $this->addCommand(new DoctorCommand());
-        $this->addCommand(new InstallCommand());
-        $this->addCommand(new NewCommand());
+        $this->add(new DoctorCommand());
+        $this->add(new InstallCommand());
+        $this->add(new NewCommand());
     }
 }
