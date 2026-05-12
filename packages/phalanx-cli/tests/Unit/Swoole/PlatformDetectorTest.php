@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Cli\Tests\Unit\Install;
+namespace Phalanx\Cli\Tests\Unit\Swoole;
 
-use Phalanx\Cli\Install\Platform;
-use Phalanx\Cli\Install\PlatformDetector;
+use Phalanx\Cli\Swoole\Platform;
+use Phalanx\Cli\Swoole\PlatformDetector;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 

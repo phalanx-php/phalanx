@@ -13,7 +13,7 @@ final class OpenSwooleCheck
                 'OpenSwoole',
                 'Not loaded',
                 "Install via PIE: pie install openswoole/ext-openswoole\n"
-                . '  Or run: phalanx install',
+                . '  Or run: phalanx swoole:install',
             );
         }
 

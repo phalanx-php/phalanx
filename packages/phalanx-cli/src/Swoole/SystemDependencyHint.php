@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Cli\Install;
+namespace Phalanx\Cli\Swoole;
 
 final class SystemDependencyHint
 {

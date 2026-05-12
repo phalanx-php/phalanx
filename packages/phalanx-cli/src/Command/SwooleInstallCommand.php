@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Phalanx\Cli\Command;
 
-use Phalanx\Cli\Install\FlagSet;
-use Phalanx\Cli\Install\OpenSwooleFlag;
-use Phalanx\Cli\Install\PieRunner;
-use Phalanx\Cli\Install\Platform;
-use Phalanx\Cli\Install\PlatformDetector;
+use Phalanx\Cli\Swoole\FlagSet;
+use Phalanx\Cli\Swoole\OpenSwooleFlag;
+use Phalanx\Cli\Swoole\PieRunner;
+use Phalanx\Cli\Swoole\Platform;
+use Phalanx\Cli\Swoole\PlatformDetector;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\QuestionHelper;
@@ -18,8 +18,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ChoiceQuestion;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 
-#[AsCommand(name: 'install', description: 'Install OpenSwoole via PIE with guided flag selection')]
-final class InstallCommand extends Command
+#[AsCommand(name: 'swoole:install', description: 'Install OpenSwoole via PIE with guided flag selection')]
+final class SwooleInstallCommand extends Command
 {
     protected function configure(): void
     {

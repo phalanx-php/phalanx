@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Cli\Tests\Unit\Install;
+namespace Phalanx\Cli\Tests\Unit\Swoole;
 
-use Phalanx\Cli\Install\FlagSet;
-use Phalanx\Cli\Install\OpenSwooleFlag;
-use Phalanx\Cli\Install\Platform;
+use Phalanx\Cli\Swoole\FlagSet;
+use Phalanx\Cli\Swoole\OpenSwooleFlag;
+use Phalanx\Cli\Swoole\Platform;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
