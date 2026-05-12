@@ -66,6 +66,7 @@
       "tests/Support/Fixtures/"
     ]
   },
+  "bin": ["bin/regenerate-accessors", "bin/check-accessors-in-sync"],
   "extra": {
     "branch-alias": {
       "dev-main": "0.2.x-dev"

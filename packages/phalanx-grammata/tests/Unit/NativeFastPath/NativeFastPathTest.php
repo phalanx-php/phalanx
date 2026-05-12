@@ -6,7 +6,7 @@ namespace Phalanx\Grammata\Tests\Unit\NativeFastPath;
 
 use Phalanx\Grammata\NativeFastPath\NativeFastPath;
 use Phalanx\Scope\ExecutionScope;
-use Phalanx\Tests\Support\CoroutineTestCase;
+use Phalanx\Testing\PhalanxTestCase;
 
 /**
  * Round-trips a small payload through `Coroutine\System::readFile` /
@@ -15,7 +15,7 @@ use Phalanx\Tests\Support\CoroutineTestCase;
  * proves the wrapper invokes the OpenSwoole path inside a scope-supervised
  * call().
  */
-final class NativeFastPathTest extends CoroutineTestCase
+final class NativeFastPathTest extends PhalanxTestCase
 {
     public function testReadAndWriteRoundTrip(): void
     {
@@ -23,7 +23,7 @@ final class NativeFastPathTest extends CoroutineTestCase
         self::assertNotFalse($path);
 
         try {
-            $this->runScoped(static function (ExecutionScope $scope) use ($path): void {
+            $this->scope->run(static function (ExecutionScope $scope) use ($path): void {
                 $fp = new NativeFastPath();
                 $written = $fp->write($scope, $path, "alpha\nbeta\n");
 

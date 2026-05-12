@@ -43,7 +43,7 @@ final class ScopeLensTest extends TestCase
 
             $app->application->scoped(Task::named(
                 'demo.scope.observe',
-                static function (ExecutionScope $scope) use ($app, &$observed): void {
+                static function (ExecutionScope $_scope) use ($app, &$observed): void {
                     $observed = $app->scope->current();
                 },
             ));

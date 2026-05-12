@@ -10,11 +10,11 @@ use Phalanx\Athena\Swarm\SwarmEvent;
 use Phalanx\Athena\Swarm\SwarmEventKind;
 use Phalanx\Iris\HttpClient;
 use Phalanx\Scope\ExecutionScope;
-use Phalanx\Tests\Support\CoroutineTestCase;
+use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 
-class Daemon8SwarmBusTest extends CoroutineTestCase
+class Daemon8SwarmBusTest extends PhalanxTestCase
 {
     #[Test]
     public function testItParsesCurrentDaemon8CustomChannelShape(): void
@@ -66,7 +66,7 @@ class Daemon8SwarmBusTest extends CoroutineTestCase
             session: 'test-session'
         );
 
-        $this->runScoped(static function (ExecutionScope $scope) use ($bus, $event): void {
+        $this->scope->run(static function (ExecutionScope $scope) use ($bus, $event): void {
             $bus->emit($scope, $event);
         });
 

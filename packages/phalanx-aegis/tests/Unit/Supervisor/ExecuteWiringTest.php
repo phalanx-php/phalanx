@@ -172,7 +172,7 @@ final class ExecuteWiringTest extends TestCase
         $scope = $app->createScope();
 
         $observedName = null;
-        $task = Task::of(static function (ExecutionScope $s) use ($ledger, &$observedName): null {
+        $task = Task::of(static function (ExecutionScope $_s) use ($ledger, &$observedName): null {
             $observedName = $ledger->tree()[0]->name ?? null;
             return null;
         });

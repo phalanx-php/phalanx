@@ -13,15 +13,16 @@ use Phalanx\Stoa\StoaApplicationBuilder;
 use Phalanx\Stoa\StoaServerConfig;
 use Phalanx\Supervisor\InProcessLedger;
 use Phalanx\Task\Scopeable;
-use Phalanx\Tests\Support\CoroutineTestCase;
+use Phalanx\Scope\ExecutionScope;
+use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
 
-final class StoaApplicationBuilderTest extends CoroutineTestCase
+final class StoaApplicationBuilderTest extends PhalanxTestCase
 {
     #[Test]
     public function buildsDispatchableApplicationWithServerConfigAndDefaultPoweredByHeader(): void
     {
-        $this->runInCoroutine(static function (): void {
+        $this->scope->run(static function (ExecutionScope $_scope): void {
             $app = self::stoa([
                 'PHALANX_REQUEST_TIMEOUT' => '2.5',
             ])
@@ -63,7 +64,7 @@ final class StoaApplicationBuilderTest extends CoroutineTestCase
     #[Test]
     public function canDisableOrOverridePoweredByWithoutOverwritingHandlerHeader(): void
     {
-        $this->runInCoroutine(static function (): void {
+        $this->scope->run(static function (ExecutionScope $_scope): void {
             $custom = self::stoa()
                 ->routes(['GET /hello' => BuilderHelloRoute::class])
                 ->withServerConfig(new StoaServerConfig(poweredBy: 'Custom'))
@@ -101,7 +102,7 @@ final class StoaApplicationBuilderTest extends CoroutineTestCase
     #[Test]
     public function loadsRoutesFromAFileOrDirectory(): void
     {
-        $this->runInCoroutine(static function (): void {
+        $this->scope->run(static function (ExecutionScope $_scope): void {
             $dir = sys_get_temp_dir() . '/' . uniqid('stoa-routes-', true);
             mkdir($dir);
 

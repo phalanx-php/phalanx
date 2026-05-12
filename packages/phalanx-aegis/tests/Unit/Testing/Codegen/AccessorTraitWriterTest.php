@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Aegis\Codegen\Tests\Unit;
+namespace Phalanx\Tests\Unit\Testing\Codegen;
 
-use Phalanx\Aegis\Codegen\AccessorTraitWriter;
-use Phalanx\Aegis\Codegen\LensMetadata;
+use Phalanx\Testing\Codegen\AccessorTraitWriter;
+use Phalanx\Testing\Codegen\LensMetadata;
 use Phalanx\Testing\Lenses\LedgerLens;
 use Phalanx\Testing\Lenses\LedgerLensFactory;
 use Phalanx\Testing\Lenses\RuntimeLens;

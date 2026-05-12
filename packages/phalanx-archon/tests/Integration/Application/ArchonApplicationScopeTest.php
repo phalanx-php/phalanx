@@ -13,9 +13,9 @@ use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Scopeable;
 use Phalanx\Task\Task;
 use Phalanx\Testing\Assert as PhalanxAssert;
-use Phalanx\Tests\Support\CoroutineTestCase;
+use Phalanx\Testing\PhalanxTestCase;
 
-final class ArchonApplicationScopeTest extends CoroutineTestCase
+final class ArchonApplicationScopeTest extends PhalanxTestCase
 {
     public function testCommandRunsInsideAegisArchonScope(): void
     {
@@ -25,7 +25,7 @@ final class ArchonApplicationScopeTest extends CoroutineTestCase
             ]))
             ->build();
 
-        $this->runInCoroutine(static function () use ($app): void {
+        $this->scope->run(static function (ExecutionScope $_scope) use ($app): void {
             self::assertSame(0, $app->dispatch(['probe']));
         });
 

@@ -8,7 +8,7 @@ use Phalanx\Athena\Stream\HttpSseSource;
 use Phalanx\Iris\HttpStream;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\Suspendable;
-use Phalanx\Tests\Support\CoroutineTestCase;
+use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\PreserveGlobalState;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
@@ -48,7 +48,7 @@ final class FakeHttpStream extends HttpStream
  */
 #[PreserveGlobalState(false)]
 #[RunTestsInSeparateProcesses]
-final class HttpSseSourceTest extends CoroutineTestCase
+final class HttpSseSourceTest extends PhalanxTestCase
 {
     public function testYieldsEventsFromSingleChunk(): void
     {
@@ -108,12 +108,12 @@ final class HttpSseSourceTest extends CoroutineTestCase
      */
     private function collect(HttpSseSource $source): array
     {
-        $events = [];
-        $this->runScoped(static function (ExecutionScope $scope) use ($source, &$events): void {
+        return $this->scope->run(static function (ExecutionScope $scope) use ($source): array {
+            $events = [];
             foreach ($source->events($scope) as $event) {
                 $events[] = $event;
             }
+            return $events;
         });
-        return $events;
     }
 }

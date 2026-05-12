@@ -9,37 +9,39 @@ use Phalanx\Boot\AppContext;
 use Phalanx\Application;
 use Phalanx\OutsideScopeException;
 use Phalanx\Phalanx;
+use Phalanx\Runtime\RuntimeHooks;
+use Phalanx\Runtime\RuntimePolicy;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 use Phalanx\Supervisor\InProcessLedger;
 use Phalanx\Task\Task;
-use Phalanx\Tests\Support\CoroutineTestCase;
+use Phalanx\Testing\PhalanxTestCase;
 
-final class PhalanxStaticHelperTest extends CoroutineTestCase
+final class PhalanxStaticHelperTest extends PhalanxTestCase
 {
     public function testScopeReturnsCurrentlyInstalledScope(): void
     {
-        $this->runInCoroutine(function (): void {
+        $this->scope->run(static function (ExecutionScope $_scope): void {
             $app = self::buildApp();
-            $scope = $app->createScope();
+            $inner = $app->createScope();
 
             $observed = null;
-            $scope->execute(Task::of(static function (ExecutionScope $s) use (&$observed): void {
+            $inner->execute(Task::of(static function (ExecutionScope $_s) use (&$observed): void {
                 $observed = Phalanx::scope();
             }));
 
             self::assertNotNull($observed);
             self::assertInstanceOf(\Phalanx\Scope\Scope::class, $observed);
 
-            $scope->dispose();
+            $inner->dispose();
         });
     }
 
     public function testScopeThrowsOutsideAnyInstalledScope(): void
     {
         // Run in a fresh coroutine with NO scope installed.
-        self::bootCoroutineRuntime();
+        RuntimeHooks::ensure(RuntimePolicy::phalanxManaged());
         $caught = null;
         Coroutine::run(static function () use (&$caught): void {
             try {
@@ -56,7 +58,7 @@ final class PhalanxStaticHelperTest extends CoroutineTestCase
 
     public function testTryScopeReturnsNullOutsideScope(): void
     {
-        self::bootCoroutineRuntime();
+        RuntimeHooks::ensure(RuntimePolicy::phalanxManaged());
         $observed = 'sentinel';
         Coroutine::run(static function () use (&$observed): void {
             $observed = Phalanx::tryScope();
@@ -66,7 +68,7 @@ final class PhalanxStaticHelperTest extends CoroutineTestCase
 
     public function testEachCoroutineSeesItsOwnInstalledScope(): void
     {
-        $this->runInCoroutine(function (): void {
+        $this->scope->run(static function (ExecutionScope $scope): void {
             $app = self::buildApp();
             $scopeA = $app->createScope();
             $scopeB = $app->createScope();
@@ -75,13 +77,13 @@ final class PhalanxStaticHelperTest extends CoroutineTestCase
             $observedB = null;
 
             $scopeA->concurrent(
-                a: Task::of(static function (ExecutionScope $s) use (&$observedA): void {
+                a: Task::of(static function (ExecutionScope $_s) use (&$observedA): void {
                     $observedA = Phalanx::scope();
                 }),
             );
 
             $scopeB->concurrent(
-                b: Task::of(static function (ExecutionScope $s) use (&$observedB): void {
+                b: Task::of(static function (ExecutionScope $_s) use (&$observedB): void {
                     $observedB = Phalanx::scope();
                 }),
             );

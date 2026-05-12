@@ -7,9 +7,9 @@ namespace Phalanx\Tests\Unit\System;
 use OpenSwoole\Coroutine;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\System\UdpSocket;
-use Phalanx\Tests\Support\CoroutineTestCase;
+use Phalanx\Testing\PhalanxTestCase;
 
-final class UdpSocketTest extends CoroutineTestCase
+final class UdpSocketTest extends PhalanxTestCase
 {
     public function testSendAndReceiveFromUdpEchoServer(): void
     {
@@ -26,9 +26,7 @@ final class UdpSocketTest extends CoroutineTestCase
         self::assertNotFalse($address);
         $port = (int) substr($address, strrpos($address, ':') + 1);
 
-        $response = null;
-
-        $this->runScoped(static function (ExecutionScope $scope) use ($server, $port, &$response): void {
+        $response = $this->scope->run(static function (ExecutionScope $scope) use ($server, $port): ?string {
             // Run an echo loop on a sibling coroutine so it can receive the
             // client's send() while the client coroutine is suspended on recv().
             Coroutine::create(static function () use ($server): void {
@@ -47,8 +45,9 @@ final class UdpSocketTest extends CoroutineTestCase
             $client = new UdpSocket();
             $client->connect($scope, '127.0.0.1', $port, 0.5);
             $client->send($scope, 'ping', 0.5);
-            $response = $client->recv($scope, 0.5);
+            $recv = $client->recv($scope, 0.5);
             $client->close();
+            return $recv;
         });
 
         fclose($server);
@@ -58,7 +57,7 @@ final class UdpSocketTest extends CoroutineTestCase
 
     public function testSendWithoutResponseDoesNotBlock(): void
     {
-        $this->runScoped(static function (ExecutionScope $scope): void {
+        $this->scope->run(static function (ExecutionScope $scope): void {
             $client = new UdpSocket();
             $client->connect($scope, '127.0.0.1', 1, 0.5);
             $written = $client->send($scope, 'no-listener', 0.2);

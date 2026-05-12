@@ -6,14 +6,14 @@ namespace Phalanx\Tests\Unit\Scope;
 
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Task;
-use Phalanx\Tests\Support\CoroutineTestCase;
+use Phalanx\Testing\PhalanxTestCase;
 use RuntimeException;
 
-final class TaskExecutorVariadicTest extends CoroutineTestCase
+final class TaskExecutorVariadicTest extends PhalanxTestCase
 {
     public function testSettlePreservesKeysForValuesAndErrors(): void
     {
-        $this->runScoped(static function (ExecutionScope $scope): void {
+        $this->scope->run(static function (ExecutionScope $scope): void {
             $bag = $scope->settle(
                 okTask: Task::of(static fn(): string => 'done'),
                 badTask: Task::of(static function (): never {
@@ -32,7 +32,7 @@ final class TaskExecutorVariadicTest extends CoroutineTestCase
         // Named args require valid PHP identifiers, but variable-array spread is
         // the sanctioned escape hatch for runtime-built task maps. The receiving
         // foreach must still preserve exotic string keys end-to-end.
-        $this->runScoped(static function (ExecutionScope $scope): void {
+        $this->scope->run(static function (ExecutionScope $scope): void {
             $tasks = [
                 'k.dot'  => Task::of(static fn(): string => 'ok'),
                 'k-dash' => Task::of(static function (): never {
@@ -50,7 +50,7 @@ final class TaskExecutorVariadicTest extends CoroutineTestCase
 
     public function testEmptyTaskListSemanticsArePreserved(): void
     {
-        $this->runScoped(static function (ExecutionScope $scope): void {
+        $this->scope->run(static function (ExecutionScope $scope): void {
             self::assertSame([], $scope->concurrent());
             self::assertSame([], $scope->series());
             self::assertNull($scope->waterfall());

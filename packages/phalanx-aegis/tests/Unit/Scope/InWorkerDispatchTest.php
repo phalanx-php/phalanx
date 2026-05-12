@@ -18,27 +18,27 @@ use Phalanx\Service\Services;
 use Phalanx\Supervisor\DispatchMode;
 use Phalanx\Supervisor\TaskRun;
 use Phalanx\Task\Task;
-use Phalanx\Tests\Support\CoroutineTestCase;
+use Phalanx\Testing\PhalanxTestCase;
 use Phalanx\Worker\WorkerDispatch;
 use Phalanx\Worker\WorkerTask;
 use RuntimeException;
 
-final class InWorkerDispatchTest extends CoroutineTestCase
+final class InWorkerDispatchTest extends PhalanxTestCase
 {
     public function testInWorkerRequiresConfiguredDispatch(): void
     {
-        $this->runInCoroutine(static function (): void {
-            $scope = Application::starting()
+        $this->scope->run(static function (ExecutionScope $_scope): void {
+            $inner = Application::starting()
                 ->compile()
                 ->createScope();
 
             try {
                 self::expectRuntimeException(
-                    static fn(): mixed => $scope->inWorker(new InWorkerProbeTask()),
+                    static fn(): mixed => $inner->inWorker(new InWorkerProbeTask()),
                     'no WorkerDispatch configured',
                 );
             } finally {
-                $scope->dispose();
+                $inner->dispose();
             }
         });
     }
@@ -47,22 +47,22 @@ final class InWorkerDispatchTest extends CoroutineTestCase
     {
         $dispatch = new RecordingWorkerDispatch();
 
-        $this->runInCoroutine(static function () use ($dispatch): void {
-            $scope = Application::starting()
+        $this->scope->run(static function (ExecutionScope $_scope) use ($dispatch): void {
+            $inner = Application::starting()
                 ->withWorkerDispatch($dispatch)
                 ->compile()
                 ->createScope();
 
             try {
-                $value = $scope->execute(Task::of(
+                $value = $inner->execute(Task::of(
                     static fn(ExecutionScope $s): mixed => $s->inWorker(new InWorkerProbeTask()),
                 ));
             } finally {
-                $scope->dispose();
+                $inner->dispose();
             }
 
             self::assertSame('worker-result', $value);
-            self::assertSame($scope, $dispatch->scope);
+            self::assertSame($inner, $dispatch->scope);
             self::assertInstanceOf(CancellationToken::class, $dispatch->token);
             self::assertInstanceOf(InWorkerProbeTask::class, $dispatch->task);
             self::assertInstanceOf(TaskRun::class, $dispatch->run);

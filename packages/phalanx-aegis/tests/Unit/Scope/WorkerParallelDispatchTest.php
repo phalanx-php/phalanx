@@ -13,18 +13,18 @@ use Phalanx\Scope\Scope;
 use Phalanx\Scope\TaskExecutor;
 use Phalanx\Scope\TaskScope;
 use Phalanx\Supervisor\DispatchMode;
-use Phalanx\Tests\Support\CoroutineTestCase;
+use Phalanx\Testing\PhalanxTestCase;
 use Phalanx\Worker\WorkerDispatch;
 use Phalanx\Worker\WorkerTask;
 
-final class WorkerParallelDispatchTest extends CoroutineTestCase
+final class WorkerParallelDispatchTest extends PhalanxTestCase
 {
     public function testParallelDispatchesWorkerTasksAsWorkerRuns(): void
     {
         $dispatch = new RecordingParallelDispatch();
 
-        $this->runInCoroutine(static function () use ($dispatch): void {
-            $scope = Application::starting()
+        $this->scope->run(static function () use ($dispatch): void {
+            $inner = Application::starting()
                 ->withWorkerDispatch($dispatch)
                 ->compile()
                 ->createScope();
@@ -32,10 +32,10 @@ final class WorkerParallelDispatchTest extends CoroutineTestCase
             try {
                 self::assertSame(
                     [0 => 10, 1 => 20],
-                    $scope->parallel(new ValueWorkerTask(10), new ValueWorkerTask(20)),
+                    $inner->parallel(new ValueWorkerTask(10), new ValueWorkerTask(20)),
                 );
             } finally {
-                $scope->dispose();
+                $inner->dispose();
             }
         });
 
@@ -46,25 +46,25 @@ final class WorkerParallelDispatchTest extends CoroutineTestCase
     {
         $dispatch = new RecordingParallelDispatch();
 
-        $this->runInCoroutine(static function () use ($dispatch): void {
-            $scope = Application::starting()
+        $settled = $this->scope->run(static function () use ($dispatch): mixed {
+            $inner = Application::starting()
                 ->withWorkerDispatch($dispatch)
                 ->compile()
                 ->createScope();
 
             try {
-                $settled = $scope->settleParallel(
+                return $inner->settleParallel(
                     ok: new ValueWorkerTask(10),
                     err: new FailingWorkerTask('boom'),
                 );
             } finally {
-                $scope->dispose();
+                $inner->dispose();
             }
-
-            self::assertSame(10, $settled->get('ok'));
-            self::assertArrayHasKey('err', $settled->errors);
-            self::assertSame('boom', $settled->errors['err']->getMessage());
         });
+
+        self::assertSame(10, $settled->get('ok'));
+        self::assertArrayHasKey('err', $settled->errors);
+        self::assertSame('boom', $settled->errors['err']->getMessage());
     }
 
     public function testMapParallelDispatchesFactoryTasksWithLimit(): void
@@ -72,14 +72,18 @@ final class WorkerParallelDispatchTest extends CoroutineTestCase
         $dispatch = new LimitRecordingDispatch(total: 5, limit: 2);
         $seen = [];
 
-        $this->runInCoroutine(static function () use ($dispatch, &$seen): void {
-            $scope = Application::starting()
+        // This test requires the outer scope only for coroutine context; the
+        // inner Application manages its own dispatch coordination via channels.
+        // Asserting on $seen and $dispatch->maxActive happens after scope->run()
+        // returns because they are populated inside the run closure via reference.
+        $results = $this->scope->run(static function () use ($dispatch, &$seen): array {
+            $app = Application::starting()
                 ->withWorkerDispatch($dispatch)
-                ->compile()
-                ->createScope();
+                ->compile();
+            $inner = $app->createScope();
 
             try {
-                $results = $scope->mapParallel(
+                $out = $inner->mapParallel(
                     ['a' => 1, 'b' => 2, 'c' => 3, 'd' => 4, 'e' => 5],
                     static fn(int $value): WorkerTask => new ValueWorkerTask($value * 10),
                     limit: 2,
@@ -88,13 +92,14 @@ final class WorkerParallelDispatchTest extends CoroutineTestCase
                     },
                 );
             } finally {
-                $scope->dispose();
+                $inner->dispose();
             }
 
-            self::assertSame(['a' => 10, 'b' => 20, 'c' => 30, 'd' => 40, 'e' => 50], $results);
+            return $out;
         });
 
         ksort($seen);
+        self::assertSame(['a' => 10, 'b' => 20, 'c' => 30, 'd' => 40, 'e' => 50], $results);
         self::assertSame(['a' => 10, 'b' => 20, 'c' => 30, 'd' => 40, 'e' => 50], $seen);
         self::assertSame(2, $dispatch->maxActive);
     }
@@ -103,15 +108,15 @@ final class WorkerParallelDispatchTest extends CoroutineTestCase
     {
         $dispatch = new CoordinatedFailFastDispatch();
 
-        $this->runInCoroutine(static function () use ($dispatch): void {
-            $scope = Application::starting()
+        $this->scope->run(static function () use ($dispatch): void {
+            $inner = Application::starting()
                 ->withWorkerDispatch($dispatch)
                 ->compile()
                 ->createScope();
 
             try {
                 try {
-                    $scope->parallel(
+                    $inner->parallel(
                         new BlockingWorkerTask(),
                         new FailingWorkerTask('fail-fast'),
                     );
@@ -120,7 +125,7 @@ final class WorkerParallelDispatchTest extends CoroutineTestCase
                     self::assertSame('fail-fast', $e->getMessage());
                 }
             } finally {
-                $scope->dispose();
+                $inner->dispose();
             }
         });
 

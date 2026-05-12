@@ -51,7 +51,6 @@
             "Phalanx\\Eidolon\\": "packages/phalanx-eidolon/src/",
             "Phalanx\\PHPStan\\": "packages/phalanx-phpstan/src/",
             "Phalanx\\Skopos\\": "packages/phalanx-skopos/src/",
-            "Phalanx\\Aegis\\Codegen\\": "packages/phalanx-aegis-codegen/src/",
             "Phalanx\\Cli\\": "packages/phalanx-cli/src/"
         }
     },
@@ -76,7 +75,6 @@
             "Phalanx\\Enigma\\Tests\\": "packages/phalanx-enigma/tests/",
             "Phalanx\\PHPStan\\Tests\\": "packages/phalanx-phpstan/tests/",
             "Phalanx\\Tests\\Eidolon\\": "packages/phalanx-eidolon/tests/",
-            "Phalanx\\Aegis\\Codegen\\Tests\\": "packages/phalanx-aegis-codegen/tests/",
             "Phalanx\\Cli\\Tests\\": "packages/phalanx-cli/tests/"
         },
         "classmap": [
@@ -108,7 +106,6 @@
         "test": "@test:all",
         "test:all": [
             "@test:aegis",
-            "@test:aegis-codegen",
             "@test:archon",
             "@test:argos",
             "@test:ai",
@@ -128,7 +125,6 @@
         "test:cli": "php vendor/bin/phpunit packages/phalanx-cli/tests/",
         "test:core": "php vendor/bin/phpunit packages/phalanx-aegis/tests/",
         "test:aegis": "php vendor/bin/phpunit packages/phalanx-aegis/tests/",
-        "test:aegis-codegen": "php vendor/bin/phpunit packages/phalanx-aegis-codegen/tests/",
         "test:archon": "php vendor/bin/phpunit packages/phalanx-archon/tests/",
         "test:argos": "php vendor/bin/phpunit packages/phalanx-argos/tests/",
         "test:ai": "php vendor/bin/phpunit packages/phalanx-athena/tests/",
@@ -184,8 +180,8 @@
         "demo:surreal:live": "php demos/surreal/02-live-query/demo.php",
         "demo:skopos:basic-dev": "php demos/skopos/01-basic-dev/skopos.php",
         "examples:lint": "find demos -name '*.php' -not -path '*/vendor/*' -print0 | xargs -0 -n1 php -l > /dev/null",
-        "gen:test-accessors": "php packages/phalanx-aegis-codegen/bin/regenerate-accessors",
-        "gen:test-accessors:check": "php packages/phalanx-aegis-codegen/bin/check-accessors-in-sync",
+        "gen:test-accessors": "php packages/phalanx-aegis/bin/regenerate-accessors",
+        "gen:test-accessors:check": "php packages/phalanx-aegis/bin/check-accessors-in-sync",
         "post-autoload-dump": "@gen:test-accessors",
         "check": ["@analyse", "@rector:dry", "@cs", "@gen:test-accessors:check", "@test", "@examples:lint"]
     },
@@ -194,13 +190,11 @@
         "sort-packages": true,
         "allow-plugins": {
             "symfony/runtime": true,
-            "dealerdirect/phpcodesniffer-composer-installer": true,
-            "phalanx-php/aegis-codegen": true
+            "dealerdirect/phpcodesniffer-composer-installer": true
         }
     },
     "replace": {
         "phalanx-php/aegis": "self.version",
-        "phalanx-php/aegis-codegen": "self.version",
         "phalanx-php/archon": "self.version",
         "phalanx-php/argos": "self.version",
         "phalanx-php/athena": "self.version",

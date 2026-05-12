@@ -6,9 +6,9 @@ namespace Phalanx\Tests\Unit\System;
 
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\System\TcpClient;
-use Phalanx\Tests\Support\CoroutineTestCase;
+use Phalanx\Testing\PhalanxTestCase;
 
-final class TcpClientTest extends CoroutineTestCase
+final class TcpClientTest extends PhalanxTestCase
 {
     public function testConnectToBoundLocalhostPort(): void
     {
@@ -19,12 +19,11 @@ final class TcpClientTest extends CoroutineTestCase
         self::assertNotFalse($address);
         $port = (int) substr($address, strrpos($address, ':') + 1);
 
-        $connected = null;
-
-        $this->runScoped(static function (ExecutionScope $scope) use ($port, &$connected): void {
+        $connected = $this->scope->run(static function (ExecutionScope $scope) use ($port): bool {
             $client = new TcpClient();
-            $connected = $client->connect($scope, '127.0.0.1', $port, 1.0);
+            $result = $client->connect($scope, '127.0.0.1', $port, 1.0);
             $client->close();
+            return $result;
         });
 
         fclose($listener);
@@ -34,12 +33,11 @@ final class TcpClientTest extends CoroutineTestCase
 
     public function testConnectToClosedPortReturnsFalse(): void
     {
-        $connected = null;
-
-        $this->runScoped(static function (ExecutionScope $scope) use (&$connected): void {
+        $connected = $this->scope->run(static function (ExecutionScope $scope): bool {
             $client = new TcpClient();
-            $connected = $client->connect($scope, '127.0.0.1', 1, 0.5);
+            $result = $client->connect($scope, '127.0.0.1', 1, 0.5);
             $client->close();
+            return $result;
         });
 
         self::assertFalse($connected);

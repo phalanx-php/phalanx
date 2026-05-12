@@ -11,7 +11,7 @@ use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 use Phalanx\Supervisor\InProcessLedger;
 use Phalanx\Task\Task;
-use Phalanx\Tests\Support\CoroutineTestCase;
+use Phalanx\Testing\PhalanxTestCase;
 
 /**
  * Verifies that attributes set on a parent scope flow into every child
@@ -23,11 +23,11 @@ use Phalanx\Tests\Support\CoroutineTestCase;
  * threading. The test would fail loudly if any primitive forgot to pass
  * the attribute snapshot when constructing its child scope.
  */
-final class AttributeInheritanceTest extends CoroutineTestCase
+final class AttributeInheritanceTest extends PhalanxTestCase
 {
     public function testConcurrentChildrenSeeParentAttributes(): void
     {
-        $this->runScoped(static function (ExecutionScope $scope): void {
+        $this->scope->run(static function (ExecutionScope $scope): void {
             $scope = $scope->withAttribute('request.id', 'req-7');
 
             $observed = $scope->concurrent(
@@ -41,10 +41,10 @@ final class AttributeInheritanceTest extends CoroutineTestCase
 
     public function testRaceWinnerSeesParentAttribute(): void
     {
-        $this->runInCoroutine(function (): void {
-            $scope = self::buildScope()->withAttribute('tenant.id', 'acme');
+        $this->scope->run(static function (ExecutionScope $_scope): void {
+            $inner = self::buildScope()->withAttribute('tenant.id', 'acme');
 
-            $value = $scope->race(...[
+            $value = $inner->race(...[
                 Task::of(static fn(ExecutionScope $s) => $s->attribute('tenant.id')),
                 Task::of(static function (ExecutionScope $s): never {
                     $s->delay(5.0);
@@ -53,28 +53,30 @@ final class AttributeInheritanceTest extends CoroutineTestCase
             ]);
 
             self::assertSame('acme', $value);
+            $inner->dispose();
         });
     }
 
     public function testAnyChildSeesParentAttribute(): void
     {
-        $this->runInCoroutine(function (): void {
-            $scope = self::buildScope()->withAttribute('trace.id', 't-99');
+        $this->scope->run(static function (ExecutionScope $_scope): void {
+            $inner = self::buildScope()->withAttribute('trace.id', 't-99');
 
-            $value = $scope->any(...[
+            $value = $inner->any(...[
                 Task::of(static fn(ExecutionScope $s) => $s->attribute('trace.id')),
             ]);
 
             self::assertSame('t-99', $value);
+            $inner->dispose();
         });
     }
 
     public function testMapChildrenSeeParentAttribute(): void
     {
-        $this->runInCoroutine(function (): void {
-            $scope = self::buildScope()->withAttribute('env', 'prod');
+        $this->scope->run(static function (ExecutionScope $_scope): void {
+            $inner = self::buildScope()->withAttribute('env', 'prod');
 
-            $observed = $scope->map(
+            $observed = $inner->map(
                 [1, 2, 3],
                 static fn(int $n) => Task::of(
                     static fn(ExecutionScope $s) => $s->attribute('env') . ":{$n}",
@@ -83,76 +85,80 @@ final class AttributeInheritanceTest extends CoroutineTestCase
             );
 
             self::assertSame([0 => 'prod:1', 1 => 'prod:2', 2 => 'prod:3'], $observed);
+            $inner->dispose();
         });
     }
 
     public function testSeriesChildrenSeeParentAttribute(): void
     {
-        $this->runInCoroutine(function (): void {
-            $scope = self::buildScope()->withAttribute('flag.a', 'on');
+        $this->scope->run(static function (ExecutionScope $_scope): void {
+            $inner = self::buildScope()->withAttribute('flag.a', 'on');
 
-            $observed = $scope->series(...[
+            $observed = $inner->series(...[
                 Task::of(static fn(ExecutionScope $s) => $s->attribute('flag.a')),
                 Task::of(static fn(ExecutionScope $s) => $s->attribute('flag.a')),
             ]);
 
             self::assertSame(['on', 'on'], $observed);
+            $inner->dispose();
         });
     }
 
     public function testSettleChildrenSeeParentAttribute(): void
     {
-        $this->runInCoroutine(function (): void {
-            $scope = self::buildScope()->withAttribute('region', 'us-west');
+        $this->scope->run(static function (ExecutionScope $_scope): void {
+            $inner = self::buildScope()->withAttribute('region', 'us-west');
 
-            $bag = $scope->settle(
+            $bag = $inner->settle(
                 a: Task::of(static fn(ExecutionScope $s) => $s->attribute('region')),
                 b: Task::of(static fn(ExecutionScope $s) => $s->attribute('region')),
             );
 
             self::assertSame('us-west', $bag->get('a'));
             self::assertSame('us-west', $bag->get('b'));
+            $inner->dispose();
         });
     }
 
     public function testGoChildSeesParentAttribute(): void
     {
-        $this->runInCoroutine(function (): void {
-            $scope = self::buildScope()->withAttribute('worker.tag', 'bg-7');
+        $this->scope->run(static function (ExecutionScope $_scope): void {
+            $inner = self::buildScope()->withAttribute('worker.tag', 'bg-7');
 
             $observed = null;
-            $scope->go(static function (ExecutionScope $s) use (&$observed): void {
+            $inner->go(static function (ExecutionScope $s) use (&$observed): void {
                 $observed = $s->attribute('worker.tag');
             });
             \OpenSwoole\Coroutine::usleep(5_000);
 
             self::assertSame('bg-7', $observed);
 
-            $scope->dispose();
+            $inner->dispose();
         });
     }
 
     public function testGrandchildrenInheritTransitively(): void
     {
-        $this->runInCoroutine(function (): void {
-            $scope = self::buildScope()->withAttribute('chain', 'root');
+        $this->scope->run(static function (ExecutionScope $_scope): void {
+            $inner = self::buildScope()->withAttribute('chain', 'root');
 
-            $observed = $scope->concurrent(
+            $observed = $inner->concurrent(
                 outer: Task::of(static fn(ExecutionScope $outer): array => $outer->concurrent(
                     inner: Task::of(static fn(ExecutionScope $inner) => $inner->attribute('chain')),
                 )),
             );
 
             self::assertSame('root', $observed['outer']['inner']);
+            $inner->dispose();
         });
     }
 
     public function testChildAttributeOverrideDoesNotMutateParent(): void
     {
-        $this->runInCoroutine(function (): void {
-            $scope = self::buildScope()->withAttribute('mutable', 'parent-value');
+        $this->scope->run(static function (ExecutionScope $_scope): void {
+            $inner = self::buildScope()->withAttribute('mutable', 'parent-value');
 
-            $scope->concurrent(
+            $inner->concurrent(
                 child: Task::of(static function (ExecutionScope $s): void {
                     // Local override on a derived scope; parent must not see it.
                     $derived = $s->withAttribute('mutable', 'child-value');
@@ -162,7 +168,8 @@ final class AttributeInheritanceTest extends CoroutineTestCase
                 }),
             );
 
-            self::assertSame('parent-value', $scope->attribute('mutable'));
+            self::assertSame('parent-value', $inner->attribute('mutable'));
+            $inner->dispose();
         });
     }
 

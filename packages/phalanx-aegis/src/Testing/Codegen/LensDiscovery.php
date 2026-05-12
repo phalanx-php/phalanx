@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Aegis\Codegen;
+namespace Phalanx\Testing\Codegen;
 
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Testing\Attribute\Lens as LensAttribute;
@@ -11,20 +11,6 @@ use ReflectionAttribute;
 use ReflectionClass;
 use RuntimeException;
 
-/**
- * Discovers all lens classes that should appear on TestApp.
- *
- * Two sources, merged in the order Aegis-first, then bundle-declared:
- *
- *   1. Aegis-native lenses listed on TestApp::AEGIS_NATIVE_LENSES.
- *   2. Lens classes returned by ServiceBundle::lens() for every bundle
- *      declared in any installed package's composer.json
- *      `extra.phalanx.bundles`.
- *
- * Each lens class is reflected for #[\Phalanx\Testing\Attribute\Lens]
- * and converted to LensMetadata. Duplicate accessor names raise a
- * RuntimeException so the codegen output never silently drops a lens.
- */
 final class LensDiscovery
 {
     private const string AEGIS_LENSES_CONSTANT = 'AEGIS_NATIVE_LENSES';

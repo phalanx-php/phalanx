@@ -7,7 +7,7 @@ namespace Phalanx\Tests\Unit\Pool;
 use Phalanx\Pool\ManagedPool;
 use Phalanx\Pool\ManagedPoolFactory;
 use Phalanx\Scope\ExecutionScope;
-use Phalanx\Tests\Support\CoroutineTestCase;
+use Phalanx\Testing\PhalanxTestCase;
 use Phalanx\Trace\Trace;
 use RuntimeException;
 
@@ -40,7 +40,7 @@ final class TestPoolClient
  * coroutine contention can be reliably staged; unit coverage focuses on
  * the lease lifecycle and the use() try/finally guarantee.
  */
-final class ManagedPoolTest extends CoroutineTestCase
+final class ManagedPoolTest extends PhalanxTestCase
 {
     public function testAcquireReleaseRoundTrip(): void
     {
@@ -53,7 +53,7 @@ final class ManagedPoolTest extends CoroutineTestCase
             size: 2,
         );
 
-        $this->runScoped(static function (ExecutionScope $scope) use ($pool): void {
+        $this->scope->run(static function (ExecutionScope $scope) use ($pool): void {
             $lease = $pool->acquire($scope);
             self::assertSame('test/pool', $lease->domain);
             self::assertSame('shared', $lease->mode);
@@ -72,7 +72,7 @@ final class ManagedPoolTest extends CoroutineTestCase
             size: 1,
         );
 
-        $this->runScoped(static function (ExecutionScope $scope) use ($pool): void {
+        $this->scope->run(static function (ExecutionScope $scope) use ($pool): void {
             $threw = false;
 
             try {
@@ -121,7 +121,7 @@ final class ManagedPoolTest extends CoroutineTestCase
             size: 1,
         );
 
-        $this->runScoped(static function (ExecutionScope $scope) use ($pool): void {
+        $this->scope->run(static function (ExecutionScope $scope) use ($pool): void {
             $pool->use($scope, static function (object $client): int {
                 self::assertInstanceOf(TestPoolClient::class, $client);
 
@@ -149,7 +149,7 @@ final class ManagedPoolTest extends CoroutineTestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('ManagedPool(test/closed)::acquire(): pool is closed');
 
-        $this->runScoped(static function (ExecutionScope $scope) use ($pool): void {
+        $this->scope->run(static function (ExecutionScope $scope) use ($pool): void {
             $pool->acquire($scope);
         });
     }

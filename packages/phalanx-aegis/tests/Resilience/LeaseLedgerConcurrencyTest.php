@@ -14,7 +14,7 @@ use Phalanx\Service\Services;
 use Phalanx\Supervisor\InProcessLedger;
 use Phalanx\Supervisor\PoolLease;
 use Phalanx\Task\Task;
-use Phalanx\Tests\Support\CoroutineTestCase;
+use Phalanx\Testing\PhalanxTestCase;
 
 /**
  * Stress the lease ledger under sibling concurrency. Each sibling
@@ -26,21 +26,21 @@ use Phalanx\Tests\Support\CoroutineTestCase;
  *   - No false-positive lease tracking across sibling boundaries (sibling
  *     A's lease should never appear on sibling B's TaskRun)
  */
-final class LeaseLedgerConcurrencyTest extends CoroutineTestCase
+final class LeaseLedgerConcurrencyTest extends PhalanxTestCase
 {
     public function testHundredSiblingsAcquireAndReleaseDistinctLeases(): void
     {
-        $this->runInCoroutine(function (): void {
+        $this->scope->run(static function (ExecutionScope $_scope): void {
             $ledger = new InProcessLedger();
             $app = self::buildApp($ledger);
-            $scope = $app->createScope();
+            $appScope = $app->createScope();
 
             $tasks = [];
             for ($i = 0; $i < 100; $i++) {
                 $tasks["worker-{$i}"] = new LeaseHolder("pool-{$i}");
             }
 
-            $results = $scope->concurrent(...$tasks);
+            $results = $appScope->concurrent(...$tasks);
 
             // Every worker reports its own pool domain back, proving leases
             // are scoped to the right TaskRun.
@@ -48,14 +48,14 @@ final class LeaseLedgerConcurrencyTest extends CoroutineTestCase
                 self::assertSame("pool-{$i}", $results["worker-{$i}"]);
             }
 
-            $scope->dispose();
+            $appScope->dispose();
             self::assertSame(0, $ledger->liveCount());
         });
     }
 
     public function testRapidAcquireReleaseChurnLeavesNoOrphans(): void
     {
-        $this->runInCoroutine(function (): void {
+        $this->scope->run(static function (ExecutionScope $_scope): void {
             $ledger = new InProcessLedger();
             $app = self::buildApp($ledger);
 
@@ -63,10 +63,10 @@ final class LeaseLedgerConcurrencyTest extends CoroutineTestCase
             // the ledger doesn't accumulate stale lease references across
             // back-to-back operations.
             for ($i = 0; $i < 500; $i++) {
-                $scope = $app->createScope();
-                $value = $scope->execute(new LeaseHolder('postgres/main'));
+                $appScope = $app->createScope();
+                $value = $appScope->execute(new LeaseHolder('postgres/main'));
                 self::assertSame('postgres/main', $value);
-                $scope->dispose();
+                $appScope->dispose();
             }
 
             self::assertSame(0, $ledger->liveCount());

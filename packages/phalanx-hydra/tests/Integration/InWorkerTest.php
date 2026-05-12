@@ -17,7 +17,7 @@ use Phalanx\Hydra\Tests\Fixtures\WorkerGreetingServiceImpl;
 use Phalanx\Hydra\Tests\Fixtures\WorkerStderrTask;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Task;
-use Phalanx\Tests\Support\AsyncTestCase;
+use Phalanx\Testing\PhalanxTestCase;
 use Phalanx\Tests\Support\Fixtures\AddNumbers;
 use Phalanx\Tests\Support\Fixtures\CpuIntensiveTask;
 use Phalanx\Tests\Support\Fixtures\TaskThatThrows;
@@ -28,7 +28,7 @@ use PHPUnit\Framework\Attributes\Test;
 
 #[PreserveGlobalState(false)]
 #[RunTestsInSeparateProcesses]
-final class InWorkerTest extends AsyncTestCase
+final class InWorkerTest extends PhalanxTestCase
 {
     private Application $app;
 
@@ -37,7 +37,7 @@ final class InWorkerTest extends AsyncTestCase
     {
         $app = $this->app;
 
-        $this->runAsync(static function () use ($app): void {
+        $this->scope->run(static function (ExecutionScope $_scope) use ($app): void {
             $scope = $app->createScope();
 
             try {
@@ -55,7 +55,7 @@ final class InWorkerTest extends AsyncTestCase
     {
         $app = $this->app;
 
-        $this->runAsync(static function () use ($app): void {
+        $this->scope->run(static function (ExecutionScope $_scope) use ($app): void {
             $scope = $app->createScope();
 
             try {
@@ -76,7 +76,7 @@ final class InWorkerTest extends AsyncTestCase
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Intentional failure');
 
-        $this->runAsync(static function () use ($app): void {
+        $this->scope->run(static function (ExecutionScope $_scope) use ($app): void {
             $scope = $app->createScope();
 
             try {
@@ -92,7 +92,7 @@ final class InWorkerTest extends AsyncTestCase
     {
         $app = $this->app;
 
-        $this->runAsync(static function () use ($app): void {
+        $this->scope->run(static function (ExecutionScope $_scope) use ($app): void {
             $scope = $app->createScope();
 
             try {
@@ -118,7 +118,7 @@ final class InWorkerTest extends AsyncTestCase
 
         try {
             try {
-                $this->runAsync(static function () use ($app): void {
+                $this->scope->run(static function (ExecutionScope $_scope) use ($app): void {
                     $scope = $app->createScope();
 
                     try {
@@ -145,7 +145,7 @@ final class InWorkerTest extends AsyncTestCase
         $app = $this->buildApp(new ParallelConfig(agents: 1));
 
         try {
-            $this->runAsync(static function () use ($app): void {
+            $this->scope->run(static function (ExecutionScope $_scope) use ($app): void {
                 $scope = $app->createScope();
 
                 try {
@@ -163,7 +163,7 @@ final class InWorkerTest extends AsyncTestCase
                 }
             });
 
-            $this->runAsync(static function () use ($app): void {
+            $this->scope->run(static function (ExecutionScope $_scope) use ($app): void {
                 $nextScope = $app->createScope();
 
                 try {
@@ -183,7 +183,7 @@ final class InWorkerTest extends AsyncTestCase
         $app = $this->buildApp(new ParallelConfig(agents: 1));
 
         try {
-            $this->runAsync(static function () use ($app): void {
+            $this->scope->run(static function (ExecutionScope $_scope) use ($app): void {
                 $scope = $app->createScope();
 
                 try {
@@ -226,7 +226,7 @@ final class InWorkerTest extends AsyncTestCase
         $app = $this->buildApp(new ParallelConfig(agents: 1));
 
         try {
-            $this->runAsync(static function () use ($app): void {
+            $this->scope->run(static function (ExecutionScope $_scope) use ($app): void {
                 $scope = $app->createScope();
 
                 try {
@@ -236,7 +236,7 @@ final class InWorkerTest extends AsyncTestCase
                 }
             });
 
-            $this->runAsync(static function () use ($app): void {
+            $this->scope->run(static function (ExecutionScope $_scope) use ($app): void {
                 $scope = $app->createScope();
 
                 try {
@@ -255,7 +255,7 @@ final class InWorkerTest extends AsyncTestCase
     {
         $app = $this->app;
 
-        $this->runAsync(static function () use ($app): void {
+        $this->scope->run(static function (ExecutionScope $_scope) use ($app): void {
             $scope = $app->createScope();
 
             try {
@@ -287,7 +287,7 @@ final class InWorkerTest extends AsyncTestCase
         $app->startup();
 
         try {
-            $this->runAsync(static function () use ($app): void {
+            $this->scope->run(static function (ExecutionScope $_scope) use ($app): void {
                 $scope = $app->createScope();
 
                 try {
@@ -306,7 +306,7 @@ final class InWorkerTest extends AsyncTestCase
     {
         $app = $this->app;
 
-        $this->runAsync(static function () use ($app): void {
+        $this->scope->run(static function (ExecutionScope $_scope) use ($app): void {
             $scope = $app->createScope();
 
             try {
@@ -333,7 +333,7 @@ final class InWorkerTest extends AsyncTestCase
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('current worker runtime exposes');
 
-        $this->runAsync(static function () use ($app): void {
+        $this->scope->run(static function (ExecutionScope $_scope) use ($app): void {
             $scope = $app->createScope();
 
             try {

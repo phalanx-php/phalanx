@@ -13,7 +13,8 @@ use Phalanx\Hermes\WsRouteGroup;
 use Phalanx\Stoa\RouteGroup;
 use Phalanx\Stoa\StoaRunner;
 use Phalanx\Supervisor\InProcessLedger;
-use Phalanx\Tests\Support\CoroutineTestCase;
+use Phalanx\Scope\ExecutionScope;
+use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
 
 /**
@@ -31,12 +32,12 @@ use PHPUnit\Framework\Attributes\Test;
  * outcome) are unit-tested in {@see \Phalanx\Hermes\Tests\Server\WsServerUpgradeUnitTest}
  * with a coroutine-driven mock target; here we only prove the wiring.
  */
-final class WsServerUpgradeTest extends CoroutineTestCase
+final class WsServerUpgradeTest extends PhalanxTestCase
 {
     #[Test]
     public function hermesInstallRegistersWebsocketUpgradeToken(): void
     {
-        $this->runInCoroutine(static function (): void {
+        $this->scope->run(static function (ExecutionScope $_scope): void {
             $app = Application::starting()
                 ->withLedger(new InProcessLedger())
                 ->providers(Hermes::services())
@@ -74,7 +75,7 @@ final class WsServerUpgradeTest extends CoroutineTestCase
     #[Test]
     public function upgradeRequestWithoutHermesInstallReturns426(): void
     {
-        $this->runInCoroutine(static function (): void {
+        $this->scope->run(static function (ExecutionScope $_scope): void {
             $app = Application::starting()
                 ->withLedger(new InProcessLedger())
                 ->providers(Hermes::services())
@@ -108,7 +109,7 @@ final class WsServerUpgradeTest extends CoroutineTestCase
         // instance Hermes constructed — never null, and never the wrong type. The
         // request body itself is not dispatched here because that path enters
         // OpenSwoole's native Response::upgrade() which has no test seam.
-        $this->runInCoroutine(static function (): void {
+        $this->scope->run(static function (ExecutionScope $_scope): void {
             $app = Application::starting()
                 ->withLedger(new InProcessLedger())
                 ->providers(Hermes::services())

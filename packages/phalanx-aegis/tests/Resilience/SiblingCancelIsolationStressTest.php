@@ -12,7 +12,7 @@ use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 use Phalanx\Supervisor\InProcessLedger;
 use Phalanx\Task\Task;
-use Phalanx\Tests\Support\CoroutineTestCase;
+use Phalanx\Testing\PhalanxTestCase;
 
 /**
  * Cross-checks the isolation invariant: a child's cancellation token is
@@ -21,15 +21,15 @@ use Phalanx\Tests\Support\CoroutineTestCase;
  *
  * Cancelling the parent must propagate to ALL children.
  */
-final class SiblingCancelIsolationStressTest extends CoroutineTestCase
+final class SiblingCancelIsolationStressTest extends PhalanxTestCase
 {
     public function testParentCancelTerminatesAllSiblingsQuickly(): void
     {
-        $this->runInCoroutine(function (): void {
+        $this->scope->run(static function (ExecutionScope $_scope): void {
             $ledger = new InProcessLedger();
             $app = self::buildApp($ledger);
-            $scope = $app->createScope();
-            $token = $scope->cancellation();
+            $appScope = $app->createScope();
+            $token = $appScope->cancellation();
 
             // Schedule cancellation after siblings are running.
             \OpenSwoole\Coroutine::create(static function () use ($token): void {
@@ -48,7 +48,7 @@ final class SiblingCancelIsolationStressTest extends CoroutineTestCase
             $start = microtime(true);
             $caught = null;
             try {
-                $scope->concurrent(...$tasks);
+                $appScope->concurrent(...$tasks);
             } catch (Cancelled $e) {
                 $caught = $e;
             }
@@ -57,17 +57,17 @@ final class SiblingCancelIsolationStressTest extends CoroutineTestCase
             self::assertNotNull($caught, 'parent cancel should propagate to children and surface');
             self::assertLessThan(1.0, $elapsed, sprintf('took %.3fs', $elapsed));
 
-            $scope->dispose();
+            $appScope->dispose();
             self::assertSame(0, $ledger->liveCount());
         });
     }
 
     public function testCompletedSiblingDoesNotCancelOthers(): void
     {
-        $this->runInCoroutine(function (): void {
+        $this->scope->run(static function (ExecutionScope $_scope): void {
             $ledger = new InProcessLedger();
             $app = self::buildApp($ledger);
-            $scope = $app->createScope();
+            $appScope = $app->createScope();
 
             // One sibling completes fast, the others a bit slower. All must
             // complete; the fast one must not signal cancellation to peers.
@@ -87,24 +87,24 @@ final class SiblingCancelIsolationStressTest extends CoroutineTestCase
                 }),
             ];
 
-            $results = $scope->concurrent(...$tasks);
+            $results = $appScope->concurrent(...$tasks);
 
             self::assertSame(['fast' => 1, 'slow-a' => 2, 'slow-b' => 3, 'slow-c' => 4], $results);
 
-            $scope->dispose();
+            $appScope->dispose();
             self::assertSame(0, $ledger->liveCount());
         });
     }
 
     public function testRaceCancelsLosersOnly(): void
     {
-        $this->runInCoroutine(function (): void {
+        $this->scope->run(static function (ExecutionScope $_scope): void {
             $ledger = new InProcessLedger();
             $app = self::buildApp($ledger);
-            $scope = $app->createScope();
+            $appScope = $app->createScope();
 
             $start = microtime(true);
-            $value = $scope->race(...[
+            $value = $appScope->race(...[
                 Task::of(static fn(ExecutionScope $s): int => 1),  // wins
                 Task::of(static function (ExecutionScope $s): never {
                     $s->delay(5.0);
@@ -120,7 +120,7 @@ final class SiblingCancelIsolationStressTest extends CoroutineTestCase
             self::assertSame(1, $value);
             self::assertLessThan(1.0, $elapsed, 'losers cancelled fast');
 
-            $scope->dispose();
+            $appScope->dispose();
             self::assertSame(0, $ledger->liveCount());
         });
     }

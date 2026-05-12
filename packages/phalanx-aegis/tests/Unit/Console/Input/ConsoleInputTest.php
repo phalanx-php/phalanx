@@ -7,7 +7,7 @@ namespace Phalanx\Tests\Unit\Console\Input;
 use Phalanx\Console\Input\ConsoleInput;
 use Phalanx\Console\Input\NonInteractiveTtyException;
 use Phalanx\Scope\ExecutionScope;
-use Phalanx\Tests\Support\CoroutineTestCase;
+use Phalanx\Testing\PhalanxTestCase;
 
 /**
  * The "read" tests need a kernel-tracked fd so OpenSwoole's reactor
@@ -36,16 +36,15 @@ use Phalanx\Tests\Support\CoroutineTestCase;
  * because OpenSwoole\Process spawning interacts badly with the test
  * runner's coroutine lifecycle.
  */
-final class ConsoleInputTest extends CoroutineTestCase
+final class ConsoleInputTest extends PhalanxTestCase
 {
     public function testReadDrainsBytesFromKernelPipeStream(): void
     {
         [$proc, $pipes] = self::spawnPipedChild('echo "hello"; fflush(STDOUT);');
 
-        $result = '';
-        $this->runScoped(static function (ExecutionScope $scope) use ($pipes, &$result): void {
+        $result = $this->scope->run(static function (ExecutionScope $scope) use ($pipes): string {
             $input = new ConsoleInput($pipes[1]);
-            $result = $input->read($scope, 64, 1.0);
+            return $input->read($scope, 64, 1.0);
         });
 
         self::assertSame('hello', $result);
@@ -57,10 +56,9 @@ final class ConsoleInputTest extends CoroutineTestCase
         // Child sleeps long enough that our 50ms read timeout fires first.
         [$proc, $pipes] = self::spawnPipedChild('usleep(500000);');
 
-        $result = 'sentinel';
-        $this->runScoped(static function (ExecutionScope $scope) use ($pipes, &$result): void {
+        $result = $this->scope->run(static function (ExecutionScope $scope) use ($pipes): string {
             $input = new ConsoleInput($pipes[1]);
-            $result = $input->read($scope, 64, 0.05);
+            return $input->read($scope, 64, 0.05);
         });
 
         self::assertSame('', $result);
@@ -71,10 +69,9 @@ final class ConsoleInputTest extends CoroutineTestCase
     {
         [$proc, $pipes] = self::spawnPipedChild('echo "alpha\n"; fflush(STDOUT);');
 
-        $result = '';
-        $this->runScoped(static function (ExecutionScope $scope) use ($pipes, &$result): void {
+        $result = $this->scope->run(static function (ExecutionScope $scope) use ($pipes): string {
             $input = new ConsoleInput($pipes[1]);
-            $result = $input->readLine($scope, 1.0);
+            return $input->readLine($scope, 1.0);
         });
 
         self::assertSame("alpha\n", $result);
@@ -95,7 +92,7 @@ final class ConsoleInputTest extends CoroutineTestCase
 
     public function testEnableRawModeOnNonTtyThrows(): void
     {
-        $this->runScoped(static function (ExecutionScope $scope): void {
+        $this->scope->run(static function (ExecutionScope $scope): void {
             $resource = fopen('php://memory', 'r+');
             self::assertNotFalse($resource);
 
@@ -115,7 +112,7 @@ final class ConsoleInputTest extends CoroutineTestCase
 
     public function testRestoreIsNoOpWhenRawModeNotEnabled(): void
     {
-        $this->runScoped(static function (ExecutionScope $scope): void {
+        $this->scope->run(static function (ExecutionScope $scope): void {
             $resource = fopen('php://memory', 'r+');
             self::assertNotFalse($resource);
 

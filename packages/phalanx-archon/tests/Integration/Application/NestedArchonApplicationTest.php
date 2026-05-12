@@ -17,61 +17,65 @@ use Phalanx\Archon\Tests\Fixtures\Commands\NestedRanCommand;
 use Phalanx\Archon\Tests\Fixtures\Commands\NoopCommand;
 use Phalanx\Archon\Tests\Fixtures\Commands\ScanCommand;
 use Phalanx\Runtime\Memory\ManagedResourceState;
-use Phalanx\Tests\Support\AsyncTestCase;
+use Phalanx\Scope\ExecutionScope;
+use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
 
-final class NestedArchonApplicationTest extends AsyncTestCase
+final class NestedArchonApplicationTest extends PhalanxTestCase
 {
     #[Test]
     public function nestedCommandDispatchesToSubcommand(): void
     {
-        $this->runAsync(function (): void {
-            $commands = CommandGroup::of([
-                'net' => CommandGroup::of([
-                    'scan' => [
-                        ScanCommand::class,
-                        new CommandConfig(
-                            description: 'Scan network',
-                            arguments: [Arg::required('target', 'CIDR range')],
-                        ),
-                    ],
-                ], description: 'Network operations'),
-            ]);
+        $commands = CommandGroup::of([
+            'net' => CommandGroup::of([
+                'scan' => [
+                    ScanCommand::class,
+                    new CommandConfig(
+                        description: 'Scan network',
+                        arguments: [Arg::required('target', 'CIDR range')],
+                    ),
+                ],
+            ], description: 'Network operations'),
+        ]);
 
-            $app = Archon::starting()
-                ->commands($commands)
-                ->build();
+        $app = Archon::starting()
+            ->commands($commands)
+            ->build();
+
+        $this->scope->run(static function (ExecutionScope $_scope) use ($app): void {
             $code = $app->dispatch(['net', 'scan', '192.168.1.0/24']);
 
-            $this->assertSame(0, $code);
-            $this->assertSame('192.168.1.0/24', ScanCommand::$lastTarget);
-            $app->shutdown();
+            self::assertSame(0, $code);
+            self::assertSame('192.168.1.0/24', ScanCommand::$lastTarget);
         });
+
+        $app->shutdown();
     }
 
     #[Test]
     public function flatAndNestedCoexist(): void
     {
-        $this->runAsync(function (): void {
-            $commands = CommandGroup::of([
-                'serve' => [FlatRanCommand::class, new CommandConfig(description: 'Start server')],
-                'net' => CommandGroup::of([
-                    'probe' => NestedRanCommand::class,
-                ]),
-            ]);
+        $commands = CommandGroup::of([
+            'serve' => [FlatRanCommand::class, new CommandConfig(description: 'Start server')],
+            'net' => CommandGroup::of([
+                'probe' => NestedRanCommand::class,
+            ]),
+        ]);
 
-            $app = Archon::starting()
-                ->commands($commands)
-                ->build();
+        $app = Archon::starting()
+            ->commands($commands)
+            ->build();
 
+        $this->scope->run(static function (ExecutionScope $_scope) use ($app): void {
             $app->dispatch(['serve']);
-            $this->assertTrue(FlatRanCommand::$ran);
-            $this->assertFalse(NestedRanCommand::$ran);
+            self::assertTrue(FlatRanCommand::$ran);
+            self::assertFalse(NestedRanCommand::$ran);
 
             $app->dispatch(['net', 'probe']);
-            $this->assertTrue(NestedRanCommand::$ran);
-            $app->shutdown();
+            self::assertTrue(NestedRanCommand::$ran);
         });
+
+        $app->shutdown();
     }
 
     #[Test]
@@ -93,10 +97,10 @@ final class NestedArchonApplicationTest extends AsyncTestCase
         $code = $app->dispatch(['net']);
         $output = StreamOutputHelper::contents($stream);
 
-        $this->assertSame(0, $code);
-        $this->assertStringContainsString('Network operations', $output);
-        $this->assertStringContainsString('scan', $output);
-        $this->assertStringContainsString('probe', $output);
+        self::assertSame(0, $code);
+        self::assertStringContainsString('Network operations', $output);
+        self::assertStringContainsString('scan', $output);
+        self::assertStringContainsString('probe', $output);
         $app->shutdown();
     }
 
@@ -120,11 +124,11 @@ final class NestedArchonApplicationTest extends AsyncTestCase
         $code = $app->dispatch(['net', 'deep']);
         $output = StreamOutputHelper::contents($stream);
 
-        $this->assertSame(0, $code);
-        $this->assertStringContainsString('Deep network operations', $output);
-        $this->assertStringContainsString('Usage:', $output);
-        $this->assertStringContainsString('net deep <command> [options]', $output);
-        $this->assertStringContainsString('scan', $output);
+        self::assertSame(0, $code);
+        self::assertStringContainsString('Deep network operations', $output);
+        self::assertStringContainsString('Usage:', $output);
+        self::assertStringContainsString('net deep <command> [options]', $output);
+        self::assertStringContainsString('scan', $output);
         $app->shutdown();
     }
 
@@ -148,10 +152,10 @@ final class NestedArchonApplicationTest extends AsyncTestCase
         $code = $app->dispatch(['help', 'net', 'deep']);
         $output = StreamOutputHelper::contents($stream);
 
-        $this->assertSame(0, $code);
-        $this->assertStringContainsString('Deep network operations', $output);
-        $this->assertStringContainsString('Usage:', $output);
-        $this->assertStringContainsString('net deep <command> [options]', $output);
+        self::assertSame(0, $code);
+        self::assertStringContainsString('Deep network operations', $output);
+        self::assertStringContainsString('Usage:', $output);
+        self::assertStringContainsString('net deep <command> [options]', $output);
         $app->shutdown();
     }
 
@@ -179,10 +183,10 @@ final class NestedArchonApplicationTest extends AsyncTestCase
         $code = $app->dispatch(['help', 'net', 'scan']);
         $output = StreamOutputHelper::contents($stream);
 
-        $this->assertSame(0, $code);
-        $this->assertStringContainsString('Scan network', $output);
-        $this->assertStringContainsString('Usage:', $output);
-        $this->assertStringContainsString('net scan <target>', $output);
+        self::assertSame(0, $code);
+        self::assertStringContainsString('Scan network', $output);
+        self::assertStringContainsString('Usage:', $output);
+        self::assertStringContainsString('net scan <target>', $output);
         $app->shutdown();
     }
 
@@ -208,11 +212,11 @@ final class NestedArchonApplicationTest extends AsyncTestCase
         $code = $app->dispatch(['scan', '--help']);
         $output = StreamOutputHelper::contents($stream);
 
-        $this->assertSame(0, $code);
-        $this->assertNull(ScanCommand::$lastTarget);
-        $this->assertStringContainsString('Scan network', $output);
-        $this->assertStringContainsString('scan <target>', $output);
-        $this->assertSame(ManagedResourceState::Closed, $app->host()->runtime()->memory->resources->all(
+        self::assertSame(0, $code);
+        self::assertNull(ScanCommand::$lastTarget);
+        self::assertStringContainsString('Scan network', $output);
+        self::assertStringContainsString('scan <target>', $output);
+        self::assertSame(ManagedResourceState::Closed, $app->host()->runtime()->memory->resources->all(
             ArchonResourceSid::Command,
         )[0]->state);
         $app->shutdown();
@@ -242,11 +246,11 @@ final class NestedArchonApplicationTest extends AsyncTestCase
         $code = $app->dispatch(['net', 'scan', '--help']);
         $output = StreamOutputHelper::contents($stream);
 
-        $this->assertSame(0, $code);
-        $this->assertNull(ScanCommand::$lastTarget);
-        $this->assertStringContainsString('Scan network', $output);
-        $this->assertStringContainsString('net scan <target>', $output);
-        $this->assertSame(ManagedResourceState::Closed, $app->host()->runtime()->memory->resources->all(
+        self::assertSame(0, $code);
+        self::assertNull(ScanCommand::$lastTarget);
+        self::assertStringContainsString('Scan network', $output);
+        self::assertStringContainsString('net scan <target>', $output);
+        self::assertSame(ManagedResourceState::Closed, $app->host()->runtime()->memory->resources->all(
             ArchonResourceSid::Command,
         )[0]->state);
         $app->shutdown();
@@ -274,9 +278,9 @@ final class NestedArchonApplicationTest extends AsyncTestCase
         $code = $app->dispatch(['help', 'scan', '--help']);
         $output = StreamOutputHelper::contents($stream);
 
-        $this->assertSame(0, $code);
-        $this->assertStringContainsString('Scan network', $output);
-        $this->assertStringContainsString('scan <target>', $output);
+        self::assertSame(0, $code);
+        self::assertStringContainsString('Scan network', $output);
+        self::assertStringContainsString('scan <target>', $output);
         $app->shutdown();
     }
 
@@ -299,10 +303,10 @@ final class NestedArchonApplicationTest extends AsyncTestCase
         $output = StreamOutputHelper::contents($stream);
         $resource = $app->host()->runtime()->memory->resources->all(ArchonResourceSid::Command)[0];
 
-        $this->assertSame(1, $code);
-        $this->assertStringContainsString('Unknown command: net missing', $output);
-        $this->assertSame(ManagedResourceState::Failed, $resource->state);
-        $this->assertSame('unknown_command', $app->host()->runtime()->memory->resources->annotations(
+        self::assertSame(1, $code);
+        self::assertStringContainsString('Unknown command: net missing', $output);
+        self::assertSame(ManagedResourceState::Failed, $resource->state);
+        self::assertSame('unknown_command', $app->host()->runtime()->memory->resources->annotations(
             $resource->id,
         )[ArchonAnnotationSid::ErrorKind->value()]);
         $app->shutdown();
@@ -328,11 +332,11 @@ final class NestedArchonApplicationTest extends AsyncTestCase
         $resource = $app->host()->runtime()->memory->resources->all(ArchonResourceSid::Command)[0];
         $annotations = $app->host()->runtime()->memory->resources->annotations($resource->id);
 
-        $this->assertSame(1, $code);
-        $this->assertStringContainsString('Unknown command: net missing', $output);
-        $this->assertSame(ManagedResourceState::Failed, $resource->state);
-        $this->assertSame('net missing', $annotations[ArchonAnnotationSid::CommandName->value()]);
-        $this->assertSame('unknown_command', $annotations[ArchonAnnotationSid::ErrorKind->value()]);
+        self::assertSame(1, $code);
+        self::assertStringContainsString('Unknown command: net missing', $output);
+        self::assertSame(ManagedResourceState::Failed, $resource->state);
+        self::assertSame('net missing', $annotations[ArchonAnnotationSid::CommandName->value()]);
+        self::assertSame('unknown_command', $annotations[ArchonAnnotationSid::ErrorKind->value()]);
         $app->shutdown();
     }
 
@@ -360,10 +364,10 @@ final class NestedArchonApplicationTest extends AsyncTestCase
         $code = $app->dispatch(['net', 'scan']);
         $output = StreamOutputHelper::contents($stream);
 
-        $this->assertSame(1, $code);
-        $this->assertStringContainsString('Error:', $output);
-        $this->assertStringContainsString('Usage:', $output);
-        $this->assertStringContainsString('net scan <target>', $output);
+        self::assertSame(1, $code);
+        self::assertStringContainsString('Error:', $output);
+        self::assertStringContainsString('Usage:', $output);
+        self::assertStringContainsString('net scan <target>', $output);
         $app->shutdown();
     }
 
@@ -392,11 +396,11 @@ final class NestedArchonApplicationTest extends AsyncTestCase
         $output = StreamOutputHelper::contents($stream);
         $resource = $app->host()->runtime()->memory->resources->all(ArchonResourceSid::Command)[0];
 
-        $this->assertSame(1, $code);
-        $this->assertNull(ScanCommand::$lastTarget);
-        $this->assertStringContainsString('Error: Unexpected argument: extra', $output);
-        $this->assertStringContainsString('net scan <target>', $output);
-        $this->assertSame(ManagedResourceState::Failed, $resource->state);
+        self::assertSame(1, $code);
+        self::assertNull(ScanCommand::$lastTarget);
+        self::assertStringContainsString('Error: Unexpected argument: extra', $output);
+        self::assertStringContainsString('net scan <target>', $output);
+        self::assertSame(ManagedResourceState::Failed, $resource->state);
         $app->shutdown();
     }
 
@@ -424,11 +428,11 @@ final class NestedArchonApplicationTest extends AsyncTestCase
         $output = StreamOutputHelper::contents($stream);
         $resource = $app->host()->runtime()->memory->resources->all(ArchonResourceSid::Command)[0];
 
-        $this->assertSame(1, $code);
-        $this->assertNull(ScanCommand::$lastTarget);
-        $this->assertStringContainsString('Error: Option --detach does not accept a value', $output);
-        $this->assertStringContainsString('scan <target> [options]', $output);
-        $this->assertSame(ManagedResourceState::Failed, $resource->state);
+        self::assertSame(1, $code);
+        self::assertNull(ScanCommand::$lastTarget);
+        self::assertStringContainsString('Error: Option --detach does not accept a value', $output);
+        self::assertStringContainsString('scan <target> [options]', $output);
+        self::assertSame(ManagedResourceState::Failed, $resource->state);
         $app->shutdown();
     }
 
@@ -451,11 +455,11 @@ final class NestedArchonApplicationTest extends AsyncTestCase
         $code = $app->dispatch(['net', '--help']);
         $output = StreamOutputHelper::contents($stream);
 
-        $this->assertSame(0, $code);
-        $this->assertStringContainsString('Network operations', $output);
-        $this->assertStringContainsString('net <command>', $output);
-        $this->assertStringContainsString('scan', $output);
-        $this->assertStringContainsString('probe', $output);
+        self::assertSame(0, $code);
+        self::assertStringContainsString('Network operations', $output);
+        self::assertStringContainsString('net <command>', $output);
+        self::assertStringContainsString('scan', $output);
+        self::assertStringContainsString('probe', $output);
         $app->shutdown();
     }
 
@@ -481,11 +485,11 @@ final class NestedArchonApplicationTest extends AsyncTestCase
         $code = $app->dispatch(['scan', 'help']);
         $output = StreamOutputHelper::contents($stream);
 
-        $this->assertSame(0, $code);
-        $this->assertNull(ScanCommand::$lastTarget);
-        $this->assertStringContainsString('Scan network', $output);
-        $this->assertStringContainsString('scan <target>', $output);
-        $this->assertSame(ManagedResourceState::Closed, $app->host()->runtime()->memory->resources->all(
+        self::assertSame(0, $code);
+        self::assertNull(ScanCommand::$lastTarget);
+        self::assertStringContainsString('Scan network', $output);
+        self::assertStringContainsString('scan <target>', $output);
+        self::assertSame(ManagedResourceState::Closed, $app->host()->runtime()->memory->resources->all(
             ArchonResourceSid::Command,
         )[0]->state);
         $app->shutdown();
@@ -515,11 +519,11 @@ final class NestedArchonApplicationTest extends AsyncTestCase
         $code = $app->dispatch(['net', 'scan', 'help']);
         $output = StreamOutputHelper::contents($stream);
 
-        $this->assertSame(0, $code);
-        $this->assertNull(ScanCommand::$lastTarget);
-        $this->assertStringContainsString('Scan network', $output);
-        $this->assertStringContainsString('net scan <target>', $output);
-        $this->assertSame(ManagedResourceState::Closed, $app->host()->runtime()->memory->resources->all(
+        self::assertSame(0, $code);
+        self::assertNull(ScanCommand::$lastTarget);
+        self::assertStringContainsString('Scan network', $output);
+        self::assertStringContainsString('net scan <target>', $output);
+        self::assertSame(ManagedResourceState::Closed, $app->host()->runtime()->memory->resources->all(
             ArchonResourceSid::Command,
         )[0]->state);
         $app->shutdown();
@@ -542,9 +546,9 @@ final class NestedArchonApplicationTest extends AsyncTestCase
         $output = StreamOutputHelper::contents($stream);
         $resource = $app->host()->runtime()->memory->resources->all(ArchonResourceSid::Command)[0];
 
-        $this->assertSame(1, $code);
-        $this->assertStringContainsString('Unknown command: missing', $output);
-        $this->assertSame(ManagedResourceState::Failed, $resource->state);
+        self::assertSame(1, $code);
+        self::assertStringContainsString('Unknown command: missing', $output);
+        self::assertSame(ManagedResourceState::Failed, $resource->state);
         $app->shutdown();
     }
 
@@ -567,11 +571,11 @@ final class NestedArchonApplicationTest extends AsyncTestCase
         $code = $app->dispatch(['help']);
         $output = StreamOutputHelper::contents($stream);
 
-        $this->assertSame(0, $code);
-        $this->assertStringContainsString('serve', $output);
-        $this->assertStringContainsString('Start server', $output);
-        $this->assertStringContainsString('net', $output);
-        $this->assertStringContainsString('Network operations', $output);
+        self::assertSame(0, $code);
+        self::assertStringContainsString('serve', $output);
+        self::assertStringContainsString('Start server', $output);
+        self::assertStringContainsString('net', $output);
+        self::assertStringContainsString('Network operations', $output);
         $app->shutdown();
     }
 
@@ -592,9 +596,9 @@ final class NestedArchonApplicationTest extends AsyncTestCase
         $output = StreamOutputHelper::contents($stream);
         $resource = $app->host()->runtime()->memory->resources->all(ArchonResourceSid::Command)[0];
 
-        $this->assertSame(1, $code);
-        $this->assertStringContainsString('Unknown command: scan extra', $output);
-        $this->assertSame(ManagedResourceState::Failed, $resource->state);
+        self::assertSame(1, $code);
+        self::assertStringContainsString('Unknown command: scan extra', $output);
+        self::assertSame(ManagedResourceState::Failed, $resource->state);
         $app->shutdown();
     }
 
@@ -605,5 +609,4 @@ final class NestedArchonApplicationTest extends AsyncTestCase
         FlatRanCommand::$ran = false;
         NestedRanCommand::$ran = false;
     }
-
 }

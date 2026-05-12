@@ -2,15 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Aegis\Codegen;
+namespace Phalanx\Testing\Codegen;
 
 use Phalanx\Testing\Lens;
 use Phalanx\Testing\LensFactory;
 
-/**
- * Resolved metadata for a single registered lens. Produced by LensDiscovery,
- * consumed by AccessorTraitWriter.
- */
 final readonly class LensMetadata
 {
     /**

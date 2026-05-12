@@ -52,7 +52,7 @@ final class RuntimeLensTest extends TestCase
 
             $app->application->scoped(Task::named(
                 'demo.runtime.health',
-                static function (ExecutionScope $scope) use ($app, &$reportedHealthy): void {
+                static function (ExecutionScope $_scope) use ($app, &$reportedHealthy): void {
                     $app->runtime->assertHealthy();
                     $reportedHealthy = true;
                 },

@@ -9,10 +9,11 @@ use OpenSwoole\Process;
 use Phalanx\Archon\Runtime\Identity\ConsoleSignal;
 use Phalanx\Archon\Runtime\Identity\ConsoleSignalPolicy;
 use Phalanx\Archon\Runtime\Identity\ConsoleSignalTrap;
-use Phalanx\Tests\Support\CoroutineTestCase;
+use Phalanx\Scope\ExecutionScope;
+use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
 
-final class ConsoleSignalTrapTest extends CoroutineTestCase
+final class ConsoleSignalTrapTest extends PhalanxTestCase
 {
     #[Test]
     public function reactorDeliversInstalledSignalToHandlerThenRestoreRemovesIt(): void
@@ -22,9 +23,8 @@ final class ConsoleSignalTrapTest extends CoroutineTestCase
         }
 
         $received = null;
-        $trap = null;
 
-        $this->runInCoroutine(static function () use (&$received, &$trap): void {
+        $this->scope->run(static function (ExecutionScope $_scope) use (&$received): void {
             $trap = ConsoleSignalTrap::install(
                 ConsoleSignalPolicy::forSignals([SIGUSR2 => 140]),
                 static function (ConsoleSignal $signal) use (&$received): void {

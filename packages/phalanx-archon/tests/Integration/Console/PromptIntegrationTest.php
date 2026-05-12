@@ -12,7 +12,7 @@ use Phalanx\Archon\Console\Style\Style;
 use Phalanx\Archon\Console\Style\Theme;
 use Phalanx\Console\Input\ConsoleInput;
 use Phalanx\Scope\ExecutionScope;
-use Phalanx\Tests\Support\CoroutineTestCase;
+use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
 
 /**
@@ -22,7 +22,7 @@ use PHPUnit\Framework\Attributes\Test;
  * pass the resource itself to waitEvent (which php_stream_casts the kernel
  * fd) rather than int-casting the PHP resource id.
  */
-final class PromptIntegrationTest extends CoroutineTestCase
+final class PromptIntegrationTest extends PhalanxTestCase
 {
     #[Test]
     public function nonInteractiveStreamShortCircuitsToDefault(): void
@@ -30,7 +30,6 @@ final class PromptIntegrationTest extends CoroutineTestCase
         $outStream = $this->outStream();
         $output    = $this->streamOutput($outStream);
         $theme     = $this->theme();
-        $captured  = null;
 
         $resource = fopen('php://memory', 'r+');
         self::assertNotFalse($resource);
@@ -41,13 +40,12 @@ final class PromptIntegrationTest extends CoroutineTestCase
 
             self::assertFalse($reader->isInteractive);
 
-            $this->runScoped(static function (ExecutionScope $scope) use (
+            $captured = $this->scope->run(static function (ExecutionScope $scope) use (
                 $output,
                 $reader,
                 $theme,
-                &$captured,
-            ): void {
-                $captured = (new TextInput(
+            ): mixed {
+                return (new TextInput(
                     theme: $theme,
                     label: 'Name',
                     placeholder: '',
@@ -65,16 +63,17 @@ final class PromptIntegrationTest extends CoroutineTestCase
     public function rawInputDrainsKernelPipeIntoCanonicalKeyTokensUnderAegisRuntime(): void
     {
         [$proc, $pipes] = self::spawnPipedChild('echo "hi\n"; fflush(STDOUT);');
-        $captured       = [];
 
         try {
-            $this->runScoped(static function (ExecutionScope $scope) use ($pipes, &$captured): void {
+            $captured = $this->scope->run(static function (ExecutionScope $scope) use ($pipes): array {
                 $consoleInput = new ConsoleInput($pipes[1]);
                 $reader       = new RawInput($consoleInput);
 
-                $captured[] = $reader->nextKey($scope);
-                $captured[] = $reader->nextKey($scope);
-                $captured[] = $reader->nextKey($scope);
+                return [
+                    $reader->nextKey($scope),
+                    $reader->nextKey($scope),
+                    $reader->nextKey($scope),
+                ];
             });
 
             self::assertSame(['h', 'i', 'enter'], $captured);
@@ -87,14 +86,13 @@ final class PromptIntegrationTest extends CoroutineTestCase
     public function rawInputReturnsEmptyStringWhenPipeClosesBeforeData(): void
     {
         [$proc, $pipes] = self::spawnPipedChild('exit(0);');
-        $key            = 'sentinel';
 
         try {
-            $this->runScoped(static function (ExecutionScope $scope) use ($pipes, &$key): void {
+            $key = $this->scope->run(static function (ExecutionScope $scope) use ($pipes): string {
                 $consoleInput = new ConsoleInput($pipes[1]);
                 $reader       = new RawInput($consoleInput);
 
-                $key = $reader->nextKey($scope);
+                return $reader->nextKey($scope);
             });
 
             self::assertSame('', $key);

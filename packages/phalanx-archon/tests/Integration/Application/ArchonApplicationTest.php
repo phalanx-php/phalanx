@@ -23,10 +23,10 @@ use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Scopeable;
 use Phalanx\Task\Task;
 use Phalanx\Testing\Assert as PhalanxAssert;
-use Phalanx\Tests\Support\CoroutineTestCase;
+use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
 
-final class ArchonApplicationTest extends CoroutineTestCase
+final class ArchonApplicationTest extends PhalanxTestCase
 {
     #[Test]
     public function facadeBuildsDispatchableCommandFirstApplication(): void
@@ -37,7 +37,7 @@ final class ArchonApplicationTest extends CoroutineTestCase
             ]))
             ->build();
 
-        $this->runInCoroutine(static function () use ($app): void {
+        $this->scope->run(static function (ExecutionScope $_scope) use ($app): void {
             self::assertSame(0, $app->dispatch(['probe']));
         });
 
@@ -63,7 +63,7 @@ final class ArchonApplicationTest extends CoroutineTestCase
             ]))
             ->build();
 
-        $this->runInCoroutine(static function () use ($app): void {
+        $this->scope->run(static function (ExecutionScope $_scope) use ($app): void {
             self::assertSame(0, $app->run());
         });
 
@@ -113,7 +113,7 @@ final class ArchonApplicationTest extends CoroutineTestCase
         );
         $app = $builder->build();
 
-        $this->runInCoroutine(static function () use ($app): void {
+        $this->scope->run(static function (ExecutionScope $_scope) use ($app): void {
             self::assertSame(0, $app->dispatch(['deploy', 'nginx', '--detach']));
         });
 
@@ -142,7 +142,7 @@ final class ArchonApplicationTest extends CoroutineTestCase
             ->withConsoleConfig(new ConsoleConfig(errorOutput: StreamOutputHelper::output($stream)))
             ->build();
 
-        $this->runInCoroutine(static function () use ($app, $stream): void {
+        $this->scope->run(static function (ExecutionScope $_scope) use ($app, $stream): void {
             $code = $app->dispatch(['fail']);
 
             self::assertSame(1, $code);
@@ -165,7 +165,7 @@ final class ArchonApplicationTest extends CoroutineTestCase
             ->withConsoleConfig(new ConsoleConfig(errorOutput: StreamOutputHelper::output($stream)))
             ->build();
 
-        $this->runInCoroutine(static function () use ($app, $stream): void {
+        $this->scope->run(static function (ExecutionScope $_scope) use ($app, $stream): void {
             $code = $app->dispatch(['missing']);
 
             self::assertSame(1, $code);
@@ -190,7 +190,7 @@ final class ArchonApplicationTest extends CoroutineTestCase
             ->withConsoleConfig(new ConsoleConfig(errorOutput: StreamOutputHelper::output($stream)))
             ->build();
 
-        $this->runInCoroutine(static function () use ($app, $stream): void {
+        $this->scope->run(static function (ExecutionScope $_scope) use ($app, $stream): void {
             $code = $app->dispatch(['help', 'missing']);
 
             self::assertSame(1, $code);
@@ -215,7 +215,7 @@ final class ArchonApplicationTest extends CoroutineTestCase
             ->withConsoleConfig(new ConsoleConfig(errorOutput: StreamOutputHelper::output($stream)))
             ->build();
 
-        $this->runInCoroutine(static function () use ($app, $missing): void {
+        $this->scope->run(static function (ExecutionScope $_scope) use ($app, $missing): void {
             self::assertSame(1, $app->dispatch([$missing]));
         });
 
@@ -241,7 +241,7 @@ final class ArchonApplicationTest extends CoroutineTestCase
             ->withConsoleConfig(new ConsoleConfig(errorOutput: StreamOutputHelper::output($stream)))
             ->build();
 
-        $this->runInCoroutine(static function () use ($app, $stream): void {
+        $this->scope->run(static function (ExecutionScope $_scope) use ($app, $stream): void {
             self::assertSame(130, $app->dispatch(['cancel']));
             self::assertStringContainsString('Cancelled: signal:int', StreamOutputHelper::contents($stream));
         });
@@ -273,17 +273,17 @@ final class ArchonApplicationTest extends CoroutineTestCase
             ->withConsoleConfig(new ConsoleConfig(errorOutput: StreamOutputHelper::output($stream)))
             ->build();
 
-        $this->runInCoroutine(static function () use ($app, $stream, &$token): void {
+        $this->scope->run(static function (ExecutionScope $_scope) use ($app, $stream, &$token): void {
             $token = CancellationToken::create();
-            $scope = $app->host()->createScope($token);
+            $outerScope = $app->host()->createScope($token);
 
             try {
-                $code = $app->dispatchScoped(['cancel'], $scope);
+                $code = $app->dispatchScoped(['cancel'], $outerScope);
 
                 self::assertSame(130, $code);
                 self::assertStringContainsString('Cancelled: scope cancelled', StreamOutputHelper::contents($stream));
             } finally {
-                $scope->dispose();
+                $outerScope->dispose();
             }
         });
 
@@ -319,17 +319,17 @@ final class ArchonApplicationTest extends CoroutineTestCase
             ->withConsoleConfig(new ConsoleConfig(errorOutput: StreamOutputHelper::output($stream)))
             ->build();
 
-        $this->runInCoroutine(static function () use ($app, $signals, $stream): void {
+        $this->scope->run(static function (ExecutionScope $_scope) use ($app, $signals, $stream): void {
             $token = CancellationToken::create();
-            $scope = $app->host()->createScope($token);
+            $outerScope = $app->host()->createScope($token);
 
             try {
-                $code = $app->dispatchScoped(['cancel'], $scope, $signals);
+                $code = $app->dispatchScoped(['cancel'], $outerScope, $signals);
 
                 self::assertSame(143, $code);
                 self::assertStringContainsString('Cancelled: signal:term', StreamOutputHelper::contents($stream));
             } finally {
-                $scope->dispose();
+                $outerScope->dispose();
             }
         });
 

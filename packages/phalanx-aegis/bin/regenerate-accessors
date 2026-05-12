@@ -3,22 +3,12 @@
 
 declare(strict_types=1);
 
-/**
- * Regenerate Phalanx\Testing\Generated\TestAppAccessors.
- *
- * Standalone entry point for monorepo development; mirrors what the Composer
- * plugin does on post-autoload-dump in a userland project. Reads root
- * composer.json `extra.phalanx.bundles` plus every monorepo package's
- * own `extra.phalanx.bundles`, runs LensDiscovery, and writes the
- * regenerated trait into packages/phalanx-aegis/src/Testing/Generated/.
- */
-
-use Phalanx\Aegis\Codegen\AccessorTraitWriter;
-use Phalanx\Aegis\Codegen\LensDiscovery;
+use Phalanx\Testing\Codegen\AccessorTraitWriter;
+use Phalanx\Testing\Codegen\LensDiscovery;
 
 $autoloadCandidates = [
-    __DIR__ . '/../vendor/autoload.php',
     __DIR__ . '/../../../vendor/autoload.php',
+    __DIR__ . '/../vendor/autoload.php',
 ];
 
 foreach ($autoloadCandidates as $candidate) {

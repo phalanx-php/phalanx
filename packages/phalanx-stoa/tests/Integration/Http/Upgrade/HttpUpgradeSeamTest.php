@@ -9,15 +9,16 @@ use Phalanx\Application;
 use Phalanx\Stoa\RouteGroup;
 use Phalanx\Stoa\StoaRunner;
 use Phalanx\Supervisor\InProcessLedger;
-use Phalanx\Tests\Support\CoroutineTestCase;
+use Phalanx\Scope\ExecutionScope;
+use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
 
-final class HttpUpgradeSeamTest extends CoroutineTestCase
+final class HttpUpgradeSeamTest extends PhalanxTestCase
 {
     #[Test]
     public function upgradeRequestWithoutRegistrarReturns426(): void
     {
-        $this->runInCoroutine(static function (): void {
+        $this->scope->run(static function (ExecutionScope $_scope): void {
             $app = Application::starting()
                 ->withLedger(new InProcessLedger())
                 ->compile()
@@ -42,7 +43,7 @@ final class HttpUpgradeSeamTest extends CoroutineTestCase
     #[Test]
     public function plainRequestSkipsUpgradePath(): void
     {
-        $this->runInCoroutine(static function (): void {
+        $this->scope->run(static function (ExecutionScope $_scope): void {
             $app = Application::starting()
                 ->withLedger(new InProcessLedger())
                 ->compile()
@@ -63,7 +64,7 @@ final class HttpUpgradeSeamTest extends CoroutineTestCase
     #[Test]
     public function upgradeHeaderWithoutConnectionUpgradeIsIgnored(): void
     {
-        $this->runInCoroutine(static function (): void {
+        $this->scope->run(static function (ExecutionScope $_scope): void {
             $app = Application::starting()
                 ->withLedger(new InProcessLedger())
                 ->compile()
@@ -87,7 +88,7 @@ final class HttpUpgradeSeamTest extends CoroutineTestCase
     #[Test]
     public function registeredTokenAppearsInRegistry(): void
     {
-        $this->runInCoroutine(static function (): void {
+        $this->scope->run(static function (ExecutionScope $_scope): void {
             $app = Application::starting()
                 ->withLedger(new InProcessLedger())
                 ->compile()

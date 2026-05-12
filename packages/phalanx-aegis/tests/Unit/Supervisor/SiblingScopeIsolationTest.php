@@ -12,7 +12,7 @@ use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 use Phalanx\Supervisor\InProcessLedger;
 use Phalanx\Task\Task;
-use Phalanx\Tests\Support\CoroutineTestCase;
+use Phalanx\Testing\PhalanxTestCase;
 use RuntimeException;
 
 /**
@@ -21,16 +21,18 @@ use RuntimeException;
  * doesn't bleed between siblings) but share the singleton container so
  * pool depth is NOT amplified by per-child scopes.
  */
-final class SiblingScopeIsolationTest extends CoroutineTestCase
+final class SiblingScopeIsolationTest extends PhalanxTestCase
 {
     public function testConcurrentChildrenGetSeparateScopedInstances(): void
     {
-        $this->runInCoroutine(function (): void {
-            $ledger = new InProcessLedger();
-            $app = $this->buildAppWithScopedCounter($ledger);
+        $ledger = new InProcessLedger();
 
-            /** @var array<string, int> $observed */
-            $observed = [];
+        /** @var array<string, int> $observed */
+        $observed = [];
+
+        $results = $this->scope->run(static function (ExecutionScope $_scope) use ($ledger, &$observed): mixed {
+            $app = self::buildAppWithScopedCounter($ledger);
+
             $task1 = Task::of(static function (ExecutionScope $s) use (&$observed): int {
                 $counter = $s->service(\Phalanx\Tests\Unit\Supervisor\Counter::class);
                 $counter->n++;
@@ -44,28 +46,32 @@ final class SiblingScopeIsolationTest extends CoroutineTestCase
                 return $counter->n;
             });
 
-            $scope = $app->createScope();
-            $results = $scope->concurrent(
+            $inner = $app->createScope();
+            $results = $inner->concurrent(
                 a: $task1,
                 b: $task2,
             );
-            $scope->dispose();
+            $inner->dispose();
 
-            // Each child has its own scoped Counter — different object ids.
-            self::assertNotSame($observed['a'], $observed['b']);
-            // Each counter started fresh — neither sees the other's mutations.
-            self::assertSame(1, $results['a']);
-            self::assertSame(100, $results['b']);
+            return $results;
         });
+
+        // Each child has its own scoped Counter — different object ids.
+        self::assertNotSame($observed['a'], $observed['b']);
+        // Each counter started fresh — neither sees the other's mutations.
+        self::assertSame(1, $results['a']);
+        self::assertSame(100, $results['b']);
     }
 
     public function testConcurrentChildrenShareSingletonInstances(): void
     {
-        $this->runInCoroutine(function (): void {
-            $ledger = new InProcessLedger();
-            $app = $this->buildAppWithSingletonPool($ledger);
+        $ledger = new InProcessLedger();
 
-            $observed = [];
+        $observed = [];
+
+        $this->scope->run(static function (ExecutionScope $_scope) use ($ledger, &$observed): void {
+            $app = self::buildAppWithSingletonPool($ledger);
+
             $task1 = Task::of(static function (ExecutionScope $s) use (&$observed): void {
                 $pool = $s->service(\Phalanx\Tests\Unit\Supervisor\PoolStub::class);
                 $observed['a'] = spl_object_id($pool);
@@ -75,20 +81,20 @@ final class SiblingScopeIsolationTest extends CoroutineTestCase
                 $observed['b'] = spl_object_id($pool);
             });
 
-            $scope = $app->createScope();
-            $scope->concurrent(a: $task1, b: $task2);
-            $scope->dispose();
-
-            // Same singleton object — pool depth is not amplified.
-            self::assertSame($observed['a'], $observed['b']);
+            $inner = $app->createScope();
+            $inner->concurrent(a: $task1, b: $task2);
+            $inner->dispose();
         });
+
+        // Same singleton object — pool depth is not amplified.
+        self::assertSame($observed['a'], $observed['b']);
     }
 
     public function testParentCancellationInterruptsChildren(): void
     {
-        $this->runInCoroutine(function (): void {
+        $this->scope->run(static function (ExecutionScope $_scope): void {
             $ledger = new InProcessLedger();
-            $app = $this->buildAppWithScopedCounter($ledger);
+            $app = self::buildAppWithScopedCounter($ledger);
 
             $reachedAfterDelay = false;
             $task = Task::of(static function (ExecutionScope $s) use (&$reachedAfterDelay): never {
@@ -98,8 +104,8 @@ final class SiblingScopeIsolationTest extends CoroutineTestCase
                 throw new RuntimeException('should not reach');
             });
 
-            $scope = $app->createScope();
-            $parentToken = $scope->cancellation();
+            $inner = $app->createScope();
+            $parentToken = $inner->cancellation();
             \OpenSwoole\Coroutine::create(static function () use ($parentToken): void {
                 \OpenSwoole\Coroutine::usleep(20_000);
                 $parentToken->cancel();
@@ -108,11 +114,11 @@ final class SiblingScopeIsolationTest extends CoroutineTestCase
             $start = microtime(true);
             $caught = null;
             try {
-                $scope->concurrent(only: $task);
+                $inner->concurrent(only: $task);
             } catch (Cancelled $e) {
                 $caught = $e;
             } finally {
-                $scope->dispose();
+                $inner->dispose();
             }
             $elapsed = microtime(true) - $start;
 
@@ -125,9 +131,9 @@ final class SiblingScopeIsolationTest extends CoroutineTestCase
 
     public function testRaceCancelsLosersThroughTheirOwnTokens(): void
     {
-        $this->runInCoroutine(function (): void {
+        $this->scope->run(static function (ExecutionScope $_scope): void {
             $ledger = new InProcessLedger();
-            $app = $this->buildAppWithScopedCounter($ledger);
+            $app = self::buildAppWithScopedCounter($ledger);
 
             $loserCancelled = false;
             $winner = Task::of(static function (ExecutionScope $s): string {
@@ -142,9 +148,9 @@ final class SiblingScopeIsolationTest extends CoroutineTestCase
                 throw new RuntimeException('should not reach');
             });
 
-            $scope = $app->createScope();
-            $value = $scope->race(fast: $winner, slow: $loser);
-            $scope->dispose();
+            $inner = $app->createScope();
+            $value = $inner->race(fast: $winner, slow: $loser);
+            $inner->dispose();
 
             self::assertSame('winner', $value);
             self::assertTrue($loserCancelled, 'loser saw its own cancellation token fire');
@@ -153,24 +159,24 @@ final class SiblingScopeIsolationTest extends CoroutineTestCase
 
     public function testConcurrentChildrenAppearInLedgerWithParentLinkage(): void
     {
-        $this->runInCoroutine(function (): void {
+        $this->scope->run(static function (ExecutionScope $_scope): void {
             $ledger = new InProcessLedger();
-            $app = $this->buildAppWithScopedCounter($ledger);
+            $app = self::buildAppWithScopedCounter($ledger);
 
             $observedTree = null;
-            $inner = Task::of(static function (ExecutionScope $s) use ($ledger, &$observedTree): string {
+            $inner_task = Task::of(static function (ExecutionScope $_s) use ($ledger, &$observedTree): string {
                 if ($observedTree === null) {
                     $observedTree = $ledger->tree();
                 }
                 return 'ok';
             });
-            $outer = Task::of(static function (ExecutionScope $s) use ($inner): array {
-                return $s->concurrent(a: $inner, b: $inner);
+            $outer_task = Task::of(static function (ExecutionScope $s) use ($inner_task): array {
+                return $s->concurrent(a: $inner_task, b: $inner_task);
             });
 
-            $scope = $app->createScope();
-            $scope->execute($outer);
-            $scope->dispose();
+            $inner = $app->createScope();
+            $inner->execute($outer_task);
+            $inner->dispose();
 
             self::assertNotNull($observedTree);
             // Tree at time of inner-body execution should have:
@@ -200,7 +206,7 @@ final class SiblingScopeIsolationTest extends CoroutineTestCase
         });
     }
 
-    private function buildAppWithScopedCounter(InProcessLedger $ledger): Application
+    private static function buildAppWithScopedCounter(InProcessLedger $ledger): Application
     {
         $bundle = new class extends ServiceBundle {
             public function services(Services $services, AppContext $context): void
@@ -215,7 +221,7 @@ final class SiblingScopeIsolationTest extends CoroutineTestCase
             ->compile();
     }
 
-    private function buildAppWithSingletonPool(InProcessLedger $ledger): Application
+    private static function buildAppWithSingletonPool(InProcessLedger $ledger): Application
     {
         $bundle = new class extends ServiceBundle {
             public function services(Services $services, AppContext $context): void

@@ -13,7 +13,7 @@ use Phalanx\Testing\Lenses\ScopeLens;
 /**
  * Generated typed-property accessors for TestApp.
  *
- * Emitted by phalanx-aegis-codegen on composer post-autoload-dump.
+ * Emitted by phalanx-aegis via composer gen:test-accessors.
  * Edits are overwritten on the next dump.
  */
 trait TestAppAccessors

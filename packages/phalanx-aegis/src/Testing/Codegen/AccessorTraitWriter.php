@@ -2,16 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Aegis\Codegen;
+namespace Phalanx\Testing\Codegen;
 
 use RuntimeException;
 
-/**
- * Emits the Phalanx\Testing\Generated\TestAppAccessors trait from a list of
- * LensMetadata. The output is deterministic and git-stable: imports are
- * alphabetized, accessors are sorted alphabetically, and every regeneration
- * produces byte-identical output for the same input.
- */
 final class AccessorTraitWriter
 {
     public const string TARGET_TRAIT = 'TestAppAccessors';
@@ -34,7 +28,7 @@ final class AccessorTraitWriter
         $body .= "\n/**\n";
         $body .= " * Generated typed-property accessors for TestApp.\n";
         $body .= " *\n";
-        $body .= " * Emitted by phalanx-aegis-codegen on composer post-autoload-dump.\n";
+        $body .= " * Emitted by phalanx-aegis via composer gen:test-accessors.\n";
         $body .= " * Edits are overwritten on the next dump.\n";
         $body .= " */\n";
         $body .= 'trait ' . self::TARGET_TRAIT . "\n";
@@ -66,8 +60,6 @@ final class AccessorTraitWriter
     }
 
     /**
-     * Returns a map of FQCN => import alias (alias equals short name unless there is a collision).
-     *
      * @param list<LensMetadata> $lenses
      * @return array<string,string> fqcn => alias
      */

@@ -20,7 +20,7 @@ use Phalanx\Task\HasTimeout;
 use Phalanx\Task\Retryable;
 use Phalanx\Task\Task;
 use Phalanx\Task\Traceable;
-use Phalanx\Tests\Support\CoroutineTestCase;
+use Phalanx\Testing\PhalanxTestCase;
 use RuntimeException;
 
 /**
@@ -39,11 +39,11 @@ use RuntimeException;
  *   - Disposal runs onDispose hooks for scoped services in reverse
  *     creation order
  */
-final class WorkingAegisSmokeTest extends CoroutineTestCase
+final class WorkingAegisSmokeTest extends PhalanxTestCase
 {
     public function testApplicationBootsAndRunsConcurrentWorkload(): void
     {
-        $this->runInCoroutine(function (): void {
+        $this->scope->run(static function (ExecutionScope $_scope): void {
             $ledger = new InProcessLedger();
             $disposed = [];
 
@@ -73,10 +73,10 @@ final class WorkingAegisSmokeTest extends CoroutineTestCase
                 ->taskMiddleware(new RetryMiddleware(), new TimeoutMiddleware(), new TraceMiddleware())
                 ->compile();
 
-            $scope = $app->createScope();
-            $startPool = $scope->service(SmokePool::class);
+            $appScope = $app->createScope();
+            $startPool = $appScope->service(SmokePool::class);
 
-            $results = $scope->concurrent(
+            $results = $appScope->concurrent(
                 fetch: new FetchUserSummary(7),
                 audit: new AuditWrite('login', 'user-7'),
                 compute: Task::of(static fn(ExecutionScope $s): int => 21 * 2),
@@ -87,12 +87,12 @@ final class WorkingAegisSmokeTest extends CoroutineTestCase
             self::assertSame(42, $results['compute']);
 
             // Singleton pool is shared.
-            self::assertSame(spl_object_id($startPool), spl_object_id($scope->service(SmokePool::class)));
+            self::assertSame(spl_object_id($startPool), spl_object_id($appScope->service(SmokePool::class)));
 
             // Two scoped RequestLogger instances were created (one per
             // concurrent child that touched it; outer scope created none
             // since outer didn't resolve RequestLogger).
-            $scope->dispose();
+            $appScope->dispose();
             // No assertion on count here — exact count depends on which
             // children resolved RequestLogger. The dispose hook firing at
             // all is what we care about — the framework called it for
@@ -105,7 +105,7 @@ final class WorkingAegisSmokeTest extends CoroutineTestCase
 
     public function testSupervisorRoutesRetryWithTimeoutAndTraceableMiddleware(): void
     {
-        $this->runInCoroutine(function (): void {
+        $this->scope->run(static function (ExecutionScope $_scope): void {
             $ledger = new InProcessLedger();
             $bundle = new class extends ServiceBundle {
                 public function services(Services $services, AppContext $context): void
@@ -119,26 +119,26 @@ final class WorkingAegisSmokeTest extends CoroutineTestCase
                 ->taskMiddleware(new RetryMiddleware(), new TimeoutMiddleware(), new TraceMiddleware())
                 ->compile();
 
-            $scope = $app->createScope();
+            $appScope = $app->createScope();
             $task = new FlakyJob(failUntilAttempt: 3);
-            $value = $scope->execute($task);
+            $value = $appScope->execute($task);
 
             self::assertSame(3, $task->attempts);
             self::assertSame('done-on-3', $value);
 
             // Trace events emitted by TraceMiddleware on the Traceable task.
-            $events = $scope->trace()->events();
+            $events = $appScope->trace()->events();
             $traceableEvents = array_filter($events, static fn($e) => $e->name === 'flaky-job');
             self::assertGreaterThanOrEqual(2, count($traceableEvents), 'start + end events emitted');
 
-            $scope->dispose();
+            $appScope->dispose();
             self::assertSame(0, $ledger->liveCount());
         });
     }
 
     public function testCancellingAScopeAbortsConcurrentChildrenQuickly(): void
     {
-        $this->runInCoroutine(function (): void {
+        $this->scope->run(static function (ExecutionScope $_scope): void {
             $ledger = new InProcessLedger();
             $bundle = new class extends ServiceBundle {
                 public function services(Services $services, AppContext $context): void
@@ -151,8 +151,8 @@ final class WorkingAegisSmokeTest extends CoroutineTestCase
                 ->withLedger($ledger)
                 ->compile();
 
-            $scope = $app->createScope();
-            $token = $scope->cancellation();
+            $appScope = $app->createScope();
+            $token = $appScope->cancellation();
 
             \OpenSwoole\Coroutine::create(static function () use ($token): void {
                 \OpenSwoole\Coroutine::usleep(15_000);
@@ -162,7 +162,7 @@ final class WorkingAegisSmokeTest extends CoroutineTestCase
             $start = microtime(true);
             $caught = null;
             try {
-                $scope->concurrent(
+                $appScope->concurrent(
                     a: Task::of(static function (ExecutionScope $s): never {
                         $s->delay(5.0);
                         throw new RuntimeException('should not reach');
@@ -176,7 +176,7 @@ final class WorkingAegisSmokeTest extends CoroutineTestCase
                 $caught = $e;
             }
             $elapsed = microtime(true) - $start;
-            $scope->dispose();
+            $appScope->dispose();
 
             self::assertNotNull($caught);
             self::assertLessThan(1.0, $elapsed, 'cancel propagated quickly');

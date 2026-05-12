@@ -6,16 +6,14 @@ namespace Phalanx\Tests\Unit\System;
 
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\System\SystemCommand;
-use Phalanx\Tests\Support\CoroutineTestCase;
+use Phalanx\Testing\PhalanxTestCase;
 
-final class SystemCommandTest extends CoroutineTestCase
+final class SystemCommandTest extends PhalanxTestCase
 {
     public function testEchoesStdoutAndReturnsZeroExit(): void
     {
-        $result = null;
-
-        $this->runScoped(static function (ExecutionScope $scope) use (&$result): void {
-            $result = (new SystemCommand("printf 'hello-aegis'"))($scope);
+        $result = $this->scope->run(static function (ExecutionScope $scope): mixed {
+            return (new SystemCommand("printf 'hello-aegis'"))($scope);
         });
 
         self::assertNotNull($result);
@@ -27,10 +25,8 @@ final class SystemCommandTest extends CoroutineTestCase
 
     public function testNonZeroExitIsCapturedNotThrown(): void
     {
-        $result = null;
-
-        $this->runScoped(static function (ExecutionScope $scope) use (&$result): void {
-            $result = (new SystemCommand("sh -c 'exit 7'"))($scope);
+        $result = $this->scope->run(static function (ExecutionScope $scope): mixed {
+            return (new SystemCommand("sh -c 'exit 7'"))($scope);
         });
 
         self::assertNotNull($result);
@@ -40,10 +36,8 @@ final class SystemCommandTest extends CoroutineTestCase
 
     public function testCaptureStderrCombinesStreamsByDefault(): void
     {
-        $result = null;
-
-        $this->runScoped(static function (ExecutionScope $scope) use (&$result): void {
-            $result = (new SystemCommand("sh -c 'printf err-line >&2; exit 0'"))($scope);
+        $result = $this->scope->run(static function (ExecutionScope $scope): mixed {
+            return (new SystemCommand("sh -c 'printf err-line >&2; exit 0'"))($scope);
         });
 
         self::assertNotNull($result);
@@ -60,10 +54,8 @@ final class SystemCommandTest extends CoroutineTestCase
 
     public function testFromExecutesArgvSafely(): void
     {
-        $result = null;
-
-        $this->runScoped(static function (ExecutionScope $scope) use (&$result): void {
-            $result = SystemCommand::from('printf', 'value: %s', 'hello world')($scope);
+        $result = $this->scope->run(static function (ExecutionScope $scope): mixed {
+            return SystemCommand::from('printf', 'value: %s', 'hello world')($scope);
         });
 
         self::assertNotNull($result);
@@ -73,10 +65,8 @@ final class SystemCommandTest extends CoroutineTestCase
 
     public function testCommandFieldEchoesOnResult(): void
     {
-        $result = null;
-
-        $this->runScoped(static function (ExecutionScope $scope) use (&$result): void {
-            $result = (new SystemCommand("printf done"))($scope);
+        $result = $this->scope->run(static function (ExecutionScope $scope): mixed {
+            return (new SystemCommand("printf done"))($scope);
         });
 
         self::assertNotNull($result);

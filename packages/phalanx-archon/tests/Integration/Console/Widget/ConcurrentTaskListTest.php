@@ -16,11 +16,11 @@ use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\Scope;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
-use Phalanx\Tests\Support\CoroutineTestCase;
+use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
 use RuntimeException;
 
-final class ConcurrentTaskListTest extends CoroutineTestCase
+final class ConcurrentTaskListTest extends PhalanxTestCase
 {
     #[Test]
     public function successPathRendersAllTasksAsSucceeded(): void
@@ -31,7 +31,7 @@ final class ConcurrentTaskListTest extends CoroutineTestCase
         $writer = new RecordingLiveRegionWriter();
         $renderer = new LiveRegionRenderer($writer);
 
-        $this->runScoped(static function (ExecutionScope $scope) use ($output, $theme, $renderer): void {
+        $this->scope->run(static function (ExecutionScope $scope) use ($output, $theme, $renderer): void {
             $okOne = new class implements Scopeable {
                 public function __invoke(Scope $scope): string
                 {
@@ -69,7 +69,7 @@ final class ConcurrentTaskListTest extends CoroutineTestCase
         $writer = new RecordingLiveRegionWriter();
         $renderer = new LiveRegionRenderer($writer);
 
-        $this->runScoped(static function (ExecutionScope $scope) use ($output, $theme, $renderer): void {
+        $this->scope->run(static function (ExecutionScope $scope) use ($output, $theme, $renderer): void {
             $okTask = new class implements Scopeable {
                 public function __invoke(Scope $scope): string
                 {
@@ -106,7 +106,7 @@ final class ConcurrentTaskListTest extends CoroutineTestCase
         $writer = new RecordingLiveRegionWriter();
         $renderer = new LiveRegionRenderer($writer);
 
-        $this->runScoped(static function (ExecutionScope $scope) use ($output, $theme, $renderer): void {
+        $this->scope->run(static function (ExecutionScope $scope) use ($output, $theme, $renderer): void {
             $task = new class implements Executable {
                 public function __invoke(ExecutionScope $scope): string
                 {
@@ -134,7 +134,7 @@ final class ConcurrentTaskListTest extends CoroutineTestCase
         $writer = new RecordingLiveRegionWriter();
         $renderer = new LiveRegionRenderer($writer);
 
-        $this->runScoped(static function (ExecutionScope $scope) use ($output, $theme, $renderer): void {
+        $this->scope->run(static function (ExecutionScope $scope) use ($output, $theme, $renderer): void {
             new ConcurrentTaskList($scope, $output, $theme, renderer: $renderer)->run();
         });
 
@@ -153,7 +153,7 @@ final class ConcurrentTaskListTest extends CoroutineTestCase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('ConcurrentTaskList spinner FPS must be greater than zero.');
 
-        $this->runScoped(static function (ExecutionScope $scope) use ($output, $theme): void {
+        $this->scope->run(static function (ExecutionScope $scope) use ($output, $theme): void {
             new ConcurrentTaskList($scope, $output, $theme, spinnerFps: 0);
         });
     }

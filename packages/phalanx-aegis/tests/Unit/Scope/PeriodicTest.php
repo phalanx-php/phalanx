@@ -8,13 +8,13 @@ use Phalanx\Concurrency\Co;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\PeriodicSubscription;
 use Phalanx\Scope\Subscription;
-use Phalanx\Tests\Support\CoroutineTestCase;
+use Phalanx\Testing\PhalanxTestCase;
 
-final class PeriodicTest extends CoroutineTestCase
+final class PeriodicTest extends PhalanxTestCase
 {
     public function testPeriodicTickFiresMultipleTimes(): void
     {
-        $this->runScoped(static function (ExecutionScope $scope): void {
+        $this->scope->run(static function (ExecutionScope $scope): void {
             $count = 0;
             $countRef = static function () use (&$count): int {
                 return $count;
@@ -37,7 +37,7 @@ final class PeriodicTest extends CoroutineTestCase
 
     public function testCancelStopsTheTimer(): void
     {
-        $this->runScoped(static function (ExecutionScope $scope): void {
+        $this->scope->run(static function (ExecutionScope $scope): void {
             $count = 0;
 
             $sub = $scope->periodic(0.02, static function () use (&$count): void {
@@ -56,7 +56,7 @@ final class PeriodicTest extends CoroutineTestCase
 
     public function testCancelIsIdempotent(): void
     {
-        $this->runScoped(static function (ExecutionScope $scope): void {
+        $this->scope->run(static function (ExecutionScope $scope): void {
             $sub = $scope->periodic(0.05, static function (): void {
             });
 
@@ -70,12 +70,12 @@ final class PeriodicTest extends CoroutineTestCase
 
     public function testScopeDisposalCancelsThePeriodic(): void
     {
-        $this->runInCoroutine(static function (): void {
+        $this->scope->run(static function (ExecutionScope $scope): void {
             $count = 0;
 
             $sub = null;
-            $scopeBody = static function (ExecutionScope $scope) use (&$count, &$sub): void {
-                $sub = $scope->periodic(0.02, static function () use (&$count): void {
+            $scopeBody = static function (ExecutionScope $inner) use (&$count, &$sub): void {
+                $sub = $inner->periodic(0.02, static function () use (&$count): void {
                     $count++;
                 });
                 Co::sleep(0.05);
@@ -96,7 +96,7 @@ final class PeriodicTest extends CoroutineTestCase
 
     public function testTickExceptionsDoNotKillTheLoop(): void
     {
-        $this->runScoped(static function (ExecutionScope $scope): void {
+        $this->scope->run(static function (ExecutionScope $scope): void {
             $count = 0;
 
             $sub = $scope->periodic(0.02, static function () use (&$count): void {

@@ -38,7 +38,7 @@ final class GracefulDrainTest extends PhalanxTestCase
 
             $results = $scope->concurrent(
                 static fn(): ResponseInterface => $runner->dispatch(new ServerRequest('GET', '/slow')),
-                static function (ExecutionScope $control) use ($runner): null {
+                static function (ExecutionScope $_control) use ($runner): null {
                     self::readSignal(DrainCompletingHandler::$entered);
                     self::assertSame(1, $runner->activeRequests());
                     $runner->stop();
@@ -75,7 +75,7 @@ final class GracefulDrainTest extends PhalanxTestCase
             $start = hrtime(true);
             $results = $scope->settle(
                 request: static fn(): ResponseInterface => $runner->dispatch(new ServerRequest('GET', '/stuck')),
-                control: static function (ExecutionScope $control) use ($runner, &$start): null {
+                control: static function (ExecutionScope $_control) use ($runner, &$start): null {
                     self::readSignal(DrainStuckHandler::$entered);
                     self::assertSame(1, $runner->activeRequests());
                     $start = hrtime(true);
@@ -124,7 +124,7 @@ final class GracefulDrainTest extends PhalanxTestCase
 
             $results = $scope->concurrent(
                 static fn(): ResponseInterface => $runner->dispatch(new ServerRequest('GET', '/slow')),
-                static function (ExecutionScope $control) use ($runner): ResponseInterface {
+                static function (ExecutionScope $_control) use ($runner): ResponseInterface {
                     self::readSignal(DrainCompletingHandler::$entered);
                     $runner->stop();
 
@@ -173,7 +173,7 @@ final class GracefulDrainTest extends PhalanxTestCase
 
             $scope->concurrent(
                 static fn(): ResponseInterface => $runner->dispatch(new ServerRequest('GET', '/slow')),
-                static function (ExecutionScope $control) use ($runner): null {
+                static function (ExecutionScope $_control) use ($runner): null {
                     self::readSignal(DrainEventTrackingHandler::$entered);
                     $runner->stop();
 

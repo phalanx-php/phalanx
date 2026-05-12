@@ -12,20 +12,20 @@ use Phalanx\Scope\ExecutionScope;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 use Phalanx\Supervisor\InProcessLedger;
-use Phalanx\Tests\Support\CoroutineTestCase;
+use Phalanx\Testing\PhalanxTestCase;
 use RuntimeException;
 
-final class SpawnHelperTest extends CoroutineTestCase
+final class SpawnHelperTest extends PhalanxTestCase
 {
     public function testGoReturnsTaskRunAndExecutesBody(): void
     {
-        $this->runInCoroutine(function (): void {
+        $this->scope->run(static function (ExecutionScope $_scope): void {
             $ledger = new InProcessLedger();
             $app = self::buildApp($ledger);
-            $scope = $app->createScope();
+            $inner = $app->createScope();
 
             $observed = null;
-            $run = $scope->go(static function (ExecutionScope $s) use (&$observed): int {
+            $run = $inner->go(static function (ExecutionScope $_s) use (&$observed): int {
                 $observed = 'ran';
                 return 7;
             }, name: 'demo-spawn');
@@ -36,19 +36,19 @@ final class SpawnHelperTest extends CoroutineTestCase
             self::assertSame('demo-spawn', $run->name);
             self::assertSame('ran', $observed);
 
-            $scope->dispose();
+            $inner->dispose();
             self::assertSame(0, $ledger->liveCount());
         });
     }
 
     public function testGoCatchesErrorsAndEmitsPhxSpawn001(): void
     {
-        $this->runInCoroutine(function (): void {
+        $this->scope->run(static function (ExecutionScope $_scope): void {
             $ledger = new InProcessLedger();
             $app = self::buildApp($ledger);
-            $scope = $app->createScope();
+            $inner = $app->createScope();
 
-            $run = $scope->go(static function (ExecutionScope $s): never {
+            $run = $inner->go(static function (ExecutionScope $_s): never {
                 throw new RuntimeException('background boom');
             });
 
@@ -56,36 +56,36 @@ final class SpawnHelperTest extends CoroutineTestCase
             Coroutine::usleep(5_000);
 
             $events = array_values(array_filter(
-                $scope->trace()->events(),
+                $inner->trace()->events(),
                 static fn($e) => $e->name === 'PHX-SPAWN-001',
             ));
             self::assertCount(1, $events);
             self::assertSame($run->id, $events[0]->attrs['run']);
             self::assertStringContainsString('background boom', $events[0]->attrs['message']);
 
-            $scope->dispose();
+            $inner->dispose();
             self::assertSame(0, $ledger->liveCount());
         });
     }
 
     public function testDisposeForceCancelsLiveSpawnAndEmitsPhxSpawn002(): void
     {
-        $this->runInCoroutine(function (): void {
+        $this->scope->run(static function (ExecutionScope $_scope): void {
             $ledger = new InProcessLedger();
             $app = self::buildApp($ledger);
-            $scope = $app->createScope();
+            $inner = $app->createScope();
 
-            $run = $scope->go(static function (ExecutionScope $s): void {
+            $run = $inner->go(static function (ExecutionScope $s): void {
                 $s->delay(5.0); // long, will be cancelled
             }, name: 'long-spawn');
 
             // Yield so the coroutine starts and parks on the delay.
             Coroutine::usleep(5_000);
 
-            $scope->dispose();
+            $inner->dispose();
 
             $events = array_values(array_filter(
-                $scope->trace()->events(),
+                $inner->trace()->events(),
                 static fn($e) => $e->name === 'PHX-SPAWN-002',
             ));
             self::assertCount(1, $events);
@@ -97,14 +97,14 @@ final class SpawnHelperTest extends CoroutineTestCase
 
     public function testDisposeWaitsForCancelledSpawnToUnwind(): void
     {
-        $this->runInCoroutine(function (): void {
+        $this->scope->run(static function (ExecutionScope $_scope): void {
             $ledger = new InProcessLedger();
             $app = self::buildApp($ledger);
-            $scope = $app->createScope();
+            $inner = $app->createScope();
             $started = new Channel(1);
             $unwound = false;
 
-            $scope->go(static function (ExecutionScope $s) use ($started, &$unwound): void {
+            $inner->go(static function (ExecutionScope $s) use ($started, &$unwound): void {
                 try {
                     $started->push(true);
                     $s->delay(5.0);
@@ -115,7 +115,7 @@ final class SpawnHelperTest extends CoroutineTestCase
 
             self::assertTrue($started->pop(1.0));
 
-            $scope->dispose();
+            $inner->dispose();
 
             self::assertTrue($unwound);
             self::assertSame(0, $ledger->liveCount());
@@ -124,13 +124,13 @@ final class SpawnHelperTest extends CoroutineTestCase
 
     public function testCancelReturnedRunStopsSpawnedBody(): void
     {
-        $this->runInCoroutine(function (): void {
+        $this->scope->run(static function (ExecutionScope $_scope): void {
             $ledger = new InProcessLedger();
             $app = self::buildApp($ledger);
-            $scope = $app->createScope();
+            $inner = $app->createScope();
 
             $reachedAfterDelay = false;
-            $run = $scope->go(static function (ExecutionScope $s) use (&$reachedAfterDelay): void {
+            $run = $inner->go(static function (ExecutionScope $s) use (&$reachedAfterDelay): void {
                 $s->delay(5.0);
                 $reachedAfterDelay = true;
             });
@@ -143,22 +143,22 @@ final class SpawnHelperTest extends CoroutineTestCase
 
             self::assertFalse($reachedAfterDelay, 'spawn body must not pass cancelled delay');
 
-            $scope->dispose();
+            $inner->dispose();
             self::assertSame(0, $ledger->liveCount());
         });
     }
 
     public function testGoOnDisposedScopeThrows(): void
     {
-        $this->runInCoroutine(function (): void {
+        $this->scope->run(static function (ExecutionScope $_scope): void {
             $ledger = new InProcessLedger();
             $app = self::buildApp($ledger);
-            $scope = $app->createScope();
-            $scope->dispose();
+            $inner = $app->createScope();
+            $inner->dispose();
 
             $caught = null;
             try {
-                $scope->go(static fn() => 1);
+                $inner->go(static fn() => 1);
             } catch (\RuntimeException $e) {
                 $caught = $e;
             }

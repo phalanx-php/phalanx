@@ -11,7 +11,7 @@ use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 use Phalanx\Supervisor\InProcessLedger;
 use Phalanx\Task\Task;
-use Phalanx\Tests\Support\CoroutineTestCase;
+use Phalanx\Testing\PhalanxTestCase;
 
 /**
  * Drives many execute / cancel cycles through one Application + one ledger
@@ -26,11 +26,11 @@ use Phalanx\Tests\Support\CoroutineTestCase;
  * supervisor / scope / task path before they become a long-running-process
  * problem in production.
  */
-final class LedgerChurnTest extends CoroutineTestCase
+final class LedgerChurnTest extends PhalanxTestCase
 {
     public function testTenThousandExecuteCyclesLeaveLedgerEmpty(): void
     {
-        $this->runInCoroutine(function (): void {
+        $this->scope->run(static function (ExecutionScope $_scope): void {
             $ledger = new InProcessLedger();
             $app = self::buildApp($ledger);
 
@@ -41,10 +41,10 @@ final class LedgerChurnTest extends CoroutineTestCase
 
             for ($batch = 0; $batch < $iterations / $batchSize; $batch++) {
                 for ($i = 0; $i < $batchSize; $i++) {
-                    $scope = $app->createScope();
-                    $value = $scope->execute(Task::of(static fn(): int => 42));
+                    $appScope = $app->createScope();
+                    $value = $appScope->execute(Task::of(static fn(): int => 42));
                     self::assertSame(42, $value);
-                    $scope->dispose();
+                    $appScope->dispose();
                 }
                 self::assertSame(0, $ledger->liveCount(), "ledger empty after batch {$batch}");
             }
@@ -67,21 +67,21 @@ final class LedgerChurnTest extends CoroutineTestCase
 
     public function testConcurrentBatchesLeaveLedgerEmpty(): void
     {
-        $this->runInCoroutine(function (): void {
+        $this->scope->run(static function (ExecutionScope $_scope): void {
             $ledger = new InProcessLedger();
             $app = self::buildApp($ledger);
 
             $iterations = 200;
 
             for ($i = 0; $i < $iterations; $i++) {
-                $scope = $app->createScope();
-                $results = $scope->concurrent(
+                $appScope = $app->createScope();
+                $results = $appScope->concurrent(
                     a: Task::of(static fn(ExecutionScope $s): int => 1),
                     b: Task::of(static fn(ExecutionScope $s): int => 2),
                     c: Task::of(static fn(ExecutionScope $s): int => 3),
                 );
                 self::assertSame(['a' => 1, 'b' => 2, 'c' => 3], $results);
-                $scope->dispose();
+                $appScope->dispose();
                 self::assertSame(0, $ledger->liveCount(), "iteration {$i}");
             }
         });

@@ -12,7 +12,7 @@ use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 use Phalanx\Supervisor\InProcessLedger;
 use Phalanx\Task\Task;
-use Phalanx\Tests\Support\CoroutineTestCase;
+use Phalanx\Testing\PhalanxTestCase;
 
 /**
  * For each top-level concurrency primitive, schedules a long-sleeping body,
@@ -26,7 +26,7 @@ use Phalanx\Tests\Support\CoroutineTestCase;
  * If a primitive is failing this it means cancellation is not propagating
  * to children at all, not that it's a few ms slow.
  */
-final class CancellationPropagationTimingTest extends CoroutineTestCase
+final class CancellationPropagationTimingTest extends PhalanxTestCase
 {
     private const float CANCEL_BUDGET_SECONDS = 1.0;
 
@@ -129,11 +129,11 @@ final class CancellationPropagationTimingTest extends CoroutineTestCase
      */
     private function assertCancelTimingOf(\Closure $body): void
     {
-        $this->runInCoroutine(function () use ($body): void {
+        $this->scope->run(static function (ExecutionScope $_scope) use ($body): void {
             $ledger = new InProcessLedger();
             $app = self::buildApp($ledger);
-            $scope = $app->createScope();
-            $token = $scope->cancellation();
+            $appScope = $app->createScope();
+            $token = $appScope->cancellation();
 
             $cancelAfter = self::CANCEL_AFTER_USEC;
             \OpenSwoole\Coroutine::create(static function () use ($token, $cancelAfter): void {
@@ -144,7 +144,7 @@ final class CancellationPropagationTimingTest extends CoroutineTestCase
             $start = microtime(true);
             $cancelled = false;
             try {
-                $body($scope);
+                $body($appScope);
             } catch (Cancelled) {
                 $cancelled = true;
             } catch (\Throwable) {
@@ -154,7 +154,7 @@ final class CancellationPropagationTimingTest extends CoroutineTestCase
             }
             $elapsed = microtime(true) - $start;
 
-            $scope->dispose();
+            $appScope->dispose();
 
             self::assertTrue(
                 $cancelled || $elapsed < self::CANCEL_BUDGET_SECONDS,

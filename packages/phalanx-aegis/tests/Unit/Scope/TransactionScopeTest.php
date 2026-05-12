@@ -17,10 +17,10 @@ use Phalanx\Supervisor\TransactionLease;
 use Phalanx\Supervisor\WaitReason;
 use Phalanx\Task\Task;
 use Phalanx\Testing\Assert as PhalanxAssert;
-use Phalanx\Tests\Support\CoroutineTestCase;
+use Phalanx\Testing\PhalanxTestCase;
 use Phalanx\Trace\Trace;
 
-final class TransactionScopeTest extends CoroutineTestCase
+final class TransactionScopeTest extends PhalanxTestCase
 {
     public function testTransactionRegistersAndReleasesLeaseAroundBody(): void
     {
@@ -29,8 +29,10 @@ final class TransactionScopeTest extends CoroutineTestCase
             public ?string $heldInside = null;
         };
 
-        $this->runScopedWithLedger($ledger, static function (ExecutionScope $scope) use ($ledger, $probe): void {
-            $value = $scope->execute(Task::of(
+        $this->scope->run(static function (ExecutionScope $_scope) use ($ledger, $probe): void {
+            $inner = self::buildScope($ledger);
+
+            $value = $inner->execute(Task::of(
                 static fn(ExecutionScope $s): mixed => $s->transaction(
                     TransactionLease::open('postgres/main', 'tx#1'),
                     static function (TransactionScope $tx) use ($ledger, $probe): string {
@@ -45,6 +47,8 @@ final class TransactionScopeTest extends CoroutineTestCase
 
             self::assertSame('tx#1', $value);
             self::assertSame('postgres/main', $probe->heldInside);
+
+            $inner->dispose();
         });
 
         PhalanxAssert::assertNoLiveTasks(new Supervisor($ledger, new Trace()));
@@ -52,10 +56,10 @@ final class TransactionScopeTest extends CoroutineTestCase
 
     public function testTransactionScopeDoesNotExposeFanOutExecutorMethods(): void
     {
-        $this->runInCoroutine(function (): void {
-            $scope = self::buildScope(new InProcessLedger());
+        $this->scope->run(static function (ExecutionScope $_scope): void {
+            $inner = self::buildScope(new InProcessLedger());
 
-            $scope->execute(Task::of(
+            $inner->execute(Task::of(
                 static fn(ExecutionScope $s): mixed => $s->transaction(
                     TransactionLease::open('postgres/main', 'tx#2'),
                     static function (TransactionScope $tx): void {
@@ -65,17 +69,20 @@ final class TransactionScopeTest extends CoroutineTestCase
                     },
                 ),
             ));
+
+            $inner->dispose();
         });
     }
 
     public function testTransactionScopeRejectsExternalWaits(): void
     {
-        $this->runInCoroutine(function (): void {
-            $scope = self::buildScope(new InProcessLedger());
+        $thrown = null;
 
-            $thrown = null;
+        $this->scope->run(static function (ExecutionScope $_scope) use (&$thrown): void {
+            $inner = self::buildScope(new InProcessLedger());
+
             try {
-                $scope->execute(Task::of(
+                $inner->execute(Task::of(
                     static fn(ExecutionScope $s): mixed => $s->transaction(
                         TransactionLease::open('postgres/main', 'tx#3'),
                         static fn(TransactionScope $tx): mixed => $tx->call(
@@ -88,17 +95,19 @@ final class TransactionScopeTest extends CoroutineTestCase
                 $thrown = $e;
             }
 
-            self::assertNotNull($thrown);
-            self::assertSame('PHX-TXN-001', $thrown->phxCode);
+            $inner->dispose();
         });
+
+        self::assertNotNull($thrown);
+        self::assertSame('PHX-TXN-001', $thrown->phxCode);
     }
 
     public function testTransactionScopeAllowsLocalWaitsAndAttributeDerivation(): void
     {
-        $this->runInCoroutine(function (): void {
-            $scope = self::buildScope(new InProcessLedger())->withAttribute('tenant', 'acme');
+        $value = $this->scope->run(static function (ExecutionScope $_scope): string {
+            $inner = self::buildScope(new InProcessLedger())->withAttribute('tenant', 'acme');
 
-            $value = $scope->execute(Task::of(
+            $result = $inner->execute(Task::of(
                 static fn(ExecutionScope $s): mixed => $s->transaction(
                     TransactionLease::open('postgres/main', 'tx#4'),
                     static function (TransactionScope $tx): string {
@@ -110,8 +119,12 @@ final class TransactionScopeTest extends CoroutineTestCase
                 ),
             ));
 
-            self::assertSame('acme/beta', $value);
+            $inner->dispose();
+
+            return $result;
         });
+
+        self::assertSame('acme/beta', $value);
     }
 
     private static function buildScope(InProcessLedger $ledger): ExecutionScope

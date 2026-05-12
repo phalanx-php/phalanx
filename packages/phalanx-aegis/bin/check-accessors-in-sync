@@ -3,20 +3,12 @@
 
 declare(strict_types=1);
 
-/**
- * Verify the committed TestAppAccessors trait matches what regenerate-accessors
- * would produce right now. Used as a CI gate so a forgotten regeneration
- * after adding/renaming a lens fails the build instead of merging silently.
- *
- * Exits 0 when in sync; exits 1 with a unified diff when out of sync.
- */
-
-use Phalanx\Aegis\Codegen\AccessorTraitWriter;
-use Phalanx\Aegis\Codegen\LensDiscovery;
+use Phalanx\Testing\Codegen\AccessorTraitWriter;
+use Phalanx\Testing\Codegen\LensDiscovery;
 
 $autoloadCandidates = [
-    __DIR__ . '/../vendor/autoload.php',
     __DIR__ . '/../../../vendor/autoload.php',
+    __DIR__ . '/../vendor/autoload.php',
 ];
 
 foreach ($autoloadCandidates as $candidate) {
