@@ -91,6 +91,10 @@ final class SwooleTableLedger implements LedgerStorage
             ownerScopeId: $run->scopeId,
             ownerRunId: $run->id,
         );
+        if ($run->parentId !== null) {
+            $this->memory->resources->addEdge($run->parentId, $run->id, 'task_child');
+        }
+
         $this->annotateRun($run->id, [
             AegisAnnotationSid::RunName->value() => $run->name,
             AegisAnnotationSid::RunMode->value() => $run->mode->value,
@@ -105,11 +109,6 @@ final class SwooleTableLedger implements LedgerStorage
             AegisAnnotationSid::WaitKind->value() => '',
             AegisAnnotationSid::WaitDetail->value() => '',
         ]);
-    }
-
-    public function addChild(string $parentRunId, string $childRunId): void
-    {
-        $this->memory->resources->addEdge($parentRunId, $childRunId, 'task_child');
     }
 
     public function markRunning(string $runId): void
@@ -215,19 +214,9 @@ final class SwooleTableLedger implements LedgerStorage
             return $out;
         }
 
-        $root = $this->find($rootRunId);
-        if ($root === null) {
-            return [];
-        }
+        $visited = [];
 
-        $out = [self::project($root)];
-        foreach ($root->childIds as $childId) {
-            foreach ($this->tree($childId) as $descendant) {
-                $out[] = $descendant;
-            }
-        }
-
-        return $out;
+        return $this->collectSubtree($rootRunId, $visited);
     }
 
     public function liveCount(): int
@@ -260,7 +249,6 @@ final class SwooleTableLedger implements LedgerStorage
             mode: $run->mode,
             state: $run->state,
             currentWait: $run->currentWait,
-            childIds: $run->childIds,
             leases: $leases,
             startedAt: $run->startedAt,
             endedAt: $run->endedAt,
@@ -303,6 +291,32 @@ final class SwooleTableLedger implements LedgerStorage
     private static function fit(string $value, int $length): string
     {
         return mb_strlen($value) <= $length ? $value : mb_substr($value, 0, $length);
+    }
+
+    /**
+     * @param array<string, true> $visited
+     * @return list<TaskRunSnapshot>
+     */
+    private function collectSubtree(string $runId, array &$visited): array
+    {
+        if (isset($visited[$runId])) {
+            return [];
+        }
+        $visited[$runId] = true;
+
+        $run = $this->find($runId);
+        if ($run === null) {
+            return [];
+        }
+
+        $out = [self::project($run)];
+        foreach ($this->memory->resources->childIds($runId) as $childId) {
+            foreach ($this->collectSubtree($childId, $visited) as $descendant) {
+                $out[] = $descendant;
+            }
+        }
+
+        return $out;
     }
 
     /** @param array<string, string> $values */
@@ -384,7 +398,6 @@ final class SwooleTableLedger implements LedgerStorage
         );
         $run->state = self::runState($resource, $annotations);
         $run->currentWait = $wait;
-        $run->childIds = $this->memory->resources->childIds($resource->id);
         $run->leases = $this->leases($resource->id);
         $endedAt = $annotations[AegisAnnotationSid::EndedAt->value()] ?? '';
         $run->endedAt = $endedAt === '' ? $resource->terminalAt : (float) $endedAt;

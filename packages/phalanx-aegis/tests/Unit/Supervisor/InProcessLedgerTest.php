@@ -146,22 +146,23 @@ final class InProcessLedgerTest extends TestCase
         $ledger->register($b);
 
         $tree = $ledger->tree();
+        $ids = array_map(static fn($snap) => $snap->id, $tree);
 
         self::assertCount(2, $tree);
+        self::assertContains('a', $ids);
+        self::assertContains('b', $ids);
     }
 
     public function testTreeFromRootIncludesTransitiveChildren(): void
     {
         $ledger = new InProcessLedger();
         $root = $this->makeRun('root', 'Root');
-        $child = $this->makeRun('child', 'Child');
-        $grand = $this->makeRun('grand', 'Grand');
+        $child = $this->makeRunWithParent('child', 'Child', 'root');
+        $grand = $this->makeRunWithParent('grand', 'Grand', 'child');
 
         $ledger->register($root);
         $ledger->register($child);
         $ledger->register($grand);
-        $ledger->addChild('root', 'child');
-        $ledger->addChild('child', 'grand');
 
         $tree = $ledger->tree('root');
 
@@ -187,12 +188,48 @@ final class InProcessLedgerTest extends TestCase
         self::assertSame([], $ledger->snapshot('run-008')?->leases);
     }
 
+    public function testTreeWithUnknownRootReturnsEmpty(): void
+    {
+        $ledger = new InProcessLedger();
+        $ledger->register($this->makeRun('a', 'A'));
+
+        self::assertSame([], $ledger->tree('nonexistent'));
+    }
+
+    public function testTreeAfterReapExcludesReapedParent(): void
+    {
+        $ledger = new InProcessLedger();
+        $ledger->register($this->makeRun('root', 'Root'));
+        $ledger->register($this->makeRunWithParent('child', 'Child', 'root'));
+        $ledger->complete('root', null);
+        $ledger->reap('root');
+
+        $tree = $ledger->tree('root');
+        self::assertSame([], $tree);
+
+        $allTree = $ledger->tree();
+        self::assertCount(1, $allTree);
+        self::assertSame('child', $allTree[0]->id);
+    }
+
     private function makeRun(string $id, string $name): TaskRun
     {
         return new TaskRun(
             id: $id,
             name: $name,
             parentId: null,
+            mode: DispatchMode::Inline,
+            cancellation: CancellationToken::create(),
+            startedAt: microtime(true),
+        );
+    }
+
+    private function makeRunWithParent(string $id, string $name, string $parentId): TaskRun
+    {
+        return new TaskRun(
+            id: $id,
+            name: $name,
+            parentId: $parentId,
             mode: DispatchMode::Inline,
             cancellation: CancellationToken::create(),
             startedAt: microtime(true),

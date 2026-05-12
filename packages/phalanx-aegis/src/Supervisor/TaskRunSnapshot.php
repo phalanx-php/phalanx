@@ -15,10 +15,7 @@ namespace Phalanx\Supervisor;
  */
 class TaskRunSnapshot
 {
-    /**
-     * @param list<string> $childIds
-     * @param list<array{domain: string, key: string, mode: string, acquiredAt: float}> $leases
-     */
+    /** @param list<array{domain: string, key: string, mode: string, acquiredAt: float}> $leases */
     public function __construct(
         protected(set) string $id,
         protected(set) string $name,
@@ -26,7 +23,6 @@ class TaskRunSnapshot
         protected(set) DispatchMode $mode,
         protected(set) RunState $state,
         protected(set) ?WaitReason $currentWait,
-        protected(set) array $childIds,
         protected(set) array $leases,
         protected(set) float $startedAt,
         protected(set) ?float $endedAt,

@@ -30,22 +30,27 @@ final class TaskTreeFormatter
         }
 
         $byId = [];
+        $childrenOf = [];
         foreach ($snapshots as $snap) {
             $byId[$snap->id] = $snap;
+            if ($snap->parentId !== null) {
+                $childrenOf[$snap->parentId][] = $snap->id;
+            }
         }
 
         $roots = self::findRoots($byId);
         $this->depthHasChild = [];
-        
+
         $out = '';
         foreach ($roots as $root) {
-            $out .= $this->renderNode($root, $byId, 0);
+            $out .= $this->renderNode($root, $byId, $childrenOf, 0);
         }
 
         return rtrim($out);
     }
 
     /**
+     * @param array<string, TaskRunSnapshot> $byId
      * @return list<TaskRunSnapshot>
      */
     private static function findRoots(array $byId): array
@@ -57,69 +62,6 @@ final class TaskTreeFormatter
             }
         }
         return $roots;
-    }
-
-    /**
-     * @param array<string, TaskRunSnapshot> $byId
-     */
-    private function renderNode(
-        TaskRunSnapshot $node,
-        array $byId,
-        int $depth,
-    ): string {
-        if ($depth > 50) {
-            return str_repeat('  ', 10) . "... (max depth reached)\n";
-        }
-
-        $isFirstChildAtDepth = !($this->depthHasChild[$depth] ?? false);
-        $this->depthHasChild[$depth] = true;
-
-        $line = $this->formatLine($node, $depth, $isFirstChildAtDepth) . "\n";
-
-        $childDepth = $depth + 1;
-        $this->depthHasChild[$childDepth] = false;
-
-        foreach ($node->childIds as $childId) {
-            if (isset($byId[$childId])) {
-                $line .= $this->renderNode($byId[$childId], $byId, $childDepth);
-            }
-        }
-
-        return $line;
-    }
-
-    private function formatLine(TaskRunSnapshot $snap, int $depth, bool $isFirstChild): string
-    {
-        $panningOffset = max(0, $depth - self::MAX_DEPTH_LEVEL);
-        $visualDepth = min($depth, self::MAX_DEPTH_LEVEL);
-        
-        $indent = str_repeat('  ', $visualDepth);
-        $prefixChars = $panningOffset > 0 ? '... ' : '';
-
-        $arrowChar = ($panningOffset > 0 && $visualDepth === self::MAX_DEPTH_LEVEL) ? '⇗ ' : '↳ ';
-        $arrow = ($depth > 0 && $isFirstChild) ? $arrowChar : ($depth > 0 ? '  ' : '');
-
-        $fullPrefix = $prefixChars . $indent . $arrow;
-        $prefixWidth = mb_strlen($fullPrefix);
-        
-        $nameBudget = max(8, self::LABEL_COLUMN_WIDTH - $prefixWidth);
-        $name = self::truncate($snap->name, $nameBudget);
-        $label = $fullPrefix . str_pad($name, $nameBudget);
-
-        $state = str_pad($snap->state->value, 10);
-        $elapsed = self::formatElapsed($snap->elapsed());
-
-        $parts = [$label, $state, $elapsed];
-
-        if ($snap->currentWait !== null) {
-            $parts[] = self::formatWait($snap->currentWait);
-        }
-
-        if ($snap->leases !== []) {
-            $parts[] = self::formatLeases($snap->leases);
-        }
-
-        return implode('  ', $parts);
     }
 
     private static function formatWait(WaitReason $wait): string
@@ -160,5 +102,70 @@ final class TaskTreeFormatter
         }
 
         return mb_substr($s, 0, $max - 1) . '…';
+    }
+
+    /**
+     * @param array<string, TaskRunSnapshot> $byId
+     * @param array<string, list<string>> $childrenOf
+     */
+    private function renderNode(
+        TaskRunSnapshot $node,
+        array $byId,
+        array $childrenOf,
+        int $depth,
+    ): string {
+        if ($depth > 50) {
+            return str_repeat('  ', 10) . "... (max depth reached)\n";
+        }
+
+        $isFirstChildAtDepth = !($this->depthHasChild[$depth] ?? false);
+        $this->depthHasChild[$depth] = true;
+
+        $line = $this->formatLine($node, $depth, $isFirstChildAtDepth) . "\n";
+
+        $childDepth = $depth + 1;
+        $this->depthHasChild[$childDepth] = false;
+
+        foreach ($childrenOf[$node->id] ?? [] as $childId) {
+            if (isset($byId[$childId])) {
+                $line .= $this->renderNode($byId[$childId], $byId, $childrenOf, $childDepth);
+            }
+        }
+
+        return $line;
+    }
+
+    private function formatLine(TaskRunSnapshot $snap, int $depth, bool $isFirstChild): string
+    {
+        $panningOffset = max(0, $depth - self::MAX_DEPTH_LEVEL);
+        $visualDepth = min($depth, self::MAX_DEPTH_LEVEL);
+
+        $indent = str_repeat('  ', $visualDepth);
+        $prefixChars = $panningOffset > 0 ? '... ' : '';
+
+        $arrowChar = ($panningOffset > 0 && $visualDepth === self::MAX_DEPTH_LEVEL) ? '⇗ ' : '↳ ';
+        $arrow = ($depth > 0 && $isFirstChild) ? $arrowChar : ($depth > 0 ? '  ' : '');
+
+        $fullPrefix = $prefixChars . $indent . $arrow;
+        $prefixWidth = mb_strlen($fullPrefix);
+
+        $nameBudget = max(8, self::LABEL_COLUMN_WIDTH - $prefixWidth);
+        $name = self::truncate($snap->name, $nameBudget);
+        $label = $fullPrefix . str_pad($name, $nameBudget);
+
+        $state = str_pad($snap->state->value, 10);
+        $elapsed = self::formatElapsed($snap->elapsed());
+
+        $parts = [$label, $state, $elapsed];
+
+        if ($snap->currentWait !== null) {
+            $parts[] = self::formatWait($snap->currentWait);
+        }
+
+        if ($snap->leases !== []) {
+            $parts[] = self::formatLeases($snap->leases);
+        }
+
+        return implode('  ', $parts);
     }
 }

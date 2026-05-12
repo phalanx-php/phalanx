@@ -21,7 +21,7 @@ use Phalanx\Cancellation\CancellationToken;
  *   3. file:line for Task::of(static fn ...) closures
  *   4. Generated run id as fallback
  *
- * Mutable fields (state, currentWait, leases, childIds) are owned by the
+ * Mutable fields (state, currentWait, leases) are owned by the
  * supervisor and updated through LedgerStorage::update(). Direct mutation
  * outside the supervisor is forbidden — the ledger is the source of truth.
  */
@@ -29,9 +29,6 @@ final class TaskRun
 {
     /** @var list<Lease> */
     public array $leases = [];
-
-    /** @var list<string> */
-    public array $childIds = [];
 
     public RunState $state;
 

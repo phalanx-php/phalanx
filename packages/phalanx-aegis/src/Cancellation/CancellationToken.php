@@ -36,6 +36,9 @@ class CancellationToken
 
     private ?int $timerId = null;
 
+    /** @var list<Closure(): void> */
+    private array $unregisters = [];
+
     private bool $immutableNone = false;
 
     private function __construct()
@@ -75,22 +78,13 @@ class CancellationToken
     public static function composite(self ...$sources): self
     {
         $composite = new self();
-        $unregisters = [];
         foreach ($sources as $source) {
             if ($source->cancelled) {
                 $composite->cancel();
                 return $composite;
             }
-            $unregisters[] = $source->onCancel(static function () use ($composite): void {
+            $composite->unregisters[] = $source->onCancel(static function () use ($composite): void {
                 $composite->cancel();
-            });
-        }
-
-        if ($unregisters !== []) {
-            $composite->onCancel(static function () use ($unregisters): void {
-                foreach ($unregisters as $unregister) {
-                    $unregister();
-                }
             });
         }
 
@@ -116,6 +110,14 @@ class CancellationToken
             $this->timerId = null;
         }
 
+        foreach ($this->unregisters as $unregister) {
+            try {
+                $unregister();
+            } catch (\Throwable) {
+            }
+        }
+        $this->unregisters = [];
+
         $listeners = $this->listeners;
         $this->listeners = [];
         foreach ($listeners as $listener) {
@@ -124,6 +126,18 @@ class CancellationToken
             } catch (\Throwable) {
             }
         }
+    }
+
+    public function release(): void
+    {
+        foreach ($this->unregisters as $unregister) {
+            try {
+                $unregister();
+            } catch (\Throwable) {
+            }
+        }
+        $this->unregisters = [];
+        $this->listeners = [];
     }
 
     /**

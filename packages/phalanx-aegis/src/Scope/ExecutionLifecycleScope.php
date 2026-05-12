@@ -91,13 +91,15 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
     private array $deferredCids = [];
 
     /**
-     * Active go()-spawned tasks awaiting completion. Each entry is
-     * [cid, TaskRun]. Cleared as tasks finish; force-cancelled with
+     * Active go()-spawned tasks awaiting completion. Keyed by spawn sequence
+     * for O(1) removal in the finally block. Force-cancelled with
      * PHX-SPAWN-002 if any remain at dispose time.
      *
-     * @var list<array{int, TaskRun}>
+     * @var array<int, array{int, TaskRun}>
      */
     private array $goSpawns = [];
+
+    private int $goSpawnSeq = 0;
 
     private bool $disposed = false;
 
@@ -953,10 +955,13 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             mode: DispatchMode::Concurrent,
             name: $resolvedName,
             parentRunId: $parentRunId,
+            token: $childScope->cancellation,
         );
 
         $supervisor = $this->supervisor;
         $traceLog = $this->traceLog;
+        $goSpawns = &$this->goSpawns;
+        $spawnKey = $this->goSpawnSeq++;
 
         /** @var Closure(): void $unregisterRunCancel */
         $unregisterRunCancel = static function (): void {
@@ -969,6 +974,8 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             $supervisor,
             $traceLog,
             &$unregisterRunCancel,
+            &$goSpawns,
+            $spawnKey,
         ): void {
             CoroutineScopeRegistry::install($childScope);
             $childScope->currentRun = $run;
@@ -993,8 +1000,10 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                 );
             } finally {
                 $unregisterRunCancel();
+                $run->cancellation->release();
                 $supervisor->reap($run);
                 $childScope->dispose();
+                unset($goSpawns[$spawnKey]);
                 CoroutineScopeRegistry::clear();
             }
         });
@@ -1008,11 +1017,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             if ($run->cancellation->isCancelled && Coroutine::exists($cid)) {
                 Coroutine::cancel($cid);
             }
-            $this->goSpawns = array_values(array_filter(
-                $this->goSpawns,
-                static fn(array $entry): bool => !$entry[1]->isTerminal(),
-            ));
-            $this->goSpawns[] = [$cid, $run];
+            $goSpawns[$spawnKey] = [$cid, $run];
         }
 
         return $run;
@@ -1596,7 +1601,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
     ): mixed {
         $name = self::resolveTaskName($task);
         $parentRunId = $scope->currentRun?->id;
-        $run = $this->supervisor->start($task, $scope, $mode, $name, $parentRunId);
+        $run = $this->supervisor->start($task, $scope, $mode, $name, $parentRunId, token: $scope->cancellation);
 
         $previousScope = CoroutineScopeRegistry::current();
         $previousRun = $scope->currentRun;
@@ -1616,6 +1621,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             $this->supervisor->fail($run, $e);
             throw $e;
         } finally {
+            $run->cancellation->release();
             $scope->currentRun = $previousRun;
             $this->supervisor->reap($run);
             if ($previousScope !== null) {
@@ -1644,6 +1650,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             DispatchMode::Worker,
             $name,
             $parentRun?->id,
+            token: $scope->cancellation,
         );
 
         $previousScope = CoroutineScopeRegistry::current();
@@ -1672,6 +1679,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             if ($clearWait !== null) {
                 $clearWait();
             }
+            $run->cancellation->release();
             $scope->currentRun = $previousRun;
             $this->supervisor->reap($run);
             if ($previousScope !== null) {

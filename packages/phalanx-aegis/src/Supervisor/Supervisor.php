@@ -94,22 +94,26 @@ final class Supervisor
         DispatchMode $mode,
         ?string $name = null,
         ?string $parentRunId = null,
+        ?CancellationToken $token = null,
     ): TaskRun {
         $id = $this->ledger->nextRunId();
         $resolvedName = $name ?? self::resolveName($task, $id);
         $metadata = self::resolveMetadata($task);
         $scopeId = $parent instanceof ScopeIdentity ? $parent->scopeId : null;
 
-        $parentToken = $parent instanceof Cancellable
-            ? $parent->cancellation()
-            : CancellationToken::none();
+        if ($token === null) {
+            $parentToken = $parent instanceof Cancellable
+                ? $parent->cancellation()
+                : CancellationToken::none();
+            $token = CancellationToken::composite($parentToken);
+        }
 
         $run = new TaskRun(
             id: $id,
             name: $resolvedName,
             parentId: $parentRunId,
             mode: $mode,
-            cancellation: CancellationToken::composite($parentToken),
+            cancellation: $token,
             startedAt: microtime(true),
             scopeId: $scopeId,
             taskFqcn: $metadata['fqcn'],
@@ -118,10 +122,6 @@ final class Supervisor
         );
 
         $this->ledger->register($run);
-
-        if ($parentRunId !== null) {
-            $this->ledger->addChild($parentRunId, $id);
-        }
 
         return $run;
     }

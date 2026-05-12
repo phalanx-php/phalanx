@@ -39,7 +39,6 @@ final class LedgerStorageContractTest extends TestCase
         $ledger->registerScope($scopeId, null, self::class, -1);
         $ledger->register($parent);
         $ledger->register($child);
-        $ledger->addChild('run-parent', 'run-child');
         $ledger->beginWait('run-parent', WaitReason::singleflight('user:42'));
         $ledger->addLease('run-parent', PoolLease::open('postgres/main', 'conn#1'));
         $ledger->addLease('run-parent', LockLease::read('cache', 'user:42'));
@@ -48,7 +47,6 @@ final class LedgerStorageContractTest extends TestCase
         self::assertNotNull($snapshot);
         self::assertSame(RunState::Suspended, $snapshot->state);
         self::assertSame(WaitKind::Singleflight, $snapshot->currentWait?->kind);
-        self::assertSame(['run-child'], $snapshot->childIds);
         self::assertCount(2, $snapshot->leases);
 
         $tree = $ledger->tree('run-parent');
@@ -75,7 +73,6 @@ final class LedgerStorageContractTest extends TestCase
 
         $ledger->register($parent);
         $ledger->register($child);
-        $ledger->addChild('run-parent', 'run-child');
         $ledger->addLease('run-parent', PoolLease::open('postgres/main', 'conn#1'));
 
         $resourceRow = $ledger->memory->tables->resources->get('run-parent');

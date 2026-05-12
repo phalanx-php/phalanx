@@ -26,8 +26,6 @@ interface LedgerStorage
 
     public function register(TaskRun $run): void;
 
-    public function addChild(string $parentRunId, string $childRunId): void;
-
     public function markRunning(string $runId): void;
 
     public function beginWait(string $runId, WaitReason $reason): void;

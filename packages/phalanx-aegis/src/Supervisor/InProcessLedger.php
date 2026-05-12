@@ -66,15 +66,6 @@ final class InProcessLedger implements LedgerStorage
         $this->runs[$run->id] = $run;
     }
 
-    public function addChild(string $parentRunId, string $childRunId): void
-    {
-        $run = $this->runs[$parentRunId] ?? null;
-        if ($run === null) {
-            return;
-        }
-        $run->childIds[] = $childRunId;
-    }
-
     public function markRunning(string $runId): void
     {
         $run = $this->runs[$runId] ?? null;
@@ -181,13 +172,14 @@ final class InProcessLedger implements LedgerStorage
             return [];
         }
 
-        $out = [self::project($root)];
-        foreach ($root->childIds as $childId) {
-            foreach ($this->tree($childId) as $descendant) {
-                $out[] = $descendant;
+        $childrenOf = [];
+        foreach ($this->runs as $run) {
+            if ($run->parentId !== null) {
+                $childrenOf[$run->parentId][] = $run->id;
             }
         }
-        return $out;
+
+        return self::collectSubtree($rootRunId, $this->runs, $childrenOf);
     }
 
     public function liveCount(): int
@@ -225,10 +217,41 @@ final class InProcessLedger implements LedgerStorage
             mode: $run->mode,
             state: $run->state,
             currentWait: $run->currentWait,
-            childIds: $run->childIds,
             leases: $leases,
             startedAt: $run->startedAt,
             endedAt: $run->endedAt,
         );
+    }
+
+    /**
+     * @param array<string, TaskRun> $runs
+     * @param array<string, list<string>> $childrenOf
+     * @param array<string, true> $visited
+     * @return list<TaskRunSnapshot>
+     */
+    private static function collectSubtree(
+        string $runId,
+        array $runs,
+        array $childrenOf,
+        array &$visited = [],
+    ): array {
+        if (isset($visited[$runId])) {
+            return [];
+        }
+        $visited[$runId] = true;
+
+        $run = $runs[$runId] ?? null;
+        if ($run === null) {
+            return [];
+        }
+
+        $out = [self::project($run)];
+        foreach ($childrenOf[$runId] ?? [] as $childId) {
+            foreach (self::collectSubtree($childId, $runs, $childrenOf, $visited) as $desc) {
+                $out[] = $desc;
+            }
+        }
+
+        return $out;
     }
 }
