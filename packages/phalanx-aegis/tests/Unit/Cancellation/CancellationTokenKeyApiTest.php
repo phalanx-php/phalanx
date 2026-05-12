@@ -55,20 +55,35 @@ final class CancellationTokenKeyApiTest extends TestCase
         self::assertFalse($token->isCancelled);
     }
 
-    public function testCompositeUsesKeyBasedUnregistration(): void
+    public function testDoubleOffCancelIsNoop(): void
     {
-        $parent = CancellationToken::create();
-        $composite = CancellationToken::composite($parent);
+        $token = CancellationToken::create();
 
         $fired = false;
-        $composite->onCancel(static function () use (&$fired): void {
+        $key = $token->onCancel(static function () use (&$fired): void {
             $fired = true;
         });
 
-        $composite->release();
-        $parent->cancel();
+        $token->offCancel($key);
+        $token->offCancel($key);
+        $token->cancel();
 
         self::assertFalse($fired);
+    }
+
+    public function testNoneTokenNeverFires(): void
+    {
+        $token = CancellationToken::none();
+
+        $fired = false;
+        $token->onCancel(static function () use (&$fired): void {
+            $fired = true;
+        });
+
+        $token->cancel();
+
+        self::assertFalse($fired);
+        self::assertFalse($token->isCancelled);
     }
 
     public function testMultipleKeysAreUnique(): void

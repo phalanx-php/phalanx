@@ -127,6 +127,10 @@ class CancellationToken
 
     public function release(): void
     {
+        if ($this->timerId !== null) {
+            Timer::clear($this->timerId);
+            $this->timerId = null;
+        }
         foreach ($this->unregisters as [$source, $key]) {
             $source->offCancel($key);
         }

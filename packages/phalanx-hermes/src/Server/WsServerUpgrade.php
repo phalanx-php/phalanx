@@ -174,21 +174,8 @@ final readonly class WsServerUpgrade implements HttpUpgradeable
         return $wsHandle;
     }
 
-    /**
-     * Remove a cancellation listener registered via CancellationToken::onCancel().
-     *
-     * The de-registration is a pure in-memory list operation and should not
-     * throw. Any Throwable other than Cancelled is treated as a non-fatal
-     * teardown anomaly and swallowed — the WS session has already terminated
-     * by the time this runs and there is no caller to surface the error to.
-     */
     private static function unlink(CancellationToken $token, int $key): void
     {
-        try {
-            $token->offCancel($key);
-        } catch (Cancelled $cancelled) {
-            throw $cancelled;
-        } catch (Throwable) {
-        }
+        $token->offCancel($key);
     }
 }

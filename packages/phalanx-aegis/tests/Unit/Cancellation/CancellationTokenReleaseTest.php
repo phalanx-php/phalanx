@@ -67,7 +67,7 @@ final class CancellationTokenReleaseTest extends TestCase
         self::assertSame(1, $cancelCount);
     }
 
-    public function testReleaseClearsCompositeListeners(): void
+    public function testReleaseClearsListeners(): void
     {
         $token = CancellationToken::create();
 
