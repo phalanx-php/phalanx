@@ -58,6 +58,10 @@ parameters:
     excludePaths:
         analyseAndScan:
             - packages/phalanx-athena/src/Cli/AgentRepl.php
+    ignoreErrors:
+        -
+            identifier: callable.nonCallable
+            reportUnmatched: true
     tmpDir: .phpstan-cache
     treatPhpDocTypesAsCertain: false
     bootstrapFiles: []

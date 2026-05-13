@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Phalanx\Hydra\Protocol;
 
-final readonly class Response
+final class Response
 {
     private function __construct(
-        public MessageType $type,
-        public string $id,
-        public bool $ok,
-        public mixed $result = null,
-        public ?string $errorClass = null,
-        public ?string $errorMessage = null,
-        public ?string $errorTrace = null,
+        private(set) MessageType $type,
+        private(set) string $id,
+        private(set) bool $ok,
+        private(set) mixed $result = null,
+        private(set) ?string $errorClass = null,
+        private(set) ?string $errorMessage = null,
+        private(set) ?string $errorTrace = null,
     ) {
     }
 

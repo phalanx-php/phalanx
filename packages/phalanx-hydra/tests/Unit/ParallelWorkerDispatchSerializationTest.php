@@ -48,7 +48,6 @@ final class ParallelWorkerDispatchSerializationTest extends TestCase
     private function extract(WorkerTask $task): array
     {
         $method = new ReflectionMethod(ParallelWorkerDispatch::class, 'extractConstructorArgs');
-        $method->setAccessible(true);
 
         return $method->invoke(new ParallelWorkerDispatch(ParallelConfig::singleWorker()), $task);
     }

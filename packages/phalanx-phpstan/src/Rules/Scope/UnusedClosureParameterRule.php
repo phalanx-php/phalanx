@@ -73,7 +73,7 @@ final class UnusedClosureParameterRule implements Rule
             ? [$node->expr]
             : $node->stmts;
 
-        if ($body === null || $body === []) {
+        if ($body === []) {
             return false;
         }
 

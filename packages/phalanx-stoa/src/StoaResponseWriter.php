@@ -33,6 +33,7 @@ final readonly class StoaResponseWriter
             }
         }
 
+        // @phpstan-ignore booleanNot.alwaysFalse (client disconnect between header writes)
         if (!$target->isWritable()) {
             $request->abort('response closed before body');
             throw new ResponseWriteFailure('OpenSwoole response closed before body.');

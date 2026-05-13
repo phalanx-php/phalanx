@@ -6,7 +6,7 @@ namespace Phalanx\Trace;
 
 class Trace
 {
-    private const MAX_EVENTS = 10_000;
+    private const int MAX_EVENTS = 10_000;
 
     /** @var list<TraceEvent> */
     private array $events = [];

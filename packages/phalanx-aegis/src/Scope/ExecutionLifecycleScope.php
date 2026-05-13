@@ -1622,8 +1622,11 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         return $deps;
     }
 
-    private static function resolveFactoryParameter(CompiledServiceConfig $config, ReflectionParameter $parameter, self $scope): mixed
-    {
+    private static function resolveFactoryParameter(
+        CompiledServiceConfig $config,
+        ReflectionParameter $parameter,
+        self $scope,
+    ): mixed {
         $type = $parameter->getType();
         if (!$type instanceof ReflectionNamedType || $type->isBuiltin()) {
             throw new RuntimeException(sprintf(

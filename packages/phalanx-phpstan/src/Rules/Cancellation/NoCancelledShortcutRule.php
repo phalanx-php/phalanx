@@ -51,11 +51,10 @@ final class NoCancelledShortcutRule implements Rule
 
         $cancelledHandledEarlier = false;
         foreach ($node->catches as $catch) {
-            if (
-                $this->catchesCancelled($catch, $scope)
-                && $this->bodyPreservesCancellation($catch, $scope)
-            ) {
-                $cancelledHandledEarlier = true;
+            if ($this->catchesCancelled($catch, $scope)) {
+                if (!$this->catchesThrowable($catch, $scope) || $this->bodyPreservesCancellation($catch, $scope)) {
+                    $cancelledHandledEarlier = true;
+                }
             }
 
             if (!$this->catchesThrowable($catch, $scope)) {

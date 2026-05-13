@@ -39,7 +39,7 @@ final class RouteContractTest extends TestCase
         ]);
 
         $scope = $this->app->createScope();
-        $scope = $scope->withAttribute('request', $request);
+        $scope->setResource('request', $request);
 
         $result = $scope->execute($group);
 
@@ -64,7 +64,7 @@ final class RouteContractTest extends TestCase
         ]);
 
         $scope = $this->app->createScope();
-        $scope = $scope->withAttribute('request', $request);
+        $scope->setResource('request', $request);
 
         $result = $scope->execute($group);
 
@@ -84,7 +84,7 @@ final class RouteContractTest extends TestCase
         $request = $this->createRequest('GET', '/health');
 
         $scope = $this->app->createScope();
-        $scope = $scope->withAttribute('request', $request);
+        $scope->setResource('request', $request);
 
         $result = $scope->execute($group);
 
@@ -105,7 +105,7 @@ final class RouteContractTest extends TestCase
         $request = $this->createRequest('GET', '/ping');
 
         $scope = $this->app->createScope();
-        $scope = $scope->withAttribute('request', $request);
+        $scope->setResource('request', $request);
 
         $result = $scope->execute($group);
 
@@ -124,7 +124,7 @@ final class RouteContractTest extends TestCase
         ]);
 
         $scope = $this->app->createScope();
-        $scope = $scope->withAttribute('request', $request);
+        $scope->setResource('request', $request);
 
         try {
             $scope->execute($group);
@@ -147,7 +147,7 @@ final class RouteContractTest extends TestCase
         ]);
 
         $scope = $this->app->createScope();
-        $scope = $scope->withAttribute('request', $request);
+        $scope->setResource('request', $request);
 
         try {
             $scope->execute($group);
@@ -169,7 +169,7 @@ final class RouteContractTest extends TestCase
         ]);
 
         $scope = $this->app->createScope();
-        $scope = $scope->withAttribute('request', $request);
+        $scope->setResource('request', $request);
 
         try {
             $scope->execute($group);
@@ -189,7 +189,7 @@ final class RouteContractTest extends TestCase
         $request = $this->createRequest('DELETE', '/tasks/42');
 
         $scope = $this->app->createScope();
-        $scope = $scope->withAttribute('request', $request);
+        $scope->setResource('request', $request);
 
         $result = $scope->execute($group);
 

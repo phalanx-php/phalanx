@@ -29,7 +29,6 @@ final class PoolRing
         $this->slots = [];
 
         for ($i = 0; $i < $size; $i++) {
-            /** @var T $ghost */
             $ghost = $this->reflector->newLazyGhost(static function (): void {
             });
             $this->slots[] = $ghost;
@@ -43,13 +42,13 @@ final class PoolRing
     public function next(Closure $initializer): object
     {
         $slot = $this->slots[$this->cursor];
+        $bound = Closure::bind($initializer, null, $this->class);
 
-        // Required on first pass AND after reset() — both leave slots as uninitialized ghosts
         if ($this->reflector->isUninitializedLazyObject($slot)) {
             $this->reflector->initializeLazyObject($slot);
         }
 
-        $this->reflector->resetAsLazyGhost($slot, $initializer);
+        $this->reflector->resetAsLazyGhost($slot, $bound);
         $this->reflector->initializeLazyObject($slot);
         $this->cursor = ($this->cursor + 1) % $this->size;
 

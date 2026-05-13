@@ -11,6 +11,7 @@ use Spatie\Ignition\ErrorPage\ErrorPageViewModel;
  */
 final class PhalanxErrorPageViewModel extends ErrorPageViewModel
 {
+    #[\Override]
     public function getAssetContents(string $asset): string
     {
         $assetPath = dirname(__DIR__, 3) . "/resources/ignition/compiled/{$asset}";
@@ -22,12 +23,12 @@ final class PhalanxErrorPageViewModel extends ErrorPageViewModel
         return (string) file_get_contents($assetPath);
     }
 
+    #[\Override]
     public function solutions(): array
     {
         // Scrub Laravel-specific solutions before they are mapped to arrays
         $this->solutions = array_filter($this->solutions, static function ($solution) {
-            $class = is_object($solution) ? $solution::class : '';
-            return !str_contains($class, 'Laravel') && !str_contains($class, 'Spatie\\LaravelIgnition');
+            return !str_contains($solution::class, 'Laravel') && !str_contains($solution::class, 'Spatie\\LaravelIgnition');
         });
 
         return parent::solutions();

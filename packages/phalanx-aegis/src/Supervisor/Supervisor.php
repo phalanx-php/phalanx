@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Supervisor;
 
 use Phalanx\Cancellation\CancellationToken;
+use Phalanx\Pool\ObjectPool;
 use Phalanx\Scope\Cancellable;
 use Phalanx\Scope\Scope;
 use Phalanx\Scope\ScopeIdentity;
@@ -14,6 +15,7 @@ use Phalanx\Task\Task;
 use Phalanx\Trace\Trace;
 use Phalanx\Trace\TraceType;
 use ReflectionFunction;
+use SplStack;
 use Throwable;
 
 /**
@@ -29,13 +31,6 @@ use Throwable;
  * this path silently drops middleware, lease tracking, wait reasons,
  * worker placement inference, and the live task-tree diagnostic surface.
  *
- * State of the slice (current commit):
- *   - Skeleton only. Methods declare the API surface and contract; they
- *     are not yet wired into ExecutionLifecycleScope's primitives.
- *   - InProcessLedger is functional and tested.
- *   - Subsequent slices wire execute(), concurrent(), and the rest of
- *     the primitives through start()/join()/cancel()/reap().
- *
  * Sibling-isolation invariant:
  *   When start() is called with DispatchMode::Concurrent, the caller is
  *   responsible for handing the child its own scope object with its own
@@ -47,10 +42,27 @@ use Throwable;
  */
 final class Supervisor
 {
+    /** @var ObjectPool<TaskRun> */
+    private ObjectPool $taskRunPool;
+
+    /** @var SplStack<CancellationToken> */
+    private SplStack $tokenPool;
+
+    private int $tokenPoolCapacity;
+
+    private int $tokenPoolHits = 0;
+
+    private int $tokenPoolMisses = 0;
+
     public function __construct(
-        public readonly LedgerStorage $ledger,
-        public readonly Trace $trace,
+        private(set) LedgerStorage $ledger,
+        private(set) Trace $trace,
+        int $taskRunPoolCapacity = 256,
+        int $tokenPoolCapacity = 512,
     ) {
+        $this->taskRunPool = new ObjectPool(TaskRun::class, $taskRunPoolCapacity);
+        $this->tokenPool = new SplStack();
+        $this->tokenPoolCapacity = $tokenPoolCapacity;
     }
 
     public function registerScope(
@@ -101,25 +113,18 @@ final class Supervisor
         $metadata = self::resolveMetadata($task);
         $scopeId = $parent instanceof ScopeIdentity ? $parent->scopeId : null;
 
+        $supervisorOwnsToken = $token === null;
         if ($token === null) {
             $parentToken = $parent instanceof Cancellable
                 ? $parent->cancellation()
                 : CancellationToken::none();
-            $token = CancellationToken::composite($parentToken);
+            $token = $this->acquireCompositeToken($parentToken);
         }
 
-        $run = new TaskRun(
-            id: $id,
-            name: $resolvedName,
-            parentId: $parentRunId,
-            mode: $mode,
-            cancellation: $token,
-            startedAt: microtime(true),
-            scopeId: $scopeId,
-            taskFqcn: $metadata['fqcn'],
-            sourcePath: $metadata['sourcePath'],
-            sourceLine: $metadata['sourceLine'],
+        $run = $this->taskRunPool->acquire(
+            TaskRun::poolInitializer($id, $resolvedName, $parentRunId, $mode, $token, $scopeId, $metadata),
         );
+        $run->tokenOwnedBySupervisor = $supervisorOwnsToken;
 
         $this->ledger->register($run);
 
@@ -166,6 +171,9 @@ final class Supervisor
      */
     public function complete(TaskRun $run, mixed $value): void
     {
+        $run->state = RunState::Completed;
+        $run->value = $value;
+        $run->endedAt = microtime(true);
         $this->ledger->complete($run->id, $value);
     }
 
@@ -174,6 +182,9 @@ final class Supervisor
      */
     public function fail(TaskRun $run, Throwable $error): void
     {
+        $run->state = RunState::Failed;
+        $run->error = $error;
+        $run->endedAt = microtime(true);
         $run->failureTree = $this->tree();
         $this->ledger->fail($run->id, $error);
     }
@@ -185,6 +196,8 @@ final class Supervisor
      */
     public function cancel(TaskRun $run): void
     {
+        $run->state = RunState::Cancelled;
+        $run->endedAt ??= microtime(true);
         $run->cancellation->cancel();
         $this->ledger->cancel($run->id);
     }
@@ -221,7 +234,36 @@ final class Supervisor
             }
         }
 
-        $this->ledger->reap($run->id);
+        $token = $run->tokenOwnedBySupervisor ? $run->cancellation : null;
+
+        try {
+            $this->ledger->reap($run->id);
+        } finally {
+            $run->error = null;
+            $run->value = null;
+            $run->failureTree = null;
+            $run->leases = [];
+            $run->currentWait = null;
+            $this->taskRunPool->release($run);
+
+            if ($token !== null) {
+                $this->releaseToken($token);
+            }
+        }
+    }
+
+    /** @return array{taskRun: array{hits: int, misses: int, overflows: int, free: int, capacity: int}, token: array{hits: int, misses: int, free: int, capacity: int}} */
+    public function poolStats(): array
+    {
+        return [
+            'taskRun' => $this->taskRunPool->stats(),
+            'token' => [
+                'hits' => $this->tokenPoolHits,
+                'misses' => $this->tokenPoolMisses,
+                'free' => $this->tokenPool->count(),
+                'capacity' => $this->tokenPoolCapacity,
+            ],
+        ];
     }
 
     /**
@@ -471,5 +513,35 @@ final class Supervisor
         }
 
         return ['fqcn' => $task::class, 'sourcePath' => '', 'sourceLine' => 0];
+    }
+
+    private function acquireCompositeToken(CancellationToken $parent): CancellationToken
+    {
+        if ($this->tokenPool->isEmpty()) {
+            $this->tokenPoolMisses++;
+            return CancellationToken::composite($parent);
+        }
+
+        $this->tokenPoolHits++;
+        $token = $this->tokenPool->pop();
+        $token->resetForPool();
+        $token->wireComposite($parent);
+
+        return $token;
+    }
+
+    private function releaseToken(CancellationToken $token): void
+    {
+        if ($token->immutableNone) {
+            return;
+        }
+
+        $token->release();
+
+        if ($this->tokenPool->count() >= $this->tokenPoolCapacity) {
+            return;
+        }
+
+        $this->tokenPool->push($token);
     }
 }

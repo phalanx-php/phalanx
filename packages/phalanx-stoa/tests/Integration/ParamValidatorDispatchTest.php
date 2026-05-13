@@ -33,7 +33,8 @@ final class ParamValidatorDispatchTest extends TestCase
         ])->withPatterns(['id' => new IntInRange(1, 999)]);
 
         $request = $this->createRequest('GET', '/items/42');
-        $scope = $this->app->createScope()->withAttribute('request', $request);
+        $scope = $this->app->createScope();
+        $scope->setResource('request', $request);
 
         $result = $scope->execute($group);
 
@@ -48,7 +49,8 @@ final class ParamValidatorDispatchTest extends TestCase
         ])->withPatterns(['id' => new IntInRange(1, 999)]);
 
         $request = $this->createRequest('GET', '/items/abc');
-        $scope = $this->app->createScope()->withAttribute('request', $request);
+        $scope = $this->app->createScope();
+        $scope->setResource('request', $request);
 
         $this->expectException(RouteNotFoundException::class);
 
@@ -65,7 +67,8 @@ final class ParamValidatorDispatchTest extends TestCase
         // FastRoute's \d+ pattern will still match 1000, but the imperative
         // range check will reject it.
         $request = $this->createRequest('GET', '/items/1000');
-        $scope = $this->app->createScope()->withAttribute('request', $request);
+        $scope = $this->app->createScope();
+        $scope->setResource('request', $request);
 
         try {
             $scope->execute($group);
@@ -84,7 +87,8 @@ final class ParamValidatorDispatchTest extends TestCase
         ])->withPatterns(['id' => new OneOf('foo', 'bar', 'baz')]);
 
         $request = $this->createRequest('GET', '/items/qux');
-        $scope = $this->app->createScope()->withAttribute('request', $request);
+        $scope = $this->app->createScope();
+        $scope->setResource('request', $request);
 
         try {
             $scope->execute($group);
@@ -103,7 +107,8 @@ final class ParamValidatorDispatchTest extends TestCase
         ])->withPatterns(['id' => new OneOf('foo', 'bar', 'baz')]);
 
         $request = $this->createRequest('GET', '/items/bar');
-        $scope = $this->app->createScope()->withAttribute('request', $request);
+        $scope = $this->app->createScope();
+        $scope->setResource('request', $request);
 
         $result = $scope->execute($group);
 

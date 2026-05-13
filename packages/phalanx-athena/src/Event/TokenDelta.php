@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Phalanx\Athena\Event;
 
-final readonly class TokenDelta
+final class TokenDelta
 {
     public function __construct(
-        public ?string $text = null,
-        public ?string $toolCallId = null,
-        public ?string $toolName = null,
-        public ?string $toolInputJson = null,
+        private(set) ?string $text = null,
+        private(set) ?string $toolCallId = null,
+        private(set) ?string $toolName = null,
+        private(set) ?string $toolInputJson = null,
     ) {}
 }

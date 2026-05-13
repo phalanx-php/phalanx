@@ -70,7 +70,13 @@ final class Probe extends BootRequirement
         $msg = $description ?? sprintf('HTTP probe %s', $url);
         $expected = $expectStatus;
 
-        $check = static function (AppContext $_ctx) use ($url, $expected, $timeout, $failureMode, $msg): BootEvaluation {
+        $check = static function (AppContext $_ctx) use (
+            $url,
+            $expected,
+            $timeout,
+            $failureMode,
+            $msg,
+        ): BootEvaluation {
             $context = stream_context_create([
                 'http' => ['method' => 'HEAD', 'timeout' => $timeout, 'ignore_errors' => true],
             ]);

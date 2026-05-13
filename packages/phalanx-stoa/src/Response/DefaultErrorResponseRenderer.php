@@ -27,7 +27,7 @@ final readonly class DefaultErrorResponseRenderer implements ErrorResponseRender
     {
     }
 
-    public function render(RequestScope $scope, Throwable $e): ?ResponseInterface
+    public function render(RequestScope $scope, Throwable $e): ResponseInterface
     {
         $resource = $scope->resource(StoaScopeKey::RequestResource->value);
 

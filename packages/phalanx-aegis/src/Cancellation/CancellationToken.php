@@ -38,10 +38,19 @@ class CancellationToken
     /** @var list<array{self, int}> */
     private array $unregisters = [];
 
-    private bool $immutableNone = false;
+    private(set) bool $immutableNone = false;
 
     private function __construct()
     {
+    }
+
+    /** @internal Pool reset — clears all state for reuse via ObjectPool */
+    public function resetForPool(): void
+    {
+        $this->release();
+        $this->cancelled = false;
+        $this->listenerSeq = 0;
+        $this->immutableNone = false;
     }
 
     public static function none(): self
@@ -89,6 +98,22 @@ class CancellationToken
         }
 
         return $composite;
+    }
+
+    /** @internal Wire composite cancellation sources on a pool-reset token */
+    public function wireComposite(self ...$sources): void
+    {
+        $token = $this;
+        foreach ($sources as $source) {
+            if ($source->cancelled) {
+                $this->cancel();
+                return;
+            }
+            $key = $source->onCancel(static function () use ($token): void {
+                $token->cancel();
+            });
+            $this->unregisters[] = [$source, $key];
+        }
     }
 
     public function throwIfCancelled(): void

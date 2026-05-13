@@ -31,7 +31,7 @@ final class RedisConversationMemory implements ConversationMemory
                 '%s expects a %s instance, got %s.',
                 self::class,
                 \Phalanx\Redis\RedisClient::class,
-                get_class($redis),
+                $redis::class,
             ));
         }
 

@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Phalanx\Athena\Event;
 
-final readonly class AgentEvent
+final class AgentEvent
 {
     public function __construct(
-        public AgentEventKind $kind,
-        public mixed $data,
-        public float $elapsed,
-        public TokenUsage $usageSoFar,
-        public int $step,
-        public ?string $agent = null,
+        private(set) AgentEventKind $kind,
+        private(set) mixed $data,
+        private(set) float $elapsed,
+        private(set) TokenUsage $usageSoFar,
+        private(set) int $step,
+        private(set) ?string $agent = null,
     ) {
     }
 

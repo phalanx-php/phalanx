@@ -166,7 +166,8 @@ class ApplicationBuilder
         if ($resolvedWorkerDispatch === null && $workerDispatchConfig !== null) {
             if ($workerDispatchConfig->lifetime !== ServiceLifetime::Singleton) {
                 throw new \RuntimeException(
-                    'WorkerDispatch services must be registered as singletons so the process pool is application-owned.',
+                    'WorkerDispatch services must be registered as singletons'
+                    . ' so the process pool is application-owned.',
                 );
             }
 

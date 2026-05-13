@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Phalanx\Hydra\Protocol;
 
-final readonly class ServiceCall
+final class ServiceCall
 {
     public function __construct(
-        public string $id,
-        public string $serviceClass,
-        public string $method,
+        private(set) string $id,
+        private(set) string $serviceClass,
+        private(set) string $method,
         /** @var list<mixed> */
-        public array $args = [],
+        private(set) array $args = [],
     ) {
     }
 

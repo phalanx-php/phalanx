@@ -33,7 +33,8 @@ final class CapabilityWiringTest extends TestCase
         ]);
 
         $request = $this->createRequest('GET', '/v', headers: []);
-        $scope = $this->app->createScope()->withAttribute('request', $request);
+        $scope = $this->app->createScope();
+        $scope->setResource('request', $request);
 
         try {
             $scope->execute($group);
@@ -52,7 +53,8 @@ final class CapabilityWiringTest extends TestCase
         ]);
 
         $request = $this->createRequest('GET', '/v', headers: ['X-Api-Version' => 'beta']);
-        $scope = $this->app->createScope()->withAttribute('request', $request);
+        $scope = $this->app->createScope();
+        $scope->setResource('request', $request);
 
         try {
             $scope->execute($group);
@@ -71,7 +73,8 @@ final class CapabilityWiringTest extends TestCase
         ]);
 
         $request = $this->createRequest('GET', '/v', headers: ['X-Api-Version' => 'v2']);
-        $scope = $this->app->createScope()->withAttribute('request', $request);
+        $scope = $this->app->createScope();
+        $scope->setResource('request', $request);
 
         $result = $scope->execute($group);
 
@@ -86,7 +89,8 @@ final class CapabilityWiringTest extends TestCase
         ]);
 
         $request = $this->createRequest('GET', '/v');
-        $scope = $this->app->createScope()->withAttribute('request', $request);
+        $scope = $this->app->createScope();
+        $scope->setResource('request', $request);
 
         try {
             $scope->execute($group);
@@ -108,7 +112,8 @@ final class CapabilityWiringTest extends TestCase
 
         // Supply query param so InputHydrator hydrates a non-default SimpleInputDto.
         $request = $this->createRequest('GET', '/v', queryParams: ['name' => 'alice']);
-        $scope = $this->app->createScope()->withAttribute('request', $request);
+        $scope = $this->app->createScope();
+        $scope->setResource('request', $request);
 
         try {
             $scope->execute($group);

@@ -99,7 +99,7 @@ class OpenApiGenerator
 
     /**
      * @param class-string $handlerClass
-     * @return array<string, mixed>
+     * @return array<int|string, mixed>
      */
     protected function buildResponses(
         string $handlerClass,

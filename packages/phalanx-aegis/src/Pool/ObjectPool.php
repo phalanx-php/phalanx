@@ -40,12 +40,13 @@ final class ObjectPool
      */
     public function acquire(Closure $initializer): object
     {
+        $bound = Closure::bind($initializer, null, $this->class);
+
         if ($this->free->isEmpty()) {
             $this->misses++;
 
-            /** @var T $instance */
             $instance = $this->reflector->newInstanceWithoutConstructor();
-            $this->reflector->resetAsLazyGhost($instance, $initializer);
+            $this->reflector->resetAsLazyGhost($instance, $bound);
             $this->reflector->initializeLazyObject($instance);
 
             return $instance;
@@ -53,9 +54,8 @@ final class ObjectPool
 
         $this->hits++;
 
-        /** @var T $instance */
         $instance = $this->free->pop();
-        $this->reflector->resetAsLazyGhost($instance, $initializer);
+        $this->reflector->resetAsLazyGhost($instance, $bound);
         $this->reflector->initializeLazyObject($instance);
 
         return $instance;

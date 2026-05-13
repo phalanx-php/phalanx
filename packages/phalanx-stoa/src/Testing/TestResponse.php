@@ -141,6 +141,7 @@ final class TestResponse
         return $this;
     }
 
+    /** @param array<int|string, mixed> $structure */
     public function assertJsonStructure(array $structure): self
     {
         self::assertStructure($structure, $this->json(), '');

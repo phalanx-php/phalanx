@@ -31,7 +31,8 @@ final class MiddlewareInterfaceTest extends TestCase
         ])->wrap(PrefixingMiddlewareV2::class);
 
         $request = $this->createRequest('GET', '/test');
-        $scope = $this->app->createScope()->withAttribute('request', $request);
+        $scope = $this->app->createScope();
+        $scope->setResource('request', $request);
 
         $result = $scope->execute($group);
 
@@ -47,7 +48,8 @@ final class MiddlewareInterfaceTest extends TestCase
         ])->wrap(AbortingMiddlewareV2::class);
 
         $request = $this->createRequest('GET', '/test');
-        $scope = $this->app->createScope()->withAttribute('request', $request);
+        $scope = $this->app->createScope();
+        $scope->setResource('request', $request);
 
         $result = $scope->execute($group);
 

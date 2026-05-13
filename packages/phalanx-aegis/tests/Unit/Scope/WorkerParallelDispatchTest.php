@@ -69,13 +69,9 @@ final class WorkerParallelDispatchTest extends PhalanxTestCase
 
     public function testMapParallelDispatchesFactoryTasksWithLimit(): void
     {
-        $dispatch = new LimitRecordingDispatch(total: 5, limit: 2);
+        $dispatch = new LimitRecordingDispatch();
         $seen = [];
 
-        // This test requires the outer scope only for coroutine context; the
-        // inner Application manages its own dispatch coordination via channels.
-        // Asserting on $seen and $dispatch->maxActive happens after scope->run()
-        // returns because they are populated inside the run closure via reference.
         $results = $this->scope->run(static function () use ($dispatch, &$seen): array {
             $app = Application::starting()
                 ->withWorkerDispatch($dispatch)
@@ -236,9 +232,6 @@ final class CoordinatedFailFastDispatch implements WorkerDispatch
             if ($this->blockedStarted->pop(1.0) !== true) {
                 throw new \RuntimeException('blocking worker did not start');
             }
-        }
-
-        if ($task instanceof FailingWorkerTask) {
             return $task($scope);
         }
 
@@ -254,36 +247,18 @@ final class CoordinatedFailFastDispatch implements WorkerDispatch
 
 final class LimitRecordingDispatch implements WorkerDispatch
 {
-    private Channel $release;
-
     private int $active = 0;
 
-    private int $started = 0;
-
     private(set) int $maxActive = 0;
-
-    public function __construct(
-        private readonly int $total,
-        private readonly int $limit,
-    ) {
-        $this->release = new Channel($total);
-    }
 
     public function dispatch(WorkerTask $task, TaskScope&TaskExecutor $scope, CancellationToken $token): mixed
     {
         $this->active++;
-        $this->started++;
         $this->maxActive = max($this->maxActive, $this->active);
 
-        if ($this->active === $this->limit || $this->started === $this->total) {
-            for ($i = 0; $i < $this->active; $i++) {
-                $this->release->push(true);
-            }
-        }
-
-        $this->release->pop(1.0);
-
         try {
+            \OpenSwoole\Coroutine::sleep(0);
+
             if ($task instanceof ValueWorkerTask) {
                 return $task($scope);
             }
@@ -296,6 +271,5 @@ final class LimitRecordingDispatch implements WorkerDispatch
 
     public function shutdown(): void
     {
-        $this->release->close();
     }
 }

@@ -41,6 +41,7 @@ final class HttpLens implements LensContract
     private mixed $actingAs = null;
 
     public function __construct(
+        /** @phpstan-ignore property.onlyWritten (GC pin — keeps TestApp alive while lens exists) */
         private readonly TestApp $app,
         private readonly StoaApplication $stoa,
     ) {

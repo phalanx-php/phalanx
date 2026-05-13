@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Phalanx\Athena\Event;
 
-final readonly class ToolCallData
+final class ToolCallData
 {
     /** @param array<string, mixed> $arguments */
     public function __construct(
-        public string $callId,
-        public string $toolName,
-        public array $arguments = [],
+        private(set) string $callId,
+        private(set) string $toolName,
+        private(set) array $arguments = [],
     ) {}
 }

@@ -68,12 +68,12 @@ final class StoaRunner
     /** @var list<ErrorResponseRenderer> */
     private array $errorRenderers = [];
 
+    /** @param list<ErrorResponseRenderer> $errorRenderers */
     private function __construct(
         private readonly AppHost $app,
         private readonly StoaServerConfig $config = new StoaServerConfig(),
         private readonly StoaRequestFactory $requestFactory = new StoaRequestFactory(),
         private readonly StoaResponseWriter $responseWriter = new StoaResponseWriter(),
-        /** @var list<ErrorResponseRenderer> */
         array $errorRenderers = [],
     ) {
         $this->bufferEvents = new BufferEventDispatcher();
@@ -844,8 +844,7 @@ final class StoaRunner
                 RouteConfig::compile('/'),
             );
 
-            return $defaultRenderer->render($dummy, $e)
-                ?? $this->jsonResponse(500, ['error' => 'Internal Server Error']);
+            return $defaultRenderer->render($dummy, $e);
         } finally {
             $ownedScope?->dispose();
         }

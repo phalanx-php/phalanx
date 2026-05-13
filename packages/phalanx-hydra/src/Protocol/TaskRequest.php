@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Phalanx\Hydra\Protocol;
 
-final readonly class TaskRequest
+final class TaskRequest
 {
     public function __construct(
-        public string $id,
-        public string $taskClass,
+        private(set) string $id,
+        private(set) string $taskClass,
         /** @var array<string, mixed> */
-        public array $constructorArgs,
+        private(set) array $constructorArgs,
         /** @var array<string, mixed> */
-        public array $contextAttrs = [],
+        private(set) array $contextAttrs = [],
     ) {
     }
 

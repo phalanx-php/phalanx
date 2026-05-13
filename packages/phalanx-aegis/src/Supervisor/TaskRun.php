@@ -43,19 +43,65 @@ final class TaskRun
     /** @var list<TaskRunSnapshot>|null */
     public ?array $failureTree = null;
 
+    public bool $tokenOwnedBySupervisor = false;
+
     public function __construct(
-        public readonly string $id,
-        public readonly string $name,
-        public readonly ?string $parentId,
-        public readonly DispatchMode $mode,
-        public readonly CancellationToken $cancellation,
-        public readonly float $startedAt,
-        public readonly ?string $scopeId = null,
-        public readonly ?string $taskFqcn = null,
-        public readonly ?string $sourcePath = null,
-        public readonly ?int $sourceLine = null,
+        private(set) string $id,
+        private(set) string $name,
+        private(set) ?string $parentId,
+        private(set) DispatchMode $mode,
+        private(set) CancellationToken $cancellation,
+        private(set) float $startedAt,
+        private(set) ?string $scopeId = null,
+        private(set) ?string $taskFqcn = null,
+        private(set) ?string $sourcePath = null,
+        private(set) ?int $sourceLine = null,
     ) {
         $this->state = RunState::Pending;
+    }
+
+    /**
+     * @internal Pool initializer — closure runs in TaskRun scope for private(set) access.
+     * @param array{fqcn: string, sourcePath: string, sourceLine: int} $metadata
+     * @return \Closure(self): void
+     */
+    public static function poolInitializer(
+        string $id,
+        string $name,
+        ?string $parentId,
+        DispatchMode $mode,
+        CancellationToken $cancellation,
+        ?string $scopeId,
+        array $metadata,
+    ): \Closure {
+        return static function (self $run) use (
+            $id,
+            $name,
+            $parentId,
+            $mode,
+            $cancellation,
+            $scopeId,
+            $metadata,
+        ): void {
+            $run->id = $id;
+            $run->name = $name;
+            $run->parentId = $parentId;
+            $run->mode = $mode;
+            $run->cancellation = $cancellation;
+            $run->startedAt = microtime(true);
+            $run->scopeId = $scopeId;
+            $run->taskFqcn = $metadata['fqcn'];
+            $run->sourcePath = $metadata['sourcePath'];
+            $run->sourceLine = $metadata['sourceLine'];
+            $run->state = RunState::Pending;
+            $run->leases = [];
+            $run->currentWait = null;
+            $run->endedAt = null;
+            $run->value = null;
+            $run->error = null;
+            $run->failureTree = null;
+            $run->tokenOwnedBySupervisor = false;
+        };
     }
 
     public function elapsed(): float
