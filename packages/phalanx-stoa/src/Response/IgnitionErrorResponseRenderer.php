@@ -48,15 +48,16 @@ final readonly class IgnitionErrorResponseRenderer implements ErrorResponseRende
             }
 
             $ignition = new Ignition();
+            $ignition->shouldDisplayException(false);
             $report = $ignition->handleException($e);
-            
-            $report->context('Phalanx', [
+
+            $report->group('Phalanx', [
                 'Request ID' => $requestId,
                 'Method' => $scope->method(),
                 'Path' => $scope->path(),
             ]);
 
-            $report->context('Active Ledger', [
+            $report->group('Active Ledger', [
                 'Fiber Hierarchy' => $ledger,
             ]);
 
