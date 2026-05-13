@@ -103,25 +103,7 @@
         }
     ],
     "scripts": {
-        "test": "@test:all",
-        "test:all": [
-            "@test:aegis",
-            "@test:archon",
-            "@test:argos",
-            "@test:ai",
-            "@test:cli",
-            "@test:eidolon",
-            "@test:ssh",
-            "@test:grammata",
-            "@test:hermes",
-            "@test:hydra",
-            "@test:iris",
-            "@test:phpstan",
-            "@test:skopos",
-            "@test:stoa",
-            "@test:styx",
-            "@test:surreal"
-        ],
+        "test": "php vendor/bin/phpunit",
         "test:cli": "php vendor/bin/phpunit packages/phalanx-cli/tests/",
         "test:core": "php vendor/bin/phpunit packages/phalanx-aegis/tests/",
         "test:aegis": "php vendor/bin/phpunit packages/phalanx-aegis/tests/",
