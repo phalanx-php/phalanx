@@ -9,6 +9,8 @@ use OpenSwoole\WebSocket\Server as WebSocketServer;
 
 final class WsMessage
 {
+    public const int READER_RING_SIZE = 128;
+
     public bool $isText {
         get => $this->opcode === WebSocketServer::WEBSOCKET_OPCODE_TEXT;
     }
@@ -72,20 +74,39 @@ final class WsMessage
 
     public static function fromFrame(Frame $frame): self
     {
+        [$payload, $opcode, $closeCode] = self::parseFrame($frame);
+
+        return new self($payload, $opcode, $closeCode);
+    }
+
+    public function reset(string $payload, int $opcode, ?WsCloseCode $closeCode = null): void
+    {
+        $this->payload = $payload;
+        $this->opcode = $opcode;
+        $this->closeCode = $closeCode;
+    }
+
+    public function resetFromFrame(Frame $frame): void
+    {
+        $this->reset(...self::parseFrame($frame));
+    }
+
+    /** @return array{string, int, ?WsCloseCode} */
+    private static function parseFrame(Frame $frame): array
+    {
         $opcode = $frame->opcode;
         $payload = $frame->data ?? '';
         $closeCode = null;
 
         if ($opcode === WebSocketServer::WEBSOCKET_OPCODE_CLOSE && strlen($payload) >= 2) {
             $unpacked = unpack('n', substr($payload, 0, 2));
-            if ($unpacked === false) {
-                return new self($payload, $opcode);
+            if ($unpacked !== false) {
+                $closeCode = WsCloseCode::tryFrom((int) $unpacked[1]);
+                $payload = substr($payload, 2);
             }
-            $closeCode = WsCloseCode::tryFrom((int) $unpacked[1]);
-            $payload = substr($payload, 2);
         }
 
-        return new self($payload, $opcode, $closeCode);
+        return [$payload, $opcode, $closeCode];
     }
 
     public function decode(bool $assoc = true, int $flags = 0): mixed

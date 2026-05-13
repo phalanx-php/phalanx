@@ -10,6 +10,7 @@ use Phalanx\Iris\HttpClientConfig;
 use Phalanx\Iris\Iris;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Task;
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -17,6 +18,7 @@ use RuntimeException;
 final class IrisFacadeTest extends TestCase
 {
     #[Test]
+    #[RunInSeparateProcess]
     public function servicesRegistersConfiguredHttpClient(): void
     {
         $config = new HttpClientConfig(connectTimeout: 1.25, userAgent: 'IrisFacadeTest');
@@ -55,7 +57,7 @@ final class IrisFacadeTest extends TestCase
             ->providers(Iris::services(), Iris::services())
             ->run(Task::named(
                 'test.iris.facade.duplicate-error',
-                static fn(ExecutionScope $scope): null => null,
+                static fn(ExecutionScope $_scope): null => null,
             ));
     }
 }

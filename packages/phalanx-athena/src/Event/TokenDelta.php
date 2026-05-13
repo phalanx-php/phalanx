@@ -11,5 +11,14 @@ final class TokenDelta
         private(set) ?string $toolCallId = null,
         private(set) ?string $toolName = null,
         private(set) ?string $toolInputJson = null,
-    ) {}
+    ) {
+    }
+
+    public function reset(?string $text = null, ?string $toolCallId = null, ?string $toolName = null, ?string $toolInputJson = null): void
+    {
+        $this->text = $text;
+        $this->toolCallId = $toolCallId;
+        $this->toolName = $toolName;
+        $this->toolInputJson = $toolInputJson;
+    }
 }

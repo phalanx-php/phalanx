@@ -66,6 +66,9 @@ final class WsServerConnection
 
         $this->readerRun = $scope->go(
             static function (ExecutionScope $rs) use ($target, $host, $bridge, $config, $self): void {
+                $messages = [];
+                $msgCursor = 0;
+
                 try {
                     while (true) {
                         $rs->throwIfCancelled();
@@ -82,7 +85,14 @@ final class WsServerConnection
                             continue;
                         }
 
-                        $message = WsMessage::fromFrame($frame);
+                        $idx = $msgCursor % WsMessage::READER_RING_SIZE;
+                        if ($msgCursor < WsMessage::READER_RING_SIZE) {
+                            $messages[$idx] = WsMessage::fromFrame($frame);
+                        } else {
+                            $messages[$idx]->resetFromFrame($frame);
+                        }
+                        $message = $messages[$idx];
+                        $msgCursor++;
 
                         if (strlen($message->payload) > $config->maxFrameSize) {
                             $self->close(WsCloseCode::MessageTooBig);

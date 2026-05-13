@@ -30,14 +30,6 @@ final class TokenUsage
         );
     }
 
-    public function add(self $other): self
-    {
-        return new self(
-            $this->input + $other->input,
-            $this->output + $other->output,
-        );
-    }
-
     public function accumulate(self $other): void
     {
         $this->input += $other->input;

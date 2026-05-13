@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Athena\Provider;
 
-use Phalanx\Athena\Event\AgentEvent;
-use Phalanx\Athena\Event\TokenDelta;
 use Phalanx\Athena\Event\TokenUsage;
 use Phalanx\Athena\Http\Url;
 use Phalanx\Athena\Stream\HttpSseSource;
@@ -46,6 +44,7 @@ final class GeminiProvider implements LlmProvider
             $config,
             $client,
         ): void {
+            $pool = new StreamEventPool();
             $model = $request->model ?? $config->model;
             $body = self::buildRequestBody($request);
             $startTime = hrtime(true);
@@ -86,11 +85,11 @@ final class GeminiProvider implements LlmProvider
                 $elapsed = (hrtime(true) - $startTime) / 1e6;
 
                 self::onUsage($parsed, $usage);
-                self::onCandidates($parsed, $channel, $elapsed, $usage, $step);
+                self::onCandidates($parsed, $channel, $pool, $elapsed, $usage, $step);
             }
 
             $finalElapsed = (hrtime(true) - $startTime) / 1e6;
-            $channel->emit(AgentEvent::tokenComplete($finalElapsed, $usage, $step));
+            $channel->emit($pool->tokenComplete($finalElapsed, $usage, $step));
             $channel->complete();
         });
     }
@@ -136,6 +135,7 @@ final class GeminiProvider implements LlmProvider
     private static function onCandidates(
         array $parsed,
         Channel $channel,
+        StreamEventPool $pool,
         float $elapsed,
         TokenUsage $usage,
         int $step,
@@ -160,12 +160,7 @@ final class GeminiProvider implements LlmProvider
                 if (!is_string($text) || $text === '') {
                     continue;
                 }
-                $channel->emit(AgentEvent::tokenDelta(
-                    new TokenDelta(text: $text),
-                    $elapsed,
-                    $usage,
-                    $step,
-                ));
+                $channel->emit($pool->tokenDelta($text, $elapsed, $usage, $step));
             }
         }
     }

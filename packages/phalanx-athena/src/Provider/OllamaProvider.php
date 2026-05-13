@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Athena\Provider;
 
-use Phalanx\Athena\Event\AgentEvent;
-use Phalanx\Athena\Event\TokenDelta;
 use Phalanx\Athena\Event\TokenUsage;
 use Phalanx\Athena\Http\Url;
 use Phalanx\Iris\HttpClient;
@@ -46,6 +44,7 @@ final class OllamaProvider implements LlmProvider
             $config,
             $client,
         ): void {
+            $pool = new StreamEventPool();
             $model = $request->model ?? $config->model;
             $body = self::buildRequestBody($request, $model);
             $startTime = hrtime(true);
@@ -79,12 +78,7 @@ final class OllamaProvider implements LlmProvider
                 $message = $parsed['message'] ?? [];
                 $content = is_array($message) ? (string) ($message['content'] ?? '') : '';
                 if ($content !== '') {
-                    $channel->emit(AgentEvent::tokenDelta(
-                        new TokenDelta(text: $content),
-                        $elapsed,
-                        $usage,
-                        $step,
-                    ));
+                    $channel->emit($pool->tokenDelta($content, $elapsed, $usage, $step));
                 }
 
                 if ($parsed['done'] ?? false) {
@@ -92,7 +86,7 @@ final class OllamaProvider implements LlmProvider
                         input: (int) ($parsed['prompt_eval_count'] ?? 0),
                         output: (int) ($parsed['eval_count'] ?? 0),
                     );
-                    $channel->emit(AgentEvent::tokenComplete($elapsed, $usage, $step));
+                    $channel->emit($pool->tokenComplete($elapsed, $usage, $step));
                 }
             }
 

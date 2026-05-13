@@ -16,6 +16,16 @@ final class AgentEvent
     ) {
     }
 
+    public function reset(AgentEventKind $kind, mixed $data, float $elapsed, TokenUsage $usageSoFar, int $step, ?string $agent = null): void
+    {
+        $this->kind = $kind;
+        $this->data = $data;
+        $this->elapsed = $elapsed;
+        $this->usageSoFar = $usageSoFar;
+        $this->step = $step;
+        $this->agent = $agent;
+    }
+
     public static function llmStart(int $step, float $elapsed): self
     {
         return new self(AgentEventKind::LlmStart, null, $elapsed, TokenUsage::zero(), $step);
@@ -80,9 +90,9 @@ final class AgentEvent
         );
     }
 
-    public function withAgent(string $name): self
+    public function setAgent(string $name): void
     {
-        return new self($this->kind, $this->data, $this->elapsed, $this->usageSoFar, $this->step, $name);
+        $this->agent = $name;
     }
 
     public function toJson(): string

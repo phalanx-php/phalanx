@@ -153,11 +153,11 @@ final class AgentLoopTest extends TestCase
         $a = new TokenUsage(input: 10, output: 5);
         $b = new TokenUsage(input: 20, output: 15);
 
-        $sum = $a->add($b);
+        $a->accumulate($b);
 
-        $this->assertSame(30, $sum->input);
-        $this->assertSame(20, $sum->output);
-        $this->assertSame(50, $sum->total);
+        $this->assertSame(30, $a->input);
+        $this->assertSame(20, $a->output);
+        $this->assertSame(50, $a->total);
     }
 
     #[Test]

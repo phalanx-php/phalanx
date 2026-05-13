@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Athena\Provider;
 
-use Phalanx\Athena\Event\AgentEvent;
-use Phalanx\Athena\Event\TokenDelta;
 use Phalanx\Athena\Event\TokenUsage;
 use Phalanx\Athena\Event\ToolCallData;
 use Phalanx\Athena\Http\Url;
@@ -50,6 +48,7 @@ final class AnthropicProvider implements LlmProvider
             $client,
         ): void {
             $model = $request->model ?? $config->model;
+            $pool = new StreamEventPool();
             $body = self::buildRequestBody($request, $model);
             $headers = self::buildHeaders($config);
             $startTime = hrtime(true);
@@ -100,6 +99,7 @@ final class AnthropicProvider implements LlmProvider
                         $currentToolName,
                         $currentToolInput,
                         $channel,
+                        $pool,
                         $elapsed,
                         $usage,
                         $step,
@@ -109,6 +109,7 @@ final class AnthropicProvider implements LlmProvider
                         $accumulatedText,
                         $currentToolInput,
                         $channel,
+                        $pool,
                         $elapsed,
                         $usage,
                         $step,
@@ -118,12 +119,13 @@ final class AnthropicProvider implements LlmProvider
                         $currentToolName,
                         $currentToolInput,
                         $channel,
+                        $pool,
                         $elapsed,
                         $usage,
                         $step,
                     ),
                     'message_delta' => self::onMessageDelta($parsed, $usage),
-                    'message_stop' => $channel->emit(AgentEvent::tokenComplete($elapsed, $usage, $step)),
+                    'message_stop' => $channel->emit($pool->tokenComplete($elapsed, $usage, $step)),
                     default => null,
                 };
             }
@@ -191,6 +193,7 @@ final class AnthropicProvider implements LlmProvider
         ?string &$currentToolName,
         string &$currentToolInput,
         Channel $channel,
+        StreamEventPool $pool,
         float $elapsed,
         TokenUsage $usage,
         int $step,
@@ -202,7 +205,7 @@ final class AnthropicProvider implements LlmProvider
         $currentToolId = (string) ($block['id'] ?? '');
         $currentToolName = (string) ($block['name'] ?? '');
         $currentToolInput = '';
-        $channel->emit(AgentEvent::toolCallStart(
+        $channel->emit($pool->toolCallStart(
             new ToolCallData($currentToolId, $currentToolName),
             $elapsed,
             $usage,
@@ -216,6 +219,7 @@ final class AnthropicProvider implements LlmProvider
         string &$accumulatedText,
         string &$currentToolInput,
         Channel $channel,
+        StreamEventPool $pool,
         float $elapsed,
         TokenUsage $usage,
         int $step,
@@ -229,7 +233,7 @@ final class AnthropicProvider implements LlmProvider
         if ($deltaType === 'text_delta') {
             $text = (string) ($delta['text'] ?? '');
             $accumulatedText .= $text;
-            $channel->emit(AgentEvent::tokenDelta(new TokenDelta(text: $text), $elapsed, $usage, $step));
+            $channel->emit($pool->tokenDelta($text, $elapsed, $usage, $step));
         } elseif ($deltaType === 'input_json_delta') {
             $currentToolInput .= (string) ($delta['partial_json'] ?? '');
         }
@@ -244,6 +248,7 @@ final class AnthropicProvider implements LlmProvider
         ?string &$currentToolName,
         string &$currentToolInput,
         Channel $channel,
+        StreamEventPool $pool,
         float $elapsed,
         TokenUsage $usage,
         int $step,
@@ -254,7 +259,7 @@ final class AnthropicProvider implements LlmProvider
         $args = $currentToolInput !== ''
             ? json_decode($currentToolInput, true, 512, JSON_THROW_ON_ERROR)
             : [];
-        $channel->emit(AgentEvent::toolCallComplete(
+        $channel->emit($pool->toolCallComplete(
             new ToolCallData($currentToolId, $currentToolName ?? '', is_array($args) ? $args : []),
             $elapsed,
             $usage,
