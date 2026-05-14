@@ -313,21 +313,6 @@ final class BareScopeStub implements \Phalanx\Scope\Scope
         throw new \RuntimeException('BareScopeStub: service resolution not supported');
     }
 
-    public function attribute(string $key, mixed $default = null): mixed
-    {
-        return $default;
-    }
-
-    public function resource(string $key, mixed $default = null): mixed
-    {
-        return $default;
-    }
-
-    public function withAttribute(string $key, mixed $value): \Phalanx\Scope\Scope
-    {
-        return $this;
-    }
-
     public function trace(): Trace
     {
         return new Trace();

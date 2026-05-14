@@ -89,6 +89,9 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
     /** @var list<Closure(): void> */
     private array $disposeStack = [];
 
+    /** @var array<class-string, object> */
+    private array $inheritedScopedInstances = [];
+
     /** @var list<int> */
     private array $deferredCids = [];
 
@@ -109,12 +112,8 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
 
     private readonly SingleflightGroup $singleflightGroup;
 
-    /** @var array<string, mixed> */
-    private array $resources;
-
     /**
-     * @param array<string, mixed> $attributes
-     * @param array<string, mixed> $resources
+     * @param array<class-string, object> $inheritedScopedInstances
      * @param list<ServiceTransformationMiddleware> $serviceMiddlewares
      * @param list<TaskMiddleware> $taskMiddlewares
      */
@@ -124,16 +123,15 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         private readonly CancellationToken $cancellation,
         private readonly Trace $traceLog,
         private readonly Supervisor $supervisor,
-        private array $attributes = [],
         ?SingleflightGroup $singleflight = null,
+        array $inheritedScopedInstances = [],
         private readonly array $serviceMiddlewares = [],
         private readonly array $taskMiddlewares = [],
         private readonly ?WorkerDispatch $workerDispatch = null,
         private readonly ?string $parentScopeId = null,
-        array &$resources = [],
     ) {
-        $this->resources = &$resources;
         $this->singleflightGroup = $singleflight ?? new SingleflightGroup();
+        $this->inheritedScopedInstances = $inheritedScopedInstances;
         $this->scopeIdValue = $this->supervisor->nextScopeId();
         $this->supervisor->registerScope(
             $this->scopeIdValue,
@@ -178,6 +176,13 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         if (isset($this->scopedInstances[$resolved])) {
             /** @var T $instance */
             $instance = $this->scopedInstances[$resolved];
+
+            return $instance;
+        }
+
+        if (isset($this->inheritedScopedInstances[$resolved])) {
+            /** @var T $instance */
+            $instance = $this->inheritedScopedInstances[$resolved];
 
             return $instance;
         }
@@ -230,7 +235,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
      * @param class-string<T> $type
      * @param T $instance
      */
-    public function bindScopedInstance(string $type, object $instance): void
+    public function bindScopedInstance(string $type, object $instance, bool $inherit = false): void
     {
         $this->throwIfCancelled();
         $resolved = $this->graph->alias($type);
@@ -240,46 +245,10 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         }
 
         $this->scopedInstances[$resolved] = $instance;
-    }
 
-    public function attribute(string $key, mixed $default = null): mixed
-    {
-        return $this->attributes[$key] ?? $default;
-    }
-
-    public function resource(string $key, mixed $default = null): mixed
-    {
-        return $this->resources[$key] ?? $default;
-    }
-
-    public function setResource(string $key, mixed $value): void
-    {
-        $this->resources[$key] = $value;
-    }
-
-    public function withAttribute(string $key, mixed $value): ExecutionScope
-    {
-        $attributes = $this->attributes;
-        $attributes[$key] = $value;
-        $child = new self(
-            $this->graph,
-            $this->singletons,
-            $this->cancellation,
-            $this->traceLog,
-            $this->supervisor,
-            $attributes,
-            $this->singleflightGroup,
-            $this->serviceMiddlewares,
-            $this->taskMiddlewares,
-            $this->workerDispatch,
-            parentScopeId: $this->scopeIdValue,
-            resources: $this->resources,
-        );
-        $this->onDispose(static function () use ($child): void {
-            $child->dispose();
-        });
-
-        return $child;
+        if ($inherit) {
+            $this->inheritedScopedInstances[$resolved] = $instance;
+        }
     }
 
     public function trace(): Trace
@@ -419,13 +388,12 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             $this->cancellation,
             $this->traceLog,
             $this->supervisor,
-            $this->attributes,
             $this->singleflightGroup,
+            $this->inheritedScopedInstances,
             $this->serviceMiddlewares,
             $this->taskMiddlewares,
             $this->workerDispatch,
             parentScopeId: $this->scopeIdValue,
-            resources: $this->resources,
         );
         try {
             return $child->execute($task);
@@ -773,23 +741,11 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
     public function waterfall(Scopeable|Executable|Closure ...$tasks): mixed
     {
         $previous = null;
-        $first = true;
-        $stepScope = null;
         foreach ($tasks as $task) {
             $this->throwIfCancelled();
-            $previousStepScope = $stepScope;
-            $stepScope = $first
-                ? $this
-                : $this->withAttribute('_waterfall_previous', $previous);
-            $first = false;
-            $previous = $stepScope->executeFresh($task);
-            if ($previousStepScope !== null && $previousStepScope !== $this) {
-                $previousStepScope->dispose();
-            }
+            $previous = $this->executeFresh($task);
         }
-        if ($stepScope !== null && $stepScope !== $this) {
-            $stepScope->dispose();
-        }
+
         return $previous;
     }
 
@@ -871,13 +827,12 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             $composite,
             $this->traceLog,
             $this->supervisor,
-            $this->attributes,
             $this->singleflightGroup,
+            $this->inheritedScopedInstances,
             $this->serviceMiddlewares,
             $this->taskMiddlewares,
             $this->workerDispatch,
             parentScopeId: $this->scopeIdValue,
-            resources: $this->resources,
         );
 
         try {
@@ -1756,9 +1711,9 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
      *     child's first TaskRun gets the right parentId)
      *
      * Shared with parent (per Pool & Scope Discipline #2): graph,
-     * singletons (THE pool), trace log, supervisor, attributes (snapshot),
-     * singleflightGroup, middlewares, workerDispatch. Pool depth is bounded
-     * by the singleton's pool.size, NOT amplified by per-child scopes.
+     * singletons (THE pool), trace log, supervisor, inherited scoped services,
+     * singleflightGroup, middlewares, workerDispatch. Pool depth is bounded by
+     * the singleton's pool.size, NOT amplified by per-child scopes.
      */
     private function makeChildScope(?TaskRun $inheritParent = null): self
     {
@@ -1769,13 +1724,12 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             $childToken,
             $this->traceLog,
             $this->supervisor,
-            $this->attributes,
             $this->singleflightGroup,
+            $this->inheritedScopedInstances,
             $this->serviceMiddlewares,
             $this->taskMiddlewares,
             $this->workerDispatch,
             parentScopeId: $this->scopeIdValue,
-            resources: $this->resources,
         );
         $child->currentRun = $inheritParent;
         return $child;

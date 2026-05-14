@@ -13,6 +13,10 @@ class AuthExecutionContext implements AuthRequestScope
 {
     use ExecutionScopeDelegate;
 
+    public RequestCtx $ctx {
+        get => $this->inner->ctx;
+    }
+
     public string $resourceId {
         get => $this->inner->resourceId;
     }
@@ -93,14 +97,6 @@ class AuthExecutionContext implements AuthRequestScope
     public function clientIp(): string
     {
         return $this->inner->clientIp();
-    }
-
-    public function withAttribute(string $key, mixed $value): AuthRequestScope
-    {
-        /** @var RequestScope $newInner */
-        $newInner = $this->inner->withAttribute($key, $value);
-
-        return new self($newInner, $this->authContext);
     }
 
     protected function innerScope(): ExecutionScope

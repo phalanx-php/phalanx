@@ -116,6 +116,7 @@ final class RouteGroup implements Executable
             new RouteParams(),
             new QueryParams($request->getQueryParams()),
             RouteConfig::compile('/'),
+            new RequestCtx(),
         ));
     }
 

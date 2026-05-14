@@ -31,7 +31,7 @@ final class EnvelopeMiddleware implements Middleware, Executable
         }
 
         $collector = $scope->service(SignalCollector::class);
-        $traceId   = $scope->attribute('trace_id');
+        $traceId = $scope->ctx->get(EnvelopeCtxKey::TraceId);
 
         return Envelope::wrap($result, $collector, is_string($traceId) ? $traceId : null);
     }

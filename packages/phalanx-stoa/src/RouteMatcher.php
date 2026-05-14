@@ -41,6 +41,7 @@ final class RouteMatcher implements HandlerMatcher
             $params,
             $scope->query,
             $handler->config,
+            $scope->ctx,
         );
 
         return new MatchResult($handler, $scope);

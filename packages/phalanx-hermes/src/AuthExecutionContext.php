@@ -6,6 +6,7 @@ namespace Phalanx\Hermes;
 
 use Phalanx\Auth\AuthContext;
 use Phalanx\Scope\ExecutionScope as BaseExecutionScope;
+use Phalanx\Stoa\RequestCtx;
 use Phalanx\Stoa\RouteParams;
 use Phalanx\Support\ExecutionScopeDelegate;
 use Psr\Http\Message\ServerRequestInterface;
@@ -13,6 +14,10 @@ use Psr\Http\Message\ServerRequestInterface;
 class AuthExecutionContext implements AuthWsScope
 {
     use ExecutionScopeDelegate;
+
+    public RequestCtx $ctx {
+        get => $this->wsScope->ctx;
+    }
 
     public WsConnection $connection {
         get => $this->wsScope->connection;
@@ -38,14 +43,6 @@ class AuthExecutionContext implements AuthWsScope
         private readonly WsScope $wsScope,
         private readonly AuthContext $authContext,
     ) {
-    }
-
-    public function withAttribute(string $key, mixed $value): AuthWsScope
-    {
-        /** @var WsScope $newInner */
-        $newInner = $this->wsScope->withAttribute($key, $value);
-
-        return new self($newInner, $this->authContext);
     }
 
     protected function innerScope(): BaseExecutionScope

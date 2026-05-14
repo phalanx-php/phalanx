@@ -23,8 +23,6 @@ class WorkerScope implements AegisWorkerScope
      * @param resource $stdout
      */
     public function __construct(
-        /** @var array<string, mixed> */
-        private array $attributes,
         private readonly Trace $trace,
         private $stdin = STDIN,
         private $stdout = STDOUT,
@@ -54,24 +52,6 @@ class WorkerScope implements AegisWorkerScope
         }
 
         return new ServiceProxy($type, $this); // @phpstan-ignore return.type
-    }
-
-    public function attribute(string $key, mixed $default = null): mixed
-    {
-        return $this->attributes[$key] ?? $default;
-    }
-
-    public function resource(string $key, mixed $default = null): mixed
-    {
-        return $default;
-    }
-
-    public function withAttribute(string $key, mixed $value): AegisWorkerScope
-    {
-        $attributes = $this->attributes;
-        $attributes[$key] = $value;
-
-        return new self($attributes, $this->trace, $this->stdin, $this->stdout);
     }
 
     public function trace(): Trace

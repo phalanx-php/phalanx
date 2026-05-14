@@ -56,12 +56,7 @@ final class HandlerDispatchTest extends TestCase
         $matcher = new class implements HandlerMatcher {
             public function match(ExecutionScope $scope, array $handlers): ?MatchResult
             {
-                $target = $scope->attribute('custom.target');
-                if ($target === null) {
-                    return null;
-                }
-
-                $handler = $handlers[$target] ?? null;
+                $handler = $handlers['task-b'] ?? null;
                 if ($handler === null) {
                     return null;
                 }
@@ -76,7 +71,6 @@ final class HandlerDispatchTest extends TestCase
         ])->withMatcher($matcher);
 
         $scope = $this->app->createScope();
-        $scope = $scope->withAttribute('custom.target', 'task-b');
 
         $result = $scope->execute($group);
 

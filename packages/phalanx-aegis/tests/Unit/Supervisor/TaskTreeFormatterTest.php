@@ -141,8 +141,5 @@ class FormatterNoopTask implements Executable {
 class FormatterBareScopeStub implements Scope {
     public \Phalanx\Runtime\RuntimeContext $runtime { get { throw new \Exception(); } }
     public function service(string $id): object { throw new \Exception(); }
-    public function attribute(string $key, mixed $default = null): mixed { return $default; }
-    public function resource(string $key, mixed $default = null): mixed { return $default; }
-    public function withAttribute(string $key, mixed $value): static { return $this; }
     public function trace(): \Phalanx\Trace\Trace { throw new \Exception(); }
 }

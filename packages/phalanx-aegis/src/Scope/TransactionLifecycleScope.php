@@ -10,7 +10,6 @@ use Phalanx\Runtime\RuntimeContext;
 use Phalanx\Supervisor\TransactionLease;
 use Phalanx\Supervisor\WaitReason;
 use Phalanx\Trace\Trace;
-use RuntimeException;
 
 final class TransactionLifecycleScope implements TransactionScope
 {
@@ -36,26 +35,6 @@ final class TransactionLifecycleScope implements TransactionScope
     public function service(string $type): object
     {
         return $this->scope->service($type);
-    }
-
-    public function attribute(string $key, mixed $default = null): mixed
-    {
-        return $this->scope->attribute($key, $default);
-    }
-
-    public function resource(string $key, mixed $default = null): mixed
-    {
-        return $this->scope->resource($key, $default);
-    }
-
-    public function withAttribute(string $key, mixed $value): TransactionScope
-    {
-        $scope = $this->scope->withAttribute($key, $value);
-        if (!$scope instanceof ExecutionLifecycleScope) {
-            throw new RuntimeException('transaction scope attribute derivation returned an unsupported scope');
-        }
-
-        return new self($scope, $this->lease);
     }
 
     public function trace(): Trace

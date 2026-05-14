@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Hermes;
 
 use Phalanx\Scope\ExecutionScope as BaseExecutionScope;
+use Phalanx\Stoa\RequestCtx;
 use Phalanx\Stoa\RouteParams;
 use Phalanx\Support\ExecutionScopeDelegate;
 use Psr\Http\Message\ServerRequestInterface;
@@ -12,6 +13,10 @@ use Psr\Http\Message\ServerRequestInterface;
 class ExecutionContext implements WsScope
 {
     use ExecutionScopeDelegate;
+
+    public RequestCtx $ctx {
+        get => $this->requestCtx;
+    }
 
     public WsConnection $connection {
         get => $this->conn;
@@ -35,18 +40,8 @@ class ExecutionContext implements WsScope
         private readonly WsConfig $wsConfig,
         private readonly ServerRequestInterface $upgradeRequest,
         private readonly RouteParams $routeParams,
+        private readonly RequestCtx $requestCtx,
     ) {
-    }
-
-    public function withAttribute(string $key, mixed $value): WsScope
-    {
-        return new self(
-            $this->inner->withAttribute($key, $value),
-            $this->conn,
-            $this->wsConfig,
-            $this->upgradeRequest,
-            $this->routeParams,
-        );
     }
 
     protected function innerScope(): BaseExecutionScope

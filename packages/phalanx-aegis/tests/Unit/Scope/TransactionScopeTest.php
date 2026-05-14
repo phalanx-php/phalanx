@@ -6,6 +6,7 @@ namespace Phalanx\Tests\Unit\Scope;
 
 use Phalanx\Boot\AppContext;
 use Phalanx\Application;
+use Phalanx\Scope\ExecutionLifecycleScope;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\TransactionScope;
 use Phalanx\Service\ServiceBundle;
@@ -102,19 +103,20 @@ final class TransactionScopeTest extends PhalanxTestCase
         self::assertSame('PHX-TXN-001', $thrown->phxCode);
     }
 
-    public function testTransactionScopeAllowsLocalWaitsAndAttributeDerivation(): void
+    public function testTransactionScopeAllowsLocalWaitsAndInheritedScopedServices(): void
     {
         $value = $this->scope->run(static function (ExecutionScope $_scope): string {
-            $inner = self::buildScope(new InProcessLedger())->withAttribute('tenant', 'acme');
+            $inner = self::buildScope(new InProcessLedger());
+            self::assertInstanceOf(ExecutionLifecycleScope::class, $inner);
+            $inner->bindScopedInstance(TransactionState::class, new TransactionState('acme'), inherit: true);
 
             $result = $inner->execute(Task::of(
                 static fn(ExecutionScope $s): mixed => $s->transaction(
                     TransactionLease::open('postgres/main', 'tx#4'),
                     static function (TransactionScope $tx): string {
-                        $derived = $tx->withAttribute('tenant', 'beta');
-                        $derived->delay(0.001);
+                        $tx->delay(0.001);
 
-                        return $tx->attribute('tenant') . '/' . $derived->attribute('tenant');
+                        return $tx->service(TransactionState::class)->tenant;
                     },
                 ),
             ));
@@ -124,7 +126,7 @@ final class TransactionScopeTest extends PhalanxTestCase
             return $result;
         });
 
-        self::assertSame('acme/beta', $value);
+        self::assertSame('acme', $value);
     }
 
     private static function buildScope(InProcessLedger $ledger): ExecutionScope
@@ -140,5 +142,13 @@ final class TransactionScopeTest extends PhalanxTestCase
             ->withLedger($ledger)
             ->compile()
             ->createScope();
+    }
+}
+
+final readonly class TransactionState
+{
+    public function __construct(
+        public string $tenant,
+    ) {
     }
 }

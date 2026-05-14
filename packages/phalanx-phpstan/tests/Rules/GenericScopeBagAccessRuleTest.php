@@ -21,9 +21,10 @@ final class GenericScopeBagAccessRuleTest extends RuleTestCase
         $this->analyse(
             [__DIR__ . '/Fixtures/generic-scope-bag-access.php'],
             [
-                [GenericScopeBagAccessRule::MESSAGE, 13],
-                [GenericScopeBagAccessRule::MESSAGE, 14],
                 [GenericScopeBagAccessRule::MESSAGE, 15],
+                [GenericScopeBagAccessRule::MESSAGE, 16],
+                [GenericScopeBagAccessRule::MESSAGE, 17],
+                [GenericScopeBagAccessRule::MESSAGE, 18],
             ],
         );
     }

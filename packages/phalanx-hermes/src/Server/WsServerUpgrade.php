@@ -22,6 +22,7 @@ use Phalanx\Scope\ExecutionLifecycleScope;
 use Phalanx\Stoa\ExecutionContext as StoaExecutionContext;
 use Phalanx\Stoa\Http\Upgrade\HttpUpgradeable;
 use Phalanx\Stoa\QueryParams;
+use Phalanx\Stoa\RequestCtx;
 use Phalanx\Stoa\RequestScope;
 use Phalanx\Stoa\RouteConfig;
 use Phalanx\Stoa\RouteMatcher;
@@ -63,8 +64,13 @@ final class WsServerUpgrade implements HttpUpgradeable
         if (!$sessionScope instanceof ExecutionLifecycleScope) {
             throw new RuntimeException('createScope() must return ExecutionLifecycleScope');
         }
-        $sessionScope->bindScopedInstance(StoaRequestResource::class, $requestResource);
-        $sessionScope->bindScopedInstance(StoaRequestDiagnostics::class, new StoaRequestDiagnostics());
+        $requestCtx = new RequestCtx();
+        $sessionScope->bindScopedInstance(StoaRequestResource::class, $requestResource, inherit: true);
+        $sessionScope->bindScopedInstance(StoaRequestDiagnostics::class, new StoaRequestDiagnostics(), inherit: true);
+        $sessionScope->bindScopedInstance(RequestCtx::class, $requestCtx, inherit: true);
+        $sessionScope->onDispose(static function () use ($requestCtx): void {
+            $requestCtx->clear();
+        });
 
         $routeScope = new StoaExecutionContext(
             $sessionScope,
@@ -72,6 +78,7 @@ final class WsServerUpgrade implements HttpUpgradeable
             new RouteParams(),
             new QueryParams($request->getQueryParams()),
             RouteConfig::compile('/'),
+            $requestCtx,
         );
 
         $match = $this->routeMatcher->match($routeScope, $this->routes->inner->all());
@@ -157,6 +164,7 @@ final class WsServerUpgrade implements HttpUpgradeable
             $wsConfig,
             $request,
             $params,
+            $requestCtx,
         );
 
         try {

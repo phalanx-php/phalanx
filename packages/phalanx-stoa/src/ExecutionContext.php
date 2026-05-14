@@ -15,6 +15,10 @@ class ExecutionContext implements RequestScope
 
     private ?RequestBody $requestBody = null;
 
+    public RequestCtx $ctx {
+        get => $this->requestCtx ??= $this->service(RequestCtx::class);
+    }
+
     public string $resourceId {
         get => $this->requestResource->id;
     }
@@ -59,6 +63,7 @@ class ExecutionContext implements RequestScope
         private(set) RouteParams $routeParams,
         private(set) QueryParams $queryParams,
         private(set) RouteConfig $routeConfig,
+        private ?RequestCtx $requestCtx = null,
     ) {
     }
 
@@ -112,21 +117,6 @@ class ExecutionContext implements RequestScope
         }
 
         return $this->server('REMOTE_ADDR', '0.0.0.0');
-    }
-
-    public function withAttribute(string $key, mixed $value): RequestScope
-    {
-        $ctx = new self(
-            $this->inner->withAttribute($key, $value),
-            $this->serverRequest,
-            $this->routeParams,
-            $this->queryParams,
-            $this->routeConfig,
-        );
-
-        $ctx->requestBody = $this->requestBody;
-
-        return $ctx;
     }
 
     protected function innerScope(): ExecutionScope

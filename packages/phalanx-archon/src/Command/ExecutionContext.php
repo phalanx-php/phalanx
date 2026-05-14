@@ -55,8 +55,7 @@ class ExecutionContext implements CommandScope
         CommandConfig $config,
         array $rawArgs,
         string $resourceId,
-    ): self
-    {
+    ): self {
         $input = ArgvParser::parse($rawArgs, $config);
 
         return new self(
@@ -66,18 +65,6 @@ class ExecutionContext implements CommandScope
             $input->options,
             $config,
             $resourceId,
-        );
-    }
-
-    public function withAttribute(string $key, mixed $value): CommandScope
-    {
-        return new self(
-            $this->inner->withAttribute($key, $value),
-            $this->name,
-            $this->parsedArgs,
-            $this->parsedOptions,
-            $this->commandConfig,
-            $this->resourceId,
         );
     }
 

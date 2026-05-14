@@ -18,11 +18,5 @@ interface Scope
      */
     public function service(string $type): object;
 
-    public function attribute(string $key, mixed $default = null): mixed;
-
-    public function resource(string $key, mixed $default = null): mixed;
-
-    public function withAttribute(string $key, mixed $value): Scope;
-
     public function trace(): Trace;
 }

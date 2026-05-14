@@ -105,7 +105,6 @@ class WorkerRuntime
         try {
             $task = $this->instantiateTask($request);
             $scope = new WorkerScope(
-                attributes: $request->contextAttrs,
                 trace: new Trace(),
                 stdin: $this->stdin,
                 stdout: $this->stdout,

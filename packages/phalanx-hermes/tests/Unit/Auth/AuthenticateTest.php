@@ -15,6 +15,7 @@ use Phalanx\Hermes\ExecutionContext;
 use Phalanx\Hermes\WsConfig;
 use Phalanx\Hermes\WsConnection;
 use Phalanx\Scope\ExecutionScope;
+use Phalanx\Stoa\RequestCtx;
 use Phalanx\Stoa\RouteParams;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -33,6 +34,7 @@ final class AuthenticateTest extends TestCase
             new WsConfig(),
             new ServerRequest('GET', '/socket/42'),
             new RouteParams(['id' => '42']),
+            new RequestCtx(),
         );
 
         $seen = null;
@@ -57,6 +59,7 @@ final class AuthenticateTest extends TestCase
             new WsConfig(),
             new ServerRequest('GET', '/socket'),
             new RouteParams(),
+            new RequestCtx(),
         );
 
         $this->expectException(AuthenticationException::class);

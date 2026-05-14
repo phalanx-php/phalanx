@@ -10,8 +10,6 @@ use Phalanx\Supervisor\TransactionLease;
 
 interface ExecutionScope extends TaskScope, TaskExecutor
 {
-    public function withAttribute(string $key, mixed $value): ExecutionScope;
-
     public function currentRunId(): ?string;
 
     public function currentRunSnapshot(): ?TaskRunSnapshot;

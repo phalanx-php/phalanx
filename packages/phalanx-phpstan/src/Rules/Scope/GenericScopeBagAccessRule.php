@@ -21,7 +21,8 @@ use PHPStan\Type\ObjectType;
 final class GenericScopeBagAccessRule implements Rule
 {
     public const string MESSAGE =
-        'Do not use generic scope bags across framework boundaries; expose typed scope properties or scoped services instead.';
+        'Do not use generic scope bags across framework boundaries;'
+        . ' expose typed scope properties or scoped services instead.';
 
     private const string IDENTIFIER = 'phalanx.scope.genericBagAccess';
 
@@ -30,6 +31,7 @@ final class GenericScopeBagAccessRule implements Rule
         'attribute' => true,
         'resource' => true,
         'setResource' => true,
+        'withAttribute' => true,
     ];
 
     public function __construct(private readonly PathPolicy $paths)
