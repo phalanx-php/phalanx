@@ -13,7 +13,7 @@ final readonly class RuntimeEvents
     public function record(RequestScope $scope, string $event, array $context = []): void
     {
         $scope->runtime->memory->resources->recordEvent(
-            $scope->resourceId,
+            $scope->requestId,
             $event,
             (string) ($context['path'] ?? $scope->path()),
             (string) ($context['detail'] ?? ''),

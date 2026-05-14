@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Stoa\Sse;
 
-use OpenSwoole\Http\Response;
-use Phalanx\Cancellation\CancellationToken;
-use Phalanx\Scope\Suspendable;
+use Phalanx\Stoa\RequestScope;
+use Phalanx\Stoa\ResponseSink;
 use Phalanx\Stoa\Runtime\Identity\StoaEventSid;
 use Phalanx\Stoa\StoaRequestResource;
 
@@ -21,12 +20,11 @@ use Phalanx\Stoa\StoaRequestResource;
  */
 final class SseStreamFactory
 {
-    public function open(
-        Suspendable $scope,
-        Response $response,
-        StoaRequestResource $request,
-        CancellationToken $cancellation,
-    ): SseStream {
+    public function open(RequestScope $scope): SseStream
+    {
+        $response = $scope->service(ResponseSink::class)->response;
+        $request = $scope->service(StoaRequestResource::class);
+
         if ($request->fd !== null) {
             $request->acquireDeliveryLease($request->fd);
         }
@@ -41,6 +39,6 @@ final class SseStreamFactory
         $request->bodyStarted();
         $request->event(StoaEventSid::SseStreamOpened);
 
-        return new SseStream($scope, $response, $request, $cancellation);
+        return new SseStream($scope, $response, $request, $scope->cancellation());
     }
 }

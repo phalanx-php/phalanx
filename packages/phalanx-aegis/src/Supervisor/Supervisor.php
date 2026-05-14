@@ -6,6 +6,7 @@ namespace Phalanx\Supervisor;
 
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Pool\ObjectPool;
+use Phalanx\Scope\BorrowedScopeFrame;
 use Phalanx\Scope\Cancellable;
 use Phalanx\Scope\Scope;
 use Phalanx\Scope\ScopeIdentity;
@@ -45,6 +46,9 @@ final class Supervisor
     /** @var ObjectPool<TaskRun> */
     private ObjectPool $taskRunPool;
 
+    /** @var ObjectPool<BorrowedScopeFrame> */
+    private ObjectPool $scopeFramePool;
+
     /** @var SplStack<CancellationToken> */
     private SplStack $tokenPool;
 
@@ -58,9 +62,11 @@ final class Supervisor
         private(set) LedgerStorage $ledger,
         private(set) Trace $trace,
         int $taskRunPoolCapacity = 256,
+        int $scopeFramePoolCapacity = 256,
         int $tokenPoolCapacity = 512,
     ) {
         $this->taskRunPool = new ObjectPool(TaskRun::class, $taskRunPoolCapacity);
+        $this->scopeFramePool = new ObjectPool(BorrowedScopeFrame::class, $scopeFramePoolCapacity);
         $this->tokenPool = new SplStack();
         $this->tokenPoolCapacity = $tokenPoolCapacity;
     }
@@ -82,6 +88,17 @@ final class Supervisor
     public function nextScopeId(): string
     {
         return $this->ledger->nextScopeId();
+    }
+
+    /** @param array<class-string, object> $inheritedScopedInstances */
+    public function acquireScopeFrame(array $inheritedScopedInstances = []): BorrowedScopeFrame
+    {
+        return $this->scopeFramePool->acquire(BorrowedScopeFrame::poolInitializer($inheritedScopedInstances));
+    }
+
+    public function releaseScopeFrame(BorrowedScopeFrame $frame): void
+    {
+        $this->scopeFramePool->release($frame);
     }
 
     /**
@@ -252,11 +269,12 @@ final class Supervisor
         }
     }
 
-    /** @return array{taskRun: array{hits: int, misses: int, overflows: int, drops: int, borrowed: int, free: int, capacity: int}, token: array{hits: int, misses: int, free: int, capacity: int}} */
+    /** @return array{taskRun: array{hits: int, misses: int, overflows: int, drops: int, borrowed: int, free: int, capacity: int}, scopeFrame: array{hits: int, misses: int, overflows: int, drops: int, borrowed: int, free: int, capacity: int}, token: array{hits: int, misses: int, free: int, capacity: int}} */
     public function poolStats(): array
     {
         return [
             'taskRun' => $this->taskRunPool->stats(),
+            'scopeFrame' => $this->scopeFramePool->stats(),
             'token' => [
                 'hits' => $this->tokenPoolHits,
                 'misses' => $this->tokenPoolMisses,

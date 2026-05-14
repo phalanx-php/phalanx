@@ -102,7 +102,7 @@ final class RuntimeLens implements LensContract
         return $this;
     }
 
-    /** @return array{taskRun: array{hits: int, misses: int, overflows: int, drops: int, borrowed: int, free: int, capacity: int}, token: array{hits: int, misses: int, free: int, capacity: int}} */
+    /** @return array{taskRun: array{hits: int, misses: int, overflows: int, drops: int, borrowed: int, free: int, capacity: int}, scopeFrame: array{hits: int, misses: int, overflows: int, drops: int, borrowed: int, free: int, capacity: int}, token: array{hits: int, misses: int, free: int, capacity: int}} */
     public function poolStats(): array
     {
         return $this->app->application->supervisor()->poolStats();
@@ -111,12 +111,18 @@ final class RuntimeLens implements LensContract
     public function assertPoolsClean(): self
     {
         $stats = $this->poolStats();
-        $borrowed = $stats['taskRun']['borrowed'];
+        $borrowedTaskRuns = $stats['taskRun']['borrowed'];
+        $borrowedScopeFrames = $stats['scopeFrame']['borrowed'];
 
         Assert::assertSame(
             0,
-            $borrowed,
-            "Expected no borrowed supervisor task runs; {$borrowed} still borrowed.",
+            $borrowedTaskRuns,
+            "Expected no borrowed supervisor task runs; {$borrowedTaskRuns} still borrowed.",
+        );
+        Assert::assertSame(
+            0,
+            $borrowedScopeFrames,
+            "Expected no borrowed scope frames; {$borrowedScopeFrames} still borrowed.",
         );
 
         return $this;

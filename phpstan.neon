@@ -33,6 +33,7 @@ parameters:
         - packages/phalanx-aegis/src/Pool/PoolRing.php
         - packages/phalanx-aegis/src/Runtime/CoroutineRuntime.php
         - packages/phalanx-aegis/src/Runtime/RuntimeHooks.php
+        - packages/phalanx-aegis/src/Scope/BorrowedScopeFrame.php
         - packages/phalanx-aegis/src/Scope/ExecutionLifecycleScope.php
         - packages/phalanx-aegis/src/Scope/TransactionLifecycleScope.php
         - packages/phalanx-aegis/src/Service/LazySingleton.php

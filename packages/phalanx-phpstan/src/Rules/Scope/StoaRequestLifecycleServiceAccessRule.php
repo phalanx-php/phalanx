@@ -87,7 +87,9 @@ final class StoaRequestLifecycleServiceAccessRule implements Rule
     {
         $namespace = $scope->getNamespace() ?? '';
 
-        return str_starts_with($namespace, 'Phalanx\\Stoa\\')
+        return $namespace === 'Phalanx\\Stoa'
+            || $namespace === 'Phalanx\\Hermes'
+            || str_starts_with($namespace, 'Phalanx\\Stoa\\')
             || str_starts_with($namespace, 'Phalanx\\Hermes\\');
     }
 }

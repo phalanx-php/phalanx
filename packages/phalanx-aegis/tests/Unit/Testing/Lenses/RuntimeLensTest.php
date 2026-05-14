@@ -80,8 +80,10 @@ final class RuntimeLensTest extends TestCase
             $stats = $app->runtime->poolStats();
 
             self::assertArrayHasKey('taskRun', $stats);
+            self::assertArrayHasKey('scopeFrame', $stats);
             self::assertArrayHasKey('token', $stats);
             self::assertSame(0, $stats['taskRun']['borrowed']);
+            self::assertSame(0, $stats['scopeFrame']['borrowed']);
 
             $app->runtime->assertPoolsClean();
             $app->runtime->assertNoBorrowedPools();

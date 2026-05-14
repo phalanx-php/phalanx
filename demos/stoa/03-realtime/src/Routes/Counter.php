@@ -6,7 +6,6 @@ namespace Acme\StoaDemo\Realtime\Routes;
 
 use OpenSwoole\Coroutine;
 use Phalanx\Stoa\RequestScope;
-use Phalanx\Stoa\ResponseSink;
 use Phalanx\Stoa\Sse\SseStream;
 use Phalanx\Stoa\Sse\SseStreamFactory;
 use Phalanx\Supervisor\WaitReason;
@@ -20,10 +19,7 @@ final class Counter implements Scopeable
 
     public function __invoke(RequestScope $scope): SseStream
     {
-        $target = $scope->service(ResponseSink::class);
-        $resource = $scope->requestResource;
-
-        $stream = $this->streams->open($scope, $target->response, $resource, $scope->cancellation());
+        $stream = $this->streams->open($scope);
 
         for ($i = 1; $i <= 5; $i++) {
             if ($scope->isCancelled) {

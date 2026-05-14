@@ -80,33 +80,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
      */
     public ?TaskRun $currentRun = null;
 
-    /** @var array<class-string, object> */
-    private array $scopedInstances = [];
-
-    /** @var list<class-string> */
-    private array $scopedCreationOrder = [];
-
-    /** @var list<Closure(): void> */
-    private array $disposeStack = [];
-
-    /** @var array<class-string, object> */
-    private array $inheritedScopedInstances = [];
-
-    /** @var list<int> */
-    private array $deferredCids = [];
-
-    /**
-     * Active go()-spawned tasks awaiting completion. Keyed by spawn sequence
-     * for O(1) removal in the finally block. Force-cancelled with
-     * PHX-SPAWN-002 if any remain at dispose time.
-     *
-     * @var array<int, array{int, TaskRun}>
-     */
-    private array $goSpawns = [];
-
-    private int $goSpawnSeq = 0;
-
-    private bool $disposed = false;
+    private ?BorrowedScopeFrame $frame = null;
 
     private readonly string $scopeIdValue;
 
@@ -130,15 +104,23 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         private readonly ?WorkerDispatch $workerDispatch = null,
         private readonly ?string $parentScopeId = null,
     ) {
-        $this->singleflightGroup = $singleflight ?? new SingleflightGroup();
-        $this->inheritedScopedInstances = $inheritedScopedInstances;
         $this->scopeIdValue = $this->supervisor->nextScopeId();
-        $this->supervisor->registerScope(
-            $this->scopeIdValue,
-            $this->parentScopeId,
-            self::class,
-            Coroutine::getCid(),
-        );
+        $this->singleflightGroup = $singleflight ?? new SingleflightGroup();
+        $this->frame = $this->supervisor->acquireScopeFrame($inheritedScopedInstances);
+
+        try {
+            $this->supervisor->registerScope(
+                $this->scopeIdValue,
+                $this->parentScopeId,
+                self::class,
+                Coroutine::getCid(),
+            );
+        } catch (Throwable $e) {
+            $this->supervisor->releaseScopeFrame($this->frame);
+            $this->frame = null;
+
+            throw $e;
+        }
     }
 
     public function supervisor(): Supervisor
@@ -171,18 +153,19 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
     public function service(string $type): object
     {
         $this->throwIfCancelled();
+        $frame = $this->frame();
         $resolved = $this->graph->alias($type);
 
-        if (isset($this->scopedInstances[$resolved])) {
+        if (isset($frame->scopedInstances[$resolved])) {
             /** @var T $instance */
-            $instance = $this->scopedInstances[$resolved];
+            $instance = $frame->scopedInstances[$resolved];
 
             return $instance;
         }
 
-        if (isset($this->inheritedScopedInstances[$resolved])) {
+        if (isset($frame->inheritedScopedInstances[$resolved])) {
             /** @var T $instance */
-            $instance = $this->inheritedScopedInstances[$resolved];
+            $instance = $frame->inheritedScopedInstances[$resolved];
 
             return $instance;
         }
@@ -215,15 +198,15 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                 return self::runMiddleware($resolved, $build, $scope);
             });
 
-            $this->scopedInstances[$resolved] = $instance;
-            $this->scopedCreationOrder[] = $resolved;
+            $frame->scopedInstances[$resolved] = $instance;
+            $frame->scopedCreationOrder[] = $resolved;
 
             return $instance;
         }
 
         $instance = self::runMiddleware($resolved, $build, $this);
-        $this->scopedInstances[$resolved] = $instance;
-        $this->scopedCreationOrder[] = $resolved;
+        $frame->scopedInstances[$resolved] = $instance;
+        $frame->scopedCreationOrder[] = $resolved;
 
         /** @var T $instance */
         return $instance;
@@ -238,16 +221,17 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
     public function bindScopedInstance(string $type, object $instance, bool $inherit = false): void
     {
         $this->throwIfCancelled();
+        $frame = $this->frame();
         $resolved = $this->graph->alias($type);
 
-        if (!isset($this->scopedInstances[$resolved])) {
-            $this->scopedCreationOrder[] = $resolved;
+        if (!isset($frame->scopedInstances[$resolved])) {
+            $frame->scopedCreationOrder[] = $resolved;
         }
 
-        $this->scopedInstances[$resolved] = $instance;
+        $frame->scopedInstances[$resolved] = $instance;
 
         if ($inherit) {
-            $this->inheritedScopedInstances[$resolved] = $instance;
+            $frame->inheritedScopedInstances[$resolved] = $instance;
         }
     }
 
@@ -268,32 +252,34 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
 
     public function onDispose(Closure $callback): void
     {
-        if ($this->disposed) {
+        $frame = $this->frame;
+        if ($frame === null || $frame->disposed) {
             try {
                 $callback();
             } catch (Throwable) {
             }
             return;
         }
-        $this->disposeStack[] = $callback;
+        $frame->disposeStack[] = $callback;
     }
 
     public function dispose(): void
     {
-        if ($this->disposed) {
+        $frame = $this->frame;
+        if ($frame === null || $frame->disposed) {
             return;
         }
-        $this->disposed = true;
+        $frame->disposed = true;
 
-        foreach ($this->deferredCids as $cid) {
+        foreach ($frame->deferredCids as $cid) {
             if (Coroutine::exists($cid)) {
                 Coroutine::cancel($cid);
             }
         }
-        $this->deferredCids = [];
+        $frame->deferredCids = [];
 
-        $callbacks = array_reverse($this->disposeStack);
-        $this->disposeStack = [];
+        $callbacks = array_reverse($frame->disposeStack);
+        $frame->disposeStack = [];
         foreach ($callbacks as $cb) {
             try {
                 $cb();
@@ -301,8 +287,8 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             }
         }
 
-        foreach (array_reverse($this->scopedCreationOrder) as $type) {
-            $instance = $this->scopedInstances[$type] ?? null;
+        foreach (array_reverse($frame->scopedCreationOrder) as $type) {
+            $instance = $frame->scopedInstances[$type] ?? null;
             if ($instance === null) {
                 continue;
             }
@@ -317,12 +303,14 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                 }
             }
         }
-        $this->scopedInstances = [];
-        $this->scopedCreationOrder = [];
+        $frame->scopedInstances = [];
+        $frame->scopedCreationOrder = [];
 
         $this->forceCancelGoSpawns();
 
         $this->supervisor->disposeScope($this->scopeIdValue);
+        $this->supervisor->releaseScopeFrame($frame);
+        $this->frame = null;
     }
 
     public function call(Closure $fn, ?WaitReason $waitReason = null): mixed
@@ -389,7 +377,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             $this->traceLog,
             $this->supervisor,
             $this->singleflightGroup,
-            $this->inheritedScopedInstances,
+            $this->frame()->inheritedScopedInstances,
             $this->serviceMiddlewares,
             $this->taskMiddlewares,
             $this->workerDispatch,
@@ -828,7 +816,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             $this->traceLog,
             $this->supervisor,
             $this->singleflightGroup,
-            $this->inheritedScopedInstances,
+            $this->frame()->inheritedScopedInstances,
             $this->serviceMiddlewares,
             $this->taskMiddlewares,
             $this->workerDispatch,
@@ -900,7 +888,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
 
     public function periodic(float $interval, Closure $tick): Subscription
     {
-        if ($this->disposed) {
+        if ($this->isDisposed()) {
             throw new RuntimeException('periodic(): cannot schedule on a disposed scope');
         }
 
@@ -908,7 +896,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         $self = $this;
 
         $timerId = Timer::tick($ms, static function () use ($self, $tick): void {
-            if ($self->disposed) {
+            if ($self->isDisposed()) {
                 return;
             }
             CoroutineScopeRegistry::install($self);
@@ -935,9 +923,10 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
 
     public function defer(Scopeable|Executable|Closure $task): void
     {
-        if ($this->disposed) {
+        if ($this->isDisposed()) {
             return;
         }
+        $frame = $this->frame();
         // @dev-cleanup-ignore — child scope disposed on completion; parent onDispose owns cancellation via deferredCids
         $childScope = $this->makeChildScope($this->currentRun);
         $traceLog = $this->traceLog;
@@ -953,15 +942,16 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             }
         });
         if ($cid !== false) {
-            $this->deferredCids[] = $cid;
+            $frame->deferredCids[] = $cid;
         }
     }
 
     public function go(Closure $fn, ?string $name = null): TaskHandle
     {
-        if ($this->disposed) {
+        if ($this->isDisposed()) {
             throw new RuntimeException('go(): cannot spawn on a disposed scope');
         }
+        $frame = $this->frame();
 
         $childScope = $this->makeChildScope($this->currentRun);
         $parentRunId = $this->currentRun?->id;
@@ -978,8 +968,8 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
 
         $supervisor = $this->supervisor;
         $traceLog = $this->traceLog;
-        $goSpawns = &$this->goSpawns;
-        $spawnKey = $this->goSpawnSeq++;
+        $goSpawns = &$frame->goSpawns;
+        $spawnKey = $frame->goSpawnSeq++;
         $runId = $run->id;
         $runName = $run->name;
         $ledger = $this->supervisor->ledger;
@@ -1662,9 +1652,21 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         return $scope->service($serviceType);
     }
 
+    private function frame(): BorrowedScopeFrame
+    {
+        return $this->frame ?? throw new RuntimeException('Execution scope has been disposed.');
+    }
+
+    private function isDisposed(): bool
+    {
+        return $this->frame === null || $this->frame->disposed;
+    }
+
     private function forceCancelGoSpawns(): void
     {
-        foreach ($this->goSpawns as [$cid, $run]) {
+        $frame = $this->frame();
+
+        foreach ($frame->goSpawns as [$cid, $run]) {
             if ($run->isTerminal()) {
                 continue;
             }
@@ -1685,20 +1687,20 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
 
         if (Coroutine::getCid() >= 0) {
             $deadline = hrtime(true) + 50_000_000;
-            foreach ($this->goSpawns as [$cid, $run]) {
+            foreach ($frame->goSpawns as [$cid, $run]) {
                 while (Coroutine::exists($cid) && hrtime(true) < $deadline) {
                     Coroutine::usleep(1_000);
                 }
             }
         }
 
-        foreach ($this->goSpawns as [$cid, $run]) {
+        foreach ($frame->goSpawns as [$cid, $run]) {
             if (!$run->isTerminal()) {
                 $this->supervisor->reap($run);
             }
         }
 
-        $this->goSpawns = [];
+        $frame->goSpawns = [];
     }
 
     /**
@@ -1725,7 +1727,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             $this->traceLog,
             $this->supervisor,
             $this->singleflightGroup,
-            $this->inheritedScopedInstances,
+            $this->frame()->inheritedScopedInstances,
             $this->serviceMiddlewares,
             $this->taskMiddlewares,
             $this->workerDispatch,
