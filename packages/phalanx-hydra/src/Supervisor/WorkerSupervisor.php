@@ -142,11 +142,9 @@ class WorkerSupervisor
         ));
 
         if (count($this->restartHistory[$agentId]) > $this->config->maxRestarts) {
-            error_log("[Supervisor] Agent {$agentId} exceeded max restarts ({$this->config->maxRestarts})");
             return;
         }
 
-        error_log("[Supervisor] Restarting agent {$agentId}");
         $agent->restart();
     }
 }

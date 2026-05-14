@@ -24,18 +24,26 @@ final class ConsoleSignalTrapTest extends TestCase
     }
 
     #[Test]
-    public function installSkipsWhenOpenSwooleMissing(): void
+    public function defaultPolicyReflectsOpenSwooleAvailability(): void
     {
-        if (extension_loaded('openswoole')) {
-            self::markTestSkipped('OpenSwoole loaded — covered by reactor-driven test.');
+        $policy = ConsoleSignalPolicy::default();
+
+        if (!extension_loaded('openswoole')) {
+            self::assertSame([], $policy->exitCodes());
+            return;
         }
 
-        $policy = ConsoleSignalPolicy::default();
-        $trap = ConsoleSignalTrap::install($policy, static function (): void {
-            self::fail('No callback should fire without OpenSwoole.');
-        });
+        self::assertNotSame([], $policy->exitCodes());
+    }
 
+    #[Test]
+    public function installWithEmptyPolicyIsANoop(): void
+    {
+        $trap = ConsoleSignalTrap::install(ConsoleSignalPolicy::disabled(), static function (): void {
+            self::fail('No callback should fire for an empty policy.');
+        });
         $trap->restore();
+
         self::assertInstanceOf(ConsoleSignalTrap::class, $trap);
     }
 

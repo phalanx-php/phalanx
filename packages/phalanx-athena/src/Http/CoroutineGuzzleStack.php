@@ -35,20 +35,7 @@ final class CoroutineGuzzleStack
      */
     public static function create(): object
     {
-        if (!class_exists(\GuzzleHttp\HandlerStack::class)) {
-            throw new RuntimeException(
-                'guzzlehttp/guzzle is not installed. Add it to your composer.json '
-                . 'to use CoroutineGuzzleStack with Guzzle-based SDKs.',
-            );
-        }
-
-        if (!class_exists(\Hyperf\Guzzle\CoroutineHandler::class)) {
-            throw new RuntimeException(
-                'hyperf/guzzle is not installed. Add `hyperf/guzzle` to your '
-                . 'composer.json so Guzzle uses an OpenSwoole-native handler '
-                . 'instead of blocking cURL.',
-            );
-        }
+        self::ensureDependencies(class_exists(...));
 
         /** @var class-string $stack */
         $stack = \GuzzleHttp\HandlerStack::class;
@@ -56,5 +43,27 @@ final class CoroutineGuzzleStack
         $handler = \Hyperf\Guzzle\CoroutineHandler::class;
 
         return $stack::create(new $handler());
+    }
+
+    /**
+     * @internal
+     * @param callable(class-string): bool $classExists
+     */
+    public static function ensureDependencies(callable $classExists): void
+    {
+        if (!$classExists(\GuzzleHttp\HandlerStack::class)) {
+            throw new RuntimeException(
+                'guzzlehttp/guzzle is not installed. Add it to your composer.json '
+                . 'to use CoroutineGuzzleStack with Guzzle-based SDKs.',
+            );
+        }
+
+        if (!$classExists(\Hyperf\Guzzle\CoroutineHandler::class)) {
+            throw new RuntimeException(
+                'hyperf/guzzle is not installed. Add `hyperf/guzzle` to your '
+                . 'composer.json so Guzzle uses an OpenSwoole-native handler '
+                . 'instead of blocking cURL.',
+            );
+        }
     }
 }
