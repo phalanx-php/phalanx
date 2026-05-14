@@ -9,6 +9,8 @@ use Phalanx\Cancellation\Cancelled;
 use Phalanx\Stoa\RequestScope;
 use Phalanx\Stoa\Response\Ignition\PhalanxErrorPageViewModel;
 use Phalanx\Stoa\StoaServerConfig;
+use Phalanx\Stoa\StoaRequestDiagnostics;
+use Phalanx\Stoa\StoaRequestResource;
 use Phalanx\Supervisor\TaskTreeFormatter;
 use Psr\Http\Message\ResponseInterface;
 use Spatie\Ignition\Config\IgnitionConfig;
@@ -30,9 +32,9 @@ final readonly class IgnitionErrorResponseRenderer implements ErrorResponseRende
         }
 
         try {
-            $requestId = $scope->requestResource->id;
+            $requestId = $scope->service(StoaRequestResource::class)->id;
 
-            $snapshots = $scope->diagnostics->failureTree();
+            $snapshots = $scope->service(StoaRequestDiagnostics::class)->failureTree();
             $ledger = '(no active tasks captured)';
             if ($snapshots !== []) {
                 try {

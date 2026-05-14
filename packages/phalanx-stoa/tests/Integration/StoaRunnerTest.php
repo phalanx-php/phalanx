@@ -146,7 +146,7 @@ final class StoaRunnerTest extends PhalanxTestCase
     }
 
     #[Test]
-    public function request_scope_exposes_aegis_managed_resource_identity(): void
+    public function request_scope_exposes_owned_request_id(): void
     {
         [$response, $body, $resourceEvents, $released] = $this->withStoaRunner(RouteGroup::of([
             'GET /resource/{id:int}' => ResourceAwareStoaRoute::class,
@@ -154,17 +154,15 @@ final class StoaRunnerTest extends PhalanxTestCase
             $response = $runner->dispatch(new ServerRequest('GET', '/resource/42'));
             $body = json_decode((string) $response->getBody(), true, 512, JSON_THROW_ON_ERROR);
             $events = $app->runtime()->memory->events->recent();
-            $resourceEvents = self::eventTypesForResource($events, (string) $body['resource_id']);
-            $released = $app->runtime()->memory->resources->get((string) $body['resource_id']) === null;
+            $resourceEvents = self::eventTypesForResource($events, (string) $body['request_id']);
+            $released = $app->runtime()->memory->resources->get((string) $body['request_id']) === null;
 
             return [$response, $body, $resourceEvents, $released];
         });
 
         self::assertSame(200, $response->getStatusCode());
-        self::assertIsString($body['resource_id']);
-        self::assertStringStartsWith('stoa-request-', $body['resource_id']);
-        self::assertSame($body['resource_id'], $body['request_resource_id']);
-        self::assertSame(0, $body['diagnostics_count']);
+        self::assertIsString($body['request_id']);
+        self::assertStringStartsWith('stoa-request-', $body['request_id']);
         self::assertSame('/resource/{id:int}', $body['route']);
         self::assertSame('42', $body['param']);
         self::assertTrue($released);
@@ -244,7 +242,7 @@ final class StoaRunnerTest extends PhalanxTestCase
     }
 
     #[Test]
-    public function request_scope_resource_id_fails_loud_when_missing(): void
+    public function request_scope_request_id_fails_loud_when_missing(): void
     {
         $this->expectException(MissingRequestResource::class);
 
@@ -260,7 +258,7 @@ final class StoaRunnerTest extends PhalanxTestCase
             );
 
             try {
-                self::assertSame('', $context->resourceId);
+                self::assertSame('', $context->requestId);
             } finally {
                 $scope->dispose();
                 $app->shutdown();
@@ -590,14 +588,12 @@ final class ExistingPoweredByStoaRoute implements Scopeable
 
 final class ResourceAwareStoaRoute implements Scopeable
 {
-    /** @return array{resource_id: string, request_resource_id: string, diagnostics_count: int, route: string, param: string} */
+    /** @return array{request_id: string, route: string, param: string} */
     public function __invoke(RequestScope $scope): array
     {
         return [
-            'resource_id' => $scope->resourceId,
-            'request_resource_id' => $scope->requestResource->id,
-            'diagnostics_count' => count($scope->diagnostics->failureTree()),
-            'route' => $scope->runtime->memory->resources->annotation($scope->resourceId, StoaAnnotationSid::Route),
+            'request_id' => $scope->requestId,
+            'route' => $scope->runtime->memory->resources->annotation($scope->requestId, StoaAnnotationSid::Route),
             'param' => $scope->params->required('id'),
         ];
     }
@@ -611,7 +607,7 @@ final class LongPathStoaRoute implements Scopeable
         return [
             'path' => $scope->path(),
             'path_annotation' => $scope->runtime->memory->resources->annotation(
-                $scope->resourceId,
+                $scope->requestId,
                 StoaAnnotationSid::Path,
             ),
         ];

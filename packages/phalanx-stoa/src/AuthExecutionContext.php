@@ -17,16 +17,8 @@ class AuthExecutionContext implements AuthRequestScope
         get => $this->inner->ctx;
     }
 
-    public string $resourceId {
-        get => $this->inner->resourceId;
-    }
-
-    public StoaRequestResource $requestResource {
-        get => $this->inner->requestResource;
-    }
-
-    public StoaRequestDiagnostics $diagnostics {
-        get => $this->inner->diagnostics;
+    public string $requestId {
+        get => $this->inner->requestId;
     }
 
     public ServerRequestInterface $request {

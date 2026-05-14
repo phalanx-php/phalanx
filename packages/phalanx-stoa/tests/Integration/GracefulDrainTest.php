@@ -250,7 +250,7 @@ final class DrainStuckHandler implements Scopeable
 
     public function __invoke(RequestScope $scope): string
     {
-        self::$resourceId = $scope->resourceId;
+        self::$resourceId = $scope->requestId;
         self::$entered->emit(true);
 
         try {

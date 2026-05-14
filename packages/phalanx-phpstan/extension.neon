@@ -43,6 +43,11 @@ services:
             - phpstan.rules.rule
 
     -
+        class: Phalanx\PHPStan\Rules\Scope\StoaRequestLifecycleServiceAccessRule
+        tags:
+            - phpstan.rules.rule
+
+    -
         class: Phalanx\PHPStan\Rules\Cancellation\RawSleepRule
         tags:
             - phpstan.rules.rule

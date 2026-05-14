@@ -19,22 +19,8 @@ class ExecutionContext implements RequestScope
         get => $this->requestCtx ??= $this->service(RequestCtx::class);
     }
 
-    public string $resourceId {
-        get => $this->requestResource->id;
-    }
-
-    public StoaRequestResource $requestResource {
-        get {
-            try {
-                return $this->service(StoaRequestResource::class);
-            } catch (ServiceNotFoundException) {
-                throw MissingRequestResource::forScopeKey(StoaRequestResource::class);
-            }
-        }
-    }
-
-    public StoaRequestDiagnostics $diagnostics {
-        get => $this->service(StoaRequestDiagnostics::class);
+    public string $requestId {
+        get => $this->requestResource()->id;
     }
 
     public ServerRequestInterface $request {
@@ -122,5 +108,14 @@ class ExecutionContext implements RequestScope
     protected function innerScope(): ExecutionScope
     {
         return $this->inner;
+    }
+
+    private function requestResource(): StoaRequestResource
+    {
+        try {
+            return $this->service(StoaRequestResource::class);
+        } catch (ServiceNotFoundException) {
+            throw MissingRequestResource::forScopeKey(StoaRequestResource::class);
+        }
     }
 }
