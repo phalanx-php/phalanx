@@ -9,6 +9,7 @@ use Phalanx\Runtime\Memory\RuntimeTableStats;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Supervisor\InProcessLedger;
 use Phalanx\Supervisor\LedgerStorage;
+use Phalanx\Supervisor\SwooleTableLedger;
 use Phalanx\Supervisor\TaskTreeFormatter;
 use RuntimeException;
 
@@ -21,6 +22,8 @@ interface BenchmarkCase
     public function warmups(): int;
 
     public function run(BenchmarkContext $context): void;
+
+    public function cleanup(): void;
 }
 
 final class BenchmarkContext
@@ -55,21 +58,33 @@ final class BenchmarkContext
         return $this->app($ledger)->createScope();
     }
 
-    public function assertNoLiveTasks(string $case): void
+    public function assertClean(string $case): void
     {
         foreach ($this->apps as $app) {
             $supervisor = $app->supervisor();
             $tree = $supervisor->tree();
 
-            if ($supervisor->liveCount() === 0 && $tree === []) {
-                continue;
+            if ($supervisor->liveCount() !== 0 || $tree !== []) {
+                $formatted = (new TaskTreeFormatter())->format($tree);
+
+                throw new RuntimeException(
+                    "Benchmark case '{$case}' left live or unreaped task runs:\n{$formatted}",
+                );
             }
 
-            $formatted = (new TaskTreeFormatter())->format($tree);
+            $liveScopes = $supervisor->liveScopeCount();
+            if ($liveScopes !== 0) {
+                throw new RuntimeException(
+                    "Benchmark case '{$case}' left {$liveScopes} live scopes.",
+                );
+            }
 
-            throw new RuntimeException(
-                "Benchmark case '{$case}' left live or unreaped task runs:\n{$formatted}",
-            );
+            $borrowed = $supervisor->poolStats()['taskRun']['borrowed'];
+            if ($borrowed !== 0) {
+                throw new RuntimeException(
+                    "Benchmark case '{$case}' left {$borrowed} borrowed task runs.",
+                );
+            }
         }
     }
 
@@ -79,6 +94,11 @@ final class BenchmarkContext
         $apps = [];
 
         foreach ($this->apps as $app) {
+            $ledger = $app->supervisor()->ledger;
+            $memory = $ledger instanceof SwooleTableLedger
+                ? $ledger->memory
+                : $app->runtime()->memory;
+
             $apps[] = [
                 'pool_stats' => $app->supervisor()->poolStats(),
                 'runtime_memory' => array_map(
@@ -89,12 +109,27 @@ final class BenchmarkContext
                         'memory_size' => $stats->memorySize,
                         'high_water_rows' => $stats->highWaterRows,
                     ],
-                    $app->runtime()->memory->stats(),
+                    $memory->stats(),
                 ),
             ];
         }
 
         return ['apps' => $apps];
+    }
+
+    public function shutdown(): void
+    {
+        foreach ($this->apps as $app) {
+            $ledger = $app->supervisor()->ledger;
+            if ($ledger instanceof SwooleTableLedger) {
+                $ledger->memory->shutdown();
+            }
+
+            $app->shutdown();
+        }
+
+        $this->apps = [];
+        $this->defaultApp = null;
     }
 }
 
@@ -242,5 +277,9 @@ abstract class AbstractBenchmarkCase implements BenchmarkCase
     public function warmups(): int
     {
         return $this->caseWarmups;
+    }
+
+    public function cleanup(): void
+    {
     }
 }

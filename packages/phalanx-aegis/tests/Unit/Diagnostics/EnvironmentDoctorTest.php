@@ -13,8 +13,11 @@ use Phalanx\Runtime\Memory\RuntimeMemory;
 use Phalanx\Runtime\Memory\RuntimeMemoryConfig;
 use Phalanx\Runtime\RuntimeHooks;
 use Phalanx\Runtime\RuntimePolicy;
+use Phalanx\Scope\ExecutionScope;
+use Phalanx\Supervisor\DispatchMode;
 use Phalanx\Supervisor\InProcessLedger;
 use Phalanx\Supervisor\Supervisor;
+use Phalanx\Task\Task;
 use Phalanx\Trace\Trace;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -51,6 +54,25 @@ final class EnvironmentDoctorTest extends TestCase
         self::assertTrue(self::check($checks, 'supervisor.pool.token')['ok']);
         self::assertStringContainsString('borrowed=0', self::check($checks, 'supervisor.pool.taskRun')['detail']);
         self::assertStringContainsString('free=0', self::check($checks, 'supervisor.pool.token')['detail']);
+    }
+
+    public function testSupervisorPoolChecksReportBorrowedTaskRuns(): void
+    {
+        $supervisor = new Supervisor(new InProcessLedger(), new Trace());
+        $scope = $this->createStub(ExecutionScope::class);
+        $task = Task::named('doctor.borrowed', static fn(ExecutionScope $scope): null => null);
+        $run = $supervisor->start($task, $scope, DispatchMode::Inline);
+
+        try {
+            $report = (new EnvironmentDoctor(supervisor: $supervisor))->check();
+            $check = self::check($report->toArray(), 'supervisor.pool.taskRun');
+
+            self::assertTrue($check['ok']);
+            self::assertStringContainsString('borrowed=1', $check['detail']);
+        } finally {
+            $supervisor->complete($run, null);
+            $supervisor->reap($run);
+        }
     }
 
     public function testMissingRequiredHooksMakeReportUnhealthy(): void

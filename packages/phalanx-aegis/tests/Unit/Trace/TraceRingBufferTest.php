@@ -156,7 +156,7 @@ final class TraceRingBufferTest extends TestCase
 
         $trace->log(TraceType::Execute, 'slot-zero', ['payload' => 'old']);
         $retained = $trace->events()[0];
-        $retainedId = spl_object_id($retained);
+        $timestamp = $retained->timestamp;
 
         for ($i = 1; $i < $ringSize; $i++) {
             $trace->log(TraceType::Execute, "filler-$i");
@@ -166,9 +166,11 @@ final class TraceRingBufferTest extends TestCase
 
         $replacement = $trace->events()[$ringSize - 1];
 
-        self::assertSame($retainedId, spl_object_id($retained));
+        self::assertSame(TraceType::Execute, $retained->type);
+        self::assertSame('slot-zero', $retained->name);
+        self::assertSame($timestamp, $retained->timestamp);
         self::assertSame(['payload' => 'old'], $retained->attrs);
-        self::assertNotSame($retainedId, spl_object_id($replacement));
+        self::assertSame('recycled', $replacement->name);
         self::assertSame(['payload' => 'new'], $replacement->attrs);
     }
 

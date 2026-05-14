@@ -6,6 +6,7 @@ namespace Phalanx\Tests\Unit\Testing\Lenses;
 
 use Phalanx\Diagnostics\DoctorReport;
 use Phalanx\Scope\ExecutionScope;
+use Phalanx\Supervisor\DispatchMode;
 use Phalanx\Task\Task;
 use Phalanx\Testing\Lenses\RuntimeLens;
 use Phalanx\Testing\TestApp;
@@ -84,6 +85,33 @@ final class RuntimeLensTest extends TestCase
 
             $app->runtime->assertPoolsClean();
             $app->runtime->assertNoBorrowedPools();
+        } finally {
+            $app->shutdown();
+        }
+    }
+
+    public function testAssertPoolsCleanFailsWhileTaskRunIsBorrowed(): void
+    {
+        $app = TestApp::boot();
+
+        try {
+            $scope = $app->application->createScope();
+            $supervisor = $app->application->supervisor();
+            $task = Task::named('runtime.lens.borrowed', static fn(ExecutionScope $scope): null => null);
+            $run = $supervisor->start($task, $scope, DispatchMode::Inline);
+
+            try {
+                self::assertSame(1, $app->runtime->poolStats()['taskRun']['borrowed']);
+
+                $this->expectException(AssertionFailedError::class);
+                $this->expectExceptionMessage('Expected no borrowed supervisor task runs; 1 still borrowed.');
+
+                $app->runtime->assertPoolsClean();
+            } finally {
+                $supervisor->complete($run, null);
+                $supervisor->reap($run);
+                $scope->dispose();
+            }
         } finally {
             $app->shutdown();
         }

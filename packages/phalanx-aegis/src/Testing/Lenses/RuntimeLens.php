@@ -85,8 +85,18 @@ final class RuntimeLens implements LensContract
         );
         Assert::assertSame(
             0,
+            $memory->tables->resourceEdges->count(),
+            'Expected no retained runtime relationships.',
+        );
+        Assert::assertSame(
+            0,
             $memory->tables->resourceLeases->count(),
             'Expected no retained runtime leases.',
+        );
+        Assert::assertSame(
+            0,
+            $memory->tables->resourceAnnotations->count(),
+            'Expected no retained runtime annotations.',
         );
 
         return $this;

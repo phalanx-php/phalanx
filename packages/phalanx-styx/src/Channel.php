@@ -8,6 +8,7 @@ use Closure;
 use Generator;
 use OpenSwoole\Coroutine\Channel as SwooleChannel;
 use Phalanx\Pool\BorrowedValue;
+use ReflectionFunction;
 use Throwable;
 
 /**
@@ -160,7 +161,26 @@ final class Channel
             return true;
         }
 
-        if (!is_array($value) || $depth > 16) {
+        if ($depth > 16) {
+            return false;
+        }
+
+        if ($value instanceof Closure) {
+            $reflection = new ReflectionFunction($value);
+            if (self::containsBorrowedValue($reflection->getClosureThis(), $depth + 1)) {
+                return true;
+            }
+
+            foreach ($reflection->getStaticVariables() as $captured) {
+                if (self::containsBorrowedValue($captured, $depth + 1)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        if (!is_array($value)) {
             return false;
         }
 

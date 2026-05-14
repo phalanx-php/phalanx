@@ -38,7 +38,11 @@ final class BorrowedValuePromotedPropertyRule implements Rule
      */
     public function processNode(Node $node, Scope $scope): array
     {
-        if (!$this->paths->shouldReport($scope->getFile()) || !$node instanceof ClassPropertiesNode) {
+        if (
+            !$this->paths->shouldReport($scope->getFile())
+            || $this->paths->isInternal($scope->getFile())
+            || !$node instanceof ClassPropertiesNode
+        ) {
             return [];
         }
 

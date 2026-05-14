@@ -90,7 +90,11 @@ final class Runner
 
         foreach ($cases as $case) {
             $context = new BenchmarkContext();
-            $results[] = $this->measure($case, $context, $metadata);
+            try {
+                $results[] = $this->measure($case, $context, $metadata);
+            } finally {
+                $context->shutdown();
+            }
         }
 
         if (isset($this->options['baseline'])) {
@@ -133,30 +137,34 @@ final class Runner
     /** @param array<string, string> $metadata */
     private function measure(BenchmarkCase $case, BenchmarkContext $context, array $metadata): BenchmarkResult
     {
-        for ($i = 0; $i < $case->warmups(); $i++) {
-            $case->run($context);
+        try {
+            for ($i = 0; $i < $case->warmups(); $i++) {
+                $case->run($context);
+            }
+
+            gc_collect_cycles();
+            if (function_exists('memory_reset_peak_usage')) {
+                memory_reset_peak_usage();
+            }
+
+            $samples = [];
+            $gcBefore = gc_status();
+            $zendMemoryBefore = memory_get_usage(false);
+            $realMemoryBefore = memory_get_usage(true);
+            $started = hrtime(true);
+
+            for ($i = 0; $i < $case->iterations(); $i++) {
+                $iterationStarted = hrtime(true);
+                $case->run($context);
+                $samples[] = hrtime(true) - $iterationStarted;
+            }
+
+            $totalNs = hrtime(true) - $started;
+        } finally {
+            $case->cleanup();
         }
 
-        gc_collect_cycles();
-        if (function_exists('memory_reset_peak_usage')) {
-            memory_reset_peak_usage();
-        }
-
-        $samples = [];
-        $gcBefore = gc_status();
-        $zendMemoryBefore = memory_get_usage(false);
-        $realMemoryBefore = memory_get_usage(true);
-        $started = hrtime(true);
-
-        for ($i = 0; $i < $case->iterations(); $i++) {
-            $iterationStarted = hrtime(true);
-            $case->run($context);
-            $samples[] = hrtime(true) - $iterationStarted;
-        }
-
-        $context->assertNoLiveTasks($case->name());
-
-        $totalNs = hrtime(true) - $started;
+        $context->assertClean($case->name());
         $diagnostics = $context->diagnostics();
         $gcAfter = gc_status();
         $zendMemoryAfter = memory_get_usage(false);

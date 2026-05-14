@@ -50,6 +50,13 @@ final class ExecuteNoopTaskCase extends AbstractBenchmarkCase
 
         $this->scope->execute($this->task);
     }
+
+    public function cleanup(): void
+    {
+        $this->scope?->dispose();
+        $this->scope = null;
+        $this->task = null;
+    }
 }
 
 final class ExecuteStaticTaskOfCase extends AbstractBenchmarkCase
@@ -66,6 +73,12 @@ final class ExecuteStaticTaskOfCase extends AbstractBenchmarkCase
         $this->scope ??= $context->scope();
 
         $this->scope->execute(Task::of(static fn(ExecutionScope $scope): null => null));
+    }
+
+    public function cleanup(): void
+    {
+        $this->scope?->dispose();
+        $this->scope = null;
     }
 }
 
@@ -96,6 +109,14 @@ final class SupervisorLifecycleCase extends AbstractBenchmarkCase
         $this->supervisor->complete($run, null);
         $this->supervisor->reap($run);
     }
+
+    public function cleanup(): void
+    {
+        $this->scope?->dispose();
+        $this->scope = null;
+        $this->supervisor = null;
+        $this->task = null;
+    }
 }
 
 final class TraceLogChurnCase extends AbstractBenchmarkCase
@@ -104,7 +125,7 @@ final class TraceLogChurnCase extends AbstractBenchmarkCase
 
     public function __construct()
     {
-        parent::__construct('trace_log_churn', 100_000, 1_000);
+        parent::__construct('trace_log_churn', 100_000, 10_000);
     }
 
     public function run(BenchmarkContext $context): void
@@ -112,6 +133,11 @@ final class TraceLogChurnCase extends AbstractBenchmarkCase
         $this->trace ??= new Trace();
 
         $this->trace->log(TraceType::Execute, 'bench.trace', ['phase' => 'tick']);
+    }
+
+    public function cleanup(): void
+    {
+        $this->trace = null;
     }
 }
 
@@ -138,6 +164,13 @@ final class ConcurrentNoopCase extends AbstractBenchmarkCase
         }
 
         $this->scope->concurrent(...$this->tasks);
+    }
+
+    public function cleanup(): void
+    {
+        $this->scope?->dispose();
+        $this->scope = null;
+        $this->tasks = [];
     }
 }
 
@@ -170,6 +203,13 @@ final class ConcurrentDelayCase extends AbstractBenchmarkCase
         }
 
         $this->scope->concurrent(...$this->tasks);
+    }
+
+    public function cleanup(): void
+    {
+        $this->scope?->dispose();
+        $this->scope = null;
+        $this->tasks = [];
     }
 }
 
@@ -210,6 +250,12 @@ final class SingleflightWaitersCase extends AbstractBenchmarkCase
         }
 
         $this->scope->concurrent(...$tasks);
+    }
+
+    public function cleanup(): void
+    {
+        $this->scope?->dispose();
+        $this->scope = null;
     }
 }
 
@@ -276,6 +322,14 @@ final class InProcessLedgerLifecycleCase extends AbstractBenchmarkCase
         $this->supervisor->complete($run, null);
         $this->supervisor->reap($run);
     }
+
+    public function cleanup(): void
+    {
+        $this->scope?->dispose();
+        $this->scope = null;
+        $this->supervisor = null;
+        $this->task = null;
+    }
 }
 
 final class SwooleTableLedgerLifecycleCase extends AbstractBenchmarkCase
@@ -304,6 +358,14 @@ final class SwooleTableLedgerLifecycleCase extends AbstractBenchmarkCase
         $this->supervisor->markRunning($run);
         $this->supervisor->complete($run, null);
         $this->supervisor->reap($run);
+    }
+
+    public function cleanup(): void
+    {
+        $this->scope?->dispose();
+        $this->scope = null;
+        $this->supervisor = null;
+        $this->task = null;
     }
 }
 
@@ -343,6 +405,14 @@ final class SwooleTableLedgerProjectionCase extends AbstractBenchmarkCase
             throw new \RuntimeException('Swoole table ledger projection did not return the active run.');
         }
     }
+
+    public function cleanup(): void
+    {
+        $this->scope?->dispose();
+        $this->scope = null;
+        $this->supervisor = null;
+        $this->task = null;
+    }
 }
 
 final class TransactionScopeEnterExitCase extends AbstractBenchmarkCase
@@ -368,6 +438,13 @@ final class TransactionScopeEnterExitCase extends AbstractBenchmarkCase
         );
 
         $this->scope->execute($this->task);
+    }
+
+    public function cleanup(): void
+    {
+        $this->scope?->dispose();
+        $this->scope = null;
+        $this->task = null;
     }
 }
 

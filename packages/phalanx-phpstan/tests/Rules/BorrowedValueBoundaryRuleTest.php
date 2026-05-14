@@ -59,6 +59,16 @@ final class BorrowedValueBoundaryRuleTest extends RuleTestCase
         $this->analyse([$file], []);
     }
 
+    public function testClosureAliasTrackingIsScopedToTheDeclaringFunction(): void
+    {
+        $this->analyse(
+            [__DIR__ . '/Fixtures/borrowed-value-boundary-scope.php'],
+            [
+                [BorrowedValueBoundaryRule::RETURN_MESSAGE, 21],
+            ],
+        );
+    }
+
     protected function setUp(): void
     {
         $this->pathPolicy = new PathPolicy();

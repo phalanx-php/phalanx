@@ -185,23 +185,30 @@ final class BorrowedValueBoundaryRule implements Rule
             return;
         }
 
-        $file = $scope->getFile();
         $name = $assign->var->name;
         if (
             ($assign->expr instanceof ClosureExpr || $assign->expr instanceof ArrowFunction)
             && $this->closureCapturesBorrowed($assign->expr, $scope)
         ) {
-            $this->borrowedClosureVariables[$file][$name] = true;
+            $this->borrowedClosureVariables[$this->scopeKey($scope)][$name] = true;
             return;
         }
 
-        unset($this->borrowedClosureVariables[$file][$name]);
+        unset($this->borrowedClosureVariables[$this->scopeKey($scope)][$name]);
     }
 
     private function isBorrowedClosureVariable(Variable $variable, Scope $scope): bool
     {
         return is_string($variable->name)
-            && isset($this->borrowedClosureVariables[$scope->getFile()][$variable->name]);
+            && isset($this->borrowedClosureVariables[$this->scopeKey($scope)][$variable->name]);
+    }
+
+    private function scopeKey(Scope $scope): string
+    {
+        $functionName = $scope->getFunctionName() ?? 'global';
+        $className = $scope->isInClass() ? $scope->getClassReflection()->getName() : '';
+
+        return $scope->getFile() . '::' . $className . '::' . $functionName;
     }
 
     private function closureCapturesBorrowed(ClosureExpr|ArrowFunction $closure, Scope $scope): bool

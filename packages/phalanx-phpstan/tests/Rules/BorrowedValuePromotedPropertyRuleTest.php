@@ -14,6 +14,8 @@ use PHPStan\Testing\RuleTestCase;
  */
 final class BorrowedValuePromotedPropertyRuleTest extends RuleTestCase
 {
+    private PathPolicy $pathPolicy;
+
     public function testReportsBorrowedValuesStoredInPromotedProperties(): void
     {
         $this->analyse(
@@ -24,8 +26,21 @@ final class BorrowedValuePromotedPropertyRuleTest extends RuleTestCase
         );
     }
 
+    public function testAllowsPromotedBorrowedValuesInsideInternalPoolBoundaries(): void
+    {
+        $file = __DIR__ . '/Fixtures/borrowed-value-boundary.php';
+        $this->pathPolicy = new PathPolicy(internalPaths: [$file]);
+
+        $this->analyse([$file], []);
+    }
+
+    protected function setUp(): void
+    {
+        $this->pathPolicy = new PathPolicy();
+    }
+
     protected function getRule(): Rule
     {
-        return new BorrowedValuePromotedPropertyRule(new PathPolicy());
+        return new BorrowedValuePromotedPropertyRule($this->pathPolicy);
     }
 }
