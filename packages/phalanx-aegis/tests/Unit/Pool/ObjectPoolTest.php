@@ -105,14 +105,17 @@ final class ObjectPoolTest extends TestCase
 
         $pool->release($obj);
 
+        $caught = null;
         try {
             $pool->acquire(static function (): void {
                 throw new \RuntimeException('initializer failed');
             });
         } catch (\RuntimeException $e) {
-            self::assertSame('initializer failed', $e->getMessage());
+            $caught = $e;
         }
 
+        self::assertNotNull($caught);
+        self::assertSame('initializer failed', $caught->getMessage());
         self::assertSame(0, $pool->stats()['free']);
         self::assertSame(1, $pool->stats()['drops']);
 
@@ -124,6 +127,7 @@ final class ObjectPoolTest extends TestCase
         self::assertNotSame($objId, spl_object_id($recovered));
         self::assertSame('Corinth', $recovered->name);
         self::assertSame(2, $recovered->value);
+        self::assertSame(1, $pool->stats()['borrowed']);
     }
 
     public function testWorksWithFinalClassMutableFields(): void
@@ -218,6 +222,22 @@ final class ObjectPoolTest extends TestCase
                 $o->value = 1;
             },
             static fn(PoolableStub $o): PoolableStub => $o,
+        );
+    }
+
+    public function testWithBorrowedRejectsClosureCapturingBorrowedSlot(): void
+    {
+        $pool = new ObjectPool(PoolableStub::class, 1);
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('Borrow callbacks must return owned values');
+
+        $pool->withBorrowed(
+            static function (PoolableStub $o): void {
+                $o->name = 'captured';
+                $o->value = 1;
+            },
+            static fn(PoolableStub $o): \Closure => static fn(): string => $o->name,
         );
     }
 }

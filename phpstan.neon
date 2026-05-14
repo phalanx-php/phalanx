@@ -35,6 +35,8 @@ parameters:
         - packages/phalanx-aegis/src/Runtime/RuntimeHooks.php
         - packages/phalanx-aegis/src/Scope/ExecutionLifecycleScope.php
         - packages/phalanx-aegis/src/Service/LazySingleton.php
+        - packages/phalanx-aegis/src/Supervisor/InProcessLedger.php
+        - packages/phalanx-aegis/src/Supervisor/LedgerStorage.php
         - packages/phalanx-aegis/src/Supervisor/Supervisor.php
         - packages/phalanx-aegis/src/Supervisor/SwooleTableLedger.php
         - packages/phalanx-aegis/src/Worker/
@@ -46,9 +48,11 @@ parameters:
         - packages/phalanx-hermes/src
         - packages/phalanx-hydra/src
         - packages/phalanx-iris/src
+        - packages/phalanx-phpstan/src
         - packages/phalanx-skopos/src
         - packages/phalanx-stoa/src
         - packages/phalanx-surreal/src
+        - packages/phalanx-styx/src
     phalanxAuditPaths: []
     phalanxRuntimeHookInternalPaths:
         - packages/phalanx-aegis/src/Runtime/RuntimeHookNames.php

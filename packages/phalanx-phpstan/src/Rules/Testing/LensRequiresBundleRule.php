@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\PHPStan\Rules\Testing;
 
+use Phalanx\Cancellation\Cancelled;
 use Phalanx\PHPStan\Support\RuleErrors;
 use Phalanx\Service\ServiceBundle;
 use PhpParser\Node\Expr\MethodCall;
@@ -187,6 +188,8 @@ final class LensRequiresBundleRule implements Rule
 
         try {
             $stmts = $parser->parse($source) ?? [];
+        } catch (Cancelled $e) {
+            throw $e;
         } catch (\Throwable) {
             return [];
         }
@@ -322,6 +325,8 @@ final class LensRequiresBundleRule implements Rule
                 foreach ($collection->all() as $lensFqcn) {
                     $lenses[] = $lensFqcn;
                 }
+            } catch (Cancelled $e) {
+                throw $e;
             } catch (\Throwable) {
             }
         }
@@ -378,6 +383,8 @@ final class LensRequiresBundleRule implements Rule
 
         try {
             $stmts = $parser->parse($source) ?? [];
+        } catch (Cancelled $e) {
+            throw $e;
         } catch (\Throwable) {
             $this->accessorMap = [];
             return $this->accessorMap;

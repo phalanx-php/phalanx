@@ -6,6 +6,7 @@ namespace Phalanx\Pool;
 
 use Closure;
 use ReflectionClass;
+use ReflectionFunction;
 use SplStack;
 
 /**
@@ -125,7 +126,7 @@ final class ObjectPool
         }
     }
 
-    /** @return array{hits: int, misses: int, overflows: int, drops: int, free: int, capacity: int} */
+    /** @return array{hits: int, misses: int, overflows: int, drops: int, borrowed: int, free: int, capacity: int} */
     public function stats(): array
     {
         return [
@@ -133,6 +134,7 @@ final class ObjectPool
             'misses' => $this->misses,
             'overflows' => $this->overflows,
             'drops' => $this->drops,
+            'borrowed' => count($this->borrowed),
             'free' => $this->free->count(),
             'capacity' => $this->capacity,
         ];
@@ -144,7 +146,26 @@ final class ObjectPool
             return true;
         }
 
-        if (!is_array($value) || $depth > 16) {
+        if ($depth > 16) {
+            return false;
+        }
+
+        if ($value instanceof Closure) {
+            $reflection = new ReflectionFunction($value);
+            if (self::containsBorrowedValue($reflection->getClosureThis(), $depth + 1)) {
+                return true;
+            }
+
+            foreach ($reflection->getStaticVariables() as $captured) {
+                if (self::containsBorrowedValue($captured, $depth + 1)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        if (!is_array($value)) {
             return false;
         }
 

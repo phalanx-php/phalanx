@@ -5,15 +5,16 @@ declare(strict_types=1);
 namespace Phalanx\Scope;
 
 use Closure;
-use Phalanx\Supervisor\TaskRun;
+use Phalanx\Supervisor\TaskRunSnapshot;
 use Phalanx\Supervisor\TransactionLease;
 
 interface ExecutionScope extends TaskScope, TaskExecutor
 {
-    public ?TaskRun $currentRun { get;
-    set; }
-
     public function withAttribute(string $key, mixed $value): ExecutionScope;
+
+    public function currentRunId(): ?string;
+
+    public function currentRunSnapshot(): ?TaskRunSnapshot;
 
     /**
      * Run a body while a transaction lease is registered against the current

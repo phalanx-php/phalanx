@@ -28,6 +28,7 @@ use Phalanx\Supervisor\DispatchMode;
 use Phalanx\Supervisor\Supervisor;
 use Phalanx\Supervisor\TaskHandle;
 use Phalanx\Supervisor\TaskRun;
+use Phalanx\Supervisor\TaskRunSnapshot;
 use Phalanx\Supervisor\TransactionLease;
 use Phalanx\Supervisor\WaitReason;
 use Phalanx\Task\Executable;
@@ -150,6 +151,18 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
     public function currentTaskRun(): ?TaskRun
     {
         return $this->currentRun;
+    }
+
+    public function currentRunId(): ?string
+    {
+        return $this->currentRun?->id;
+    }
+
+    public function currentRunSnapshot(): ?TaskRunSnapshot
+    {
+        return $this->currentRun === null
+            ? null
+            : $this->supervisor->ledger->snapshot($this->currentRun->id);
     }
 
     /**

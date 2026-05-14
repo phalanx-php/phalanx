@@ -12,6 +12,7 @@ use Phalanx\Scope\ExecutionScope;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 use Phalanx\Supervisor\InProcessLedger;
+use Phalanx\Supervisor\TaskHandle;
 use Phalanx\Testing\PhalanxTestCase;
 use RuntimeException;
 
@@ -25,12 +26,14 @@ final class SpawnHelperTest extends PhalanxTestCase
             $inner = $app->createScope();
 
             $observed = null;
-            $handle = $inner->go(static function (ExecutionScope $_s) use (&$observed): int {
+            $ran = new Channel(1);
+            $handle = $inner->go(static function (ExecutionScope $_s) use ($ran, &$observed): int {
                 $observed = 'ran';
+                $ran->push(true);
                 return 7;
             }, name: 'demo-spawn');
 
-            Coroutine::usleep(5_000);
+            self::assertTrue($ran->pop(1.0));
 
             self::assertSame('demo-spawn', $handle->name);
             self::assertSame('ran', $observed);
@@ -46,17 +49,20 @@ final class SpawnHelperTest extends PhalanxTestCase
             $ledger = new InProcessLedger();
             $app = self::buildApp($ledger);
             $inner = $app->createScope();
+            $started = new Channel(1);
 
-            $handle = $inner->go(static function (ExecutionScope $_s): never {
+            $handle = $inner->go(static function (ExecutionScope $_s) use ($started): never {
+                $started->push(true);
                 throw new RuntimeException('background boom');
             });
 
-            Coroutine::usleep(5_000);
+            self::assertTrue($started->pop(1.0));
+            self::waitUntil(
+                static fn(): bool => self::traceEvents($inner, 'PHX-SPAWN-001') !== [],
+                'spawn error trace was not emitted',
+            );
 
-            $events = array_values(array_filter(
-                $inner->trace()->events(),
-                static fn($e) => $e->name === 'PHX-SPAWN-001',
-            ));
+            $events = self::traceEvents($inner, 'PHX-SPAWN-001');
             self::assertCount(1, $events);
             self::assertSame($handle->id, $events[0]->attrs['run']);
             self::assertStringContainsString('background boom', $events[0]->attrs['message']);
@@ -72,19 +78,18 @@ final class SpawnHelperTest extends PhalanxTestCase
             $ledger = new InProcessLedger();
             $app = self::buildApp($ledger);
             $inner = $app->createScope();
+            $started = new Channel(1);
 
-            $handle = $inner->go(static function (ExecutionScope $s): void {
+            $handle = $inner->go(static function (ExecutionScope $s) use ($started): void {
+                $started->push(true);
                 $s->delay(5.0);
             }, name: 'long-spawn');
 
-            Coroutine::usleep(5_000);
+            self::assertTrue($started->pop(1.0));
 
             $inner->dispose();
 
-            $events = array_values(array_filter(
-                $inner->trace()->events(),
-                static fn($e) => $e->name === 'PHX-SPAWN-002',
-            ));
+            $events = self::traceEvents($inner, 'PHX-SPAWN-002');
             self::assertCount(1, $events);
             self::assertSame($handle->id, $events[0]->attrs['run']);
 
@@ -127,15 +132,22 @@ final class SpawnHelperTest extends PhalanxTestCase
             $inner = $app->createScope();
 
             $reachedAfterDelay = false;
-            $handle = $inner->go(static function (ExecutionScope $s) use (&$reachedAfterDelay): void {
-                $s->delay(5.0);
-                $reachedAfterDelay = true;
+            $started = new Channel(1);
+            $unwound = new Channel(1);
+            $handle = $inner->go(static function (ExecutionScope $s) use ($started, $unwound, &$reachedAfterDelay): void {
+                try {
+                    $started->push(true);
+                    $s->delay(5.0);
+                    $reachedAfterDelay = true;
+                } finally {
+                    $unwound->push(true);
+                }
             });
 
-            Coroutine::usleep(5_000);
+            self::assertTrue($started->pop(1.0));
             $handle->cancel();
 
-            Coroutine::usleep(20_000);
+            self::assertTrue($unwound->pop(1.0));
 
             self::assertFalse($reachedAfterDelay, 'spawn body must not pass cancelled delay');
 
@@ -151,10 +163,15 @@ final class SpawnHelperTest extends PhalanxTestCase
             $app = self::buildApp($ledger);
             $inner = $app->createScope();
             $started = new Channel(1);
+            $unwound = new Channel(1);
 
-            $handle = $inner->go(static function (ExecutionScope $s) use ($started): void {
-                $started->push(true);
-                $s->delay(5.0);
+            $handle = $inner->go(static function (ExecutionScope $s) use ($started, $unwound): void {
+                try {
+                    $started->push(true);
+                    $s->delay(5.0);
+                } finally {
+                    $unwound->push(true);
+                }
             }, name: 'snapshot-spawn');
 
             self::assertTrue($started->pop(1.0));
@@ -166,7 +183,7 @@ final class SpawnHelperTest extends PhalanxTestCase
             self::assertSame('snapshot-spawn', $snapshot->name);
 
             $handle->cancel();
-            Coroutine::usleep(20_000);
+            self::assertTrue($unwound->pop(1.0));
 
             $inner->dispose();
 
@@ -182,19 +199,31 @@ final class SpawnHelperTest extends PhalanxTestCase
             $app = self::buildApp($ledger);
             $inner = $app->createScope();
             $started = new Channel(1);
+            $completedDone = new Channel(1);
+            $parkedUnwound = new Channel(1);
 
-            $completed = $inner->go(static fn(): string => 'done', name: 'completed-spawn');
-            Coroutine::usleep(5_000);
+            $completed = $inner->go(static function () use ($completedDone): string {
+                $completedDone->push(true);
+                return 'done';
+            }, name: 'completed-spawn');
+            self::assertTrue($completedDone->pop(1.0));
+            self::waitForNullSnapshot($completed);
+            $statsBeforeParked = $inner->supervisor()->poolStats()['taskRun'];
 
-            $parked = $inner->go(static function (ExecutionScope $s) use ($started): void {
-                $started->push(true);
-                $s->delay(5.0);
+            $parked = $inner->go(static function (ExecutionScope $s) use ($started, $parkedUnwound): void {
+                try {
+                    $started->push(true);
+                    $s->delay(5.0);
+                } finally {
+                    $parkedUnwound->push(true);
+                }
             }, name: 'parked-spawn');
+            $statsAfterParked = $inner->supervisor()->poolStats()['taskRun'];
 
             self::assertTrue($started->pop(1.0));
+            self::assertSame($statsBeforeParked['hits'] + 1, $statsAfterParked['hits']);
 
             $completed->cancel();
-            Coroutine::usleep(20_000);
 
             $snapshot = $parked->snapshot();
             self::assertNotNull($snapshot);
@@ -202,10 +231,11 @@ final class SpawnHelperTest extends PhalanxTestCase
             self::assertSame('parked-spawn', $snapshot->name);
 
             $parked->cancel();
-            Coroutine::usleep(20_000);
+            self::assertTrue($parkedUnwound->pop(1.0));
 
             $inner->dispose();
             self::assertSame(0, $ledger->liveCount());
+            self::assertSame(0, $inner->supervisor()->poolStats()['taskRun']['borrowed']);
         });
     }
 
@@ -239,5 +269,37 @@ final class SpawnHelperTest extends PhalanxTestCase
             ->providers($bundle)
             ->withLedger($ledger)
             ->compile();
+    }
+
+    /** @return list<object> */
+    private static function traceEvents(ExecutionScope $scope, string $name): array
+    {
+        return array_values(array_filter(
+            $scope->trace()->events(),
+            static fn($event): bool => $event->name === $name,
+        ));
+    }
+
+    /** @param \Closure(): bool $condition */
+    private static function waitUntil(\Closure $condition, string $message): void
+    {
+        $deadline = microtime(true) + 1.0;
+        while (microtime(true) < $deadline) {
+            if ($condition()) {
+                return;
+            }
+
+            Coroutine::usleep(1_000);
+        }
+
+        self::fail($message);
+    }
+
+    private static function waitForNullSnapshot(TaskHandle $handle): void
+    {
+        self::waitUntil(
+            static fn(): bool => $handle->snapshot() === null,
+            'task handle still had a live snapshot after completion',
+        );
     }
 }

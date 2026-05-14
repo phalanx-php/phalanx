@@ -12,7 +12,7 @@ use Phalanx\Runtime\RuntimeContext;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\Subscription;
 use Phalanx\Supervisor\TaskHandle;
-use Phalanx\Supervisor\TaskRun;
+use Phalanx\Supervisor\TaskRunSnapshot;
 use Phalanx\Supervisor\TransactionLease;
 use Phalanx\Supervisor\WaitReason;
 use Phalanx\Task\Executable;
@@ -22,11 +22,6 @@ use Phalanx\Worker\WorkerTask;
 
 trait ExecutionScopeDelegate
 {
-    public ?TaskRun $currentRun {
-        get => $this->innerScope()->currentRun;
-        set { $this->innerScope()->currentRun = $value; }
-    }
-
     public bool $isCancelled {
         get => $this->innerScope()->isCancelled;
     }
@@ -53,6 +48,16 @@ trait ExecutionScopeDelegate
     public function resource(string $key, mixed $default = null): mixed
     {
         return $this->innerScope()->resource($key, $default);
+    }
+
+    public function currentRunId(): ?string
+    {
+        return $this->innerScope()->currentRunId();
+    }
+
+    public function currentRunSnapshot(): ?TaskRunSnapshot
+    {
+        return $this->innerScope()->currentRunSnapshot();
     }
 
     public function trace(): Trace

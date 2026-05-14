@@ -455,6 +455,7 @@ final class StoaRunner
                 );
             }
 
+            $requestFailureTree = null;
             try {
                 $supervisor = $this->app->supervisor();
                 $requestRun = $supervisor->start(
@@ -464,7 +465,7 @@ final class StoaRunner
                     name: 'StoaRequest: ' . $resource->path
                 );
                 $supervisor->markRunning($requestRun);
-                $scope->currentRun = $requestRun;
+                $rootScope->currentRun = $requestRun;
 
                 try {
                     $result = $scope->execute($routes);
@@ -487,9 +488,11 @@ final class StoaRunner
                     $supervisor->complete($requestRun, $response);
                 } catch (Cancelled $e) {
                     $supervisor->cancel($requestRun);
+                    $requestFailureTree = $supervisor->tree();
                     throw $e;
                 } catch (Throwable $e) {
                     $supervisor->fail($requestRun, $e);
+                    $requestFailureTree = $requestRun->failureTree;
                     throw $e;
                 } finally {
                     $supervisor->reap($requestRun);
@@ -501,7 +504,7 @@ final class StoaRunner
                     return null;
                 }
 
-                $tree = $requestRun->failureTree ?? $this->app->supervisor()->tree();
+                $tree = $requestFailureTree ?? $this->app->supervisor()->tree();
                 $rootScope->setResource('phx.error_ledger', $tree);
                 $response = $this->errorResponse($errorScope, $e, $resource);
             } catch (Throwable $e) {
@@ -511,7 +514,7 @@ final class StoaRunner
                     $resource->fail($e);
                     $trace->log(TraceType::Failed, 'request', ['error' => $e->getMessage()]);
 
-                    $tree = $requestRun->failureTree ?? $this->app->supervisor()->tree();
+                    $tree = $requestFailureTree ?? $this->app->supervisor()->tree();
                     $rootScope->setResource('phx.error_ledger', $tree);
                     $response = $this->errorResponse($errorScope, $e, $resource);
                 }

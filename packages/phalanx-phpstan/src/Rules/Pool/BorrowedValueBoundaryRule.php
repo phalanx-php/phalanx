@@ -11,13 +11,18 @@ use Phalanx\Styx\Channel;
 use PhpParser\Node;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\Array_;
+use PhpParser\Node\Expr\ArrayDimFetch;
 use PhpParser\Node\Expr\ArrowFunction;
 use PhpParser\Node\Expr\Assign;
+use PhpParser\Node\Expr\AssignOp;
 use PhpParser\Node\Expr\Closure as ClosureExpr;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\PropertyFetch;
 use PhpParser\Node\Expr\StaticPropertyFetch;
+use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\Stmt\Return_;
+use PhpParser\Node\Expr\Yield_;
+use PhpParser\Node\Expr\YieldFrom;
 use PHPStan\Analyser\Scope;
 use PHPStan\Rules\IdentifierRuleError;
 use PHPStan\Rules\Rule;
@@ -45,6 +50,9 @@ final class BorrowedValueBoundaryRule implements Rule
 
     private const string IDENTIFIER = 'phalanx.pool.borrowedBoundary';
 
+    /** @var array<string, array<string, true>> */
+    private array $borrowedClosureVariables = [];
+
     public function __construct(private readonly PathPolicy $paths)
     {
     }
@@ -71,7 +79,10 @@ final class BorrowedValueBoundaryRule implements Rule
             return [];
         }
 
-        if ($node instanceof ArrowFunction && $this->containsBorrowedValue($node->expr, $scope)) {
+        if (
+            $node instanceof ArrowFunction
+            && ($this->containsBorrowedValue($node->expr, $scope) || $this->closureCapturesBorrowed($node, $scope))
+        ) {
             return [
                 $this->error(self::ARROW_RETURN_MESSAGE, $node->getLine()),
             ];
@@ -87,12 +98,36 @@ final class BorrowedValueBoundaryRule implements Rule
             ];
         }
 
-        if ($node instanceof Assign && $this->containsBorrowedValue($node->expr, $scope)) {
-            if ($node->var instanceof PropertyFetch || $node->var instanceof StaticPropertyFetch) {
+        if ($node instanceof Yield_ && $node->value instanceof Expr && $this->containsBorrowedValue($node->value, $scope)) {
+            return [
+                $this->error(self::RETURN_MESSAGE, $node->getLine()),
+            ];
+        }
+
+        if ($node instanceof YieldFrom && $this->containsBorrowedValue($node->expr, $scope)) {
+            return [
+                $this->error(self::RETURN_MESSAGE, $node->getLine()),
+            ];
+        }
+
+        if ($node instanceof Assign) {
+            $this->recordBorrowedClosureVariable($node, $scope);
+
+            if ($this->containsBorrowedValue($node->expr, $scope) && $this->isPropertyAssignmentTarget($node->var)) {
                 return [
                     $this->error(self::PROPERTY_MESSAGE, $node->getLine()),
                 ];
             }
+        }
+
+        if (
+            $node instanceof AssignOp
+            && $this->containsBorrowedValue($node->expr, $scope)
+            && $this->isPropertyAssignmentTarget($node->var)
+        ) {
+            return [
+                $this->error(self::PROPERTY_MESSAGE, $node->getLine()),
+            ];
         }
 
         return [];
@@ -125,6 +160,10 @@ final class BorrowedValueBoundaryRule implements Rule
 
     private function containsBorrowedValue(Expr $expr, Scope $scope): bool
     {
+        if ($expr instanceof Variable && $this->isBorrowedClosureVariable($expr, $scope)) {
+            return true;
+        }
+
         if ($this->isBorrowedType($scope->getType($expr))) {
             return true;
         }
@@ -150,6 +189,95 @@ final class BorrowedValueBoundaryRule implements Rule
         }
 
         return false;
+    }
+
+    private function recordBorrowedClosureVariable(Assign $assign, Scope $scope): void
+    {
+        if (!$assign->var instanceof Variable || !is_string($assign->var->name)) {
+            return;
+        }
+
+        $file = $scope->getFile();
+        $name = $assign->var->name;
+        if (
+            ($assign->expr instanceof ClosureExpr || $assign->expr instanceof ArrowFunction)
+            && $this->closureCapturesBorrowed($assign->expr, $scope)
+        ) {
+            $this->borrowedClosureVariables[$file][$name] = true;
+            return;
+        }
+
+        unset($this->borrowedClosureVariables[$file][$name]);
+    }
+
+    private function isBorrowedClosureVariable(Variable $variable, Scope $scope): bool
+    {
+        return is_string($variable->name)
+            && isset($this->borrowedClosureVariables[$scope->getFile()][$variable->name]);
+    }
+
+    private function closureCapturesBorrowed(ClosureExpr|ArrowFunction $closure, Scope $scope): bool
+    {
+        if ($closure instanceof ClosureExpr) {
+            foreach ($closure->uses as $use) {
+                if ($this->containsBorrowedValue($use->var, $scope)) {
+                    return true;
+                }
+            }
+
+            foreach ($closure->stmts as $stmt) {
+                if ($this->nodeReferencesBorrowed($stmt, $scope)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        return $this->nodeReferencesBorrowed($closure->expr, $scope);
+    }
+
+    private function nodeReferencesBorrowed(Node $node, Scope $scope, int $depth = 0): bool
+    {
+        if ($depth > 32) {
+            return false;
+        }
+
+        if ($node instanceof Expr) {
+            if ($node instanceof Variable && $this->isBorrowedClosureVariable($node, $scope)) {
+                return true;
+            }
+
+            if ($this->isBorrowedType($scope->getType($node))) {
+                return true;
+            }
+        }
+
+        foreach ($node->getSubNodeNames() as $name) {
+            $value = $node->$name;
+            if ($value instanceof Node && $this->nodeReferencesBorrowed($value, $scope, $depth + 1)) {
+                return true;
+            }
+
+            if (is_array($value)) {
+                foreach ($value as $item) {
+                    if ($item instanceof Node && $this->nodeReferencesBorrowed($item, $scope, $depth + 1)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private function isPropertyAssignmentTarget(Expr $expr): bool
+    {
+        if ($expr instanceof PropertyFetch || $expr instanceof StaticPropertyFetch) {
+            return true;
+        }
+
+        return $expr instanceof ArrayDimFetch && $this->isPropertyAssignmentTarget($expr->var);
     }
 
     private function isBorrowedType(\PHPStan\Type\Type $type): bool

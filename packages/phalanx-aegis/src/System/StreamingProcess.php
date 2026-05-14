@@ -75,11 +75,11 @@ class StreamingProcess
 
             $pid = $adapter->pid();
             $scopeId = $scope instanceof ScopeIdentity ? $scope->scopeId : null;
-            $ownerRun = method_exists($scope, 'currentTaskRun') ? $scope->currentTaskRun() : null;
+            $ownerRunId = method_exists($scope, 'currentRunId') ? $scope->currentRunId() : null;
             $resource = $scope->runtime->memory->resources->open(
                 AegisResourceSid::StreamingProcess,
                 ownerScopeId: $scopeId,
-                ownerRunId: $ownerRun?->id,
+                ownerRunId: $ownerRunId,
                 state: ManagedResourceState::Opening,
             );
             $resourceId = $resource->id;

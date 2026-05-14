@@ -41,10 +41,11 @@ final class LeaseViolation extends RuntimeException
     public function __construct(
         public readonly string $phxCode,
         public readonly string $detail,
-        public readonly ?TaskRun $run = null,
+        public readonly ?string $runId = null,
+        public readonly ?string $runName = null,
         public readonly ?Lease $offending = null,
     ) {
-        $context = $run !== null ? " (task '{$run->name}', run {$run->id})" : '';
+        $context = $runId !== null && $runName !== null ? " (task '{$runName}', run {$runId})" : '';
         parent::__construct("[{$phxCode}] {$detail}{$context}");
     }
 }

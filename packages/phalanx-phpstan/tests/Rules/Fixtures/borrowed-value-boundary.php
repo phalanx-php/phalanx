@@ -20,6 +20,9 @@ final class BorrowedValueBoundaryFixture
     /** @var list<BorrowedAgentEvent> */
     private array $events = [];
 
+    /** @var list<BorrowedAgentEvent> */
+    private static array $staticEvents = [];
+
     private ?\Closure $storedClosure = null;
 
     public function invalidChannelEmit(Channel $channel, BorrowedAgentEvent $event): void
@@ -78,6 +81,29 @@ final class BorrowedValueBoundaryFixture
         };
     }
 
+    public function invalidClosureVariableReturn(BorrowedAgentEvent $event): \Closure
+    {
+        $fn = static function () use ($event): void {
+            $event::class;
+        };
+
+        return $fn;
+    }
+
+    public function invalidArrowClosureCaptureReturn(BorrowedAgentEvent $event): \Closure
+    {
+        return static fn(): string => $event::class;
+    }
+
+    public function invalidClosureVariableChannelEmit(Channel $channel, BorrowedAgentEvent $event): void
+    {
+        $fn = static function () use ($event): void {
+            $event::class;
+        };
+
+        $channel->emit($fn);
+    }
+
     public function invalidPropertyStore(BorrowedAgentEvent $event): void
     {
         $this->stored = $event;
@@ -98,6 +124,28 @@ final class BorrowedValueBoundaryFixture
         };
     }
 
+    public function invalidPropertyClosureVariableStore(BorrowedAgentEvent $event): void
+    {
+        $fn = static function () use ($event): void {
+            $event::class;
+        };
+
+        $this->storedClosure = $fn;
+    }
+
+    public function invalidPropertyArrayAppend(BorrowedAgentEvent $event): void
+    {
+        $this->events[] = $event;
+        self::$staticEvents[] = $event;
+        $this->events += [$event];
+    }
+
+    public function invalidYield(BorrowedAgentEvent $event): \Generator
+    {
+        yield $event;
+        yield from [$event];
+    }
+
     public function validLocalUse(BorrowedAgentEvent $event): string
     {
         return $event::class;
@@ -108,6 +156,26 @@ final class BorrowedValueBoundaryFixture
         $events = [$event];
 
         return count($events);
+    }
+
+    public function validLocalClosureUse(BorrowedAgentEvent $event): void
+    {
+        $fn = static function () use ($event): string {
+            return $event::class;
+        };
+
+        $fn();
+    }
+
+    public function validClosureVariableReassignment(BorrowedAgentEvent $event): \Closure
+    {
+        $fn = static function () use ($event): void {
+            $event::class;
+        };
+        $fn = static function (): void {
+        };
+
+        return $fn;
     }
 }
 

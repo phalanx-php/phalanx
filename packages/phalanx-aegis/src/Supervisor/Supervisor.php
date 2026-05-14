@@ -252,7 +252,7 @@ final class Supervisor
         }
     }
 
-    /** @return array{taskRun: array{hits: int, misses: int, overflows: int, free: int, capacity: int}, token: array{hits: int, misses: int, free: int, capacity: int}} */
+    /** @return array{taskRun: array{hits: int, misses: int, overflows: int, drops: int, borrowed: int, free: int, capacity: int}, token: array{hits: int, misses: int, free: int, capacity: int}} */
     public function poolStats(): array
     {
         return [
@@ -290,7 +290,8 @@ final class Supervisor
                     throw new LeaseViolation(
                         phxCode: 'PHX-POOL-001',
                         detail: "nested acquire from pool '{$lease->domain}' (already holds connection #{$held->key})",
-                        run: $run,
+                        runId: $run->id,
+                        runName: $run->name,
                         offending: $lease,
                     );
                 }
@@ -315,7 +316,8 @@ final class Supervisor
                         detail: "out-of-order lock acquire in domain '{$lease->domain}': "
                               . "would acquire '{$lease->key}' while holding '{$held->key}' "
                               . "— canonical-sort multi-key acquires to prevent deadlock",
-                        run: $run,
+                        runId: $run->id,
+                        runName: $run->name,
                         offending: $lease,
                     );
                 }
@@ -346,7 +348,8 @@ final class Supervisor
             throw new LeaseViolation(
                 phxCode: 'PHX-POOL-002',
                 detail: "process-local lease '{$held->domain}'/'{$held->key}' held across worker dispatch boundary",
-                run: $run,
+                runId: $run->id,
+                runName: $run->name,
                 offending: $held,
             );
         }
@@ -378,7 +381,8 @@ final class Supervisor
                 phxCode: 'PHX-TXN-001',
                 detail: "external {$reason->kind->value} wait attempted while transaction "
                     . "'{$held->domain}'/'{$held->key}' is open",
-                run: $run,
+                runId: $run->id,
+                runName: $run->name,
                 offending: $held,
             );
         }

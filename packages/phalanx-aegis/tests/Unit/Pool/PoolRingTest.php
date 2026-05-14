@@ -261,6 +261,22 @@ final class PoolRingTest extends TestCase
         );
     }
 
+    public function testBorrowCallbackCannotReturnClosureCapturingBorrowedSlot(): void
+    {
+        $ring = new PoolRing(PoolableStub::class, 1);
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('Borrow callbacks must return owned values');
+
+        $ring->withBorrowed(
+            static function (PoolableStub $o): void {
+                $o->name = 'captured';
+                $o->value = 1;
+            },
+            static fn(PoolableStub $o): \Closure => static fn(): string => $o->name,
+        );
+    }
+
     public function testNestedBorrowSkipsCheckedOutSlot(): void
     {
         $ring = new PoolRing(PoolableStub::class, 2);
