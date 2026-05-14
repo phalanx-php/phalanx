@@ -139,4 +139,62 @@ JSON);
             @rmdir($root);
         }
     }
+
+    public function testScansComposerManifestWhenPassedAsAFilePath(): void
+    {
+        $root = sys_get_temp_dir() . '/' . uniqid('phalanx-risk-', true);
+        mkdir($root);
+        $file = $root . '/composer.json';
+
+        try {
+            file_put_contents($file, <<<'JSON'
+{
+    "require": {
+        "react/event-loop": "^1.5"
+    }
+}
+JSON);
+
+            $risks = (new RuntimeRiskScanner())->scanPaths([$file]);
+            $symbols = array_map(
+                static fn(RuntimeRisk $risk): string => $risk->category . ':' . $risk->symbol,
+                $risks,
+            );
+
+            self::assertContains('stale_async_dependency:composer package react/event-loop', $symbols);
+        } finally {
+            @unlink($file);
+            @rmdir($root);
+        }
+    }
+
+    public function testScansGroupedUseStaleAsyncImports(): void
+    {
+        $file = sys_get_temp_dir() . '/' . uniqid('phalanx-risk-', true) . '.php';
+
+        try {
+            file_put_contents($file, <<<'PHP_WRAP'
+            <?php
+            declare(strict_types=1);
+            namespace Phalanx\PHPStan\Tests\Audit\Fixtures;
+            use Amp\{Future};
+            use React\Promise\{Deferred as ReactDeferred};
+            use Revolt\{EventLoop};
+            PHP_WRAP);
+
+            $risks = (new RuntimeRiskScanner())->scanFile($file);
+            $symbols = array_map(
+                static fn(RuntimeRisk $risk): string => $risk->category . ':' . $risk->symbol,
+                $risks,
+            );
+
+            self::assertContains('stale_async_dependency:Amp\Future', $symbols);
+            self::assertContains('stale_async_dependency:React\Promise\Deferred', $symbols);
+            self::assertContains('stale_async_dependency:Revolt\EventLoop', $symbols);
+            self::assertNotContains('stale_async_dependency:React\Promise', $symbols);
+            self::assertNotContains('stale_async_dependency:ReactDeferred', $symbols);
+        } finally {
+            @unlink($file);
+        }
+    }
 }

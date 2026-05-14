@@ -94,7 +94,7 @@ final class RuntimeRiskScanner
 
         $tokens = token_get_all($source);
         $aliases = $this->aliases($tokens);
-        $risks = [];
+        $risks = $this->processGroupedUseTokens($tokens, $file);
 
         foreach ($tokens as $i => $token) {
             if (!is_array($token)) {
@@ -189,10 +189,11 @@ final class RuntimeRiskScanner
      */
     private function processQualifiedName(array $tokens, int $i, string $text, string $file, int $line, array $aliases): array
     {
-        if (str_starts_with(ltrim($text, '\\'), 'React\\')
-            || str_starts_with(ltrim($text, '\\'), 'Amp\\')
-            || str_starts_with(ltrim($text, '\\'), 'Revolt\\')
-        ) {
+        if ($this->isGroupedUsePrefix($tokens, $i)) {
+            return [];
+        }
+
+        if (self::isStaleAsyncSymbol($text)) {
             return [new RuntimeRisk('stale_async_dependency', ltrim($text, '\\'), $file, $line)];
         }
 
@@ -226,6 +227,121 @@ final class RuntimeRiskScanner
         }
 
         return null;
+    }
+
+    /**
+     * @param array<int, mixed> $tokens
+     * @return list<RuntimeRisk>
+     */
+    private function processGroupedUseTokens(array $tokens, string $file): array
+    {
+        $risks = [];
+
+        foreach ($tokens as $i => $token) {
+            if (!is_array($token) || $token[0] !== T_USE || $this->nextSignificant($tokens, $i) === '(') {
+                continue;
+            }
+
+            $groupStart = $this->groupedUseStart($tokens, $i);
+            if ($groupStart === null) {
+                continue;
+            }
+
+            $prefix = $this->groupedUsePrefix($tokens, $i, $groupStart);
+            if ($prefix === '') {
+                continue;
+            }
+
+            for ($j = $groupStart + 1, $count = count($tokens); $j < $count; $j++) {
+                if ($tokens[$j] === '}') {
+                    break;
+                }
+
+                if (!is_array($tokens[$j])) {
+                    continue;
+                }
+
+                [$id, $name, $line] = $tokens[$j];
+                if ($id !== T_STRING && $id !== T_NAME_QUALIFIED && $id !== T_NAME_FULLY_QUALIFIED) {
+                    continue;
+                }
+
+                if ($this->previousSignificant($tokens, $j) === T_AS) {
+                    continue;
+                }
+
+                $symbol = trim($prefix . '\\' . ltrim($name, '\\'), '\\');
+                if (self::isStaleAsyncSymbol($symbol)) {
+                    $risks[] = new RuntimeRisk('stale_async_dependency', $symbol, $file, $line);
+                }
+            }
+        }
+
+        return $risks;
+    }
+
+    /** @param array<int, mixed> $tokens */
+    private function groupedUseStart(array $tokens, int $useIndex): ?int
+    {
+        for ($i = $useIndex + 1, $count = count($tokens); $i < $count; $i++) {
+            if ($this->isInsignificant($tokens[$i])) {
+                continue;
+            }
+
+            if ($tokens[$i] === ';') {
+                return null;
+            }
+
+            if ($tokens[$i] === '{') {
+                return $i;
+            }
+        }
+
+        return null;
+    }
+
+    /** @param array<int, mixed> $tokens */
+    private function groupedUsePrefix(array $tokens, int $useIndex, int $groupStart): string
+    {
+        $parts = [];
+        for ($i = $useIndex + 1; $i < $groupStart; $i++) {
+            $token = $tokens[$i];
+            if ($this->isInsignificant($token)) {
+                continue;
+            }
+
+            if ($token === '\\') {
+                $parts[] = '\\';
+                continue;
+            }
+
+            if (!is_array($token)) {
+                continue;
+            }
+
+            [$id, $text] = $token;
+            if ($id === T_STRING || $id === T_NAME_QUALIFIED || $id === T_NAME_FULLY_QUALIFIED || $id === T_NS_SEPARATOR) {
+                $parts[] = $text;
+            }
+        }
+
+        return trim(implode('', $parts), '\\');
+    }
+
+    /** @param array<int, mixed> $tokens */
+    private function isGroupedUsePrefix(array $tokens, int $i): bool
+    {
+        $next = $this->nextSignificantIndex($tokens, $i);
+        if ($next === null || !$this->isNamespaceSeparator($tokens[$next])) {
+            return false;
+        }
+
+        return $this->nextSignificant($tokens, $next) === '{';
+    }
+
+    private function isNamespaceSeparator(mixed $token): bool
+    {
+        return $token === '\\' || (is_array($token) && $token[0] === T_NS_SEPARATOR);
     }
 
     /**
@@ -267,7 +383,7 @@ final class RuntimeRiskScanner
     private function phpFiles(string $path): array
     {
         if (is_file($path)) {
-            return str_ends_with($path, '.php') ? [$path] : [];
+            return str_ends_with($path, '.php') || self::isComposerManifest($path) ? [$path] : [];
         }
 
         if (!is_dir($path)) {
@@ -501,6 +617,15 @@ final class RuntimeRiskScanner
         }
 
         return false;
+    }
+
+    private static function isStaleAsyncSymbol(string $symbol): bool
+    {
+        $trimmed = ltrim($symbol, '\\');
+
+        return str_starts_with($trimmed, 'React\\')
+            || str_starts_with($trimmed, 'Amp\\')
+            || str_starts_with($trimmed, 'Revolt\\');
     }
 
     private static function lineFor(string $source, string $needle): int

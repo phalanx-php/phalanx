@@ -15,7 +15,7 @@ require $autoload;
 
 $paths = array_values(array_slice($argv, 1));
 if ($paths === []) {
-    $paths = ['packages'];
+    $paths = ['packages', 'composer.json', 'composer.lock'];
 }
 
 $risks = (new RuntimeRiskScanner())->scanPaths($paths);
