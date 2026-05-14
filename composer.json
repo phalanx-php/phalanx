@@ -103,7 +103,7 @@
         }
     ],
     "scripts": {
-        "test": "php vendor/bin/phpunit",
+        "test": "php -d memory_limit=512M vendor/bin/phpunit",
         "test:cli": "php vendor/bin/phpunit packages/phalanx-cli/tests/",
         "test:core": "php vendor/bin/phpunit packages/phalanx-aegis/tests/",
         "test:aegis": "php vendor/bin/phpunit packages/phalanx-aegis/tests/",

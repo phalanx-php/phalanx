@@ -106,14 +106,16 @@ final class SkoposApplicationBuilder
         return $this->app->compile()->run($devServer);
     }
 
+    private static function deriveNameFromCommand(string $command): string
+    {
+        $parts = explode(' ', trim($command));
+        return basename($parts[0]);
+    }
+
     /** @return list<Process> */
     private function resolveProcesses(): array
     {
-        $cwd = getcwd();
-        if ($cwd === false) {
-            $cwd = '.';
-        }
-
+        $cwd = getcwd() ?: '.';
         $resolved = $this->processes;
 
         foreach ($this->backends as $backend) {
@@ -127,11 +129,5 @@ final class SkoposApplicationBuilder
         }
 
         return $resolved;
-    }
-
-    private static function deriveNameFromCommand(string $command): string
-    {
-        $parts = explode(' ', trim($command));
-        return basename($parts[0]);
     }
 }

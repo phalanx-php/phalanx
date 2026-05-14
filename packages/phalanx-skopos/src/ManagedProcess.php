@@ -48,6 +48,10 @@ final class ManagedProcess
 
     public function start(ExecutionScope $scope, Multiplexer $output): void
     {
+        if ($this->handle !== null) {
+            $this->stop();
+        }
+
         $this->state = ProcessState::Starting;
         $this->stopping = false;
 
@@ -154,6 +158,23 @@ final class ManagedProcess
         }
     }
 
+    public function waitUntilStopped(ExecutionScope $scope, float $timeout = 5.0): void
+    {
+        $deadline = microtime(true) + $timeout;
+
+        while (!$this->hasStopped()) {
+            $scope->throwIfCancelled();
+
+            if (microtime(true) >= $deadline) {
+                throw new \RuntimeException(
+                    "Process '{$this->config->name}' did not stop within {$timeout}s"
+                );
+            }
+
+            $scope->delay(0.02);
+        }
+    }
+
     public function restart(ExecutionScope $scope, Multiplexer $output): void
     {
         $this->stop();
@@ -187,10 +208,11 @@ final class ManagedProcess
     public function onProcessExit(StreamingProcessHandle $handle): void
     {
         if ($handle !== $this->handle && $this->handle !== null) {
-            // A newer handle has taken over — old drain coroutine for a
-            // restarted process is exiting. Don't transition state.
+            $handle->close('skopos.stale-exit');
             return;
         }
+
+        $handle->close('skopos.process-exit');
 
         $this->pid = null;
         $wasStopping = $this->stopping;
@@ -219,5 +241,11 @@ final class ManagedProcess
         }
 
         return ['sh', '-c', 'exec ' . $trimmed];
+    }
+
+    private function hasStopped(): bool
+    {
+        return $this->handle === null
+            && ($this->state === ProcessState::Stopped || $this->state === ProcessState::Crashed);
     }
 }

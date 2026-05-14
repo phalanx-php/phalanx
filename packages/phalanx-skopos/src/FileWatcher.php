@@ -23,7 +23,11 @@ final class FileWatcher
 {
     private ?Subscription $subscription = null;
 
+    private bool $running = false;
+
     private bool $scanInFlight = false;
+
+    private int $generation = 0;
 
     /** @var array<string, int> path => mtime */
     private array $snapshot = [];
@@ -31,7 +35,7 @@ final class FileWatcher
     /**
      * @param list<string> $paths
      * @param list<string> $extensions
-     * @param \Closure(list<string>): void $onChange Must be a static closure; captures in timer callbacks cause reference-cycle leaks.
+     * @param \Closure(list<string>): void $onChange
      */
     public function __construct(
         private array $paths,
@@ -44,34 +48,53 @@ final class FileWatcher
 
     public function start(TaskExecutor $scope): void
     {
+        $this->stop();
+
+        $this->running = true;
+        $this->scanInFlight = false;
+        $generation = ++$this->generation;
         $this->snapshot = $this->scan();
 
         $self = $this;
-        $this->subscription = $scope->periodic($this->interval, static function () use ($self, $scope): void {
-            // @dev-cleanup-ignore — prevent unbounded coroutine fan-out when previous scan is still in flight
-            if ($self->scanInFlight) {
-                return;
-            }
-            $self->scanInFlight = true;
-
-            $scope->go(static function () use ($self): void {
-                try {
-                    $current = $self->scan();
-                    $changed = self::diff($self->snapshot, $current);
-                    $self->snapshot = $current;
-
-                    if ($changed !== []) {
-                        ($self->onChange)($changed);
-                    }
-                } finally {
-                    $self->scanInFlight = false;
+        $this->subscription = $scope->periodic(
+            $this->interval,
+            static function () use ($self, $scope, $generation): void {
+                if (!$self->isActive($generation)) {
+                    return;
                 }
-            }, name: 'skopos.filewatcher.scan');
-        });
+                /** @dev-cleanup-ignore */
+                if ($self->scanInFlight) {
+                    return;
+                }
+                $self->scanInFlight = true;
+
+                $scope->go(static function () use ($self, $generation): void {
+                    try {
+                        $current = $self->scan();
+                        if (!$self->isActive($generation)) {
+                            return;
+                        }
+
+                        $changed = self::diff($self->snapshot, $current);
+                        $self->snapshot = $current;
+
+                        if ($changed !== []) {
+                            ($self->onChange)($changed);
+                        }
+                    } finally {
+                        if ($self->generation === $generation) {
+                            $self->scanInFlight = false;
+                        }
+                    }
+                }, name: 'skopos.filewatcher.scan');
+            },
+        );
     }
 
     public function stop(): void
     {
+        $this->running = false;
+        ++$this->generation;
         $this->subscription?->cancel();
         $this->subscription = null;
     }
@@ -110,6 +133,11 @@ final class FileWatcher
         }
 
         return false;
+    }
+
+    private function isActive(int $generation): bool
+    {
+        return $this->running && $this->generation === $generation;
     }
 
     /** @return array<string, int> */

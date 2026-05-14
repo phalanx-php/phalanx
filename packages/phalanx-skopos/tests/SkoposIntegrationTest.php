@@ -17,8 +17,9 @@ final class SkoposIntegrationTest extends PhalanxTestCase
 {
     public function testManagedProcessReachesRunningOnReadinessMatch(): void
     {
+        $script = 'echo "ready\n"; for ($i = 0; $i < 50; $i++) { usleep(20000); }';
         $config = Process::named('readiness-fixture')
-            ->command(PHP_BINARY . ' -r ' . escapeshellarg('echo "ready\n"; for ($i = 0; $i < 50; $i++) { usleep(20000); }'))
+            ->command(PHP_BINARY . ' -r ' . escapeshellarg($script))
             ->ready('/ready/');
 
         $finalState = $this->scope->run(static function (ExecutionScope $scope) use ($config): ProcessState {
@@ -28,7 +29,7 @@ final class SkoposIntegrationTest extends PhalanxTestCase
             $mp->waitUntilReady($scope, timeout: 5.0);
             $state = $mp->state;
             $mp->stop(0.5, 1.0);
-            $scope->delay(0.1);
+            $mp->waitUntilStopped($scope);
             return $state;
         });
 
@@ -38,8 +39,9 @@ final class SkoposIntegrationTest extends PhalanxTestCase
 
     public function testManagedProcessReachesRunningOnStderrReadinessMatch(): void
     {
+        $script = 'fwrite(STDERR, "ready\n"); for ($i = 0; $i < 50; $i++) { usleep(20000); }';
         $config = Process::named('stderr-readiness-fixture')
-            ->command(PHP_BINARY . ' -r ' . escapeshellarg('fwrite(STDERR, "ready\n"); for ($i = 0; $i < 50; $i++) { usleep(20000); }'))
+            ->command(PHP_BINARY . ' -r ' . escapeshellarg($script))
             ->ready('/ready/');
 
         $finalState = $this->scope->run(static function (ExecutionScope $scope) use ($config): ProcessState {
@@ -49,7 +51,7 @@ final class SkoposIntegrationTest extends PhalanxTestCase
             $mp->waitUntilReady($scope, timeout: 5.0);
             $state = $mp->state;
             $mp->stop(0.5, 1.0);
-            $scope->delay(0.1);
+            $mp->waitUntilStopped($scope);
             return $state;
         });
 
@@ -59,8 +61,9 @@ final class SkoposIntegrationTest extends PhalanxTestCase
 
     public function testManagedProcessImmediateReadinessRunsWithoutPattern(): void
     {
+        $script = 'for ($i = 0; $i < 50; $i++) { usleep(20000); }';
         $config = Process::named('immediate-fixture')
-            ->command(PHP_BINARY . ' -r ' . escapeshellarg('for ($i = 0; $i < 50; $i++) { usleep(20000); }'));
+            ->command(PHP_BINARY . ' -r ' . escapeshellarg($script));
 
         $state = $this->scope->run(static function (ExecutionScope $scope) use ($config): ProcessState {
             $output = self::nullMultiplexer();
@@ -69,7 +72,7 @@ final class SkoposIntegrationTest extends PhalanxTestCase
             $scope->delay(0.05);
             $observed = $mp->state;
             $mp->stop(0.5, 1.0);
-            $scope->delay(0.1);
+            $mp->waitUntilStopped($scope);
             return $observed;
         });
 
@@ -90,11 +93,7 @@ final class SkoposIntegrationTest extends PhalanxTestCase
                 $captured = true;
             });
             $mp->start($scope, $output);
-
-            $deadline = microtime(true) + 2.0;
-            while ($mp->state !== ProcessState::Crashed && microtime(true) < $deadline) {
-                $scope->delay(0.02);
-            }
+            $mp->waitUntilStopped($scope, timeout: 2.0);
 
             return $captured;
         });
@@ -107,7 +106,7 @@ final class SkoposIntegrationTest extends PhalanxTestCase
     {
         $tmpDir = self::tempDir();
         $file = $tmpDir . '/probe.php';
-        file_put_contents($file, "<?php\n// initial\n");
+        file_put_contents($file, "<?php\n\$probe = 1;\n");
 
         $changes = $this->scope->run(static function (ExecutionScope $scope) use ($tmpDir, $file): array {
             $captured = [];
@@ -124,7 +123,6 @@ final class SkoposIntegrationTest extends PhalanxTestCase
             $watcher->start($scope);
             $scope->delay(0.2);
 
-            // touch file with new mtime
             touch($file, time() + 5);
             $scope->delay(0.3);
             $watcher->stop();
@@ -134,15 +132,15 @@ final class SkoposIntegrationTest extends PhalanxTestCase
 
         self::assertContains($file, $changes);
 
-        // cleanup
         @unlink($file);
         @rmdir($tmpDir);
     }
 
     public function testManagedProcessRestartsCleanly(): void
     {
+        $script = 'echo "ready\n"; for ($i = 0; $i < 50; $i++) { usleep(20000); }';
         $config = Process::named('restart-fixture')
-            ->command(PHP_BINARY . ' -r ' . escapeshellarg('echo "ready\n"; for ($i = 0; $i < 50; $i++) { usleep(20000); }'))
+            ->command(PHP_BINARY . ' -r ' . escapeshellarg($script))
             ->ready('/ready/');
 
         $pids = $this->scope->run(static function (ExecutionScope $scope) use ($config): array {
@@ -157,7 +155,7 @@ final class SkoposIntegrationTest extends PhalanxTestCase
             $second = $mp->pid;
 
             $mp->stop(0.5, 1.0);
-            $scope->delay(0.1);
+            $mp->waitUntilStopped($scope);
 
             return [$first, $second];
         });
@@ -170,8 +168,9 @@ final class SkoposIntegrationTest extends PhalanxTestCase
 
     public function testManagedProcessStopIsIdempotent(): void
     {
+        $script = 'echo "ready\n"; for ($i = 0; $i < 50; $i++) { usleep(20000); }';
         $config = Process::named('idempotent-stop-fixture')
-            ->command(PHP_BINARY . ' -r ' . escapeshellarg('echo "ready\n"; for ($i = 0; $i < 50; $i++) { usleep(20000); }'))
+            ->command(PHP_BINARY . ' -r ' . escapeshellarg($script))
             ->ready('/ready/');
 
         $stoppedState = $this->scope->run(static function (ExecutionScope $scope) use ($config): ProcessState {
@@ -184,7 +183,7 @@ final class SkoposIntegrationTest extends PhalanxTestCase
             $mp->stop(0.5, 1.0);
             $mp->stop(0.5, 1.0);
 
-            $scope->delay(0.1);
+            $mp->waitUntilStopped($scope);
 
             return $mp->state;
         });
@@ -198,13 +197,35 @@ final class SkoposIntegrationTest extends PhalanxTestCase
         $config = Process::named('stop-before-start-fixture')
             ->command(PHP_BINARY . ' -r ' . escapeshellarg('echo "ready\n";'));
 
-        $state = $this->scope->run(static function (ExecutionScope $scope) use ($config): ProcessState {
+        $state = $this->scope->run(static function () use ($config): ProcessState {
             $mp = new ManagedProcess($config);
             $mp->stop(0.5, 1.0);
             return $mp->state;
         });
 
         self::assertSame(ProcessState::Stopped, $state);
+        self::assertSame(0, $this->scope->memory->resources->liveCount(AegisResourceSid::StreamingProcess));
+    }
+
+    public function testManagedProcessNaturalExitReleasesResourceBeforeScopeDisposal(): void
+    {
+        $config = Process::named('natural-exit-fixture')
+            ->command(PHP_BINARY . ' -r ' . escapeshellarg('echo "done\n";'));
+
+        [$state, $live] = $this->scope->run(static function (ExecutionScope $scope) use ($config): array {
+            $output = self::nullMultiplexer();
+            $mp = new ManagedProcess($config);
+            $mp->start($scope, $output);
+            $mp->waitUntilStopped($scope, timeout: 2.0);
+
+            return [
+                $mp->state,
+                $scope->runtime->memory->resources->liveCount(AegisResourceSid::StreamingProcess),
+            ];
+        });
+
+        self::assertSame(ProcessState::Crashed, $state);
+        self::assertSame(0, $live);
         self::assertSame(0, $this->scope->memory->resources->liveCount(AegisResourceSid::StreamingProcess));
     }
 
@@ -216,7 +237,8 @@ final class SkoposIntegrationTest extends PhalanxTestCase
             $watcher = new FileWatcher(
                 paths: [$tmpDir],
                 extensions: ['php'],
-                onChange: static function (): void {},
+                onChange: static function (): void {
+                },
                 interval: 1.0,
             );
             $watcher->stop();
@@ -225,7 +247,40 @@ final class SkoposIntegrationTest extends PhalanxTestCase
 
         @rmdir($tmpDir);
 
-        self::assertTrue(true);
+        self::assertSame(0, $this->scope->memory->resources->liveCount(AegisResourceSid::StreamingProcess));
+    }
+
+    public function testFileWatcherStopSuppressesLaterChanges(): void
+    {
+        $tmpDir = self::tempDir();
+        $file = $tmpDir . '/probe.php';
+        file_put_contents($file, "<?php\n\$probe = 1;\n");
+
+        $changes = $this->scope->run(static function (ExecutionScope $scope) use ($tmpDir, $file): array {
+            $captured = [];
+            $watcher = new FileWatcher(
+                paths: [$tmpDir],
+                extensions: ['php'],
+                onChange: static function (array $changed) use (&$captured): void {
+                    foreach ($changed as $c) {
+                        $captured[] = $c;
+                    }
+                },
+                interval: 0.05,
+            );
+            $watcher->start($scope);
+            $watcher->stop();
+
+            touch($file, time() + 5);
+            $scope->delay(0.15);
+
+            return $captured;
+        });
+
+        @unlink($file);
+        @rmdir($tmpDir);
+
+        self::assertSame([], $changes);
     }
 
     private static function nullMultiplexer(): Multiplexer
