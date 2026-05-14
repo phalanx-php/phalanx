@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 
 final class StreamEventTest extends TestCase
 {
-    public function testEnumValuesMatchReactPhpEventStrings(): void
+    public function testEnumValuesMatchStableStreamEventStrings(): void
     {
         self::assertSame('data', StreamEvent::Data->value);
         self::assertSame('end', StreamEvent::End->value);

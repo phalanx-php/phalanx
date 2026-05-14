@@ -11,6 +11,16 @@ use SplFileInfo;
 final class RuntimeRiskScanner
 {
     /** @var list<string> */
+    private const array STALE_COMPOSER_PREFIXES = [
+        'amp/',
+        'amphp/',
+        'clue/',
+        'ratchet/',
+        'react/',
+        'revolt/',
+    ];
+
+    /** @var list<string> */
     private const array PROCESS_FUNCTIONS = [
         'proc_open',
         'proc_close',
@@ -65,6 +75,18 @@ final class RuntimeRiskScanner
     /** @return list<RuntimeRisk> */
     public function scanFile(string $file): array
     {
+        if (self::isVendorPath($file)) {
+            return [];
+        }
+
+        if (self::isComposerManifest($file)) {
+            return $this->scanComposerFile($file);
+        }
+
+        if (!str_ends_with($file, '.php')) {
+            return [];
+        }
+
         $source = file_get_contents($file);
         if ($source === false) {
             return [];
@@ -96,6 +118,36 @@ final class RuntimeRiskScanner
             if ($id === T_NAME_QUALIFIED || $id === T_NAME_FULLY_QUALIFIED) {
                 array_push($risks, ...$this->processQualifiedName($tokens, $i, $text, $file, $line, $aliases));
             }
+        }
+
+        return $risks;
+    }
+
+    /** @return list<RuntimeRisk> */
+    private function scanComposerFile(string $file): array
+    {
+        $source = file_get_contents($file);
+        if ($source === false) {
+            return [];
+        }
+
+        $decoded = json_decode($source, true);
+        if (!is_array($decoded)) {
+            return [];
+        }
+
+        $risks = [];
+        foreach (self::composerPackageNames($decoded) as $package) {
+            if (!self::isStaleComposerPackage($package)) {
+                continue;
+            }
+
+            $risks[] = new RuntimeRisk(
+                'stale_async_dependency',
+                'composer package ' . $package,
+                $file,
+                self::lineFor($source, $package),
+            );
         }
 
         return $risks;
@@ -169,7 +221,6 @@ final class RuntimeRiskScanner
 
         if ($trimmed === 'OpenSwoole\\Coroutine\\Channel'
             || $trimmed === 'Swoole\\Coroutine\\Channel'
-            || $trimmed === 'Channel'
         ) {
             return new RuntimeRisk('raw_channel', 'new ' . $trimmed, $file, $line);
         }
@@ -230,7 +281,10 @@ final class RuntimeRiskScanner
                 continue;
             }
 
-            if ($file->getExtension() === 'php') {
+            if (
+                ($file->getExtension() === 'php' || self::isComposerManifest($file->getPathname()))
+                && !self::isVendorPath($file->getPathname())
+            ) {
                 $files[] = $file->getPathname();
             }
         }
@@ -386,5 +440,76 @@ final class RuntimeRiskScanner
         $parts = explode('\\', trim($name, '\\'));
 
         return end($parts) ?: $name;
+    }
+
+    private static function isVendorPath(string $path): bool
+    {
+        $normalized = str_replace('\\', '/', $path);
+
+        return $normalized === 'vendor'
+            || str_starts_with($normalized, 'vendor/')
+            || str_contains($normalized, '/vendor/');
+    }
+
+    private static function isComposerManifest(string $path): bool
+    {
+        $name = basename($path);
+
+        return $name === 'composer.json' || $name === 'composer.lock';
+    }
+
+    /**
+     * @param array<string, mixed> $decoded
+     * @return list<string>
+     */
+    private static function composerPackageNames(array $decoded): array
+    {
+        $packages = [];
+        foreach (['require', 'require-dev', 'suggest', 'conflict', 'replace', 'provide'] as $section) {
+            if (!isset($decoded[$section]) || !is_array($decoded[$section])) {
+                continue;
+            }
+
+            foreach (array_keys($decoded[$section]) as $package) {
+                if (is_string($package)) {
+                    $packages[] = $package;
+                }
+            }
+        }
+
+        foreach (['packages', 'packages-dev'] as $section) {
+            if (!isset($decoded[$section]) || !is_array($decoded[$section])) {
+                continue;
+            }
+
+            foreach ($decoded[$section] as $package) {
+                if (is_array($package) && isset($package['name']) && is_string($package['name'])) {
+                    $packages[] = $package['name'];
+                }
+            }
+        }
+
+        return array_values(array_unique($packages));
+    }
+
+    private static function isStaleComposerPackage(string $package): bool
+    {
+        foreach (self::STALE_COMPOSER_PREFIXES as $prefix) {
+            if (str_starts_with($package, $prefix)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static function lineFor(string $source, string $needle): int
+    {
+        $position = strpos($source, $needle);
+        if ($position === false) {
+            return 1;
+        }
+
+        return substr_count(substr($source, 0, $position), "\n") + 1;
     }
 }

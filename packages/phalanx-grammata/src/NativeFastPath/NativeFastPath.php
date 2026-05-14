@@ -40,10 +40,10 @@ final class NativeFastPath
         return $result;
     }
 
-    public function write(Suspendable $scope, string $path, string $data): int
+    public function write(Suspendable $scope, string $path, string $data, int $flags = 0): int
     {
         $result = $scope->call(
-            static fn(): bool|int => System::writeFile($path, $data),
+            static fn(): bool|int => System::writeFile($path, $data, $flags),
             WaitReason::custom("grammata.native.write {$path}"),
         );
         if ($result === false) {

@@ -6,6 +6,7 @@ namespace Phalanx\Grammata\Task;
 
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Grammata\Exception\FilesystemException;
+use Phalanx\Grammata\NativeFastPath\NativeFastPath;
 use Phalanx\Task\Executable;
 use RuntimeException;
 
@@ -20,6 +21,10 @@ final readonly class ReadFile implements Executable
 
     public function __invoke(ExecutionScope $scope): string
     {
+        if (!is_file($this->path) || !is_readable($this->path)) {
+            throw new FilesystemException("Failed to read: {$this->path}", $this->path);
+        }
+
         if ($this->maxBytes !== null) {
             $size = @filesize($this->path);
             if ($size !== false && $size > $this->maxBytes) {
@@ -29,12 +34,10 @@ final readonly class ReadFile implements Executable
             }
         }
 
-        $contents = @file_get_contents($this->path);
-
-        if ($contents === false) {
-            throw new FilesystemException("Failed to read: {$this->path}", $this->path);
+        try {
+            return (new NativeFastPath())->read($scope, $this->path);
+        } catch (RuntimeException $e) {
+            throw new FilesystemException("Failed to read: {$this->path}", $this->path, $e);
         }
-
-        return $contents;
     }
 }

@@ -50,6 +50,7 @@ parameters:
         - packages/phalanx-archon/src
         - packages/phalanx-athena/src
         - packages/phalanx-enigma/src
+        - packages/phalanx-grammata/src
         - packages/phalanx-hermes/src
         - packages/phalanx-hydra/src
         - packages/phalanx-iris/src

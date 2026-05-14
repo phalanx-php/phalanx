@@ -32,5 +32,111 @@ final class RuntimeRiskScannerTest extends TestCase
         self::assertContains('process:new OpenSwoole\Process\Pool', $symbols);
         self::assertContains('process:new OpenSwoole\Core\Process\Manager', $symbols);
         self::assertContains('stale_async_dependency:React\EventLoop\Loop', $symbols);
+        self::assertContains('stale_async_dependency:Amp\Future', $symbols);
+        self::assertContains('stale_async_dependency:Revolt\EventLoop', $symbols);
+    }
+
+    public function testDoesNotReportSameNamespaceChannelWrapperAsRawOpenSwooleChannel(): void
+    {
+        $file = sys_get_temp_dir() . '/' . uniqid('phalanx-risk-', true) . '.php';
+
+        try {
+            file_put_contents($file, <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace Phalanx\Styx;
+
+final class LocalChannelFixture
+{
+    public function __invoke(): void
+    {
+        new Channel();
+    }
+}
+PHP);
+
+            $risks = (new RuntimeRiskScanner())->scanFile($file);
+
+            self::assertSame([], $risks);
+        } finally {
+            unlink($file);
+        }
+    }
+
+    public function testSkipsNestedVendorTrees(): void
+    {
+        $root = sys_get_temp_dir() . '/' . uniqid('phalanx-risk-', true);
+        $vendor = $root . '/packages/example/vendor/react/event-loop';
+        mkdir($vendor, recursive: true);
+
+        try {
+            file_put_contents($vendor . '/Loop.php', <<<'PHP'
+<?php
+
+namespace Example;
+
+use React\EventLoop\Loop;
+PHP);
+
+            $risks = (new RuntimeRiskScanner())->scanPaths([$root]);
+
+            self::assertSame([], $risks);
+        } finally {
+            @unlink($vendor . '/Loop.php');
+            @rmdir($vendor);
+            @rmdir(dirname($vendor));
+            @rmdir(dirname($vendor, 2));
+            @rmdir(dirname($vendor, 3));
+            @rmdir(dirname($vendor, 4));
+            @rmdir($root);
+        }
+    }
+
+    public function testScansComposerManifestsForStaleAsyncPackages(): void
+    {
+        $root = sys_get_temp_dir() . '/' . uniqid('phalanx-risk-', true);
+        mkdir($root);
+
+        try {
+            file_put_contents($root . '/composer.json', <<<'JSON'
+{
+    "require": {
+        "php": "^8.4",
+        "react/event-loop": "^1.5"
+    },
+    "require-dev": {
+        "amphp/amp": "^3.0"
+    }
+}
+JSON);
+
+            file_put_contents($root . '/composer.lock', <<<'JSON'
+{
+    "packages": [
+        {"name": "revolt/event-loop"}
+    ],
+    "packages-dev": [
+        {"name": "clue/stream-filter"}
+    ]
+}
+JSON);
+
+            $risks = (new RuntimeRiskScanner())->scanPaths([$root]);
+            $symbols = array_map(
+                static fn(RuntimeRisk $risk): string => $risk->category . ':' . $risk->symbol,
+                $risks,
+            );
+
+            self::assertContains('stale_async_dependency:composer package react/event-loop', $symbols);
+            self::assertContains('stale_async_dependency:composer package amphp/amp', $symbols);
+            self::assertContains('stale_async_dependency:composer package revolt/event-loop', $symbols);
+            self::assertContains('stale_async_dependency:composer package clue/stream-filter', $symbols);
+        } finally {
+            @unlink($root . '/composer.lock');
+            @unlink($root . '/composer.json');
+            @rmdir($root);
+        }
     }
 }

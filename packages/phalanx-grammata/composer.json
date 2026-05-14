@@ -17,7 +17,7 @@
         "phalanx-php/styx": "^0.6"
     },
     "suggest": {
-        "phalanx-php/hydra": "Required for WorkerReadFile/WorkerWriteFile (slow-storage offload)"
+        "phalanx-php/hydra": "Use for application-owned slow-storage offload when filesystem work should run in workers"
     },
     "autoload": {
         "psr-4": {

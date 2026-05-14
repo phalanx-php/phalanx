@@ -4,22 +4,28 @@ declare(strict_types=1);
 
 namespace Phalanx\Grammata\Tests\Unit;
 
+use Phalanx\Application;
 use Phalanx\Grammata\Exception\FilesystemException;
 use Phalanx\Grammata\Task\ReadFile;
 use Phalanx\Scope\ExecutionScope;
+use Phalanx\Task\Task;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class ReadFileTest extends TestCase
 {
-    public function test_reads_existing_file(): void
+    #[Test]
+    public function readsExistingFile(): void
     {
         $tmpFile = tempnam(sys_get_temp_dir(), 'phalanx_test_');
         file_put_contents($tmpFile, 'hello world');
 
         try {
-            $task = new ReadFile($tmpFile);
-            $scope = $this->createStub(ExecutionScope::class);
-            $result = $task($scope);
+            $result = Application::starting()
+                ->run(Task::named(
+                    'test.grammata.read-file',
+                    static fn(ExecutionScope $scope): string => $scope->execute(new ReadFile($tmpFile)),
+                ));
 
             $this->assertSame('hello world', $result);
         } finally {
@@ -27,12 +33,15 @@ final class ReadFileTest extends TestCase
         }
     }
 
-    public function test_throws_on_missing_file(): void
+    #[Test]
+    public function throwsOnMissingFile(): void
     {
         $this->expectException(FilesystemException::class);
 
-        $task = new ReadFile('/nonexistent/path/file.txt');
-        $scope = $this->createStub(ExecutionScope::class);
-        $task($scope);
+        Application::starting()
+            ->run(Task::named(
+                'test.grammata.read-file.missing',
+                static fn(ExecutionScope $scope): string => $scope->execute(new ReadFile('/nonexistent/path/file.txt')),
+            ));
     }
 }
