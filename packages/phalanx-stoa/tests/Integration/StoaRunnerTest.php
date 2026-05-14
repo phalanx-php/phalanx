@@ -163,6 +163,8 @@ final class StoaRunnerTest extends PhalanxTestCase
         self::assertSame(200, $response->getStatusCode());
         self::assertIsString($body['resource_id']);
         self::assertStringStartsWith('stoa-request-', $body['resource_id']);
+        self::assertSame($body['resource_id'], $body['request_resource_id']);
+        self::assertSame(0, $body['diagnostics_count']);
         self::assertSame('/resource/{id:int}', $body['route']);
         self::assertSame('42', $body['param']);
         self::assertTrue($released);
@@ -588,11 +590,13 @@ final class ExistingPoweredByStoaRoute implements Scopeable
 
 final class ResourceAwareStoaRoute implements Scopeable
 {
-    /** @return array{resource_id: string, route: string, param: string} */
+    /** @return array{resource_id: string, request_resource_id: string, diagnostics_count: int, route: string, param: string} */
     public function __invoke(RequestScope $scope): array
     {
         return [
             'resource_id' => $scope->resourceId,
+            'request_resource_id' => $scope->requestResource->id,
+            'diagnostics_count' => count($scope->diagnostics->failureTree()),
             'route' => $scope->runtime->memory->resources->annotation($scope->resourceId, StoaAnnotationSid::Route),
             'param' => $scope->params->required('id'),
         ];

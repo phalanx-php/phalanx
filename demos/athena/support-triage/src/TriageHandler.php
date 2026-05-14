@@ -10,15 +10,12 @@ use Phalanx\Athena\Event\AgentEventKind;
 use Phalanx\Athena\Message\Message;
 use Phalanx\Athena\Provider\ProviderConfig;
 use Phalanx\Athena\Turn;
-use Phalanx\Stoa\Runtime\StoaScopeKey;
 use Phalanx\Stoa\RequestScope;
+use Phalanx\Stoa\ResponseSink;
 use Phalanx\Stoa\Sse\SseStream;
 use Phalanx\Stoa\Sse\SseStreamFactory;
-use Phalanx\Stoa\StoaRequestResource;
 use Phalanx\Task\Scopeable;
-use OpenSwoole\Http\Response as OpenSwooleResponse;
 use Psr\Http\Message\ResponseInterface;
-use RuntimeException;
 use Throwable;
 
 final class TriageHandler implements Scopeable
@@ -106,13 +103,9 @@ final class TriageHandler implements Scopeable
 
     private function openStream(RequestScope $scope): SseStream
     {
-        $response = $scope->attribute(StoaScopeKey::OpenSwooleResponse->value);
-        $resource = $scope->attribute(StoaScopeKey::RequestResource->value);
+        $target = $scope->service(ResponseSink::class);
+        $resource = $scope->requestResource;
 
-        if (!$response instanceof OpenSwooleResponse || !$resource instanceof StoaRequestResource) {
-            throw new RuntimeException('Triage requires a live OpenSwoole request target.');
-        }
-
-        return (new SseStreamFactory())->open($scope, $response, $resource, $scope->cancellation());
+        return (new SseStreamFactory())->open($scope, $target->response, $resource, $scope->cancellation());
     }
 }

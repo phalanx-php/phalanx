@@ -10,6 +10,6 @@ final class MissingRequestResource extends RuntimeException
 {
     public static function forScopeKey(string $key): self
     {
-        return new self("Stoa request scope is missing managed resource attribute '{$key}'.");
+        return new self("Stoa request scope is missing managed request resource '{$key}'.");
     }
 }

@@ -19,9 +19,14 @@ use Phalanx\Hermes\WsRouteConfig;
 use Phalanx\Hermes\WsRouteGroup;
 use Phalanx\Runtime\Memory\ManagedResourceHandle;
 use Phalanx\Scope\ExecutionLifecycleScope;
+use Phalanx\Stoa\ExecutionContext as StoaExecutionContext;
 use Phalanx\Stoa\Http\Upgrade\HttpUpgradeable;
+use Phalanx\Stoa\QueryParams;
+use Phalanx\Stoa\RequestScope;
+use Phalanx\Stoa\RouteConfig;
 use Phalanx\Stoa\RouteMatcher;
 use Phalanx\Stoa\RouteParams;
+use Phalanx\Stoa\StoaRequestDiagnostics;
 use Phalanx\Stoa\StoaRequestResource;
 use Psr\Http\Message\ServerRequestInterface;
 use RuntimeException;
@@ -58,13 +63,28 @@ final class WsServerUpgrade implements HttpUpgradeable
         if (!$sessionScope instanceof ExecutionLifecycleScope) {
             throw new RuntimeException('createScope() must return ExecutionLifecycleScope');
         }
-        $sessionScope->setResource('request', $request);
+        $sessionScope->bindScopedInstance(StoaRequestResource::class, $requestResource);
+        $sessionScope->bindScopedInstance(StoaRequestDiagnostics::class, new StoaRequestDiagnostics());
 
-        $match = $this->routeMatcher->match($sessionScope, $this->routes->inner->all());
+        $routeScope = new StoaExecutionContext(
+            $sessionScope,
+            $request,
+            new RouteParams(),
+            new QueryParams($request->getQueryParams()),
+            RouteConfig::compile('/'),
+        );
+
+        $match = $this->routeMatcher->match($routeScope, $this->routes->inner->all());
         if ($match === null) {
             $sessionScope->dispose();
             $resources->recordEvent($requestResource->id, HermesEventSid::ServerUpgradeRejected, 'no_route');
             return $resources->fail($requestResource->id, 'no_route');
+        }
+
+        if (!$match->scope instanceof RequestScope) {
+            $sessionScope->dispose();
+            $resources->recordEvent($requestResource->id, HermesEventSid::ServerUpgradeRejected, 'invalid_route_scope');
+            return $resources->fail($requestResource->id, 'invalid_route_scope');
         }
 
         $handler = $match->handler;
@@ -72,10 +92,7 @@ final class WsServerUpgrade implements HttpUpgradeable
             ? $handler->config->wsConfig
             : new WsConfig();
 
-        $params = $match->scope->attribute('route.params', []);
-        if (!is_array($params)) {
-            $params = [];
-        }
+        $params = $match->scope->params;
 
         $handshakeOk = false;
         try {
@@ -139,7 +156,7 @@ final class WsServerUpgrade implements HttpUpgradeable
             $connection,
             $wsConfig,
             $request,
-            new RouteParams($params),
+            $params,
         );
 
         try {

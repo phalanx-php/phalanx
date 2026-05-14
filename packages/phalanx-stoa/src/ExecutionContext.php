@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Stoa;
 
+use Phalanx\Exception\ServiceNotFoundException;
 use Phalanx\Scope\ExecutionScope;
-use Phalanx\Stoa\Runtime\StoaScopeKey;
 use Phalanx\Support\ExecutionScopeDelegate;
 use Psr\Http\Message\ServerRequestInterface;
 
@@ -16,15 +16,21 @@ class ExecutionContext implements RequestScope
     private ?RequestBody $requestBody = null;
 
     public string $resourceId {
+        get => $this->requestResource->id;
+    }
+
+    public StoaRequestResource $requestResource {
         get {
-            $id = $this->resource(StoaScopeKey::ResourceId->value);
-
-            if (!is_string($id) || $id === '') {
-                throw MissingRequestResource::forScopeKey(StoaScopeKey::ResourceId->value);
+            try {
+                return $this->service(StoaRequestResource::class);
+            } catch (ServiceNotFoundException) {
+                throw MissingRequestResource::forScopeKey(StoaRequestResource::class);
             }
-
-            return $id;
         }
+    }
+
+    public StoaRequestDiagnostics $diagnostics {
+        get => $this->service(StoaRequestDiagnostics::class);
     }
 
     public ServerRequestInterface $request {

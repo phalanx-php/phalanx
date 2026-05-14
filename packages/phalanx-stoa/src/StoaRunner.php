@@ -26,7 +26,6 @@ use Phalanx\Stoa\Response\ErrorResponseRenderer;
 use Phalanx\Stoa\Response\HtmlErrorResponseRenderer;
 use Phalanx\Stoa\Response\IgnitionErrorResponseRenderer;
 use Phalanx\Stoa\Runtime\Identity\StoaEventSid;
-use Phalanx\Stoa\Runtime\StoaScopeKey;
 use Phalanx\Stoa\Sse\SseStream;
 use Phalanx\Supervisor\DispatchMode;
 use Phalanx\Support\SignalHandler;
@@ -396,11 +395,13 @@ final class StoaRunner
             $registered = true;
             $resource->activate();
 
-            $rootScope->setResource(StoaScopeKey::ResourceId->value, $resource->id);
-            $rootScope->setResource(StoaScopeKey::RequestResource->value, $resource);
+            $diagnostics = new StoaRequestDiagnostics();
+            $rootScope->bindScopedInstance(StoaRequestResource::class, $resource);
+            $rootScope->bindScopedInstance(StoaRequestDiagnostics::class, $diagnostics);
             if ($target !== null) {
-                $rootScope->setResource(StoaScopeKey::OpenSwooleResponse->value, $target);
+                $rootScope->bindScopedInstance(ResponseSink::class, new ResponseSink($target));
             }
+
             $scope = $rootScope;
             $trace = $scope->trace();
             $trace->clear();
@@ -504,7 +505,7 @@ final class StoaRunner
                 }
 
                 $tree = $requestFailureTree ?? $this->app->supervisor()->tree();
-                $rootScope->setResource('phx.error_ledger', $tree);
+                $diagnostics->recordFailureTree($tree);
                 $response = $this->errorResponse($errorScope, $e, $resource);
             } catch (Throwable $e) {
                 if ($e instanceof ToResponse) {
@@ -514,7 +515,7 @@ final class StoaRunner
                     $trace->log(TraceType::Failed, 'request', ['error' => $e->getMessage()]);
 
                     $tree = $requestFailureTree ?? $this->app->supervisor()->tree();
-                    $rootScope->setResource('phx.error_ledger', $tree);
+                    $diagnostics->recordFailureTree($tree);
                     $response = $this->errorResponse($errorScope, $e, $resource);
                 }
             }

@@ -7,6 +7,7 @@ namespace Phalanx\Hermes;
 use Phalanx\Handler\Handler;
 use Phalanx\Handler\HandlerGroup;
 use Phalanx\Stoa\RouteConfig;
+use Phalanx\Stoa\RouteGroup;
 use Phalanx\Stoa\RouteMatcher;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
@@ -49,7 +50,7 @@ final class WsRouteGroup
                 $wsConfig = new WsConfig();
             }
 
-            $compiled = RouteConfig::compile($parsed, 'GET');
+            $compiled = RouteConfig::compile($parsed, 'GET', RouteGroup::DEFAULT_PATTERNS);
             $config = WsRouteConfig::fromCompiled($compiled, $wsConfig);
 
             $handlers[$key] = new Handler($class, $config);

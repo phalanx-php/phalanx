@@ -6,6 +6,7 @@ namespace Phalanx\Stoa;
 
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Cancellation\Cancelled;
+use Phalanx\Exception\ServiceNotFoundException;
 use Phalanx\Runtime\Memory\ManagedResource;
 use Phalanx\Runtime\Memory\ManagedResourceHandle;
 use Phalanx\Runtime\Memory\ManagedResourceState;
@@ -15,7 +16,6 @@ use Phalanx\Stoa\Response\ResponseLeaseDomain;
 use Phalanx\Stoa\Runtime\Identity\StoaAnnotationSid;
 use Phalanx\Stoa\Runtime\Identity\StoaEventSid;
 use Phalanx\Stoa\Runtime\Identity\StoaResourceSid;
-use Phalanx\Stoa\Runtime\StoaScopeKey;
 use Phalanx\Supervisor\DeliveryLease;
 use Psr\Http\Message\ServerRequestInterface;
 use Throwable;
@@ -85,9 +85,11 @@ final class StoaRequestResource
 
     public static function fromScope(ExecutionScope $scope): ?self
     {
-        $resource = $scope->resource(StoaScopeKey::RequestResource->value);
-
-        return $resource instanceof self ? $resource : null;
+        try {
+            return $scope->service(self::class);
+        } catch (ServiceNotFoundException) {
+            return null;
+        }
     }
 
     /**

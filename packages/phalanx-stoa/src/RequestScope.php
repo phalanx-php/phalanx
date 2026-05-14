@@ -10,6 +10,8 @@ use Psr\Http\Message\ServerRequestInterface;
 interface RequestScope extends ExecutionScope
 {
     public string $resourceId { get; }
+    public StoaRequestResource $requestResource { get; }
+    public StoaRequestDiagnostics $diagnostics { get; }
     public ServerRequestInterface $request { get; }
     public RouteParams $params { get; }
     public QueryParams $query { get; }

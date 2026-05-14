@@ -34,7 +34,9 @@ parameters:
         - packages/phalanx-aegis/src/Runtime/CoroutineRuntime.php
         - packages/phalanx-aegis/src/Runtime/RuntimeHooks.php
         - packages/phalanx-aegis/src/Scope/ExecutionLifecycleScope.php
+        - packages/phalanx-aegis/src/Scope/TransactionLifecycleScope.php
         - packages/phalanx-aegis/src/Service/LazySingleton.php
+        - packages/phalanx-aegis/src/Support/ExecutionScopeDelegate.php
         - packages/phalanx-aegis/src/Supervisor/InProcessLedger.php
         - packages/phalanx-aegis/src/Supervisor/LedgerStorage.php
         - packages/phalanx-aegis/src/Supervisor/Supervisor.php
@@ -44,6 +46,7 @@ parameters:
         - packages/phalanx-stoa/src/StoaRunner.php
     phalanxEnforcedPaths:
         - packages/phalanx-aegis/src
+        - packages/phalanx-archon/src
         - packages/phalanx-athena/src
         - packages/phalanx-enigma/src
         - packages/phalanx-hermes/src

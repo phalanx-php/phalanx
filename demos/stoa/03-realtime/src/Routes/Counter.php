@@ -5,15 +5,12 @@ declare(strict_types=1);
 namespace Acme\StoaDemo\Realtime\Routes;
 
 use OpenSwoole\Coroutine;
-use OpenSwoole\Http\Response;
 use Phalanx\Stoa\RequestScope;
-use Phalanx\Stoa\Runtime\StoaScopeKey;
+use Phalanx\Stoa\ResponseSink;
 use Phalanx\Stoa\Sse\SseStream;
 use Phalanx\Stoa\Sse\SseStreamFactory;
-use Phalanx\Stoa\StoaRequestResource;
 use Phalanx\Supervisor\WaitReason;
 use Phalanx\Task\Scopeable;
-use RuntimeException;
 
 final class Counter implements Scopeable
 {
@@ -23,14 +20,10 @@ final class Counter implements Scopeable
 
     public function __invoke(RequestScope $scope): SseStream
     {
-        $response = $scope->attribute(StoaScopeKey::OpenSwooleResponse->value);
-        $resource = $scope->attribute(StoaScopeKey::RequestResource->value);
+        $target = $scope->service(ResponseSink::class);
+        $resource = $scope->requestResource;
 
-        if (!$response instanceof Response || !$resource instanceof StoaRequestResource) {
-            throw new RuntimeException('Counter requires a live OpenSwoole request target.');
-        }
-
-        $stream = $this->streams->open($scope, $response, $resource, $scope->cancellation());
+        $stream = $this->streams->open($scope, $target->response, $resource, $scope->cancellation());
 
         for ($i = 1; $i <= 5; $i++) {
             if ($scope->isCancelled) {

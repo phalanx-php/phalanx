@@ -6,10 +6,7 @@ namespace Phalanx\Stoa\Response;
 
 use GuzzleHttp\Psr7\Response as PsrResponse;
 use Phalanx\Cancellation\Cancelled;
-use Phalanx\Scope\ExecutionScope;
 use Phalanx\Stoa\RequestScope;
-use Phalanx\Stoa\StoaRequestResource;
-use Phalanx\Stoa\Runtime\StoaScopeKey;
 use Phalanx\Supervisor\Supervisor;
 use Phalanx\Supervisor\TaskTreeFormatter;
 use Psr\Http\Message\ResponseInterface;
@@ -29,30 +26,19 @@ final readonly class DefaultErrorResponseRenderer implements ErrorResponseRender
 
     public function render(RequestScope $scope, Throwable $e): ResponseInterface
     {
-        $resource = $scope->resource(StoaScopeKey::RequestResource->value);
-
         $body = [
             'error' => 'Internal Server Error',
         ];
 
         if ($this->debug) {
+            $resource = $scope->requestResource;
             $body['message'] = $e->getMessage();
-
-            if ($resource instanceof StoaRequestResource) {
-                $body['request'] = [
-                    'id' => $resource->id,
-                    'path' => $resource->path,
-                    'state' => $resource->stateValue(),
-                    'method' => $resource->method,
-                ];
-            } else {
-                $body['request'] = [
-                    'id' => 'err-' . uniqid('plx_'),
-                    'path' => $scope->path(),
-                    'state' => 'failed',
-                    'method' => $scope->method(),
-                ];
-            }
+            $body['request'] = [
+                'id' => $resource->id,
+                'path' => $resource->path,
+                'state' => $resource->stateValue(),
+                'method' => $resource->method,
+            ];
 
             $body['trace'] = $this->formatTrace($e);
             $body['tasks'] = '';

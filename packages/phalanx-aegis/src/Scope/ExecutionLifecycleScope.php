@@ -175,6 +175,13 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         $this->throwIfCancelled();
         $resolved = $this->graph->alias($type);
 
+        if (isset($this->scopedInstances[$resolved])) {
+            /** @var T $instance */
+            $instance = $this->scopedInstances[$resolved];
+
+            return $instance;
+        }
+
         if ($this->graph->hasContextConfig($type)) {
             /** @var T $config */
             $config = $this->graph->contextConfig($type);
@@ -197,13 +204,6 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             return $instance;
         }
 
-        if (isset($this->scopedInstances[$resolved])) {
-            /** @var T $instance */
-            $instance = $this->scopedInstances[$resolved];
-
-            return $instance;
-        }
-
         if ($config->lazy) {
             /** @var T $instance */
             $instance = $config->reflection()->newLazyProxy(static function () use ($scope, $resolved, $build): object {
@@ -222,6 +222,24 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
 
         /** @var T $instance */
         return $instance;
+    }
+
+    /**
+     * @internal
+     * @template T of object
+     * @param class-string<T> $type
+     * @param T $instance
+     */
+    public function bindScopedInstance(string $type, object $instance): void
+    {
+        $this->throwIfCancelled();
+        $resolved = $this->graph->alias($type);
+
+        if (!isset($this->scopedInstances[$resolved])) {
+            $this->scopedCreationOrder[] = $resolved;
+        }
+
+        $this->scopedInstances[$resolved] = $instance;
     }
 
     public function attribute(string $key, mixed $default = null): mixed
