@@ -7,6 +7,7 @@ namespace Phalanx\Styx;
 use Closure;
 use Generator;
 use OpenSwoole\Coroutine\Channel as SwooleChannel;
+use Phalanx\Pool\BorrowedValue;
 use Throwable;
 
 /**
@@ -23,16 +24,11 @@ use Throwable;
  */
 final class Channel
 {
-    private static ?\stdClass $sentinel = null;
-
-    private static function sentinel(): \stdClass
-    {
-        return self::$sentinel ??= new \stdClass();
-    }
-
     public bool $isOpen {
         get => $this->open;
     }
+
+    private static ?\stdClass $sentinel = null;
 
     private readonly SwooleChannel $chan;
 
@@ -58,6 +54,7 @@ final class Channel
         }
 
         $value = count($args) === 1 ? $args[0] : $args;
+        self::assertOwnedBoundaryValue($value);
 
         $this->firePauseIfFilling();
         $this->chan->push($value);
@@ -70,6 +67,7 @@ final class Channel
         }
 
         $value = count($args) === 1 ? $args[0] : $args;
+        self::assertOwnedBoundaryValue($value);
 
         if (!$this->chan->push($value, 0)) {
             return false;
@@ -140,6 +138,39 @@ final class Channel
     {
         $this->pressureCallback = $fn;
         return $this;
+    }
+
+    private static function sentinel(): \stdClass
+    {
+        return self::$sentinel ??= new \stdClass();
+    }
+
+    private static function assertOwnedBoundaryValue(mixed $value): void
+    {
+        if (self::containsBorrowedValue($value)) {
+            throw new \LogicException(
+                'Borrowed values cannot cross Styx channel boundaries; copy to an owned value before emit().',
+            );
+        }
+    }
+
+    private static function containsBorrowedValue(mixed $value, int $depth = 0): bool
+    {
+        if ($value instanceof BorrowedValue) {
+            return true;
+        }
+
+        if (!is_array($value) || $depth > 16) {
+            return false;
+        }
+
+        foreach ($value as $item) {
+            if (self::containsBorrowedValue($item, $depth + 1)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function firePauseIfFilling(): void

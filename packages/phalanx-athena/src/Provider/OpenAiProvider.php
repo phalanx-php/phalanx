@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Athena\Provider;
 
+use Phalanx\Athena\Event\AgentEvent;
+use Phalanx\Athena\Event\TokenDelta;
 use Phalanx\Athena\Event\TokenUsage;
 use Phalanx\Athena\Event\ToolCallData;
 use Phalanx\Athena\Http\Url;
@@ -49,7 +51,6 @@ final class OpenAiProvider implements LlmProvider
             $config,
             $client,
         ): void {
-            $pool = new StreamEventPool();
             $model = $request->model ?? $config->model;
             $body = self::buildRequestBody($request, $model);
             $headers = self::buildHeaders($config);
@@ -90,11 +91,11 @@ final class OpenAiProvider implements LlmProvider
                 }
                 $delta = is_array($choice['delta'] ?? null) ? $choice['delta'] : [];
 
-                self::onContentDelta($delta, $channel, $pool, $elapsed, $usage, $step);
-                self::onToolCallDeltas($delta, $toolCalls, $channel, $pool, $elapsed, $usage, $step);
+                self::onContentDelta($delta, $channel, $elapsed, $usage, $step);
+                self::onToolCallDeltas($delta, $toolCalls, $channel, $elapsed, $usage, $step);
 
                 if (($choice['finish_reason'] ?? null) !== null) {
-                    self::onFinish($toolCalls, $channel, $pool, $elapsed, $usage, $step);
+                    self::onFinish($toolCalls, $channel, $elapsed, $usage, $step);
                 }
             }
 
@@ -172,7 +173,6 @@ final class OpenAiProvider implements LlmProvider
     private static function onContentDelta(
         array $delta,
         Channel $channel,
-        StreamEventPool $pool,
         float $elapsed,
         TokenUsage $usage,
         int $step,
@@ -181,7 +181,7 @@ final class OpenAiProvider implements LlmProvider
         if (!is_string($content) || $content === '') {
             return;
         }
-        $channel->emit($pool->tokenDelta($content, $elapsed, $usage, $step));
+        $channel->emit(AgentEvent::tokenDelta(new TokenDelta(text: $content), $elapsed, $usage, $step));
     }
 
     /**
@@ -192,7 +192,6 @@ final class OpenAiProvider implements LlmProvider
         array $delta,
         array &$toolCalls,
         Channel $channel,
-        StreamEventPool $pool,
         float $elapsed,
         TokenUsage $usage,
         int $step,
@@ -214,7 +213,7 @@ final class OpenAiProvider implements LlmProvider
                     'name' => (string) ($fn['name'] ?? ''),
                     'arguments' => '',
                 ];
-                $channel->emit($pool->toolCallStart(
+                $channel->emit(AgentEvent::toolCallStart(
                     new ToolCallData($toolCalls[$idx]['id'], $toolCalls[$idx]['name']),
                     $elapsed,
                     $usage,
@@ -231,7 +230,6 @@ final class OpenAiProvider implements LlmProvider
     private static function onFinish(
         array $toolCalls,
         Channel $channel,
-        StreamEventPool $pool,
         float $elapsed,
         TokenUsage $usage,
         int $step,
@@ -240,13 +238,13 @@ final class OpenAiProvider implements LlmProvider
             $args = $tc['arguments'] !== ''
                 ? json_decode($tc['arguments'], true, 512, JSON_THROW_ON_ERROR)
                 : [];
-            $channel->emit($pool->toolCallComplete(
+            $channel->emit(AgentEvent::toolCallComplete(
                 new ToolCallData($tc['id'], $tc['name'], is_array($args) ? $args : []),
                 $elapsed,
                 $usage,
                 $step,
             ));
         }
-        $channel->emit($pool->tokenComplete($elapsed, $usage, $step));
+        $channel->emit(AgentEvent::tokenComplete($elapsed, $usage, $step));
     }
 }

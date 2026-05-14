@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Phalanx\Athena\Tests\Fixtures;
 
+use Phalanx\Athena\Event\AgentEvent;
+use Phalanx\Athena\Event\TokenDelta;
 use Phalanx\Athena\Event\TokenUsage;
 use Phalanx\Athena\Event\ToolCallData;
 use Phalanx\Athena\Provider\GenerateRequest;
 use Phalanx\Athena\Provider\LlmProvider;
-use Phalanx\Athena\Provider\StreamEventPool;
 use Phalanx\Styx\Channel;
 use Phalanx\Styx\Emitter;
 
@@ -28,25 +29,26 @@ final class MockProvider implements LlmProvider
 
     public function generate(GenerateRequest $request): Emitter
     {
-        $response = $this->responses[$this->callIndex] ?? $this->responses[array_key_last($this->responses)] ?? ['text' => '', 'toolCalls' => []];
+        $response = $this->responses[$this->callIndex]
+            ?? $this->responses[array_key_last($this->responses)]
+            ?? ['text' => '', 'toolCalls' => []];
         $this->callIndex++;
 
         return Emitter::produce(static function (Channel $ch) use ($response): void {
-            $pool = new StreamEventPool();
             $usage = new TokenUsage(input: 10, output: 5);
 
             foreach (str_split($response['text']) as $char) {
-                $ch->emit($pool->tokenDelta($char, 0.0, $usage, 0));
+                $ch->emit(AgentEvent::tokenDelta(new TokenDelta(text: $char), 0.0, $usage, 0));
             }
 
             foreach ($response['toolCalls'] as $tc) {
-                $ch->emit($pool->toolCallStart(
+                $ch->emit(AgentEvent::toolCallStart(
                     new ToolCallData($tc['id'], $tc['name']),
                     0.0,
                     $usage,
                     0,
                 ));
-                $ch->emit($pool->toolCallComplete(
+                $ch->emit(AgentEvent::toolCallComplete(
                     new ToolCallData($tc['id'], $tc['name'], $tc['arguments']),
                     0.0,
                     $usage,
@@ -54,7 +56,7 @@ final class MockProvider implements LlmProvider
                 ));
             }
 
-            $ch->emit($pool->tokenComplete(0.0, $usage, 0));
+            $ch->emit(AgentEvent::tokenComplete(0.0, $usage, 0));
         });
     }
 

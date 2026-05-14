@@ -100,6 +100,20 @@ services:
             - phpstan.rules.rule
 
     -
+        class: Phalanx\PHPStan\Rules\Pool\BorrowedValueBoundaryRule
+        arguments:
+            - @Phalanx\PHPStan\Support\PathPolicy
+        tags:
+            - phpstan.rules.rule
+
+    -
+        class: Phalanx\PHPStan\Rules\Pool\BorrowedValuePromotedPropertyRule
+        arguments:
+            - @Phalanx\PHPStan\Support\PathPolicy
+        tags:
+            - phpstan.rules.rule
+
+    -
         class: Phalanx\PHPStan\Rules\Testing\UseTestAppRule
         tags:
             - phpstan.rules.rule

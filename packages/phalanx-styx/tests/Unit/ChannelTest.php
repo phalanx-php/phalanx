@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Styx\Tests\Unit;
 
+use Phalanx\Pool\BorrowedValue;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Styx\Channel;
 use Phalanx\Testing\PhalanxTestCase;
@@ -31,6 +32,36 @@ final class ChannelTest extends PhalanxTestCase
             }
 
             self::assertSame(['a', 'b', 'c'], $items);
+        });
+    }
+
+    #[Test]
+    public function emitRejectsBorrowedValues(): void
+    {
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('Borrowed values cannot cross Styx channel boundaries');
+
+        $this->scope->run(static function (): void {
+            $channel = new Channel();
+            $borrowed = new class implements BorrowedValue {
+            };
+
+            $channel->emit($borrowed);
+        });
+    }
+
+    #[Test]
+    public function tryEmitRejectsBorrowedValuesInsideArrays(): void
+    {
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('Borrowed values cannot cross Styx channel boundaries');
+
+        $this->scope->run(static function (): void {
+            $channel = new Channel();
+            $borrowed = new class implements BorrowedValue {
+            };
+
+            $channel->tryEmit(['event' => $borrowed]);
         });
     }
 

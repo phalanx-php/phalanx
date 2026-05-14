@@ -14,13 +14,4 @@ final class TraceEvent
         private(set) array $attrs,
     ) {
     }
-
-    /** @param array<string, mixed> $attrs */
-    public function reset(TraceType $type, string $name, float $timestamp, array $attrs): void
-    {
-        $this->type = $type;
-        $this->name = $name;
-        $this->timestamp = $timestamp;
-        $this->attrs = $attrs;
-    }
 }

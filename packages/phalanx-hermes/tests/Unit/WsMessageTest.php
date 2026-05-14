@@ -123,6 +123,17 @@ final class WsMessageTest extends TestCase
     }
 
     #[Test]
+    public function fromFrameCreatesDistinctOwnedMessages(): void
+    {
+        $first = WsMessage::fromFrame(WsMessage::text('first')->toFrame());
+        $second = WsMessage::fromFrame(WsMessage::text('second')->toFrame());
+
+        $this->assertNotSame(spl_object_id($first), spl_object_id($second));
+        $this->assertSame('first', $first->payload);
+        $this->assertSame('second', $second->payload);
+    }
+
+    #[Test]
     public function fromFrameDecodesCloseCode(): void
     {
         $closeFrame = new Frame();
@@ -152,5 +163,37 @@ final class WsMessageTest extends TestCase
         $this->assertTrue($msg->isClose);
         $this->assertNull($msg->closeCode);
         $this->assertSame('', $msg->payload);
+    }
+
+    #[Test]
+    public function fromFrameHandlesShortClosePayload(): void
+    {
+        $closeFrame = new Frame();
+        $closeFrame->data = "\x03";
+        $closeFrame->opcode = WebSocketServer::WEBSOCKET_OPCODE_CLOSE;
+        $closeFrame->flags = WebSocketServer::WEBSOCKET_FLAG_FIN;
+        $closeFrame->finish = true;
+
+        $msg = WsMessage::fromFrame($closeFrame);
+
+        $this->assertTrue($msg->isClose);
+        $this->assertNull($msg->closeCode);
+        $this->assertSame("\x03", $msg->payload);
+    }
+
+    #[Test]
+    public function fromFrameHandlesUnknownCloseCode(): void
+    {
+        $closeFrame = new Frame();
+        $closeFrame->data = pack('n', 9999) . 'olympus';
+        $closeFrame->opcode = WebSocketServer::WEBSOCKET_OPCODE_CLOSE;
+        $closeFrame->flags = WebSocketServer::WEBSOCKET_FLAG_FIN;
+        $closeFrame->finish = true;
+
+        $msg = WsMessage::fromFrame($closeFrame);
+
+        $this->assertTrue($msg->isClose);
+        $this->assertNull($msg->closeCode);
+        $this->assertSame('olympus', $msg->payload);
     }
 }

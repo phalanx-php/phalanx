@@ -29,6 +29,14 @@ use Throwable;
  */
 final class WsClientConnectionHandle
 {
+    private(set) bool $closing = false;
+
+    private(set) bool $closed = false;
+
+    public bool $isConnected {
+        get => !$this->closing && !$this->closed;
+    }
+
     private readonly ManagedResourceRegistry $resources;
 
     private readonly Channel $inbound;
@@ -40,14 +48,6 @@ final class WsClientConnectionHandle
     private readonly TaskRun $writerRun;
 
     private readonly Subscription $pingSubscription;
-
-    private(set) bool $closing = false;
-
-    private(set) bool $closed = false;
-
-    public bool $isConnected {
-        get => !$this->closing && !$this->closed;
-    }
 
     public function __construct(
         ExecutionScope $scope,
@@ -69,9 +69,6 @@ final class WsClientConnectionHandle
 
         $this->readerRun = $scope->go(
             static function (ExecutionScope $rs) use ($client, $config, $host, $inbound): void {
-                $messages = [];
-                $msgCursor = 0;
-
                 try {
                     while (true) {
                         $rs->throwIfCancelled();
@@ -91,14 +88,7 @@ final class WsClientConnectionHandle
                             continue;
                         }
 
-                        $idx = $msgCursor % WsMessage::READER_RING_SIZE;
-                        if ($msgCursor < WsMessage::READER_RING_SIZE) {
-                            $messages[$idx] = WsMessage::fromFrame($frame);
-                        } else {
-                            $messages[$idx]->resetFromFrame($frame);
-                        }
-                        $message = $messages[$idx];
-                        $msgCursor++;
+                        $message = WsMessage::fromFrame($frame);
 
                         $inbound->emit($message);
 

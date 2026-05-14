@@ -104,7 +104,7 @@ final class TraceRingBufferTest extends TestCase
         self::assertSame('Poseidon', $events[0]->name);
     }
 
-    public function testResetOverwritesAllFields(): void
+    public function testWrappedEventReplacesAllFields(): void
     {
         $trace = new Trace();
         $ringSize = self::ringSize();
@@ -125,13 +125,14 @@ final class TraceRingBufferTest extends TestCase
         self::assertSame(['key' => 'new'], $newest->attrs);
     }
 
-    public function testSlotReuseVerifiedByObjectIdentity(): void
+    public function testRetainedEventsRemainStableAfterWrap(): void
     {
         $trace = new Trace();
         $ringSize = self::ringSize();
 
         $trace->log(TraceType::Execute, 'slot-zero');
-        $firstSlotId = spl_object_id($trace->events()[0]);
+        $retained = $trace->events()[0];
+        $retainedId = spl_object_id($retained);
 
         for ($i = 1; $i < $ringSize; $i++) {
             $trace->log(TraceType::Execute, "filler-$i");
@@ -140,13 +141,15 @@ final class TraceRingBufferTest extends TestCase
         $trace->log(TraceType::Execute, 'recycled');
 
         $events = $trace->events();
-        $recycledEvent = $events[$ringSize - 1];
+        $replacement = $events[$ringSize - 1];
 
-        self::assertSame($firstSlotId, spl_object_id($recycledEvent));
-        self::assertSame('recycled', $recycledEvent->name);
+        self::assertSame($retainedId, spl_object_id($retained));
+        self::assertSame('slot-zero', $retained->name);
+        self::assertNotSame($retainedId, spl_object_id($replacement));
+        self::assertSame('recycled', $replacement->name);
     }
 
-    public function testAttrsReplacedOnReset(): void
+    public function testAttrsReplacedOnWrap(): void
     {
         $trace = new Trace();
         $ringSize = self::ringSize();

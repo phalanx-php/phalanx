@@ -9,8 +9,6 @@ use OpenSwoole\WebSocket\Server as WebSocketServer;
 
 final class WsMessage
 {
-    public const int READER_RING_SIZE = 128;
-
     public bool $isText {
         get => $this->opcode === WebSocketServer::WEBSOCKET_OPCODE_TEXT;
     }
@@ -79,16 +77,20 @@ final class WsMessage
         return new self($payload, $opcode, $closeCode);
     }
 
-    public function reset(string $payload, int $opcode, ?WsCloseCode $closeCode = null): void
+    public function decode(bool $assoc = true, int $flags = 0): mixed
     {
-        $this->payload = $payload;
-        $this->opcode = $opcode;
-        $this->closeCode = $closeCode;
+        return json_decode($this->payload, $assoc, 512, $flags | JSON_THROW_ON_ERROR);
     }
 
-    public function resetFromFrame(Frame $frame): void
+    public function toFrame(): Frame
     {
-        $this->reset(...self::parseFrame($frame));
+        $frame = new Frame();
+        $frame->data = $this->payload;
+        $frame->opcode = $this->opcode;
+        $frame->flags = WebSocketServer::WEBSOCKET_FLAG_FIN;
+        $frame->finish = true;
+
+        return $frame;
     }
 
     /** @return array{string, int, ?WsCloseCode} */
@@ -107,21 +109,5 @@ final class WsMessage
         }
 
         return [$payload, $opcode, $closeCode];
-    }
-
-    public function decode(bool $assoc = true, int $flags = 0): mixed
-    {
-        return json_decode($this->payload, $assoc, 512, $flags | JSON_THROW_ON_ERROR);
-    }
-
-    public function toFrame(): Frame
-    {
-        $frame = new Frame();
-        $frame->data = $this->payload;
-        $frame->opcode = $this->opcode;
-        $frame->flags = WebSocketServer::WEBSOCKET_FLAG_FIN;
-        $frame->finish = true;
-
-        return $frame;
     }
 }

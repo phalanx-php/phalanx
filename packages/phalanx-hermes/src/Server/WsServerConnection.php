@@ -32,12 +32,6 @@ use Throwable;
  */
 final class WsServerConnection
 {
-    private readonly TaskRun $readerRun;
-
-    private readonly TaskRun $writerRun;
-
-    private readonly Subscription $pingSubscription;
-
     private(set) bool $closing = false;
 
     private(set) bool $closed = false;
@@ -45,6 +39,12 @@ final class WsServerConnection
     public bool $isOpen {
         get => !$this->closing && !$this->closed;
     }
+
+    private readonly TaskRun $readerRun;
+
+    private readonly TaskRun $writerRun;
+
+    private readonly Subscription $pingSubscription;
 
     public function __construct(
         ExecutionScope $scope,
@@ -66,9 +66,6 @@ final class WsServerConnection
 
         $this->readerRun = $scope->go(
             static function (ExecutionScope $rs) use ($target, $host, $bridge, $config, $self): void {
-                $messages = [];
-                $msgCursor = 0;
-
                 try {
                     while (true) {
                         $rs->throwIfCancelled();
@@ -85,14 +82,7 @@ final class WsServerConnection
                             continue;
                         }
 
-                        $idx = $msgCursor % WsMessage::READER_RING_SIZE;
-                        if ($msgCursor < WsMessage::READER_RING_SIZE) {
-                            $messages[$idx] = WsMessage::fromFrame($frame);
-                        } else {
-                            $messages[$idx]->resetFromFrame($frame);
-                        }
-                        $message = $messages[$idx];
-                        $msgCursor++;
+                        $message = WsMessage::fromFrame($frame);
 
                         if (strlen($message->payload) > $config->maxFrameSize) {
                             $self->close(WsCloseCode::MessageTooBig);

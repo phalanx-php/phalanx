@@ -8,7 +8,7 @@ final class Trace
 {
     private const int RING_SIZE = 10_000;
 
-    /** @var list<TraceEvent> */
+    /** @var array<int, TraceEvent> */
     private array $slots = [];
 
     private int $cursor = 0;
@@ -24,7 +24,7 @@ final class Trace
             $this->slots[] = new TraceEvent($type, $name, $timestamp, $attrs);
             $this->count++;
         } else {
-            $this->slots[$this->cursor]->reset($type, $name, $timestamp, $attrs);
+            $this->slots[$this->cursor] = new TraceEvent($type, $name, $timestamp, $attrs);
         }
 
         $this->cursor = ($this->cursor + 1) % self::RING_SIZE;
