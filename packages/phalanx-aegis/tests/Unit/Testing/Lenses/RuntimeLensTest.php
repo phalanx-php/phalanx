@@ -71,6 +71,24 @@ final class RuntimeLensTest extends TestCase
         }
     }
 
+    public function testPoolStatsExposeSupervisorPoolsSeparatelyFromHealth(): void
+    {
+        $app = TestApp::boot();
+
+        try {
+            $stats = $app->runtime->poolStats();
+
+            self::assertArrayHasKey('taskRun', $stats);
+            self::assertArrayHasKey('token', $stats);
+            self::assertSame(0, $stats['taskRun']['borrowed']);
+
+            $app->runtime->assertPoolsClean();
+            $app->runtime->assertNoBorrowedPools();
+        } finally {
+            $app->shutdown();
+        }
+    }
+
     public function testAssertCheckFailsErrorsWhenCheckIsUnknown(): void
     {
         $app = TestApp::boot();

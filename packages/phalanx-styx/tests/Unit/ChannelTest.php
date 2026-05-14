@@ -66,6 +66,21 @@ final class ChannelTest extends PhalanxTestCase
     }
 
     #[Test]
+    public function emitRejectsBorrowedValuesInsideTuplePayloads(): void
+    {
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('Borrowed values cannot cross Styx channel boundaries');
+
+        $this->scope->run(static function (): void {
+            $channel = new Channel();
+            $borrowed = new class implements BorrowedValue {
+            };
+
+            $channel->emit('topic', $borrowed);
+        });
+    }
+
+    #[Test]
     public function completeEndsConsumer(): void
     {
         $this->scope->run(static function (ExecutionScope $scope): void {

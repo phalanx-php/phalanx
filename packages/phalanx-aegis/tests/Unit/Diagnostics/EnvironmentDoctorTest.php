@@ -14,6 +14,8 @@ use Phalanx\Runtime\Memory\RuntimeMemoryConfig;
 use Phalanx\Runtime\RuntimeHooks;
 use Phalanx\Runtime\RuntimePolicy;
 use Phalanx\Supervisor\InProcessLedger;
+use Phalanx\Supervisor\Supervisor;
+use Phalanx\Trace\Trace;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
@@ -36,6 +38,19 @@ final class EnvironmentDoctorTest extends TestCase
         self::assertContains('openswoole.hooks.missing', array_column($checks, 'name'));
         self::assertContains('openswoole.hooks.sensitive', array_column($checks, 'name'));
         self::assertContains('supervisor.ledger', array_column($checks, 'name'));
+    }
+
+    public function testReportContainsInformationalSupervisorPoolChecks(): void
+    {
+        $supervisor = new Supervisor(new InProcessLedger(), new Trace());
+        $report = (new EnvironmentDoctor(supervisor: $supervisor))->check();
+        $checks = $report->toArray();
+
+        self::assertTrue($report->isHealthy());
+        self::assertTrue(self::check($checks, 'supervisor.pool.taskRun')['ok']);
+        self::assertTrue(self::check($checks, 'supervisor.pool.token')['ok']);
+        self::assertStringContainsString('borrowed=0', self::check($checks, 'supervisor.pool.taskRun')['detail']);
+        self::assertStringContainsString('free=0', self::check($checks, 'supervisor.pool.token')['detail']);
     }
 
     public function testMissingRequiredHooksMakeReportUnhealthy(): void

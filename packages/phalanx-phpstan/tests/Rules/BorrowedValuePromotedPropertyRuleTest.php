@@ -19,7 +19,7 @@ final class BorrowedValuePromotedPropertyRuleTest extends RuleTestCase
         $this->analyse(
             [__DIR__ . '/Fixtures/borrowed-value-boundary.php'],
             [
-                [BorrowedValuePromotedPropertyRule::MESSAGE, 208],
+                [BorrowedValuePromotedPropertyRule::MESSAGE, 209],
             ],
         );
     }

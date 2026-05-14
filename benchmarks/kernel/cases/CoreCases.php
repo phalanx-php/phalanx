@@ -16,6 +16,7 @@ use Phalanx\Supervisor\SwooleTableLedger;
 use Phalanx\Supervisor\TransactionLease;
 use Phalanx\Task\Task;
 use Phalanx\Trace\Trace;
+use Phalanx\Trace\TraceType;
 
 final class ScopeCreateDisposeCase extends AbstractBenchmarkCase
 {
@@ -94,6 +95,23 @@ final class SupervisorLifecycleCase extends AbstractBenchmarkCase
         $this->supervisor->markRunning($run);
         $this->supervisor->complete($run, null);
         $this->supervisor->reap($run);
+    }
+}
+
+final class TraceLogChurnCase extends AbstractBenchmarkCase
+{
+    private ?Trace $trace = null;
+
+    public function __construct()
+    {
+        parent::__construct('trace_log_churn', 100_000, 1_000);
+    }
+
+    public function run(BenchmarkContext $context): void
+    {
+        $this->trace ??= new Trace();
+
+        $this->trace->log(TraceType::Execute, 'bench.trace', ['phase' => 'tick']);
     }
 }
 
@@ -289,6 +307,44 @@ final class SwooleTableLedgerLifecycleCase extends AbstractBenchmarkCase
     }
 }
 
+final class SwooleTableLedgerProjectionCase extends AbstractBenchmarkCase
+{
+    private ?ExecutionScope $scope = null;
+
+    private ?Supervisor $supervisor = null;
+
+    private ?Task $task = null;
+
+    public function __construct()
+    {
+        parent::__construct('ledger_swoole_table_projection', 10_000, 100);
+    }
+
+    public function run(BenchmarkContext $context): void
+    {
+        if ($this->scope === null || $this->supervisor === null || $this->task === null) {
+            $app = $context->app(new SwooleTableLedger(1024));
+            $this->scope = $app->createScope();
+            $this->supervisor = $app->supervisor();
+            $this->task = Task::named(
+                'bench.ledger.swoole_table.projection',
+                static fn(ExecutionScope $scope): null => null,
+            );
+        }
+
+        $run = $this->supervisor->start($this->task, $this->scope, DispatchMode::Inline);
+        $this->supervisor->markRunning($run);
+        $snapshot = $this->supervisor->ledger->snapshot($run->id);
+        $tree = $this->supervisor->tree($run->id);
+        $this->supervisor->complete($run, null);
+        $this->supervisor->reap($run);
+
+        if ($snapshot === null || $tree === []) {
+            throw new \RuntimeException('Swoole table ledger projection did not return the active run.');
+        }
+    }
+}
+
 final class TransactionScopeEnterExitCase extends AbstractBenchmarkCase
 {
     private ?ExecutionScope $scope = null;
@@ -323,12 +379,14 @@ function aegisKernelCases(): array
         new ExecuteNoopTaskCase(),
         new ExecuteStaticTaskOfCase(),
         new SupervisorLifecycleCase(),
+        new TraceLogChurnCase(),
         new ConcurrentNoopCase(100),
         new ConcurrentDelayCase(100),
         new SingleflightWaitersCase(100),
         new CancelSleepingChildrenCase(100),
         new InProcessLedgerLifecycleCase(),
         new SwooleTableLedgerLifecycleCase(),
+        new SwooleTableLedgerProjectionCase(),
         new TransactionScopeEnterExitCase(),
     ];
 }

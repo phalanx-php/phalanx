@@ -15,6 +15,7 @@ use Phalanx\Runtime\Memory\RuntimeTableStats;
 use Phalanx\Runtime\RuntimeHooks;
 use Phalanx\Runtime\RuntimePolicy;
 use Phalanx\Supervisor\LedgerStorage;
+use Phalanx\Supervisor\Supervisor;
 
 final readonly class EnvironmentDoctor
 {
@@ -24,6 +25,7 @@ final readonly class EnvironmentDoctor
         private ?LedgerStorage $ledger = null,
         private ?RuntimePolicy $runtimePolicy = null,
         private ?RuntimeMemory $memory = null,
+        private ?Supervisor $supervisor = null,
     ) {
     }
 
@@ -95,6 +97,16 @@ final readonly class EnvironmentDoctor
                 true,
                 $this->ledger::class,
             );
+        }
+
+        if ($this->supervisor !== null) {
+            foreach ($this->supervisor->poolStats() as $name => $stats) {
+                $checks[] = new DoctorCheck(
+                    "supervisor.pool.{$name}",
+                    true,
+                    self::poolStatsDetail($stats),
+                );
+            }
         }
 
         if ($this->memory !== null) {
@@ -223,5 +235,16 @@ final readonly class EnvironmentDoctor
             $stats->highWaterRows,
             $highWaterPercent,
         );
+    }
+
+    /** @param array<string, int> $stats */
+    private static function poolStatsDetail(array $stats): string
+    {
+        $parts = [];
+        foreach ($stats as $name => $value) {
+            $parts[] = "{$name}={$value}";
+        }
+
+        return implode(', ', $parts);
     }
 }

@@ -92,6 +92,31 @@ final class RuntimeLens implements LensContract
         return $this;
     }
 
+    /** @return array{taskRun: array{hits: int, misses: int, overflows: int, drops: int, borrowed: int, free: int, capacity: int}, token: array{hits: int, misses: int, free: int, capacity: int}} */
+    public function poolStats(): array
+    {
+        return $this->app->application->supervisor()->poolStats();
+    }
+
+    public function assertPoolsClean(): self
+    {
+        $stats = $this->poolStats();
+        $borrowed = $stats['taskRun']['borrowed'];
+
+        Assert::assertSame(
+            0,
+            $borrowed,
+            "Expected no borrowed supervisor task runs; {$borrowed} still borrowed.",
+        );
+
+        return $this;
+    }
+
+    public function assertNoBorrowedPools(): self
+    {
+        return $this->assertPoolsClean();
+    }
+
     public function assertCheckFails(string $name): self
     {
         foreach ($this->report() as $check) {
@@ -119,6 +144,7 @@ final class RuntimeLens implements LensContract
         return new EnvironmentDoctor(
             ledger: $this->app->application->supervisor()->ledger,
             memory: $this->app->application->runtime()->memory,
+            supervisor: $this->app->application->supervisor(),
         );
     }
 }

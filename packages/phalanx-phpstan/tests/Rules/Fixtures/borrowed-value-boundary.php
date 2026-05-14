@@ -29,6 +29,7 @@ final class BorrowedValueBoundaryFixture
     {
         $channel->emit($event);
         $channel->tryEmit(['event' => $event]);
+        $channel->emit('topic', $event);
     }
 
     public function invalidChannelEmitArrayVariable(Channel $channel, BorrowedAgentEvent $event): void

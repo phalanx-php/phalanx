@@ -149,6 +149,29 @@ final class TraceRingBufferTest extends TestCase
         self::assertSame('recycled', $replacement->name);
     }
 
+    public function testRetainedEventAttributesRemainStableAfterWrap(): void
+    {
+        $trace = new Trace();
+        $ringSize = self::ringSize();
+
+        $trace->log(TraceType::Execute, 'slot-zero', ['payload' => 'old']);
+        $retained = $trace->events()[0];
+        $retainedId = spl_object_id($retained);
+
+        for ($i = 1; $i < $ringSize; $i++) {
+            $trace->log(TraceType::Execute, "filler-$i");
+        }
+
+        $trace->log(TraceType::Execute, 'recycled', ['payload' => 'new']);
+
+        $replacement = $trace->events()[$ringSize - 1];
+
+        self::assertSame($retainedId, spl_object_id($retained));
+        self::assertSame(['payload' => 'old'], $retained->attrs);
+        self::assertNotSame($retainedId, spl_object_id($replacement));
+        self::assertSame(['payload' => 'new'], $replacement->attrs);
+    }
+
     public function testAttrsReplacedOnWrap(): void
     {
         $trace = new Trace();

@@ -85,11 +85,11 @@ final class Runner
             return 1;
         }
 
-        $context = new BenchmarkContext();
         $metadata = self::metadata();
         $results = [];
 
         foreach ($cases as $case) {
+            $context = new BenchmarkContext();
             $results[] = $this->measure($case, $context, $metadata);
         }
 
@@ -143,7 +143,9 @@ final class Runner
         }
 
         $samples = [];
-        $memoryBefore = memory_get_usage(true);
+        $gcBefore = gc_status();
+        $zendMemoryBefore = memory_get_usage(false);
+        $realMemoryBefore = memory_get_usage(true);
         $started = hrtime(true);
 
         for ($i = 0; $i < $case->iterations(); $i++) {
@@ -155,7 +157,11 @@ final class Runner
         $context->assertNoLiveTasks($case->name());
 
         $totalNs = hrtime(true) - $started;
-        $memoryAfter = memory_get_usage(true);
+        $diagnostics = $context->diagnostics();
+        $gcAfter = gc_status();
+        $zendMemoryAfter = memory_get_usage(false);
+        $realMemoryAfter = memory_get_usage(true);
+        $zendMemoryPeak = memory_get_peak_usage(false);
         $memoryPeak = memory_get_peak_usage(true);
 
         gc_collect_cycles();
@@ -164,11 +170,17 @@ final class Runner
             case: $case->name(),
             iterations: $case->iterations(),
             totalNs: $totalNs,
-            memoryBefore: $memoryBefore,
-            memoryAfter: $memoryAfter,
+            zendMemoryBefore: $zendMemoryBefore,
+            zendMemoryAfter: $zendMemoryAfter,
+            realMemoryBefore: $realMemoryBefore,
+            realMemoryAfter: $realMemoryAfter,
             memoryPeak: $memoryPeak,
+            zendMemoryPeak: $zendMemoryPeak,
+            gcRootsBefore: self::gcRoots($gcBefore),
+            gcRootsAfter: self::gcRoots($gcAfter),
             samplesNs: $samples,
             metadata: $metadata,
+            diagnostics: $diagnostics,
         );
     }
 
@@ -261,6 +273,14 @@ final class Runner
         return max(0.0, (float) $raw);
     }
 
+    /** @param array<string, mixed> $status */
+    private static function gcRoots(array $status): int
+    {
+        $roots = $status['roots'] ?? 0;
+
+        return is_int($roots) ? $roots : 0;
+    }
+
     /** @return array<string, string> */
     private static function metadata(): array
     {
@@ -308,26 +328,30 @@ final class Runner
         echo "php_binary={$metadata['php_binary']}" . PHP_EOL . PHP_EOL;
 
         printf(
-            "%-34s %8s %10s %10s %10s %12s %13s\n",
+            "%-34s %8s %10s %10s %10s %12s %13s %13s %8s\n",
             'case',
             'iter',
             'mean_us',
             'p95_us',
             'p99_us',
             'ops_sec',
-            'mem_delta_kb',
+            'real_delta_kb',
+            'zend_delta_kb',
+            'gc_roots',
         );
 
         foreach ($results as $result) {
             printf(
-                "%-34s %8d %10.2f %10.2f %10.2f %12.2f %13.2f\n",
+                "%-34s %8d %10.2f %10.2f %10.2f %12.2f %13.2f %13.2f %8d\n",
                 $result->case,
                 $result->iterations,
                 $result->meanUs(),
                 $result->p95Us(),
                 $result->p99Us(),
                 $result->opsPerSec(),
-                $result->memoryDeltaKb(),
+                $result->realMemoryDeltaKb(),
+                $result->zendMemoryDeltaKb(),
+                $result->gcRootsDelta(),
             );
         }
     }
