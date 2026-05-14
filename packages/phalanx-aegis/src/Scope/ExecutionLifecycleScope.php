@@ -26,6 +26,7 @@ use Phalanx\Service\ServiceGraph;
 use Phalanx\Service\ServiceLifetime;
 use Phalanx\Supervisor\DispatchMode;
 use Phalanx\Supervisor\Supervisor;
+use Phalanx\Supervisor\TaskHandle;
 use Phalanx\Supervisor\TaskRun;
 use Phalanx\Supervisor\TransactionLease;
 use Phalanx\Supervisor\WaitReason;
@@ -970,7 +971,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         }
     }
 
-    public function go(Closure $fn, ?string $name = null): TaskRun
+    public function go(Closure $fn, ?string $name = null): TaskHandle
     {
         if ($this->disposed) {
             throw new RuntimeException('go(): cannot spawn on a disposed scope');
@@ -993,6 +994,11 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         $traceLog = $this->traceLog;
         $goSpawns = &$this->goSpawns;
         $spawnKey = $this->goSpawnSeq++;
+        $runId = $run->id;
+        $runName = $run->name;
+        $ledger = $this->supervisor->ledger;
+
+        $goSpawns[$spawnKey] = [0, $run];
 
         $runCancelKey = -1;
 
@@ -1037,9 +1043,20 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             }
         });
 
-        if ($cid !== false) {
+        if ($cid === false) {
+            unset($goSpawns[$spawnKey]);
+            $error = new RuntimeException('go(): failed to create coroutine');
+            $supervisor->fail($run, $error);
+            $run->cancellation->release();
+            $supervisor->reap($run);
+            $childScope->dispose();
+
+            throw $error;
+        }
+
+        if (array_key_exists($spawnKey, $goSpawns)) {
             $runCancelKey = $run->cancellation->onCancel(static function () use ($cid): void {
-                if ($cid > 0 && Coroutine::exists($cid)) {
+                if (Coroutine::exists($cid)) {
                     Coroutine::cancel($cid);
                 }
             });
@@ -1049,7 +1066,20 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             $goSpawns[$spawnKey] = [$cid, $run];
         }
 
-        return $run;
+        return new TaskHandle(
+            $runId,
+            $runName,
+            static function () use (&$goSpawns, $spawnKey): void {
+                $spawn = $goSpawns[$spawnKey] ?? null;
+                if ($spawn === null) {
+                    return;
+                }
+
+                [, $run] = $spawn;
+                $run->cancellation->cancel();
+            },
+            static fn() => $ledger->snapshot($runId),
+        );
     }
 
     public function singleflight(string $key, Scopeable|Executable|Closure $task): mixed

@@ -93,6 +93,39 @@ final class ObjectPoolTest extends TestCase
         self::assertSame(1, $pool->stats()['hits']);
     }
 
+    public function testReusedSlotIsDroppedWhenInitializerThrows(): void
+    {
+        $pool = new ObjectPool(PoolableStub::class, 1);
+
+        $obj = $pool->acquire(static function (PoolableStub $o): void {
+            $o->name = 'Thebes';
+            $o->value = 1;
+        });
+        $objId = spl_object_id($obj);
+
+        $pool->release($obj);
+
+        try {
+            $pool->acquire(static function (): void {
+                throw new \RuntimeException('initializer failed');
+            });
+        } catch (\RuntimeException $e) {
+            self::assertSame('initializer failed', $e->getMessage());
+        }
+
+        self::assertSame(0, $pool->stats()['free']);
+        self::assertSame(1, $pool->stats()['drops']);
+
+        $recovered = $pool->acquire(static function (PoolableStub $o): void {
+            $o->name = 'Corinth';
+            $o->value = 2;
+        });
+
+        self::assertNotSame($objId, spl_object_id($recovered));
+        self::assertSame('Corinth', $recovered->name);
+        self::assertSame(2, $recovered->value);
+    }
+
     public function testWorksWithFinalClassMutableFields(): void
     {
         $pool = new ObjectPool(MutableStub::class, 4);
@@ -120,9 +153,9 @@ final class ObjectPoolTest extends TestCase
         self::assertSame(16, $pool->stats()['capacity']);
     }
 
-    public function testDoubleReleaseRespectsCapacity(): void
+    public function testDoubleReleaseIsRejected(): void
     {
-        $pool = new ObjectPool(PoolableStub::class, 1);
+        $pool = new ObjectPool(PoolableStub::class, 4);
 
         $init = static function (PoolableStub $o): void {
             $o->name = 'Pericles';
@@ -131,9 +164,60 @@ final class ObjectPoolTest extends TestCase
 
         $obj = $pool->acquire($init);
         $pool->release($obj);
-        $pool->release($obj);
 
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('cannot release an object that is not borrowed');
+
+        $pool->release($obj);
+    }
+
+    public function testForeignReleaseIsRejected(): void
+    {
+        $pool = new ObjectPool(PoolableStub::class, 4);
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('cannot release a foreign object');
+
+        $pool->release(new MutableStub());
+    }
+
+    public function testPoolClassMustBeBorrowedValue(): void
+    {
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('ObjectPool classes must implement BorrowedValue');
+
+        new ObjectPool(\stdClass::class, 1);
+    }
+
+    public function testWithBorrowedReleasesAfterCallback(): void
+    {
+        $pool = new ObjectPool(PoolableStub::class, 1);
+
+        $name = $pool->withBorrowed(
+            static function (PoolableStub $o): void {
+                $o->name = 'Solon';
+                $o->value = 1;
+            },
+            static fn(PoolableStub $o): string => $o->name,
+        );
+
+        self::assertSame('Solon', $name);
         self::assertSame(1, $pool->stats()['free']);
-        self::assertSame(1, $pool->stats()['overflows']);
+    }
+
+    public function testWithBorrowedRejectsBorrowedReturn(): void
+    {
+        $pool = new ObjectPool(PoolableStub::class, 1);
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('Borrow callbacks must return owned values');
+
+        $pool->withBorrowed(
+            static function (PoolableStub $o): void {
+                $o->name = 'Solon';
+                $o->value = 1;
+            },
+            static fn(PoolableStub $o): PoolableStub => $o,
+        );
     }
 }

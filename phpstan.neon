@@ -29,12 +29,16 @@ parameters:
     phalanxInternalPaths:
         - packages/phalanx-aegis/src/Concurrency/Co.php
         - packages/phalanx-aegis/src/Cancellation/CancellationToken.php
+        - packages/phalanx-aegis/src/Pool/ObjectPool.php
+        - packages/phalanx-aegis/src/Pool/PoolRing.php
         - packages/phalanx-aegis/src/Runtime/CoroutineRuntime.php
         - packages/phalanx-aegis/src/Runtime/RuntimeHooks.php
         - packages/phalanx-aegis/src/Scope/ExecutionLifecycleScope.php
         - packages/phalanx-aegis/src/Service/LazySingleton.php
         - packages/phalanx-aegis/src/Supervisor/Supervisor.php
+        - packages/phalanx-aegis/src/Supervisor/SwooleTableLedger.php
         - packages/phalanx-aegis/src/Worker/
+        - packages/phalanx-stoa/src/StoaRunner.php
     phalanxEnforcedPaths:
         - packages/phalanx-aegis/src
         - packages/phalanx-athena/src

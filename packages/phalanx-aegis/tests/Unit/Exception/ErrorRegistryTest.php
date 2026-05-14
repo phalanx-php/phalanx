@@ -15,7 +15,7 @@ final class ErrorRegistryTest extends TestCase
 {
     public function testReportsToRegisteredHandlers(): void
     {
-        $scope = $this->createMock(Scope::class);
+        $scope = $this->createStub(Scope::class);
         $exception = new RuntimeException('test');
 
         $handler1 = $this->createMock(ErrorHandler::class);
@@ -34,13 +34,13 @@ final class ErrorRegistryTest extends TestCase
 
     public function testUnwrapsAggregateException(): void
     {
-        $scope = $this->createMock(Scope::class);
+        $scope = $this->createStub(Scope::class);
         $error1 = new RuntimeException('error 1');
         $error2 = new RuntimeException('error 2');
         $aggregate = new AggregateException(['a' => $error1, 'b' => $error2]);
 
         $reportedErrors = [];
-        $handler = $this->createMock(ErrorHandler::class);
+        $handler = $this->createStub(ErrorHandler::class);
         $handler->method('report')
             ->willReturnCallback(function (Scope $s, \Throwable $e) use ($scope, &$reportedErrors) {
                 $this->assertSame($scope, $s);
@@ -57,7 +57,7 @@ final class ErrorRegistryTest extends TestCase
 
     public function testIsolatesReporterFailures(): void
     {
-        $scope = $this->createMock(Scope::class);
+        $scope = $this->createStub(Scope::class);
         $exception = new RuntimeException('test');
 
         $handler1 = $this->createMock(ErrorHandler::class);
@@ -71,8 +71,7 @@ final class ErrorRegistryTest extends TestCase
             ->with($scope, $exception);
 
         $registry = new ErrorRegistry([$handler1, $handler2]);
-        
-        // Should not throw
+
         $registry->report($scope, $exception);
     }
 }

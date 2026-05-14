@@ -13,12 +13,14 @@ final class BorrowedAgentEvent implements BorrowedValue
 
 final class BorrowedValueBoundaryFixture
 {
-    private ?BorrowedAgentEvent $stored = null;
-
     private static ?BorrowedAgentEvent $staticStored = null;
+
+    private ?BorrowedAgentEvent $stored = null;
 
     /** @var list<BorrowedAgentEvent> */
     private array $events = [];
+
+    private ?\Closure $storedClosure = null;
 
     public function invalidChannelEmit(Channel $channel, BorrowedAgentEvent $event): void
     {
@@ -31,6 +33,13 @@ final class BorrowedValueBoundaryFixture
         $events = [$event];
 
         $channel->emit($events);
+    }
+
+    public function invalidChannelEmitClosure(Channel $channel, BorrowedAgentEvent $event): void
+    {
+        $channel->emit(static function () use ($event): void {
+            $event::class;
+        });
     }
 
     public function invalidReturn(BorrowedAgentEvent $event): BorrowedAgentEvent
@@ -62,6 +71,13 @@ final class BorrowedValueBoundaryFixture
         return static fn(): array => [$event];
     }
 
+    public function invalidClosureReturn(BorrowedAgentEvent $event): \Closure
+    {
+        return static function () use ($event): void {
+            $event::class;
+        };
+    }
+
     public function invalidPropertyStore(BorrowedAgentEvent $event): void
     {
         $this->stored = $event;
@@ -73,6 +89,13 @@ final class BorrowedValueBoundaryFixture
         $events = [$event];
 
         $this->events = $events;
+    }
+
+    public function invalidPropertyClosureStore(BorrowedAgentEvent $event): void
+    {
+        $this->storedClosure = static function () use ($event): void {
+            $event::class;
+        };
     }
 
     public function validLocalUse(BorrowedAgentEvent $event): string

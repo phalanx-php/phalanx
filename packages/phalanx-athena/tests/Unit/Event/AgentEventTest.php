@@ -15,21 +15,33 @@ use RuntimeException;
 
 final class AgentEventTest extends TestCase
 {
-    public function testSetAgentMutatesInPlace(): void
+    public function testWithAgentReturnsOwnedSnapshot(): void
     {
         $usage = new TokenUsage(input: 5, output: 3);
         $event = new AgentEvent(AgentEventKind::TokenDelta, 'text', 1.0, $usage, 2);
-        $originalId = spl_object_id($event);
 
-        $event->setAgent('Pericles');
+        $tagged = $event->withAgent('Pericles');
 
-        self::assertSame($originalId, spl_object_id($event));
-        self::assertSame('Pericles', $event->agent);
-        self::assertSame(AgentEventKind::TokenDelta, $event->kind);
-        self::assertSame('text', $event->data);
-        self::assertSame(1.0, $event->elapsed);
-        self::assertSame($usage, $event->usageSoFar);
-        self::assertSame(2, $event->step);
+        self::assertNotSame($event, $tagged);
+        self::assertNull($event->agent);
+        self::assertSame('Pericles', $tagged->agent);
+        self::assertSame(AgentEventKind::TokenDelta, $tagged->kind);
+        self::assertSame('text', $tagged->data);
+        self::assertSame(1.0, $tagged->elapsed);
+        self::assertNotSame($event->usageSoFar, $tagged->usageSoFar);
+        self::assertNotSame($usage, $tagged->usageSoFar);
+        self::assertSame(2, $tagged->step);
+    }
+
+    public function testUsageIsSnapshotAtConstruction(): void
+    {
+        $usage = new TokenUsage(input: 5, output: 3);
+        $event = new AgentEvent(AgentEventKind::TokenDelta, 'text', 1.0, $usage, 2);
+
+        $usage->accumulate(new TokenUsage(input: 10, output: 10));
+
+        self::assertSame(5, $event->usageSoFar->input);
+        self::assertSame(3, $event->usageSoFar->output);
     }
 
     public function testNamedConstructorsCreateDistinctOwnedEvents(): void

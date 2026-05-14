@@ -17,7 +17,7 @@ use Phalanx\Runtime\Memory\ManagedResourceHandle;
 use Phalanx\Runtime\Memory\ManagedResourceRegistry;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\Subscription;
-use Phalanx\Supervisor\TaskRun;
+use Phalanx\Supervisor\TaskHandle;
 use Phalanx\Supervisor\WaitReason;
 use Throwable;
 
@@ -40,9 +40,9 @@ final class WsServerConnection
         get => !$this->closing && !$this->closed;
     }
 
-    private readonly TaskRun $readerRun;
+    private readonly TaskHandle $readerRun;
 
-    private readonly TaskRun $writerRun;
+    private readonly TaskHandle $writerRun;
 
     private readonly Subscription $pingSubscription;
 
@@ -169,12 +169,8 @@ final class WsServerConnection
             $this->connection->outbound->complete();
         }
 
-        if (!$this->readerRun->cancellation->isCancelled) {
-            $this->readerRun->cancellation->cancel();
-        }
-        if (!$this->writerRun->cancellation->isCancelled) {
-            $this->writerRun->cancellation->cancel();
-        }
+        $this->readerRun->cancel();
+        $this->writerRun->cancel();
 
         try {
             $this->target->close();

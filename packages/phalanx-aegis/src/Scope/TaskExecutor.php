@@ -7,7 +7,7 @@ namespace Phalanx\Scope;
 use Closure;
 use Phalanx\Concurrency\RetryPolicy;
 use Phalanx\Concurrency\SettlementBag;
-use Phalanx\Supervisor\TaskRun;
+use Phalanx\Supervisor\TaskHandle;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 use Phalanx\Worker\WorkerTask;
@@ -95,9 +95,9 @@ interface TaskExecutor
      * Use for fire-and-forget work whose result the caller does not await.
      *
      * Unlike defer(), the spawned task is registered in the supervisor's
-     * ledger as a concurrent child of the current run — visible in the
-     * task tree, cancellable via the returned TaskRun's cancellation token,
-     * and bounded by the parent scope's lifetime.
+     * ledger as a concurrent child of the current run — visible in the task
+     * tree, cancellable via the returned handle, and bounded by the parent
+     * scope's lifetime.
      *
      * Errors raised inside the body are caught and emitted as
      * PHX-SPAWN-001 trace events; they do NOT propagate to the parent
@@ -109,8 +109,8 @@ interface TaskExecutor
      * PHX-SPAWN-002 is emitted and the task is force-cancelled.
      *
      * Cancel an in-flight spawn via:
-     *   $run = $scope->go(static fn() => ...);
-     *   $run->cancellation->cancel();
+     *   $handle = $scope->go(static fn() => ...);
+     *   $handle->cancel();
      */
-    public function go(Closure $fn, ?string $name = null): TaskRun;
+    public function go(Closure $fn, ?string $name = null): TaskHandle;
 }

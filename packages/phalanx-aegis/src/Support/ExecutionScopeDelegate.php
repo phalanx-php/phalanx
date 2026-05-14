@@ -11,6 +11,7 @@ use Phalanx\Concurrency\SettlementBag;
 use Phalanx\Runtime\RuntimeContext;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\Subscription;
+use Phalanx\Supervisor\TaskHandle;
 use Phalanx\Supervisor\TaskRun;
 use Phalanx\Supervisor\TransactionLease;
 use Phalanx\Supervisor\WaitReason;
@@ -157,7 +158,7 @@ trait ExecutionScopeDelegate
         return $this->innerScope()->mapParallel($items, $fn, $limit, $onEach);
     }
 
-    public function go(Closure $fn, ?string $name = null): TaskRun
+    public function go(Closure $fn, ?string $name = null): TaskHandle
     {
         return $this->innerScope()->go($fn, $name);
     }

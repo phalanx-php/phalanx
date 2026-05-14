@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Tests\Unit\Pool;
 
-use PHPUnit\Framework\TestCase;
 use Phalanx\Pool\ObjectPool;
+use PHPUnit\Framework\TestCase;
 
 final class ReadonlyGhostVerificationTest extends TestCase
 {

@@ -19,7 +19,7 @@ final class BorrowedValuePromotedPropertyRuleTest extends RuleTestCase
         $this->analyse(
             [__DIR__ . '/Fixtures/borrowed-value-boundary.php'],
             [
-                ['Borrowed values must not be stored in promoted properties; copy to an owned value first.', 94],
+                [BorrowedValuePromotedPropertyRule::MESSAGE, 117],
             ],
         );
     }

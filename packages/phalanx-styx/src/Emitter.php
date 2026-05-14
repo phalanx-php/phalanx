@@ -14,7 +14,7 @@ use Phalanx\Styx\Terminal\Collect;
 use Phalanx\Styx\Terminal\Drain;
 use Phalanx\Styx\Terminal\First;
 use Phalanx\Styx\Terminal\Reduce;
-use Phalanx\Supervisor\TaskRun;
+use Phalanx\Supervisor\TaskHandle;
 use Throwable;
 
 /**
@@ -51,7 +51,7 @@ final class Emitter implements StreamSource
             }, 'styx.produce');
 
             return static function () use ($run): void {
-                $run->cancellation->cancel();
+                $run->cancel();
             };
         });
     }
@@ -123,7 +123,7 @@ final class Emitter implements StreamSource
             }, 'styx.map');
 
             return static function () use ($run): void {
-                $run->cancellation->cancel();
+                $run->cancel();
             };
         });
     }
@@ -151,7 +151,7 @@ final class Emitter implements StreamSource
             }, 'styx.filter');
 
             return static function () use ($run): void {
-                $run->cancellation->cancel();
+                $run->cancel();
             };
         });
     }
@@ -180,7 +180,7 @@ final class Emitter implements StreamSource
             }, 'styx.take');
 
             return static function () use ($run): void {
-                $run->cancellation->cancel();
+                $run->cancel();
             };
         });
     }
@@ -212,7 +212,7 @@ final class Emitter implements StreamSource
             }, 'styx.throttle');
 
             return static function () use ($run): void {
-                $run->cancellation->cancel();
+                $run->cancel();
             };
         });
     }
@@ -223,7 +223,7 @@ final class Emitter implements StreamSource
 
         return new self(static function (Channel $ch, ExecutionScope $scope) use ($prev, $seconds): Closure {
             $delaySeconds = max(0.001, $seconds);
-            /** @var TaskRun|null $timerRun */
+            /** @var TaskHandle|null $timerRun */
             $timerRun = null;
             $producerRun = $scope->go(static function (ExecutionScope $childScope) use (
                 $prev,
@@ -238,7 +238,7 @@ final class Emitter implements StreamSource
                 try {
                     foreach ($prev($childScope) as $value) {
                         $childScope->throwIfCancelled();
-                        $timerRun?->cancellation->cancel();
+                        $timerRun?->cancel();
                         $latest = $value;
                         $hasLatest = true;
                         $version++;
@@ -260,23 +260,23 @@ final class Emitter implements StreamSource
                         }, 'styx.debounce.timer');
                     }
 
-                    $timerRun?->cancellation->cancel();
+                    $timerRun?->cancel();
                     if ($hasLatest) {
                         $ch->emit($latest);
                     }
                     $ch->complete();
                 } catch (Cancelled $e) {
-                    $timerRun?->cancellation->cancel();
+                    $timerRun?->cancel();
                     throw $e;
                 } catch (Throwable $e) {
-                    $timerRun?->cancellation->cancel();
+                    $timerRun?->cancel();
                     $ch->error($e);
                 }
             }, 'styx.debounce');
 
             return static function () use ($producerRun, &$timerRun): void {
-                $timerRun?->cancellation->cancel();
-                $producerRun->cancellation->cancel();
+                $timerRun?->cancel();
+                $producerRun->cancel();
             };
         });
     }
@@ -287,7 +287,7 @@ final class Emitter implements StreamSource
 
         return new self(static function (Channel $ch, ExecutionScope $scope) use ($prev, $count, $seconds): Closure {
             $delaySeconds = max(0.001, $seconds);
-            /** @var TaskRun|null $timerRun */
+            /** @var TaskHandle|null $timerRun */
             $timerRun = null;
             $producerRun = $scope->go(static function (ExecutionScope $childScope) use (
                 $prev,
@@ -306,7 +306,7 @@ final class Emitter implements StreamSource
                         $buffer = [];
                         $ch->emit($batch);
                     }
-                    $timerRun?->cancellation->cancel();
+                    $timerRun?->cancel();
                     $timerRun = null;
                     $version++;
                 };
@@ -339,17 +339,17 @@ final class Emitter implements StreamSource
                     $flush();
                     $ch->complete();
                 } catch (Cancelled $e) {
-                    $timerRun?->cancellation->cancel();
+                    $timerRun?->cancel();
                     throw $e;
                 } catch (Throwable $e) {
-                    $timerRun?->cancellation->cancel();
+                    $timerRun?->cancel();
                     $ch->error($e);
                 }
             }, 'styx.buffer_window');
 
             return static function () use ($producerRun, &$timerRun): void {
-                $timerRun?->cancellation->cancel();
-                $producerRun->cancellation->cancel();
+                $timerRun?->cancel();
+                $producerRun->cancel();
             };
         });
     }
@@ -362,7 +362,7 @@ final class Emitter implements StreamSource
             $remaining = count($sources);
             $failed = false;
             $completed = false;
-            /** @var list<TaskRun> $runs */
+            /** @var list<TaskHandle> $runs */
             $runs = [];
 
             foreach ($sources as $source) {
@@ -401,7 +401,7 @@ final class Emitter implements StreamSource
 
             return static function () use (&$runs): void {
                 foreach ($runs as $run) {
-                    $run->cancellation->cancel();
+                    $run->cancel();
                 }
             };
         });
@@ -434,7 +434,7 @@ final class Emitter implements StreamSource
             }, 'styx.distinct');
 
             return static function () use ($run): void {
-                $run->cancellation->cancel();
+                $run->cancel();
             };
         });
     }
@@ -468,7 +468,7 @@ final class Emitter implements StreamSource
             }, 'styx.distinct_by');
 
             return static function () use ($run): void {
-                $run->cancellation->cancel();
+                $run->cancel();
             };
         });
     }
@@ -515,7 +515,7 @@ final class Emitter implements StreamSource
 
             return static function () use ($run, $subscription): void {
                 $subscription->cancel();
-                $run->cancellation->cancel();
+                $run->cancel();
             };
         });
     }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Supervisor;
 
 use Phalanx\Cancellation\CancellationToken;
+use Phalanx\Pool\BorrowedValue;
 
 /**
  * One entry in the supervisor's ledger. Represents a unit of work that
@@ -25,7 +26,7 @@ use Phalanx\Cancellation\CancellationToken;
  * supervisor and updated through LedgerStorage::update(). Direct mutation
  * outside the supervisor is forbidden — the ledger is the source of truth.
  */
-final class TaskRun
+final class TaskRun implements BorrowedValue
 {
     /** @var list<Lease> */
     public array $leases = [];

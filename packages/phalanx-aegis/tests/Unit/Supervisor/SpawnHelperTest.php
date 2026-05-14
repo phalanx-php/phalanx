@@ -6,8 +6,8 @@ namespace Phalanx\Tests\Unit\Supervisor;
 
 use OpenSwoole\Coroutine;
 use OpenSwoole\Coroutine\Channel;
-use Phalanx\Boot\AppContext;
 use Phalanx\Application;
+use Phalanx\Boot\AppContext;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
@@ -17,7 +17,7 @@ use RuntimeException;
 
 final class SpawnHelperTest extends PhalanxTestCase
 {
-    public function testGoReturnsTaskRunAndExecutesBody(): void
+    public function testGoReturnsOwnedHandleAndExecutesBody(): void
     {
         $this->scope->run(static function (ExecutionScope $_scope): void {
             $ledger = new InProcessLedger();
@@ -25,15 +25,14 @@ final class SpawnHelperTest extends PhalanxTestCase
             $inner = $app->createScope();
 
             $observed = null;
-            $run = $inner->go(static function (ExecutionScope $_s) use (&$observed): int {
+            $handle = $inner->go(static function (ExecutionScope $_s) use (&$observed): int {
                 $observed = 'ran';
                 return 7;
             }, name: 'demo-spawn');
 
-            // Yield once so spawned coroutine schedules.
             Coroutine::usleep(5_000);
 
-            self::assertSame('demo-spawn', $run->name);
+            self::assertSame('demo-spawn', $handle->name);
             self::assertSame('ran', $observed);
 
             $inner->dispose();
@@ -48,11 +47,10 @@ final class SpawnHelperTest extends PhalanxTestCase
             $app = self::buildApp($ledger);
             $inner = $app->createScope();
 
-            $run = $inner->go(static function (ExecutionScope $_s): never {
+            $handle = $inner->go(static function (ExecutionScope $_s): never {
                 throw new RuntimeException('background boom');
             });
 
-            // Allow spawned task to run + crash without taking down anything.
             Coroutine::usleep(5_000);
 
             $events = array_values(array_filter(
@@ -60,7 +58,7 @@ final class SpawnHelperTest extends PhalanxTestCase
                 static fn($e) => $e->name === 'PHX-SPAWN-001',
             ));
             self::assertCount(1, $events);
-            self::assertSame($run->id, $events[0]->attrs['run']);
+            self::assertSame($handle->id, $events[0]->attrs['run']);
             self::assertStringContainsString('background boom', $events[0]->attrs['message']);
 
             $inner->dispose();
@@ -75,11 +73,10 @@ final class SpawnHelperTest extends PhalanxTestCase
             $app = self::buildApp($ledger);
             $inner = $app->createScope();
 
-            $run = $inner->go(static function (ExecutionScope $s): void {
-                $s->delay(5.0); // long, will be cancelled
+            $handle = $inner->go(static function (ExecutionScope $s): void {
+                $s->delay(5.0);
             }, name: 'long-spawn');
 
-            // Yield so the coroutine starts and parks on the delay.
             Coroutine::usleep(5_000);
 
             $inner->dispose();
@@ -89,7 +86,7 @@ final class SpawnHelperTest extends PhalanxTestCase
                 static fn($e) => $e->name === 'PHX-SPAWN-002',
             ));
             self::assertCount(1, $events);
-            self::assertSame($run->id, $events[0]->attrs['run']);
+            self::assertSame($handle->id, $events[0]->attrs['run']);
 
             self::assertSame(0, $ledger->liveCount());
         });
@@ -122,7 +119,7 @@ final class SpawnHelperTest extends PhalanxTestCase
         });
     }
 
-    public function testCancelReturnedRunStopsSpawnedBody(): void
+    public function testCancelReturnedHandleStopsSpawnedBody(): void
     {
         $this->scope->run(static function (ExecutionScope $_scope): void {
             $ledger = new InProcessLedger();
@@ -130,18 +127,82 @@ final class SpawnHelperTest extends PhalanxTestCase
             $inner = $app->createScope();
 
             $reachedAfterDelay = false;
-            $run = $inner->go(static function (ExecutionScope $s) use (&$reachedAfterDelay): void {
+            $handle = $inner->go(static function (ExecutionScope $s) use (&$reachedAfterDelay): void {
                 $s->delay(5.0);
                 $reachedAfterDelay = true;
             });
 
             Coroutine::usleep(5_000);
-            $run->cancellation->cancel();
+            $handle->cancel();
 
-            // Wait briefly for spawned coroutine to observe cancel.
             Coroutine::usleep(20_000);
 
             self::assertFalse($reachedAfterDelay, 'spawn body must not pass cancelled delay');
+
+            $inner->dispose();
+            self::assertSame(0, $ledger->liveCount());
+        });
+    }
+
+    public function testReturnedHandleSnapshotsLiveRunById(): void
+    {
+        $this->scope->run(static function (ExecutionScope $_scope): void {
+            $ledger = new InProcessLedger();
+            $app = self::buildApp($ledger);
+            $inner = $app->createScope();
+            $started = new Channel(1);
+
+            $handle = $inner->go(static function (ExecutionScope $s) use ($started): void {
+                $started->push(true);
+                $s->delay(5.0);
+            }, name: 'snapshot-spawn');
+
+            self::assertTrue($started->pop(1.0));
+
+            $snapshot = $handle->snapshot();
+
+            self::assertNotNull($snapshot);
+            self::assertSame($handle->id, $snapshot->id);
+            self::assertSame('snapshot-spawn', $snapshot->name);
+
+            $handle->cancel();
+            Coroutine::usleep(20_000);
+
+            $inner->dispose();
+
+            self::assertNull($handle->snapshot());
+            self::assertSame(0, $ledger->liveCount());
+        });
+    }
+
+    public function testCompletedHandleCannotCancelReusedRunSlot(): void
+    {
+        $this->scope->run(static function (ExecutionScope $_scope): void {
+            $ledger = new InProcessLedger();
+            $app = self::buildApp($ledger);
+            $inner = $app->createScope();
+            $started = new Channel(1);
+
+            $completed = $inner->go(static fn(): string => 'done', name: 'completed-spawn');
+            Coroutine::usleep(5_000);
+
+            $parked = $inner->go(static function (ExecutionScope $s) use ($started): void {
+                $started->push(true);
+                $s->delay(5.0);
+            }, name: 'parked-spawn');
+
+            self::assertTrue($started->pop(1.0));
+
+            $completed->cancel();
+            Coroutine::usleep(20_000);
+
+            $snapshot = $parked->snapshot();
+            self::assertNotNull($snapshot);
+            self::assertSame($parked->id, $snapshot->id);
+            self::assertSame('parked-spawn', $snapshot->name);
+
+            $parked->cancel();
+            Coroutine::usleep(20_000);
 
             $inner->dispose();
             self::assertSame(0, $ledger->liveCount());

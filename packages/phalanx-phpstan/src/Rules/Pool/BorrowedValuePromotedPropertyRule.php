@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace Phalanx\PHPStan\Rules\Pool;
 
 use Phalanx\PHPStan\Support\PathPolicy;
-use PHPStan\Node\ClassPropertiesNode;
+use Phalanx\Pool\BorrowedValue;
 use PhpParser\Node;
 use PHPStan\Analyser\Scope;
+use PHPStan\Node\ClassPropertiesNode;
 use PHPStan\Rules\IdentifierRuleError;
 use PHPStan\Rules\Rule;
 use PHPStan\Rules\RuleErrorBuilder;
@@ -18,6 +19,9 @@ use PHPStan\Type\ObjectType;
  */
 final class BorrowedValuePromotedPropertyRule implements Rule
 {
+    public const string MESSAGE =
+        'Borrowed values must not be stored in promoted properties; copy to an owned value first.';
+
     private const string IDENTIFIER = 'phalanx.pool.borrowedPromotedProperty';
 
     public function __construct(private readonly PathPolicy $paths)
@@ -39,7 +43,7 @@ final class BorrowedValuePromotedPropertyRule implements Rule
         }
 
         $errors = [];
-        $borrowed = new ObjectType(\Phalanx\Pool\BorrowedValue::class);
+        $borrowed = new ObjectType(BorrowedValue::class);
 
         foreach ($node->getProperties() as $property) {
             $type = $property->getNativeType();
@@ -47,7 +51,7 @@ final class BorrowedValuePromotedPropertyRule implements Rule
                 continue;
             }
 
-            $errors[] = RuleErrorBuilder::message('Borrowed values must not be stored in promoted properties; copy to an owned value first.')
+            $errors[] = RuleErrorBuilder::message(self::MESSAGE)
                 ->identifier(self::IDENTIFIER)
                 ->line($property->getLine())
                 ->build();

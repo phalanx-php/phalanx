@@ -6,14 +6,32 @@ namespace Phalanx\Athena\Event;
 
 final class AgentEvent
 {
+    private(set) AgentEventKind $kind;
+
+    private(set) mixed $data;
+
+    private(set) float $elapsed;
+
+    private(set) TokenUsage $usageSoFar;
+
+    private(set) int $step;
+
+    private(set) ?string $agent;
+
     public function __construct(
-        private(set) AgentEventKind $kind,
-        private(set) mixed $data,
-        private(set) float $elapsed,
-        private(set) TokenUsage $usageSoFar,
-        private(set) int $step,
-        private(set) ?string $agent = null,
+        AgentEventKind $kind,
+        mixed $data,
+        float $elapsed,
+        TokenUsage $usageSoFar,
+        int $step,
+        ?string $agent = null,
     ) {
+        $this->kind = $kind;
+        $this->data = $data;
+        $this->elapsed = $elapsed;
+        $this->usageSoFar = clone $usageSoFar;
+        $this->step = $step;
+        $this->agent = $agent;
     }
 
     public static function llmStart(int $step, float $elapsed): self
@@ -80,9 +98,17 @@ final class AgentEvent
         );
     }
 
-    public function setAgent(string $name): void
+    public function __clone(): void
     {
-        $this->agent = $name;
+        $this->usageSoFar = clone $this->usageSoFar;
+    }
+
+    public function withAgent(string $name): self
+    {
+        $event = clone $this;
+        $event->agent = $name;
+
+        return $event;
     }
 
     public function toJson(): string

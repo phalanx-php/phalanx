@@ -11,8 +11,9 @@ use Phalanx\Styx\Channel;
 use PhpParser\Node;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\Array_;
-use PhpParser\Node\Expr\Assign;
 use PhpParser\Node\Expr\ArrowFunction;
+use PhpParser\Node\Expr\Assign;
+use PhpParser\Node\Expr\Closure as ClosureExpr;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\PropertyFetch;
 use PhpParser\Node\Expr\StaticPropertyFetch;
@@ -29,6 +30,19 @@ use PHPStan\Type\ObjectType;
  */
 final class BorrowedValueBoundaryRule implements Rule
 {
+    public const string CHANNEL_MESSAGE =
+        'Borrowed values must not be emitted through Styx channels; copy to an owned value before emit().';
+
+    public const string ARROW_RETURN_MESSAGE =
+        'Borrowed values must not be returned from arrow functions; '
+        . 'copy to an owned value before leaving the borrow scope.';
+
+    public const string RETURN_MESSAGE =
+        'Borrowed values must not be returned; copy to an owned value before leaving the borrow scope.';
+
+    public const string PROPERTY_MESSAGE =
+        'Borrowed values must not be stored on object or static properties; copy to an owned value first.';
+
     private const string IDENTIFIER = 'phalanx.pool.borrowedBoundary';
 
     public function __construct(private readonly PathPolicy $paths)
@@ -53,31 +67,30 @@ final class BorrowedValueBoundaryRule implements Rule
             return $this->checkChannelEmit($node, $scope);
         }
 
+        if ($this->paths->isInternal($scope->getFile())) {
+            return [];
+        }
+
         if ($node instanceof ArrowFunction && $this->containsBorrowedValue($node->expr, $scope)) {
             return [
-                $this->error(
-                    'Borrowed values must not be returned from arrow functions; copy to an owned value before leaving the borrow scope.',
-                    $node->getLine(),
-                ),
+                $this->error(self::ARROW_RETURN_MESSAGE, $node->getLine()),
             ];
         }
 
-        if ($node instanceof Return_ && $node->expr instanceof Expr && $this->containsBorrowedValue($node->expr, $scope)) {
+        if (
+            $node instanceof Return_
+            && $node->expr instanceof Expr
+            && $this->containsBorrowedValue($node->expr, $scope)
+        ) {
             return [
-                $this->error(
-                    'Borrowed values must not be returned; copy to an owned value before leaving the borrow scope.',
-                    $node->getLine(),
-                ),
+                $this->error(self::RETURN_MESSAGE, $node->getLine()),
             ];
         }
 
         if ($node instanceof Assign && $this->containsBorrowedValue($node->expr, $scope)) {
             if ($node->var instanceof PropertyFetch || $node->var instanceof StaticPropertyFetch) {
                 return [
-                    $this->error(
-                        'Borrowed values must not be stored on object or static properties; copy to an owned value first.',
-                        $node->getLine(),
-                    ),
+                    $this->error(self::PROPERTY_MESSAGE, $node->getLine()),
                 ];
             }
         }
@@ -102,10 +115,7 @@ final class BorrowedValueBoundaryRule implements Rule
         foreach ($call->args as $arg) {
             if ($arg instanceof Node\Arg && $this->containsBorrowedValue($arg->value, $scope)) {
                 return [
-                    $this->error(
-                        'Borrowed values must not be emitted through Styx channels; copy to an owned value before emit().',
-                        $arg->getLine(),
-                    ),
+                    $this->error(self::CHANNEL_MESSAGE, $arg->getLine()),
                 ];
             }
         }
@@ -120,6 +130,16 @@ final class BorrowedValueBoundaryRule implements Rule
         }
 
         if (!$expr instanceof Array_) {
+            if (!$expr instanceof ClosureExpr) {
+                return false;
+            }
+
+            foreach ($expr->uses as $use) {
+                if ($this->containsBorrowedValue($use->var, $scope)) {
+                    return true;
+                }
+            }
+
             return false;
         }
 

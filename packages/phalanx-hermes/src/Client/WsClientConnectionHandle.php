@@ -15,7 +15,7 @@ use Phalanx\Runtime\Memory\ManagedResourceRegistry;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\Subscription;
 use Phalanx\Styx\Channel;
-use Phalanx\Supervisor\TaskRun;
+use Phalanx\Supervisor\TaskHandle;
 use Phalanx\Supervisor\WaitReason;
 use Throwable;
 
@@ -43,9 +43,9 @@ final class WsClientConnectionHandle
 
     private readonly Channel $writes;
 
-    private readonly TaskRun $readerRun;
+    private readonly TaskHandle $readerRun;
 
-    private readonly TaskRun $writerRun;
+    private readonly TaskHandle $writerRun;
 
     private readonly Subscription $pingSubscription;
 
@@ -203,12 +203,8 @@ final class WsClientConnectionHandle
         $this->writes->complete();
         $this->inbound->complete();
 
-        if (!$this->readerRun->cancellation->isCancelled) {
-            $this->readerRun->cancellation->cancel();
-        }
-        if (!$this->writerRun->cancellation->isCancelled) {
-            $this->writerRun->cancellation->cancel();
-        }
+        $this->readerRun->cancel();
+        $this->writerRun->cancel();
 
         try {
             $this->client->close();

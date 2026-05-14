@@ -20,13 +20,13 @@ use PHPUnit\Framework\TestCase;
 final class InputHydratorTest extends TestCase
 {
     #[Test]
-    public function meta_returns_null_for_scope_only_handler(): void
+    public function metaReturnsNullForScopeOnlyHandler(): void
     {
         $this->assertNull(InputHydrator::meta(HealthCheck::class));
     }
 
     #[Test]
-    public function meta_detects_typed_input_parameter(): void
+    public function metaDetectsTypedInputParameter(): void
     {
         $meta = InputHydrator::meta(CreateTaskHandler::class);
 
@@ -36,7 +36,7 @@ final class InputHydratorTest extends TestCase
     }
 
     #[Test]
-    public function meta_detects_query_type_parameter(): void
+    public function metaDetectsQueryTypeParameter(): void
     {
         $meta = InputHydrator::meta(ListTasksHandler::class);
 
@@ -46,7 +46,7 @@ final class InputHydratorTest extends TestCase
     }
 
     #[Test]
-    public function input_source_from_post_is_body(): void
+    public function inputSourceFromPostIsBody(): void
     {
         $this->assertSame(InputSource::Body, InputSource::fromMethod('POST'));
         $this->assertSame(InputSource::Body, InputSource::fromMethod('PUT'));
@@ -54,7 +54,7 @@ final class InputHydratorTest extends TestCase
     }
 
     #[Test]
-    public function input_source_from_get_is_query(): void
+    public function inputSourceFromGetIsQuery(): void
     {
         $this->assertSame(InputSource::Query, InputSource::fromMethod('GET'));
         $this->assertSame(InputSource::Query, InputSource::fromMethod('DELETE'));
@@ -62,7 +62,7 @@ final class InputHydratorTest extends TestCase
     }
 
     #[Test]
-    public function hydrates_dto_with_all_fields(): void
+    public function hydratesDtoWithAllFields(): void
     {
         $data = ['title' => 'Test Task', 'description' => 'A description', 'priority' => 'high'];
 
@@ -76,7 +76,7 @@ final class InputHydratorTest extends TestCase
     }
 
     #[Test]
-    public function hydrates_dto_with_defaults(): void
+    public function hydratesDtoWithDefaults(): void
     {
         $data = ['title' => 'Minimal'];
 
@@ -90,7 +90,7 @@ final class InputHydratorTest extends TestCase
     }
 
     #[Test]
-    public function resolve_hydrates_dto_before_return(): void
+    public function resolveHydratesDtoBeforeReturn(): void
     {
         $data = ['title' => 'Test Task'];
         $scope = $this->mockScope('POST', $data);
@@ -102,7 +102,7 @@ final class InputHydratorTest extends TestCase
     }
 
     #[Test]
-    public function resolve_validates_before_return(): void
+    public function resolveValidatesBeforeReturn(): void
     {
         $data = ['title' => ''];
         $scope = $this->mockScope('POST', $data);
@@ -112,7 +112,7 @@ final class InputHydratorTest extends TestCase
     }
 
     #[Test]
-    public function throws_for_missing_required_field(): void
+    public function throwsForMissingRequiredField(): void
     {
         $data = ['description' => 'no title'];
         $scope = $this->mockScope('POST', $data);
@@ -128,7 +128,7 @@ final class InputHydratorTest extends TestCase
     }
 
     #[Test]
-    public function throws_for_invalid_enum_value(): void
+    public function throwsForInvalidEnumValue(): void
     {
         $data = ['title' => 'Test', 'priority' => 'urgent'];
         $scope = $this->mockScope('POST', $data);
@@ -145,7 +145,7 @@ final class InputHydratorTest extends TestCase
     }
 
     #[Test]
-    public function nullable_field_accepts_null(): void
+    public function nullableFieldAcceptsNull(): void
     {
         $data = ['title' => 'Test', 'description' => null];
         $scope = $this->mockScope('POST', $data);
@@ -156,7 +156,7 @@ final class InputHydratorTest extends TestCase
     }
 
     #[Test]
-    public function hydrates_query_dto_with_int_coercion(): void
+    public function hydratesQueryDtoWithIntCoercion(): void
     {
         $data = ['page' => '3', 'limit' => '50'];
         $scope = $this->mockScope('GET', $data);
@@ -171,7 +171,7 @@ final class InputHydratorTest extends TestCase
     }
 
     #[Test]
-    public function runs_validatable_after_hydration(): void
+    public function runsValidatableAfterHydration(): void
     {
         $data = ['title' => ''];
         $scope = $this->mockScope('POST', $data);
@@ -188,16 +188,16 @@ final class InputHydratorTest extends TestCase
 
     private function mockScope(string $method, array $data): \Phalanx\Stoa\RequestScope
     {
-        $inner = $this->createMock(\Phalanx\Scope\ExecutionScope::class);
-        $request = $this->createMock(\Psr\Http\Message\ServerRequestInterface::class);
+        $inner = $this->createStub(\Phalanx\Scope\ExecutionScope::class);
+        $request = $this->createStub(\Psr\Http\Message\ServerRequestInterface::class);
         $request->method('getMethod')->willReturn($method);
 
         if ($method === 'POST') {
-            $stream = $this->createMock(\Psr\Http\Message\StreamInterface::class);
+            $stream = $this->createStub(\Psr\Http\Message\StreamInterface::class);
             $stream->method('__toString')->willReturn(json_encode($data));
             $request->method('getBody')->willReturn($stream);
         } else {
-            $stream = $this->createMock(\Psr\Http\Message\StreamInterface::class);
+            $stream = $this->createStub(\Psr\Http\Message\StreamInterface::class);
             $stream->method('__toString')->willReturn('');
             $request->method('getBody')->willReturn($stream);
         }

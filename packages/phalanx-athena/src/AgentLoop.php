@@ -31,10 +31,7 @@ final class AgentLoop
     {
         return Emitter::produce(static function (Channel $channel) use ($turn, $scope, $agentName): void {
             $relay = static function (AgentEvent $e) use ($channel, $agentName): void {
-                if ($agentName !== null) {
-                    $e->setAgent($agentName);
-                }
-                $channel->emit($e);
+                $channel->emit($agentName === null ? $e : $e->withAgent($agentName));
             };
 
             $conversation = $turn->buildConversation();
