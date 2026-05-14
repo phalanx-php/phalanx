@@ -390,7 +390,6 @@ final class StoaRunner
             }
             $errorScope = $rootScope;
 
-            $rootScope->setResource('request', $request);
             $ownerScopeId = $rootScope->scopeId;
             $resource = StoaRequestResource::open($this->app->runtime(), $request, $token, $fd, $ownerScopeId);
             $this->registerRequest($resource);
@@ -468,7 +467,7 @@ final class StoaRunner
                 $rootScope->currentRun = $requestRun;
 
                 try {
-                    $result = $scope->execute($routes);
+                    $result = $routes->dispatch($request, $rootScope);
 
                     if ($result instanceof SseStream) {
                         if (!$result->isClosed()) {

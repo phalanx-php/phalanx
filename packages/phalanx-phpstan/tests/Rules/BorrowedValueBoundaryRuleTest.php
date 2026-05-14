@@ -65,6 +65,7 @@ final class BorrowedValueBoundaryRuleTest extends RuleTestCase
             [__DIR__ . '/Fixtures/borrowed-value-boundary-scope.php'],
             [
                 [BorrowedValueBoundaryRule::RETURN_MESSAGE, 21],
+                [BorrowedValueBoundaryRule::RETURN_MESSAGE, 40],
             ],
         );
     }

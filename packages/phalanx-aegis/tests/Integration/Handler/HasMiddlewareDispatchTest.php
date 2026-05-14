@@ -30,9 +30,8 @@ final class HasMiddlewareDispatchTest extends TestCase
         ])->wrap(PrefixingMiddleware::class);
 
         $scope = $this->app->createScope();
-        $scope = $scope->withAttribute('handler.key', 'h');
 
-        $result = $scope->execute($group);
+        $result = $group->dispatch('h', $scope);
 
         // Group middleware (PrefixingMiddleware) wraps the chain outermost,
         // instance middleware (InstanceMiddleware) wraps the handler innermost.
@@ -48,9 +47,8 @@ final class HasMiddlewareDispatchTest extends TestCase
         ]);
 
         $scope = $this->app->createScope();
-        $scope = $scope->withAttribute('handler.key', 'h');
 
-        $result = $scope->execute($group);
+        $result = $group->dispatch('h', $scope);
 
         $this->assertSame('instance(core)', $result);
     }

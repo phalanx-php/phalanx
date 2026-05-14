@@ -38,10 +38,7 @@ final class RouteDispatchTest extends TestCase
 
         $request = $this->createRequest('GET', '/users');
 
-        $scope = $this->app->createScope();
-        $scope->setResource('request', $request);
-
-        $result = $scope->execute($group);
+        $result = $this->dispatch($group, $request);
 
         $this->assertSame(['users' => []], $result);
     }
@@ -55,10 +52,7 @@ final class RouteDispatchTest extends TestCase
 
         $request = $this->createRequest('GET', '/users/42');
 
-        $scope = $this->app->createScope();
-        $scope->setResource('request', $request);
-
-        $result = $scope->execute($group);
+        $result = $this->dispatch($group, $request);
 
         $this->assertSame('42', $result['id']);
         $this->assertSame(['id' => '42'], $result['params']);
@@ -71,17 +65,11 @@ final class RouteDispatchTest extends TestCase
             'GET /users/{id:int}' => ShowRouteId::class,
         ]);
 
-        $scope = $this->app->createScope();
-        $scope->setResource('request', $this->createRequest('GET', '/users/42'));
-
-        self::assertSame('42', $scope->execute($group));
-
-        $scope = $this->app->createScope();
-        $scope->setResource('request', $this->createRequest('GET', '/users/int'));
+        self::assertSame('42', $this->dispatch($group, $this->createRequest('GET', '/users/42')));
 
         $this->expectException(RouteNotFoundException::class);
 
-        $scope->execute($group);
+        $this->dispatch($group, $this->createRequest('GET', '/users/int'));
     }
 
     #[Test]
@@ -91,17 +79,11 @@ final class RouteDispatchTest extends TestCase
             'GET /posts/{id:slug}' => ShowRouteId::class,
         ]);
 
-        $scope = $this->app->createScope();
-        $scope->setResource('request', $this->createRequest('GET', '/posts/hello-world'));
-
-        self::assertSame('hello-world', $scope->execute($group));
-
-        $scope = $this->app->createScope();
-        $scope->setResource('request', $this->createRequest('GET', '/posts/HelloWorld'));
+        self::assertSame('hello-world', $this->dispatch($group, $this->createRequest('GET', '/posts/hello-world')));
 
         $this->expectException(RouteNotFoundException::class);
 
-        $scope->execute($group);
+        $this->dispatch($group, $this->createRequest('GET', '/posts/HelloWorld'));
     }
 
     #[Test]
@@ -111,17 +93,11 @@ final class RouteDispatchTest extends TestCase
             'GET /codes/{id:code}' => ShowRouteId::class,
         ])->withPatterns(['code' => '[A-Z]+']);
 
-        $scope = $this->app->createScope();
-        $scope->setResource('request', $this->createRequest('GET', '/codes/ABC'));
-
-        self::assertSame('ABC', $scope->execute($group));
-
-        $scope = $this->app->createScope();
-        $scope->setResource('request', $this->createRequest('GET', '/codes/abc'));
+        self::assertSame('ABC', $this->dispatch($group, $this->createRequest('GET', '/codes/ABC')));
 
         $this->expectException(RouteNotFoundException::class);
 
-        $scope->execute($group);
+        $this->dispatch($group, $this->createRequest('GET', '/codes/abc'));
     }
 
     #[Test]
@@ -133,13 +109,10 @@ final class RouteDispatchTest extends TestCase
 
         $request = $this->createRequest('GET', '/posts');
 
-        $scope = $this->app->createScope();
-        $scope->setResource('request', $request);
-
         $this->expectException(\Phalanx\Stoa\RouteNotFoundException::class);
         $this->expectExceptionMessage('No route matches GET /posts');
 
-        $scope->execute($group);
+        $this->dispatch($group, $request);
     }
 
     #[Test]
@@ -149,11 +122,8 @@ final class RouteDispatchTest extends TestCase
             'GET,POST /resource' => StatusOk::class,
         ]);
 
-        $scope = $this->app->createScope();
-        $scope->setResource('request', $this->createRequest('DELETE', '/resource'));
-
         try {
-            $scope->execute($group);
+            $this->dispatch($group, $this->createRequest('DELETE', '/resource'));
             $this->fail('Expected MethodNotAllowedException');
         } catch (MethodNotAllowedException $e) {
             self::assertSame(['GET', 'POST'], $e->allowedMethods);
@@ -169,10 +139,7 @@ final class RouteDispatchTest extends TestCase
 
         $request = $this->createRequest('GET', '/test');
 
-        $scope = $this->app->createScope();
-        $scope->setResource('request', $request);
-
-        $result = $scope->execute($group);
+        $result = $this->dispatch($group, $request);
 
         $this->assertSame('before:ok:after', $result);
     }
@@ -186,10 +153,8 @@ final class RouteDispatchTest extends TestCase
 
         foreach (['GET', 'POST'] as $method) {
             $request = $this->createRequest($method, '/resource');
-            $scope = $this->app->createScope();
-            $scope->setResource('request', $request);
 
-            $result = $scope->execute($group);
+            $result = $this->dispatch($group, $request);
 
             $this->assertSame('ok', $result);
         }
@@ -209,10 +174,8 @@ final class RouteDispatchTest extends TestCase
         $this->assertContains('GET /api/v1/users/{id}', $mounted->keys());
 
         $request = $this->createRequest('GET', '/api/v1/users/42');
-        $scope = $this->app->createScope();
-        $scope->setResource('request', $request);
 
-        $result = $scope->execute($mounted);
+        $result = $this->dispatch($mounted, $request);
 
         $this->assertSame('42', $result);
     }
@@ -231,13 +194,8 @@ final class RouteDispatchTest extends TestCase
             ->mount('/api', $public)
             ->mount('/api', $admin);
 
-        $publicScope = $this->app->createScope();
-        $publicScope->setResource('request', $this->createRequest('GET', '/api/public'));
-        $adminScope = $this->app->createScope();
-        $adminScope->setResource('request', $this->createRequest('GET', '/api/admin'));
-
-        self::assertSame('ok', $publicScope->execute($mounted));
-        self::assertSame('before:ok:after', $adminScope->execute($mounted));
+        self::assertSame('ok', $this->dispatch($mounted, $this->createRequest('GET', '/api/public')));
+        self::assertSame('before:ok:after', $this->dispatch($mounted, $this->createRequest('GET', '/api/admin')));
     }
 
     #[Test]
@@ -249,17 +207,11 @@ final class RouteDispatchTest extends TestCase
 
         $mounted = RouteGroup::of([])->mount('/api/v1', $group);
 
-        $scope = $this->app->createScope();
-        $scope->setResource('request', $this->createRequest('GET', '/api/v1/users/42'));
-
-        self::assertSame('42', $scope->execute($mounted));
-
-        $scope = $this->app->createScope();
-        $scope->setResource('request', $this->createRequest('GET', '/api/v1/users/int'));
+        self::assertSame('42', $this->dispatch($mounted, $this->createRequest('GET', '/api/v1/users/42')));
 
         $this->expectException(RouteNotFoundException::class);
 
-        $scope->execute($mounted);
+        $this->dispatch($mounted, $this->createRequest('GET', '/api/v1/users/int'));
     }
 
     #[Test]
@@ -316,5 +268,10 @@ final class RouteDispatchTest extends TestCase
         $request->method('getQueryParams')->willReturn([]);
 
         return $request;
+    }
+
+    private function dispatch(RouteGroup $group, ServerRequestInterface $request): mixed
+    {
+        return $group->dispatch($request, $this->app->createScope());
     }
 }

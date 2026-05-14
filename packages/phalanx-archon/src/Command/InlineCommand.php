@@ -44,7 +44,13 @@ final class InlineCommand implements Executable, Traceable
 
     public function __invoke(ExecutionScope $scope): mixed
     {
-        $context = ExecutionContext::fromScope($scope, $this->name, $this->commandConfig);
+        throw new RuntimeException('InlineCommand requires CommandInvocation dispatch.');
+    }
+
+    /** @param list<string> $args */
+    public function dispatch(ExecutionScope $scope, array $args, string $resourceId): mixed
+    {
+        $context = ExecutionContext::fromInput($scope, $this->name, $this->commandConfig, $args, $resourceId);
 
         return ($this->handler)($context);
     }

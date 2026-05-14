@@ -8,7 +8,6 @@ use Phalanx\Handler\Handler;
 use Phalanx\Handler\HandlerMatcher;
 use Phalanx\Handler\MatchResult;
 use Phalanx\Scope\ExecutionScope;
-use Psr\Http\Message\ServerRequestInterface;
 
 final class RouteMatcher implements HandlerMatcher
 {
@@ -17,26 +16,18 @@ final class RouteMatcher implements HandlerMatcher
     /** @param array<string, Handler> $handlers */
     public function match(ExecutionScope $scope, array $handlers): ?MatchResult
     {
-        $request = $scope->resource('request');
-
-        if (!$request instanceof ServerRequestInterface) {
+        if (!$scope instanceof RequestScope) {
             return null;
         }
 
-        $method = $request->getMethod();
-        $path = $request->getUri()->getPath();
+        $method = $scope->request->getMethod();
+        $path = $scope->request->getUri()->getPath();
 
         $this->compiler ??= new FastRouteCompiler($handlers);
         $result = $this->compiler->dispatch($method, $path);
 
         $handler = $result['handler'];
-        $params = $result['params'];
-
-        $scope = $scope->withAttribute('route.params', $params);
-
-        foreach ($params as $name => $value) {
-            $scope = $scope->withAttribute("route.$name", $value);
-        }
+        $params = new RouteParams($result['params']);
 
         assert($handler->config instanceof RouteConfig);
         $resource = StoaRequestResource::fromScope($scope);
@@ -46,9 +37,9 @@ final class RouteMatcher implements HandlerMatcher
 
         $scope = new ExecutionContext(
             $scope,
-            $request,
-            new RouteParams($params),
-            new QueryParams($request->getQueryParams()),
+            $scope->request,
+            $params,
+            $scope->query,
             $handler->config,
         );
 

@@ -6,21 +6,15 @@ namespace Phalanx\Tests\Stoa\Fixtures\Routes;
 
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\Utils;
-use Phalanx\Scope\ExecutionScope;
+use Phalanx\Stoa\RequestScope;
 use Phalanx\Task\Executable;
 use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
 
 final class EchoJsonHandler implements Executable
 {
-    public function __invoke(ExecutionScope $scope): ResponseInterface
+    public function __invoke(RequestScope $scope): ResponseInterface
     {
-        $request = $scope->resource('request');
-
-        if (!$request instanceof ServerRequestInterface) {
-            return new Response(500, [], 'no request in scope');
-        }
-
+        $request = $scope->request;
         $body = (string) $request->getBody();
         $payload = $body === '' ? [] : json_decode($body, true);
 

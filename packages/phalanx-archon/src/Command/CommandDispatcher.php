@@ -72,14 +72,10 @@ final class CommandDispatcher
             argumentCount: count($args),
             defaultCommand: $defaultCommand,
         );
-        $scope = $rootScope
-            ->withAttribute('args', $args)
-            ->withAttribute('command', $command)
-            ->withAttribute(CommandLifecycle::RESOURCE_ATTRIBUTE, $lifecycle->resourceId);
 
         try {
-            $scope->throwIfCancelled();
-            $code = $this->execute($scope, $lifecycle, $command, $args);
+            $rootScope->throwIfCancelled();
+            $code = $this->execute($rootScope, $lifecycle, $command, $args);
             $lifecycle->close($code);
 
             return $code;
@@ -146,7 +142,11 @@ final class CommandDispatcher
 
         if (isset($this->inlineCommands[$command])) {
             $lifecycle->activate($this->inlineCommands[$command]->traceName);
-            $result = $scope->execute($this->inlineCommands[$command]);
+            $result = $scope->execute(CommandInvocation::inline(
+                $this->inlineCommands[$command],
+                $args,
+                $lifecycle->resourceId,
+            ));
 
             return is_int($result) ? $result : 0;
         }
@@ -157,7 +157,7 @@ final class CommandDispatcher
         }
 
         $lifecycle->activate("archon.command.$command");
-        $result = $scope->execute($this->commands);
+        $result = $scope->execute(CommandInvocation::group($this->commands, $command, $args, $lifecycle->resourceId));
 
         return is_int($result) ? $result : 0;
     }

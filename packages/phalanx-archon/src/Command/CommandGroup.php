@@ -9,6 +9,7 @@ use Phalanx\Handler\HandlerGroup;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
+use RuntimeException;
 
 /**
  * Typed collection of CLI commands.
@@ -53,7 +54,7 @@ final class CommandGroup implements Executable
             $handlers[$name] = new Handler($command, new CommandConfig());
         }
 
-        $this->inner = HandlerGroup::of($handlers)->withMatcher(new CommandMatcher());
+        $this->inner = HandlerGroup::of($handlers);
     }
 
     /**
@@ -67,29 +68,43 @@ final class CommandGroup implements Executable
     }
 
     /**
-     * Wrap a raw HandlerGroup in a CommandGroup, applying the command matcher.
-     * Used by CommandLoader when a command file returns a HandlerGroup rather
-     * than a CommandGroup directly.
+     * Wrap a raw HandlerGroup in a CommandGroup. Used by CommandLoader when a
+     * command file returns a HandlerGroup rather than a CommandGroup directly.
      *
      * @internal
      */
     public static function fromHandlerGroup(HandlerGroup $inner, string $description = ''): self
     {
         $instance = new self([], $description);
-        $instance->inner = $inner->withMatcher(new CommandMatcher());
+        $instance->inner = $inner;
 
         return $instance;
     }
 
     public function __invoke(ExecutionScope $scope): mixed
     {
-        $name = $scope->attribute('command');
+        throw new RuntimeException('CommandGroup requires CommandInvocation dispatch.');
+    }
 
-        if (is_string($name) && isset($this->groups[$name])) {
-            return $this->dispatchSubcommand($scope, $name, $this->groups[$name]);
+    /** @param list<string> $args */
+    public function dispatch(ExecutionScope $scope, string $name, array $args, string $resourceId): mixed
+    {
+        if (isset($this->groups[$name])) {
+            return $this->dispatchSubcommand($scope, $name, $this->groups[$name], $args, $resourceId);
         }
 
-        return ($this->inner)($scope);
+        $handler = $this->inner->get($name);
+
+        if ($handler === null) {
+            throw UnknownCommand::named($name);
+        }
+
+        assert($handler->config instanceof CommandConfig);
+
+        return $this->inner->dispatch(
+            $name,
+            ExecutionContext::fromInput($scope, $name, $handler->config, $args, $resourceId),
+        );
     }
 
     public function merge(self $other): self
@@ -139,20 +154,21 @@ final class CommandGroup implements Executable
         return $this->inner->filterByConfig(CommandConfig::class);
     }
 
-    private function dispatchSubcommand(ExecutionScope $scope, string $name, self $group): mixed
+    /** @param list<string> $args */
+    private function dispatchSubcommand(
+        ExecutionScope $scope,
+        string $name,
+        self $group,
+        array $args,
+        string $resourceId,
+    ): mixed
     {
-        /** @var list<string> $args */
-        $args       = $scope->attribute('args', []);
         $subcommand = $args[0] ?? null;
 
         if ($subcommand === null || $subcommand === '--help' || $subcommand === 'help') {
             return HelpGenerator::forGroup($name, $group);
         }
 
-        $childScope = $scope
-            ->withAttribute('command', $subcommand)
-            ->withAttribute('args', array_slice($args, 1));
-
-        return $group($childScope);
+        return $group->dispatch($scope, $subcommand, array_slice($args, 1), $resourceId);
     }
 }

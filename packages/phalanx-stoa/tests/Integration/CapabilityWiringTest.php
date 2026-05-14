@@ -33,11 +33,9 @@ final class CapabilityWiringTest extends TestCase
         ]);
 
         $request = $this->createRequest('GET', '/v', headers: []);
-        $scope = $this->app->createScope();
-        $scope->setResource('request', $request);
 
         try {
-            $scope->execute($group);
+            $this->dispatch($group, $request);
             $this->fail('Expected ValidationException');
         } catch (ValidationException $e) {
             $this->assertArrayHasKey('X-Api-Version', $e->errors);
@@ -53,11 +51,9 @@ final class CapabilityWiringTest extends TestCase
         ]);
 
         $request = $this->createRequest('GET', '/v', headers: ['X-Api-Version' => 'beta']);
-        $scope = $this->app->createScope();
-        $scope->setResource('request', $request);
 
         try {
-            $scope->execute($group);
+            $this->dispatch($group, $request);
             $this->fail('Expected ValidationException');
         } catch (ValidationException $e) {
             $this->assertArrayHasKey('X-Api-Version', $e->errors);
@@ -73,10 +69,8 @@ final class CapabilityWiringTest extends TestCase
         ]);
 
         $request = $this->createRequest('GET', '/v', headers: ['X-Api-Version' => 'v2']);
-        $scope = $this->app->createScope();
-        $scope->setResource('request', $request);
 
-        $result = $scope->execute($group);
+        $result = $this->dispatch($group, $request);
 
         $this->assertSame(['ok' => true], $result);
     }
@@ -89,11 +83,9 @@ final class CapabilityWiringTest extends TestCase
         ]);
 
         $request = $this->createRequest('GET', '/v');
-        $scope = $this->app->createScope();
-        $scope->setResource('request', $request);
 
         try {
-            $scope->execute($group);
+            $this->dispatch($group, $request);
             $this->fail('Expected ValidationException from validator');
         } catch (ValidationException $e) {
             $this->assertArrayHasKey('test_field', $e->errors);
@@ -112,11 +104,9 @@ final class CapabilityWiringTest extends TestCase
 
         // Supply query param so InputHydrator hydrates a non-default SimpleInputDto.
         $request = $this->createRequest('GET', '/v', queryParams: ['name' => 'alice']);
-        $scope = $this->app->createScope();
-        $scope->setResource('request', $request);
 
         try {
-            $scope->execute($group);
+            $this->dispatch($group, $request);
             $this->fail('Expected ValidationException from validator');
         } catch (ValidationException $e) {
             $this->assertArrayHasKey('captured', $e->errors);
@@ -160,5 +150,10 @@ final class CapabilityWiringTest extends TestCase
         );
 
         return $request;
+    }
+
+    private function dispatch(RouteGroup $group, ServerRequestInterface $request): mixed
+    {
+        return $group->dispatch($request, $this->app->createScope());
     }
 }

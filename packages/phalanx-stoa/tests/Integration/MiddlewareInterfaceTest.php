@@ -31,10 +31,8 @@ final class MiddlewareInterfaceTest extends TestCase
         ])->wrap(PrefixingMiddlewareV2::class);
 
         $request = $this->createRequest('GET', '/test');
-        $scope = $this->app->createScope();
-        $scope->setResource('request', $request);
 
-        $result = $scope->execute($group);
+        $result = $this->dispatch($group, $request);
 
         // Same order as PrefixingMiddleware: outermost runs first and last
         $this->assertSame('before:ok:after', $result);
@@ -48,10 +46,8 @@ final class MiddlewareInterfaceTest extends TestCase
         ])->wrap(AbortingMiddlewareV2::class);
 
         $request = $this->createRequest('GET', '/test');
-        $scope = $this->app->createScope();
-        $scope->setResource('request', $request);
 
-        $result = $scope->execute($group);
+        $result = $this->dispatch($group, $request);
 
         $this->assertSame('aborted', $result);
     }
@@ -77,6 +73,11 @@ final class MiddlewareInterfaceTest extends TestCase
         $request->method('getQueryParams')->willReturn([]);
 
         return $request;
+    }
+
+    private function dispatch(RouteGroup $group, ServerRequestInterface $request): mixed
+    {
+        return $group->dispatch($request, $this->app->createScope());
     }
 }
 

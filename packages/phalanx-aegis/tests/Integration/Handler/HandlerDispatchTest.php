@@ -29,9 +29,8 @@ final class HandlerDispatchTest extends TestCase
         ]);
 
         $scope = $this->app->createScope();
-        $scope = $scope->withAttribute('handler.key', 'task-b');
 
-        $result = $scope->execute($group);
+        $result = $group->dispatch('task-b', $scope);
 
         $this->assertSame('b', $result);
     }
@@ -44,12 +43,11 @@ final class HandlerDispatchTest extends TestCase
         ]);
 
         $scope = $this->app->createScope();
-        $scope = $scope->withAttribute('handler.key', 'nonexistent');
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Handler not found: nonexistent');
 
-        $scope->execute($group);
+        $group->dispatch('nonexistent', $scope);
     }
 
     #[Test]
@@ -108,9 +106,8 @@ final class HandlerDispatchTest extends TestCase
         ])->wrap(PrefixingMiddleware::class);
 
         $scope = $this->app->createScope();
-        $scope = $scope->withAttribute('handler.key', 'task-a');
 
-        $result = $scope->execute($group);
+        $result = $group->dispatch('task-a', $scope);
 
         $this->assertSame('before:a:after', $result);
     }

@@ -25,4 +25,18 @@ final class BorrowedValueBoundaryScopeFixture
     {
         return $fn;
     }
+
+    public function invalidClosureVariableMaybeReassigned(bool $replace, ScopedBorrowedAgentEvent $event): \Closure
+    {
+        $fn = static function () use ($event): void {
+            $event::class;
+        };
+
+        if ($replace) {
+            $fn = static function (): void {
+            };
+        }
+
+        return $fn;
+    }
 }

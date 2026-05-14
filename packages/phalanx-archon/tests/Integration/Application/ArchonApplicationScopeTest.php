@@ -66,9 +66,10 @@ final class ArchonProbeCommand implements Scopeable
         self::$receivedCommandScope = true;
         self::$commandName = $scope->commandName;
         self::$commandResourceId = $scope->commandResourceId;
+        $commandName = $scope->commandName;
         self::$taskResult = $scope->execute(Task::named(
             'archon.proof',
-            static fn(ExecutionScope $taskScope): string => 'task:' . $taskScope->attribute('command'),
+            static fn(): string => "task:$commandName",
         ));
 
         return 0;

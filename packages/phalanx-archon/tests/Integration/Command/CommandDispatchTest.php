@@ -17,17 +17,14 @@ final class CommandDispatchTest extends TestCase
     private Application $app;
 
     #[Test]
-    public function dispatches_command_by_command_attribute(): void
+    public function dispatches_command_by_direct_key(): void
     {
         $group = CommandGroup::of([
             'migrate' => NoopCommand::class,
             'seed' => FailingCommand::class,
         ]);
 
-        $scope = $this->app->createScope();
-        $scope = $scope->withAttribute('command', 'migrate');
-
-        $result = $scope->execute($group);
+        $result = $group->dispatch($this->app->createScope(), 'migrate', [], 'archon-command-test');
 
         $this->assertSame(0, $result);
     }
@@ -39,13 +36,10 @@ final class CommandDispatchTest extends TestCase
             'migrate' => NoopCommand::class,
         ]);
 
-        $scope = $this->app->createScope();
-        $scope = $scope->withAttribute('command', 'unknown');
-
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Command not found: unknown');
 
-        $scope->execute($group);
+        $group->dispatch($this->app->createScope(), 'unknown', [], 'archon-command-test');
     }
 
     #[Test]

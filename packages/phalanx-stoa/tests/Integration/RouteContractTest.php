@@ -38,10 +38,7 @@ final class RouteContractTest extends TestCase
             'priority' => 'high',
         ]);
 
-        $scope = $this->app->createScope();
-        $scope->setResource('request', $request);
-
-        $result = $scope->execute($group);
+        $result = $this->dispatch($group, $request);
 
         $this->assertInstanceOf(Created::class, $result);
         $this->assertInstanceOf(TaskResource::class, $result->data);
@@ -63,10 +60,7 @@ final class RouteContractTest extends TestCase
             'status' => 'done',
         ]);
 
-        $scope = $this->app->createScope();
-        $scope->setResource('request', $request);
-
-        $result = $scope->execute($group);
+        $result = $this->dispatch($group, $request);
 
         $this->assertSame(2, $result['page']);
         $this->assertSame(10, $result['limit']);
@@ -83,10 +77,7 @@ final class RouteContractTest extends TestCase
 
         $request = $this->createRequest('GET', '/health');
 
-        $scope = $this->app->createScope();
-        $scope->setResource('request', $request);
-
-        $result = $scope->execute($group);
+        $result = $this->dispatch($group, $request);
 
         $this->assertSame(['status' => 'ok'], $result);
     }
@@ -104,10 +95,7 @@ final class RouteContractTest extends TestCase
 
         $request = $this->createRequest('GET', '/ping');
 
-        $scope = $this->app->createScope();
-        $scope->setResource('request', $request);
-
-        $result = $scope->execute($group);
+        $result = $this->dispatch($group, $request);
 
         $this->assertSame(['status' => 'ok'], $result);
     }
@@ -123,11 +111,8 @@ final class RouteContractTest extends TestCase
             'description' => 'no title provided',
         ]);
 
-        $scope = $this->app->createScope();
-        $scope->setResource('request', $request);
-
         try {
-            $scope->execute($group);
+            $this->dispatch($group, $request);
             $this->fail('Expected ValidationException');
         } catch (ValidationException $e) {
             $this->assertArrayHasKey('title', $e->errors);
@@ -146,11 +131,8 @@ final class RouteContractTest extends TestCase
             'priority' => 'urgent',
         ]);
 
-        $scope = $this->app->createScope();
-        $scope->setResource('request', $request);
-
         try {
-            $scope->execute($group);
+            $this->dispatch($group, $request);
             $this->fail('Expected ValidationException');
         } catch (ValidationException $e) {
             $this->assertArrayHasKey('priority', $e->errors);
@@ -168,11 +150,8 @@ final class RouteContractTest extends TestCase
             'title' => '',
         ]);
 
-        $scope = $this->app->createScope();
-        $scope->setResource('request', $request);
-
         try {
-            $scope->execute($group);
+            $this->dispatch($group, $request);
             $this->fail('Expected ValidationException');
         } catch (ValidationException $e) {
             $this->assertArrayHasKey('title', $e->errors);
@@ -188,10 +167,7 @@ final class RouteContractTest extends TestCase
 
         $request = $this->createRequest('DELETE', '/tasks/42');
 
-        $scope = $this->app->createScope();
-        $scope->setResource('request', $request);
-
-        $result = $scope->execute($group);
+        $result = $this->dispatch($group, $request);
 
         $this->assertInstanceOf(NoContent::class, $result);
     }
@@ -234,5 +210,10 @@ final class RouteContractTest extends TestCase
         );
 
         return $request;
+    }
+
+    private function dispatch(RouteGroup $group, ServerRequestInterface $request): mixed
+    {
+        return $group->dispatch($request, $this->app->createScope());
     }
 }

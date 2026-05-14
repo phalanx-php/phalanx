@@ -14,11 +14,10 @@ use RuntimeException;
 /**
  * Self-dispatching handler collection.
  *
- * HandlerGroup implements Executable, reading scope attributes to determine
- * which handler to invoke:
- *
- * - 'handler.key' (string) -> direct lookup
- * - Registered matchers -> protocol-specific matching (routes, commands, etc.)
+ * HandlerGroup implements Executable, using registered matchers for
+ * protocol-specific dispatch (routes, commands, etc.). Direct key dispatch
+ * goes through dispatch() so framework metadata does not travel through
+ * generic scope attributes.
  *
  * Runners become thin shells that set attributes and execute the group.
  *
@@ -75,10 +74,6 @@ final class HandlerGroup implements Executable
 
     public function __invoke(ExecutionScope $scope): mixed
     {
-        if ($scope->attribute('handler.key') !== null) {
-            return $this->dispatchByKey($scope);
-        }
-
         foreach ($this->matchers as $matcher) {
             $result = $matcher->match($scope, $this->handlers);
 
@@ -89,8 +84,19 @@ final class HandlerGroup implements Executable
 
         throw new RuntimeException(
             'HandlerGroup: no matcher could handle this scope. '
-            . 'Register matchers via withMatcher() or set handler.key attribute.'
+            . 'Register matchers via withMatcher() or use dispatch() for direct key dispatch.'
         );
+    }
+
+    public function dispatch(string $key, ExecutionScope $scope): mixed
+    {
+        $handler = $this->handlers[$key] ?? null;
+
+        if ($handler === null) {
+            throw new RuntimeException("Handler not found: $key");
+        }
+
+        return $this->executeHandler($handler, $scope);
     }
 
     /** @internal */
@@ -209,18 +215,6 @@ final class HandlerGroup implements Executable
         return array_values(array_reverse(
             array_unique(array_reverse($middleware))
         ));
-    }
-
-    private function dispatchByKey(ExecutionScope $scope): mixed
-    {
-        $key = $scope->attribute('handler.key');
-        $handler = $this->handlers[$key] ?? null;
-
-        if ($handler === null) {
-            throw new RuntimeException("Handler not found: $key");
-        }
-
-        return $this->executeHandler($handler, $scope);
     }
 
     private function executeHandler(Handler $handler, ExecutionScope $scope): mixed

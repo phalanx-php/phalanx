@@ -48,10 +48,15 @@ class ExecutionContext implements CommandScope
     ) {
     }
 
-    public static function fromScope(ExecutionScope $scope, string $name, CommandConfig $config): self
+    /** @param list<string> $rawArgs */
+    public static function fromInput(
+        ExecutionScope $scope,
+        string $name,
+        CommandConfig $config,
+        array $rawArgs,
+        string $resourceId,
+    ): self
     {
-        /** @var list<string> $rawArgs */
-        $rawArgs = $scope->attribute('args', []);
         $input = ArgvParser::parse($rawArgs, $config);
 
         return new self(
@@ -60,7 +65,7 @@ class ExecutionContext implements CommandScope
             $input->args,
             $input->options,
             $config,
-            (string) $scope->attribute(CommandLifecycle::RESOURCE_ATTRIBUTE, ''),
+            $resourceId,
         );
     }
 

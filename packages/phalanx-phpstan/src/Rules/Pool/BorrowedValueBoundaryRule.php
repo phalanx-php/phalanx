@@ -20,6 +20,7 @@ use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\PropertyFetch;
 use PhpParser\Node\Expr\StaticPropertyFetch;
 use PhpParser\Node\Expr\Variable;
+use PhpParser\Node\Stmt\If_;
 use PhpParser\Node\Stmt\Return_;
 use PhpParser\Node\Expr\Yield_;
 use PhpParser\Node\Expr\YieldFrom;
@@ -53,6 +54,9 @@ final class BorrowedValueBoundaryRule implements Rule
     /** @var array<string, array<string, true>> */
     private array $borrowedClosureVariables = [];
 
+    /** @var array<string, array<int, true>> */
+    private array $conditionalClosureAssignmentLines = [];
+
     public function __construct(private readonly PathPolicy $paths)
     {
     }
@@ -77,6 +81,10 @@ final class BorrowedValueBoundaryRule implements Rule
 
         if ($this->paths->isInternal($scope->getFile())) {
             return [];
+        }
+
+        if ($node instanceof If_) {
+            $this->recordConditionalClosureAssignments($node, $scope);
         }
 
         if (
@@ -185,6 +193,10 @@ final class BorrowedValueBoundaryRule implements Rule
             return;
         }
 
+        if (isset($this->conditionalClosureAssignmentLines[$this->scopeKey($scope)][$assign->getLine()])) {
+            return;
+        }
+
         $name = $assign->var->name;
         if (
             ($assign->expr instanceof ClosureExpr || $assign->expr instanceof ArrowFunction)
@@ -195,6 +207,121 @@ final class BorrowedValueBoundaryRule implements Rule
         }
 
         unset($this->borrowedClosureVariables[$this->scopeKey($scope)][$name]);
+    }
+
+    private function recordConditionalClosureAssignments(If_ $if, Scope $scope): void
+    {
+        $scopeKey = $this->scopeKey($scope);
+        $branches = [$if->stmts];
+
+        foreach ($if->elseifs as $elseif) {
+            $branches[] = $elseif->stmts;
+        }
+
+        $branches[] = $if->else === null ? [] : $if->else->stmts;
+
+        $branchAssignments = [];
+        $assignedNames = [];
+
+        foreach ($branches as $statements) {
+            $assignments = $this->closureAssignmentsIn(array_values($statements), $scope);
+            $branchAssignments[] = $assignments;
+            $assignedNames = [...$assignedNames, ...array_keys($assignments)];
+
+            foreach ($assignments as $assignment) {
+                $this->conditionalClosureAssignmentLines[$scopeKey][$assignment['line']] = true;
+            }
+        }
+
+        foreach (array_unique($assignedNames) as $name) {
+            $branchCount = count($branchAssignments);
+            $safeAssignments = 0;
+            $hasBorrowedAssignment = false;
+
+            foreach ($branchAssignments as $assignments) {
+                if (!array_key_exists($name, $assignments)) {
+                    continue;
+                }
+
+                if ($assignments[$name]['borrowed']) {
+                    $hasBorrowedAssignment = true;
+                    continue;
+                }
+
+                ++$safeAssignments;
+            }
+
+            if ($hasBorrowedAssignment) {
+                $this->borrowedClosureVariables[$scopeKey][$name] = true;
+                continue;
+            }
+
+            if (!isset($this->borrowedClosureVariables[$scopeKey][$name])) {
+                continue;
+            }
+
+            if ($safeAssignments === $branchCount) {
+                unset($this->borrowedClosureVariables[$scopeKey][$name]);
+            }
+        }
+    }
+
+    /**
+     * @param list<Node\Stmt> $statements
+     * @return array<string, array{line: int, borrowed: bool}>
+     */
+    private function closureAssignmentsIn(array $statements, Scope $scope): array
+    {
+        $assignments = [];
+
+        foreach ($statements as $statement) {
+            foreach ($this->assignmentsInNode($statement, $scope) as $name => $assignment) {
+                $assignments[$name] = $assignment;
+            }
+        }
+
+        return $assignments;
+    }
+
+    /** @return array<string, array{line: int, borrowed: bool}> */
+    private function assignmentsInNode(Node $node, Scope $scope): array
+    {
+        $assignments = [];
+
+        if ($node instanceof Assign && $node->var instanceof Variable && is_string($node->var->name)) {
+            $assignments[$node->var->name] = [
+                'line' => $node->getLine(),
+                'borrowed' => ($node->expr instanceof ClosureExpr || $node->expr instanceof ArrowFunction)
+                    && $this->closureCapturesBorrowed($node->expr, $scope),
+            ];
+        }
+
+        foreach ($node->getSubNodeNames() as $name) {
+            $value = $node->$name;
+
+            if ($value instanceof Node) {
+                foreach ($this->assignmentsInNode($value, $scope) as $assignmentName => $assignment) {
+                    $assignments[$assignmentName] = $assignment;
+                }
+                continue;
+            }
+
+            if (!is_array($value)) {
+                continue;
+            }
+
+            foreach ($value as $item) {
+                if (!$item instanceof Node) {
+                    continue;
+                }
+
+                foreach ($this->assignmentsInNode($item, $scope) as $assignmentName => $assignment) {
+                    $assignments[$assignmentName] = $assignment;
+                }
+            }
+        }
+
+        return $assignments;
     }
 
     private function isBorrowedClosureVariable(Variable $variable, Scope $scope): bool

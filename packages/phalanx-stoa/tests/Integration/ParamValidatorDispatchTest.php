@@ -33,10 +33,8 @@ final class ParamValidatorDispatchTest extends TestCase
         ])->withPatterns(['id' => new IntInRange(1, 999)]);
 
         $request = $this->createRequest('GET', '/items/42');
-        $scope = $this->app->createScope();
-        $scope->setResource('request', $request);
 
-        $result = $scope->execute($group);
+        $result = $this->dispatch($group, $request);
 
         $this->assertSame('42', $result);
     }
@@ -49,12 +47,10 @@ final class ParamValidatorDispatchTest extends TestCase
         ])->withPatterns(['id' => new IntInRange(1, 999)]);
 
         $request = $this->createRequest('GET', '/items/abc');
-        $scope = $this->app->createScope();
-        $scope->setResource('request', $request);
 
         $this->expectException(RouteNotFoundException::class);
 
-        $scope->execute($group);
+        $this->dispatch($group, $request);
     }
 
     #[Test]
@@ -67,11 +63,9 @@ final class ParamValidatorDispatchTest extends TestCase
         // FastRoute's \d+ pattern will still match 1000, but the imperative
         // range check will reject it.
         $request = $this->createRequest('GET', '/items/1000');
-        $scope = $this->app->createScope();
-        $scope->setResource('request', $request);
 
         try {
-            $scope->execute($group);
+            $this->dispatch($group, $request);
             $this->fail('Expected ValidationException');
         } catch (ValidationException $e) {
             $this->assertArrayHasKey('id', $e->errors);
@@ -87,11 +81,9 @@ final class ParamValidatorDispatchTest extends TestCase
         ])->withPatterns(['id' => new OneOf('foo', 'bar', 'baz')]);
 
         $request = $this->createRequest('GET', '/items/qux');
-        $scope = $this->app->createScope();
-        $scope->setResource('request', $request);
 
         try {
-            $scope->execute($group);
+            $this->dispatch($group, $request);
             $this->fail('Expected ValidationException');
         } catch (ValidationException $e) {
             $this->assertArrayHasKey('id', $e->errors);
@@ -107,10 +99,8 @@ final class ParamValidatorDispatchTest extends TestCase
         ])->withPatterns(['id' => new OneOf('foo', 'bar', 'baz')]);
 
         $request = $this->createRequest('GET', '/items/bar');
-        $scope = $this->app->createScope();
-        $scope->setResource('request', $request);
 
-        $result = $scope->execute($group);
+        $result = $this->dispatch($group, $request);
 
         $this->assertSame('bar', $result);
     }
@@ -136,5 +126,10 @@ final class ParamValidatorDispatchTest extends TestCase
         $request->method('getQueryParams')->willReturn([]);
 
         return $request;
+    }
+
+    private function dispatch(RouteGroup $group, ServerRequestInterface $request): mixed
+    {
+        return $group->dispatch($request, $this->app->createScope());
     }
 }

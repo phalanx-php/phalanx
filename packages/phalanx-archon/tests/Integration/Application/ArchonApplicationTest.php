@@ -97,13 +97,14 @@ final class ArchonApplicationTest extends PhalanxTestCase
         $builder = Archon::command(
             'deploy',
             static function (CommandScope $scope) use (&$received): string {
+                $commandName = $scope->commandName;
                 $received = [
                     $scope->commandName,
                     $scope->args->get('image'),
                     $scope->options->flag('detach'),
                     $scope->execute(Task::named(
                         'archon.inline.probe',
-                        static fn(ExecutionScope $taskScope): string => 'task:' . $taskScope->attribute('command'),
+                        static fn(): string => "task:$commandName",
                     )),
                 ];
 
@@ -406,9 +407,10 @@ final class ArchonApplicationProbeCommand implements Scopeable
     {
         self::$commandName = $scope->commandName;
         self::$commandResourceId = $scope->commandResourceId;
+        $commandName = $scope->commandName;
         self::$taskResult = $scope->execute(Task::named(
             'archon.application.proof',
-            static fn(ExecutionScope $taskScope): string => 'task:' . $taskScope->attribute('command'),
+            static fn(): string => "task:$commandName",
         ));
 
         return 0;

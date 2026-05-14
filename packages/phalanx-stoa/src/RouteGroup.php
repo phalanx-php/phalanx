@@ -17,6 +17,7 @@ use Phalanx\Stoa\Contract\RouteParamValidator;
 use Phalanx\Stoa\Contract\RouteValidator;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
+use Psr\Http\Message\ServerRequestInterface;
 
 /**
  * Typed collection of HTTP routes.
@@ -105,6 +106,17 @@ final class RouteGroup implements Executable
     public function __invoke(ExecutionScope $scope): mixed
     {
         return ($this->inner)($scope);
+    }
+
+    public function dispatch(ServerRequestInterface $request, ExecutionScope $scope): mixed
+    {
+        return ($this->inner)(new ExecutionContext(
+            $scope,
+            $request,
+            new RouteParams(),
+            new QueryParams($request->getQueryParams()),
+            RouteConfig::compile('/'),
+        ));
     }
 
     /** @param array<string, string|RouteParamValidator> $patterns */

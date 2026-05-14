@@ -18,8 +18,6 @@ use Throwable;
 /** @internal */
 final class CommandLifecycle
 {
-    public const string RESOURCE_ATTRIBUTE = 'archon.command.resource_id';
-
     public string $resourceId {
         get => $this->handle->id;
     }
