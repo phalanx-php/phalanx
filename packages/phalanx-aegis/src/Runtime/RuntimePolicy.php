@@ -49,7 +49,10 @@ final readonly class RuntimePolicy
         return new self(
             name: self::nameFor($capabilities),
             requiredFlags: $required,
-            sensitiveFlags: Runtime::HOOK_SLEEP | Runtime::HOOK_STDIO | Runtime::HOOK_BLOCKING_FUNCTION,
+            sensitiveFlags: Runtime::HOOK_SLEEP
+                | Runtime::HOOK_STDIO
+                | Runtime::HOOK_BLOCKING_FUNCTION
+                | Runtime::HOOK_PROC,
         );
     }
 
@@ -125,7 +128,7 @@ final readonly class RuntimePolicy
             RuntimeCapability::Files => Runtime::HOOK_FILE,
             RuntimeCapability::Sockets => Runtime::HOOK_SOCKETS,
             RuntimeCapability::Datagrams => Runtime::HOOK_UDP | Runtime::HOOK_UDG,
-            RuntimeCapability::Processes => Runtime::HOOK_PROC,
+            RuntimeCapability::Processes => 0,
             RuntimeCapability::InteractiveStdio => Runtime::HOOK_STDIO,
             RuntimeCapability::Sleep => Runtime::HOOK_SLEEP,
             RuntimeCapability::BlockingFunctions => Runtime::HOOK_BLOCKING_FUNCTION,

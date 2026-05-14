@@ -4,12 +4,18 @@ declare(strict_types=1);
 
 namespace Phalanx\Grammata\Tests\Unit;
 
+use Phalanx\Application;
+use Phalanx\Cancellation\Cancelled;
+use Phalanx\Grammata\Exception\FilesystemException;
 use Phalanx\Grammata\FilePool;
+use Phalanx\Grammata\Grammata;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\Suspendable;
 use Phalanx\Styx\Channel;
 use Phalanx\Testing\PhalanxTestCase;
+use Phalanx\Task\Task;
 use PHPUnit\Framework\Attributes\Test;
+use RuntimeException;
 
 final class FilePoolTest extends PhalanxTestCase
 {
@@ -38,6 +44,26 @@ final class FilePoolTest extends PhalanxTestCase
 
         $pool->release();
         $this->assertSame(1, $pool->activeCount);
+    }
+
+    #[Test]
+    public function releaseWithoutAcquireFailsClearly(): void
+    {
+        $pool = new FilePool(maxOpen: 1);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('no active file slot');
+
+        $pool->release();
+    }
+
+    #[Test]
+    public function maxOpenMustBePositive(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('maxOpen >= 1');
+
+        new FilePool(maxOpen: 0);
     }
 
     #[Test]
@@ -91,5 +117,97 @@ final class FilePoolTest extends PhalanxTestCase
         $pool = new FilePool(maxOpen: 1);
 
         $this->assertSame(0, $pool->waitingCount);
+    }
+
+    #[Test]
+    public function cancelledWaitingAcquireIsRemoved(): void
+    {
+        $this->scope->run(static function (ExecutionScope $scope): void {
+            $pool = new FilePool(maxOpen: 1);
+            $pool->acquire($scope);
+
+            try {
+                $thrown = null;
+                try {
+                    $scope->timeout(
+                        0.01,
+                        Task::of(static fn(ExecutionScope $child): mixed => $pool->acquire($child)),
+                    );
+                } catch (Cancelled $e) {
+                    $thrown = $e;
+                }
+
+                self::assertNotNull($thrown);
+                self::assertSame(1, $pool->activeCount);
+                self::assertSame(0, $pool->waitingCount);
+            } finally {
+                $pool->release();
+            }
+
+            self::assertSame(0, $pool->activeCount);
+        });
+    }
+
+    #[Test]
+    public function readStreamReleasesSlotAfterConsumption(): void
+    {
+        $tmpFile = tempnam(sys_get_temp_dir(), 'phalanx-stream-read-');
+        self::assertIsString($tmpFile);
+        file_put_contents($tmpFile, 'streamed');
+
+        try {
+            $result = Application::starting()
+                ->providers(Grammata::services(maxOpen: 1))
+                ->run(Task::named(
+                    'test.grammata.stream.read-release',
+                    static function (ExecutionScope $scope) use ($tmpFile): array {
+                        $pool = $scope->service(FilePool::class);
+                        $stream = Grammata::files($scope)->readStream($tmpFile);
+                        $chunks = [];
+
+                        foreach ($stream($scope) as $chunk) {
+                            $chunks[] = $chunk;
+                        }
+
+                        return [
+                            'contents' => implode('', $chunks),
+                            'active' => $pool->activeCount,
+                        ];
+                    },
+                ));
+
+            self::assertSame(['contents' => 'streamed', 'active' => 0], $result);
+        } finally {
+            unlink($tmpFile);
+        }
+    }
+
+    #[Test]
+    public function readStreamReleasesSlotAfterOpenFailure(): void
+    {
+        $result = Application::starting()
+            ->providers(Grammata::services(maxOpen: 1))
+            ->run(Task::named(
+                'test.grammata.stream.read-open-failure',
+                static function (ExecutionScope $scope): array {
+                    $pool = $scope->service(FilePool::class);
+                    $stream = Grammata::files($scope)->readStream('/missing/phalanx-stream-read.txt');
+                    $threw = false;
+
+                    try {
+                        foreach ($stream($scope) as $_chunk) {
+                        }
+                    } catch (FilesystemException) {
+                        $threw = true;
+                    }
+
+                    return [
+                        'threw' => $threw,
+                        'active' => $pool->activeCount,
+                    ];
+                },
+            ));
+
+        self::assertSame(['threw' => true, 'active' => 0], $result);
     }
 }

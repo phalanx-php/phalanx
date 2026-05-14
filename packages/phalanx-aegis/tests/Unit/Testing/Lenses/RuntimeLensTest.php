@@ -10,8 +10,6 @@ use Phalanx\Task\Task;
 use Phalanx\Testing\Lenses\RuntimeLens;
 use Phalanx\Testing\TestApp;
 use PHPUnit\Framework\AssertionFailedError;
-use PHPUnit\Framework\Attributes\PreserveGlobalState;
-use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 
 final class RuntimeLensTest extends TestCase
@@ -41,8 +39,6 @@ final class RuntimeLensTest extends TestCase
         }
     }
 
-    #[PreserveGlobalState(false)]
-    #[RunInSeparateProcess]
     public function testAssertHealthyPassesInsideScopedRun(): void
     {
         $app = TestApp::boot();

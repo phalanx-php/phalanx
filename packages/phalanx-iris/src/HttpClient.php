@@ -12,6 +12,7 @@ use Phalanx\Scope\Scope;
 use Phalanx\Scope\ScopeIdentity;
 use Phalanx\Scope\Suspendable;
 use Phalanx\System\DnsResolver;
+use Phalanx\System\TcpConnection;
 use Phalanx\System\TcpClient;
 use Phalanx\System\TlsOptions;
 use Throwable;
@@ -28,9 +29,13 @@ class HttpClient
     /** @var array<string, TlsOptions> */
     private array $tlsCache = [];
 
+    /**
+     * @param null|\Closure(string, string, ?TlsOptions): TcpConnection $tcpFactory
+     */
     public function __construct(
         private readonly HttpClientConfig $config = new HttpClientConfig(),
         private readonly DnsResolver $dns = new DnsResolver(),
+        private readonly ?\Closure $tcpFactory = null,
     ) {
     }
 
@@ -139,10 +144,12 @@ class HttpClient
         return $scope->runtime->memory->resources->activate($resource);
     }
 
-    private function buildClient(string $scheme, string $host): TcpClient
+    private function buildClient(string $scheme, string $host): TcpConnection
     {
         if ($scheme !== 'https') {
-            return new TcpClient();
+            return $this->tcpFactory !== null
+                ? ($this->tcpFactory)($scheme, $host, null)
+                : new TcpClient();
         }
 
         $tlsOptions = $this->tlsCache[$host] ?? null;
@@ -168,7 +175,9 @@ class HttpClient
             $this->tlsCache[$host] = $tlsOptions;
         }
 
-        return new TcpClient(tls: true, tlsOptions: $tlsOptions);
+        return $this->tcpFactory !== null
+            ? ($this->tcpFactory)($scheme, $host, $tlsOptions)
+            : new TcpClient(tls: true, tlsOptions: $tlsOptions);
     }
 
     private function resolveHost(Suspendable $scope, string $host): string

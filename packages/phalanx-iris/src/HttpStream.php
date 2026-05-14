@@ -9,12 +9,12 @@ use Phalanx\Iris\Wire\ChunkedDecoder;
 use Phalanx\Runtime\Memory\ManagedResourceHandle;
 use Phalanx\Runtime\RuntimeContext;
 use Phalanx\Scope\Suspendable;
-use Phalanx\System\TcpClient;
+use Phalanx\System\TcpConnection;
 
 /**
  * Coroutine-readable byte stream over an HTTP/1.1 response body.
  *
- * Backed by a {@see TcpClient} the caller already opened and wrote a
+ * Backed by a {@see TcpConnection} the caller already opened and wrote a
  * request to. The first {@see read()} drains bytes until the response
  * status line and headers terminate with `\r\n\r\n`, then enters body
  * mode based on the response framing:
@@ -27,7 +27,7 @@ use Phalanx\System\TcpClient;
  * currently available, up to the requested cap. EOF is reported via
  * {@see eof}; subsequent reads return empty strings.
  *
- * Lifecycle: the stream owns the TcpClient. {@see close()} closes the
+ * Lifecycle: the stream owns the TCP connection. {@see close()} closes the
  * underlying socket. Sharing a stream across coroutines is unsupported.
  *
  * HTTP/2 was the original substrate but OpenSwoole 26's
@@ -97,7 +97,7 @@ class HttpStream
     private int $contentLengthRemaining = 0;
 
     public function __construct(
-        private readonly TcpClient $client,
+        private readonly TcpConnection $client,
         private readonly string $waitDetail,
         private readonly RuntimeContext $runtime,
         private readonly ManagedResourceHandle $resource,

@@ -15,7 +15,7 @@ namespace Phalanx\Pool;
  * this interface and `make()` (e.g. `PostgresClientFactory`,
  * `RedisClientFactory`).
  *
- * @template T of object
+ * @template T of ManagedPoolClient
  */
 interface ManagedPoolFactory
 {
@@ -26,5 +26,5 @@ interface ManagedPoolFactory
      * @param mixed $config opaque config object passed at pool construction
      * @return T
      */
-    public static function make(mixed $config): object;
+    public static function make(mixed $config): ManagedPoolClient;
 }

@@ -4,89 +4,57 @@ declare(strict_types=1);
 
 namespace Phalanx\Iris\Tests\Integration;
 
-use OpenSwoole\Coroutine\Channel;
-use OpenSwoole\Coroutine\Socket;
 use Phalanx\Iris\HttpClient;
 use Phalanx\Iris\HttpRequest;
 use Phalanx\Scope\ExecutionScope;
-use Phalanx\Testing\PhalanxTestCase;
+use Phalanx\Scope\Suspendable;
+use Phalanx\System\TcpConnection;
+use Phalanx\System\TlsOptions;
+use Phalanx\Testing\TestScope;
+use PHPUnit\Framework\TestCase;
 
 /**
  * End-to-end proof for the HTTP/1.1 + chunked transport.
  *
- * Spins up a coroutine-native TCP listener, accepts a single connection,
- * hand-crafts an HTTP/1.1 chunked response with three SSE payload chunks
- * emitted at 30ms intervals, then runs HttpClient::stream() against it
- * from a sibling coroutine and asserts each chunk decodes through
- * HttpStream::read() in the order written.
+ * Uses a scripted TCP connection to hand HttpClient::stream() an HTTP/1.1
+ * chunked response with three SSE payload chunks, then asserts each chunk
+ * decodes through HttpStream::read() in the order written.
  *
  * This pins the chunked decoder + stream framing against an exact
  * known wire so future regressions show up immediately without
  * standing up a real OpenSwoole HTTP server.
  */
-final class HttpStreamChunkedTest extends PhalanxTestCase
+final class HttpStreamChunkedTest extends TestCase
 {
     private const string HOST = '127.0.0.1';
 
     public function testChunkedSseStreamYieldsEachChunkInOrder(): void
     {
-        $this->scope->run(static function (ExecutionScope $scope): void {
-            $listener = new Socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
-            self::assertTrue($listener->bind(self::HOST, 0), "socket bind: {$listener->errMsg}");
-            self::assertTrue($listener->listen(), "socket listen: {$listener->errMsg}");
+        $connection = ScriptedTcpConnection::withResponseChunks([
+            "HTTP/1.1 200 OK\r\n"
+                . "content-type: text/event-stream\r\n"
+                . "transfer-encoding: chunked\r\n"
+                . "\r\n",
+            self::chunk("event: tick\ndata: {\"n\":1}\n\n"),
+            self::chunk("event: tick\ndata: {\"n\":2}\n\n"),
+            self::chunk("event: tick\ndata: {\"n\":3}\n\n"),
+            self::chunk("data: [DONE]\n\n"),
+            "0\r\n\r\n",
+        ]);
 
-            $name = $listener->getsockname();
-            self::assertIsArray($name);
-            self::assertArrayHasKey('port', $name);
-            $port = (int) $name['port'];
-
-            $serverDone = new Channel(1);
-            $scope->go(static function (ExecutionScope $serverScope) use ($listener, $serverDone): void {
-                try {
-                    $conn = $listener->accept(5);
-                    if ($conn === false) {
-                        return;
-                    }
-
-                    $req = '';
-                    while (!str_contains($req, "\r\n\r\n")) {
-                        $piece = $conn->recv(4096, 5);
-                        if ($piece === false || $piece === '') {
-                            break;
-                        }
-                        $req .= $piece;
-                    }
-
-                    $head = "HTTP/1.1 200 OK\r\n"
-                        . "content-type: text/event-stream\r\n"
-                        . "transfer-encoding: chunked\r\n"
-                        . "\r\n";
-                    $conn->sendAll($head);
-
-                    $payloads = [
-                        "event: tick\ndata: {\"n\":1}\n\n",
-                        "event: tick\ndata: {\"n\":2}\n\n",
-                        "event: tick\ndata: {\"n\":3}\n\n",
-                        "data: [DONE]\n\n",
-                    ];
-                    foreach ($payloads as $p) {
-                        $size = dechex(strlen($p));
-                        $conn->sendAll("{$size}\r\n{$p}\r\n");
-                        $serverScope->delay(0.03);
-                    }
-                    $conn->sendAll("0\r\n\r\n");
-                    $conn->close();
-                } finally {
-                    $listener->close();
-                    $serverDone->push(true);
-                }
-            });
-
-            try {
-                $client = new HttpClient();
+        TestScope::compile()
+            ->shutdownAfterRun()
+            ->run(static function (ExecutionScope $scope) use ($connection): void {
+                $client = new HttpClient(
+                    tcpFactory: static fn(
+                        string $_scheme,
+                        string $_host,
+                        ?TlsOptions $_tlsOptions,
+                    ): TcpConnection => $connection,
+                );
                 $stream = $client->stream($scope, new HttpRequest(
                     'GET',
-                    "http://127.0.0.1:{$port}/",
+                    'http://' . self::HOST . ':8123/',
                     ['accept' => ['text/event-stream']],
                 ));
 
@@ -112,9 +80,54 @@ final class HttpStreamChunkedTest extends PhalanxTestCase
                 self::assertStringContainsString('"n":2', $events[1]);
                 self::assertStringContainsString('"n":3', $events[2]);
                 self::assertStringContainsString('[DONE]', $events[3]);
-            } finally {
-                self::assertTrue($serverDone->pop(2));
-            }
-        });
+            });
+
+        self::assertTrue($connection->closed);
+        self::assertStringContainsString("GET / HTTP/1.1\r\n", $connection->sent);
+    }
+
+    private static function chunk(string $payload): string
+    {
+        return dechex(strlen($payload)) . "\r\n{$payload}\r\n";
+    }
+}
+
+final class ScriptedTcpConnection implements TcpConnection
+{
+    public string $sent = '';
+
+    public bool $closed = false;
+
+    /** @param list<string> $responseChunks */
+    private function __construct(private array $responseChunks)
+    {
+    }
+
+    /** @param list<string> $responseChunks */
+    public static function withResponseChunks(array $responseChunks): self
+    {
+        return new self($responseChunks);
+    }
+
+    public function connect(Suspendable $_scope, string $_host, int $_port, float $_timeout = 1.0): bool
+    {
+        return true;
+    }
+
+    public function send(Suspendable $_scope, string $payload, float $_timeout = 1.0): int
+    {
+        $this->sent .= $payload;
+
+        return strlen($payload);
+    }
+
+    public function recv(Suspendable $_scope, float $_timeout = 1.0): ?string
+    {
+        return array_shift($this->responseChunks) ?? '';
+    }
+
+    public function close(): void
+    {
+        $this->closed = true;
     }
 }

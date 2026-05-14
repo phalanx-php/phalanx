@@ -8,9 +8,7 @@ use Phalanx\Application;
 use Phalanx\Iris\HttpClient;
 use Phalanx\Iris\HttpClientConfig;
 use Phalanx\Iris\Iris;
-use Phalanx\Scope\ExecutionScope;
-use Phalanx\Task\Task;
-use PHPUnit\Framework\Attributes\RunInSeparateProcess;
+use Phalanx\Testing\TestScope;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -18,28 +16,27 @@ use RuntimeException;
 final class IrisFacadeTest extends TestCase
 {
     #[Test]
-    #[RunInSeparateProcess]
     public function servicesRegistersConfiguredHttpClient(): void
     {
         $config = new HttpClientConfig(connectTimeout: 1.25, userAgent: 'IrisFacadeTest');
+        $bundle = Iris::services($config);
 
-        $result = Application::starting()
-            ->providers(Iris::services($config))
-            ->run(Task::named(
-                'test.iris.facade.services',
-                static function (ExecutionScope $scope): array {
-                    $resolvedConfig = $scope->service(HttpClientConfig::class);
-                    $client = Iris::client($scope);
+        $result = [];
 
-                    self::assertInstanceOf(HttpClientConfig::class, $resolvedConfig);
-                    self::assertInstanceOf(HttpClient::class, $client);
+        TestScope::compile(services: static fn($services, $context): mixed => $bundle->services($services, $context))
+            ->shutdownAfterRun()
+            ->run(static function ($scope) use (&$result): void {
+                $resolvedConfig = $scope->service(HttpClientConfig::class);
+                $client = Iris::client($scope);
 
-                    return [
-                        'connectTimeout' => $resolvedConfig->connectTimeout,
-                        'userAgent' => $resolvedConfig->userAgent,
-                    ];
-                },
-            ));
+                self::assertInstanceOf(HttpClientConfig::class, $resolvedConfig);
+                self::assertInstanceOf(HttpClient::class, $client);
+
+                $result = [
+                    'connectTimeout' => $resolvedConfig->connectTimeout,
+                    'userAgent' => $resolvedConfig->userAgent,
+                ];
+            });
 
         self::assertSame([
             'connectTimeout' => 1.25,
@@ -55,9 +52,6 @@ final class IrisFacadeTest extends TestCase
 
         Application::starting()
             ->providers(Iris::services(), Iris::services())
-            ->run(Task::named(
-                'test.iris.facade.duplicate-error',
-                static fn(ExecutionScope $_scope): null => null,
-            ));
+            ->compile();
     }
 }

@@ -15,10 +15,6 @@ final class Archon
     /** @param array<string,mixed> $context */
     public static function starting(array $context = []): ArchonBuilder
     {
-        if (!isset($context['argv'])) {
-            $context['argv'] = $_SERVER['argv'] ?? [];
-        }
-
         return new ArchonBuilder(new AppContext($context));
     }
 

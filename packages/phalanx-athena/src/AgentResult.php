@@ -15,13 +15,29 @@ use Phalanx\Styx\Emitter;
 
 final readonly class AgentResult
 {
+    public string $text;
+
+    public ?object $structured;
+
+    public Conversation $conversation;
+
+    public TokenUsage $usage;
+
+    public int $steps;
+
     public function __construct(
-        public string $text,
-        public ?object $structured,
-        public Conversation $conversation,
-        public TokenUsage $usage,
-        public int $steps,
-    ) {}
+        string $text,
+        ?object $structured,
+        Conversation $conversation,
+        TokenUsage $usage,
+        int $steps,
+    ) {
+        $this->text = $text;
+        $this->structured = $structured;
+        $this->conversation = $conversation;
+        $this->usage = clone $usage;
+        $this->steps = $steps;
+    }
 
     public static function fromGeneration(Generation $generation, Conversation $conversation, int $steps): self
     {

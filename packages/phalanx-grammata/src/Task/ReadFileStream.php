@@ -21,36 +21,34 @@ final readonly class ReadFileStream implements Executable
 
     public function __invoke(ExecutionScope $scope): Emitter
     {
-        $pool = $scope->service(FilePool::class);
-        $pool->acquire($scope);
-
-        $handle = @fopen($this->path, 'r');
-
-        if ($handle === false) {
-            $pool->release();
-            throw new FilesystemException("Failed to open: {$this->path}", $this->path);
-        }
-
-        $scope->onDispose(static function () use ($handle, $pool): void {
-            if (is_resource($handle)) {
-                fclose($handle);
-            }
-            $pool->release();
-        });
-
         $path = $this->path;
 
-        return Emitter::produce(static function (Channel $ch, ExecutionScope $ctx) use ($handle, $path): void {
-            while (!feof($handle)) {
-                $ctx->throwIfCancelled();
-                $chunk = @fread($handle, self::CHUNK_BYTES);
-                if ($chunk === false) {
-                    throw new FilesystemException("Read failed: {$path}", $path);
+        return Emitter::produce(static function (Channel $ch, ExecutionScope $ctx) use ($path): void {
+            $pool = $ctx->service(FilePool::class);
+            $pool->acquire($ctx);
+            $handle = is_file($path) && is_readable($path) ? @fopen($path, 'r') : false;
+
+            try {
+                if ($handle === false) {
+                    throw new FilesystemException("Failed to open: {$path}", $path);
                 }
-                if ($chunk === '') {
-                    break;
+
+                while (!feof($handle)) {
+                    $ctx->throwIfCancelled();
+                    $chunk = @fread($handle, self::CHUNK_BYTES);
+                    if ($chunk === false) {
+                        throw new FilesystemException("Read failed: {$path}", $path);
+                    }
+                    if ($chunk === '') {
+                        break;
+                    }
+                    $ch->emit($chunk);
                 }
-                $ch->emit($chunk);
+            } finally {
+                if (is_resource($handle)) {
+                    fclose($handle);
+                }
+                $pool->release();
             }
         });
     }

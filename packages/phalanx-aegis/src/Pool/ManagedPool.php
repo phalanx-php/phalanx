@@ -8,12 +8,17 @@ use Closure;
 use OpenSwoole\Core\Coroutine\Pool\ClientPool;
 use Phalanx\Runtime\CoroutineRuntime;
 use Phalanx\Runtime\RuntimePolicy;
+use Phalanx\Scope\ExecutionLifecycleScope;
 use Phalanx\Scope\Suspendable;
 use Phalanx\Supervisor\PoolLease;
+use Phalanx\Supervisor\Supervisor;
+use Phalanx\Supervisor\TaskRun;
 use Phalanx\Supervisor\WaitReason;
 use Phalanx\Trace\Trace;
 use Phalanx\Trace\TraceType;
+use ReflectionProperty;
 use RuntimeException;
+use Throwable;
 
 /**
  * Aegis-managed connection pool primitive.
@@ -34,7 +39,7 @@ use RuntimeException;
  *   );
  *
  * The factory class implements {@see ManagedPoolFactory} (a static
- * `make($config): object` contract) and is the same shape OpenSwoole's
+ * `make($config): ManagedPoolClient` contract) and is the same shape OpenSwoole's
  * core ClientPool consumes — no shim or adapter required.
  *
  * Consumer pattern:
@@ -60,7 +65,7 @@ final class ManagedPool
 
     private readonly ClientPool $clientPool;
 
-    /** @var array<string, object> */
+    /** @var array<string, array{client: ManagedPoolClient, supervisor: ?Supervisor, run: ?TaskRun}> */
     private array $checkedOut = [];
 
     private bool $closed = false;
@@ -91,14 +96,20 @@ final class ManagedPool
         $domain = $this->domain;
         $pool = $this->clientPool;
 
-        $client = $scope->call(
-            static fn(): mixed => $pool->get($timeout),
-            WaitReason::custom("pool.acquire {$domain}"),
-        );
+        try {
+            $client = $scope->call(
+                static fn(): mixed => $pool->get($timeout),
+                WaitReason::custom("pool.acquire {$domain}"),
+            );
+        } catch (Throwable $e) {
+            $this->compensateFailedCheckout();
+            throw $e;
+        }
 
-        if (!is_object($client)) {
+        if (!$client instanceof ManagedPoolClient) {
+            $this->compensateFailedCheckout();
             throw new RuntimeException(
-                "ManagedPool({$this->domain})::acquire(): pool returned non-object (timeout or closed)",
+                "ManagedPool({$this->domain})::acquire(): pool returned no managed client (timeout or closed)",
             );
         }
 
@@ -117,15 +128,31 @@ final class ManagedPool
         }
 
         $connectionId = 'c' . spl_object_id($client);
-        $this->checkedOut[$connectionId] = $client;
+        $lease = PoolLease::open($this->domain, $connectionId);
+        [$supervisor, $run] = $this->currentRunContext($scope);
+        $this->checkedOut[$connectionId] = [
+            'client' => $client,
+            'supervisor' => $supervisor,
+            'run' => $run,
+        ];
 
-        return PoolLease::open($this->domain, $connectionId);
+        try {
+            if ($supervisor !== null && $run !== null) {
+                $supervisor->registerLease($run, $lease);
+            }
+        } catch (Throwable $e) {
+            unset($this->checkedOut[$connectionId]);
+            $this->clientPool->put($client);
+            throw $e;
+        }
+
+        return $lease;
     }
 
     public function release(PoolLease $lease): void
     {
-        $client = $this->checkedOut[$lease->key] ?? null;
-        if ($client === null) {
+        $checkout = $this->checkedOut[$lease->key] ?? null;
+        if ($checkout === null) {
             $this->trace->log(
                 TraceType::Defer,
                 'PHX-POOL-003',
@@ -138,7 +165,14 @@ final class ManagedPool
             return;
         }
         unset($this->checkedOut[$lease->key]);
-        $this->clientPool->put($client);
+
+        try {
+            if ($checkout['supervisor'] !== null && $checkout['run'] !== null) {
+                $checkout['supervisor']->releaseLease($checkout['run'], $lease);
+            }
+        } finally {
+            $this->clientPool->put($checkout['client']);
+        }
     }
 
     /**
@@ -150,7 +184,7 @@ final class ManagedPool
     {
         $lease = $this->acquire($scope, $timeout);
         try {
-            $client = $this->checkedOut[$lease->key];
+            $client = $this->checkedOut[$lease->key]['client'];
             return $work($client);
         } finally {
             $this->release($lease);
@@ -176,5 +210,25 @@ final class ManagedPool
         $this->closed = true;
         $this->clientPool->close();
         $this->checkedOut = [];
+    }
+
+    /** @return array{?Supervisor, ?TaskRun} */
+    private function currentRunContext(Suspendable $scope): array
+    {
+        if (!$scope instanceof ExecutionLifecycleScope) {
+            return [null, null];
+        }
+
+        return [$scope->supervisor(), $scope->currentTaskRun()];
+    }
+
+    private function compensateFailedCheckout(): void
+    {
+        $property = new ReflectionProperty(ClientPool::class, 'active');
+        $active = $property->getValue($this->clientPool);
+
+        if (is_int($active) && $active > 0) {
+            $property->setValue($this->clientPool, $active - 1);
+        }
     }
 }

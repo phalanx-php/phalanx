@@ -184,6 +184,16 @@ final class TestAppTest extends TestCase
         // observable cleanup of the reset itself rather than re-resolving.
     }
 
+    public function testShutdownStopsRegisteredPrimaryApps(): void
+    {
+        $primary = new ShutdownRecordingPrimaryApp();
+        $app = TestApp::boot()->withPrimary($primary);
+
+        $app->shutdown();
+
+        self::assertSame(1, $primary->shutdowns);
+    }
+
     public function testBundleWithNoLensDoesNotContributeLenses(): void
     {
         $bundle = new class extends \Phalanx\Service\ServiceBundle {
@@ -232,5 +242,15 @@ final class TestAppTest extends TestCase
 
         self::assertStringContainsString(FixtureBundle::class, $exception->getMessage());
         self::assertStringContainsString(ConflictingFixtureBundle::class, $exception->getMessage());
+    }
+}
+
+final class ShutdownRecordingPrimaryApp
+{
+    public int $shutdowns = 0;
+
+    public function shutdown(): void
+    {
+        $this->shutdowns++;
     }
 }

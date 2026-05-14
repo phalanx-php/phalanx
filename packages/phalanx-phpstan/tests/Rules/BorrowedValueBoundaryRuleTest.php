@@ -44,6 +44,8 @@ final class BorrowedValueBoundaryRuleTest extends RuleTestCase
                 [BorrowedValueBoundaryRule::PROPERTY_MESSAGE, 140],
                 [BorrowedValueBoundaryRule::RETURN_MESSAGE, 145],
                 [BorrowedValueBoundaryRule::RETURN_MESSAGE, 146],
+                [BorrowedValueBoundaryRule::RETURN_MESSAGE, 155],
+                [BorrowedValueBoundaryRule::PROPERTY_MESSAGE, 162],
             ],
         );
     }

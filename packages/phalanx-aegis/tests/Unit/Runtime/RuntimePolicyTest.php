@@ -15,8 +15,6 @@ use Phalanx\Runtime\RuntimeHookSnapshot;
 use Phalanx\Runtime\RuntimeHooks;
 use Phalanx\Runtime\RuntimePolicy;
 use Phalanx\Scope\ScopeIdentity;
-use PHPUnit\Framework\Attributes\PreserveGlobalState;
-use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 
 final class RuntimePolicyTest extends TestCase
@@ -34,7 +32,6 @@ final class RuntimePolicyTest extends TestCase
             | Runtime::HOOK_TLS
             | Runtime::HOOK_STREAM_FUNCTION
             | Runtime::HOOK_FILE
-            | Runtime::HOOK_PROC
             | Runtime::HOOK_CURL
             | Runtime::HOOK_NATIVE_CURL
             | Runtime::HOOK_SOCKETS,
@@ -48,9 +45,11 @@ final class RuntimePolicyTest extends TestCase
         self::assertSame(0, $policy->requiredFlags & Runtime::HOOK_SLEEP);
         self::assertSame(0, $policy->requiredFlags & Runtime::HOOK_STDIO);
         self::assertSame(0, $policy->requiredFlags & Runtime::HOOK_BLOCKING_FUNCTION);
+        self::assertSame(0, $policy->requiredFlags & Runtime::HOOK_PROC);
 
         self::assertSame(Runtime::HOOK_SLEEP, $policy->sensitiveEnabledFlags(Runtime::HOOK_SLEEP));
         self::assertSame(Runtime::HOOK_STDIO, $policy->sensitiveEnabledFlags(Runtime::HOOK_STDIO));
+        self::assertSame(Runtime::HOOK_PROC, $policy->sensitiveEnabledFlags(Runtime::HOOK_PROC));
         self::assertSame(
             Runtime::HOOK_BLOCKING_FUNCTION,
             $policy->sensitiveEnabledFlags(Runtime::HOOK_BLOCKING_FUNCTION),
@@ -69,18 +68,19 @@ final class RuntimePolicyTest extends TestCase
         ]));
 
         self::assertSame(
-            Runtime::HOOK_TCP | Runtime::HOOK_NATIVE_CURL | Runtime::HOOK_FILE | Runtime::HOOK_PROC | Runtime::HOOK_STDIO,
+            Runtime::HOOK_TCP | Runtime::HOOK_NATIVE_CURL | Runtime::HOOK_FILE | Runtime::HOOK_STDIO,
             $policy->requiredFlags
                 & (Runtime::HOOK_TCP | Runtime::HOOK_NATIVE_CURL | Runtime::HOOK_FILE | Runtime::HOOK_PROC | Runtime::HOOK_STDIO),
         );
     }
 
-    public function testProcessesCapabilityDoesNotEnableInteractiveStdio(): void
+    public function testProcessesCapabilityDoesNotEnableSemanticProcessHooks(): void
     {
         $policy = RuntimePolicy::forCapabilities(RuntimeCapability::Processes);
 
-        self::assertSame(Runtime::HOOK_PROC, $policy->requiredFlags & Runtime::HOOK_PROC);
+        self::assertSame(0, $policy->requiredFlags & Runtime::HOOK_PROC);
         self::assertSame(0, $policy->requiredFlags & Runtime::HOOK_STDIO);
+        self::assertSame(Runtime::HOOK_PROC, $policy->sensitiveEnabledFlags(Runtime::HOOK_PROC));
     }
 
     public function testInvalidCapabilityContextThrowsClearly(): void
@@ -93,8 +93,6 @@ final class RuntimePolicyTest extends TestCase
         ]));
     }
 
-    #[PreserveGlobalState(false)]
-    #[RunInSeparateProcess]
     public function testBuilderRuntimePolicyOverrideWinsOverInvalidContext(): void
     {
         $app = Application::starting([
@@ -120,8 +118,6 @@ final class RuntimePolicyTest extends TestCase
         ])->compile();
     }
 
-    #[PreserveGlobalState(false)]
-    #[RunInSeparateProcess]
     public function testRuntimeHooksEnsureIsIdempotentAndPreservesExistingFlags(): void
     {
         $before = RuntimeHooks::currentFlags();
@@ -177,7 +173,7 @@ final class RuntimePolicyTest extends TestCase
         $policy = RuntimePolicy::phalanxManaged();
         $names = RuntimeHookNames::forMask($policy->requiredFlags);
 
-        self::assertContains('PROC', $names);
+        self::assertNotContains('PROC', $names);
         self::assertNotContains('STDIO', $names);
         self::assertNotContains('SLEEP', $names);
         self::assertNotContains('BLOCKING_FUNCTION', $names);

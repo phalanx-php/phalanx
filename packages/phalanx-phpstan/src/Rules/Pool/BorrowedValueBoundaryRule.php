@@ -80,21 +80,15 @@ final class BorrowedValueBoundaryRule implements Rule
         }
 
         if (
-            $node instanceof ArrowFunction
-            && ($this->containsBorrowedValue($node->expr, $scope) || $this->closureCapturesBorrowed($node, $scope))
-        ) {
-            return [
-                $this->error(self::ARROW_RETURN_MESSAGE, $node->getLine()),
-            ];
-        }
-
-        if (
             $node instanceof Return_
             && $node->expr instanceof Expr
             && $this->containsBorrowedValue($node->expr, $scope)
         ) {
             return [
-                $this->error(self::RETURN_MESSAGE, $node->getLine()),
+                $this->error(
+                    $node->expr instanceof ArrowFunction ? self::ARROW_RETURN_MESSAGE : self::RETURN_MESSAGE,
+                    $node->getLine(),
+                ),
             ];
         }
 
@@ -169,17 +163,11 @@ final class BorrowedValueBoundaryRule implements Rule
         }
 
         if (!$expr instanceof Array_) {
-            if (!$expr instanceof ClosureExpr) {
+            if (!$expr instanceof ClosureExpr && !$expr instanceof ArrowFunction) {
                 return false;
             }
 
-            foreach ($expr->uses as $use) {
-                if ($this->containsBorrowedValue($use->var, $scope)) {
-                    return true;
-                }
-            }
-
-            return false;
+            return $this->closureCapturesBorrowed($expr, $scope);
         }
 
         foreach ($expr->items as $item) {

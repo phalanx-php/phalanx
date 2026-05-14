@@ -11,6 +11,7 @@ use PhpParser\Node;
 use PhpParser\Node\Identifier;
 use PhpParser\Node\Name;
 use PhpParser\Node\NullableType;
+use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Property;
 use PhpParser\Node\UnionType;
@@ -51,16 +52,20 @@ final class BorrowedValuePublicSurfaceRule implements Rule
         }
 
         if ($node instanceof Property && ($node->isPublic() || $node->isProtected())) {
-            return $this->borrowedTypeError($node->type, $node->getLine(), $scope);
+            return $this->borrowedTypeError($node->type, $node->getDocComment()?->getText(), $node->getLine(), $scope);
         }
 
         if (!$node instanceof ClassMethod || (!$node->isPublic() && !$node->isProtected())) {
             return [];
         }
 
-        $errors = $this->borrowedTypeError($node->returnType, $node->getLine(), $scope);
+        $doc = $node->getDocComment()?->getText();
+        $errors = $this->borrowedTypeError($node->returnType, $this->tagDoc($doc, 'return'), $node->getLine(), $scope);
         foreach ($node->params as $param) {
-            array_push($errors, ...$this->borrowedTypeError($param->type, $param->getLine(), $scope));
+            $paramDoc = $param->var instanceof Variable && is_string($param->var->name)
+                ? $this->paramDoc($doc, $param->var->name)
+                : null;
+            array_push($errors, ...$this->borrowedTypeError($param->type, $paramDoc, $param->getLine(), $scope));
         }
 
         return $errors;
@@ -69,12 +74,8 @@ final class BorrowedValuePublicSurfaceRule implements Rule
     /**
      * @return list<IdentifierRuleError>
      */
-    private function borrowedTypeError(Node|Identifier|null $type, int $line, Scope $scope): array
+    private function borrowedTypeError(Node|Identifier|null $type, ?string $doc, int $line, Scope $scope): array
     {
-        if ($type === null) {
-            return [];
-        }
-
         foreach ($this->typeNames($type, $scope) as $name) {
             if ($this->isBorrowedType($name)) {
                 return [
@@ -86,12 +87,25 @@ final class BorrowedValuePublicSurfaceRule implements Rule
             }
         }
 
+        if ($doc !== null && $this->docMentionsBorrowedType($doc, $scope)) {
+            return [
+                RuleErrorBuilder::message(self::MESSAGE)
+                    ->identifier(self::IDENTIFIER)
+                    ->line($line)
+                    ->build(),
+            ];
+        }
+
         return [];
     }
 
     /** @return list<string> */
-    private function typeNames(Node|Identifier $type, Scope $scope): array
+    private function typeNames(Node|Identifier|null $type, Scope $scope): array
     {
+        if ($type === null) {
+            return [];
+        }
+
         if ($type instanceof NullableType) {
             return $this->typeNames($type->type, $scope);
         }
@@ -111,6 +125,55 @@ final class BorrowedValuePublicSurfaceRule implements Rule
         $resolved = NodeNames::resolvedTypeName($type, $scope);
 
         return $resolved === null ? [] : [$resolved];
+    }
+
+    private function tagDoc(?string $doc, string $tag): ?string
+    {
+        if ($doc === null) {
+            return null;
+        }
+
+        return preg_match('/@' . preg_quote($tag, '/') . '\s+([^\n\r*]+)/', $doc, $match) === 1
+            ? $match[1]
+            : null;
+    }
+
+    private function paramDoc(?string $doc, string $parameter): ?string
+    {
+        if ($doc === null) {
+            return null;
+        }
+
+        return preg_match('/@param\s+([^\n\r*]+)\s+\$' . preg_quote($parameter, '/') . '\b/', $doc, $match) === 1
+            ? $match[1]
+            : null;
+    }
+
+    private function docMentionsBorrowedType(string $doc, Scope $scope): bool
+    {
+        if (!preg_match_all('/\\\\?[A-Z][A-Za-z0-9_\\\\]*/', $doc, $matches)) {
+            return false;
+        }
+
+        foreach ($matches[0] as $name) {
+            if (str_starts_with($name, '\\')) {
+                $resolved = substr($name, 1);
+            } else {
+                $resolved = $scope->resolveName(new Name($name));
+                if (!$this->reflectionProvider->hasClass($resolved)) {
+                    $namespace = $scope->getNamespace();
+                    if ($namespace !== null && $namespace !== '') {
+                        $resolved = $namespace . '\\' . $name;
+                    }
+                }
+            }
+
+            if ($this->isBorrowedType($resolved)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function isBorrowedType(string $type): bool

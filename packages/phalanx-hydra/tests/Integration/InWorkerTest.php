@@ -22,12 +22,8 @@ use Phalanx\Tests\Support\Fixtures\AddNumbers;
 use Phalanx\Tests\Support\Fixtures\CpuIntensiveTask;
 use Phalanx\Tests\Support\Fixtures\TaskThatThrows;
 use Phalanx\Tests\Support\TestServiceBundle;
-use PHPUnit\Framework\Attributes\PreserveGlobalState;
-use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use PHPUnit\Framework\Attributes\Test;
 
-#[PreserveGlobalState(false)]
-#[RunTestsInSeparateProcesses]
 final class InWorkerTest extends PhalanxTestCase
 {
     private Application $app;

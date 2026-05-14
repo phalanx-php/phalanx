@@ -39,6 +39,7 @@ parameters:
         - packages/phalanx-aegis/src/Supervisor/LedgerStorage.php
         - packages/phalanx-aegis/src/Supervisor/Supervisor.php
         - packages/phalanx-aegis/src/Supervisor/SwooleTableLedger.php
+        - packages/phalanx-aegis/src/Supervisor/TaskRun.php
         - packages/phalanx-aegis/src/Worker/
         - packages/phalanx-stoa/src/StoaRunner.php
     phalanxEnforcedPaths:

@@ -132,6 +132,18 @@ final class AgentLoopTest extends TestCase
     }
 
     #[Test]
+    public function agent_result_usage_is_snapshot_at_construction(): void
+    {
+        $usage = new TokenUsage(input: 100, output: 50);
+        $result = AgentResult::maxStepsReached(Conversation::create(), $usage, 3);
+
+        $usage->accumulate(new TokenUsage(input: 5, output: 5));
+
+        $this->assertSame(100, $result->usage->input);
+        $this->assertSame(50, $result->usage->output);
+    }
+
+    #[Test]
     public function agent_result_to_array(): void
     {
         $usage = new TokenUsage(input: 100, output: 50);

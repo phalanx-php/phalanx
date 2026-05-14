@@ -43,9 +43,6 @@
         <testsuite name="Stoa Unit">
             <directory>packages/phalanx-stoa/tests/Unit</directory>
         </testsuite>
-        <testsuite name="Stoa Integration">
-            <directory>packages/phalanx-stoa/tests/Integration</directory>
-        </testsuite>
         <testsuite name="Iris Unit">
             <directory>packages/phalanx-iris/tests/Unit</directory>
         </testsuite>
@@ -102,6 +99,11 @@
         </testsuite>
         <testsuite name="PHPStan Extension">
             <directory>packages/phalanx-phpstan/tests</directory>
+        </testsuite>
+        <!-- Keep Stoa's HTTP-lens integration last. OpenSwoole does not fully
+             reset its event-loop state inside one PHPUnit process. -->
+        <testsuite name="Stoa Integration">
+            <directory>packages/phalanx-stoa/tests/Integration</directory>
         </testsuite>
     </testsuites>
 </phpunit>

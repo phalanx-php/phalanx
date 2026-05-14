@@ -274,6 +274,12 @@ final class TestApp
             } catch (Throwable) {
             }
         } finally {
+            foreach ($this->primaryApps as $primaryApp) {
+                if (method_exists($primaryApp, 'shutdown')) {
+                    $primaryApp->shutdown();
+                }
+            }
+
             $this->application->shutdown();
             $this->instances = [];
             $this->factories = [];

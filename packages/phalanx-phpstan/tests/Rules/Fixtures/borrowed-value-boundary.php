@@ -146,6 +146,22 @@ final class BorrowedValueBoundaryFixture
         yield from [$event];
     }
 
+    public function invalidClosureVariableYield(BorrowedAgentEvent $event): \Generator
+    {
+        $fn = static function () use ($event): void {
+            $event::class;
+        };
+
+        yield $fn;
+    }
+
+    public function invalidArrowVariablePropertyStore(BorrowedAgentEvent $event): void
+    {
+        $fn = static fn(): string => $event::class;
+
+        $this->storedClosure = $fn;
+    }
+
     public function validLocalUse(BorrowedAgentEvent $event): string
     {
         return $event::class;
@@ -163,6 +179,13 @@ final class BorrowedValueBoundaryFixture
         $fn = static function () use ($event): string {
             return $event::class;
         };
+
+        $fn();
+    }
+
+    public function validLocalArrowUse(BorrowedAgentEvent $event): void
+    {
+        $fn = static fn(): string => $event::class;
 
         $fn();
     }

@@ -24,7 +24,7 @@ use RuntimeException;
  * typed TlsOptions value object, keeping SSL config out of the stringly-
  * typed setOption() surface.
  */
-final class TcpClient
+final class TcpClient implements TcpConnection
 {
     public bool $isConnected {
         get => $this->client->isConnected();

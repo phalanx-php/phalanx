@@ -13,13 +13,9 @@ use Phalanx\Iris\HttpClientConfig;
 use Phalanx\Iris\Iris;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Task;
-use PHPUnit\Framework\Attributes\PreserveGlobalState;
-use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-#[PreserveGlobalState(false)]
-#[RunTestsInSeparateProcesses]
 final class AthenaApplicationBuilderTest extends TestCase
 {
     #[Test]

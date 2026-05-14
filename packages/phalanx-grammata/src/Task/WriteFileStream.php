@@ -21,32 +21,30 @@ final readonly class WriteFileStream implements Executable
     {
         $pool = $scope->service(FilePool::class);
         $pool->acquire($scope);
-
         $handle = @fopen($this->path, 'w');
 
-        if ($handle === false) {
-            $pool->release();
-            throw new FilesystemException("Failed to open for writing: {$this->path}", $this->path);
-        }
+        try {
+            if ($handle === false) {
+                throw new FilesystemException("Failed to open for writing: {$this->path}", $this->path);
+            }
 
-        $scope->onDispose(static function () use ($handle, $pool): void {
+            foreach (($this->source)($scope) as $chunk) {
+                $scope->throwIfCancelled();
+                if (!is_string($chunk)) {
+                    throw new FilesystemException(
+                        'Stream emitted non-string chunk: ' . get_debug_type($chunk),
+                        $this->path,
+                    );
+                }
+                if (@fwrite($handle, $chunk) === false) {
+                    throw new FilesystemException("Write failed: {$this->path}", $this->path);
+                }
+            }
+        } finally {
             if (is_resource($handle)) {
                 fclose($handle);
             }
             $pool->release();
-        });
-
-        foreach (($this->source)($scope) as $chunk) {
-            $scope->throwIfCancelled();
-            if (!is_string($chunk)) {
-                throw new FilesystemException(
-                    'Stream emitted non-string chunk: ' . get_debug_type($chunk),
-                    $this->path,
-                );
-            }
-            if (@fwrite($handle, $chunk) === false) {
-                throw new FilesystemException("Write failed: {$this->path}", $this->path);
-            }
         }
 
         return null;

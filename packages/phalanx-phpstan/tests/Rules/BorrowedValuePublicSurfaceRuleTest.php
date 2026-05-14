@@ -22,10 +22,14 @@ final class BorrowedValuePublicSurfaceRuleTest extends RuleTestCase
             [__DIR__ . '/Fixtures/borrowed-value-public-surface.php'],
             [
                 [BorrowedValuePublicSurfaceRule::MESSAGE, 15],
-                [BorrowedValuePublicSurfaceRule::MESSAGE, 17],
-                [BorrowedValuePublicSurfaceRule::MESSAGE, 21],
-                [BorrowedValuePublicSurfaceRule::MESSAGE, 26],
-                [BorrowedValuePublicSurfaceRule::MESSAGE, 31],
+                [BorrowedValuePublicSurfaceRule::MESSAGE, 18],
+                [BorrowedValuePublicSurfaceRule::MESSAGE, 20],
+                [BorrowedValuePublicSurfaceRule::MESSAGE, 23],
+                [BorrowedValuePublicSurfaceRule::MESSAGE, 30],
+                [BorrowedValuePublicSurfaceRule::MESSAGE, 36],
+                [BorrowedValuePublicSurfaceRule::MESSAGE, 41],
+                [BorrowedValuePublicSurfaceRule::MESSAGE, 46],
+                [BorrowedValuePublicSurfaceRule::MESSAGE, 52],
             ],
         );
     }

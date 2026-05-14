@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace Phalanx\Tests\Unit\Pool;
 
+use Phalanx\Cancellation\Cancelled;
+use Phalanx\Pool\ManagedPoolClient;
 use Phalanx\Pool\ManagedPool;
 use Phalanx\Pool\ManagedPoolFactory;
 use Phalanx\Scope\ExecutionScope;
+use Phalanx\Supervisor\LeaseViolation;
 use Phalanx\Testing\PhalanxTestCase;
+use Phalanx\Task\Task;
 use Phalanx\Trace\Trace;
 use RuntimeException;
 
@@ -16,13 +20,14 @@ use RuntimeException;
  */
 final class ManagedPoolTestFactory implements ManagedPoolFactory
 {
-    public static function make(mixed $config): TestPoolClient
+    public static function make(mixed $config): ManagedPoolClient
     {
         return new TestPoolClient();
     }
 }
 
 final class TestPoolClient
+    implements ManagedPoolClient
 {
     public int $useCount = 0;
 
@@ -96,6 +101,128 @@ final class ManagedPoolTest extends PhalanxTestCase
             self::assertSame('test/use', $lease->domain);
             $pool->release($lease);
         });
+    }
+
+    public function testAcquireRegistersAndReleasesSupervisorLease(): void
+    {
+        $pool = new ManagedPool(
+            domain: 'test/lease',
+            factoryClass: ManagedPoolTestFactory::class,
+            config: null,
+            trace: new Trace(),
+            size: 1,
+        );
+
+        $this->scope->run(static function (ExecutionScope $scope) use ($pool): void {
+            $lease = $pool->acquire($scope);
+            $snapshot = $scope->currentRunSnapshot();
+
+            self::assertNotNull($snapshot);
+            self::assertCount(1, $snapshot->leases);
+            self::assertSame('test/lease', $snapshot->leases[0]['domain']);
+
+            $pool->release($lease);
+            $snapshot = $scope->currentRunSnapshot();
+
+            self::assertNotNull($snapshot);
+            self::assertCount(0, $snapshot->leases);
+        });
+    }
+
+    public function testNestedAcquireReturnsClientAndReportsLeaseViolation(): void
+    {
+        $pool = new ManagedPool(
+            domain: 'test/nested',
+            factoryClass: ManagedPoolTestFactory::class,
+            config: null,
+            trace: new Trace(),
+            size: 2,
+        );
+
+        $this->scope->run(static function (ExecutionScope $scope) use ($pool): void {
+            $lease = $pool->acquire($scope);
+
+            try {
+                $thrown = null;
+                try {
+                    $pool->acquire($scope);
+                } catch (LeaseViolation $e) {
+                    $thrown = $e;
+                }
+
+                self::assertNotNull($thrown);
+                self::assertSame('PHX-POOL-001', $thrown->phxCode);
+            } finally {
+                $pool->release($lease);
+            }
+
+            $lease = $pool->acquire($scope);
+            $pool->release($lease);
+        });
+    }
+
+    public function testAcquireTimeoutDoesNotPoisonClose(): void
+    {
+        $pool = new ManagedPool(
+            domain: 'test/timeout',
+            factoryClass: ManagedPoolTestFactory::class,
+            config: null,
+            trace: new Trace(),
+            size: 1,
+        );
+
+        $this->scope->run(static function (ExecutionScope $scope) use ($pool): void {
+            $lease = $pool->acquire($scope);
+
+            try {
+                $thrown = null;
+                try {
+                    $pool->acquire($scope, timeout: 0.001);
+                } catch (RuntimeException $e) {
+                    $thrown = $e;
+                }
+
+                self::assertNotNull($thrown);
+                self::assertStringContainsString('timeout or closed', $thrown->getMessage());
+            } finally {
+                $pool->release($lease);
+            }
+        });
+
+        $pool->close();
+    }
+
+    public function testCancelledAcquireDoesNotPoisonClose(): void
+    {
+        $pool = new ManagedPool(
+            domain: 'test/cancel',
+            factoryClass: ManagedPoolTestFactory::class,
+            config: null,
+            trace: new Trace(),
+            size: 1,
+        );
+
+        $this->scope->run(static function (ExecutionScope $scope) use ($pool): void {
+            $lease = $pool->acquire($scope);
+
+            try {
+                $thrown = null;
+                try {
+                    $scope->timeout(
+                        0.01,
+                        Task::of(static fn(ExecutionScope $child): mixed => $pool->acquire($child)),
+                    );
+                } catch (Cancelled $e) {
+                    $thrown = $e;
+                }
+
+                self::assertNotNull($thrown);
+            } finally {
+                $pool->release($lease);
+            }
+        });
+
+        $pool->close();
     }
 
     public function testPoolReportsConfiguredSize(): void
