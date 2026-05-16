@@ -126,35 +126,31 @@ class InputHydrator
             InputSource::Query => $scope->query->all(),
         };
 
-        $dto = self::hydrate($meta->inputClass, $data);
-
-        return [$scope, $dto];
-    }
-
-    /**
-     * Hydrate a DTO from raw data using constructor reflection.
-     *
-     * @param class-string $class
-     * @param array<string, mixed> $data
-     */
-    protected static function hydrate(string $class, array $data): object
-    {
+        /** @var class-string $class */
+        $class = $meta->inputClass;
         [$args, $errors] = self::resolveArgs($class, $data);
 
         if ($errors !== []) {
             throw new ValidationException($errors);
         }
 
-        $dto = new $class(...$args);
+        $ref = new ReflectionClass($class);
+        $dto = $ref->newLazyGhost(static function (object $instance) use ($ref, $args): void {
+            foreach ($args as $name => $value) {
+                $ref->getProperty($name)->setValue($instance, $value);
+            }
+        });
 
-        if ($dto instanceof Validatable) {
+        if (is_subclass_of($class, Validatable::class)) {
+            $ref->initializeLazyObject($dto);
+            assert($dto instanceof Validatable);
             $validationErrors = $dto->validate();
             if ($validationErrors !== []) {
                 throw new ValidationException($validationErrors);
             }
         }
 
-        return $dto;
+        return [$scope, $dto];
     }
 
     /**

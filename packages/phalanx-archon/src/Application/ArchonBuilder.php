@@ -14,6 +14,7 @@ use Phalanx\Boot\AppContext;
 use Phalanx\Archon\Command\CommandGroup;
 use Phalanx\Archon\Command\CommandLoader;
 use Phalanx\Archon\Command\InlineCommand;
+use Phalanx\Archon\Console\Style\ConsoleServiceBundle;
 use Phalanx\Console\Input\ConsoleInputServiceBundle;
 use Phalanx\Middleware\ServiceTransformationMiddleware;
 use Phalanx\Middleware\TaskMiddleware;
@@ -41,6 +42,9 @@ final class ArchonBuilder
     /** @var array<string, InlineCommand> */
     private array $inlineCommands = [];
 
+    /** @var list<\Phalanx\Archon\Console\ConsoleErrorRenderer> */
+    private array $errorRenderers = [];
+
     private ?ConsoleConfig $consoleConfig = null;
 
     public function __construct(private readonly AppContext $context = new AppContext())
@@ -64,6 +68,18 @@ final class ArchonBuilder
     public function taskMiddleware(TaskMiddleware ...$middlewares): self
     {
         $this->app->taskMiddleware(...$middlewares);
+        return $this;
+    }
+
+    public function withErrorRenderers(\Phalanx\Archon\Console\ConsoleErrorRenderer ...$renderers): self
+    {
+        $this->errorRenderers = array_values([...$this->errorRenderers, ...$renderers]);
+        return $this;
+    }
+
+    public function withErrorHandler(\Phalanx\Exception\ErrorHandler ...$handlers): self
+    {
+        $this->app->withErrorHandler(...$handlers);
         return $this;
     }
 
@@ -129,6 +145,7 @@ final class ArchonBuilder
 
     public function build(): ArchonApplication
     {
+        $this->app->providers(new ConsoleServiceBundle());
         $host = $this->app->compile();
         $commands = CommandGroup::of([]);
 
@@ -141,6 +158,7 @@ final class ArchonBuilder
             commands: $commands,
             consoleConfig: $this->resolveConsoleConfig(),
             inlineCommands: $this->inlineCommands,
+            errorRenderers: $this->errorRenderers,
         );
     }
 

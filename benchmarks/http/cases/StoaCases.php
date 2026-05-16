@@ -11,8 +11,8 @@ use OpenSwoole\Coroutine\Channel;
 use OpenSwoole\Http\Request as OpenSwooleRequest;
 use Phalanx\Application;
 use Phalanx\Benchmarks\Http\AbstractHttpBenchmarkCase;
-use Phalanx\Benchmarks\Http\HttpBenchmarkContext;
-use Phalanx\Benchmarks\Http\HttpBenchmarkSuite;
+use Phalanx\Benchmarks\Http\HttpBenchmarkCase;
+use Phalanx\Benchmarks\Kit\BenchmarkApp;
 use Phalanx\Stoa\RequestScope;
 use Phalanx\Stoa\RouteGroup;
 use Phalanx\Stoa\StoaRequestFactory;
@@ -29,9 +29,9 @@ final class StoaDispatchPlaintextCase extends AbstractHttpBenchmarkCase
         parent::__construct('stoa_dispatch_plaintext', 5_000, 100);
     }
 
-    public function run(HttpBenchmarkContext $context): void
+    public function run(BenchmarkApp $app): void
     {
-        $response = $context->runner('plaintext', RouteGroup::of([
+        $response = $app->stoaRunner('plaintext', RouteGroup::of([
             'GET /plaintext' => BenchmarkPlaintextRoute::class,
         ]))->dispatch(new ServerRequest('GET', '/plaintext'));
 
@@ -48,9 +48,9 @@ final class StoaDispatchJsonCase extends AbstractHttpBenchmarkCase
         parent::__construct('stoa_dispatch_json', 5_000, 100);
     }
 
-    public function run(HttpBenchmarkContext $context): void
+    public function run(BenchmarkApp $app): void
     {
-        $response = $context->runner('json', RouteGroup::of([
+        $response = $app->stoaRunner('json', RouteGroup::of([
             'GET /json' => BenchmarkJsonRoute::class,
         ]))->dispatch(new ServerRequest('GET', '/json'));
 
@@ -67,9 +67,9 @@ final class StoaDispatchRouteParamCase extends AbstractHttpBenchmarkCase
         parent::__construct('stoa_dispatch_route_param', 5_000, 100);
     }
 
-    public function run(HttpBenchmarkContext $context): void
+    public function run(BenchmarkApp $app): void
     {
-        $response = $context->runner('route-param', RouteGroup::of([
+        $response = $app->stoaRunner('route-param', RouteGroup::of([
             'GET /users/{id:int}' => BenchmarkRouteParamRoute::class,
         ]))->dispatch(new ServerRequest('GET', '/users/42'));
 
@@ -110,7 +110,7 @@ final class StoaRequestFactoryCase extends AbstractHttpBenchmarkCase
         return $request;
     }
 
-    public function run(HttpBenchmarkContext $context): void
+    public function run(BenchmarkApp $app): void
     {
         $request = $this->factory->create($this->request);
 
@@ -127,9 +127,9 @@ final class StoaRequestResourceLifecycleCase extends AbstractHttpBenchmarkCase
         parent::__construct('stoa_request_resource_lifecycle', 2_000, 50);
     }
 
-    public function run(HttpBenchmarkContext $context): void
+    public function run(BenchmarkApp $app): void
     {
-        $runner = $context->runner('resource-lifecycle', RouteGroup::of([
+        $runner = $app->stoaRunner('resource-lifecycle', RouteGroup::of([
             'GET /resource' => BenchmarkResourceRoute::class,
         ]));
 
@@ -148,10 +148,10 @@ final class StoaDrainCleanupCase extends AbstractHttpBenchmarkCase
         parent::__construct('stoa_drain_cleanup', 20, 2);
     }
 
-    public function run(HttpBenchmarkContext $context): void
+    public function run(BenchmarkApp $app): void
     {
-        $app = Application::starting()->compile()->startup();
-        $runner = StoaRunner::from($app, new StoaServerConfig(requestTimeout: 1.0, drainTimeout: 0.01))
+        $internalApp = Application::starting()->compile()->startup();
+        $runner = StoaRunner::from($internalApp, new StoaServerConfig(requestTimeout: 1.0, drainTimeout: 0.01))
             ->withRoutes(RouteGroup::of([
                 'GET /drain' => BenchmarkDrainRoute::class,
             ]));
@@ -171,7 +171,7 @@ final class StoaDrainCleanupCase extends AbstractHttpBenchmarkCase
             }
         } finally {
             $responses->close();
-            $app->shutdown();
+            $internalApp->shutdown();
         }
     }
 }
@@ -223,14 +223,15 @@ final class BenchmarkDrainRoute implements Scopeable
     }
 }
 
-function stoaHttpCases(): HttpBenchmarkSuite
+/** @return list<HttpBenchmarkCase> */
+function stoaHttpCases(): array
 {
-    return HttpBenchmarkSuite::of(
+    return [
         new StoaDispatchPlaintextCase(),
         new StoaDispatchJsonCase(),
         new StoaDispatchRouteParamCase(),
         new StoaRequestFactoryCase(),
         new StoaRequestResourceLifecycleCase(),
         new StoaDrainCleanupCase(),
-    );
+    ];
 }

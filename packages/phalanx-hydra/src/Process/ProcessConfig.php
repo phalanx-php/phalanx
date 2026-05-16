@@ -30,13 +30,7 @@ final readonly class ProcessConfig
             dirname(__DIR__, 5) . '/bin/phalanx-worker',
         ];
 
-        foreach ($candidates as $path) {
-            if (file_exists($path)) {
-                return $path;
-            }
-        }
-
-        return $candidates[0];
+        return array_find($candidates, static fn(string $path): bool => file_exists($path)) ?? $candidates[0];
     }
 
     private static function findAutoloadPath(): string
@@ -48,12 +42,7 @@ final readonly class ProcessConfig
             dirname(__DIR__, 7) . '/vendor/autoload.php',
         ];
 
-        foreach ($candidates as $path) {
-            if (file_exists($path)) {
-                return $path;
-            }
-        }
-
-        throw new \RuntimeException('Cannot find autoload.php for worker process');
+        return array_find($candidates, static fn(string $path): bool => file_exists($path))
+            ?? throw new \RuntimeException('Cannot find autoload.php for worker process');
     }
 }

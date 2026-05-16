@@ -30,6 +30,9 @@ final class StoaApplicationBuilder
     /** @var list<RouteGroup|string|list<string>|array<string, class-string>> */
     private array $routeSources = [];
 
+    /** @var list<Response\ErrorResponseRenderer> */
+    private array $errorRenderers = [];
+
     private ?string $host = null;
 
     private ?int $port = null;
@@ -88,6 +91,12 @@ final class StoaApplicationBuilder
     public function withRuntimeHooksStrict(bool $strict): self
     {
         $this->app->withRuntimeHooksStrict($strict);
+        return $this;
+    }
+
+    public function withErrorRenderers(Response\ErrorResponseRenderer ...$renderers): self
+    {
+        $this->errorRenderers = array_values([...$this->errorRenderers, ...$renderers]);
         return $this;
     }
 
@@ -163,6 +172,7 @@ final class StoaApplicationBuilder
             host: $host,
             routes: $routes,
             serverConfig: $this->hasServerConfigInput() ? $this->resolveServerConfig() : null,
+            errorRenderers: $this->errorRenderers,
         );
     }
 

@@ -62,6 +62,7 @@ parameters:
         - packages/phalanx-styx/src
     phalanxAuditPaths: []
     phalanxRuntimeHookInternalPaths:
+        - packages/phalanx-aegis/src/Runtime/RuntimeCapability.php
         - packages/phalanx-aegis/src/Runtime/RuntimeHookNames.php
         - packages/phalanx-aegis/src/Runtime/RuntimeHooks.php
         - packages/phalanx-aegis/src/Runtime/RuntimePolicy.php

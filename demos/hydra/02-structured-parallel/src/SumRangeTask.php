@@ -20,7 +20,7 @@ class SumRangeTask implements WorkerTask
     }
 
     /** @return array{from: int, to: int, sum: int, pid: int} */
-    public function __invoke(WorkerScope $scope): array
+    public function __invoke(): array
     {
         $pid = getmypid();
         if ($pid === false) {

@@ -6,6 +6,8 @@ namespace Phalanx\Archon\Command;
 
 use Phalanx\AppHost;
 use Phalanx\Archon\Application\ConsoleConfig;
+use Phalanx\Archon\Console\ConsoleErrorRenderer;
+use Phalanx\Archon\Console\DefaultConsoleErrorRenderer;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Archon\Runtime\Identity\ConsoleSignal;
 use Phalanx\Archon\Runtime\Identity\ConsoleSignalState;
@@ -22,6 +24,9 @@ final class CommandDispatcher
 
     private ?StreamOutput $errorOutput = null;
 
+    /** @var list<ConsoleErrorRenderer> */
+    private array $errorRenderers = [];
+
     /** @param array<string, InlineCommand> $inlineCommands */
     public function __construct(
         private AppHost $host,
@@ -29,6 +34,12 @@ final class CommandDispatcher
         private ConsoleConfig $config,
         private array $inlineCommands = [],
     ) {
+    }
+
+    public function withErrorRenderers(ConsoleErrorRenderer ...$renderers): self
+    {
+        $this->errorRenderers = array_values([...$this->errorRenderers, ...$renderers]);
+        return $this;
     }
 
     /** @param list<string> $argv */
@@ -102,10 +113,51 @@ final class CommandDispatcher
             return 1;
         } catch (Throwable $e) {
             $lifecycle->fail('exception', $e->getMessage(), $e);
-            $this->errorOutput()->persist("Error: {$e->getMessage()}");
+
+            try {
+                $rootScope->service(\Phalanx\Exception\ErrorRegistry::class)->report($rootScope, $e);
+            } catch (Cancelled $cancelled) {
+                throw $cancelled;
+            } catch (Throwable) {
+            }
+
+            $this->renderError($rootScope, $e);
 
             return 1;
         }
+    }
+
+    private function renderError(\Phalanx\Scope\Scope $scope, Throwable $e): void
+    {
+        $commandScope = $scope instanceof CommandScope ? $scope : null;
+
+        if ($commandScope !== null) {
+            foreach ($this->errorRenderers as $renderer) {
+                if ($renderer->render($commandScope, $e, $this->errorOutput())) {
+                    return;
+                }
+            }
+        }
+
+        $renderer = new DefaultConsoleErrorRenderer(debug: true);
+
+        if ($commandScope !== null) {
+            $renderer->render($commandScope, $e, $this->errorOutput());
+            return;
+        }
+
+        // Fallback: Create a dummy context for the default renderer
+        $inner = $scope instanceof ExecutionScope ? $scope : $this->host->createScope();
+        $dummy = new ExecutionContext(
+            $inner,
+            'unknown',
+            new CommandArgs([]),
+            new CommandOptions([]),
+            new CommandConfig(),
+            'unknown-id'
+        );
+
+        $renderer->render($dummy, $e, $this->errorOutput());
     }
 
     /** @param list<string> $args */

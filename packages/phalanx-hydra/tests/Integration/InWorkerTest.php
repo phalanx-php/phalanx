@@ -105,33 +105,28 @@ final class InWorkerTest extends PhalanxTestCase
     public function drainsWorkerStderrWithoutPoisoningNextDispatch(): void
     {
         $app = $this->buildApp(new ParallelConfig(agents: 1));
-        $stderrLog = tempnam(sys_get_temp_dir(), 'phalanx-worker-stderr-');
-
-        self::assertIsString($stderrLog);
-
-        $previousErrorLog = ini_get('error_log');
-        ini_set('error_log', $stderrLog);
 
         try {
-            try {
-                $this->scope->run(static function (ExecutionScope $_scope) use ($app): void {
-                    $scope = $app->createScope();
+            $this->scope->run(static function (ExecutionScope $_scope) use ($app): void {
+                $scope = $app->createScope();
 
-                    try {
-                        self::assertSame('stderr-drained', $scope->inWorker(new WorkerStderrTask('athena-warning')));
-                        self::assertSame(5, $scope->inWorker(new AddNumbers(2, 3)));
-                    } finally {
-                        $scope->dispose();
-                    }
-                });
-            } finally {
-                $app->shutdown();
-            }
+                try {
+                    self::assertSame('stderr-drained', $scope->inWorker(new WorkerStderrTask('athena-warning')));
+                    self::assertSame(5, $scope->inWorker(new AddNumbers(2, 3)));
+                } finally {
+                    $scope->dispose();
+                }
+            });
 
-            self::assertStringContainsString('athena-warning', file_get_contents($stderrLog) ?: '');
+            $stderrEvents = array_filter(
+                $app->trace()->events(),
+                static fn($e) => $e->name === 'hydra.worker.stderr',
+            );
+            $chunks = implode('', array_map(static fn($e) => $e->attrs['chunk'] ?? '', $stderrEvents));
+
+            self::assertStringContainsString('athena-warning', $chunks);
         } finally {
-            ini_set('error_log', is_string($previousErrorLog) ? $previousErrorLog : '');
-            unlink($stderrLog);
+            $app->shutdown();
         }
     }
 

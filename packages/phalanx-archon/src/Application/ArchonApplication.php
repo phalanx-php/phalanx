@@ -14,12 +14,16 @@ use Phalanx\Scope\ExecutionScope;
 
 final class ArchonApplication
 {
-    /** @param array<string, InlineCommand> $inlineCommands */
+    /**
+     * @param array<string, InlineCommand> $inlineCommands
+     * @param list<\Phalanx\Archon\Console\ConsoleErrorRenderer> $errorRenderers
+     */
     public function __construct(
         private readonly AppHost $host,
         private readonly CommandGroup $commands,
         private readonly ConsoleConfig $consoleConfig,
         private readonly array $inlineCommands = [],
+        private readonly array $errorRenderers = [],
     ) {
     }
 
@@ -82,11 +86,11 @@ final class ArchonApplication
 
     private function dispatcher(): CommandDispatcher
     {
-        return new CommandDispatcher(
+        return (new CommandDispatcher(
             host: $this->host,
             commands: $this->commands,
             config: $this->consoleConfig,
             inlineCommands: $this->inlineCommands,
-        );
+        ))->withErrorRenderers(...$this->errorRenderers);
     }
 }

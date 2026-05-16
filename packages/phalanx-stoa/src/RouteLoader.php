@@ -49,12 +49,8 @@ final readonly class RouteLoader
         }
 
         $group = RouteGroup::of([]);
-        $files = glob($dir . '/*.php');
-
-        if ($files === false) {
-            return $group;
-        }
-
+        /** @var list<string> $files */
+        $files = iterator_to_array(new \GlobIterator($dir . '/*.php', \FilesystemIterator::CURRENT_AS_PATHNAME), false);
         sort($files);
 
         foreach ($files as $file) {

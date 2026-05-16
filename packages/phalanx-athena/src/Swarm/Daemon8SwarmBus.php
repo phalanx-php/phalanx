@@ -14,6 +14,7 @@ use Phalanx\Scope\Scope;
 use Phalanx\Scope\Suspendable;
 use Phalanx\Styx\Channel;
 use Phalanx\Styx\Emitter;
+use Phalanx\Trace\TraceType;
 use RuntimeException;
 
 /**
@@ -86,13 +87,17 @@ final class Daemon8SwarmBus implements SwarmBus
                     $stream->read($scope);
                 }
                 if ($stream->status >= 400) {
-                    error_log("Daemon8 swarm ingest failed: HTTP {$stream->status}");
+                    $scope->trace()->log(TraceType::Failed, 'daemon8.swarm.ingest', [
+                        'status' => $stream->status,
+                    ]);
                 }
             } finally {
                 $stream->close();
             }
         } catch (HttpClientException $e) {
-            error_log('Daemon8 swarm ingest failed: ' . $e->getMessage());
+            $scope->trace()->log(TraceType::Failed, 'daemon8.swarm.ingest', [
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 

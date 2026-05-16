@@ -57,14 +57,10 @@ final class NewCommand extends Command
 
         $directory = rtrim($parentDir, '/') . '/' . $name;
 
-        if (is_dir($directory)) {
-            $entries = scandir($directory);
-
-            if ($entries !== false && count($entries) > 2) {
-                $escaped = OutputFormatter::escape($directory);
-                $output->writeln("<error>Directory {$escaped} already exists and is not empty.</error>");
-                return Command::FAILURE;
-            }
+        if (is_dir($directory) && (new \FilesystemIterator($directory))->valid()) {
+            $escaped = OutputFormatter::escape($directory);
+            $output->writeln("<error>Directory {$escaped} already exists and is not empty.</error>");
+            return Command::FAILURE;
         }
 
         $output->writeln('');

@@ -1,41 +1,20 @@
-#!/usr/bin/env php
 <?php
 
 declare(strict_types=1);
 
-namespace Phalanx\Benchmarks\Http;
-
-use OpenSwoole\Coroutine;
-use Phalanx\Boot\AppContext;
-use Phalanx\Runtime\RuntimeHooks;
-use Phalanx\Runtime\RuntimePolicy;
-use Throwable;
-
-require __DIR__ . '/../../vendor/autoload.php';
+require __DIR__ . '/../../vendor/autoload_runtime.php';
 require __DIR__ . '/BenchmarkCase.php';
-require __DIR__ . '/Runner.php';
 require __DIR__ . '/cases/StoaCases.php';
+require __DIR__ . '/cases/LazyCases.php';
 
-$arguments = $argv ?? [];
-$context = new AppContext(['argv' => $arguments]);
+use Phalanx\Benchmarks\Kit\BenchmarkReport;
+use Phalanx\Benchmarks\Kit\BenchmarkRunner;
+use Phalanx\Boot\AppContext;
 
-RuntimeHooks::ensure(RuntimePolicy::fromContext($context));
+use function Phalanx\Benchmarks\Http\Cases\lazyHttpCases;
+use function Phalanx\Benchmarks\Http\Cases\stoaHttpCases;
 
-$caught = null;
-$exitCode = 0;
-
-Coroutine::run(static function () use ($arguments, &$caught, &$exitCode): void {
-    try {
-        $exitCode = (new Runner($arguments))->run();
-    } catch (Throwable $e) {
-        $caught = $e;
-        $exitCode = 1;
-    }
+return BenchmarkRunner::boot('HTTP Benchmarks', static function (BenchmarkReport $report, AppContext $context): void {
+    $report->group(stoaHttpCases());
+    $report->group(lazyHttpCases());
 });
-
-if ($caught !== null) {
-    fwrite(STDERR, $caught::class . ': ' . $caught->getMessage() . PHP_EOL);
-    fwrite(STDERR, $caught->getTraceAsString() . PHP_EOL);
-}
-
-exit($exitCode);

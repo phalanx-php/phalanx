@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Demos\Hydra\StructuredParallel;
 
-use Phalanx\Worker\WorkerScope;
 use Phalanx\Worker\WorkerTask;
 
 class FailingWorkerTask implements WorkerTask
@@ -18,7 +17,7 @@ class FailingWorkerTask implements WorkerTask
     ) {
     }
 
-    public function __invoke(WorkerScope $scope): never
+    public function __invoke(): never
     {
         throw new \RuntimeException($this->message);
     }

@@ -48,6 +48,9 @@ class ApplicationBuilder
     /** @var list<TaskMiddleware> */
     private array $taskMiddlewares = [];
 
+    /** @var list<\Phalanx\Exception\ErrorHandler> */
+    private array $errorHandlers = [];
+
     private ?Trace $trace = null;
 
     private ?LedgerStorage $ledger = null;
@@ -79,6 +82,12 @@ class ApplicationBuilder
     public function taskMiddleware(TaskMiddleware ...$middlewares): self
     {
         $this->taskMiddlewares = array_values([...$this->taskMiddlewares, ...$middlewares]);
+        return $this;
+    }
+
+    public function withErrorHandler(\Phalanx\Exception\ErrorHandler ...$handlers): self
+    {
+        $this->errorHandlers = array_values([...$this->errorHandlers, ...$handlers]);
         return $this;
     }
 
@@ -139,6 +148,8 @@ class ApplicationBuilder
             ->factory(static fn(): Trace => $trace);
         $catalog->singleton(HandlerResolver::class)
             ->factory(static fn(): HandlerResolver => new HandlerResolver());
+        $catalog->singleton(\Phalanx\Exception\ErrorRegistry::class)
+            ->factory(fn() => new \Phalanx\Exception\ErrorRegistry($this->errorHandlers));
         foreach ($this->providers as $provider) {
             $provider->services($catalog, $this->context);
         }

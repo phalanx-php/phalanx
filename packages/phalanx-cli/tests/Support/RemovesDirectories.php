@@ -8,24 +8,17 @@ trait RemovesDirectories
 {
     private static function removeDir(string $dir): void
     {
-        $items = scandir($dir);
-
-        if ($items === false) {
+        if (!is_dir($dir)) {
             return;
         }
 
-        foreach ($items as $item) {
-            if ($item === '.' || $item === '..') {
-                continue;
-            }
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($dir, \FilesystemIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::CHILD_FIRST,
+        );
 
-            $path = $dir . '/' . $item;
-
-            if (is_dir($path)) {
-                self::removeDir($path);
-            } else {
-                unlink($path);
-            }
+        foreach ($iterator as $file) {
+            $file->isDir() ? rmdir($file->getPathname()) : unlink($file->getPathname());
         }
 
         rmdir($dir);

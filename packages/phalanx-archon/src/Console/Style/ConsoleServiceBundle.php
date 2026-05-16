@@ -28,14 +28,20 @@ class ConsoleServiceBundle extends ServiceBundle
 {
     public function services(Services $services, AppContext $context): void
     {
-        $services->singleton(Theme::class)
-            ->factory(static fn() => Theme::default());
+        if (!$services->has(Theme::class)) {
+            $services->singleton(Theme::class)
+                ->factory(static fn() => Theme::default());
+        }
 
-        $services->singleton(StreamOutput::class)
-            ->factory(static fn() => new StreamOutput(terminal: TerminalEnvironment::fromContext($context)));
+        if (!$services->has(StreamOutput::class)) {
+            $services->singleton(StreamOutput::class)
+                ->factory(static fn() => new StreamOutput(terminal: TerminalEnvironment::fromContext($context)));
+        }
 
-        $services->scoped(KeyReader::class)
-            ->needs(ConsoleInput::class)
-            ->factory(static fn(ConsoleInput $input): KeyReader => new RawInput($input));
+        if (!$services->has(KeyReader::class)) {
+            $services->scoped(KeyReader::class)
+                ->needs(ConsoleInput::class)
+                ->factory(static fn(ConsoleInput $input): KeyReader => new RawInput($input));
+        }
     }
 }

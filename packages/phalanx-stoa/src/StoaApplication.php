@@ -14,10 +14,14 @@ final class StoaApplication
 
     private bool $started = false;
 
+    /**
+     * @param list<Response\ErrorResponseRenderer> $errorRenderers
+     */
     public function __construct(
         private readonly AppHost $host,
         private readonly RouteGroup $routes,
         private readonly ?StoaServerConfig $serverConfig = null,
+        private readonly array $errorRenderers = [],
     ) {
     }
 
@@ -95,7 +99,7 @@ final class StoaApplication
 
         $config = $this->serverConfig($fallback);
 
-        $this->runner = StoaRunner::from($this->host, $config)
+        $this->runner = StoaRunner::from($this->host, $config, errorRenderers: $this->errorRenderers)
             ->withRoutes($this->routes);
 
         return $this->runner;

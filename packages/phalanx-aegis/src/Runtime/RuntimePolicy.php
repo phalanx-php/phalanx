@@ -144,7 +144,7 @@ final readonly class RuntimePolicy
 
         return 'capabilities:' . implode(
             ',',
-            array_map(static fn(RuntimeCapability $capability): string => $capability->value, $capabilities),
+            array_map(static fn(RuntimeCapability $capability): string => $capability->name, $capabilities),
         );
     }
 }

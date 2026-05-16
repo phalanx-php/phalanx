@@ -16,6 +16,8 @@ use Phalanx\Scope\TaskScope;
 use Phalanx\System\StreamingProcess;
 use Phalanx\System\StreamingProcessException;
 use Phalanx\System\StreamingProcessHandle;
+use Phalanx\Trace\Trace;
+use Phalanx\Trace\TraceType;
 use RuntimeException;
 
 class ProcessHandle
@@ -62,9 +64,10 @@ class ProcessHandle
 
         $process = $this->process;
         $this->state = ProcessState::Idle;
+        $trace = $scope->trace();
 
-        $scope->go(static function () use ($process): void {
-            self::drainStderr($process);
+        $scope->go(static function () use ($process, $trace): void {
+            self::drainStderr($process, $trace);
         }, 'hydra.worker.stderr');
     }
 
@@ -127,7 +130,7 @@ class ProcessHandle
         $this->cleanup();
     }
 
-    private static function drainStderr(StreamingProcessHandle $process): void
+    private static function drainStderr(StreamingProcessHandle $process, Trace $trace): void
     {
         while ($process->isRunning()) {
             try {
@@ -139,7 +142,7 @@ class ProcessHandle
             }
 
             if ($chunk !== '') {
-                error_log("[Worker STDERR] {$chunk}");
+                $trace->log(TraceType::Worker, 'hydra.worker.stderr', ['chunk' => $chunk]);
             }
         }
     }

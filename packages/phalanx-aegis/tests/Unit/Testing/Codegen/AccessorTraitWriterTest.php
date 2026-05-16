@@ -125,20 +125,13 @@ final class AccessorTraitWriterTest extends TestCase
             return;
         }
 
-        $entries = scandir($path) ?: [];
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($path, \FilesystemIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::CHILD_FIRST,
+        );
 
-        foreach ($entries as $entry) {
-            if ($entry === '.' || $entry === '..') {
-                continue;
-            }
-
-            $full = $path . DIRECTORY_SEPARATOR . $entry;
-
-            if (is_dir($full)) {
-                self::removeRecursive($full);
-            } else {
-                @unlink($full);
-            }
+        foreach ($iterator as $file) {
+            $file->isDir() ? @rmdir($file->getPathname()) : @unlink($file->getPathname());
         }
 
         @rmdir($path);

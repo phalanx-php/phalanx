@@ -147,7 +147,8 @@ final class ArchonApplicationTest extends PhalanxTestCase
             $code = $app->dispatch(['fail']);
 
             self::assertSame(1, $code);
-            self::assertStringContainsString('Error: expected failure', StreamOutputHelper::contents($stream));
+            self::assertStringContainsString('ERROR', StreamOutputHelper::contents($stream));
+            self::assertStringContainsString('expected failure', StreamOutputHelper::contents($stream));
         });
 
         self::assertTrue($disposed);

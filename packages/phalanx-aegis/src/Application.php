@@ -73,6 +73,16 @@ class Application implements AppHost
         return $this->runtime;
     }
 
+    public function reportException(Scope $scope, \Throwable $e): void
+    {
+        $reportingScope = $this->createScope();
+        try {
+            $reportingScope->service(\Phalanx\Exception\ErrorRegistry::class)->report($scope, $e);
+        } finally {
+            $reportingScope->dispose();
+        }
+    }
+
     public function createScope(?CancellationToken $token = null): ExecutionScope
     {
         $this->ensureRuntimeHooks();

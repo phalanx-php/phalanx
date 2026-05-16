@@ -82,12 +82,7 @@ final readonly class HandlerLoader
         }
 
         $group = HandlerGroup::create();
-        $files = glob($dir . '/*.php');
-
-        if ($files === false) {
-            return $group;
-        }
-
+        $files = iterator_to_array(new \GlobIterator($dir . '/*.php', \FilesystemIterator::CURRENT_AS_PATHNAME), false);
         sort($files);
 
         foreach ($files as $file) {
