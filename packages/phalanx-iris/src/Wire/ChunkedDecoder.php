@@ -33,9 +33,7 @@ final class ChunkedDecoder
     private const int STATE_TRAILER = 3;
     private const int STATE_EOF = 4;
 
-    public bool $eof {
-        get => $this->isEof;
-    }
+    private(set) bool $eof = false;
 
     private string $buffer = '';
 
@@ -44,8 +42,6 @@ final class ChunkedDecoder
     private int $state = self::STATE_SIZE;
 
     private int $chunkRemaining = 0;
-
-    private bool $isEof = false;
 
     public function feed(string $bytes): void
     {
@@ -83,7 +79,7 @@ final class ChunkedDecoder
      */
     public function needsMore(): bool
     {
-        return !$this->isEof && $this->decoded === '';
+        return !$this->eof && $this->decoded === '';
     }
 
     private function advance(): void
@@ -193,7 +189,7 @@ final class ChunkedDecoder
             $this->buffer = (string) substr($this->buffer, $crlf + 2);
             if ($crlf === 0) {
                 $this->state = self::STATE_EOF;
-                $this->isEof = true;
+                $this->eof = true;
                 return true;
             }
         }
