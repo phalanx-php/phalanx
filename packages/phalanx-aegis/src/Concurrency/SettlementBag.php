@@ -18,17 +18,18 @@ use Traversable;
  * @implements ArrayAccess<string|int, Settlement>
  * @implements IteratorAggregate<string|int, Settlement>
  */
+// phpcs:disable Generic.WhiteSpace.ScopeIndent -- PHPCS misreads PHP 8.4 property hook indentation
 final class SettlementBag implements ArrayAccess, IteratorAggregate, Countable
 {
     /** @var array<string|int, mixed> */
     public array $values {
         get {
             $out = [];
-    foreach ($this->settlements as $k => $s) {
-        if ($s->isOk) {
-            $out[$k] = $s->value;
-        }
-    }
+            foreach ($this->settlements as $k => $s) {
+                if ($s->isOk) {
+                    $out[$k] = $s->value;
+                }
+            }
             return $out;
         }
     }
@@ -37,11 +38,11 @@ final class SettlementBag implements ArrayAccess, IteratorAggregate, Countable
     public array $errors {
         get {
             $out = [];
-    foreach ($this->settlements as $k => $s) {
-        if (!$s->isOk && $s->error !== null) {
-            $out[$k] = $s->error;
-        }
-    }
+            foreach ($this->settlements as $k => $s) {
+                if (!$s->isOk && $s->error !== null) {
+                    $out[$k] = $s->error;
+                }
+            }
 
             return $out;
         }
@@ -49,22 +50,22 @@ final class SettlementBag implements ArrayAccess, IteratorAggregate, Countable
 
     public bool $allOk {
         get {
-    foreach ($this->settlements as $s) {
-        if (!$s->isOk) {
-            return false;
-        }
-    }
+            foreach ($this->settlements as $s) {
+                if (!$s->isOk) {
+                    return false;
+                }
+            }
             return true;
         }
     }
 
     public bool $anyOk {
         get {
-    foreach ($this->settlements as $s) {
-        if ($s->isOk) {
-            return true;
-        }
-    }
+            foreach ($this->settlements as $s) {
+                if ($s->isOk) {
+                    return true;
+                }
+            }
             return false;
         }
     }

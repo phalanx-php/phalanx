@@ -6,8 +6,8 @@ namespace Phalanx\Pool;
 
 use Closure;
 use OpenSwoole\Core\Coroutine\Pool\ClientPool;
-use Phalanx\Runtime\CoroutineRuntime;
 use Phalanx\Diagnostics\DiagnosticCode;
+use Phalanx\Runtime\CoroutineRuntime;
 use Phalanx\Runtime\RuntimePolicy;
 use Phalanx\Scope\ExecutionLifecycleScope;
 use Phalanx\Scope\Suspendable;

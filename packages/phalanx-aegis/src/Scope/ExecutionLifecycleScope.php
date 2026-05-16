@@ -14,10 +14,10 @@ use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Concurrency\Co;
 use Phalanx\Concurrency\RetryPolicy;
-use Phalanx\Diagnostics\DiagnosticCode;
 use Phalanx\Concurrency\Settlement;
 use Phalanx\Concurrency\SettlementBag;
 use Phalanx\Concurrency\SingleflightGroup;
+use Phalanx\Diagnostics\DiagnosticCode;
 use Phalanx\Middleware\ServiceTransformationMiddleware;
 use Phalanx\Middleware\TaskMiddleware;
 use Phalanx\Runtime\RuntimeContext;
@@ -1032,7 +1032,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         }
 
         if (array_key_exists($spawnKey, $goSpawns)) {
-            $runCancelKey = $run->cancellation->onCancel(static function () use ($cid): void {
+            $run->cancellation->onCancel(static function () use ($cid): void {
                 if (Coroutine::exists($cid)) {
                     Coroutine::cancel($cid);
                 }

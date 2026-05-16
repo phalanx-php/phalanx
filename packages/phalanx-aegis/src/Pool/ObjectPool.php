@@ -112,7 +112,7 @@ final class ObjectPool
      */
     public function withBorrowed(Closure $initializer, Closure $borrow): mixed
     {
-        /** @var T|object $instance */
+        /** @var T $instance */
         $instance = $this->acquire($initializer);
 
         try {
