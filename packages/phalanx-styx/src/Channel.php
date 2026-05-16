@@ -25,15 +25,11 @@ use Throwable;
  */
 final class Channel
 {
-    public bool $isOpen {
-        get => $this->open;
-    }
-
     private static ?\stdClass $sentinel = null;
 
     private readonly SwooleChannel $chan;
 
-    private bool $open = true;
+    private(set) bool $isOpen = true;
 
     private ?Throwable $error = null;
 
@@ -50,7 +46,7 @@ final class Channel
 
     public function emit(mixed ...$args): void
     {
-        if (!$this->open) {
+        if (!$this->isOpen) {
             return;
         }
 
@@ -63,7 +59,7 @@ final class Channel
 
     public function tryEmit(mixed ...$args): bool
     {
-        if (!$this->open || $this->chan->length() >= $this->bufferSize) {
+        if (!$this->isOpen || $this->chan->length() >= $this->bufferSize) {
             return false;
         }
 
@@ -80,20 +76,20 @@ final class Channel
 
     public function complete(): void
     {
-        if (!$this->open) {
+        if (!$this->isOpen) {
             return;
         }
-        $this->open = false;
+        $this->isOpen = false;
         $this->chan->close();
     }
 
     public function error(Throwable $e): void
     {
-        if (!$this->open) {
+        if (!$this->isOpen) {
             return;
         }
         $this->error = $e;
-        $this->open = false;
+        $this->isOpen = false;
         $this->chan->close();
     }
 
