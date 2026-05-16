@@ -11,7 +11,7 @@ use Phalanx\Cancellation\Cancelled;
  * Coroutine helpers that translate OpenSwoole's "cancellation = return-false +
  * isCanceled() flag" into the exception-based model aegis users expect.
  *
- * Phase 0 substrate finding (2026-04-30): OpenSwoole 26.x's Coroutine::cancel
+ * 2026-04-30 finding: OpenSwoole 26.x's Coroutine::cancel
  * does NOT raise an exception in the target coroutine the way native Swoole does.
  * It interrupts the suspended call (usleep returns false, channel pop returns
  * false, ...) and sets Coroutine::isCanceled() to true. The coroutine resumes

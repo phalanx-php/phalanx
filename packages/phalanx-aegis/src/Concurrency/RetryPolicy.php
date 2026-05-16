@@ -13,9 +13,9 @@ use Throwable;
  */
 final class RetryPolicy
 {
-    private const string STRATEGY_EXPONENTIAL = 'exponential';
-    private const string STRATEGY_LINEAR = 'linear';
     private const string STRATEGY_FIXED = 'fixed';
+    private const string STRATEGY_LINEAR = 'linear';
+    private const string STRATEGY_EXPONENTIAL = 'exponential';
 
     /** @var list<class-string<Throwable>> */
     private array $retryOn = [];
