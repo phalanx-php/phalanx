@@ -10,11 +10,7 @@ use Throwable;
 
 class SurrealLiveSubscription
 {
-    public bool $isOpen {
-        get => $this->open;
-    }
-
-    private bool $open = true;
+    private(set) bool $isOpen = true;
 
     public function __construct(
         private readonly string $id,
@@ -47,7 +43,7 @@ class SurrealLiveSubscription
 
     public function kill(): void
     {
-        if (!$this->open) {
+        if (!$this->isOpen) {
             return;
         }
 
@@ -60,22 +56,22 @@ class SurrealLiveSubscription
 
     public function close(): void
     {
-        if (!$this->open) {
+        if (!$this->isOpen) {
             return;
         }
 
-        $this->open = false;
+        $this->isOpen = false;
         $this->connection->unsubscribe($this->id);
         $this->channel->complete();
     }
 
     public function fail(Throwable $error): void
     {
-        if (!$this->open) {
+        if (!$this->isOpen) {
             return;
         }
 
-        $this->open = false;
+        $this->isOpen = false;
         $this->connection->unsubscribe($this->id);
         $this->channel->error($error);
     }

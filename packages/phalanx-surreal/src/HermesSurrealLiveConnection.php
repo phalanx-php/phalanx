@@ -12,9 +12,7 @@ use Throwable;
 
 class HermesSurrealLiveConnection implements SurrealLiveConnection
 {
-    public bool $isOpen {
-        get => $this->open;
-    }
+    private(set) bool $isOpen = true;
 
     /** @var array<int, Channel> */
     private array $pending = [];
@@ -23,8 +21,6 @@ class HermesSurrealLiveConnection implements SurrealLiveConnection
     private array $subscriptions = [];
 
     private int $nextId = 1;
-
-    private bool $open = true;
 
     public function __construct(
         private readonly ExecutionScope $scope,
@@ -86,11 +82,11 @@ class HermesSurrealLiveConnection implements SurrealLiveConnection
 
     public function close(): void
     {
-        if (!$this->open) {
+        if (!$this->isOpen) {
             return;
         }
 
-        $this->open = false;
+        $this->isOpen = false;
         foreach ($this->pending as $reply) {
             $reply->complete();
         }
@@ -194,7 +190,7 @@ class HermesSurrealLiveConnection implements SurrealLiveConnection
 
     private function assertOpen(): void
     {
-        if (!$this->open) {
+        if (!$this->isOpen) {
             throw new SurrealException('Surreal live connection is closed.');
         }
     }
