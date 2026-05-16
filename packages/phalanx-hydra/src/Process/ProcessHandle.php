@@ -9,6 +9,7 @@ use Phalanx\Hydra\Protocol\Codec;
 use Phalanx\Hydra\Protocol\MessageType;
 use Phalanx\Hydra\Protocol\Response;
 use Phalanx\Hydra\Protocol\ServiceCall;
+use Phalanx\Hydra\Protocol\StreamEmit;
 use Phalanx\Hydra\Protocol\TaskRequest;
 use Phalanx\Scope\TaskExecutor;
 use Phalanx\Scope\TaskScope;
@@ -59,8 +60,8 @@ class ProcessHandle
             "--autoload={$this->config->autoloadPath}",
         ])->start($scope);
 
-        $this->state = ProcessState::Idle;
         $process = $this->process;
+        $this->state = ProcessState::Idle;
 
         $scope->go(static function () use ($process): void {
             self::drainStderr($process);
@@ -159,6 +160,10 @@ class ProcessHandle
             }
 
             $message = Codec::decode($line);
+
+            if ($message instanceof StreamEmit) {
+                continue;
+            }
 
             if ($message instanceof ServiceCall) {
                 $this->handleServiceCall($message, $serviceHandler);

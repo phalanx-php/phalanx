@@ -8,16 +8,16 @@ use JsonException;
 
 final class Codec
 {
-    public static function encode(TaskRequest|ServiceCall|Response $message): string
+    public static function encode(TaskRequest|ServiceCall|Response|StreamEmit $message): string
     {
         return json_encode($message->toArray(), JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES) . "\n";
     }
 
     /**
-     * @return TaskRequest|ServiceCall|Response
+     * @return TaskRequest|ServiceCall|Response|StreamEmit
      * @throws JsonException|InvalidMessageException
      */
-    public static function decode(string $line): TaskRequest|ServiceCall|Response
+    public static function decode(string $line): TaskRequest|ServiceCall|Response|StreamEmit
     {
         $data = json_decode(trim($line), true, 512, JSON_THROW_ON_ERROR);
 
@@ -35,6 +35,7 @@ final class Codec
             MessageType::TaskRequest => TaskRequest::fromArray($data),
             MessageType::ServiceCall => ServiceCall::fromArray($data),
             MessageType::TaskResponse, MessageType::ServiceResponse => Response::fromArray($data),
+            MessageType::StreamEmit => StreamEmit::fromArray($data),
         };
     }
 

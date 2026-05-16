@@ -108,6 +108,7 @@ class WorkerRuntime
                 trace: new Trace(),
                 stdin: $this->stdin,
                 stdout: $this->stdout,
+                taskId: $request->id,
             );
 
             self::assertAcceptsWorkerScope($task);

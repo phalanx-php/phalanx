@@ -10,4 +10,5 @@ enum MessageType: string
     case ServiceCall = 'service_call';
     case TaskResponse = 'task_response';
     case ServiceResponse = 'service_response';
+    case StreamEmit = 'stream_emit';
 }

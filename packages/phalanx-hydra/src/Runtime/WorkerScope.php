@@ -7,6 +7,7 @@ namespace Phalanx\Hydra\Runtime;
 use Phalanx\Hydra\Protocol\Codec;
 use Phalanx\Hydra\Protocol\Response;
 use Phalanx\Hydra\Protocol\ServiceCall;
+use Phalanx\Hydra\Protocol\StreamEmit;
 use Phalanx\Runtime\RuntimeContext;
 use Phalanx\Trace\Trace;
 use Phalanx\Worker\WorkerScope as AegisWorkerScope;
@@ -23,9 +24,10 @@ class WorkerScope implements AegisWorkerScope
      * @param resource $stdout
      */
     public function __construct(
-        private readonly Trace $trace,
+        private Trace $trace,
         private $stdin = STDIN,
         private $stdout = STDOUT,
+        private(set) string $taskId = '',
     ) {
     }
 
@@ -96,6 +98,19 @@ class WorkerScope implements AegisWorkerScope
                 return $response;
             }
         }
+    }
+
+    /** @param array<string, mixed> $payload Must be JSON-serializable (no closures, resources, or objects). */
+    public function streamEmit(string $eventClass, array $payload = []): void
+    {
+        $message = new StreamEmit(
+            taskId: $this->taskId,
+            eventClass: $eventClass,
+            payload: $payload,
+        );
+
+        fwrite($this->stdout, Codec::encode($message));
+        fflush($this->stdout);
     }
 
     private function write(ServiceCall $call): void
