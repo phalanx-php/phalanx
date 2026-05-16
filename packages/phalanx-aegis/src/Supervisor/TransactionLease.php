@@ -10,7 +10,7 @@ namespace Phalanx\Supervisor;
  * calls, message publishes, etc. — while this lease is held; if the
  * transaction commits and the IO failed, retries become a correctness
  * problem. Detection of "external IO while holding a transaction" is
- * PHX-TXN-001.
+ * DiagnosticCode::TransactionExternalIo.
  *
  * Domain: pool name backing the transaction (e.g. "postgres/main").
  * Key:    transaction identifier (connection id + tx number).

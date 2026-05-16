@@ -75,7 +75,7 @@ return DemoReport::demo(
         };
 
         $runCase('greet Ada',             ['greet', 'Ada'],             'Hello, Ada.');
-        $runCase('version',               ['version'],                  'archon-demo 0.1');
+        $runCase('version',               ['version'],                  'archon-demo 0.2.0-alpha');
         $runCase('info --shout',          ['info', '--shout'],          'PHALANX ARCHON');
         $runCase('debug:deadlock',        ['debug:deadlock'],           '[DEADLOCK REPORT]');
         $runCase('debug:deadlock --json', ['debug:deadlock', '--json'], '"coroutineCount":');

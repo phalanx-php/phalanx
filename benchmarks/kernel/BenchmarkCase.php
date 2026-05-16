@@ -79,7 +79,7 @@ final class BenchmarkContext
                 );
             }
 
-            $borrowed = $supervisor->poolStats()['taskRun']['borrowed'];
+            $borrowed = $supervisor->poolStats()->taskRun->borrowed;
             if ($borrowed !== 0) {
                 throw new RuntimeException(
                     "Benchmark case '{$case}' left {$borrowed} borrowed task runs.",
@@ -100,7 +100,7 @@ final class BenchmarkContext
                 : $app->runtime()->memory;
 
             $apps[] = [
-                'pool_stats' => $app->supervisor()->poolStats(),
+                'pool_stats' => $app->supervisor()->poolStats()->toArray(),
                 'runtime_memory' => array_map(
                     static fn(RuntimeTableStats $stats): array => [
                         'name' => $stats->name,
@@ -141,20 +141,20 @@ final class BenchmarkResult
      * @param array<string, mixed> $diagnostics
      */
     public function __construct(
-        public readonly string $case,
-        public readonly int $iterations,
-        public readonly int $totalNs,
-        public readonly int $zendMemoryBefore,
-        public readonly int $zendMemoryAfter,
-        public readonly int $realMemoryBefore,
-        public readonly int $realMemoryAfter,
-        public readonly int $memoryPeak,
-        public readonly int $zendMemoryPeak,
-        public readonly int $gcRootsBefore,
-        public readonly int $gcRootsAfter,
-        public readonly array $samplesNs,
-        public readonly array $metadata,
-        public readonly array $diagnostics,
+        private(set) string $case,
+        private(set) int $iterations,
+        private(set) int $totalNs,
+        private(set) int $zendMemoryBefore,
+        private(set) int $zendMemoryAfter,
+        private(set) int $realMemoryBefore,
+        private(set) int $realMemoryAfter,
+        private(set) int $memoryPeak,
+        private(set) int $zendMemoryPeak,
+        private(set) int $gcRootsBefore,
+        private(set) int $gcRootsAfter,
+        private(set) array $samplesNs,
+        private(set) array $metadata,
+        private(set) array $diagnostics,
     ) {
     }
 

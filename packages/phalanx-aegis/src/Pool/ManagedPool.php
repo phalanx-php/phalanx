@@ -7,6 +7,7 @@ namespace Phalanx\Pool;
 use Closure;
 use OpenSwoole\Core\Coroutine\Pool\ClientPool;
 use Phalanx\Runtime\CoroutineRuntime;
+use Phalanx\Diagnostics\DiagnosticCode;
 use Phalanx\Runtime\RuntimePolicy;
 use Phalanx\Scope\ExecutionLifecycleScope;
 use Phalanx\Scope\Suspendable;
@@ -117,7 +118,7 @@ final class ManagedPool
         if ($waitedMs > $this->starvationThresholdMs) {
             $this->trace->log(
                 TraceType::Lifecycle,
-                'PHX-POOL-001',
+                DiagnosticCode::PoolStarvation->value,
                 [
                     'domain' => $this->domain,
                     'wait_ms' => $waitedMs,
@@ -155,7 +156,7 @@ final class ManagedPool
         if ($checkout === null) {
             $this->trace->log(
                 TraceType::Defer,
-                'PHX-POOL-003',
+                DiagnosticCode::PoolDoubleRelease->value,
                 [
                     'domain' => $this->domain,
                     'key' => $lease->key,

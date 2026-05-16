@@ -8,11 +8,11 @@ namespace Phalanx\Supervisor;
  * A claim on a finite resource held by a TaskRun. The supervisor's ledger
  * tracks lease lifecycle so violations are mechanically detectable:
  *
- *   PHX-POOL-001  nested acquire from same pool by the same TaskRun
- *   PHX-POOL-002  pool lease held across a worker dispatch boundary
- *   PHX-TXN-001   external IO attempted while holding a transaction lease
- *   PHX-LOCK-001  lock acquisition order would deadlock (canonical sort
- *                 of multi-key acquire detects circular ordering)
+ *   DiagnosticCode::PoolNestedAcquire   nested acquire from same pool by the same TaskRun
+ *   DiagnosticCode::PoolCrossBoundary   pool lease held across a worker dispatch boundary
+ *   DiagnosticCode::TransactionExternalIo  external IO attempted while holding a transaction lease
+ *   DiagnosticCode::LockOrderViolation  lock acquisition order would deadlock (canonical sort
+ *                                       of multi-key acquire detects circular ordering)
  *
  * Implementations:
  *   PoolLease         pool name + connection id + 'shared'

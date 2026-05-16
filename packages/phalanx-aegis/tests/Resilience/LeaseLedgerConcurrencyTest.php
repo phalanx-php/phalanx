@@ -19,7 +19,7 @@ use Phalanx\Testing\PhalanxTestCase;
 /**
  * Stress the lease ledger under sibling concurrency. Each sibling
  * acquires + releases a lease against a different pool domain (so no
- * PHX-POOL-001 collisions) and we assert that:
+ * DiagnosticCode::PoolNestedAcquire collisions) and we assert that:
  *
  *   - All leases are released cleanly
  *   - Ledger drains to zero

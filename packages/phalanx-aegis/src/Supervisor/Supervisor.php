@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Supervisor;
 
 use Phalanx\Cancellation\CancellationToken;
+use Phalanx\Diagnostics\DiagnosticCode;
 use Phalanx\Pool\ObjectPool;
 use Phalanx\Scope\BorrowedScopeFrame;
 use Phalanx\Scope\Cancellable;
@@ -232,13 +233,11 @@ final class Supervisor
             $this->cancel($run);
         }
 
-        // PHX-LEASE-001 marks leases still held at reap time; the supervisor
-        // reports the leak but leaves the underlying resource with its owner.
         if ($run->leases !== []) {
             foreach ($run->leases as $orphaned) {
                 $this->trace->log(
                     TraceType::Defer,
-                    'PHX-LEASE-001',
+                    DiagnosticCode::LeaseOrphan->value,
                     [
                         'run' => $run->id,
                         'task' => $run->name,
@@ -269,19 +268,18 @@ final class Supervisor
         }
     }
 
-    /** @return array{taskRun: array{hits: int, misses: int, overflows: int, drops: int, borrowed: int, free: int, capacity: int}, scopeFrame: array{hits: int, misses: int, overflows: int, drops: int, borrowed: int, free: int, capacity: int}, token: array{hits: int, misses: int, free: int, capacity: int}} */
-    public function poolStats(): array
+    public function poolStats(): SupervisorPoolStats
     {
-        return [
-            'taskRun' => $this->taskRunPool->stats(),
-            'scopeFrame' => $this->scopeFramePool->stats(),
-            'token' => [
-                'hits' => $this->tokenPoolHits,
-                'misses' => $this->tokenPoolMisses,
-                'free' => $this->tokenPool->count(),
-                'capacity' => $this->tokenPoolCapacity,
-            ],
-        ];
+        return new SupervisorPoolStats(
+            taskRun: $this->taskRunPool->stats(),
+            scopeFrame: $this->scopeFramePool->stats(),
+            token: new TokenPoolStats(
+                hits: $this->tokenPoolHits,
+                misses: $this->tokenPoolMisses,
+                free: $this->tokenPool->count(),
+                capacity: $this->tokenPoolCapacity,
+            ),
+        );
     }
 
     /**
@@ -289,11 +287,7 @@ final class Supervisor
      * acquisitions call this; the supervisor checks the run's existing
      * leases for violations before recording.
      *
-     * @throws LeaseViolation
-     *   PHX-POOL-001  Nested acquire of the same pool by the same run.
-     *   PHX-LOCK-001  Lock acquire whose key sorts before an already-held
-     *                 lock in the same domain — the unsorted acquire would
-     *                 allow the canonical deadlock pattern.
+     * @throws LeaseViolation DiagnosticCode::PoolNestedAcquire, DiagnosticCode::LockOrderViolation
      */
     public function registerLease(TaskRun $run, Lease $lease): void
     {
@@ -306,7 +300,7 @@ final class Supervisor
             foreach ($existing->leases as $held) {
                 if ($held instanceof PoolLease && $held->domain === $lease->domain) {
                     throw new LeaseViolation(
-                        phxCode: 'PHX-POOL-001',
+                        diagnostic: DiagnosticCode::PoolNestedAcquire,
                         detail: "nested acquire from pool '{$lease->domain}' (already holds connection #{$held->key})",
                         runId: $run->id,
                         runName: $run->name,
@@ -330,7 +324,7 @@ final class Supervisor
                 }
                 if (strcmp($lease->key, $held->key) < 0) {
                     throw new LeaseViolation(
-                        phxCode: 'PHX-LOCK-001',
+                        diagnostic: DiagnosticCode::LockOrderViolation,
                         detail: "out-of-order lock acquire in domain '{$lease->domain}': "
                               . "would acquire '{$lease->key}' while holding '{$held->key}' "
                               . "— canonical-sort multi-key acquires to prevent deadlock",
@@ -349,7 +343,7 @@ final class Supervisor
      * Worker dispatch crosses a process boundary. Any lease that points at
      * process-local state must be released before the task leaves the parent.
      *
-     * @throws LeaseViolation PHX-POOL-002
+     * @throws LeaseViolation DiagnosticCode::PoolCrossBoundary
      */
     public function assertCanEnterWorker(TaskRun $run): void
     {
@@ -364,7 +358,7 @@ final class Supervisor
             }
 
             throw new LeaseViolation(
-                phxCode: 'PHX-POOL-002',
+                diagnostic: DiagnosticCode::PoolCrossBoundary,
                 detail: "process-local lease '{$held->domain}'/'{$held->key}' held across worker dispatch boundary",
                 runId: $run->id,
                 runName: $run->name,
@@ -377,7 +371,7 @@ final class Supervisor
      * Transactions may wait on local coordination primitives, but must not
      * perform unrelated external IO while the transaction lease is held.
      *
-     * @throws LeaseViolation PHX-TXN-001
+     * @throws LeaseViolation DiagnosticCode::TransactionExternalIo
      */
     public function assertCanWait(TaskRun $run, WaitReason $reason): void
     {
@@ -396,7 +390,7 @@ final class Supervisor
             }
 
             throw new LeaseViolation(
-                phxCode: 'PHX-TXN-001',
+                diagnostic: DiagnosticCode::TransactionExternalIo,
                 detail: "external {$reason->kind->value} wait attempted while transaction "
                     . "'{$held->domain}'/'{$held->key}' is open",
                 runId: $run->id,

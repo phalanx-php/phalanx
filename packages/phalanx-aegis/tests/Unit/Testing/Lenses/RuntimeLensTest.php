@@ -79,11 +79,8 @@ final class RuntimeLensTest extends TestCase
         try {
             $stats = $app->runtime->poolStats();
 
-            self::assertArrayHasKey('taskRun', $stats);
-            self::assertArrayHasKey('scopeFrame', $stats);
-            self::assertArrayHasKey('token', $stats);
-            self::assertSame(0, $stats['taskRun']['borrowed']);
-            self::assertSame(0, $stats['scopeFrame']['borrowed']);
+            self::assertSame(0, $stats->taskRun->borrowed);
+            self::assertSame(0, $stats->scopeFrame->borrowed);
 
             $app->runtime->assertPoolsClean();
             $app->runtime->assertNoBorrowedPools();
@@ -103,7 +100,7 @@ final class RuntimeLensTest extends TestCase
             $run = $supervisor->start($task, $scope, DispatchMode::Inline);
 
             try {
-                self::assertSame(1, $app->runtime->poolStats()['taskRun']['borrowed']);
+                self::assertSame(1, $app->runtime->poolStats()->taskRun->borrowed);
 
                 $this->expectException(AssertionFailedError::class);
                 $this->expectExceptionMessage('Expected no borrowed supervisor task runs; 1 still borrowed.');

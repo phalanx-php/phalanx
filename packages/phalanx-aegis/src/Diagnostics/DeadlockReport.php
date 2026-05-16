@@ -13,7 +13,7 @@ use OpenSwoole\Coroutine;
  * core library but only echoes a textual dump to stdout — fine for crash
  * reporting from a SIGUSR2 trap, useless for programmatic consumers.
  * This wrapper builds a structured report from the same primitives
- * (`Coroutine::list()`, `Coroutine::stats()`, `Coroutine::getBackTrace()`)
+ * (`Coroutine::list()`, `CoroutineStats::capture()`, `Coroutine::getBackTrace()`)
  * so an Archon `phalanx debug:deadlock` command (or any operator tooling)
  * can format the output however it wants.
  *
@@ -39,8 +39,7 @@ final readonly class DeadlockReport
      */
     public static function collect(int $maxFrames = 32, int $depth = 32): self
     {
-        $stats = Coroutine::stats();
-        $count = isset($stats['coroutine_num']) ? (int) $stats['coroutine_num'] : 0;
+        $count = CoroutineStats::capture()->coroutineNum;
         $cids = Coroutine::list();
 
         $frames = [];

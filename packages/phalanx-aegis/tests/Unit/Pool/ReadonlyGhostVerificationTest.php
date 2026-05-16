@@ -113,7 +113,7 @@ final class ReadonlyGhostVerificationTest extends TestCase
             $pool->release($obj);
         }
 
-        self::assertSame(4, $pool->stats()['hits']);
-        self::assertSame(1, $pool->stats()['misses']);
+        self::assertSame(4, $pool->stats()->hits);
+        self::assertSame(1, $pool->stats()->misses);
     }
 }

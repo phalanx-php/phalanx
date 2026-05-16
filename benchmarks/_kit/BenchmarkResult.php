@@ -13,15 +13,15 @@ final class BenchmarkResult
      * @param list<int> $samplesNs
      */
     public function __construct(
-        public private(set) string $case,
-        public private(set) int $iterations,
-        public private(set) int $totalNs,
-        public private(set) int $memoryBefore,
-        public private(set) int $memoryAfter,
-        public private(set) int $memoryPeak,
-        public private(set) int $errors,
-        public private(set) string $cleanup,
-        public private(set) array $samplesNs,
+        private(set) string $case,
+        private(set) int $iterations,
+        private(set) int $totalNs,
+        private(set) int $memoryBefore,
+        private(set) int $memoryAfter,
+        private(set) int $memoryPeak,
+        private(set) int $errors,
+        private(set) string $cleanup,
+        private(set) array $samplesNs,
     ) {
     }
 

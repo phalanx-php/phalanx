@@ -15,7 +15,7 @@ use SplFileInfo;
  * Meta-test: Archon has fully replaced its React/Promise era. Any new
  * `use React\…`, `PromiseInterface`, `Deferred`, or `Loop::` symbol in
  * Archon source or tests is a regression — those primitives belong to
- * the historical 0.1 substrate, not the OpenSwoole 0.2 runtime.
+ * the archived pre-OpenSwoole era, not the current runtime.
  */
 final class NoReactImportsTest extends TestCase
 {
@@ -51,7 +51,7 @@ final class NoReactImportsTest extends TestCase
         self::assertSame(
             [],
             $offenders,
-            "React-era imports detected in Archon — these belong to the historical 0.1 substrate:\n  - "
+            "React-era imports detected in Archon — these belong to the archived pre-OpenSwoole era:\n  - "
             . implode("\n  - ", $offenders),
         );
     }

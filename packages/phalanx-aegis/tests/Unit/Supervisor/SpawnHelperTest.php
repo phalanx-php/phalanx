@@ -8,6 +8,7 @@ use OpenSwoole\Coroutine;
 use OpenSwoole\Coroutine\Channel;
 use Phalanx\Application;
 use Phalanx\Boot\AppContext;
+use Phalanx\Diagnostics\DiagnosticCode;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
@@ -58,11 +59,11 @@ final class SpawnHelperTest extends PhalanxTestCase
 
             self::assertTrue($started->pop(1.0));
             self::waitUntil(
-                static fn(): bool => self::traceEvents($inner, 'PHX-SPAWN-001') !== [],
+                static fn(): bool => self::traceEvents($inner, DiagnosticCode::SpawnError->value) !== [],
                 'spawn error trace was not emitted',
             );
 
-            $events = self::traceEvents($inner, 'PHX-SPAWN-001');
+            $events = self::traceEvents($inner, DiagnosticCode::SpawnError->value);
             self::assertCount(1, $events);
             self::assertSame($handle->id, $events[0]->attrs['run']);
             self::assertStringContainsString('background boom', $events[0]->attrs['message']);
@@ -89,7 +90,7 @@ final class SpawnHelperTest extends PhalanxTestCase
 
             $inner->dispose();
 
-            $events = self::traceEvents($inner, 'PHX-SPAWN-002');
+            $events = self::traceEvents($inner, DiagnosticCode::SpawnForceCancelled->value);
             self::assertCount(1, $events);
             self::assertSame($handle->id, $events[0]->attrs['run']);
 
@@ -208,7 +209,7 @@ final class SpawnHelperTest extends PhalanxTestCase
             }, name: 'completed-spawn');
             self::assertTrue($completedDone->pop(1.0));
             self::waitForNullSnapshot($completed);
-            $statsBeforeParked = $inner->supervisor()->poolStats()['taskRun'];
+            $statsBeforeParked = $inner->supervisor()->poolStats()->taskRun;
 
             $parked = $inner->go(static function (ExecutionScope $s) use ($started, $parkedUnwound): void {
                 try {
@@ -218,10 +219,10 @@ final class SpawnHelperTest extends PhalanxTestCase
                     $parkedUnwound->push(true);
                 }
             }, name: 'parked-spawn');
-            $statsAfterParked = $inner->supervisor()->poolStats()['taskRun'];
+            $statsAfterParked = $inner->supervisor()->poolStats()->taskRun;
 
             self::assertTrue($started->pop(1.0));
-            self::assertSame($statsBeforeParked['hits'] + 1, $statsAfterParked['hits']);
+            self::assertSame($statsBeforeParked->hits + 1, $statsAfterParked->hits);
 
             $completed->cancel();
 
@@ -235,7 +236,7 @@ final class SpawnHelperTest extends PhalanxTestCase
 
             $inner->dispose();
             self::assertSame(0, $ledger->liveCount());
-            self::assertSame(0, $inner->supervisor()->poolStats()['taskRun']['borrowed']);
+            self::assertSame(0, $inner->supervisor()->poolStats()->taskRun->borrowed);
         });
     }
 

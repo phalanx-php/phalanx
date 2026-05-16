@@ -112,6 +112,7 @@ final class ObjectPool
      */
     public function withBorrowed(Closure $initializer, Closure $borrow): mixed
     {
+        /** @var T|object $instance */
         $instance = $this->acquire($initializer);
 
         try {
@@ -126,18 +127,17 @@ final class ObjectPool
         }
     }
 
-    /** @return array{hits: int, misses: int, overflows: int, drops: int, borrowed: int, free: int, capacity: int} */
-    public function stats(): array
+    public function stats(): PoolStats
     {
-        return [
-            'hits' => $this->hits,
-            'misses' => $this->misses,
-            'overflows' => $this->overflows,
-            'drops' => $this->drops,
-            'borrowed' => count($this->borrowed),
-            'free' => $this->free->count(),
-            'capacity' => $this->capacity,
-        ];
+        return new PoolStats(
+            hits: $this->hits,
+            misses: $this->misses,
+            overflows: $this->overflows,
+            drops: $this->drops,
+            borrowed: count($this->borrowed),
+            free: $this->free->count(),
+            capacity: $this->capacity,
+        );
     }
 
     private static function containsBorrowedValue(mixed $value, int $depth = 0): bool

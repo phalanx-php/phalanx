@@ -21,7 +21,7 @@ use Phalanx\Trace\TraceType;
  * extension call.
  *
  * The monitor reads ServerStats on each tick; when lag crosses the
- * threshold it emits PHX-PRESSURE-001 to the Trace, attributed with the
+ * threshold it emits DiagnosticCode::PressureEventLoopLag to the Trace, attributed with the
  * current lag value and the configured threshold. Operators consume the
  * trace via the supervisor's diagnostic surface, /metrics endpoint, or
  * any other Trace-listening surface.
@@ -33,8 +33,6 @@ use Phalanx\Trace\TraceType;
  */
 final class PressureMonitor
 {
-    public const string DIAGNOSTIC_CODE = 'PHX-PRESSURE-001';
-
     public function __construct(
         private readonly Trace $trace,
         private readonly ServerStats $stats,
@@ -61,7 +59,7 @@ final class PressureMonitor
         if ($snapshot->eventLoopLagMs > $this->thresholdMs) {
             $this->trace->log(
                 TraceType::Lifecycle,
-                self::DIAGNOSTIC_CODE,
+                DiagnosticCode::PressureEventLoopLag->value,
                 [
                     'lag_ms' => $snapshot->eventLoopLagMs,
                     'threshold_ms' => $this->thresholdMs,

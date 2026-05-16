@@ -23,21 +23,21 @@ final class ScopeFramePoolTest extends TestCase
             $first = $app->createScope();
             self::assertInstanceOf(ExecutionLifecycleScope::class, $first);
             $firstId = $first->scopeId;
-            self::assertSame(1, $app->supervisor()->poolStats()['scopeFrame']['borrowed']);
+            self::assertSame(1, $app->supervisor()->poolStats()->scopeFrame->borrowed);
 
             $first->dispose();
-            $afterFirstDispose = $app->supervisor()->poolStats()['scopeFrame'];
-            self::assertSame(0, $afterFirstDispose['borrowed']);
-            self::assertSame(1, $afterFirstDispose['free']);
-            $hitsBeforeReuse = $afterFirstDispose['hits'];
+            $afterFirstDispose = $app->supervisor()->poolStats()->scopeFrame;
+            self::assertSame(0, $afterFirstDispose->borrowed);
+            self::assertSame(1, $afterFirstDispose->free);
+            $hitsBeforeReuse = $afterFirstDispose->hits;
 
             $second = $app->createScope();
             self::assertInstanceOf(ExecutionLifecycleScope::class, $second);
 
             try {
-                $afterSecondCreate = $app->supervisor()->poolStats()['scopeFrame'];
-                self::assertGreaterThan($hitsBeforeReuse, $afterSecondCreate['hits']);
-                self::assertSame(1, $afterSecondCreate['borrowed']);
+                $afterSecondCreate = $app->supervisor()->poolStats()->scopeFrame;
+                self::assertGreaterThan($hitsBeforeReuse, $afterSecondCreate->hits);
+                self::assertSame(1, $afterSecondCreate->borrowed);
                 self::assertNotSame($first, $second);
                 self::assertNotSame($firstId, $second->scopeId);
 
@@ -70,7 +70,7 @@ final class ScopeFramePoolTest extends TestCase
                 self::assertSame('expected', $e->getMessage());
             }
 
-            self::assertSame(0, $app->supervisor()->poolStats()['scopeFrame']['borrowed']);
+            self::assertSame(0, $app->supervisor()->poolStats()->scopeFrame->borrowed);
         } finally {
             $app->shutdown();
         }
@@ -92,13 +92,13 @@ final class ScopeFramePoolTest extends TestCase
                     );
 
                     $borrowedDuringRun = $scope instanceof ExecutionLifecycleScope
-                        ? $scope->supervisor()->poolStats()['scopeFrame']['borrowed']
+                        ? $scope->supervisor()->poolStats()->scopeFrame->borrowed
                         : null;
                 },
             ));
 
             self::assertSame(1, $borrowedDuringRun);
-            self::assertSame(0, $app->supervisor()->poolStats()['scopeFrame']['borrowed']);
+            self::assertSame(0, $app->supervisor()->poolStats()->scopeFrame->borrowed);
         } finally {
             $app->shutdown();
         }

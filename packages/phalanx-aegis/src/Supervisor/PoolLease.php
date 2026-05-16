@@ -16,9 +16,9 @@ namespace Phalanx\Supervisor;
  *         own connections, bounded by pool.size.
  *
  * Detection: nested acquire from the same pool by the same TaskRun =
- * PHX-POOL-001. Holding a PoolLease across a worker dispatch boundary =
- * PHX-POOL-002 (the connection is process-local; serializing the lease
- * crosses an unsafe boundary).
+ * DiagnosticCode::PoolNestedAcquire. Holding a PoolLease across a worker
+ * dispatch boundary = DiagnosticCode::PoolCrossBoundary (the connection is
+ * process-local; serializing the lease crosses an unsafe boundary).
  */
 final class PoolLease implements Lease
 {

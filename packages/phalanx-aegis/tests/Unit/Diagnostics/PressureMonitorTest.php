@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Tests\Unit\Diagnostics;
 
+use Phalanx\Diagnostics\DiagnosticCode;
 use Phalanx\Diagnostics\PressureMonitor;
 use Phalanx\Server\ServerStats;
 use Phalanx\Trace\Trace;
@@ -11,7 +12,7 @@ use Phalanx\Trace\TraceType;
 use PHPUnit\Framework\TestCase;
 
 /**
- * PressureMonitor::sample() emits PHX-PRESSURE-001 when the snapshot's
+ * PressureMonitor::sample() emits DiagnosticCode::PressureEventLoopLag when the snapshot's
  * event_loop_lag_ms crosses the threshold. The periodic loop is exercised
  * via integration tests with a real server; this unit test drives the
  * sample() entry directly using a static stats provider.
@@ -41,7 +42,7 @@ final class PressureMonitorTest extends TestCase
         self::assertSame(75.0, $lag);
         $diagnostics = self::diagnosticEvents($trace);
         self::assertCount(1, $diagnostics);
-        self::assertSame('PHX-PRESSURE-001', $diagnostics[0]->name);
+        self::assertSame(DiagnosticCode::PressureEventLoopLag->value, $diagnostics[0]->name);
         self::assertSame(75.0, $diagnostics[0]->attrs['lag_ms']);
         self::assertSame(50.0, $diagnostics[0]->attrs['threshold_ms']);
     }
@@ -70,7 +71,7 @@ final class PressureMonitorTest extends TestCase
     {
         $events = [];
         foreach ($trace->events() as $event) {
-            if ($event->type === TraceType::Lifecycle && $event->name === PressureMonitor::DIAGNOSTIC_CODE) {
+            if ($event->type === TraceType::Lifecycle && $event->name === DiagnosticCode::PressureEventLoopLag->value) {
                 $events[] = $event;
             }
         }

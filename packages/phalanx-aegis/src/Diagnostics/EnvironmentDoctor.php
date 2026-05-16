@@ -100,7 +100,7 @@ final readonly class EnvironmentDoctor
         }
 
         if ($this->supervisor !== null) {
-            foreach ($this->supervisor->poolStats() as $name => $stats) {
+            foreach ($this->supervisor->poolStats()->toArray() as $name => $stats) {
                 $checks[] = new DoctorCheck(
                     "supervisor.pool.{$name}",
                     true,

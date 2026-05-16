@@ -15,7 +15,7 @@ final class VersionCommand implements Scopeable
 {
     public function __invoke(CommandScope $scope): int
     {
-        $scope->service(StreamOutput::class)->persist('archon-demo 0.1');
+        $scope->service(StreamOutput::class)->persist('archon-demo 0.2.0-alpha');
 
         return 0;
     }

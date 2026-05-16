@@ -142,6 +142,11 @@ services:
             - phpstan.rules.rule
 
     -
+        class: Phalanx\PHPStan\Rules\Testing\UseBenchmarkHarnessRule
+        tags:
+            - phpstan.rules.rule
+
+    -
         class: Phalanx\PHPStan\Rules\Scope\UnusedClosureParameterRule
         tags:
             - phpstan.rules.rule

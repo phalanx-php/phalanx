@@ -8,7 +8,7 @@ use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\ServerRequest;
 use Phalanx\Benchmarks\Http\AbstractHttpBenchmarkCase;
 use Phalanx\Benchmarks\Http\HttpBenchmarkCase;
-use Phalanx\Benchmarks\Kit\BenchmarkApp;
+use Phalanx\Benchmarks\Http\HttpBenchmarkContext;
 use Phalanx\Stoa\RequestScope;
 use Phalanx\Stoa\RouteGroup;
 use Phalanx\Task\Scopeable;
@@ -20,7 +20,7 @@ final class StoaDispatchDtoUnusedCase extends AbstractHttpBenchmarkCase
         parent::__construct('stoa_dispatch_dto_unused', 5_000, 100);
     }
 
-    public function run(BenchmarkApp $app): void
+    public function run(HttpBenchmarkContext $context): void
     {
         $payload = [
             'title' => 'Benchmark Task',
@@ -28,13 +28,13 @@ final class StoaDispatchDtoUnusedCase extends AbstractHttpBenchmarkCase
             'meta' => array_fill(0, 50, ['key' => 'value', 'data' => str_repeat('x', 20)]),
         ];
 
-        $response = $app->stoaRunner('dto-unused', RouteGroup::of([
+        $response = $context->runner('dto-unused', RouteGroup::of([
             'POST /dto-unused' => BenchmarkDtoUnusedRoute::class,
         ]))->dispatch(new ServerRequest(
             'POST',
             '/dto-unused',
             ['Content-Type' => 'application/json'],
-            json_encode($payload)
+            (string) json_encode($payload)
         ));
 
         if ($response->getStatusCode() !== 200) {
@@ -50,7 +50,7 @@ final class StoaDispatchDtoUsedCase extends AbstractHttpBenchmarkCase
         parent::__construct('stoa_dispatch_dto_used', 5_000, 100);
     }
 
-    public function run(BenchmarkApp $app): void
+    public function run(HttpBenchmarkContext $context): void
     {
         $payload = [
             'title' => 'Benchmark Task',
@@ -58,13 +58,13 @@ final class StoaDispatchDtoUsedCase extends AbstractHttpBenchmarkCase
             'meta' => array_fill(0, 50, ['key' => 'value', 'data' => str_repeat('x', 20)]),
         ];
 
-        $response = $app->stoaRunner('dto-used', RouteGroup::of([
+        $response = $context->runner('dto-used', RouteGroup::of([
             'POST /dto-used' => BenchmarkDtoUsedRoute::class,
         ]))->dispatch(new ServerRequest(
             'POST',
             '/dto-used',
             ['Content-Type' => 'application/json'],
-            json_encode($payload)
+            (string) json_encode($payload)
         ));
 
         if ($response->getStatusCode() !== 200) {

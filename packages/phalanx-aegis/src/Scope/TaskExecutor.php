@@ -100,13 +100,13 @@ interface TaskExecutor
      * scope's lifetime.
      *
      * Errors raised inside the body are caught and emitted as
-     * PHX-SPAWN-001 trace events; they do NOT propagate to the parent
-     * coroutine. This is intentional — go() is an error boundary so a
-     * crashing background task can never tear down the worker process or
+     * DiagnosticCode::SpawnError trace events; they do NOT propagate to the
+     * parent coroutine. This is intentional — go() is an error boundary so
+     * a crashing background task can never tear down the worker process or
      * surprise unrelated code paths.
      *
      * If the parent scope is disposed while a go() task is still running,
-     * PHX-SPAWN-002 is emitted and the task is force-cancelled.
+     * DiagnosticCode::SpawnForceCancelled is emitted and the task is force-cancelled.
      *
      * Cancel an in-flight spawn via:
      *   $handle = $scope->go(static fn() => ...);

@@ -67,10 +67,10 @@ final class ObjectPoolTest extends TestCase
         $pool->release($c);
 
         $stats = $pool->stats();
-        self::assertSame(0, $stats['hits']);
-        self::assertSame(3, $stats['misses']);
-        self::assertSame(1, $stats['overflows']);
-        self::assertSame(2, $stats['free']);
+        self::assertSame(0, $stats->hits);
+        self::assertSame(3, $stats->misses);
+        self::assertSame(1, $stats->overflows);
+        self::assertSame(2, $stats->free);
     }
 
     public function testStatsTrackHitsAndMisses(): void
@@ -83,14 +83,14 @@ final class ObjectPoolTest extends TestCase
         };
 
         $obj = $pool->acquire($init);
-        self::assertSame(1, $pool->stats()['misses']);
-        self::assertSame(0, $pool->stats()['hits']);
+        self::assertSame(1, $pool->stats()->misses);
+        self::assertSame(0, $pool->stats()->hits);
 
         $pool->release($obj);
 
         $pool->acquire($init);
-        self::assertSame(1, $pool->stats()['misses']);
-        self::assertSame(1, $pool->stats()['hits']);
+        self::assertSame(1, $pool->stats()->misses);
+        self::assertSame(1, $pool->stats()->hits);
     }
 
     public function testReusedSlotIsDroppedWhenInitializerThrows(): void
@@ -116,8 +116,8 @@ final class ObjectPoolTest extends TestCase
 
         self::assertNotNull($caught);
         self::assertSame('initializer failed', $caught->getMessage());
-        self::assertSame(0, $pool->stats()['free']);
-        self::assertSame(1, $pool->stats()['drops']);
+        self::assertSame(0, $pool->stats()->free);
+        self::assertSame(1, $pool->stats()->drops);
 
         $recovered = $pool->acquire(static function (PoolableStub $o): void {
             $o->name = 'Corinth';
@@ -127,7 +127,7 @@ final class ObjectPoolTest extends TestCase
         self::assertNotSame($objId, spl_object_id($recovered));
         self::assertSame('Corinth', $recovered->name);
         self::assertSame(2, $recovered->value);
-        self::assertSame(1, $pool->stats()['borrowed']);
+        self::assertSame(1, $pool->stats()->borrowed);
     }
 
     public function testWorksWithFinalClassMutableFields(): void
@@ -154,7 +154,7 @@ final class ObjectPoolTest extends TestCase
     {
         $pool = new ObjectPool(PoolableStub::class, 16);
 
-        self::assertSame(16, $pool->stats()['capacity']);
+        self::assertSame(16, $pool->stats()->capacity);
     }
 
     public function testDoubleReleaseIsRejected(): void
@@ -206,7 +206,7 @@ final class ObjectPoolTest extends TestCase
         );
 
         self::assertSame('Solon', $name);
-        self::assertSame(1, $pool->stats()['free']);
+        self::assertSame(1, $pool->stats()->free);
     }
 
     public function testWithBorrowedRejectsBorrowedReturn(): void

@@ -36,7 +36,7 @@ class BenchmarkHarness
             $this->useApp(\Phalanx\Application::starting($this->context->values)->compile()->startup());
         }
 
-        return $this->primaryApp;
+        return $this->primaryApp ?? throw new \RuntimeException('Application failed to initialize.');
     }
 
     public function useApp(Application $app): void

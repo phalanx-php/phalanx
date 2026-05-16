@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Phalanx\Benchmarks\Kit;
 
 use Phalanx\Benchmarks\Http\HttpBenchmarkCase;
-use Phalanx\Benchmarks\Kernel\KernelBenchmarkCase;
+use Phalanx\Benchmarks\Http\HttpBenchmarkContext;
+use Phalanx\Benchmarks\Kernel\BenchmarkCase as KernelBenchmarkCase;
+use Phalanx\Benchmarks\Kernel\BenchmarkContext;
 use RuntimeException;
 
 /**
@@ -35,11 +37,13 @@ final class BenchmarkReport
         $this->runner = $runner;
     }
 
+    /** @param array<string, mixed> $options */
     public function setOptions(array $options): void
     {
         $this->options = $options;
     }
 
+    /** @param array<string, mixed> $metadata */
     public function setMetadata(array $metadata): void
     {
         $this->metadata = $metadata;
@@ -60,17 +64,19 @@ final class BenchmarkReport
             }
 
             if ($case instanceof HttpBenchmarkCase) {
+                $httpContext = new HttpBenchmarkContext();
                 $this->measure(
                     $case->name(),
                     $case->iterations(),
-                    static fn(BenchmarkApp $app) => $case->run($app),
+                    static fn(BenchmarkApp $_app) => $case->run($httpContext),
                     $case->warmups()
                 );
             } elseif ($case instanceof KernelBenchmarkCase) {
+                $kernelContext = new BenchmarkContext();
                 $this->measure(
                     $case->name(),
                     $case->iterations(),
-                    static fn(BenchmarkHarness $harness) => $case->run($harness),
+                    static fn(BenchmarkApp $_app) => $case->run($kernelContext),
                     $case->warmups()
                 );
             } else {
@@ -179,6 +185,10 @@ final class BenchmarkReport
         }
 
         $raw = file_get_contents($path);
+        if ($raw === false) {
+            fwrite(STDERR, "Cannot read baseline file: {$path}\n");
+            return;
+        }
         $decoded = json_decode($raw, true);
         if (!is_array($decoded) || !isset($decoded['results'])) {
             fwrite(STDERR, "Invalid baseline format: {$path}\n");

@@ -14,6 +14,7 @@ use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Concurrency\Co;
 use Phalanx\Concurrency\RetryPolicy;
+use Phalanx\Diagnostics\DiagnosticCode;
 use Phalanx\Concurrency\Settlement;
 use Phalanx\Concurrency\SettlementBag;
 use Phalanx\Concurrency\SingleflightGroup;
@@ -1000,7 +1001,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                 $supervisor->fail($run, $e);
                 $traceLog->log(
                     TraceType::Defer,
-                    'PHX-SPAWN-001',
+                    DiagnosticCode::SpawnError->value,
                     [
                         'run' => $run->id,
                         'task' => $run->name,
@@ -1672,7 +1673,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             }
             $this->traceLog->log(
                 TraceType::Defer,
-                'PHX-SPAWN-002',
+                DiagnosticCode::SpawnForceCancelled->value,
                 [
                     'run' => $run->id,
                     'task' => $run->name,

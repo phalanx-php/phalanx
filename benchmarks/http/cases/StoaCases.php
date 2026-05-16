@@ -205,11 +205,11 @@ final class BenchmarkResourceRoute implements Scopeable
 {
     public function __invoke(RequestScope $scope): Response
     {
-        if (!str_starts_with($scope->resourceId, 'stoa-request-')) {
+        if (!str_starts_with($scope->requestId, 'stoa-request-')) {
             throw new RuntimeException('Request resource id was not exposed to the benchmark route.');
         }
 
-        return new Response(200, ['Content-Type' => 'text/plain'], $scope->resourceId);
+        return new Response(200, ['Content-Type' => 'text/plain'], $scope->requestId);
     }
 }
 

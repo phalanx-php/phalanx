@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Tests\Unit\Scope;
 
-use Phalanx\Boot\AppContext;
 use Phalanx\Application;
+use Phalanx\Boot\AppContext;
+use Phalanx\Diagnostics\DiagnosticCode;
 use Phalanx\Scope\ExecutionLifecycleScope;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\TransactionScope;
@@ -100,7 +101,7 @@ final class TransactionScopeTest extends PhalanxTestCase
         });
 
         self::assertNotNull($thrown);
-        self::assertSame('PHX-TXN-001', $thrown->phxCode);
+        self::assertSame(DiagnosticCode::TransactionExternalIo, $thrown->diagnostic);
     }
 
     public function testTransactionScopeAllowsLocalWaitsAndInheritedScopedServices(): void

@@ -17,7 +17,7 @@ namespace Phalanx\Supervisor;
  *
  * Multi-key acquire MUST sort canonical keys before acquisition so the
  * acquisition order is deterministic across all task runs — circular
- * order between tasks would otherwise allow PHX-LOCK-001 deadlocks.
+ * order between tasks would otherwise allow DiagnosticCode::LockOrderViolation deadlocks.
  */
 final class LockLease implements Lease
 {

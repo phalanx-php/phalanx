@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Tests\Unit\Supervisor;
 
+use Phalanx\Diagnostics\DiagnosticCode;
 use Phalanx\Supervisor\DispatchMode;
 use Phalanx\Supervisor\InProcessLedger;
 use Phalanx\Supervisor\LeaseViolation;
@@ -52,7 +53,7 @@ final class LeaseTrackingTest extends TestCase
         }
 
         self::assertNotNull($thrown);
-        self::assertSame('PHX-POOL-001', $thrown->phxCode);
+        self::assertSame(DiagnosticCode::PoolNestedAcquire, $thrown->diagnostic);
         self::assertStringContainsString('postgres/main', $thrown->detail);
     }
 
@@ -89,7 +90,7 @@ final class LeaseTrackingTest extends TestCase
         }
 
         self::assertNotNull($thrown);
-        self::assertSame('PHX-LOCK-001', $thrown->phxCode);
+        self::assertSame(DiagnosticCode::LockOrderViolation, $thrown->diagnostic);
     }
 
     public function testInOrderLockAcquireSucceeds(): void
@@ -149,7 +150,7 @@ final class LeaseTrackingTest extends TestCase
         }
 
         self::assertNotNull($thrown);
-        self::assertSame('PHX-POOL-002', $thrown->phxCode);
+        self::assertSame(DiagnosticCode::PoolCrossBoundary, $thrown->diagnostic);
         self::assertStringContainsString('worker dispatch boundary', $thrown->detail);
     }
 
@@ -168,7 +169,7 @@ final class LeaseTrackingTest extends TestCase
         }
 
         self::assertNotNull($thrown);
-        self::assertSame('PHX-POOL-002', $thrown->phxCode);
+        self::assertSame(DiagnosticCode::PoolCrossBoundary, $thrown->diagnostic);
     }
 
     public function testExternalWaitDuringTransactionTriggersPhxTxn001(): void
@@ -186,7 +187,7 @@ final class LeaseTrackingTest extends TestCase
         }
 
         self::assertNotNull($thrown);
-        self::assertSame('PHX-TXN-001', $thrown->phxCode);
+        self::assertSame(DiagnosticCode::TransactionExternalIo, $thrown->diagnostic);
         self::assertStringContainsString('external http wait', $thrown->detail);
     }
 
@@ -262,7 +263,7 @@ final class LeaseTrackingTest extends TestCase
 
         $events = array_values(array_filter(
             $trace->events(),
-            static fn($e) => $e->name === 'PHX-LEASE-001',
+            static fn($e) => $e->name === DiagnosticCode::LeaseOrphan->value,
         ));
         self::assertCount(1, $events);
         self::assertSame('postgres/main', $events[0]->attrs['domain']);

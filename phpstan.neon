@@ -23,6 +23,7 @@ parameters:
         - packages/phalanx-stoa/src
         - packages/phalanx-surreal/src
         - packages/phalanx-styx/src
+        - benchmarks
         - demos
     scanDirectories:
         - vendor/openswoole/ide-helper
@@ -75,6 +76,10 @@ parameters:
     ignoreErrors:
         -
             identifier: callable.nonCallable
+            reportUnmatched: true
+        -
+            identifier: phalanx.testing.useBenchmarkHarness
+            path: benchmarks/http/cases/StoaCases.php
             reportUnmatched: true
     tmpDir: .phpstan-cache
     treatPhpDocTypesAsCertain: false

@@ -6,6 +6,7 @@ namespace Phalanx\Runtime;
 
 use OpenSwoole\Coroutine;
 use OpenSwoole\Runtime;
+use Phalanx\Diagnostics\CoroutineStats;
 use Throwable;
 
 final class RuntimeHooks
@@ -68,8 +69,7 @@ final class RuntimeHooks
      */
     private static function applyCoroutineOptions(RuntimePolicy $policy): void
     {
-        $stats = Coroutine::stats();
-        if ((int) ($stats['coroutine_num'] ?? 0) > 0) {
+        if (CoroutineStats::capture()->coroutineNum > 0) {
             return;
         }
         try {

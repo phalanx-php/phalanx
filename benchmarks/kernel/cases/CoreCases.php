@@ -46,7 +46,7 @@ final class ExecuteNoopTaskCase extends AbstractBenchmarkCase
     public function run(BenchmarkContext $context): void
     {
         $this->scope ??= $context->scope();
-        $this->task ??= Task::named('bench.noop', static fn(ExecutionScope $scope): null => null);
+        $this->task ??= Task::named('bench.noop', static fn(ExecutionScope $_scope): null => null);
 
         $this->scope->execute($this->task);
     }
@@ -72,7 +72,7 @@ final class ExecuteStaticTaskOfCase extends AbstractBenchmarkCase
     {
         $this->scope ??= $context->scope();
 
-        $this->scope->execute(Task::of(static fn(ExecutionScope $scope): null => null));
+        $this->scope->execute(Task::of(static fn(ExecutionScope $_scope): null => null));
     }
 
     public function cleanup(): void
@@ -101,7 +101,7 @@ final class SupervisorLifecycleCase extends AbstractBenchmarkCase
             $app = $context->app();
             $this->scope = $app->createScope();
             $this->supervisor = $app->supervisor();
-            $this->task = Task::named('bench.supervisor', static fn(ExecutionScope $scope): null => null);
+            $this->task = Task::named('bench.supervisor', static fn(ExecutionScope $_scope): null => null);
         }
 
         $run = $this->supervisor->start($this->task, $this->scope, DispatchMode::Inline);
@@ -159,7 +159,7 @@ final class ConcurrentNoopCase extends AbstractBenchmarkCase
 
         if ($this->tasks === []) {
             for ($i = 0; $i < $this->count; $i++) {
-                $this->tasks[] = Task::named("bench.concurrent.noop.{$i}", static fn(ExecutionScope $scope): int => 1);
+                $this->tasks[] = Task::named("bench.concurrent.noop.{$i}", static fn(ExecutionScope $_scope): int => 1);
             }
         }
 
@@ -229,7 +229,7 @@ final class SingleflightWaitersCase extends AbstractBenchmarkCase
         $tasks = [
             Task::named(
                 'bench.singleflight.owner',
-                static fn(ExecutionScope $scope): mixed => $scope->singleflight(
+                static fn(ExecutionScope $_scope): mixed => $_scope->singleflight(
                     'bench-key',
                     Task::named('bench.singleflight.work', static function (ExecutionScope $owner): string {
                         $owner->delay(0.001);
@@ -242,9 +242,9 @@ final class SingleflightWaitersCase extends AbstractBenchmarkCase
         for ($i = 0; $i < $this->waiters; $i++) {
             $tasks[] = Task::named(
                 "bench.singleflight.waiter.{$i}",
-                static fn(ExecutionScope $scope): mixed => $scope->singleflight(
+                static fn(ExecutionScope $_scope): mixed => $_scope->singleflight(
                     'bench-key',
-                    Task::named('bench.singleflight.unused', static fn(ExecutionScope $scope): string => 'unused'),
+                    Task::named('bench.singleflight.unused', static fn(ExecutionScope $_s): string => 'unused'),
                 ),
             );
         }
@@ -314,7 +314,7 @@ final class InProcessLedgerLifecycleCase extends AbstractBenchmarkCase
             $app = $context->app(new InProcessLedger());
             $this->scope = $app->createScope();
             $this->supervisor = $app->supervisor();
-            $this->task = Task::named('bench.ledger.inprocess', static fn(ExecutionScope $scope): null => null);
+            $this->task = Task::named('bench.ledger.inprocess', static fn(ExecutionScope $_scope): null => null);
         }
 
         $run = $this->supervisor->start($this->task, $this->scope, DispatchMode::Inline);
@@ -351,7 +351,7 @@ final class SwooleTableLedgerLifecycleCase extends AbstractBenchmarkCase
             $app = $context->app(new SwooleTableLedger(1024));
             $this->scope = $app->createScope();
             $this->supervisor = $app->supervisor();
-            $this->task = Task::named('bench.ledger.swoole_table', static fn(ExecutionScope $scope): null => null);
+            $this->task = Task::named('bench.ledger.swoole_table', static fn(ExecutionScope $_scope): null => null);
         }
 
         $run = $this->supervisor->start($this->task, $this->scope, DispatchMode::Inline);
@@ -390,7 +390,7 @@ final class SwooleTableLedgerProjectionCase extends AbstractBenchmarkCase
             $this->supervisor = $app->supervisor();
             $this->task = Task::named(
                 'bench.ledger.swoole_table.projection',
-                static fn(ExecutionScope $scope): null => null,
+                static fn(ExecutionScope $_scope): null => null,
             );
         }
 
@@ -431,9 +431,9 @@ final class TransactionScopeEnterExitCase extends AbstractBenchmarkCase
         $this->scope ??= $context->scope();
         $this->task ??= Task::named(
             'bench.transaction',
-            static fn(ExecutionScope $scope): mixed => $scope->transaction(
+            static fn(ExecutionScope $_scope): mixed => $_scope->transaction(
                 TransactionLease::open('bench/postgres', 'tx'),
-                static fn(TransactionScope $transaction): null => null,
+                static fn(TransactionScope $_transaction): null => null,
             ),
         );
 

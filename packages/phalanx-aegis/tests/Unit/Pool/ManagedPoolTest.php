@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Phalanx\Tests\Unit\Pool;
 
 use Phalanx\Cancellation\Cancelled;
-use Phalanx\Pool\ManagedPoolClient;
+use Phalanx\Diagnostics\DiagnosticCode;
 use Phalanx\Pool\ManagedPool;
+use Phalanx\Pool\ManagedPoolClient;
 use Phalanx\Pool\ManagedPoolFactory;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Supervisor\LeaseViolation;
-use Phalanx\Testing\PhalanxTestCase;
 use Phalanx\Task\Task;
+use Phalanx\Testing\PhalanxTestCase;
 use Phalanx\Trace\Trace;
 use RuntimeException;
 
@@ -151,7 +152,7 @@ final class ManagedPoolTest extends PhalanxTestCase
                 }
 
                 self::assertNotNull($thrown);
-                self::assertSame('PHX-POOL-001', $thrown->phxCode);
+                self::assertSame(DiagnosticCode::PoolNestedAcquire, $thrown->diagnostic);
             } finally {
                 $pool->release($lease);
             }

@@ -139,8 +139,8 @@ final class TaskRunPoolTest extends TestCase
         }
 
         $stats = $pool->stats();
-        self::assertSame(2, $stats['overflows']);
-        self::assertSame(2, $stats['free']);
+        self::assertSame(2, $stats->overflows);
+        self::assertSame(2, $stats->free);
     }
 
     public function testPoolStatsTrackHitRate(): void
@@ -153,8 +153,8 @@ final class TaskRunPoolTest extends TestCase
         self::acquireTaskRun($pool, 'run-002', 'Marathon');
 
         $stats = $pool->stats();
-        self::assertSame(1, $stats['hits']);
-        self::assertSame(1, $stats['misses']);
+        self::assertSame(1, $stats->hits);
+        self::assertSame(1, $stats->misses);
     }
 
     public function testMultipleRecycleCyclesStable(): void
@@ -170,8 +170,8 @@ final class TaskRunPoolTest extends TestCase
             $pool->release($run);
         }
 
-        self::assertSame(9, $pool->stats()['hits']);
-        self::assertSame(1, $pool->stats()['misses']);
+        self::assertSame(9, $pool->stats()->hits);
+        self::assertSame(1, $pool->stats()->misses);
     }
 
     private static function acquireTaskRun(ObjectPool $pool, string $id, string $name): TaskRun
