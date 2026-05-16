@@ -22,11 +22,7 @@ use OpenSwoole\Timer;
  */
 class CancellationToken
 {
-    public bool $isCancelled {
-        get => $this->cancelled;
-    }
-
-    private bool $cancelled = false;
+    private(set) bool $isCancelled = false;
 
     /** @var array<int, \Closure(): void> */
     private array $listeners = [];
@@ -48,7 +44,7 @@ class CancellationToken
     public function resetForPool(): void
     {
         $this->release();
-        $this->cancelled = false;
+        $this->isCancelled = false;
         $this->listenerSeq = 0;
         $this->immutableNone = false;
     }
@@ -87,7 +83,7 @@ class CancellationToken
     {
         $composite = new self();
         foreach ($sources as $source) {
-            if ($source->cancelled) {
+            if ($source->isCancelled) {
                 $composite->cancel();
                 return $composite;
             }
@@ -105,7 +101,7 @@ class CancellationToken
     {
         $token = $this;
         foreach ($sources as $source) {
-            if ($source->cancelled) {
+            if ($source->isCancelled) {
                 $this->cancel();
                 return;
             }
@@ -118,17 +114,17 @@ class CancellationToken
 
     public function throwIfCancelled(): void
     {
-        if ($this->cancelled) {
+        if ($this->isCancelled) {
             throw new Cancelled();
         }
     }
 
     public function cancel(): void
     {
-        if ($this->cancelled || $this->immutableNone) {
+        if ($this->isCancelled || $this->immutableNone) {
             return;
         }
-        $this->cancelled = true;
+        $this->isCancelled = true;
 
         if ($this->timerId !== null) {
             Timer::clear($this->timerId);
@@ -166,7 +162,7 @@ class CancellationToken
     /** @param \Closure(): void $listener */
     public function onCancel(\Closure $listener): int
     {
-        if ($this->cancelled) {
+        if ($this->isCancelled) {
             try {
                 $listener();
             } catch (\Throwable) {

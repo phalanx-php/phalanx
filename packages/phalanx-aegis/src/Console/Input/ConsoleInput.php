@@ -45,16 +45,12 @@ use RuntimeException;
  */
 final class ConsoleInput
 {
-    public bool $isInteractive {
-        get => $this->interactive;
-    }
+    private(set) bool $isInteractive;
 
     /** @var resource|null */
     private mixed $stream = null;
 
     private readonly ?Socket $socket;
-
-    private readonly bool $interactive;
 
     private bool $rawModeActive = false;
 
@@ -67,7 +63,7 @@ final class ConsoleInput
 
         if ($source instanceof Socket) {
             $this->socket = $source;
-            $this->interactive = false;
+            $this->isInteractive = false;
             return;
         }
 
@@ -75,7 +71,7 @@ final class ConsoleInput
         // fread from blocking the worker after readiness is signaled.
         $this->stream = $source;
         $this->socket = null;
-        $this->interactive = stream_isatty($source);
+        $this->isInteractive = stream_isatty($source);
         @stream_set_blocking($source, false);
     }
 
@@ -141,7 +137,7 @@ final class ConsoleInput
         if ($this->rawModeActive) {
             return;
         }
-        if (!$this->interactive) {
+        if (!$this->isInteractive) {
             throw new NonInteractiveTtyException(
                 'Cannot enable raw mode: input source is not a TTY.',
             );

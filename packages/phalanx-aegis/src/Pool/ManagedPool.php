@@ -58,11 +58,7 @@ use Throwable;
  */
 final class ManagedPool
 {
-    public int $size {
-        get => $this->poolSize;
-    }
-
-    private readonly int $poolSize;
+    private(set) int $size;
 
     private readonly ClientPool $clientPool;
 
@@ -83,7 +79,7 @@ final class ManagedPool
         private readonly float $starvationThresholdMs = 250.0,
         bool $heartbeat = false,
     ) {
-        $this->poolSize = $size;
+        $this->size = $size;
         $this->clientPool = new ClientPool($factoryClass, $config, $size, $heartbeat);
     }
 

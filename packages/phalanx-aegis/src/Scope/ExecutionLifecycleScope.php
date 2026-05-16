@@ -65,9 +65,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         get => $this->cancellation->isCancelled;
     }
 
-    public string $scopeId {
-        get => $this->scopeIdValue;
-    }
+    private(set) string $scopeId = '';
 
     public RuntimeContext $runtime {
         get => $this->service(RuntimeContext::class);
@@ -82,8 +80,6 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
     public ?TaskRun $currentRun = null;
 
     private ?BorrowedScopeFrame $frame = null;
-
-    private readonly string $scopeIdValue;
 
     private readonly SingleflightGroup $singleflightGroup;
 
@@ -105,13 +101,13 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         private readonly ?WorkerDispatch $workerDispatch = null,
         private readonly ?string $parentScopeId = null,
     ) {
-        $this->scopeIdValue = $this->supervisor->nextScopeId();
+        $this->scopeId = $this->supervisor->nextScopeId();
         $this->singleflightGroup = $singleflight ?? new SingleflightGroup();
         $this->frame = $this->supervisor->acquireScopeFrame($inheritedScopedInstances);
 
         try {
             $this->supervisor->registerScope(
-                $this->scopeIdValue,
+                $this->scopeId,
                 $this->parentScopeId,
                 self::class,
                 Coroutine::getCid(),
@@ -309,7 +305,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
 
         $this->forceCancelGoSpawns();
 
-        $this->supervisor->disposeScope($this->scopeIdValue);
+        $this->supervisor->disposeScope($this->scopeId);
         $this->supervisor->releaseScopeFrame($frame);
         $this->frame = null;
     }
@@ -382,7 +378,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             $this->serviceMiddlewares,
             $this->taskMiddlewares,
             $this->workerDispatch,
-            parentScopeId: $this->scopeIdValue,
+            parentScopeId: $this->scopeId,
         );
         try {
             return $child->execute($task);
@@ -821,7 +817,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             $this->serviceMiddlewares,
             $this->taskMiddlewares,
             $this->workerDispatch,
-            parentScopeId: $this->scopeIdValue,
+            parentScopeId: $this->scopeId,
         );
 
         try {
@@ -1732,7 +1728,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             $this->serviceMiddlewares,
             $this->taskMiddlewares,
             $this->workerDispatch,
-            parentScopeId: $this->scopeIdValue,
+            parentScopeId: $this->scopeId,
         );
         $child->currentRun = $inheritParent;
         return $child;

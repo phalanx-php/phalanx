@@ -25,26 +25,14 @@ namespace Phalanx\Supervisor;
  */
 final class DeliveryLease implements Lease
 {
-    public string $domain {
-        get => $this->surfaceDomain;
-    }
-
-    public string $key {
-        get => $this->fdKey;
-    }
-
     public string $mode {
         get => 'flush';
     }
 
-    public float $acquiredAt {
-        get => $this->acquired;
-    }
-
     public function __construct(
-        public readonly string $surfaceDomain,
-        public readonly string $fdKey,
-        public readonly float $acquired = 0.0,
+        private(set) string $domain,
+        private(set) string $key,
+        private(set) float $acquiredAt = 0.0,
     ) {
     }
 

@@ -21,31 +21,15 @@ namespace Phalanx\Supervisor;
  */
 final class LockLease implements Lease
 {
-    public string $domain {
-        get => $this->lockDomain;
-    }
-
-    public string $key {
-        get => $this->lockKey;
-    }
-
-    public string $mode {
-        get => $this->lockMode;
-    }
-
-    public float $acquiredAt {
-        get => $this->acquired;
-    }
-
     public function __construct(
-        public readonly string $lockDomain,
-        public readonly string $lockKey,
-        public readonly string $lockMode,
-        public readonly float $acquired = 0.0,
+        private(set) string $domain,
+        private(set) string $key,
+        private(set) string $mode,
+        private(set) float $acquiredAt = 0.0,
     ) {
-        if ($this->lockMode !== 'read' && $this->lockMode !== 'write') {
+        if ($this->mode !== 'read' && $this->mode !== 'write') {
             throw new \InvalidArgumentException(
-                "LockLease mode must be 'read' or 'write', got '{$this->lockMode}'.",
+                "LockLease mode must be 'read' or 'write', got '{$this->mode}'.",
             );
         }
     }

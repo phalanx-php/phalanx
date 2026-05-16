@@ -22,26 +22,14 @@ namespace Phalanx\Supervisor;
  */
 final class PoolLease implements Lease
 {
-    public string $domain {
-        get => $this->poolName;
-    }
-
-    public string $key {
-        get => $this->connectionId;
-    }
-
     public string $mode {
         get => 'shared';
     }
 
-    public float $acquiredAt {
-        get => $this->acquired;
-    }
-
     public function __construct(
-        public readonly string $poolName,
-        public readonly string $connectionId,
-        public readonly float $acquired = 0.0,
+        private(set) string $domain,
+        private(set) string $key,
+        private(set) float $acquiredAt = 0.0,
     ) {
     }
 

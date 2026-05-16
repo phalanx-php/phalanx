@@ -30,17 +30,13 @@ final class TcpClient implements TcpConnection
         get => $this->client->isConnected();
     }
 
-    public bool $tls {
-        get => $this->tlsEnabled;
-    }
+    private(set) bool $tls;
 
     private readonly Client $client;
 
-    private readonly bool $tlsEnabled;
-
     public function __construct(?Client $client = null, bool $tls = false, ?TlsOptions $tlsOptions = null)
     {
-        $this->tlsEnabled = $tls;
+        $this->tls = $tls;
         $this->client = $client ?? new Client($tls ? SWOOLE_SOCK_TCP | SWOOLE_SSL : SWOOLE_SOCK_TCP);
         if ($tls && $tlsOptions !== null) {
             $this->client->set($tlsOptions->toClientOptions());
@@ -54,7 +50,7 @@ final class TcpClient implements TcpConnection
 
     public function setTlsOptions(TlsOptions $options): void
     {
-        if (!$this->tlsEnabled) {
+        if (!$this->tls) {
             throw new RuntimeException(
                 'TcpClient::setTlsOptions(): TLS not enabled at construction. Pass $tls=true to apply SSL options.',
             );

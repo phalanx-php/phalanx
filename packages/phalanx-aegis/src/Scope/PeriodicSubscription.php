@@ -14,11 +14,7 @@ use OpenSwoole\Timer;
  */
 final class PeriodicSubscription implements Subscription
 {
-    public bool $cancelled {
-        get => $this->isCancelled;
-    }
-
-    private bool $isCancelled = false;
+    private(set) bool $cancelled = false;
 
     public function __construct(
         private readonly int $timerId,
@@ -27,10 +23,10 @@ final class PeriodicSubscription implements Subscription
 
     public function cancel(): void
     {
-        if ($this->isCancelled) {
+        if ($this->cancelled) {
             return;
         }
-        $this->isCancelled = true;
+        $this->cancelled = true;
         Timer::clear($this->timerId);
     }
 }

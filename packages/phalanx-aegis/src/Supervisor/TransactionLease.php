@@ -18,26 +18,14 @@ namespace Phalanx\Supervisor;
  */
 final class TransactionLease implements Lease
 {
-    public string $domain {
-        get => $this->poolName;
-    }
-
-    public string $key {
-        get => $this->transactionId;
-    }
-
     public string $mode {
         get => 'exclusive';
     }
 
-    public float $acquiredAt {
-        get => $this->acquired;
-    }
-
     public function __construct(
-        public readonly string $poolName,
-        public readonly string $transactionId,
-        public readonly float $acquired = 0.0,
+        private(set) string $domain,
+        private(set) string $key,
+        private(set) float $acquiredAt = 0.0,
     ) {
     }
 
