@@ -18,33 +18,13 @@ class ExecutionContext implements CommandScope
 {
     use ExecutionScopeDelegate;
 
-    public string $commandName {
-        get => $this->name;
-    }
-
-    public CommandArgs $args {
-        get => $this->parsedArgs;
-    }
-
-    public string $commandResourceId {
-        get => $this->resourceId;
-    }
-
-    public CommandOptions $options {
-        get => $this->parsedOptions;
-    }
-
-    public CommandConfig $config {
-        get => $this->commandConfig;
-    }
-
     public function __construct(
         private readonly ExecutionScope $inner,
-        private readonly string $name,
-        private readonly CommandArgs $parsedArgs,
-        private readonly CommandOptions $parsedOptions,
-        private readonly CommandConfig $commandConfig,
-        private readonly string $resourceId,
+        private(set) string $commandName,
+        private(set) CommandArgs $args,
+        private(set) CommandOptions $options,
+        private(set) CommandConfig $config,
+        private(set) string $commandResourceId,
     ) {
     }
 

@@ -11,17 +11,13 @@ use Phalanx\Task\Traceable;
 /** @internal */
 final class CommandInvocation implements Executable, Traceable
 {
-    public string $traceName {
-        get => $this->trace;
-    }
-
     /** @param list<string> $args */
     private function __construct(
         private CommandGroup|InlineCommand $target,
         private string $command,
         private array $args,
         private string $resourceId,
-        private string $trace,
+        private(set) string $traceName,
     ) {
     }
 

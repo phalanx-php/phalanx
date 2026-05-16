@@ -9,13 +9,9 @@ use RuntimeException;
 /** @internal */
 final class UnknownCommand extends RuntimeException
 {
-    public string $command {
-        get => $this->commandName;
-    }
-
-    private function __construct(private readonly string $commandName)
+    private function __construct(private(set) string $command)
     {
-        parent::__construct("Command not found: $commandName");
+        parent::__construct("Command not found: $this->command");
     }
 
     public static function named(string $command): self

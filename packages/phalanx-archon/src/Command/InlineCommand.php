@@ -19,14 +19,10 @@ final class InlineCommand implements Executable, Traceable
         get => "archon.command.{$this->name}";
     }
 
-    public CommandConfig $config {
-        get => $this->commandConfig;
-    }
-
     private function __construct(
         private readonly string $name,
         private readonly Closure|Scopeable|Executable $handler,
-        private readonly CommandConfig $commandConfig,
+        private(set) CommandConfig $config,
     ) {
     }
 
@@ -50,7 +46,7 @@ final class InlineCommand implements Executable, Traceable
     /** @param list<string> $args */
     public function dispatch(ExecutionScope $scope, array $args, string $resourceId): mixed
     {
-        $context = ExecutionContext::fromInput($scope, $this->name, $this->commandConfig, $args, $resourceId);
+        $context = ExecutionContext::fromInput($scope, $this->name, $this->config, $args, $resourceId);
 
         return ($this->handler)($context);
     }
