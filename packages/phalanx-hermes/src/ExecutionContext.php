@@ -14,33 +14,13 @@ class ExecutionContext implements WsScope
 {
     use ExecutionScopeDelegate;
 
-    public RequestCtx $ctx {
-        get => $this->requestCtx;
-    }
-
-    public WsConnection $connection {
-        get => $this->conn;
-    }
-
-    public WsConfig $config {
-        get => $this->wsConfig;
-    }
-
-    public ServerRequestInterface $request {
-        get => $this->upgradeRequest;
-    }
-
-    public RouteParams $params {
-        get => $this->routeParams;
-    }
-
     public function __construct(
         private readonly BaseExecutionScope $inner,
-        private readonly WsConnection $conn,
-        private readonly WsConfig $wsConfig,
-        private readonly ServerRequestInterface $upgradeRequest,
-        private readonly RouteParams $routeParams,
-        private readonly RequestCtx $requestCtx,
+        private(set) WsConnection $connection,
+        private(set) WsConfig $config,
+        private(set) ServerRequestInterface $request,
+        private(set) RouteParams $params,
+        private(set) RequestCtx $ctx,
     ) {
     }
 

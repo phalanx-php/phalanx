@@ -35,13 +35,9 @@ class AuthExecutionContext implements AuthWsScope
         get => $this->wsScope->params;
     }
 
-    public AuthContext $auth {
-        get => $this->authContext;
-    }
-
     public function __construct(
         private readonly WsScope $wsScope,
-        private readonly AuthContext $authContext,
+        private(set) AuthContext $auth,
     ) {
     }
 

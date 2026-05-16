@@ -11,9 +11,7 @@ use Phalanx\Styx\ScopedStream;
 
 final class WsConnection
 {
-    public string $id {
-        get => $this->connectionId;
-    }
+    private(set) string $id;
 
     public bool $isOpen {
         get => $this->outbound->isOpen;
@@ -24,10 +22,11 @@ final class WsConnection
     private ?Emitter $inboundEmitter = null;
 
     public function __construct(
-        private readonly string $connectionId,
+        string $id,
         int $inboundBuffer = 32,
         int $outboundBuffer = 64,
     ) {
+        $this->id = $id;
         $this->inbound = new Channel(bufferSize: $inboundBuffer);
         $this->outbound = new Channel(bufferSize: $outboundBuffer);
     }
