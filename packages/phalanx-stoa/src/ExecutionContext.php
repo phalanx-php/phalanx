@@ -23,49 +23,33 @@ class ExecutionContext implements RequestScope
         get => $this->requestResource()->id;
     }
 
-    public ServerRequestInterface $request {
-        get => $this->serverRequest;
-    }
-
-    public RouteParams $params {
-        get => $this->routeParams;
-    }
-
-    public QueryParams $query {
-        get => $this->queryParams;
-    }
-
     public RequestBody $body {
-        get => $this->requestBody ??= RequestBody::from($this->serverRequest);
-    }
-
-    public RouteConfig $config {
-        get => $this->routeConfig;
+        get => $this->requestBody ??= RequestBody::from($this->request);
     }
 
     public function __construct(
         private(set) ExecutionScope $inner,
-        private(set) ServerRequestInterface $serverRequest,
-        private(set) RouteParams $routeParams,
-        private(set) QueryParams $queryParams,
-        private(set) RouteConfig $routeConfig,
+        private(set) ServerRequestInterface $request,
+        private(set) RouteParams $params,
+        private(set) QueryParams $query,
+        private(set) RouteConfig $config,
         private ?RequestCtx $requestCtx = null,
     ) {
     }
 
     public function method(): string
     {
-        return $this->serverRequest->getMethod();
+        return $this->request->getMethod();
     }
 
     public function path(): string
     {
-        return $this->serverRequest->getUri()->getPath();
+        return $this->request->getUri()->getPath();
     }
 
     public function header(string $name): string
     {
-        return $this->serverRequest->getHeaderLine($name);
+        return $this->request->getHeaderLine($name);
     }
 
     public function isJson(): bool
@@ -91,7 +75,7 @@ class ExecutionContext implements RequestScope
 
     public function server(string $key, string $default = ''): string
     {
-        return (string) ($this->serverRequest->getServerParams()[$key] ?? $default);
+        return (string) ($this->request->getServerParams()[$key] ?? $default);
     }
 
     public function clientIp(): string

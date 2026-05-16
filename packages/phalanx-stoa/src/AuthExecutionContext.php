@@ -41,13 +41,9 @@ class AuthExecutionContext implements AuthRequestScope
         get => $this->inner->config;
     }
 
-    public AuthContext $auth {
-        get => $this->authContext;
-    }
-
     public function __construct(
         private readonly RequestScope $inner,
-        private readonly AuthContext $authContext,
+        private(set) AuthContext $auth,
     ) {
     }
 
