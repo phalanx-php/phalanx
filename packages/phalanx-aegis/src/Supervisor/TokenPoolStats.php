@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace Phalanx\Supervisor;
 
+/**
+ * Runtime metrics for the supervisor's cancellation token pool.
+ *
+ * @see \Phalanx\Supervisor\Supervisor::poolStats()
+ */
 final class TokenPoolStats
 {
     public function __construct(
@@ -19,8 +24,8 @@ final class TokenPoolStats
     {
         return [
             'hits' => $this->hits,
-            'misses' => $this->misses,
             'free' => $this->free,
+            'misses' => $this->misses,
             'capacity' => $this->capacity,
         ];
     }

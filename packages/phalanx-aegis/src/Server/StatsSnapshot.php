@@ -5,28 +5,21 @@ declare(strict_types=1);
 namespace Phalanx\Server;
 
 /**
- * Immutable snapshot of OpenSwoole\Server::stats() at a single point in time.
+ * Typed snapshot of OpenSwoole\Server::stats().
  *
- * The OpenSwoole master process tracks these counters natively; reading
- * stats() is a cheap synchronous call. This snapshot freezes one read so
- * callers can inspect multiple counters consistently without re-querying
- * mid-read (which could skew if a connection accepts/closes between reads).
- *
- * Field availability tracks OpenSwoole 26.2: `connection_num`, `accept_count`,
- * `close_count`, and `event_loop_lag` are documented; missing keys read as
- * 0 so callers get a stable shape across OpenSwoole minor versions.
+ * @see https://openswoole.com/docs/modules/swoole-server-stats
  */
-final readonly class StatsSnapshot
+final class StatsSnapshot
 {
     public function __construct(
-        public int $connectionNum,
-        public int $acceptCount,
-        public int $closeCount,
-        public int $coroutineNum,
-        public int $workerRequestNum,
-        public int $workerDispatchNum,
-        public float $eventLoopLagMs,
-        public int $startTime,
+        private(set) int $connectionNum,
+        private(set) int $acceptCount,
+        private(set) int $closeCount,
+        private(set) int $coroutineNum,
+        private(set) int $workerRequestNum,
+        private(set) int $workerDispatchNum,
+        private(set) float $eventLoopLagMs,
+        private(set) int $startTime,
     ) {
     }
 

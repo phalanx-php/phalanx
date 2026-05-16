@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace Phalanx\Pool;
 
+/**
+ * Runtime metrics for a single ObjectPool instance.
+ *
+ * @see \Phalanx\Pool\ObjectPool::stats()
+ */
 final class PoolStats
 {
     public function __construct(

@@ -4,14 +4,19 @@ declare(strict_types=1);
 
 namespace Phalanx\Runtime\Memory;
 
-final readonly class RuntimeTableStats
+/**
+ * Typed snapshot of a single OpenSwoole\Table's runtime metrics.
+ *
+ * @see https://openswoole.com/docs/modules/swoole-table
+ */
+final class RuntimeTableStats
 {
     public function __construct(
-        public string $name,
-        public int $configuredRows,
-        public int $currentRows,
-        public int $memorySize,
-        public int $highWaterRows,
+        private(set) string $name,
+        private(set) int $configuredRows,
+        private(set) int $currentRows,
+        private(set) int $memorySize,
+        private(set) int $highWaterRows,
     ) {
     }
 }

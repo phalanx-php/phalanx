@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Diagnostics;
 
 use OpenSwoole\Coroutine;
+use Phalanx\Runtime\CoroutineStats;
 
 /**
  * Typed wrapper around OpenSwoole's coroutine introspection surface.

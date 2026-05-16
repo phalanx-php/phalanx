@@ -2,10 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Diagnostics;
+namespace Phalanx\Runtime;
 
 use OpenSwoole\Coroutine;
 
+/**
+ * Typed snapshot of OpenSwoole\Coroutine::stats().
+ *
+ * @see https://openswoole.com/docs/modules/swoole-coroutine-stats
+ */
 final class CoroutineStats
 {
     private function __construct(

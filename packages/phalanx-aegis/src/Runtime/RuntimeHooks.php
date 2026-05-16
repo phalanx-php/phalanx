@@ -6,7 +6,6 @@ namespace Phalanx\Runtime;
 
 use OpenSwoole\Coroutine;
 use OpenSwoole\Runtime;
-use Phalanx\Diagnostics\CoroutineStats;
 use Throwable;
 
 final class RuntimeHooks

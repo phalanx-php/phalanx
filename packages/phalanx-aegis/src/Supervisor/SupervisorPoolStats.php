@@ -6,6 +6,11 @@ namespace Phalanx\Supervisor;
 
 use Phalanx\Pool\PoolStats;
 
+/**
+ * Composite runtime metrics for all supervisor-managed pools.
+ *
+ * @see \Phalanx\Supervisor\Supervisor::poolStats()
+ */
 final class SupervisorPoolStats
 {
     public function __construct(
