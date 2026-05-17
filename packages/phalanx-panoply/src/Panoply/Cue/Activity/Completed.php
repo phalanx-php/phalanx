@@ -1,0 +1,20 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Phalanx\Panoply\Cue\Activity;
+
+use Phalanx\Panoply\Cue;
+
+final class Completed extends Cue
+{
+    public string $type { get => 'cue.activity.completed'; }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function payload(): array
+    {
+        return [];
+    }
+}

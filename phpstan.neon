@@ -18,6 +18,7 @@ parameters:
         - packages/phalanx-hermes/src
         - packages/phalanx-hydra/src
         - packages/phalanx-iris/src
+        - packages/phalanx-panoply/src
         - packages/phalanx-phpstan/src
         - packages/phalanx-skopos/src
         - packages/phalanx-stoa/src
