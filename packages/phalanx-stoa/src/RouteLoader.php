@@ -50,7 +50,8 @@ final readonly class RouteLoader
 
         $group = RouteGroup::of([]);
         /** @var list<string> $files */
-        $files = iterator_to_array(new \GlobIterator($dir . '/*.php', \FilesystemIterator::CURRENT_AS_PATHNAME), false);
+        $flags = \FilesystemIterator::CURRENT_AS_PATHNAME | \FilesystemIterator::SKIP_DOTS;
+        $files = iterator_to_array(new \GlobIterator($dir . '/*.php', $flags), false);
         sort($files);
 
         foreach ($files as $file) {
