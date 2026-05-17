@@ -7,14 +7,12 @@ namespace Phalanx\Panoply\HomeDir;
 use Phalanx\Panoply\Series;
 
 /**
- * Final — Series leaf carries a sealed element type.
- *
- * Typed series over {@see Locator} entries. Consumers can use every
- * inherited combinator immediately; domain-specific filters live
- * alongside the per-tool HomeDir implementations that produce them.
+ * Typed Series leaf over {@see Locator}. Vendor HomeDir adapters may
+ * subclass to add tool-specific predicates (e.g., `byCwd(string $cwd): static`);
+ * subclasses must add only methods, not constructor state, per Series contract.
  *
  * @extends Series<Locator>
  */
-final class Locators extends Series
+class Locators extends Series
 {
 }

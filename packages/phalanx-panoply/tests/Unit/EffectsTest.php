@@ -67,4 +67,13 @@ final class EffectsTest extends TestCase
         self::assertSame(64, strlen($hash));
         self::assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $hash);
     }
+
+    #[Test]
+    public function differentEffectsProduceDifferentHashes(): void
+    {
+        $a = Effects::allow(Kind::FileRead);
+        $b = Effects::allow(Kind::FileWrite);
+
+        self::assertNotSame(Canonical::of($a), Canonical::of($b));
+    }
 }

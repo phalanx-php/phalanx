@@ -10,11 +10,11 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Sanity check that the TokenDelta value-object shape supports the
- * coalescing semantics Stream::coalescing(Duration) will rely on later
- * (PA-02 / PA-05): merging adjacent TokenDeltas on the same channel
- * concatenates `text` and preserves the channel. We don't implement
- * Stream-level coalescing here — just verify the data model supports it.
+ * Tests that token-output cues carry the shape expected for downstream
+ * coalescing: TokenDelta carries a `channel` field, distinct channels
+ * remain unmerged, and concatenating text across two TokenDeltas
+ * preserves their original channel discriminator. The coalescing
+ * combinator itself is exercised in StreamTest.
  */
 final class CoalescingShapeTest extends TestCase
 {

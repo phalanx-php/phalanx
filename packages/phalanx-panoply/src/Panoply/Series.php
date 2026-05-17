@@ -37,7 +37,7 @@ class Series implements \IteratorAggregate
     /**
      * @param \Closure(): \Generator<T> $source
      */
-    final public function __construct(private readonly \Closure $source)
+    final public function __construct(private(set) \Closure $source)
     {
     }
 
