@@ -6,18 +6,19 @@ namespace Phalanx\Panoply\Tests\Unit;
 
 use Phalanx\Panoply\Context;
 use Phalanx\Panoply\Hash\Canonical;
-use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(Context::class)]
 final class ContextTest extends TestCase
 {
-    public function test_new_is_empty(): void
+    #[Test]
+    public function newIsEmpty(): void
     {
         self::assertTrue(Context::new()->isEmpty());
     }
 
-    public function test_front_middle_tail_accumulate(): void
+    #[Test]
+    public function frontMiddleTailAccumulate(): void
     {
         $ctx = Context::new()
             ->front(ContextFixture\A::class, ContextFixture\B::class)
@@ -29,7 +30,8 @@ final class ContextTest extends TestCase
         self::assertSame([ContextFixture\D::class, ContextFixture\E::class], $ctx->tailSources);
     }
 
-    public function test_with_calls_return_new_instance(): void
+    #[Test]
+    public function withCallsReturnNewInstance(): void
     {
         $original = Context::new();
         $extended = $original->front(ContextFixture\A::class);
@@ -39,7 +41,8 @@ final class ContextTest extends TestCase
         self::assertFalse($extended->isEmpty());
     }
 
-    public function test_duplicates_dedup_within_a_slot(): void
+    #[Test]
+    public function duplicatesDedupWithinASlot(): void
     {
         $ctx = Context::new()->front(
             ContextFixture\A::class,
@@ -50,7 +53,8 @@ final class ContextTest extends TestCase
         self::assertCount(2, $ctx->frontSources);
     }
 
-    public function test_all_concatenates_front_middle_tail_in_order(): void
+    #[Test]
+    public function allConcatenatesFrontMiddleTailInOrder(): void
     {
         $ctx = Context::new()
             ->tail(ContextFixture\D::class)
@@ -63,7 +67,8 @@ final class ContextTest extends TestCase
         );
     }
 
-    public function test_canonical_form_preserves_slot_order(): void
+    #[Test]
+    public function canonicalFormPreservesSlotOrder(): void
     {
         $a = Context::new()->front(ContextFixture\A::class)->tail(ContextFixture\D::class);
         $b = Context::new()->tail(ContextFixture\D::class)->front(ContextFixture\A::class);
@@ -74,8 +79,18 @@ final class ContextTest extends TestCase
 
 namespace Phalanx\Panoply\Tests\Unit\ContextFixture;
 
-final class A {}
-final class B {}
-final class C {}
-final class D {}
-final class E {}
+final class A
+{
+}
+final class B
+{
+}
+final class C
+{
+}
+final class D
+{
+}
+final class E
+{
+}

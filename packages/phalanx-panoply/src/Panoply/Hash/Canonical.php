@@ -26,7 +26,7 @@ use UnitEnum;
  * drift from objects that change shape between releases (scopes,
  * channels, closures, services).
  */
-final class Canonical
+class Canonical
 {
     public static function of(mixed $value): string
     {

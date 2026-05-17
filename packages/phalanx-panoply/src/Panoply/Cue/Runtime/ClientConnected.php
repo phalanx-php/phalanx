@@ -6,9 +6,9 @@ namespace Phalanx\Panoply\Cue\Runtime;
 
 use Phalanx\Panoply\Cue;
 
-final class ClientConnected extends Cue
+class ClientConnected extends Cue
 {
-    public string $type { get => 'cue.runtime.client_connected'; }
+    final public string $type { get => 'cue.runtime.client_connected'; }
 
     public function __construct(
         string $id,
@@ -26,7 +26,7 @@ final class ClientConnected extends Cue
     /**
      * @return array<string, mixed>
      */
-    protected function payload(): array
+    final protected function payload(): array
     {
         return [
             'client_id'   => $this->clientId,

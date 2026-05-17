@@ -22,6 +22,12 @@ namespace Phalanx\Panoply;
  * `getIterator()` is called or a terminal op runs (each/reduce/first/
  * last/count/toArray).
  *
+ * Subclasses may add behavior but not constructor state: every combinator
+ * uses `new static($closure)` to preserve subclass identity through chains,
+ * so the constructor signature is sealed via `final`. Inject extra context
+ * by composing closures over captured state rather than by overriding
+ * `__construct`.
+ *
  * @template T
  * @implements \IteratorAggregate<T>
  * @phpstan-consistent-constructor
@@ -43,7 +49,7 @@ class Series implements \IteratorAggregate
      * @param iterable<mixed> $items
      * @return static
      */
-    public static function from(iterable $items): static
+    final public static function from(iterable $items): static
     {
         return new static(static function () use ($items): \Generator {
             yield from $items;

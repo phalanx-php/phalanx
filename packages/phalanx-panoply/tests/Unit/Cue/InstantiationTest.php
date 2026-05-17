@@ -17,6 +17,7 @@ use Phalanx\Panoply\Cue\StopReason;
 use Phalanx\Panoply\Cue\Usage;
 use Phalanx\Panoply\Effect\Kind as EffectKind;
 use Phalanx\Panoply\Hash\Canonical;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -25,7 +26,8 @@ use PHPUnit\Framework\TestCase;
  */
 final class InstantiationTest extends TestCase
 {
-    public function test_every_cue_subclass_instantiates(): void
+    #[Test]
+    public function everyCueSubclassInstantiates(): void
     {
         $cues = $this->allCues();
 
@@ -38,14 +40,16 @@ final class InstantiationTest extends TestCase
         }
     }
 
-    public function test_type_identifiers_are_unique(): void
+    #[Test]
+    public function typeIdentifiersAreUnique(): void
     {
         $types = array_map(static fn (Cue $c): string => $c->type, $this->allCues());
 
         self::assertCount(count($types), array_unique($types), 'type identifiers must be unique across cues');
     }
 
-    public function test_every_cue_hashes(): void
+    #[Test]
+    public function everyCueHashes(): void
     {
         foreach ($this->allCues() as $cue) {
             $hash = Canonical::of($cue);
@@ -81,7 +85,12 @@ final class InstantiationTest extends TestCase
             new Invocation\Cancelled(...$base, reason: 'scope-cancelled'),
 
             // Provider (3)
-            new Provider\Resolved(...$base, provider: 'anthropic', model: 'claude-opus-4-7', reasonCode: 'agent-preference-met'),
+            new Provider\Resolved(
+                ...$base,
+                provider: 'anthropic',
+                model: 'claude-opus-4-7',
+                reasonCode: 'agent-preference-met',
+            ),
             new Provider\RateLimited(...$base, provider: 'anthropic', model: 'claude-opus-4-7', retryAfterSeconds: 30),
             new Provider\Retrying(...$base, provider: 'anthropic', attempt: 2, maxAttempts: 5, backoffMs: 1000),
 

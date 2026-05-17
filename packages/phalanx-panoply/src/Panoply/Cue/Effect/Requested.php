@@ -7,9 +7,9 @@ namespace Phalanx\Panoply\Cue\Effect;
 use Phalanx\Panoply\Cue;
 use Phalanx\Panoply\Effect\Kind;
 
-final class Requested extends Cue
+class Requested extends Cue
 {
-    public string $type { get => 'cue.effect.requested'; }
+    final public string $type { get => 'cue.effect.requested'; }
 
     /**
      * @param array<string, mixed> $arguments
@@ -33,7 +33,7 @@ final class Requested extends Cue
     /**
      * @return array<string, mixed>
      */
-    protected function payload(): array
+    final protected function payload(): array
     {
         return [
             'effect_id'         => $this->effectId,

@@ -11,6 +11,6 @@ namespace Phalanx\Panoply\Hash;
  * Infinity. Always indicates a programming error: hashable surfaces
  * must be made of declared canonical shapes.
  */
-final class UncanonicalizableValue extends \InvalidArgumentException
+class UncanonicalizableValue extends \InvalidArgumentException
 {
 }

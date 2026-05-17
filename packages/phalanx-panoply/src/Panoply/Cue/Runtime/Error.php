@@ -6,9 +6,9 @@ namespace Phalanx\Panoply\Cue\Runtime;
 
 use Phalanx\Panoply\Cue;
 
-final class Error extends Cue
+class Error extends Cue
 {
-    public string $type { get => 'cue.runtime.error'; }
+    final public string $type { get => 'cue.runtime.error'; }
 
     public function __construct(
         string $id,
@@ -27,7 +27,7 @@ final class Error extends Cue
     /**
      * @return array<string, mixed>
      */
-    protected function payload(): array
+    final protected function payload(): array
     {
         return [
             'message'     => $this->message,

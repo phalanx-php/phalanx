@@ -8,13 +8,13 @@ use Phalanx\Panoply\Capabilities;
 use Phalanx\Panoply\Capability;
 use Phalanx\Panoply\Hash\Canonical;
 use Phalanx\Panoply\Hash\UncanonicalizableValue;
-use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(Canonical::class)]
 final class CanonicalTest extends TestCase
 {
-    public function test_scalar_hashes_are_stable(): void
+    #[Test]
+    public function scalarHashesAreStable(): void
     {
         $first = Canonical::of('hello');
         $second = Canonical::of('hello');
@@ -23,7 +23,8 @@ final class CanonicalTest extends TestCase
         self::assertSame(64, strlen($first), 'sha256 hex is 64 chars');
     }
 
-    public function test_associative_array_key_order_is_irrelevant(): void
+    #[Test]
+    public function associativeArrayKeyOrderIsIrrelevant(): void
     {
         $hashA = Canonical::of(['b' => 2, 'a' => 1, 'c' => 3]);
         $hashB = Canonical::of(['c' => 3, 'a' => 1, 'b' => 2]);
@@ -33,7 +34,8 @@ final class CanonicalTest extends TestCase
         self::assertSame($hashB, $hashC);
     }
 
-    public function test_list_order_is_preserved(): void
+    #[Test]
+    public function listOrderIsPreserved(): void
     {
         $hashAB = Canonical::of(['a', 'b']);
         $hashBA = Canonical::of(['b', 'a']);
@@ -41,7 +43,8 @@ final class CanonicalTest extends TestCase
         self::assertNotSame($hashAB, $hashBA);
     }
 
-    public function test_backed_enum_normalizes_to_value(): void
+    #[Test]
+    public function backedEnumNormalizesToValue(): void
     {
         $enumHash = Canonical::of(Capability::Reasoning);
         $stringHash = Canonical::of('reasoning');
@@ -49,7 +52,8 @@ final class CanonicalTest extends TestCase
         self::assertSame($enumHash, $stringHash);
     }
 
-    public function test_unit_enum_normalizes_to_name(): void
+    #[Test]
+    public function unitEnumNormalizesToName(): void
     {
         $enumHash = Canonical::of(CanonicalFixture\Mood::Happy);
         $stringHash = Canonical::of('Happy');
@@ -57,7 +61,8 @@ final class CanonicalTest extends TestCase
         self::assertSame($enumHash, $stringHash);
     }
 
-    public function test_canonicalizable_object_uses_its_form(): void
+    #[Test]
+    public function canonicalizableObjectUsesItsForm(): void
     {
         $caps = Capabilities::of(Capability::Reasoning, Capability::ToolUse);
 
@@ -70,7 +75,8 @@ final class CanonicalTest extends TestCase
         self::assertSame($hashFromObject, $hashFromArray);
     }
 
-    public function test_capabilities_hash_is_independent_of_input_order(): void
+    #[Test]
+    public function capabilitiesHashIsIndependentOfInputOrder(): void
     {
         $a = Capabilities::of(Capability::Reasoning, Capability::ToolUse, Capability::Vision);
         $b = Capabilities::of(Capability::Vision, Capability::Reasoning, Capability::ToolUse);
@@ -78,37 +84,57 @@ final class CanonicalTest extends TestCase
         self::assertSame(Canonical::of($a), Canonical::of($b));
     }
 
-    public function test_arbitrary_object_is_rejected(): void
+    #[Test]
+    public function arbitraryObjectIsRejected(): void
     {
         $this->expectException(UncanonicalizableValue::class);
         Canonical::of(new \stdClass());
     }
 
-    public function test_closure_is_rejected(): void
+    #[Test]
+    public function closureIsRejected(): void
     {
         $this->expectException(UncanonicalizableValue::class);
         Canonical::of(static fn (): int => 1);
     }
 
-    public function test_nan_is_rejected(): void
+    #[Test]
+    public function resourceIsRejected(): void
+    {
+        $resource = fopen('php://memory', 'rb');
+        try {
+            $this->expectException(UncanonicalizableValue::class);
+            Canonical::of($resource);
+        } finally {
+            if (is_resource($resource)) {
+                fclose($resource);
+            }
+        }
+    }
+
+    #[Test]
+    public function nanIsRejected(): void
     {
         $this->expectException(UncanonicalizableValue::class);
         Canonical::of(NAN);
     }
 
-    public function test_positive_infinity_is_rejected(): void
+    #[Test]
+    public function positiveInfinityIsRejected(): void
     {
         $this->expectException(UncanonicalizableValue::class);
         Canonical::of(INF);
     }
 
-    public function test_negative_infinity_is_rejected(): void
+    #[Test]
+    public function negativeInfinityIsRejected(): void
     {
         $this->expectException(UncanonicalizableValue::class);
         Canonical::of(-INF);
     }
 
-    public function test_integer_and_integer_float_hash_distinctly(): void
+    #[Test]
+    public function integerAndIntegerFloatHashDistinctly(): void
     {
         // Floats keep their fractional form (`42.0` not `42`) so int 42 and
         // float 42.0 are never conflated. This is required for round-trip

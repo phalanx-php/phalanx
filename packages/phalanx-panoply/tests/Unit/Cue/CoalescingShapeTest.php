@@ -6,6 +6,7 @@ namespace Phalanx\Panoply\Tests\Unit\Cue;
 
 use Phalanx\Panoply\Cue\Output\Channel;
 use Phalanx\Panoply\Cue\Output\TokenDelta;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -17,7 +18,8 @@ use PHPUnit\Framework\TestCase;
  */
 final class CoalescingShapeTest extends TestCase
 {
-    public function test_concatenating_text_of_two_token_deltas_preserves_channel(): void
+    #[Test]
+    public function concatenatingTextOfTwoTokenDeltasPreservesChannel(): void
     {
         $base = [
             'activityId'   => 'act_1',
@@ -34,7 +36,8 @@ final class CoalescingShapeTest extends TestCase
         self::assertSame('hello world', $a->text . $b->text);
     }
 
-    public function test_token_deltas_on_different_channels_should_not_be_merged(): void
+    #[Test]
+    public function tokenDeltasOnDifferentChannelsShouldNotBeMerged(): void
     {
         $base = [
             'activityId'   => 'act_1',

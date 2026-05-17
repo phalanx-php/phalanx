@@ -12,7 +12,7 @@ use Phalanx\Panoply\Hash\Canonicalizable;
  * instance — agents and provider configs are expected to declare their
  * capabilities once and pass the instance by value.
  */
-final class Capabilities implements Canonicalizable
+class Capabilities implements Canonicalizable
 {
     /** @var list<Capability> */
     private(set) array $cases;
@@ -38,6 +38,23 @@ final class Capabilities implements Canonicalizable
     public static function empty(): self
     {
         return new self();
+    }
+
+    /**
+     * Stable serialization for hashing/diagnostics. Cases sorted by value;
+     * custom tags sorted lexicographically.
+     *
+     * @return array{cases: list<string>, custom: list<string>}
+     */
+    final public function toCanonical(): array
+    {
+        $cases = array_map(static fn (Capability $c): string => $c->value, $this->cases);
+        sort($cases);
+
+        $custom = $this->custom;
+        sort($custom);
+
+        return ['cases' => $cases, 'custom' => $custom];
     }
 
     public function with(Capability ...$cases): self
@@ -131,23 +148,6 @@ final class Capabilities implements Canonicalizable
     public function isEmpty(): bool
     {
         return $this->cases === [] && $this->custom === [];
-    }
-
-    /**
-     * Stable serialization for hashing/diagnostics. Cases sorted by value;
-     * custom tags sorted lexicographically.
-     *
-     * @return array{cases: list<string>, custom: list<string>}
-     */
-    public function toCanonical(): array
-    {
-        $cases = array_map(static fn (Capability $c): string => $c->value, $this->cases);
-        sort($cases);
-
-        $custom = $this->custom;
-        sort($custom);
-
-        return ['cases' => $cases, 'custom' => $custom];
     }
 
     /**

@@ -17,9 +17,11 @@ use Phalanx\Panoply\Hash\Canonicalizable;
  * goes into the hash, NOT the PHP class name, so renaming a class
  * doesn't break replay or audit keys.
  *
- * Concrete subclasses are `final`, declare additional fields via
- * promoted constructor `private(set)` properties, and override
- * {@see self::payload()} to return their type-specific fields.
+ * Concrete subclasses declare additional fields via promoted constructor
+ * `private(set)` properties and override {@see self::payload()} to return
+ * their type-specific fields. The `$type` hook and `payload()` method are
+ * `final` on every leaf so a sub-subclass cannot silently divert hash
+ * shape; the base's `toCanonical()` is `final` for the same reason.
  */
 abstract class Cue implements Canonicalizable
 {

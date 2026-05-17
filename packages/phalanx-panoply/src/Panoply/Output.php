@@ -19,7 +19,7 @@ use Phalanx\Panoply\Hash\Canonicalizable;
  * The agent contract surfaces only the declaration; assembly and
  * validation live downstream.
  */
-final class Output implements Canonicalizable
+class Output implements Canonicalizable
 {
     /**
      * @param class-string|null $schema
@@ -52,7 +52,7 @@ final class Output implements Canonicalizable
     /**
      * @return array{mode: string, artifact_kind: string|null, schema: string|null}
      */
-    public function toCanonical(): array
+    final public function toCanonical(): array
     {
         return [
             'mode'          => $this->mode->value,

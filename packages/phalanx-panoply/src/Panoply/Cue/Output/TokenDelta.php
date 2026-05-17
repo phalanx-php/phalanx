@@ -6,9 +6,9 @@ namespace Phalanx\Panoply\Cue\Output;
 
 use Phalanx\Panoply\Cue;
 
-final class TokenDelta extends Cue
+class TokenDelta extends Cue
 {
-    public string $type { get => 'cue.output.token_delta'; }
+    final public string $type { get => 'cue.output.token_delta'; }
 
     public function __construct(
         string $id,
@@ -26,7 +26,7 @@ final class TokenDelta extends Cue
     /**
      * @return array<string, mixed>
      */
-    protected function payload(): array
+    final protected function payload(): array
     {
         return [
             'text'    => $this->text,

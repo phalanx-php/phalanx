@@ -6,9 +6,9 @@ namespace Phalanx\Panoply\Cue\Effect;
 
 use Phalanx\Panoply\Cue;
 
-final class Denied extends Cue
+class Denied extends Cue
 {
-    public string $type { get => 'cue.effect.denied'; }
+    final public string $type { get => 'cue.effect.denied'; }
 
     /**
      * @param list<string> $reasonCodes
@@ -29,7 +29,7 @@ final class Denied extends Cue
     /**
      * @return array<string, mixed>
      */
-    protected function payload(): array
+    final protected function payload(): array
     {
         return [
             'effect_id'    => $this->effectId,

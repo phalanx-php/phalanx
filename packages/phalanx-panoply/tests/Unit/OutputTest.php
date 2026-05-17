@@ -7,13 +7,13 @@ namespace Phalanx\Panoply\Tests\Unit;
 use Phalanx\Panoply\Artifact\Kind as ArtifactKind;
 use Phalanx\Panoply\Hash\Canonical;
 use Phalanx\Panoply\Output;
-use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(Output::class)]
 final class OutputTest extends TestCase
 {
-    public function test_text_mode(): void
+    #[Test]
+    public function textMode(): void
     {
         $out = Output::text();
 
@@ -22,7 +22,8 @@ final class OutputTest extends TestCase
         self::assertNull($out->schema);
     }
 
-    public function test_artifact_mode_carries_kind(): void
+    #[Test]
+    public function artifactModeCarriesKind(): void
     {
         $out = Output::artifact(ArtifactKind::Thesis);
 
@@ -31,7 +32,8 @@ final class OutputTest extends TestCase
         self::assertNull($out->schema);
     }
 
-    public function test_structured_mode_carries_schema(): void
+    #[Test]
+    public function structuredModeCarriesSchema(): void
     {
         $out = Output::structured(OutputFixture\Schema::class);
 
@@ -40,7 +42,8 @@ final class OutputTest extends TestCase
         self::assertNull($out->artifactKind);
     }
 
-    public function test_same_mode_hashes_identically(): void
+    #[Test]
+    public function sameModeHashesIdentically(): void
     {
         $a = Output::artifact(ArtifactKind::Thesis);
         $b = Output::artifact(ArtifactKind::Thesis);
@@ -48,7 +51,8 @@ final class OutputTest extends TestCase
         self::assertSame(Canonical::of($a), Canonical::of($b));
     }
 
-    public function test_distinct_modes_hash_differently(): void
+    #[Test]
+    public function distinctModesHashDifferently(): void
     {
         $text      = Output::text();
         $artifact  = Output::artifact(ArtifactKind::Thesis);
@@ -62,4 +66,6 @@ final class OutputTest extends TestCase
 
 namespace Phalanx\Panoply\Tests\Unit\OutputFixture;
 
-final class Schema {}
+final class Schema
+{
+}

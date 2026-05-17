@@ -14,13 +14,13 @@ use Phalanx\Panoply\Output;
 use Phalanx\Panoply\Provider\Needs as ProviderNeeds;
 use Phalanx\Panoply\Provider\Preference;
 use Phalanx\Panoply\Transport\Needs as TransportNeeds;
-use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(Invocation::class)]
 final class InvocationTest extends TestCase
 {
-    public function test_of_constructs_with_timestamp(): void
+    #[Test]
+    public function ofConstructsWithTimestamp(): void
     {
         $inv = self::fixture();
 
@@ -29,7 +29,8 @@ final class InvocationTest extends TestCase
         self::assertSame('act_1', $inv->activityId);
     }
 
-    public function test_prompt_hash_is_64_char_hex(): void
+    #[Test]
+    public function promptHashIs64CharHex(): void
     {
         $inv = self::fixture();
         $hash = $inv->promptHash();
@@ -38,7 +39,8 @@ final class InvocationTest extends TestCase
         self::assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $hash);
     }
 
-    public function test_same_invocation_hashes_identically(): void
+    #[Test]
+    public function sameInvocationHashesIdentically(): void
     {
         $created = new \DateTimeImmutable('2026-05-17T12:00:00Z');
 
@@ -48,17 +50,19 @@ final class InvocationTest extends TestCase
         self::assertSame($a->promptHash(), $b->promptHash());
     }
 
-    public function test_different_instructions_produce_different_hashes(): void
+    #[Test]
+    public function differentInstructionsProduceDifferentHashes(): void
     {
         $created = new \DateTimeImmutable('2026-05-17T12:00:00Z');
 
         $a = self::fixture(instructions: 'summarize', createdAt: $created);
-        $b = self::fixture(instructions: 'critique',  createdAt: $created);
+        $b = self::fixture(instructions: 'critique', createdAt: $created);
 
         self::assertNotSame($a->promptHash(), $b->promptHash());
     }
 
-    public function test_dynamic_context_key_order_does_not_affect_hash(): void
+    #[Test]
+    public function dynamicContextKeyOrderDoesNotAffectHash(): void
     {
         $created = new \DateTimeImmutable('2026-05-17T12:00:00Z');
 
@@ -68,7 +72,8 @@ final class InvocationTest extends TestCase
         self::assertSame($a->promptHash(), $b->promptHash());
     }
 
-    public function test_canonical_form_is_json_serializable(): void
+    #[Test]
+    public function canonicalFormIsJsonSerializable(): void
     {
         $inv = self::fixture();
         $json = json_encode(Canonical::normalize($inv));

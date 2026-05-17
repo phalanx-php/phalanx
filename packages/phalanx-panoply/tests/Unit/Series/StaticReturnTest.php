@@ -8,6 +8,7 @@ use Phalanx\Panoply\Cue;
 use Phalanx\Panoply\Cue\Output\TokenDelta;
 use Phalanx\Panoply\Series;
 use Phalanx\Panoply\Stream;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -18,7 +19,8 @@ use PHPUnit\Framework\TestCase;
  */
 final class StaticReturnTest extends TestCase
 {
-    public function test_stream_where_returns_stream(): void
+    #[Test]
+    public function streamWhereReturnsStream(): void
     {
         $stream = self::stream();
         $filtered = $stream->where(static fn (Cue $c): bool => true);
@@ -27,22 +29,26 @@ final class StaticReturnTest extends TestCase
         self::assertNotInstanceOf(Stream::class, Series::from([]));
     }
 
-    public function test_stream_take_returns_stream(): void
+    #[Test]
+    public function streamTakeReturnsStream(): void
     {
         self::assertInstanceOf(Stream::class, self::stream()->take(1));
     }
 
-    public function test_stream_skip_returns_stream(): void
+    #[Test]
+    public function streamSkipReturnsStream(): void
     {
         self::assertInstanceOf(Stream::class, self::stream()->skip(0));
     }
 
-    public function test_stream_merge_returns_stream(): void
+    #[Test]
+    public function streamMergeReturnsStream(): void
     {
         self::assertInstanceOf(Stream::class, self::stream()->merge(self::stream()));
     }
 
-    public function test_stream_map_returns_base_series(): void
+    #[Test]
+    public function streamMapReturnsBaseSeries(): void
     {
         $mapped = self::stream()->map(static fn (Cue $c): string => $c->type);
 
@@ -50,7 +56,8 @@ final class StaticReturnTest extends TestCase
         self::assertNotInstanceOf(Stream::class, $mapped);
     }
 
-    public function test_stream_chunk_returns_base_series(): void
+    #[Test]
+    public function streamChunkReturnsBaseSeries(): void
     {
         $chunked = self::stream()->chunk(2);
 
@@ -58,7 +65,8 @@ final class StaticReturnTest extends TestCase
         self::assertNotInstanceOf(Stream::class, $chunked);
     }
 
-    public function test_subclass_type_preserved_across_chained_combinators(): void
+    #[Test]
+    public function subclassTypePreservedAcrossChainedCombinators(): void
     {
         $chained = self::stream()
             ->where(static fn (Cue $c): bool => true)
@@ -70,7 +78,8 @@ final class StaticReturnTest extends TestCase
         self::assertInstanceOf(Stream::class, $chained);
     }
 
-    public function test_stream_from_returns_stream(): void
+    #[Test]
+    public function streamFromReturnsStream(): void
     {
         // Late-static-binding on `from()` preserves the subclass type.
         $stream = Stream::from([]);

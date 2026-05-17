@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Phalanx\Panoply\Tests\Unit\Series;
 
 use Phalanx\Panoply\Series;
-use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(Series::class)]
 final class LazyTest extends TestCase
 {
-    public function test_combinators_do_not_consume_until_iterated(): void
+    #[Test]
+    public function combinatorsDoNotConsumeUntilIterated(): void
     {
         $consumed = 0;
         $source = static function () use (&$consumed): \Generator {
@@ -34,25 +34,29 @@ final class LazyTest extends TestCase
         self::assertLessThanOrEqual(6, $consumed, 'only the items needed to yield 3 evens should be consumed');
     }
 
-    public function test_take_yields_at_most_n(): void
+    #[Test]
+    public function takeYieldsAtMostN(): void
     {
         $series = Series::from(range(1, 100));
         self::assertCount(7, $series->take(7)->toArray());
     }
 
-    public function test_take_zero_yields_nothing(): void
+    #[Test]
+    public function takeZeroYieldsNothing(): void
     {
         $series = Series::from(range(1, 100));
         self::assertSame([], $series->take(0)->toArray());
     }
 
-    public function test_take_more_than_available_yields_all(): void
+    #[Test]
+    public function takeMoreThanAvailableYieldsAll(): void
     {
         $series = Series::from([1, 2, 3]);
         self::assertSame([1, 2, 3], $series->take(99)->toArray());
     }
 
-    public function test_first_consumes_only_one_item(): void
+    #[Test]
+    public function firstConsumesOnlyOneItem(): void
     {
         $consumed = 0;
         $source = static function () use (&$consumed): \Generator {
@@ -68,7 +72,8 @@ final class LazyTest extends TestCase
         self::assertSame(1, $consumed);
     }
 
-    public function test_series_can_be_iterated_more_than_once(): void
+    #[Test]
+    public function seriesCanBeIteratedMoreThanOnce(): void
     {
         // The source factory closure is stored; each getIterator() call
         // invokes a fresh Generator, so a Series is safe to iterate

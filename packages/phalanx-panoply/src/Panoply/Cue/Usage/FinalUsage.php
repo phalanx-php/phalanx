@@ -11,9 +11,9 @@ use Phalanx\Panoply\Cue;
  * `Final` to avoid the PHP reserved keyword collision; `type` remains
  * `cue.usage.final`.
  */
-final class FinalUsage extends Cue
+class FinalUsage extends Cue
 {
-    public string $type { get => 'cue.usage.final'; }
+    final public string $type { get => 'cue.usage.final'; }
 
     public function __construct(
         string $id,
@@ -34,7 +34,7 @@ final class FinalUsage extends Cue
     /**
      * @return array<string, mixed>
      */
-    protected function payload(): array
+    final protected function payload(): array
     {
         return [
             'input_tokens'       => $this->inputTokens,

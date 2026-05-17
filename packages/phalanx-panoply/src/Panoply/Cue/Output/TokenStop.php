@@ -7,9 +7,9 @@ namespace Phalanx\Panoply\Cue\Output;
 use Phalanx\Panoply\Cue;
 use Phalanx\Panoply\Cue\StopReason;
 
-final class TokenStop extends Cue
+class TokenStop extends Cue
 {
-    public string $type { get => 'cue.output.token_stop'; }
+    final public string $type { get => 'cue.output.token_stop'; }
 
     public function __construct(
         string $id,
@@ -27,7 +27,7 @@ final class TokenStop extends Cue
     /**
      * @return array<string, mixed>
      */
-    protected function payload(): array
+    final protected function payload(): array
     {
         return [
             'reason'  => $this->reason->value,

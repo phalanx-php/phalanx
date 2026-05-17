@@ -8,13 +8,13 @@ use Phalanx\Panoply\Cue;
 use Phalanx\Panoply\Cue\Activity;
 use Phalanx\Panoply\Cue\Output;
 use Phalanx\Panoply\Hash\Canonical;
-use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(Cue::class)]
 final class CueTest extends TestCase
 {
-    public function test_base_fields_are_carried(): void
+    #[Test]
+    public function baseFieldsAreCarried(): void
     {
         $at = new \DateTimeImmutable('2026-05-17T12:00:00Z');
         $cue = new Activity\Started(
@@ -35,7 +35,8 @@ final class CueTest extends TestCase
         self::assertSame('cue.activity.started', $cue->type);
     }
 
-    public function test_instanceof_narrows_concrete_subclass(): void
+    #[Test]
+    public function instanceofNarrowsConcreteSubclass(): void
     {
         $cue = self::tokenDelta();
 
@@ -44,7 +45,8 @@ final class CueTest extends TestCase
         self::assertNotInstanceOf(Activity\Started::class, $cue);
     }
 
-    public function test_canonical_form_includes_type_and_payload(): void
+    #[Test]
+    public function canonicalFormIncludesTypeAndPayload(): void
     {
         $cue = self::tokenDelta();
         $canonical = $cue->toCanonical();
@@ -55,7 +57,8 @@ final class CueTest extends TestCase
         self::assertSame('message', $canonical['payload']['channel']);
     }
 
-    public function test_hash_is_stable(): void
+    #[Test]
+    public function hashIsStable(): void
     {
         $a = self::tokenDelta();
         $b = self::tokenDelta();
@@ -63,7 +66,8 @@ final class CueTest extends TestCase
         self::assertSame(Canonical::of($a), Canonical::of($b));
     }
 
-    public function test_different_payloads_produce_different_hashes(): void
+    #[Test]
+    public function differentPayloadsProduceDifferentHashes(): void
     {
         $a = self::tokenDelta(text: 'hello ');
         $b = self::tokenDelta(text: 'world!');

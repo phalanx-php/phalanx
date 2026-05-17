@@ -6,9 +6,9 @@ namespace Phalanx\Panoply\Cue\Provider;
 
 use Phalanx\Panoply\Cue;
 
-final class Retrying extends Cue
+class Retrying extends Cue
 {
-    public string $type { get => 'cue.provider.retrying'; }
+    final public string $type { get => 'cue.provider.retrying'; }
 
     public function __construct(
         string $id,
@@ -28,7 +28,7 @@ final class Retrying extends Cue
     /**
      * @return array<string, mixed>
      */
-    protected function payload(): array
+    final protected function payload(): array
     {
         return [
             'provider'     => $this->provider,

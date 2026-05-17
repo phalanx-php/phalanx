@@ -6,9 +6,9 @@ namespace Phalanx\Panoply\Cue\Invocation;
 
 use Phalanx\Panoply\Cue;
 
-final class Failed extends Cue
+class Failed extends Cue
 {
-    public string $type { get => 'cue.invocation.failed'; }
+    final public string $type { get => 'cue.invocation.failed'; }
 
     public function __construct(
         string $id,
@@ -26,7 +26,7 @@ final class Failed extends Cue
     /**
      * @return array<string, mixed>
      */
-    protected function payload(): array
+    final protected function payload(): array
     {
         return [
             'reason'      => $this->reason,

@@ -13,6 +13,6 @@ use Phalanx\Panoply\Series;
  *
  * @extends Series<object>
  */
-final class Collection extends Series
+class Collection extends Series
 {
 }

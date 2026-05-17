@@ -15,11 +15,13 @@ use Phalanx\Panoply\Output;
 use Phalanx\Panoply\Provider\Needs as ProviderNeeds;
 use Phalanx\Panoply\Provider\Preference;
 use Phalanx\Panoply\Transport\Needs as TransportNeeds;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class AgentTest extends TestCase
 {
-    public function test_concrete_agent_property_hooks_resolve(): void
+    #[Test]
+    public function concreteAgentPropertyHooksResolve(): void
     {
         $agent = new TestInvestigatorAgent();
 
@@ -40,13 +42,15 @@ final class AgentTest extends TestCase
         self::assertSame(ArtifactKind::Thesis, $agent->output->artifactKind);
     }
 
-    public function test_agent_context_reflects_declared_sources(): void
+    #[Test]
+    public function agentContextReflectsDeclaredSources(): void
     {
         $agent = new TestInvestigatorAgent();
         self::assertFalse($agent->context->isEmpty());
     }
 
-    public function test_agents_are_value_types_pass_by_handle_not_state(): void
+    #[Test]
+    public function agentsAreValueTypesPassByHandleNotState(): void
     {
         $a = new TestInvestigatorAgent();
         $b = new TestInvestigatorAgent();
@@ -98,6 +102,12 @@ final class TestInvestigatorAgent implements Agent
 
 namespace Phalanx\Panoply\Tests\Unit\TestSource;
 
-final class Mission {}
-final class Excerpts {}
-final class Question {}
+final class Mission
+{
+}
+final class Excerpts
+{
+}
+final class Question
+{
+}

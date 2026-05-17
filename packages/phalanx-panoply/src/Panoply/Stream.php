@@ -21,13 +21,13 @@ use Phalanx\Panoply\Cue\Output;
  *
  * @extends Series<Cue>
  */
-final class Stream extends Series
+class Stream extends Series
 {
     /**
      * All token-output cues — both deltas and stops. Useful for
      * rendering streaming model output.
      */
-    public function tokens(): self
+    public function tokens(): static
     {
         return $this->ofKind(Output\TokenDelta::class, Output\TokenStop::class);
     }
@@ -36,7 +36,7 @@ final class Stream extends Series
      * Every effect-related cue (request, arguments delta, authorization,
      * pause, execution, failure).
      */
-    public function effects(): self
+    public function effects(): static
     {
         return $this->ofKind(
             Effect\Requested::class,
@@ -52,7 +52,7 @@ final class Stream extends Series
     /**
      * Every artifact-related cue (drafting, delta, finalized).
      */
-    public function artifacts(): self
+    public function artifacts(): static
     {
         return $this->ofKind(
             Artifact\Drafting::class,
@@ -64,7 +64,7 @@ final class Stream extends Series
     /**
      * Activity + Invocation lifecycle cues.
      */
-    public function lifecycle(): self
+    public function lifecycle(): static
     {
         return $this->ofKind(
             Activity\Started::class,
@@ -83,12 +83,15 @@ final class Stream extends Series
      *
      * @param class-string<Cue> ...$cueClasses
      */
-    public function ofKind(string ...$cueClasses): self
+    public function ofKind(string ...$cueClasses): static
     {
         if ($cueClasses === []) {
             return $this;
         }
 
-        return $this->where(static fn(Cue $cue): bool => array_any($cueClasses, fn($class) => $cue instanceof $class));
+        return $this->where(static fn(Cue $cue): bool => array_any(
+            $cueClasses,
+            static fn(string $class): bool => $cue instanceof $class,
+        ));
     }
 }

@@ -6,9 +6,9 @@ namespace Phalanx\Panoply\Cue\Invocation;
 
 use Phalanx\Panoply\Cue;
 
-final class Cancelled extends Cue
+class Cancelled extends Cue
 {
-    public string $type { get => 'cue.invocation.cancelled'; }
+    final public string $type { get => 'cue.invocation.cancelled'; }
 
     public function __construct(
         string $id,
@@ -25,7 +25,7 @@ final class Cancelled extends Cue
     /**
      * @return array<string, mixed>
      */
-    protected function payload(): array
+    final protected function payload(): array
     {
         return ['reason' => $this->reason];
     }

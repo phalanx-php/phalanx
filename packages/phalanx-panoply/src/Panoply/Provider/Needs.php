@@ -22,7 +22,7 @@ use Phalanx\Panoply\Hash\Canonicalizable;
  *     ->require(Capability::Reasoning, Capability::ToolUse);
  * ```
  */
-final class Needs implements Canonicalizable
+class Needs implements Canonicalizable
 {
     /** @var list<Preference> */
     private(set) array $preferences;
@@ -41,6 +41,17 @@ final class Needs implements Canonicalizable
     public static function new(): self
     {
         return new self();
+    }
+
+    /**
+     * @return array{preferences: list<string>, required: array{cases: list<string>, custom: list<string>}}
+     */
+    final public function toCanonical(): array
+    {
+        return [
+            'preferences' => array_map(static fn (Preference $p): string => $p->value, $this->preferences),
+            'required'    => $this->required->toCanonical(),
+        ];
     }
 
     public function prefer(Preference $preference): self
@@ -86,17 +97,6 @@ final class Needs implements Canonicalizable
     public function isEmpty(): bool
     {
         return $this->preferences === [] && $this->required->isEmpty();
-    }
-
-    /**
-     * @return array{preferences: list<string>, required: array{cases: list<string>, custom: list<string>}}
-     */
-    public function toCanonical(): array
-    {
-        return [
-            'preferences' => array_map(static fn (Preference $p): string => $p->value, $this->preferences),
-            'required'    => $this->required->toCanonical(),
-        ];
     }
 
     /**

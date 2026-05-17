@@ -12,7 +12,7 @@ use Symfony\Component\Uid\Ulid;
  * Artifact, default Record id) are ULIDs — lexicographically sortable,
  * 26-char base32, embedded millisecond timestamp.
  */
-final class Id
+class Id
 {
     public static function generate(): string
     {

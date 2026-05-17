@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Phalanx\Panoply\Tests\Unit\Transport;
 
 use Phalanx\Panoply\Transport\Needs;
-use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(Needs::class)]
 final class NeedsTest extends TestCase
 {
-    public function test_new_has_no_requirements(): void
+    #[Test]
+    public function newHasNoRequirements(): void
     {
         $needs = Needs::new();
 
@@ -22,7 +22,8 @@ final class NeedsTest extends TestCase
         self::assertNull($needs->maxIdleSeconds);
     }
 
-    public function test_fluent_chain_accumulates_flags(): void
+    #[Test]
+    public function fluentChainAccumulatesFlags(): void
     {
         $needs = Needs::new()
             ->streaming()
@@ -38,7 +39,8 @@ final class NeedsTest extends TestCase
         self::assertSame(30, $needs->maxIdleSeconds);
     }
 
-    public function test_each_setter_returns_new_instance(): void
+    #[Test]
+    public function eachSetterReturnsNewInstance(): void
     {
         $original = Needs::new();
         $streamed = $original->streaming();
@@ -48,7 +50,8 @@ final class NeedsTest extends TestCase
         self::assertTrue($streamed->streamingRequired);
     }
 
-    public function test_max_idle_seconds_rejects_zero_or_negative(): void
+    #[Test]
+    public function maxIdleSecondsRejectsZeroOrNegative(): void
     {
         $this->expectException(\InvalidArgumentException::class);
         Needs::new()->withMaxIdleSeconds(0);

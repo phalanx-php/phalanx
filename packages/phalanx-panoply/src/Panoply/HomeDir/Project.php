@@ -10,7 +10,7 @@ namespace Phalanx\Panoply\HomeDir;
  * projects.json`. The `slug` is tool-specific; the `path` is always the
  * canonical filesystem path it refers to.
  */
-final class Project
+class Project
 {
     /**
      * @param array<string, mixed> $metadata

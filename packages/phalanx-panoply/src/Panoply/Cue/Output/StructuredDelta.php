@@ -6,9 +6,9 @@ namespace Phalanx\Panoply\Cue\Output;
 
 use Phalanx\Panoply\Cue;
 
-final class StructuredDelta extends Cue
+class StructuredDelta extends Cue
 {
-    public string $type { get => 'cue.output.structured_delta'; }
+    final public string $type { get => 'cue.output.structured_delta'; }
 
     public function __construct(
         string $id,
@@ -26,7 +26,7 @@ final class StructuredDelta extends Cue
     /**
      * @return array<string, mixed>
      */
-    protected function payload(): array
+    final protected function payload(): array
     {
         return [
             'json_delta' => $this->jsonDelta,

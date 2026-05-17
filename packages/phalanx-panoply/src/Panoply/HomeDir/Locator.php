@@ -9,7 +9,7 @@ namespace Phalanx\Panoply\HomeDir;
  * path returned by {@see \Phalanx\Panoply\HomeDir::locate()}. Carries
  * just enough metadata to decide whether to read it.
  */
-final class Locator
+class Locator
 {
     public function __construct(
         private(set) string $path,

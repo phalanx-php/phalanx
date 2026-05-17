@@ -6,13 +6,13 @@ namespace Phalanx\Panoply\Tests\Unit;
 
 use Phalanx\Panoply\Capabilities;
 use Phalanx\Panoply\Capability;
-use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(Capabilities::class)]
 final class CapabilitiesTest extends TestCase
 {
-    public function test_of_creates_set_from_cases(): void
+    #[Test]
+    public function ofCreatesSetFromCases(): void
     {
         $caps = Capabilities::of(Capability::Reasoning, Capability::ToolUse);
 
@@ -21,7 +21,8 @@ final class CapabilitiesTest extends TestCase
         self::assertFalse($caps->has(Capability::Vision));
     }
 
-    public function test_with_returns_new_instance(): void
+    #[Test]
+    public function withReturnsNewInstance(): void
     {
         $original = Capabilities::of(Capability::Reasoning);
         $extended = $original->with(Capability::ToolUse);
@@ -31,14 +32,16 @@ final class CapabilitiesTest extends TestCase
         self::assertTrue($extended->has(Capability::ToolUse));
     }
 
-    public function test_duplicates_are_deduped(): void
+    #[Test]
+    public function duplicatesAreDeduped(): void
     {
         $caps = Capabilities::of(Capability::Reasoning, Capability::Reasoning, Capability::ToolUse);
 
         self::assertCount(2, $caps->cases);
     }
 
-    public function test_satisfies_checks_all_required(): void
+    #[Test]
+    public function satisfiesChecksAllRequired(): void
     {
         $caps = Capabilities::of(Capability::Reasoning, Capability::ToolUse, Capability::Vision);
 
@@ -46,7 +49,8 @@ final class CapabilitiesTest extends TestCase
         self::assertFalse($caps->satisfies(Capability::Reasoning, Capability::JsonMode));
     }
 
-    public function test_intersect_preserves_only_shared(): void
+    #[Test]
+    public function intersectPreservesOnlyShared(): void
     {
         $a = Capabilities::of(Capability::Reasoning, Capability::ToolUse, Capability::Vision);
         $b = Capabilities::of(Capability::Vision, Capability::JsonMode);
@@ -58,7 +62,8 @@ final class CapabilitiesTest extends TestCase
         self::assertFalse($shared->has(Capability::JsonMode));
     }
 
-    public function test_custom_tags_survive_with_and_without(): void
+    #[Test]
+    public function customTagsSurviveWithAndWithout(): void
     {
         $caps = Capabilities::of(Capability::Reasoning)
             ->withCustom('vendor-feature-a', 'vendor-feature-b');
@@ -72,7 +77,8 @@ final class CapabilitiesTest extends TestCase
         self::assertTrue($reduced->hasCustom('vendor-feature-a'));
     }
 
-    public function test_to_canonical_sorts_cases_and_custom(): void
+    #[Test]
+    public function toCanonicalSortsCasesAndCustom(): void
     {
         $caps = Capabilities::of(Capability::Vision, Capability::Reasoning, Capability::ToolUse)
             ->withCustom('zebra', 'alpha');
@@ -83,7 +89,8 @@ final class CapabilitiesTest extends TestCase
         self::assertSame(['alpha', 'zebra'], $canonical['custom']);
     }
 
-    public function test_union_combines_two_sets(): void
+    #[Test]
+    public function unionCombinesTwoSets(): void
     {
         $a = Capabilities::of(Capability::Reasoning, Capability::ToolUse);
         $b = Capabilities::of(Capability::Vision, Capability::JsonMode);
@@ -96,7 +103,8 @@ final class CapabilitiesTest extends TestCase
         self::assertTrue($merged->has(Capability::JsonMode));
     }
 
-    public function test_union_dedups_overlap(): void
+    #[Test]
+    public function unionDedupsOverlap(): void
     {
         $a = Capabilities::of(Capability::Reasoning, Capability::Vision);
         $b = Capabilities::of(Capability::Vision, Capability::ToolUse);
@@ -106,7 +114,8 @@ final class CapabilitiesTest extends TestCase
         self::assertCount(3, $merged->cases, 'overlap (Vision) should appear once');
     }
 
-    public function test_union_preserves_custom_tags_from_both(): void
+    #[Test]
+    public function unionPreservesCustomTagsFromBoth(): void
     {
         $a = Capabilities::of(Capability::Reasoning)->withCustom('feature-a');
         $b = Capabilities::of(Capability::Vision)->withCustom('feature-b');
@@ -117,14 +126,16 @@ final class CapabilitiesTest extends TestCase
         self::assertTrue($merged->hasCustom('feature-b'));
     }
 
-    public function test_is_empty(): void
+    #[Test]
+    public function emptyAndNonEmptyAreDetected(): void
     {
         self::assertTrue(Capabilities::empty()->isEmpty());
         self::assertFalse(Capabilities::of(Capability::Reasoning)->isEmpty());
         self::assertFalse(Capabilities::empty()->withCustom('feature-x')->isEmpty());
     }
 
-    public function test_without_non_member_is_no_op(): void
+    #[Test]
+    public function withoutNonMemberIsNoOp(): void
     {
         $original = Capabilities::of(Capability::Reasoning);
         $reduced  = $original->without(Capability::Vision);

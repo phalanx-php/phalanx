@@ -7,11 +7,13 @@ namespace Phalanx\Panoply\Tests\Unit\Cue;
 use Phalanx\Panoply\Cue\Output\Channel;
 use Phalanx\Panoply\Cue\Output\TokenDelta;
 use Phalanx\Panoply\Hash\Canonical;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class HashTest extends TestCase
 {
-    public function test_token_delta_hash_stable_across_instances(): void
+    #[Test]
+    public function tokenDeltaHashStableAcrossInstances(): void
     {
         $at = new \DateTimeImmutable('2026-05-17T12:00:00Z');
         $a = new TokenDelta(
@@ -36,7 +38,8 @@ final class HashTest extends TestCase
         self::assertSame(Canonical::of($a), Canonical::of($b));
     }
 
-    public function test_token_delta_different_channels_hash_differently(): void
+    #[Test]
+    public function tokenDeltaDifferentChannelsHashDifferently(): void
     {
         $args = [
             'id'           => 'cue_1',
@@ -54,7 +57,8 @@ final class HashTest extends TestCase
         self::assertNotSame(Canonical::of($message), Canonical::of($thinking));
     }
 
-    public function test_null_optional_fields_hash_differently_than_populated(): void
+    #[Test]
+    public function nullOptionalFieldsHashDifferentlyThanPopulated(): void
     {
         $shared = [
             'id'         => 'cue_1',
@@ -70,7 +74,8 @@ final class HashTest extends TestCase
         self::assertNotSame(Canonical::of($bare), Canonical::of($full));
     }
 
-    public function test_timestamp_in_different_timezones_hashes_identically(): void
+    #[Test]
+    public function timestampInDifferentTimezonesHashesIdentically(): void
     {
         $utc     = new \DateTimeImmutable('2026-05-17T12:00:00Z');
         $chicago = new \DateTimeImmutable('2026-05-17T07:00:00-05:00');

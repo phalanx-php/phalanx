@@ -6,9 +6,9 @@ namespace Phalanx\Panoply\Cue\Provider;
 
 use Phalanx\Panoply\Cue;
 
-final class RateLimited extends Cue
+class RateLimited extends Cue
 {
-    public string $type { get => 'cue.provider.rate_limited'; }
+    final public string $type { get => 'cue.provider.rate_limited'; }
 
     public function __construct(
         string $id,
@@ -27,7 +27,7 @@ final class RateLimited extends Cue
     /**
      * @return array<string, mixed>
      */
-    protected function payload(): array
+    final protected function payload(): array
     {
         return [
             'provider'            => $this->provider,

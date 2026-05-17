@@ -6,9 +6,9 @@ namespace Phalanx\Panoply\Cue\Effect;
 
 use Phalanx\Panoply\Cue;
 
-final class Authorized extends Cue
+class Authorized extends Cue
 {
-    public string $type { get => 'cue.effect.authorized'; }
+    final public string $type { get => 'cue.effect.authorized'; }
 
     public function __construct(
         string $id,
@@ -26,7 +26,7 @@ final class Authorized extends Cue
     /**
      * @return array<string, mixed>
      */
-    protected function payload(): array
+    final protected function payload(): array
     {
         return [
             'effect_id' => $this->effectId,

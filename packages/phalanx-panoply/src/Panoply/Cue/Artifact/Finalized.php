@@ -6,9 +6,9 @@ namespace Phalanx\Panoply\Cue\Artifact;
 
 use Phalanx\Panoply\Cue;
 
-final class Finalized extends Cue
+class Finalized extends Cue
 {
-    public string $type { get => 'cue.artifact.finalized'; }
+    final public string $type { get => 'cue.artifact.finalized'; }
 
     public function __construct(
         string $id,
@@ -26,7 +26,7 @@ final class Finalized extends Cue
     /**
      * @return array<string, mixed>
      */
-    protected function payload(): array
+    final protected function payload(): array
     {
         return [
             'artifact_id'  => $this->artifactId,

@@ -13,6 +13,6 @@ use Phalanx\Panoply\Series;
  *
  * @extends Series<Locator>
  */
-final class Locators extends Series
+class Locators extends Series
 {
 }

@@ -6,9 +6,9 @@ namespace Phalanx\Panoply\Cue\Runtime;
 
 use Phalanx\Panoply\Cue;
 
-final class Warning extends Cue
+class Warning extends Cue
 {
-    public string $type { get => 'cue.runtime.warning'; }
+    final public string $type { get => 'cue.runtime.warning'; }
 
     public function __construct(
         string $id,
@@ -26,7 +26,7 @@ final class Warning extends Cue
     /**
      * @return array<string, mixed>
      */
-    protected function payload(): array
+    final protected function payload(): array
     {
         return [
             'message' => $this->message,

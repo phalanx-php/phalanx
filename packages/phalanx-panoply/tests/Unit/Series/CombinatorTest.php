@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Phalanx\Panoply\Tests\Unit\Series;
 
 use Phalanx\Panoply\Series;
-use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(Series::class)]
 final class CombinatorTest extends TestCase
 {
-    public function test_where(): void
+    #[Test]
+    public function whereFiltersByPredicate(): void
     {
         $r = Series::from([1, 2, 3, 4, 5])
             ->where(static fn (int $n): bool => $n > 2)
@@ -20,7 +20,8 @@ final class CombinatorTest extends TestCase
         self::assertSame([3, 4, 5], $r);
     }
 
-    public function test_map(): void
+    #[Test]
+    public function mapTransformsEachItem(): void
     {
         $r = Series::from([1, 2, 3])
             ->map(static fn (int $n): int => $n * 2)
@@ -29,19 +30,22 @@ final class CombinatorTest extends TestCase
         self::assertSame([2, 4, 6], $r);
     }
 
-    public function test_take(): void
+    #[Test]
+    public function takeYieldsFirstN(): void
     {
         $r = Series::from(range(1, 10))->take(3)->toArray();
         self::assertSame([1, 2, 3], $r);
     }
 
-    public function test_skip(): void
+    #[Test]
+    public function skipDropsFirstN(): void
     {
         $r = Series::from([1, 2, 3, 4, 5])->skip(2)->toArray();
         self::assertSame([3, 4, 5], $r);
     }
 
-    public function test_until_is_exclusive(): void
+    #[Test]
+    public function untilIsExclusive(): void
     {
         $r = Series::from([1, 2, 3, 4, 5])
             ->until(static fn (int $n): bool => $n >= 3)
@@ -50,7 +54,8 @@ final class CombinatorTest extends TestCase
         self::assertSame([1, 2], $r);
     }
 
-    public function test_since_is_inclusive(): void
+    #[Test]
+    public function sinceIsInclusive(): void
     {
         $r = Series::from([1, 2, 3, 4, 5])
             ->since(static fn (int $n): bool => $n >= 3)
@@ -59,7 +64,8 @@ final class CombinatorTest extends TestCase
         self::assertSame([3, 4, 5], $r);
     }
 
-    public function test_tee_observes_without_consuming(): void
+    #[Test]
+    public function teeObservesWithoutConsuming(): void
     {
         $observed = [];
         $r = Series::from([1, 2, 3])
@@ -72,7 +78,8 @@ final class CombinatorTest extends TestCase
         self::assertSame([1, 2, 3], $observed);
     }
 
-    public function test_pluck_property(): void
+    #[Test]
+    public function pluckProperty(): void
     {
         $items = [
             (object) ['name' => 'a'],
@@ -83,26 +90,30 @@ final class CombinatorTest extends TestCase
         self::assertSame(['a', 'b'], $r);
     }
 
-    public function test_pluck_array_key(): void
+    #[Test]
+    public function pluckArrayKey(): void
     {
         $items = [['k' => 1], ['k' => 2], ['k' => 3]];
         $r = Series::from($items)->pluck('k')->toArray();
         self::assertSame([1, 2, 3], $r);
     }
 
-    public function test_chunk(): void
+    #[Test]
+    public function chunkGroupsIntoFixedSize(): void
     {
         $r = Series::from([1, 2, 3, 4, 5])->chunk(2)->toArray();
         self::assertSame([[1, 2], [3, 4], [5]], $r);
     }
 
-    public function test_flatten(): void
+    #[Test]
+    public function flattenInlinesNestedIterables(): void
     {
         $r = Series::from([[1, 2], [3], [], [4, 5]])->flatten()->toArray();
         self::assertSame([1, 2, 3, 4, 5], $r);
     }
 
-    public function test_zip(): void
+    #[Test]
+    public function zipPairsAlignedItems(): void
     {
         $r = Series::from([1, 2, 3])
             ->zip(Series::from(['a', 'b', 'c']), Series::from(['x', 'y', 'z']))
@@ -114,13 +125,15 @@ final class CombinatorTest extends TestCase
         );
     }
 
-    public function test_zip_stops_at_shortest(): void
+    #[Test]
+    public function zipStopsAtShortest(): void
     {
         $r = Series::from([1, 2, 3])->zip(Series::from(['a', 'b']))->toArray();
         self::assertSame([[1, 'a'], [2, 'b']], $r);
     }
 
-    public function test_merge_concatenates(): void
+    #[Test]
+    public function mergeConcatenates(): void
     {
         $r = Series::from([1, 2])
             ->merge(Series::from([3, 4]), Series::from([5]))
@@ -129,7 +142,8 @@ final class CombinatorTest extends TestCase
         self::assertSame([1, 2, 3, 4, 5], $r);
     }
 
-    public function test_interleave_round_robin(): void
+    #[Test]
+    public function interleaveRoundRobin(): void
     {
         $r = Series::from([1, 2, 3])
             ->interleave(Series::from([10, 20, 30]), Series::from([100, 200]))
@@ -138,7 +152,8 @@ final class CombinatorTest extends TestCase
         self::assertSame([1, 10, 100, 2, 20, 200, 3, 30], $r);
     }
 
-    public function test_interleave_by_sort_merges_by_key(): void
+    #[Test]
+    public function interleaveBySortMergesByKey(): void
     {
         $a = Series::from([['t' => 1], ['t' => 4], ['t' => 7]]);
         $b = Series::from([['t' => 2], ['t' => 5], ['t' => 8]]);
@@ -151,13 +166,15 @@ final class CombinatorTest extends TestCase
         self::assertSame([1, 2, 3, 4, 5, 6, 7, 8], $timestamps);
     }
 
-    public function test_interleave_with_no_others_is_identity(): void
+    #[Test]
+    public function interleaveWithNoOthersIsIdentity(): void
     {
         $r = Series::from([1, 2, 3])->interleave()->toArray();
         self::assertSame([1, 2, 3], $r);
     }
 
-    public function test_interleave_with_empty_primary(): void
+    #[Test]
+    public function interleaveWithEmptyPrimary(): void
     {
         $r = Series::from([])
             ->interleave(Series::from([1, 2, 3]))
@@ -166,13 +183,15 @@ final class CombinatorTest extends TestCase
         self::assertSame([1, 2, 3], $r);
     }
 
-    public function test_interleave_all_empty(): void
+    #[Test]
+    public function interleaveAllEmpty(): void
     {
         $r = Series::from([])->interleave(Series::from([]), Series::from([]))->toArray();
         self::assertSame([], $r);
     }
 
-    public function test_interleave_by_ties_break_in_declared_order(): void
+    #[Test]
+    public function interleaveByTiesBreakInDeclaredOrder(): void
     {
         $a = Series::from([['t' => 1, 'src' => 'a'], ['t' => 2, 'src' => 'a']]);
         $b = Series::from([['t' => 1, 'src' => 'b'], ['t' => 2, 'src' => 'b']]);
@@ -184,7 +203,8 @@ final class CombinatorTest extends TestCase
         self::assertSame(['a', 'b', 'a', 'b'], $sources);
     }
 
-    public function test_interleave_by_with_no_others_yields_sorted_input(): void
+    #[Test]
+    public function interleaveByWithNoOthersYieldsSortedInput(): void
     {
         $r = Series::from([['t' => 1], ['t' => 2], ['t' => 3]])
             ->interleaveBy(static fn (array $row): int => $row['t'])
@@ -194,7 +214,8 @@ final class CombinatorTest extends TestCase
         self::assertSame([1, 2, 3], $timestamps);
     }
 
-    public function test_interleave_by_dedup_drops_duplicate_digests(): void
+    #[Test]
+    public function interleaveByDedupDropsDuplicateDigests(): void
     {
         $a = Series::from([['t' => 1, 'h' => 'aaa'], ['t' => 3, 'h' => 'ccc']]);
         $b = Series::from([['t' => 2, 'h' => 'bbb'], ['t' => 3, 'h' => 'ccc']]);
@@ -209,7 +230,8 @@ final class CombinatorTest extends TestCase
         self::assertSame(['aaa', 'bbb', 'ccc'], $hashes, 'duplicate ccc appears once');
     }
 
-    public function test_reduce(): void
+    #[Test]
+    public function reduceFoldsToSingleValue(): void
     {
         $sum = Series::from([1, 2, 3, 4])->reduce(
             static fn (int $acc, int $n): int => $acc + $n,
@@ -219,7 +241,8 @@ final class CombinatorTest extends TestCase
         self::assertSame(10, $sum);
     }
 
-    public function test_each(): void
+    #[Test]
+    public function eachVisitsEveryItem(): void
     {
         $seen = [];
         Series::from([1, 2, 3])->each(static function (int $n) use (&$seen): void {
@@ -229,41 +252,48 @@ final class CombinatorTest extends TestCase
         self::assertSame([1, 2, 3], $seen);
     }
 
-    public function test_first_returns_null_on_empty(): void
+    #[Test]
+    public function firstReturnsNullOnEmpty(): void
     {
         self::assertNull(Series::from([])->first());
     }
 
-    public function test_last(): void
+    #[Test]
+    public function lastReturnsFinalOrNull(): void
     {
         self::assertSame(3, Series::from([1, 2, 3])->last());
         self::assertNull(Series::from([])->last());
     }
 
-    public function test_count(): void
+    #[Test]
+    public function countMaterializesAll(): void
     {
         self::assertSame(0, Series::from([])->count());
         self::assertSame(5, Series::from([1, 2, 3, 4, 5])->count());
     }
 
-    public function test_to_array(): void
+    #[Test]
+    public function toArrayMaterializesItems(): void
     {
         self::assertSame([1, 2, 3], Series::from([1, 2, 3])->toArray());
     }
 
-    public function test_take_rejects_negative(): void
+    #[Test]
+    public function takeRejectsNegative(): void
     {
         $this->expectException(\InvalidArgumentException::class);
         Series::from([1, 2, 3])->take(-1);
     }
 
-    public function test_skip_rejects_negative(): void
+    #[Test]
+    public function skipRejectsNegative(): void
     {
         $this->expectException(\InvalidArgumentException::class);
         Series::from([1, 2, 3])->skip(-1);
     }
 
-    public function test_chunk_rejects_zero(): void
+    #[Test]
+    public function chunkRejectsZero(): void
     {
         $this->expectException(\InvalidArgumentException::class);
         Series::from([1, 2, 3])->chunk(0);

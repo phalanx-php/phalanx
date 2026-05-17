@@ -6,9 +6,9 @@ namespace Phalanx\Panoply\Cue\Effect;
 
 use Phalanx\Panoply\Cue;
 
-final class ArgumentsDelta extends Cue
+class ArgumentsDelta extends Cue
 {
-    public string $type { get => 'cue.effect.arguments_delta'; }
+    final public string $type { get => 'cue.effect.arguments_delta'; }
 
     public function __construct(
         string $id,
@@ -26,7 +26,7 @@ final class ArgumentsDelta extends Cue
     /**
      * @return array<string, mixed>
      */
-    protected function payload(): array
+    final protected function payload(): array
     {
         return [
             'effect_id'  => $this->effectId,

@@ -15,7 +15,7 @@ use Phalanx\Panoply\Hash\Canonicalizable;
  * codes — live in `Effect\Authorizer` (PA-03/PA-05). This type only
  * carries the agent's declared surface.
  */
-final class Effects implements Canonicalizable
+class Effects implements Canonicalizable
 {
     /** @var list<Kind> */
     private(set) array $allowed;
@@ -41,6 +41,20 @@ final class Effects implements Canonicalizable
     public static function allow(Kind ...$kinds): self
     {
         return new self(array_values($kinds));
+    }
+
+    /**
+     * @return array{allowed: list<string>, requires_approval: list<string>}
+     */
+    final public function toCanonical(): array
+    {
+        $allowed = array_map(static fn (Kind $k): string => $k->value, $this->allowed);
+        sort($allowed);
+
+        $approval = array_map(static fn (Kind $k): string => $k->value, $this->requiresApproval);
+        sort($approval);
+
+        return ['allowed' => $allowed, 'requires_approval' => $approval];
     }
 
     public function withAllowed(Kind ...$kinds): self
@@ -80,20 +94,6 @@ final class Effects implements Canonicalizable
     public function isEmpty(): bool
     {
         return $this->allowed === [] && $this->requiresApproval === [];
-    }
-
-    /**
-     * @return array{allowed: list<string>, requires_approval: list<string>}
-     */
-    public function toCanonical(): array
-    {
-        $allowed = array_map(static fn (Kind $k): string => $k->value, $this->allowed);
-        sort($allowed);
-
-        $approval = array_map(static fn (Kind $k): string => $k->value, $this->requiresApproval);
-        sort($approval);
-
-        return ['allowed' => $allowed, 'requires_approval' => $approval];
     }
 
     /**

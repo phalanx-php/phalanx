@@ -28,7 +28,7 @@ use Phalanx\Panoply\Hash\Canonicalizable;
  * schema and the immediate question belong at the tail, source material
  * sits in the middle.
  */
-final class Context implements Canonicalizable
+class Context implements Canonicalizable
 {
     /** @var list<class-string> */
     private(set) array $frontSources;
@@ -54,6 +54,18 @@ final class Context implements Canonicalizable
     public static function new(): self
     {
         return new self();
+    }
+
+    /**
+     * @return array{front: list<string>, middle: list<string>, tail: list<string>}
+     */
+    final public function toCanonical(): array
+    {
+        return [
+            'front'  => $this->frontSources,
+            'middle' => $this->middleSources,
+            'tail'   => $this->tailSources,
+        ];
     }
 
     /**
@@ -117,18 +129,6 @@ final class Context implements Canonicalizable
         return $this->frontSources === []
             && $this->middleSources === []
             && $this->tailSources === [];
-    }
-
-    /**
-     * @return array{front: list<string>, middle: list<string>, tail: list<string>}
-     */
-    public function toCanonical(): array
-    {
-        return [
-            'front'  => $this->frontSources,
-            'middle' => $this->middleSources,
-            'tail'   => $this->tailSources,
-        ];
     }
 
     /**

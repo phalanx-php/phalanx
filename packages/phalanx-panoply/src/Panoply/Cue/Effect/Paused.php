@@ -6,9 +6,9 @@ namespace Phalanx\Panoply\Cue\Effect;
 
 use Phalanx\Panoply\Cue;
 
-final class Paused extends Cue
+class Paused extends Cue
 {
-    public string $type { get => 'cue.effect.paused'; }
+    final public string $type { get => 'cue.effect.paused'; }
 
     public function __construct(
         string $id,
@@ -26,7 +26,7 @@ final class Paused extends Cue
     /**
      * @return array<string, mixed>
      */
-    protected function payload(): array
+    final protected function payload(): array
     {
         return [
             'effect_id' => $this->effectId,

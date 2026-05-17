@@ -12,7 +12,7 @@ use Phalanx\Panoply\Hash\Canonicalizable;
  * satisfy these requirements. `required` flags reject incompatible
  * transports; `preferred` flags break ties.
  */
-final class Needs implements Canonicalizable
+class Needs implements Canonicalizable
 {
     private function __construct(
         private(set) bool $streamingRequired = false,
@@ -26,6 +26,26 @@ final class Needs implements Canonicalizable
     public static function new(): self
     {
         return new self();
+    }
+
+    /**
+     * @return array{
+     *     streaming: bool,
+     *     cancellable: bool,
+     *     backpressure: bool,
+     *     partial_json: bool,
+     *     max_idle_seconds: int|null
+     * }
+     */
+    final public function toCanonical(): array
+    {
+        return [
+            'streaming'        => $this->streamingRequired,
+            'cancellable'      => $this->cancellableRequired,
+            'backpressure'     => $this->backpressurePreferred,
+            'partial_json'     => $this->partialJsonPreferred,
+            'max_idle_seconds' => $this->maxIdleSeconds,
+        ];
     }
 
     public function streaming(): self
@@ -85,25 +105,5 @@ final class Needs implements Canonicalizable
             partialJsonPreferred: $this->partialJsonPreferred,
             maxIdleSeconds: $seconds,
         );
-    }
-
-    /**
-     * @return array{
-     *     streaming: bool,
-     *     cancellable: bool,
-     *     backpressure: bool,
-     *     partial_json: bool,
-     *     max_idle_seconds: int|null
-     * }
-     */
-    public function toCanonical(): array
-    {
-        return [
-            'streaming'        => $this->streamingRequired,
-            'cancellable'      => $this->cancellableRequired,
-            'backpressure'     => $this->backpressurePreferred,
-            'partial_json'     => $this->partialJsonPreferred,
-            'max_idle_seconds' => $this->maxIdleSeconds,
-        ];
     }
 }

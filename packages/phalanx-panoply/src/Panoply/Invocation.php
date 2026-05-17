@@ -21,7 +21,7 @@ use Phalanx\Panoply\Hash\Canonicalizable;
  * Construct via {@see self::of()} which fills `createdAt` and lets the
  * agent runtime derive `contextHash` from the assembled context envelope.
  */
-final class Invocation implements Canonicalizable
+class Invocation implements Canonicalizable
 {
     /**
      * @param array<string, mixed> $dynamicContext
@@ -73,18 +73,9 @@ final class Invocation implements Canonicalizable
     }
 
     /**
-     * The canonical prompt hash for this invocation. Stable across PHP
-     * runs, key orderings, and host platforms.
-     */
-    public function promptHash(): string
-    {
-        return Canonical::of($this);
-    }
-
-    /**
      * @return array<string, mixed>
      */
-    public function toCanonical(): array
+    final public function toCanonical(): array
     {
         return [
             'id'              => $this->id,
@@ -101,5 +92,14 @@ final class Invocation implements Canonicalizable
             // match across hosts in any timezone.
             'created_at'      => $this->createdAt->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d\TH:i:s.u\Z'),
         ];
+    }
+
+    /**
+     * The canonical prompt hash for this invocation. Stable across PHP
+     * runs, key orderings, and host platforms.
+     */
+    public function promptHash(): string
+    {
+        return Canonical::of($this);
     }
 }

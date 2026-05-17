@@ -7,13 +7,13 @@ namespace Phalanx\Panoply\Tests\Unit;
 use Phalanx\Panoply\Effect\Kind;
 use Phalanx\Panoply\Effects;
 use Phalanx\Panoply\Hash\Canonical;
-use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(Effects::class)]
 final class EffectsTest extends TestCase
 {
-    public function test_none_permits_nothing(): void
+    #[Test]
+    public function nonePermitsNothing(): void
     {
         $effects = Effects::none();
 
@@ -21,7 +21,8 @@ final class EffectsTest extends TestCase
         self::assertFalse($effects->permits(Kind::FileRead));
     }
 
-    public function test_allow_grants_kinds(): void
+    #[Test]
+    public function allowGrantsKinds(): void
     {
         $effects = Effects::allow(Kind::FileRead, Kind::CodeSearch);
 
@@ -30,7 +31,8 @@ final class EffectsTest extends TestCase
         self::assertFalse($effects->permits(Kind::FileWrite));
     }
 
-    public function test_require_approval_separate_from_allow(): void
+    #[Test]
+    public function requireApprovalSeparateFromAllow(): void
     {
         $effects = Effects::allow(Kind::FileRead)
             ->requireApproval(Kind::FileWrite, Kind::ShellExec);
@@ -40,14 +42,16 @@ final class EffectsTest extends TestCase
         self::assertTrue($effects->needsApproval(Kind::ShellExec));
     }
 
-    public function test_duplicates_dedup(): void
+    #[Test]
+    public function duplicatesDedup(): void
     {
         $effects = Effects::allow(Kind::FileRead, Kind::FileRead, Kind::CodeSearch);
 
         self::assertCount(2, $effects->allowed);
     }
 
-    public function test_canonical_form_sorts_kinds(): void
+    #[Test]
+    public function canonicalFormSortsKinds(): void
     {
         $a = Effects::allow(Kind::WebFetch, Kind::FileRead, Kind::CodeSearch);
         $b = Effects::allow(Kind::CodeSearch, Kind::FileRead, Kind::WebFetch);
