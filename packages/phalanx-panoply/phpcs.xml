@@ -10,6 +10,8 @@
         <!-- PHP 8.4 property hooks: phpcs parser doesn't understand { get => } syntax -->
         <exclude name="PSR2.Classes.PropertyDeclaration.Multiple"/>
         <exclude name="PSR2.Classes.PropertyDeclaration.ScopeMissing"/>
+        <!-- PHP 8.4 property hooks: phpcs misreads hook-body lines in multi-namespace files -->
+        <exclude name="PSR2.Classes.PropertyDeclaration.SpacingAfterType"/>
     </rule>
 
     <!-- PHP 8.4 property hooks: interface property hooks trigger false positives -->

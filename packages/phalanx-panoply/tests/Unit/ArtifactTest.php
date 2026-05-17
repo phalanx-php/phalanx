@@ -102,6 +102,7 @@ final class ArtifactTest extends TestCase
         self::assertArrayHasKey('content', $canonical);
         self::assertArrayHasKey('content_hash', $canonical);
         self::assertArrayHasKey('agent_id', $canonical);
+        self::assertArrayHasKey('activity_id', $canonical);
         self::assertArrayHasKey('created_at', $canonical);
         self::assertArrayHasKey('updated_at', $canonical);
         self::assertArrayHasKey('finalized_at', $canonical);
@@ -193,6 +194,28 @@ final class ArtifactTest extends TestCase
 
         self::assertTrue($finalized->isFinalized());
         self::assertSame('', $finalized->content);
+    }
+
+    #[Test]
+    public function canonicalAlgorithmAnchorForArtifact(): void
+    {
+        $artifact = Artifact::draft(
+            id: '01HZ000000000000000000ARTIFACT',
+            kind: ArtifactKind::Thesis,
+            agentId: 'leonidas',
+            activityId: 'act.thermopylae',
+            title: 'Spartan Defense Brief',
+            createdAt: new \DateTimeImmutable('2026-05-17T12:00:00.000000+00:00'),
+        );
+
+        $hash = Canonical::of($artifact);
+
+        // Anchor — algorithm drift surfaces here with a clear "algorithm changed" signal.
+        self::assertSame(
+            '0d0ed3a3da42391b161bb47bed0540cfde6ad67154b7cc4bc9da3171f3e85c25',
+            $hash,
+            'Canonical algorithm drifted for Artifact — verify normalization changes are intentional',
+        );
     }
 
     private static function fixture(): Artifact
