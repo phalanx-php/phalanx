@@ -33,7 +33,7 @@ final class Registry
 
     public function with(Agent $agent): self
     {
-        $agents          = $this->agents;
+        $agents             = $this->agents;
         $agents[$agent->id] = $agent;
 
         return new self($agents);
@@ -49,22 +49,16 @@ final class Registry
         return isset($this->agents[$id]);
     }
 
-    /**
-     * @return array<string, Agent>
-     */
-    public function all(): array
+    public function all(): Collection
     {
-        return $this->agents;
+        return Collection::from($this->agents);
     }
 
-    /**
-     * @return array<string, Agent>
-     */
-    public function byCapability(Capability $capability): array
+    public function byCapability(Capability $capability): Collection
     {
-        return array_filter(
+        return Collection::from(array_filter(
             $this->agents,
             static fn (Agent $agent): bool => $agent->capabilities->has($capability),
-        );
+        ));
     }
 }

@@ -5,8 +5,15 @@ declare(strict_types=1);
 namespace Phalanx\Panoply\Tests\Unit\Hash;
 
 use Phalanx\Panoply\Conversation\Record\Message;
+use Phalanx\Panoply\Cue\Output\Channel;
+use Phalanx\Panoply\Cue\Output\TokenDelta;
+use Phalanx\Panoply\Effect;
+use Phalanx\Panoply\Effect\Decision;
+use Phalanx\Panoply\Effect\Kind as EffectKind;
 use Phalanx\Panoply\Effects;
+use Phalanx\Panoply\Grant;
 use Phalanx\Panoply\Hash\Canonical;
+use Phalanx\Panoply\Hazard;
 use Phalanx\Panoply\Invocation;
 use Phalanx\Panoply\Output;
 use Phalanx\Panoply\Provider\Needs as ProviderNeeds;
@@ -129,6 +136,82 @@ final class DeterminismGateTest extends TestCase
             '9638dbb127588a4197545c9aeddf089141652cd52e7560bda3803840d11b2bfb',
             $hash,
             'Canonical algorithm output drifted for Record\Message — verify normalization changes are intentional',
+        );
+    }
+
+    #[Test]
+    public function canonicalAlgorithmAnchorForTokenDelta(): void
+    {
+        // Highest-volume cue — a streaming token delta with fixed fields.
+        $cue = new TokenDelta(
+            id: '01HZ000000000000000000TD0001',
+            sequence: 1,
+            activityId: 'act.thermopylae',
+            invocationId: '01HZ000000000000000000INV001',
+            agentId: 'agent.leonidas',
+            at: new \DateTimeImmutable('2026-05-17T12:00:00.123456+00:00'),
+            text: 'Hold the pass.',
+            channel: Channel::Message,
+        );
+
+        self::assertSame(
+            'f25b581e5b5df47f4bf8dd5108a2ba2d333057b2bc47996c0982e0e8709c9d99',
+            Canonical::of($cue),
+            'Canonical algorithm output drifted for Cue\Output\TokenDelta',
+        );
+    }
+
+    #[Test]
+    public function canonicalAlgorithmAnchorForEffect(): void
+    {
+        // Effect — Authorizer/Scorer input type.
+        $effect = Effect::of(
+            id: '01HZ000000000000000000EFF001',
+            kind: EffectKind::FileRead,
+            summary: 'Read hoplite formation data from /var/phalanx/sparta.json',
+            arguments: ['path' => '/var/phalanx/sparta.json'],
+            requiresApproval: false,
+            hazard: Hazard::Low,
+        );
+
+        self::assertSame(
+            'f7d31a17efbe946be90572a676b3541f5db9e4d00302a4b36cd8f533e217447c',
+            Canonical::of($effect),
+            'Canonical algorithm output drifted for Effect',
+        );
+    }
+
+    #[Test]
+    public function canonicalAlgorithmAnchorForGrant(): void
+    {
+        // Grant — authorization payload issued to agents.
+        $grant = Grant::of(
+            id: '01HZ000000000000000000GRT001',
+            subject: 'agent.leonidas',
+            allowedEffects: [EffectKind::FileRead, EffectKind::CodeSearch],
+            scope: 'thermopylae.battle',
+            hazardCeiling: Hazard::Medium,
+            expiresAt: new \DateTimeImmutable('2026-05-17T18:00:00.000000+00:00'),
+            conditions: ['battlefield' => 'thermopylae', 'year' => -480],
+        );
+
+        self::assertSame(
+            '2e12b982169d8117f4d3cff895fd4764e6b7de1dcc6f1f43e1682dc9b1f4a01c',
+            Canonical::of($grant),
+            'Canonical algorithm output drifted for Grant',
+        );
+    }
+
+    #[Test]
+    public function canonicalAlgorithmAnchorForDecision(): void
+    {
+        // Effect\Decision — Authorizer output type.
+        $decision = Decision::granted('01HZ000000000000000000GRT001');
+
+        self::assertSame(
+            '62cc2d4b10dc6029de18dbb25641e551d5fb76f801ac779fe74b15655e87ebd3',
+            Canonical::of($decision),
+            'Canonical algorithm output drifted for Effect\Decision',
         );
     }
 

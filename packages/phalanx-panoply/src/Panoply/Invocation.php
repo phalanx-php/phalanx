@@ -78,7 +78,7 @@ final class Invocation implements Canonicalizable
     /**
      * @return array<string, mixed>
      */
-    final public function toCanonical(): array
+    public function toCanonical(): array
     {
         return [
             'id'              => $this->id,

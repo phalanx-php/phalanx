@@ -58,9 +58,13 @@ final class Runtime implements RuntimeContract
     }
 
     /**
-     * Cancels the runtime scope and runs all registered cleanup closures in
-     * LIFO order. Public for test and host control — not part of the
-     * {@see RuntimeContract} interface.
+     * Cancel the runtime. Sets the cancelled flag and runs registered
+     * cleanups in LIFO order. Idempotent — calling twice has no effect.
+     *
+     * @internal Public for host/test control only; not part of the
+     *           {@see RuntimeContract} interface. Subclasses or wrapping
+     *           runtimes should treat this as an out-of-band cancellation
+     *           channel, not a contract method.
      */
     public function cancel(): void
     {

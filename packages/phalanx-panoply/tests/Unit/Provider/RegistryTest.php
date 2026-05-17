@@ -10,10 +10,14 @@ use Phalanx\Panoply\Provider\Config;
 use Phalanx\Panoply\Provider\Config\Model;
 use Phalanx\Panoply\Provider\DuplicateModelAlias;
 use Phalanx\Panoply\Provider\Registry;
+use Phalanx\Panoply\Provider\Resolution;
 use Phalanx\Panoply\Transport\Needs as TransportNeeds;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * Pins spec acceptance gate #14.
+ */
 final class RegistryTest extends TestCase
 {
     #[Test]
@@ -84,8 +88,9 @@ final class RegistryTest extends TestCase
         $result = $registry->byModelAlias('apollo');
 
         self::assertNotNull($result);
-        self::assertSame('olympus', $result['config']->id);
-        self::assertSame('apollo-v1', $result['model']->name);
+        self::assertInstanceOf(Resolution::class, $result);
+        self::assertSame('olympus', $result->config->id);
+        self::assertSame('apollo-v1', $result->model->name);
     }
 
     #[Test]
@@ -101,7 +106,8 @@ final class RegistryTest extends TestCase
         $result = $registry->byModelAlias('opus');
 
         self::assertNotNull($result);
-        self::assertSame('opus', $result['model']->name);
+        self::assertInstanceOf(Resolution::class, $result);
+        self::assertSame('opus', $result->model->name);
     }
 
     #[Test]
@@ -127,7 +133,8 @@ final class RegistryTest extends TestCase
         $result = $registry->byModelAlias('leo');
 
         self::assertNotNull($result);
-        self::assertSame('sparta', $result['config']->id);
+        self::assertInstanceOf(Resolution::class, $result);
+        self::assertSame('sparta', $result->config->id);
     }
 
     #[Test]

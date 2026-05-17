@@ -40,7 +40,7 @@ final class Needs implements Canonicalizable
      *     max_idle_seconds: int|null
      * }
      */
-    final public function toCanonical(): array
+    public function toCanonical(): array
     {
         return [
             'streaming'        => $this->streamingRequired,

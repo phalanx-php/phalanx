@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Panoply\Tests\Unit\Agent;
 
+use Phalanx\Panoply\Agent;
+use Phalanx\Panoply\Agent\Collection;
 use Phalanx\Panoply\Agent\Registry;
 use Phalanx\Panoply\Capability;
 use Phalanx\Panoply\Tests\Unit\Agent\Stubs\StubAgent;
@@ -15,9 +17,10 @@ final class RegistryTest extends TestCase
     #[Test]
     public function emptyStartsEmpty(): void
     {
-        $registry = Registry::empty();
+        $all = Registry::empty()->all();
 
-        self::assertSame([], $registry->all());
+        self::assertInstanceOf(Collection::class, $all);
+        self::assertSame(0, $all->count());
     }
 
     #[Test]
@@ -57,41 +60,50 @@ final class RegistryTest extends TestCase
     }
 
     #[Test]
-    public function allReturnsAllAgents(): void
+    public function allReturnsCollectionOfAllAgents(): void
     {
         $registry = Registry::empty()
             ->with(new StubAgent('leonidas', Capability::Reasoning))
             ->with(new StubAgent('odysseus', Capability::ToolUse));
 
-        self::assertCount(2, $registry->all());
-        self::assertArrayHasKey('leonidas', $registry->all());
-        self::assertArrayHasKey('odysseus', $registry->all());
+        $all = $registry->all();
+
+        self::assertInstanceOf(Collection::class, $all);
+        self::assertSame(2, $all->count());
     }
 
     #[Test]
     public function byCapabilityFiltersCorrectly(): void
     {
+        $leonidas = new StubAgent('leonidas', Capability::Reasoning);
+        $odysseus = new StubAgent('odysseus', Capability::ToolUse);
+        $achilles = new StubAgent('achilles', Capability::Reasoning);
+
         $registry = Registry::empty()
-            ->with(new StubAgent('leonidas', Capability::Reasoning))
-            ->with(new StubAgent('odysseus', Capability::ToolUse))
-            ->with(new StubAgent('achilles', Capability::Reasoning));
+            ->with($leonidas)
+            ->with($odysseus)
+            ->with($achilles);
 
         $reasoners = $registry->byCapability(Capability::Reasoning);
 
-        self::assertCount(2, $reasoners);
-        self::assertArrayHasKey('leonidas', $reasoners);
-        self::assertArrayHasKey('achilles', $reasoners);
-        self::assertArrayNotHasKey('odysseus', $reasoners);
+        self::assertInstanceOf(Collection::class, $reasoners);
+        self::assertSame(2, $reasoners->count());
+
+        $ids = array_map(static fn (Agent $a): string => $a->id, $reasoners->toArray());
+        self::assertContains('leonidas', $ids);
+        self::assertContains('achilles', $ids);
+        self::assertNotContains('odysseus', $ids);
     }
 
     #[Test]
-    public function byCapabilityReturnsEmptyForNoMatch(): void
+    public function byCapabilityReturnsEmptyCollectionForNoMatch(): void
     {
         $registry = Registry::empty()->with(new StubAgent('leonidas', Capability::Reasoning));
 
         $result = $registry->byCapability(Capability::Vision);
 
-        self::assertSame([], $result);
+        self::assertInstanceOf(Collection::class, $result);
+        self::assertSame(0, $result->count());
     }
 }
 
@@ -130,8 +142,8 @@ final class StubAgent implements Agent
     public Output $output        { get => Output::artifact(ArtifactKind::Thesis); }
 
     public function __construct(
-        private readonly string $agentId,
-        private readonly Capability $cap,
+        private(set) string $agentId,
+        private(set) Capability $cap,
     ) {
     }
 }

@@ -49,7 +49,7 @@ final class Capabilities implements Canonicalizable
      *
      * @return array{cases: list<string>, custom: list<string>}
      */
-    final public function toCanonical(): array
+    public function toCanonical(): array
     {
         $cases = array_map(static fn (Capability $c): string => $c->value, $this->cases);
         sort($cases);

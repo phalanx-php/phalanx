@@ -11,6 +11,9 @@ use Phalanx\Panoply\Hazard\Scorer\Rules\Scorer;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * Pins spec acceptance gate #12.
+ */
 final class ScorerTest extends TestCase
 {
     #[Test]

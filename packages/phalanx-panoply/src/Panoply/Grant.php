@@ -72,7 +72,7 @@ final class Grant implements Canonicalizable
     /**
      * @return array<string, mixed>
      */
-    final public function toCanonical(): array
+    public function toCanonical(): array
     {
         $allowed = array_map(static fn (Effect\Kind $k): string => $k->value, $this->allowedEffects);
         sort($allowed);

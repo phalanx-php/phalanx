@@ -49,7 +49,7 @@ final class Needs implements Canonicalizable
     /**
      * @return array{preferences: list<string>, required: array{cases: list<string>, custom: list<string>}}
      */
-    final public function toCanonical(): array
+    public function toCanonical(): array
     {
         return [
             'preferences' => array_map(static fn (Preference $p): string => $p->value, $this->preferences),

@@ -49,7 +49,7 @@ final class Effects implements Canonicalizable
     /**
      * @return array{allowed: list<string>, requires_approval: list<string>}
      */
-    final public function toCanonical(): array
+    public function toCanonical(): array
     {
         $allowed = array_map(static fn (Kind $k): string => $k->value, $this->allowed);
         sort($allowed);

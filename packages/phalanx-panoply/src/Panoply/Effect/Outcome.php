@@ -69,7 +69,7 @@ final class Outcome implements Canonicalizable
     /**
      * @return array<string, mixed>
      */
-    final public function toCanonical(): array
+    public function toCanonical(): array
     {
         return [
             'state'         => $this->state->value,

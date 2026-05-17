@@ -55,7 +55,7 @@ final class Output implements Canonicalizable
     /**
      * @return array{mode: string, artifact_kind: string|null, schema: string|null}
      */
-    final public function toCanonical(): array
+    public function toCanonical(): array
     {
         return [
             'mode'          => $this->mode->value,

@@ -68,7 +68,7 @@ final class ConfigTest extends TestCase
     }
 
     #[Test]
-    public function hashAnchor(): void
+    public function canonicalAlgorithmAnchorForConfig(): void
     {
         self::assertSame(
             '5458e0697b7e0d686cb25e38c7f6cd587c033afbd1f089e24655126cca1ab7a3',

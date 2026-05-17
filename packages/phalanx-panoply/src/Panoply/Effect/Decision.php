@@ -68,7 +68,7 @@ final class Decision implements Canonicalizable
     /**
      * @return array<string, mixed>
      */
-    final public function toCanonical(): array
+    public function toCanonical(): array
     {
         $codes = $this->reasonCodes;
         sort($codes);

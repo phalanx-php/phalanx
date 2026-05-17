@@ -10,6 +10,9 @@ use Phalanx\Panoply\Provider\ValidationError;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * Pins spec acceptance gate #13.
+ */
 final class LoaderTest extends TestCase
 {
     #[Test]
@@ -215,6 +218,22 @@ YAML;
             self::assertStringContainsString("transport", $message);
             self::assertStringContainsString("retry", $message);
         }
+    }
+
+    #[Test]
+    public function fakeYamlRoundTrip(): void
+    {
+        $path   = dirname(__DIR__, 3) . '/src/Panoply/Provider/Fake/fake.panoply.yaml';
+        $config = Loader::fromFile($path);
+
+        self::assertSame('fake', $config->id);
+        self::assertSame(\Phalanx\Panoply\Provider\Fake\Provider::class, $config->wireTranslator);
+
+        self::assertCount(1, $config->models);
+        $model = $config->models[0];
+        self::assertSame('oracle-of-delphi', $model->name);
+        self::assertContains('delphi', $model->aliases);
+        self::assertContains('oracle', $model->aliases);
     }
 
     private static function fixtureFile(): string

@@ -57,7 +57,7 @@ final class Model implements Canonicalizable
     /**
      * @return array<string, mixed>
      */
-    final public function toCanonical(): array
+    public function toCanonical(): array
     {
         $aliases = $this->aliases;
         sort($aliases);

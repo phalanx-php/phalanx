@@ -72,7 +72,7 @@ final class ModelTest extends TestCase
     }
 
     #[Test]
-    public function hashAnchor(): void
+    public function canonicalAlgorithmAnchorForModel(): void
     {
         self::assertSame(
             '9488834bc5cd4f22881237a06fff8da08a730d9b17659592398f99c67b85c0ef',

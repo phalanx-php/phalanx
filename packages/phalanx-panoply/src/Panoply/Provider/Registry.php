@@ -66,21 +66,19 @@ final class Registry
 
     /**
      * Search every Config's models for any model whose name or aliases
-     * match the supplied string. Returns the first match as a typed
-     * tuple, or null when no match is found.
-     *
-     * @return array{config: Config, model: Config\Model}|null
+     * match the supplied string. Returns the first match as a {@see Resolution},
+     * or null when no match is found.
      */
-    public function byModelAlias(string $alias): ?array
+    public function byModelAlias(string $alias): ?Resolution
     {
         foreach ($this->configs as $config) {
             foreach ($config->models as $model) {
                 if ($model->name === $alias) {
-                    return ['config' => $config, 'model' => $model];
+                    return new Resolution($config, $model);
                 }
 
                 if (in_array($alias, $model->aliases, strict: true)) {
-                    return ['config' => $config, 'model' => $model];
+                    return new Resolution($config, $model);
                 }
             }
         }
