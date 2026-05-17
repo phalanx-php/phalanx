@@ -7,6 +7,7 @@ namespace Phalanx\Athena\Provider;
 use Phalanx\Athena\Event\AgentEvent;
 use Phalanx\Athena\Event\TokenDelta;
 use Phalanx\Athena\Event\TokenUsage;
+use Phalanx\Athena\Event\ToolCallData;
 use Phalanx\Athena\Http\Url;
 use Phalanx\Iris\HttpClient;
 use Phalanx\Iris\HttpRequest;
@@ -82,6 +83,15 @@ final class OllamaProvider implements LlmProvider
                     $channel->emit(AgentEvent::tokenDelta(new TokenDelta(text: $content), $elapsed, $usage, $step));
                 }
 
+                $toolCalls = is_array($message) ? ($message['tool_calls'] ?? []) : [];
+                foreach ($toolCalls as $tc) {
+                    $fn = $tc['function'] ?? [];
+                    $callId = (string) ($tc['id'] ?? 'call_' . bin2hex(random_bytes(8)));
+                    $toolData = new ToolCallData($callId, $fn['name'] ?? '', $fn['arguments'] ?? []);
+                    $channel->emit(AgentEvent::toolCallStart($toolData, $elapsed, $usage, $step));
+                    $channel->emit(AgentEvent::toolCallComplete($toolData, $elapsed, $usage, $step));
+                }
+
                 if ($parsed['done'] ?? false) {
                     $usage = new TokenUsage(
                         input: (int) ($parsed['prompt_eval_count'] ?? 0),
@@ -106,10 +116,23 @@ final class OllamaProvider implements LlmProvider
             $messages[] = $msg;
         }
 
-        return [
+        $body = [
             'model' => $model,
             'messages' => $messages,
             'stream' => true,
         ];
+
+        if ($request->tools !== []) {
+            $body['tools'] = array_map(static fn(array $tool): array => [
+                'type' => 'function',
+                'function' => [
+                    'name' => $tool['name'],
+                    'description' => $tool['description'],
+                    'parameters' => $tool['input_schema'],
+                ],
+            ], $request->tools);
+        }
+
+        return $body;
     }
 }
