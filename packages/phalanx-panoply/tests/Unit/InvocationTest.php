@@ -82,6 +82,18 @@ final class InvocationTest extends TestCase
         self::assertJson($json);
     }
 
+    #[Test]
+    public function timestampInDifferentTimezonesHashesIdentically(): void
+    {
+        $instant = new \DateTimeImmutable('2026-05-17T12:00:00+05:00');
+        $utc     = new \DateTimeImmutable('2026-05-17T07:00:00Z');
+
+        $a = self::fixture(createdAt: $instant);
+        $b = self::fixture(createdAt: $utc);
+
+        self::assertSame(Canonical::of($a), Canonical::of($b));
+    }
+
     /**
      * @param array<string, mixed> $dynamicContext
      */

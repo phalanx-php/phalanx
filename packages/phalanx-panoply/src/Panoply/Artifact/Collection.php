@@ -11,7 +11,7 @@ use Phalanx\Panoply\Series;
  * combinator immediately; domain-specific filters live alongside the
  * Artifact value object and Store interface.
  *
- * @extends Series<object>
+ * @extends Series<\Phalanx\Panoply\Artifact>
  */
 class Collection extends Series
 {

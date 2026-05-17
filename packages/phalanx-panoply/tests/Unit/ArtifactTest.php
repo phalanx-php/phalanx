@@ -160,6 +160,41 @@ final class ArtifactTest extends TestCase
         self::assertSame(64, strlen($hash));
     }
 
+    #[Test]
+    public function timestampInDifferentTimezonesHashesIdentically(): void
+    {
+        $instant = new \DateTimeImmutable('2026-05-17T12:00:00+05:00');
+        $utc     = new \DateTimeImmutable('2026-05-17T07:00:00Z');
+
+        $a = Artifact::draft('art_tz', ArtifactKind::Thesis, 'leonidas', createdAt: $instant);
+        $b = Artifact::draft('art_tz', ArtifactKind::Thesis, 'leonidas', createdAt: $utc);
+
+        self::assertSame(Canonical::of($a), Canonical::of($b));
+    }
+
+    #[Test]
+    public function finalizeTwicePreservesLatestContent(): void
+    {
+        $draft  = Artifact::draft('art_x', ArtifactKind::Thesis, 'leonidas');
+        $first  = $draft->finalize('first', hash('sha256', 'first'));
+        $second = $first->finalize('second', hash('sha256', 'second'));
+
+        self::assertSame('second', $second->content);
+        self::assertSame(hash('sha256', 'second'), $second->contentHash);
+        // First is immutable; finalize returned a new instance.
+        self::assertSame('first', $first->content);
+    }
+
+    #[Test]
+    public function finalizeWithEmptyContentIsAllowed(): void
+    {
+        $draft     = Artifact::draft('art_x', ArtifactKind::Thesis, 'leonidas');
+        $finalized = $draft->finalize('', hash('sha256', ''));
+
+        self::assertTrue($finalized->isFinalized());
+        self::assertSame('', $finalized->content);
+    }
+
     private static function fixture(): Artifact
     {
         return Artifact::draft(

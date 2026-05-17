@@ -12,8 +12,8 @@ use Phalanx\Panoply\Hash\Canonicalizable;
  * which of those require human approval before the host executes them.
  *
  * Authorization semantics — hazard scoring, grant matching, denial reason
- * codes — live in `Effect\Authorizer` (PA-03/PA-05). This type only
- * carries the agent's declared surface.
+ * codes — live in `Effect\Authorizer`. This type only carries the agent's
+ * declared surface.
  */
 class Effects implements Canonicalizable
 {

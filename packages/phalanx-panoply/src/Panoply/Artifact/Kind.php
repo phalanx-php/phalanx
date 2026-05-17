@@ -7,8 +7,11 @@ namespace Phalanx\Panoply\Artifact;
 /**
  * Normalized kinds of durable agent output. Hosts and Delphi-style
  * consumers route artifacts to renderers and stores based on this kind.
- * Use {@see self::Custom} with a domain-specific subtype carried on the
- * artifact's payload for vendor- or host-defined outputs.
+ * Use {@see self::Custom} for vendor- or host-defined artifact kinds.
+ * The kind enum is closed; Custom is the escape hatch. Vendors that
+ * need additional discriminant information beyond the kind itself
+ * should compose Artifact with their own metadata carrier rather than
+ * relying on a panoply-supplied subtype field.
  */
 enum Kind: string
 {

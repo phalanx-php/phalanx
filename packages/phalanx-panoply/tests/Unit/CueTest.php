@@ -75,6 +75,15 @@ final class CueTest extends TestCase
         self::assertNotSame(Canonical::of($a), Canonical::of($b));
     }
 
+    #[Test]
+    public function hashIsA64CharacterHexString(): void
+    {
+        $hash = Canonical::of(self::tokenDelta());
+
+        self::assertSame(64, strlen($hash));
+        self::assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $hash);
+    }
+
     private static function tokenDelta(string $text = 'hello '): Output\TokenDelta
     {
         return new Output\TokenDelta(

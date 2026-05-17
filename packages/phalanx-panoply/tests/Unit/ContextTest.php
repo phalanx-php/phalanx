@@ -75,6 +75,15 @@ final class ContextTest extends TestCase
 
         self::assertSame(Canonical::of($a), Canonical::of($b));
     }
+
+    #[Test]
+    public function hashIsA64CharacterHexString(): void
+    {
+        $hash = Canonical::of(Context::new()->front(ContextFixture\A::class)->tail(ContextFixture\D::class));
+
+        self::assertSame(64, strlen($hash));
+        self::assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $hash);
+    }
 }
 
 namespace Phalanx\Panoply\Tests\Unit\ContextFixture;

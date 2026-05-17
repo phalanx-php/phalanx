@@ -107,4 +107,35 @@ final class OutcomeTest extends TestCase
         self::assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $hash);
         self::assertSame(64, strlen($hash));
     }
+
+    #[Test]
+    public function cancelledLeavesValueAndErrorFieldsNull(): void
+    {
+        $outcome = Outcome::cancelled(42);
+
+        self::assertNull($outcome->valueDigest);
+        self::assertNull($outcome->errorClass);
+        self::assertNull($outcome->errorMessage);
+        self::assertSame(42, $outcome->durationMs);
+    }
+
+    #[Test]
+    public function succeededLeavesErrorFieldsNull(): void
+    {
+        $outcome = Outcome::succeeded('digest_abc', 15);
+
+        self::assertNull($outcome->errorClass);
+        self::assertNull($outcome->errorMessage);
+        self::assertSame('digest_abc', $outcome->valueDigest);
+    }
+
+    #[Test]
+    public function failedLeavesValueDigestNull(): void
+    {
+        $outcome = Outcome::failed(\RuntimeException::class, 'thermopylae breach', 7);
+
+        self::assertNull($outcome->valueDigest);
+        self::assertSame(\RuntimeException::class, $outcome->errorClass);
+        self::assertSame('thermopylae breach', $outcome->errorMessage);
+    }
 }

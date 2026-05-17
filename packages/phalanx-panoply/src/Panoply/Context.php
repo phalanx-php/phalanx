@@ -12,7 +12,7 @@ use Phalanx\Panoply\Hash\Canonicalizable;
  * an ordered list of class-string references to context sources.
  *
  * Assembly (resolving class-strings into actual content) lives in the
- * agent runtime (PA-04+). This type only carries the declaration.
+ * agent runtime. This type only carries the declaration.
  *
  * Build fluently:
  *

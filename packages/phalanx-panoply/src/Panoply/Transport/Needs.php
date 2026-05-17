@@ -7,12 +7,15 @@ namespace Phalanx\Panoply\Transport;
 use Phalanx\Panoply\Hash\Canonicalizable;
 
 /**
- * Agent-side declaration of transport requirements. The transport
- * selector (PA-03/PA-04) chooses an adapter whose declared capabilities
- * satisfy these requirements. `required` flags reject incompatible
- * transports; `preferred` flags break ties.
+ * Agent-side declaration of transport requirements. The transport selector
+ * chooses an adapter whose declared capabilities satisfy these requirements.
+ * `required` flags reject incompatible transports; `preferred` flags break
+ * ties.
+ *
+ * Final because the canonical hash is load-bearing: subclassing would
+ * alter toCanonical() and break hash stability across consumers.
  */
-class Needs implements Canonicalizable
+final class Needs implements Canonicalizable
 {
     private function __construct(
         private(set) bool $streamingRequired = false,

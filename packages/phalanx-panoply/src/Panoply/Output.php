@@ -18,8 +18,11 @@ use Phalanx\Panoply\Hash\Canonicalizable;
  *
  * The agent contract surfaces only the declaration; assembly and
  * validation live downstream.
+ *
+ * Final because the canonical hash is load-bearing: subclassing would
+ * alter toCanonical() and break hash stability across consumers.
  */
-class Output implements Canonicalizable
+final class Output implements Canonicalizable
 {
     /**
      * @param class-string|null $schema

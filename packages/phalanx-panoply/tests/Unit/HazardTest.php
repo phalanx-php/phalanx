@@ -72,4 +72,18 @@ final class HazardTest extends TestCase
             self::assertFalse(Hazard::None->exceeds($other), "None should not exceed {$other->value}");
         }
     }
+
+    #[Test]
+    public function exceedsAdjacentRankBoundaries(): void
+    {
+        self::assertTrue(Hazard::Low->exceeds(Hazard::None));
+        self::assertTrue(Hazard::Medium->exceeds(Hazard::Low));
+        self::assertTrue(Hazard::High->exceeds(Hazard::Medium));
+        self::assertTrue(Hazard::Critical->exceeds(Hazard::High));
+
+        self::assertFalse(Hazard::None->exceeds(Hazard::Low));
+        self::assertFalse(Hazard::Low->exceeds(Hazard::Medium));
+        self::assertFalse(Hazard::Medium->exceeds(Hazard::High));
+        self::assertFalse(Hazard::High->exceeds(Hazard::Critical));
+    }
 }

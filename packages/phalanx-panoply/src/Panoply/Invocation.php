@@ -20,8 +20,11 @@ use Phalanx\Panoply\Hash\Canonicalizable;
  *
  * Construct via {@see self::of()} which fills `createdAt` and lets the
  * agent runtime derive `contextHash` from the assembled context envelope.
+ *
+ * Final because the canonical hash is load-bearing: subclassing would
+ * alter toCanonical() and break hash stability across consumers.
  */
-class Invocation implements Canonicalizable
+final class Invocation implements Canonicalizable
 {
     /**
      * @param array<string, mixed> $dynamicContext

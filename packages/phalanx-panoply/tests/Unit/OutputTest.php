@@ -62,6 +62,15 @@ final class OutputTest extends TestCase
         self::assertNotSame(Canonical::of($text), Canonical::of($structured));
         self::assertNotSame(Canonical::of($artifact), Canonical::of($structured));
     }
+
+    #[Test]
+    public function hashIsA64CharacterHexString(): void
+    {
+        $hash = Canonical::of(Output::artifact(ArtifactKind::Thesis));
+
+        self::assertSame(64, strlen($hash));
+        self::assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $hash);
+    }
 }
 
 namespace Phalanx\Panoply\Tests\Unit\OutputFixture;

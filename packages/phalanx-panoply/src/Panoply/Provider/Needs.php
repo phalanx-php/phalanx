@@ -10,8 +10,8 @@ use Phalanx\Panoply\Hash\Canonicalizable;
 
 /**
  * Agent-side declaration of provider selection preferences and required
- * capabilities. Resolution lives in `Provider\Registry` (PA-04.02); this
- * type only carries what the agent asks for.
+ * capabilities. Resolution lives in `Provider\Registry`; this type only
+ * carries what the agent asks for.
  *
  * Build fluently:
  *
@@ -21,8 +21,11 @@ use Phalanx\Panoply\Hash\Canonicalizable;
  *     ->fallback(Preference::Hosted)
  *     ->require(Capability::Reasoning, Capability::ToolUse);
  * ```
+ *
+ * Final because the canonical hash is load-bearing: subclassing would
+ * alter toCanonical() and break hash stability across consumers.
  */
-class Needs implements Canonicalizable
+final class Needs implements Canonicalizable
 {
     /** @var list<Preference> */
     private(set) array $preferences;

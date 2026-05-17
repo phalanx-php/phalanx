@@ -298,4 +298,34 @@ final class CombinatorTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         Series::from([1, 2, 3])->chunk(0);
     }
+
+    #[Test]
+    public function whereOnEmptyYieldsEmpty(): void
+    {
+        self::assertSame([], Series::from([])->where(static fn ($x): bool => true)->toArray());
+    }
+
+    #[Test]
+    public function mapOnEmptyYieldsEmpty(): void
+    {
+        self::assertSame([], Series::from([])->map(static fn ($x): mixed => $x)->toArray());
+    }
+
+    #[Test]
+    public function takeOnEmptyYieldsEmpty(): void
+    {
+        self::assertSame([], Series::from([])->take(5)->toArray());
+    }
+
+    #[Test]
+    public function chunkOnEmptyYieldsEmpty(): void
+    {
+        self::assertSame([], Series::from([])->chunk(2)->toArray());
+    }
+
+    #[Test]
+    public function reduceOnEmptyReturnsInitial(): void
+    {
+        self::assertSame(0, Series::from([])->reduce(static fn (int $a, int $x): int => $a + $x, 0));
+    }
 }

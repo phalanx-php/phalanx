@@ -14,6 +14,13 @@ use Phalanx\Panoply\Hash\Canonicalizable;
  *
  * `final` because subclassing would alter {@see self::toCanonical()} and
  * break Canonical hash stability.
+ *
+ * Outcome is the host-internal value object an Executor produces when it
+ * finishes running an Effect. The corresponding wire-stable signal is
+ * carried by `Cue\Effect\Executed` (success) or `Cue\Effect\Failed`
+ * (failure), which reference the effect by string id only — Outcome itself
+ * is not embedded in the cue stream so the cue payload can remain stable
+ * across replay/audit forever, independent of host-side value-object shape.
  */
 final class Outcome implements Canonicalizable
 {
