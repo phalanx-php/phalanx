@@ -6,7 +6,7 @@ namespace Phalanx\Panoply\Cue\Provider;
 
 use Phalanx\Panoply\Cue;
 
-class RateLimited extends Cue
+final class RateLimited extends Cue
 {
     final public string $type { get => 'cue.provider.rate_limited'; }
 

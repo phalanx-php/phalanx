@@ -7,12 +7,14 @@ namespace Phalanx\Panoply;
 use Symfony\Component\Uid\Ulid;
 
 /**
+ * Final — static-only ULID utility; no extension surface.
+ *
  * Centralized ID generation for panoply value objects. All
  * panoply-generated IDs (Activity, Invocation, Cue, Effect, Grant,
  * Artifact, default Record id) are ULIDs — lexicographically sortable,
  * 26-char base32, embedded millisecond timestamp.
  */
-class Id
+final class Id
 {
     public static function generate(): string
     {

@@ -6,7 +6,7 @@ namespace Phalanx\Panoply\Cue\Effect;
 
 use Phalanx\Panoply\Cue;
 
-class Paused extends Cue
+final class Paused extends Cue
 {
     final public string $type { get => 'cue.effect.paused'; }
 

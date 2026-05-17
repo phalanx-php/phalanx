@@ -6,7 +6,7 @@ namespace Phalanx\Panoply\Cue\Output;
 
 use Phalanx\Panoply\Cue;
 
-class TokenDelta extends Cue
+final class TokenDelta extends Cue
 {
     final public string $type { get => 'cue.output.token_delta'; }
 

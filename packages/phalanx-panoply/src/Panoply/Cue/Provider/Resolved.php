@@ -6,7 +6,7 @@ namespace Phalanx\Panoply\Cue\Provider;
 
 use Phalanx\Panoply\Cue;
 
-class Resolved extends Cue
+final class Resolved extends Cue
 {
     final public string $type { get => 'cue.provider.resolved'; }
 

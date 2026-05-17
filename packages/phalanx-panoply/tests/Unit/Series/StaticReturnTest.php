@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace Phalanx\Panoply\Tests\Unit\Series;
 
+use Phalanx\Panoply\Artifact\Collection;
+use Phalanx\Panoply\Conversation\Log;
 use Phalanx\Panoply\Cue;
 use Phalanx\Panoply\Cue\Output\TokenDelta;
+use Phalanx\Panoply\HomeDir\Locators;
+use Phalanx\Panoply\HomeDir\Projects;
 use Phalanx\Panoply\Series;
 use Phalanx\Panoply\Stream;
 use PHPUnit\Framework\Attributes\Test;
@@ -84,6 +88,78 @@ final class StaticReturnTest extends TestCase
         // Late-static-binding on `from()` preserves the subclass type.
         $stream = Stream::from([]);
         self::assertInstanceOf(Stream::class, $stream);
+    }
+
+    // --- Conversation\Log ---
+
+    #[Test]
+    public function logWhereReturnsLog(): void
+    {
+        $log = Log::from([]);
+        self::assertInstanceOf(Log::class, $log->where(static fn ($r): bool => true));
+    }
+
+    #[Test]
+    public function logMapReturnsBaseSeries(): void
+    {
+        $log    = Log::from([]);
+        $mapped = $log->map(static fn ($r): mixed => $r);
+        self::assertInstanceOf(Series::class, $mapped);
+        self::assertNotInstanceOf(Log::class, $mapped);
+    }
+
+    // --- Artifact\Collection ---
+
+    #[Test]
+    public function collectionWhereReturnsCollection(): void
+    {
+        $col = Collection::from([]);
+        self::assertInstanceOf(Collection::class, $col->where(static fn ($a): bool => true));
+    }
+
+    #[Test]
+    public function collectionMapReturnsBaseSeries(): void
+    {
+        $col    = Collection::from([]);
+        $mapped = $col->map(static fn ($a): mixed => $a);
+        self::assertInstanceOf(Series::class, $mapped);
+        self::assertNotInstanceOf(Collection::class, $mapped);
+    }
+
+    // --- HomeDir\Projects ---
+
+    #[Test]
+    public function projectsWhereReturnsProjects(): void
+    {
+        $projects = Projects::from([]);
+        self::assertInstanceOf(Projects::class, $projects->where(static fn ($p): bool => true));
+    }
+
+    #[Test]
+    public function projectsMapReturnsBaseSeries(): void
+    {
+        $projects = Projects::from([]);
+        $mapped   = $projects->map(static fn ($p): mixed => $p);
+        self::assertInstanceOf(Series::class, $mapped);
+        self::assertNotInstanceOf(Projects::class, $mapped);
+    }
+
+    // --- HomeDir\Locators ---
+
+    #[Test]
+    public function locatorsWhereReturnsLocators(): void
+    {
+        $locators = Locators::from([]);
+        self::assertInstanceOf(Locators::class, $locators->where(static fn ($l): bool => true));
+    }
+
+    #[Test]
+    public function locatorsMapReturnsBaseSeries(): void
+    {
+        $locators = Locators::from([]);
+        $mapped   = $locators->map(static fn ($l): mixed => $l);
+        self::assertInstanceOf(Series::class, $mapped);
+        self::assertNotInstanceOf(Locators::class, $mapped);
     }
 
     private static function stream(): Stream

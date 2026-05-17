@@ -8,6 +8,9 @@ use Phalanx\Panoply\Effect\Kind;
 use Phalanx\Panoply\Hash\Canonicalizable;
 
 /**
+ * Final — canonical hash determinism: subclassing would alter toCanonical()
+ * and break hash stability across consumers.
+ *
  * Immutable declaration of which effect kinds an agent may request and
  * which of those require human approval before the host executes them.
  *
@@ -15,7 +18,7 @@ use Phalanx\Panoply\Hash\Canonicalizable;
  * codes — live in `Effect\Authorizer`. This type only carries the agent's
  * declared surface.
  */
-class Effects implements Canonicalizable
+final class Effects implements Canonicalizable
 {
     /** @var list<Kind> */
     private(set) array $allowed;

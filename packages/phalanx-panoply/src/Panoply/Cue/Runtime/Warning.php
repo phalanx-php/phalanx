@@ -6,7 +6,7 @@ namespace Phalanx\Panoply\Cue\Runtime;
 
 use Phalanx\Panoply\Cue;
 
-class Warning extends Cue
+final class Warning extends Cue
 {
     final public string $type { get => 'cue.runtime.warning'; }
 

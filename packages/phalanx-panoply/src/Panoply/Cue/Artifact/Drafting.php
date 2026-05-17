@@ -7,7 +7,7 @@ namespace Phalanx\Panoply\Cue\Artifact;
 use Phalanx\Panoply\Artifact\Kind;
 use Phalanx\Panoply\Cue;
 
-class Drafting extends Cue
+final class Drafting extends Cue
 {
     final public string $type { get => 'cue.artifact.drafting'; }
 

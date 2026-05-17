@@ -6,7 +6,7 @@ namespace Phalanx\Panoply\Cue\Effect;
 
 use Phalanx\Panoply\Cue;
 
-class ArgumentsDelta extends Cue
+final class ArgumentsDelta extends Cue
 {
     final public string $type { get => 'cue.effect.arguments_delta'; }
 

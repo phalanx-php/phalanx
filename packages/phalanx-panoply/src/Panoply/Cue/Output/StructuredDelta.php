@@ -6,7 +6,7 @@ namespace Phalanx\Panoply\Cue\Output;
 
 use Phalanx\Panoply\Cue;
 
-class StructuredDelta extends Cue
+final class StructuredDelta extends Cue
 {
     final public string $type { get => 'cue.output.structured_delta'; }
 

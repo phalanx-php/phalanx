@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Panoply\Tests\Unit\Provider;
 
 use Phalanx\Panoply\Capability;
+use Phalanx\Panoply\Hash\Canonical;
 use Phalanx\Panoply\Provider\Needs;
 use Phalanx\Panoply\Provider\Preference;
 use PHPUnit\Framework\Attributes\Test;
@@ -68,5 +69,29 @@ final class NeedsTest extends TestCase
 
         self::assertNotSame($original, $extended);
         self::assertTrue($original->isEmpty());
+    }
+
+    #[Test]
+    public function hashIsStableAcrossReconstruction(): void
+    {
+        $a = Needs::new()->prefer(Preference::LocalFirst)->require(Capability::Reasoning);
+        $b = Needs::new()->prefer(Preference::LocalFirst)->require(Capability::Reasoning);
+        self::assertSame(Canonical::of($a), Canonical::of($b));
+    }
+
+    #[Test]
+    public function differentPreferencesProduceDifferentHashes(): void
+    {
+        $a = Needs::new()->prefer(Preference::LocalFirst);
+        $b = Needs::new()->prefer(Preference::Hosted);
+        self::assertNotSame(Canonical::of($a), Canonical::of($b));
+    }
+
+    #[Test]
+    public function hashIsA64CharacterHexString(): void
+    {
+        $hash = Canonical::of(Needs::new()->prefer(Preference::LocalFirst));
+        self::assertSame(64, strlen($hash));
+        self::assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $hash);
     }
 }

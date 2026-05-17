@@ -6,7 +6,7 @@ namespace Phalanx\Panoply\Cue\Effect;
 
 use Phalanx\Panoply\Cue;
 
-class Denied extends Cue
+final class Denied extends Cue
 {
     final public string $type { get => 'cue.effect.denied'; }
 

@@ -6,6 +6,7 @@ namespace Phalanx\Panoply\Tests\Unit;
 
 use Phalanx\Panoply\Capabilities;
 use Phalanx\Panoply\Capability;
+use Phalanx\Panoply\Hash\Canonical;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -142,5 +143,21 @@ final class CapabilitiesTest extends TestCase
 
         self::assertTrue($reduced->has(Capability::Reasoning));
         self::assertCount(1, $reduced->cases);
+    }
+
+    #[Test]
+    public function hashIsA64CharacterHexString(): void
+    {
+        $hash = Canonical::of(Capabilities::of(Capability::Reasoning, Capability::ToolUse));
+        self::assertSame(64, strlen($hash));
+        self::assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $hash);
+    }
+
+    #[Test]
+    public function differentCapabilitiesProduceDifferentHashes(): void
+    {
+        $a = Capabilities::of(Capability::Reasoning);
+        $b = Capabilities::of(Capability::ToolUse);
+        self::assertNotSame(Canonical::of($a), Canonical::of($b));
     }
 }

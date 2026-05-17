@@ -7,7 +7,7 @@ namespace Phalanx\Panoply\Cue\Output;
 use Phalanx\Panoply\Cue;
 use Phalanx\Panoply\Cue\StopReason;
 
-class TokenStop extends Cue
+final class TokenStop extends Cue
 {
     final public string $type { get => 'cue.output.token_stop'; }
 

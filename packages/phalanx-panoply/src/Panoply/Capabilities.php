@@ -7,12 +7,15 @@ namespace Phalanx\Panoply;
 use Phalanx\Panoply\Hash\Canonicalizable;
 
 /**
+ * Final — canonical hash determinism: subclassing would alter toCanonical()
+ * and break hash stability across consumers.
+ *
  * Immutable set of {@see Capability} cases plus opaque "custom" strings
  * for vendor-specific surfaces. All mutating operations return a new
  * instance — agents and provider configs are expected to declare their
  * capabilities once and pass the instance by value.
  */
-class Capabilities implements Canonicalizable
+final class Capabilities implements Canonicalizable
 {
     /** @var list<Capability> */
     private(set) array $cases;

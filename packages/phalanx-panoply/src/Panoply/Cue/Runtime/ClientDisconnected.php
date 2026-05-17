@@ -6,7 +6,7 @@ namespace Phalanx\Panoply\Cue\Runtime;
 
 use Phalanx\Panoply\Cue;
 
-class ClientDisconnected extends Cue
+final class ClientDisconnected extends Cue
 {
     final public string $type { get => 'cue.runtime.client_disconnected'; }
 

@@ -6,7 +6,7 @@ namespace Phalanx\Panoply\Cue\Activity;
 
 use Phalanx\Panoply\Cue;
 
-class Cancelled extends Cue
+final class Cancelled extends Cue
 {
     final public string $type { get => 'cue.activity.cancelled'; }
 

@@ -6,7 +6,7 @@ namespace Phalanx\Panoply\Cue\Artifact;
 
 use Phalanx\Panoply\Cue;
 
-class Delta extends Cue
+final class Delta extends Cue
 {
     final public string $type { get => 'cue.artifact.delta'; }
 

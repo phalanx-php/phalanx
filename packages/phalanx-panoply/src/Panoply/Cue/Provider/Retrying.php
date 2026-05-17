@@ -6,7 +6,7 @@ namespace Phalanx\Panoply\Cue\Provider;
 
 use Phalanx\Panoply\Cue;
 
-class Retrying extends Cue
+final class Retrying extends Cue
 {
     final public string $type { get => 'cue.provider.retrying'; }
 

@@ -8,6 +8,9 @@ use BackedEnum;
 use UnitEnum;
 
 /**
+ * Final — static-only canonicalization algorithm; subclassing would
+ * diverge byte output and break hash stability.
+ *
  * Stable SHA-256 hex hashes over canonical-encoded values. Canonical
  * encoding sorts associative-array keys lexicographically, preserves
  * UTF-8, omits whitespace, normalizes floats deterministically, and
@@ -26,7 +29,7 @@ use UnitEnum;
  * drift from objects that change shape between releases (scopes,
  * channels, closures, services).
  */
-class Canonical
+final class Canonical
 {
     public static function of(mixed $value): string
     {

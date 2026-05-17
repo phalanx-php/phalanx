@@ -6,7 +6,7 @@ namespace Phalanx\Panoply\Cue\Usage;
 
 use Phalanx\Panoply\Cue;
 
-class Delta extends Cue
+final class Delta extends Cue
 {
     final public string $type { get => 'cue.usage.delta'; }
 

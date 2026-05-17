@@ -6,7 +6,7 @@ namespace Phalanx\Panoply\Cue\Effect;
 
 use Phalanx\Panoply\Cue;
 
-class Authorized extends Cue
+final class Authorized extends Cue
 {
     final public string $type { get => 'cue.effect.authorized'; }
 

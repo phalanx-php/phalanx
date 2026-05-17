@@ -7,7 +7,7 @@ namespace Phalanx\Panoply\Cue\Effect;
 use Phalanx\Panoply\Cue;
 use Phalanx\Panoply\Effect\Kind;
 
-class Requested extends Cue
+final class Requested extends Cue
 {
     final public string $type { get => 'cue.effect.requested'; }
 

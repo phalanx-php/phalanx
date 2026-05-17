@@ -7,6 +7,9 @@ namespace Phalanx\Panoply;
 use Phalanx\Panoply\Hash\Canonicalizable;
 
 /**
+ * Final — canonical hash determinism: subclassing would alter toCanonical()
+ * and break hash stability across consumers.
+ *
  * Agent-side declaration of how context is positioned in the assembled
  * prompt envelope. Three slots — `front`, `middle`, `tail` — each carry
  * an ordered list of class-string references to context sources.
@@ -28,7 +31,7 @@ use Phalanx\Panoply\Hash\Canonicalizable;
  * schema and the immediate question belong at the tail, source material
  * sits in the middle.
  */
-class Context implements Canonicalizable
+final class Context implements Canonicalizable
 {
     /** @var list<class-string> */
     private(set) array $frontSources;

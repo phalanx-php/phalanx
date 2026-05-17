@@ -6,7 +6,7 @@ namespace Phalanx\Panoply\Cue\Runtime;
 
 use Phalanx\Panoply\Cue;
 
-class Error extends Cue
+final class Error extends Cue
 {
     final public string $type { get => 'cue.runtime.error'; }
 

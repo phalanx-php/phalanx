@@ -7,7 +7,7 @@ namespace Phalanx\Panoply\Cue\Invocation;
 use Phalanx\Panoply\Cue;
 use Phalanx\Panoply\Cue\StopReason;
 
-class Completed extends Cue
+final class Completed extends Cue
 {
     final public string $type { get => 'cue.invocation.completed'; }
 

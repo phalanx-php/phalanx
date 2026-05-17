@@ -85,8 +85,15 @@ final class ContractsExistTest extends TestCase
 
         $call   = $r->getMethod('call');
         $params = $call->getParameters();
+        self::assertCount(2, $params, 'Runtime::call accepts (closure, ?waitReason)');
         self::assertSame('work', $params[0]->getName());
         self::assertSame(\Closure::class, $params[0]->getType()?->getName());
+        self::assertSame('waitReason', $params[1]->getName());
+        self::assertTrue($params[1]->allowsNull());
+
+        $return = $call->getReturnType();
+        self::assertInstanceOf(\ReflectionNamedType::class, $return);
+        self::assertSame('mixed', $return->getName());
     }
 
     #[Test]

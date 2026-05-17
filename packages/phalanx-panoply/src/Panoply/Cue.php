@@ -19,9 +19,11 @@ use Phalanx\Panoply\Hash\Canonicalizable;
  *
  * Concrete subclasses declare additional fields via promoted constructor
  * `private(set)` properties and override {@see self::payload()} to return
- * their type-specific fields. The `$type` hook and `payload()` method are
- * `final` on every leaf so a sub-subclass cannot silently divert hash
- * shape; the base's `toCanonical()` is `final` for the same reason.
+ * their type-specific fields. Every leaf class is `final`, so the hierarchy
+ * is sealed at exactly one level of inheritance. The `$type` hook and
+ * `payload()` method are also `final` on every leaf so a sub-subclass cannot
+ * silently divert hash shape; the base's `toCanonical()` is `final` for
+ * the same reason.
  */
 abstract class Cue implements Canonicalizable
 {

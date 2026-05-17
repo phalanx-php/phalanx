@@ -20,9 +20,9 @@ interface Authorizer
      * Deterministic: same (effect, grant) → same Decision across runs.
      *
      * When `$grant` is null, implementations MUST return
-     * Decision::denied(...) with a reason code indicating absence of
-     * grant. The Rules-based authorizer (PA-05.02) uses the reason
-     * code `'no-grant'`; other implementations may use their own.
+     * `Decision::denied(...)` with at least one reason code indicating absence
+     * of grant (the canonical rules-based authorizer uses `'no-grant'`; other
+     * implementations may use their own).
      */
     public function evaluate(Effect $effect, ?Grant $grant = null): Decision;
 }

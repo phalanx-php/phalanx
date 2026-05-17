@@ -11,7 +11,7 @@ use Phalanx\Panoply\Cue;
  * `Final` to avoid the PHP reserved keyword collision; `type` remains
  * `cue.usage.final`.
  */
-class FinalUsage extends Cue
+final class FinalUsage extends Cue
 {
     final public string $type { get => 'cue.usage.final'; }
 

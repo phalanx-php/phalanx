@@ -6,7 +6,7 @@ namespace Phalanx\Panoply\Cue\Activity;
 
 use Phalanx\Panoply\Cue;
 
-class Started extends Cue
+final class Started extends Cue
 {
     final public string $type { get => 'cue.activity.started'; }
 
