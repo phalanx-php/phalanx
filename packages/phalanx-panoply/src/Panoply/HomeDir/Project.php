@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace Phalanx\Panoply\HomeDir;
 
 /**
+ * Final — canonical hash determinism: subclassing would alter toCanonical()
+ * and break request-replay/audit stability across adapters.
+ *
  * A single project entry inside a tool's home directory — e.g. one
  * `~/.claude/projects/<slug>/` folder or one entry in `~/.gemini/
  * projects.json`. The `slug` is tool-specific; the `path` is always the
  * canonical filesystem path it refers to.
  */
-class Project
+final class Project
 {
     /**
      * @param array<string, mixed> $metadata
