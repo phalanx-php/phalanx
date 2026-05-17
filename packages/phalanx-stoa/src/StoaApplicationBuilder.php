@@ -47,6 +47,8 @@ final class StoaApplicationBuilder
 
     private ?StoaServerConfig $serverConfig = null;
 
+    private ?string $banner = null;
+
     public function __construct(private readonly AppContext $context = new AppContext())
     {
         $this->app = Application::starting($context->values);
@@ -150,6 +152,12 @@ final class StoaApplicationBuilder
     public function quiet(bool $quiet = true): self
     {
         $this->quiet = $quiet;
+        return $this;
+    }
+
+    public function withBanner(string $banner): self
+    {
+        $this->banner = $banner;
         return $this;
     }
 
@@ -263,6 +271,7 @@ final class StoaApplicationBuilder
             docsUrl: $base->docsUrl,
             githubUrl: $base->githubUrl,
             openswooleDocsUrl: $base->openswooleDocsUrl,
+            banner: $this->banner ?? $base->banner,
         );
     }
 
@@ -276,6 +285,7 @@ final class StoaApplicationBuilder
             || $this->drainTimeout !== null
             || $this->ignitionEnabled !== null
             || $this->quiet !== null
+            || $this->banner !== null
         ) {
             return true;
         }

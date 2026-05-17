@@ -141,6 +141,39 @@ PHP);
         });
     }
 
+    #[Test]
+    public function bannerFlowsThroughBuilderToServerConfig(): void
+    {
+        $banner = "Test Server\nListening on {url}";
+
+        $app = self::stoa()
+            ->routes(['GET /hello' => BuilderHelloRoute::class])
+            ->listen('127.0.0.1:9099')
+            ->withBanner($banner)
+            ->build();
+
+        try {
+            self::assertSame($banner, $app->serverConfig()->banner);
+        } finally {
+            $app->shutdown();
+        }
+    }
+
+    #[Test]
+    public function bannerIsNullByDefault(): void
+    {
+        $app = self::stoa()
+            ->routes(['GET /hello' => BuilderHelloRoute::class])
+            ->listen('127.0.0.1:9099')
+            ->build();
+
+        try {
+            self::assertNull($app->serverConfig()->banner);
+        } finally {
+            $app->shutdown();
+        }
+    }
+
     /** @param array<string, mixed> $context */
     private static function stoa(array $context = []): StoaApplicationBuilder
     {

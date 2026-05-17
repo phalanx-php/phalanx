@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/../../../vendor/autoload.php';
+require __DIR__ . '/../../../vendor/autoload_runtime.php';
 
 use Phalanx\Archon\Application\Archon;
 use Phalanx\Archon\Command\Arg;
@@ -13,28 +13,30 @@ use Phalanx\Demos\Archon\InteractiveInput\RegisterCommand;
 use Phalanx\Demos\Archon\InteractiveInput\SetConfigCommand;
 use Phalanx\Demos\Archon\InteractiveInput\ShowConfigCommand;
 
-exit(Archon::starting(['argv' => $argv])
-    ->providers(new ConsoleServiceBundle())
-    ->commands(CommandGroup::of([
-        'register' => [
-            RegisterCommand::class,
-            new CommandConfig(description: 'Register a demo account through interactive prompts.'),
-        ],
-        'config' => CommandGroup::of([
-            'show' => [
-                ShowConfigCommand::class,
-                new CommandConfig(description: 'Display the current demo config.'),
+return static fn(array $context): \Closure => static function () use ($context): int {
+    return Archon::starting($context)
+        ->providers(new ConsoleServiceBundle())
+        ->commands(CommandGroup::of([
+            'register' => [
+                RegisterCommand::class,
+                new CommandConfig(description: 'Register a demo account through interactive prompts.'),
             ],
-            'set' => [
-                SetConfigCommand::class,
-                new CommandConfig(
-                    description: 'Set a config value.',
-                    arguments:   [
-                        Arg::required('key',   'Config key.'),
-                        Arg::required('value', 'New value.'),
-                    ],
-                ),
-            ],
-        ], description: 'Demo configuration commands.'),
-    ]))
-    ->run());
+            'config' => CommandGroup::of([
+                'show' => [
+                    ShowConfigCommand::class,
+                    new CommandConfig(description: 'Display the current demo config.'),
+                ],
+                'set' => [
+                    SetConfigCommand::class,
+                    new CommandConfig(
+                        description: 'Set a config value.',
+                        arguments: [
+                            Arg::required('key', 'Config key.'),
+                            Arg::required('value', 'New value.'),
+                        ],
+                    ),
+                ],
+            ], description: 'Demo configuration commands.'),
+        ]))
+        ->run();
+};

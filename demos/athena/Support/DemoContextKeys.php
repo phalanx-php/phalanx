@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Demos\Athena\Support;
 
+use Phalanx\Boot\AppContext;
+
 /**
  * Canonical context-key constants and the live/non-live key split
  * for Athena examples.
@@ -48,6 +50,32 @@ final class DemoContextKeys
             self::GEMINI_MODEL,
             self::GUZZLE_DEMO_URL,
         ];
+    }
+
+    /** @param array<string, mixed> $context */
+    public static function effectiveContext(array $context): AppContext
+    {
+        $values = [];
+        $keys = [
+            self::GEMINI_MODEL,
+            self::OPENAI_BASE_URL,
+            self::OPENAI_API_KEY,
+            self::GEMINI_API_KEY,
+            self::OLLAMA_MODEL,
+            self::OLLAMA_BASE_URL,
+            self::OLLAMA_ENABLED,
+            self::ANTHROPIC_API_KEY,
+            self::GUZZLE_DEMO_URL,
+            self::ATHENA_DEMO_LIVE,
+        ];
+
+        foreach ($keys as $key) {
+            if (isset($context[$key]) && $context[$key] !== '') {
+                $values[$key] = $context[$key];
+            }
+        }
+
+        return (new LiveModeFlag(new AppContext($values)))->effective();
     }
 
     private function __construct()

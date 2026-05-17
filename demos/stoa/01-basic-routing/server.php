@@ -2,32 +2,25 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/../bootstrap.php';
+require __DIR__ . '/../../../vendor/autoload_runtime.php';
 
 use Phalanx\Stoa\Stoa;
 
-$listen = $argv[1] ?? '127.0.0.1:8188';
+return static fn(array $context): \Closure => static function () use ($context): int {
+    $listen = $context['argv'][1] ?? '127.0.0.1:8188';
 
-$exampleHost = str_starts_with($listen, '0.0.0.0:')
-    ? '127.0.0.1:' . substr($listen, strlen('0.0.0.0:'))
-    : $listen;
+    return Stoa::starting($context)
+        ->routes(__DIR__ . '/routes.php')
+        ->listen($listen)
+        ->withBanner(<<<'BANNER'
+            Phalanx Server: Stoa basic routing demo
+            Listening on {url}
 
-$baseUrl = "http://{$exampleHost}";
-
-echo <<<BOOT
-Phalanx Server: Stoa basic routing demo
-Listening on http://{$listen}
-
-Try these examples:
-curl -i {$baseUrl}/
-curl -i {$baseUrl}/users/42
-curl -i {$baseUrl}/posts/phalanx-stoa
-curl -I {$baseUrl}/users/42
-
-BOOT;
-
-Stoa::starting()
-    ->routes(__DIR__ . '/routes.php')
-    ->listen($listen)
-    ->quiet()
-    ->run();
+            Try these examples:
+            curl -i {url}/
+            curl -i {url}/users/42
+            curl -i {url}/posts/phalanx-stoa
+            curl -I {url}/users/42
+            BANNER)
+        ->run();
+};

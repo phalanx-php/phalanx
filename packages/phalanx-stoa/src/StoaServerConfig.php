@@ -25,6 +25,7 @@ final readonly class StoaServerConfig
         public string $docsUrl = 'https://github.com/phalanx-php/phalanx',
         public string $githubUrl = 'https://github.com/phalanx-php/phalanx',
         public string $openswooleDocsUrl = 'https://openswoole.com/docs',
+        public ?string $banner = null,
     ) {
     }
 

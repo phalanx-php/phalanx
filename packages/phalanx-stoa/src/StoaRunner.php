@@ -306,13 +306,26 @@ final class StoaRunner
         return $group;
     }
 
+    private static function resolveBanner(string $banner, string $listen): string
+    {
+        [$host, $port] = self::parseListen($listen);
+        $displayHost = $host === '0.0.0.0' ? '127.0.0.1' : $host;
+        $url = "http://{$displayHost}:{$port}";
+
+        return str_replace(['{listen}', '{url}'], [$listen, $url], $banner);
+    }
+
     private function onServerStart(Server $server): void
     {
         $this->running = true;
         $this->serverStats ??= ServerStats::fromServer($server);
         $this->app->trace()->log(TraceType::LifecycleStartup, 'ready', ['listen' => $this->listenAddress]);
         if (!$this->config->quiet) {
-            printf("Phalanx Server listening on %s\n", $this->listenAddress);
+            if ($this->config->banner !== null) {
+                echo self::resolveBanner($this->config->banner, $this->listenAddress) . "\n";
+            } else {
+                printf("Phalanx Server listening on %s\n", $this->listenAddress);
+            }
         }
         SignalHandler::register($this->shutdownOpenSwooleServer(...));
     }

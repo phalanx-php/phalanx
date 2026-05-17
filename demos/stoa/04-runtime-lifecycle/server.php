@@ -2,35 +2,29 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/../bootstrap.php';
+require __DIR__ . '/../../../vendor/autoload_runtime.php';
 
 use Acme\StoaDemo\Runtime\RuntimeLifecycleBundle;
 use Phalanx\Stoa\Stoa;
 
-$listen = $argv[1] ?? '127.0.0.1:8083';
-$exampleHost = str_starts_with($listen, '0.0.0.0:')
-    ? '127.0.0.1:' . substr($listen, strlen('0.0.0.0:'))
-    : $listen;
-$baseUrl = "http://{$exampleHost}";
+return static fn(array $context): \Closure => static function () use ($context): int {
+    $listen = $context['argv'][1] ?? '127.0.0.1:8083';
 
-echo <<<BOOT
-Phalanx Server: Stoa runtime lifecycle demo
-Listening on http://{$listen}
+    return Stoa::starting($context)
+        ->providers(new RuntimeLifecycleBundle())
+        ->routes(__DIR__ . '/routes.php')
+        ->listen($listen)
+        ->withBanner(<<<'BANNER'
+            Phalanx Server: Stoa runtime lifecycle demo
+            Listening on {url}
 
-Try these examples:
-curl -i {$baseUrl}/runtime/health
-curl -i {$baseUrl}/runtime/slow
-curl -i --max-time 0.2 {$baseUrl}/runtime/disconnect
-curl -i {$baseUrl}/runtime/events
-curl -s {$baseUrl}/runtime/events | php -r 'echo json_encode(json_decode(stream_get_contents(STDIN), true), JSON_PRETTY_PRINT) . PHP_EOL;'
+            Try these examples:
+            curl -i {url}/runtime/health
+            curl -i {url}/runtime/slow
+            curl -i --max-time 0.2 {url}/runtime/disconnect
+            curl -i {url}/runtime/events
 
-After the disconnect example, inspect /runtime/events to see the cancellation and cleanup events.
-
-BOOT;
-
-Stoa::starting()
-    ->providers(new RuntimeLifecycleBundle())
-    ->routes(__DIR__ . '/routes.php')
-    ->listen($listen)
-    ->quiet()
-    ->run();
+            After the disconnect example, inspect /runtime/events to see the cancellation and cleanup events.
+            BANNER)
+        ->run();
+};

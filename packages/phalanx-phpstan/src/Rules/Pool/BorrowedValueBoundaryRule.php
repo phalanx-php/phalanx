@@ -57,6 +57,14 @@ final class BorrowedValueBoundaryRule implements Rule
     /** @var array<string, array<int, true>> */
     private array $conditionalClosureAssignmentLines = [];
 
+    /** @var array<int, array<string, array{line: int, borrowed: bool}>> */
+    private array $assignmentCache = [];
+
+    private string $currentFile = '';
+
+    /** @var array<string, bool> */
+    private array $borrowedTypeCache = [];
+
     public function __construct(private readonly PathPolicy $paths)
     {
     }
@@ -71,7 +79,15 @@ final class BorrowedValueBoundaryRule implements Rule
      */
     public function processNode(Node $node, Scope $scope): array
     {
-        if (!$this->paths->shouldReport($scope->getFile())) {
+        $file = $scope->getFile();
+        if ($file !== $this->currentFile) {
+            $this->currentFile = $file;
+            $this->borrowedClosureVariables = [];
+            $this->conditionalClosureAssignmentLines = [];
+            $this->assignmentCache = [];
+        }
+
+        if (!$this->paths->shouldReport($file)) {
             return [];
         }
 
@@ -166,7 +182,7 @@ final class BorrowedValueBoundaryRule implements Rule
             return true;
         }
 
-        if ($this->isBorrowedType($scope->getType($expr))) {
+        if ($this->mayCarryBorrowedType($expr) && $this->isBorrowedType($scope->getType($expr))) {
             return true;
         }
 
@@ -185,6 +201,17 @@ final class BorrowedValueBoundaryRule implements Rule
         }
 
         return false;
+    }
+
+    private function mayCarryBorrowedType(Expr $expr): bool
+    {
+        return $expr instanceof Variable
+            || $expr instanceof MethodCall
+            || $expr instanceof \PhpParser\Node\Expr\StaticCall
+            || $expr instanceof \PhpParser\Node\Expr\FuncCall
+            || $expr instanceof PropertyFetch
+            || $expr instanceof StaticPropertyFetch
+            || $expr instanceof ArrayDimFetch;
     }
 
     private function recordBorrowedClosureVariable(Assign $assign, Scope $scope): void
@@ -286,6 +313,11 @@ final class BorrowedValueBoundaryRule implements Rule
     /** @return array<string, array{line: int, borrowed: bool}> */
     private function assignmentsInNode(Node $node, Scope $scope): array
     {
+        $nodeId = spl_object_id($node);
+        if (isset($this->assignmentCache[$nodeId])) {
+            return $this->assignmentCache[$nodeId];
+        }
+
         $assignments = [];
 
         if ($node instanceof Assign && $node->var instanceof Variable && is_string($node->var->name)) {
@@ -321,7 +353,7 @@ final class BorrowedValueBoundaryRule implements Rule
             }
         }
 
-        return $assignments;
+        return $this->assignmentCache[$nodeId] = $assignments;
     }
 
     private function isBorrowedClosureVariable(Variable $variable, Scope $scope): bool
@@ -361,7 +393,7 @@ final class BorrowedValueBoundaryRule implements Rule
 
     private function nodeReferencesBorrowed(Node $node, Scope $scope, int $depth = 0): bool
     {
-        if ($depth > 32) {
+        if ($depth > 16) {
             return false;
         }
 
@@ -370,7 +402,7 @@ final class BorrowedValueBoundaryRule implements Rule
                 return true;
             }
 
-            if ($this->isBorrowedType($scope->getType($node))) {
+            if ($this->mayCarryBorrowedType($node) && $this->isBorrowedType($scope->getType($node))) {
                 return true;
             }
         }
@@ -408,15 +440,20 @@ final class BorrowedValueBoundaryRule implements Rule
             return false;
         }
 
+        $key = $type->describe(\PHPStan\Type\VerbosityLevel::cache());
+        if (isset($this->borrowedTypeCache[$key])) {
+            return $this->borrowedTypeCache[$key];
+        }
+
         if ((new ObjectType(BorrowedValue::class))->isSuperTypeOf($type)->yes()) {
-            return true;
+            return $this->borrowedTypeCache[$key] = true;
         }
 
         if ($type->isIterable()->yes()) {
-            return $this->isBorrowedType($type->getIterableValueType());
+            return $this->borrowedTypeCache[$key] = $this->isBorrowedType($type->getIterableValueType());
         }
 
-        return false;
+        return $this->borrowedTypeCache[$key] = false;
     }
 
     private function error(string $message, int $line): IdentifierRuleError

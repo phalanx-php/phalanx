@@ -2,63 +2,33 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/../bootstrap.php';
+require __DIR__ . '/../../../vendor/autoload_runtime.php';
 
 use Acme\TriageHandler;
 use Phalanx\Athena\AiServiceBundle;
-use Phalanx\Stoa\RouteGroup;
+use Phalanx\Demos\Athena\Support\DemoContextKeys;
 use Phalanx\Stoa\Stoa;
 
-$routes = RouteGroup::of([
-    'POST /triage' => TriageHandler::class,
-]);
-/** @var array<string, mixed> $context */
-$context = phalanxAthenaExampleContext($argv ?? []);
-$listen = $argv[1] ?? '0.0.0.0:8080';
-$exampleHost = str_starts_with($listen, '0.0.0.0:')
-    ? 'localhost:' . substr($listen, strlen('0.0.0.0:'))
-    : $listen;
+return static fn(array $context): \Closure => static function () use ($context): int {
+    $listen = $context['argv'][1] ?? '0.0.0.0:8080';
+    $effective = DemoContextKeys::effectiveContext($context);
 
-echo <<<BOOT
-Support Triage Server
-=====================
-Status: starting
-
-Listening on http://{$listen}
-
-Endpoint:
-  POST http://{$exampleHost}/triage
-
-Example JSON:
-  {"ticket_id":123,"customer_email":"sarah@example.com","subject":"Athena exhibit notes","body":"The owl symbolism section needs clearer source guidance."}
-
-Provider configuration:
-
-BOOT;
-
-printf("  %-18s %s\n", 'ATHENA_DEMO_LIVE', phalanxAthenaExampleLiveMode() ? 'enabled' : 'disabled');
-printf("  %-18s %s\n", 'ANTHROPIC_API_KEY', phalanxAthenaExampleEnvStatus('ANTHROPIC_API_KEY', requiresLive: true));
-printf("  %-18s %s\n", 'OPENAI_API_KEY', phalanxAthenaExampleEnvStatus('OPENAI_API_KEY', requiresLive: true));
-
-$instructions = <<<'BOOT'
-
-Run with a hosted provider:
-  ATHENA_DEMO_LIVE=1 ANTHROPIC_API_KEY=... %s
-
-BOOT;
-
-printf(
-    $instructions,
-    phalanxAthenaExampleComposerCommand('demo:athena:serve:support-triage'),
-);
-
-try {
-    Stoa::starting($context)
+    return Stoa::starting($effective->values)
         ->providers(new AiServiceBundle())
-        ->routes($routes)
+        ->routes(['POST /triage' => TriageHandler::class])
         ->listen($listen)
+        ->withBanner(<<<'BANNER'
+            Support Triage Server
+            Listening on {url}
+
+            Endpoint:
+              POST {url}/triage
+
+            Example JSON:
+              {"ticket_id":123,"customer_email":"sarah@example.com","subject":"Athena exhibit notes","body":"The owl symbolism section needs clearer source guidance."}
+
+            Run with a hosted provider:
+              ATHENA_DEMO_LIVE=1 ANTHROPIC_API_KEY=... composer demo:athena:serve:support-triage
+            BANNER)
         ->run();
-} catch (\Throwable $e) {
-    phalanxAthenaExamplePrintServerFailure($e, $listen);
-    exit(1);
-}
+};

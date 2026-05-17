@@ -107,6 +107,21 @@ final class StoaServerConfigTest extends TestCase
     }
 
     #[Test]
+    public function bannerDefaultsToNull(): void
+    {
+        self::assertNull(StoaServerConfig::defaults()->banner);
+        self::assertNull(StoaServerConfig::fromContext(new AppContext())->banner);
+    }
+
+    #[Test]
+    public function bannerIsPreservedThroughConstructor(): void
+    {
+        $config = new StoaServerConfig(banner: 'Test banner {url}');
+
+        self::assertSame('Test banner {url}', $config->banner);
+    }
+
+    #[Test]
     public function symfonyRuntimeRejectsBareAppHost(): void
     {
         if (!class_exists(\Symfony\Component\Runtime\GenericRuntime::class)) {

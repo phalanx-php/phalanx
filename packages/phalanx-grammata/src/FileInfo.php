@@ -32,7 +32,7 @@ final readonly class FileInfo
             isFile: ($stat['mode'] & 0100000) !== 0,
             isDirectory: ($stat['mode'] & 0040000) !== 0,
             isSymlink: is_link($path),
-            symlinkTarget: is_link($path) ? readlink($path) ?: null : null,
+            symlinkTarget: is_link($path) ? (readlink($path) ?: null) : null,
         );
     }
 }
