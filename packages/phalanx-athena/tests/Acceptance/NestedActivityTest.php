@@ -36,13 +36,6 @@ use PHPUnit\Framework\Attributes\Test;
 
 final class NestedActivityTest extends PhalanxTestCase
 {
-    #[\Override]
-    protected function tearDown(): void
-    {
-        ChildAgentTool::$childProvider = null;
-        parent::tearDown();
-    }
-
     #[Test]
     public function toolThatRunsChildLoopCompletesAndBothLoopsYieldCompletedState(): void
     {
@@ -102,6 +95,13 @@ final class NestedActivityTest extends PhalanxTestCase
         self::assertSame(Outcome::Complete, $result->outcome);
 
         $this->scope->expect->runtime()->clean();
+    }
+
+    #[\Override]
+    protected function tearDown(): void
+    {
+        ChildAgentTool::$childProvider = null;
+        parent::tearDown();
     }
 }
 

@@ -42,10 +42,8 @@ class GrantMonitor
 
         $this->connection->subscribe($queryId, $channel);
 
-        $sub = $subscription;
-        $scope->onDispose(static function () use (&$sub): void {
-            $sub?->kill();
-            $sub = null;
+        $scope->onDispose(static function () use ($subscription): void {
+            $subscription->kill();
         });
 
         try {
@@ -71,14 +69,12 @@ class GrantMonitor
 
                     if ($grant !== null) {
                         $subscription->kill();
-                        $sub = null;
                         return $grant;
                     }
                 }
             }
         } catch (\Throwable $e) {
             $subscription->kill();
-            $sub = null;
             throw $e;
         }
     }
