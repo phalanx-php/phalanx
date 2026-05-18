@@ -105,23 +105,15 @@ Real, runnable examples covering the core surface. Each ships with a `.env.examp
 
 ### Benchmarks
 
-The goal with Phalanx was never "fastest PHP." It was: how much runtime protection can I layer on top of OpenSwoole before the overhead starts to matter? Scope creation, task supervision, cancellation wiring, disposal hooks, wait-reason tracking, ledger bookkeeping -- all of it runs on every unit of work. That's the managed runtime tax.
-
-Turns out it's about 4%.
-
-Every task in Phalanx flows through the full Aegis kernel: supervisor registration, cancellation token propagation, scope nesting, and cleanup. The context-switch benchmark isolates that cost by running 1M managed switches and comparing against the same workload on raw OpenSwoole coroutines (no framework) and raw PHP Fibers (no scheduler at all). The Fiber number is the theoretical floor -- no Phalanx code path can reach it because all suspension routes through OpenSwoole's reactor. The number that matters is managed vs raw Swoole.
-
-I'm also using `ObjectPool` and `PoolRing` with `resetAsLazyGhost()` to recycle `TaskRun` and scope frame objects across requests instead of allocating/freeing them on every cycle. ZMM (PHP's memory allocator) returns freed memory to internal free lists, not the OS -- so constant alloc/free churn fragments the heap over time. The pools sidestep that by reusing the same object slots. Early days, but the foundation is there.
-
-There are frameworks that will post faster raw throughput numbers. C extensions modifying php-src, custom Fiber implementations, stripped-down routers with no middleware -- they'll win on a wrk leaderboard. I'm not chasing that. The trade-off here is: every unit of work is owned, cancellable, traceable, and cleaned up. If there's a need to squeeze out every microsecond later, I'll dig in. For now, the coordination and safety layer has proven itself worth the cost.
-
-One thing I've been watching closely: memory stability in long-running processes. I built an async TUI (multi-agent chat interface) on top of Phalanx and ran it through extended sessions. At rest, memory plateaus -- no slow leak. That was the validation I needed. The disposal and scope-cleanup machinery actually works. Ongoing conversations that accumulate state are a different problem (and one I'm actively working on -- clearing conversation memory without disrupting the session). But the baseline is solid: the runtime itself doesn't bleed.
+The managed runtime tax is about 4%. Every unit of work flows through the full Aegis kernel -- scope creation, supervisor registration, cancellation propagation, disposal -- and the cost is negligible against raw OpenSwoole.
 
 > PHP 8.4.16, OpenSwoole 26.2.0, Apple M-series.
 > Run `composer bench:aegis` and `composer bench:stoa` to reproduce.
 
 <details>
-<summary><strong>Context switching</strong> -- 1,000 units x 1,000 suspends = 1M context switches per iteration</summary>
+<summary><strong>Context switching</strong> -- 1M managed switches vs raw OpenSwoole vs raw Fibers</summary>
+
+1,000 units x 1,000 suspends per iteration. The Fiber number is the theoretical floor (no Phalanx code path can reach it -- all suspension routes through OpenSwoole's reactor). The number that matters is managed vs raw Swoole.
 
 | Tier | Mean (us) | P95 (us) | Ops/sec | Note |
 |------|-----------|----------|---------|------|
@@ -133,6 +125,8 @@ One thing I've been watching closely: memory stability in long-running processes
 
 <details>
 <summary><strong>Aegis kernel</strong> -- scope, task, supervision, cancellation primitives</summary>
+
+Isolates the cost of individual Aegis operations. `ObjectPool` + `resetAsLazyGhost()` recycles TaskRun and scope frame objects to avoid ZMM fragmentation from alloc/free churn.
 
 | Case | Mean (us) | P95 (us) | Ops/sec | GC roots |
 |------|-----------|----------|---------|----------|
@@ -156,6 +150,8 @@ One thing I've been watching closely: memory stability in long-running processes
 
 <details>
 <summary><strong>Stoa HTTP dispatch</strong> -- internal per-request overhead (no network)</summary>
+
+Measures Stoa's request lifecycle in isolation -- request factory, routing, handler dispatch, scope cleanup. No TCP/TLS involved.
 
 | Case | Mean (us) | P95 (us) | Ops/sec |
 |------|-----------|----------|---------|
