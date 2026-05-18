@@ -69,6 +69,8 @@ final class ResponsesProvider implements ProviderContract
             foreach ($parser->flush() as $event) {
                 yield from $mapper->translate($event);
             }
+
+            yield from $mapper->complete();
         });
     }
 

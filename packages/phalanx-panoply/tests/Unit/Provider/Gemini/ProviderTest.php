@@ -147,6 +147,38 @@ final class ProviderTest extends TestCase
     }
 
     #[Test]
+    public function performIsLazyAndDoesNotStartStreamBeforeIteration(): void
+    {
+        // perform() must return a Stream without invoking transport. Only
+        // iterating the stream triggers transport.stream().
+        $stub = new class implements \Phalanx\Panoply\Transport {
+            public bool $called = false;
+
+            public function stream(
+                \Phalanx\Panoply\Transport\Request $request,
+                \Phalanx\Panoply\Runtime $runtime,
+            ): \Generator {
+                $this->called = true;
+                yield 'data: {}' . "\n\n";
+            }
+        };
+
+        $provider = new Provider(
+            transport: $stub,
+            apiKey: 'key_test',
+            model: self::model(),
+        );
+
+        $stream = $provider->perform(self::invocation(), new Runtime());
+
+        self::assertFalse($stub->called);
+
+        iterator_to_array($stream);
+
+        self::assertTrue($stub->called);
+    }
+
+    #[Test]
     public function capabilitiesReadFromModel(): void
     {
         $model    = Model::of(

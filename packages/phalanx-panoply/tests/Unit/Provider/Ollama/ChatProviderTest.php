@@ -9,6 +9,7 @@ use Phalanx\Panoply\Capabilities;
 use Phalanx\Panoply\Capability;
 use Phalanx\Panoply\Cue\Effect\Requested;
 use Phalanx\Panoply\Cue\Invocation\Completed;
+use Phalanx\Panoply\Cue\Invocation\Failed;
 use Phalanx\Panoply\Cue\Invocation\Started;
 use Phalanx\Panoply\Cue\Output\TokenDelta;
 use Phalanx\Panoply\Cue\Output\TokenStop;
@@ -75,6 +76,59 @@ final class ChatProviderTest extends TestCase
 
         self::assertCount(1, $requested);
         self::assertStringContainsString('search_agora', $requested[0]->summary);
+    }
+
+    #[Test]
+    public function errorFixtureEmitsInvocationFailed(): void
+    {
+        $provider = self::provider(self::script('chat-error.ndjson'));
+        $stream   = $provider->perform(self::invocation(), new Runtime());
+        $cues     = $stream->toArray();
+
+        $failed = array_values(array_filter($cues, static fn ($c) => $c instanceof Failed));
+
+        self::assertCount(1, $failed);
+        self::assertStringContainsString('olympus-7b', $failed[0]->reason);
+    }
+
+    #[Test]
+    public function streamEndingWithoutWireTerminatorStillEmitsCompleted(): void
+    {
+        // A stream that ends before done:true (transport truncation / cancellation).
+        // The defensive complete() wired in ChatProvider::perform() must emit exactly
+        // one Completed — no duplicate, no missing.
+        $provider = self::provider(self::script('truncated-start-only.ndjson'));
+        $stream   = $provider->perform(self::invocation(), new Runtime());
+        $cues     = $stream->toArray();
+
+        $completed = array_values(array_filter($cues, static fn ($c) => $c instanceof Completed));
+
+        self::assertCount(1, $completed);
+    }
+
+    #[Test]
+    public function cancellationMidStreamHaltsIteration(): void
+    {
+        $runtime  = new Runtime();
+        $provider = self::provider(self::script('chat-simple.ndjson'));
+        $stream   = $provider->perform(self::invocation(), $runtime);
+
+        $count     = 0;
+        $cancelled = false;
+        try {
+            foreach ($stream as $cue) {
+                $count++;
+                if ($count === 1) {
+                    $runtime->cancel();
+                }
+            }
+        } catch (\Phalanx\Panoply\Runtime\CancellationException) {
+            $cancelled = true;
+        }
+
+        self::assertGreaterThanOrEqual(1, $count);
+        self::assertTrue($cancelled);
+        self::assertTrue($runtime->isCancelled());
     }
 
     #[Test]

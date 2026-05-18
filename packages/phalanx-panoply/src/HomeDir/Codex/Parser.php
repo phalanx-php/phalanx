@@ -146,7 +146,7 @@ final class Parser implements ParserInterface
         $ts = $row['ts'] ?? $row['timestamp'] ?? null;
 
         if (is_int($ts) || (is_string($ts) && ctype_digit($ts))) {
-            return new \DateTimeImmutable()->setTimestamp((int) $ts);
+            return new \DateTimeImmutable('@' . (int) $ts);
         }
 
         if (is_string($ts) && $ts !== '') {

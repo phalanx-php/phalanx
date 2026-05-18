@@ -10,6 +10,7 @@ use Phalanx\Panoply\Capability;
 use Phalanx\Panoply\Cue\Effect\ArgumentsDelta;
 use Phalanx\Panoply\Cue\Effect\Requested;
 use Phalanx\Panoply\Cue\Invocation\Completed;
+use Phalanx\Panoply\Cue\Invocation\Failed;
 use Phalanx\Panoply\Cue\Invocation\Started;
 use Phalanx\Panoply\Cue\Output\TokenDelta;
 use Phalanx\Panoply\Cue\Output\TokenStop;
@@ -149,6 +150,54 @@ final class InferenceProviderTest extends TestCase
         self::assertGreaterThanOrEqual(1, $count);
         self::assertTrue($cancelled);
         self::assertTrue($runtime->isCancelled());
+    }
+
+    #[Test]
+    public function errorFixtureEmitsInvocationFailed(): void
+    {
+        // OpenAI-compat error chunk emitted mid-stream. ChatCueMapper handles it;
+        // InferenceProvider routes through the same mapper so the Failed cue propagates.
+        $provider = self::provider(self::script('chat-error.sse'));
+        $stream   = $provider->perform(self::invocation(), new Runtime());
+        $cues     = $stream->toArray();
+
+        $failed = array_values(array_filter($cues, static fn ($c) => $c instanceof Failed));
+
+        self::assertCount(1, $failed);
+        self::assertStringContainsString('Sparta rate limit', $failed[0]->reason);
+        self::assertSame('rate_limit_exceeded', $failed[0]->errorClass);
+    }
+
+    #[Test]
+    public function performIsLazyAndDoesNotStartStreamBeforeIteration(): void
+    {
+        // perform() must return a Stream without invoking transport. Only
+        // iterating the stream triggers transport.stream().
+        $stub = new class implements \Phalanx\Panoply\Transport {
+            public bool $called = false;
+
+            public function stream(
+                \Phalanx\Panoply\Transport\Request $request,
+                \Phalanx\Panoply\Runtime $runtime,
+            ): \Generator {
+                $this->called = true;
+                yield 'data: {}' . "\n\n";
+            }
+        };
+
+        $provider = new InferenceProvider(
+            transport: $stub,
+            apiKey: 'hf_tok_test',
+            model: self::model(),
+        );
+
+        $stream = $provider->perform(self::invocation(), new Runtime());
+
+        self::assertFalse($stub->called);
+
+        iterator_to_array($stream);
+
+        self::assertTrue($stub->called);
     }
 
     #[Test]

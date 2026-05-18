@@ -1,0 +1,3 @@
+data: {"id":"chatcmpl-ERR01","object":"chat.completion.chunk","model":"gpt-5","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
+
+data: {"error":{"message":"Delphi rate limit reached — the oracle is busy.","type":"tokens","param":null,"code":"rate_limit_exceeded"}}

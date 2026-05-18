@@ -124,6 +124,80 @@ final class ResponsesProviderTest extends TestCase
     }
 
     #[Test]
+    public function streamEndingWithoutWireTerminatorStillEmitsCompleted(): void
+    {
+        // A stream that ends before response.completed (transport truncation).
+        // The defensive complete() wired in ResponsesProvider::perform() must emit
+        // exactly one Completed — no duplicate, no missing.
+        $provider = self::provider(self::script('responses-truncated.sse'));
+        $stream   = $provider->perform(self::invocation(), new Runtime());
+        $cues     = $stream->toArray();
+
+        $completed = array_values(array_filter($cues, static fn ($c) => $c instanceof Completed));
+
+        self::assertCount(1, $completed);
+    }
+
+    #[Test]
+    public function cancellationMidStreamHaltsIteration(): void
+    {
+        $runtime  = new Runtime();
+        $provider = self::provider(self::script('responses-simple.sse'));
+        $stream   = $provider->perform(self::invocation(), $runtime);
+
+        $count     = 0;
+        $cancelled = false;
+        try {
+            foreach ($stream as $cue) {
+                $count++;
+                if ($count === 1) {
+                    $runtime->cancel();
+                }
+            }
+        } catch (\Phalanx\Panoply\Runtime\CancellationException) {
+            $cancelled = true;
+        }
+
+        self::assertGreaterThanOrEqual(1, $count);
+        self::assertTrue($cancelled);
+        self::assertTrue($runtime->isCancelled());
+    }
+
+    #[Test]
+    public function performIsLazyAndDoesNotStartStreamBeforeIteration(): void
+    {
+        // perform() must return a Stream without invoking transport. Only
+        // iterating the stream triggers transport.stream().
+        $stub = new class implements \Phalanx\Panoply\Transport {
+            public bool $called = false;
+
+            public function stream(
+                \Phalanx\Panoply\Transport\Request $request,
+                \Phalanx\Panoply\Runtime $runtime,
+            ): \Generator {
+                $this->called = true;
+                yield 'data: {}' . "\n\n";
+            }
+        };
+
+        $provider = new ResponsesProvider(
+            transport: $stub,
+            apiKey: 'key_test',
+            model: self::model(),
+        );
+
+        $stream = $provider->perform(self::invocation(), new Runtime());
+
+        // Transport must NOT have been called yet.
+        self::assertFalse($stub->called);
+
+        // Consume the stream — transport is now invoked.
+        iterator_to_array($stream);
+
+        self::assertTrue($stub->called);
+    }
+
+    #[Test]
     public function capabilitiesReadFromModel(): void
     {
         $model    = Model::of(

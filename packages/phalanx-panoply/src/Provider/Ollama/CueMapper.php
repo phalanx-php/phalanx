@@ -7,6 +7,7 @@ namespace Phalanx\Panoply\Provider\Ollama;
 use Phalanx\Panoply\Cue;
 use Phalanx\Panoply\Cue\Effect\Requested;
 use Phalanx\Panoply\Cue\Invocation\Completed;
+use Phalanx\Panoply\Cue\Invocation\Failed;
 use Phalanx\Panoply\Cue\Invocation\Started;
 use Phalanx\Panoply\Cue\Output\Channel;
 use Phalanx\Panoply\Cue\Output\TokenDelta;
@@ -40,6 +41,19 @@ final class CueMapper
 
     private bool $started = false;
 
+    /**
+     * Set to true after TokenStop + FinalUsage + Completed are emitted — either
+     * via the wire-native done:true path or the defensive complete() path.
+     * Prevents double emission regardless of which path fires first.
+     */
+    private bool $completed = false;
+
+    /** Input token count from the done line's prompt_eval_count field. */
+    private int $inputTokens = 0;
+
+    /** Output token count from the done line's eval_count field. */
+    private int $outputTokens = 0;
+
     public function __construct(
         private(set) Invocation $invocation,
     ) {
@@ -53,7 +67,24 @@ final class CueMapper
      */
     public function translate(array $line): \Generator
     {
-        $now     = new \DateTimeImmutable();
+        $now = new \DateTimeImmutable();
+
+        // Ollama error response — a standalone line with only an `error` key.
+        if (isset($line['error']) && is_string($line['error'])) {
+            yield new Failed(
+                id: (string) Id::ulid(),
+                sequence: $this->sequence++,
+                activityId: $this->invocation->activityId,
+                invocationId: $this->invocation->id,
+                agentId: $this->invocation->agentId,
+                at: $now,
+                reason: $line['error'],
+                errorClass: null,
+            );
+
+            return;
+        }
+
         $message = is_array($line['message'] ?? null) ? $line['message'] : [];
         $role    = isset($message['role']) ? (string) $message['role'] : '';
         $content = isset($message['content']) ? (string) $message['content'] : '';
@@ -124,6 +155,26 @@ final class CueMapper
     }
 
     /**
+     * Guarded post-loop terminator. Called by the provider after the NDJSON
+     * reader flush. Emits TokenStop + FinalUsage + Completed only when the
+     * stream actually started ($started === true) and completion has not already
+     * been emitted ($completed === false).
+     *
+     * Handles transport truncation and mid-stream cancellation where the wire-
+     * native done:true line never arrives.
+     *
+     * @return \Generator<int, Cue>
+     */
+    public function complete(): \Generator
+    {
+        if (!$this->started || $this->completed) {
+            return;
+        }
+
+        yield from $this->emitTerminal([], new \DateTimeImmutable());
+    }
+
+    /**
      * @param array<string, mixed> $tc
      * @return \Generator<int, Cue>
      */
@@ -155,8 +206,26 @@ final class CueMapper
      */
     private function onDone(array $line, array $toolCalls, \DateTimeImmutable $now): \Generator
     {
-        $inputTokens  = (int) ($line['prompt_eval_count'] ?? 0);
-        $outputTokens = (int) ($line['eval_count'] ?? 0);
+        if ($this->completed) {
+            return;
+        }
+
+        $this->inputTokens  = (int) ($line['prompt_eval_count'] ?? 0);
+        $this->outputTokens = (int) ($line['eval_count'] ?? 0);
+
+        yield from $this->emitTerminal($toolCalls, $now);
+    }
+
+    /**
+     * Emits TokenStop + FinalUsage + Completed and marks $completed = true.
+     * Must only be called after verifying !$this->completed.
+     *
+     * @param list<array<string, mixed>> $toolCalls present tool calls (empty on defensive path)
+     * @return \Generator<int, Cue>
+     */
+    private function emitTerminal(array $toolCalls, \DateTimeImmutable $now): \Generator
+    {
+        $this->completed = true;
 
         // When tool calls were present in the done line, the model stopped to
         // invoke tools — not because it finished a turn naturally.
@@ -180,8 +249,8 @@ final class CueMapper
             invocationId: $this->invocation->id,
             agentId: $this->invocation->agentId,
             at: $now,
-            inputTokens: $inputTokens,
-            outputTokens: $outputTokens,
+            inputTokens: $this->inputTokens,
+            outputTokens: $this->outputTokens,
         );
 
         yield new Completed(

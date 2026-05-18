@@ -47,6 +47,16 @@ final class CueMapper
      */
     private array $activeBlocks = [];
 
+    /** Set to true when message_start fires, emitting Resolved + Started. */
+    private bool $started = false;
+
+    /**
+     * Set to true after FinalUsage + Completed are emitted — either via the
+     * wire-native message_stop path or the defensive complete() path.
+     * Prevents double emission regardless of which path fires first.
+     */
+    private bool $completed = false;
+
     /** Accumulated stop reason from message_delta; applied in message_stop */
     private ?StopReason $pendingStopReason = null;
 
@@ -86,6 +96,26 @@ final class CueMapper
         // content_block_stop and unknown event types yield nothing.
     }
 
+    /**
+     * Guarded post-loop terminator. Called by the provider after the parser
+     * flush. Emits FinalUsage + Completed only when the stream actually started
+     * ($started === true) and completion has not already been emitted
+     * ($completed === false).
+     *
+     * Handles transport truncation and mid-stream cancellation where the wire-
+     * native message_stop event never arrives.
+     *
+     * @return \Generator<int, Cue>
+     */
+    public function complete(): \Generator
+    {
+        if (!$this->started || $this->completed) {
+            return;
+        }
+
+        yield from $this->emitTerminal(new \DateTimeImmutable());
+    }
+
     private static function translateStopReason(string $raw): StopReason
     {
         return match ($raw) {
@@ -107,6 +137,7 @@ final class CueMapper
         $model = (string) ($data['message']['model'] ?? '');
 
         $this->inputTokens = (int) ($data['message']['usage']['input_tokens'] ?? 0);
+        $this->started     = true;
 
         yield $this->resolved('anthropic', $model, $now);
         yield $this->invocationStarted($now);
@@ -252,6 +283,23 @@ final class CueMapper
      */
     private function onMessageStop(Event $event, \DateTimeImmutable $now): \Generator
     {
+        if ($this->completed) {
+            return;
+        }
+
+        yield from $this->emitTerminal($now);
+    }
+
+    /**
+     * Emits FinalUsage + Completed and marks $completed = true.
+     * Must only be called after verifying !$this->completed.
+     *
+     * @return \Generator<int, Cue>
+     */
+    private function emitTerminal(\DateTimeImmutable $now): \Generator
+    {
+        $this->completed = true;
+
         yield new FinalUsage(
             id: (string) Id::ulid(),
             sequence: $this->sequence++,

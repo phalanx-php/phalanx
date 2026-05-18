@@ -9,6 +9,7 @@ use Phalanx\Panoply\Capability;
 use Phalanx\Panoply\Cue\Effect\ArgumentsDelta;
 use Phalanx\Panoply\Cue\Effect\Requested;
 use Phalanx\Panoply\Cue\Invocation\Completed;
+use Phalanx\Panoply\Cue\Invocation\Failed;
 use Phalanx\Panoply\Cue\Invocation\Started;
 use Phalanx\Panoply\Cue\Output\Channel;
 use Phalanx\Panoply\Cue\Output\TokenDelta;
@@ -482,6 +483,27 @@ final class ChatCueMapperTest extends TestCase
         $resolved = array_values(array_filter($cues, static fn ($c) => $c instanceof Resolved));
         self::assertCount(1, $resolved);
         self::assertSame('huggingface', $resolved[0]->provider);
+    }
+
+    #[Test]
+    public function errorChunkYieldsInvocationFailed(): void
+    {
+        // Mid-stream error chunk: top-level `error` key, no `choices`.
+        $mapper = self::fixture();
+        $event  = new Event('', [
+            'error' => [
+                'message' => 'Delphi rate limit reached — the oracle is busy.',
+                'type'    => 'tokens',
+                'code'    => 'rate_limit_exceeded',
+            ],
+        ]);
+
+        $cues = iterator_to_array($mapper->translate($event), preserve_keys: false);
+
+        self::assertCount(1, $cues);
+        self::assertInstanceOf(Failed::class, $cues[0]);
+        self::assertStringContainsString('Delphi rate limit', $cues[0]->reason);
+        self::assertSame('rate_limit_exceeded', $cues[0]->errorClass);
     }
 
     private static function fixture(): ChatCueMapper

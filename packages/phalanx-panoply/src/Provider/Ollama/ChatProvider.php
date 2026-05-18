@@ -26,9 +26,6 @@ use Phalanx\Panoply\Transport as TransportContract;
  * The provider itself is stateless — all state lives in the {@see CueMapper}
  * allocated per call.
  *
- * Named ChatProvider to mirror OpenAI's ChatProvider/ResponsesProvider split and
- * to leave room for a future GenerateProvider targeting the {@see /api/generate}
- * endpoint.
  *
  * Final — sealed provider contract; extension would alter the NDJSON mapping
  * invariants tests depend on.
@@ -61,6 +58,8 @@ final class ChatProvider implements ProviderContract
             foreach ($reader->flush() as $line) {
                 yield from $mapper->translate($line);
             }
+
+            yield from $mapper->complete();
         });
     }
 

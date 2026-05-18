@@ -10,11 +10,11 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Tests that token-output cues carry the shape expected for downstream
- * coalescing: TokenDelta carries a `channel` field, distinct channels
- * remain unmerged, and concatenating text across two TokenDeltas
- * preserves their original channel discriminator. The coalescing
- * combinator itself is exercised in StreamTest.
+ * Pins the shape of Cue subtypes that the coalescing combinator operates on:
+ * TokenDelta carries a `channel` field, distinct channels remain unmerged,
+ * and concatenating text across two TokenDeltas preserves the channel
+ * discriminator. The combinator is implemented as a separate slice and
+ * tested independently at that point.
  */
 final class CoalescingShapeTest extends TestCase
 {

@@ -122,7 +122,7 @@ final class HomeDir implements HomeDirInterface, AdapterFactory
                     isDirectory: true,
                     sizeBytes: null,
                     modifiedAt: $stat !== false
-                        ? new \DateTimeImmutable()->setTimestamp((int) $stat['mtime'])
+                        ? new \DateTimeImmutable('@' . (int) $stat['mtime'])
                         : null,
                 );
             }
@@ -136,7 +136,7 @@ final class HomeDir implements HomeDirInterface, AdapterFactory
                     isDirectory: true,
                     sizeBytes: null,
                     modifiedAt: $stat !== false
-                        ? new \DateTimeImmutable()->setTimestamp((int) $stat['mtime'])
+                        ? new \DateTimeImmutable('@' . (int) $stat['mtime'])
                         : null,
                 );
             }

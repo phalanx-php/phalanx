@@ -92,7 +92,7 @@ final class HomeDir implements HomeDirInterface, AdapterFactory
                 }
 
                 $mtime      = $file->getMTime();
-                $lastActive = new \DateTimeImmutable()->setTimestamp($mtime);
+                $lastActive = new \DateTimeImmutable('@' . $mtime);
 
                 if (!isset($cwdMap[$cwd])) {
                     $cwdMap[$cwd] = ['lastActive' => $lastActive, 'count' => 0];
@@ -137,7 +137,7 @@ final class HomeDir implements HomeDirInterface, AdapterFactory
                     isDirectory: false,
                     sizeBytes: $stat !== false ? (int) $stat['size'] : null,
                     modifiedAt: $stat !== false
-                        ? new \DateTimeImmutable()->setTimestamp((int) $stat['mtime'])
+                        ? new \DateTimeImmutable('@' . (int) $stat['mtime'])
                         : null,
                 );
             }
@@ -151,7 +151,7 @@ final class HomeDir implements HomeDirInterface, AdapterFactory
                     isDirectory: false,
                     sizeBytes: $stat !== false ? (int) $stat['size'] : null,
                     modifiedAt: $stat !== false
-                        ? new \DateTimeImmutable()->setTimestamp((int) $stat['mtime'])
+                        ? new \DateTimeImmutable('@' . (int) $stat['mtime'])
                         : null,
                 );
             }

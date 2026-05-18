@@ -279,6 +279,58 @@ final class CueMapperTest extends TestCase
         self::assertCount(0, $cues);
     }
 
+    // ── complete() defensive terminator ──────────────────────────────────────
+
+    #[Test]
+    public function completeOnUnstartedStreamYieldsNoCues(): void
+    {
+        $mapper = self::fixture();
+
+        $cues = iterator_to_array($mapper->complete(), preserve_keys: false);
+
+        self::assertCount(0, $cues);
+    }
+
+    #[Test]
+    public function completeAfterStartedWithoutWireTerminatorEmitsFinalUsageAndCompleted(): void
+    {
+        $mapper = self::fixture();
+
+        // Feed only message_start — stream starts but message_stop never arrives.
+        iterator_to_array($mapper->translate(new Event('message_start', [
+            'message' => ['model' => 'claude-opus-4-7', 'usage' => ['input_tokens' => 10]],
+        ])), preserve_keys: false);
+
+        $cues = iterator_to_array($mapper->complete(), preserve_keys: false);
+
+        self::assertCount(2, $cues);
+        self::assertInstanceOf(FinalUsage::class, $cues[0]);
+        self::assertInstanceOf(Completed::class, $cues[1]);
+    }
+
+    #[Test]
+    public function completeAfterCleanShutdownYieldsNothing(): void
+    {
+        $mapper = self::fixture();
+
+        // Feed a complete stream including the wire-native message_stop.
+        iterator_to_array($mapper->translate(new Event('message_start', [
+            'message' => ['model' => 'claude-opus-4-7', 'usage' => ['input_tokens' => 5]],
+        ])), preserve_keys: false);
+
+        iterator_to_array($mapper->translate(new Event('message_delta', [
+            'delta' => ['stop_reason' => 'end_turn'],
+            'usage' => ['output_tokens' => 3],
+        ])), preserve_keys: false);
+
+        iterator_to_array($mapper->translate(new Event('message_stop', [])), preserve_keys: false);
+
+        // complete() must be a guarded no-op — message_stop already emitted the terminal cues.
+        $cues = iterator_to_array($mapper->complete(), preserve_keys: false);
+
+        self::assertCount(0, $cues);
+    }
+
     private static function fixture(): CueMapper
     {
         return new CueMapper(self::invocation());

@@ -8,6 +8,7 @@ use Phalanx\Panoply\Artifact\Kind as ArtifactKind;
 use Phalanx\Panoply\Capability;
 use Phalanx\Panoply\Cue\Effect\Requested;
 use Phalanx\Panoply\Cue\Invocation\Completed;
+use Phalanx\Panoply\Cue\Invocation\Failed;
 use Phalanx\Panoply\Cue\Invocation\Started;
 use Phalanx\Panoply\Cue\Output\TokenDelta;
 use Phalanx\Panoply\Cue\Output\TokenStop;
@@ -157,6 +158,71 @@ final class CueMapperTest extends TestCase
 
         self::assertCount(1, $requested);
         self::assertStringContainsString('search_agora', $requested[0]->summary);
+    }
+
+    #[Test]
+    public function errorLineYieldsInvocationFailed(): void
+    {
+        $mapper = self::fixture();
+        $line   = ['error' => "model 'olympus-7b' not found, try pulling it first"];
+
+        $cues = iterator_to_array($mapper->translate($line), preserve_keys: false);
+
+        self::assertCount(1, $cues);
+        self::assertInstanceOf(Failed::class, $cues[0]);
+        self::assertStringContainsString('olympus-7b', $cues[0]->reason);
+    }
+
+    // ── complete() defensive terminator ──────────────────────────────────────
+
+    #[Test]
+    public function completeOnUnstartedStreamYieldsNoCues(): void
+    {
+        $mapper = self::fixture();
+
+        $cues = iterator_to_array($mapper->complete(), preserve_keys: false);
+
+        self::assertCount(0, $cues);
+    }
+
+    #[Test]
+    public function completeAfterStartedWithoutWireTerminatorEmitsFinalUsageAndCompleted(): void
+    {
+        $mapper = self::fixture();
+        self::primeStart($mapper);
+
+        // Feed a content delta — stream has started but done:true never arrives.
+        iterator_to_array($mapper->translate([
+            'message' => ['role' => 'assistant', 'content' => 'Leonidas '],
+            'done'    => false,
+        ]), preserve_keys: false);
+
+        $cues = iterator_to_array($mapper->complete(), preserve_keys: false);
+
+        self::assertCount(3, $cues);
+        self::assertInstanceOf(TokenStop::class, $cues[0]);
+        self::assertInstanceOf(FinalUsage::class, $cues[1]);
+        self::assertInstanceOf(Completed::class, $cues[2]);
+    }
+
+    #[Test]
+    public function completeAfterCleanShutdownYieldsNothing(): void
+    {
+        $mapper = self::fixture();
+        self::primeStart($mapper);
+
+        // Feed a done line — wire-native terminator already emitted the terminal cues.
+        iterator_to_array($mapper->translate([
+            'message'           => ['role' => 'assistant', 'content' => ''],
+            'done'              => true,
+            'prompt_eval_count' => 5,
+            'eval_count'        => 3,
+        ]), preserve_keys: false);
+
+        // complete() must be a guarded no-op.
+        $cues = iterator_to_array($mapper->complete(), preserve_keys: false);
+
+        self::assertCount(0, $cues);
     }
 
     #[Test]

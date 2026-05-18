@@ -43,6 +43,16 @@ final class ResponsesCueMapper
 
     private int $outputTokens = 0;
 
+    /** Set to true when response.created fires, emitting Resolved + Started. */
+    private bool $started = false;
+
+    /**
+     * Set to true after TokenStop + FinalUsage + Completed are emitted — either
+     * via the wire-native response.completed path or the defensive complete()
+     * path. Prevents double emission regardless of which path fires first.
+     */
+    private bool $completed = false;
+
     /** Set to true when {@see onFunctionCallCreated} fires at least once. */
     private bool $hasToolCalls = false;
 
@@ -86,6 +96,26 @@ final class ResponsesCueMapper
     }
 
     /**
+     * Guarded post-loop terminator. Called by the provider after the parser
+     * flush. Emits TokenStop + FinalUsage + Completed only when the stream
+     * actually started ($started === true) and completion has not already been
+     * emitted ($completed === false).
+     *
+     * Handles transport truncation and mid-stream cancellation where the wire-
+     * native response.completed event never arrives.
+     *
+     * @return \Generator<int, Cue>
+     */
+    public function complete(): \Generator
+    {
+        if (!$this->started || $this->completed) {
+            return;
+        }
+
+        yield from $this->emitTerminal(new \DateTimeImmutable());
+    }
+
+    /**
      * @return \Generator<int, Cue>
      */
     private function onResponseCreated(Event $event, \DateTimeImmutable $now): \Generator
@@ -93,6 +123,8 @@ final class ResponsesCueMapper
         /** @var array{response?: array{model?: string}} $data */
         $data  = $event->data;
         $model = (string) ($data['response']['model'] ?? '');
+
+        $this->started = true;
 
         yield new Resolved(
             id: (string) Id::ulid(),
@@ -229,6 +261,10 @@ final class ResponsesCueMapper
      */
     private function onResponseCompleted(Event $event, \DateTimeImmutable $now): \Generator
     {
+        if ($this->completed) {
+            return;
+        }
+
         /** @var array{response?: array{usage?: array{input_tokens?: int, output_tokens?: int}}} $data */
         $data  = $event->data;
         $usage = is_array($data['response']['usage'] ?? null) ? $data['response']['usage'] : [];
@@ -236,7 +272,19 @@ final class ResponsesCueMapper
         $this->inputTokens  = (int) ($usage['input_tokens'] ?? 0);
         $this->outputTokens = (int) ($usage['output_tokens'] ?? 0);
 
-        $stopReason = $this->hasToolCalls ? StopReason::ToolUse : StopReason::EndOfTurn;
+        yield from $this->emitTerminal($now);
+    }
+
+    /**
+     * Emits TokenStop + FinalUsage + Completed and marks $completed = true.
+     * Must only be called after verifying !$this->completed.
+     *
+     * @return \Generator<int, Cue>
+     */
+    private function emitTerminal(\DateTimeImmutable $now): \Generator
+    {
+        $this->completed = true;
+        $stopReason      = $this->hasToolCalls ? StopReason::ToolUse : StopReason::EndOfTurn;
 
         yield new TokenStop(
             id: (string) Id::ulid(),

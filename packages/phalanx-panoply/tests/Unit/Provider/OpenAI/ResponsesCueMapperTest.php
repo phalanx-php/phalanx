@@ -250,6 +250,56 @@ final class ResponsesCueMapperTest extends TestCase
         self::assertCount(0, $cues);
     }
 
+    // ── complete() defensive terminator ──────────────────────────────────────
+
+    #[Test]
+    public function completeOnUnstartedStreamYieldsNoCues(): void
+    {
+        $mapper = self::fixture();
+
+        $cues = iterator_to_array($mapper->complete(), preserve_keys: false);
+
+        self::assertCount(0, $cues);
+    }
+
+    #[Test]
+    public function completeAfterStartedWithoutWireTerminatorEmitsTokenStopFinalUsageCompleted(): void
+    {
+        $mapper = self::fixture();
+
+        // Feed only response.created — stream starts but response.completed never arrives.
+        iterator_to_array($mapper->translate(new Event('response.created', [
+            'response' => ['id' => 'resp_TRUNC01', 'model' => 'o3'],
+        ])), preserve_keys: false);
+
+        $cues = iterator_to_array($mapper->complete(), preserve_keys: false);
+
+        self::assertCount(3, $cues);
+        self::assertInstanceOf(TokenStop::class, $cues[0]);
+        self::assertInstanceOf(FinalUsage::class, $cues[1]);
+        self::assertInstanceOf(InvocationCompleted::class, $cues[2]);
+    }
+
+    #[Test]
+    public function completeAfterCleanShutdownYieldsNothing(): void
+    {
+        $mapper = self::fixture();
+
+        iterator_to_array($mapper->translate(new Event('response.created', [
+            'response' => ['model' => 'o3'],
+        ])), preserve_keys: false);
+
+        // Feed a full response.completed — wire-native terminator.
+        iterator_to_array($mapper->translate(new Event('response.completed', [
+            'response' => ['status' => 'completed', 'usage' => ['input_tokens' => 8, 'output_tokens' => 4]],
+        ])), preserve_keys: false);
+
+        // complete() must be a guarded no-op.
+        $cues = iterator_to_array($mapper->complete(), preserve_keys: false);
+
+        self::assertCount(0, $cues);
+    }
+
     #[Test]
     public function sequenceNumbersIncrementAcrossEvents(): void
     {

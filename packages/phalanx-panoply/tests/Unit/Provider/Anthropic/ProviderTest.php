@@ -148,6 +148,21 @@ final class ProviderTest extends TestCase
     }
 
     #[Test]
+    public function streamEndingWithoutWireTerminatorStillEmitsCompleted(): void
+    {
+        // A stream that ends before message_stop (transport truncation / cancellation).
+        // The defensive complete() wired in Provider::perform() must emit exactly
+        // one Completed — no duplicate, no missing.
+        $provider = self::provider(self::script('truncated-start-only.sse'));
+        $stream   = $provider->perform(self::invocation(), new Runtime());
+        $cues     = $stream->toArray();
+
+        $completed = array_values(array_filter($cues, static fn ($c) => $c instanceof Completed));
+
+        self::assertCount(1, $completed);
+    }
+
+    #[Test]
     public function capabilitiesReadFromModel(): void
     {
         // Build a model with a deliberately distinct capability set so the

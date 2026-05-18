@@ -8,6 +8,7 @@ use Phalanx\Panoply\Cue;
 use Phalanx\Panoply\Cue\Effect\ArgumentsDelta;
 use Phalanx\Panoply\Cue\Effect\Requested;
 use Phalanx\Panoply\Cue\Invocation\Completed;
+use Phalanx\Panoply\Cue\Invocation\Failed;
 use Phalanx\Panoply\Cue\Invocation\Started;
 use Phalanx\Panoply\Cue\Output\Channel;
 use Phalanx\Panoply\Cue\Output\TokenDelta;
@@ -98,6 +99,28 @@ final class ChatCueMapper
         $data = $event->data;
 
         $now = new \DateTimeImmutable();
+
+        // Top-level error object — emitted mid-stream when the provider rejects
+        // the request after streaming has begun (rate limit, content filter, etc.).
+        if (isset($data['error']) && is_array($data['error']) && !isset($data['choices'])) {
+            /** @var array<string, mixed> $err */
+            $err     = $data['error'];
+            $message = (string) ($err['message'] ?? 'unknown provider error');
+            $code    = isset($err['code']) && is_string($err['code']) ? $err['code'] : null;
+
+            yield new Failed(
+                id: (string) Id::ulid(),
+                sequence: $this->sequence++,
+                activityId: $this->invocation->activityId,
+                invocationId: $this->invocation->id,
+                agentId: $this->invocation->agentId,
+                at: $now,
+                reason: $message,
+                errorClass: $code,
+            );
+
+            return;
+        }
 
         // Usage-only chunk (stream_options: {include_usage: true} final chunk).
         // When $finished is already true (a finish_reason chunk preceded this),

@@ -231,7 +231,7 @@ final class Parser implements ParserInterface
         }
 
         if (is_int($raw) || (is_float($raw) && $raw > 0)) {
-            return new \DateTimeImmutable()->setTimestamp((int) $raw);
+            return new \DateTimeImmutable('@' . (int) $raw);
         }
 
         return new \DateTimeImmutable();
