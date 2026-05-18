@@ -166,6 +166,25 @@ final class InferenceProviderTest extends TestCase
         self::assertCount(1, $failed);
         self::assertStringContainsString('Sparta rate limit', $failed[0]->reason);
         self::assertSame('rate_limit_exceeded', $failed[0]->errorClass);
+        // Failed is terminal — no Completed must follow it.
+        self::assertCount(0, array_filter($cues, static fn ($c) => $c instanceof Completed));
+    }
+
+    #[Test]
+    public function errorMidStreamThenTransportCloseEmitsFailedExactlyOnceWithoutCompleted(): void
+    {
+        // chat-error.sse: role chunk fires first (stream starts), then a top-level
+        // error object arrives and transport closes. Contract: exactly one Failed, zero Completed.
+        // HuggingFace InferenceProvider composes ChatCueMapper so this fix is inherited.
+        $provider = self::provider(self::script('chat-error.sse'));
+        $stream   = $provider->perform(self::invocation(), new Runtime());
+        $cues     = $stream->toArray();
+
+        $failed    = array_values(array_filter($cues, static fn ($c) => $c instanceof Failed));
+        $completed = array_values(array_filter($cues, static fn ($c) => $c instanceof Completed));
+
+        self::assertCount(1, $failed);
+        self::assertCount(0, $completed);
     }
 
     #[Test]

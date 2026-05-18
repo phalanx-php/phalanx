@@ -89,6 +89,24 @@ final class ChatProviderTest extends TestCase
 
         self::assertCount(1, $failed);
         self::assertStringContainsString('olympus-7b', $failed[0]->reason);
+        // Failed is terminal — no Completed must follow it.
+        self::assertCount(0, array_filter($cues, static fn ($c) => $c instanceof Completed));
+    }
+
+    #[Test]
+    public function errorMidStreamThenTransportCloseEmitsFailedExactlyOnceWithoutCompleted(): void
+    {
+        // chat-error-mid-stream.ndjson: a content delta fires first (stream starts), then an
+        // error line arrives and transport closes. Contract: exactly one Failed, zero Completed.
+        $provider = self::provider(self::script('chat-error-mid-stream.ndjson'));
+        $stream   = $provider->perform(self::invocation(), new Runtime());
+        $cues     = $stream->toArray();
+
+        $failed    = array_values(array_filter($cues, static fn ($c) => $c instanceof Failed));
+        $completed = array_values(array_filter($cues, static fn ($c) => $c instanceof Completed));
+
+        self::assertCount(1, $failed);
+        self::assertCount(0, $completed);
     }
 
     #[Test]
@@ -104,6 +122,8 @@ final class ChatProviderTest extends TestCase
         $completed = array_values(array_filter($cues, static fn ($c) => $c instanceof Completed));
 
         self::assertCount(1, $completed);
+        // Partial output must be present — the truncated fixture emits a TokenDelta before cutting off.
+        self::assertNotEmpty(array_filter($cues, static fn ($c) => $c instanceof TokenDelta));
     }
 
     #[Test]
@@ -146,6 +166,37 @@ final class ChatProviderTest extends TestCase
         );
 
         self::assertSame($model->capabilities, $provider->capabilities());
+    }
+
+    #[Test]
+    public function performIsLazyAndDoesNotStartStreamBeforeIteration(): void
+    {
+        // perform() must return a Stream without invoking transport. Only
+        // iterating the stream triggers transport.stream().
+        $stub = new class implements \Phalanx\Panoply\Transport {
+            public bool $called = false;
+
+            public function stream(
+                \Phalanx\Panoply\Transport\Request $request,
+                \Phalanx\Panoply\Runtime $runtime,
+            ): \Generator {
+                $this->called = true;
+                yield '{}' . "\n";
+            }
+        };
+
+        $provider = new ChatProvider(
+            transport: $stub,
+            model: self::model(),
+        );
+
+        $stream = $provider->perform(self::invocation(), new Runtime());
+
+        self::assertFalse($stub->called);
+
+        iterator_to_array($stream);
+
+        self::assertTrue($stub->called);
     }
 
     /**

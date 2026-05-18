@@ -71,6 +71,8 @@ final class CueMapper
 
         // Ollama error response — a standalone line with only an `error` key.
         if (isset($line['error']) && is_string($line['error'])) {
+            $this->completed = true;
+
             yield new Failed(
                 id: (string) Id::ulid(),
                 sequence: $this->sequence++,

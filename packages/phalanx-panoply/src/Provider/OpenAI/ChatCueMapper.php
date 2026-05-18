@@ -108,6 +108,8 @@ final class ChatCueMapper
             $message = (string) ($err['message'] ?? 'unknown provider error');
             $code    = isset($err['code']) && is_string($err['code']) ? $err['code'] : null;
 
+            $this->completed = true;
+
             yield new Failed(
                 id: (string) Id::ulid(),
                 sequence: $this->sequence++,

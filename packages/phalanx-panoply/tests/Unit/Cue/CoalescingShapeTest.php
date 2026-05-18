@@ -13,8 +13,8 @@ use PHPUnit\Framework\TestCase;
  * Pins the shape of Cue subtypes that the coalescing combinator operates on:
  * TokenDelta carries a `channel` field, distinct channels remain unmerged,
  * and concatenating text across two TokenDeltas preserves the channel
- * discriminator. The combinator is implemented as a separate slice and
- * tested independently at that point.
+ * discriminator. Coalescing is a separate combinator; this test pins only
+ * the TokenDelta surface it depends on.
  */
 final class CoalescingShapeTest extends TestCase
 {

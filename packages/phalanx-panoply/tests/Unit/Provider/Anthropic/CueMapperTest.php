@@ -279,6 +279,21 @@ final class CueMapperTest extends TestCase
         self::assertCount(0, $cues);
     }
 
+    #[Test]
+    public function ignoredEventsAloneDoNotSynthesizeCompleted(): void
+    {
+        // Feeding only unknown event types must not flip $started — complete()
+        // must emit nothing when no message_start was seen.
+        $mapper = self::fixture();
+
+        $event = new Event('unknown_anthropic_event', ['type' => 'unknown_anthropic_event']);
+        iterator_to_array($mapper->translate($event), preserve_keys: false);
+
+        $cues = iterator_to_array($mapper->complete(), preserve_keys: false);
+
+        self::assertCount(0, $cues);
+    }
+
     // ── complete() defensive terminator ──────────────────────────────────────
 
     #[Test]

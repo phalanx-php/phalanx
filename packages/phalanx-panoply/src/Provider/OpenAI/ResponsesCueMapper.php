@@ -343,6 +343,8 @@ final class ResponsesCueMapper
             ? (string) $responseError['code']
             : (isset($data['code']) ? (string) $data['code'] : null);
 
+        $this->completed = true;
+
         yield new Failed(
             id: (string) Id::ulid(),
             sequence: $this->sequence++,

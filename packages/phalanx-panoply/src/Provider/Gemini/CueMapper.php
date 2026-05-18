@@ -261,6 +261,8 @@ final class CueMapper
         $message = (string) ($error['message'] ?? 'unknown Gemini error');
         $code    = isset($error['status']) ? (string) $error['status'] : null;
 
+        $this->completed = true;
+
         yield new Failed(
             id: (string) Id::ulid(),
             sequence: $this->sequence++,

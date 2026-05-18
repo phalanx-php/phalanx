@@ -332,6 +332,8 @@ final class CueMapper
         $error   = $data['error'] ?? [];
         $message = (string) ($error['message'] ?? 'unknown provider error');
 
+        $this->completed = true;
+
         yield new Failed(
             id: (string) Id::ulid(),
             sequence: $this->sequence++,

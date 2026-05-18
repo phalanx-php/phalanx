@@ -1,0 +1,4 @@
+data: {"candidates":[{"content":{"role":"model","parts":[{"text":"Hephaestus forges "}]},"finishReason":null,"index":0}],"modelVersion":"gemini-2.5-flash"}
+
+data: {"error":{"code":429,"message":"Hephaestus forge is overloaded mid-stream.","status":"RESOURCE_EXHAUSTED"}}
+

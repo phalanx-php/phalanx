@@ -109,6 +109,24 @@ final class ResponsesProviderTest extends TestCase
         self::assertCount(1, $failed);
         self::assertStringContainsString('oracle', $failed[0]->reason);
         self::assertSame('server_error', $failed[0]->errorClass);
+        // Failed is terminal — no Completed must follow it.
+        self::assertCount(0, array_filter($cues, static fn ($c) => $c instanceof Completed));
+    }
+
+    #[Test]
+    public function responseFailedYieldsInvocationFailed(): void
+    {
+        // responses-failed.sse: response.created fires first (stream starts), then
+        // response.failed arrives and transport closes. Contract: exactly one Failed, zero Completed.
+        $provider = self::provider(self::script('responses-failed.sse'));
+        $stream   = $provider->perform(self::invocation(), new Runtime());
+        $cues     = $stream->toArray();
+
+        $failed    = array_values(array_filter($cues, static fn ($c) => $c instanceof Failed));
+        $completed = array_values(array_filter($cues, static fn ($c) => $c instanceof Completed));
+
+        self::assertCount(1, $failed);
+        self::assertCount(0, $completed);
     }
 
     #[Test]
@@ -136,6 +154,8 @@ final class ResponsesProviderTest extends TestCase
         $completed = array_values(array_filter($cues, static fn ($c) => $c instanceof Completed));
 
         self::assertCount(1, $completed);
+        // Partial output must be present — the truncated fixture emits a TokenDelta before cutting off.
+        self::assertNotEmpty(array_filter($cues, static fn ($c) => $c instanceof TokenDelta));
     }
 
     #[Test]

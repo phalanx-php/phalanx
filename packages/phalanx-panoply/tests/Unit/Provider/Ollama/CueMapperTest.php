@@ -173,6 +173,21 @@ final class CueMapperTest extends TestCase
         self::assertStringContainsString('olympus-7b', $cues[0]->reason);
     }
 
+    #[Test]
+    public function ignoredEventsAloneDoNotSynthesizeCompleted(): void
+    {
+        // Feeding NDJSON lines that don't set $started (no message.role key)
+        // must not flip $started — complete() must emit nothing.
+        $mapper = self::fixture();
+
+        // A line without message.role does not start the stream.
+        iterator_to_array($mapper->translate(['info' => 'model loaded']), preserve_keys: false);
+
+        $cues = iterator_to_array($mapper->complete(), preserve_keys: false);
+
+        self::assertCount(0, $cues);
+    }
+
     // ── complete() defensive terminator ──────────────────────────────────────
 
     #[Test]
