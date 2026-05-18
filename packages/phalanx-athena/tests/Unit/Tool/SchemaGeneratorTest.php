@@ -30,7 +30,7 @@ final class SearchCorpus implements Tool
     ) {
     }
 
-    public function __invoke(EffectContext $ctx, TaskScope $scope): EffectOutcome
+    public function __invoke(TaskScope $scope, EffectContext $ctx): EffectOutcome
     {
         return EffectOutcome::routed(Resolution::LocalTool);
     }
@@ -38,7 +38,7 @@ final class SearchCorpus implements Tool
 
 final class NoParamTool implements Tool
 {
-    public function __invoke(EffectContext $ctx, TaskScope $scope): EffectOutcome
+    public function __invoke(TaskScope $scope, EffectContext $ctx): EffectOutcome
     {
         return EffectOutcome::routed(Resolution::LocalTool);
     }

@@ -92,7 +92,7 @@ final class StringArgTool implements Tool
     ) {
     }
 
-    public function __invoke(EffectContext $ctx, TaskScope $scope): EffectOutcome
+    public function __invoke(TaskScope $scope, EffectContext $ctx): EffectOutcome
     {
         return EffectOutcome::routed(Resolution::LocalTool);
     }
@@ -106,7 +106,7 @@ final class IntArgTool implements Tool
     ) {
     }
 
-    public function __invoke(EffectContext $ctx, TaskScope $scope): EffectOutcome
+    public function __invoke(TaskScope $scope, EffectContext $ctx): EffectOutcome
     {
         return EffectOutcome::routed(Resolution::LocalTool);
     }
@@ -120,7 +120,7 @@ final class FloatArgTool implements Tool
     ) {
     }
 
-    public function __invoke(EffectContext $ctx, TaskScope $scope): EffectOutcome
+    public function __invoke(TaskScope $scope, EffectContext $ctx): EffectOutcome
     {
         return EffectOutcome::routed(Resolution::LocalTool);
     }
@@ -134,7 +134,7 @@ final class BoolArgTool implements Tool
     ) {
     }
 
-    public function __invoke(EffectContext $ctx, TaskScope $scope): EffectOutcome
+    public function __invoke(TaskScope $scope, EffectContext $ctx): EffectOutcome
     {
         return EffectOutcome::routed(Resolution::LocalTool);
     }
@@ -148,7 +148,7 @@ final class DefaultArgTool implements Tool
     ) {
     }
 
-    public function __invoke(EffectContext $ctx, TaskScope $scope): EffectOutcome
+    public function __invoke(TaskScope $scope, EffectContext $ctx): EffectOutcome
     {
         return EffectOutcome::routed(Resolution::LocalTool);
     }
@@ -162,7 +162,7 @@ final class NullableArgTool implements Tool
     ) {
     }
 
-    public function __invoke(EffectContext $ctx, TaskScope $scope): EffectOutcome
+    public function __invoke(TaskScope $scope, EffectContext $ctx): EffectOutcome
     {
         return EffectOutcome::routed(Resolution::LocalTool);
     }
@@ -170,7 +170,7 @@ final class NullableArgTool implements Tool
 
 final class NoCtorTool implements Tool
 {
-    public function __invoke(EffectContext $ctx, TaskScope $scope): EffectOutcome
+    public function __invoke(TaskScope $scope, EffectContext $ctx): EffectOutcome
     {
         return EffectOutcome::routed(Resolution::LocalTool);
     }

@@ -10,5 +10,5 @@ use Phalanx\Scope\TaskScope;
 
 interface Tool
 {
-    public function __invoke(EffectContext $ctx, TaskScope $scope): EffectOutcome;
+    public function __invoke(TaskScope $scope, EffectContext $ctx): EffectOutcome;
 }

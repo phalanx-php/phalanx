@@ -58,7 +58,7 @@ final class ToolRegistry
         $hydrated = ArgumentHydrator::hydrate($arguments, $class);
         $tool = new $class(...$hydrated);
 
-        return $tool($ctx, $scope);
+        return $tool($scope, $ctx);
     }
 
     /** @return list<string> */
