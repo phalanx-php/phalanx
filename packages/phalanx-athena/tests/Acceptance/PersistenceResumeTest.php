@@ -28,7 +28,7 @@ final class PersistenceResumeTest extends TestCase
     #[Test]
     public function suspendedActivityPersistsLogAndNewLoopResumeFromStoredLog(): void
     {
-        $at    = new \DateTimeImmutable('2026-05-18T10:00:00Z');
+        $at = new \DateTimeImmutable('2026-05-18T10:00:00Z');
         $scope = new ScopeStub();
         $store = new MemoryExecutionStore();
 

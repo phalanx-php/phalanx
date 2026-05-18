@@ -10,29 +10,29 @@ namespace Phalanx\Archon\Console\Style;
  */
 final class Ansi
 {
-    public const string RESET        = "\033[0m";
+    public const string RESET = "\033[0m";
 
-    public const string BOLD_ON      = "\033[1m";
-    public const string BOLD_OFF     = "\033[22m";
-    public const string DIM_ON       = "\033[2m";
-    public const string DIM_OFF      = "\033[22m";
-    public const string ITALIC_ON    = "\033[3m";
-    public const string ITALIC_OFF   = "\033[23m";
+    public const string BOLD_ON = "\033[1m";
+    public const string BOLD_OFF = "\033[22m";
+    public const string DIM_ON = "\033[2m";
+    public const string DIM_OFF = "\033[22m";
+    public const string ITALIC_ON = "\033[3m";
+    public const string ITALIC_OFF = "\033[23m";
     public const string UNDERLINE_ON = "\033[4m";
     public const string UNDERLINE_OFF = "\033[24m";
-    public const string INVERSE_ON   = "\033[7m";
-    public const string INVERSE_OFF  = "\033[27m";
-    public const string STRIKE_ON    = "\033[9m";
-    public const string STRIKE_OFF   = "\033[29m";
+    public const string INVERSE_ON = "\033[7m";
+    public const string INVERSE_OFF = "\033[27m";
+    public const string STRIKE_ON = "\033[9m";
+    public const string STRIKE_OFF = "\033[29m";
 
-    public const string HIDE_CURSOR  = "\033[?25l";
-    public const string SHOW_CURSOR  = "\033[?25h";
+    public const string HIDE_CURSOR = "\033[?25l";
+    public const string SHOW_CURSOR = "\033[?25h";
 
-    public const string ERASE_DOWN   = "\033[J";
-    public const string ERASE_LINE   = "\033[2K";
+    public const string ERASE_DOWN = "\033[J";
+    public const string ERASE_LINE = "\033[2K";
 
-    public const string SYNC_START   = "\033[?2026h";
-    public const string SYNC_END     = "\033[?2026l";
+    public const string SYNC_START = "\033[?2026h";
+    public const string SYNC_END = "\033[?2026l";
 
     private function __construct()
     {

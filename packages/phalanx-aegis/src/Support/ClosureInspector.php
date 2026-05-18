@@ -37,7 +37,7 @@ final class ClosureInspector
             }
 
             /** @var class-string $name */
-            $name    = $type->getName();
+            $name = $type->getName();
             $types[] = $name;
         }
 

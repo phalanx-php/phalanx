@@ -7,5 +7,5 @@ namespace Phalanx\Athena\Mcp;
 enum Transport: string
 {
     case Stdio = 'stdio';
-    case Sse   = 'sse';
+    case Sse = 'sse';
 }

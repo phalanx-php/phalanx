@@ -23,7 +23,7 @@ final class RegistryAutoDetectTest extends TestCase
     #[Test]
     public function allThreeToolsDetectedInFullFixture(): void
     {
-        $home     = self::fixtureRoot() . '/full';
+        $home = self::fixtureRoot() . '/full';
         $registry = Registry::autoDetect($home);
 
         self::assertCount(3, $registry->all());
@@ -35,7 +35,7 @@ final class RegistryAutoDetectTest extends TestCase
     #[Test]
     public function onlyClaudeDetectedInPartialFixture(): void
     {
-        $home     = self::fixtureRoot() . '/partial';
+        $home = self::fixtureRoot() . '/partial';
         $registry = Registry::autoDetect($home);
 
         self::assertCount(1, $registry->all());
@@ -47,7 +47,7 @@ final class RegistryAutoDetectTest extends TestCase
     #[Test]
     public function noToolsDetectedInEmptyFixture(): void
     {
-        $home     = self::fixtureRoot() . '/none';
+        $home = self::fixtureRoot() . '/none';
         $registry = Registry::autoDetect($home);
 
         self::assertCount(0, $registry->all());
@@ -64,7 +64,7 @@ final class RegistryAutoDetectTest extends TestCase
     #[Test]
     public function detectedAdaptersImplementHomeDirInterface(): void
     {
-        $home    = self::fixtureRoot() . '/full';
+        $home = self::fixtureRoot() . '/full';
         $registry = Registry::autoDetect($home);
 
         foreach ($registry->all() as $adapter) {
@@ -75,7 +75,7 @@ final class RegistryAutoDetectTest extends TestCase
     #[Test]
     public function claudeCodeAdapterHasCorrectType(): void
     {
-        $home     = self::fixtureRoot() . '/full';
+        $home = self::fixtureRoot() . '/full';
         $registry = Registry::autoDetect($home);
 
         self::assertInstanceOf(
@@ -87,7 +87,7 @@ final class RegistryAutoDetectTest extends TestCase
     #[Test]
     public function geminiCliAdapterHasCorrectType(): void
     {
-        $home     = self::fixtureRoot() . '/full';
+        $home = self::fixtureRoot() . '/full';
         $registry = Registry::autoDetect($home);
 
         self::assertInstanceOf(
@@ -99,7 +99,7 @@ final class RegistryAutoDetectTest extends TestCase
     #[Test]
     public function codexAdapterHasCorrectType(): void
     {
-        $home     = self::fixtureRoot() . '/full';
+        $home = self::fixtureRoot() . '/full';
         $registry = Registry::autoDetect($home);
 
         self::assertInstanceOf(

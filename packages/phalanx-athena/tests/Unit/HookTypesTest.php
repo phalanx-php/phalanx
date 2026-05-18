@@ -28,7 +28,7 @@ final class HookTypesTest extends TestCase
     #[Test]
     public function failStoresThrowable(): void
     {
-        $error  = new \RuntimeException('failed');
+        $error = new \RuntimeException('failed');
         $result = StepHookResult::fail($error);
 
         self::assertSame(Outcome::Failed, $result->outcome);

@@ -30,7 +30,7 @@ final class TokenStop extends Cue
     final protected function payload(): array
     {
         return [
-            'reason'  => $this->reason->value,
+            'reason' => $this->reason->value,
             'channel' => $this->channel->value,
         ];
     }

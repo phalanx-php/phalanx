@@ -36,10 +36,10 @@ final class Requested extends Cue
     final protected function payload(): array
     {
         return [
-            'effect_id'         => $this->effectId,
-            'kind'              => $this->kind->value,
-            'summary'           => $this->summary,
-            'arguments'         => $this->arguments,
+            'effect_id' => $this->effectId,
+            'kind' => $this->kind->value,
+            'summary' => $this->summary,
+            'arguments' => $this->arguments,
             'requires_approval' => $this->requiresApproval,
         ];
     }

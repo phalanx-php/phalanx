@@ -29,7 +29,7 @@ final class TokenDelta extends Cue
     final protected function payload(): array
     {
         return [
-            'text'    => $this->text,
+            'text' => $this->text,
             'channel' => $this->channel->value,
         ];
     }

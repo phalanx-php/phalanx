@@ -29,7 +29,7 @@ final class Mtime
             return 0;
         }
 
-        $max      = 0;
+        $max = 0;
         $iterator = new \RecursiveIteratorIterator(
             new \RecursiveDirectoryIterator(
                 $directory,

@@ -37,7 +37,7 @@ final class Error extends Record
     final protected function payload(): array
     {
         return [
-            'code'    => $this->code,
+            'code' => $this->code,
             'message' => $this->message,
             'details' => $this->details,
         ];

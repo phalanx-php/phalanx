@@ -15,7 +15,7 @@ final class StoreTest extends TestCase
     #[Test]
     public function saveAndByIdRoundtrip(): void
     {
-        $store    = new Store();
+        $store = new Store();
         $artifact = self::artifact('art_01', 'leonidas', 'act_sparta');
 
         $store->save($artifact);
@@ -32,8 +32,8 @@ final class StoreTest extends TestCase
     #[Test]
     public function upsertOverwritesPreviousRecord(): void
     {
-        $store   = new Store();
-        $first   = self::artifact('art_01', 'leonidas', 'act_sparta');
+        $store = new Store();
+        $first = self::artifact('art_01', 'leonidas', 'act_sparta');
         $updated = $first->withContent('Hoplite formation updated');
 
         $store->save($first);

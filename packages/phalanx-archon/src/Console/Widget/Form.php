@@ -78,13 +78,13 @@ final class Form
     ): array {
         /** @var array<string, mixed> $values */
         $values = [];
-        $index  = 0;
+        $index = 0;
 
         while ($index < count($this->steps)) {
-            $step          = $this->steps[$index];
-            $id            = $step['id'];
+            $step = $this->steps[$index];
+            $id = $step['id'];
             $previousValue = $values[$id] ?? null;
-            $prompt        = ($step['factory'])($previousValue);
+            $prompt = ($step['factory'])($previousValue);
 
             try {
                 $values[$id] = $prompt->prompt($scope, $output, $reader);
@@ -103,7 +103,7 @@ final class Form
 
     private function addStep(string $id, Closure $factory): self
     {
-        $clone          = clone $this;
+        $clone = clone $this;
         $clone->steps[] = ['id' => $id, 'factory' => $factory];
 
         return $clone;

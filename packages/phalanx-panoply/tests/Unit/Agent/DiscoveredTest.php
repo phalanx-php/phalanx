@@ -19,7 +19,7 @@ final class DiscoveredTest extends TestCase
     #[Test]
     public function attributeTargetsClass(): void
     {
-        $ref        = new \ReflectionClass(Discovered::class);
+        $ref = new \ReflectionClass(Discovered::class);
         $attributes = $ref->getAttributes(\Attribute::class);
 
         self::assertNotEmpty($attributes);
@@ -34,7 +34,7 @@ final class DiscoveredTest extends TestCase
     public function attributeCanBeAppliedToClass(): void
     {
         // Verify that reflection can pick up Discovered on a class decorated with it.
-        $ref        = new \ReflectionClass(SampleDiscoveredAgent::class);
+        $ref = new \ReflectionClass(SampleDiscoveredAgent::class);
         $attributes = $ref->getAttributes(Discovered::class);
 
         self::assertCount(1, $attributes);

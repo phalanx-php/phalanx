@@ -36,8 +36,8 @@ final class ChatProviderTest extends TestCase
     public function simpleFixtureEmitsExpectedCueTypes(): void
     {
         $provider = self::provider(self::script('chat-simple.ndjson'));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
-        $cues     = $stream->toArray();
+        $stream = $provider->perform(self::invocation(), new Runtime());
+        $cues = $stream->toArray();
 
         $types = array_map(static fn ($c) => $c::class, $cues);
 
@@ -53,7 +53,7 @@ final class ChatProviderTest extends TestCase
     public function simpleFixtureTranscriptAssembles(): void
     {
         $provider = self::provider(self::script('chat-simple.ndjson'));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
+        $stream = $provider->perform(self::invocation(), new Runtime());
 
         $transcript = '';
         foreach ($stream->tokens() as $cue) {
@@ -69,8 +69,8 @@ final class ChatProviderTest extends TestCase
     public function toolCallFixtureEmitsEffectRequested(): void
     {
         $provider = self::provider(self::script('chat-tool-call.ndjson'));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
-        $cues     = $stream->toArray();
+        $stream = $provider->perform(self::invocation(), new Runtime());
+        $cues = $stream->toArray();
 
         $requested = array_values(array_filter($cues, static fn ($c) => $c instanceof Requested));
 
@@ -82,8 +82,8 @@ final class ChatProviderTest extends TestCase
     public function errorFixtureEmitsInvocationFailed(): void
     {
         $provider = self::provider(self::script('chat-error.ndjson'));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
-        $cues     = $stream->toArray();
+        $stream = $provider->perform(self::invocation(), new Runtime());
+        $cues = $stream->toArray();
 
         $failed = array_values(array_filter($cues, static fn ($c) => $c instanceof Failed));
 
@@ -99,10 +99,10 @@ final class ChatProviderTest extends TestCase
         // chat-error-mid-stream.ndjson: a content delta fires first (stream starts), then an
         // error line arrives and transport closes. Contract: exactly one Failed, zero Completed.
         $provider = self::provider(self::script('chat-error-mid-stream.ndjson'));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
-        $cues     = $stream->toArray();
+        $stream = $provider->perform(self::invocation(), new Runtime());
+        $cues = $stream->toArray();
 
-        $failed    = array_values(array_filter($cues, static fn ($c) => $c instanceof Failed));
+        $failed = array_values(array_filter($cues, static fn ($c) => $c instanceof Failed));
         $completed = array_values(array_filter($cues, static fn ($c) => $c instanceof Completed));
 
         self::assertCount(1, $failed);
@@ -116,8 +116,8 @@ final class ChatProviderTest extends TestCase
         // The defensive complete() wired in ChatProvider::perform() must emit exactly
         // one Completed — no duplicate, no missing.
         $provider = self::provider(self::script('truncated-start-only.ndjson'));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
-        $cues     = $stream->toArray();
+        $stream = $provider->perform(self::invocation(), new Runtime());
+        $cues = $stream->toArray();
 
         $completed = array_values(array_filter($cues, static fn ($c) => $c instanceof Completed));
 
@@ -129,11 +129,11 @@ final class ChatProviderTest extends TestCase
     #[Test]
     public function cancellationMidStreamHaltsIteration(): void
     {
-        $runtime  = new Runtime();
+        $runtime = new Runtime();
         $provider = self::provider(self::script('chat-simple.ndjson'));
-        $stream   = $provider->perform(self::invocation(), $runtime);
+        $stream = $provider->perform(self::invocation(), $runtime);
 
-        $count     = 0;
+        $count = 0;
         $cancelled = false;
         try {
             foreach ($stream as $cue) {
@@ -154,7 +154,7 @@ final class ChatProviderTest extends TestCase
     #[Test]
     public function capabilitiesReadFromModel(): void
     {
-        $model    = Model::of(
+        $model = Model::of(
             name: 'qwen2.5',
             modelId: 'qwen2.5',
             aliases: ['qwen'],
@@ -205,7 +205,7 @@ final class ChatProviderTest extends TestCase
     private static function script(string $fixture): array
     {
         $path = dirname(__DIR__, 3) . '/Fixtures/Provider/Ollama/' . $fixture;
-        $raw  = file_get_contents($path);
+        $raw = file_get_contents($path);
 
         if ($raw === false) {
             throw new \RuntimeException("Fixture not found: {$path}");

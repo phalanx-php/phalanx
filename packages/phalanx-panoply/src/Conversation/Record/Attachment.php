@@ -36,10 +36,10 @@ final class Attachment extends Record
     {
         return [
             'attachment_id' => $this->attachmentId,
-            'filename'      => $this->filename,
-            'mime'          => $this->mime,
-            'size'          => $this->size,
-            'content_hash'  => $this->contentHash,
+            'filename' => $this->filename,
+            'mime' => $this->mime,
+            'size' => $this->size,
+            'content_hash' => $this->contentHash,
         ];
     }
 }

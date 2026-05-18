@@ -25,7 +25,7 @@ final class NoReactImportsTest extends TestCase
     public function archonSourceContainsNoReactImports(): void
     {
         $offenders = [];
-        $patterns  = [
+        $patterns = [
             'use React\\\\',
             'PromiseInterface',
             'React\\\\Promise\\\\Deferred',

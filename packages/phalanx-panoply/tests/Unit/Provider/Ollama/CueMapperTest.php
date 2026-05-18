@@ -32,7 +32,7 @@ final class CueMapperTest extends TestCase
     public function firstLineWithRoleYieldsResolvedThenStarted(): void
     {
         $mapper = self::fixture();
-        $line   = ['model' => 'llama3.1', 'message' => ['role' => 'assistant', 'content' => ''], 'done' => false];
+        $line = ['model' => 'llama3.1', 'message' => ['role' => 'assistant', 'content' => ''], 'done' => false];
 
         $cues = iterator_to_array($mapper->translate($line), preserve_keys: false);
 
@@ -45,7 +45,7 @@ final class CueMapperTest extends TestCase
     public function resolvedCueCarriesOllamaProvider(): void
     {
         $mapper = self::fixture();
-        $line   = ['model' => 'llama3.1', 'message' => ['role' => 'assistant', 'content' => ''], 'done' => false];
+        $line = ['model' => 'llama3.1', 'message' => ['role' => 'assistant', 'content' => ''], 'done' => false];
 
         $cues = iterator_to_array($mapper->translate($line), preserve_keys: false);
 
@@ -75,10 +75,10 @@ final class CueMapperTest extends TestCase
         self::primeStart($mapper);
 
         $line = [
-            'message'           => ['role' => 'assistant', 'content' => ''],
-            'done'              => true,
+            'message' => ['role' => 'assistant', 'content' => ''],
+            'done' => true,
             'prompt_eval_count' => 30,
-            'eval_count'        => 15,
+            'eval_count' => 15,
         ];
 
         $cues = iterator_to_array($mapper->translate($line), preserve_keys: false);
@@ -102,7 +102,7 @@ final class CueMapperTest extends TestCase
 
         $line = ['message' => ['role' => 'assistant', 'content' => ''], 'done' => true];
 
-        $cues  = iterator_to_array($mapper->translate($line), preserve_keys: false);
+        $cues = iterator_to_array($mapper->translate($line), preserve_keys: false);
         $stops = array_values(array_filter($cues, static fn ($c) => $c instanceof TokenStop));
 
         self::assertSame(StopReason::EndOfTurn, $stops[0]->reason);
@@ -116,18 +116,18 @@ final class CueMapperTest extends TestCase
 
         $line = [
             'message' => [
-                'role'       => 'assistant',
-                'content'    => '',
+                'role' => 'assistant',
+                'content' => '',
                 'tool_calls' => [
                     ['function' => ['name' => 'query_olympus', 'arguments' => ['topic' => 'Delphi']]],
                 ],
             ],
-            'done'              => true,
+            'done' => true,
             'prompt_eval_count' => 25,
-            'eval_count'        => 12,
+            'eval_count' => 12,
         ];
 
-        $cues  = iterator_to_array($mapper->translate($line), preserve_keys: false);
+        $cues = iterator_to_array($mapper->translate($line), preserve_keys: false);
         $stops = array_values(array_filter($cues, static fn ($c) => $c instanceof TokenStop));
 
         self::assertCount(1, $stops);
@@ -142,18 +142,18 @@ final class CueMapperTest extends TestCase
 
         $line = [
             'message' => [
-                'role'       => 'assistant',
-                'content'    => '',
+                'role' => 'assistant',
+                'content' => '',
                 'tool_calls' => [
                     ['function' => ['name' => 'search_agora', 'arguments' => ['query' => 'Sparta']]],
                 ],
             ],
-            'done'              => true,
+            'done' => true,
             'prompt_eval_count' => 20,
-            'eval_count'        => 10,
+            'eval_count' => 10,
         ];
 
-        $cues      = iterator_to_array($mapper->translate($line), preserve_keys: false);
+        $cues = iterator_to_array($mapper->translate($line), preserve_keys: false);
         $requested = array_values(array_filter($cues, static fn ($c) => $c instanceof Requested));
 
         self::assertCount(1, $requested);
@@ -164,7 +164,7 @@ final class CueMapperTest extends TestCase
     public function errorLineYieldsInvocationFailed(): void
     {
         $mapper = self::fixture();
-        $line   = ['error' => "model 'olympus-7b' not found, try pulling it first"];
+        $line = ['error' => "model 'olympus-7b' not found, try pulling it first"];
 
         $cues = iterator_to_array($mapper->translate($line), preserve_keys: false);
 
@@ -209,7 +209,7 @@ final class CueMapperTest extends TestCase
         // Feed a content delta — stream has started but done:true never arrives.
         iterator_to_array($mapper->translate([
             'message' => ['role' => 'assistant', 'content' => 'Leonidas '],
-            'done'    => false,
+            'done' => false,
         ]), preserve_keys: false);
 
         $cues = iterator_to_array($mapper->complete(), preserve_keys: false);
@@ -228,10 +228,10 @@ final class CueMapperTest extends TestCase
 
         // Feed a done line — wire-native terminator already emitted the terminal cues.
         iterator_to_array($mapper->translate([
-            'message'           => ['role' => 'assistant', 'content' => ''],
-            'done'              => true,
+            'message' => ['role' => 'assistant', 'content' => ''],
+            'done' => true,
             'prompt_eval_count' => 5,
-            'eval_count'        => 3,
+            'eval_count' => 3,
         ]), preserve_keys: false);
 
         // complete() must be a guarded no-op.
@@ -251,7 +251,7 @@ final class CueMapperTest extends TestCase
 
         $cues2 = iterator_to_array($mapper->translate([
             'message' => ['role' => 'assistant', 'content' => ''],
-            'done'    => true,
+            'done' => true,
             'eval_count' => 5, 'prompt_eval_count' => 10,
         ]), preserve_keys: false);
 

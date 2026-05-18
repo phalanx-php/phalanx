@@ -30,8 +30,8 @@ final class Executed extends Cue
     final protected function payload(): array
     {
         return [
-            'effect_id'     => $this->effectId,
-            'duration_ms'   => $this->durationMs,
+            'effect_id' => $this->effectId,
+            'duration_ms' => $this->durationMs,
             'result_digest' => $this->resultDigest,
         ];
     }

@@ -42,16 +42,16 @@ final class HashTest extends TestCase
     public function tokenDeltaDifferentChannelsHashDifferently(): void
     {
         $args = [
-            'id'           => 'cue_1',
-            'sequence'     => 0,
-            'activityId'   => 'act_1',
+            'id' => 'cue_1',
+            'sequence' => 0,
+            'activityId' => 'act_1',
             'invocationId' => null,
-            'agentId'      => null,
-            'at'           => new \DateTimeImmutable('2026-05-17T12:00:00Z'),
-            'text'         => 'reasoning content',
+            'agentId' => null,
+            'at' => new \DateTimeImmutable('2026-05-17T12:00:00Z'),
+            'text' => 'reasoning content',
         ];
 
-        $message  = new TokenDelta(...$args, channel: Channel::Message);
+        $message = new TokenDelta(...$args, channel: Channel::Message);
         $thinking = new TokenDelta(...$args, channel: Channel::Thinking);
 
         self::assertNotSame(Canonical::of($message), Canonical::of($thinking));
@@ -61,11 +61,11 @@ final class HashTest extends TestCase
     public function nullOptionalFieldsHashDifferentlyThanPopulated(): void
     {
         $shared = [
-            'id'         => 'cue_1',
-            'sequence'   => 0,
+            'id' => 'cue_1',
+            'sequence' => 0,
             'activityId' => 'act_1',
-            'at'         => new \DateTimeImmutable('2026-05-17T12:00:00Z'),
-            'text'       => 'hello',
+            'at' => new \DateTimeImmutable('2026-05-17T12:00:00Z'),
+            'text' => 'hello',
         ];
 
         $bare = new TokenDelta(...$shared, invocationId: null, agentId: null);
@@ -96,18 +96,18 @@ final class HashTest extends TestCase
     #[Test]
     public function timestampInDifferentTimezonesHashesIdentically(): void
     {
-        $utc     = new \DateTimeImmutable('2026-05-17T12:00:00Z');
+        $utc = new \DateTimeImmutable('2026-05-17T12:00:00Z');
         $chicago = new \DateTimeImmutable('2026-05-17T07:00:00-05:00');
         $args = [
-            'id'           => 'cue_1',
-            'sequence'     => 0,
-            'activityId'   => 'act_1',
+            'id' => 'cue_1',
+            'sequence' => 0,
+            'activityId' => 'act_1',
             'invocationId' => 'inv_1',
-            'agentId'      => 'investigator',
-            'text'         => 'hello',
+            'agentId' => 'investigator',
+            'text' => 'hello',
         ];
 
-        $utcCue     = new TokenDelta(...$args, at: $utc);
+        $utcCue = new TokenDelta(...$args, at: $utc);
         $chicagoCue = new TokenDelta(...$args, at: $chicago);
 
         self::assertSame(

@@ -34,8 +34,8 @@ final class ToolResult extends Record
     final protected function payload(): array
     {
         return [
-            'call_id'  => $this->callId,
-            'output'   => $this->output,
+            'call_id' => $this->callId,
+            'output' => $this->output,
             'is_error' => $this->isError,
         ];
     }

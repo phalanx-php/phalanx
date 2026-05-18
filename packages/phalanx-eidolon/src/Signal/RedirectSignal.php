@@ -19,15 +19,15 @@ final class RedirectSignal implements Signal
 
     public function __construct(string $url, bool $replace = false)
     {
-        $this->url     = $url;
+        $this->url = $url;
         $this->replace = $replace;
     }
 
     public function toArray(): array
     {
         return [
-            'type'    => SignalType::Redirect->value,
-            'to'      => $this->url,
+            'type' => SignalType::Redirect->value,
+            'to' => $this->url,
             'replace' => $this->replace,
         ];
     }

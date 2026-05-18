@@ -109,7 +109,6 @@ final class Probe extends BootRequirement
         string $description,
         ProbeOutcome $failureMode = ProbeOutcome::FailBoot,
     ): self {
-
         return new self(
             self::KIND_CALLABLE,
             $description,

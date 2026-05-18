@@ -55,7 +55,7 @@ final class ResponsesProvider implements ProviderContract
             $this->defaultHeaders,
         );
         $transport = $this->transport;
-        $mapper    = new ResponsesCueMapper($invocation);
+        $mapper = new ResponsesCueMapper($invocation);
 
         return new Stream(static function () use ($transport, $request, $runtime, $mapper): \Generator {
             $parser = new Parser();

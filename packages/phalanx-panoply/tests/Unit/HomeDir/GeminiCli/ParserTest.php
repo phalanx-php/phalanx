@@ -23,7 +23,7 @@ final class ParserTest extends TestCase
     #[Test]
     public function parsesUserRoleAsUserMessage(): void
     {
-        $parser  = new Parser();
+        $parser = new Parser();
         $records = $parser->parse(self::marathonFixture(), Options::lenient())->toArray();
 
         $userMessages = array_filter($records, static fn ($r): bool => $r instanceof Message && $r->role === 'user');
@@ -33,7 +33,7 @@ final class ParserTest extends TestCase
     #[Test]
     public function parsesModelRoleAsAssistantMessage(): void
     {
-        $parser  = new Parser();
+        $parser = new Parser();
         $records = $parser->parse(self::marathonFixture(), Options::lenient())->toArray();
 
         $assistantMessages = array_filter(
@@ -46,7 +46,7 @@ final class ParserTest extends TestCase
     #[Test]
     public function parsesFunctionCallAsToolCall(): void
     {
-        $parser  = new Parser();
+        $parser = new Parser();
         $records = $parser->parse(self::marathonFixture(), Options::lenient())->toArray();
 
         $toolCalls = array_values(array_filter($records, static fn ($r): bool => $r instanceof ToolCall));
@@ -60,11 +60,11 @@ final class ParserTest extends TestCase
     #[Test]
     public function toolCallPreservesArgs(): void
     {
-        $parser  = new Parser();
+        $parser = new Parser();
         $records = $parser->parse(self::marathonFixture(), Options::lenient())->toArray();
 
         $toolCalls = array_values(array_filter($records, static fn ($r): bool => $r instanceof ToolCall));
-        $tc        = $toolCalls[0];
+        $tc = $toolCalls[0];
 
         self::assertInstanceOf(ToolCall::class, $tc);
         self::assertArrayHasKey('battle', $tc->arguments);
@@ -74,7 +74,7 @@ final class ParserTest extends TestCase
     #[Test]
     public function parsesFunctionResponseAsToolResult(): void
     {
-        $parser  = new Parser();
+        $parser = new Parser();
         $records = $parser->parse(self::marathonFixture(), Options::lenient())->toArray();
 
         $toolResults = array_filter($records, static fn ($r): bool => $r instanceof ToolResult);
@@ -91,7 +91,7 @@ final class ParserTest extends TestCase
         );
 
         try {
-            $parser  = new Parser();
+            $parser = new Parser();
             $records = $parser->parse(new Source($tmpFile), Options::lenient())->toArray();
 
             $unknown = array_filter($records, static fn ($r): bool => $r instanceof Unknown);
@@ -130,7 +130,7 @@ final class ParserTest extends TestCase
         );
 
         try {
-            $parser  = new Parser();
+            $parser = new Parser();
             $records = $parser->parse(new Source($tmpFile), Options::silent())->toArray();
             self::assertCount(0, $records);
         } finally {
@@ -150,7 +150,7 @@ final class ParserTest extends TestCase
     #[Test]
     public function marathonFixtureProducesExpectedRecordCount(): void
     {
-        $parser  = new Parser();
+        $parser = new Parser();
         $records = $parser->parse(self::marathonFixture(), Options::lenient())->toArray();
 
         // 4 lines: user (text), model (text+functionCall), user (functionResponse), model (text)
@@ -162,7 +162,7 @@ final class ParserTest extends TestCase
     public function parseIsLazyAndDoesNotThrowBeforeIteration(): void
     {
         $parser = new Parser();
-        $log    = $parser->parse(new Source('/nonexistent/path/that/does/not/exist.jsonl'), Options::lenient());
+        $log = $parser->parse(new Source('/nonexistent/path/that/does/not/exist.jsonl'), Options::lenient());
 
         self::assertInstanceOf(\Phalanx\Panoply\Conversation\Log::class, $log);
 

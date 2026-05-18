@@ -34,8 +34,8 @@ final class RequestBuilder
         $messages = self::deriveMessages($invocation);
 
         $body = [
-            'model'    => $model->modelId,
-            'stream'   => true,
+            'model' => $model->modelId,
+            'stream' => true,
             'messages' => $messages,
         ];
 
@@ -54,7 +54,7 @@ final class RequestBuilder
             url: rtrim($baseUrl, '/') . '/api/chat',
             headers: [
                 'content-type' => 'application/json',
-                'accept'       => 'application/x-ndjson',
+                'accept' => 'application/x-ndjson',
             ],
             body: json_encode($body, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES),
         );

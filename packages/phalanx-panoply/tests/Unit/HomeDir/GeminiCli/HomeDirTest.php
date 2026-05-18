@@ -20,7 +20,7 @@ final class HomeDirTest extends TestCase
     #[Test]
     public function projectsReturnsProjectsFromIndex(): void
     {
-        $homeDir  = new HomeDir(self::fixtureRoot());
+        $homeDir = new HomeDir(self::fixtureRoot());
         $projects = $homeDir->projects()->toArray();
 
         self::assertCount(2, $projects);
@@ -30,8 +30,8 @@ final class HomeDirTest extends TestCase
     #[Test]
     public function projectsHaveCorrectPaths(): void
     {
-        $homeDir  = new HomeDir(self::fixtureRoot());
-        $paths    = array_map(static fn (Project $p): string => $p->path, $homeDir->projects()->toArray());
+        $homeDir = new HomeDir(self::fixtureRoot());
+        $paths = array_map(static fn (Project $p): string => $p->path, $homeDir->projects()->toArray());
 
         self::assertContains('/srv/phalanx/marathon', $paths);
         self::assertContains('/srv/phalanx/olympus', $paths);
@@ -40,7 +40,7 @@ final class HomeDirTest extends TestCase
     #[Test]
     public function projectsHaveCorrectHomeDirId(): void
     {
-        $homeDir  = new HomeDir(self::fixtureRoot());
+        $homeDir = new HomeDir(self::fixtureRoot());
         $projects = $homeDir->projects()->toArray();
 
         foreach ($projects as $project) {
@@ -51,8 +51,8 @@ final class HomeDirTest extends TestCase
     #[Test]
     public function projectMarathonCountsHistoryFiles(): void
     {
-        $homeDir  = new HomeDir(self::fixtureRoot());
-        $bySlug   = [];
+        $homeDir = new HomeDir(self::fixtureRoot());
+        $bySlug = [];
 
         foreach ($homeDir->projects() as $project) {
             $bySlug[$project->slug] = $project;
@@ -66,7 +66,7 @@ final class HomeDirTest extends TestCase
     #[Test]
     public function projectLastActiveIsPopulated(): void
     {
-        $homeDir  = new HomeDir(self::fixtureRoot());
+        $homeDir = new HomeDir(self::fixtureRoot());
         $projects = $homeDir->projects()->toArray();
 
         $marathon = array_values(array_filter($projects, static fn (Project $p): bool => $p->slug === 'proj-marathon'));
@@ -77,7 +77,7 @@ final class HomeDirTest extends TestCase
     #[Test]
     public function locatorsYieldsHomeDirDirectory(): void
     {
-        $homeDir  = new HomeDir(self::fixtureRoot());
+        $homeDir = new HomeDir(self::fixtureRoot());
         $locators = $homeDir->locators()->toArray();
 
         self::assertGreaterThanOrEqual(1, count($locators));
@@ -103,7 +103,7 @@ final class HomeDirTest extends TestCase
     #[Test]
     public function noProjectsJsonProducesEmptyProjects(): void
     {
-        $homeDir  = new HomeDir('/does/not/exist');
+        $homeDir = new HomeDir('/does/not/exist');
         $projects = $homeDir->projects()->toArray();
 
         self::assertCount(0, $projects);
@@ -113,7 +113,7 @@ final class HomeDirTest extends TestCase
     public function fromConfigResolvesHomeDirPath(): void
     {
         $adapterClass = str_replace('\\', '\\\\', \Phalanx\Panoply\HomeDir\GeminiCli\HomeDir::class);
-        $yaml         = implode("\n", [
+        $yaml = implode("\n", [
             'id: gemini_cli',
             'display_name: "Gemini CLI"',
             'roots:',

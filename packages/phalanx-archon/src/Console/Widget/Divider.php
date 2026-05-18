@@ -20,10 +20,10 @@ final class Divider
             return $theme->border->apply(str_repeat('─', $width));
         }
 
-        $labelLen   = mb_strlen($label);
-        $totalDash  = max(0, $width - $labelLen - 2); // 2 spaces around label
-        $leftDash   = (int) floor($totalDash / 2);
-        $rightDash  = $totalDash - $leftDash;
+        $labelLen = mb_strlen($label);
+        $totalDash = max(0, $width - $labelLen - 2); // 2 spaces around label
+        $leftDash = (int) floor($totalDash / 2);
+        $rightDash = $totalDash - $leftDash;
 
         return $theme->border->apply(str_repeat('─', $leftDash))
              . ' ' . $label . ' '

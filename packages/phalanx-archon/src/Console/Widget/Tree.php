@@ -34,19 +34,19 @@ final class Tree
         bool $isRoot = true,
     ): string {
         $lines = [];
-        $keys  = array_keys($nodes);
-        $last  = count($keys) - 1;
+        $keys = array_keys($nodes);
+        $last = count($keys) - 1;
 
         foreach ($keys as $i => $key) {
-            $value    = $nodes[$key];
-            $isLast   = $i === $last;
-            $label    = is_string($key) ? $key : (string) $value;
+            $value = $nodes[$key];
+            $isLast = $i === $last;
+            $label = is_string($key) ? $key : (string) $value;
 
-            $connector  = $isLast ? '└─' : '├─';
-            $childPfx   = $isLast ? '   ' : '│  ';
+            $connector = $isLast ? '└─' : '├─';
+            $childPfx = $isLast ? '   ' : '│  ';
 
             $styledConn = $theme->border->apply($prefix . $connector . ' ');
-            $nodeStyle  = $styleOverrides[$label] ?? null;
+            $nodeStyle = $styleOverrides[$label] ?? null;
             $styledLabel = $nodeStyle ? $nodeStyle->apply($label) : $label;
 
             $lines[] = $styledConn . $styledLabel;

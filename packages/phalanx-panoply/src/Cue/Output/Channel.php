@@ -13,7 +13,7 @@ namespace Phalanx\Panoply\Cue\Output;
  */
 enum Channel: string
 {
-    case Message   = 'message';
-    case Thinking  = 'thinking';
+    case Message = 'message';
+    case Thinking = 'thinking';
     case Reasoning = 'reasoning';
 }

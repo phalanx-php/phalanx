@@ -33,8 +33,8 @@ final class FileSnapshot extends Record
     final protected function payload(): array
     {
         return [
-            'path'         => $this->path,
-            'content'      => $this->content,
+            'path' => $this->path,
+            'content' => $this->content,
             'content_hash' => $this->contentHash,
         ];
     }

@@ -60,12 +60,12 @@ final class Effect implements Canonicalizable
     public function toCanonical(): array
     {
         return [
-            'id'                => $this->id,
-            'kind'              => $this->kind->value,
-            'summary'           => $this->summary,
-            'arguments'         => $this->arguments,
+            'id' => $this->id,
+            'kind' => $this->kind->value,
+            'summary' => $this->summary,
+            'arguments' => $this->arguments,
             'requires_approval' => $this->requiresApproval,
-            'hazard'            => $this->hazard?->value,
+            'hazard' => $this->hazard?->value,
         ];
     }
 

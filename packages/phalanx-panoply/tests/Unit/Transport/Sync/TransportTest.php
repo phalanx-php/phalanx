@@ -54,8 +54,8 @@ final class TransportTest extends TestCase
         $transport = self::fixture();
         // Use a well-known unroutable address — the generator is returned
         // without executing until iterated, so no actual connection attempt.
-        $request   = Request::of('GET', 'http://127.0.0.1:1/');
-        $runtime   = new SyncRuntime();
+        $request = Request::of('GET', 'http://127.0.0.1:1/');
+        $runtime = new SyncRuntime();
 
         // The call returns a generator without executing until iterated.
         $generator = $transport->stream($request, $runtime);
@@ -105,11 +105,11 @@ final class TransportTest extends TestCase
 
         try {
             $transport = self::fixture();
-            $request   = Request::of('POST', "http://127.0.0.1:{$port}/", [], '');
-            $runtime   = new SyncRuntime();
+            $request = Request::of('POST', "http://127.0.0.1:{$port}/", [], '');
+            $runtime = new SyncRuntime();
 
             $chunks = iterator_to_array($transport->stream($request, $runtime), preserve_keys: false);
-            $body   = implode('', $chunks);
+            $body = implode('', $chunks);
 
             self::assertStringContainsString('agora', $body);
         } finally {
@@ -141,8 +141,8 @@ final class TransportTest extends TestCase
 
         try {
             $transport = self::fixture();
-            $request   = Request::of('GET', "http://127.0.0.1:{$port}/");
-            $runtime   = new SyncRuntime();
+            $request = Request::of('GET', "http://127.0.0.1:{$port}/");
+            $runtime = new SyncRuntime();
 
             // Cancel before curl starts — the progress callback fires
             // immediately on the first poll and returns 1, triggering abort.

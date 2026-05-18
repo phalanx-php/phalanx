@@ -44,7 +44,7 @@ final class EffectTest extends TestCase
     public function withHazardReturnsNewInstance(): void
     {
         $original = self::fixture();
-        $scored   = $original->withHazard(Hazard::Medium);
+        $scored = $original->withHazard(Hazard::Medium);
 
         self::assertNotSame($original, $scored);
         self::assertNull($original->hazard);
@@ -55,7 +55,7 @@ final class EffectTest extends TestCase
     public function withHazardPreservesOtherFields(): void
     {
         $original = self::fixture();
-        $scored   = $original->withHazard(Hazard::Low);
+        $scored = $original->withHazard(Hazard::Low);
 
         self::assertSame($original->id, $scored->id);
         self::assertSame($original->kind, $scored->kind);
@@ -65,7 +65,7 @@ final class EffectTest extends TestCase
     #[Test]
     public function toCanonicalHasExpectedKeys(): void
     {
-        $effect    = self::fixture()->withHazard(Hazard::High);
+        $effect = self::fixture()->withHazard(Hazard::High);
         $canonical = $effect->toCanonical();
 
         self::assertArrayHasKey('id', $canonical);
@@ -109,7 +109,7 @@ final class EffectTest extends TestCase
     {
         // Custom kind carries an opaque subtype via $arguments; the kind
         // value itself is the string 'custom' per Effect\Kind::Custom.
-        $effect    = Effect::of(
+        $effect = Effect::of(
             id: 'eff_custom_01',
             kind: EffectKind::Custom,
             summary: 'vault.note.append',

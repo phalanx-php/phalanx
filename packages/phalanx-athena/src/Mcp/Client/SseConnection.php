@@ -38,8 +38,8 @@ final class SseConnection implements McpConnection
     {
         $initResponse = $this->sendRequest($scope, new Request($this->nextId(), 'initialize', [
             'protocolVersion' => '2024-11-05',
-            'capabilities'    => [],
-            'clientInfo'      => ['name' => 'phalanx-athena', 'version' => '0.2'],
+            'capabilities' => [],
+            'clientInfo' => ['name' => 'phalanx-athena', 'version' => '0.2'],
         ]));
 
         if ($initResponse->isError) {
@@ -76,7 +76,7 @@ final class SseConnection implements McpConnection
         $start = (int) round(microtime(true) * 1000);
 
         $response = $this->sendRequest($scope, new Request($this->nextId(), 'tools/call', [
-            'name'      => $toolName,
+            'name' => $toolName,
             'arguments' => $args,
         ]));
 

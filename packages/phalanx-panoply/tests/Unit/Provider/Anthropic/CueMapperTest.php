@@ -36,8 +36,8 @@ final class CueMapperTest extends TestCase
     public function messageStartYieldsResolvedThenStarted(): void
     {
         $mapper = self::fixture();
-        $event  = new Event('message_start', [
-            'type'    => 'message_start',
+        $event = new Event('message_start', [
+            'type' => 'message_start',
             'message' => ['model' => 'claude-opus-4-7'],
         ]);
 
@@ -52,11 +52,11 @@ final class CueMapperTest extends TestCase
     public function resolvedCueCarriesProviderAndModel(): void
     {
         $mapper = self::fixture();
-        $event  = new Event('message_start', [
+        $event = new Event('message_start', [
             'message' => ['model' => 'claude-opus-4-7'],
         ]);
 
-        $cues    = iterator_to_array($mapper->translate($event), preserve_keys: false);
+        $cues = iterator_to_array($mapper->translate($event), preserve_keys: false);
         $resolved = $cues[0];
 
         self::assertInstanceOf(Resolved::class, $resolved);
@@ -71,7 +71,7 @@ final class CueMapperTest extends TestCase
 
         // Prime the block state.
         iterator_to_array($mapper->translate(new Event('content_block_start', [
-            'index'         => 0,
+            'index' => 0,
             'content_block' => ['type' => 'text'],
         ])), preserve_keys: false);
 
@@ -94,7 +94,7 @@ final class CueMapperTest extends TestCase
         $mapper = self::fixture();
 
         iterator_to_array($mapper->translate(new Event('content_block_start', [
-            'index'         => 0,
+            'index' => 0,
             'content_block' => ['type' => 'thinking'],
         ])), preserve_keys: false);
 
@@ -115,8 +115,8 @@ final class CueMapperTest extends TestCase
     public function toolUseBlockStartYieldsEffectRequested(): void
     {
         $mapper = self::fixture();
-        $event  = new Event('content_block_start', [
-            'index'         => 0,
+        $event = new Event('content_block_start', [
+            'index' => 0,
             'content_block' => ['type' => 'tool_use', 'id' => 'toolu_agora', 'name' => 'search_records'],
         ]);
 
@@ -134,7 +134,7 @@ final class CueMapperTest extends TestCase
 
         // Open a tool_use block first.
         iterator_to_array($mapper->translate(new Event('content_block_start', [
-            'index'         => 0,
+            'index' => 0,
             'content_block' => ['type' => 'tool_use', 'id' => 'toolu_sparta', 'name' => 'query'],
         ])), preserve_keys: false);
 
@@ -155,7 +155,7 @@ final class CueMapperTest extends TestCase
     public function contentBlockStopYieldsNoCues(): void
     {
         $mapper = self::fixture();
-        $event  = new Event('content_block_stop', ['index' => 0]);
+        $event = new Event('content_block_stop', ['index' => 0]);
 
         $cues = iterator_to_array($mapper->translate($event), preserve_keys: false);
 
@@ -166,7 +166,7 @@ final class CueMapperTest extends TestCase
     public function messageDeltaWithStopReasonYieldsTokenStop(): void
     {
         $mapper = self::fixture();
-        $event  = new Event('message_delta', [
+        $event = new Event('message_delta', [
             'delta' => ['stop_reason' => 'end_turn'],
             'usage' => ['output_tokens' => 42],
         ]);
@@ -182,12 +182,12 @@ final class CueMapperTest extends TestCase
     public function messageDeltaWithUsageYieldsUsageDelta(): void
     {
         $mapper = self::fixture();
-        $event  = new Event('message_delta', [
+        $event = new Event('message_delta', [
             'delta' => ['stop_reason' => 'end_turn'],
             'usage' => ['output_tokens' => 17],
         ]);
 
-        $cues   = iterator_to_array($mapper->translate($event), preserve_keys: false);
+        $cues = iterator_to_array($mapper->translate($event), preserve_keys: false);
         $usages = array_values(array_filter($cues, static fn ($c) => $c instanceof UsageDelta));
 
         self::assertCount(1, $usages);
@@ -198,7 +198,7 @@ final class CueMapperTest extends TestCase
     public function messageStopYieldsFinalUsageThenInvocationCompleted(): void
     {
         $mapper = self::fixture();
-        $event  = new Event('message_stop', ['type' => 'message_stop']);
+        $event = new Event('message_stop', ['type' => 'message_stop']);
 
         $cues = iterator_to_array($mapper->translate($event), preserve_keys: false);
 
@@ -238,8 +238,8 @@ final class CueMapperTest extends TestCase
     public function errorEventYieldsInvocationFailed(): void
     {
         $mapper = self::fixture();
-        $event  = new Event('error', [
-            'type'  => 'error',
+        $event = new Event('error', [
+            'type' => 'error',
             'error' => ['type' => 'overloaded_error', 'message' => 'Olympus is under siege.'],
         ]);
 
@@ -272,7 +272,7 @@ final class CueMapperTest extends TestCase
     public function unknownEventTypeYieldsNoCues(): void
     {
         $mapper = self::fixture();
-        $event  = new Event('ping', ['type' => 'ping']);
+        $event = new Event('ping', ['type' => 'ping']);
 
         $cues = iterator_to_array($mapper->translate($event), preserve_keys: false);
 

@@ -15,23 +15,23 @@ namespace Phalanx\Archon\Console\Style;
 final class Color
 {
     private const array NAMED_FG = [
-        'black'          => 30,
-        'red'            => 31,
-        'green'          => 32,
-        'yellow'         => 33,
-        'blue'           => 34,
-        'magenta'        => 35,
-        'cyan'           => 36,
-        'white'          => 37,
-        'gray'           => 90,
-        'bright-black'   => 90,
-        'bright-red'     => 91,
-        'bright-green'   => 92,
-        'bright-yellow'  => 93,
-        'bright-blue'    => 94,
+        'black' => 30,
+        'red' => 31,
+        'green' => 32,
+        'yellow' => 33,
+        'blue' => 34,
+        'magenta' => 35,
+        'cyan' => 36,
+        'white' => 37,
+        'gray' => 90,
+        'bright-black' => 90,
+        'bright-red' => 91,
+        'bright-green' => 92,
+        'bright-yellow' => 93,
+        'bright-blue' => 94,
         'bright-magenta' => 95,
-        'bright-cyan'    => 96,
-        'bright-white'   => 97,
+        'bright-cyan' => 96,
+        'bright-white' => 97,
     ];
 
     /** @param string|int|array{0:int,1:int,2:int} $color */
@@ -50,8 +50,8 @@ final class Color
     {
         return match (true) {
             is_string($this->color) => self::namedFg($this->color),
-            is_int($this->color)    => "\033[38;5;{$this->color}m",
-            default                 => "\033[38;2;{$this->color[0]};{$this->color[1]};{$this->color[2]}m",
+            is_int($this->color) => "\033[38;5;{$this->color}m",
+            default => "\033[38;2;{$this->color[0]};{$this->color[1]};{$this->color[2]}m",
         };
     }
 
@@ -59,8 +59,8 @@ final class Color
     {
         return match (true) {
             is_string($this->color) => self::namedBg($this->color),
-            is_int($this->color)    => "\033[48;5;{$this->color}m",
-            default                 => "\033[48;2;{$this->color[0]};{$this->color[1]};{$this->color[2]}m",
+            is_int($this->color) => "\033[48;5;{$this->color}m",
+            default => "\033[48;2;{$this->color[0]};{$this->color[1]};{$this->color[2]}m",
         };
     }
 

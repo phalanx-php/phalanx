@@ -39,8 +39,8 @@ final class BundledYamlsLoadTest extends TestCase
     #[Test]
     public function inferenceYamlModelsHaveExpectedIds(): void
     {
-        $config    = Loader::fromFile(self::yamlPath('huggingface.panoply.yaml'));
-        $modelIds  = array_map(static fn ($m) => $m->modelId, $config->models);
+        $config = Loader::fromFile(self::yamlPath('huggingface.panoply.yaml'));
+        $modelIds = array_map(static fn ($m) => $m->modelId, $config->models);
 
         self::assertContains('meta-llama/Meta-Llama-3.1-70B-Instruct', $modelIds);
         self::assertContains('mistralai/Mistral-7B-Instruct-v0.3', $modelIds);
@@ -59,7 +59,7 @@ final class BundledYamlsLoadTest extends TestCase
     public function dedicatedYamlHasCatchAllModel(): void
     {
         $config = Loader::fromFile(self::yamlPath('huggingface-dedicated.panoply.yaml'));
-        $model  = $config->models[0];
+        $model = $config->models[0];
 
         self::assertSame('local-dedicated', $model->name);
         self::assertSame('tgi', $model->modelId);

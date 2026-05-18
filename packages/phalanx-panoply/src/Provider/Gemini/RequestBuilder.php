@@ -41,12 +41,12 @@ final class RequestBuilder
         Options $options = new Options(),
         array $defaultHeaders = [],
     ): Request {
-        $url  = self::buildUrl($baseUrl, $model->modelId, $apiKey);
+        $url = self::buildUrl($baseUrl, $model->modelId, $apiKey);
         $body = self::buildBody($invocation, $model, $options);
 
         $headers = array_merge($defaultHeaders, [
             'content-type' => 'application/json',
-            'accept'       => 'text/event-stream',
+            'accept' => 'text/event-stream',
         ]);
 
         return Request::of(
@@ -112,7 +112,7 @@ final class RequestBuilder
 
         return [
             [
-                'role'  => 'user',
+                'role' => 'user',
                 'parts' => [['text' => (string) $userInput]],
             ],
         ];
@@ -176,9 +176,9 @@ final class RequestBuilder
     private static function mapThinkingBudget(string $level): int
     {
         return match ($level) {
-            'low'    => 256,
-            'high'   => 4096,
-            default  => 1024,
+            'low' => 256,
+            'high' => 4096,
+            default => 1024,
         };
     }
 }

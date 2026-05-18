@@ -46,7 +46,7 @@ final class Provider implements ProviderContract
             $this->messagesOptions,
         );
         $transport = $this->transport;
-        $mapper    = new CueMapper($invocation);
+        $mapper = new CueMapper($invocation);
 
         return new Stream(static function () use ($transport, $request, $runtime, $mapper): \Generator {
             $parser = new Parser();

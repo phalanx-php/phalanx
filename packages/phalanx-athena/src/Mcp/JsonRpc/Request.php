@@ -18,9 +18,9 @@ final class Request
     {
         return json_encode([
             'jsonrpc' => '2.0',
-            'id'      => $this->id,
-            'method'  => $this->method,
-            'params'  => $this->params,
+            'id' => $this->id,
+            'method' => $this->method,
+            'params' => $this->params,
         ], JSON_THROW_ON_ERROR) . "\n";
     }
 }

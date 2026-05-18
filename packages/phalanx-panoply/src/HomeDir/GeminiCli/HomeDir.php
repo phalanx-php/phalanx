@@ -38,7 +38,7 @@ final class HomeDir implements HomeDirInterface, AdapterFactory
 
     public static function fromConfig(Config $config, string $home): self
     {
-        $roots       = $config->roots;
+        $roots = $config->roots;
         $homeDirPath = Config::resolvePath($roots[0] ?? '~/.gemini', $home);
 
         return new self($homeDirPath);
@@ -72,21 +72,21 @@ final class HomeDir implements HomeDirInterface, AdapterFactory
                     continue;
                 }
 
-                $path       = isset($entry['path']) && is_string($entry['path']) ? $entry['path'] : '';
-                $name       = isset($entry['name']) && is_string($entry['name']) ? $entry['name'] : $path;
-                $projectId  = isset($entry['id']) && is_string($entry['id']) ? $entry['id'] : md5($path);
+                $path = isset($entry['path']) && is_string($entry['path']) ? $entry['path'] : '';
+                $name = isset($entry['name']) && is_string($entry['name']) ? $entry['name'] : $path;
+                $projectId = isset($entry['id']) && is_string($entry['id']) ? $entry['id'] : md5($path);
                 $lastActive = null;
 
                 if (isset($entry['lastActive']) && is_string($entry['lastActive'])) {
                     $lastActiveRaw = $entry['lastActive'];
-                    $dt            = \DateTimeImmutable::createFromFormat(\DateTimeInterface::RFC3339, $lastActiveRaw)
+                    $dt = \DateTimeImmutable::createFromFormat(\DateTimeInterface::RFC3339, $lastActiveRaw)
                         ?: \DateTimeImmutable::createFromFormat(\DateTimeInterface::RFC3339_EXTENDED, $lastActiveRaw)
                         ?: null;
-                    $lastActive    = $dt;
+                    $lastActive = $dt;
                 }
 
                 // Count JSONL files in history/<project_id>/.
-                $historyDir        = $homeDirPath . '/history/' . $projectId;
+                $historyDir = $homeDirPath . '/history/' . $projectId;
                 $conversationCount = 0;
 
                 if (is_dir($historyDir)) {

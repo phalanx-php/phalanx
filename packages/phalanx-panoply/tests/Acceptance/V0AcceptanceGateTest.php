@@ -118,7 +118,7 @@ final class V0AcceptanceGateTest extends TestCase
         self::assertSame($ab, $ba, 'Key order must not affect the canonical hash');
 
         // Float/int distinction
-        $intHash   = Canonical::of(1);
+        $intHash = Canonical::of(1);
         $floatHash = Canonical::of(1.0);
         self::assertNotSame($intHash, $floatHash, 'int 1 and float 1.0 must hash distinctly');
 
@@ -133,7 +133,7 @@ final class V0AcceptanceGateTest extends TestCase
     #[Test]
     public function gate03_fakeProviderEndToEndProducesValidCueStream(): void
     {
-        $at     = new \DateTimeImmutable('2026-05-18T00:00:00Z');
+        $at = new \DateTimeImmutable('2026-05-18T00:00:00Z');
         $script = [
             new Started('c1', 1, 'act.sparta', 'inv.01', 'agent.leonidas', $at),
             new TokenDelta('c2', 2, 'act.sparta', 'inv.01', 'agent.leonidas', $at, 'Hold the pass.', Channel::Message),
@@ -143,14 +143,14 @@ final class V0AcceptanceGateTest extends TestCase
             new ActivityCompleted('c6', 6, 'act.sparta', 'inv.01', 'agent.leonidas', $at),
         ];
 
-        $provider  = new FakeProvider($script, Capabilities::of(Capability::Reasoning));
+        $provider = new FakeProvider($script, Capabilities::of(Capability::Reasoning));
         $invocation = self::invocation();
         $cues = $provider->perform($invocation, new SyncRuntime())->toArray();
 
         $tokenDeltas = array_filter($cues, static fn ($c): bool => $c instanceof TokenDelta);
-        $completed   = array_filter($cues, static fn ($c): bool => $c instanceof InvocationCompleted);
+        $completed = array_filter($cues, static fn ($c): bool => $c instanceof InvocationCompleted);
         $finalUsages = array_filter($cues, static fn ($c): bool => $c instanceof FinalUsage);
-        $started     = array_filter($cues, static fn ($c): bool => $c instanceof Started);
+        $started = array_filter($cues, static fn ($c): bool => $c instanceof Started);
 
         self::assertNotEmpty($started, 'Expected a Started lifecycle cue');
         self::assertNotEmpty($tokenDeltas, 'Expected at least one TokenDelta');
@@ -192,7 +192,7 @@ final class V0AcceptanceGateTest extends TestCase
     public function gate05_streamCoalescingMergesAdjacentTokenDeltasWithinWindow(): void
     {
         $clock = new FrozenClock(0);
-        $at    = new \DateTimeImmutable('2026-05-18T00:00:00Z');
+        $at = new \DateTimeImmutable('2026-05-18T00:00:00Z');
 
         // Three adjacent Message-channel deltas, clock frozen → all within 50 ms window
         $stream = Stream::from([
@@ -210,7 +210,7 @@ final class V0AcceptanceGateTest extends TestCase
         // Verify the tokens()->coalescing() chain from the spec example compiles
         // and produces the same result — tokens() filters to TokenDelta/TokenStop only,
         // then coalescing() merges within the window.
-        $clock2  = new FrozenClock(0);
+        $clock2 = new FrozenClock(0);
         $chained = Stream::from([
             new TokenDelta('d1', 1, 'act.agora', 'inv.01', 'agent.pericles', $at, 'Hold ', Channel::Message),
             new TokenDelta('d2', 2, 'act.agora', 'inv.01', 'agent.pericles', $at, 'the ', Channel::Message),
@@ -236,7 +236,7 @@ final class V0AcceptanceGateTest extends TestCase
 
         self::assertFileExists($fixture, 'Sparta JSONL fixture must exist');
 
-        $parser  = new ClaudeCodeParser();
+        $parser = new ClaudeCodeParser();
         $records = $parser->parse(new ClaudeCodeSource($fixture), Options::lenient())->toArray();
 
         self::assertNotEmpty($records, 'Parser must produce at least one Record from the sparta fixture');
@@ -337,7 +337,7 @@ final class V0AcceptanceGateTest extends TestCase
         }
 
         $tokenDeltas = array_filter($cues, static fn ($c): bool => $c instanceof TokenDelta);
-        $completed   = array_filter($cues, static fn ($c): bool => $c instanceof InvocationCompleted);
+        $completed = array_filter($cues, static fn ($c): bool => $c instanceof InvocationCompleted);
         $finalUsages = array_filter($cues, static fn ($c): bool => $c instanceof FinalUsage);
 
         self::assertNotEmpty($tokenDeltas, 'Expected at least one TokenDelta from live API');
@@ -370,7 +370,7 @@ final class V0AcceptanceGateTest extends TestCase
     #[RequiresPhpExtension('openswoole')]
     public function gate10_cancellationEmitsCancelledCueWithoutLeaks(): void
     {
-        $at      = new \DateTimeImmutable('2026-05-18T00:00:00Z');
+        $at = new \DateTimeImmutable('2026-05-18T00:00:00Z');
         $runtime = new SyncRuntime();
 
         $script = [
@@ -380,7 +380,7 @@ final class V0AcceptanceGateTest extends TestCase
         ];
 
         $provider = new FakeProvider($script, Capabilities::of(Capability::Reasoning));
-        $stream   = $provider->perform(self::invocation(), $runtime);
+        $stream = $provider->perform(self::invocation(), $runtime);
 
         // Consume first cue (Started) before cancelling
         $cues = [];
@@ -420,7 +420,7 @@ final class V0AcceptanceGateTest extends TestCase
     #[Test]
     public function gate11_rulesAuthorizerDeniesShellExecWithoutGrant(): void
     {
-        $effect   = Effect::of('eff.01', EffectKind::ShellExec, 'execute rm -rf /');
+        $effect = Effect::of('eff.01', EffectKind::ShellExec, 'execute rm -rf /');
         $decision = new Authorizer()->evaluate($effect, null);
 
         self::assertTrue($decision->isDenied(), 'Null grant must produce a denied decision');
@@ -437,7 +437,7 @@ final class V0AcceptanceGateTest extends TestCase
         $scorer = new Scorer();
         $effect = Effect::of('eff.01', EffectKind::ShellExec, 'run formation drill');
 
-        $first  = $scorer->score($effect);
+        $first = $scorer->score($effect);
         $second = $scorer->score($effect);
 
         self::assertSame($first, $second, 'Scorer must return the same Hazard for the same Effect every time');
@@ -481,7 +481,7 @@ final class V0AcceptanceGateTest extends TestCase
 
         self::assertFileExists($yamlPath, 'Anthropic fixture YAML must exist');
 
-        $config   = Loader::fromFile($yamlPath);
+        $config = Loader::fromFile($yamlPath);
         $registry = Registry::empty()->with($config);
 
         $resolution = $registry->byModelAlias('opus');

@@ -102,7 +102,7 @@ final class StaticReturnTest extends TestCase
     #[Test]
     public function logMapReturnsBaseSeries(): void
     {
-        $log    = Log::from([]);
+        $log = Log::from([]);
         $mapped = $log->map(static fn ($r): mixed => $r);
         self::assertInstanceOf(Series::class, $mapped);
         self::assertNotInstanceOf(Log::class, $mapped);
@@ -120,7 +120,7 @@ final class StaticReturnTest extends TestCase
     #[Test]
     public function collectionMapReturnsBaseSeries(): void
     {
-        $col    = Collection::from([]);
+        $col = Collection::from([]);
         $mapped = $col->map(static fn ($a): mixed => $a);
         self::assertInstanceOf(Series::class, $mapped);
         self::assertNotInstanceOf(Collection::class, $mapped);
@@ -139,7 +139,7 @@ final class StaticReturnTest extends TestCase
     public function projectsMapReturnsBaseSeries(): void
     {
         $projects = Projects::from([]);
-        $mapped   = $projects->map(static fn ($p): mixed => $p);
+        $mapped = $projects->map(static fn ($p): mixed => $p);
         self::assertInstanceOf(Series::class, $mapped);
         self::assertNotInstanceOf(Projects::class, $mapped);
     }
@@ -157,7 +157,7 @@ final class StaticReturnTest extends TestCase
     public function locatorsMapReturnsBaseSeries(): void
     {
         $locators = Locators::from([]);
-        $mapped   = $locators->map(static fn ($l): mixed => $l);
+        $mapped = $locators->map(static fn ($l): mixed => $l);
         self::assertInstanceOf(Series::class, $mapped);
         self::assertNotInstanceOf(Locators::class, $mapped);
     }

@@ -27,16 +27,16 @@ namespace Phalanx\Archon\Console\Input;
 final class KeyParser
 {
     private const string PASTE_START = "\033[200~";
-    private const string PASTE_END   = "\033[201~";
+    private const string PASTE_END = "\033[201~";
 
-    private string $buffer      = '';
-    private bool $inPaste       = false;
+    private string $buffer = '';
+    private bool $inPaste = false;
     private string $pasteBuffer = '';
 
     /** @return list<string> */
     public function parse(string $data): array
     {
-        $keys          = [];
+        $keys = [];
         $this->buffer .= $data;
 
         while ($this->buffer !== '') {
@@ -48,7 +48,7 @@ final class KeyParser
             }
 
             if (str_starts_with($this->buffer, self::PASTE_START)) {
-                $this->buffer  = substr($this->buffer, strlen(self::PASTE_START));
+                $this->buffer = substr($this->buffer, strlen(self::PASTE_START));
                 $this->inPaste = true;
                 continue;
             }
@@ -74,12 +74,12 @@ final class KeyParser
 
         if ($endPos === false) {
             $this->pasteBuffer .= $this->buffer;
-            $this->buffer       = '';
+            $this->buffer = '';
             return false;
         }
 
         $this->pasteBuffer .= substr($this->buffer, 0, $endPos);
-        $this->buffer       = substr($this->buffer, $endPos + strlen(self::PASTE_END));
+        $this->buffer = substr($this->buffer, $endPos + strlen(self::PASTE_END));
 
         foreach (mb_str_split($this->pasteBuffer) as $char) {
             if ($char === "\r" || $char === "\n") {
@@ -92,14 +92,14 @@ final class KeyParser
         }
 
         $this->pasteBuffer = '';
-        $this->inPaste     = false;
+        $this->inPaste = false;
 
         return true;
     }
 
     private function parseOne(): string|false|null
     {
-        $b     = $this->buffer;
+        $b = $this->buffer;
         $first = ord($b[0]);
 
         if ($first === 0x1B) {
@@ -126,8 +126,8 @@ final class KeyParser
             return 'ctrl-' . chr($first + 96);
         }
 
-        $char         = mb_substr($b, 0, 1);
-        $byteLen      = strlen($char);
+        $char = mb_substr($b, 0, 1);
+        $byteLen = strlen($char);
         $this->buffer = substr($b, $byteLen);
 
         if ($char === ' ') {
@@ -158,7 +158,7 @@ final class KeyParser
         }
 
         $this->buffer = substr($b, 2);
-        $next         = $b[1];
+        $next = $b[1];
 
         // Terminal.app ESC+b/f → alt-left/alt-right word motion.
         if ($next === 'b') {
@@ -193,7 +193,7 @@ final class KeyParser
         }
 
         $paramEnd = 2;
-        $len      = strlen($b);
+        $len = strlen($b);
 
         while ($paramEnd < $len) {
             $c = $b[$paramEnd];
@@ -208,16 +208,16 @@ final class KeyParser
             return false;
         }
 
-        $finalByte    = $b[$paramEnd];
-        $params       = substr($b, 2, $paramEnd - 2);
+        $finalByte = $b[$paramEnd];
+        $params = substr($b, 2, $paramEnd - 2);
         $this->buffer = substr($b, $paramEnd + 1);
 
         return match ($finalByte) {
             'A', 'B', 'C', 'D' => $this->arrowKey($finalByte, $params),
-            'H'                => 'home',
-            'F'                => 'end',
-            '~'                => $this->tildeKey($params),
-            default            => null,
+            'H' => 'home',
+            'F' => 'end',
+            '~' => $this->tildeKey($params),
+            default => null,
         };
     }
 
@@ -225,7 +225,7 @@ final class KeyParser
     {
         $modifier = 1;
         if (str_contains($params, ';')) {
-            $parts    = explode(';', $params);
+            $parts = explode(';', $params);
             $modifier = (int) ($parts[1] ?? 1);
         }
 
@@ -236,10 +236,10 @@ final class KeyParser
         }
 
         return match ($direction) {
-            'A'     => 'up',
-            'B'     => 'down',
-            'C'     => 'right',
-            'D'     => 'left',
+            'A' => 'up',
+            'B' => 'down',
+            'C' => 'right',
+            'D' => 'left',
             default => '',
         };
     }
@@ -247,23 +247,23 @@ final class KeyParser
     private function tildeKey(string $params): ?string
     {
         $parts = explode(';', $params);
-        $code  = (int) ($parts[0] ?? 0);
+        $code = (int) ($parts[0] ?? 0);
 
         return match ($code) {
-            1       => 'home',
-            2       => 'insert',
-            3       => 'delete',
-            4       => 'end',
-            5       => 'pageup',
-            6       => 'pagedown',
-            15      => 'f5',
-            17      => 'f6',
-            18      => 'f7',
-            19      => 'f8',
-            20      => 'f9',
-            21      => 'f10',
-            23      => 'f11',
-            24      => 'f12',
+            1 => 'home',
+            2 => 'insert',
+            3 => 'delete',
+            4 => 'end',
+            5 => 'pageup',
+            6 => 'pagedown',
+            15 => 'f5',
+            17 => 'f6',
+            18 => 'f7',
+            19 => 'f8',
+            20 => 'f9',
+            21 => 'f10',
+            23 => 'f11',
+            24 => 'f12',
             default => null,
         };
     }
@@ -276,20 +276,20 @@ final class KeyParser
             return false;
         }
 
-        $char         = $b[2];
+        $char = $b[2];
         $this->buffer = substr($b, 3);
 
         return match ($char) {
-            'A'     => 'up',
-            'B'     => 'down',
-            'C'     => 'right',
-            'D'     => 'left',
-            'H'     => 'home',
-            'F'     => 'end',
-            'P'     => 'f1',
-            'Q'     => 'f2',
-            'R'     => 'f3',
-            'S'     => 'f4',
+            'A' => 'up',
+            'B' => 'down',
+            'C' => 'right',
+            'D' => 'left',
+            'H' => 'home',
+            'F' => 'end',
+            'P' => 'f1',
+            'Q' => 'f2',
+            'R' => 'f3',
+            'S' => 'f4',
             default => null,
         };
     }

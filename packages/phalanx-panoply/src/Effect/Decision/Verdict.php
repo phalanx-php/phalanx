@@ -12,6 +12,6 @@ namespace Phalanx\Panoply\Effect\Decision;
 enum Verdict: string
 {
     case Granted = 'granted';
-    case Denied  = 'denied';
-    case Paused  = 'paused';
+    case Denied = 'denied';
+    case Paused = 'paused';
 }

@@ -28,7 +28,7 @@ final class OutputHydratorTest extends TestCase
     {
         $scope = new ScopeStub();
         $agent = self::agentWithOutput(Output::structured(WeatherResult::class));
-        $raw   = '{"city":"Athens","temperature":22.5}';
+        $raw = '{"city":"Athens","temperature":22.5}';
 
         $result = OutputHydrator::hydrate($scope, $raw, $agent);
 
@@ -113,9 +113,9 @@ final class OutputHydratorTest extends TestCase
         $this->expectException(OutputHydrationError::class);
         $this->expectExceptionMessage('Structured output mode requires a schema class-string');
 
-        $scope  = new ScopeStub();
+        $scope = new ScopeStub();
         $output = self::structuredOutputWithNullSchema();
-        $agent  = self::agentWithOutput($output);
+        $agent = self::agentWithOutput($output);
 
         OutputHydrator::hydrate($scope, '{}', $agent);
     }

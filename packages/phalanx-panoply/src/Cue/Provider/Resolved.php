@@ -30,8 +30,8 @@ final class Resolved extends Cue
     final protected function payload(): array
     {
         return [
-            'provider'    => $this->provider,
-            'model'       => $this->model,
+            'provider' => $this->provider,
+            'model' => $this->model,
             'reason_code' => $this->reasonCode,
         ];
     }

@@ -44,10 +44,10 @@ final class Request implements Canonicalizable
         ksort($headers);
 
         return [
-            'method'  => $this->method,
-            'url'     => $this->url,
+            'method' => $this->method,
+            'url' => $this->url,
             'headers' => $headers,
-            'body'    => $this->body,
+            'body' => $this->body,
         ];
     }
 }

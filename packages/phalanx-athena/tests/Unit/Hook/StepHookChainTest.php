@@ -27,8 +27,8 @@ final class StepHookChainTest extends TestCase
     #[Test]
     public function emptyChainReturnsContinue(): void
     {
-        $chain  = new StepHookChain();
-        $scope  = new ScopeStub();
+        $chain = new StepHookChain();
+        $scope = new ScopeStub();
         $result = $chain->notify($scope, self::makeContext());
 
         self::assertSame(Outcome::Continue, $result->outcome);
@@ -66,7 +66,7 @@ final class StepHookChainTest extends TestCase
             }
         };
 
-        $chain  = new StepHookChain([$first, $second]);
+        $chain = new StepHookChain([$first, $second]);
         $result = $chain->notify(new ScopeStub(), self::makeContext());
 
         self::assertSame(Outcome::Continue, $result->outcome);
@@ -104,7 +104,7 @@ final class StepHookChainTest extends TestCase
             }
         };
 
-        $chain  = new StepHookChain([$first, $second]);
+        $chain = new StepHookChain([$first, $second]);
         $result = $chain->notify(new ScopeStub(), self::makeContext());
 
         self::assertSame(Outcome::Complete, $result->outcome);
@@ -127,7 +127,7 @@ final class StepHookChainTest extends TestCase
             }
         };
 
-        $chain  = new StepHookChain([$hook]);
+        $chain = new StepHookChain([$hook]);
         $result = $chain->notify(new ScopeStub(), self::makeContext());
 
         self::assertSame(Outcome::Failed, $result->outcome);
@@ -155,7 +155,7 @@ final class StepHookChainTest extends TestCase
     private static function makeContext(): StepContext
     {
         $config = new Config('act_test', Context::new());
-        $log    = Log::from([]);
+        $log = Log::from([]);
 
         $invocation = Invocation::of(
             id: 'inv_test',

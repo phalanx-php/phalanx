@@ -6,6 +6,8 @@
 !.gitignore
 !.github/
 !.env.example
+!.php-cs-fixer.php
+.php-cs-fixer.cache
 !README.md
 
 # Dependencies

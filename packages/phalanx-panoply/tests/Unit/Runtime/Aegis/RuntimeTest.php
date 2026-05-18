@@ -29,7 +29,7 @@ final class RuntimeTest extends TestCase
     public function delegatesCallToScope(): void
     {
         $adapter = new Runtime(self::stub());
-        $result  = $adapter->call(static fn (): string => 'agora');
+        $result = $adapter->call(static fn (): string => 'agora');
 
         self::assertSame('agora', $result);
     }
@@ -37,7 +37,7 @@ final class RuntimeTest extends TestCase
     #[Test]
     public function callForwardsWaitReasonToScope(): void
     {
-        $stub    = self::stub();
+        $stub = self::stub();
         $adapter = new Runtime($stub);
 
         // A non-null label must be translated to a typed WaitReason and forwarded.
@@ -60,7 +60,7 @@ final class RuntimeTest extends TestCase
     public function callPassesReturnValueThrough(): void
     {
         $adapter = new Runtime(self::stub());
-        $result  = $adapter->call(static fn (): int => 300);
+        $result = $adapter->call(static fn (): int => 300);
 
         self::assertSame(300, $result);
     }
@@ -68,7 +68,7 @@ final class RuntimeTest extends TestCase
     #[Test]
     public function isCancelledReturnsFalseByDefault(): void
     {
-        $token   = CancellationToken::create();
+        $token = CancellationToken::create();
         $adapter = new Runtime(self::stub($token));
 
         self::assertFalse($adapter->isCancelled());
@@ -77,7 +77,7 @@ final class RuntimeTest extends TestCase
     #[Test]
     public function isCancelledReturnsTrueAfterTokenCancellation(): void
     {
-        $token   = CancellationToken::create();
+        $token = CancellationToken::create();
         $adapter = new Runtime(self::stub($token));
 
         $token->cancel();
@@ -97,7 +97,7 @@ final class RuntimeTest extends TestCase
     #[Test]
     public function throwIfCancelledRewrapsAsCancellationException(): void
     {
-        $token   = CancellationToken::create();
+        $token = CancellationToken::create();
         $token->cancel();
         $adapter = new Runtime(self::stub($token));
 
@@ -109,7 +109,7 @@ final class RuntimeTest extends TestCase
     #[Test]
     public function cancellationExceptionChainsAegisCancelled(): void
     {
-        $token   = CancellationToken::create();
+        $token = CancellationToken::create();
         $token->cancel();
         $adapter = new Runtime(self::stub($token));
 
@@ -128,7 +128,7 @@ final class RuntimeTest extends TestCase
         // Without cancellation the cleanup must NOT run — onCancel is
         // cancellation-only, not a generic teardown hook.
         $called = false;
-        $stub   = self::stub();
+        $stub = self::stub();
 
         $adapter = new Runtime($stub);
         $adapter->onCancel(static function () use (&$called): void {
@@ -144,8 +144,8 @@ final class RuntimeTest extends TestCase
     public function onCancelRunsCleanupWhenScopeIsCancelled(): void
     {
         $called = false;
-        $token  = CancellationToken::create();
-        $stub   = self::stub($token);
+        $token = CancellationToken::create();
+        $stub = self::stub($token);
 
         $adapter = new Runtime($stub);
         $adapter->onCancel(static function () use (&$called): void {
@@ -162,9 +162,9 @@ final class RuntimeTest extends TestCase
     public function onCancelWithAlreadyDisposedAndCancelledScopeRunsImmediately(): void
     {
         $called = false;
-        $token  = CancellationToken::create();
+        $token = CancellationToken::create();
         $token->cancel();
-        $stub   = self::stub($token, disposed: true);
+        $stub = self::stub($token, disposed: true);
 
         $adapter = new Runtime($stub);
         $adapter->onCancel(static function () use (&$called): void {
@@ -229,7 +229,7 @@ final class RuntimeTest extends TestCase
             public function dispose(): void
             {
                 $this->disposed = true;
-                $callbacks      = array_reverse($this->disposeStack);
+                $callbacks = array_reverse($this->disposeStack);
                 $this->disposeStack = [];
                 foreach ($callbacks as $cb) {
                     $cb();

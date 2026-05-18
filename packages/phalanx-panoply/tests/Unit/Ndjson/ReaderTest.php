@@ -14,7 +14,7 @@ final class ReaderTest extends TestCase
     public function singleCompleteLineYieldsOneParsedObject(): void
     {
         $reader = new Reader();
-        $lines  = iterator_to_array($reader->feed("{\"model\":\"llama3.1\",\"done\":false}\n"), preserve_keys: false);
+        $lines = iterator_to_array($reader->feed("{\"model\":\"llama3.1\",\"done\":false}\n"), preserve_keys: false);
 
         self::assertCount(1, $lines);
         self::assertSame('llama3.1', $lines[0]['model']);
@@ -25,7 +25,7 @@ final class ReaderTest extends TestCase
     public function twoLinesInOneChunkYieldsTwoObjects(): void
     {
         $reader = new Reader();
-        $lines  = iterator_to_array(
+        $lines = iterator_to_array(
             $reader->feed("{\"a\":1}\n{\"b\":2}\n"),
             preserve_keys: false,
         );
@@ -40,7 +40,7 @@ final class ReaderTest extends TestCase
     {
         $reader = new Reader();
 
-        $first  = iterator_to_array($reader->feed("{\"model\":\"llama"), preserve_keys: false);
+        $first = iterator_to_array($reader->feed("{\"model\":\"llama"), preserve_keys: false);
         $second = iterator_to_array($reader->feed("3.1\"}\n"), preserve_keys: false);
 
         self::assertCount(0, $first);
@@ -111,7 +111,7 @@ final class ReaderTest extends TestCase
     #[Test]
     public function emptyFlushYieldsNothing(): void
     {
-        $reader  = new Reader();
+        $reader = new Reader();
         $flushed = iterator_to_array($reader->flush(), preserve_keys: false);
 
         self::assertCount(0, $flushed);

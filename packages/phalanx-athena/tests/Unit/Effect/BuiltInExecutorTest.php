@@ -21,7 +21,7 @@ final class BuiltInExecutorTest extends TestCase
     public function noopReturnsBuiltInResolutionWithNullData(): void
     {
         $executor = new BuiltInExecutor();
-        $outcome  = $executor(new ScopeStub(), self::makeRequest('noop'), self::makeContext());
+        $outcome = $executor(new ScopeStub(), self::makeRequest('noop'), self::makeContext());
 
         self::assertSame(Resolution::BuiltIn, $outcome->resolution);
         self::assertNull($outcome->data);
@@ -32,9 +32,9 @@ final class BuiltInExecutorTest extends TestCase
     #[Test]
     public function echoReturnsRequestArguments(): void
     {
-        $args     = ['message' => 'sparta', 'count' => 300];
+        $args = ['message' => 'sparta', 'count' => 300];
         $executor = new BuiltInExecutor();
-        $outcome  = $executor(new ScopeStub(), self::makeRequest('echo', $args), self::makeContext());
+        $outcome = $executor(new ScopeStub(), self::makeRequest('echo', $args), self::makeContext());
 
         self::assertSame(Resolution::BuiltIn, $outcome->resolution);
         self::assertSame($args, $outcome->data);
@@ -45,7 +45,7 @@ final class BuiltInExecutorTest extends TestCase
     public function haltReturnsHaltOutcome(): void
     {
         $executor = new BuiltInExecutor();
-        $outcome  = $executor(new ScopeStub(), self::makeRequest('halt'), self::makeContext());
+        $outcome = $executor(new ScopeStub(), self::makeRequest('halt'), self::makeContext());
 
         self::assertSame(Resolution::BuiltIn, $outcome->resolution);
         self::assertTrue($outcome->halt);

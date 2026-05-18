@@ -78,13 +78,13 @@ final class Grant implements Canonicalizable
         sort($allowed);
 
         return [
-            'id'              => $this->id,
-            'subject'         => $this->subject,
+            'id' => $this->id,
+            'subject' => $this->subject,
             'allowed_effects' => $allowed,
-            'scope'           => $this->scope,
-            'hazard_ceiling'  => $this->hazardCeiling->value,
-            'expires_at'      => $this->expiresAt?->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d\TH:i:s.u\Z'),
-            'conditions'      => $this->conditions,
+            'scope' => $this->scope,
+            'hazard_ceiling' => $this->hazardCeiling->value,
+            'expires_at' => $this->expiresAt?->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d\TH:i:s.u\Z'),
+            'conditions' => $this->conditions,
         ];
     }
 
@@ -131,13 +131,13 @@ final class Grant implements Canonicalizable
     private static function dedupKinds(array $kinds): array
     {
         $seen = [];
-        $out  = [];
+        $out = [];
         foreach ($kinds as $kind) {
             if (isset($seen[$kind->value])) {
                 continue;
             }
             $seen[$kind->value] = true;
-            $out[]              = $kind;
+            $out[] = $kind;
         }
 
         return $out;

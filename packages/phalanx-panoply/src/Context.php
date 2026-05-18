@@ -65,9 +65,9 @@ final class Context implements Canonicalizable
     final public function toCanonical(): array
     {
         return [
-            'front'  => $this->frontSources,
+            'front' => $this->frontSources,
             'middle' => $this->middleSources,
-            'tail'   => $this->tailSources,
+            'tail' => $this->tailSources,
         ];
     }
 

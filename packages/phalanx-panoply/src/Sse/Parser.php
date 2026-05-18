@@ -61,7 +61,7 @@ final class Parser
         $this->buffer .= $chunk;
 
         while (($pos = strpos($this->buffer, "\n\n")) !== false) {
-            $eventText    = substr($this->buffer, 0, $pos);
+            $eventText = substr($this->buffer, 0, $pos);
             $this->buffer = substr($this->buffer, $pos + 2);
 
             $event = self::parseEvent($eventText);
@@ -83,7 +83,7 @@ final class Parser
             return;
         }
 
-        $event        = self::parseEvent($this->buffer);
+        $event = self::parseEvent($this->buffer);
         $this->buffer = '';
 
         if ($event !== null) {
@@ -93,7 +93,7 @@ final class Parser
 
     private static function parseEvent(string $eventText): ?Event
     {
-        $lines     = explode("\n", trim($eventText));
+        $lines = explode("\n", trim($eventText));
         $eventType = '';
         $dataLines = [];
 

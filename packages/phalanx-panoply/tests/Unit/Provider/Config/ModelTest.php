@@ -83,7 +83,7 @@ final class ModelTest extends TestCase
     #[Test]
     public function nullPricingIsPreserved(): void
     {
-        $model     = Model::of('leonidas', 'leonidas-v1', [], Capabilities::empty());
+        $model = Model::of('leonidas', 'leonidas-v1', [], Capabilities::empty());
         $canonical = $model->toCanonical();
 
         self::assertNull($canonical['input_pricing']);

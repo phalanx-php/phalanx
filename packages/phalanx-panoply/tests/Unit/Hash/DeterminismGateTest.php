@@ -66,7 +66,7 @@ final class DeterminismGateTest extends TestCase
         // JSON_PRESERVE_ZERO_FRACTION emits 1.0 as `1.0` — it must NOT be
         // conflated with integer 1. This keeps float/int distinct for
         // external JCS verifiers.
-        $intHash   = Canonical::of(1);
+        $intHash = Canonical::of(1);
         $floatHash = Canonical::of(1.0);
 
         self::assertNotSame(
@@ -92,10 +92,10 @@ final class DeterminismGateTest extends TestCase
     #[Test]
     public function timezoneDoesNotAffectInvocationHash(): void
     {
-        $utc    = new \DateTimeImmutable('2026-05-17T12:00:00.123456+00:00');
+        $utc = new \DateTimeImmutable('2026-05-17T12:00:00.123456+00:00');
         $athens = new \DateTimeImmutable('2026-05-17T15:00:00.123456+03:00');
 
-        $invUtc    = self::buildInvocation($utc);
+        $invUtc = self::buildInvocation($utc);
         $invAthens = self::buildInvocation($athens);
 
         self::assertSame(
@@ -116,7 +116,7 @@ final class DeterminismGateTest extends TestCase
         // with microseconds). Any future change to Canonical::normalize() or
         // Canonicalizable::toCanonical() that alters byte output surfaces here
         // with a clear "algorithm changed" failure — not a silent invalidation.
-        $inv  = self::deterministicInvocation();
+        $inv = self::deterministicInvocation();
         $hash = Canonical::of($inv);
 
         self::assertSame(
@@ -434,7 +434,7 @@ final class DeterminismGateTest extends TestCase
     #[Test]
     public function canonicalAlgorithmAnchorForCueEffectAuthorized(): void
     {
-        $at  = new \DateTimeImmutable('2026-05-17T12:00:00.123456+00:00');
+        $at = new \DateTimeImmutable('2026-05-17T12:00:00.123456+00:00');
         $cue = new CueEffectAuthorized(
             '01HZ000000000000000000AUTH01',
             1,
@@ -456,7 +456,7 @@ final class DeterminismGateTest extends TestCase
     #[Test]
     public function canonicalAlgorithmAnchorForCueInvocationCompleted(): void
     {
-        $at  = new \DateTimeImmutable('2026-05-17T12:00:00.123456+00:00');
+        $at = new \DateTimeImmutable('2026-05-17T12:00:00.123456+00:00');
         $cue = new CueInvocationCompleted(
             '01HZ000000000000000000COMP01',
             2,
@@ -477,7 +477,7 @@ final class DeterminismGateTest extends TestCase
     #[Test]
     public function canonicalAlgorithmAnchorForCueActivityStarted(): void
     {
-        $at  = new \DateTimeImmutable('2026-05-17T12:00:00.123456+00:00');
+        $at = new \DateTimeImmutable('2026-05-17T12:00:00.123456+00:00');
         $cue = new CueActivityStarted(
             '01HZ000000000000000000STRT01',
             3,
@@ -497,7 +497,7 @@ final class DeterminismGateTest extends TestCase
     #[Test]
     public function canonicalAlgorithmAnchorForCueArtifactFinalized(): void
     {
-        $at  = new \DateTimeImmutable('2026-05-17T12:00:00.123456+00:00');
+        $at = new \DateTimeImmutable('2026-05-17T12:00:00.123456+00:00');
         $cue = new CueArtifactFinalized(
             '01HZ000000000000000000FINL01',
             4,
@@ -523,9 +523,9 @@ final class DeterminismGateTest extends TestCase
     {
         // Dynamic context keys in non-alphabetical order — canonicalization must
         // sort through the full object graph, not just top-level arrays.
-        $at       = new \DateTimeImmutable('2026-05-17T12:00:00.123456+00:00');
-        $zebra    = self::buildInvocationWithContext(['zebra' => 1, 'apple' => 2], $at);
-        $apple    = self::buildInvocationWithContext(['apple' => 2, 'zebra' => 1], $at);
+        $at = new \DateTimeImmutable('2026-05-17T12:00:00.123456+00:00');
+        $zebra = self::buildInvocationWithContext(['zebra' => 1, 'apple' => 2], $at);
+        $apple = self::buildInvocationWithContext(['apple' => 2, 'zebra' => 1], $at);
         $zebraHash = Canonical::of($zebra);
         $appleHash = Canonical::of($apple);
 

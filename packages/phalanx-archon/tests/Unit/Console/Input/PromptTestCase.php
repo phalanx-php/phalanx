@@ -12,17 +12,17 @@ use PHPUnit\Framework\TestCase;
 
 abstract class PromptTestCase extends TestCase
 {
-    protected const string ENTER     = 'enter';
+    protected const string ENTER = 'enter';
     protected const string BACKSPACE = 'backspace';
-    protected const string UP        = 'up';
-    protected const string DOWN      = 'down';
-    protected const string LEFT      = 'left';
-    protected const string RIGHT     = 'right';
-    protected const string SPACE     = 'space';
-    protected const string TAB       = 'tab';
-    protected const string ESCAPE    = 'escape';
-    protected const string CTRL_C    = 'ctrl-c';
-    protected const string CTRL_U    = 'ctrl-u';
+    protected const string UP = 'up';
+    protected const string DOWN = 'down';
+    protected const string LEFT = 'left';
+    protected const string RIGHT = 'right';
+    protected const string SPACE = 'space';
+    protected const string TAB = 'tab';
+    protected const string ESCAPE = 'escape';
+    protected const string CTRL_C = 'ctrl-c';
+    protected const string CTRL_U = 'ctrl-u';
 
     protected Theme $theme;
 
@@ -33,17 +33,17 @@ abstract class PromptTestCase extends TestCase
 
     protected function setUp(): void
     {
-        $plain       = Style::new();
+        $plain = Style::new();
         $this->theme = new Theme(
             success: $plain,
             warning: $plain,
-            error:   $plain,
-            muted:   $plain,
-            accent:  $plain,
-            label:   $plain,
-            hint:    $plain,
-            border:  $plain,
-            active:  $plain,
+            error: $plain,
+            muted: $plain,
+            accent: $plain,
+            label: $plain,
+            hint: $plain,
+            border: $plain,
+            active: $plain,
         );
 
         $stream = fopen('php://memory', 'w+');
@@ -52,9 +52,9 @@ abstract class PromptTestCase extends TestCase
         }
 
         $this->stream = $stream;
-        $terminal     = new TerminalEnvironment(columns: 80, lines: 24);
+        $terminal = new TerminalEnvironment(columns: 80, lines: 24);
         $this->output = new StreamOutput($this->stream, $terminal);
-        $this->scope  = new StubScope();
+        $this->scope = new StubScope();
     }
 
     protected function tearDown(): void

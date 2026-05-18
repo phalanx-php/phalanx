@@ -12,6 +12,6 @@ namespace Phalanx\Panoply\Conversation\Record\PermissionMode;
 enum Mode: string
 {
     case Allow = 'allow';
-    case Ask   = 'ask';
-    case Deny  = 'deny';
+    case Ask = 'ask';
+    case Deny = 'deny';
 }

@@ -81,19 +81,19 @@ final class Invocation implements Canonicalizable
     public function toCanonical(): array
     {
         return [
-            'id'              => $this->id,
-            'agent_id'        => $this->agentId,
-            'activity_id'     => $this->activityId,
-            'context_hash'    => $this->contextHash,
-            'instructions'    => $this->instructions,
-            'output'          => $this->output->toCanonical(),
-            'effects'         => $this->effects->toCanonical(),
-            'provider'        => $this->provider->toCanonical(),
-            'transport'       => $this->transport->toCanonical(),
+            'id' => $this->id,
+            'agent_id' => $this->agentId,
+            'activity_id' => $this->activityId,
+            'context_hash' => $this->contextHash,
+            'instructions' => $this->instructions,
+            'output' => $this->output->toCanonical(),
+            'effects' => $this->effects->toCanonical(),
+            'provider' => $this->provider->toCanonical(),
+            'transport' => $this->transport->toCanonical(),
             'dynamic_context' => $this->dynamicContext,
             // Normalize to UTC and emit microsecond precision so hashes
             // match across hosts in any timezone.
-            'created_at'      => $this->createdAt->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d\TH:i:s.u\Z'),
+            'created_at' => $this->createdAt->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d\TH:i:s.u\Z'),
         ];
     }
 

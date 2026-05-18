@@ -23,7 +23,7 @@ final class GrantMonitorTest extends PhalanxTestCase
     #[Test]
     public function createNotificationTriggersFindAndReturnsGrant(): void
     {
-        $grant  = self::grant(Kind::FileWrite);
+        $grant = self::grant(Kind::FileWrite);
         $result = $this->scope->run(static function (ExecutionScope $scope) use ($grant): Grant {
             $grantStore = new StubGrantStore($grant);
             $connection = new PreloadedConnection(static function (Channel $channel): void {
@@ -44,7 +44,7 @@ final class GrantMonitorTest extends PhalanxTestCase
     #[Test]
     public function updateNotificationAlsoTriggersFindAndReturnsGrant(): void
     {
-        $grant  = self::grant(Kind::FileRead);
+        $grant = self::grant(Kind::FileRead);
         $result = $this->scope->run(static function (ExecutionScope $scope) use ($grant): Grant {
             $grantStore = new StubGrantStore($grant);
             $connection = new PreloadedConnection(static function (Channel $channel): void {
@@ -65,7 +65,7 @@ final class GrantMonitorTest extends PhalanxTestCase
     #[Test]
     public function deleteNotificationSkipsFindAndWaitsForNext(): void
     {
-        $grant  = self::grant(Kind::ShellExec);
+        $grant = self::grant(Kind::ShellExec);
         $result = $this->scope->run(static function (ExecutionScope $scope) use ($grant): Grant {
             $grantStore = new CountingGrantStore($grant);
             $connection = new PreloadedConnection(static function (Channel $channel): void {
@@ -113,7 +113,7 @@ final class GrantMonitorTest extends PhalanxTestCase
     #[Test]
     public function subscriptionIsKilledAfterGrantIsFound(): void
     {
-        $grant      = self::grant(Kind::FileWrite);
+        $grant = self::grant(Kind::FileWrite);
         $connection = new PreloadedConnection(static function (Channel $channel): void {
             $channel->emit(new SurrealLiveNotification(
                 SurrealLiveAction::Create,

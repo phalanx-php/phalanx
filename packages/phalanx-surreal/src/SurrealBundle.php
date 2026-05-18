@@ -38,7 +38,6 @@ class SurrealBundle extends ServiceBundle
         );
     }
 
-
     public function __construct(
         private ?SurrealConfig $config = null,
         private ?SurrealTransport $transport = null,

@@ -55,7 +55,7 @@ final class TextInputTest extends PromptTestCase
     public function validation_error_blocks_submit_until_corrected(): void
     {
         $callCount = 0;
-        $reader    = $this->reader(['a', 'b', self::ENTER, 'c', self::ENTER]);
+        $reader = $this->reader(['a', 'b', self::ENTER, 'c', self::ENTER]);
 
         $prompt = $this->input(validate: static function (string $v) use (&$callCount): ?string {
             $callCount++;

@@ -34,7 +34,7 @@ final class Unknown extends Record
     final protected function payload(): array
     {
         return [
-            'raw_json'    => $this->rawJson,
+            'raw_json' => $this->rawJson,
             'parser_hint' => $this->parserHint,
         ];
     }

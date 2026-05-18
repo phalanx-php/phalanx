@@ -23,7 +23,7 @@ final class ParserTest extends TestCase
     #[Test]
     public function parsesSystemMessageFromFixture(): void
     {
-        $parser  = new Parser();
+        $parser = new Parser();
         $records = $parser->parse(self::spartaFixture(), Options::lenient())->toArray();
 
         $systemMessages = array_filter(
@@ -36,7 +36,7 @@ final class ParserTest extends TestCase
     #[Test]
     public function parsesUserMessageFromFixture(): void
     {
-        $parser  = new Parser();
+        $parser = new Parser();
         $records = $parser->parse(self::spartaFixture(), Options::lenient())->toArray();
 
         $userMessages = array_filter($records, static fn ($r): bool => $r instanceof Message && $r->role === 'user');
@@ -46,7 +46,7 @@ final class ParserTest extends TestCase
     #[Test]
     public function parsesAssistantMessageFromFixture(): void
     {
-        $parser  = new Parser();
+        $parser = new Parser();
         $records = $parser->parse(self::spartaFixture(), Options::lenient())->toArray();
 
         $assistantMessages = array_filter(
@@ -59,7 +59,7 @@ final class ParserTest extends TestCase
     #[Test]
     public function parsesToolCallFromFixture(): void
     {
-        $parser  = new Parser();
+        $parser = new Parser();
         $records = $parser->parse(self::spartaFixture(), Options::lenient())->toArray();
 
         $toolCalls = array_filter($records, static fn ($r): bool => $r instanceof ToolCall);
@@ -73,11 +73,11 @@ final class ParserTest extends TestCase
     #[Test]
     public function toolCallPreservesArguments(): void
     {
-        $parser  = new Parser();
+        $parser = new Parser();
         $records = $parser->parse(self::spartaFixture(), Options::lenient())->toArray();
 
         $toolCalls = array_values(array_filter($records, static fn ($r): bool => $r instanceof ToolCall));
-        $tc        = $toolCalls[0];
+        $tc = $toolCalls[0];
 
         self::assertInstanceOf(ToolCall::class, $tc);
         self::assertArrayHasKey('formation', $tc->arguments);
@@ -87,7 +87,7 @@ final class ParserTest extends TestCase
     #[Test]
     public function parsesToolResultFromFixture(): void
     {
-        $parser  = new Parser();
+        $parser = new Parser();
         $records = $parser->parse(self::spartaFixture(), Options::lenient())->toArray();
 
         $toolResults = array_filter($records, static fn ($r): bool => $r instanceof ToolResult);
@@ -101,7 +101,7 @@ final class ParserTest extends TestCase
     #[Test]
     public function parsesSummaryAsMetadata(): void
     {
-        $parser  = new Parser();
+        $parser = new Parser();
         $records = $parser->parse(self::spartaFixture(), Options::lenient())->toArray();
 
         $metaRecords = array_filter($records, static fn ($r): bool => $r instanceof Metadata);
@@ -120,7 +120,7 @@ final class ParserTest extends TestCase
         file_put_contents($tmpFile, $line . "\n");
 
         try {
-            $parser  = new Parser();
+            $parser = new Parser();
             $records = $parser->parse(new Source($tmpFile), Options::lenient())->toArray();
 
             $unknown = array_filter($records, static fn ($r): bool => $r instanceof Unknown);
@@ -157,7 +157,7 @@ final class ParserTest extends TestCase
         file_put_contents($tmpFile, '{"type":"weird_type","timestamp":"2026-05-17T10:00:00.000Z"}' . "\n");
 
         try {
-            $parser  = new Parser();
+            $parser = new Parser();
             $records = $parser->parse(new Source($tmpFile), Options::silent())->toArray();
 
             self::assertCount(0, $records);
@@ -178,7 +178,7 @@ final class ParserTest extends TestCase
     #[Test]
     public function nonExistentFileReturnsEmptyLog(): void
     {
-        $parser  = new Parser();
+        $parser = new Parser();
         $records = $parser->parse(new Source('/does/not/exist.jsonl'), Options::lenient())->toArray();
 
         self::assertCount(0, $records);
@@ -190,7 +190,7 @@ final class ParserTest extends TestCase
         // parse() must return a Log without touching the filesystem. Filesystem
         // access only happens when the returned Log is iterated.
         $parser = new Parser();
-        $log    = $parser->parse(new Source('/nonexistent/path/that/does/not/exist.jsonl'), Options::lenient());
+        $log = $parser->parse(new Source('/nonexistent/path/that/does/not/exist.jsonl'), Options::lenient());
 
         self::assertInstanceOf(\Phalanx\Panoply\Conversation\Log::class, $log);
 
@@ -202,7 +202,7 @@ final class ParserTest extends TestCase
     #[Test]
     public function marathonFixtureProducesTwoMessages(): void
     {
-        $parser  = new Parser();
+        $parser = new Parser();
         $records = $parser->parse(self::marathonFixture(), Options::lenient())->toArray();
 
         $messages = array_filter($records, static fn ($r): bool => $r instanceof Message);

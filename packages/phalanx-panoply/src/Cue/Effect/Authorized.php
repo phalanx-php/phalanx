@@ -30,7 +30,7 @@ final class Authorized extends Cue
     {
         return [
             'effect_id' => $this->effectId,
-            'grant_id'  => $this->grantId,
+            'grant_id' => $this->grantId,
         ];
     }
 }

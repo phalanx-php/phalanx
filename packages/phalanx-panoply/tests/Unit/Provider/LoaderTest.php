@@ -39,7 +39,7 @@ final class LoaderTest extends TestCase
         // Point at a class that will never exist; Loader must resolve to null.
         $yaml = self::validYaml();
         $nonexistent = 'Phalanx\\\\Panoply\\\\__NONEXISTENT_FOR_TEST__\\\\Provider';
-        $yaml        = str_replace('wire_translator: null', "wire_translator: \"{$nonexistent}\"", $yaml);
+        $yaml = str_replace('wire_translator: null', "wire_translator: \"{$nonexistent}\"", $yaml);
 
         $config = Loader::fromString($yaml, 'test.yaml');
 
@@ -82,7 +82,7 @@ final class LoaderTest extends TestCase
     public function modelAliasesAreLoaded(): void
     {
         $config = Loader::fromFile(self::fixtureFile());
-        $model  = $config->models[0];
+        $model = $config->models[0];
 
         self::assertContains('opus', $model->aliases);
         self::assertContains('opus-4', $model->aliases);
@@ -277,7 +277,7 @@ YAML;
     #[Test]
     public function fakeYamlRoundTrip(): void
     {
-        $path   = dirname(__DIR__, 3) . '/src/Provider/Fake/fake.panoply.yaml';
+        $path = dirname(__DIR__, 3) . '/src/Provider/Fake/fake.panoply.yaml';
         $config = Loader::fromFile($path);
 
         self::assertSame('fake', $config->id);

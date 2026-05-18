@@ -30,8 +30,8 @@ final class Failed extends Cue
     final protected function payload(): array
     {
         return [
-            'effect_id'   => $this->effectId,
-            'reason'      => $this->reason,
+            'effect_id' => $this->effectId,
+            'reason' => $this->reason,
             'error_class' => $this->errorClass,
         ];
     }

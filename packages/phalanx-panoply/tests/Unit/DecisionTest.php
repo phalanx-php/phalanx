@@ -50,8 +50,8 @@ final class DecisionTest extends TestCase
     public function predicatesAreExclusive(): void
     {
         $granted = Decision::granted('g1');
-        $denied  = Decision::denied('no.grant');
-        $paused  = Decision::paused('pending olympus review');
+        $denied = Decision::denied('no.grant');
+        $paused = Decision::paused('pending olympus review');
 
         self::assertTrue($granted->isGranted());
         self::assertFalse($granted->isDenied());

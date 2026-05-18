@@ -77,7 +77,7 @@ final class ActivityLifecycleTest extends PhalanxTestCase
                 mcpRegistry: new McpRegistry(),
             );
 
-            $loop     = new Loop(new DefaultBuilder(), $provider, dispatcher: $dispatcher);
+            $loop = new Loop(new DefaultBuilder(), $provider, dispatcher: $dispatcher);
             $activity = new ActivityRunner($loop);
 
             return $activity($scope, new TestAgent(), new Activity\Config('act_lifecycle', Context::new(), 2));

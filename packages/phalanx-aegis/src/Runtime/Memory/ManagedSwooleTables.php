@@ -91,14 +91,14 @@ final class ManagedSwooleTables
 
         foreach (
             [
-            $this->claims,
-            $this->counters,
-            $this->resourceEvents,
-            $this->resourceAnnotations,
-            $this->resourceLeases,
-            $this->resourceEdges,
-            $this->resources,
-            $this->symbols,
+                $this->claims,
+                $this->counters,
+                $this->resourceEvents,
+                $this->resourceAnnotations,
+                $this->resourceLeases,
+                $this->resourceEdges,
+                $this->resources,
+                $this->symbols,
             ] as $table
         ) {
             $table->destroy();

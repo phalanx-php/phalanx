@@ -116,7 +116,7 @@ final class ChatRequestBuilderTest extends TestCase
             'key_test',
             'https://api.openai.com/v1',
         );
-        $body    = json_decode($request->body, associative: true);
+        $body = json_decode($request->body, associative: true);
 
         self::assertSame('gpt-5', $body['model']);
         self::assertTrue($body['stream']);
@@ -131,7 +131,7 @@ final class ChatRequestBuilderTest extends TestCase
             'key_test',
             'https://api.openai.com/v1',
         );
-        $body    = json_decode($request->body, associative: true);
+        $body = json_decode($request->body, associative: true);
 
         self::assertSame('system', $body['messages'][0]['role']);
         self::assertSame('Guard the agora. Report to the phalanx.', $body['messages'][0]['content']);
@@ -152,7 +152,7 @@ final class ChatRequestBuilderTest extends TestCase
             'key_test',
             'https://api.openai.com/v1',
         );
-        $body    = json_decode($request->body, associative: true);
+        $body = json_decode($request->body, associative: true);
 
         // System + 2 history messages.
         self::assertSame('user', $body['messages'][1]['role']);
@@ -163,13 +163,13 @@ final class ChatRequestBuilderTest extends TestCase
     public function userInputFallsBackToSingleUserMessage(): void
     {
         $invocation = self::invocationWith(['user_input' => 'Describe the pass at Thermopylae.']);
-        $request    = ChatRequestBuilder::build(
+        $request = ChatRequestBuilder::build(
             $invocation,
             self::model(),
             'key_test',
             'https://api.openai.com/v1',
         );
-        $body       = json_decode($request->body, associative: true);
+        $body = json_decode($request->body, associative: true);
 
         // system message + user message
         self::assertCount(2, $body['messages']);
@@ -186,7 +186,7 @@ final class ChatRequestBuilderTest extends TestCase
             'key_test',
             'https://api.openai.com/v1',
         );
-        $body    = json_decode($request->body, associative: true);
+        $body = json_decode($request->body, associative: true);
 
         self::assertArrayNotHasKey('tools', $body);
     }
@@ -203,7 +203,7 @@ final class ChatRequestBuilderTest extends TestCase
             'key_test',
             'https://api.openai.com/v1',
         );
-        $body    = json_decode($request->body, associative: true);
+        $body = json_decode($request->body, associative: true);
 
         self::assertArrayHasKey('tools', $body);
         self::assertCount(1, $body['tools']);
@@ -218,7 +218,7 @@ final class ChatRequestBuilderTest extends TestCase
             'key_test',
             'https://api.openai.com/v1',
         );
-        $body    = json_decode($request->body, associative: true);
+        $body = json_decode($request->body, associative: true);
 
         self::assertArrayNotHasKey('max_tokens', $body);
     }
@@ -247,7 +247,7 @@ final class ChatRequestBuilderTest extends TestCase
             'key_test',
             'https://api.openai.com/v1',
         );
-        $body    = json_decode($request->body, associative: true);
+        $body = json_decode($request->body, associative: true);
 
         self::assertArrayNotHasKey('temperature', $body);
         self::assertArrayNotHasKey('top_p', $body);

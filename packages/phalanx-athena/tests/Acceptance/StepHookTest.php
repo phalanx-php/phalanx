@@ -38,7 +38,7 @@ final class StepHookTest extends TestCase
         ], Capabilities::empty());
 
         $counter = new InvocationCounterHook();
-        $loop    = new Loop(new DefaultBuilder(), $provider, new SyncRuntimeFactory(), hooks: [$counter]);
+        $loop = new Loop(new DefaultBuilder(), $provider, new SyncRuntimeFactory(), hooks: [$counter]);
 
         $result = $loop(new ScopeStub(), new TestAgent(), new Activity\Config('act_hook', Context::new(), 1));
 

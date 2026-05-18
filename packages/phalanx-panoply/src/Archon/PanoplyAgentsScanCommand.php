@@ -71,7 +71,7 @@ final class PanoplyAgentsScanCommand implements Scopeable
         }
 
         $registry = new AttributeLoader($this->sourceDirectory, $this->namespacePrefix)->load();
-        $payload  = self::buildPayload($registry, $sourceMtime);
+        $payload = self::buildPayload($registry, $sourceMtime);
 
         self::writeCache($this->cacheOutputPath, $payload);
 
@@ -91,7 +91,7 @@ final class PanoplyAgentsScanCommand implements Scopeable
         );
 
         return [
-            'agents'       => array_values($fqcns),
+            'agents' => array_values($fqcns),
             'generated_at' => gmdate('c'),
             'source_mtime' => $sourceMtime,
         ];
@@ -111,7 +111,7 @@ final class PanoplyAgentsScanCommand implements Scopeable
             throw new \RuntimeException("Cannot create cache directory: {$dir}");
         }
 
-        $json   = json_encode($payload, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT);
+        $json = json_encode($payload, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT);
         $result = file_put_contents($path, $json);
 
         if ($result === false) {

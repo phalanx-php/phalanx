@@ -36,8 +36,8 @@ final class Sidechain extends Record
     {
         return [
             'parent_id' => $this->parentId,
-            'branch'    => $this->branch,
-            'summary'   => $this->summary,
+            'branch' => $this->branch,
+            'summary' => $this->summary,
         ];
     }
 }

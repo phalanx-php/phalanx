@@ -241,7 +241,7 @@ final class SettingsTest extends TestCase
     #[Test]
     public function tomlAvailableReflectsActualExtensionState(): void
     {
-        $settings         = self::noopSettings();
+        $settings = self::noopSettings();
         $extensionPresent = class_exists('Yosymfony\Toml\Toml');
 
         self::assertSame($extensionPresent, $settings->tomlAvailable);

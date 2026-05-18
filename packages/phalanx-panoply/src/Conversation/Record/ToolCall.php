@@ -36,7 +36,7 @@ final class ToolCall extends Record
     final protected function payload(): array
     {
         return [
-            'call_id'   => $this->callId,
+            'call_id' => $this->callId,
             'tool_name' => $this->toolName,
             'arguments' => $this->arguments,
         ];

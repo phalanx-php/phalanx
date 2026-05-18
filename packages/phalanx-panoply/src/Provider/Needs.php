@@ -53,7 +53,7 @@ final class Needs implements Canonicalizable
     {
         return [
             'preferences' => array_map(static fn (Preference $p): string => $p->value, $this->preferences),
-            'required'    => $this->required->toCanonical(),
+            'required' => $this->required->toCanonical(),
         ];
     }
 

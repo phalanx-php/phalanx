@@ -16,7 +16,7 @@ namespace Phalanx\Panoply\Conversation;
  */
 enum StrictMode: string
 {
-    case Loud    = 'loud';
+    case Loud = 'loud';
     case Lenient = 'lenient';
-    case Silent  = 'silent';
+    case Silent = 'silent';
 }

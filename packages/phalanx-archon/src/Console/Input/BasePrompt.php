@@ -35,14 +35,14 @@ use Phalanx\Scope\Suspendable;
  */
 abstract class BasePrompt
 {
-    protected string $state   = 'initial';
-    protected string $error   = '';
+    protected string $state = 'initial';
+    protected string $error = '';
     protected bool $validated = false;
 
     protected ?Suspendable $scope = null;
     private ?int $cachedInnerWidth = null;
 
-    private bool $settled         = false;
+    private bool $settled = false;
     private mixed $submittedValue = null;
     private ?StreamOutput $output = null;
 
@@ -58,7 +58,7 @@ abstract class BasePrompt
         KeyReader $reader,
     ): mixed {
         $this->output = $output;
-        $this->scope  = $scope;
+        $this->scope = $scope;
 
         if (!$reader->isInteractive) {
             return $this->defaultValue();
@@ -85,7 +85,7 @@ abstract class BasePrompt
                 default => throw new CancelledException('Prompt cancelled'),
             };
         } finally {
-            $this->scope  = null;
+            $this->scope = null;
             $this->output = null;
         }
     }
@@ -102,8 +102,8 @@ abstract class BasePrompt
         }
 
         assert($this->output !== null);
-        $this->settled        = true;
-        $this->state          = 'submit';
+        $this->settled = true;
+        $this->state = 'submit';
         $this->submittedValue = $value;
         $this->output->persist($this->renderAnswered());
     }
@@ -116,7 +116,7 @@ abstract class BasePrompt
 
         assert($this->output !== null);
         $this->settled = true;
-        $this->state   = 'cancel';
+        $this->state = 'cancel';
         $this->output->clear();
     }
 
@@ -128,7 +128,7 @@ abstract class BasePrompt
 
         assert($this->output !== null);
         $this->settled = true;
-        $this->state   = 'revert';
+        $this->state = 'revert';
         $this->output->update(' ');
         $this->output->clear();
     }
@@ -172,10 +172,10 @@ abstract class BasePrompt
         $borderStyle = $answered
             ? $this->theme->border
             : ($this->state === 'error' ? $this->theme->error : $this->theme->accent);
-        $topFill     = str_repeat('─', max(0, $width - mb_strlen($labelText) - 3));
+        $topFill = str_repeat('─', max(0, $width - mb_strlen($labelText) - 3));
 
-        $top    = $borderStyle->apply('─ ') . $styledTitle . ' ' . $borderStyle->apply($topFill);
-        $body   = explode("\n", $content);
+        $top = $borderStyle->apply('─ ') . $styledTitle . ' ' . $borderStyle->apply($topFill);
+        $body = explode("\n", $content);
         $bottom = $borderStyle->apply(str_repeat('─', $width));
 
         return implode("\n", [$top, ...$body, $bottom]);
@@ -260,13 +260,13 @@ abstract class BasePrompt
         $message = ($this->validate)($value);
 
         if ($message === null) {
-            $this->error     = '';
+            $this->error = '';
             $this->validated = true;
             return true;
         }
 
-        $this->state     = 'error';
-        $this->error     = $message;
+        $this->state = 'error';
+        $this->error = $message;
         $this->validated = true;
         return false;
     }

@@ -39,7 +39,7 @@ final class TurnTypesTest extends TestCase
     public function defaultBuilderCreatesPanoplyInvocation(): void
     {
         $builder = new DefaultBuilder();
-        $config  = new Config('act_1', Context::new(), 3, 2);
+        $config = new Config('act_1', Context::new(), 3, 2);
 
         $log = Log::from([
             new Message(

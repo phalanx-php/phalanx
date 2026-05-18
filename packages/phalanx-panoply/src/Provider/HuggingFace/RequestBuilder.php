@@ -43,8 +43,8 @@ final class RequestBuilder
         $messages = self::deriveMessages($invocation);
 
         $body = [
-            'model'    => $model->modelId,
-            'stream'   => true,
+            'model' => $model->modelId,
+            'stream' => true,
             'messages' => $messages,
         ];
 
@@ -75,8 +75,8 @@ final class RequestBuilder
 
         $headers = array_merge($defaultHeaders, [
             'authorization' => 'Bearer ' . $apiKey,
-            'content-type'  => 'application/json',
-            'accept'        => 'text/event-stream',
+            'content-type' => 'application/json',
+            'accept' => 'text/event-stream',
         ]);
 
         return Request::of(

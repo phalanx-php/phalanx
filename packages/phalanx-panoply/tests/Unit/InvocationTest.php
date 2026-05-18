@@ -86,7 +86,7 @@ final class InvocationTest extends TestCase
     public function timestampInDifferentTimezonesHashesIdentically(): void
     {
         $instant = new \DateTimeImmutable('2026-05-17T12:00:00+05:00');
-        $utc     = new \DateTimeImmutable('2026-05-17T07:00:00Z');
+        $utc = new \DateTimeImmutable('2026-05-17T07:00:00Z');
 
         $a = self::fixture(createdAt: $instant);
         $b = self::fixture(createdAt: $utc);

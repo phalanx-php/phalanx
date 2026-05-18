@@ -854,7 +854,7 @@ final class StoaRunner
             $inner = $scope;
         } else {
             $ownedScope = $this->app->createScope();
-            $inner      = $ownedScope;
+            $inner = $ownedScope;
         }
 
         try {

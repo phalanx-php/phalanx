@@ -38,7 +38,7 @@ final class FakeLoopTest extends TestCase
     public function fullCueStreamFlowsEndToEnd(): void
     {
         $provider = new Provider(self::script(), Capabilities::of(Capability::Reasoning));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
+        $stream = $provider->perform(self::invocation(), new Runtime());
 
         $allCues = $stream->toArray();
 
@@ -48,7 +48,7 @@ final class FakeLoopTest extends TestCase
     #[Test]
     public function tokensFilterYieldsOnlyTokenDeltaAndTokenStop(): void
     {
-        $provider    = new Provider(self::script(), Capabilities::of(Capability::Reasoning));
+        $provider = new Provider(self::script(), Capabilities::of(Capability::Reasoning));
         $tokenStream = $provider->perform(self::invocation(), new Runtime())->tokens();
 
         foreach ($tokenStream as $cue) {
@@ -65,7 +65,7 @@ final class FakeLoopTest extends TestCase
     #[Test]
     public function transcriptAssemblesCorrectly(): void
     {
-        $provider    = new Provider(self::script(), Capabilities::of(Capability::Reasoning));
+        $provider = new Provider(self::script(), Capabilities::of(Capability::Reasoning));
         $tokenStream = $provider->perform(self::invocation(), new Runtime())->tokens();
 
         $transcript = '';
@@ -81,7 +81,7 @@ final class FakeLoopTest extends TestCase
     #[Test]
     public function nonTokenCuesDoNotSurviveTokensFilter(): void
     {
-        $provider    = new Provider(self::script(), Capabilities::of(Capability::Reasoning));
+        $provider = new Provider(self::script(), Capabilities::of(Capability::Reasoning));
         $tokenStream = $provider->perform(self::invocation(), new Runtime())->tokens()->toArray();
 
         // Started and Completed must be filtered out; only 2 TokenDelta + 1 TokenStop survive.
@@ -92,7 +92,7 @@ final class FakeLoopTest extends TestCase
     public function streamYieldsNothingWhenScriptIsEmpty(): void
     {
         $provider = new Provider([], Capabilities::of(Capability::Reasoning));
-        $cues     = $provider->perform(self::invocation(), new Runtime())->toArray();
+        $cues = $provider->perform(self::invocation(), new Runtime())->toArray();
 
         self::assertSame([], $cues);
     }

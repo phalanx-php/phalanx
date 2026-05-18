@@ -30,8 +30,8 @@ final class RateLimited extends Cue
     final protected function payload(): array
     {
         return [
-            'provider'            => $this->provider,
-            'model'               => $this->model,
+            'provider' => $this->provider,
+            'model' => $this->model,
             'retry_after_seconds' => $this->retryAfterSeconds,
         ];
     }

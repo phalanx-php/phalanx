@@ -48,7 +48,7 @@ final class Composite implements Loader
         $this->conflicts = [];
 
         /** @var array<string, list<string>> $seen  agent id => list of FQCNs that emitted it */
-        $seen     = [];
+        $seen = [];
         $registry = Registry::empty();
 
         foreach ($this->loaders as $loader) {
@@ -56,12 +56,12 @@ final class Composite implements Loader
 
             /** @var Agent $agent */
             foreach ($sub->all()->toArray() as $agent) {
-                $id   = $agent->id;
+                $id = $agent->id;
                 $fqcn = $agent::class;
 
                 if (!$registry->has($id)) {
-                    $registry   = $registry->with($agent);
-                    $seen[$id]  = [$fqcn];
+                    $registry = $registry->with($agent);
+                    $seen[$id] = [$fqcn];
                 } else {
                     $seen[$id][] = $fqcn;
                 }

@@ -98,7 +98,7 @@ final class FormTest extends TestCase
     #[Test]
     public function emptyFormReturnsEmptyArray(): void
     {
-        $form   = new Form();
+        $form = new Form();
         $reader = new FakeKeyReader([]);
 
         self::assertSame([], $form->submit($this->scope, $this->output, $reader));
@@ -205,7 +205,7 @@ final class FormTest extends TestCase
 
     protected function setUp(): void
     {
-        $plain       = Style::new();
+        $plain = Style::new();
         $this->theme = new Theme($plain, $plain, $plain, $plain, $plain, $plain, $plain, $plain, $plain);
 
         $stream = fopen('php://memory', 'w+');
@@ -213,7 +213,7 @@ final class FormTest extends TestCase
         $this->stream = $stream;
 
         $this->output = new StreamOutput($stream, new TerminalEnvironment(columns: 80, lines: 24));
-        $this->scope  = new StubScope();
+        $this->scope = new StubScope();
     }
 
     protected function tearDown(): void

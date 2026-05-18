@@ -31,7 +31,7 @@ final class CompositeTest extends TestCase
     public function singleLoaderMergesItsRegistry(): void
     {
         $leonidas = new StubAgent('leonidas', Capability::Reasoning);
-        $loader   = new Composite(new Manual($leonidas));
+        $loader = new Composite(new Manual($leonidas));
 
         $registry = $loader->load();
 
@@ -63,11 +63,11 @@ final class CompositeTest extends TestCase
     #[Test]
     public function firstMatchWinsOnDuplicateId(): void
     {
-        $first  = new StubAgent('leonidas', Capability::Reasoning);
+        $first = new StubAgent('leonidas', Capability::Reasoning);
         $second = new StubAgent('leonidas', Capability::ToolUse);
 
         $composite = new Composite(new Manual($first), new Manual($second));
-        $registry  = $composite->load();
+        $registry = $composite->load();
 
         self::assertSame(1, $registry->all()->count());
         // First loader's agent must win.
@@ -77,7 +77,7 @@ final class CompositeTest extends TestCase
     #[Test]
     public function conflictsAreRecordedWhenDuplicateIdsEncountered(): void
     {
-        $first  = new StubAgent('leonidas', Capability::Reasoning);
+        $first = new StubAgent('leonidas', Capability::Reasoning);
         $second = new StubAgent('leonidas', Capability::ToolUse);
 
         $composite = new Composite(new Manual($first), new Manual($second));
@@ -106,7 +106,7 @@ final class CompositeTest extends TestCase
     #[Test]
     public function conflictsAreResetOnSubsequentLoadCalls(): void
     {
-        $first  = new StubAgent('leonidas', Capability::Reasoning);
+        $first = new StubAgent('leonidas', Capability::Reasoning);
         $second = new StubAgent('leonidas', Capability::ToolUse);
 
         $composite = new Composite(new Manual($first), new Manual($second));

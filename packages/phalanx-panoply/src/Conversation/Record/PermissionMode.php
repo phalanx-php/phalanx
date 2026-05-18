@@ -33,7 +33,7 @@ final class PermissionMode extends Record
     final protected function payload(): array
     {
         return [
-            'mode'  => $this->mode->value,
+            'mode' => $this->mode->value,
             'scope' => $this->scope,
         ];
     }

@@ -52,7 +52,7 @@ final class ConcurrentTaskList
 
     public function add(string $id, string $name, Executable|Scopeable $task): self
     {
-        $clone             = clone $this;
+        $clone = clone $this;
         $clone->tasks[$id] = ['name' => $name, 'task' => $task];
 
         return $clone;
@@ -64,9 +64,9 @@ final class ConcurrentTaskList
             return;
         }
 
-        $taskList    = $this->buildTaskList();
+        $taskList = $this->buildTaskList();
         $spinnerTick = 0;
-        $renderer    = $this->renderer ?? new LiveRegionRenderer($this->output);
+        $renderer = $this->renderer ?? new LiveRegionRenderer($this->output);
 
         foreach (array_keys($this->tasks) as $id) {
             $taskList->setState($id, TaskState::Running);

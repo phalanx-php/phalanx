@@ -33,11 +33,11 @@ final class RequestBuilder
         MessagesOptions $options = new MessagesOptions(),
     ): Request {
         $body = [
-            'model'      => $model->modelId,
+            'model' => $model->modelId,
             'max_tokens' => $options->maxTokens,
-            'system'     => $invocation->instructions,
-            'messages'   => self::deriveMessages($invocation),
-            'stream'     => true,
+            'system' => $invocation->instructions,
+            'messages' => self::deriveMessages($invocation),
+            'stream' => true,
         ];
 
         if ($options->temperature !== null) {
@@ -61,10 +61,10 @@ final class RequestBuilder
             method: 'POST',
             url: rtrim($baseUrl, '/') . '/v1/messages',
             headers: [
-                'x-api-key'         => $apiKey,
+                'x-api-key' => $apiKey,
                 'anthropic-version' => '2023-06-01',
-                'content-type'      => 'application/json',
-                'accept'            => 'text/event-stream',
+                'content-type' => 'application/json',
+                'accept' => 'text/event-stream',
             ],
             body: json_encode($body, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES),
         );

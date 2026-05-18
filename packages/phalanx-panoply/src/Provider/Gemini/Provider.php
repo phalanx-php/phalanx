@@ -43,7 +43,7 @@ final class Provider implements ProviderContract
 
     public function perform(Invocation $invocation, Runtime $runtime): Stream
     {
-        $request   = RequestBuilder::build(
+        $request = RequestBuilder::build(
             $invocation,
             $this->model,
             $this->apiKey,
@@ -52,7 +52,7 @@ final class Provider implements ProviderContract
             $this->defaultHeaders,
         );
         $transport = $this->transport;
-        $mapper    = new CueMapper($invocation);
+        $mapper = new CueMapper($invocation);
 
         return new Stream(static function () use ($transport, $request, $runtime, $mapper): \Generator {
             $parser = new Parser();

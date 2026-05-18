@@ -36,8 +36,8 @@ final class Message extends Record
     final protected function payload(): array
     {
         return [
-            'role'        => $this->role,
-            'text'        => $this->text,
+            'role' => $this->role,
+            'text' => $this->text,
             'attachments' => $this->attachments,
         ];
     }

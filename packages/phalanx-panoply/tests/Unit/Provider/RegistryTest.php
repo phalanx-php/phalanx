@@ -49,7 +49,7 @@ final class RegistryTest extends TestCase
     #[Test]
     public function getReturnsConfigById(): void
     {
-        $config   = self::config('sparta');
+        $config = self::config('sparta');
         $registry = Registry::empty()->with($config);
 
         self::assertSame($config, $registry->get('sparta'));

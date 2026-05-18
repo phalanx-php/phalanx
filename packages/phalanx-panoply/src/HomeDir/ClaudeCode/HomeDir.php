@@ -42,7 +42,7 @@ final class HomeDir implements HomeDirInterface, AdapterFactory
     public static function fromConfig(Config $config, string $home): self
     {
         // roots[0] is the homeDirPath; roots[1] (when present) is the sidecar.
-        $roots       = $config->roots;
+        $roots = $config->roots;
         $homeDirPath = Config::resolvePath($roots[0] ?? '~/.claude', $home);
         $sidecarPath = isset($roots[1]) ? Config::resolvePath($roots[1], $home) : null;
 
@@ -69,10 +69,10 @@ final class HomeDir implements HomeDirInterface, AdapterFactory
 
                 $slug = $entry->getFilename();
                 $path = Slug::decode($slug);
-                $dir  = $entry->getPathname();
+                $dir = $entry->getPathname();
 
                 $conversationCount = 0;
-                $latestMtime       = null;
+                $latestMtime = null;
 
                 $innerIter = new \DirectoryIterator($dir);
                 foreach ($innerIter as $file) {

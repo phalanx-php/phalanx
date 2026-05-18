@@ -58,7 +58,7 @@ final class TransportTest extends TestCase
     #[Test]
     public function cancellationIsHonoredBetweenChunks(): void
     {
-        $runtime   = new Runtime();
+        $runtime = new Runtime();
         $transport = new Transport([
             'POST https://api.olympus.example/v1/messages' => ['before', 'after'],
         ]);

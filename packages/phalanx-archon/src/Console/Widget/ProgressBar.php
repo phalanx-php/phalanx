@@ -24,7 +24,7 @@ final class ProgressBar
 
     public function render(int $value, int $total, int $width, string $label = ''): string
     {
-        $pctText  = sprintf(' %3d%%', (int) round($value / max(1, $total) * 100));
+        $pctText = sprintf(' %3d%%', (int) round($value / max(1, $total) * 100));
         $labelLen = $label !== '' ? mb_strlen($label) + 1 : 0;
         $barWidth = $width - 5 - $labelLen;
 
@@ -34,7 +34,7 @@ final class ProgressBar
         }
 
         $filled = (int) round($barWidth * $value / max(1, $total));
-        $empty  = $barWidth - $filled;
+        $empty = $barWidth - $filled;
 
         $bar = $this->theme->accent->apply(str_repeat($this->filledChar, $filled))
              . $this->theme->muted->apply(str_repeat($this->emptyChar, $empty));

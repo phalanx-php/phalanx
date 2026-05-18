@@ -51,7 +51,7 @@ final class EffectApprovalFlowTest extends PhalanxTestCase
     #[Test]
     public function pausedEffectFlowsThroughSuspenderAndResumesWithGrant(): void
     {
-        $at    = new \DateTimeImmutable('2026-05-18T10:00:00Z');
+        $at = new \DateTimeImmutable('2026-05-18T10:00:00Z');
         $grant = Grant::of(
             id: 'grant_approval',
             subject: 'athena-test-agent',
@@ -83,9 +83,9 @@ final class EffectApprovalFlowTest extends PhalanxTestCase
                 $registry = new ToolRegistry();
                 $registry->register('write_approved', ApprovalWriteTool::class);
 
-                $grantStore  = new ApprovalGrantStore($grant);
-                $authorizer  = new ApprovalOnceAuthorizer();
-                $dispatcher  = new Dispatcher(
+                $grantStore = new ApprovalGrantStore($grant);
+                $authorizer = new ApprovalOnceAuthorizer();
+                $dispatcher = new Dispatcher(
                     authorizer: $authorizer,
                     scorer: new Scorer(),
                     grantStore: $grantStore,
@@ -93,9 +93,9 @@ final class EffectApprovalFlowTest extends PhalanxTestCase
                     mcpRegistry: new McpRegistry(),
                 );
 
-                $monitor   = new ApprovalImmediateMonitor($grant, $grantStore);
+                $monitor = new ApprovalImmediateMonitor($grant, $grantStore);
                 $suspender = new Suspender($spyStore, $monitor);
-                $loop      = new Loop(new DefaultBuilder(), $provider, suspender: $suspender, dispatcher: $dispatcher);
+                $loop = new Loop(new DefaultBuilder(), $provider, suspender: $suspender, dispatcher: $dispatcher);
 
                 return $loop($scope, new TestAgent(), new Activity\Config('act_approval', Context::new(), 2));
             },
@@ -148,7 +148,7 @@ final class ApprovalSpyStore implements ExecutionStore
 
     public function suspendActivity(TaskScope $scope, string $activityId, Log $log, Requested $pendingEffect): void
     {
-        $this->suspended           = true;
+        $this->suspended = true;
         $this->suspendedActivityId = $activityId;
     }
 

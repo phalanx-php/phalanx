@@ -39,8 +39,8 @@ final class All extends ConversationSource
     ) {
         $this->availableSources = array_keys(array_filter([
             'sessions' => $sessions !== null,
-            'history'  => $history !== null,
-            'sqlite'   => $sqlite !== null,
+            'history' => $history !== null,
+            'sqlite' => $sqlite !== null,
         ]));
     }
 

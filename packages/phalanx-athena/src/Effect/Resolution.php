@@ -6,8 +6,8 @@ namespace Phalanx\Athena\Effect;
 
 enum Resolution: string
 {
-    case BuiltIn  = 'built-in';
+    case BuiltIn = 'built-in';
     case LocalTool = 'local-tool';
-    case McpTool   = 'mcp-tool';
-    case SubAgent  = 'sub-agent';
+    case McpTool = 'mcp-tool';
+    case SubAgent = 'sub-agent';
 }

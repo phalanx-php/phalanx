@@ -15,7 +15,7 @@ final class CommandResultTest extends TestCase
         $result = new CommandResult('echo hi', 0, "hi\n", 1.5);
 
         self::assertTrue($result->successful);
-        self::assertSame('hi'.PHP_EOL, $result->output);
+        self::assertSame('hi' . PHP_EOL, $result->output);
         self::assertSame(0, $result->exitCode);
         self::assertSame(0, $result->signal);
     }

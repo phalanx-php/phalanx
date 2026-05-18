@@ -49,7 +49,7 @@ final class Reader
         $this->buffer .= $chunk;
 
         while (($pos = strpos($this->buffer, "\n")) !== false) {
-            $line         = substr($this->buffer, 0, $pos);
+            $line = substr($this->buffer, 0, $pos);
             $this->buffer = substr($this->buffer, $pos + 1);
 
             $parsed = self::parseLine($line);
@@ -71,7 +71,7 @@ final class Reader
             return;
         }
 
-        $parsed       = self::parseLine($this->buffer);
+        $parsed = self::parseLine($this->buffer);
         $this->buffer = '';
 
         if ($parsed !== null) {

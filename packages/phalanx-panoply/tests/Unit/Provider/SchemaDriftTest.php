@@ -78,7 +78,7 @@ final class SchemaDriftTest extends TestCase
         foreach (self::MODEL_REQUIRED as $key) {
             $model = self::modelBlock();
             unset($model[$key]);
-            $yaml  = self::yamlWithModel($model);
+            $yaml = self::yamlWithModel($model);
 
             try {
                 Loader::fromString($yaml, "model-missing-{$key}.yaml");
@@ -96,7 +96,7 @@ final class SchemaDriftTest extends TestCase
     #[Test]
     public function modelAdditionalPropertiesFalseEnforced(): void
     {
-        $model                  = self::modelBlock();
+        $model = self::modelBlock();
         $model['unknown_field'] = true;
 
         $this->expectException(ValidationError::class);
@@ -113,7 +113,7 @@ final class SchemaDriftTest extends TestCase
     {
         foreach (self::CAPS_REQUIRED as $key) {
             $otherKey = $key === 'closed' ? 'custom' : 'closed';
-            $yaml     = <<<YAML
+            $yaml = <<<YAML
 id: olympus
 display_name: "Olympus"
 models: []
@@ -169,7 +169,7 @@ YAML;
     {
         foreach (self::TRANSPORT_REQUIRED as $key) {
             $otherKey = $key === 'streaming' ? 'cancellable' : 'streaming';
-            $yaml     = <<<YAML
+            $yaml = <<<YAML
 id: olympus
 display_name: "Olympus"
 models: []
@@ -240,11 +240,11 @@ YAML;
     {
         // Build a complete document from explicit key-value pairs, skipping $key.
         $all = [
-            'id'             => 'id: olympus',
-            'display_name'   => 'display_name: "Olympus Provider"',
-            'models'         => 'models: []',
-            'capabilities'   => "capabilities:\n  closed: []\n  custom: []",
-            'transport'      => "transport:\n  streaming: true\n  cancellable: true",
+            'id' => 'id: olympus',
+            'display_name' => 'display_name: "Olympus Provider"',
+            'models' => 'models: []',
+            'capabilities' => "capabilities:\n  closed: []\n  custom: []",
+            'transport' => "transport:\n  streaming: true\n  cancellable: true",
             'wire_translator' => 'wire_translator: null',
         ];
 
@@ -259,9 +259,9 @@ YAML;
     private static function modelBlock(): array
     {
         return [
-            'name'         => 'zeus-thunderbolt',
-            'model_id'     => 'zt-1',
-            'aliases'      => ['zeus'],
+            'name' => 'zeus-thunderbolt',
+            'model_id' => 'zt-1',
+            'aliases' => ['zeus'],
             'capabilities' => ['closed' => ['reasoning'], 'custom' => []],
         ];
     }
@@ -284,10 +284,10 @@ YAML;
             }
 
             if ($field === 'capabilities') {
-                $caps      = $model['capabilities'];
-                $lines[]   = '    capabilities:';
-                $lines[]   = '      closed: ' . json_encode($caps['closed'] ?? []);
-                $lines[]   = '      custom: ' . json_encode($caps['custom'] ?? []);
+                $caps = $model['capabilities'];
+                $lines[] = '    capabilities:';
+                $lines[] = '      closed: ' . json_encode($caps['closed'] ?? []);
+                $lines[] = '      custom: ' . json_encode($caps['custom'] ?? []);
             } elseif ($field === 'aliases') {
                 $lines[] = '    aliases: ' . json_encode($model['aliases']);
             } else {

@@ -55,7 +55,7 @@ final class ChatProvider implements ProviderContract
             $this->defaultHeaders,
         );
         $transport = $this->transport;
-        $mapper    = new ChatCueMapper($invocation);
+        $mapper = new ChatCueMapper($invocation);
 
         return new Stream(static function () use ($transport, $request, $runtime, $mapper): \Generator {
             $parser = new Parser();

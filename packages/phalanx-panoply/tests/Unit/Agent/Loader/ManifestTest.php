@@ -19,7 +19,7 @@ final class ManifestTest extends TestCase
     #[Test]
     public function validManifestRegistersAllAgents(): void
     {
-        $loader   = new Manifest(self::fixtureManifest());
+        $loader = new Manifest(self::fixtureManifest());
         $registry = $loader->load();
 
         self::assertInstanceOf(Registry::class, $registry);

@@ -14,7 +14,7 @@ final class ValidationErrorTest extends TestCase
     public function violationsListIsPreserved(): void
     {
         $violations = ['Missing required key: id', 'display_name must be non-empty'];
-        $error      = new ValidationError($violations, 'olympus.yaml');
+        $error = new ValidationError($violations, 'olympus.yaml');
 
         self::assertSame($violations, $error->violations);
     }

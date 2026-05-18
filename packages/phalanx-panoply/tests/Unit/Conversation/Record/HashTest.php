@@ -51,7 +51,7 @@ final class HashTest extends TestCase
     #[Test]
     public function timestampTimezoneIndependentForBaseAtField(): void
     {
-        $utc    = new \DateTimeImmutable('2026-05-17T12:00:00Z');
+        $utc = new \DateTimeImmutable('2026-05-17T12:00:00Z');
         $athens = new \DateTimeImmutable('2026-05-17T15:00:00+03:00');
 
         $a = new Message('rec_1', 0, $utc, role: 'user', text: 'hoplite');
@@ -91,8 +91,8 @@ final class HashTest extends TestCase
     #[Test]
     public function toolResultIsErrorChangesHash(): void
     {
-        $at  = self::at();
-        $ok  = new ToolResult('rec_3', 2, $at, callId: 'call_1', output: 'ok', isError: false);
+        $at = self::at();
+        $ok = new ToolResult('rec_3', 2, $at, callId: 'call_1', output: 'ok', isError: false);
         $err = new ToolResult('rec_3', 2, $at, callId: 'call_1', output: 'ok', isError: true);
 
         self::assertNotSame(Canonical::of($ok), Canonical::of($err));
@@ -136,9 +136,9 @@ final class HashTest extends TestCase
     #[Test]
     public function permissionModeDifferentModesHashDifferently(): void
     {
-        $at    = self::at();
+        $at = self::at();
         $allow = new PermissionMode('rec_6', 5, $at, mode: Mode::Allow);
-        $deny  = new PermissionMode('rec_6', 5, $at, mode: Mode::Deny);
+        $deny = new PermissionMode('rec_6', 5, $at, mode: Mode::Deny);
 
         self::assertNotSame(Canonical::of($allow), Canonical::of($deny));
     }
@@ -174,7 +174,7 @@ final class HashTest extends TestCase
     #[Test]
     public function differentSubclassesSameBaseFieldsHashDifferently(): void
     {
-        $at  = self::at();
+        $at = self::at();
         $msg = new Message('rec_1', 0, $at, role: 'user', text: 'thermopylae');
         $err = new Error('rec_1', 0, $at, code: 'e', message: 'thermopylae');
 

@@ -50,10 +50,10 @@ final class AthenaBundle extends ServiceBundle
 
     public function services(Services $services, AppContext $context): void
     {
-        $router      = $this->router;
+        $router = $this->router;
         $toolBundles = $this->toolBundles;
-        $hooks       = $this->hooks;
-        $mcpServers  = $this->mcpServers;
+        $hooks = $this->hooks;
+        $mcpServers = $this->mcpServers;
 
         // --- Singletons (concrete classes; interfaces aliased below) ---------
 

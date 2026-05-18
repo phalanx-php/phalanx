@@ -62,12 +62,12 @@ final class SurrealGrantStore implements Store
         }
 
         $this->surreal->upsert('athena_grant:' . $grant->id, [
-            'subject'         => $grant->subject,
+            'subject' => $grant->subject,
             'allowed_effects' => array_map(static fn(Kind $k): string => $k->value, $grant->allowedEffects),
-            'scope'           => $grant->scope,
-            'hazard_ceiling'  => $grant->hazardCeiling->value,
-            'expires_at'      => $grant->expiresAt?->format(\DateTimeInterface::RFC3339_EXTENDED),
-            'conditions'      => $grant->conditions,
+            'scope' => $grant->scope,
+            'hazard_ceiling' => $grant->hazardCeiling->value,
+            'expires_at' => $grant->expiresAt?->format(\DateTimeInterface::RFC3339_EXTENDED),
+            'conditions' => $grant->conditions,
         ]);
     }
 

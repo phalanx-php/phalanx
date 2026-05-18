@@ -45,14 +45,14 @@ final class Transport implements TransportContract
         $handle = curl_init();
         try {
             curl_setopt_array($handle, [
-                CURLOPT_URL            => $request->url,
+                CURLOPT_URL => $request->url,
                 CURLOPT_RETURNTRANSFER => false,
                 CURLOPT_CONNECTTIMEOUT => $this->connectTimeoutSeconds,
-                CURLOPT_TIMEOUT        => $this->totalTimeoutSeconds,
+                CURLOPT_TIMEOUT => $this->totalTimeoutSeconds,
                 CURLOPT_FOLLOWLOCATION => false,
-                CURLOPT_HTTPHEADER     => self::flattenHeaders($request->headers),
-                CURLOPT_NOPROGRESS     => false,
-                CURLOPT_WRITEFUNCTION  => static function (\CurlHandle $ch, string $data) use (&$chunks): int {
+                CURLOPT_HTTPHEADER => self::flattenHeaders($request->headers),
+                CURLOPT_NOPROGRESS => false,
+                CURLOPT_WRITEFUNCTION => static function (\CurlHandle $ch, string $data) use (&$chunks): int {
                     $chunks[] = $data;
                     return strlen($data);
                 },
@@ -73,7 +73,7 @@ final class Transport implements TransportContract
                 }
             }
 
-            $ok         = curl_exec($handle);
+            $ok = curl_exec($handle);
             $statusCode = (int) curl_getinfo($handle, CURLINFO_HTTP_CODE);
 
             if (!$ok) {

@@ -43,8 +43,8 @@ final class NumberInput extends TextInput
     protected function handleKey(string $key): void
     {
         match ($key) {
-            'up'    => $this->adjustBy($this->step),
-            'down'  => $this->adjustBy(-$this->step),
+            'up' => $this->adjustBy($this->step),
+            'down' => $this->adjustBy(-$this->step),
             default => $this->handleKeyFiltered($key),
         };
     }
@@ -77,8 +77,8 @@ final class NumberInput extends TextInput
 
         if (
             in_array($key, [
-            'left', 'right', 'home', 'end', 'backspace', 'delete',
-            'ctrl-a', 'ctrl-e', 'ctrl-b', 'ctrl-f', 'ctrl-w', 'ctrl-k',
+                'left', 'right', 'home', 'end', 'backspace', 'delete',
+                'ctrl-a', 'ctrl-e', 'ctrl-b', 'ctrl-f', 'ctrl-w', 'ctrl-k',
             ], true)
         ) {
             parent::handleKey($key);
@@ -117,8 +117,8 @@ final class NumberInput extends TextInput
 
     private function wrapValidate(?Closure $userValidate): Closure
     {
-        $min   = $this->min;
-        $max   = $this->max;
+        $min = $this->min;
+        $max = $this->max;
         $float = $this->float;
 
         return static function (mixed $value) use ($min, $max, $float, $userValidate): ?string {

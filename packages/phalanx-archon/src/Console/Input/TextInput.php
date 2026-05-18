@@ -21,7 +21,7 @@ use Phalanx\Archon\Console\Style\Theme;
 class TextInput extends BasePrompt
 {
     protected string $value = '';
-    protected int $cursor   = 0;
+    protected int $cursor = 0;
 
     public function __construct(
         Theme $theme,
@@ -33,7 +33,7 @@ class TextInput extends BasePrompt
         protected readonly ?Closure $transform = null,
     ) {
         parent::__construct($theme, $validate);
-        $this->value  = $default;
+        $this->value = $default;
         $this->cursor = mb_strlen($default);
     }
 
@@ -42,28 +42,28 @@ class TextInput extends BasePrompt
         $len = mb_strlen($this->value);
 
         match ($key) {
-            'left', 'ctrl-b'        => $this->cursor = max(0, $this->cursor - 1),
-            'right', 'ctrl-f'       => $this->cursor = min($len, $this->cursor + 1),
+            'left', 'ctrl-b' => $this->cursor = max(0, $this->cursor - 1),
+            'right', 'ctrl-f' => $this->cursor = min($len, $this->cursor + 1),
             'alt-left', 'alt-right' => $key === 'alt-left' ? $this->moveWordLeft() : $this->moveWordRight(),
-            'home', 'ctrl-a'        => $this->cursor = 0,
-            'end', 'ctrl-e'         => $this->cursor = $len,
-            'backspace'             => $this->deleteLeft(),
-            'delete'                => $this->deleteRight(),
-            'ctrl-w'                => $this->deleteWordLeft(),
-            'ctrl-k'                => $this->value = mb_substr($this->value, 0, $this->cursor),
-            'enter'                 => $this->submit($this->finalValue()),
-            'space'                 => $this->insertChar(' '),
-            default                 => $this->insertChar($key),
+            'home', 'ctrl-a' => $this->cursor = 0,
+            'end', 'ctrl-e' => $this->cursor = $len,
+            'backspace' => $this->deleteLeft(),
+            'delete' => $this->deleteRight(),
+            'ctrl-w' => $this->deleteWordLeft(),
+            'ctrl-k' => $this->value = mb_substr($this->value, 0, $this->cursor),
+            'enter' => $this->submit($this->finalValue()),
+            'space' => $this->insertChar(' '),
+            default => $this->insertChar($key),
         };
     }
 
     protected function renderActive(): string
     {
         $innerWidth = $this->innerWidth();
-        $title      = $this->state === 'error'
+        $title = $this->state === 'error'
             ? $this->theme->error->apply($this->label)
             : $this->theme->accent->apply($this->label);
-        $content    = '  ' . $this->valueWithCursor($innerWidth - 4);
+        $content = '  ' . $this->valueWithCursor($innerWidth - 4);
 
         if ($this->hint !== '') {
             $content .= "\n" . $this->theme->hint->apply('  ' . $this->hint);
@@ -200,7 +200,7 @@ class TextInput extends BasePrompt
             return;
         }
         $chars = mb_str_split($this->value);
-        $pos   = $this->cursor;
+        $pos = $this->cursor;
 
         while ($pos > 0 && $chars[$pos - 1] === ' ') {
             $pos--;
@@ -210,7 +210,7 @@ class TextInput extends BasePrompt
         }
 
         array_splice($chars, $pos, $this->cursor - $pos);
-        $this->value  = implode('', $chars);
+        $this->value = implode('', $chars);
         $this->cursor = $pos;
     }
 }

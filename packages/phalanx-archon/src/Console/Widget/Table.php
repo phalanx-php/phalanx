@@ -56,8 +56,8 @@ final class Table
         }
 
         $separatorWidth = ($colCount - 1) * 3; // ' │ ' between columns
-        $indent         = 2;
-        $available      = $terminalWidth - $separatorWidth - $indent;
+        $indent = 2;
+        $available = $terminalWidth - $separatorWidth - $indent;
 
         if (array_sum($maxWidths) <= $available) {
             return $maxWidths;
@@ -80,7 +80,7 @@ final class Table
     {
         $cells = [];
         foreach ($headers as $i => $h) {
-            $w      = $widths[$i] ?? mb_strlen($h);
+            $w = $widths[$i] ?? mb_strlen($h);
             $cells[] = $this->theme->label->apply(mb_str_pad($h, $w));
         }
 
@@ -89,7 +89,7 @@ final class Table
             $sep[] = $this->theme->border->apply(str_repeat('─', $w));
         }
 
-        $glue    = $this->theme->border->apply(' │ ');
+        $glue = $this->theme->border->apply(' │ ');
         $sepGlue = $this->theme->border->apply('─┼─');
 
         return '  ' . implode($glue, $cells) . "\n"
@@ -106,8 +106,8 @@ final class Table
     {
         $rendered = [];
         foreach ($cells as $i => $cell) {
-            $w         = $widths[$i] ?? mb_strlen((string) $cell);
-            $cell      = (string) $cell;
+            $w = $widths[$i] ?? mb_strlen((string) $cell);
+            $cell = (string) $cell;
             $cellWidth = mb_strlen($cell);
 
             if ($cellWidth > $w) {

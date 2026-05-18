@@ -32,9 +32,9 @@ final class AuthorizerScorerLoopTest extends TestCase
     #[Test]
     public function grantPermittingFileReadOnlyDeniesShellExec(): void
     {
-        $effect     = self::shellExecEffect();
-        $scored     = $effect->withHazard(new Scorer()->score($effect));
-        $grant      = Grant::of(
+        $effect = self::shellExecEffect();
+        $scored = $effect->withHazard(new Scorer()->score($effect));
+        $grant = Grant::of(
             id: 'grant_agora_01',
             subject: 'leonidas',
             allowedEffects: [EffectKind::FileRead, EffectKind::CodeSearch],
@@ -91,7 +91,7 @@ final class AuthorizerScorerLoopTest extends TestCase
     #[Test]
     public function nullGrantAlwaysDeniesBeforeScoring(): void
     {
-        $effect   = self::shellExecEffect()->withHazard(Hazard::High);
+        $effect = self::shellExecEffect()->withHazard(Hazard::High);
         $decision = new Authorizer()->evaluate($effect, null);
 
         self::assertTrue($decision->isDenied());
@@ -122,10 +122,10 @@ final class AuthorizerScorerLoopTest extends TestCase
     #[Test]
     public function deterministicRoundtrip(): void
     {
-        $scorer     = new Scorer();
+        $scorer = new Scorer();
         $authorizer = new Authorizer();
-        $effect     = self::shellExecEffect();
-        $grant      = Grant::of(
+        $effect = self::shellExecEffect();
+        $grant = Grant::of(
             id: 'grant_determ',
             subject: 'leonidas',
             allowedEffects: [EffectKind::ShellExec],
@@ -133,8 +133,8 @@ final class AuthorizerScorerLoopTest extends TestCase
             hazardCeiling: Hazard::Critical,
         );
 
-        $scored1  = $effect->withHazard($scorer->score($effect));
-        $scored2  = $effect->withHazard($scorer->score($effect));
+        $scored1 = $effect->withHazard($scorer->score($effect));
+        $scored2 = $effect->withHazard($scorer->score($effect));
         $decision1 = $authorizer->evaluate($scored1, $grant);
         $decision2 = $authorizer->evaluate($scored2, $grant);
 

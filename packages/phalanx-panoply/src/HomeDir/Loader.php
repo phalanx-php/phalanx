@@ -69,7 +69,7 @@ final class Loader
     private static function validateDocument(array $data): array
     {
         $violations = [];
-        $required   = ['id', 'display_name', 'roots', 'adapter'];
+        $required = ['id', 'display_name', 'roots', 'adapter'];
 
         foreach ($required as $key) {
             if (!array_key_exists($key, $data)) {

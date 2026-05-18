@@ -39,8 +39,8 @@ final class ResponsesProviderTest extends TestCase
     public function simpleFixtureEmitsExpectedCueTypes(): void
     {
         $provider = self::provider(self::script('responses-simple.sse'));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
-        $cues     = $stream->toArray();
+        $stream = $provider->perform(self::invocation(), new Runtime());
+        $cues = $stream->toArray();
 
         $types = array_map(static fn ($c) => $c::class, $cues);
 
@@ -55,7 +55,7 @@ final class ResponsesProviderTest extends TestCase
     public function simpleFixtureTranscriptAssembles(): void
     {
         $provider = self::provider(self::script('responses-simple.sse'));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
+        $stream = $provider->perform(self::invocation(), new Runtime());
 
         $transcript = '';
         foreach ($stream->tokens() as $cue) {
@@ -71,8 +71,8 @@ final class ResponsesProviderTest extends TestCase
     public function toolCallFixtureEmitsEffectRequestedAndArgumentsDeltas(): void
     {
         $provider = self::provider(self::script('responses-tool-call.sse'));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
-        $cues     = $stream->toArray();
+        $stream = $provider->perform(self::invocation(), new Runtime());
+        $cues = $stream->toArray();
 
         $types = array_map(static fn ($c) => $c::class, $cues);
 
@@ -84,8 +84,8 @@ final class ResponsesProviderTest extends TestCase
     public function reasoningFixtureEmitsReasoningChannelDelta(): void
     {
         $provider = self::provider(self::script('responses-reasoning.sse'));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
-        $cues     = $stream->toArray();
+        $stream = $provider->perform(self::invocation(), new Runtime());
+        $cues = $stream->toArray();
 
         $reasoningDeltas = array_values(array_filter(
             $cues,
@@ -101,8 +101,8 @@ final class ResponsesProviderTest extends TestCase
         // response.failed is the real OpenAI wire event; this fixture captures
         // the shape. Asserts that a Failed cue is emitted with the correct reason.
         $provider = self::provider(self::script('responses-failed.sse'));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
-        $cues     = $stream->toArray();
+        $stream = $provider->perform(self::invocation(), new Runtime());
+        $cues = $stream->toArray();
 
         $failed = array_values(array_filter($cues, static fn ($c) => $c instanceof Failed));
 
@@ -119,10 +119,10 @@ final class ResponsesProviderTest extends TestCase
         // responses-failed.sse: response.created fires first (stream starts), then
         // response.failed arrives and transport closes. Contract: exactly one Failed, zero Completed.
         $provider = self::provider(self::script('responses-failed.sse'));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
-        $cues     = $stream->toArray();
+        $stream = $provider->perform(self::invocation(), new Runtime());
+        $cues = $stream->toArray();
 
-        $failed    = array_values(array_filter($cues, static fn ($c) => $c instanceof Failed));
+        $failed = array_values(array_filter($cues, static fn ($c) => $c instanceof Failed));
         $completed = array_values(array_filter($cues, static fn ($c) => $c instanceof Completed));
 
         self::assertCount(1, $failed);
@@ -133,7 +133,7 @@ final class ResponsesProviderTest extends TestCase
     public function toolCallFixtureStopReasonIsToolUse(): void
     {
         $provider = self::provider(self::script('responses-tool-call.sse'));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
+        $stream = $provider->perform(self::invocation(), new Runtime());
 
         $stops = $stream->ofKind(TokenStop::class)->toArray();
 
@@ -148,8 +148,8 @@ final class ResponsesProviderTest extends TestCase
         // The defensive complete() wired in ResponsesProvider::perform() must emit
         // exactly one Completed — no duplicate, no missing.
         $provider = self::provider(self::script('responses-truncated.sse'));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
-        $cues     = $stream->toArray();
+        $stream = $provider->perform(self::invocation(), new Runtime());
+        $cues = $stream->toArray();
 
         $completed = array_values(array_filter($cues, static fn ($c) => $c instanceof Completed));
 
@@ -161,11 +161,11 @@ final class ResponsesProviderTest extends TestCase
     #[Test]
     public function cancellationMidStreamHaltsIteration(): void
     {
-        $runtime  = new Runtime();
+        $runtime = new Runtime();
         $provider = self::provider(self::script('responses-simple.sse'));
-        $stream   = $provider->perform(self::invocation(), $runtime);
+        $stream = $provider->perform(self::invocation(), $runtime);
 
-        $count     = 0;
+        $count = 0;
         $cancelled = false;
         try {
             foreach ($stream as $cue) {
@@ -220,7 +220,7 @@ final class ResponsesProviderTest extends TestCase
     #[Test]
     public function capabilitiesReadFromModel(): void
     {
-        $model    = Model::of(
+        $model = Model::of(
             name: 'o3-reasoning',
             modelId: 'o3',
             aliases: ['o3'],
@@ -241,7 +241,7 @@ final class ResponsesProviderTest extends TestCase
     private static function script(string $fixture): array
     {
         $path = dirname(__DIR__, 3) . '/Fixtures/Provider/OpenAI/' . $fixture;
-        $raw  = file_get_contents($path);
+        $raw = file_get_contents($path);
 
         if ($raw === false) {
             throw new \RuntimeException("Fixture not found: {$path}");

@@ -82,7 +82,7 @@ final class RuntimeTest extends TestCase
     public function onCancelRunsCleanupOnCancel(): void
     {
         $runtime = self::fixture();
-        $called  = false;
+        $called = false;
 
         $runtime->onCancel(static function () use (&$called): void {
             $called = true;
@@ -97,7 +97,7 @@ final class RuntimeTest extends TestCase
     public function cleanupsRunInLifoOrder(): void
     {
         $runtime = self::fixture();
-        $order   = [];
+        $order = [];
 
         $runtime->onCancel(static function () use (&$order): void {
             $order[] = 'first';
@@ -117,7 +117,7 @@ final class RuntimeTest extends TestCase
     #[Test]
     public function cancelIsDeduplicated(): void
     {
-        $runtime  = self::fixture();
+        $runtime = self::fixture();
         $callCount = 0;
 
         $runtime->onCancel(static function () use (&$callCount): void {
@@ -134,7 +134,7 @@ final class RuntimeTest extends TestCase
     public function cleanupDoesNotRunWithoutCancel(): void
     {
         $runtime = self::fixture();
-        $called  = false;
+        $called = false;
 
         $runtime->onCancel(static function () use (&$called): void {
             $called = true;

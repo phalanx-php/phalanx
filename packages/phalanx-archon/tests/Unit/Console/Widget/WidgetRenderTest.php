@@ -59,7 +59,7 @@ final class WidgetRenderTest extends TestCase
     #[Test]
     public function key_value_aligns_values_at_same_column(): void
     {
-        $out   = KeyValue::render(['A' => 'val-one', 'LongerKey' => 'val-two'], $this->theme);
+        $out = KeyValue::render(['A' => 'val-one', 'LongerKey' => 'val-two'], $this->theme);
         $lines = explode("\n", $out);
         self::assertSame(mb_strpos($lines[0], 'val-one'), mb_strpos($lines[1], 'val-two'));
     }
@@ -83,7 +83,7 @@ final class WidgetRenderTest extends TestCase
     #[Test]
     public function box_embeds_title_in_top_border_only(): void
     {
-        $out   = Box::render('content', 'MyTitle');
+        $out = Box::render('content', 'MyTitle');
         $lines = explode("\n", $out);
         self::assertStringContainsString('MyTitle', $lines[0]);
         self::assertStringNotContainsString('MyTitle', $lines[1]);
@@ -92,7 +92,7 @@ final class WidgetRenderTest extends TestCase
     #[Test]
     public function box_top_border_matches_requested_width(): void
     {
-        $out     = Box::render('hi', '', BoxStyle::Rounded, null, 30);
+        $out = Box::render('hi', '', BoxStyle::Rounded, null, 30);
         $topLine = explode("\n", $out)[0];
         self::assertSame(30, mb_strlen($topLine));
     }
@@ -145,7 +145,7 @@ final class WidgetRenderTest extends TestCase
     public function spinner_cycles_through_frames_and_wraps(): void
     {
         $spinner = new Spinner($this->theme, Spinner::LINE);
-        $count   = count(Spinner::LINE);
+        $count = count(Spinner::LINE);
 
         foreach (Spinner::LINE as $i => $char) {
             self::assertStringContainsString($char, $spinner->frame($i));
@@ -175,7 +175,7 @@ final class WidgetRenderTest extends TestCase
     public function table_compute_widths_shrinks_columns_when_overflow(): void
     {
         $headers = [str_repeat('A', 60), str_repeat('B', 60)];
-        $widths  = Table::computeWidths($headers, [], 80);
+        $widths = Table::computeWidths($headers, [], 80);
         self::assertLessThan(60, $widths[0]);
         self::assertLessThan(60, $widths[1]);
     }
@@ -183,9 +183,9 @@ final class WidgetRenderTest extends TestCase
     #[Test]
     public function table_header_contains_all_header_text_and_separator(): void
     {
-        $table  = new Table($this->theme);
+        $table = new Table($this->theme);
         $widths = [12, 8, 6];
-        $out    = $table->header(['IP Address', 'Status', 'FW Ver'], $widths);
+        $out = $table->header(['IP Address', 'Status', 'FW Ver'], $widths);
         self::assertStringContainsString('IP Address', $out);
         self::assertStringContainsString('Status', $out);
         self::assertStringContainsString('FW Ver', $out);
@@ -195,9 +195,9 @@ final class WidgetRenderTest extends TestCase
     #[Test]
     public function table_row_truncates_overflowing_cell_with_tilde(): void
     {
-        $table  = new Table($this->theme);
+        $table = new Table($this->theme);
         $widths = [10, 6];
-        $out    = $table->row(['192.168.1.100', 'OK'], $widths);
+        $out = $table->row(['192.168.1.100', 'OK'], $widths);
         self::assertStringContainsString('~', $out);
         self::assertStringContainsString('OK', $out);
     }
@@ -270,13 +270,13 @@ final class WidgetRenderTest extends TestCase
         $this->theme = new Theme(
             success: $plain,
             warning: $plain,
-            error:   $plain,
-            muted:   $plain,
-            accent:  $plain,
-            label:   $plain,
-            hint:    $plain,
-            border:  $plain,
-            active:  $plain,
+            error: $plain,
+            muted: $plain,
+            accent: $plain,
+            label: $plain,
+            hint: $plain,
+            border: $plain,
+            active: $plain,
         );
     }
 }

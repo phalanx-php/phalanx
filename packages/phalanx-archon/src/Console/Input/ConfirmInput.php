@@ -28,13 +28,13 @@ final class ConfirmInput extends BasePrompt
     protected function handleKey(string $key): void
     {
         match ($key) {
-            'left', 'h', 'ctrl-b'  => $this->confirmed = true,
+            'left', 'h', 'ctrl-b' => $this->confirmed = true,
             'right', 'l', 'ctrl-f' => $this->confirmed = false,
-            'tab'                  => $this->confirmed = !$this->confirmed,
-            'y'                    => $this->submitNow(true),
-            'n'                    => $this->submitNow(false),
-            'enter'                => $this->submit($this->confirmed),
-            default                => null,
+            'tab' => $this->confirmed = !$this->confirmed,
+            'y' => $this->submitNow(true),
+            'n' => $this->submitNow(false),
+            'enter' => $this->submit($this->confirmed),
+            default => null,
         };
     }
 

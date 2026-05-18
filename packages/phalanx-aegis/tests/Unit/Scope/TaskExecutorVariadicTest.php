@@ -34,7 +34,7 @@ final class TaskExecutorVariadicTest extends PhalanxTestCase
         // foreach must still preserve exotic string keys end-to-end.
         $this->scope->run(static function (ExecutionScope $scope): void {
             $tasks = [
-                'k.dot'  => Task::of(static fn(): string => 'ok'),
+                'k.dot' => Task::of(static fn(): string => 'ok'),
                 'k-dash' => Task::of(static function (): never {
                     throw new RuntimeException('boom');
                 }),

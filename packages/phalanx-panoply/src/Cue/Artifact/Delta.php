@@ -30,9 +30,9 @@ final class Delta extends Cue
     final protected function payload(): array
     {
         return [
-            'artifact_id'   => $this->artifactId,
+            'artifact_id' => $this->artifactId,
             'content_delta' => $this->contentDelta,
-            'path'          => $this->path,
+            'path' => $this->path,
         ];
     }
 }

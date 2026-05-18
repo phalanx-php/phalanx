@@ -28,7 +28,7 @@ final class SignalCollector
     {
         usort($this->signals, static fn(Signal $a, Signal $b) => $a->priority->value <=> $b->priority->value);
 
-        $result        = array_map(static fn(Signal $s) => $s->toArray(), $this->signals);
+        $result = array_map(static fn(Signal $s) => $s->toArray(), $this->signals);
         $this->signals = [];
 
         return $result;

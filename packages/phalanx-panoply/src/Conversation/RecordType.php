@@ -11,14 +11,14 @@ namespace Phalanx\Panoply\Conversation;
  */
 enum RecordType: string
 {
-    case Message        = 'record.message';
-    case ToolCall       = 'record.tool_call';
-    case ToolResult     = 'record.tool_result';
-    case Attachment     = 'record.attachment';
-    case FileSnapshot   = 'record.file_snapshot';
+    case Message = 'record.message';
+    case ToolCall = 'record.tool_call';
+    case ToolResult = 'record.tool_result';
+    case Attachment = 'record.attachment';
+    case FileSnapshot = 'record.file_snapshot';
     case PermissionMode = 'record.permission_mode';
-    case Sidechain      = 'record.sidechain';
-    case Metadata       = 'record.metadata';
-    case Error          = 'record.error';
-    case Unknown        = 'record.unknown';
+    case Sidechain = 'record.sidechain';
+    case Metadata = 'record.metadata';
+    case Error = 'record.error';
+    case Unknown = 'record.unknown';
 }

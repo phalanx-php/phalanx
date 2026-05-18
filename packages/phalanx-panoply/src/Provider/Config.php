@@ -75,16 +75,16 @@ final class Config implements Canonicalizable
     public function toCanonical(): array
     {
         return [
-            'id'              => $this->id,
-            'display_name'    => $this->displayName,
-            'models'          => array_map(
+            'id' => $this->id,
+            'display_name' => $this->displayName,
+            'models' => array_map(
                 static fn (Config\Model $m): array => $m->toCanonical(),
                 $this->models,
             ),
-            'capabilities'    => $this->capabilities->toCanonical(),
-            'transport'       => $this->transport->toCanonical(),
+            'capabilities' => $this->capabilities->toCanonical(),
+            'transport' => $this->transport->toCanonical(),
             'wire_translator' => $this->wireTranslator,
-            'base_url'        => $this->baseUrl,
+            'base_url' => $this->baseUrl,
             'default_headers' => $this->defaultHeaders,
         ];
     }

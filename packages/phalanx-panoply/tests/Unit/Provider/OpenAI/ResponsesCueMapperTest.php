@@ -35,7 +35,7 @@ final class ResponsesCueMapperTest extends TestCase
     public function responseCreatedYieldsResolvedThenStarted(): void
     {
         $mapper = self::fixture();
-        $event  = new Event('response.created', [
+        $event = new Event('response.created', [
             'response' => ['id' => 'resp_01', 'model' => 'o3'],
         ]);
 
@@ -50,7 +50,7 @@ final class ResponsesCueMapperTest extends TestCase
     public function resolvedCueCarriesProviderAndModel(): void
     {
         $mapper = self::fixture();
-        $event  = new Event('response.created', ['response' => ['model' => 'o3']]);
+        $event = new Event('response.created', ['response' => ['model' => 'o3']]);
 
         $cues = iterator_to_array($mapper->translate($event), preserve_keys: false);
 
@@ -62,7 +62,7 @@ final class ResponsesCueMapperTest extends TestCase
     public function outputTextDeltaYieldsTokenDeltaOnMessageChannel(): void
     {
         $mapper = self::fixture();
-        $event  = new Event('response.output_text.delta', ['delta' => 'Leonidas stood firm at Thermopylae.']);
+        $event = new Event('response.output_text.delta', ['delta' => 'Leonidas stood firm at Thermopylae.']);
 
         $cues = iterator_to_array($mapper->translate($event), preserve_keys: false);
 
@@ -76,7 +76,7 @@ final class ResponsesCueMapperTest extends TestCase
     public function reasoningDeltaYieldsTokenDeltaOnReasoningChannel(): void
     {
         $mapper = self::fixture();
-        $event  = new Event('response.reasoning.delta', ['delta' => 'Apollo considers the strategy.']);
+        $event = new Event('response.reasoning.delta', ['delta' => 'Apollo considers the strategy.']);
 
         $cues = iterator_to_array($mapper->translate($event), preserve_keys: false);
 
@@ -89,7 +89,7 @@ final class ResponsesCueMapperTest extends TestCase
     public function functionCallCreatedYieldsEffectRequested(): void
     {
         $mapper = self::fixture();
-        $event  = new Event('response.function_call.created', [
+        $event = new Event('response.function_call.created', [
             'item' => ['id' => 'fc_agora01', 'name' => 'search_records', 'type' => 'function_call'],
         ]);
 
@@ -113,7 +113,7 @@ final class ResponsesCueMapperTest extends TestCase
 
         $event = new Event('response.function_call_arguments.delta', [
             'item_id' => 'fc_sparta01',
-            'delta'   => '{"count":300}',
+            'delta' => '{"count":300}',
         ]);
 
         $cues = iterator_to_array($mapper->translate($event), preserve_keys: false);
@@ -128,11 +128,11 @@ final class ResponsesCueMapperTest extends TestCase
     public function responseCompletedWithoutToolCallsStopReasonIsEndOfTurn(): void
     {
         $mapper = self::fixture();
-        $event  = new Event('response.completed', [
+        $event = new Event('response.completed', [
             'response' => ['status' => 'completed', 'usage' => ['input_tokens' => 10, 'output_tokens' => 5]],
         ]);
 
-        $cues  = iterator_to_array($mapper->translate($event), preserve_keys: false);
+        $cues = iterator_to_array($mapper->translate($event), preserve_keys: false);
         $stops = array_values(array_filter($cues, static fn ($c) => $c instanceof TokenStop));
 
         self::assertCount(1, $stops);
@@ -155,8 +155,8 @@ final class ResponsesCueMapperTest extends TestCase
             'response' => ['status' => 'completed', 'usage' => ['input_tokens' => 30, 'output_tokens' => 12]],
         ]);
 
-        $cues      = iterator_to_array($mapper->translate($completedEvent), preserve_keys: false);
-        $stops     = array_values(array_filter($cues, static fn ($c) => $c instanceof TokenStop));
+        $cues = iterator_to_array($mapper->translate($completedEvent), preserve_keys: false);
+        $stops = array_values(array_filter($cues, static fn ($c) => $c instanceof TokenStop));
         $completed = array_values(array_filter($cues, static fn ($c) => $c instanceof InvocationCompleted));
 
         self::assertCount(1, $stops);
@@ -169,10 +169,10 @@ final class ResponsesCueMapperTest extends TestCase
     public function responseCompletedYieldsTokenStopThenFinalUsageThenCompleted(): void
     {
         $mapper = self::fixture();
-        $event  = new Event('response.completed', [
+        $event = new Event('response.completed', [
             'response' => [
                 'status' => 'completed',
-                'usage'  => ['input_tokens' => 40, 'output_tokens' => 20, 'total_tokens' => 60],
+                'usage' => ['input_tokens' => 40, 'output_tokens' => 20, 'total_tokens' => 60],
             ],
         ]);
 
@@ -192,11 +192,11 @@ final class ResponsesCueMapperTest extends TestCase
         // OpenAI Responses API uses response.failed (not response.error).
         // Error info is nested under response.error in the payload.
         $mapper = self::fixture();
-        $event  = new Event('response.failed', [
+        $event = new Event('response.failed', [
             'response' => [
-                'id'     => 'resp_FAIL01',
+                'id' => 'resp_FAIL01',
                 'status' => 'failed',
-                'error'  => ['code' => 'server_error', 'message' => 'Olympus overloaded.'],
+                'error' => ['code' => 'server_error', 'message' => 'Olympus overloaded.'],
             ],
         ]);
 
@@ -213,9 +213,9 @@ final class ResponsesCueMapperTest extends TestCase
     {
         // Some error shapes only have top-level message/code (not nested under response.error).
         $mapper = self::fixture();
-        $event  = new Event('response.failed', [
+        $event = new Event('response.failed', [
             'message' => 'Marathon dispatch failed.',
-            'code'    => 'timeout',
+            'code' => 'timeout',
         ]);
 
         $cues = iterator_to_array($mapper->translate($event), preserve_keys: false);
@@ -232,7 +232,7 @@ final class ResponsesCueMapperTest extends TestCase
         // response.error is NOT the real OpenAI wire event — it must yield nothing
         // (forward-compat unknown-event path) rather than silently handling errors.
         $mapper = self::fixture();
-        $event  = new Event('response.error', ['message' => 'should be ignored']);
+        $event = new Event('response.error', ['message' => 'should be ignored']);
 
         $cues = iterator_to_array($mapper->translate($event), preserve_keys: false);
 
@@ -243,7 +243,7 @@ final class ResponsesCueMapperTest extends TestCase
     public function unknownEventTypeYieldsNoCues(): void
     {
         $mapper = self::fixture();
-        $event  = new Event('response.rate_limit', []);
+        $event = new Event('response.rate_limit', []);
 
         $cues = iterator_to_array($mapper->translate($event), preserve_keys: false);
 

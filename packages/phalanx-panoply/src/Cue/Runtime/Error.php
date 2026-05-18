@@ -30,8 +30,8 @@ final class Error extends Cue
     final protected function payload(): array
     {
         return [
-            'message'     => $this->message,
-            'code'        => $this->code,
+            'message' => $this->message,
+            'code' => $this->code,
             'error_class' => $this->errorClass,
         ];
     }

@@ -33,7 +33,7 @@ final class Metadata extends Record
     final protected function payload(): array
     {
         return [
-            'key'   => $this->key,
+            'key' => $this->key,
             'value' => $this->value,
         ];
     }

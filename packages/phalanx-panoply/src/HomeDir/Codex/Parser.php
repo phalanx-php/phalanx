@@ -49,9 +49,9 @@ final class Parser implements ParserInterface
 
         return match (true) {
             $source instanceof Sessions => $this->parseSessions($source, $mode),
-            $source instanceof History  => $this->parseHistory($source, $mode),
-            $source instanceof Sqlite   => $this->parseSqlite($source, $mode),
-            $source instanceof All      => $this->parseAll($source, $mode),
+            $source instanceof History => $this->parseHistory($source, $mode),
+            $source instanceof Sqlite => $this->parseSqlite($source, $mode),
+            $source instanceof All => $this->parseAll($source, $mode),
             default => throw new \InvalidArgumentException(
                 sprintf(
                     '%s does not support source type %s',
@@ -70,11 +70,11 @@ final class Parser implements ParserInterface
      */
     private static function rowToRecords(array $row, int $seq, StrictMode $mode): \Generator
     {
-        $type    = isset($row['type']) && is_string($row['type']) ? $row['type'] : '';
-        $role    = isset($row['role']) && is_string($row['role']) ? $row['role'] : '';
+        $type = isset($row['type']) && is_string($row['type']) ? $row['type'] : '';
+        $role = isset($row['role']) && is_string($row['role']) ? $row['role'] : '';
         $content = isset($row['content']) && is_string($row['content']) ? $row['content'] : '';
-        $ts      = self::extractTimestamp($row);
-        $id      = Id::generate();
+        $ts = self::extractTimestamp($row);
+        $id = Id::generate();
 
         switch ($type) {
             case 'message':
@@ -87,7 +87,7 @@ final class Parser implements ParserInterface
             case 'tool_call':
                 $toolName = isset($row['tool_name']) && is_string($row['tool_name'])
                     ? $row['tool_name'] : 'unknown_tool';
-                $callId   = isset($row['call_id']) && is_string($row['call_id'])
+                $callId = isset($row['call_id']) && is_string($row['call_id'])
                     ? $row['call_id'] : Id::generate();
                 $arguments = [];
 
@@ -109,7 +109,7 @@ final class Parser implements ParserInterface
                 break;
 
             case 'tool_result':
-                $callId  = isset($row['call_id']) && is_string($row['call_id']) ? $row['call_id'] : '';
+                $callId = isset($row['call_id']) && is_string($row['call_id']) ? $row['call_id'] : '';
                 $isError = isset($row['is_error']) && (bool) $row['is_error'];
                 yield new ToolResult(
                     $id,
@@ -256,7 +256,7 @@ final class Parser implements ParserInterface
             return Log::from([]);
         }
 
-        $logs  = array_values($logs);
+        $logs = array_values($logs);
         $first = array_shift($logs);
 
         /** @var Log $first */

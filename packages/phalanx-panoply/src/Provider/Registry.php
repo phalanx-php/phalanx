@@ -40,7 +40,7 @@ final class Registry
             }
         }
 
-        $configs              = $this->configs;
+        $configs = $this->configs;
         $configs[$config->id] = $config;
 
         return new self($configs);

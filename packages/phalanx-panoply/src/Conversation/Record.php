@@ -49,14 +49,14 @@ abstract class Record implements Canonicalizable
     final public function toCanonical(): array
     {
         return [
-            'type'     => $this->type->value,
-            'id'       => $this->id,
+            'type' => $this->type->value,
+            'id' => $this->id,
             'sequence' => $this->sequence,
             // Normalize to UTC and emit microsecond precision with a literal
             // 'Z' suffix; preserves microsecond determinism across hosts in
             // any timezone.
-            'at'       => $this->at->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d\TH:i:s.u\Z'),
-            'payload'  => $this->payload(),
+            'at' => $this->at->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d\TH:i:s.u\Z'),
+            'payload' => $this->payload(),
         ];
     }
 

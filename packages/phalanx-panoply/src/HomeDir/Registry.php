@@ -75,7 +75,7 @@ final class Registry
             }
 
             /** @var class-string<AdapterFactory> $adapterClass */
-            $adapter  = $adapterClass::fromConfig($config, $home);
+            $adapter = $adapterClass::fromConfig($config, $home);
             $registry = $registry->with($config->id, $adapter);
         }
 
@@ -87,7 +87,7 @@ final class Registry
      */
     public function with(string $id, HomeDirInterface $homeDir): self
     {
-        $homeDirs      = $this->homeDirs;
+        $homeDirs = $this->homeDirs;
         $homeDirs[$id] = $homeDir;
 
         return new self($homeDirs);

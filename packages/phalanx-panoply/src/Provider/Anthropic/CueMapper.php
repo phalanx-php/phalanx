@@ -119,11 +119,11 @@ final class CueMapper
     private static function translateStopReason(string $raw): StopReason
     {
         return match ($raw) {
-            'end_turn'      => StopReason::EndOfTurn,
-            'max_tokens'    => StopReason::MaxTokens,
+            'end_turn' => StopReason::EndOfTurn,
+            'max_tokens' => StopReason::MaxTokens,
             'stop_sequence' => StopReason::StopSequence,
-            'tool_use'      => StopReason::ToolUse,
-            default         => StopReason::EndOfTurn,
+            'tool_use' => StopReason::ToolUse,
+            default => StopReason::EndOfTurn,
         };
     }
 
@@ -133,11 +133,11 @@ final class CueMapper
     private function onMessageStart(Event $event, \DateTimeImmutable $now): \Generator
     {
         /** @var array{message?: array{model?: string, usage?: array{input_tokens?: int}}} $data */
-        $data  = $event->data;
+        $data = $event->data;
         $model = (string) ($data['message']['model'] ?? '');
 
         $this->inputTokens = (int) ($data['message']['usage']['input_tokens'] ?? 0);
-        $this->started     = true;
+        $this->started = true;
 
         yield $this->resolved('anthropic', $model, $now);
         yield $this->invocationStarted($now);
@@ -149,15 +149,15 @@ final class CueMapper
     private function onContentBlockStart(Event $event, \DateTimeImmutable $now): \Generator
     {
         /** @var array{index?: int, content_block?: array{type?: string, id?: string}} $data */
-        $data  = $event->data;
+        $data = $event->data;
         $index = (int) ($data['index'] ?? 0);
         $block = $data['content_block'] ?? [];
-        $type  = (string) ($block['type'] ?? '');
+        $type = (string) ($block['type'] ?? '');
 
         if ($type === 'tool_use') {
-            $effectId                    = (string) ($block['id'] ?? Id::generate());
-            $this->activeBlocks[$index]  = ['type' => 'tool_use', 'effectId' => $effectId];
-            $toolName                    = (string) ($block['name'] ?? 'unknown');
+            $effectId = (string) ($block['id'] ?? Id::generate());
+            $this->activeBlocks[$index] = ['type' => 'tool_use', 'effectId' => $effectId];
+            $toolName = (string) ($block['name'] ?? 'unknown');
 
             yield new Requested(
                 id: (string) Id::ulid(),
@@ -183,11 +183,11 @@ final class CueMapper
     private function onContentBlockDelta(Event $event, \DateTimeImmutable $now): \Generator
     {
         /** @var array{index?: int, delta?: array{type?: string, text?: string, thinking?: string, partial_json?: string}} $data */
-        $data       = $event->data;
-        $index      = (int) ($data['index'] ?? 0);
-        $delta      = $data['delta'] ?? [];
-        $deltaType  = (string) ($delta['type'] ?? '');
-        $block      = $this->activeBlocks[$index] ?? ['type' => 'text', 'effectId' => null];
+        $data = $event->data;
+        $index = (int) ($data['index'] ?? 0);
+        $delta = $data['delta'] ?? [];
+        $deltaType = (string) ($delta['type'] ?? '');
+        $block = $this->activeBlocks[$index] ?? ['type' => 'text', 'effectId' => null];
 
         if ($deltaType === 'text_delta') {
             $text = (string) ($delta['text'] ?? '');
@@ -219,7 +219,7 @@ final class CueMapper
             }
         } elseif ($deltaType === 'input_json_delta') {
             $jsonDelta = (string) ($delta['partial_json'] ?? '');
-            $effectId  = (string) ($block['effectId'] ?? '');
+            $effectId = (string) ($block['effectId'] ?? '');
             if ($jsonDelta !== '' && $effectId !== '') {
                 yield new ArgumentsDelta(
                     id: (string) Id::ulid(),
@@ -241,10 +241,10 @@ final class CueMapper
     private function onMessageDelta(Event $event, \DateTimeImmutable $now): \Generator
     {
         /** @var array{delta?: array{stop_reason?: string}, usage?: array{output_tokens?: int}} $data */
-        $data     = $event->data;
-        $delta    = $data['delta'] ?? [];
-        $rawStop  = (string) ($delta['stop_reason'] ?? '');
-        $usage    = $data['usage'] ?? [];
+        $data = $event->data;
+        $delta = $data['delta'] ?? [];
+        $rawStop = (string) ($delta['stop_reason'] ?? '');
+        $usage = $data['usage'] ?? [];
 
         if ($rawStop !== '') {
             $this->pendingStopReason = self::translateStopReason($rawStop);
@@ -328,8 +328,8 @@ final class CueMapper
     private function onError(Event $event, \DateTimeImmutable $now): \Generator
     {
         /** @var array{error?: array{message?: string, type?: string}} $data */
-        $data    = $event->data;
-        $error   = $data['error'] ?? [];
+        $data = $event->data;
+        $error = $data['error'] ?? [];
         $message = (string) ($error['message'] ?? 'unknown provider error');
 
         $this->completed = true;

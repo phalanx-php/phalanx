@@ -46,16 +46,16 @@ final class Loop implements Activity\Executor
     public function __invoke(TaskScope $scope, Agent $agent, Activity\Config $config, ?Log $log = null): Activity\Result
     {
         $records = $log !== null ? $log->toArray() : [];
-        $turn    = new Config($config->id, $config->context, $config->maxInvocations);
+        $turn = new Config($config->id, $config->context, $config->maxInvocations);
         $runtime = ($this->runtimeFactory)($scope);
-        $chain   = new StepHookChain([...$this->hooks, ...$config->hooks]);
-        $cues    = [];
+        $chain = new StepHookChain([...$this->hooks, ...$config->hooks]);
+        $cues = [];
 
         for ($i = 1; $i <= $config->maxInvocations; $i++) {
             $scope->throwIfCancelled();
             $runtime->throwIfCancelled();
 
-            $current    = Log::from($records);
+            $current = Log::from($records);
             $turnConfig = $turn->forInvocation($i);
             $invocation = $this->builder->build($scope, $agent, $current, $turnConfig);
 
@@ -82,13 +82,13 @@ final class Loop implements Activity\Executor
                 self::pushAssistantMessage($records, $text);
             }
 
-            $current    = Log::from($records);
-            $afterCtx   = StepContext::afterInvocation($turnConfig, $current, $invocation, $outcome);
+            $current = Log::from($records);
+            $afterCtx = StepContext::afterInvocation($turnConfig, $current, $invocation, $outcome);
             $hookResult = $chain->notify($scope, $afterCtx);
 
             if ($hookResult->outcome->terminal()) {
                 $outcome = $hookResult->outcome;
-                $error   = $hookResult->error;
+                $error = $hookResult->error;
             }
 
             if ($outcome->terminal()) {
@@ -199,9 +199,9 @@ final class Loop implements Activity\Executor
         array &$cues,
         string $activityId,
     ): array {
-        $text    = '';
+        $text = '';
         $outcome = Outcome::Continue;
-        $error   = null;
+        $error = null;
 
         foreach ($stream->stream() as $cue) {
             $cues[] = $cue;

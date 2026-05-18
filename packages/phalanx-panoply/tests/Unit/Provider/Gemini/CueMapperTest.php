@@ -34,7 +34,7 @@ final class CueMapperTest extends TestCase
     public function firstChunkWithPartsYieldsResolvedThenStarted(): void
     {
         $mapper = self::fixture();
-        $cues   = self::translateChunk($mapper, self::textChunk('Poseidon speaks.'));
+        $cues = self::translateChunk($mapper, self::textChunk('Poseidon speaks.'));
 
         self::assertCount(3, $cues);
         self::assertInstanceOf(Resolved::class, $cues[0]);
@@ -46,7 +46,7 @@ final class CueMapperTest extends TestCase
     public function resolvedCueCarriesGeminiProviderAndModelVersion(): void
     {
         $mapper = self::fixture();
-        $cues   = self::translateChunk($mapper, self::textChunk('text', modelVersion: 'gemini-2.5-flash'));
+        $cues = self::translateChunk($mapper, self::textChunk('text', modelVersion: 'gemini-2.5-flash'));
 
         $resolved = array_values(array_filter($cues, static fn ($c) => $c instanceof Resolved));
         self::assertCount(1, $resolved);
@@ -76,11 +76,11 @@ final class CueMapperTest extends TestCase
 
         $event = new Event('', [
             'candidates' => [[
-                'content'      => ['role' => 'model', 'parts' => [
+                'content' => ['role' => 'model', 'parts' => [
                     ['thought' => true, 'text' => 'Artemis deliberates the shot.'],
                 ]],
                 'finishReason' => null,
-                'index'        => 0,
+                'index' => 0,
             ]],
             'modelVersion' => 'gemini-2.5-pro',
         ]);
@@ -104,7 +104,7 @@ final class CueMapperTest extends TestCase
                     ['functionCall' => ['name' => 'search_hades_records', 'args' => ['query' => 'shades']]],
                 ]],
                 'finishReason' => null,
-                'index'        => 0,
+                'index' => 0,
             ]],
             'modelVersion' => 'gemini-2.5-pro',
         ]);
@@ -123,7 +123,7 @@ final class CueMapperTest extends TestCase
         $mapper = self::fixture();
         self::primeStart($mapper);
 
-        $cues  = self::translateChunk($mapper, self::finishChunk('STOP'));
+        $cues = self::translateChunk($mapper, self::finishChunk('STOP'));
         $stops = array_values(array_filter($cues, static fn ($c) => $c instanceof TokenStop));
 
         self::assertCount(1, $stops);
@@ -136,7 +136,7 @@ final class CueMapperTest extends TestCase
         $mapper = self::fixture();
         self::primeStart($mapper);
 
-        $cues  = self::translateChunk($mapper, self::finishChunk('MAX_TOKENS'));
+        $cues = self::translateChunk($mapper, self::finishChunk('MAX_TOKENS'));
         $stops = array_values(array_filter($cues, static fn ($c) => $c instanceof TokenStop));
 
         self::assertCount(1, $stops);
@@ -149,7 +149,7 @@ final class CueMapperTest extends TestCase
         $mapper = self::fixture();
         self::primeStart($mapper);
 
-        $cues  = self::translateChunk($mapper, self::finishChunk('SAFETY'));
+        $cues = self::translateChunk($mapper, self::finishChunk('SAFETY'));
         $stops = array_values(array_filter($cues, static fn ($c) => $c instanceof TokenStop));
 
         self::assertCount(1, $stops);
@@ -162,7 +162,7 @@ final class CueMapperTest extends TestCase
         $mapper = self::fixture();
         self::primeStart($mapper);
 
-        $cues  = self::translateChunk($mapper, self::finishChunk('RECITATION'));
+        $cues = self::translateChunk($mapper, self::finishChunk('RECITATION'));
         $stops = array_values(array_filter($cues, static fn ($c) => $c instanceof TokenStop));
 
         self::assertSame(StopReason::Error, $stops[0]->reason);
@@ -174,7 +174,7 @@ final class CueMapperTest extends TestCase
         $mapper = self::fixture();
         self::primeStart($mapper);
 
-        $cues  = self::translateChunk($mapper, self::finishChunk('OTHER'));
+        $cues = self::translateChunk($mapper, self::finishChunk('OTHER'));
         $stops = array_values(array_filter($cues, static fn ($c) => $c instanceof TokenStop));
 
         self::assertCount(1, $stops);
@@ -189,7 +189,7 @@ final class CueMapperTest extends TestCase
         $mapper = self::fixture();
         self::primeStart($mapper);
 
-        $cues  = self::translateChunk($mapper, self::finishChunk('FUTURE_NEW_REASON'));
+        $cues = self::translateChunk($mapper, self::finishChunk('FUTURE_NEW_REASON'));
         $stops = array_values(array_filter($cues, static fn ($c) => $c instanceof TokenStop));
 
         self::assertCount(1, $stops);
@@ -205,26 +205,26 @@ final class CueMapperTest extends TestCase
         self::primeStart($mapper);
 
         $event = new Event('', [
-            'candidates'    => [[
-                'content'      => ['role' => 'model', 'parts' => []],
+            'candidates' => [[
+                'content' => ['role' => 'model', 'parts' => []],
                 'finishReason' => null,
-                'index'        => 0,
+                'index' => 0,
             ]],
             'usageMetadata' => ['promptTokenCount' => 10, 'candidatesTokenCount' => 5, 'totalTokenCount' => 15],
-            'modelVersion'  => 'gemini-2.5-flash',
+            'modelVersion' => 'gemini-2.5-flash',
         ]);
         $cues = iterator_to_array($mapper->translate($event), preserve_keys: false);
 
-        $finals    = array_values(array_filter($cues, static fn ($c) => $c instanceof FinalUsage));
+        $finals = array_values(array_filter($cues, static fn ($c) => $c instanceof FinalUsage));
         $completed = array_values(array_filter($cues, static fn ($c) => $c instanceof Completed));
         self::assertCount(0, $finals);
         self::assertCount(0, $completed);
 
         // Now send a finish chunk — terminal cues must emit then.
-        $cues2     = self::translateChunk($mapper, self::finishChunk('STOP'));
-        $stops     = array_values(array_filter($cues2, static fn ($c) => $c instanceof TokenStop));
-        $cues3     = iterator_to_array($mapper->complete(), preserve_keys: false);
-        $finals2   = array_values(array_filter($cues3, static fn ($c) => $c instanceof FinalUsage));
+        $cues2 = self::translateChunk($mapper, self::finishChunk('STOP'));
+        $stops = array_values(array_filter($cues2, static fn ($c) => $c instanceof TokenStop));
+        $cues3 = iterator_to_array($mapper->complete(), preserve_keys: false);
+        $finals2 = array_values(array_filter($cues3, static fn ($c) => $c instanceof FinalUsage));
         $completed2 = array_values(array_filter($cues3, static fn ($c) => $c instanceof Completed));
 
         self::assertCount(1, $stops);
@@ -240,16 +240,16 @@ final class CueMapperTest extends TestCase
 
         $event = new Event('', [
             'candidates' => [[
-                'content'      => ['role' => 'model', 'parts' => []],
+                'content' => ['role' => 'model', 'parts' => []],
                 'finishReason' => 'STOP',
-                'index'        => 0,
+                'index' => 0,
             ]],
             'usageMetadata' => ['promptTokenCount' => 20, 'candidatesTokenCount' => 8, 'totalTokenCount' => 28],
-            'modelVersion'  => 'gemini-2.5-flash',
+            'modelVersion' => 'gemini-2.5-flash',
         ]);
         $cues = iterator_to_array($mapper->translate($event), preserve_keys: false);
 
-        $finals    = array_values(array_filter($cues, static fn ($c) => $c instanceof FinalUsage));
+        $finals = array_values(array_filter($cues, static fn ($c) => $c instanceof FinalUsage));
         $completed = array_values(array_filter($cues, static fn ($c) => $c instanceof Completed));
 
         self::assertCount(1, $finals);
@@ -266,10 +266,10 @@ final class CueMapperTest extends TestCase
 
         // Inline usage chunk closes the stream.
         $candidate = ['content' => ['role' => 'model', 'parts' => []], 'finishReason' => 'STOP', 'index' => 0];
-        $event     = new Event('', [
-            'candidates'    => [$candidate],
+        $event = new Event('', [
+            'candidates' => [$candidate],
             'usageMetadata' => ['promptTokenCount' => 5, 'candidatesTokenCount' => 3, 'totalTokenCount' => 8],
-            'modelVersion'  => 'gemini-2.5-flash',
+            'modelVersion' => 'gemini-2.5-flash',
         ]);
         iterator_to_array($mapper->translate($event), preserve_keys: false);
 
@@ -288,8 +288,8 @@ final class CueMapperTest extends TestCase
         self::translateChunk($mapper, self::finishChunk('STOP'));
 
         // complete() should emit FinalUsage + Completed (defensive path).
-        $cues      = iterator_to_array($mapper->complete(), preserve_keys: false);
-        $finals    = array_values(array_filter($cues, static fn ($c) => $c instanceof FinalUsage));
+        $cues = iterator_to_array($mapper->complete(), preserve_keys: false);
+        $finals = array_values(array_filter($cues, static fn ($c) => $c instanceof FinalUsage));
         $completed = array_values(array_filter($cues, static fn ($c) => $c instanceof Completed));
 
         self::assertCount(1, $finals);
@@ -300,7 +300,7 @@ final class CueMapperTest extends TestCase
     public function emptyStreamYieldsNoCues(): void
     {
         $mapper = self::fixture();
-        $cues   = iterator_to_array($mapper->complete(), preserve_keys: false);
+        $cues = iterator_to_array($mapper->complete(), preserve_keys: false);
 
         self::assertCount(0, $cues);
     }
@@ -312,9 +312,9 @@ final class CueMapperTest extends TestCase
 
         $event = new Event('', [
             'error' => [
-                'code'    => 429,
+                'code' => 429,
                 'message' => 'Hephaestus forge is overloaded.',
-                'status'  => 'RESOURCE_EXHAUSTED',
+                'status' => 'RESOURCE_EXHAUSTED',
             ],
         ]);
         $cues = iterator_to_array($mapper->translate($event), preserve_keys: false);
@@ -331,7 +331,7 @@ final class CueMapperTest extends TestCase
         // Gemini chunks never carry a typed event field in normal use, but
         // the mapper silently skips any non-empty event type for safety.
         $mapper = self::fixture();
-        $event  = new Event('some-type', ['candidates' => []]);
+        $event = new Event('some-type', ['candidates' => []]);
 
         $cues = iterator_to_array($mapper->translate($event), preserve_keys: false);
 
@@ -344,7 +344,7 @@ final class CueMapperTest extends TestCase
         $mapper = self::fixture();
 
         $chunk1 = self::textChunk('Poseidon ', modelVersion: 'gemini-2.5-flash');
-        $cues1  = self::translateChunk($mapper, $chunk1);
+        $cues1 = self::translateChunk($mapper, $chunk1);
 
         // Resolved=0, Started=1, TokenDelta=2
         self::assertSame(0, $cues1[0]->sequence);
@@ -365,13 +365,13 @@ final class CueMapperTest extends TestCase
                     ['functionCall' => ['name' => 'consult_oracle', 'args' => ['question' => 'fate']]],
                 ]],
                 'finishReason' => null,
-                'index'        => 0,
+                'index' => 0,
             ]],
             'modelVersion' => 'gemini-2.5-pro',
         ]);
         $cues = iterator_to_array($mapper->translate($event), preserve_keys: false);
 
-        $deltas    = array_values(array_filter($cues, static fn ($c) => $c instanceof TokenDelta));
+        $deltas = array_values(array_filter($cues, static fn ($c) => $c instanceof TokenDelta));
         $requested = array_values(array_filter($cues, static fn ($c) => $c instanceof Requested));
 
         self::assertCount(1, $deltas);
@@ -405,9 +405,9 @@ final class CueMapperTest extends TestCase
     {
         return [
             'candidates' => [[
-                'content'      => ['role' => 'model', 'parts' => [['text' => $text]]],
+                'content' => ['role' => 'model', 'parts' => [['text' => $text]]],
                 'finishReason' => null,
-                'index'        => 0,
+                'index' => 0,
             ]],
             'modelVersion' => $modelVersion,
         ];
@@ -420,9 +420,9 @@ final class CueMapperTest extends TestCase
     {
         return [
             'candidates' => [[
-                'content'      => ['role' => 'model', 'parts' => []],
+                'content' => ['role' => 'model', 'parts' => []],
                 'finishReason' => $finishReason,
-                'index'        => 0,
+                'index' => 0,
             ]],
             'modelVersion' => $modelVersion,
         ];

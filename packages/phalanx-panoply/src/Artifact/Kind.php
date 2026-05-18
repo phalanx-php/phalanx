@@ -15,16 +15,16 @@ namespace Phalanx\Panoply\Artifact;
  */
 enum Kind: string
 {
-    case Thesis               = 'thesis';
-    case InvestigationReport  = 'investigation-report';
-    case HazardReport         = 'hazard-report';
-    case GrantRequest         = 'grant-request';
-    case ProofPlan            = 'proof-plan';
-    case PatchDraft           = 'patch-draft';
-    case ReviewFindings       = 'review-findings';
-    case SourceSnapshot       = 'source-snapshot';
-    case ConversationImport   = 'conversation-import';
+    case Thesis = 'thesis';
+    case InvestigationReport = 'investigation-report';
+    case HazardReport = 'hazard-report';
+    case GrantRequest = 'grant-request';
+    case ProofPlan = 'proof-plan';
+    case PatchDraft = 'patch-draft';
+    case ReviewFindings = 'review-findings';
+    case SourceSnapshot = 'source-snapshot';
+    case ConversationImport = 'conversation-import';
     case ProviderHealthReport = 'provider-health-report';
-    case StructuredResult     = 'structured-result';
-    case Custom               = 'custom';
+    case StructuredResult = 'structured-result';
+    case Custom = 'custom';
 }

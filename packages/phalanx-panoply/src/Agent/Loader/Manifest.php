@@ -45,7 +45,7 @@ final class Manifest implements Loader
             throw LoaderError::manifestNotFound($this->manifestPath);
         }
 
-        $raw  = file_get_contents($this->manifestPath);
+        $raw = file_get_contents($this->manifestPath);
         $data = Yaml::parse($raw !== false ? $raw : '');
 
         self::validate($data, $this->manifestPath);

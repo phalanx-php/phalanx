@@ -63,12 +63,12 @@ final class InstantiationTest extends TestCase
     private function allCues(): array
     {
         $base = [
-            'id'           => 'cue_1',
-            'sequence'     => 0,
-            'activityId'   => 'act_1',
+            'id' => 'cue_1',
+            'sequence' => 0,
+            'activityId' => 'act_1',
             'invocationId' => 'inv_1',
-            'agentId'      => 'investigator',
-            'at'           => new \DateTimeImmutable('2026-05-17T12:00:00Z'),
+            'agentId' => 'investigator',
+            'at' => new \DateTimeImmutable('2026-05-17T12:00:00Z'),
         ];
 
         return [

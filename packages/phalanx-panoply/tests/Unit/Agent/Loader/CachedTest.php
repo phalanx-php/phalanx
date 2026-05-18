@@ -20,7 +20,7 @@ final class CachedTest extends TestCase
     #[Test]
     public function validCacheRegistersAllAgents(): void
     {
-        $loader   = new Cached(self::fixtureCachePath());
+        $loader = new Cached(self::fixtureCachePath());
         $registry = $loader->load();
 
         self::assertInstanceOf(Registry::class, $registry);
@@ -69,7 +69,7 @@ final class CachedTest extends TestCase
     public function missingGeneratedAtKeyThrowsLoaderError(): void
     {
         $path = $this->writeTempCache(json_encode([
-            'agents'       => [],
+            'agents' => [],
             'source_mtime' => 1747440000,
         ]) ?: '');
 
@@ -83,7 +83,7 @@ final class CachedTest extends TestCase
     public function missingSourceMtimeKeyThrowsLoaderError(): void
     {
         $path = $this->writeTempCache(json_encode([
-            'agents'       => [],
+            'agents' => [],
             'generated_at' => '2026-05-17T00:00:00+00:00',
         ]) ?: '');
 
@@ -106,7 +106,7 @@ final class CachedTest extends TestCase
     {
         // Write a cache file with source_mtime = far future so it's never stale.
         $path = $this->writeTempCache(json_encode([
-            'agents'       => [
+            'agents' => [
                 \Phalanx\Panoply\Tests\Fixtures\Agent\Discovered\HoplitesAgent::class,
             ],
             'generated_at' => '2099-01-01T00:00:00+00:00',
@@ -123,7 +123,7 @@ final class CachedTest extends TestCase
     {
         // Write a cache with source_mtime = 0 (ancient epoch).
         $path = $this->writeTempCache(json_encode([
-            'agents'       => [],
+            'agents' => [],
             'generated_at' => '1970-01-01T00:00:00+00:00',
             'source_mtime' => 0,
         ]) ?: '');
@@ -151,7 +151,7 @@ final class CachedTest extends TestCase
     {
         // NonAgentClass exists but does not implement Agent.
         $path = $this->writeTempCache(json_encode([
-            'agents'       => [
+            'agents' => [
                 \Phalanx\Panoply\Tests\Fixtures\Agent\Discovered\NonAgentClass::class,
             ],
             'generated_at' => '2026-05-17T00:00:00+00:00',
@@ -168,7 +168,7 @@ final class CachedTest extends TestCase
     public function cacheEntryForNonExistentClassThrowsLoaderError(): void
     {
         $path = $this->writeTempCache(json_encode([
-            'agents'       => ['App\\Removed\\Agent'],
+            'agents' => ['App\\Removed\\Agent'],
             'generated_at' => '2026-05-17T00:00:00+00:00',
             'source_mtime' => 1747440000,
         ]) ?: '');

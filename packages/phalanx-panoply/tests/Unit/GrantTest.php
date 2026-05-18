@@ -61,8 +61,8 @@ final class GrantTest extends TestCase
     #[Test]
     public function withExpiryReturnsNewInstance(): void
     {
-        $grant   = self::fixture();
-        $expiry  = new \DateTimeImmutable('2026-12-01T00:00:00Z');
+        $grant = self::fixture();
+        $expiry = new \DateTimeImmutable('2026-12-01T00:00:00Z');
         $expired = $grant->withExpiry($expiry);
 
         self::assertNotSame($grant, $expired);
@@ -74,7 +74,7 @@ final class GrantTest extends TestCase
     public function isExpiredReturnsTrueWhenPastExpiry(): void
     {
         $expiry = new \DateTimeImmutable('2026-05-01T00:00:00Z');
-        $grant  = self::fixture()->withExpiry($expiry);
+        $grant = self::fixture()->withExpiry($expiry);
 
         self::assertTrue($grant->isExpired(new \DateTimeImmutable('2026-05-17T00:00:00Z')));
     }
@@ -83,7 +83,7 @@ final class GrantTest extends TestCase
     public function isExpiredReturnsFalseWhenBeforeExpiry(): void
     {
         $expiry = new \DateTimeImmutable('2026-12-31T00:00:00Z');
-        $grant  = self::fixture()->withExpiry($expiry);
+        $grant = self::fixture()->withExpiry($expiry);
 
         self::assertFalse($grant->isExpired(new \DateTimeImmutable('2026-05-17T00:00:00Z')));
     }
@@ -97,7 +97,7 @@ final class GrantTest extends TestCase
     #[Test]
     public function withConditionReturnsNewInstance(): void
     {
-        $grant    = self::fixture();
+        $grant = self::fixture();
         $enriched = $grant->withCondition('region', 'sparta');
 
         self::assertNotSame($grant, $enriched);
@@ -108,7 +108,7 @@ final class GrantTest extends TestCase
     #[Test]
     public function toCanonicalHasExpectedKeysAndSortsAllowedEffects(): void
     {
-        $grant     = self::fixture();
+        $grant = self::fixture();
         $canonical = $grant->toCanonical();
 
         self::assertArrayHasKey('id', $canonical);
@@ -121,7 +121,7 @@ final class GrantTest extends TestCase
 
         // allowed_effects must be sorted
         $effects = $canonical['allowed_effects'];
-        $sorted  = $effects;
+        $sorted = $effects;
         sort($sorted);
         self::assertSame($sorted, $effects);
     }
@@ -148,7 +148,7 @@ final class GrantTest extends TestCase
     public function hashIsTimezoneIndependent(): void
     {
         // Same instant expressed in UTC and +05:00 must produce identical hashes.
-        $utc   = new \DateTimeImmutable('2026-12-01T00:00:00Z');
+        $utc = new \DateTimeImmutable('2026-12-01T00:00:00Z');
         $plus5 = new \DateTimeImmutable('2026-12-01T05:00:00+05:00');
 
         $a = self::fixture()->withExpiry($utc);
@@ -162,7 +162,7 @@ final class GrantTest extends TestCase
     {
         // isExpired uses >=, so a grant expires at the exact expiresAt instant.
         $expiry = new \DateTimeImmutable('2026-06-01T12:00:00Z');
-        $grant  = self::fixture()->withExpiry($expiry);
+        $grant = self::fixture()->withExpiry($expiry);
 
         self::assertTrue($grant->isExpired($expiry));
     }

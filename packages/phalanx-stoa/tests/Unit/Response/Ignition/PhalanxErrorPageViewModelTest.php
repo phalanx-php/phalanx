@@ -18,7 +18,7 @@ final class PhalanxErrorPageViewModelTest extends TestCase
         $e = new RuntimeException('test');
         $report = new Report();
         $config = new IgnitionConfig();
-        
+
         $viewModel = new PhalanxErrorPageViewModel(
             $e,
             $config,
@@ -28,7 +28,7 @@ final class PhalanxErrorPageViewModelTest extends TestCase
         );
 
         $css = $viewModel->getAssetContents('ignition.css');
-        
+
         $this->assertNotEmpty($css);
         $this->assertStringNotContainsString('Asset ignition.css not found', $css);
         $this->assertStringContainsString('html', $css);
@@ -39,7 +39,7 @@ final class PhalanxErrorPageViewModelTest extends TestCase
         $e = new RuntimeException('test');
         $report = new Report();
         $config = new IgnitionConfig();
-        
+
         $viewModel = new PhalanxErrorPageViewModel(
             $e,
             $config,
@@ -49,7 +49,7 @@ final class PhalanxErrorPageViewModelTest extends TestCase
         );
 
         $solutions = $viewModel->solutions();
-        
+
         $this->assertCount(1, $solutions);
         $this->assertSame('Phalanx Solution', reset($solutions)['title']);
     }

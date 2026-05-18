@@ -20,7 +20,7 @@ final class HomeDirTest extends TestCase
     #[Test]
     public function projectsReturnsAllProjectDirectories(): void
     {
-        $homeDir  = new HomeDir(self::fixtureRoot());
+        $homeDir = new HomeDir(self::fixtureRoot());
         $projects = $homeDir->projects()->toArray();
 
         self::assertCount(2, $projects);
@@ -30,8 +30,8 @@ final class HomeDirTest extends TestCase
     #[Test]
     public function projectsHaveCorrectSlugs(): void
     {
-        $homeDir  = new HomeDir(self::fixtureRoot());
-        $slugs    = array_map(static fn (Project $p): string => $p->slug, $homeDir->projects()->toArray());
+        $homeDir = new HomeDir(self::fixtureRoot());
+        $slugs = array_map(static fn (Project $p): string => $p->slug, $homeDir->projects()->toArray());
 
         self::assertContains('-Users-jhavens-sparta', $slugs);
         self::assertContains('-Users-jhavens-marathon', $slugs);
@@ -40,8 +40,8 @@ final class HomeDirTest extends TestCase
     #[Test]
     public function projectsDecodePathFromSlug(): void
     {
-        $homeDir  = new HomeDir(self::fixtureRoot());
-        $bySlug   = [];
+        $homeDir = new HomeDir(self::fixtureRoot());
+        $bySlug = [];
 
         foreach ($homeDir->projects() as $project) {
             $bySlug[$project->slug] = $project;
@@ -56,8 +56,8 @@ final class HomeDirTest extends TestCase
     #[Test]
     public function projectsReportConversationCount(): void
     {
-        $homeDir  = new HomeDir(self::fixtureRoot());
-        $bySlug   = [];
+        $homeDir = new HomeDir(self::fixtureRoot());
+        $bySlug = [];
 
         foreach ($homeDir->projects() as $project) {
             $bySlug[$project->slug] = $project;
@@ -70,7 +70,7 @@ final class HomeDirTest extends TestCase
     #[Test]
     public function locatorsYieldsHomeDirLocator(): void
     {
-        $homeDir  = new HomeDir(self::fixtureRoot());
+        $homeDir = new HomeDir(self::fixtureRoot());
         $locators = $homeDir->locators()->toArray();
 
         self::assertGreaterThanOrEqual(1, count($locators));
@@ -81,8 +81,8 @@ final class HomeDirTest extends TestCase
     public function locatorsYieldsSidecarWhenPresent(): void
     {
         $fixtureRoot = self::fixtureRoot();
-        $homeDir     = new HomeDir($fixtureRoot, $fixtureRoot . '/claude.json');
-        $locators    = $homeDir->locators()->toArray();
+        $homeDir = new HomeDir($fixtureRoot, $fixtureRoot . '/claude.json');
+        $locators = $homeDir->locators()->toArray();
 
         // Should have both the directory and the sidecar file.
         self::assertCount(2, $locators);
@@ -109,7 +109,7 @@ final class HomeDirTest extends TestCase
     #[Test]
     public function fromConfigResolvesTome(): void
     {
-        $config  = \Phalanx\Panoply\HomeDir\Loader::fromFile(
+        $config = \Phalanx\Panoply\HomeDir\Loader::fromFile(
             dirname(__DIR__, 3) . '/Fixtures/HomeDir/claudecode.panoply.yaml',
         );
         $homeDir = HomeDir::fromConfig($config, '/fake/home');

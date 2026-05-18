@@ -170,7 +170,7 @@ final class PanoplyAgentsScanCommandTest extends TestCase
                 $this->cacheFile,
             );
 
-            $result  = $command(self::makeScope());
+            $result = $command(self::makeScope());
             $payload = self::readCache($this->cacheFile);
 
             self::assertSame(0, $result);
@@ -186,9 +186,9 @@ final class PanoplyAgentsScanCommandTest extends TestCase
     public function sourceMtimeMatchesMaxMtimeOfFixtureFiles(): void
     {
         // Touch a known fixture file to a fixed epoch so max-mtime is predictable.
-        $fixtureFile  = self::discoveredDir() . '/HoplitesAgent.php';
+        $fixtureFile = self::discoveredDir() . '/HoplitesAgent.php';
         $originalTime = filemtime($fixtureFile);
-        $knownEpoch   = 1700000000; // 2023-11-14T22:13:20Z — a fixed past timestamp
+        $knownEpoch = 1700000000; // 2023-11-14T22:13:20Z — a fixed past timestamp
 
         // Set the mtime to a known value; touch the other files to 0 so they
         // don't accidentally have a newer mtime than $knownEpoch.
@@ -196,7 +196,7 @@ final class PanoplyAgentsScanCommandTest extends TestCase
         // to a known epoch and checking payload['source_mtime'] === that epoch
         // only works reliably if we set ALL fixtures to <= $knownEpoch.
         // Instead, use a temp directory with a single PHP file at $knownEpoch.
-        $tempDir  = sys_get_temp_dir() . '/panoply_mtime_' . uniqid();
+        $tempDir = sys_get_temp_dir() . '/panoply_mtime_' . uniqid();
         mkdir($tempDir, 0755);
         $tempFile = $tempDir . '/Sparta.php';
         file_put_contents($tempFile, "<?php\n// mtime fixture\n");

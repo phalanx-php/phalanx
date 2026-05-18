@@ -33,7 +33,7 @@ final class Registry
 
     public function with(Agent $agent): self
     {
-        $agents             = $this->agents;
+        $agents = $this->agents;
         $agents[$agent->id] = $agent;
 
         return new self($agents);

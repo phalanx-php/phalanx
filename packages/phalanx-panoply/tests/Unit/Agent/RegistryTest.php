@@ -27,8 +27,8 @@ final class RegistryTest extends TestCase
     public function withIsImmutable(): void
     {
         $agent = new StubAgent('leonidas', Capability::Reasoning);
-        $a     = Registry::empty();
-        $b     = $a->with($agent);
+        $a = Registry::empty();
+        $b = $a->with($agent);
 
         self::assertNotSame($a, $b);
         self::assertFalse($a->has('leonidas'));
@@ -38,7 +38,7 @@ final class RegistryTest extends TestCase
     #[Test]
     public function getReturnsAgentById(): void
     {
-        $agent    = new StubAgent('leonidas', Capability::Reasoning);
+        $agent = new StubAgent('leonidas', Capability::Reasoning);
         $registry = Registry::empty()->with($agent);
 
         self::assertSame($agent, $registry->get('leonidas'));

@@ -24,10 +24,10 @@ use Phalanx\Archon\Console\Style\Theme;
  */
 final class Spinner
 {
-    public const array DOTS    = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+    public const array DOTS = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
     public const array BRAILLE = ['⣾', '⣽', '⣻', '⢿', '⡿', '⣟', '⣯', '⣷'];
-    public const array LINE    = ['-', '\\', '|', '/'];
-    public const array ARC     = ['◜', '◠', '◝', '◞', '◡', '◟'];
+    public const array LINE = ['-', '\\', '|', '/'];
+    public const array ARC = ['◜', '◠', '◝', '◞', '◡', '◟'];
 
     /**
      * @param list<string> $frames
@@ -40,7 +40,7 @@ final class Spinner
 
     public function frame(int $tick, string $label = ''): string
     {
-        $char   = $this->frames[$tick % count($this->frames)];
+        $char = $this->frames[$tick % count($this->frames)];
         $styled = $this->theme->accent->apply($char);
         return $label !== '' ? "{$styled} {$label}" : $styled;
     }

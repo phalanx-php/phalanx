@@ -51,7 +51,7 @@ final class SuspensionFlowTest extends PhalanxTestCase
     #[Test]
     public function pausedEffectWithSuspenderResumesAndCompletesActivity(): void
     {
-        $at    = new \DateTimeImmutable('2026-05-17T12:00:00Z');
+        $at = new \DateTimeImmutable('2026-05-17T12:00:00Z');
         $grant = Grant::of(
             id: 'grant_1',
             subject: 'agent_1',
@@ -77,13 +77,13 @@ final class SuspensionFlowTest extends PhalanxTestCase
         ], Capabilities::empty());
 
         $result = $this->scope->run(static function (ExecutionScope $scope) use ($provider, $grant): Activity\Result {
-            $store      = new FlowSpyStore();
-            $registry   = new ToolRegistry();
+            $store = new FlowSpyStore();
+            $registry = new ToolRegistry();
             $registry->register('write_file', FlowEchoTool::class);
 
-            $grantStore  = new FlowGrantStore($grant);
-            $authorizer  = new FlowOnceAuthorizer();
-            $dispatcher  = new Dispatcher(
+            $grantStore = new FlowGrantStore($grant);
+            $authorizer = new FlowOnceAuthorizer();
+            $dispatcher = new Dispatcher(
                 authorizer: $authorizer,
                 scorer: new Scorer(),
                 grantStore: $grantStore,
@@ -91,9 +91,9 @@ final class SuspensionFlowTest extends PhalanxTestCase
                 mcpRegistry: new McpRegistry(),
             );
 
-            $monitor   = new FlowImmediateMonitor($grant, $grantStore);
+            $monitor = new FlowImmediateMonitor($grant, $grantStore);
             $suspender = new Suspender($store, $monitor);
-            $loop      = new Loop(new DefaultBuilder(), $provider, suspender: $suspender, dispatcher: $dispatcher);
+            $loop = new Loop(new DefaultBuilder(), $provider, suspender: $suspender, dispatcher: $dispatcher);
 
             return $loop($scope, new TestAgent(), new Activity\Config('act_1', Context::new(), 2));
         });
@@ -137,7 +137,7 @@ final class SuspensionFlowTest extends PhalanxTestCase
     #[Test]
     public function suspenderPersistsStateBeforeWaitingForGrant(): void
     {
-        $at    = new \DateTimeImmutable('2026-05-17T12:00:00Z');
+        $at = new \DateTimeImmutable('2026-05-17T12:00:00Z');
         $grant = Grant::of(
             id: 'grant_1',
             subject: 'agent_1',
@@ -146,7 +146,7 @@ final class SuspensionFlowTest extends PhalanxTestCase
             hazardCeiling: Hazard::Critical,
         );
 
-        $store    = new FlowSpyStore();
+        $store = new FlowSpyStore();
         $provider = new Provider([
             new Requested(
                 id: 'cue_1',
@@ -163,7 +163,7 @@ final class SuspensionFlowTest extends PhalanxTestCase
         ], Capabilities::empty());
 
         $this->scope->run(static function (ExecutionScope $scope) use ($provider, $grant, $store): void {
-            $registry  = new ToolRegistry();
+            $registry = new ToolRegistry();
             $registry->register('write_file', FlowEchoTool::class);
 
             $grantStore = new FlowGrantStore($grant);
@@ -175,9 +175,9 @@ final class SuspensionFlowTest extends PhalanxTestCase
                 mcpRegistry: new McpRegistry(),
             );
 
-            $monitor   = new FlowImmediateMonitor($grant, $grantStore);
+            $monitor = new FlowImmediateMonitor($grant, $grantStore);
             $suspender = new Suspender($store, $monitor);
-            $loop      = new Loop(new DefaultBuilder(), $provider, suspender: $suspender, dispatcher: $dispatcher);
+            $loop = new Loop(new DefaultBuilder(), $provider, suspender: $suspender, dispatcher: $dispatcher);
 
             $loop($scope, new TestAgent(), new Activity\Config('act_1', Context::new(), 2));
         });
@@ -221,7 +221,7 @@ final class FlowSpyStore implements ExecutionStore
 
     public function suspendActivity(TaskScope $scope, string $activityId, Log $log, Requested $pendingEffect): void
     {
-        $this->suspended           = true;
+        $this->suspended = true;
         $this->suspendedActivityId = $activityId;
     }
 

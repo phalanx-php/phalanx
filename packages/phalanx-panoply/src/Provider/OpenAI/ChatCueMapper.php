@@ -104,9 +104,9 @@ final class ChatCueMapper
         // the request after streaming has begun (rate limit, content filter, etc.).
         if (isset($data['error']) && is_array($data['error']) && !isset($data['choices'])) {
             /** @var array<string, mixed> $err */
-            $err     = $data['error'];
+            $err = $data['error'];
             $message = (string) ($err['message'] ?? 'unknown provider error');
-            $code    = isset($err['code']) && is_string($err['code']) ? $err['code'] : null;
+            $code = isset($err['code']) && is_string($err['code']) ? $err['code'] : null;
 
             $this->completed = true;
 
@@ -154,7 +154,7 @@ final class ChatCueMapper
         // First chunk: delta.role signals stream start.
         if (!$this->started && isset($delta['role'])) {
             $this->started = true;
-            $model         = (string) ($data['model'] ?? '');
+            $model = (string) ($data['model'] ?? '');
             yield $this->resolved($this->providerId, $model, $now);
             yield $this->invocationStarted($now);
         }
@@ -206,7 +206,7 @@ final class ChatCueMapper
         $finishReason = $choice['finish_reason'] ?? null;
         if (is_string($finishReason) && $finishReason !== '') {
             $this->pendingStopReason = self::translateFinishReason($finishReason);
-            $this->finished          = true;
+            $this->finished = true;
 
             yield new TokenStop(
                 id: (string) Id::ulid(),
@@ -260,11 +260,11 @@ final class ChatCueMapper
     private static function translateFinishReason(string $raw): StopReason
     {
         return match ($raw) {
-            'stop'           => StopReason::EndOfTurn,
-            'length'         => StopReason::MaxTokens,
-            'tool_calls'     => StopReason::ToolUse,
+            'stop' => StopReason::EndOfTurn,
+            'length' => StopReason::MaxTokens,
+            'tool_calls' => StopReason::ToolUse,
             'content_filter' => StopReason::Error,
-            default          => StopReason::EndOfTurn,
+            default => StopReason::EndOfTurn,
         };
     }
 
@@ -306,14 +306,14 @@ final class ChatCueMapper
      */
     private function onToolCallChunk(array $tc, \DateTimeImmutable $now): \Generator
     {
-        $index    = isset($tc['index']) ? (int) $tc['index'] : 0;
+        $index = isset($tc['index']) ? (int) $tc['index'] : 0;
         $function = is_array($tc['function'] ?? null) ? $tc['function'] : [];
 
         if (!isset($this->toolCallEffectIds[$index])) {
             // First chunk for this index — carries id and name.
-            $rawId    = isset($tc['id']) && is_string($tc['id']) ? $tc['id'] : 'tc_' . $index;
+            $rawId = isset($tc['id']) && is_string($tc['id']) ? $tc['id'] : 'tc_' . $index;
             $effectId = 'tc_' . $rawId;
-            $name     = isset($function['name']) && is_string($function['name'])
+            $name = isset($function['name']) && is_string($function['name'])
                 ? $function['name']
                 : 'unknown';
 
@@ -364,7 +364,7 @@ final class ChatCueMapper
         /** @var array<string, mixed> $usage */
         $usage = is_array($data['usage'] ?? null) ? $data['usage'] : [];
 
-        $this->inputTokens  += (int) ($usage['prompt_tokens'] ?? 0);
+        $this->inputTokens += (int) ($usage['prompt_tokens'] ?? 0);
         $this->outputTokens += (int) ($usage['completion_tokens'] ?? 0);
     }
 

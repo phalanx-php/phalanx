@@ -122,7 +122,7 @@ final class CueMapper
 
             if ($parts !== [] && !$this->started) {
                 $this->started = true;
-                $model         = (string) ($data['modelVersion'] ?? '');
+                $model = (string) ($data['modelVersion'] ?? '');
 
                 yield $this->resolved($model, $now);
                 yield $this->invocationStarted($now);
@@ -135,7 +135,7 @@ final class CueMapper
             $rawFinish = $candidate['finishReason'] ?? null;
             if (is_string($rawFinish) && $rawFinish !== '') {
                 $this->pendingStopReason = self::translateFinishReason($rawFinish);
-                $this->finished          = true;
+                $this->finished = true;
 
                 yield new TokenStop(
                     id: (string) Id::ulid(),
@@ -152,7 +152,7 @@ final class CueMapper
 
         // usageMetadata may appear alongside candidates or alone in the final chunk.
         if (isset($data['usageMetadata']) && is_array($data['usageMetadata'])) {
-            $this->inputTokens  = (int) ($data['usageMetadata']['promptTokenCount'] ?? 0);
+            $this->inputTokens = (int) ($data['usageMetadata']['promptTokenCount'] ?? 0);
             $this->outputTokens = (int) ($data['usageMetadata']['candidatesTokenCount'] ?? 0);
 
             if ($this->finished && !$this->completed) {
@@ -179,9 +179,9 @@ final class CueMapper
     private static function translateFinishReason(string $raw): StopReason
     {
         return match ($raw) {
-            'STOP'       => StopReason::EndOfTurn,
+            'STOP' => StopReason::EndOfTurn,
             'MAX_TOKENS' => StopReason::MaxTokens,
-            default      => StopReason::Error,
+            default => StopReason::Error,
         };
     }
 
@@ -214,9 +214,9 @@ final class CueMapper
 
         // Function call part — complete call emitted in one chunk.
         if (isset($part['functionCall']) && is_array($part['functionCall'])) {
-            $fc       = $part['functionCall'];
-            $name     = (string) ($fc['name'] ?? 'unknown');
-            $args     = is_array($fc['args'] ?? null) ? $fc['args'] : [];
+            $fc = $part['functionCall'];
+            $name = (string) ($fc['name'] ?? 'unknown');
+            $args = is_array($fc['args'] ?? null) ? $fc['args'] : [];
             $effectId = 'fc_' . (string) Id::ulid();
 
             yield new Requested(
@@ -259,7 +259,7 @@ final class CueMapper
     private function onError(array $error, \DateTimeImmutable $now): \Generator
     {
         $message = (string) ($error['message'] ?? 'unknown Gemini error');
-        $code    = isset($error['status']) ? (string) $error['status'] : null;
+        $code = isset($error['status']) ? (string) $error['status'] : null;
 
         $this->completed = true;
 

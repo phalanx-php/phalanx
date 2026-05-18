@@ -87,7 +87,7 @@ final class Loader
         $violations = [];
 
         $required = ['id', 'display_name', 'models', 'capabilities', 'transport', 'wire_translator'];
-        $allowed  = array_merge($required, ['base_url', 'default_headers']);
+        $allowed = array_merge($required, ['base_url', 'default_headers']);
 
         foreach ($required as $key) {
             if (!array_key_exists($key, $data)) {
@@ -328,7 +328,7 @@ final class Loader
         );
 
         $capabilities = self::buildCapabilities((array) $data['capabilities']);
-        $transport    = self::buildTransport((array) $data['transport']);
+        $transport = self::buildTransport((array) $data['transport']);
 
         $wireTranslator = $data['wire_translator'];
         if (is_string($wireTranslator) && !class_exists($wireTranslator)) {
@@ -365,10 +365,10 @@ final class Loader
      */
     private static function buildModel(array $m): Config\Model
     {
-        $aliases      = array_values(array_map(strval(...), (array) $m['aliases']));
+        $aliases = array_values(array_map(strval(...), (array) $m['aliases']));
         $capabilities = self::buildCapabilities((array) $m['capabilities']);
 
-        $inputPricing  = isset($m['input_pricing']) ? (float) $m['input_pricing'] : null;
+        $inputPricing = isset($m['input_pricing']) ? (float) $m['input_pricing'] : null;
         $outputPricing = isset($m['output_pricing']) ? (float) $m['output_pricing'] : null;
 
         return Config\Model::of(

@@ -72,17 +72,17 @@ final readonly class IgnitionErrorResponseRenderer implements ErrorResponseRende
 
             $renderer = new Renderer();
             $viewPath = dirname(__DIR__, 2) . '/resources/ignition/views/errorPage.php';
-            
+
             if (!is_file($viewPath)) {
                 return null;
             }
 
             $html = $renderer->renderAsString(['viewModel' => $viewModel], $viewPath);
-            
+
             if ($html === '') {
                 return null;
             }
-            
+
             return new \GuzzleHttp\Psr7\Response(
                 500,
                 ['Content-Type' => 'text/html', 'X-Phalanx-Renderer' => 'Ignition'],
@@ -100,7 +100,7 @@ final readonly class IgnitionErrorResponseRenderer implements ErrorResponseRende
     private function getCustomHead(): string
     {
         $favicon = $this->config->faviconPath;
-        
+
         return <<<HTML
         <!-- Substrate-Native Branding & Favicon -->
         <link rel="icon" type="image/x-icon" href="{$favicon}">

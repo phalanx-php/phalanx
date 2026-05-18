@@ -97,7 +97,7 @@ final class AnthropicLiveTest extends TestCase
         }
 
         $tokenDeltas = array_filter($cues, static fn ($c): bool => $c instanceof TokenDelta);
-        $completed   = array_filter($cues, static fn ($c): bool => $c instanceof Completed);
+        $completed = array_filter($cues, static fn ($c): bool => $c instanceof Completed);
         $finalUsages = array_filter($cues, static fn ($c): bool => $c instanceof FinalUsage);
 
         self::assertNotEmpty($tokenDeltas, 'Expected at least one TokenDelta cue');

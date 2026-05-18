@@ -57,7 +57,7 @@ final class FrozenClock implements Clock
 
     public function now(): \DateTimeImmutable
     {
-        $sec   = intdiv($this->microseconds, 1_000_000);
+        $sec = intdiv($this->microseconds, 1_000_000);
         $micro = $this->microseconds % 1_000_000;
 
         $dt = \DateTimeImmutable::createFromFormat('U.u', sprintf('%d.%06d', $sec, $micro));

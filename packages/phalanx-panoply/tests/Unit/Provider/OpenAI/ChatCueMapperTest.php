@@ -35,9 +35,9 @@ final class ChatCueMapperTest extends TestCase
     public function firstChunkWithRoleYieldsResolvedThenStarted(): void
     {
         $mapper = self::fixture();
-        $event  = new Event('', [
-            'id'      => 'chatcmpl-x',
-            'model'   => 'gpt-5',
+        $event = new Event('', [
+            'id' => 'chatcmpl-x',
+            'model' => 'gpt-5',
             'choices' => [['index' => 0, 'delta' => ['role' => 'assistant', 'content' => ''], 'finish_reason' => null]],
         ]);
 
@@ -52,8 +52,8 @@ final class ChatCueMapperTest extends TestCase
     public function resolvedCueCarriesProviderAndModel(): void
     {
         $mapper = self::fixture();
-        $event  = new Event('', [
-            'model'   => 'gpt-5',
+        $event = new Event('', [
+            'model' => 'gpt-5',
             'choices' => [['index' => 0, 'delta' => ['role' => 'assistant'], 'finish_reason' => null]],
         ]);
 
@@ -72,8 +72,8 @@ final class ChatCueMapperTest extends TestCase
 
         $event = new Event('', [
             'choices' => [[
-                'index'         => 0,
-                'delta'         => ['content' => 'Hold the pass at Thermopylae.'],
+                'index' => 0,
+                'delta' => ['content' => 'Hold the pass at Thermopylae.'],
                 'finish_reason' => null,
             ]],
         ]);
@@ -94,8 +94,8 @@ final class ChatCueMapperTest extends TestCase
 
         $event = new Event('', [
             'choices' => [[
-                'index'         => 0,
-                'delta'         => ['reasoning_content' => 'Apollo deliberates the strategy.'],
+                'index' => 0,
+                'delta' => ['reasoning_content' => 'Apollo deliberates the strategy.'],
                 'finish_reason' => null,
             ]],
         ]);
@@ -118,7 +118,7 @@ final class ChatCueMapperTest extends TestCase
             'choices' => [['index' => 0, 'delta' => [], 'finish_reason' => 'stop']],
         ]);
 
-        $cues  = iterator_to_array($mapper->translate($event), preserve_keys: false);
+        $cues = iterator_to_array($mapper->translate($event), preserve_keys: false);
         $stops = array_values(array_filter($cues, static fn ($c) => $c instanceof TokenStop));
 
         self::assertCount(1, $stops);
@@ -135,7 +135,7 @@ final class ChatCueMapperTest extends TestCase
             'choices' => [['index' => 0, 'delta' => [], 'finish_reason' => 'length']],
         ]);
 
-        $cues  = iterator_to_array($mapper->translate($event), preserve_keys: false);
+        $cues = iterator_to_array($mapper->translate($event), preserve_keys: false);
         $stops = array_values(array_filter($cues, static fn ($c) => $c instanceof TokenStop));
 
         self::assertSame(StopReason::MaxTokens, $stops[0]->reason);
@@ -151,7 +151,7 @@ final class ChatCueMapperTest extends TestCase
             'choices' => [['index' => 0, 'delta' => [], 'finish_reason' => 'tool_calls']],
         ]);
 
-        $cues  = iterator_to_array($mapper->translate($event), preserve_keys: false);
+        $cues = iterator_to_array($mapper->translate($event), preserve_keys: false);
         $stops = array_values(array_filter($cues, static fn ($c) => $c instanceof TokenStop));
 
         self::assertSame(StopReason::ToolUse, $stops[0]->reason);
@@ -165,11 +165,11 @@ final class ChatCueMapperTest extends TestCase
 
         $event = new Event('', [
             'choices' => [[
-                'index'         => 0,
-                'delta'         => ['tool_calls' => [[
-                    'index'    => 0,
-                    'id'       => 'call_olympus',
-                    'type'     => 'function',
+                'index' => 0,
+                'delta' => ['tool_calls' => [[
+                    'index' => 0,
+                    'id' => 'call_olympus',
+                    'type' => 'function',
                     'function' => ['name' => 'search_agora', 'arguments' => ''],
                 ]]],
                 'finish_reason' => null,
@@ -193,11 +193,11 @@ final class ChatCueMapperTest extends TestCase
         // First chunk — registers effectId.
         $first = new Event('', [
             'choices' => [[
-                'index'         => 0,
-                'delta'         => ['tool_calls' => [[
-                    'index'    => 0,
-                    'id'       => 'call_sparta',
-                    'type'     => 'function',
+                'index' => 0,
+                'delta' => ['tool_calls' => [[
+                    'index' => 0,
+                    'id' => 'call_sparta',
+                    'type' => 'function',
                     'function' => ['name' => 'rally', 'arguments' => ''],
                 ]]],
                 'finish_reason' => null,
@@ -208,15 +208,15 @@ final class ChatCueMapperTest extends TestCase
         // Second chunk — argument delta.
         $second = new Event('', [
             'choices' => [[
-                'index'         => 0,
-                'delta'         => ['tool_calls' => [
+                'index' => 0,
+                'delta' => ['tool_calls' => [
                     ['index' => 0, 'function' => ['arguments' => '{"count":300}']],
                 ]],
                 'finish_reason' => null,
             ]],
         ]);
 
-        $cues   = iterator_to_array($mapper->translate($second), preserve_keys: false);
+        $cues = iterator_to_array($mapper->translate($second), preserve_keys: false);
         $deltas = array_values(array_filter($cues, static fn ($c) => $c instanceof ArgumentsDelta));
 
         self::assertCount(1, $deltas);
@@ -232,8 +232,8 @@ final class ChatCueMapperTest extends TestCase
 
         $event = new Event('', [
             'choices' => [[
-                'index'         => 0,
-                'delta'         => ['tool_calls' => [
+                'index' => 0,
+                'delta' => ['tool_calls' => [
                     ['index' => 0, 'id' => 'call_apollo', 'type' => 'function',
                         'function' => ['name' => 'query_olympus', 'arguments' => '']],
                     ['index' => 1, 'id' => 'call_leonidas', 'type' => 'function',
@@ -243,7 +243,7 @@ final class ChatCueMapperTest extends TestCase
             ]],
         ]);
 
-        $cues      = iterator_to_array($mapper->translate($event), preserve_keys: false);
+        $cues = iterator_to_array($mapper->translate($event), preserve_keys: false);
         $requested = array_values(array_filter($cues, static fn ($c) => $c instanceof Requested));
 
         self::assertCount(2, $requested);
@@ -261,7 +261,7 @@ final class ChatCueMapperTest extends TestCase
             'choices' => [['index' => 0, 'delta' => [], 'finish_reason' => 'content_filter']],
         ]);
 
-        $cues  = iterator_to_array($mapper->translate($event), preserve_keys: false);
+        $cues = iterator_to_array($mapper->translate($event), preserve_keys: false);
         $stops = array_values(array_filter($cues, static fn ($c) => $c instanceof TokenStop));
 
         self::assertCount(1, $stops);
@@ -279,7 +279,7 @@ final class ChatCueMapperTest extends TestCase
             'choices' => [['index' => 0, 'delta' => [], 'finish_reason' => 'function_call']],
         ]);
 
-        $cues  = iterator_to_array($mapper->translate($event), preserve_keys: false);
+        $cues = iterator_to_array($mapper->translate($event), preserve_keys: false);
         $stops = array_values(array_filter($cues, static fn ($c) => $c instanceof TokenStop));
 
         self::assertCount(1, $stops);
@@ -308,8 +308,8 @@ final class ChatCueMapperTest extends TestCase
         // Feed a content delta with no finish_reason.
         $event = new Event('', [
             'choices' => [[
-                'index'         => 0,
-                'delta'         => ['content' => 'Zeus commands the phalanx.'],
+                'index' => 0,
+                'delta' => ['content' => 'Zeus commands the phalanx.'],
                 'finish_reason' => null,
             ]],
         ]);
@@ -317,7 +317,7 @@ final class ChatCueMapperTest extends TestCase
 
         $cues = iterator_to_array($mapper->complete(), preserve_keys: false);
 
-        $finals    = array_values(array_filter($cues, static fn ($c) => $c instanceof FinalUsage));
+        $finals = array_values(array_filter($cues, static fn ($c) => $c instanceof FinalUsage));
         $completed = array_values(array_filter($cues, static fn ($c) => $c instanceof Completed));
 
         self::assertCount(1, $finals);
@@ -338,7 +338,7 @@ final class ChatCueMapperTest extends TestCase
 
         $event = new Event('', [
             'choices' => [['index' => 0, 'delta' => [], 'finish_reason' => 'stop']],
-            'usage'   => ['prompt_tokens' => 10, 'completion_tokens' => 5, 'total_tokens' => 15],
+            'usage' => ['prompt_tokens' => 10, 'completion_tokens' => 5, 'total_tokens' => 15],
         ]);
         iterator_to_array($mapper->translate($event), preserve_keys: false);
 
@@ -369,7 +369,7 @@ final class ChatCueMapperTest extends TestCase
         ]);
         $cues = iterator_to_array($mapper->translate($usage), preserve_keys: false);
 
-        $finals    = array_values(array_filter($cues, static fn ($c) => $c instanceof FinalUsage));
+        $finals = array_values(array_filter($cues, static fn ($c) => $c instanceof FinalUsage));
         $completed = array_values(array_filter($cues, static fn ($c) => $c instanceof Completed));
 
         self::assertCount(1, $finals);
@@ -403,7 +403,7 @@ final class ChatCueMapperTest extends TestCase
     {
         // ResponsesProvider events have a non-empty type — ChatCueMapper ignores them.
         $mapper = self::fixture();
-        $event  = new Event('response.created', ['type' => 'response.created']);
+        $event = new Event('response.created', ['type' => 'response.created']);
 
         $cues = iterator_to_array($mapper->translate($event), preserve_keys: false);
 
@@ -434,7 +434,7 @@ final class ChatCueMapperTest extends TestCase
         // the same chunk as finish_reason. complete() is therefore a no-op.
         $event = new Event('', [
             'choices' => [['index' => 0, 'delta' => [], 'finish_reason' => 'stop']],
-            'usage'   => ['prompt_tokens' => 50, 'completion_tokens' => 25, 'total_tokens' => 75],
+            'usage' => ['prompt_tokens' => 50, 'completion_tokens' => 25, 'total_tokens' => 75],
         ]);
         $cues = iterator_to_array($mapper->translate($event), preserve_keys: false);
 
@@ -452,7 +452,7 @@ final class ChatCueMapperTest extends TestCase
 
         // Feed the role chunk — sets $started = true, emits Resolved + Started.
         $cues1 = iterator_to_array($mapper->translate(new Event('', [
-            'model'   => 'gpt-5',
+            'model' => 'gpt-5',
             'choices' => [['index' => 0, 'delta' => ['role' => 'assistant'], 'finish_reason' => null]],
         ])), preserve_keys: false);
 
@@ -473,8 +473,8 @@ final class ChatCueMapperTest extends TestCase
         // Proves that constructing with a custom providerId is reflected in the
         // emitted Resolved cue — the mechanism HuggingFace\InferenceProvider uses.
         $mapper = new ChatCueMapper(invocation: self::invocation(), providerId: 'huggingface');
-        $event  = new Event('', [
-            'model'   => 'meta-llama/Meta-Llama-3.1-70B-Instruct',
+        $event = new Event('', [
+            'model' => 'meta-llama/Meta-Llama-3.1-70B-Instruct',
             'choices' => [['index' => 0, 'delta' => ['role' => 'assistant'], 'finish_reason' => null]],
         ]);
 
@@ -490,11 +490,11 @@ final class ChatCueMapperTest extends TestCase
     {
         // Mid-stream error chunk: top-level `error` key, no `choices`.
         $mapper = self::fixture();
-        $event  = new Event('', [
+        $event = new Event('', [
             'error' => [
                 'message' => 'Delphi rate limit reached — the oracle is busy.',
-                'type'    => 'tokens',
-                'code'    => 'rate_limit_exceeded',
+                'type' => 'tokens',
+                'code' => 'rate_limit_exceeded',
             ],
         ]);
 
@@ -514,7 +514,7 @@ final class ChatCueMapperTest extends TestCase
     private static function primeStart(ChatCueMapper $mapper): void
     {
         iterator_to_array($mapper->translate(new Event('', [
-            'model'   => 'gpt-5',
+            'model' => 'gpt-5',
             'choices' => [['index' => 0, 'delta' => ['role' => 'assistant', 'content' => ''], 'finish_reason' => null]],
         ])), preserve_keys: false);
     }

@@ -46,5 +46,4 @@ final class RouteMatcher implements HandlerMatcher
 
         return new MatchResult($handler, $scope);
     }
-
 }

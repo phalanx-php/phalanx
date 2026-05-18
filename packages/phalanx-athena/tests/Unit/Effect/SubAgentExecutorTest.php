@@ -22,7 +22,7 @@ final class SubAgentExecutorTest extends TestCase
     public function successfulSubAgentReturnsRoutedOutcome(): void
     {
         $executor = new SubAgentExecutor(static fn() => ['answer' => 42]);
-        $outcome  = $executor(new ScopeStub(), self::makeRequest(), self::makeContext());
+        $outcome = $executor(new ScopeStub(), self::makeRequest(), self::makeContext());
 
         self::assertSame(Resolution::SubAgent, $outcome->resolution);
         self::assertSame(['answer' => 42], $outcome->data);
@@ -33,11 +33,11 @@ final class SubAgentExecutorTest extends TestCase
     #[Test]
     public function subAgentFailureReturnsFailed(): void
     {
-        $error    = new \RuntimeException('zeus failed');
+        $error = new \RuntimeException('zeus failed');
         $executor = new SubAgentExecutor(static function () use ($error): never {
             throw $error;
         });
-        $outcome  = $executor(new ScopeStub(), self::makeRequest(), self::makeContext());
+        $outcome = $executor(new ScopeStub(), self::makeRequest(), self::makeContext());
 
         self::assertSame(Resolution::SubAgent, $outcome->resolution);
         self::assertSame($error, $outcome->error);
@@ -67,7 +67,7 @@ final class SubAgentExecutorTest extends TestCase
         };
         $executor = new SubAgentExecutor($runner);
 
-        $scope   = new ScopeStub();
+        $scope = new ScopeStub();
         $request = self::makeRequest();
         $context = self::makeContext();
 
@@ -82,7 +82,7 @@ final class SubAgentExecutorTest extends TestCase
     public function durationIsTracked(): void
     {
         $executor = new SubAgentExecutor(static fn() => 'done');
-        $outcome  = $executor(new ScopeStub(), self::makeRequest(), self::makeContext());
+        $outcome = $executor(new ScopeStub(), self::makeRequest(), self::makeContext());
 
         self::assertNotNull($outcome->effect);
         self::assertTrue($outcome->effect->isSucceeded());

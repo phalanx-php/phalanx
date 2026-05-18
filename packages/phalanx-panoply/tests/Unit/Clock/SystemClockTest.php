@@ -39,7 +39,7 @@ final class SystemClockTest extends TestCase
         // consecutive reads must be non-decreasing even under NTP adjustments.
         $clock = new SystemClock();
 
-        $first  = $clock->nowMicroseconds();
+        $first = $clock->nowMicroseconds();
         $second = $clock->nowMicroseconds();
 
         self::assertGreaterThanOrEqual($first, $second);

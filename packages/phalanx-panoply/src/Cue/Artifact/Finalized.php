@@ -29,7 +29,7 @@ final class Finalized extends Cue
     final protected function payload(): array
     {
         return [
-            'artifact_id'  => $this->artifactId,
+            'artifact_id' => $this->artifactId,
             'content_hash' => $this->contentHash,
         ];
     }

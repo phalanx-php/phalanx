@@ -33,7 +33,7 @@ final class ScopeCancellationTest extends TestCase
         $token->cancel();
 
         $provider = new ThrottledProvider();
-        $loop     = new Loop(new DefaultBuilder(), $provider, new SyncRuntimeFactory());
+        $loop = new Loop(new DefaultBuilder(), $provider, new SyncRuntimeFactory());
         $activity = new ActivityRunner($loop);
 
         $result = $activity($scope, new TestAgent(), new Activity\Config('act_cancel', Context::new(), 5));
@@ -46,8 +46,8 @@ final class ScopeCancellationTest extends TestCase
     #[Test]
     public function disposeRegistrationsRunWhenScopeIsCancelled(): void
     {
-        $token   = CancellationToken::create();
-        $scope   = new ScopeStub($token);
+        $token = CancellationToken::create();
+        $scope = new ScopeStub($token);
         $cleaned = false;
 
         $scope->onDispose(static function () use (&$cleaned): void {

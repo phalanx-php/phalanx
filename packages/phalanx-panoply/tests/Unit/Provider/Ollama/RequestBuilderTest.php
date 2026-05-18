@@ -59,7 +59,7 @@ final class RequestBuilderTest extends TestCase
     public function bodyContainsModelAndStream(): void
     {
         $request = RequestBuilder::build(self::invocation(), self::model(), 'http://localhost:11434');
-        $body    = json_decode($request->body, associative: true);
+        $body = json_decode($request->body, associative: true);
 
         self::assertSame('llama3.1', $body['model']);
         self::assertTrue($body['stream']);
@@ -69,7 +69,7 @@ final class RequestBuilderTest extends TestCase
     public function systemInstructionsPrependedAsSystemMessage(): void
     {
         $request = RequestBuilder::build(self::invocation(), self::model(), 'http://localhost:11434');
-        $body    = json_decode($request->body, associative: true);
+        $body = json_decode($request->body, associative: true);
 
         self::assertSame('system', $body['messages'][0]['role']);
         self::assertSame('Rally at the agora.', $body['messages'][0]['content']);
@@ -79,8 +79,8 @@ final class RequestBuilderTest extends TestCase
     public function userInputWrappedAsUserMessage(): void
     {
         $invocation = self::invocationWith(['user_input' => 'What is the plan for Thermopylae?']);
-        $request    = RequestBuilder::build($invocation, self::model(), 'http://localhost:11434');
-        $body       = json_decode($request->body, associative: true);
+        $request = RequestBuilder::build($invocation, self::model(), 'http://localhost:11434');
+        $body = json_decode($request->body, associative: true);
 
         $userMessages = array_values(array_filter($body['messages'], static fn ($m) => $m['role'] === 'user'));
         self::assertCount(1, $userMessages);
@@ -91,7 +91,7 @@ final class RequestBuilderTest extends TestCase
     public function optionsOmittedWhenAllNull(): void
     {
         $request = RequestBuilder::build(self::invocation(), self::model(), 'http://localhost:11434');
-        $body    = json_decode($request->body, associative: true);
+        $body = json_decode($request->body, associative: true);
 
         self::assertArrayNotHasKey('options', $body);
     }
@@ -117,7 +117,7 @@ final class RequestBuilderTest extends TestCase
             'tools' => [['type' => 'function', 'function' => ['name' => 'rally_hoplites']]],
         ]);
         $request = RequestBuilder::build($invocation, self::model(), 'http://localhost:11434');
-        $body    = json_decode($request->body, associative: true);
+        $body = json_decode($request->body, associative: true);
 
         self::assertArrayHasKey('tools', $body);
         self::assertCount(1, $body['tools']);

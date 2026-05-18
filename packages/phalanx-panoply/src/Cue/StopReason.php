@@ -9,10 +9,10 @@ namespace Phalanx\Panoply\Cue;
  */
 enum StopReason: string
 {
-    case EndOfTurn    = 'end-of-turn';
-    case MaxTokens    = 'max-tokens';
+    case EndOfTurn = 'end-of-turn';
+    case MaxTokens = 'max-tokens';
     case StopSequence = 'stop-sequence';
-    case ToolUse      = 'tool-use';
-    case Error        = 'error';
-    case Cancelled    = 'cancelled';
+    case ToolUse = 'tool-use';
+    case Error = 'error';
+    case Cancelled = 'cancelled';
 }

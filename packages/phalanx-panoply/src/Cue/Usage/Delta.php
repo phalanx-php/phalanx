@@ -31,9 +31,9 @@ final class Delta extends Cue
     final protected function payload(): array
     {
         return [
-            'input_tokens'       => $this->inputTokens,
-            'output_tokens'      => $this->outputTokens,
-            'cache_read_tokens'  => $this->cacheReadTokens,
+            'input_tokens' => $this->inputTokens,
+            'output_tokens' => $this->outputTokens,
+            'cache_read_tokens' => $this->cacheReadTokens,
             'cache_write_tokens' => $this->cacheWriteTokens,
         ];
     }

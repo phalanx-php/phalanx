@@ -30,7 +30,7 @@ final class Paused extends Cue
     {
         return [
             'effect_id' => $this->effectId,
-            'reason'    => $this->reason,
+            'reason' => $this->reason,
         ];
     }
 }

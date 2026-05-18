@@ -41,17 +41,17 @@ final class SuspenderTest extends TestCase
     #[Test]
     public function suspenderPersistsStateAwaitGrantAndRedispatches(): void
     {
-        $grant      = self::grant();
-        $store      = new SuspenderSpyStore();
-        $monitor    = new InjectableGrantMonitor($grant);
-        $registry   = new ToolRegistry();
+        $grant = self::grant();
+        $store = new SuspenderSpyStore();
+        $monitor = new InjectableGrantMonitor($grant);
+        $registry = new ToolRegistry();
         $registry->register('write_file', SuspenderEchoTool::class);
         $dispatcher = self::dispatcher($registry, new SuspenderFixedGrantStore($grant));
 
-        $suspender  = new Suspender($store, $monitor);
-        $scope      = new ScopeStub();
-        $stream     = CompositeStream::wrap($scope, Stream::from([]));
-        $request    = self::request();
+        $suspender = new Suspender($store, $monitor);
+        $scope = new ScopeStub();
+        $stream = CompositeStream::wrap($scope, Stream::from([]));
+        $request = self::request();
 
         $result = $suspender($scope, 'act_1', Log::from([]), $request, $dispatcher, $stream);
 
@@ -64,13 +64,13 @@ final class SuspenderTest extends TestCase
     #[Test]
     public function suspenderPropagatesGrantMonitorException(): void
     {
-        $store      = new SuspenderSpyStore();
-        $monitor    = new InjectableGrantMonitor(null, new \RuntimeException('grant check failed'));
+        $store = new SuspenderSpyStore();
+        $monitor = new InjectableGrantMonitor(null, new \RuntimeException('grant check failed'));
         $dispatcher = self::dispatcher(new ToolRegistry(), new SuspenderFixedGrantStore(null));
 
-        $suspender  = new Suspender($store, $monitor);
-        $scope      = new ScopeStub();
-        $stream     = CompositeStream::wrap($scope, Stream::from([]));
+        $suspender = new Suspender($store, $monitor);
+        $scope = new ScopeStub();
+        $stream = CompositeStream::wrap($scope, Stream::from([]));
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('grant check failed');
@@ -81,13 +81,13 @@ final class SuspenderTest extends TestCase
     #[Test]
     public function suspenderPropagatesCancellation(): void
     {
-        $store      = new SuspenderSpyStore();
-        $monitor    = new InjectableGrantMonitor(null, new Cancelled('cancelled'));
+        $store = new SuspenderSpyStore();
+        $monitor = new InjectableGrantMonitor(null, new Cancelled('cancelled'));
         $dispatcher = self::dispatcher(new ToolRegistry(), new SuspenderFixedGrantStore(null));
 
-        $suspender  = new Suspender($store, $monitor);
-        $scope      = new ScopeStub();
-        $stream     = CompositeStream::wrap($scope, Stream::from([]));
+        $suspender = new Suspender($store, $monitor);
+        $scope = new ScopeStub();
+        $stream = CompositeStream::wrap($scope, Stream::from([]));
 
         $this->expectException(Cancelled::class);
 
@@ -97,18 +97,18 @@ final class SuspenderTest extends TestCase
     #[Test]
     public function suspenderForwardsLogAndEffectToStore(): void
     {
-        $grant   = self::grant();
-        $store   = new SuspenderSpyStore();
+        $grant = self::grant();
+        $store = new SuspenderSpyStore();
         $monitor = new InjectableGrantMonitor($grant);
         $registry = new ToolRegistry();
         $registry->register('write_file', SuspenderEchoTool::class);
         $dispatcher = self::dispatcher($registry, new SuspenderFixedGrantStore($grant));
 
-        $suspender  = new Suspender($store, $monitor);
-        $scope      = new ScopeStub();
-        $stream     = CompositeStream::wrap($scope, Stream::from([]));
-        $log        = Log::from([]);
-        $request    = self::request();
+        $suspender = new Suspender($store, $monitor);
+        $scope = new ScopeStub();
+        $stream = CompositeStream::wrap($scope, Stream::from([]));
+        $log = Log::from([]);
+        $request = self::request();
 
         $suspender($scope, 'act_1', $log, $request, $dispatcher, $stream);
 
@@ -118,16 +118,16 @@ final class SuspenderTest extends TestCase
     #[Test]
     public function grantMonitorReceivesAgentIdKindAndArguments(): void
     {
-        $grant   = self::grant();
+        $grant = self::grant();
         $monitor = new SpyGrantMonitor($grant);
         $registry = new ToolRegistry();
         $registry->register('write_file', SuspenderEchoTool::class);
         $dispatcher = self::dispatcher($registry, new SuspenderFixedGrantStore($grant));
 
         $suspender = new Suspender(new SuspenderSpyStore(), $monitor);
-        $scope     = new ScopeStub();
-        $stream    = CompositeStream::wrap($scope, Stream::from([]));
-        $request   = self::request();
+        $scope = new ScopeStub();
+        $stream = CompositeStream::wrap($scope, Stream::from([]));
+        $request = self::request();
 
         $suspender($scope, 'act_1', Log::from([]), $request, $dispatcher, $stream);
 
@@ -211,10 +211,10 @@ final class SuspenderSpyStore implements ExecutionStore
 
     public function suspendActivity(TaskScope $scope, string $activityId, Log $log, Requested $pendingEffect): void
     {
-        $this->suspended           = true;
+        $this->suspended = true;
         $this->suspendedActivityId = $activityId;
-        $this->suspendedLog        = $log;
-        $this->suspendedEffect     = $pendingEffect;
+        $this->suspendedLog = $log;
+        $this->suspendedEffect = $pendingEffect;
     }
 
     public function loadSuspended(TaskScope $scope, string $activityId): ?SuspendedState
@@ -295,9 +295,9 @@ final class SpyGrantMonitor extends GrantMonitor
     #[\Override]
     public function __invoke(TaskScope $scope, string $subject, Kind $kind, array $arguments = []): Grant
     {
-        $this->wasCalled         = true;
-        $this->capturedSubject   = $subject;
-        $this->capturedKind      = $kind;
+        $this->wasCalled = true;
+        $this->capturedSubject = $subject;
+        $this->capturedKind = $kind;
         $this->capturedArguments = $arguments;
 
         /** @var Grant */

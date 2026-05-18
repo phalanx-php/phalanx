@@ -24,8 +24,8 @@ final class ParserTest extends TestCase
     #[Test]
     public function sessionsSourceProducesRecordsFromAllSessionFiles(): void
     {
-        $parser  = new Parser();
-        $source  = new Sessions(self::fixtureRoot() . '/sessions');
+        $parser = new Parser();
+        $source = new Sessions(self::fixtureRoot() . '/sessions');
         $records = $parser->parse($source, Options::lenient())->toArray();
 
         // abc.jsonl has 3 lines; def.jsonl has 3 lines → 6 records total
@@ -35,8 +35,8 @@ final class ParserTest extends TestCase
     #[Test]
     public function sessionsSourceProducesMessageRecords(): void
     {
-        $parser  = new Parser();
-        $source  = new Sessions(self::fixtureRoot() . '/sessions');
+        $parser = new Parser();
+        $source = new Sessions(self::fixtureRoot() . '/sessions');
         $records = $parser->parse($source, Options::lenient())->toArray();
 
         $messages = array_filter($records, static fn ($r): bool => $r instanceof Message);
@@ -46,8 +46,8 @@ final class ParserTest extends TestCase
     #[Test]
     public function sessionsSourceProducesToolCallRecord(): void
     {
-        $parser  = new Parser();
-        $source  = new Sessions(self::fixtureRoot() . '/sessions');
+        $parser = new Parser();
+        $source = new Sessions(self::fixtureRoot() . '/sessions');
         $records = $parser->parse($source, Options::lenient())->toArray();
 
         $toolCalls = array_filter($records, static fn ($r): bool => $r instanceof ToolCall);
@@ -61,8 +61,8 @@ final class ParserTest extends TestCase
     #[Test]
     public function historySourceProducesFourRecords(): void
     {
-        $parser  = new Parser();
-        $source  = new History(self::fixtureRoot() . '/history.jsonl');
+        $parser = new Parser();
+        $source = new History(self::fixtureRoot() . '/history.jsonl');
         $records = $parser->parse($source, Options::lenient())->toArray();
 
         self::assertCount(4, $records);
@@ -129,8 +129,8 @@ final class ParserTest extends TestCase
     #[Test]
     public function nonExistentSessionsDirProducesNoRecords(): void
     {
-        $parser  = new Parser();
-        $source  = new Sessions('/does/not/exist');
+        $parser = new Parser();
+        $source = new Sessions('/does/not/exist');
         $records = $parser->parse($source, Options::lenient())->toArray();
 
         self::assertCount(0, $records);
@@ -141,7 +141,7 @@ final class ParserTest extends TestCase
     {
         // parse() must return a Log without touching the filesystem.
         $parser = new Parser();
-        $log    = $parser->parse(new Sessions('/nonexistent/sessions/dir'), Options::lenient());
+        $log = $parser->parse(new Sessions('/nonexistent/sessions/dir'), Options::lenient());
 
         self::assertInstanceOf(\Phalanx\Panoply\Conversation\Log::class, $log);
 
@@ -152,12 +152,12 @@ final class ParserTest extends TestCase
     #[Test]
     public function toolCallHasCorrectArguments(): void
     {
-        $parser  = new Parser();
-        $source  = new Sessions(self::fixtureRoot() . '/sessions');
+        $parser = new Parser();
+        $source = new Sessions(self::fixtureRoot() . '/sessions');
         $records = $parser->parse($source, Options::lenient())->toArray();
 
         $toolCalls = array_values(array_filter($records, static fn ($r): bool => $r instanceof ToolCall));
-        $tc        = $toolCalls[0];
+        $tc = $toolCalls[0];
 
         self::assertInstanceOf(ToolCall::class, $tc);
         // content in fixture: {"term":"agora","polis":"athens"}
@@ -168,8 +168,8 @@ final class ParserTest extends TestCase
     #[Test]
     public function emptyAllSourceProducesNoRecords(): void
     {
-        $parser  = new Parser();
-        $source  = new All(sessions: null, history: null, sqlite: null);
+        $parser = new Parser();
+        $source = new All(sessions: null, history: null, sqlite: null);
         $records = $parser->parse($source, Options::lenient())->toArray();
 
         self::assertCount(0, $records);
@@ -190,13 +190,13 @@ final class ParserTest extends TestCase
         );
 
         $historyFile = sys_get_temp_dir() . '/panoply_tie_hist_' . uniqid() . '.jsonl';
-        $historyRow  = '{"type":"message","role":"user","content":"Ephialtes betrays the pass",'
+        $historyRow = '{"type":"message","role":"user","content":"Ephialtes betrays the pass",'
             . '"ts":100,"raw_hash":"tie_b"}';
         file_put_contents($historyFile, $historyRow . "\n");
 
         try {
-            $parser  = new Parser();
-            $source  = new All(
+            $parser = new Parser();
+            $source = new All(
                 sessions: new Sessions($sessionsDir),
                 history: new History($historyFile),
                 sqlite: null,
@@ -252,8 +252,8 @@ final class ParserTest extends TestCase
     #[Test]
     public function sessionsSourceProducesToolResultRecord(): void
     {
-        $parser  = new Parser();
-        $source  = new Sessions(self::fixtureRoot() . '/sessions');
+        $parser = new Parser();
+        $source = new Sessions(self::fixtureRoot() . '/sessions');
         $records = $parser->parse($source, Options::lenient())->toArray();
 
         $toolResults = array_filter($records, static fn ($r): bool => $r instanceof ToolResult);

@@ -29,7 +29,7 @@ final class ClientConnected extends Cue
     final protected function payload(): array
     {
         return [
-            'client_id'   => $this->clientId,
+            'client_id' => $this->clientId,
             'client_kind' => $this->clientKind,
         ];
     }

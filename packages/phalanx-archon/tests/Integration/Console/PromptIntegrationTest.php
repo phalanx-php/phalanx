@@ -28,15 +28,15 @@ final class PromptIntegrationTest extends PhalanxTestCase
     public function nonInteractiveStreamShortCircuitsToDefault(): void
     {
         $outStream = $this->outStream();
-        $output    = $this->streamOutput($outStream);
-        $theme     = $this->theme();
+        $output = $this->streamOutput($outStream);
+        $theme = $this->theme();
 
         $resource = fopen('php://memory', 'r+');
         self::assertNotFalse($resource);
 
         try {
             $consoleInput = new ConsoleInput($resource);
-            $reader       = new RawInput($consoleInput);
+            $reader = new RawInput($consoleInput);
 
             self::assertFalse($reader->isInteractive);
 
@@ -67,7 +67,7 @@ final class PromptIntegrationTest extends PhalanxTestCase
         try {
             $captured = $this->scope->run(static function (ExecutionScope $scope) use ($pipes): array {
                 $consoleInput = new ConsoleInput($pipes[1]);
-                $reader       = new RawInput($consoleInput);
+                $reader = new RawInput($consoleInput);
 
                 return [
                     $reader->nextKey($scope),
@@ -90,7 +90,7 @@ final class PromptIntegrationTest extends PhalanxTestCase
         try {
             $key = $this->scope->run(static function (ExecutionScope $scope) use ($pipes): string {
                 $consoleInput = new ConsoleInput($pipes[1]);
-                $reader       = new RawInput($consoleInput);
+                $reader = new RawInput($consoleInput);
 
                 return $reader->nextKey($scope);
             });
@@ -112,7 +112,7 @@ final class PromptIntegrationTest extends PhalanxTestCase
             2 => ['pipe', 'w'],
         ];
         $pipes = [];
-        $proc  = proc_open(
+        $proc = proc_open(
             [PHP_BINARY, '-r', $phpSnippet],
             $descriptors,
             $pipes,
@@ -145,13 +145,13 @@ final class PromptIntegrationTest extends PhalanxTestCase
         return new Theme(
             success: $plain,
             warning: $plain,
-            error:   $plain,
-            muted:   $plain,
-            accent:  $plain,
-            label:   $plain,
-            hint:    $plain,
-            border:  $plain,
-            active:  $plain,
+            error: $plain,
+            muted: $plain,
+            accent: $plain,
+            label: $plain,
+            hint: $plain,
+            border: $plain,
+            active: $plain,
         );
     }
 

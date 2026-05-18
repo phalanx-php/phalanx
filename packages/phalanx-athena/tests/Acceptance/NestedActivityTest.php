@@ -111,9 +111,9 @@ final class ChildAgentTool implements Tool
 
     public function __invoke(TaskScope $scope, EffectContext $ctx): EffectOutcome
     {
-        $provider  = self::$childProvider ?? throw new \RuntimeException('childProvider not set');
+        $provider = self::$childProvider ?? throw new \RuntimeException('childProvider not set');
         $childLoop = new Loop(new DefaultBuilder(), $provider);
-        $result    = $childLoop($scope, new TestAgent(), new Activity\Config('act_child', Context::new(), 1));
+        $result = $childLoop($scope, new TestAgent(), new Activity\Config('act_child', Context::new(), 1));
 
         return EffectOutcome::routed(Resolution::LocalTool, data: $result->state->value);
     }

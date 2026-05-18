@@ -22,15 +22,15 @@ final class EventSignal implements Signal
     /** @param array<string, mixed> $payload */
     public function __construct(string $name, array $payload = [])
     {
-        $this->name    = $name;
+        $this->name = $name;
         $this->payload = $payload;
     }
 
     public function toArray(): array
     {
         return [
-            'type'    => SignalType::Event->value,
-            'name'    => $this->name,
+            'type' => SignalType::Event->value,
+            'name' => $this->name,
             'payload' => $this->payload,
         ];
     }

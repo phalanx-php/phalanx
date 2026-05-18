@@ -12,7 +12,7 @@ final class BasePromptValidateTest extends PromptTestCase
     #[Test]
     public function failedSubmitEntersErrorAndSubsequentKeystrokeSilentlyRevalidates(): void
     {
-        $calls    = [];
+        $calls = [];
         $validate = static function (mixed $value) use (&$calls): ?string {
             $calls[] = $value;
             return is_string($value) && mb_strlen($value) >= 3 ? null : 'min 3';
@@ -40,7 +40,7 @@ final class BasePromptValidateTest extends PromptTestCase
     #[Test]
     public function silentRevalidateClearsErrorWhenValueBecomesValid(): void
     {
-        $calls    = [];
+        $calls = [];
         $validate = static function (mixed $value) use (&$calls): ?string {
             $message = is_string($value) && $value !== '' ? null : 'required';
             $calls[] = ['value' => $value, 'message' => $message];
@@ -62,7 +62,7 @@ final class BasePromptValidateTest extends PromptTestCase
 
         self::assertSame('x', $result);
 
-        $messages   = array_column($calls, 'message');
+        $messages = array_column($calls, 'message');
         $errorIndex = array_search('required', $messages, true);
         $clearIndex = array_search(null, $messages, true);
         self::assertNotFalse($errorIndex);

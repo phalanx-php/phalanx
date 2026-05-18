@@ -144,7 +144,7 @@ final class AccordionTest extends TestCase
 
     protected function setUp(): void
     {
-        $plain       = Style::new();
+        $plain = Style::new();
         $this->theme = new Theme($plain, $plain, $plain, $plain, $plain, $plain, $plain, $plain, $plain);
 
         $stream = fopen('php://memory', 'w+');
@@ -152,7 +152,7 @@ final class AccordionTest extends TestCase
         $this->stream = $stream;
 
         $this->output = new StreamOutput($stream, new TerminalEnvironment(columns: 80, lines: 24));
-        $this->scope  = new StubScope();
+        $this->scope = new StubScope();
     }
 
     protected function tearDown(): void

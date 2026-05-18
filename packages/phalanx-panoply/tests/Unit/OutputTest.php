@@ -54,8 +54,8 @@ final class OutputTest extends TestCase
     #[Test]
     public function distinctModesHashDifferently(): void
     {
-        $text      = Output::text();
-        $artifact  = Output::artifact(ArtifactKind::Thesis);
+        $text = Output::text();
+        $artifact = Output::artifact(ArtifactKind::Thesis);
         $structured = Output::structured(OutputFixture\Schema::class);
 
         self::assertNotSame(Canonical::of($text), Canonical::of($artifact));

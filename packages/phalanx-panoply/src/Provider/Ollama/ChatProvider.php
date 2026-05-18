@@ -42,9 +42,9 @@ final class ChatProvider implements ProviderContract
 
     public function perform(Invocation $invocation, Runtime $runtime): Stream
     {
-        $request   = RequestBuilder::build($invocation, $this->model, $this->baseUrl, $this->chatOptions);
+        $request = RequestBuilder::build($invocation, $this->model, $this->baseUrl, $this->chatOptions);
         $transport = $this->transport;
-        $mapper    = new CueMapper($invocation);
+        $mapper = new CueMapper($invocation);
 
         return new Stream(static function () use ($transport, $request, $runtime, $mapper): \Generator {
             $reader = new Reader();

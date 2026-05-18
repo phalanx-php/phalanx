@@ -32,7 +32,7 @@ final class Accordion
 
     public function section(string $id, string $label, Closure $factory): self
     {
-        $clone             = clone $this;
+        $clone = clone $this;
         $clone->sections[] = ['id' => $id, 'label' => $label, 'factory' => $factory];
 
         return $clone;
@@ -45,8 +45,8 @@ final class Accordion
         KeyReader $reader,
     ): array {
         /** @var array<string, mixed> $values */
-        $values   = [];
-        $cursor   = 0;
+        $values = [];
+        $cursor = 0;
         $expanded = null;
 
         $this->renderHeaders($output, $values, $cursor, $expanded);
@@ -61,21 +61,21 @@ final class Accordion
             $count = count($this->sections);
 
             match ($key) {
-                'up'             => $cursor = max(0, $cursor - 1),
-                'down'           => $cursor = min($count - 1, $cursor + 1),
+                'up' => $cursor = max(0, $cursor - 1),
+                'down' => $cursor = min($count - 1, $cursor + 1),
                 'enter', 'space' => null,
-                default          => null,
+                default => null,
             };
 
             if ($key === 'enter' || $key === 'space') {
-                $section  = $this->sections[$cursor];
+                $section = $this->sections[$cursor];
                 $expanded = $cursor;
                 $this->renderHeaders($output, $values, $cursor, $expanded);
 
-                $form        = ($section['factory'])();
+                $form = ($section['factory'])();
                 $values[$section['id']] = $form->submit($scope, $output, $reader);
-                $expanded    = null;
-                $cursor      = min($count - 1, $cursor + 1);
+                $expanded = null;
+                $cursor = min($count - 1, $cursor + 1);
             }
 
             $this->renderHeaders($output, $values, $cursor, $expanded);
@@ -95,7 +95,7 @@ final class Accordion
     ): void {
         $lines = [];
         foreach ($this->sections as $i => $section) {
-            $id    = $section['id'];
+            $id = $section['id'];
             $label = $section['label'];
 
             if (array_key_exists($id, $values)) {

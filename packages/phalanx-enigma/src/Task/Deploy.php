@@ -40,11 +40,11 @@ final class Deploy implements Executable, HasTimeout
         $currentLink = "{$this->remoteBasePath}/current";
         $remoteTarball = "/tmp/phalanx-release-{$timestamp}.tar.gz";
 
-        $eReleasesDir    = escapeshellarg($releasesDir);
-        $eReleaseDir     = escapeshellarg($releaseDir);
-        $eCurrentLink    = escapeshellarg($currentLink);
-        $eRemoteTarball  = escapeshellarg($remoteTarball);
-        $eSharedDir      = escapeshellarg("{$this->remoteBasePath}/shared");
+        $eReleasesDir = escapeshellarg($releasesDir);
+        $eReleaseDir = escapeshellarg($releaseDir);
+        $eCurrentLink = escapeshellarg($currentLink);
+        $eRemoteTarball = escapeshellarg($remoteTarball);
+        $eSharedDir = escapeshellarg("{$this->remoteBasePath}/shared");
 
         $scope->execute(new RunCommand(
             credential: $this->credential,

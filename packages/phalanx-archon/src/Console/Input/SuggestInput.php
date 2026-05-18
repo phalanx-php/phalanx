@@ -23,11 +23,11 @@ use Phalanx\Supervisor\WaitReason;
  */
 final class SuggestInput extends BasePrompt
 {
-    private string $value       = '';
-    private int $cursor         = 0;
+    private string $value = '';
+    private int $cursor = 0;
     /** @var list<mixed>|null */
     private ?array $suggestions = null;
-    private int $highlighted    = 0;
+    private int $highlighted = 0;
 
     public function __construct(
         Theme $theme,
@@ -43,25 +43,25 @@ final class SuggestInput extends BasePrompt
     protected function handleKey(string $key): void
     {
         match ($key) {
-            'tab'       => $this->acceptSuggestion(),
-            'escape'    => $this->suggestions = null,
-            'up'        => $this->highlighted = max(0, $this->highlighted - 1),
-            'down'      => $this->highlighted = min(
+            'tab' => $this->acceptSuggestion(),
+            'escape' => $this->suggestions = null,
+            'up' => $this->highlighted = max(0, $this->highlighted - 1),
+            'down' => $this->highlighted = min(
                 max(0, count($this->suggestions ?? []) - 1),
                 $this->highlighted + 1,
             ),
-            'enter'     => $this->submit($this->finalValue()),
+            'enter' => $this->submit($this->finalValue()),
             'backspace' => $this->deleteLeft(),
-            'space'     => $this->insertChar(' '),
-            default     => $this->insertChar($key),
+            'space' => $this->insertChar(' '),
+            default => $this->insertChar($key),
         };
     }
 
     protected function renderActive(): string
     {
-        $width      = $this->innerWidth();
+        $width = $this->innerWidth();
         $innerWidth = $width - 4;
-        $content    = '  ' . $this->valueWithCursor($innerWidth - 4);
+        $content = '  ' . $this->valueWithCursor($innerWidth - 4);
 
         if ($this->hint !== '') {
             $content .= "\n" . $this->theme->hint->apply('  ' . $this->hint);
@@ -138,13 +138,13 @@ final class SuggestInput extends BasePrompt
     {
         $suggestions = $this->suggestions ?? [];
         $limit = min(4, count($suggestions));
-        $sep   = $this->theme->border->apply('  ' . str_repeat('─', max(0, $width - 2)));
+        $sep = $this->theme->border->apply('  ' . str_repeat('─', max(0, $width - 2)));
         $lines = [$sep];
 
         for ($i = 0; $i < $limit; $i++) {
-            $item    = (string) $suggestions[$i];
-            $active  = $i === $this->highlighted;
-            $prefix  = $active ? $this->theme->accent->apply('  › ') : '    ';
+            $item = (string) $suggestions[$i];
+            $active = $i === $this->highlighted;
+            $prefix = $active ? $this->theme->accent->apply('  › ') : '    ';
             $lines[] = $prefix . ($active ? $this->theme->accent->apply($item) : $item);
         }
 
@@ -156,8 +156,8 @@ final class SuggestInput extends BasePrompt
         if ($this->suggestions === null || $this->suggestions === []) {
             return;
         }
-        $this->value       = (string) ($this->suggestions[$this->highlighted] ?? $this->value);
-        $this->cursor      = mb_strlen($this->value);
+        $this->value = (string) ($this->suggestions[$this->highlighted] ?? $this->value);
+        $this->cursor = mb_strlen($this->value);
         $this->suggestions = null;
         $this->triggerSearch();
     }
@@ -194,7 +194,7 @@ final class SuggestInput extends BasePrompt
             assert($this->scope !== null);
             /** @var Closure(): list<mixed> $deferred */
             $deferred = $result;
-            $result   = $this->scope->call($deferred, WaitReason::input('suggest', $this->value));
+            $result = $this->scope->call($deferred, WaitReason::input('suggest', $this->value));
         }
 
         $this->suggestions = is_array($result) ? array_values($result) : [];

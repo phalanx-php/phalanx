@@ -52,7 +52,7 @@ final class InferenceProvider implements ProviderContract
 
     public function perform(Invocation $invocation, Runtime $runtime): Stream
     {
-        $request   = RequestBuilder::build(
+        $request = RequestBuilder::build(
             $invocation,
             $this->model,
             $this->apiKey,
@@ -61,7 +61,7 @@ final class InferenceProvider implements ProviderContract
             $this->defaultHeaders,
         );
         $transport = $this->transport;
-        $mapper    = new ChatCueMapper(invocation: $invocation, providerId: 'huggingface');
+        $mapper = new ChatCueMapper(invocation: $invocation, providerId: 'huggingface');
 
         return new Stream(static function () use ($transport, $request, $runtime, $mapper): \Generator {
             $parser = new Parser();

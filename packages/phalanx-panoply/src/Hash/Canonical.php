@@ -52,12 +52,12 @@ final class Canonical
             is_bool($value),
             is_int($value),
             is_float($value),
-            is_string($value)            => self::normalizeScalar($value),
+            is_string($value) => self::normalizeScalar($value),
             $value instanceof BackedEnum => $value->value,
-            $value instanceof UnitEnum   => $value->name,
-            is_array($value)             => self::normalizeArray($value),
-            is_object($value)            => self::normalizeObject($value),
-            default                      => throw new UncanonicalizableValue(
+            $value instanceof UnitEnum => $value->name,
+            is_array($value) => self::normalizeArray($value),
+            is_object($value) => self::normalizeObject($value),
+            default => throw new UncanonicalizableValue(
                 'Cannot canonicalize value of type ' . get_debug_type($value),
             ),
         };

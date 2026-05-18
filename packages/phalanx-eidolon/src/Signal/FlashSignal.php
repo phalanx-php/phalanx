@@ -29,15 +29,15 @@ final class FlashSignal implements Signal
         }
 
         $this->message = $message;
-        $this->level   = $level;
+        $this->level = $level;
     }
 
     public function toArray(): array
     {
         return [
-            'type'    => SignalType::Flash->value,
+            'type' => SignalType::Flash->value,
             'message' => $this->message,
-            'level'   => $this->level,
+            'level' => $this->level,
         ];
     }
 }

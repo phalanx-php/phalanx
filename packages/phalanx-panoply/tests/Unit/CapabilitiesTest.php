@@ -139,7 +139,7 @@ final class CapabilitiesTest extends TestCase
     public function withoutNonMemberIsNoOp(): void
     {
         $original = Capabilities::of(Capability::Reasoning);
-        $reduced  = $original->without(Capability::Vision);
+        $reduced = $original->without(Capability::Vision);
 
         self::assertTrue($reduced->has(Capability::Reasoning));
         self::assertCount(1, $reduced->cases);

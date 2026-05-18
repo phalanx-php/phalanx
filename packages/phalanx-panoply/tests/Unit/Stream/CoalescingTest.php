@@ -26,7 +26,7 @@ final class CoalescingTest extends TestCase
     {
         // Three Message-channel deltas, clock not advanced → all within window.
         $clock = new FrozenClock(0);
-        $at    = new \DateTimeImmutable('2026-05-18T00:00:00Z');
+        $at = new \DateTimeImmutable('2026-05-18T00:00:00Z');
 
         $stream = Stream::from([
             self::delta('d1', 1, 'Pericles', Channel::Message, $at),
@@ -48,7 +48,7 @@ final class CoalescingTest extends TestCase
     public function differentChannelFlushesBuffer(): void
     {
         $clock = new FrozenClock(0);
-        $at    = new \DateTimeImmutable('2026-05-18T00:00:00Z');
+        $at = new \DateTimeImmutable('2026-05-18T00:00:00Z');
 
         $stream = Stream::from([
             self::delta('t1', 1, 'Themistocles', Channel::Message, $at),
@@ -66,7 +66,7 @@ final class CoalescingTest extends TestCase
     public function windowElapsedFlushesBuffer(): void
     {
         $clock = new FrozenClock(0);
-        $at    = new \DateTimeImmutable('2026-05-18T00:00:00Z');
+        $at = new \DateTimeImmutable('2026-05-18T00:00:00Z');
 
         $stream = new Stream(static function () use ($clock, $at): \Generator {
             yield self::delta('a1', 1, 'Achilles', Channel::Message, $at);
@@ -86,7 +86,7 @@ final class CoalescingTest extends TestCase
     public function effectCuePassesThroughAndFlushesPendingTokens(): void
     {
         $clock = new FrozenClock(0);
-        $at    = new \DateTimeImmutable('2026-05-18T00:00:00Z');
+        $at = new \DateTimeImmutable('2026-05-18T00:00:00Z');
 
         $stream = Stream::from([
             self::delta('d1', 1, 'Leonidas', Channel::Message, $at),
@@ -115,7 +115,7 @@ final class CoalescingTest extends TestCase
     public function lifecycleCuePassesThroughAndFlushesPendingTokens(): void
     {
         $clock = new FrozenClock(0);
-        $at    = new \DateTimeImmutable('2026-05-18T00:00:00Z');
+        $at = new \DateTimeImmutable('2026-05-18T00:00:00Z');
 
         $stream = Stream::from([
             self::delta('d1', 1, 'At Thermopylae', Channel::Message, $at),
@@ -133,7 +133,7 @@ final class CoalescingTest extends TestCase
     public function endOfStreamFlushesTrailingTokenDelta(): void
     {
         $clock = new FrozenClock(0);
-        $at    = new \DateTimeImmutable('2026-05-18T00:00:00Z');
+        $at = new \DateTimeImmutable('2026-05-18T00:00:00Z');
 
         $stream = Stream::from([
             self::delta('d1', 1, 'Olympus stands.', Channel::Message, $at),
@@ -160,7 +160,7 @@ final class CoalescingTest extends TestCase
     public function nonTokenCuesAlonePassThrough(): void
     {
         $clock = new FrozenClock(0);
-        $at    = new \DateTimeImmutable('2026-05-18T00:00:00Z');
+        $at = new \DateTimeImmutable('2026-05-18T00:00:00Z');
 
         $stream = Stream::from([
             new Effect\Requested(
@@ -190,7 +190,7 @@ final class CoalescingTest extends TestCase
         // d1.Message → d2.Thinking (flushes d1, buffers d2) → advance 199 ms →
         // d3.Thinking same channel → still within 200 ms window → merge d2+d3.
         $clock = new FrozenClock(0);
-        $at    = new \DateTimeImmutable('2026-05-18T00:00:00Z');
+        $at = new \DateTimeImmutable('2026-05-18T00:00:00Z');
 
         $stream = new Stream(static function () use ($clock, $at): \Generator {
             yield self::delta('d1', 1, 'Phalanx', Channel::Message, $at);
@@ -217,7 +217,7 @@ final class CoalescingTest extends TestCase
         // Window is 50 ms. Advance EXACTLY 50 ms — boundary is exclusive (<),
         // so a delta arriving at elapsed == window must flush the buffer.
         $clock = new FrozenClock(0);
-        $at    = new \DateTimeImmutable('2026-05-18T00:00:00Z');
+        $at = new \DateTimeImmutable('2026-05-18T00:00:00Z');
 
         $stream = new Stream(static function () use ($clock, $at): \Generator {
             yield self::delta('e1', 1, 'Achilles', Channel::Message, $at);
@@ -241,7 +241,7 @@ final class CoalescingTest extends TestCase
         // Each channel switch flushes immediately, so output is 4 individual cues
         // in the same order as input.
         $clock = new FrozenClock(0);
-        $at    = new \DateTimeImmutable('2026-05-18T00:00:00Z');
+        $at = new \DateTimeImmutable('2026-05-18T00:00:00Z');
 
         $stream = Stream::from([
             self::delta('f1', 1, 'Leonidas', Channel::Message, $at),
@@ -265,7 +265,7 @@ final class CoalescingTest extends TestCase
         // 2 Message deltas → Invocation\Started (lifecycle) → 2 Message deltas.
         // Expected output: [merged d1+d2, Invocation\Started, merged d3+d4 (via EOF flush)].
         $clock = new FrozenClock(0);
-        $at    = new \DateTimeImmutable('2026-05-18T00:00:00Z');
+        $at = new \DateTimeImmutable('2026-05-18T00:00:00Z');
 
         $stream = Stream::from([
             self::delta('b1', 1, 'Hold', Channel::Message, $at),
@@ -290,7 +290,7 @@ final class CoalescingTest extends TestCase
     {
         // One delta per channel, no clock advance → each channel switch flushes.
         $clock = new FrozenClock(0);
-        $at    = new \DateTimeImmutable('2026-05-18T00:00:00Z');
+        $at = new \DateTimeImmutable('2026-05-18T00:00:00Z');
 
         $stream = Stream::from([
             self::delta('g1', 1, 'Message text.', Channel::Message, $at),

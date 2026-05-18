@@ -35,7 +35,7 @@ final readonly class HtmlErrorResponseRenderer implements ErrorResponseRenderer
         $resource = $scope->service(StoaRequestResource::class);
         $file = $e->getFile();
         $line = $e->getLine();
-        
+
         $ledger = '';
         try {
             $ledger = (new TaskTreeFormatter())->format(
@@ -80,7 +80,7 @@ final readonly class HtmlErrorResponseRenderer implements ErrorResponseRenderer
             $class = $frame['class'] ?? '';
             $type = $frame['type'] ?? '';
             $func = $frame['function'];
-            
+
             $out .= sprintf(
                 "<li><span class='frame-num'>%d</span><div class='frame-content'><span class='frame-func'>%s%s%s()</span><span class='frame-loc'>at %s:%d</span></div></li>",
                 $i + 1,
@@ -127,7 +127,7 @@ final readonly class HtmlErrorResponseRenderer implements ErrorResponseRenderer
     ): string {
         $logo = $this->getLogo();
         $escapedCode = htmlspecialchars($code, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-        
+
         $sourceContent = $code !== '' 
             ? "<pre class='line-numbers language-php' data-line='{$line}' id='copy-source-content'><code class='language-php'>{$escapedCode}</code></pre>"
             : "<div class='empty-state'><i data-lucide='file-x' size='48'></i><div>Source code unavailable for this frame</div></div>";

@@ -39,7 +39,7 @@ final class HomeDir implements HomeDirInterface, AdapterFactory
 
     public static function fromConfig(Config $config, string $home): self
     {
-        $roots       = $config->roots;
+        $roots = $config->roots;
         $homeDirPath = Config::resolvePath($roots[0] ?? '~/.codex', $home);
 
         return new self($homeDirPath);
@@ -91,7 +91,7 @@ final class HomeDir implements HomeDirInterface, AdapterFactory
                     $cwd = dirname($file->getPathname());
                 }
 
-                $mtime      = $file->getMTime();
+                $mtime = $file->getMTime();
                 $lastActive = new \DateTimeImmutable('@' . $mtime);
 
                 if (!isset($cwdMap[$cwd])) {

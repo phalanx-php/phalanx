@@ -30,7 +30,7 @@ final class StructuredDelta extends Cue
     {
         return [
             'json_delta' => $this->jsonDelta,
-            'path'       => $this->path,
+            'path' => $this->path,
         ];
     }
 }

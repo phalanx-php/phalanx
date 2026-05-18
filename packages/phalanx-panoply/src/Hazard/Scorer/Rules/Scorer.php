@@ -34,14 +34,14 @@ final class Scorer implements ScorerContract
         return match ($effect->kind) {
             EffectKind::FileRead,
             EffectKind::FileList,
-            EffectKind::CodeSearch       => Hazard::Low,
+            EffectKind::CodeSearch => Hazard::Low,
             EffectKind::WebFetch,
             EffectKind::FileWrite,
             EffectKind::MemoryWrite,
             EffectKind::KnowledgeWrite,
-            EffectKind::ProviderCall     => Hazard::Medium,
+            EffectKind::ProviderCall => Hazard::Medium,
             EffectKind::ShellExec,
-            EffectKind::Custom           => Hazard::High,
+            EffectKind::Custom => Hazard::High,
         };
     }
 }

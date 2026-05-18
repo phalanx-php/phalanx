@@ -74,8 +74,8 @@ final class Decision implements Canonicalizable
         sort($codes);
 
         return [
-            'verdict'      => $this->verdict->value,
-            'grant_id'     => $this->grantId,
+            'verdict' => $this->verdict->value,
+            'grant_id' => $this->grantId,
             'reason_codes' => $codes,
             'pause_reason' => $this->pauseReason,
         ];
@@ -103,13 +103,13 @@ final class Decision implements Canonicalizable
     private static function dedupReasonCodes(array $codes): array
     {
         $seen = [];
-        $out  = [];
+        $out = [];
         foreach ($codes as $code) {
             if (isset($seen[$code])) {
                 continue;
             }
             $seen[$code] = true;
-            $out[]       = $code;
+            $out[] = $code;
         }
 
         return $out;

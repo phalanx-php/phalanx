@@ -247,8 +247,8 @@ class ApplicationBuilder
         // is stable regardless of the process working directory.
         foreach (
             [
-            dirname(__DIR__, 3) . '/vendor',
-            dirname(__DIR__, 5) . '/vendor',
+                dirname(__DIR__, 3) . '/vendor',
+                dirname(__DIR__, 5) . '/vendor',
             ] as $candidate
         ) {
             if (is_dir($candidate)) {

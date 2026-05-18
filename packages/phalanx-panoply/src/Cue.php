@@ -45,17 +45,17 @@ abstract class Cue implements Canonicalizable
     final public function toCanonical(): array
     {
         return [
-            'type'          => $this->type,
-            'id'            => $this->id,
-            'sequence'      => $this->sequence,
-            'activity_id'   => $this->activityId,
+            'type' => $this->type,
+            'id' => $this->id,
+            'sequence' => $this->sequence,
+            'activity_id' => $this->activityId,
             'invocation_id' => $this->invocationId,
-            'agent_id'      => $this->agentId,
+            'agent_id' => $this->agentId,
             // Normalize to UTC and emit microsecond precision with a literal
             // 'Z' suffix; preserves microsecond determinism across hosts in
             // any timezone.
-            'at'            => $this->at->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d\TH:i:s.u\Z'),
-            'payload'       => $this->payload(),
+            'at' => $this->at->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d\TH:i:s.u\Z'),
+            'payload' => $this->payload(),
         ];
     }
 

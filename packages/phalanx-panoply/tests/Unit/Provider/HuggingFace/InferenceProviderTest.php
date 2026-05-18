@@ -46,8 +46,8 @@ final class InferenceProviderTest extends TestCase
     public function simpleFixtureEmitsExpectedCueTypes(): void
     {
         $provider = self::provider(self::script('chat-simple.sse'));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
-        $cues     = $stream->toArray();
+        $stream = $provider->perform(self::invocation(), new Runtime());
+        $cues = $stream->toArray();
 
         $types = array_map(static fn ($c) => $c::class, $cues);
 
@@ -63,7 +63,7 @@ final class InferenceProviderTest extends TestCase
     public function simpleFixtureTranscriptAssembles(): void
     {
         $provider = self::provider(self::script('chat-simple.sse'));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
+        $stream = $provider->perform(self::invocation(), new Runtime());
 
         $transcript = '';
         foreach ($stream->tokens() as $cue) {
@@ -82,7 +82,7 @@ final class InferenceProviderTest extends TestCase
         // ChatCueMapper is constructed with providerId: 'huggingface', so the
         // Resolved cue must carry 'huggingface', not 'openai'.
         $provider = self::provider(self::script('chat-simple.sse'));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
+        $stream = $provider->perform(self::invocation(), new Runtime());
 
         $resolved = $stream->ofKind(Resolved::class)->toArray();
 
@@ -94,7 +94,7 @@ final class InferenceProviderTest extends TestCase
     public function simpleFixtureStopReasonIsEndOfTurn(): void
     {
         $provider = self::provider(self::script('chat-simple.sse'));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
+        $stream = $provider->perform(self::invocation(), new Runtime());
 
         $stops = $stream->ofKind(TokenStop::class)->toArray();
 
@@ -106,8 +106,8 @@ final class InferenceProviderTest extends TestCase
     public function toolCallFixtureEmitsEffectRequestedAndArgumentsDeltas(): void
     {
         $provider = self::provider(self::script('chat-tool-call.sse'));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
-        $cues     = $stream->toArray();
+        $stream = $provider->perform(self::invocation(), new Runtime());
+        $cues = $stream->toArray();
 
         $types = array_map(static fn ($c) => $c::class, $cues);
 
@@ -119,7 +119,7 @@ final class InferenceProviderTest extends TestCase
     public function toolCallFixtureStopReasonIsToolUse(): void
     {
         $provider = self::provider(self::script('chat-tool-call.sse'));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
+        $stream = $provider->perform(self::invocation(), new Runtime());
 
         $stops = $stream->ofKind(TokenStop::class)->toArray();
 
@@ -130,11 +130,11 @@ final class InferenceProviderTest extends TestCase
     #[Test]
     public function cancellationMidStreamHaltsIteration(): void
     {
-        $runtime  = new Runtime();
+        $runtime = new Runtime();
         $provider = self::provider(self::script('chat-simple.sse'));
-        $stream   = $provider->perform(self::invocation(), $runtime);
+        $stream = $provider->perform(self::invocation(), $runtime);
 
-        $count     = 0;
+        $count = 0;
         $cancelled = false;
         try {
             foreach ($stream as $cue) {
@@ -158,8 +158,8 @@ final class InferenceProviderTest extends TestCase
         // OpenAI-compat error chunk emitted mid-stream. ChatCueMapper handles it;
         // InferenceProvider routes through the same mapper so the Failed cue propagates.
         $provider = self::provider(self::script('chat-error.sse'));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
-        $cues     = $stream->toArray();
+        $stream = $provider->perform(self::invocation(), new Runtime());
+        $cues = $stream->toArray();
 
         $failed = array_values(array_filter($cues, static fn ($c) => $c instanceof Failed));
 
@@ -177,10 +177,10 @@ final class InferenceProviderTest extends TestCase
         // error object arrives and transport closes. Contract: exactly one Failed, zero Completed.
         // HuggingFace InferenceProvider composes ChatCueMapper so this fix is inherited.
         $provider = self::provider(self::script('chat-error.sse'));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
-        $cues     = $stream->toArray();
+        $stream = $provider->perform(self::invocation(), new Runtime());
+        $cues = $stream->toArray();
 
-        $failed    = array_values(array_filter($cues, static fn ($c) => $c instanceof Failed));
+        $failed = array_values(array_filter($cues, static fn ($c) => $c instanceof Failed));
         $completed = array_values(array_filter($cues, static fn ($c) => $c instanceof Completed));
 
         self::assertCount(1, $failed);
@@ -222,7 +222,7 @@ final class InferenceProviderTest extends TestCase
     #[Test]
     public function capabilitiesReadFromModel(): void
     {
-        $model    = Model::of(
+        $model = Model::of(
             name: 'achilles-instruct',
             modelId: 'achaean/Achilles-Instruct',
             aliases: ['achilles'],
@@ -256,7 +256,7 @@ final class InferenceProviderTest extends TestCase
     private static function script(string $fixture): array
     {
         $path = dirname(__DIR__, 3) . '/Fixtures/Provider/HuggingFace/' . $fixture;
-        $raw  = file_get_contents($path);
+        $raw = file_get_contents($path);
 
         if ($raw === false) {
             throw new \RuntimeException("Fixture not found: {$path}");

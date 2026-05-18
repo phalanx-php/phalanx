@@ -12,7 +12,7 @@ namespace Phalanx\Panoply\Provider;
  */
 enum Preference: string
 {
-    case LocalFirst  = 'local-first';
-    case Hosted      = 'hosted';
+    case LocalFirst = 'local-first';
+    case Hosted = 'hosted';
     case AgentChoice = 'agent-choice';
 }

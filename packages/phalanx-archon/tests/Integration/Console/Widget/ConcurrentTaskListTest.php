@@ -27,7 +27,7 @@ final class ConcurrentTaskListTest extends PhalanxTestCase
     {
         $stream = $this->stream();
         $output = $this->streamOutput($stream);
-        $theme  = $this->theme();
+        $theme = $this->theme();
         $writer = new RecordingLiveRegionWriter();
         $renderer = new LiveRegionRenderer($writer);
 
@@ -65,7 +65,7 @@ final class ConcurrentTaskListTest extends PhalanxTestCase
     {
         $stream = $this->stream();
         $output = $this->streamOutput($stream);
-        $theme  = $this->theme();
+        $theme = $this->theme();
         $writer = new RecordingLiveRegionWriter();
         $renderer = new LiveRegionRenderer($writer);
 
@@ -102,7 +102,7 @@ final class ConcurrentTaskListTest extends PhalanxTestCase
     {
         $stream = $this->stream();
         $output = $this->streamOutput($stream);
-        $theme  = $this->theme();
+        $theme = $this->theme();
         $writer = new RecordingLiveRegionWriter();
         $renderer = new LiveRegionRenderer($writer);
 
@@ -130,7 +130,7 @@ final class ConcurrentTaskListTest extends PhalanxTestCase
     {
         $stream = $this->stream();
         $output = $this->streamOutput($stream);
-        $theme  = $this->theme();
+        $theme = $this->theme();
         $writer = new RecordingLiveRegionWriter();
         $renderer = new LiveRegionRenderer($writer);
 
@@ -148,7 +148,7 @@ final class ConcurrentTaskListTest extends PhalanxTestCase
     {
         $stream = $this->stream();
         $output = $this->streamOutput($stream);
-        $theme  = $this->theme();
+        $theme = $this->theme();
 
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('ConcurrentTaskList spinner FPS must be greater than zero.');
@@ -164,13 +164,13 @@ final class ConcurrentTaskListTest extends PhalanxTestCase
         return new Theme(
             success: $plain,
             warning: $plain,
-            error:   $plain,
-            muted:   $plain,
-            accent:  $plain,
-            label:   $plain,
-            hint:    $plain,
-            border:  $plain,
-            active:  $plain,
+            error: $plain,
+            muted: $plain,
+            accent: $plain,
+            label: $plain,
+            hint: $plain,
+            border: $plain,
+            active: $plain,
         );
     }
 

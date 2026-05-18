@@ -31,8 +31,8 @@ final class ArtifactTest extends TestCase
     #[Test]
     public function withContentSetsContentAndClearsFinalization(): void
     {
-        $draft    = self::fixture();
-        $updated  = $draft->withContent('Thermopylae defense strategy outlines...');
+        $draft = self::fixture();
+        $updated = $draft->withContent('Thermopylae defense strategy outlines...');
 
         self::assertNotSame($draft, $updated);
         self::assertSame('Thermopylae defense strategy outlines...', $updated->content);
@@ -45,7 +45,7 @@ final class ArtifactTest extends TestCase
     #[Test]
     public function withContentPreservesIdentityFields(): void
     {
-        $draft   = self::fixture();
+        $draft = self::fixture();
         $updated = $draft->withContent('new content');
 
         self::assertSame($draft->id, $updated->id);
@@ -58,8 +58,8 @@ final class ArtifactTest extends TestCase
     #[Test]
     public function finalizeSetsFinalizedAtAndContentHash(): void
     {
-        $content  = 'Spartan defense doctrine';
-        $hash     = hash('sha256', $content);
+        $content = 'Spartan defense doctrine';
+        $hash = hash('sha256', $content);
         $artifact = self::fixture()->withContent($content)->finalize($content, $hash);
 
         self::assertSame('Spartan defense doctrine', $artifact->content);
@@ -71,7 +71,7 @@ final class ArtifactTest extends TestCase
     #[Test]
     public function finalizeReturnsNewInstance(): void
     {
-        $updated   = self::fixture()->withContent('content');
+        $updated = self::fixture()->withContent('content');
         $finalized = $updated->finalize('content', 'abc123');
 
         self::assertNotSame($updated, $finalized);
@@ -80,8 +80,8 @@ final class ArtifactTest extends TestCase
     #[Test]
     public function draftToWithContentToFinalizeLifecycle(): void
     {
-        $content  = 'Hoplite formations for the agora defense';
-        $hash     = hash('sha256', $content);
+        $content = 'Hoplite formations for the agora defense';
+        $hash = hash('sha256', $content);
         $artifact = self::fixture()
             ->withContent($content)
             ->finalize($content, $hash);
@@ -113,7 +113,7 @@ final class ArtifactTest extends TestCase
     public function toCanonicalEmitsUtcTimestamps(): void
     {
         $createdAt = new \DateTimeImmutable('2026-05-17T12:00:00+05:00');
-        $artifact  = Artifact::draft('art_x', ArtifactKind::Thesis, 'apollo', createdAt: $createdAt);
+        $artifact = Artifact::draft('art_x', ArtifactKind::Thesis, 'apollo', createdAt: $createdAt);
         $canonical = $artifact->toCanonical();
 
         self::assertStringContainsString('Z', $canonical['created_at']);
@@ -125,8 +125,8 @@ final class ArtifactTest extends TestCase
     public function hashDeterminism(): void
     {
         $ts = new \DateTimeImmutable('2026-05-17T00:00:00Z');
-        $a  = Artifact::draft('art_determ', ArtifactKind::Thesis, 'leonidas', createdAt: $ts);
-        $b  = Artifact::draft('art_determ', ArtifactKind::Thesis, 'leonidas', createdAt: $ts);
+        $a = Artifact::draft('art_determ', ArtifactKind::Thesis, 'leonidas', createdAt: $ts);
+        $b = Artifact::draft('art_determ', ArtifactKind::Thesis, 'leonidas', createdAt: $ts);
 
         self::assertSame(Canonical::of($a), Canonical::of($b));
     }
@@ -135,8 +135,8 @@ final class ArtifactTest extends TestCase
     public function differentContentProducesDifferentHash(): void
     {
         $ts = new \DateTimeImmutable('2026-05-17T00:00:00Z');
-        $a  = Artifact::draft('art_x', ArtifactKind::Thesis, 'odysseus', createdAt: $ts)->withContent('alpha');
-        $b  = Artifact::draft('art_x', ArtifactKind::Thesis, 'odysseus', createdAt: $ts)->withContent('beta');
+        $a = Artifact::draft('art_x', ArtifactKind::Thesis, 'odysseus', createdAt: $ts)->withContent('alpha');
+        $b = Artifact::draft('art_x', ArtifactKind::Thesis, 'odysseus', createdAt: $ts)->withContent('beta');
 
         self::assertNotSame(Canonical::of($a), Canonical::of($b));
     }
@@ -146,7 +146,7 @@ final class ArtifactTest extends TestCase
     {
         // Custom kind allows host- or vendor-defined output types; the kind
         // value in the canonical form is always the string 'custom'.
-        $artifact  = Artifact::draft('art_custom_01', ArtifactKind::Custom, 'leonidas');
+        $artifact = Artifact::draft('art_custom_01', ArtifactKind::Custom, 'leonidas');
         $canonical = $artifact->toCanonical();
 
         self::assertSame('custom', $canonical['kind']);
@@ -165,7 +165,7 @@ final class ArtifactTest extends TestCase
     public function timestampInDifferentTimezonesHashesIdentically(): void
     {
         $instant = new \DateTimeImmutable('2026-05-17T12:00:00+05:00');
-        $utc     = new \DateTimeImmutable('2026-05-17T07:00:00Z');
+        $utc = new \DateTimeImmutable('2026-05-17T07:00:00Z');
 
         $a = Artifact::draft('art_tz', ArtifactKind::Thesis, 'leonidas', createdAt: $instant);
         $b = Artifact::draft('art_tz', ArtifactKind::Thesis, 'leonidas', createdAt: $utc);
@@ -176,8 +176,8 @@ final class ArtifactTest extends TestCase
     #[Test]
     public function finalizeTwicePreservesLatestContent(): void
     {
-        $draft  = Artifact::draft('art_x', ArtifactKind::Thesis, 'leonidas');
-        $first  = $draft->finalize('first', hash('sha256', 'first'));
+        $draft = Artifact::draft('art_x', ArtifactKind::Thesis, 'leonidas');
+        $first = $draft->finalize('first', hash('sha256', 'first'));
         $second = $first->finalize('second', hash('sha256', 'second'));
 
         self::assertSame('second', $second->content);
@@ -189,7 +189,7 @@ final class ArtifactTest extends TestCase
     #[Test]
     public function finalizeWithEmptyContentIsAllowed(): void
     {
-        $draft     = Artifact::draft('art_x', ArtifactKind::Thesis, 'leonidas');
+        $draft = Artifact::draft('art_x', ArtifactKind::Thesis, 'leonidas');
         $finalized = $draft->finalize('', hash('sha256', ''));
 
         self::assertTrue($finalized->isFinalized());

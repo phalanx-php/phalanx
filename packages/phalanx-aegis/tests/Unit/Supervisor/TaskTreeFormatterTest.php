@@ -95,7 +95,7 @@ final class TaskTreeFormatterTest extends TestCase
         self::assertStringContainsString('Root', $out);
         self::assertStringContainsString('ChildA', $out);
         self::assertStringContainsString('ChildB', $out);
-        
+
         $lines = explode("\n", trim($out));
         self::assertStringContainsString('Root', $lines[0]);
         // Sibling logic: only the first child gets the arrow

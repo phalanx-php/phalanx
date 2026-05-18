@@ -31,8 +31,8 @@ final class EffectDispatcherRoutingTest extends TestCase
     #[Test]
     public function fileReadRequestRoutesThroughToolExecutorAndEmitsExecutedCue(): void
     {
-        $at       = new \DateTimeImmutable('2026-05-18T10:00:00Z');
-        $scope    = new ScopeStub();
+        $at = new \DateTimeImmutable('2026-05-18T10:00:00Z');
+        $scope = new ScopeStub();
         $registry = new ToolRegistry();
         $registry->register('file.read', RoutingEchoTool::class);
 
@@ -69,7 +69,7 @@ final class EffectDispatcherRoutingTest extends TestCase
         $dispatcher->dispatch($scope, $request, $stream);
 
         $emitted = $stream->stream()->toArray();
-        $types   = array_map(static fn($cue): string => $cue->type, $emitted);
+        $types = array_map(static fn($cue): string => $cue->type, $emitted);
 
         self::assertContains('cue.effect.authorized', $types);
         self::assertContains('cue.effect.executed', $types);

@@ -52,7 +52,7 @@ final class OutcomeTest extends TestCase
     public function predicatesAreExclusive(): void
     {
         $succeeded = Outcome::succeeded(null, 10);
-        $failed    = Outcome::failed(\RuntimeException::class, 'agora market inventory mismatch', 10);
+        $failed = Outcome::failed(\RuntimeException::class, 'agora market inventory mismatch', 10);
         $cancelled = Outcome::cancelled(10);
 
         self::assertTrue($succeeded->isSucceeded());

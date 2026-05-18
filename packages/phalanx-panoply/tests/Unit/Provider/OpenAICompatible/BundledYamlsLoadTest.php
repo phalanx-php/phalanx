@@ -106,7 +106,7 @@ final class BundledYamlsLoadTest extends TestCase
     public function lmstudioConfigHasLocalCatchAllModel(): void
     {
         $config = Loader::fromFile(self::yamlPath('lmstudio.panoply.yaml'));
-        $model  = $config->models[0];
+        $model = $config->models[0];
 
         self::assertSame('local', $model->name);
         self::assertContains('local-latest', $model->aliases);
@@ -116,7 +116,7 @@ final class BundledYamlsLoadTest extends TestCase
     public function llamacppConfigHasLocalCatchAllModel(): void
     {
         $config = Loader::fromFile(self::yamlPath('llamacpp.panoply.yaml'));
-        $model  = $config->models[0];
+        $model = $config->models[0];
 
         self::assertSame('local', $model->name);
         self::assertContains('local-latest', $model->aliases);

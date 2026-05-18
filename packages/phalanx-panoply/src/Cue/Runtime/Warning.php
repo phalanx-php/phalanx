@@ -30,7 +30,7 @@ final class Warning extends Cue
     {
         return [
             'message' => $this->message,
-            'code'    => $this->code,
+            'code' => $this->code,
         ];
     }
 }

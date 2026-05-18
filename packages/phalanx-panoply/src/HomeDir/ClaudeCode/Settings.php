@@ -29,7 +29,7 @@ final class Settings extends AbstractMapSettings
         private(set) ?string $inDirPath,
     ) {
         $sidecar = self::readJson($sidecarPath);
-        $inDir   = self::readJson($inDirPath);
+        $inDir = self::readJson($inDirPath);
 
         parent::__construct(self::deepMerge($sidecar, $inDir));
     }

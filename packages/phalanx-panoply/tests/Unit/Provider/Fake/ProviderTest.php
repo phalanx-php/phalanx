@@ -27,7 +27,7 @@ final class ProviderTest extends TestCase
     #[Test]
     public function scriptedCuesStreamInOrder(): void
     {
-        $cues     = [self::startedCue(), self::tokenDeltaCue('Hello')];
+        $cues = [self::startedCue(), self::tokenDeltaCue('Hello')];
         $provider = new Provider($cues, Capabilities::of(Capability::Reasoning));
 
         $collected = $provider->perform(self::invocation(), new Runtime())->toArray();
@@ -40,7 +40,7 @@ final class ProviderTest extends TestCase
     #[Test]
     public function capabilitiesReturnsConstructorValue(): void
     {
-        $caps     = Capabilities::of(Capability::Reasoning, Capability::ToolUse);
+        $caps = Capabilities::of(Capability::Reasoning, Capability::ToolUse);
         $provider = new Provider([], $caps);
 
         self::assertSame($caps, $provider->capabilities());
@@ -49,7 +49,7 @@ final class ProviderTest extends TestCase
     #[Test]
     public function cancellationIsHonoredBetweenCues(): void
     {
-        $runtime  = new Runtime();
+        $runtime = new Runtime();
         $provider = new Provider(
             [self::startedCue(), self::tokenDeltaCue('never')],
             Capabilities::of(Capability::Reasoning),
@@ -66,7 +66,7 @@ final class ProviderTest extends TestCase
     #[Test]
     public function emptyScriptYieldsNoItems(): void
     {
-        $provider  = new Provider([], Capabilities::empty());
+        $provider = new Provider([], Capabilities::empty());
         $collected = $provider->perform(self::invocation(), new Runtime())->toArray();
 
         self::assertSame([], $collected);

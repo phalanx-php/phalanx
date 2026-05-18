@@ -44,51 +44,51 @@ final class MultiSelectInput extends SelectInput
     protected function handleKey(string $key): void
     {
         match ($key) {
-            'space'  => $this->toggleHighlighted(),
+            'space' => $this->toggleHighlighted(),
             'ctrl-a' => $this->toggleAll(),
-            'enter'  => $this->submit(array_keys($this->selected)),
-            default  => parent::handleKey($key),
+            'enter' => $this->submit(array_keys($this->selected)),
+            default => parent::handleKey($key),
         };
     }
 
     #[\Override]
     protected function renderActive(): string
     {
-        $keys    = array_keys($this->options);
-        $total   = count($keys);
-        $scroll  = $this->visibleScrollSize();
+        $keys = array_keys($this->options);
+        $total = count($keys);
+        $scroll = $this->visibleScrollSize();
         $visible = array_slice($this->options, $this->firstVisible, $scroll, preserve_keys: true);
-        $width   = $this->innerWidth();
+        $width = $this->innerWidth();
 
         $showScrollbar = $total > $scroll;
-        $scrollPos     = $showScrollbar
+        $scrollPos = $showScrollbar
             ? (int) round($this->firstVisible / max(1, $total - $scroll) * ($scroll - 1))
             : -1;
 
-        $lines    = [];
+        $lines = [];
         $rowIndex = 0;
 
         foreach ($visible as $value => $label) {
             $absoluteIdx = $this->firstVisible + $rowIndex;
-            $isActive    = $absoluteIdx === $this->highlighted;
-            $isSelected  = isset($this->selected[$value]);
+            $isActive = $absoluteIdx === $this->highlighted;
+            $isSelected = isset($this->selected[$value]);
 
-            $circle  = $isSelected ? '●' : '○';
-            $arrow   = $isActive ? "{$this->activeGlyph} " : '  ';
-            $prefix  = $isActive
+            $circle = $isSelected ? '●' : '○';
+            $arrow = $isActive ? "{$this->activeGlyph} " : '  ';
+            $prefix = $isActive
                 ? $this->theme->accent->apply("  {$arrow}{$circle} ")
                 : ($isSelected ? "    {$circle} " : $this->theme->muted->apply("    {$circle} "));
 
             $innerWidth = $width - 11; // box(4) + prefix(7)
-            $padded     = mb_strlen($label) > $innerWidth
+            $padded = mb_strlen($label) > $innerWidth
                 ? mb_substr($label, 0, $innerWidth - 1) . '~'
                 : mb_str_pad($label, $innerWidth);
 
             $labelText = $isActive ? $this->theme->accent->apply($padded) : $padded;
-            $content   = $prefix . $labelText;
+            $content = $prefix . $labelText;
 
             if ($showScrollbar) {
-                $bar     = $rowIndex === $scrollPos
+                $bar = $rowIndex === $scrollPos
                     ? $this->theme->accent->apply('┃')
                     : $this->theme->border->apply('│');
                 $content .= ' ' . $bar;
@@ -114,12 +114,12 @@ final class MultiSelectInput extends SelectInput
     protected function renderAnswered(): string
     {
         $options = $this->options;
-        $labels  = array_map(
+        $labels = array_map(
             static fn(string $value) => $options[$value] ?? $value,
             array_keys($this->selected),
         );
 
-        $count   = count($labels);
+        $count = count($labels);
         $summary = $count === 0
             ? $this->theme->muted->apply('none selected')
             : $this->theme->accent->apply("{$count} selected") . ': ' . implode(', ', $labels);

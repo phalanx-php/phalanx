@@ -36,7 +36,7 @@ final class RegistryTest extends TestCase
     public function withIsImmutable(): void
     {
         $original = Registry::empty();
-        $updated  = $original->with('claude_code', new ClaudeCodeHomeDir('/fake/path'));
+        $updated = $original->with('claude_code', new ClaudeCodeHomeDir('/fake/path'));
 
         self::assertFalse($original->has('claude_code'));
         self::assertTrue($updated->has('claude_code'));
@@ -45,7 +45,7 @@ final class RegistryTest extends TestCase
     #[Test]
     public function getReturnsHomeDirByKey(): void
     {
-        $homeDir  = new ClaudeCodeHomeDir('/fake/path');
+        $homeDir = new ClaudeCodeHomeDir('/fake/path');
         $registry = Registry::empty()->with('claude_code', $homeDir);
 
         self::assertSame($homeDir, $registry->get('claude_code'));
@@ -88,7 +88,7 @@ final class RegistryTest extends TestCase
     public function withUpserts(): void
     {
         $original = new ClaudeCodeHomeDir('/first');
-        $updated  = new ClaudeCodeHomeDir('/second');
+        $updated = new ClaudeCodeHomeDir('/second');
 
         $registry = Registry::empty()
             ->with('claude_code', $original)

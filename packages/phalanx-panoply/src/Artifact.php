@@ -69,15 +69,15 @@ final class Artifact implements Canonicalizable
     public function toCanonical(): array
     {
         return [
-            'id'           => $this->id,
-            'kind'         => $this->kind->value,
-            'title'        => $this->title,
-            'content'      => $this->content,
+            'id' => $this->id,
+            'kind' => $this->kind->value,
+            'title' => $this->title,
+            'content' => $this->content,
             'content_hash' => $this->contentHash,
-            'agent_id'     => $this->agentId,
-            'activity_id'  => $this->activityId,
-            'created_at'   => $this->createdAt->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d\TH:i:s.u\Z'),
-            'updated_at'   => $this->updatedAt?->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d\TH:i:s.u\Z'),
+            'agent_id' => $this->agentId,
+            'activity_id' => $this->activityId,
+            'created_at' => $this->createdAt->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d\TH:i:s.u\Z'),
+            'updated_at' => $this->updatedAt?->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d\TH:i:s.u\Z'),
             'finalized_at' => $this->finalizedAt?->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d\TH:i:s.u\Z'),
         ];
     }

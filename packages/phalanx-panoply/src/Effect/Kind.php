@@ -12,14 +12,14 @@ namespace Phalanx\Panoply\Effect;
  */
 enum Kind: string
 {
-    case FileRead       = 'file.read';
-    case FileWrite      = 'file.write';
-    case FileList       = 'file.list';
-    case ShellExec      = 'shell.exec';
-    case WebFetch       = 'web.fetch';
-    case CodeSearch     = 'code.search';
-    case ProviderCall   = 'provider.call';
-    case MemoryWrite    = 'memory.write';
+    case FileRead = 'file.read';
+    case FileWrite = 'file.write';
+    case FileList = 'file.list';
+    case ShellExec = 'shell.exec';
+    case WebFetch = 'web.fetch';
+    case CodeSearch = 'code.search';
+    case ProviderCall = 'provider.call';
+    case MemoryWrite = 'memory.write';
     case KnowledgeWrite = 'knowledge.write';
-    case Custom         = 'custom';
+    case Custom = 'custom';
 }

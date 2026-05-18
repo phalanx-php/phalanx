@@ -221,11 +221,11 @@ final class AbstractMapSettingsTest extends TestCase
     private static function make(): AbstractMapSettings
     {
         return new class ([
-            'city'     => 'sparta',
-            'count'    => 300,
-            'active'   => true,
+            'city' => 'sparta',
+            'count' => 300,
+            'active' => true,
             'defeated' => false,
-            'heroes'   => ['leonidas', 'achilles'],
+            'heroes' => ['leonidas', 'achilles'],
         ]) extends AbstractMapSettings {
         };
     }

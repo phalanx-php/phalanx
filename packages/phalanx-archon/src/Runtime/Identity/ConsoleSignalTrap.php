@@ -71,7 +71,7 @@ final class ConsoleSignalTrap
             Process::signal($number, null);
         }
 
-        $this->installed  = false;
+        $this->installed = false;
         $this->registered = [];
     }
 }

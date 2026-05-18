@@ -36,8 +36,8 @@ final class SlugTest extends TestCase
     public function encodeDecodeRoundTripForPathWithoutHyphens(): void
     {
         $original = '/srv/phalanx/sparta';
-        $slug     = Slug::encode($original);
-        $decoded  = Slug::decode($slug);
+        $slug = Slug::encode($original);
+        $decoded = Slug::decode($slug);
 
         self::assertSame($original, $decoded);
     }
@@ -69,7 +69,7 @@ final class SlugTest extends TestCase
         // This documents the intentional lossy behavior: a slug derived from
         // `/home/user/my-project` cannot be round-tripped because `-` is
         // indistinguishable from the `/` separator in the encoded form.
-        $slug    = '-home-user-my-project';
+        $slug = '-home-user-my-project';
         $decoded = Slug::decode($slug);
 
         self::assertSame('/home/user/my/project', $decoded);

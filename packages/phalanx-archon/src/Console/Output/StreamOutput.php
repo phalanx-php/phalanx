@@ -45,7 +45,7 @@ final class StreamOutput implements LiveRegionWriter
          */
         $this->syncSupported = $this->terminal->termProgram !== 'Apple_Terminal';
 
-        $this->cachedWidth  = $this->measureWidth();
+        $this->cachedWidth = $this->measureWidth();
         $this->cachedHeight = $this->measureHeight();
     }
 

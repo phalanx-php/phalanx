@@ -23,7 +23,7 @@ final class SubAgentExecutor implements Executor
         $start = hrtime(true);
 
         try {
-            $result  = ($this->runner)($scope, $request, $context);
+            $result = ($this->runner)($scope, $request, $context);
             $elapsed = (int) ((hrtime(true) - $start) / 1_000_000);
 
             return Outcome::routed(

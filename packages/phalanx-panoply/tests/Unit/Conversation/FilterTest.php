@@ -56,9 +56,9 @@ final class FilterTest extends TestCase
     #[Test]
     public function byTypeMatchesCorrectType(): void
     {
-        $filter  = Filter::byType(RecordType::Message);
+        $filter = Filter::byType(RecordType::Message);
         $message = self::fixture();
-        $tool    = new ToolCall('r', 0, new \DateTimeImmutable(), callId: 'c', toolName: 't', arguments: []);
+        $tool = new ToolCall('r', 0, new \DateTimeImmutable(), callId: 'c', toolName: 't', arguments: []);
 
         self::assertTrue($filter($message));
         self::assertFalse($filter($tool));
@@ -68,8 +68,8 @@ final class FilterTest extends TestCase
     public function byRoleMatchesMessageRole(): void
     {
         $filter = Filter::byRole('user');
-        $user   = new Message('r', 0, new \DateTimeImmutable(), role: 'user', text: 'agora');
-        $asst   = new Message('r', 0, new \DateTimeImmutable(), role: 'assistant', text: 'olympus');
+        $user = new Message('r', 0, new \DateTimeImmutable(), role: 'user', text: 'agora');
+        $asst = new Message('r', 0, new \DateTimeImmutable(), role: 'assistant', text: 'olympus');
 
         self::assertTrue($filter($user));
         self::assertFalse($filter($asst));
@@ -79,7 +79,7 @@ final class FilterTest extends TestCase
     public function byRoleReturnsFalseForNonMessageRecord(): void
     {
         $filter = Filter::byRole('user');
-        $err    = new Error('r', 0, new \DateTimeImmutable(), code: 'e', message: 'm');
+        $err = new Error('r', 0, new \DateTimeImmutable(), code: 'e', message: 'm');
 
         self::assertFalse($filter($err));
     }
@@ -88,11 +88,11 @@ final class FilterTest extends TestCase
     public function sinceTimeIncludesAtAndAfterThreshold(): void
     {
         $threshold = new \DateTimeImmutable('2026-05-17T12:00:00Z');
-        $filter    = Filter::sinceTime($threshold);
+        $filter = Filter::sinceTime($threshold);
 
         $before = new Message('r', 0, new \DateTimeImmutable('2026-05-17T11:59:59Z'), role: 'user', text: 'sparta');
-        $exact  = new Message('r', 0, $threshold, role: 'user', text: 'sparta');
-        $after  = new Message('r', 0, new \DateTimeImmutable('2026-05-17T12:00:01Z'), role: 'user', text: 'sparta');
+        $exact = new Message('r', 0, $threshold, role: 'user', text: 'sparta');
+        $after = new Message('r', 0, new \DateTimeImmutable('2026-05-17T12:00:01Z'), role: 'user', text: 'sparta');
 
         self::assertFalse($filter($before));
         self::assertTrue($filter($exact));
@@ -103,11 +103,11 @@ final class FilterTest extends TestCase
     public function untilTimeExcludesThresholdAndAfter(): void
     {
         $threshold = new \DateTimeImmutable('2026-05-17T12:00:00Z');
-        $filter    = Filter::untilTime($threshold);
+        $filter = Filter::untilTime($threshold);
 
         $before = new Message('r', 0, new \DateTimeImmutable('2026-05-17T11:59:59Z'), role: 'user', text: 'marathon');
-        $exact  = new Message('r', 0, $threshold, role: 'user', text: 'marathon');
-        $after  = new Message('r', 0, new \DateTimeImmutable('2026-05-17T12:00:01Z'), role: 'user', text: 'marathon');
+        $exact = new Message('r', 0, $threshold, role: 'user', text: 'marathon');
+        $after = new Message('r', 0, new \DateTimeImmutable('2026-05-17T12:00:01Z'), role: 'user', text: 'marathon');
 
         self::assertTrue($filter($before));
         self::assertFalse($filter($exact));

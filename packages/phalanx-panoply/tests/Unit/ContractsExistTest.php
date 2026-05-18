@@ -43,7 +43,7 @@ final class ContractsExistTest extends TestCase
         self::assertTrue($r->isInterface());
 
         $perform = $r->getMethod('perform');
-        $params  = $perform->getParameters();
+        $params = $perform->getParameters();
         self::assertCount(2, $params);
         self::assertSame('invocation', $params[0]->getName());
         self::assertSame(Invocation::class, $params[0]->getType()?->getName());
@@ -83,7 +83,7 @@ final class ContractsExistTest extends TestCase
         self::assertTrue($r->hasMethod('throwIfCancelled'));
         self::assertTrue($r->hasMethod('onCancel'));
 
-        $call   = $r->getMethod('call');
+        $call = $r->getMethod('call');
         $params = $call->getParameters();
         self::assertCount(2, $params, 'Runtime::call accepts (closure, ?waitReason)');
         self::assertSame('work', $params[0]->getName());
@@ -122,7 +122,7 @@ final class ContractsExistTest extends TestCase
         $r = new \ReflectionClass(Parser::class);
         self::assertTrue($r->isInterface());
 
-        $parse  = $r->getMethod('parse');
+        $parse = $r->getMethod('parse');
         $params = $parse->getParameters();
         self::assertCount(2, $params);
         self::assertSame('source', $params[0]->getName());
@@ -139,7 +139,7 @@ final class ContractsExistTest extends TestCase
         self::assertTrue($r->isInterface());
 
         $evaluate = $r->getMethod('evaluate');
-        $params   = $evaluate->getParameters();
+        $params = $evaluate->getParameters();
         self::assertCount(2, $params);
         self::assertSame('effect', $params[0]->getName());
         self::assertSame(Effect::class, $params[0]->getType()?->getName());
@@ -154,7 +154,7 @@ final class ContractsExistTest extends TestCase
         $r = new \ReflectionClass(Scorer::class);
         self::assertTrue($r->isInterface());
 
-        $score  = $r->getMethod('score');
+        $score = $r->getMethod('score');
         $params = $score->getParameters();
         self::assertCount(1, $params);
         self::assertSame('effect', $params[0]->getName());
@@ -173,7 +173,7 @@ final class ContractsExistTest extends TestCase
         self::assertTrue($r->hasMethod('byActivity'));
         self::assertTrue($r->hasMethod('all'));
 
-        $save       = $r->getMethod('save');
+        $save = $r->getMethod('save');
         $saveParams = $save->getParameters();
         self::assertCount(1, $saveParams);
         self::assertSame(Artifact::class, $saveParams[0]->getType()?->getName());

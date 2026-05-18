@@ -88,14 +88,14 @@ final class CueMapper
         }
 
         $message = is_array($line['message'] ?? null) ? $line['message'] : [];
-        $role    = isset($message['role']) ? (string) $message['role'] : '';
+        $role = isset($message['role']) ? (string) $message['role'] : '';
         $content = isset($message['content']) ? (string) $message['content'] : '';
-        $done    = (bool) ($line['done'] ?? false);
+        $done = (bool) ($line['done'] ?? false);
 
         // First line — role present signals stream start.
         if (!$this->started && $role !== '') {
             $this->started = true;
-            $model         = (string) ($line['model'] ?? '');
+            $model = (string) ($line['model'] ?? '');
 
             yield new Resolved(
                 id: (string) Id::ulid(),
@@ -183,7 +183,7 @@ final class CueMapper
     private function onToolCall(array $tc, \DateTimeImmutable $now): \Generator
     {
         $function = is_array($tc['function'] ?? null) ? $tc['function'] : [];
-        $name     = (string) ($function['name'] ?? 'unknown');
+        $name = (string) ($function['name'] ?? 'unknown');
         $effectId = 'tc_' . (string) Id::ulid();
 
         yield new Requested(
@@ -212,7 +212,7 @@ final class CueMapper
             return;
         }
 
-        $this->inputTokens  = (int) ($line['prompt_eval_count'] ?? 0);
+        $this->inputTokens = (int) ($line['prompt_eval_count'] ?? 0);
         $this->outputTokens = (int) ($line['eval_count'] ?? 0);
 
         yield from $this->emitTerminal($toolCalls, $now);

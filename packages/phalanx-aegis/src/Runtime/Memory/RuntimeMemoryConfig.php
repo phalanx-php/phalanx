@@ -26,15 +26,15 @@ final readonly class RuntimeMemoryConfig
     ) {
         foreach (
             [
-            'resourceRows' => $this->resourceRows,
-            'edgeRows' => $this->edgeRows,
-            'leaseRows' => $this->leaseRows,
-            'annotationRows' => $this->annotationRows,
-            'eventRows' => $this->eventRows,
-            'counterRows' => $this->counterRows,
-            'claimRows' => $this->claimRows,
-            'symbolRows' => $this->symbolRows,
-            'transitionLockStripes' => $this->transitionLockStripes,
+                'resourceRows' => $this->resourceRows,
+                'edgeRows' => $this->edgeRows,
+                'leaseRows' => $this->leaseRows,
+                'annotationRows' => $this->annotationRows,
+                'eventRows' => $this->eventRows,
+                'counterRows' => $this->counterRows,
+                'claimRows' => $this->claimRows,
+                'symbolRows' => $this->symbolRows,
+                'transitionLockStripes' => $this->transitionLockStripes,
             ] as $name => $rows
         ) {
             if ($rows < 1) {

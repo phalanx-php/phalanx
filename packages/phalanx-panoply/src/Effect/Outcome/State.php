@@ -11,6 +11,6 @@ namespace Phalanx\Panoply\Effect\Outcome;
 enum State: string
 {
     case Succeeded = 'succeeded';
-    case Failed    = 'failed';
+    case Failed = 'failed';
     case Cancelled = 'cancelled';
 }

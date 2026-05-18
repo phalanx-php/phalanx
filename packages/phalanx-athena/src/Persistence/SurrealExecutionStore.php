@@ -27,10 +27,10 @@ final class SurrealExecutionStore implements ExecutionStore
         $scope->throwIfCancelled();
 
         $this->surreal->upsert('athena_activity:' . $record->id, [
-            'agent_id'         => $record->agentId,
-            'state'            => $record->state->value,
-            'started_at'       => $record->startedAt->format(\DateTimeInterface::RFC3339_EXTENDED),
-            'completed_at'     => $record->completedAt?->format(\DateTimeInterface::RFC3339_EXTENDED),
+            'agent_id' => $record->agentId,
+            'state' => $record->state->value,
+            'started_at' => $record->startedAt->format(\DateTimeInterface::RFC3339_EXTENDED),
+            'completed_at' => $record->completedAt?->format(\DateTimeInterface::RFC3339_EXTENDED),
             'invocation_count' => $record->invocationCount,
         ]);
     }
@@ -66,11 +66,11 @@ final class SurrealExecutionStore implements ExecutionStore
         $scope->throwIfCancelled();
 
         $this->surreal->upsert('athena_invocation:' . $record->id, [
-            'activity_id'  => $record->activityId,
-            'prompt_hash'  => $record->promptHash,
-            'provider'     => $record->provider,
-            'model'        => $record->model,
-            'at'           => $record->at->format(\DateTimeInterface::RFC3339_EXTENDED),
+            'activity_id' => $record->activityId,
+            'prompt_hash' => $record->promptHash,
+            'provider' => $record->provider,
+            'model' => $record->model,
+            'at' => $record->at->format(\DateTimeInterface::RFC3339_EXTENDED),
             'completed_at' => $record->completedAt?->format(\DateTimeInterface::RFC3339_EXTENDED),
         ]);
     }
@@ -81,12 +81,12 @@ final class SurrealExecutionStore implements ExecutionStore
 
         $this->surreal->create('athena_effect_log:' . $record->id, [
             'invocation_id' => $record->invocationId,
-            'kind'          => $record->kind,
-            'tool_name'     => $record->toolName,
-            'args_hash'     => $record->argsHash,
-            'resolution'    => $record->resolution->value,
-            'outcome'       => $record->outcome,
-            'at'            => $record->at->format(\DateTimeInterface::RFC3339_EXTENDED),
+            'kind' => $record->kind,
+            'tool_name' => $record->toolName,
+            'args_hash' => $record->argsHash,
+            'resolution' => $record->resolution->value,
+            'outcome' => $record->outcome,
+            'at' => $record->at->format(\DateTimeInterface::RFC3339_EXTENDED),
         ]);
     }
 
@@ -95,9 +95,9 @@ final class SurrealExecutionStore implements ExecutionStore
         $scope->throwIfCancelled();
 
         $this->surreal->upsert('athena_prompt_hash:' . $record->hash, [
-            'activity_id'   => $record->activityId,
+            'activity_id' => $record->activityId,
             'invocation_id' => $record->invocationId,
-            'at'            => $record->at->format(\DateTimeInterface::RFC3339_EXTENDED),
+            'at' => $record->at->format(\DateTimeInterface::RFC3339_EXTENDED),
         ]);
     }
 
@@ -129,13 +129,13 @@ final class SurrealExecutionStore implements ExecutionStore
     {
         $scope->throwIfCancelled();
 
-        $logJson    = json_encode(array_map(static fn($r) => $r->toCanonical(), $log->toArray()), JSON_THROW_ON_ERROR);
+        $logJson = json_encode(array_map(static fn($r) => $r->toCanonical(), $log->toArray()), JSON_THROW_ON_ERROR);
         $effectJson = json_encode($pendingEffect->toCanonical(), JSON_THROW_ON_ERROR);
 
         $this->surreal->upsert('athena_activity:' . $activityId, [
-            'state'                  => State::Suspended->value,
-            'serialized_log'         => $logJson,
-            'pending_effect_id'      => $pendingEffect->effectId,
+            'state' => State::Suspended->value,
+            'serialized_log' => $logJson,
+            'pending_effect_id' => $pendingEffect->effectId,
             'pending_effect_payload' => $effectJson,
         ]);
     }
@@ -173,13 +173,13 @@ final class SurrealExecutionStore implements ExecutionStore
         );
 
         /** @var list<array<string, mixed>> $logData */
-        $logData  = json_decode((string) $row['serialized_log'], true, 512, JSON_THROW_ON_ERROR);
-        $log      = Log::from(array_map(self::hydrateRecord(...), $logData));
+        $logData = json_decode((string) $row['serialized_log'], true, 512, JSON_THROW_ON_ERROR);
+        $log = Log::from(array_map(self::hydrateRecord(...), $logData));
 
         /** @var array<string, mixed> $effectData */
         $effectData = json_decode((string) $row['pending_effect_payload'], true, 512, JSON_THROW_ON_ERROR);
-        $payload    = $effectData['payload'] ?? [];
-        $requested  = new Requested(
+        $payload = $effectData['payload'] ?? [];
+        $requested = new Requested(
             id: (string) $effectData['id'],
             sequence: (int) $effectData['sequence'],
             activityId: (string) $effectData['activity_id'],
@@ -199,10 +199,10 @@ final class SurrealExecutionStore implements ExecutionStore
     /** @param array<string, mixed> $entry */
     private static function hydrateRecord(array $entry): \Phalanx\Panoply\Conversation\Record
     {
-        $type    = RecordType::from((string) $entry['type']);
-        $id      = (string) $entry['id'];
-        $seq     = isset($entry['sequence']) ? (int) $entry['sequence'] : null;
-        $at      = new \DateTimeImmutable((string) $entry['at']);
+        $type = RecordType::from((string) $entry['type']);
+        $id = (string) $entry['id'];
+        $seq = isset($entry['sequence']) ? (int) $entry['sequence'] : null;
+        $at = new \DateTimeImmutable((string) $entry['at']);
         $payload = (array) ($entry['payload'] ?? []);
 
         return match ($type) {

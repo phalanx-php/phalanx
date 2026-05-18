@@ -31,10 +31,10 @@ final class Retrying extends Cue
     final protected function payload(): array
     {
         return [
-            'provider'     => $this->provider,
-            'attempt'      => $this->attempt,
+            'provider' => $this->provider,
+            'attempt' => $this->attempt,
             'max_attempts' => $this->maxAttempts,
-            'backoff_ms'   => $this->backoffMs,
+            'backoff_ms' => $this->backoffMs,
         ];
     }
 }

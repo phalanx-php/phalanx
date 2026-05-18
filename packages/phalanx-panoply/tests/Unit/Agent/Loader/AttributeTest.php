@@ -20,7 +20,7 @@ final class AttributeTest extends TestCase
     #[Test]
     public function discoveredAgentClassesAreRegistered(): void
     {
-        $loader   = new Attribute(self::discoveredDir(), self::discoveredPrefix());
+        $loader = new Attribute(self::discoveredDir(), self::discoveredPrefix());
         $registry = $loader->load();
 
         self::assertInstanceOf(Registry::class, $registry);
@@ -33,7 +33,7 @@ final class AttributeTest extends TestCase
     #[Test]
     public function nonAttributedClassIsSkipped(): void
     {
-        $loader   = new Attribute(self::discoveredDir(), self::discoveredPrefix());
+        $loader = new Attribute(self::discoveredDir(), self::discoveredPrefix());
         $registry = $loader->load();
 
         // NonAgentClass has no #[Discovered] and must not appear.
@@ -60,7 +60,7 @@ final class AttributeTest extends TestCase
     #[Test]
     public function nonExistentDirectoryYieldsEmptyRegistry(): void
     {
-        $loader   = new Attribute('/does/not/exist', 'App\\Agents');
+        $loader = new Attribute('/does/not/exist', 'App\\Agents');
         $registry = $loader->load();
 
         self::assertSame(0, $registry->all()->count());

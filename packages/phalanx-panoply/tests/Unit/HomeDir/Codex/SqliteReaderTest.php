@@ -36,7 +36,7 @@ final class SqliteReaderTest extends TestCase
         $rows = iterator_to_array(SqliteReader::read($this->dbPath));
 
         $timestamps = array_column($rows, 'ts');
-        $sorted     = $timestamps;
+        $sorted = $timestamps;
         sort($sorted);
 
         self::assertSame($sorted, $timestamps);

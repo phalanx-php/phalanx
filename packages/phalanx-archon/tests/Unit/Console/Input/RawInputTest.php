@@ -28,7 +28,7 @@ final class RawInputTest extends TestCase
         self::assertNotFalse($stream);
 
         $consoleInput = new ConsoleInput($stream);
-        $rawInput     = new RawInput($consoleInput);
+        $rawInput = new RawInput($consoleInput);
 
         self::assertSame($consoleInput->isInteractive, $rawInput->isInteractive);
         self::assertFalse($rawInput->isInteractive);
@@ -43,8 +43,8 @@ final class RawInputTest extends TestCase
         self::assertNotFalse($stream);
 
         $consoleInput = new ConsoleInput($stream);
-        $rawInput     = new RawInput($consoleInput);
-        $scope        = new StubScope();
+        $rawInput = new RawInput($consoleInput);
+        $scope = new StubScope();
 
         $rawInput->restoreOnDispose($scope);
 

@@ -33,8 +33,8 @@ final class AllTest extends TestCase
     public function constructsWithAllThreeSourcesPresent(): void
     {
         $sessions = new Sessions('/sessions');
-        $history  = new History('/history.jsonl');
-        $sqlite   = new Sqlite('/logs.sqlite');
+        $history = new History('/history.jsonl');
+        $sqlite = new Sqlite('/logs.sqlite');
 
         $all = new All(sessions: $sessions, history: $history, sqlite: $sqlite);
 
@@ -100,7 +100,7 @@ final class AllTest extends TestCase
         // returns the same value and there is no public mutator.
         $all = new All(sessions: new Sessions('/s'), history: null, sqlite: null);
 
-        $first  = $all->availableSources();
+        $first = $all->availableSources();
         $second = $all->availableSources();
 
         self::assertSame($first, $second);
@@ -110,7 +110,7 @@ final class AllTest extends TestCase
     public function sourcesHoldCorrectTypes(): void
     {
         $sessions = new Sessions('/some/sessions');
-        $history  = new History('/some/history.jsonl');
+        $history = new History('/some/history.jsonl');
 
         $all = new All(sessions: $sessions, history: $history, sqlite: null);
 

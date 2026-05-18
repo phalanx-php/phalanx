@@ -102,7 +102,6 @@ PHP);
 
         return $dir;
     }
-
 }
 
 final class LifecycleCommand implements Scopeable

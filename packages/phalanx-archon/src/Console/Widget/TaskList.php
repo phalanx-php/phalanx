@@ -35,7 +35,7 @@ final class TaskList
         if (!isset($this->tasks[$id])) {
             return;
         }
-        $this->tasks[$id]['state']  = $state;
+        $this->tasks[$id]['state'] = $state;
         $this->tasks[$id]['detail'] = $detail;
     }
 
@@ -43,8 +43,8 @@ final class TaskList
     {
         $lines = [];
         foreach ($this->tasks as $task) {
-            $icon  = $this->icon($task['state'], $spinnerTick);
-            $name  = $task['name'];
+            $icon = $this->icon($task['state'], $spinnerTick);
+            $name = $task['name'];
             $detail = $task['detail'] !== null
                 ? '  ' . $this->theme->muted->apply($task['detail'])
                 : '';
@@ -58,11 +58,11 @@ final class TaskList
     private function icon(TaskState $state, int $tick): string
     {
         return match ($state) {
-            TaskState::Pending  => $this->theme->muted->apply('○'),
-            TaskState::Running  => $this->spinner->frame($tick),
-            TaskState::Success  => $this->theme->success->apply('✓'),
-            TaskState::Error    => $this->theme->error->apply('✗'),
-            TaskState::Skipped  => $this->theme->muted->apply('–'),
+            TaskState::Pending => $this->theme->muted->apply('○'),
+            TaskState::Running => $this->spinner->frame($tick),
+            TaskState::Success => $this->theme->success->apply('✓'),
+            TaskState::Error => $this->theme->error->apply('✗'),
+            TaskState::Skipped => $this->theme->muted->apply('–'),
         };
     }
 }

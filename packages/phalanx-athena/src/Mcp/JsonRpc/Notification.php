@@ -17,8 +17,8 @@ class Notification
     {
         return json_encode([
             'jsonrpc' => '2.0',
-            'method'  => $this->method,
-            'params'  => $this->params,
+            'method' => $this->method,
+            'params' => $this->params,
         ], JSON_THROW_ON_ERROR) . "\n";
     }
 }

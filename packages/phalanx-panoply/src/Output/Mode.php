@@ -6,7 +6,7 @@ namespace Phalanx\Panoply\Output;
 
 enum Mode: string
 {
-    case Text       = 'text';
-    case Artifact   = 'artifact';
+    case Text = 'text';
+    case Artifact = 'artifact';
     case Structured = 'structured';
 }

@@ -17,9 +17,9 @@ final class GrantScopeTest extends TestCase
     #[Test]
     public function sessionGrantRemainsAvailableAfterFirstLookup(): void
     {
-        $scope      = new ScopeStub();
+        $scope = new ScopeStub();
         $grantStore = new MemoryGrantStore();
-        $grant      = Grant::of(
+        $grant = Grant::of(
             id: 'grant_session',
             subject: 'agent_session',
             allowedEffects: [Kind::FileRead],
@@ -29,7 +29,7 @@ final class GrantScopeTest extends TestCase
 
         $grantStore->remember($scope, $grant);
 
-        $first  = $grantStore->find($scope, 'agent_session', Kind::FileRead);
+        $first = $grantStore->find($scope, 'agent_session', Kind::FileRead);
         $second = $grantStore->find($scope, 'agent_session', Kind::FileRead);
 
         self::assertNotNull($first);
@@ -41,9 +41,9 @@ final class GrantScopeTest extends TestCase
     #[Test]
     public function onceGrantIsConsumedAndUnavailableAfterRevoke(): void
     {
-        $scope      = new ScopeStub();
+        $scope = new ScopeStub();
         $grantStore = new MemoryGrantStore();
-        $grant      = Grant::of(
+        $grant = Grant::of(
             id: 'grant_once',
             subject: 'agent_once',
             allowedEffects: [Kind::FileWrite],
@@ -65,9 +65,9 @@ final class GrantScopeTest extends TestCase
     #[Test]
     public function alwaysGrantPersistsAcrossMultipleFinds(): void
     {
-        $scope      = new ScopeStub();
+        $scope = new ScopeStub();
         $grantStore = new MemoryGrantStore();
-        $grant      = Grant::of(
+        $grant = Grant::of(
             id: 'grant_always',
             subject: 'agent_always',
             allowedEffects: [Kind::WebFetch],
@@ -86,9 +86,9 @@ final class GrantScopeTest extends TestCase
     #[Test]
     public function expiredGrantIsNotReturnedByFind(): void
     {
-        $scope      = new ScopeStub();
+        $scope = new ScopeStub();
         $grantStore = new MemoryGrantStore();
-        $grant      = Grant::of(
+        $grant = Grant::of(
             id: 'grant_expired',
             subject: 'agent_expired',
             allowedEffects: [Kind::FileRead],

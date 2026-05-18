@@ -29,7 +29,7 @@ final class Failed extends Cue
     final protected function payload(): array
     {
         return [
-            'reason'      => $this->reason,
+            'reason' => $this->reason,
             'error_class' => $this->errorClass,
         ];
     }

@@ -75,9 +75,9 @@ final class Parser implements ParserInterface
                     continue;
                 }
 
-                $role  = isset($data['role']) && is_string($data['role']) ? $data['role'] : '';
+                $role = isset($data['role']) && is_string($data['role']) ? $data['role'] : '';
                 $parts = isset($data['parts']) && is_array($data['parts']) ? $data['parts'] : [];
-                $ts    = self::extractTimestamp($data);
+                $ts = self::extractTimestamp($data);
                 $seq++;
 
                 yield from self::dispatchLine($data, $role, $parts, $ts, $seq, $mode);
@@ -102,7 +102,7 @@ final class Parser implements ParserInterface
     ): \Generator {
         // Gemini uses "model" for the assistant role; normalize it.
         $normalizedRole = match ($role) {
-            'user'  => 'user',
+            'user' => 'user',
             'model' => 'assistant',
             default => '',
         };
@@ -152,8 +152,8 @@ final class Parser implements ParserInterface
      */
     private static function buildToolCall(array $fc, int $seq, \DateTimeImmutable $ts): ToolCall
     {
-        $callId    = isset($fc['id']) && is_string($fc['id']) ? $fc['id'] : Id::generate();
-        $toolName  = isset($fc['name']) && is_string($fc['name']) ? $fc['name'] : 'unknown_tool';
+        $callId = isset($fc['id']) && is_string($fc['id']) ? $fc['id'] : Id::generate();
+        $toolName = isset($fc['name']) && is_string($fc['name']) ? $fc['name'] : 'unknown_tool';
         $arguments = isset($fc['args']) && is_array($fc['args']) ? $fc['args'] : [];
 
         return new ToolCall(Id::generate(), $seq, $ts, callId: $callId, toolName: $toolName, arguments: $arguments);
@@ -164,12 +164,12 @@ final class Parser implements ParserInterface
      */
     private static function buildToolResult(array $fr, int $seq, \DateTimeImmutable $ts): ToolResult
     {
-        $callId   = isset($fr['name']) && is_string($fr['name']) ? $fr['name'] : '';
+        $callId = isset($fr['name']) && is_string($fr['name']) ? $fr['name'] : '';
         $response = isset($fr['response']) && is_array($fr['response']) ? $fr['response'] : [];
-        $output   = isset($response['output']) && is_string($response['output'])
+        $output = isset($response['output']) && is_string($response['output'])
             ? $response['output']
             : (json_encode($response) ?: '');
-        $isError  = isset($fr['response']['error']);
+        $isError = isset($fr['response']['error']);
 
         return new ToolResult(Id::generate(), $seq, $ts, callId: $callId, output: $output, isError: $isError);
     }

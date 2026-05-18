@@ -21,8 +21,8 @@ use Phalanx\Archon\Console\Style\Theme;
  */
 class SelectInput extends BasePrompt
 {
-    public string $activeGlyph  = '›';
-    protected int $highlighted  = 0;
+    public string $activeGlyph = '›';
+    protected int $highlighted = 0;
     protected int $firstVisible = 0;
 
     /** @param array<string, string> $options  value → label */
@@ -43,8 +43,8 @@ class SelectInput extends BasePrompt
             'up', 'k' => $this->move(-1),
             'down', 'j' => $this->move(1),
             'home' => $this->jumpTo(0),
-            'end'  => $this->jumpTo($count - 1),
-            'pageup'   => $this->move(-$this->visibleScrollSize()),
+            'end' => $this->jumpTo($count - 1),
+            'pageup' => $this->move(-$this->visibleScrollSize()),
             'pagedown' => $this->move($this->visibleScrollSize()),
             'enter' => $this->submit(array_keys($this->options)[$this->highlighted]),
             default => null,
@@ -53,22 +53,22 @@ class SelectInput extends BasePrompt
 
     protected function renderActive(): string
     {
-        $keys    = array_keys($this->options);
-        $total   = count($keys);
-        $scroll  = $this->visibleScrollSize();
+        $keys = array_keys($this->options);
+        $total = count($keys);
+        $scroll = $this->visibleScrollSize();
         $visible = array_slice($this->options, $this->firstVisible, $scroll, preserve_keys: true);
-        $width   = $this->innerWidth();
+        $width = $this->innerWidth();
 
         $showScrollbar = $total > $scroll;
-        $scrollPos     = $showScrollbar
+        $scrollPos = $showScrollbar
             ? (int) round($this->firstVisible / max(1, $total - $scroll) * ($scroll - 1))
             : -1;
 
-        $lines    = [];
+        $lines = [];
         $rowIndex = 0;
         foreach ($visible as $value => $label) {
             $absoluteIdx = $this->firstVisible + $rowIndex;
-            $isActive    = $absoluteIdx === $this->highlighted;
+            $isActive = $absoluteIdx === $this->highlighted;
 
             $prefix = $isActive
                 ? $this->theme->accent->apply("  {$this->activeGlyph} ")
@@ -80,14 +80,14 @@ class SelectInput extends BasePrompt
 
             // -4 for box margins, -4 for prefix, -1 for scrollbar column
             $innerWidth = $width - 9;
-            $padded     = mb_strlen($label) > $innerWidth
+            $padded = mb_strlen($label) > $innerWidth
                 ? mb_substr($label, 0, $innerWidth - 1) . '~'
                 : mb_str_pad($label, $innerWidth);
 
             $content = $prefix . ($isActive ? $this->theme->accent->apply($padded) : $padded);
 
             if ($showScrollbar) {
-                $bar     = $rowIndex === $scrollPos
+                $bar = $rowIndex === $scrollPos
                     ? $this->theme->accent->apply('┃')
                     : $this->theme->border->apply('│');
                 $content .= ' ' . $bar;
@@ -112,7 +112,7 @@ class SelectInput extends BasePrompt
 
     protected function renderAnswered(): string
     {
-        $keys  = array_keys($this->options);
+        $keys = array_keys($this->options);
         $label = $this->options[$keys[$this->highlighted]] ?? '';
 
         return $this->buildFrame(
@@ -142,8 +142,8 @@ class SelectInput extends BasePrompt
 
     private function jumpTo(int $index): void
     {
-        $this->highlighted  = $index;
-        $scroll             = $this->visibleScrollSize();
+        $this->highlighted = $index;
+        $scroll = $this->visibleScrollSize();
         $this->firstVisible = $index === 0 ? 0 : max(0, count($this->options) - $scroll);
     }
 

@@ -58,9 +58,9 @@ final class Output implements Canonicalizable
     public function toCanonical(): array
     {
         return [
-            'mode'          => $this->mode->value,
+            'mode' => $this->mode->value,
             'artifact_kind' => $this->artifactKind?->value,
-            'schema'        => $this->schema,
+            'schema' => $this->schema,
         ];
     }
 }

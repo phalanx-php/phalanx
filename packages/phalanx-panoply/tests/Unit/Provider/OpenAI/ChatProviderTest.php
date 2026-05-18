@@ -42,8 +42,8 @@ final class ChatProviderTest extends TestCase
     public function simpleFixtureEmitsExpectedCueTypes(): void
     {
         $provider = self::provider(self::script('chat-simple.sse'));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
-        $cues     = $stream->toArray();
+        $stream = $provider->perform(self::invocation(), new Runtime());
+        $cues = $stream->toArray();
 
         $types = array_map(static fn ($c) => $c::class, $cues);
 
@@ -59,7 +59,7 @@ final class ChatProviderTest extends TestCase
     public function simpleFixtureTranscriptAssembles(): void
     {
         $provider = self::provider(self::script('chat-simple.sse'));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
+        $stream = $provider->perform(self::invocation(), new Runtime());
 
         $transcript = '';
         foreach ($stream->tokens() as $cue) {
@@ -75,7 +75,7 @@ final class ChatProviderTest extends TestCase
     public function simpleFixtureStopReasonIsEndOfTurn(): void
     {
         $provider = self::provider(self::script('chat-simple.sse'));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
+        $stream = $provider->perform(self::invocation(), new Runtime());
 
         $stops = $stream->ofKind(TokenStop::class)->toArray();
 
@@ -87,8 +87,8 @@ final class ChatProviderTest extends TestCase
     public function toolCallFixtureEmitsEffectRequestedAndArgumentsDeltas(): void
     {
         $provider = self::provider(self::script('chat-tool-call.sse'));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
-        $cues     = $stream->toArray();
+        $stream = $provider->perform(self::invocation(), new Runtime());
+        $cues = $stream->toArray();
 
         $types = array_map(static fn ($c) => $c::class, $cues);
 
@@ -100,7 +100,7 @@ final class ChatProviderTest extends TestCase
     public function toolCallFixtureStopReasonIsToolUse(): void
     {
         $provider = self::provider(self::script('chat-tool-call.sse'));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
+        $stream = $provider->perform(self::invocation(), new Runtime());
 
         $stops = $stream->ofKind(TokenStop::class)->toArray();
 
@@ -112,8 +112,8 @@ final class ChatProviderTest extends TestCase
     public function parallelToolsFixtureEmitsTwoEffectRequested(): void
     {
         $provider = self::provider(self::script('chat-parallel-tools.sse'));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
-        $cues     = $stream->toArray();
+        $stream = $provider->perform(self::invocation(), new Runtime());
+        $cues = $stream->toArray();
 
         $requested = array_values(array_filter($cues, static fn ($c) => $c instanceof Requested));
 
@@ -123,13 +123,13 @@ final class ChatProviderTest extends TestCase
         // Verify argument deltas route to the correct effectId without cross-contamination.
         // Fixture: index 0 (call_apollo01 / query_olympus) gets {"location": "Delphi"}
         //          index 1 (call_leonidas01 / rally_hoplites) gets {"count": 300}
-        $apolloId   = 'tc_call_apollo01';
+        $apolloId = 'tc_call_apollo01';
         $leonidasId = 'tc_call_leonidas01';
 
         /** @var list<ArgumentsDelta> $deltas */
         $deltas = array_values(array_filter($cues, static fn ($c) => $c instanceof ArgumentsDelta));
 
-        $apolloDeltas   = array_values(array_filter($deltas, static fn ($d) => $d->effectId === $apolloId));
+        $apolloDeltas = array_values(array_filter($deltas, static fn ($d) => $d->effectId === $apolloId));
         $leonidasDeltas = array_values(array_filter($deltas, static fn ($d) => $d->effectId === $leonidasId));
 
         // Apollo received the location argument fragments.
@@ -149,8 +149,8 @@ final class ChatProviderTest extends TestCase
     public function doneSentinelFixtureCompletesNormally(): void
     {
         $provider = self::provider(self::script('chat-done-sentinel.sse'));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
-        $cues     = $stream->toArray();
+        $stream = $provider->perform(self::invocation(), new Runtime());
+        $cues = $stream->toArray();
 
         $completed = array_values(array_filter($cues, static fn ($c) => $c instanceof Completed));
 
@@ -164,8 +164,8 @@ final class ChatProviderTest extends TestCase
         // (truncated or non-standard provider). The defensive complete() path
         // must still emit exactly one Completed — no duplicate, no missing.
         $provider = self::provider(self::script('chat-no-finish-reason.sse'));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
-        $cues     = $stream->toArray();
+        $stream = $provider->perform(self::invocation(), new Runtime());
+        $cues = $stream->toArray();
 
         $completed = array_values(array_filter($cues, static fn ($c) => $c instanceof Completed));
 
@@ -179,8 +179,8 @@ final class ChatProviderTest extends TestCase
         // handler added to ChatCueMapper must emit Failed rather than silently
         // swallowing the payload.
         $provider = self::provider(self::script('chat-error.sse'));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
-        $cues     = $stream->toArray();
+        $stream = $provider->perform(self::invocation(), new Runtime());
+        $cues = $stream->toArray();
 
         $failed = array_values(array_filter($cues, static fn ($c) => $c instanceof Failed));
 
@@ -197,10 +197,10 @@ final class ChatProviderTest extends TestCase
         // chat-error.sse: role chunk fires first (stream starts), then a top-level
         // error object arrives and the transport closes. Contract: exactly one Failed, zero Completed.
         $provider = self::provider(self::script('chat-error.sse'));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
-        $cues     = $stream->toArray();
+        $stream = $provider->perform(self::invocation(), new Runtime());
+        $cues = $stream->toArray();
 
-        $failed    = array_values(array_filter($cues, static fn ($c) => $c instanceof Failed));
+        $failed = array_values(array_filter($cues, static fn ($c) => $c instanceof Failed));
         $completed = array_values(array_filter($cues, static fn ($c) => $c instanceof Completed));
 
         self::assertCount(1, $failed);
@@ -210,11 +210,11 @@ final class ChatProviderTest extends TestCase
     #[Test]
     public function cancellationMidStreamHaltsIteration(): void
     {
-        $runtime  = new Runtime();
+        $runtime = new Runtime();
         $provider = self::provider(self::script('chat-simple.sse'));
-        $stream   = $provider->perform(self::invocation(), $runtime);
+        $stream = $provider->perform(self::invocation(), $runtime);
 
-        $count     = 0;
+        $count = 0;
         $cancelled = false;
         try {
             foreach ($stream as $cue) {
@@ -238,8 +238,8 @@ final class ChatProviderTest extends TestCase
         // A stream truncated before finish_reason. complete() defensive path must
         // emit exactly one Completed.
         $provider = self::provider(self::script('chat-truncated.sse'));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
-        $cues     = $stream->toArray();
+        $stream = $provider->perform(self::invocation(), new Runtime());
+        $cues = $stream->toArray();
 
         $completed = array_values(array_filter($cues, static fn ($c) => $c instanceof Completed));
 
@@ -251,7 +251,7 @@ final class ChatProviderTest extends TestCase
     #[Test]
     public function capabilitiesReadFromModel(): void
     {
-        $model    = Model::of(
+        $model = Model::of(
             name: 'apollo-vision',
             modelId: 'apollo-vision',
             aliases: ['apollo'],
@@ -304,7 +304,7 @@ final class ChatProviderTest extends TestCase
     private static function script(string $fixture): array
     {
         $path = dirname(__DIR__, 3) . '/Fixtures/Provider/OpenAI/' . $fixture;
-        $raw  = file_get_contents($path);
+        $raw = file_get_contents($path);
 
         if ($raw === false) {
             throw new \RuntimeException("Fixture not found: {$path}");

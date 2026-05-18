@@ -42,8 +42,8 @@ final class ProviderTest extends TestCase
     public function simpleTextFixtureEmitsExpectedCueTypes(): void
     {
         $provider = self::provider(self::script('simple-text.sse'));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
-        $cues     = $stream->toArray();
+        $stream = $provider->perform(self::invocation(), new Runtime());
+        $cues = $stream->toArray();
 
         $types = array_map(static fn ($c) => $c::class, $cues);
 
@@ -59,7 +59,7 @@ final class ProviderTest extends TestCase
     public function simpleTextTranscriptAssembles(): void
     {
         $provider = self::provider(self::script('simple-text.sse'));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
+        $stream = $provider->perform(self::invocation(), new Runtime());
 
         $transcript = '';
         foreach ($stream->tokens() as $cue) {
@@ -75,7 +75,7 @@ final class ProviderTest extends TestCase
     public function simpleTextStopReasonIsEndOfTurn(): void
     {
         $provider = self::provider(self::script('simple-text.sse'));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
+        $stream = $provider->perform(self::invocation(), new Runtime());
 
         $stops = $stream->ofKind(TokenStop::class)->toArray();
 
@@ -87,8 +87,8 @@ final class ProviderTest extends TestCase
     public function functionCallFixtureEmitsEffectRequested(): void
     {
         $provider = self::provider(self::script('function-call.sse'));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
-        $cues     = $stream->toArray();
+        $stream = $provider->perform(self::invocation(), new Runtime());
+        $cues = $stream->toArray();
 
         $types = array_map(static fn ($c) => $c::class, $cues);
 
@@ -99,7 +99,7 @@ final class ProviderTest extends TestCase
     public function functionCallFixtureStopReasonIsEndOfTurn(): void
     {
         $provider = self::provider(self::script('function-call.sse'));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
+        $stream = $provider->perform(self::invocation(), new Runtime());
 
         $stops = $stream->ofKind(TokenStop::class)->toArray();
 
@@ -111,10 +111,10 @@ final class ProviderTest extends TestCase
     public function thinkingFixtureEmitsThinkingChannelAndMessageChannel(): void
     {
         $provider = self::provider(self::script('thinking.sse'));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
-        $cues     = $stream->toArray();
+        $stream = $provider->perform(self::invocation(), new Runtime());
+        $cues = $stream->toArray();
 
-        $deltas   = array_values(array_filter($cues, static fn ($c) => $c instanceof TokenDelta));
+        $deltas = array_values(array_filter($cues, static fn ($c) => $c instanceof TokenDelta));
         $channels = array_map(static fn ($d) => $d->channel, $deltas);
 
         self::assertContains(Channel::Thinking, $channels);
@@ -125,8 +125,8 @@ final class ProviderTest extends TestCase
     public function errorFixtureEmitsInvocationFailed(): void
     {
         $provider = self::provider(self::script('error.sse'));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
-        $cues     = $stream->toArray();
+        $stream = $provider->perform(self::invocation(), new Runtime());
+        $cues = $stream->toArray();
 
         $failed = array_values(array_filter($cues, static fn ($c) => $c instanceof Failed));
 
@@ -142,10 +142,10 @@ final class ProviderTest extends TestCase
         // error-mid-stream.sse: a candidates chunk fires first (stream starts), then an
         // error object arrives and transport closes. Contract: exactly one Failed, zero Completed.
         $provider = self::provider(self::script('error-mid-stream.sse'));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
-        $cues     = $stream->toArray();
+        $stream = $provider->perform(self::invocation(), new Runtime());
+        $cues = $stream->toArray();
 
-        $failed    = array_values(array_filter($cues, static fn ($c) => $c instanceof Failed));
+        $failed = array_values(array_filter($cues, static fn ($c) => $c instanceof Failed));
         $completed = array_values(array_filter($cues, static fn ($c) => $c instanceof Completed));
 
         self::assertCount(1, $failed);
@@ -156,7 +156,7 @@ final class ProviderTest extends TestCase
     public function resolvedCueCarriesGeminiProvider(): void
     {
         $provider = self::provider(self::script('simple-text.sse'));
-        $stream   = $provider->perform(self::invocation(), new Runtime());
+        $stream = $provider->perform(self::invocation(), new Runtime());
 
         $resolved = $stream->ofKind(Resolved::class)->toArray();
 
@@ -199,7 +199,7 @@ final class ProviderTest extends TestCase
     #[Test]
     public function capabilitiesReadFromModel(): void
     {
-        $model    = Model::of(
+        $model = Model::of(
             name: 'gemini-vision',
             modelId: 'gemini-vision',
             aliases: ['vision'],
@@ -217,11 +217,11 @@ final class ProviderTest extends TestCase
     #[Test]
     public function cancellationMidStreamHaltsIteration(): void
     {
-        $runtime  = new Runtime();
+        $runtime = new Runtime();
         $provider = self::provider(self::script('simple-text.sse'));
-        $stream   = $provider->perform(self::invocation(), $runtime);
+        $stream = $provider->perform(self::invocation(), $runtime);
 
-        $count     = 0;
+        $count = 0;
         $cancelled = false;
         try {
             foreach ($stream as $cue) {
@@ -258,15 +258,15 @@ final class ProviderTest extends TestCase
     private static function script(string $fixture): array
     {
         $path = dirname(__DIR__, 3) . '/Fixtures/Provider/Gemini/' . $fixture;
-        $raw  = file_get_contents($path);
+        $raw = file_get_contents($path);
 
         if ($raw === false) {
             throw new \RuntimeException("Fixture not found: {$path}");
         }
 
-        $model  = self::model();
+        $model = self::model();
         $apiKey = 'key_demeter';
-        $url    = 'https://generativelanguage.googleapis.com'
+        $url = 'https://generativelanguage.googleapis.com'
             . '/v1beta/models/'
             . rawurlencode($model->modelId)
             . ':streamGenerateContent?alt=sse&key='

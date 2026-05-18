@@ -22,7 +22,7 @@ final class McpStdioClientTest extends PhalanxTestCase
         );
 
         $result = $this->scope->run(static function (ExecutionScope $scope) use ($server): mixed {
-            $client     = new StdioClient();
+            $client = new StdioClient();
             $connection = $client->connect($scope, $server);
 
             $tools = $connection->tools($scope);

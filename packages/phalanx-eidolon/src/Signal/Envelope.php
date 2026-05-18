@@ -14,11 +14,11 @@ final class Envelope
     {
         return [
             '__envelope' => true,
-            'data'       => $data,
-            'meta'       => [
-                'signals'   => $collector->drain(),
+            'data' => $data,
+            'meta' => [
+                'signals' => $collector->drain(),
                 'timestamp' => (int) (microtime(true) * 1000),
-                'trace_id'  => $traceId,
+                'trace_id' => $traceId,
             ],
         ];
     }

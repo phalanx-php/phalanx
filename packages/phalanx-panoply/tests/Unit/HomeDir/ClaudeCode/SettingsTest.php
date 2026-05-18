@@ -52,7 +52,7 @@ final class SettingsTest extends TestCase
     public function nestedObjectMergedDeepWithInDirWinning(): void
     {
         $settings = $this->buildSettings();
-        $nested   = $settings->asArray('nested');
+        $nested = $settings->asArray('nested');
 
         // level1: sidecar=sidecar-value, in-dir=indir-wins → indir-wins
         self::assertSame('indir-wins', $nested['level1']);
@@ -62,7 +62,7 @@ final class SettingsTest extends TestCase
     public function nestedKeyOnlyInSidecarIsPreserved(): void
     {
         $settings = $this->buildSettings();
-        $nested   = $settings->asArray('nested');
+        $nested = $settings->asArray('nested');
 
         self::assertSame('sparta', $nested['onlyInSidecar']);
     }
@@ -71,7 +71,7 @@ final class SettingsTest extends TestCase
     public function nestedKeyOnlyInDirIsPresent(): void
     {
         $settings = $this->buildSettings();
-        $nested   = $settings->asArray('nested');
+        $nested = $settings->asArray('nested');
 
         self::assertSame('olympus', $nested['onlyInDir']);
     }

@@ -81,14 +81,14 @@ final class SseClientTest extends TestCase
     {
         $initJson = json_encode([
             'jsonrpc' => '2.0',
-            'id'      => 1,
-            'result'  => ['protocolVersion' => '2024-11-05', 'capabilities' => []],
+            'id' => 1,
+            'result' => ['protocolVersion' => '2024-11-05', 'capabilities' => []],
         ], JSON_THROW_ON_ERROR);
 
         $listJson = json_encode([
             'jsonrpc' => '2.0',
-            'id'      => 2,
-            'result'  => [
+            'id' => 2,
+            'result' => [
                 'tools' => [
                     ['name' => 'zeus_strike', 'description' => 'Hurls a thunderbolt',
                         'inputSchema' => ['type' => 'object']],
@@ -116,14 +116,14 @@ final class SseClientTest extends TestCase
     {
         $initJson = json_encode([
             'jsonrpc' => '2.0',
-            'id'      => 1,
-            'result'  => ['protocolVersion' => '2024-11-05', 'capabilities' => []],
+            'id' => 1,
+            'result' => ['protocolVersion' => '2024-11-05', 'capabilities' => []],
         ], JSON_THROW_ON_ERROR);
 
         $listJson = json_encode([
             'jsonrpc' => '2.0',
-            'id'      => 2,
-            'result'  => [
+            'id' => 2,
+            'result' => [
                 'tools' => [
                     ['name' => 'echo', 'description' => 'Echo', 'inputSchema' => ['type' => 'object']],
                 ],
@@ -132,8 +132,8 @@ final class SseClientTest extends TestCase
 
         $invokeJson = json_encode([
             'jsonrpc' => '2.0',
-            'id'      => 3,
-            'result'  => ['content' => [['type' => 'text', 'text' => 'pong']]],
+            'id' => 3,
+            'result' => ['content' => [['type' => 'text', 'text' => 'pong']]],
         ], JSON_THROW_ON_ERROR);
 
         $endpointSse = "event: endpoint\ndata: /post\n\n";
@@ -157,8 +157,8 @@ final class SseClientTest extends TestCase
     {
         $shutdownJson = json_encode([
             'jsonrpc' => '2.0',
-            'id'      => 1,
-            'result'  => null,
+            'id' => 1,
+            'result' => null,
         ], JSON_THROW_ON_ERROR);
 
         $endpointSse = "event: endpoint\ndata: /post\n\n";
@@ -211,8 +211,8 @@ final class SseClientTest extends TestCase
     {
         $errorJson = json_encode([
             'jsonrpc' => '2.0',
-            'id'      => 1,
-            'error'   => ['code' => -32600, 'message' => 'bad init'],
+            'id' => 1,
+            'error' => ['code' => -32600, 'message' => 'bad init'],
         ], JSON_THROW_ON_ERROR);
 
         $sseBody = "event: endpoint\ndata: /post\n\nevent: message\ndata: {$errorJson}\n\n";
@@ -229,14 +229,14 @@ final class SseClientTest extends TestCase
     {
         $initJson = json_encode([
             'jsonrpc' => '2.0',
-            'id'      => 1,
-            'result'  => ['protocolVersion' => '2024-11-05', 'capabilities' => []],
+            'id' => 1,
+            'result' => ['protocolVersion' => '2024-11-05', 'capabilities' => []],
         ], JSON_THROW_ON_ERROR);
 
         $errorJson = json_encode([
             'jsonrpc' => '2.0',
-            'id'      => 2,
-            'error'   => ['code' => -32601, 'message' => 'tools/list not supported'],
+            'id' => 2,
+            'error' => ['code' => -32601, 'message' => 'tools/list not supported'],
         ], JSON_THROW_ON_ERROR);
 
         $sseBody = "event: endpoint\ndata: /post\n\n" .

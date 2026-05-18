@@ -22,7 +22,7 @@ final class FakeKeyReader implements KeyReader
     }
 
     public int $restoreCalls = 0;
-    public int $enableCalls  = 0;
+    public int $enableCalls = 0;
 
     /** @var list<string> */
     private array $keys;

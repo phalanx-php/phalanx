@@ -19,15 +19,15 @@ final class TokenSignal implements Signal
 
     public function __construct(?string $token, ?int $expiresIn = null)
     {
-        $this->token     = $token;
+        $this->token = $token;
         $this->expiresIn = $expiresIn;
     }
 
     public function toArray(): array
     {
         return [
-            'type'       => SignalType::Token->value,
-            'token'      => $this->token,
+            'type' => SignalType::Token->value,
+            'token' => $this->token,
             'expires_in' => $this->expiresIn,
         ];
     }

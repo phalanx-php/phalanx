@@ -32,8 +32,8 @@ final class Drafting extends Cue
     {
         return [
             'artifact_id' => $this->artifactId,
-            'kind'        => $this->kind->value,
-            'title'       => $this->title,
+            'kind' => $this->kind->value,
+            'title' => $this->title,
         ];
     }
 }

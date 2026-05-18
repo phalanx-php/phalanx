@@ -61,7 +61,7 @@ final class RequestBuilderTest extends TestCase
     public function bodyContainsModelAndStream(): void
     {
         $request = RequestBuilder::build(self::invocation(), self::model(), 'key_test', 'https://api.anthropic.com');
-        $body    = json_decode($request->body, associative: true);
+        $body = json_decode($request->body, associative: true);
 
         self::assertSame('claude-opus-4-7', $body['model']);
         self::assertTrue($body['stream']);
@@ -71,7 +71,7 @@ final class RequestBuilderTest extends TestCase
     public function bodyContainsInstructionsAsSystem(): void
     {
         $request = RequestBuilder::build(self::invocation(), self::model(), 'key_test', 'https://api.anthropic.com');
-        $body    = json_decode($request->body, associative: true);
+        $body = json_decode($request->body, associative: true);
 
         self::assertSame('Guard the agora. Report to the phalanx.', $body['system']);
     }
@@ -86,7 +86,7 @@ final class RequestBuilderTest extends TestCase
             ],
         ]);
         $request = RequestBuilder::build($invocation, self::model(), 'key_test', 'https://api.anthropic.com');
-        $body    = json_decode($request->body, associative: true);
+        $body = json_decode($request->body, associative: true);
 
         self::assertCount(2, $body['messages']);
         self::assertSame('user', $body['messages'][0]['role']);
@@ -96,8 +96,8 @@ final class RequestBuilderTest extends TestCase
     public function userInputFallsBackToSingleMessage(): void
     {
         $invocation = self::invocationWith(['user_input' => 'What is the pass at Thermopylae?']);
-        $request    = RequestBuilder::build($invocation, self::model(), 'key_test', 'https://api.anthropic.com');
-        $body       = json_decode($request->body, associative: true);
+        $request = RequestBuilder::build($invocation, self::model(), 'key_test', 'https://api.anthropic.com');
+        $body = json_decode($request->body, associative: true);
 
         self::assertCount(1, $body['messages']);
         self::assertSame('user', $body['messages'][0]['role']);
@@ -108,7 +108,7 @@ final class RequestBuilderTest extends TestCase
     public function toolsKeyAbsentWhenNoTools(): void
     {
         $request = RequestBuilder::build(self::invocation(), self::model(), 'key_test', 'https://api.anthropic.com');
-        $body    = json_decode($request->body, associative: true);
+        $body = json_decode($request->body, associative: true);
 
         self::assertArrayNotHasKey('tools', $body);
     }
@@ -122,7 +122,7 @@ final class RequestBuilderTest extends TestCase
             ],
         ]);
         $request = RequestBuilder::build($invocation, self::model(), 'key_test', 'https://api.anthropic.com');
-        $body    = json_decode($request->body, associative: true);
+        $body = json_decode($request->body, associative: true);
 
         self::assertArrayHasKey('tools', $body);
         self::assertCount(1, $body['tools']);
@@ -133,7 +133,7 @@ final class RequestBuilderTest extends TestCase
     public function defaultMaxTokensIs4096(): void
     {
         $request = RequestBuilder::build(self::invocation(), self::model(), 'key_test', 'https://api.anthropic.com');
-        $body    = json_decode($request->body, associative: true);
+        $body = json_decode($request->body, associative: true);
 
         self::assertSame(4096, $body['max_tokens']);
     }

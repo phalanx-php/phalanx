@@ -38,12 +38,12 @@ use Phalanx\Supervisor\WaitReason;
  */
 final class SearchInput extends BasePrompt
 {
-    private string $query       = '';
-    private int $queryCursor    = 0;
+    private string $query = '';
+    private int $queryCursor = 0;
     /** @var list<mixed>|null */
-    private ?array $matches     = [];
-    private ?int $highlighted   = null;
-    private int $spinnerTick    = 0;
+    private ?array $matches = [];
+    private ?int $highlighted = null;
+    private int $spinnerTick = 0;
     private Spinner $spinner;
 
     public function __construct(
@@ -68,9 +68,9 @@ final class SearchInput extends BasePrompt
 
     protected function renderActive(): string
     {
-        $width      = $this->innerWidth();
+        $width = $this->innerWidth();
         $innerWidth = $width - 4;
-        $title      = $this->state === 'error'
+        $title = $this->state === 'error'
             ? $this->theme->error->apply($this->label)
             : $this->theme->accent->apply($this->label);
 
@@ -89,15 +89,15 @@ final class SearchInput extends BasePrompt
             return $this->buildFrame($body . $this->hintLine(), $title, $this->label, $width);
         }
 
-        $scroll  = max(1, min($this->scroll, $this->height() - 8));
-        $lines   = [$queryLine, $this->theme->border->apply('  ' . str_repeat('─', $innerWidth - 2))];
+        $scroll = max(1, min($this->scroll, $this->height() - 8));
+        $lines = [$queryLine, $this->theme->border->apply('  ' . str_repeat('─', $innerWidth - 2))];
 
         $visible = array_slice($this->matches, 0, $scroll);
         foreach ($visible as $i => $match) {
-            $isActive  = $i === $this->highlighted;
-            $prefix    = $isActive ? $this->theme->accent->apply('  › ') : '    ';
-            $padded    = mb_str_pad((string) $match, $innerWidth - 6);
-            $lines[]   = $prefix . ($isActive ? $this->theme->accent->apply($padded) : $padded);
+            $isActive = $i === $this->highlighted;
+            $prefix = $isActive ? $this->theme->accent->apply('  › ') : '    ';
+            $padded = mb_str_pad((string) $match, $innerWidth - 6);
+            $lines[] = $prefix . ($isActive ? $this->theme->accent->apply($padded) : $padded);
         }
 
         return $this->buildFrame(implode("\n", $lines) . $this->hintLine(), $title, $this->label, $width);
@@ -157,10 +157,10 @@ final class SearchInput extends BasePrompt
         $count = $this->matches !== null ? count($this->matches) : 0;
 
         match ($key) {
-            'up'    => $this->highlighted = $this->highlighted <= 0
+            'up' => $this->highlighted = $this->highlighted <= 0
                 ? ($this->highlighted = null)
                 : $this->highlighted - 1,
-            'down'  => $this->highlighted = min($count - 1, ($this->highlighted ?? -1) + 1),
+            'down' => $this->highlighted = min($count - 1, ($this->highlighted ?? -1) + 1),
             'enter' => $this->highlighted !== null && $this->matches !== null
                 ? $this->submit($this->matches[$this->highlighted])
                 : null,
@@ -198,8 +198,8 @@ final class SearchInput extends BasePrompt
 
     private function triggerSearch(): void
     {
-        $this->state       = 'searching';
-        $this->matches     = null;
+        $this->state = 'searching';
+        $this->matches = null;
         $this->highlighted = null;
         $this->render();
 
@@ -209,11 +209,11 @@ final class SearchInput extends BasePrompt
             assert($this->scope !== null);
             /** @var Closure(): list<mixed> $deferred */
             $deferred = $result;
-            $result   = $this->scope->call($deferred, WaitReason::input('search', $this->query));
+            $result = $this->scope->call($deferred, WaitReason::input('search', $this->query));
         }
 
         $this->matches = is_array($result) ? array_values($result) : [];
-        $this->state   = 'active';
+        $this->state = 'active';
     }
 
     private function renderQueryLine(int $maxWidth): string

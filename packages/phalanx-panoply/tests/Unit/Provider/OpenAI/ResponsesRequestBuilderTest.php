@@ -87,7 +87,7 @@ final class ResponsesRequestBuilderTest extends TestCase
             'key_test',
             'https://api.openai.com/v1',
         );
-        $body    = json_decode($request->body, associative: true);
+        $body = json_decode($request->body, associative: true);
 
         self::assertSame('o3', $body['model']);
         self::assertTrue($body['stream']);
@@ -97,13 +97,13 @@ final class ResponsesRequestBuilderTest extends TestCase
     public function userInputFallbackToInput(): void
     {
         $invocation = self::invocationWith(['user_input' => 'Describe Thermopylae.']);
-        $request    = ResponsesRequestBuilder::build(
+        $request = ResponsesRequestBuilder::build(
             $invocation,
             self::model(),
             'key_test',
             'https://api.openai.com/v1',
         );
-        $body       = json_decode($request->body, associative: true);
+        $body = json_decode($request->body, associative: true);
 
         self::assertSame('Describe Thermopylae.', $body['input']);
     }
@@ -112,13 +112,13 @@ final class ResponsesRequestBuilderTest extends TestCase
     public function prefersDynamicContextInput(): void
     {
         $invocation = self::invocationWith(['input' => 'explicit input', 'user_input' => 'fallback']);
-        $request    = ResponsesRequestBuilder::build(
+        $request = ResponsesRequestBuilder::build(
             $invocation,
             self::model(),
             'key_test',
             'https://api.openai.com/v1',
         );
-        $body       = json_decode($request->body, associative: true);
+        $body = json_decode($request->body, associative: true);
 
         self::assertSame('explicit input', $body['input']);
     }
@@ -132,7 +132,7 @@ final class ResponsesRequestBuilderTest extends TestCase
             'key_test',
             'https://api.openai.com/v1',
         );
-        $body    = json_decode($request->body, associative: true);
+        $body = json_decode($request->body, associative: true);
 
         self::assertSame('Think like a Spartan hoplite.', $body['instructions']);
     }
@@ -179,7 +179,7 @@ final class ResponsesRequestBuilderTest extends TestCase
             'key_test',
             'https://api.openai.com/v1',
         );
-        $body    = json_decode($request->body, associative: true);
+        $body = json_decode($request->body, associative: true);
 
         self::assertArrayNotHasKey('reasoning', $body);
         self::assertArrayNotHasKey('max_output_tokens', $body);

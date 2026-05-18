@@ -29,7 +29,7 @@ final class KeyValue
 
         $lines = [];
         foreach ($pairs as $key => $value) {
-            $padded  = mb_str_pad($key . ':', $maxKeyLen + 1);
+            $padded = mb_str_pad($key . ':', $maxKeyLen + 1);
             $lines[] = '  ' . $theme->label->apply($padded) . '  ' . $value;
         }
 

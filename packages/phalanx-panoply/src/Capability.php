@@ -11,18 +11,18 @@ namespace Phalanx\Panoply;
  */
 enum Capability: string
 {
-    case Reasoning        = 'reasoning';
-    case ToolUse          = 'tool-use';
+    case Reasoning = 'reasoning';
+    case ToolUse = 'tool-use';
     case StructuredOutput = 'structured-output';
-    case Vision           = 'vision';
-    case PromptCaching    = 'prompt-caching';
+    case Vision = 'vision';
+    case PromptCaching = 'prompt-caching';
     case ExtendedThinking = 'extended-thinking';
-    case ParallelTools    = 'parallel-tools';
-    case JsonMode         = 'json-mode';
-    case AudioInput       = 'audio-input';
-    case AudioOutput      = 'audio-output';
-    case VideoInput       = 'video-input';
-    case FunctionCalling  = 'function-calling';
-    case Streaming        = 'streaming';
-    case Batch            = 'batch';
+    case ParallelTools = 'parallel-tools';
+    case JsonMode = 'json-mode';
+    case AudioInput = 'audio-input';
+    case AudioOutput = 'audio-output';
+    case VideoInput = 'video-input';
+    case FunctionCalling = 'function-calling';
+    case Streaming = 'streaming';
+    case Batch = 'batch';
 }

@@ -54,7 +54,7 @@ final class ArchonDispatchTask implements Executable, Traceable
         }
 
         $signals = $this->signals;
-        $token   = $scope->cancellation();
+        $token = $scope->cancellation();
 
         return ConsoleSignalTrap::install(
             $this->signalPolicy,

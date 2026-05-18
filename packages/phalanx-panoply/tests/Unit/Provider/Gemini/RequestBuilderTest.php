@@ -171,7 +171,7 @@ final class RequestBuilderTest extends TestCase
             ),
         );
 
-        $body   = json_decode($request->body, true);
+        $body = json_decode($request->body, true);
         $config = $body['generationConfig'];
 
         self::assertSame(512, $config['maxOutputTokens']);

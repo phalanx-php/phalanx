@@ -30,7 +30,7 @@ final class ClientDisconnected extends Cue
     {
         return [
             'client_id' => $this->clientId,
-            'reason'    => $this->reason,
+            'reason' => $this->reason,
         ];
     }
 }

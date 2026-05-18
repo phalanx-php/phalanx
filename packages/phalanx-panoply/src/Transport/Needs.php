@@ -43,10 +43,10 @@ final class Needs implements Canonicalizable
     public function toCanonical(): array
     {
         return [
-            'streaming'        => $this->streamingRequired,
-            'cancellable'      => $this->cancellableRequired,
-            'backpressure'     => $this->backpressurePreferred,
-            'partial_json'     => $this->partialJsonPreferred,
+            'streaming' => $this->streamingRequired,
+            'cancellable' => $this->cancellableRequired,
+            'backpressure' => $this->backpressurePreferred,
+            'partial_json' => $this->partialJsonPreferred,
             'max_idle_seconds' => $this->maxIdleSeconds,
         ];
     }

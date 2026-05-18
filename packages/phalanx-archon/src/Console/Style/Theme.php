@@ -28,13 +28,13 @@ final class Theme
         return new self(
             success: Style::new()->fg('green')->bold(),
             warning: Style::new()->fg('yellow'),
-            error:   Style::new()->fg('red')->bold(),
-            muted:   Style::new()->dim(),
-            accent:  Style::new()->fg('cyan'),
-            label:   Style::new()->bold(),
-            hint:    Style::new()->dim()->italic(),
-            border:  Style::new()->dim(),
-            active:  Style::new()->fg('cyan'),
+            error: Style::new()->fg('red')->bold(),
+            muted: Style::new()->dim(),
+            accent: Style::new()->fg('cyan'),
+            label: Style::new()->bold(),
+            hint: Style::new()->dim()->italic(),
+            border: Style::new()->dim(),
+            active: Style::new()->fg('cyan'),
         );
     }
 }

@@ -9,11 +9,11 @@ use Phalanx\SelfDescribed;
 final class SchemaGenerator
 {
     private const array TYPE_MAP = [
-        'string'  => 'string',
-        'int'     => 'integer',
-        'float'   => 'number',
-        'bool'    => 'boolean',
-        'array'   => 'array',
+        'string' => 'string',
+        'int' => 'integer',
+        'float' => 'number',
+        'bool' => 'boolean',
+        'array' => 'array',
     ];
 
     /** @var array<class-string<Tool>, array{name: string, description: string, parameters: array<string, mixed>}> */
@@ -37,9 +37,9 @@ final class SchemaGenerator
         $class = new \ReflectionClass($toolClass);
 
         return [
-            'name'        => $class->getShortName(),
+            'name' => $class->getShortName(),
             'description' => self::resolveDescription($class, $toolClass),
-            'parameters'  => self::buildParameters($class),
+            'parameters' => self::buildParameters($class),
         ];
     }
 
@@ -71,7 +71,7 @@ final class SchemaGenerator
         }
 
         $properties = [];
-        $required   = [];
+        $required = [];
 
         foreach ($constructor->getParameters() as $param) {
             $attributes = $param->getAttributes(Param::class);
@@ -81,7 +81,7 @@ final class SchemaGenerator
             }
 
             /** @var Param $meta */
-            $meta     = $attributes[0]->newInstance();
+            $meta = $attributes[0]->newInstance();
             $jsonType = self::resolveJsonType($param);
             $property = ['type' => $jsonType, 'description' => $meta->description];
 
@@ -97,9 +97,9 @@ final class SchemaGenerator
         }
 
         return [
-            'type'       => 'object',
+            'type' => 'object',
             'properties' => $properties,
-            'required'   => $required,
+            'required' => $required,
         ];
     }
 

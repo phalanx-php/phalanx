@@ -36,8 +36,8 @@ class GrantMonitor
     ): Grant {
         $scope->throwIfCancelled();
 
-        $channel      = new Channel(bufferSize: 8);
-        $queryId      = (string) $this->connection->request('live', ['athena_grant']);
+        $channel = new Channel(bufferSize: 8);
+        $queryId = (string) $this->connection->request('live', ['athena_grant']);
         $subscription = new SurrealLiveSubscription($queryId, $this->connection, $channel);
 
         $this->connection->subscribe($queryId, $channel);

@@ -24,11 +24,11 @@ final class RecordTypesTest extends TestCase
     public static function allActivityStates(): array
     {
         return [
-            'pending'   => [State::Pending],
-            'running'   => [State::Running],
+            'pending' => [State::Pending],
+            'running' => [State::Running],
             'suspended' => [State::Suspended],
             'completed' => [State::Completed],
-            'failed'    => [State::Failed],
+            'failed' => [State::Failed],
             'cancelled' => [State::Cancelled],
         ];
     }
@@ -37,10 +37,10 @@ final class RecordTypesTest extends TestCase
     public static function allResolutions(): array
     {
         return [
-            'built-in'   => [Resolution::BuiltIn],
+            'built-in' => [Resolution::BuiltIn],
             'local-tool' => [Resolution::LocalTool],
-            'mcp-tool'   => [Resolution::McpTool],
-            'sub-agent'  => [Resolution::SubAgent],
+            'mcp-tool' => [Resolution::McpTool],
+            'sub-agent' => [Resolution::SubAgent],
         ];
     }
 

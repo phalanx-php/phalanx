@@ -79,7 +79,7 @@ final class Parser implements ParserInterface
                 }
 
                 $type = isset($data['type']) && is_string($data['type']) ? $data['type'] : '';
-                $ts   = self::extractTimestamp($data);
+                $ts = self::extractTimestamp($data);
                 $seq++;
 
                 yield from self::dispatchLine($data, $type, $ts, $seq, $mode);
@@ -167,8 +167,8 @@ final class Parser implements ParserInterface
      */
     private static function buildToolCall(array $block, int $seq, \DateTimeImmutable $ts): ToolCall
     {
-        $callId    = isset($block['id']) && is_string($block['id']) ? $block['id'] : Id::generate();
-        $toolName  = isset($block['name']) && is_string($block['name']) ? $block['name'] : 'unknown_tool';
+        $callId = isset($block['id']) && is_string($block['id']) ? $block['id'] : Id::generate();
+        $toolName = isset($block['name']) && is_string($block['name']) ? $block['name'] : 'unknown_tool';
         $arguments = isset($block['input']) && is_array($block['input']) ? $block['input'] : [];
 
         return new ToolCall(Id::generate(), $seq, $ts, callId: $callId, toolName: $toolName, arguments: $arguments);
@@ -179,7 +179,7 @@ final class Parser implements ParserInterface
      */
     private static function buildToolResult(array $block, int $seq, \DateTimeImmutable $ts): ToolResult
     {
-        $callId  = isset($block['tool_use_id']) && is_string($block['tool_use_id']) ? $block['tool_use_id'] : '';
+        $callId = isset($block['tool_use_id']) && is_string($block['tool_use_id']) ? $block['tool_use_id'] : '';
         $isError = isset($block['is_error']) && $block['is_error'] === true;
 
         // Content may be a string or an array of text blocks.

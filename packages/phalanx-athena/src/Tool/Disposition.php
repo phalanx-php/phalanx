@@ -6,7 +6,7 @@ namespace Phalanx\Athena\Tool;
 
 enum Disposition: string
 {
-    case Continue  = 'continue';
+    case Continue = 'continue';
     case Terminate = 'terminate';
-    case Suspend   = 'suspend';
+    case Suspend = 'suspend';
 }

@@ -14,7 +14,7 @@ final class ParserTest extends TestCase
     public function feedYieldsCompleteEventFromSingleChunk(): void
     {
         $parser = self::fixture();
-        $chunk  = "event: message_start\ndata: {\"type\":\"message_start\"}\n\n";
+        $chunk = "event: message_start\ndata: {\"type\":\"message_start\"}\n\n";
 
         $events = iterator_to_array($parser->feed($chunk), preserve_keys: false);
 
@@ -26,7 +26,7 @@ final class ParserTest extends TestCase
     public function feedYieldsNothingForPartialEvent(): void
     {
         $parser = self::fixture();
-        $chunk  = "event: message_start\ndata: {\"type\":\"message_start\"}";
+        $chunk = "event: message_start\ndata: {\"type\":\"message_start\"}";
 
         $events = iterator_to_array($parser->feed($chunk), preserve_keys: false);
 
@@ -36,9 +36,9 @@ final class ParserTest extends TestCase
     #[Test]
     public function feedYieldsEventSplitAcrossTwoChunks(): void
     {
-        $parser  = self::fixture();
-        $chunk1  = "event: message_start\ndata: {\"type\":\"mess";
-        $chunk2  = "age_start\"}\n\n";
+        $parser = self::fixture();
+        $chunk1 = "event: message_start\ndata: {\"type\":\"mess";
+        $chunk2 = "age_start\"}\n\n";
 
         $events1 = iterator_to_array($parser->feed($chunk1), preserve_keys: false);
         $events2 = iterator_to_array($parser->feed($chunk2), preserve_keys: false);
@@ -52,7 +52,7 @@ final class ParserTest extends TestCase
     public function feedYieldsMultipleEventsFromOneChunk(): void
     {
         $parser = self::fixture();
-        $chunk  = "event: message_start\ndata: {\"type\":\"message_start\"}\n\n"
+        $chunk = "event: message_start\ndata: {\"type\":\"message_start\"}\n\n"
             . "event: content_block_start\ndata: {\"type\":\"content_block_start\"}\n\n";
 
         $events = iterator_to_array($parser->feed($chunk), preserve_keys: false);
@@ -66,7 +66,7 @@ final class ParserTest extends TestCase
     public function flushYieldsTrailingEventWithoutDoubleNewline(): void
     {
         $parser = self::fixture();
-        $chunk  = "event: message_stop\ndata: {\"type\":\"message_stop\"}";
+        $chunk = "event: message_stop\ndata: {\"type\":\"message_stop\"}";
 
         iterator_to_array($parser->feed($chunk), preserve_keys: false);
         $events = iterator_to_array($parser->flush(), preserve_keys: false);
@@ -79,7 +79,7 @@ final class ParserTest extends TestCase
     public function flushClearsBufferAfterYielding(): void
     {
         $parser = self::fixture();
-        $chunk  = "event: message_stop\ndata: {\"type\":\"message_stop\"}";
+        $chunk = "event: message_stop\ndata: {\"type\":\"message_stop\"}";
 
         iterator_to_array($parser->feed($chunk), preserve_keys: false);
         iterator_to_array($parser->flush(), preserve_keys: false);
@@ -93,7 +93,7 @@ final class ParserTest extends TestCase
     public function sseCommentLinesAreIgnored(): void
     {
         $parser = self::fixture();
-        $chunk  = ": keep-alive\nevent: message_start\ndata: {\"type\":\"message_start\"}\n\n";
+        $chunk = ": keep-alive\nevent: message_start\ndata: {\"type\":\"message_start\"}\n\n";
 
         $events = iterator_to_array($parser->feed($chunk), preserve_keys: false);
 
@@ -105,7 +105,7 @@ final class ParserTest extends TestCase
     public function malformedJsonDataEventIsDropped(): void
     {
         $parser = self::fixture();
-        $chunk  = "event: message_start\ndata: not-valid-json\n\n"
+        $chunk = "event: message_start\ndata: not-valid-json\n\n"
             . "event: message_stop\ndata: {\"type\":\"message_stop\"}\n\n";
 
         $events = iterator_to_array($parser->feed($chunk), preserve_keys: false);
@@ -119,8 +119,8 @@ final class ParserTest extends TestCase
     public function dataFieldIsParsedAsArray(): void
     {
         $parser = self::fixture();
-        $json   = json_encode(['type' => 'message_start', 'message' => ['model' => 'claude-opus-4-7']]);
-        $chunk  = "event: message_start\ndata: {$json}\n\n";
+        $json = json_encode(['type' => 'message_start', 'message' => ['model' => 'claude-opus-4-7']]);
+        $chunk = "event: message_start\ndata: {$json}\n\n";
 
         $events = iterator_to_array($parser->feed($chunk), preserve_keys: false);
 
@@ -134,7 +134,7 @@ final class ParserTest extends TestCase
     {
         $parser = self::fixture();
         // \r\n\r\n is a valid SSE event delimiter per the WHATWG spec.
-        $chunk  = "event: message_start\r\ndata: {\"type\":\"message_start\"}\r\n\r\n";
+        $chunk = "event: message_start\r\ndata: {\"type\":\"message_start\"}\r\n\r\n";
 
         $events = iterator_to_array($parser->feed($chunk), preserve_keys: false);
 
@@ -147,7 +147,7 @@ final class ParserTest extends TestCase
     {
         $parser = self::fixture();
         // \r\r is a valid SSE event delimiter per the WHATWG spec.
-        $chunk  = "event: message_start\rdata: {\"type\":\"message_start\"}\r\r";
+        $chunk = "event: message_start\rdata: {\"type\":\"message_start\"}\r\r";
 
         $events = iterator_to_array($parser->feed($chunk), preserve_keys: false);
 
@@ -180,7 +180,7 @@ final class ParserTest extends TestCase
         // safe boundary (between two top-level keys) so the joined string is
         // valid JSON.
         $parser = self::fixture();
-        $chunk  = "event: message_start\ndata: {\"type\":\"message_start\",\ndata: \"extra\":true}\n\n";
+        $chunk = "event: message_start\ndata: {\"type\":\"message_start\",\ndata: \"extra\":true}\n\n";
 
         // This split produces `{"type":"message_start",\n"extra":true}` which is
         // valid JSON — the parser must join and decode it successfully.
@@ -197,7 +197,7 @@ final class ParserTest extends TestCase
     {
         $parser = self::fixture();
         // No space between colon and value — `event:foo` must parse as type=foo.
-        $chunk  = "event:message_start\ndata:{\"type\":\"message_start\"}\n\n";
+        $chunk = "event:message_start\ndata:{\"type\":\"message_start\"}\n\n";
 
         $events = iterator_to_array($parser->feed($chunk), preserve_keys: false);
 
@@ -211,7 +211,7 @@ final class ParserTest extends TestCase
         // OpenAI SSE emits every chunk without an event: field. The type
         // should be an empty string and the payload decoded normally.
         $parser = self::fixture();
-        $chunk  = "data: {\"object\":\"chat.completion.chunk\",\"id\":\"abc\"}\n\n";
+        $chunk = "data: {\"object\":\"chat.completion.chunk\",\"id\":\"abc\"}\n\n";
 
         $events = iterator_to_array($parser->feed($chunk), preserve_keys: false);
 
@@ -227,7 +227,7 @@ final class ParserTest extends TestCase
         // OpenAI terminates the stream with `data: [DONE]` — not valid JSON.
         // The parser must drop it without error.
         $parser = self::fixture();
-        $chunk  = "data: [DONE]\n\n";
+        $chunk = "data: [DONE]\n\n";
 
         $events = iterator_to_array($parser->feed($chunk), preserve_keys: false);
 
@@ -239,10 +239,10 @@ final class ParserTest extends TestCase
     {
         // A valid event before [DONE] and a valid event after must both survive.
         // Feeds three separate chunks to exercise the buffer accumulation path.
-        $parser  = self::fixture();
-        $chunk1  = "data: {\"object\":\"chat.completion.chunk\",\"id\":\"1\"}\n\n";
-        $chunk2  = "data: [DONE]\n\n";
-        $chunk3  = "data: {\"object\":\"chat.completion.chunk\",\"id\":\"2\"}\n\n";
+        $parser = self::fixture();
+        $chunk1 = "data: {\"object\":\"chat.completion.chunk\",\"id\":\"1\"}\n\n";
+        $chunk2 = "data: [DONE]\n\n";
+        $chunk3 = "data: {\"object\":\"chat.completion.chunk\",\"id\":\"2\"}\n\n";
 
         $events1 = iterator_to_array($parser->feed($chunk1), preserve_keys: false);
         $events2 = iterator_to_array($parser->feed($chunk2), preserve_keys: false);

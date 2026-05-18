@@ -29,7 +29,7 @@ final class ArgumentsDelta extends Cue
     final protected function payload(): array
     {
         return [
-            'effect_id'  => $this->effectId,
+            'effect_id' => $this->effectId,
             'json_delta' => $this->jsonDelta,
         ];
     }

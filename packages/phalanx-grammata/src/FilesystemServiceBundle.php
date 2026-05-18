@@ -26,7 +26,6 @@ class FilesystemServiceBundle extends ServiceBundle
         );
     }
 
-
     public function __construct(
         private ?int $maxOpen = null,
     ) {}

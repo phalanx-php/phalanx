@@ -20,6 +20,7 @@
         "symfony/yaml": "^8.0"
     },
     "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.95",
         "guzzlehttp/guzzle": "^7.10",
         "hyperf/guzzle": "^3.1",
         "openswoole/ide-helper": "^26.2",
@@ -131,6 +132,8 @@
         "audit:runtime-risk": "php packages/phalanx-phpstan/bin/runtime-risk-audit",
         "rector": "php vendor/bin/rector process",
         "rector:dry": "php vendor/bin/rector process --dry-run",
+        "fmt": "php vendor/bin/php-cs-fixer fix --diff",
+        "fmt:dry": "php vendor/bin/php-cs-fixer fix --dry-run --diff",
         "cs": "php vendor/bin/phpcs --standard=packages/phalanx-aegis/phpcs.xml",
         "cs:fix": "php vendor/bin/phpcbf --standard=packages/phalanx-aegis/phpcs.xml",
         "bench:aegis": "php -d memory_limit=512M benchmarks/kernel/run.php",
@@ -177,7 +180,7 @@
         "gen:test-accessors": "php packages/phalanx-aegis/bin/regenerate-accessors",
         "gen:test-accessors:check": "php packages/phalanx-aegis/bin/check-accessors-in-sync",
         "post-autoload-dump": "@gen:test-accessors",
-        "check": ["@analyse", "@rector:dry", "@cs", "@gen:test-accessors:check", "@test", "@examples:lint"]
+        "check": ["@analyse", "@rector:dry", "@fmt:dry", "@cs", "@gen:test-accessors:check", "@test", "@examples:lint"]
     },
     "config": {
         "process-timeout": 0,

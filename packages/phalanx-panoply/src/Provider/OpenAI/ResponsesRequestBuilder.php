@@ -43,9 +43,9 @@ final class ResponsesRequestBuilder
             ?? '';
 
         $body = [
-            'model'  => $model->modelId,
+            'model' => $model->modelId,
             'stream' => true,
-            'input'  => $input,
+            'input' => $input,
         ];
 
         if ($invocation->instructions !== '') {
@@ -75,8 +75,8 @@ final class ResponsesRequestBuilder
 
         $headers = array_merge($defaultHeaders, [
             'authorization' => 'Bearer ' . $apiKey,
-            'content-type'  => 'application/json',
-            'accept'        => 'text/event-stream',
+            'content-type' => 'application/json',
+            'accept' => 'text/event-stream',
         ]);
 
         return Request::of(

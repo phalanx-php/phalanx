@@ -121,7 +121,7 @@ final class ResponsesCueMapper
     private function onResponseCreated(Event $event, \DateTimeImmutable $now): \Generator
     {
         /** @var array{response?: array{model?: string}} $data */
-        $data  = $event->data;
+        $data = $event->data;
         $model = (string) ($data['response']['model'] ?? '');
 
         $this->started = true;
@@ -154,7 +154,7 @@ final class ResponsesCueMapper
     private function onOutputTextDelta(Event $event, \DateTimeImmutable $now): \Generator
     {
         /** @var array{delta?: string} $data */
-        $data  = $event->data;
+        $data = $event->data;
         $delta = (string) ($data['delta'] ?? '');
 
         if ($delta === '') {
@@ -179,7 +179,7 @@ final class ResponsesCueMapper
     private function onReasoningDelta(Event $event, \DateTimeImmutable $now): \Generator
     {
         /** @var array{delta?: string} $data */
-        $data  = $event->data;
+        $data = $event->data;
         $delta = (string) ($data['delta'] ?? '');
 
         if ($delta === '') {
@@ -204,14 +204,14 @@ final class ResponsesCueMapper
     private function onFunctionCallCreated(Event $event, \DateTimeImmutable $now): \Generator
     {
         /** @var array{item?: array{id?: string, name?: string}} $data */
-        $data     = $event->data;
-        $item     = is_array($data['item'] ?? null) ? $data['item'] : [];
-        $rawId    = (string) ($item['id'] ?? Id::generate());
+        $data = $event->data;
+        $item = is_array($data['item'] ?? null) ? $data['item'] : [];
+        $rawId = (string) ($item['id'] ?? Id::generate());
         $effectId = 'fc_' . $rawId;
-        $name     = (string) ($item['name'] ?? 'unknown');
+        $name = (string) ($item['name'] ?? 'unknown');
 
         $this->functionCallEffectIds[$rawId] = $effectId;
-        $this->hasToolCalls                  = true;
+        $this->hasToolCalls = true;
 
         yield new Requested(
             id: (string) Id::ulid(),
@@ -234,8 +234,8 @@ final class ResponsesCueMapper
     private function onFunctionCallArgumentsDelta(Event $event, \DateTimeImmutable $now): \Generator
     {
         /** @var array{item_id?: string, delta?: string} $data */
-        $data      = $event->data;
-        $rawId     = (string) ($data['item_id'] ?? '');
+        $data = $event->data;
+        $rawId = (string) ($data['item_id'] ?? '');
         $jsonDelta = (string) ($data['delta'] ?? '');
 
         if ($jsonDelta === '') {
@@ -266,10 +266,10 @@ final class ResponsesCueMapper
         }
 
         /** @var array{response?: array{usage?: array{input_tokens?: int, output_tokens?: int}}} $data */
-        $data  = $event->data;
+        $data = $event->data;
         $usage = is_array($data['response']['usage'] ?? null) ? $data['response']['usage'] : [];
 
-        $this->inputTokens  = (int) ($usage['input_tokens'] ?? 0);
+        $this->inputTokens = (int) ($usage['input_tokens'] ?? 0);
         $this->outputTokens = (int) ($usage['output_tokens'] ?? 0);
 
         yield from $this->emitTerminal($now);
@@ -284,7 +284,7 @@ final class ResponsesCueMapper
     private function emitTerminal(\DateTimeImmutable $now): \Generator
     {
         $this->completed = true;
-        $stopReason      = $this->hasToolCalls ? StopReason::ToolUse : StopReason::EndOfTurn;
+        $stopReason = $this->hasToolCalls ? StopReason::ToolUse : StopReason::EndOfTurn;
 
         yield new TokenStop(
             id: (string) Id::ulid(),
@@ -339,7 +339,7 @@ final class ResponsesCueMapper
             : [];
 
         $message = (string) ($responseError['message'] ?? $data['message'] ?? 'unknown provider error');
-        $code    = isset($responseError['code'])
+        $code = isset($responseError['code'])
             ? (string) $responseError['code']
             : (isset($data['code']) ? (string) $data['code'] : null);
 

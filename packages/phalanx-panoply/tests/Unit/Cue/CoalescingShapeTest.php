@@ -22,10 +22,10 @@ final class CoalescingShapeTest extends TestCase
     public function concatenatingTextOfTwoTokenDeltasPreservesChannel(): void
     {
         $base = [
-            'activityId'   => 'act_1',
+            'activityId' => 'act_1',
             'invocationId' => 'inv_1',
-            'agentId'      => null,
-            'at'           => new \DateTimeImmutable('2026-05-17T12:00:00Z'),
+            'agentId' => null,
+            'at' => new \DateTimeImmutable('2026-05-17T12:00:00Z'),
         ];
 
         $a = new TokenDelta(...$base, id: 'c_1', sequence: 0, text: 'hello ');
@@ -40,13 +40,13 @@ final class CoalescingShapeTest extends TestCase
     public function tokenDeltasOnDifferentChannelsShouldNotBeMerged(): void
     {
         $base = [
-            'activityId'   => 'act_1',
+            'activityId' => 'act_1',
             'invocationId' => 'inv_1',
-            'agentId'      => null,
-            'at'           => new \DateTimeImmutable('2026-05-17T12:00:00Z'),
+            'agentId' => null,
+            'at' => new \DateTimeImmutable('2026-05-17T12:00:00Z'),
         ];
 
-        $message  = new TokenDelta(...$base, id: 'c_1', sequence: 0, text: 'reply', channel: Channel::Message);
+        $message = new TokenDelta(...$base, id: 'c_1', sequence: 0, text: 'reply', channel: Channel::Message);
         $thinking = new TokenDelta(...$base, id: 'c_2', sequence: 1, text: 'thought', channel: Channel::Thinking);
 
         self::assertNotSame($message->channel, $thinking->channel);

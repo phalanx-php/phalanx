@@ -67,8 +67,8 @@ final class CanonicalTest extends TestCase
         $caps = Capabilities::of(Capability::Reasoning, Capability::ToolUse);
 
         $hashFromObject = Canonical::of($caps);
-        $hashFromArray  = Canonical::of([
-            'cases'  => ['reasoning', 'tool-use'],
+        $hashFromArray = Canonical::of([
+            'cases' => ['reasoning', 'tool-use'],
             'custom' => [],
         ]);
 

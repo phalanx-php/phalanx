@@ -63,11 +63,11 @@ final class Model implements Canonicalizable
         sort($aliases);
 
         return [
-            'name'           => $this->name,
-            'model_id'       => $this->modelId,
-            'aliases'        => $aliases,
-            'capabilities'   => $this->capabilities->toCanonical(),
-            'input_pricing'  => $this->inputPricing,
+            'name' => $this->name,
+            'model_id' => $this->modelId,
+            'aliases' => $aliases,
+            'capabilities' => $this->capabilities->toCanonical(),
+            'input_pricing' => $this->inputPricing,
             'output_pricing' => $this->outputPricing,
         ];
     }

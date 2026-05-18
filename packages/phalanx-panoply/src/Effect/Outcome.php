@@ -72,11 +72,11 @@ final class Outcome implements Canonicalizable
     public function toCanonical(): array
     {
         return [
-            'state'         => $this->state->value,
-            'value_digest'  => $this->valueDigest,
-            'error_class'   => $this->errorClass,
+            'state' => $this->state->value,
+            'value_digest' => $this->valueDigest,
+            'error_class' => $this->errorClass,
             'error_message' => $this->errorMessage,
-            'duration_ms'   => $this->durationMs,
+            'duration_ms' => $this->durationMs,
         ];
     }
 

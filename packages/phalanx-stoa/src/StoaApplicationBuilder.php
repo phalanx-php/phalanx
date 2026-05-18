@@ -292,18 +292,18 @@ final class StoaApplicationBuilder
 
         foreach (
             [
-            'host',
-            'port',
-            'ignition_enabled',
-            'quiet',
-            'PHALANX_HOST',
-            'PHALANX_PORT',
-            'PHALANX_IGNITION_ENABLED',
-            'PHALANX_QUIET',
-            'request_timeout',
-            'drain_timeout',
-            'PHALANX_REQUEST_TIMEOUT',
-            'PHALANX_DRAIN_TIMEOUT',
+                'host',
+                'port',
+                'ignition_enabled',
+                'quiet',
+                'PHALANX_HOST',
+                'PHALANX_PORT',
+                'PHALANX_IGNITION_ENABLED',
+                'PHALANX_QUIET',
+                'request_timeout',
+                'drain_timeout',
+                'PHALANX_REQUEST_TIMEOUT',
+                'PHALANX_DRAIN_TIMEOUT',
             ] as $key
         ) {
             if ($this->context->has($key)) {

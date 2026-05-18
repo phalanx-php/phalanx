@@ -29,7 +29,7 @@ final class ManualTest extends TestCase
     #[Test]
     public function singleAgentIsRegistered(): void
     {
-        $agent  = new StubAgent('leonidas', Capability::Reasoning);
+        $agent = new StubAgent('leonidas', Capability::Reasoning);
         $loader = new Manual($agent);
 
         $registry = $loader->load();
@@ -57,7 +57,7 @@ final class ManualTest extends TestCase
     public function laterAgentOverwritesEarlierDuplicateId(): void
     {
         // Registry::with() replaces on duplicate — last one wins.
-        $first  = new StubAgent('leonidas', Capability::Reasoning);
+        $first = new StubAgent('leonidas', Capability::Reasoning);
         $second = new StubAgent('leonidas', Capability::ToolUse);
 
         $registry = new Manual($first, $second)->load();
@@ -69,7 +69,7 @@ final class ManualTest extends TestCase
     #[Test]
     public function loadIsIdempotent(): void
     {
-        $agent  = new StubAgent('sparta', Capability::Reasoning);
+        $agent = new StubAgent('sparta', Capability::Reasoning);
         $loader = new Manual($agent);
 
         $r1 = $loader->load();

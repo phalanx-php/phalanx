@@ -34,8 +34,8 @@ final class SseParser
                 if ($dataParts !== []) {
                     yield [
                         'event' => $event,
-                        'data'  => implode("\n", $dataParts),
-                        'id'    => $id,
+                        'data' => implode("\n", $dataParts),
+                        'id' => $id,
                     ];
                 }
 
@@ -59,8 +59,8 @@ final class SseParser
 
             match ($name) {
                 'event' => $event = $value,
-                'data'  => $dataParts[] = $value,
-                'id'    => $id = $value,
+                'data' => $dataParts[] = $value,
+                'id' => $id = $value,
                 default => null,
             };
         }
