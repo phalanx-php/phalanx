@@ -10,12 +10,15 @@ use Phalanx\Athena\Effect\Outcome;
 use Phalanx\Athena\Effect\Resolution;
 use Phalanx\Athena\Exception\EffectDenied;
 use Phalanx\Athena\Grant\Store as GrantStore;
+use Phalanx\Athena\Mcp\McpConnection;
 use Phalanx\Athena\Mcp\McpRegistry;
+use Phalanx\Athena\Mcp\McpTool;
 use Phalanx\Athena\Stream\CompositeStream;
 use Phalanx\Athena\Tests\Fixtures\ScopeStub;
 use Phalanx\Athena\Tool\Tool;
 use Phalanx\Athena\Tool\ToolRegistry;
 use Phalanx\Athena\Turn;
+use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Panoply\Cue\Effect\Authorized;
 use Phalanx\Panoply\Cue\Effect\Denied;
@@ -27,6 +30,7 @@ use Phalanx\Panoply\Effect;
 use Phalanx\Panoply\Effect\Authorizer\Rules\Authorizer;
 use Phalanx\Panoply\Effect\Decision;
 use Phalanx\Panoply\Effect\Kind;
+use Phalanx\Panoply\Effect\Outcome as PanoplyOutcome;
 use Phalanx\Panoply\Grant;
 use Phalanx\Panoply\Hazard;
 use Phalanx\Panoply\Hazard\Scorer\Rules\Scorer;
@@ -57,6 +61,7 @@ final class DispatcherTest extends TestCase
         self::assertSame(Turn\Outcome::Continue, $result->turnOutcome);
         self::assertNotNull($result->effectOutcome);
         self::assertSame(Resolution::LocalTool, $result->effectOutcome->resolution);
+        self::assertSame('echoed', $result->data);
 
         $cues = $stream->stream()->toArray();
         self::assertCount(2, $cues);
@@ -298,6 +303,46 @@ final class DispatcherTest extends TestCase
     }
 
     #[Test]
+    public function mcpToolRoutesViaMcpRegistry(): void
+    {
+        $mcpRegistry = new McpRegistry([new FakeConnection()]);
+
+        $dispatcher = self::dispatcher(
+            mcpRegistry: $mcpRegistry,
+            grantStore: new FixedGrantStore(self::grant(Kind::Custom)),
+        );
+
+        $scope = new ScopeStub();
+        $stream = CompositeStream::wrap($scope, Stream::from([]));
+        $request = self::request('mcp_search', Kind::Custom, arguments: ['q' => 'sparta']);
+
+        $result = $dispatcher->dispatch($scope, $request, $stream);
+
+        self::assertSame(Turn\Outcome::Continue, $result->turnOutcome);
+        self::assertSame(Resolution::McpTool, $result->effectOutcome->resolution);
+        self::assertSame(['found' => true], $result->data);
+    }
+
+    #[Test]
+    public function preCancelledScopeThrowsImmediately(): void
+    {
+        $token = CancellationToken::create();
+        $token->cancel();
+        $scope = new ScopeStub($token);
+
+        $dispatcher = self::dispatcher(
+            grantStore: new FixedGrantStore(self::grant(Kind::Custom)),
+        );
+
+        $stream = CompositeStream::wrap($scope, Stream::from([]));
+        $request = self::request('noop', Kind::Custom);
+
+        $this->expectException(Cancelled::class);
+
+        $dispatcher->dispatch($scope, $request, $stream);
+    }
+
+    #[Test]
     public function builtInTakesPriorityOverLocalTool(): void
     {
         $registry = new ToolRegistry();
@@ -422,5 +467,29 @@ final class PausingAuthorizer implements Effect\Authorizer
     public function evaluate(Effect $effect, ?Grant $grant = null): Decision
     {
         return Decision::paused('Human approval required');
+    }
+}
+
+final class FakeConnection implements McpConnection
+{
+    public function tools(): array
+    {
+        return [
+            new McpTool(
+                name: 'mcp_search',
+                description: 'Fake search tool',
+                inputSchema: [],
+                serverName: 'fake_server',
+            ),
+        ];
+    }
+
+    public function invoke(TaskScope $scope, string $toolName, array $args): Outcome
+    {
+        return Outcome::routed(Resolution::McpTool, PanoplyOutcome::succeeded(null, 0), ['found' => true]);
+    }
+
+    public function disconnect(): void
+    {
     }
 }

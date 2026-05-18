@@ -12,6 +12,8 @@ final class BuiltInExecutor implements Executor
 {
     public function __invoke(TaskScope $scope, Requested $request, Context $context): Outcome
     {
+        $scope->throwIfCancelled();
+
         $kind = BuiltInKind::from($request->effectId);
 
         return match ($kind) {

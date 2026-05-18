@@ -8,7 +8,7 @@ use Phalanx\Panoply\Effect\Outcome as PanoplyOutcome;
 
 final class Outcome
 {
-    public function __construct(
+    private function __construct(
         private(set) Resolution $resolution,
         private(set) ?PanoplyOutcome $effect = null,
         private(set) mixed $data = null,

@@ -8,6 +8,8 @@ use Phalanx\Athena\Effect\BuiltInExecutor;
 use Phalanx\Athena\Effect\Context;
 use Phalanx\Athena\Effect\Resolution;
 use Phalanx\Athena\Tests\Fixtures\ScopeStub;
+use Phalanx\Cancellation\CancellationToken;
+use Phalanx\Cancellation\Cancelled;
 use Phalanx\Panoply\Cue\Effect\Requested;
 use Phalanx\Panoply\Effect\Kind;
 use PHPUnit\Framework\Attributes\Test;
@@ -24,6 +26,7 @@ final class BuiltInExecutorTest extends TestCase
         self::assertSame(Resolution::BuiltIn, $outcome->resolution);
         self::assertNull($outcome->data);
         self::assertNull($outcome->error);
+        self::assertFalse($outcome->halt);
     }
 
     #[Test]
@@ -35,6 +38,7 @@ final class BuiltInExecutorTest extends TestCase
 
         self::assertSame(Resolution::BuiltIn, $outcome->resolution);
         self::assertSame($args, $outcome->data);
+        self::assertFalse($outcome->halt);
     }
 
     #[Test]
@@ -54,6 +58,18 @@ final class BuiltInExecutorTest extends TestCase
 
         $executor = new BuiltInExecutor();
         $executor(new ScopeStub(), self::makeRequest('unknown'), self::makeContext());
+    }
+
+    #[Test]
+    public function preCancelledScopeThrows(): void
+    {
+        $this->expectException(Cancelled::class);
+
+        $token = CancellationToken::create();
+        $token->cancel();
+
+        $executor = new BuiltInExecutor();
+        $executor(new ScopeStub($token), self::makeRequest('noop'), self::makeContext());
     }
 
     /**

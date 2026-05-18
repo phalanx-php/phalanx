@@ -26,8 +26,11 @@ final class CompositeStream
 
     public function emit(Cue $cue): void
     {
-        $this->hostCues[] = $cue;
-        usort($this->hostCues, self::compare(...));
+        $pos = count($this->hostCues);
+        while ($pos > 0 && $this->hostCues[$pos - 1]->sequence > $cue->sequence) {
+            $pos--;
+        }
+        array_splice($this->hostCues, $pos, 0, [$cue]);
     }
 
     public function stream(): Stream
@@ -46,11 +49,6 @@ final class CompositeStream
 
             yield from $self->drainHostCues($hostIndex);
         });
-    }
-
-    private static function compare(Cue $left, Cue $right): int
-    {
-        return $left->sequence <=> $right->sequence;
     }
 
     /** @return \Generator<Cue> */

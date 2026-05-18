@@ -7,7 +7,6 @@ namespace Phalanx\Athena\Tool;
 use Phalanx\Athena\Effect\Context;
 use Phalanx\Athena\Effect\Executor;
 use Phalanx\Athena\Effect\Outcome;
-use Phalanx\Athena\Effect\Resolution;
 use Phalanx\Panoply\Cue\Effect\Requested;
 use Phalanx\Scope\TaskScope;
 
@@ -20,8 +19,8 @@ final class ToolExecutor implements Executor
 
     public function __invoke(TaskScope $scope, Requested $request, Context $context): Outcome
     {
-        $result = $this->registry->invoke($scope, $request->effectId, $context, $request->arguments);
+        $scope->throwIfCancelled();
 
-        return Outcome::routed(Resolution::LocalTool, $result->effect, $result->data);
+        return $this->registry->invoke($scope, $request->effectId, $context, $request->arguments);
     }
 }

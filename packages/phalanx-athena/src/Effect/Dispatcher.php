@@ -28,6 +28,8 @@ use Phalanx\Scope\TaskScope;
 
 final class Dispatcher
 {
+    private(set) ToolExecutor $toolExecutor;
+
     public function __construct(
         private(set) Authorizer $authorizer,
         private(set) Scorer $scorer,
@@ -35,7 +37,9 @@ final class Dispatcher
         private(set) ToolRegistry $toolRegistry,
         private(set) McpRegistry $mcpRegistry,
         private(set) BuiltInExecutor $builtInExecutor = new BuiltInExecutor(),
+        ?ToolExecutor $toolExecutor = null,
     ) {
+        $this->toolExecutor = $toolExecutor ?? new ToolExecutor($this->toolRegistry);
     }
 
     public function dispatch(TaskScope $scope, Requested $request, CompositeStream $stream): DispatchResult
@@ -146,6 +150,14 @@ final class Dispatcher
     {
         $mcpOutcome = $mcp->invoke($scope, $request->effectId, $request->arguments);
 
+        if ($mcpOutcome->error !== null) {
+            return Outcome::failed(Resolution::McpTool, $mcpOutcome->error, $mcpOutcome->effect);
+        }
+
+        if ($mcpOutcome->halt) {
+            return Outcome::halted(Resolution::McpTool, $mcpOutcome->effect);
+        }
+
         return Outcome::routed(Resolution::McpTool, $mcpOutcome->effect, $mcpOutcome->data);
     }
 
@@ -230,7 +242,7 @@ final class Dispatcher
     ): Outcome {
         return match ($resolution) {
             Resolution::BuiltIn => ($this->builtInExecutor)($scope, $request, $context),
-            Resolution::LocalTool => (new ToolExecutor($this->toolRegistry))($scope, $request, $context),
+            Resolution::LocalTool => ($this->toolExecutor)($scope, $request, $context),
             Resolution::McpTool => self::executeMcp($scope, $request, $this->mcpRegistry),
             Resolution::SubAgent => throw new \RuntimeException(
                 'SubAgent resolution requires an explicit SubAgentExecutor; none is registered.',
