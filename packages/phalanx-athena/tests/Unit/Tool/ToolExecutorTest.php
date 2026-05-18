@@ -36,25 +36,20 @@ final class ToolExecutorTest extends TestCase
         self::assertSame(Resolution::LocalTool, $result->resolution);
         self::assertSame('hoplite', $result->data);
         self::assertNull($result->error);
-        self::assertNotNull($result->effect);
-        self::assertTrue($result->effect->isSucceeded());
     }
 
     #[Test]
-    public function toolExceptionReturnsFailed(): void
+    public function toolExceptionPropagates(): void
     {
         $registry = new ToolRegistry();
         $registry->register('failing_tool', FailingTool::class);
 
         $executor = new ToolExecutor($registry);
-        $result = $executor(new ScopeStub(), self::makeRequest('failing_tool'), self::makeContext());
 
-        self::assertSame(Resolution::LocalTool, $result->resolution);
-        self::assertNotNull($result->error);
-        self::assertInstanceOf(\RuntimeException::class, $result->error);
-        self::assertSame('sparta burns', $result->error->getMessage());
-        self::assertNotNull($result->effect);
-        self::assertTrue($result->effect->isFailed());
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('sparta burns');
+
+        $executor(new ScopeStub(), self::makeRequest('failing_tool'), self::makeContext());
     }
 
     #[Test]
@@ -63,12 +58,11 @@ final class ToolExecutorTest extends TestCase
         $registry = new ToolRegistry();
 
         $executor = new ToolExecutor($registry);
-        $result = $executor(new ScopeStub(), self::makeRequest('phantom'), self::makeContext());
 
-        self::assertSame(Resolution::LocalTool, $result->resolution);
-        self::assertNotNull($result->error);
-        self::assertInstanceOf(\RuntimeException::class, $result->error);
-        self::assertStringContainsString('phantom', $result->error->getMessage());
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessageMatches('/phantom/');
+
+        $executor(new ScopeStub(), self::makeRequest('phantom'), self::makeContext());
     }
 
     /** @param array<string, mixed> $arguments */

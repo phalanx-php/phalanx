@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Athena\Turn;
 
 use Phalanx\Athena\Activity;
+use Phalanx\Athena\Effect\Dispatcher;
 use Phalanx\Athena\Exception\ActivityFailed;
 use Phalanx\Athena\Exception\MaxInvocationsReached;
 use Phalanx\Athena\Hook\StepContext;
@@ -13,6 +14,8 @@ use Phalanx\Athena\Stream\CompositeStream;
 use Phalanx\Panoply\Agent;
 use Phalanx\Panoply\Conversation\Log;
 use Phalanx\Panoply\Conversation\Record\Message;
+use Phalanx\Panoply\Conversation\Record\ToolCall;
+use Phalanx\Panoply\Conversation\Record\ToolResult;
 use Phalanx\Panoply\Cue\Effect\Requested;
 use Phalanx\Panoply\Cue\Output\TokenDelta;
 use Phalanx\Panoply\Cue\Output\TokenStop;
@@ -31,6 +34,7 @@ final class Loop implements Activity\Executor
         private(set) Provider $provider,
         private(set) RuntimeFactory $runtimeFactory = new AegisRuntimeFactory(),
         private(set) array $hooks = [],
+        private(set) ?Dispatcher $dispatcher = null,
     ) {
     }
 
@@ -92,7 +96,21 @@ final class Loop implements Activity\Executor
                 }
 
                 if ($cue instanceof Requested) {
-                    [$outcome, $error] = self::effectOutcome($cue);
+                    if ($this->dispatcher === null) {
+                        [$outcome, $error] = self::effectOutcome($cue);
+                        break;
+                    }
+
+                    $result = $this->dispatcher->dispatch($scope, $cue, $stream);
+
+                    if ($result->turnOutcome === Outcome::Continue) {
+                        $current = self::appendToolCall($current, $cue);
+                        $current = self::appendToolResult($current, $cue, $result->data);
+                        continue;
+                    }
+
+                    $outcome = $result->turnOutcome;
+                    $error   = $result->error;
                     break;
                 }
             }
@@ -154,6 +172,35 @@ final class Loop implements Activity\Executor
             Outcome::Failed,
             new ActivityFailed(sprintf('No effect dispatcher is available for %s.', $cue->kind->value)),
         ];
+    }
+
+    private static function appendToolCall(Log $log, Requested $request): Log
+    {
+        $records = $log->toArray();
+        $records[] = new ToolCall(
+            id: 'rec_' . Id::generate(),
+            sequence: count($records) + 1,
+            at: new \DateTimeImmutable(),
+            callId: $request->effectId,
+            toolName: $request->effectId,
+            arguments: $request->arguments,
+        );
+
+        return Log::from($records);
+    }
+
+    private static function appendToolResult(Log $log, Requested $request, mixed $data): Log
+    {
+        $records = $log->toArray();
+        $records[] = new ToolResult(
+            id: 'rec_' . Id::generate(),
+            sequence: count($records) + 1,
+            at: new \DateTimeImmutable(),
+            callId: $request->effectId,
+            output: is_string($data) ? $data : json_encode($data, JSON_THROW_ON_ERROR),
+        );
+
+        return Log::from($records);
     }
 
     private static function stateFor(Outcome $outcome): Activity\State
