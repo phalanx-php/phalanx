@@ -22,6 +22,6 @@ final class ToolExecutor implements Executor
     {
         $result = $this->registry->invoke($scope, $request->effectId, $context, $request->arguments);
 
-        return Outcome::routed(Resolution::LocalTool, data: $result->data);
+        return Outcome::routed(Resolution::LocalTool, $result->effect, $result->data);
     }
 }

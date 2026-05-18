@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Athena\Effect;
 
 use Phalanx\Athena\Exception\EffectDenied;
+use Phalanx\Athena\Grant\Store as GrantStore;
 use Phalanx\Athena\Mcp\McpRegistry;
 use Phalanx\Athena\Stream\CompositeStream;
 use Phalanx\Athena\Tool\ToolExecutor;
@@ -20,6 +21,7 @@ use Phalanx\Panoply\Effect;
 use Phalanx\Panoply\Effect\Authorizer;
 use Phalanx\Panoply\Effect\Decision;
 use Phalanx\Panoply\Effect\Outcome as PanoplyOutcome;
+use Phalanx\Panoply\Grant;
 use Phalanx\Panoply\Hazard\Scorer;
 use Phalanx\Panoply\Id;
 use Phalanx\Scope\TaskScope;
@@ -29,7 +31,7 @@ final class Dispatcher
     public function __construct(
         private(set) Authorizer $authorizer,
         private(set) Scorer $scorer,
-        private(set) \Phalanx\Athena\Grant\Store $grantStore,
+        private(set) GrantStore $grantStore,
         private(set) ToolRegistry $toolRegistry,
         private(set) McpRegistry $mcpRegistry,
         private(set) BuiltInExecutor $builtInExecutor = new BuiltInExecutor(),
@@ -153,7 +155,7 @@ final class Dispatcher
         CompositeStream $stream,
         Decision $decision,
         Resolution $resolution,
-        ?\Phalanx\Panoply\Grant $grant,
+        ?Grant $grant,
         int $seq,
     ): DispatchResult {
         $stream->emit(new Authorized(
@@ -230,7 +232,9 @@ final class Dispatcher
             Resolution::BuiltIn => ($this->builtInExecutor)($scope, $request, $context),
             Resolution::LocalTool => (new ToolExecutor($this->toolRegistry))($scope, $request, $context),
             Resolution::McpTool => self::executeMcp($scope, $request, $this->mcpRegistry),
-            Resolution::SubAgent => throw new \RuntimeException('SubAgent dispatch is not yet implemented.'),
+            Resolution::SubAgent => throw new \RuntimeException(
+                'SubAgent resolution requires an explicit SubAgentExecutor; none is registered.',
+            ),
         };
     }
 }

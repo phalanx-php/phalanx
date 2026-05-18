@@ -10,6 +10,7 @@ use Phalanx\Athena\Exception\ActivityFailed;
 use Phalanx\Athena\Exception\MaxInvocationsReached;
 use Phalanx\Athena\Hook\StepContext;
 use Phalanx\Athena\Hook\StepHook;
+use Phalanx\Athena\Hook\StepHookResult;
 use Phalanx\Athena\Stream\CompositeStream;
 use Phalanx\Panoply\Agent;
 use Phalanx\Panoply\Conversation\Log;
@@ -217,9 +218,9 @@ final class Loop implements Activity\Executor
         TaskScope $scope,
         StepContext $context,
         array $hooks,
-    ): \Phalanx\Athena\Hook\StepHookResult {
+    ): StepHookResult {
         if ($hooks === []) {
-            return \Phalanx\Athena\Hook\StepHookResult::continue();
+            return StepHookResult::continue();
         }
 
         foreach ($hooks as $hook) {
@@ -229,6 +230,6 @@ final class Loop implements Activity\Executor
             }
         }
 
-        return \Phalanx\Athena\Hook\StepHookResult::continue();
+        return StepHookResult::continue();
     }
 }

@@ -9,12 +9,14 @@ use Phalanx\Athena\Effect\Dispatcher;
 use Phalanx\Athena\Effect\Outcome;
 use Phalanx\Athena\Effect\Resolution;
 use Phalanx\Athena\Exception\EffectDenied;
+use Phalanx\Athena\Grant\Store as GrantStore;
 use Phalanx\Athena\Mcp\McpRegistry;
 use Phalanx\Athena\Stream\CompositeStream;
 use Phalanx\Athena\Tests\Fixtures\ScopeStub;
 use Phalanx\Athena\Tool\Tool;
 use Phalanx\Athena\Tool\ToolRegistry;
 use Phalanx\Athena\Turn;
+use Phalanx\Cancellation\Cancelled;
 use Phalanx\Panoply\Cue\Effect\Authorized;
 use Phalanx\Panoply\Cue\Effect\Denied;
 use Phalanx\Panoply\Cue\Effect\Executed;
@@ -59,7 +61,12 @@ final class DispatcherTest extends TestCase
         $cues = $stream->stream()->toArray();
         self::assertCount(2, $cues);
         self::assertInstanceOf(Authorized::class, $cues[0]);
+        self::assertSame('read_file', $cues[0]->effectId);
+        self::assertSame(11, $cues[0]->sequence);
         self::assertInstanceOf(Executed::class, $cues[1]);
+        self::assertSame('read_file', $cues[1]->effectId);
+        self::assertSame(12, $cues[1]->sequence);
+        self::assertGreaterThanOrEqual(0, $cues[1]->durationMs);
     }
 
     #[Test]
@@ -85,6 +92,8 @@ final class DispatcherTest extends TestCase
         $cues = $stream->stream()->toArray();
         self::assertCount(1, $cues);
         self::assertInstanceOf(Denied::class, $cues[0]);
+        self::assertSame('read_file', $cues[0]->effectId);
+        self::assertSame(11, $cues[0]->sequence);
         self::assertContains('no-grant', $cues[0]->reasonCodes);
     }
 
@@ -112,6 +121,7 @@ final class DispatcherTest extends TestCase
 
         $cues = $stream->stream()->toArray();
         self::assertInstanceOf(Denied::class, $cues[0]);
+        self::assertSame('shell_exec', $cues[0]->effectId);
         self::assertContains('hazard-exceeds-ceiling', $cues[0]->reasonCodes);
     }
 
@@ -139,6 +149,8 @@ final class DispatcherTest extends TestCase
         $cues = $stream->stream()->toArray();
         self::assertCount(1, $cues);
         self::assertInstanceOf(Paused::class, $cues[0]);
+        self::assertSame('write_file', $cues[0]->effectId);
+        self::assertSame('Human approval required', $cues[0]->reason);
     }
 
     #[Test]
@@ -166,6 +178,9 @@ final class DispatcherTest extends TestCase
         self::assertCount(2, $cues);
         self::assertInstanceOf(Authorized::class, $cues[0]);
         self::assertInstanceOf(Failed::class, $cues[1]);
+        self::assertSame('fail_tool', $cues[1]->effectId);
+        self::assertSame(\RuntimeException::class, $cues[1]->errorClass);
+        self::assertSame('Tool broke', $cues[1]->reason);
     }
 
     #[Test]
@@ -254,7 +269,7 @@ final class DispatcherTest extends TestCase
         $stream = CompositeStream::wrap($scope, Stream::from([]));
         $request = self::request('cancel_tool', Kind::Custom);
 
-        $this->expectException(\Phalanx\Cancellation\Cancelled::class);
+        $this->expectException(Cancelled::class);
 
         $dispatcher->dispatch($scope, $request, $stream);
     }
@@ -305,7 +320,7 @@ final class DispatcherTest extends TestCase
     private static function dispatcher(
         ?Effect\Authorizer $authorizer = null,
         ?Hazard\Scorer $scorer = null,
-        ?\Phalanx\Athena\Grant\Store $grantStore = null,
+        ?GrantStore $grantStore = null,
         ?ToolRegistry $toolRegistry = null,
         ?McpRegistry $mcpRegistry = null,
     ): Dispatcher {
@@ -354,8 +369,6 @@ final class DispatcherTest extends TestCase
     }
 }
 
-// -- Fixtures ----------------------------------------------------------------
-
 final class EchoTool implements Tool
 {
     public function __invoke(TaskScope $scope, Context $ctx): Outcome
@@ -372,7 +385,7 @@ final class FailingTool implements Tool
     }
 }
 
-final class FixedGrantStore implements \Phalanx\Athena\Grant\Store
+final class FixedGrantStore implements GrantStore
 {
     public function __construct(private(set) ?Grant $grant)
     {
@@ -386,9 +399,11 @@ final class FixedGrantStore implements \Phalanx\Athena\Grant\Store
     public function remember(TaskScope $scope, Grant $grant): void
     {
     }
+
     public function consume(TaskScope $scope, Grant $grant): void
     {
     }
+
     public function revoke(TaskScope $scope, string $grantId): void
     {
     }
@@ -398,7 +413,7 @@ final class CancellingTool implements Tool
 {
     public function __invoke(TaskScope $scope, Context $ctx): Outcome
     {
-        throw new \Phalanx\Cancellation\Cancelled('Scope cancelled');
+        throw new Cancelled('Scope cancelled');
     }
 }
 
