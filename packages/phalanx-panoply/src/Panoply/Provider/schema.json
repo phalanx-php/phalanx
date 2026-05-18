@@ -83,6 +83,16 @@
     "wire_translator": {
       "type": ["string", "null"],
       "description": "Fully-qualified class name of the Provider implementation. Null when the adapter package is not installed."
+    },
+    "base_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "Per-provider default base URL. Wire translator constructors use this as their default; an explicit constructor argument still wins."
+    },
+    "default_headers": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "description": "Provider-level static headers merged into every request (e.g. HTTP-Referer for OpenRouter ranking)."
     }
   },
   "$defs": {

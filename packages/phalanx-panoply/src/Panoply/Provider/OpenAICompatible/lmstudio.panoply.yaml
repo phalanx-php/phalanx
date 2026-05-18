@@ -1,0 +1,21 @@
+id: lmstudio
+display_name: "LM Studio"
+base_url: "http://localhost:1234/v1"
+models:
+  - name: local
+    model_id: local
+    aliases: ["local-latest", "lmstudio-local"]
+    capabilities:
+      closed: ["reasoning"]
+      custom: []
+    input_pricing: 0
+    output_pricing: 0
+capabilities:
+  closed: ["reasoning"]
+  custom: []
+transport:
+  streaming: true
+  cancellable: true
+  backpressure: false
+  partial_json: false
+wire_translator: "Phalanx\\Panoply\\Provider\\OpenAI\\ChatProvider"

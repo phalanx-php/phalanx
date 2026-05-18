@@ -71,7 +71,7 @@ final class ConfigTest extends TestCase
     public function canonicalAlgorithmAnchorForConfig(): void
     {
         self::assertSame(
-            '5458e0697b7e0d686cb25e38c7f6cd587c033afbd1f089e24655126cca1ab7a3',
+            'c0a3958a0c60815409befd1789f1e6b2a423a3674a9da5799274bd4eacc47cf9',
             Canonical::of(self::fixture()),
         );
     }

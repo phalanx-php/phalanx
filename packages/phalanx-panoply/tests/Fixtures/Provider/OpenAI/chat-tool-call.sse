@@ -1,0 +1,11 @@
+data: {"id":"chatcmpl-AGORA01","object":"chat.completion.chunk","model":"gpt-5","choices":[{"index":0,"delta":{"role":"assistant","content":null},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-AGORA01","object":"chat.completion.chunk","model":"gpt-5","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"id":"call_hoplite01","type":"function","function":{"name":"search_agora_records","arguments":""}}]},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-AGORA01","object":"chat.completion.chunk","model":"gpt-5","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"arguments":"{\"query\":"}}]},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-AGORA01","object":"chat.completion.chunk","model":"gpt-5","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"arguments":"\"Sparta marathon records\"}"}}]},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-AGORA01","object":"chat.completion.chunk","model":"gpt-5","choices":[{"index":0,"delta":{},"finish_reason":"tool_calls"}],"usage":{"prompt_tokens":45,"completion_tokens":22,"total_tokens":67}}
+
+data: [DONE]

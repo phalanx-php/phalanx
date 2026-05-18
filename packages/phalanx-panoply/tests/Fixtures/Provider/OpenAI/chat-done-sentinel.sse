@@ -1,0 +1,7 @@
+data: {"id":"chatcmpl-SPARTA01","object":"chat.completion.chunk","model":"gpt-5","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-SPARTA01","object":"chat.completion.chunk","model":"gpt-5","choices":[{"index":0,"delta":{"content":"Apollo guided the phalanx to victory at Marathon."},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-SPARTA01","object":"chat.completion.chunk","model":"gpt-5","choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":12,"completion_tokens":9,"total_tokens":21}}
+
+data: [DONE]

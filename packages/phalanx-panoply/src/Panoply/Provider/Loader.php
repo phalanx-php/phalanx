@@ -81,7 +81,7 @@ final class Loader
         $violations = [];
 
         $required = ['id', 'display_name', 'models', 'capabilities', 'transport', 'wire_translator'];
-        $allowed  = $required;
+        $allowed  = array_merge($required, ['base_url', 'default_headers']);
 
         foreach ($required as $key) {
             if (!array_key_exists($key, $data)) {
@@ -124,6 +124,16 @@ final class Loader
             if ($wt !== null && !is_string($wt)) {
                 $violations[] = "wire_translator must be a string or null";
             }
+        }
+
+        if (array_key_exists('base_url', $data)) {
+            if (!is_string($data['base_url'])) {
+                $violations[] = "base_url must be a string";
+            }
+        }
+
+        if (array_key_exists('default_headers', $data)) {
+            $violations = array_merge($violations, self::validateDefaultHeaders($data['default_headers']));
         }
 
         return $violations;
@@ -245,6 +255,27 @@ final class Loader
     }
 
     /**
+     * @param mixed $headers
+     * @return list<string>
+     */
+    private static function validateDefaultHeaders(mixed $headers): array
+    {
+        if (!is_array($headers)) {
+            return ['default_headers must be a mapping'];
+        }
+
+        $violations = [];
+
+        foreach ($headers as $key => $value) {
+            if (!is_string($value)) {
+                $violations[] = "default_headers.{$key} must be a string";
+            }
+        }
+
+        return $violations;
+    }
+
+    /**
      * @param mixed $transport
      * @return list<string>
      */
@@ -298,6 +329,18 @@ final class Loader
             $wireTranslator = null;
         }
 
+        $baseUrl = isset($data['base_url']) && is_string($data['base_url'])
+            ? $data['base_url']
+            : null;
+
+        /** @var array<string, string> $defaultHeaders */
+        $defaultHeaders = [];
+        if (isset($data['default_headers']) && is_array($data['default_headers'])) {
+            foreach ($data['default_headers'] as $k => $v) {
+                $defaultHeaders[(string) $k] = (string) $v;
+            }
+        }
+
         /** @var class-string<\Phalanx\Panoply\Provider>|null $wireTranslator */
         return Config::of(
             id: (string) $data['id'],
@@ -306,6 +349,8 @@ final class Loader
             capabilities: $capabilities,
             transport: $transport,
             wireTranslator: $wireTranslator,
+            baseUrl: $baseUrl,
+            defaultHeaders: $defaultHeaders,
         );
     }
 

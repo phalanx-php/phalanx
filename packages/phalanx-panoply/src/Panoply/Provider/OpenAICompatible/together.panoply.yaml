@@ -1,0 +1,37 @@
+id: together
+display_name: "Together AI"
+base_url: "https://api.together.xyz/v1"
+models:
+  - name: meta-llama/Llama-3.3-70B-Instruct-Turbo
+    model_id: meta-llama/Llama-3.3-70B-Instruct-Turbo
+    aliases: ["llama-3.3-70b", "llama70b"]
+    capabilities:
+      closed: ["reasoning", "tool-use"]
+      custom: []
+    input_pricing: 0.00088
+    output_pricing: 0.00088
+  - name: Qwen/Qwen2.5-72B-Instruct-Turbo
+    model_id: Qwen/Qwen2.5-72B-Instruct-Turbo
+    aliases: ["qwen-72b", "qwen2.5-72b"]
+    capabilities:
+      closed: ["reasoning", "tool-use"]
+      custom: []
+    input_pricing: 0.0012
+    output_pricing: 0.0012
+  - name: mistralai/Mixtral-8x22B-Instruct-v0.1
+    model_id: mistralai/Mixtral-8x22B-Instruct-v0.1
+    aliases: ["mixtral-8x22b", "mixtral22b"]
+    capabilities:
+      closed: ["reasoning", "tool-use"]
+      custom: []
+    input_pricing: 0.0012
+    output_pricing: 0.0012
+capabilities:
+  closed: ["reasoning", "tool-use"]
+  custom: []
+transport:
+  streaming: true
+  cancellable: true
+  backpressure: true
+  partial_json: false
+wire_translator: "Phalanx\\Panoply\\Provider\\OpenAI\\ChatProvider"

@@ -26,8 +26,9 @@ use Phalanx\Panoply\Transport\Needs as TransportNeeds;
 final class Config implements Canonicalizable
 {
     /**
-     * @param list<Config\Model> $models
+     * @param list<Config\Model>                            $models
      * @param class-string<\Phalanx\Panoply\Provider>|null $wireTranslator
+     * @param array<string, string>                         $defaultHeaders
      */
     public function __construct(
         private(set) string $id,
@@ -36,12 +37,15 @@ final class Config implements Canonicalizable
         private(set) Capabilities $capabilities,
         private(set) TransportNeeds $transport,
         private(set) ?string $wireTranslator,
+        private(set) ?string $baseUrl = null,
+        private(set) array $defaultHeaders = [],
     ) {
     }
 
     /**
-     * @param list<Config\Model> $models
+     * @param list<Config\Model>                            $models
      * @param class-string<\Phalanx\Panoply\Provider>|null $wireTranslator
+     * @param array<string, string>                         $defaultHeaders
      */
     public static function of(
         string $id,
@@ -50,6 +54,8 @@ final class Config implements Canonicalizable
         Capabilities $capabilities,
         TransportNeeds $transport,
         ?string $wireTranslator = null,
+        ?string $baseUrl = null,
+        array $defaultHeaders = [],
     ): self {
         return new self(
             id: $id,
@@ -58,6 +64,8 @@ final class Config implements Canonicalizable
             capabilities: $capabilities,
             transport: $transport,
             wireTranslator: $wireTranslator,
+            baseUrl: $baseUrl,
+            defaultHeaders: $defaultHeaders,
         );
     }
 
@@ -76,6 +84,8 @@ final class Config implements Canonicalizable
             'capabilities'    => $this->capabilities->toCanonical(),
             'transport'       => $this->transport->toCanonical(),
             'wire_translator' => $this->wireTranslator,
+            'base_url'        => $this->baseUrl,
+            'default_headers' => $this->defaultHeaders,
         ];
     }
 }

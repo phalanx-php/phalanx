@@ -1,0 +1,155 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Phalanx\Panoply\Tests\Unit\Provider\Ollama;
+
+use Phalanx\Panoply\Artifact\Kind as ArtifactKind;
+use Phalanx\Panoply\Capabilities;
+use Phalanx\Panoply\Capability;
+use Phalanx\Panoply\Cue\Effect\Requested;
+use Phalanx\Panoply\Cue\Invocation\Completed;
+use Phalanx\Panoply\Cue\Invocation\Started;
+use Phalanx\Panoply\Cue\Output\TokenDelta;
+use Phalanx\Panoply\Cue\Output\TokenStop;
+use Phalanx\Panoply\Cue\Provider\Resolved;
+use Phalanx\Panoply\Cue\Usage\FinalUsage;
+use Phalanx\Panoply\Effect\Kind as EffectKind;
+use Phalanx\Panoply\Effects;
+use Phalanx\Panoply\Invocation;
+use Phalanx\Panoply\Output;
+use Phalanx\Panoply\Provider\Config\Model;
+use Phalanx\Panoply\Provider\Needs as ProviderNeeds;
+use Phalanx\Panoply\Provider\Ollama\ChatOptions;
+use Phalanx\Panoply\Provider\Ollama\ChatProvider;
+use Phalanx\Panoply\Provider\Preference;
+use Phalanx\Panoply\Runtime\Sync\Runtime;
+use Phalanx\Panoply\Transport\Fake\Transport as FakeTransport;
+use Phalanx\Panoply\Transport\Needs as TransportNeeds;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+
+final class ChatProviderTest extends TestCase
+{
+    #[Test]
+    public function simpleFixtureEmitsExpectedCueTypes(): void
+    {
+        $provider = self::provider(self::script('chat-simple.ndjson'));
+        $stream   = $provider->perform(self::invocation(), new Runtime());
+        $cues     = $stream->toArray();
+
+        $types = array_map(static fn ($c) => $c::class, $cues);
+
+        self::assertContains(Resolved::class, $types);
+        self::assertContains(Started::class, $types);
+        self::assertContains(TokenDelta::class, $types);
+        self::assertContains(TokenStop::class, $types);
+        self::assertContains(FinalUsage::class, $types);
+        self::assertContains(Completed::class, $types);
+    }
+
+    #[Test]
+    public function simpleFixtureTranscriptAssembles(): void
+    {
+        $provider = self::provider(self::script('chat-simple.ndjson'));
+        $stream   = $provider->perform(self::invocation(), new Runtime());
+
+        $transcript = '';
+        foreach ($stream->tokens() as $cue) {
+            if ($cue instanceof TokenDelta) {
+                $transcript .= $cue->text;
+            }
+        }
+
+        self::assertSame('Leonidas led the hoplites at Thermopylae.', $transcript);
+    }
+
+    #[Test]
+    public function toolCallFixtureEmitsEffectRequested(): void
+    {
+        $provider = self::provider(self::script('chat-tool-call.ndjson'));
+        $stream   = $provider->perform(self::invocation(), new Runtime());
+        $cues     = $stream->toArray();
+
+        $requested = array_values(array_filter($cues, static fn ($c) => $c instanceof Requested));
+
+        self::assertCount(1, $requested);
+        self::assertStringContainsString('search_agora', $requested[0]->summary);
+    }
+
+    #[Test]
+    public function capabilitiesReadFromModel(): void
+    {
+        $model    = Model::of(
+            name: 'qwen2.5',
+            modelId: 'qwen2.5',
+            aliases: ['qwen'],
+            capabilities: Capabilities::of(Capability::ToolUse),
+        );
+        $provider = new ChatProvider(
+            transport: new FakeTransport([]),
+            model: $model,
+        );
+
+        self::assertSame($model->capabilities, $provider->capabilities());
+    }
+
+    /**
+     * @return array<string, list<string>>
+     */
+    private static function script(string $fixture): array
+    {
+        $path = dirname(__DIR__, 3) . '/Fixtures/Provider/Ollama/' . $fixture;
+        $raw  = file_get_contents($path);
+
+        if ($raw === false) {
+            throw new \RuntimeException("Fixture not found: {$path}");
+        }
+
+        // Split NDJSON at newlines; each line is one chunk.
+        $chunks = array_values(array_filter(
+            array_map(
+                static fn (string $line): string => $line . "\n",
+                explode("\n", rtrim($raw, "\n")),
+            ),
+            static fn (string $s): bool => trim($s) !== '',
+        ));
+
+        return ['POST http://localhost:11434/api/chat' => $chunks];
+    }
+
+    private static function provider(array $script, ?ChatOptions $options = null): ChatProvider
+    {
+        return new ChatProvider(
+            transport: new FakeTransport($script),
+            model: self::model(),
+            chatOptions: $options ?? new ChatOptions(),
+        );
+    }
+
+    private static function invocation(): Invocation
+    {
+        return Invocation::of(
+            id: 'inv_leonidas',
+            agentId: 'leonidas',
+            activityId: 'act_thermopylae',
+            contextHash: str_repeat('i', 64),
+            instructions: 'Rally the hoplites at the pass.',
+            output: Output::artifact(ArtifactKind::Thesis),
+            effects: Effects::allow(EffectKind::FileRead),
+            provider: ProviderNeeds::new()->prefer(Preference::LocalFirst)->require(Capability::ToolUse),
+            transport: TransportNeeds::new()->streaming(),
+            dynamicContext: ['user_input' => 'What is the battle plan?'],
+        );
+    }
+
+    private static function model(): Model
+    {
+        return Model::of(
+            name: 'llama3.1',
+            modelId: 'llama3.1',
+            aliases: ['llama'],
+            capabilities: Capabilities::of(Capability::ToolUse),
+        );
+    }
+}

@@ -1,0 +1,40 @@
+id: openrouter
+display_name: "OpenRouter"
+base_url: "https://openrouter.ai/api/v1"
+default_headers:
+  HTTP-Referer: "https://phalanx.test"
+  X-Title: "Phalanx-Panoply"
+models:
+  - name: anthropic/claude-opus-4-7
+    model_id: anthropic/claude-opus-4-7
+    aliases: ["claude-opus", "opus-via-router"]
+    capabilities:
+      closed: ["reasoning", "tool-use", "vision"]
+      custom: []
+    input_pricing: 0.003
+    output_pricing: 0.015
+  - name: openai/gpt-5
+    model_id: openai/gpt-5
+    aliases: ["gpt5-via-router", "openai-gpt5"]
+    capabilities:
+      closed: ["reasoning", "tool-use", "vision"]
+      custom: []
+    input_pricing: 0.00125
+    output_pricing: 0.01
+  - name: meta-llama/llama-3.3-70b-instruct
+    model_id: meta-llama/llama-3.3-70b-instruct
+    aliases: ["llama-router", "llama70b-router"]
+    capabilities:
+      closed: ["reasoning", "tool-use"]
+      custom: []
+    input_pricing: 0.00059
+    output_pricing: 0.00079
+capabilities:
+  closed: ["reasoning", "tool-use", "vision"]
+  custom: []
+transport:
+  streaming: true
+  cancellable: true
+  backpressure: true
+  partial_json: false
+wire_translator: "Phalanx\\Panoply\\Provider\\OpenAI\\ChatProvider"

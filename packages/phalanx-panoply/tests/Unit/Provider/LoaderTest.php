@@ -235,6 +235,46 @@ YAML;
     }
 
     #[Test]
+    public function loaderReadsBaseUrlFromYaml(): void
+    {
+        $yaml = self::validYaml() . "\nbase_url: \"https://api.together.xyz/v1\"\n";
+
+        $config = Loader::fromString($yaml, 'test.yaml');
+
+        self::assertSame('https://api.together.xyz/v1', $config->baseUrl);
+    }
+
+    #[Test]
+    public function loaderReadsDefaultHeadersFromYaml(): void
+    {
+        $yaml = self::validYaml();
+        $yaml .= "\ndefault_headers:\n  HTTP-Referer: \"https://phalanx.test\"\n  X-Title: \"Sparta\"\n";
+
+        $config = Loader::fromString($yaml, 'test.yaml');
+
+        self::assertSame(['HTTP-Referer' => 'https://phalanx.test', 'X-Title' => 'Sparta'], $config->defaultHeaders);
+    }
+
+    #[Test]
+    public function loaderRejectsNonStringHeaderValues(): void
+    {
+        $yaml = self::validYaml() . "\ndefault_headers:\n  X-Count: 42\n";
+
+        $this->expectException(ValidationError::class);
+
+        Loader::fromString($yaml, 'test.yaml');
+    }
+
+    #[Test]
+    public function loaderBaseUrlAndDefaultHeadersAreOptional(): void
+    {
+        $config = Loader::fromString(self::validYaml(), 'test.yaml');
+
+        self::assertNull($config->baseUrl);
+        self::assertSame([], $config->defaultHeaders);
+    }
+
+    #[Test]
     public function fakeYamlRoundTrip(): void
     {
         $path   = dirname(__DIR__, 3) . '/src/Panoply/Provider/Fake/fake.panoply.yaml';
