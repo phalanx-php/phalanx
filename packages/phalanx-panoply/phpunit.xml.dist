@@ -15,6 +15,21 @@
          displayDetailsOnTestsThatTriggerWarnings="true"
          failOnRisky="true"
          failOnWarning="false">
+    <!--
+        PHPUnit runs the first-declared testsuite by default when no testsuite
+        flag is supplied. "Unit" is the safe default: no live API calls, no
+        OpenSwoole extension, no network I/O.
+
+        To run each suite explicitly from the project root:
+          php vendor/bin/phpunit -c packages/phalanx-panoply/phpunit.xml.dist
+          php vendor/bin/phpunit -c packages/phalanx-panoply/phpunit.xml.dist - -testsuite=Integration
+          php vendor/bin/phpunit -c packages/phalanx-panoply/phpunit.xml.dist - -testsuite=Acceptance
+
+        Integration requires ANTHROPIC_API_KEY and makes real API calls.
+        Acceptance requires ANTHROPIC_API_KEY and the openswoole extension for gate 10.
+
+        The package-level "composer test" script explicitly passes the Unit suite.
+    -->
     <testsuites>
         <testsuite name="Unit">
             <directory>tests/Unit</directory>

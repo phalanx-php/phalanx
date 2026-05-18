@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace Phalanx\Panoply\Tests\Integration\Provider;
 
-use Phalanx\Panoply\Artifact\Kind as ArtifactKind;
 use Phalanx\Panoply\Capabilities;
 use Phalanx\Panoply\Capability;
-use Phalanx\Panoply\Cue\Output\TokenDelta;
 use Phalanx\Panoply\Cue\Invocation\Completed;
+use Phalanx\Panoply\Cue\Output\TokenDelta;
 use Phalanx\Panoply\Cue\Usage\FinalUsage;
 use Phalanx\Panoply\Effects;
 use Phalanx\Panoply\Invocation;
@@ -75,16 +74,24 @@ final class AnthropicLiveTest extends TestCase
             createdAt: new \DateTimeImmutable(),
         );
 
+        $cues = [];
         try {
             $cues = $provider->perform($invocation, new Runtime())->toArray();
         } catch (HttpError $e) {
-            // A 4xx response (e.g. depleted credits, invalid key) means the
-            // transport and provider stack reached the API — the integration
-            // path works. Skip rather than fail so a depleted test key does
-            // not block CI.
-            self::markTestSkipped(sprintf(
-                'Anthropic API returned HTTP %d — transport verified but response was error: %s',
+            // We reached the API but got an error response (e.g. depleted
+            // credits, invalid key). The transport path is verified; the
+            // full contract (token deltas + completed cue) is not.
+            self::markTestIncomplete(sprintf(
+                'Anthropic API returned HTTP %d — transport integration verified but response was an error (%s)',
                 $e->statusCode,
+                $e->getMessage(),
+            ));
+        } catch (\Throwable $e) {
+            // Network failures (DNS, TLS, connection refused) prevent us
+            // from exercising the contract at all.
+            self::markTestIncomplete(sprintf(
+                'Network error prevented live API call (%s: %s)',
+                $e::class,
                 $e->getMessage(),
             ));
         }

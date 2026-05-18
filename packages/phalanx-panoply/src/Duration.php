@@ -26,16 +26,40 @@ final class Duration
 
     public static function ms(int $milliseconds): self
     {
+        if ($milliseconds < 0) {
+            throw new \InvalidArgumentException(sprintf('Duration must be non-negative, got %d ms', $milliseconds));
+        }
+        if ($milliseconds > intdiv(PHP_INT_MAX, 1_000)) {
+            throw new \InvalidArgumentException(
+                sprintf('Duration overflow: %d ms exceeds maximum representable microseconds', $milliseconds),
+            );
+        }
+
         return new self($milliseconds * 1_000);
     }
 
     public static function seconds(int $seconds): self
     {
+        if ($seconds < 0) {
+            throw new \InvalidArgumentException(sprintf('Duration must be non-negative, got %d seconds', $seconds));
+        }
+        if ($seconds > intdiv(PHP_INT_MAX, 1_000_000)) {
+            throw new \InvalidArgumentException(
+                sprintf('Duration overflow: %d seconds exceeds maximum representable microseconds', $seconds),
+            );
+        }
+
         return new self($seconds * 1_000_000);
     }
 
     public static function microseconds(int $microseconds): self
     {
+        if ($microseconds < 0) {
+            throw new \InvalidArgumentException(
+                sprintf('Duration must be non-negative, got %d microseconds', $microseconds),
+            );
+        }
+
         return new self($microseconds);
     }
 

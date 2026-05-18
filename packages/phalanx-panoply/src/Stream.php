@@ -100,8 +100,14 @@ class Stream extends Series
 
     /**
      * Merge adjacent {@see TokenDelta} cues that share the same channel and
-     * arrive within `$window` of each other into a single delta with
-     * concatenated text. All other cue types pass through unchanged.
+     * arrive within `$window` of the *first unflushed delta* into a single
+     * delta with concatenated text. All other cue types pass through unchanged.
+     *
+     * The window is measured from the moment the buffer is opened (when the
+     * first un-buffered delta arrives), not from each individual delta — this
+     * is a from-start window, not a sliding per-pair window. A delta that
+     * arrives after the window has elapsed since the buffer opened flushes the
+     * current buffer and opens a fresh one.
      *
      * Useful for reducing downstream render pressure: a 200 ms window turns
      * 50 sub-millisecond token events into a handful of coarser batches

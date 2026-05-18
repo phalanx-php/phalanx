@@ -184,6 +184,128 @@ final class CoalescingTest extends TestCase
         self::assertInstanceOf(Invocation\Started::class, $cues[1]);
     }
 
+    #[Test]
+    public function channelTransitionStartsFreshWindowForNewBuffer(): void
+    {
+        // d1.Message → d2.Thinking (flushes d1, buffers d2) → advance 199 ms →
+        // d3.Thinking same channel → still within 200 ms window → merge d2+d3.
+        $clock = new FrozenClock(0);
+        $at    = new \DateTimeImmutable('2026-05-18T00:00:00Z');
+
+        $stream = new Stream(static function () use ($clock, $at): \Generator {
+            yield self::delta('d1', 1, 'Phalanx', Channel::Message, $at);
+            yield self::delta('d2', 2, 'thinks.', Channel::Thinking, $at);
+            $clock->advance(Duration::ms(199));
+            yield self::delta('d3', 3, ' More thoughts.', Channel::Thinking, $at);
+        });
+
+        $cues = $stream->coalescing(Duration::ms(200), $clock)->toArray();
+
+        // d1 flushed by channel transition, d2+d3 merged in same window
+        self::assertCount(2, $cues);
+        self::assertInstanceOf(TokenDelta::class, $cues[0]);
+        self::assertSame(Channel::Message, $cues[0]->channel);
+        self::assertSame('Phalanx', $cues[0]->text);
+        self::assertInstanceOf(TokenDelta::class, $cues[1]);
+        self::assertSame(Channel::Thinking, $cues[1]->channel);
+        self::assertSame('thinks. More thoughts.', $cues[1]->text);
+    }
+
+    #[Test]
+    public function exactlyAtWindowFlushes(): void
+    {
+        // Window is 50 ms. Advance EXACTLY 50 ms — boundary is exclusive (<),
+        // so a delta arriving at elapsed == window must flush the buffer.
+        $clock = new FrozenClock(0);
+        $at    = new \DateTimeImmutable('2026-05-18T00:00:00Z');
+
+        $stream = new Stream(static function () use ($clock, $at): \Generator {
+            yield self::delta('e1', 1, 'Achilles', Channel::Message, $at);
+            $clock->advance(Duration::ms(50));
+            yield self::delta('e2', 2, ' runs.', Channel::Message, $at);
+        });
+
+        $cues = $stream->coalescing(Duration::ms(50), $clock)->toArray();
+
+        // elapsed == window (50 µs × 1000 = 50 000 µs), condition is `< window`
+        // so the second delta falls outside and flushes the buffer.
+        self::assertCount(2, $cues);
+        self::assertSame('Achilles', $cues[0]->text);
+        self::assertSame(' runs.', $cues[1]->text);
+    }
+
+    #[Test]
+    public function threeConsecutiveFlushesPreserveOrdering(): void
+    {
+        // d1.Message → d2.Thinking → d3.Message → d4.Reasoning, clock frozen.
+        // Each channel switch flushes immediately, so output is 4 individual cues
+        // in the same order as input.
+        $clock = new FrozenClock(0);
+        $at    = new \DateTimeImmutable('2026-05-18T00:00:00Z');
+
+        $stream = Stream::from([
+            self::delta('f1', 1, 'Leonidas', Channel::Message, $at),
+            self::delta('f2', 2, 'ponders.', Channel::Thinking, $at),
+            self::delta('f3', 3, 'Commands.', Channel::Message, $at),
+            self::delta('f4', 4, 'Deeper.', Channel::Reasoning, $at),
+        ])->coalescing(Duration::ms(200), $clock);
+
+        $cues = $stream->toArray();
+
+        self::assertCount(4, $cues);
+        self::assertSame('Leonidas', $cues[0]->text);
+        self::assertSame('ponders.', $cues[1]->text);
+        self::assertSame('Commands.', $cues[2]->text);
+        self::assertSame('Deeper.', $cues[3]->text);
+    }
+
+    #[Test]
+    public function burstLifecycleBurstPreservesOrder(): void
+    {
+        // 2 Message deltas → Invocation\Started (lifecycle) → 2 Message deltas.
+        // Expected output: [merged d1+d2, Invocation\Started, merged d3+d4 (via EOF flush)].
+        $clock = new FrozenClock(0);
+        $at    = new \DateTimeImmutable('2026-05-18T00:00:00Z');
+
+        $stream = Stream::from([
+            self::delta('b1', 1, 'Hold', Channel::Message, $at),
+            self::delta('b2', 2, ' the', Channel::Message, $at),
+            new Invocation\Started('s1', 3, 'act.sparta', 'inv.01', 'agent.leonidas', $at),
+            self::delta('b3', 4, ' pass', Channel::Message, $at),
+            self::delta('b4', 5, ' now.', Channel::Message, $at),
+        ])->coalescing(Duration::ms(200), $clock);
+
+        $cues = $stream->toArray();
+
+        self::assertCount(3, $cues);
+        self::assertInstanceOf(TokenDelta::class, $cues[0]);
+        self::assertSame('Hold the', $cues[0]->text);
+        self::assertInstanceOf(Invocation\Started::class, $cues[1]);
+        self::assertInstanceOf(TokenDelta::class, $cues[2]);
+        self::assertSame(' pass now.', $cues[2]->text);
+    }
+
+    #[Test]
+    public function threeDifferentChannelsBackToBackProduceThreeOutputs(): void
+    {
+        // One delta per channel, no clock advance → each channel switch flushes.
+        $clock = new FrozenClock(0);
+        $at    = new \DateTimeImmutable('2026-05-18T00:00:00Z');
+
+        $stream = Stream::from([
+            self::delta('g1', 1, 'Message text.', Channel::Message, $at),
+            self::delta('g2', 2, 'Thinking text.', Channel::Thinking, $at),
+            self::delta('g3', 3, 'Reasoning text.', Channel::Reasoning, $at),
+        ])->coalescing(Duration::ms(200), $clock);
+
+        $cues = $stream->toArray();
+
+        self::assertCount(3, $cues);
+        self::assertSame(Channel::Message, $cues[0]->channel);
+        self::assertSame(Channel::Thinking, $cues[1]->channel);
+        self::assertSame(Channel::Reasoning, $cues[2]->channel);
+    }
+
     private static function delta(
         string $id,
         int $sequence,

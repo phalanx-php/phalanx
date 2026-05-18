@@ -11,8 +11,13 @@ use Phalanx\Panoply\Capability;
 use Phalanx\Panoply\Context;
 use Phalanx\Panoply\Conversation\Options;
 use Phalanx\Panoply\Conversation\Record\Message;
+use Phalanx\Panoply\Cue\Activity\Started as CueActivityStarted;
+use Phalanx\Panoply\Cue\Artifact\Finalized as CueArtifactFinalized;
+use Phalanx\Panoply\Cue\Effect\Authorized as CueEffectAuthorized;
+use Phalanx\Panoply\Cue\Invocation\Completed as CueInvocationCompleted;
 use Phalanx\Panoply\Cue\Output\Channel;
 use Phalanx\Panoply\Cue\Output\TokenDelta;
+use Phalanx\Panoply\Cue\StopReason;
 use Phalanx\Panoply\Effect;
 use Phalanx\Panoply\Effect\Decision;
 use Phalanx\Panoply\Effect\Kind as EffectKind;
@@ -424,6 +429,146 @@ final class DeterminismGateTest extends TestCase
         );
     }
 
+    // ── Cue subclass anchors (A4) ─────────────────────────────────────────────
+
+    #[Test]
+    public function canonicalAlgorithmAnchorForCueEffectAuthorized(): void
+    {
+        $at  = new \DateTimeImmutable('2026-05-17T12:00:00.123456+00:00');
+        $cue = new CueEffectAuthorized(
+            '01HZ000000000000000000AUTH01',
+            1,
+            'act.thermopylae',
+            '01HZ000000000000000000INV001',
+            'agent.leonidas',
+            $at,
+            effectId: 'eff.sparta.01',
+            grantId: 'grt.zeus.01',
+        );
+
+        self::assertSame(
+            'afad2b95371d34b33e488bdc3124610fc8cd80b4cf8cc9c28f801ed93c571ff4',
+            Canonical::of($cue),
+            'Canonical algorithm output drifted for Cue\Effect\Authorized',
+        );
+    }
+
+    #[Test]
+    public function canonicalAlgorithmAnchorForCueInvocationCompleted(): void
+    {
+        $at  = new \DateTimeImmutable('2026-05-17T12:00:00.123456+00:00');
+        $cue = new CueInvocationCompleted(
+            '01HZ000000000000000000COMP01',
+            2,
+            'act.thermopylae',
+            '01HZ000000000000000000INV001',
+            'agent.leonidas',
+            $at,
+            StopReason::EndOfTurn,
+        );
+
+        self::assertSame(
+            'ae0333b3407e6e2bc68bb25c782238f4286e558ad78980ffa0ba30357c3da56a',
+            Canonical::of($cue),
+            'Canonical algorithm output drifted for Cue\Invocation\Completed',
+        );
+    }
+
+    #[Test]
+    public function canonicalAlgorithmAnchorForCueActivityStarted(): void
+    {
+        $at  = new \DateTimeImmutable('2026-05-17T12:00:00.123456+00:00');
+        $cue = new CueActivityStarted(
+            '01HZ000000000000000000STRT01',
+            3,
+            'act.thermopylae',
+            '01HZ000000000000000000INV001',
+            'agent.leonidas',
+            $at,
+        );
+
+        self::assertSame(
+            'b61d3d551a8915aa9978e33249eb6bd0db303cfa31394d572b414af915387f57',
+            Canonical::of($cue),
+            'Canonical algorithm output drifted for Cue\Activity\Started',
+        );
+    }
+
+    #[Test]
+    public function canonicalAlgorithmAnchorForCueArtifactFinalized(): void
+    {
+        $at  = new \DateTimeImmutable('2026-05-17T12:00:00.123456+00:00');
+        $cue = new CueArtifactFinalized(
+            '01HZ000000000000000000FINL01',
+            4,
+            'act.thermopylae',
+            '01HZ000000000000000000INV001',
+            'agent.leonidas',
+            $at,
+            artifactId: '01HZ000000000000000000ART001',
+            contentHash: str_repeat('a', 64),
+        );
+
+        self::assertSame(
+            'd2a076d0e53a2ed77dab83f956ebaabe13c80fa4745870b9524340811d4e777d',
+            Canonical::of($cue),
+            'Canonical algorithm output drifted for Cue\Artifact\Finalized',
+        );
+    }
+
+    // ── Nested map key order (A5) ─────────────────────────────────────────────
+
+    #[Test]
+    public function nestedMapKeyOrderIsIrrelevant(): void
+    {
+        // Dynamic context keys in non-alphabetical order — canonicalization must
+        // sort through the full object graph, not just top-level arrays.
+        $at       = new \DateTimeImmutable('2026-05-17T12:00:00.123456+00:00');
+        $zebra    = self::buildInvocationWithContext(['zebra' => 1, 'apple' => 2], $at);
+        $apple    = self::buildInvocationWithContext(['apple' => 2, 'zebra' => 1], $at);
+        $zebraHash = Canonical::of($zebra);
+        $appleHash = Canonical::of($apple);
+
+        self::assertSame(
+            $zebraHash,
+            $appleHash,
+            'dynamicContext key insertion order must not affect the canonical hash',
+        );
+        self::assertSame(
+            '06cce447b9a63e610fa974de07353c38d8461d75f8622ed075efa09375eab11f',
+            $zebraHash,
+            'Canonical algorithm output drifted for nested-map key order anchor',
+        );
+    }
+
+    // ── Set-semantics order-invariance (Q6 + Q7) ─────────────────────────────
+
+    #[Test]
+    public function capabilitiesOrderInvariant(): void
+    {
+        $toolVision = Capabilities::of(Capability::ToolUse, Capability::Vision);
+        $visionTool = Capabilities::of(Capability::Vision, Capability::ToolUse);
+
+        self::assertSame(
+            Canonical::of($toolVision),
+            Canonical::of($visionTool),
+            'Capabilities::of() insertion order must not affect the canonical hash',
+        );
+    }
+
+    #[Test]
+    public function effectsAllowListOrderInvariant(): void
+    {
+        $fileShell = Effects::allow(EffectKind::FileRead, EffectKind::ShellExec);
+        $shellFile = Effects::allow(EffectKind::ShellExec, EffectKind::FileRead);
+
+        self::assertSame(
+            Canonical::of($fileShell),
+            Canonical::of($shellFile),
+            'Effects::allow() insertion order must not affect the canonical hash',
+        );
+    }
+
     /**
      * Deterministic Invocation fixture with fully frozen field values.
      * Every field is a literal constant — no `new \DateTimeImmutable()` calls
@@ -451,6 +596,26 @@ final class DeterminismGateTest extends TestCase
             provider: ProviderNeeds::new(),
             transport: TransportNeeds::new(),
             dynamicContext: ['battle' => 'thermopylae', 'year' => -480],
+            createdAt: $createdAt,
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $dynamicContext
+     */
+    private static function buildInvocationWithContext(array $dynamicContext, \DateTimeImmutable $createdAt): Invocation
+    {
+        return new Invocation(
+            id: '01HZ000000000000000000KMORD',
+            agentId: 'agent.leonidas',
+            activityId: 'act.thermopylae',
+            contextHash: str_repeat('0', 64),
+            instructions: 'Hold the pass at Thermopylae until the last hoplite falls.',
+            output: Output::text(),
+            effects: Effects::none(),
+            provider: ProviderNeeds::new(),
+            transport: TransportNeeds::new(),
+            dynamicContext: $dynamicContext,
             createdAt: $createdAt,
         );
     }

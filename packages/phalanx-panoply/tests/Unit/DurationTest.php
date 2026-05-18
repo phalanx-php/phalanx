@@ -98,4 +98,38 @@ final class DurationTest extends TestCase
 
         Duration::seconds(-5);
     }
+
+    #[Test]
+    public function msFactoryRejectsOverflow(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessageMatches('/overflow/i');
+
+        Duration::ms(PHP_INT_MAX);
+    }
+
+    #[Test]
+    public function secondsFactoryRejectsOverflow(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessageMatches('/overflow/i');
+
+        Duration::seconds(PHP_INT_MAX);
+    }
+
+    #[Test]
+    public function negativeMsReportedAsCallerInput(): void
+    {
+        // The error message must reflect the caller's negative input value,
+        // not a post-multiplication wrapped result.
+        $caught = null;
+        try {
+            Duration::ms(-42);
+        } catch (\InvalidArgumentException $e) {
+            $caught = $e;
+        }
+
+        self::assertNotNull($caught);
+        self::assertStringContainsString('-42', $caught->getMessage());
+    }
 }

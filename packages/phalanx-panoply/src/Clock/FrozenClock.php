@@ -8,14 +8,21 @@ use Phalanx\Panoply\Clock;
 use Phalanx\Panoply\Duration;
 
 /**
- * Test seam. Holds a fixed epoch-microsecond counter that advances only
- * when {@see self::advance()} or {@see self::set()} are called explicitly.
+ * Test seam. Holds a fixed microsecond counter that advances only when
+ * {@see self::advance()} or {@see self::set()} are called explicitly.
  *
- * Construct with an initial epoch value (e.g. `1_000_000` for 1970-01-01
- * 00:00:01 UTC). Mutate via {@see self::advance()} between stream items in
- * coalescing tests to simulate elapsed time without touching the OS clock.
+ * `nowMicroseconds()` is the controllable monotonic seam used by coalescing
+ * tests. Construct with any initial value (e.g. `0` or `1_000_000`); advance
+ * it between stream items to simulate elapsed time without touching the OS
+ * clock. The value is arbitrary — it represents relative elapsed time, not
+ * wall-clock epoch.
  *
- * Note: the backing field is `private int` — mutable by design. The Clock
+ * `now()` derives a `\DateTimeImmutable` from the same counter for the rare
+ * cases where a wall-clock-like value is needed in tests. It is NOT
+ * synchronized with the production `SystemClock::now()` wall-clock source —
+ * the two sources are intentionally independent (see {@see Clock} docblock).
+ *
+ * The backing field is `private int` — mutable by design. The Clock
  * interface is a test seam, not a value object, so `readonly` and
  * `private(set)` are intentionally absent.
  *

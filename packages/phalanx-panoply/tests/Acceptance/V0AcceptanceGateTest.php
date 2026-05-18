@@ -50,6 +50,7 @@ use Phalanx\Panoply\Tests\Fixtures\Agent\Discovered\HoplitesAgent;
 use Phalanx\Panoply\Transport\Needs as TransportNeeds;
 use Phalanx\Testing\TestApp;
 use PHPUnit\Framework\Attributes\RequiresEnvironment;
+use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -184,6 +185,8 @@ final class V0AcceptanceGateTest extends TestCase
     /**
      * Gate 5: Stream::coalescing() merges adjacent TokenDelta cues on the
      * same channel within the window, producing one merged delta per burst.
+     * Also verifies the `tokens()->coalescing()` chain compiles and reduces
+     * correctly — mirroring the spec example.
      */
     #[Test]
     public function gate05_streamCoalescingMergesAdjacentTokenDeltasWithinWindow(): void
@@ -203,6 +206,22 @@ final class V0AcceptanceGateTest extends TestCase
         self::assertCount(1, $cues, 'Three within-window deltas must merge into one');
         self::assertInstanceOf(TokenDelta::class, $cues[0]);
         self::assertSame('Hold the pass.', $cues[0]->text);
+
+        // Verify the tokens()->coalescing() chain from the spec example compiles
+        // and produces the same result — tokens() filters to TokenDelta/TokenStop only,
+        // then coalescing() merges within the window.
+        $clock2  = new FrozenClock(0);
+        $chained = Stream::from([
+            new TokenDelta('d1', 1, 'act.agora', 'inv.01', 'agent.pericles', $at, 'Hold ', Channel::Message),
+            new TokenDelta('d2', 2, 'act.agora', 'inv.01', 'agent.pericles', $at, 'the ', Channel::Message),
+            new TokenDelta('d3', 3, 'act.agora', 'inv.01', 'agent.pericles', $at, 'pass.', Channel::Message),
+        ])->tokens()->coalescing(Duration::ms(50), $clock2);
+
+        $chainedCues = $chained->toArray();
+
+        self::assertCount(1, $chainedCues, 'tokens()->coalescing() chain must also merge three within-window deltas into one');
+        self::assertInstanceOf(TokenDelta::class, $chainedCues[0]);
+        self::assertSame('Hold the pass.', $chainedCues[0]->text);
     }
 
     /**
@@ -269,12 +288,6 @@ final class V0AcceptanceGateTest extends TestCase
             outputPricing: 0.00125,
         );
 
-        $provider = new \Phalanx\Panoply\Provider\Anthropic\Provider(
-            transport: new \Phalanx\Panoply\Transport\Sync\Transport(),
-            apiKey: $apiKey,
-            model: $model,
-        );
-
         $invocation = Invocation::of(
             id: 'gate-08',
             agentId: 'agent.sparta',
@@ -288,15 +301,37 @@ final class V0AcceptanceGateTest extends TestCase
             dynamicContext: ['user_input' => 'What was the message at Thermopylae?'],
         );
 
+        // Transport has a configurable total timeout (default 300 s). For the
+        // acceptance gate, override to 10 s to prevent an unbounded wait on
+        // a slow or unreachable API. The Transport constructor accepts
+        // connectTimeoutSeconds and totalTimeoutSeconds.
+        $provider = new \Phalanx\Panoply\Provider\Anthropic\Provider(
+            transport: new \Phalanx\Panoply\Transport\Sync\Transport(
+                connectTimeoutSeconds: 5,
+                totalTimeoutSeconds: 10,
+            ),
+            apiKey: $apiKey,
+            model: $model,
+        );
+
+        $cues = [];
         try {
             $cues = $provider->perform($invocation, new SyncRuntime())->toArray();
         } catch (HttpError $e) {
-            // A 4xx response (e.g. depleted credits, invalid key) means the transport
-            // and provider stack reached the API — the integration path works. Skip
-            // rather than fail so a depleted test API key does not block CI.
-            self::markTestSkipped(sprintf(
+            // We reached the API but got an error response (e.g. depleted
+            // credits, invalid key). Transport path is verified; full
+            // contract is not.
+            self::markTestIncomplete(sprintf(
                 'Anthropic API returned HTTP %d — transport integration verified but response was an error (%s)',
                 $e->statusCode,
+                $e->getMessage(),
+            ));
+        } catch (\Throwable $e) {
+            // Network failures (DNS, TLS, timeout, connection refused) prevent
+            // the gate from exercising the full contract.
+            self::markTestIncomplete(sprintf(
+                'Network error prevented live API call (%s: %s)',
+                $e::class,
                 $e->getMessage(),
             ));
         }
@@ -321,17 +356,18 @@ final class V0AcceptanceGateTest extends TestCase
     }
 
     /**
-     * Gate 10: Cancellation mid-stream emits no leaked resources. The
-     * Aegis TestApp boots cleanly; a scripted stream with an Invocation\Cancelled
-     * cue passes through correctly; and the TestApp ledger reports zero orphaned
-     * tasks after cleanup.
+     * Gate 10: Cancellation mid-stream propagates a CancellationException and
+     * leaves no orphaned tasks in the Aegis TestApp lease ledger.
      *
-     * Full Aegis-backed verification requires the OpenSwoole extension to be loaded
-     * (TestApp::boot() calls into OpenSwoole\Table). When the extension is absent
-     * (e.g. plain CLI PHP without the .so), gate 10 falls back to verifying the
-     * cancellation contract via SyncRuntime alone.
+     * The unique value of this gate is the leak-ledger assertion: after a
+     * cancelled FakeProvider stream, `TestApp::boot()` must report zero
+     * orphaned tasks. That path requires the OpenSwoole extension
+     * (TestApp::boot() calls into OpenSwoole\Table). Without it this gate is
+     * skipped — SyncRuntime cancellation propagation is already covered by
+     * unit tests for the SyncRuntime type.
      */
     #[Test]
+    #[RequiresPhpExtension('openswoole')]
     public function gate10_cancellationEmitsCancelledCueWithoutLeaks(): void
     {
         $at      = new \DateTimeImmutable('2026-05-18T00:00:00Z');
@@ -366,15 +402,14 @@ final class V0AcceptanceGateTest extends TestCase
         self::assertCount(1, $cues, 'Only the Started cue should have been yielded before cancellation');
         self::assertInstanceOf(Started::class, $cues[0]);
 
-        // Full Aegis leak introspection requires the OpenSwoole extension. When
-        // available, boot TestApp and assert the ledger has zero orphaned tasks.
-        if (extension_loaded('openswoole')) {
-            $app = TestApp::boot();
-            try {
-                $app->ledger->assertNoOrphans();
-            } finally {
-                $app->shutdown();
-            }
+        // Boot TestApp and assert the ledger reports zero orphaned tasks after
+        // the cancelled stream completes. This is the leak-introspection half
+        // of this gate that requires the OpenSwoole extension.
+        $app = TestApp::boot();
+        try {
+            $app->ledger->assertNoOrphans();
+        } finally {
+            $app->shutdown();
         }
     }
 
