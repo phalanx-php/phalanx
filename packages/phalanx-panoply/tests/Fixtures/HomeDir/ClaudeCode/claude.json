@@ -1,0 +1,10 @@
+{
+  "accountId": "usr_01leonidas",
+  "theme": "dark",
+  "autoUpdate": true,
+  "telemetry": "disabled",
+  "nested": {
+    "level1": "sidecar-value",
+    "onlyInSidecar": "sparta"
+  }
+}

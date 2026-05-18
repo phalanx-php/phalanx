@@ -1,0 +1,4 @@
+{"type":"message","role":"system","content":"You are advising Pericles on the rebuilding of the Acropolis.","ts":1747468800,"cwd":"/srv/phalanx/agora","raw_hash":"hash_sys_pericles"}
+{"type":"message","role":"user","content":"How should we fund the Parthenon reconstruction?","ts":1747468810,"cwd":"/srv/phalanx/agora","raw_hash":"hash_user_parthenon"}
+{"type":"message","role":"user","content":"Socrates, what is the purpose of the agora?","ts":1747472400,"cwd":"/srv/phalanx/agora","raw_hash":"hash_user_agora"}
+{"type":"message","role":"assistant","content":"The agora is the civic heart of the polis — marketplace, law court, and gathering place for citizens of the demos.","ts":1747472420,"cwd":"/srv/phalanx/agora","raw_hash":"hash_asst_agora_answer"}

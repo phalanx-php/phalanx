@@ -1,0 +1,14 @@
+[
+  {
+    "id": "proj-marathon",
+    "path": "/srv/phalanx/marathon",
+    "name": "Battle of Marathon",
+    "lastActive": "2026-05-17T09:00:00Z"
+  },
+  {
+    "id": "proj-olympus",
+    "path": "/srv/phalanx/olympus",
+    "name": "Mount Olympus Expedition",
+    "lastActive": "2026-05-16T14:30:00Z"
+  }
+]

@@ -1,0 +1,9 @@
+{
+  "theme": "light",
+  "maxOutputTokens": 8192,
+  "enableVision": true,
+  "nested": {
+    "level1": "indir-wins",
+    "onlyInDir": "olympus"
+  }
+}

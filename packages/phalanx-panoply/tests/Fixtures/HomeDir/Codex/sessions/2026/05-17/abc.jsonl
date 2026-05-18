@@ -1,0 +1,3 @@
+{"type":"message","role":"system","content":"You are advising Pericles on the rebuilding of the Acropolis.","ts":1747468800,"cwd":"/srv/phalanx/agora","raw_hash":"hash_sys_pericles"}
+{"type":"message","role":"user","content":"How should we fund the Parthenon reconstruction?","ts":1747468810,"cwd":"/srv/phalanx/agora","raw_hash":"hash_user_parthenon"}
+{"type":"message","role":"assistant","content":"Draw from the Delian League treasury. The tribute from allied poleis will suffice for the columns and frieze.","ts":1747468820,"cwd":"/srv/phalanx/agora","raw_hash":"hash_asst_delian"}

@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "HomeDirConfig",
+  "description": "Schema for Panoply HomeDir adapter YAML bundles (*.panoply.yaml).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "display_name", "roots", "adapter"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "description": "Stable machine identifier for this HomeDir adapter."
+    },
+    "display_name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable name shown in diagnostics and UIs."
+    },
+    "roots": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "description": "Filesystem paths (relative to ~ or absolute) that indicate this tool is installed."
+    },
+    "adapter": {
+      "type": "string",
+      "description": "Fully-qualified class name of the HomeDir adapter implementation."
+    }
+  }
+}

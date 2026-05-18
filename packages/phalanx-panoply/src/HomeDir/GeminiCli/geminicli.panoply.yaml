@@ -1,0 +1,5 @@
+id: gemini_cli
+display_name: "Gemini CLI"
+roots:
+  - "~/.gemini"
+adapter: "Phalanx\\Panoply\\HomeDir\\GeminiCli\\HomeDir"

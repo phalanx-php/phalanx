@@ -1,0 +1,2 @@
+{"type":"user","timestamp":"2026-05-17T11:00:00.000Z","message":{"role":"user","content":[{"type":"text","text":"Pheidippides, report from the battle of Marathon!"}]}}
+{"type":"assistant","timestamp":"2026-05-17T11:00:01.000Z","message":{"role":"assistant","content":[{"type":"text","text":"We have won the battle of Marathon! Athens is saved. The Persian fleet retreats."}]}}
