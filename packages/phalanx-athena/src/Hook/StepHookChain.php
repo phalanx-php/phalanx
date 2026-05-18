@@ -10,7 +10,7 @@ final class StepHookChain
 {
     /** @param list<StepHook> $hooks */
     public function __construct(
-        private(set) array $hooks = [],
+        private array $hooks = [],
     ) {
     }
 

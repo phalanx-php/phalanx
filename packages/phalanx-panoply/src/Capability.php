@@ -23,5 +23,6 @@ enum Capability: string
     case AudioOutput      = 'audio-output';
     case VideoInput       = 'video-input';
     case FunctionCalling  = 'function-calling';
+    case Streaming        = 'streaming';
     case Batch            = 'batch';
 }

@@ -16,11 +16,23 @@ final class SchemaGenerator
         'array'   => 'array',
     ];
 
+    /** @var array<class-string<Tool>, array{name: string, description: string, parameters: array<string, mixed>}> */
+    private static array $cache = [];
+
     /**
      * @param class-string<Tool> $toolClass
      * @return array{name: string, description: string, parameters: array<string, mixed>}
      */
     public static function forTool(string $toolClass): array
+    {
+        return self::$cache[$toolClass] ??= self::generate($toolClass);
+    }
+
+    /**
+     * @param class-string<Tool> $toolClass
+     * @return array{name: string, description: string, parameters: array<string, mixed>}
+     */
+    private static function generate(string $toolClass): array
     {
         $class = new \ReflectionClass($toolClass);
 

@@ -202,6 +202,7 @@ final class DispatcherTest extends TestCase
         $result = $dispatcher->dispatch($scope, $request, $stream);
 
         self::assertSame(Turn\Outcome::Continue, $result->turnOutcome);
+        self::assertNotNull($result->effectOutcome);
         self::assertSame(Resolution::BuiltIn, $result->effectOutcome->resolution);
     }
 
@@ -239,6 +240,7 @@ final class DispatcherTest extends TestCase
         $result = $dispatcher->dispatch($scope, $request, $stream);
 
         self::assertSame(Turn\Outcome::Continue, $result->turnOutcome);
+        self::assertNotNull($result->effectOutcome);
         self::assertSame(Resolution::LocalTool, $result->effectOutcome->resolution);
     }
 
@@ -319,6 +321,7 @@ final class DispatcherTest extends TestCase
         $result = $dispatcher->dispatch($scope, $request, $stream);
 
         self::assertSame(Turn\Outcome::Continue, $result->turnOutcome);
+        self::assertNotNull($result->effectOutcome);
         self::assertSame(Resolution::McpTool, $result->effectOutcome->resolution);
         self::assertSame(['found' => true], $result->data);
     }
@@ -359,6 +362,7 @@ final class DispatcherTest extends TestCase
 
         $result = $dispatcher->dispatch($scope, $request, $stream);
 
+        self::assertNotNull($result->effectOutcome);
         self::assertSame(Resolution::BuiltIn, $result->effectOutcome->resolution);
     }
 

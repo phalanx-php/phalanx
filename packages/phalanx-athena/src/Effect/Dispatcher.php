@@ -28,15 +28,15 @@ use Phalanx\Scope\TaskScope;
 
 final class Dispatcher
 {
-    private(set) ToolExecutor $toolExecutor;
+    private ToolExecutor $toolExecutor;
 
     public function __construct(
-        private(set) Authorizer $authorizer,
-        private(set) Scorer $scorer,
-        private(set) GrantStore $grantStore,
-        private(set) ToolRegistry $toolRegistry,
-        private(set) McpRegistry $mcpRegistry,
-        private(set) BuiltInExecutor $builtInExecutor = new BuiltInExecutor(),
+        private Authorizer $authorizer,
+        private Scorer $scorer,
+        private GrantStore $grantStore,
+        private ToolRegistry $toolRegistry,
+        private McpRegistry $mcpRegistry,
+        private BuiltInExecutor $builtInExecutor = new BuiltInExecutor(),
         ?ToolExecutor $toolExecutor = null,
     ) {
         $this->toolExecutor = $toolExecutor ?? new ToolExecutor($this->toolRegistry);

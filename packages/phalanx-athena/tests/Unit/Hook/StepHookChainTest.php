@@ -38,28 +38,30 @@ final class StepHookChainTest extends TestCase
     #[Test]
     public function runsHooksInOrder(): void
     {
-        $order = [];
+        $tracker = new \ArrayObject();
 
-        $first = new class ($order) implements StepHook {
-            public function __construct(private array &$order)
+        $first = new class ($tracker) implements StepHook {
+            /** @param \ArrayObject<int, string> $tracker */
+            public function __construct(private \ArrayObject $tracker)
             {
             }
 
             public function __invoke(TaskScope $scope, StepContext $context): StepHookResult
             {
-                $this->order[] = 'first';
+                $this->tracker->append('first');
                 return StepHookResult::continue();
             }
         };
 
-        $second = new class ($order) implements StepHook {
-            public function __construct(private array &$order)
+        $second = new class ($tracker) implements StepHook {
+            /** @param \ArrayObject<int, string> $tracker */
+            public function __construct(private \ArrayObject $tracker)
             {
             }
 
             public function __invoke(TaskScope $scope, StepContext $context): StepHookResult
             {
-                $this->order[] = 'second';
+                $this->tracker->append('second');
                 return StepHookResult::continue();
             }
         };
@@ -68,34 +70,36 @@ final class StepHookChainTest extends TestCase
         $result = $chain->notify(new ScopeStub(), self::makeContext());
 
         self::assertSame(Outcome::Continue, $result->outcome);
-        self::assertSame(['first', 'second'], $order);
+        self::assertSame(['first', 'second'], $tracker->getArrayCopy());
     }
 
     #[Test]
     public function shortCircuitsOnTerminalResult(): void
     {
-        $ran = [];
+        $tracker = new \ArrayObject();
 
-        $first = new class ($ran) implements StepHook {
-            public function __construct(private array &$ran)
+        $first = new class ($tracker) implements StepHook {
+            /** @param \ArrayObject<int, string> $tracker */
+            public function __construct(private \ArrayObject $tracker)
             {
             }
 
             public function __invoke(TaskScope $scope, StepContext $context): StepHookResult
             {
-                $this->ran[] = 'first';
+                $this->tracker->append('first');
                 return StepHookResult::stop(Outcome::Complete);
             }
         };
 
-        $second = new class ($ran) implements StepHook {
-            public function __construct(private array &$ran)
+        $second = new class ($tracker) implements StepHook {
+            /** @param \ArrayObject<int, string> $tracker */
+            public function __construct(private \ArrayObject $tracker)
             {
             }
 
             public function __invoke(TaskScope $scope, StepContext $context): StepHookResult
             {
-                $this->ran[] = 'second';
+                $this->tracker->append('second');
                 return StepHookResult::continue();
             }
         };
@@ -104,7 +108,7 @@ final class StepHookChainTest extends TestCase
         $result = $chain->notify(new ScopeStub(), self::makeContext());
 
         self::assertSame(Outcome::Complete, $result->outcome);
-        self::assertSame(['first'], $ran);
+        self::assertSame(['first'], $tracker->getArrayCopy());
     }
 
     #[Test]

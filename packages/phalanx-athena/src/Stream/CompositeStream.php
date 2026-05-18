@@ -14,8 +14,8 @@ final class CompositeStream
     private array $hostCues = [];
 
     private function __construct(
-        private(set) Stream $provider,
-        private(set) TaskScope $scope,
+        private Stream $provider,
+        private TaskScope $scope,
     ) {
     }
 

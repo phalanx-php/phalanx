@@ -6,13 +6,9 @@ namespace Phalanx\Athena\Tool;
 
 final class ToolBundle
 {
-    /** @var array<string, class-string<Tool>> */
-    private(set) array $tools;
-
     /** @param array<string, class-string<Tool>> $tools name => class-string */
-    public function __construct(array $tools = [])
+    public function __construct(private(set) array $tools = [])
     {
-        $this->tools = $tools;
     }
 
     /** @param class-string<Tool> $toolClass */

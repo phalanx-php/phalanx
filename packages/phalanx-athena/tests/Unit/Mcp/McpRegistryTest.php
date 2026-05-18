@@ -104,12 +104,16 @@ final class McpRegistryTest extends TestCase
         $outcome = $this->cannedOutcome;
 
         $this->connection = new class ($tools, $outcome) implements McpConnection {
+            /**
+             * @param list<McpTool> $fixedTools
+             */
             public function __construct(
                 private array $fixedTools,
                 private Outcome $fixedOutcome,
             ) {
             }
 
+            /** @return list<McpTool> */
             public function tools(): array
             {
                 return $this->fixedTools;

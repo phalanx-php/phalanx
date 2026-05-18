@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Athena\Grant;
 
+use Phalanx\Athena\Persistence\SurrealResult;
 use Phalanx\Panoply\Effect\Kind;
 use Phalanx\Panoply\Grant;
 use Phalanx\Panoply\Hazard;
@@ -16,7 +17,7 @@ final class SurrealGrantStore implements Store
     private array $sessionGrants = [];
 
     public function __construct(
-        private(set) Surreal $surreal,
+        private Surreal $surreal,
     ) {
     }
 
@@ -36,7 +37,7 @@ final class SurrealGrantStore implements Store
             ['subject' => $subject],
         );
 
-        $rows = self::firstResult($results);
+        $rows = SurrealResult::firstRows($results);
         if ($rows === []) {
             return null;
         }
@@ -101,7 +102,7 @@ final class SurrealGrantStore implements Store
         $rawEffects = $row['allowed_effects'] ?? [];
         /** @var list<Kind> $allowedEffects */
         $allowedEffects = array_map(
-            static fn(string $v): Kind => Kind::from($v),
+            Kind::from(...),
             is_array($rawEffects) ? array_values($rawEffects) : [],
         );
 
@@ -114,24 +115,5 @@ final class SurrealGrantStore implements Store
             expiresAt: isset($row['expires_at']) ? new \DateTimeImmutable((string) $row['expires_at']) : null,
             conditions: (array) ($row['conditions'] ?? []),
         );
-    }
-
-    /**
-     * @param list<mixed>|null $results
-     * @return list<array<string, mixed>>
-     */
-    private static function firstResult(?array $results): array
-    {
-        if ($results === null || $results === []) {
-            return [];
-        }
-
-        $first = $results[0];
-        if (!is_array($first)) {
-            return [];
-        }
-
-        /** @var list<array<string, mixed>> $first */
-        return $first;
     }
 }

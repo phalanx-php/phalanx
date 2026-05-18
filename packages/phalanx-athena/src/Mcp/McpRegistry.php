@@ -10,10 +10,13 @@ use Phalanx\Scope\TaskScope;
 final class McpRegistry
 {
     /** @var list<McpTool> */
-    private(set) array $tools = [];
+    private array $tools = [];
+
+    /** @var array<string, McpTool> toolName -> tool */
+    private array $nameIndex = [];
 
     /** @var array<string, McpConnection> serverName -> connection */
-    private array $index = [];
+    private array $serverIndex = [];
 
     /** @param list<McpConnection> $connections */
     public function __construct(array $connections = [])
@@ -27,7 +30,8 @@ final class McpRegistry
     {
         foreach ($connection->tools() as $tool) {
             $this->tools[] = $tool;
-            $this->index[$tool->serverName] = $connection;
+            $this->nameIndex[$tool->name] = $tool;
+            $this->serverIndex[$tool->serverName] = $connection;
         }
     }
 
@@ -39,12 +43,12 @@ final class McpRegistry
 
     public function find(string $toolName): ?McpTool
     {
-        return array_find($this->tools, static fn(McpTool $t): bool => $t->name === $toolName);
+        return $this->nameIndex[$toolName] ?? null;
     }
 
     public function connection(string $serverName): ?McpConnection
     {
-        return $this->index[$serverName] ?? null;
+        return $this->serverIndex[$serverName] ?? null;
     }
 
     /** @param array<string, mixed> $args */
@@ -52,6 +56,6 @@ final class McpRegistry
     {
         $tool = $this->find($toolName) ?? throw new \RuntimeException("Unknown MCP tool: {$toolName}");
 
-        return ($this->index[$tool->serverName])->invoke($scope, $toolName, $args);
+        return ($this->serverIndex[$tool->serverName])->invoke($scope, $toolName, $args);
     }
 }

@@ -6,6 +6,9 @@ namespace Phalanx\Athena\Tool;
 
 final class ArgumentHydrator
 {
+    /** @var array<class-string<Tool>, ?\ReflectionMethod> */
+    private static array $constructors = [];
+
     /**
      * @param array<string, mixed> $json
      * @param class-string<Tool> $toolClass
@@ -13,7 +16,7 @@ final class ArgumentHydrator
      */
     public static function hydrate(array $json, string $toolClass): array
     {
-        $constructor = (new \ReflectionClass($toolClass))->getConstructor();
+        $constructor = self::$constructors[$toolClass] ??= new \ReflectionClass($toolClass)->getConstructor();
 
         if ($constructor === null) {
             return [];

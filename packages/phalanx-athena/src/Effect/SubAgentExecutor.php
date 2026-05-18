@@ -11,13 +11,9 @@ use Phalanx\Scope\TaskScope;
 
 final class SubAgentExecutor implements Executor
 {
-    /** @var \Closure(TaskScope, Requested, Context): mixed */
-    private(set) \Closure $runner;
-
     /** @param \Closure(TaskScope, Requested, Context): mixed $runner */
-    public function __construct(\Closure $runner)
+    public function __construct(private \Closure $runner)
     {
-        $this->runner = $runner;
     }
 
     public function __invoke(TaskScope $scope, Requested $request, Context $context): Outcome

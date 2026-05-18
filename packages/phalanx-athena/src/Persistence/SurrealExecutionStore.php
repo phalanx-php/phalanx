@@ -11,7 +11,7 @@ use Phalanx\Surreal\Surreal;
 final class SurrealExecutionStore implements ExecutionStore
 {
     public function __construct(
-        private(set) Surreal $surreal,
+        private Surreal $surreal,
     ) {
     }
 
@@ -37,7 +37,7 @@ final class SurrealExecutionStore implements ExecutionStore
             ['id' => 'athena_activity:' . $activityId],
         );
 
-        $rows = self::firstResult($results);
+        $rows = SurrealResult::firstRows($results);
         if ($rows === []) {
             return null;
         }
@@ -103,7 +103,7 @@ final class SurrealExecutionStore implements ExecutionStore
             ['id' => 'athena_prompt_hash:' . $hash],
         );
 
-        $rows = self::firstResult($results);
+        $rows = SurrealResult::firstRows($results);
         if ($rows === []) {
             return null;
         }
@@ -116,24 +116,5 @@ final class SurrealExecutionStore implements ExecutionStore
             invocationId: $row['invocation_id'],
             at: new \DateTimeImmutable($row['at']),
         );
-    }
-
-    /**
-     * @param list<mixed>|null $results
-     * @return list<array<string, mixed>>
-     */
-    private static function firstResult(?array $results): array
-    {
-        if ($results === null || $results === []) {
-            return [];
-        }
-
-        $first = $results[0];
-        if (!is_array($first)) {
-            return [];
-        }
-
-        /** @var list<array<string, mixed>> $first */
-        return $first;
     }
 }
