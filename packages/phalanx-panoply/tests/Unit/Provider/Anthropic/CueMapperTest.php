@@ -23,9 +23,9 @@ use Phalanx\Panoply\Effects;
 use Phalanx\Panoply\Invocation;
 use Phalanx\Panoply\Output;
 use Phalanx\Panoply\Provider\Anthropic\CueMapper;
-use Phalanx\Panoply\Provider\Anthropic\SseEvent;
 use Phalanx\Panoply\Provider\Needs as ProviderNeeds;
 use Phalanx\Panoply\Provider\Preference;
+use Phalanx\Panoply\Provider\Sse\Event;
 use Phalanx\Panoply\Transport\Needs as TransportNeeds;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -36,7 +36,7 @@ final class CueMapperTest extends TestCase
     public function messageStartYieldsResolvedThenStarted(): void
     {
         $mapper = self::fixture();
-        $event  = new SseEvent('message_start', [
+        $event  = new Event('message_start', [
             'type'    => 'message_start',
             'message' => ['model' => 'claude-opus-4-7'],
         ]);
@@ -52,7 +52,7 @@ final class CueMapperTest extends TestCase
     public function resolvedCueCarriesProviderAndModel(): void
     {
         $mapper = self::fixture();
-        $event  = new SseEvent('message_start', [
+        $event  = new Event('message_start', [
             'message' => ['model' => 'claude-opus-4-7'],
         ]);
 
@@ -70,12 +70,12 @@ final class CueMapperTest extends TestCase
         $mapper = self::fixture();
 
         // Prime the block state.
-        iterator_to_array($mapper->translate(new SseEvent('content_block_start', [
+        iterator_to_array($mapper->translate(new Event('content_block_start', [
             'index'         => 0,
             'content_block' => ['type' => 'text'],
         ])), preserve_keys: false);
 
-        $event = new SseEvent('content_block_delta', [
+        $event = new Event('content_block_delta', [
             'index' => 0,
             'delta' => ['type' => 'text_delta', 'text' => 'Hold the pass at Thermopylae.'],
         ]);
@@ -93,12 +93,12 @@ final class CueMapperTest extends TestCase
     {
         $mapper = self::fixture();
 
-        iterator_to_array($mapper->translate(new SseEvent('content_block_start', [
+        iterator_to_array($mapper->translate(new Event('content_block_start', [
             'index'         => 0,
             'content_block' => ['type' => 'thinking'],
         ])), preserve_keys: false);
 
-        $event = new SseEvent('content_block_delta', [
+        $event = new Event('content_block_delta', [
             'index' => 0,
             'delta' => ['type' => 'thinking_delta', 'thinking' => 'Apollo guides our strategy.'],
         ]);
@@ -115,7 +115,7 @@ final class CueMapperTest extends TestCase
     public function toolUseBlockStartYieldsEffectRequested(): void
     {
         $mapper = self::fixture();
-        $event  = new SseEvent('content_block_start', [
+        $event  = new Event('content_block_start', [
             'index'         => 0,
             'content_block' => ['type' => 'tool_use', 'id' => 'toolu_agora', 'name' => 'search_records'],
         ]);
@@ -133,12 +133,12 @@ final class CueMapperTest extends TestCase
         $mapper = self::fixture();
 
         // Open a tool_use block first.
-        iterator_to_array($mapper->translate(new SseEvent('content_block_start', [
+        iterator_to_array($mapper->translate(new Event('content_block_start', [
             'index'         => 0,
             'content_block' => ['type' => 'tool_use', 'id' => 'toolu_sparta', 'name' => 'query'],
         ])), preserve_keys: false);
 
-        $event = new SseEvent('content_block_delta', [
+        $event = new Event('content_block_delta', [
             'index' => 0,
             'delta' => ['type' => 'input_json_delta', 'partial_json' => '{"q":'],
         ]);
@@ -155,7 +155,7 @@ final class CueMapperTest extends TestCase
     public function contentBlockStopYieldsNoCues(): void
     {
         $mapper = self::fixture();
-        $event  = new SseEvent('content_block_stop', ['index' => 0]);
+        $event  = new Event('content_block_stop', ['index' => 0]);
 
         $cues = iterator_to_array($mapper->translate($event), preserve_keys: false);
 
@@ -166,7 +166,7 @@ final class CueMapperTest extends TestCase
     public function messageDeltaWithStopReasonYieldsTokenStop(): void
     {
         $mapper = self::fixture();
-        $event  = new SseEvent('message_delta', [
+        $event  = new Event('message_delta', [
             'delta' => ['stop_reason' => 'end_turn'],
             'usage' => ['output_tokens' => 42],
         ]);
@@ -182,7 +182,7 @@ final class CueMapperTest extends TestCase
     public function messageDeltaWithUsageYieldsUsageDelta(): void
     {
         $mapper = self::fixture();
-        $event  = new SseEvent('message_delta', [
+        $event  = new Event('message_delta', [
             'delta' => ['stop_reason' => 'end_turn'],
             'usage' => ['output_tokens' => 17],
         ]);
@@ -198,7 +198,7 @@ final class CueMapperTest extends TestCase
     public function messageStopYieldsFinalUsageThenInvocationCompleted(): void
     {
         $mapper = self::fixture();
-        $event  = new SseEvent('message_stop', ['type' => 'message_stop']);
+        $event  = new Event('message_stop', ['type' => 'message_stop']);
 
         $cues = iterator_to_array($mapper->translate($event), preserve_keys: false);
 
@@ -213,7 +213,7 @@ final class CueMapperTest extends TestCase
         $mapper = self::fixture();
 
         // Simulate a message_start with input tokens.
-        iterator_to_array($mapper->translate(new SseEvent('message_start', [
+        iterator_to_array($mapper->translate(new Event('message_start', [
             'message' => [
                 'model' => 'claude-opus-4-7',
                 'usage' => ['input_tokens' => 150],
@@ -221,12 +221,12 @@ final class CueMapperTest extends TestCase
         ])), preserve_keys: false);
 
         // Simulate a message_delta with output tokens.
-        iterator_to_array($mapper->translate(new SseEvent('message_delta', [
+        iterator_to_array($mapper->translate(new Event('message_delta', [
             'delta' => ['stop_reason' => 'end_turn'],
             'usage' => ['output_tokens' => 75],
         ])), preserve_keys: false);
 
-        $cues = iterator_to_array($mapper->translate(new SseEvent('message_stop', [])), preserve_keys: false);
+        $cues = iterator_to_array($mapper->translate(new Event('message_stop', [])), preserve_keys: false);
 
         $finalUsage = array_values(array_filter($cues, static fn ($c) => $c instanceof FinalUsage));
         self::assertCount(1, $finalUsage);
@@ -238,7 +238,7 @@ final class CueMapperTest extends TestCase
     public function errorEventYieldsInvocationFailed(): void
     {
         $mapper = self::fixture();
-        $event  = new SseEvent('error', [
+        $event  = new Event('error', [
             'type'  => 'error',
             'error' => ['type' => 'overloaded_error', 'message' => 'Olympus is under siege.'],
         ]);
@@ -255,11 +255,11 @@ final class CueMapperTest extends TestCase
     {
         $mapper = self::fixture();
 
-        $cues1 = iterator_to_array($mapper->translate(new SseEvent('message_start', [
+        $cues1 = iterator_to_array($mapper->translate(new Event('message_start', [
             'message' => ['model' => 'claude-opus-4-7'],
         ])), preserve_keys: false);
 
-        $cues2 = iterator_to_array($mapper->translate(new SseEvent('message_stop', [])), preserve_keys: false);
+        $cues2 = iterator_to_array($mapper->translate(new Event('message_stop', [])), preserve_keys: false);
 
         // Resolved=0, Started=1, FinalUsage=2, Completed=3
         self::assertSame(0, $cues1[0]->sequence);
@@ -272,7 +272,7 @@ final class CueMapperTest extends TestCase
     public function unknownEventTypeYieldsNoCues(): void
     {
         $mapper = self::fixture();
-        $event  = new SseEvent('ping', ['type' => 'ping']);
+        $event  = new Event('ping', ['type' => 'ping']);
 
         $cues = iterator_to_array($mapper->translate($event), preserve_keys: false);
 

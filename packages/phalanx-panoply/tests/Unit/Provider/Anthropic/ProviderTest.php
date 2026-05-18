@@ -20,6 +20,7 @@ use Phalanx\Panoply\Effect\Kind as EffectKind;
 use Phalanx\Panoply\Effects;
 use Phalanx\Panoply\Invocation;
 use Phalanx\Panoply\Output;
+use Phalanx\Panoply\Provider\Anthropic\Options;
 use Phalanx\Panoply\Provider\Anthropic\Provider;
 use Phalanx\Panoply\Provider\Config\Model;
 use Phalanx\Panoply\Provider\Needs as ProviderNeeds;
@@ -149,13 +150,25 @@ final class ProviderTest extends TestCase
     /**
      * @param array<string, list<string>> $script
      */
-    private static function provider(array $script): Provider
+    #[Test]
+    public function capabilitiesReadFromModel(): void
+    {
+        $provider = self::provider(self::script('simple-message.sse'));
+
+        self::assertTrue($provider->capabilities()->has(Capability::Reasoning));
+        self::assertTrue($provider->capabilities()->has(Capability::ToolUse));
+    }
+
+    /**
+     * @param array<string, list<string>> $script
+     */
+    private static function provider(array $script, ?Options $options = null): Provider
     {
         return new Provider(
             transport: new FakeTransport($script),
             apiKey: 'key_sparta',
             model: self::model(),
-            capabilities: Capabilities::of(Capability::Reasoning, Capability::ToolUse),
+            options: $options ?? new Options(),
         );
     }
 

@@ -35,6 +35,23 @@ final class RuntimeTest extends TestCase
     }
 
     #[Test]
+    public function callForwardsWaitReasonToScope(): void
+    {
+        $stub    = self::stub();
+        $adapter = new Runtime($stub);
+
+        // A non-null label must be translated to a typed WaitReason and forwarded.
+        $adapter->call(static fn (): string => 'agora', 'provider.streaming');
+
+        self::assertInstanceOf(WaitReason::class, $stub->lastWaitReason);
+
+        // A null label must forward null — no WaitReason is created.
+        $adapter->call(static fn (): string => 'polis');
+
+        self::assertNull($stub->lastWaitReason);
+    }
+
+    #[Test]
     public function callPassesReturnValueThrough(): void
     {
         $adapter = new Runtime(self::stub());
@@ -169,6 +186,8 @@ final class RuntimeTest extends TestCase
                 get => throw new \RuntimeException('not implemented in stub');
             }
 
+            public ?WaitReason $lastWaitReason = null;
+
             /** @var list<\Closure(): void> */
             private array $disposeStack = [];
 
@@ -178,6 +197,8 @@ final class RuntimeTest extends TestCase
 
             public function call(\Closure $fn, ?WaitReason $waitReason = null): mixed
             {
+                $this->lastWaitReason = $waitReason;
+
                 return $fn();
             }
 

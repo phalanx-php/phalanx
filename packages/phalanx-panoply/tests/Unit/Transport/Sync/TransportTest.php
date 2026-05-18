@@ -175,7 +175,9 @@ final class TransportTest extends TestCase
 
     private static function writeServerScript(): string
     {
-        $path    = sys_get_temp_dir() . '/panoply_sync_test_server.php';
+        $base = tempnam(sys_get_temp_dir(), 'panoply_sync_');
+        $path = $base . '_server_' . getmypid() . '.php';
+        @unlink($base);
         $content = '<?php header("Content-Type: text/plain"); echo "agora response";';
         file_put_contents($path, $content);
 
@@ -184,7 +186,9 @@ final class TransportTest extends TestCase
 
     private static function writeSlowServerScript(): string
     {
-        $path    = sys_get_temp_dir() . '/panoply_sync_slow_server.php';
+        $base = tempnam(sys_get_temp_dir(), 'panoply_sync_');
+        $path = $base . '_slow_' . getmypid() . '.php';
+        @unlink($base);
         $content = '<?php sleep(2); header("Content-Type: text/plain"); echo "thermopylae";';
         file_put_contents($path, $content);
 

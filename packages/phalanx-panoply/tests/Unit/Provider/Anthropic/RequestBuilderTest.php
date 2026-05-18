@@ -11,6 +11,7 @@ use Phalanx\Panoply\Effect\Kind as EffectKind;
 use Phalanx\Panoply\Effects;
 use Phalanx\Panoply\Invocation;
 use Phalanx\Panoply\Output;
+use Phalanx\Panoply\Provider\Anthropic\Options;
 use Phalanx\Panoply\Provider\Anthropic\RequestBuilder;
 use Phalanx\Panoply\Provider\Config\Model;
 use Phalanx\Panoply\Provider\Needs as ProviderNeeds;
@@ -138,11 +139,16 @@ final class RequestBuilderTest extends TestCase
     }
 
     #[Test]
-    public function dynamicContextMaxTokensOverridesDefault(): void
+    public function optionsMaxTokensIsReflectedInRequestBody(): void
     {
-        $invocation = self::invocationWith(['max_tokens' => 8192]);
-        $request    = RequestBuilder::build($invocation, self::model(), 'key_test', 'https://api.anthropic.com');
-        $body       = json_decode($request->body, associative: true);
+        $request = RequestBuilder::build(
+            self::invocation(),
+            self::model(),
+            'key_test',
+            'https://api.anthropic.com',
+            new Options(maxTokens: 8192),
+        );
+        $body = json_decode($request->body, associative: true);
 
         self::assertSame(8192, $body['max_tokens']);
     }

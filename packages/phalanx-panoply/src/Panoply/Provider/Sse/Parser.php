@@ -2,20 +2,22 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Panoply\Provider\Anthropic;
+namespace Phalanx\Panoply\Provider\Sse;
 
 /**
- * Stateful SSE parser for Anthropic's streaming Messages API.
+ * Stateful WHATWG SSE parser. Reusable across any panoply provider that
+ * consumes Server-Sent Events.
  *
  * SSE events are delimited by double newlines (`\n\n`). Each event block
- * contains one `event:` line and one `data:` line. Lines starting with
- * `:` are comments and are silently ignored. Events whose data is not
- * valid JSON or whose event type is empty are silently dropped so the
- * stream survives unknown future event shapes.
+ * contains one `event:` line and one or more `data:` lines. Multiple
+ * `data:` lines are joined with `\n` before JSON-decoding, per the WHATWG
+ * spec. Lines starting with `:` are comments and are silently ignored.
+ * Events whose data is not valid JSON or whose event type is empty are
+ * silently dropped so the stream survives unknown future event shapes.
  *
  * Usage pattern:
  * ```php
- * $parser = new SseParser();
+ * $parser = new Parser();
  * foreach ($transport->stream($request, $runtime) as $chunk) {
  *     foreach ($parser->feed($chunk) as $event) { ... }
  * }
@@ -25,7 +27,7 @@ namespace Phalanx\Panoply\Provider\Anthropic;
  * Final — sealed; the buffer accumulation invariant is a correctness
  * property that subclasses cannot safely alter.
  */
-final class SseParser
+final class Parser
 {
     private string $buffer = '';
 
@@ -38,7 +40,7 @@ final class SseParser
      * \r\n, \n, or \r as line endings and \r\n\r\n, \n\n, or \r\r as event
      * delimiters; normalizing to \n\n covers all three cases uniformly.
      *
-     * @return \Generator<int, SseEvent>
+     * @return \Generator<int, Event>
      */
     public function feed(string $chunk): \Generator
     {
@@ -53,8 +55,8 @@ final class SseParser
         $this->buffer .= $chunk;
 
         while (($pos = strpos($this->buffer, "\n\n")) !== false) {
-            $eventText     = substr($this->buffer, 0, $pos);
-            $this->buffer  = substr($this->buffer, $pos + 2);
+            $eventText    = substr($this->buffer, 0, $pos);
+            $this->buffer = substr($this->buffer, $pos + 2);
 
             $event = self::parseEvent($eventText);
             if ($event !== null) {
@@ -67,7 +69,7 @@ final class SseParser
      * Flush any trailing data in the buffer as a final event. Call after
      * the transport stream is exhausted.
      *
-     * @return \Generator<int, SseEvent>
+     * @return \Generator<int, Event>
      */
     public function flush(): \Generator
     {
@@ -83,7 +85,7 @@ final class SseParser
         }
     }
 
-    private static function parseEvent(string $eventText): ?SseEvent
+    private static function parseEvent(string $eventText): ?Event
     {
         $lines     = explode("\n", trim($eventText));
         $eventType = '';
@@ -116,6 +118,6 @@ final class SseParser
             return null;
         }
 
-        return new SseEvent($eventType, $data);
+        return new Event($eventType, $data);
     }
 }

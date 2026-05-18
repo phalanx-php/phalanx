@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Panoply\Tests\Unit\Provider\Anthropic;
+namespace Phalanx\Panoply\Tests\Unit\Provider\Sse;
 
-use Phalanx\Panoply\Provider\Anthropic\SseParser;
+use Phalanx\Panoply\Provider\Sse\Parser;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-final class SseParserTest extends TestCase
+final class ParserTest extends TestCase
 {
     #[Test]
     public function feedYieldsCompleteEventFromSingleChunk(): void
@@ -188,6 +188,8 @@ final class SseParserTest extends TestCase
 
         self::assertCount(1, $events);
         self::assertSame('message_start', $events[0]->type);
+        // Verify the second data: line was joined and the extra key decoded.
+        self::assertTrue($events[0]->data['extra'] ?? false);
     }
 
     #[Test]
@@ -203,8 +205,8 @@ final class SseParserTest extends TestCase
         self::assertSame('message_start', $events[0]->type);
     }
 
-    private static function fixture(): SseParser
+    private static function fixture(): Parser
     {
-        return new SseParser();
+        return new Parser();
     }
 }

@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Panoply\Provider\Anthropic;
+namespace Phalanx\Panoply\Provider\Sse;
 
 /**
- * Internal value object carrying one parsed SSE event from Anthropic's
- * streaming Messages API. Used only between {@see SseParser} and
- * {@see CueMapper}; not part of the public panoply surface.
+ * Internal value object carrying one parsed SSE event. Used between
+ * {@see Parser} and provider-specific cue mappers; not part of the public
+ * panoply surface.
  *
  * Final — sealed internal carrier; extension is neither needed nor safe.
  */
-final class SseEvent
+final class Event
 {
     /**
      * @param array<string, mixed> $data decoded JSON payload from the data field

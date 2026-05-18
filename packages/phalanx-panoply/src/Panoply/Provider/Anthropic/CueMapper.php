@@ -20,6 +20,7 @@ use Phalanx\Panoply\Cue\Usage\FinalUsage;
 use Phalanx\Panoply\Effect\Kind;
 use Phalanx\Panoply\Id;
 use Phalanx\Panoply\Invocation;
+use Phalanx\Panoply\Provider\Sse\Event;
 
 /**
  * Stateful mapper that translates Anthropic SSE events into panoply
@@ -65,7 +66,7 @@ final class CueMapper
      *
      * @return \Generator<int, Cue>
      */
-    public function translate(SseEvent $event): \Generator
+    public function translate(Event $event): \Generator
     {
         $now = new \DateTimeImmutable();
 
@@ -99,7 +100,7 @@ final class CueMapper
     /**
      * @return \Generator<int, Cue>
      */
-    private function onMessageStart(SseEvent $event, \DateTimeImmutable $now): \Generator
+    private function onMessageStart(Event $event, \DateTimeImmutable $now): \Generator
     {
         /** @var array{message?: array{model?: string, usage?: array{input_tokens?: int}}} $data */
         $data  = $event->data;
@@ -114,7 +115,7 @@ final class CueMapper
     /**
      * @return \Generator<int, Cue>
      */
-    private function onContentBlockStart(SseEvent $event, \DateTimeImmutable $now): \Generator
+    private function onContentBlockStart(Event $event, \DateTimeImmutable $now): \Generator
     {
         /** @var array{index?: int, content_block?: array{type?: string, id?: string}} $data */
         $data  = $event->data;
@@ -148,7 +149,7 @@ final class CueMapper
     /**
      * @return \Generator<int, Cue>
      */
-    private function onContentBlockDelta(SseEvent $event, \DateTimeImmutable $now): \Generator
+    private function onContentBlockDelta(Event $event, \DateTimeImmutable $now): \Generator
     {
         /** @var array{index?: int, delta?: array{type?: string, text?: string, thinking?: string, partial_json?: string}} $data */
         $data       = $event->data;
@@ -206,7 +207,7 @@ final class CueMapper
     /**
      * @return \Generator<int, Cue>
      */
-    private function onMessageDelta(SseEvent $event, \DateTimeImmutable $now): \Generator
+    private function onMessageDelta(Event $event, \DateTimeImmutable $now): \Generator
     {
         /** @var array{delta?: array{stop_reason?: string}, usage?: array{output_tokens?: int}} $data */
         $data     = $event->data;
@@ -249,7 +250,7 @@ final class CueMapper
     /**
      * @return \Generator<int, Cue>
      */
-    private function onMessageStop(SseEvent $event, \DateTimeImmutable $now): \Generator
+    private function onMessageStop(Event $event, \DateTimeImmutable $now): \Generator
     {
         yield new FinalUsage(
             id: (string) Id::ulid(),
@@ -276,7 +277,7 @@ final class CueMapper
     /**
      * @return \Generator<int, Cue>
      */
-    private function onError(SseEvent $event, \DateTimeImmutable $now): \Generator
+    private function onError(Event $event, \DateTimeImmutable $now): \Generator
     {
         /** @var array{error?: array{message?: string, type?: string}} $data */
         $data    = $event->data;

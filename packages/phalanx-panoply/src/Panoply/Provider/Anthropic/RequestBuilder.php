@@ -30,17 +30,11 @@ final class RequestBuilder
         Model $model,
         string $apiKey,
         string $baseUrl,
+        Options $options = new Options(),
     ): Request {
-        // max_tokens defaults to 4096 but can be overridden via
-        // dynamicContext['max_tokens'] to accommodate models with larger
-        // output windows (e.g. Claude 4's 8192-token capacity).
-        $maxTokens = isset($invocation->dynamicContext['max_tokens'])
-            ? (int) $invocation->dynamicContext['max_tokens']
-            : 4096;
-
         $body = [
             'model'      => $model->modelId,
-            'max_tokens' => $maxTokens,
+            'max_tokens' => $options->maxTokens,
             'system'     => $invocation->instructions,
             'messages'   => self::deriveMessages($invocation),
             'stream'     => true,

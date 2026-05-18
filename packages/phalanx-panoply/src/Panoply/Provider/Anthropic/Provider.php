@@ -8,6 +8,7 @@ use Phalanx\Panoply\Capabilities;
 use Phalanx\Panoply\Invocation;
 use Phalanx\Panoply\Provider as ProviderContract;
 use Phalanx\Panoply\Provider\Config\Model;
+use Phalanx\Panoply\Provider\Sse\Parser;
 use Phalanx\Panoply\Runtime;
 use Phalanx\Panoply\Stream;
 use Phalanx\Panoply\Transport as TransportContract;
@@ -30,19 +31,19 @@ final class Provider implements ProviderContract
         private(set) TransportContract $transport,
         private(set) string $apiKey,
         private(set) Model $model,
-        private(set) Capabilities $capabilities,
         private(set) string $baseUrl = 'https://api.anthropic.com',
+        private(set) Options $options = new Options(),
     ) {
     }
 
     public function perform(Invocation $invocation, Runtime $runtime): Stream
     {
-        $request   = RequestBuilder::build($invocation, $this->model, $this->apiKey, $this->baseUrl);
+        $request   = RequestBuilder::build($invocation, $this->model, $this->apiKey, $this->baseUrl, $this->options);
         $transport = $this->transport;
         $mapper    = new CueMapper($invocation);
 
         return new Stream(static function () use ($transport, $request, $runtime, $mapper): \Generator {
-            $parser = new SseParser();
+            $parser = new Parser();
 
             foreach ($transport->stream($request, $runtime) as $chunk) {
                 foreach ($parser->feed($chunk) as $event) {
@@ -58,6 +59,6 @@ final class Provider implements ProviderContract
 
     public function capabilities(): Capabilities
     {
-        return $this->capabilities;
+        return $this->model->capabilities;
     }
 }
