@@ -10,6 +10,10 @@ use Phalanx\Athena\Persistence\ActivityRecord;
 use Phalanx\Athena\Persistence\EffectLogRecord;
 use Phalanx\Athena\Persistence\InvocationRecord;
 use Phalanx\Athena\Persistence\PromptHashRecord;
+use Phalanx\Athena\Persistence\SuspendedState;
+use Phalanx\Panoply\Conversation\Log;
+use Phalanx\Panoply\Cue\Effect\Requested;
+use Phalanx\Panoply\Effect\Kind;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -191,5 +195,70 @@ final class RecordTypesTest extends TestCase
         self::assertSame('act_01', $record->activityId);
         self::assertSame('inv_01', $record->invocationId);
         self::assertSame($at, $record->at);
+    }
+
+    #[Test]
+    public function activityRecordDefaultsSuspensionFieldsToNull(): void
+    {
+        $record = new ActivityRecord(
+            id: 'act_10',
+            agentId: 'agent_01',
+            state: State::Pending,
+            startedAt: new \DateTimeImmutable(),
+        );
+
+        self::assertNull($record->serializedLog);
+        self::assertNull($record->pendingEffectId);
+        self::assertNull($record->pendingEffectPayload);
+    }
+
+    #[Test]
+    public function activityRecordCarriesSuspensionFields(): void
+    {
+        $record = new ActivityRecord(
+            id: 'act_11',
+            agentId: 'agent_01',
+            state: State::Suspended,
+            startedAt: new \DateTimeImmutable(),
+            serializedLog: '[]',
+            pendingEffectId: 'write_file',
+            pendingEffectPayload: '{"effect_id":"write_file"}',
+        );
+
+        self::assertSame('[]', $record->serializedLog);
+        self::assertSame('write_file', $record->pendingEffectId);
+        self::assertSame('{"effect_id":"write_file"}', $record->pendingEffectPayload);
+    }
+
+    #[Test]
+    public function suspendedStateCarriesRecordLogAndPendingEffect(): void
+    {
+        $record = new ActivityRecord(
+            id: 'act_12',
+            agentId: 'agent_01',
+            state: State::Suspended,
+            startedAt: new \DateTimeImmutable(),
+        );
+
+        $log = Log::from([]);
+
+        $effect = new Requested(
+            id: 'cue_1',
+            sequence: 1,
+            activityId: 'act_12',
+            invocationId: null,
+            agentId: 'agent_01',
+            at: new \DateTimeImmutable(),
+            effectId: 'write_file',
+            kind: Kind::FileWrite,
+            summary: 'write a file',
+            requiresApproval: true,
+        );
+
+        $state = new SuspendedState($record, $log, $effect);
+
+        self::assertSame($record, $state->record);
+        self::assertSame($log, $state->log);
+        self::assertSame($effect, $state->pendingEffect);
     }
 }

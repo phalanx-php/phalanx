@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Athena\Turn;
 
 use Phalanx\Athena\Activity;
+use Phalanx\Athena\Activity\Suspender;
 use Phalanx\Athena\Effect\Dispatcher;
 use Phalanx\Athena\Exception\ActivityFailed;
 use Phalanx\Athena\Exception\MaxInvocationsReached;
@@ -33,11 +34,12 @@ final class Loop implements Activity\Executor
      * @param list<StepHook> $hooks
      */
     public function __construct(
-        private Builder $builder,
-        private Provider $provider,
-        private RuntimeFactory $runtimeFactory = new AegisRuntimeFactory(),
-        private array $hooks = [],
-        private ?Dispatcher $dispatcher = null,
+        private(set) Builder $builder,
+        private(set) Provider $provider,
+        private(set) RuntimeFactory $runtimeFactory = new AegisRuntimeFactory(),
+        private(set) array $hooks = [],
+        private(set) ?Dispatcher $dispatcher = null,
+        private(set) ?Suspender $suspender = null,
     ) {
     }
 
@@ -73,6 +75,7 @@ final class Loop implements Activity\Executor
                 $invocation,
                 $records,
                 $cues,
+                $config->id,
             );
 
             if ($text !== '') {
@@ -194,6 +197,7 @@ final class Loop implements Activity\Executor
         Invocation $invocation,
         array &$records,
         array &$cues,
+        string $activityId,
     ): array {
         $text    = '';
         $outcome = Outcome::Continue;
@@ -219,7 +223,7 @@ final class Loop implements Activity\Executor
             }
 
             if ($cue instanceof Requested) {
-                [$outcome, $error] = $this->handleRequestedEffect($scope, $cue, $stream, $records);
+                [$outcome, $error] = $this->handleRequestedEffect($scope, $cue, $stream, $records, $activityId);
 
                 if ($outcome->terminal()) {
                     return [$outcome, $error, $text];
@@ -239,12 +243,24 @@ final class Loop implements Activity\Executor
         Requested $cue,
         CompositeStream $stream,
         array &$records,
+        string $activityId,
     ): array {
         if ($this->dispatcher === null) {
             return self::effectOutcome($cue);
         }
 
         $result = $this->dispatcher->dispatch($scope, $cue, $stream);
+
+        if ($result->turnOutcome === Outcome::WaitingForApproval && $this->suspender !== null) {
+            $result = ($this->suspender)(
+                $scope,
+                $activityId,
+                Log::from($records),
+                $cue,
+                $this->dispatcher,
+                $stream,
+            );
+        }
 
         if ($result->turnOutcome === Outcome::Continue) {
             self::pushToolCall($records, $cue);

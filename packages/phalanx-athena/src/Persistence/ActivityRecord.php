@@ -15,6 +15,9 @@ final class ActivityRecord
         private(set) \DateTimeImmutable $startedAt,
         private(set) ?\DateTimeImmutable $completedAt = null,
         private(set) int $invocationCount = 0,
+        private(set) ?string $serializedLog = null,
+        private(set) ?string $pendingEffectId = null,
+        private(set) ?string $pendingEffectPayload = null,
     ) {
     }
 }

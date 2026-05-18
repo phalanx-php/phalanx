@@ -4,20 +4,31 @@ declare(strict_types=1);
 
 namespace Phalanx\Panoply\Tests\Unit\Hash;
 
+use Phalanx\Panoply\Artifact;
+use Phalanx\Panoply\Artifact\Kind as ArtifactKind;
+use Phalanx\Panoply\Capabilities;
+use Phalanx\Panoply\Capability;
+use Phalanx\Panoply\Context;
+use Phalanx\Panoply\Conversation\Options;
 use Phalanx\Panoply\Conversation\Record\Message;
 use Phalanx\Panoply\Cue\Output\Channel;
 use Phalanx\Panoply\Cue\Output\TokenDelta;
 use Phalanx\Panoply\Effect;
 use Phalanx\Panoply\Effect\Decision;
 use Phalanx\Panoply\Effect\Kind as EffectKind;
+use Phalanx\Panoply\Effect\Outcome;
 use Phalanx\Panoply\Effects;
 use Phalanx\Panoply\Grant;
 use Phalanx\Panoply\Hash\Canonical;
 use Phalanx\Panoply\Hazard;
 use Phalanx\Panoply\Invocation;
 use Phalanx\Panoply\Output;
+use Phalanx\Panoply\Provider\Config;
+use Phalanx\Panoply\Provider\Config\Model;
 use Phalanx\Panoply\Provider\Needs as ProviderNeeds;
+use Phalanx\Panoply\Provider\Preference;
 use Phalanx\Panoply\Transport\Needs as TransportNeeds;
+use Phalanx\Panoply\Transport\Request;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -212,6 +223,204 @@ final class DeterminismGateTest extends TestCase
             '62cc2d4b10dc6029de18dbb25641e551d5fb76f801ac779fe74b15655e87ebd3',
             Canonical::of($decision),
             'Canonical algorithm output drifted for Effect\Decision',
+        );
+    }
+
+    #[Test]
+    public function canonicalAlgorithmAnchorForDecisionDenied(): void
+    {
+        // Denied variant — complements the existing granted-verdict anchor.
+        $decision = Decision::denied('effect-not-allowed', 'hazard-exceeds-ceiling');
+
+        self::assertSame(
+            'afeb2bbca7a081ce418c84101c36f3fd81bf7a943472da807f45d0b5763b15f8',
+            Canonical::of($decision),
+            'Canonical algorithm output drifted for Effect\Decision (denied variant)',
+        );
+    }
+
+    #[Test]
+    public function canonicalAlgorithmAnchorForOutcome(): void
+    {
+        $outcome = Outcome::succeeded('a1b2c3d4', 42);
+
+        self::assertSame(
+            '3bb8acb98b3750f4d51792c5490d8a2e3e6b2050893606cfc76c12a49fdbea6c',
+            Canonical::of($outcome),
+            'Canonical algorithm output drifted for Effect\Outcome',
+        );
+    }
+
+    #[Test]
+    public function canonicalAlgorithmAnchorForCapabilities(): void
+    {
+        $caps = Capabilities::of(Capability::ToolUse, Capability::Vision);
+
+        self::assertSame(
+            '9a7e10d7645535515dd0423b4d3130316e31b9a9a53d666e22641477f8d9e06f',
+            Canonical::of($caps),
+            'Canonical algorithm output drifted for Capabilities',
+        );
+    }
+
+    #[Test]
+    public function canonicalAlgorithmAnchorForContext(): void
+    {
+        $ctx = Context::new()
+            ->front('FrontSource')
+            ->middle('MidSource')
+            ->tail('TailSource');
+
+        self::assertSame(
+            'dc55c6103302e9f238d24f311c48b6cb4beae64ca3fd410da69600b75a5cd966',
+            Canonical::of($ctx),
+            'Canonical algorithm output drifted for Context',
+        );
+    }
+
+    #[Test]
+    public function canonicalAlgorithmAnchorForOutput(): void
+    {
+        $output = Output::artifact(ArtifactKind::Thesis);
+
+        self::assertSame(
+            '37e2179029202dfd8aa7dc6e4c2a4f369d4ce831a5823d60328e7e02d3f496f3',
+            Canonical::of($output),
+            'Canonical algorithm output drifted for Output',
+        );
+    }
+
+    #[Test]
+    public function canonicalAlgorithmAnchorForEffects(): void
+    {
+        $effects = Effects::allow(EffectKind::FileRead, EffectKind::ShellExec)
+            ->requireApproval(EffectKind::ShellExec);
+
+        self::assertSame(
+            '8b0a200d9caa1b64e17361a9525b87a0e73b08cdb4e1e0a70a8342dd6f60971f',
+            Canonical::of($effects),
+            'Canonical algorithm output drifted for Effects',
+        );
+    }
+
+    #[Test]
+    public function canonicalAlgorithmAnchorForConversationOptions(): void
+    {
+        $options = Options::lenient();
+
+        self::assertSame(
+            'd4e2bbe043893c878e01aa6843c49b7c4dbd5a847095e319044dc9232554efca',
+            Canonical::of($options),
+            'Canonical algorithm output drifted for Conversation\Options',
+        );
+    }
+
+    #[Test]
+    public function canonicalAlgorithmAnchorForTransportRequest(): void
+    {
+        $request = Request::of(
+            'POST',
+            'https://example.com/v1/messages',
+            ['Content-Type' => 'application/json'],
+            '{"model":"haiku"}',
+        );
+
+        self::assertSame(
+            '93205688df8d6f5e56dabe567fc2068b370576a2da69970c60a8db475b183510',
+            Canonical::of($request),
+            'Canonical algorithm output drifted for Transport\Request',
+        );
+    }
+
+    #[Test]
+    public function canonicalAlgorithmAnchorForTransportNeeds(): void
+    {
+        $needs = TransportNeeds::new()->streaming()->cancellable();
+
+        self::assertSame(
+            '93fb66ef428f8fe98b535da391051a2dbc234e5f80b3d39138876e78159355bf',
+            Canonical::of($needs),
+            'Canonical algorithm output drifted for Transport\Needs',
+        );
+    }
+
+    #[Test]
+    public function canonicalAlgorithmAnchorForProviderConfigModel(): void
+    {
+        $model = Model::of(
+            name: 'apollo',
+            modelId: 'apollo-20260101',
+            aliases: ['apollo', 'light'],
+            capabilities: Capabilities::of(Capability::Reasoning),
+            inputPricing: 0.001,
+            outputPricing: 0.005,
+        );
+
+        self::assertSame(
+            'fe285b307827749bf7a15af8120c666b353a16dd5681356a0ae52ab554b66e5b',
+            Canonical::of($model),
+            'Canonical algorithm output drifted for Provider\Config\Model',
+        );
+    }
+
+    #[Test]
+    public function canonicalAlgorithmAnchorForProviderConfig(): void
+    {
+        $model = Model::of(
+            name: 'apollo',
+            modelId: 'apollo-20260101',
+            aliases: ['apollo', 'light'],
+            capabilities: Capabilities::of(Capability::Reasoning),
+            inputPricing: 0.001,
+            outputPricing: 0.005,
+        );
+
+        $config = Config::of(
+            id: 'olympus',
+            displayName: 'Olympus Provider',
+            models: [$model],
+            capabilities: Capabilities::of(Capability::Reasoning, Capability::ToolUse),
+            transport: TransportNeeds::new()->streaming(),
+            wireTranslator: null,
+        );
+
+        self::assertSame(
+            '6725a6706765a099c83139068e9306a0fb307fce23c57a397f7a3860a28a5488',
+            Canonical::of($config),
+            'Canonical algorithm output drifted for Provider\Config',
+        );
+    }
+
+    #[Test]
+    public function canonicalAlgorithmAnchorForProviderNeeds(): void
+    {
+        $needs = ProviderNeeds::new()
+            ->prefer(Preference::LocalFirst)
+            ->require(Capability::Reasoning);
+
+        self::assertSame(
+            '64b295cbd51ed90028f364ccb9cb9f72978e8d598ba7261472e2f9f6219efae5',
+            Canonical::of($needs),
+            'Canonical algorithm output drifted for Provider\Needs',
+        );
+    }
+
+    #[Test]
+    public function canonicalAlgorithmAnchorForArtifact(): void
+    {
+        $artifact = Artifact::draft(
+            id: '01HZ000000000000000000ART001',
+            kind: ArtifactKind::Thesis,
+            agentId: 'agent.leonidas',
+            activityId: 'act.thermopylae',
+            title: 'Battle Report',
+            createdAt: new \DateTimeImmutable('2026-05-17T12:00:00.123456+00:00'),
+        );
+
+        self::assertSame(
+            '7447abff9311337dd7f09dc05936da67eb74466b11a3d4ff521cdfb0d58da41e',
+            Canonical::of($artifact),
+            'Canonical algorithm output drifted for Artifact',
         );
     }
 

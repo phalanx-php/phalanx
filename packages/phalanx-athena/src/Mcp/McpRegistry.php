@@ -18,21 +18,32 @@ final class McpRegistry
     /** @var array<string, McpConnection> serverName -> connection */
     private array $serverIndex = [];
 
-    /** @param list<McpConnection> $connections */
-    public function __construct(array $connections = [])
+    /** @param list<McpServer> $pendingServers */
+    public function __construct(private array $pendingServers = [])
     {
-        foreach ($connections as $connection) {
-            $this->register($connection);
-        }
     }
 
-    public function register(McpConnection $connection): void
+    /** @param array<string, mixed> $args */
+    public function invoke(TaskScope $scope, string $toolName, array $args): Outcome
     {
-        foreach ($connection->tools() as $tool) {
+        $tool = $this->find($toolName) ?? throw new \RuntimeException("Unknown MCP tool: {$toolName}");
+
+        return ($this->serverIndex[$tool->serverName])->invoke($scope, $toolName, $args);
+    }
+
+    public function register(TaskScope $scope, McpConnection $connection): void
+    {
+        foreach ($connection->tools($scope) as $tool) {
             $this->tools[] = $tool;
             $this->nameIndex[$tool->name] = $tool;
             $this->serverIndex[$tool->serverName] = $connection;
         }
+    }
+
+    /** @return list<McpServer> */
+    public function pendingServers(): array
+    {
+        return $this->pendingServers;
     }
 
     /** @return list<McpTool> */
@@ -49,13 +60,5 @@ final class McpRegistry
     public function connection(string $serverName): ?McpConnection
     {
         return $this->serverIndex[$serverName] ?? null;
-    }
-
-    /** @param array<string, mixed> $args */
-    public function invoke(TaskScope $scope, string $toolName, array $args): Outcome
-    {
-        $tool = $this->find($toolName) ?? throw new \RuntimeException("Unknown MCP tool: {$toolName}");
-
-        return ($this->serverIndex[$tool->serverName])->invoke($scope, $toolName, $args);
     }
 }

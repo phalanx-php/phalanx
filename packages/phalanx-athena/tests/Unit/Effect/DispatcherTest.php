@@ -307,7 +307,8 @@ final class DispatcherTest extends TestCase
     #[Test]
     public function mcpToolRoutesViaMcpRegistry(): void
     {
-        $mcpRegistry = new McpRegistry([new FakeConnection()]);
+        $mcpRegistry = new McpRegistry();
+        $mcpRegistry->register(new ScopeStub(), new FakeConnection());
 
         $dispatcher = self::dispatcher(
             mcpRegistry: $mcpRegistry,
@@ -476,7 +477,7 @@ final class PausingAuthorizer implements Effect\Authorizer
 
 final class FakeConnection implements McpConnection
 {
-    public function tools(): array
+    public function tools(TaskScope $scope): array
     {
         return [
             new McpTool(
@@ -493,7 +494,7 @@ final class FakeConnection implements McpConnection
         return Outcome::routed(Resolution::McpTool, PanoplyOutcome::succeeded(null, 0), ['found' => true]);
     }
 
-    public function disconnect(): void
+    public function disconnect(TaskScope $scope): void
     {
     }
 }

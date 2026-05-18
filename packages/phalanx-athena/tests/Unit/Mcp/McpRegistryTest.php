@@ -25,7 +25,7 @@ final class McpRegistryTest extends TestCase
     public function registeredConnectionToolsAreDiscovered(): void
     {
         $registry = new McpRegistry();
-        $registry->register($this->connection);
+        $registry->register(new ScopeStub(), $this->connection);
 
         self::assertCount(2, $registry->tools());
         self::assertContains($this->toolA, $registry->tools());
@@ -36,7 +36,7 @@ final class McpRegistryTest extends TestCase
     public function findReturnsToolByName(): void
     {
         $registry = new McpRegistry();
-        $registry->register($this->connection);
+        $registry->register(new ScopeStub(), $this->connection);
 
         $found = $registry->find('read_file');
 
@@ -47,7 +47,7 @@ final class McpRegistryTest extends TestCase
     public function findReturnsNullForUnknownTool(): void
     {
         $registry = new McpRegistry();
-        $registry->register($this->connection);
+        $registry->register(new ScopeStub(), $this->connection);
 
         self::assertNull($registry->find('nonexistent'));
     }
@@ -56,7 +56,7 @@ final class McpRegistryTest extends TestCase
     public function connectionLookupByServerName(): void
     {
         $registry = new McpRegistry();
-        $registry->register($this->connection);
+        $registry->register(new ScopeStub(), $this->connection);
 
         self::assertSame($this->connection, $registry->connection('filesystem'));
         self::assertNull($registry->connection('unknown-server'));
@@ -66,7 +66,7 @@ final class McpRegistryTest extends TestCase
     public function invokeDelegatesToOwningConnection(): void
     {
         $registry = new McpRegistry();
-        $registry->register($this->connection);
+        $registry->register(new ScopeStub(), $this->connection);
 
         $scope = new ScopeStub();
         $result = $registry->invoke($scope, 'read_file', ['path' => '/tmp/test']);
@@ -78,7 +78,7 @@ final class McpRegistryTest extends TestCase
     public function invokeThrowsForUnknownTool(): void
     {
         $registry = new McpRegistry();
-        $registry->register($this->connection);
+        $registry->register(new ScopeStub(), $this->connection);
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Unknown MCP tool: phantom');
@@ -87,9 +87,10 @@ final class McpRegistryTest extends TestCase
     }
 
     #[Test]
-    public function constructorAcceptsInitialConnections(): void
+    public function registerAcceptsMultipleConnections(): void
     {
-        $registry = new McpRegistry([$this->connection]);
+        $registry = new McpRegistry();
+        $registry->register(new ScopeStub(), $this->connection);
 
         self::assertCount(2, $registry->tools());
     }
@@ -114,7 +115,7 @@ final class McpRegistryTest extends TestCase
             }
 
             /** @return list<McpTool> */
-            public function tools(): array
+            public function tools(TaskScope $scope): array
             {
                 return $this->fixedTools;
             }
@@ -124,7 +125,7 @@ final class McpRegistryTest extends TestCase
                 return $this->fixedOutcome;
             }
 
-            public function disconnect(): void
+            public function disconnect(TaskScope $scope): void
             {
             }
         };

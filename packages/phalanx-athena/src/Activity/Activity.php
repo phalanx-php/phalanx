@@ -20,7 +20,7 @@ use Phalanx\Task\Task;
 final class Activity implements Executor
 {
     public function __construct(
-        private(set) Executor $executor,
+        private Executor $executor,
     ) {
     }
 
@@ -32,10 +32,14 @@ final class Activity implements Executor
 
         $self = $this;
 
-        return $scope->execute(Task::named(
-            'athena.activity.' . $config->id,
-            static fn(ExecutionScope $activityScope): Result => $self->runInline($activityScope, $agent, $config, $log),
-        ));
+        try {
+            return $scope->execute(Task::named(
+                'athena.activity.' . $config->id,
+                static fn(ExecutionScope $activityScope): Result => $self->runInline($activityScope, $agent, $config, $log),
+            ));
+        } catch (ScopeCancelled $error) {
+            return self::cancelled($scope, $config, $log, $error);
+        }
     }
 
     private static function withLifecycle(TaskScope $scope, Config $config, Agent $agent, Result $result): Result

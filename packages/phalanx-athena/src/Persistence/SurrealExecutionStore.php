@@ -5,6 +5,13 @@ declare(strict_types=1);
 namespace Phalanx\Athena\Persistence;
 
 use Phalanx\Athena\Activity\State;
+use Phalanx\Panoply\Conversation\Log;
+use Phalanx\Panoply\Conversation\Record\Message;
+use Phalanx\Panoply\Conversation\Record\ToolCall;
+use Phalanx\Panoply\Conversation\Record\ToolResult;
+use Phalanx\Panoply\Conversation\RecordType;
+use Phalanx\Panoply\Cue\Effect\Requested;
+use Phalanx\Panoply\Effect\Kind;
 use Phalanx\Scope\TaskScope;
 use Phalanx\Surreal\Surreal;
 
@@ -116,5 +123,116 @@ final class SurrealExecutionStore implements ExecutionStore
             invocationId: $row['invocation_id'],
             at: new \DateTimeImmutable($row['at']),
         );
+    }
+
+    public function suspendActivity(TaskScope $scope, string $activityId, Log $log, Requested $pendingEffect): void
+    {
+        $scope->throwIfCancelled();
+
+        $logJson    = json_encode(array_map(static fn($r) => $r->toCanonical(), $log->toArray()), JSON_THROW_ON_ERROR);
+        $effectJson = json_encode($pendingEffect->toCanonical(), JSON_THROW_ON_ERROR);
+
+        $this->surreal->upsert('athena_activity:' . $activityId, [
+            'state'                  => State::Suspended->value,
+            'serialized_log'         => $logJson,
+            'pending_effect_id'      => $pendingEffect->effectId,
+            'pending_effect_payload' => $effectJson,
+        ]);
+    }
+
+    public function loadSuspended(TaskScope $scope, string $activityId): ?SuspendedState
+    {
+        $scope->throwIfCancelled();
+
+        $results = $this->surreal->query(
+            'SELECT * FROM athena_activity WHERE id = $id LIMIT 1',
+            ['id' => 'athena_activity:' . $activityId],
+        );
+
+        $rows = SurrealResult::firstRows($results);
+        if ($rows === []) {
+            return null;
+        }
+
+        $row = $rows[0];
+
+        if (($row['state'] ?? '') !== State::Suspended->value) {
+            return null;
+        }
+
+        $record = new ActivityRecord(
+            id: $activityId,
+            agentId: $row['agent_id'],
+            state: State::from($row['state']),
+            startedAt: new \DateTimeImmutable($row['started_at']),
+            completedAt: isset($row['completed_at']) ? new \DateTimeImmutable($row['completed_at']) : null,
+            invocationCount: (int) $row['invocation_count'],
+            serializedLog: $row['serialized_log'] ?? null,
+            pendingEffectId: $row['pending_effect_id'] ?? null,
+            pendingEffectPayload: $row['pending_effect_payload'] ?? null,
+        );
+
+        /** @var list<array<string, mixed>> $logData */
+        $logData  = json_decode((string) $row['serialized_log'], true, 512, JSON_THROW_ON_ERROR);
+        $log      = Log::from(array_map(self::hydrateRecord(...), $logData));
+
+        /** @var array<string, mixed> $effectData */
+        $effectData = json_decode((string) $row['pending_effect_payload'], true, 512, JSON_THROW_ON_ERROR);
+        $payload    = $effectData['payload'] ?? [];
+        $requested  = new Requested(
+            id: (string) $effectData['id'],
+            sequence: (int) $effectData['sequence'],
+            activityId: (string) $effectData['activity_id'],
+            invocationId: isset($effectData['invocation_id']) ? (string) $effectData['invocation_id'] : null,
+            agentId: isset($effectData['agent_id']) ? (string) $effectData['agent_id'] : null,
+            at: new \DateTimeImmutable($effectData['at']),
+            effectId: (string) $payload['effect_id'],
+            kind: Kind::from((string) $payload['kind']),
+            summary: (string) $payload['summary'],
+            arguments: (array) ($payload['arguments'] ?? []),
+            requiresApproval: (bool) ($payload['requires_approval'] ?? false),
+        );
+
+        return new SuspendedState($record, $log, $requested);
+    }
+
+    /** @param array<string, mixed> $entry */
+    private static function hydrateRecord(array $entry): \Phalanx\Panoply\Conversation\Record
+    {
+        $type    = RecordType::from((string) $entry['type']);
+        $id      = (string) $entry['id'];
+        $seq     = isset($entry['sequence']) ? (int) $entry['sequence'] : null;
+        $at      = new \DateTimeImmutable((string) $entry['at']);
+        $payload = (array) ($entry['payload'] ?? []);
+
+        return match ($type) {
+            RecordType::Message => new Message(
+                id: $id,
+                sequence: $seq,
+                at: $at,
+                role: (string) $payload['role'],
+                text: (string) $payload['text'],
+                attachments: array_values(array_map(strval(...), (array) ($payload['attachments'] ?? []))),
+            ),
+            RecordType::ToolCall => new ToolCall(
+                id: $id,
+                sequence: $seq,
+                at: $at,
+                callId: (string) $payload['call_id'],
+                toolName: (string) $payload['tool_name'],
+                arguments: (array) ($payload['arguments'] ?? []),
+            ),
+            RecordType::ToolResult => new ToolResult(
+                id: $id,
+                sequence: $seq,
+                at: $at,
+                callId: (string) $payload['call_id'],
+                output: (string) $payload['output'],
+                isError: (bool) ($payload['is_error'] ?? false),
+            ),
+            default => throw new \UnexpectedValueException(
+                'Cannot hydrate record type "' . $type->value . '" from suspended state.',
+            ),
+        };
     }
 }

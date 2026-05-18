@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Athena\Persistence;
 
+use Phalanx\Panoply\Conversation\Log;
+use Phalanx\Panoply\Cue\Effect\Requested;
 use Phalanx\Scope\TaskScope;
 
 interface ExecutionStore
@@ -19,4 +21,8 @@ interface ExecutionStore
     public function savePromptHash(TaskScope $scope, PromptHashRecord $record): void;
 
     public function findPromptHash(TaskScope $scope, string $hash): ?PromptHashRecord;
+
+    public function suspendActivity(TaskScope $scope, string $activityId, Log $log, Requested $pendingEffect): void;
+
+    public function loadSuspended(TaskScope $scope, string $activityId): ?SuspendedState;
 }
