@@ -66,9 +66,16 @@ final class Runtime implements RuntimeContract
         // Aegis onDispose() fires on BOTH normal teardown and cancellation.
         // Gate to cancellation-only so the panoply onCancel() semantic
         // (cleanup runs only when the scope was actually cancelled) is upheld.
-        $scope = $this->scope;
-        $this->scope->onDispose(static function () use ($scope, $cleanup): void {
-            if ($scope->isCancelled) {
+        //
+        // WeakReference breaks the reference cycle that would otherwise arise
+        // from capturing $this->scope in a closure that is registered on
+        // $this->scope's own dispose stack. Under ZMM load a retained cycle
+        // in a dispose closure can pin the surrounding chunk across many
+        // request boundaries.
+        $weakScope = \WeakReference::create($this->scope);
+        $this->scope->onDispose(static function () use ($weakScope, $cleanup): void {
+            $scope = $weakScope->get();
+            if ($scope !== null && $scope->isCancelled) {
                 $cleanup();
             }
         });

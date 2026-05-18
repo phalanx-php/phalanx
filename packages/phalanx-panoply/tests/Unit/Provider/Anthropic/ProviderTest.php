@@ -20,7 +20,7 @@ use Phalanx\Panoply\Effect\Kind as EffectKind;
 use Phalanx\Panoply\Effects;
 use Phalanx\Panoply\Invocation;
 use Phalanx\Panoply\Output;
-use Phalanx\Panoply\Provider\Anthropic\Options;
+use Phalanx\Panoply\Provider\Anthropic\MessagesOptions;
 use Phalanx\Panoply\Provider\Anthropic\Provider;
 use Phalanx\Panoply\Provider\Config\Model;
 use Phalanx\Panoply\Provider\Needs as ProviderNeeds;
@@ -147,28 +147,34 @@ final class ProviderTest extends TestCase
         self::assertTrue($runtime->isCancelled());
     }
 
-    /**
-     * @param array<string, list<string>> $script
-     */
     #[Test]
     public function capabilitiesReadFromModel(): void
     {
-        $provider = self::provider(self::script('simple-message.sse'));
+        // Build a model with a deliberately distinct capability set so the
+        // assertion proves delegation rather than a coincidental match.
+        $model    = Model::of(
+            name: 'apollo-vision',
+            modelId: 'apollo-vision',
+            aliases: ['apollo'],
+            capabilities: Capabilities::of(Capability::Vision),
+        );
+        $provider = new Provider(
+            transport: new FakeTransport([]),
+            apiKey: 'key_olympus',
+            model: $model,
+        );
 
-        self::assertTrue($provider->capabilities()->has(Capability::Reasoning));
-        self::assertTrue($provider->capabilities()->has(Capability::ToolUse));
+        // Provider must expose the same Capabilities instance the model holds.
+        self::assertSame($model->capabilities, $provider->capabilities());
     }
 
-    /**
-     * @param array<string, list<string>> $script
-     */
-    private static function provider(array $script, ?Options $options = null): Provider
+    private static function provider(array $script, ?MessagesOptions $options = null): Provider
     {
         return new Provider(
             transport: new FakeTransport($script),
             apiKey: 'key_sparta',
             model: self::model(),
-            options: $options ?? new Options(),
+            messagesOptions: $options ?? new MessagesOptions(),
         );
     }
 
@@ -176,7 +182,7 @@ final class ProviderTest extends TestCase
      * Reads a fixture .sse file and returns a FakeTransport script map
      * keyed by "POST https://api.anthropic.com/v1/messages".
      *
-     * The fixture is split into chunks at double-newlines so the SseParser's
+     * The fixture is split into chunks at double-newlines so the Parser's
      * buffer accumulation is exercised, not just full-event parsing.
      *
      * @return array<string, list<string>>

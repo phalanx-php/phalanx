@@ -25,7 +25,7 @@ use Phalanx\Panoply\Output;
 use Phalanx\Panoply\Provider\Anthropic\CueMapper;
 use Phalanx\Panoply\Provider\Needs as ProviderNeeds;
 use Phalanx\Panoply\Provider\Preference;
-use Phalanx\Panoply\Provider\Sse\Event;
+use Phalanx\Panoply\Sse\Event;
 use Phalanx\Panoply\Transport\Needs as TransportNeeds;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;

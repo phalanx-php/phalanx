@@ -20,7 +20,7 @@ use Phalanx\Panoply\Cue\Usage\FinalUsage;
 use Phalanx\Panoply\Effect\Kind;
 use Phalanx\Panoply\Id;
 use Phalanx\Panoply\Invocation;
-use Phalanx\Panoply\Provider\Sse\Event;
+use Phalanx\Panoply\Sse\Event;
 
 /**
  * Stateful mapper that translates Anthropic SSE events into panoply

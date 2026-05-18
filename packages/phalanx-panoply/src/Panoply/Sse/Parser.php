@@ -2,18 +2,24 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Panoply\Provider\Sse;
+namespace Phalanx\Panoply\Sse;
 
 /**
- * Stateful WHATWG SSE parser. Reusable across any panoply provider that
- * consumes Server-Sent Events.
+ * Stateful WHATWG SSE parser. Reusable across any panoply consumer of
+ * Server-Sent Events.
  *
  * SSE events are delimited by double newlines (`\n\n`). Each event block
- * contains one `event:` line and one or more `data:` lines. Multiple
- * `data:` lines are joined with `\n` before JSON-decoding, per the WHATWG
- * spec. Lines starting with `:` are comments and are silently ignored.
- * Events whose data is not valid JSON or whose event type is empty are
- * silently dropped so the stream survives unknown future event shapes.
+ * may contain an optional `event:` line and one or more `data:` lines.
+ * Multiple `data:` lines are joined with `\n` before JSON-decoding, per
+ * the WHATWG spec. Lines starting with `:` are comments and are silently
+ * ignored. Events whose data is not valid JSON are silently dropped so the
+ * stream survives wire-format terminators (e.g., `data: [DONE]`) and
+ * unknown future event shapes.
+ *
+ * The `event:` field is optional. When absent the resulting {@see Event}
+ * carries an empty-string type; mappers dispatch on the JSON payload shape
+ * in that case (the OpenAI streaming format). When present the type drives
+ * mapper dispatch directly (the Anthropic format).
  *
  * Usage pattern:
  * ```php
@@ -102,7 +108,10 @@ final class Parser
             // Unknown field names are also ignored for forward compatibility.
         }
 
-        if ($eventType === '' || $dataLines === []) {
+        // An event with no data lines carries no payload — nothing to decode.
+        // An empty event type is permitted: OpenAI SSE omits the event: field
+        // entirely and embeds the type inside the JSON payload.
+        if ($dataLines === []) {
             return null;
         }
 
@@ -111,6 +120,8 @@ final class Parser
         try {
             $data = json_decode($dataJson, associative: true, flags: JSON_THROW_ON_ERROR);
         } catch (\JsonException) {
+            // Non-JSON payloads (e.g., the OpenAI `data: [DONE]` sentinel)
+            // are silently dropped. The stream continues normally.
             return null;
         }
 

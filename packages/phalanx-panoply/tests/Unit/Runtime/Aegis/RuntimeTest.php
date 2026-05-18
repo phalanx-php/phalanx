@@ -41,9 +41,14 @@ final class RuntimeTest extends TestCase
         $adapter = new Runtime($stub);
 
         // A non-null label must be translated to a typed WaitReason and forwarded.
-        $adapter->call(static fn (): string => 'agora', 'provider.streaming');
+        // Use a Greek-flavored label to make the assertion specific and traceable.
+        $adapter->call(static fn (): string => 'agora', 'sparta.muster');
 
         self::assertInstanceOf(WaitReason::class, $stub->lastWaitReason);
+        // Verify the panoply label string is preserved in the Aegis detail field.
+        self::assertSame('sparta.muster', $stub->lastWaitReason->detail);
+        // Verify WaitReason::custom() sets WaitKind::Custom on the kind axis.
+        self::assertSame(\Phalanx\Supervisor\WaitKind::Custom, $stub->lastWaitReason->kind);
 
         // A null label must forward null — no WaitReason is created.
         $adapter->call(static fn (): string => 'polis');

@@ -52,7 +52,9 @@ final class TransportTest extends TestCase
         }
 
         $transport = self::fixture();
-        $request   = Request::of('GET', 'http://127.0.0.1:19876/');
+        // Use a well-known unroutable address — the generator is returned
+        // without executing until iterated, so no actual connection attempt.
+        $request   = Request::of('GET', 'http://127.0.0.1:1/');
         $runtime   = new SyncRuntime();
 
         // The call returns a generator without executing until iterated.
@@ -91,23 +93,19 @@ final class TransportTest extends TestCase
         }
 
         // Spin up a local PHP built-in server serving a fixed response.
+        // Pick a random high port and retry up to five times to avoid racing
+        // with other parallel test processes that may have claimed the port.
         $serverScript = self::writeServerScript();
-        $proc         = proc_open(
-            'php -S 127.0.0.1:19871 ' . $serverScript,
-            [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
-            $pipes,
-        );
+        [$proc, $pipes, $port] = self::startServer($serverScript);
 
-        if (!is_resource($proc)) {
-            self::markTestSkipped('Could not start local PHP server');
+        if ($proc === null) {
+            @unlink($serverScript);
+            self::markTestSkipped('Could not bind a local PHP server after 5 attempts');
         }
-
-        // Give the server a moment to bind the port.
-        usleep(100_000);
 
         try {
             $transport = self::fixture();
-            $request   = Request::of('POST', 'http://127.0.0.1:19871/', [], '');
+            $request   = Request::of('POST', "http://127.0.0.1:{$port}/", [], '');
             $runtime   = new SyncRuntime();
 
             $chunks = iterator_to_array($transport->stream($request, $runtime), preserve_keys: false);
@@ -134,21 +132,16 @@ final class TransportTest extends TestCase
         // Spin up a local PHP server that sleeps before responding so the
         // progress callback has a chance to fire and abort curl.
         $serverScript = self::writeSlowServerScript();
-        $proc         = proc_open(
-            'php -S 127.0.0.1:19872 ' . $serverScript,
-            [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
-            $pipes,
-        );
+        [$proc, $pipes, $port] = self::startServer($serverScript);
 
-        if (!is_resource($proc)) {
-            self::markTestSkipped('Could not start local PHP server');
+        if ($proc === null) {
+            @unlink($serverScript);
+            self::markTestSkipped('Could not bind a local PHP server after 5 attempts');
         }
-
-        usleep(100_000);
 
         try {
             $transport = self::fixture();
-            $request   = Request::of('GET', 'http://127.0.0.1:19872/');
+            $request   = Request::of('GET', "http://127.0.0.1:{$port}/");
             $runtime   = new SyncRuntime();
 
             // Cancel before curl starts — the progress callback fires
@@ -171,6 +164,47 @@ final class TransportTest extends TestCase
     private static function fixture(): Transport
     {
         return new Transport();
+    }
+
+    /**
+     * Attempt to start a `php -S` server on a random high port. Retries up
+     * to five times on different ports to survive parallel test execution.
+     *
+     * Returns [proc_resource, pipes, port] on success, or [null, [], 0] if
+     * all attempts fail.
+     *
+     * @return array{0: resource|null, 1: array<int, resource>, 2: int}
+     */
+    private static function startServer(string $serverScript): array
+    {
+        for ($attempt = 0; $attempt < 5; $attempt++) {
+            $port = random_int(20000, 60000);
+            $proc = proc_open(
+                'php -S 127.0.0.1:' . $port . ' ' . $serverScript,
+                [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
+                $pipes,
+            );
+
+            if (!is_resource($proc)) {
+                continue;
+            }
+
+            // Give the server a moment to bind the port.
+            usleep(100_000);
+
+            $status = proc_get_status($proc);
+            if ($status['running'] === true) {
+                return [$proc, $pipes, $port];
+            }
+
+            // Server exited — port likely already in use. Clean up and retry.
+            fclose($pipes[0]);
+            fclose($pipes[1]);
+            fclose($pipes[2]);
+            proc_close($proc);
+        }
+
+        return [null, [], 0];
     }
 
     private static function writeServerScript(): string

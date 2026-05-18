@@ -30,7 +30,7 @@ final class RequestBuilder
         Model $model,
         string $apiKey,
         string $baseUrl,
-        Options $options = new Options(),
+        MessagesOptions $options = new MessagesOptions(),
     ): Request {
         $body = [
             'model'      => $model->modelId,
@@ -39,6 +39,18 @@ final class RequestBuilder
             'messages'   => self::deriveMessages($invocation),
             'stream'     => true,
         ];
+
+        if ($options->temperature !== null) {
+            $body['temperature'] = $options->temperature;
+        }
+
+        if ($options->topP !== null) {
+            $body['top_p'] = $options->topP;
+        }
+
+        if ($options->stopSequences !== []) {
+            $body['stop_sequences'] = array_values($options->stopSequences);
+        }
 
         $tools = self::deriveTools($invocation);
         if ($tools !== []) {

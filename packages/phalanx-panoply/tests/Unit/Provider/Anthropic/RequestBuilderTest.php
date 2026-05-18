@@ -11,7 +11,7 @@ use Phalanx\Panoply\Effect\Kind as EffectKind;
 use Phalanx\Panoply\Effects;
 use Phalanx\Panoply\Invocation;
 use Phalanx\Panoply\Output;
-use Phalanx\Panoply\Provider\Anthropic\Options;
+use Phalanx\Panoply\Provider\Anthropic\MessagesOptions;
 use Phalanx\Panoply\Provider\Anthropic\RequestBuilder;
 use Phalanx\Panoply\Provider\Config\Model;
 use Phalanx\Panoply\Provider\Needs as ProviderNeeds;
@@ -146,11 +146,73 @@ final class RequestBuilderTest extends TestCase
             self::model(),
             'key_test',
             'https://api.anthropic.com',
-            new Options(maxTokens: 8192),
+            new MessagesOptions(maxTokens: 8192),
         );
         $body = json_decode($request->body, associative: true);
 
         self::assertSame(8192, $body['max_tokens']);
+    }
+
+    #[Test]
+    public function optionsTemperatureIsReflectedInRequestBody(): void
+    {
+        $request = RequestBuilder::build(
+            self::invocation(),
+            self::model(),
+            'key_test',
+            'https://api.anthropic.com',
+            new MessagesOptions(temperature: 0.7),
+        );
+        $body = json_decode($request->body, associative: true);
+
+        self::assertSame(0.7, $body['temperature']);
+    }
+
+    #[Test]
+    public function optionsTopPIsReflectedInRequestBody(): void
+    {
+        $request = RequestBuilder::build(
+            self::invocation(),
+            self::model(),
+            'key_test',
+            'https://api.anthropic.com',
+            new MessagesOptions(topP: 0.9),
+        );
+        $body = json_decode($request->body, associative: true);
+
+        self::assertSame(0.9, $body['top_p']);
+    }
+
+    #[Test]
+    public function optionsStopSequencesAreReflectedInRequestBody(): void
+    {
+        $request = RequestBuilder::build(
+            self::invocation(),
+            self::model(),
+            'key_test',
+            'https://api.anthropic.com',
+            new MessagesOptions(stopSequences: ['STOP', 'END']),
+        );
+        $body = json_decode($request->body, associative: true);
+
+        self::assertSame(['STOP', 'END'], $body['stop_sequences']);
+    }
+
+    #[Test]
+    public function defaultOptionsOmitTemperatureAndTopPAndStopSequences(): void
+    {
+        $request = RequestBuilder::build(
+            self::invocation(),
+            self::model(),
+            'key_test',
+            'https://api.anthropic.com',
+            new MessagesOptions(),
+        );
+        $body = json_decode($request->body, associative: true);
+
+        self::assertArrayNotHasKey('temperature', $body);
+        self::assertArrayNotHasKey('top_p', $body);
+        self::assertArrayNotHasKey('stop_sequences', $body);
     }
 
     private static function invocation(): Invocation

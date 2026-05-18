@@ -2,12 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Panoply\Provider\Sse;
+namespace Phalanx\Panoply\Sse;
 
 /**
  * Internal value object carrying one parsed SSE event. Used between
- * {@see Parser} and provider-specific cue mappers; not part of the public
- * panoply surface.
+ * {@see Parser} and cue mappers; not part of the public panoply surface.
  *
  * Final — sealed internal carrier; extension is neither needed nor safe.
  */

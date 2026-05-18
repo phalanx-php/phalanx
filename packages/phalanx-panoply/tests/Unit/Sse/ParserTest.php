@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Panoply\Tests\Unit\Provider\Sse;
+namespace Phalanx\Panoply\Tests\Unit\Sse;
 
-use Phalanx\Panoply\Provider\Sse\Parser;
+use Phalanx\Panoply\Sse\Parser;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -203,6 +203,61 @@ final class ParserTest extends TestCase
 
         self::assertCount(1, $events);
         self::assertSame('message_start', $events[0]->type);
+    }
+
+    #[Test]
+    public function typelessEventWithValidJsonDataYieldsEvent(): void
+    {
+        // OpenAI SSE emits every chunk without an event: field. The type
+        // should be an empty string and the payload decoded normally.
+        $parser = self::fixture();
+        $chunk  = "data: {\"object\":\"chat.completion.chunk\",\"id\":\"abc\"}\n\n";
+
+        $events = iterator_to_array($parser->feed($chunk), preserve_keys: false);
+
+        self::assertCount(1, $events);
+        self::assertSame('', $events[0]->type);
+        self::assertSame('chat.completion.chunk', $events[0]->data['object'] ?? null);
+        self::assertSame('abc', $events[0]->data['id'] ?? null);
+    }
+
+    #[Test]
+    public function doneSentinelIsSilentlyDropped(): void
+    {
+        // OpenAI terminates the stream with `data: [DONE]` — not valid JSON.
+        // The parser must drop it without error.
+        $parser = self::fixture();
+        $chunk  = "data: [DONE]\n\n";
+
+        $events = iterator_to_array($parser->feed($chunk), preserve_keys: false);
+
+        self::assertCount(0, $events);
+    }
+
+    #[Test]
+    public function doneSentinelDoesNotCorruptBuffer(): void
+    {
+        // A valid event before [DONE] and a valid event after must both survive.
+        // Feeds three separate chunks to exercise the buffer accumulation path.
+        $parser  = self::fixture();
+        $chunk1  = "data: {\"object\":\"chat.completion.chunk\",\"id\":\"1\"}\n\n";
+        $chunk2  = "data: [DONE]\n\n";
+        $chunk3  = "data: {\"object\":\"chat.completion.chunk\",\"id\":\"2\"}\n\n";
+
+        $events1 = iterator_to_array($parser->feed($chunk1), preserve_keys: false);
+        $events2 = iterator_to_array($parser->feed($chunk2), preserve_keys: false);
+        $events3 = iterator_to_array($parser->feed($chunk3), preserve_keys: false);
+
+        // First valid event arrives from chunk1.
+        self::assertCount(1, $events1);
+        self::assertSame('1', $events1[0]->data['id'] ?? null);
+
+        // [DONE] sentinel drops silently.
+        self::assertCount(0, $events2);
+
+        // Second valid event arrives from chunk3 — buffer was not corrupted.
+        self::assertCount(1, $events3);
+        self::assertSame('2', $events3[0]->data['id'] ?? null);
     }
 
     private static function fixture(): Parser
