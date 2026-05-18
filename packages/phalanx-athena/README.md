@@ -2,8 +2,10 @@
   <img src="brand/logo.svg" alt="Phalanx" width="520">
 </p>
 
-# Phalanx Athena
+# Athena
 
-AI agent runtime for Phalanx with provider adapters, tool execution, streaming output, structured responses, and multi-agent coordination patterns.
+Supervised agent activity runtime for Phalanx.
+
+Athena v2 is the execution layer above Panoply's provider/transport contracts: activities, turns, effects, grants, hooks, and persistence.
 
 Part of the [Phalanx monorepo](https://github.com/phalanx-php/phalanx).

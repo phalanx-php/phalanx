@@ -1,0 +1,260 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Phalanx\Athena\Tests\Unit;
+
+use Phalanx\Athena\Activity;
+use Phalanx\Athena\Exception\MaxInvocationsReached;
+use Phalanx\Athena\Hook\StepContext;
+use Phalanx\Athena\Hook\StepHook;
+use Phalanx\Athena\Hook\StepHookResult;
+use Phalanx\Athena\Tests\Fixtures\ScopeStub;
+use Phalanx\Athena\Tests\Fixtures\SyncRuntimeFactory;
+use Phalanx\Athena\Tests\Fixtures\TestAgent;
+use Phalanx\Athena\Turn\DefaultBuilder;
+use Phalanx\Athena\Turn\Loop;
+use Phalanx\Athena\Turn\Outcome;
+use Phalanx\Panoply\Capabilities;
+use Phalanx\Panoply\Context;
+use Phalanx\Panoply\Conversation\Record\Message;
+use Phalanx\Panoply\Cue\Effect\Requested;
+use Phalanx\Panoply\Cue\Output\TokenDelta;
+use Phalanx\Panoply\Cue\Output\TokenStop;
+use Phalanx\Panoply\Cue\StopReason;
+use Phalanx\Panoply\Effect\Kind as EffectKind;
+use Phalanx\Panoply\Invocation;
+use Phalanx\Panoply\Provider as ProviderContract;
+use Phalanx\Panoply\Provider\Fake\Provider;
+use Phalanx\Panoply\Runtime;
+use Phalanx\Panoply\Stream;
+use Phalanx\Scope\TaskScope;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+
+final class TurnLoopTest extends TestCase
+{
+    #[Test]
+    public function fakeProviderStreamCompletesActivityAndAppendsAssistantMessage(): void
+    {
+        $at = new \DateTimeImmutable('2026-05-17T12:00:00Z');
+        $provider = new Provider([
+            new TokenDelta('cue_1', 1, 'act_1', null, 'athena-test-agent', $at, 'Hello '),
+            new TokenDelta('cue_2', 2, 'act_1', null, 'athena-test-agent', $at, 'world'),
+            new TokenStop('cue_3', 3, 'act_1', null, 'athena-test-agent', $at, StopReason::EndOfTurn),
+        ], Capabilities::empty());
+
+        $loop = new Loop(new DefaultBuilder(), $provider, new SyncRuntimeFactory());
+
+        $result = $loop(new ScopeStub(), new TestAgent(), new Activity\Config('act_1', Context::new(), 3));
+
+        self::assertSame(Activity\State::Completed, $result->state);
+        self::assertSame(Outcome::Complete, $result->outcome);
+        self::assertSame(1, $result->invocations);
+
+        $records = $result->log->toArray();
+        self::assertCount(1, $records);
+        self::assertInstanceOf(Message::class, $records[0]);
+        self::assertSame('Hello world', $records[0]->text);
+    }
+
+    #[Test]
+    public function loopCanGrowLogAcrossThreeProviderInvocationsBeforeCompletion(): void
+    {
+        $at = new \DateTimeImmutable('2026-05-17T12:00:00Z');
+        $provider = new SequencedProvider([
+            [new TokenDelta('cue_1', 1, 'act_1', null, 'athena-test-agent', $at, 'first')],
+            [new TokenDelta('cue_2', 2, 'act_1', null, 'athena-test-agent', $at, 'second')],
+            [
+                new TokenDelta('cue_3', 3, 'act_1', null, 'athena-test-agent', $at, 'final'),
+                new TokenStop('cue_4', 4, 'act_1', null, 'athena-test-agent', $at, StopReason::EndOfTurn),
+            ],
+        ]);
+
+        $loop = new Loop(new DefaultBuilder(), $provider, new SyncRuntimeFactory());
+
+        $result = $loop(new ScopeStub(), new TestAgent(), new Activity\Config('act_1', Context::new(), 3));
+
+        self::assertSame(Outcome::Complete, $result->outcome);
+        self::assertSame(3, $result->invocations);
+        self::assertCount(3, $result->log->toArray());
+    }
+
+    #[Test]
+    public function loopThrowsWhenProviderNeverTerminatesWithinMaxInvocations(): void
+    {
+        $at = new \DateTimeImmutable('2026-05-17T12:00:00Z');
+        $provider = new Provider([
+            new TokenDelta('cue_1', 1, 'act_1', null, 'athena-test-agent', $at, 'still thinking'),
+        ], Capabilities::empty());
+
+        $loop = new Loop(new DefaultBuilder(), $provider, new SyncRuntimeFactory());
+
+        $this->expectException(MaxInvocationsReached::class);
+
+        $loop(new ScopeStub(), new TestAgent(), new Activity\Config('act_1', Context::new(), 2));
+    }
+
+    #[Test]
+    public function terminalHookFailureMapsActivityToFailedState(): void
+    {
+        $provider = new Provider([], Capabilities::empty());
+        $hook = new class implements StepHook {
+            public function __invoke(TaskScope $scope, StepContext $context): StepHookResult
+            {
+                return StepHookResult::fail(new \RuntimeException('halted by hook'));
+            }
+        };
+
+        $loop = new Loop(new DefaultBuilder(), $provider, new SyncRuntimeFactory(), hooks: [$hook]);
+
+        $result = $loop(new ScopeStub(), new TestAgent(), new Activity\Config('act_1', Context::new(), 1));
+
+        self::assertSame(Activity\State::Failed, $result->state);
+        self::assertSame(Outcome::Failed, $result->outcome);
+        self::assertInstanceOf(\RuntimeException::class, $result->error);
+    }
+
+    #[Test]
+    public function hookFailureAfterCuePreservesThrowable(): void
+    {
+        $at = new \DateTimeImmutable('2026-05-17T12:00:00Z');
+        $error = new \RuntimeException('cue rejected');
+        $provider = new Provider([
+            new TokenDelta('cue_1', 1, 'act_1', null, 'athena-test-agent', $at, 'partial'),
+        ], Capabilities::empty());
+        $hook = new FailAfterCueHook($error);
+        $loop = new Loop(new DefaultBuilder(), $provider, new SyncRuntimeFactory(), hooks: [$hook]);
+
+        $result = $loop(new ScopeStub(), new TestAgent(), new Activity\Config('act_1', Context::new(), 1));
+
+        self::assertSame(Activity\State::Failed, $result->state);
+        self::assertSame($error, $result->error);
+    }
+
+    #[Test]
+    public function hookFailureAfterInvocationPreservesThrowable(): void
+    {
+        $at = new \DateTimeImmutable('2026-05-17T12:00:00Z');
+        $error = new \RuntimeException('invocation rejected');
+        $provider = new Provider([
+            new TokenDelta('cue_1', 1, 'act_1', null, 'athena-test-agent', $at, 'done'),
+            new TokenStop('cue_2', 2, 'act_1', null, 'athena-test-agent', $at, StopReason::EndOfTurn),
+        ], Capabilities::empty());
+        $hook = new FailAfterInvocationHook($error);
+        $loop = new Loop(new DefaultBuilder(), $provider, new SyncRuntimeFactory(), hooks: [$hook]);
+
+        $result = $loop(new ScopeStub(), new TestAgent(), new Activity\Config('act_1', Context::new(), 1));
+
+        self::assertSame(Activity\State::Failed, $result->state);
+        self::assertSame($error, $result->error);
+    }
+
+    #[Test]
+    public function requestedEffectRequiringApprovalSuspendsActivity(): void
+    {
+        $at = new \DateTimeImmutable('2026-05-17T12:00:00Z');
+        $provider = new Provider([
+            new Requested(
+                id: 'cue_1',
+                sequence: 1,
+                activityId: 'act_1',
+                invocationId: null,
+                agentId: 'athena-test-agent',
+                at: $at,
+                effectId: 'eff_1',
+                kind: EffectKind::FileWrite,
+                summary: 'write file',
+                requiresApproval: true,
+            ),
+        ], Capabilities::empty());
+        $loop = new Loop(new DefaultBuilder(), $provider, new SyncRuntimeFactory());
+
+        $result = $loop(new ScopeStub(), new TestAgent(), new Activity\Config('act_1', Context::new(), 1));
+
+        self::assertSame(Activity\State::Suspended, $result->state);
+        self::assertSame(Outcome::WaitingForApproval, $result->outcome);
+    }
+
+    #[Test]
+    public function requestedEffectWithoutDispatcherFailsFast(): void
+    {
+        $at = new \DateTimeImmutable('2026-05-17T12:00:00Z');
+        $provider = new Provider([
+            new Requested(
+                id: 'cue_1',
+                sequence: 1,
+                activityId: 'act_1',
+                invocationId: null,
+                agentId: 'athena-test-agent',
+                at: $at,
+                effectId: 'eff_1',
+                kind: EffectKind::FileRead,
+                summary: 'read file',
+            ),
+        ], Capabilities::empty());
+        $loop = new Loop(new DefaultBuilder(), $provider, new SyncRuntimeFactory());
+
+        $result = $loop(new ScopeStub(), new TestAgent(), new Activity\Config('act_1', Context::new(), 1));
+
+        self::assertSame(Activity\State::Failed, $result->state);
+        self::assertSame(Outcome::Failed, $result->outcome);
+        self::assertNotNull($result->error);
+        self::assertStringContainsString('No effect dispatcher', $result->error->getMessage());
+    }
+}
+
+final class SequencedProvider implements ProviderContract
+{
+    private int $calls = 0;
+
+    /**
+     * @param list<list<\Phalanx\Panoply\Cue>> $scripts
+     */
+    public function __construct(private(set) array $scripts)
+    {
+    }
+
+    public function perform(Invocation $invocation, Runtime $runtime): Stream
+    {
+        $script = $this->scripts[$this->calls] ?? [];
+        $this->calls++;
+
+        return Stream::from($script);
+    }
+
+    public function capabilities(): Capabilities
+    {
+        return Capabilities::empty();
+    }
+}
+
+final class FailAfterCueHook implements StepHook
+{
+    public function __construct(
+        private(set) \Throwable $error,
+    ) {
+    }
+
+    public function __invoke(TaskScope $scope, StepContext $context): StepHookResult
+    {
+        return $context->cue !== null
+            ? StepHookResult::fail($this->error)
+            : StepHookResult::continue();
+    }
+}
+
+final class FailAfterInvocationHook implements StepHook
+{
+    public function __construct(
+        private(set) \Throwable $error,
+    ) {
+    }
+
+    public function __invoke(TaskScope $scope, StepContext $context): StepHookResult
+    {
+        return $context->cue === null && $context->outcome !== Outcome::Continue
+            ? StepHookResult::fail($this->error)
+            : StepHookResult::continue();
+    }
+}

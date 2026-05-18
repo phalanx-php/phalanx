@@ -72,13 +72,7 @@ parameters:
         - packages/phalanx-hydra/src/WorkerPool/WorkerPool.php
     phalanxCoroutineInternalPaths:
         - packages/phalanx-aegis/src/Scope/ExecutionLifecycleScope.php
-    excludePaths:
-        analyseAndScan:
-            - packages/phalanx-athena/src/Cli/AgentRepl.php
     ignoreErrors:
-        -
-            identifier: callable.nonCallable
-            reportUnmatched: true
         -
             identifier: phalanx.testing.useBenchmarkHarness
             path: benchmarks/http/cases/StoaCases.php

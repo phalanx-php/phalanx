@@ -199,6 +199,7 @@
         "phalanx-php/hermes": "self.version",
         "phalanx-php/hydra": "self.version",
         "phalanx-php/iris": "self.version",
+        "phalanx-php/panoply": "self.version",
         "phalanx-php/phpstan": "self.version",
         "phalanx-php/skopos": "self.version",
         "phalanx-php/stoa": "self.version",
