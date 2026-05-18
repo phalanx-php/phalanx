@@ -9,6 +9,7 @@ use Phalanx\Athena\Exception\ActivityFailed;
 use Phalanx\Athena\Exception\MaxInvocationsReached;
 use Phalanx\Athena\Hook\StepContext;
 use Phalanx\Athena\Hook\StepHook;
+use Phalanx\Athena\Stream\CompositeStream;
 use Phalanx\Panoply\Agent;
 use Phalanx\Panoply\Conversation\Log;
 use Phalanx\Panoply\Conversation\Record\Message;
@@ -17,6 +18,7 @@ use Phalanx\Panoply\Cue\Output\TokenDelta;
 use Phalanx\Panoply\Cue\Output\TokenStop;
 use Phalanx\Panoply\Id;
 use Phalanx\Panoply\Provider;
+use Phalanx\Panoply\Stream;
 use Phalanx\Scope\TaskScope;
 
 final class Loop implements Activity\Executor
@@ -38,6 +40,7 @@ final class Loop implements Activity\Executor
         $turn    = new Config($config->id, $config->context, $config->maxInvocations);
         $runtime = ($this->runtimeFactory)($scope);
         $hooks   = [...$this->hooks, ...$config->hooks];
+        $cues    = [];
 
         for ($i = 1; $i <= $config->maxInvocations; $i++) {
             $scope->throwIfCancelled();
@@ -56,14 +59,17 @@ final class Loop implements Activity\Executor
                     $current,
                     $i,
                     $hookResult->error,
+                    stream: Stream::from($cues),
                 );
             }
 
             $text    = '';
             $outcome = Outcome::Continue;
             $error   = null;
+            $stream  = CompositeStream::wrap($this->provider->perform($invocation, $runtime), $scope);
 
-            foreach ($this->provider->perform($invocation, $runtime) as $cue) {
+            foreach ($stream->stream() as $cue) {
+                $cues[] = $cue;
                 $hookResult = self::notify(
                     $scope,
                     StepContext::afterCue($turnConfig, $current, $invocation, $cue),
@@ -113,6 +119,7 @@ final class Loop implements Activity\Executor
                     log: $current,
                     invocations: $i,
                     error: $error,
+                    stream: Stream::from($cues),
                 );
             }
         }
