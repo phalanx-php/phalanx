@@ -40,7 +40,7 @@ final class Loop implements Activity\Executor
 
     public function __invoke(TaskScope $scope, Agent $agent, Activity\Config $config, ?Log $log = null): Activity\Result
     {
-        $current = $log ?? Log::from([]);
+        $records = $log !== null ? $log->toArray() : [];
         $turn    = new Config($config->id, $config->context, $config->maxInvocations);
         $runtime = ($this->runtimeFactory)($scope);
         $hooks   = [...$this->hooks, ...$config->hooks];
@@ -50,6 +50,7 @@ final class Loop implements Activity\Executor
             $scope->throwIfCancelled();
             $runtime->throwIfCancelled();
 
+            $current    = Log::from($records);
             $turnConfig = $turn->forInvocation($i);
             $invocation = $this->builder->build($scope, $agent, $current, $turnConfig);
             $context    = StepContext::beforeInvocation($turnConfig, $current, $invocation);
@@ -104,8 +105,8 @@ final class Loop implements Activity\Executor
                     $result = $this->dispatcher->dispatch($scope, $cue, $stream);
 
                     if ($result->turnOutcome === Outcome::Continue) {
-                        $current = self::appendToolCall($current, $cue);
-                        $current = self::appendToolResult($current, $cue, $result->data);
+                        self::pushToolCall($records, $cue);
+                        self::pushToolResult($records, $cue, $result->data);
                         continue;
                     }
 
@@ -116,8 +117,10 @@ final class Loop implements Activity\Executor
             }
 
             if ($text !== '') {
-                $current = self::appendAssistantMessage($current, $text);
+                self::pushAssistantMessage($records, $text);
             }
+
+            $current = Log::from($records);
 
             $hookResult = self::notify(
                 $scope,
@@ -145,9 +148,9 @@ final class Loop implements Activity\Executor
         throw new MaxInvocationsReached($config->id, $config->maxInvocations);
     }
 
-    private static function appendAssistantMessage(Log $log, string $text): Log
+    /** @param list<\Phalanx\Panoply\Conversation\Record> $records */
+    private static function pushAssistantMessage(array &$records, string $text): void
     {
-        $records = $log->toArray();
         $records[] = new Message(
             id: 'msg_' . Id::generate(),
             sequence: count($records) + 1,
@@ -155,8 +158,6 @@ final class Loop implements Activity\Executor
             role: 'assistant',
             text: $text,
         );
-
-        return Log::from($records);
     }
 
     /**
@@ -174,9 +175,9 @@ final class Loop implements Activity\Executor
         ];
     }
 
-    private static function appendToolCall(Log $log, Requested $request): Log
+    /** @param list<\Phalanx\Panoply\Conversation\Record> $records */
+    private static function pushToolCall(array &$records, Requested $request): void
     {
-        $records = $log->toArray();
         $records[] = new ToolCall(
             id: 'rec_' . Id::generate(),
             sequence: count($records) + 1,
@@ -185,13 +186,11 @@ final class Loop implements Activity\Executor
             toolName: $request->effectId,
             arguments: $request->arguments,
         );
-
-        return Log::from($records);
     }
 
-    private static function appendToolResult(Log $log, Requested $request, mixed $data): Log
+    /** @param list<\Phalanx\Panoply\Conversation\Record> $records */
+    private static function pushToolResult(array &$records, Requested $request, mixed $data): void
     {
-        $records = $log->toArray();
         $records[] = new ToolResult(
             id: 'rec_' . Id::generate(),
             sequence: count($records) + 1,
@@ -199,8 +198,6 @@ final class Loop implements Activity\Executor
             callId: $request->effectId,
             output: is_string($data) ? $data : json_encode($data, JSON_THROW_ON_ERROR),
         );
-
-        return Log::from($records);
     }
 
     private static function stateFor(Outcome $outcome): Activity\State

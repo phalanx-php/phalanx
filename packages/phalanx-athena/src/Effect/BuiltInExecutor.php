@@ -24,10 +24,9 @@ final class BuiltInExecutor implements Executor
                 PanoplyOutcome::succeeded(null, 0),
                 $request->arguments,
             ),
-            BuiltInKind::Halt => Outcome::routed(
+            BuiltInKind::Halt => Outcome::halted(
                 Resolution::BuiltIn,
                 PanoplyOutcome::succeeded(null, 0),
-                '__halt__',
             ),
         };
     }

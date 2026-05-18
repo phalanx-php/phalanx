@@ -240,6 +240,49 @@ final class DispatcherTest extends TestCase
     }
 
     #[Test]
+    public function cancelledExceptionPropagatesWithoutWrapping(): void
+    {
+        $registry = new ToolRegistry();
+        $registry->register('cancel_tool', CancellingTool::class);
+
+        $dispatcher = self::dispatcher(
+            toolRegistry: $registry,
+            grantStore: new FixedGrantStore(self::grant(Kind::Custom)),
+        );
+
+        $scope = new ScopeStub();
+        $stream = CompositeStream::wrap($scope, Stream::from([]));
+        $request = self::request('cancel_tool', Kind::Custom);
+
+        $this->expectException(\Phalanx\Cancellation\Cancelled::class);
+
+        $dispatcher->dispatch($scope, $request, $stream);
+    }
+
+    #[Test]
+    public function requiresApprovalFlagDoesNotOverrideAuthorizerDecision(): void
+    {
+        $registry = new ToolRegistry();
+        $registry->register('read_file', EchoTool::class);
+
+        $dispatcher = self::dispatcher(
+            toolRegistry: $registry,
+            grantStore: new FixedGrantStore(self::grant(Kind::FileRead)),
+        );
+
+        $scope = new ScopeStub();
+        $stream = CompositeStream::wrap($scope, Stream::from([]));
+        $request = self::request('read_file', Kind::FileRead, requiresApproval: true);
+
+        $result = $dispatcher->dispatch($scope, $request, $stream);
+
+        self::assertSame(Turn\Outcome::Continue, $result->turnOutcome);
+
+        $cues = $stream->stream()->toArray();
+        self::assertInstanceOf(Authorized::class, $cues[0]);
+    }
+
+    #[Test]
     public function builtInTakesPriorityOverLocalTool(): void
     {
         $registry = new ToolRegistry();
@@ -348,6 +391,14 @@ final class FixedGrantStore implements \Phalanx\Athena\Grant\Store
     }
     public function revoke(TaskScope $scope, string $grantId): void
     {
+    }
+}
+
+final class CancellingTool implements Tool
+{
+    public function __invoke(TaskScope $scope, Context $ctx): Outcome
+    {
+        throw new \Phalanx\Cancellation\Cancelled('Scope cancelled');
     }
 }
 

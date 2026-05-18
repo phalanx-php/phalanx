@@ -13,12 +13,18 @@ final class Outcome
         private(set) ?PanoplyOutcome $effect = null,
         private(set) mixed $data = null,
         private(set) ?\Throwable $error = null,
+        private(set) bool $halt = false,
     ) {
     }
 
     public static function routed(Resolution $resolution, ?PanoplyOutcome $effect = null, mixed $data = null): self
     {
         return new self($resolution, $effect, $data);
+    }
+
+    public static function halted(Resolution $resolution, ?PanoplyOutcome $effect = null): self
+    {
+        return new self($resolution, $effect, halt: true);
     }
 
     public static function failed(Resolution $resolution, \Throwable $error, ?PanoplyOutcome $effect = null): self

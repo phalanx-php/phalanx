@@ -38,13 +38,13 @@ final class BuiltInExecutorTest extends TestCase
     }
 
     #[Test]
-    public function haltReturnsHaltSentinel(): void
+    public function haltReturnsHaltOutcome(): void
     {
         $executor = new BuiltInExecutor();
         $outcome  = $executor(new ScopeStub(), self::makeRequest('halt'), self::makeContext());
 
         self::assertSame(Resolution::BuiltIn, $outcome->resolution);
-        self::assertSame('__halt__', $outcome->data);
+        self::assertTrue($outcome->halt);
     }
 
     #[Test]

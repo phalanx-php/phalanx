@@ -191,7 +191,7 @@ final class Dispatcher
                 durationMs: $elapsed,
             ));
 
-            if ($outcome->data === '__halt__') {
+            if ($outcome->halt) {
                 return DispatchResult::halted($outcome);
             }
 
