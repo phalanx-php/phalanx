@@ -1,0 +1,8 @@
+{
+    "agents": [
+        "Phalanx\\Panoply\\Tests\\Fixtures\\Agent\\Discovered\\HoplitesAgent",
+        "Phalanx\\Panoply\\Tests\\Fixtures\\Agent\\Discovered\\PhalanxAgent"
+    ],
+    "generated_at": "2026-05-17T00:00:00+00:00",
+    "source_mtime": 1747440000
+}

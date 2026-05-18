@@ -117,6 +117,20 @@ final class SettingsTest extends TestCase
         self::assertSame(42, $settings->getInt('missingKey', 42));
     }
 
+    #[Test]
+    public function isAvailableReturnsTrue(): void
+    {
+        self::assertTrue($this->buildSettings()->isAvailable());
+    }
+
+    #[Test]
+    public function isAvailableReturnsTrueEvenWithNoFile(): void
+    {
+        $settings = new Settings(null);
+
+        self::assertTrue($settings->isAvailable());
+    }
+
     private static function fixtureRoot(): string
     {
         return dirname(__DIR__, 3) . '/Fixtures/HomeDir/GeminiCli';

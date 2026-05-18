@@ -30,7 +30,7 @@ final class Settings implements SettingsInterface
 
     public function __construct(private(set) ?string $configTomlPath)
     {
-        [$this->data, $this->tomlAvailable] = $this->loadConfig($configTomlPath);
+        [$this->data, $this->tomlAvailable] = self::loadConfig($configTomlPath);
     }
 
     public function has(string $key): bool
@@ -40,6 +40,11 @@ final class Settings implements SettingsInterface
         }
 
         return array_key_exists($key, $this->data);
+    }
+
+    public function isAvailable(): bool
+    {
+        return $this->tomlAvailable;
     }
 
     public function asString(string $key): string
@@ -137,32 +142,13 @@ final class Settings implements SettingsInterface
         return is_array($value) ? $value : $default;
     }
 
-    private function requireKey(string $key): mixed
-    {
-        if (!array_key_exists($key, $this->data)) {
-            throw SettingsError::missingKey($key, 'codex');
-        }
-
-        return $this->data[$key];
-    }
-
-    private function requireToml(string $key): void
-    {
-        if (!$this->tomlAvailable) {
-            throw new SettingsError(
-                "Codex settings are unavailable: no TOML parser found. " .
-                "Install a compatible TOML library to read '{$key}'.",
-            );
-        }
-    }
-
     /**
      * Attempt to load Codex's config.toml. Returns the parsed data array
      * and a flag indicating whether a TOML parser was available.
      *
      * @return array{array<string, mixed>, bool}
      */
-    private function loadConfig(?string $path): array
+    private static function loadConfig(?string $path): array
     {
         if ($path === null || !is_file($path)) {
             return [[], false];
@@ -182,5 +168,24 @@ final class Settings implements SettingsInterface
 
         // No TOML parser available — operate in no-op mode.
         return [[], false];
+    }
+
+    private function requireKey(string $key): mixed
+    {
+        if (!array_key_exists($key, $this->data)) {
+            throw SettingsError::missingKey($key, 'codex');
+        }
+
+        return $this->data[$key];
+    }
+
+    private function requireToml(string $key): void
+    {
+        if (!$this->tomlAvailable) {
+            throw new SettingsError(
+                "Codex settings are unavailable: no TOML parser found. " .
+                "Install a compatible TOML library to read '{$key}'.",
+            );
+        }
     }
 }

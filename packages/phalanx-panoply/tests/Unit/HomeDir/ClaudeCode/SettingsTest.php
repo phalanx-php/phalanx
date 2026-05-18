@@ -152,6 +152,20 @@ final class SettingsTest extends TestCase
         self::assertNull($settings->getString('anything'));
     }
 
+    #[Test]
+    public function isAvailableReturnsTrue(): void
+    {
+        self::assertTrue($this->buildSettings()->isAvailable());
+    }
+
+    #[Test]
+    public function isAvailableReturnsTrueEvenWithNoFiles(): void
+    {
+        $settings = new Settings(sidecarPath: null, inDirPath: null);
+
+        self::assertTrue($settings->isAvailable());
+    }
+
     private static function fixtureRoot(): string
     {
         return dirname(__DIR__, 3) . '/Fixtures/HomeDir/ClaudeCode';

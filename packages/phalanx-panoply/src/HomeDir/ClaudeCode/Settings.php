@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Panoply\HomeDir\ClaudeCode;
 
-use Phalanx\Panoply\HomeDir\Settings as SettingsInterface;
-use Phalanx\Panoply\HomeDir\SettingsError;
+use Phalanx\Panoply\HomeDir\AbstractMapSettings;
 
 /**
  * Settings accessor for Claude Code's merged configuration. Reads both a
@@ -15,119 +14,24 @@ use Phalanx\Panoply\HomeDir\SettingsError;
  * merged key-by-key rather than replaced wholesale).
  *
  * Construction reads and parses both files immediately; subsequent accessor
- * calls are pure lookups into the merged map.
+ * calls are pure lookups into the merged map (via {@see AbstractMapSettings}).
+ *
+ * Malformed JSON causes a {@see \JsonException} to propagate — fail-loud
+ * is the Phalanx default. An absent or empty file degrades silently to an
+ * empty map, which is appropriate (the file is optional).
  *
  * Final — Settings implementations are sealed per vendor.
  */
-final class Settings implements SettingsInterface
+final class Settings extends AbstractMapSettings
 {
-    /** @var array<string, mixed> */
-    private(set) array $merged;
-
     public function __construct(
         private(set) ?string $sidecarPath,
         private(set) ?string $inDirPath,
     ) {
-        $sidecar = $this->readJson($sidecarPath);
-        $inDir   = $this->readJson($inDirPath);
+        $sidecar = self::readJson($sidecarPath);
+        $inDir   = self::readJson($inDirPath);
 
-        $this->merged = self::deepMerge($sidecar, $inDir);
-    }
-
-    public function has(string $key): bool
-    {
-        return array_key_exists($key, $this->merged);
-    }
-
-    public function asString(string $key): string
-    {
-        $value = $this->requireKey($key);
-
-        if (!is_string($value)) {
-            throw SettingsError::typeMismatch($key, 'string', gettype($value));
-        }
-
-        return $value;
-    }
-
-    public function getString(string $key, ?string $default = null): ?string
-    {
-        if (!$this->has($key)) {
-            return $default;
-        }
-        $value = $this->merged[$key];
-
-        return is_string($value) ? $value : $default;
-    }
-
-    public function asInt(string $key): int
-    {
-        $value = $this->requireKey($key);
-
-        if (!is_int($value)) {
-            throw SettingsError::typeMismatch($key, 'int', gettype($value));
-        }
-
-        return $value;
-    }
-
-    public function getInt(string $key, ?int $default = null): ?int
-    {
-        if (!$this->has($key)) {
-            return $default;
-        }
-        $value = $this->merged[$key];
-
-        return is_int($value) ? $value : $default;
-    }
-
-    public function asBool(string $key): bool
-    {
-        $value = $this->requireKey($key);
-
-        if (!is_bool($value)) {
-            throw SettingsError::typeMismatch($key, 'bool', gettype($value));
-        }
-
-        return $value;
-    }
-
-    public function getBool(string $key, ?bool $default = null): ?bool
-    {
-        if (!$this->has($key)) {
-            return $default;
-        }
-        $value = $this->merged[$key];
-
-        return is_bool($value) ? $value : $default;
-    }
-
-    /**
-     * @return array<int|string, mixed>
-     */
-    public function asArray(string $key): array
-    {
-        $value = $this->requireKey($key);
-
-        if (!is_array($value)) {
-            throw SettingsError::typeMismatch($key, 'array', gettype($value));
-        }
-
-        return $value;
-    }
-
-    /**
-     * @param array<int|string, mixed>|null $default
-     * @return array<int|string, mixed>|null
-     */
-    public function getArray(string $key, ?array $default = null): ?array
-    {
-        if (!$this->has($key)) {
-            return $default;
-        }
-        $value = $this->merged[$key];
-
-        return is_array($value) ? $value : $default;
+        parent::__construct(self::deepMerge($sidecar, $inDir));
     }
 
     /**
@@ -159,19 +63,10 @@ final class Settings implements SettingsInterface
         return $result;
     }
 
-    private function requireKey(string $key): mixed
-    {
-        if (!$this->has($key)) {
-            throw SettingsError::missingKey($key, 'claude_code');
-        }
-
-        return $this->merged[$key];
-    }
-
     /**
      * @return array<string, mixed>
      */
-    private function readJson(?string $path): array
+    private static function readJson(?string $path): array
     {
         if ($path === null || !is_file($path)) {
             return [];
@@ -183,13 +78,13 @@ final class Settings implements SettingsInterface
             return [];
         }
 
-        $decoded = json_decode($raw, associative: true);
+        /** @var array<string, mixed> $decoded */
+        $decoded = json_decode($raw, associative: true, flags: JSON_THROW_ON_ERROR);
 
         if (!is_array($decoded)) {
             return [];
         }
 
-        /** @var array<string, mixed> $decoded */
         return $decoded;
     }
 }

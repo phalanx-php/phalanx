@@ -227,12 +227,42 @@ final class SettingsTest extends TestCase
     }
 
     #[Test]
+    public function isAvailableReturnsTrueWhenTomlParserPresentAndFileLoaded(): void
+    {
+        $settings = self::loadedSettings();
+
+        if (!$settings->tomlAvailable) {
+            self::markTestSkipped('No TOML parser present — loaded-config path skipped.');
+        }
+
+        self::assertTrue($settings->isAvailable());
+    }
+
+    #[Test]
     public function tomlAvailableReflectsActualExtensionState(): void
     {
         $settings         = self::noopSettings();
         $extensionPresent = class_exists('Yosymfony\Toml\Toml');
 
         self::assertSame($extensionPresent, $settings->tomlAvailable);
+    }
+
+    #[Test]
+    public function isAvailableReflectsTomlAvailabilityWhenNoParser(): void
+    {
+        $settings = self::noopSettings();
+
+        // isAvailable() must mirror tomlAvailable exactly.
+        self::assertSame($settings->tomlAvailable, $settings->isAvailable());
+    }
+
+    #[Test]
+    public function isAvailableReturnsFalseWhenNoConfigPath(): void
+    {
+        // null path always produces tomlAvailable=false regardless of parser.
+        $settings = new Settings(configTomlPath: null);
+
+        self::assertFalse($settings->isAvailable());
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
