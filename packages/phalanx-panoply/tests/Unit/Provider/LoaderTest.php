@@ -36,11 +36,25 @@ final class LoaderTest extends TestCase
     #[Test]
     public function missingWireTranslatorClassResolvesToNull(): void
     {
-        // The fixture references Phalanx\Panoply\Provider\Anthropic\Provider
-        // which does not exist — Loader must set wireTranslator to null.
-        $config = Loader::fromFile(self::fixtureFile());
+        // Point at a class that will never exist; Loader must resolve to null.
+        $yaml = self::validYaml();
+        $nonexistent = 'Phalanx\\\\Panoply\\\\__NONEXISTENT_FOR_TEST__\\\\Provider';
+        $yaml        = str_replace('wire_translator: null', "wire_translator: \"{$nonexistent}\"", $yaml);
+
+        $config = Loader::fromString($yaml, 'test.yaml');
 
         self::assertNull($config->wireTranslator);
+    }
+
+    #[Test]
+    public function realWireTranslatorClassResolves(): void
+    {
+        // The fixture points at the real Anthropic Provider class which is
+        // loaded via Composer autoload. Loader must resolve it to the
+        // class-string, not null.
+        $config = Loader::fromFile(self::fixtureFile());
+
+        self::assertSame(\Phalanx\Panoply\Provider\Anthropic\Provider::class, $config->wireTranslator);
     }
 
     #[Test]
