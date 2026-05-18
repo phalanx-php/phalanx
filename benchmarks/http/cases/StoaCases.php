@@ -223,15 +223,3 @@ final class BenchmarkDrainRoute implements Scopeable
     }
 }
 
-/** @return list<HttpBenchmarkCase> */
-function stoaHttpCases(): array
-{
-    return [
-        new StoaDispatchPlaintextCase(),
-        new StoaDispatchJsonCase(),
-        new StoaDispatchRouteParamCase(),
-        new StoaRequestFactoryCase(),
-        new StoaRequestResourceLifecycleCase(),
-        new StoaDrainCleanupCase(),
-    ];
-}

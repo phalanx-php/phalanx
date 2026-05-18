@@ -11,6 +11,7 @@ final class BenchmarkResult
 {
     /**
      * @param list<int> $samplesNs
+     * @param array<string, mixed> $diagnostics
      */
     public function __construct(
         private(set) string $case,
@@ -22,6 +23,15 @@ final class BenchmarkResult
         private(set) int $errors,
         private(set) string $cleanup,
         private(set) array $samplesNs,
+        private(set) int $zendMemoryBefore = 0,
+        private(set) int $zendMemoryAfter = 0,
+        private(set) int $zendMemoryPeak = 0,
+        private(set) int $realMemoryBefore = 0,
+        private(set) int $realMemoryAfter = 0,
+        private(set) int $realMemoryPeak = 0,
+        private(set) int $gcRootsBefore = 0,
+        private(set) int $gcRootsAfter = 0,
+        private(set) array $diagnostics = [],
     ) {
     }
 
@@ -38,6 +48,25 @@ final class BenchmarkResult
 
     public float $memoryDeltaKb {
         get => ($this->memoryAfter - $this->memoryBefore) / 1024;
+    }
+
+    public float $zendMemoryDeltaKb {
+        get => ($this->zendMemoryAfter - $this->zendMemoryBefore) / 1024;
+    }
+
+    public float $realMemoryDeltaKb {
+        get => ($this->realMemoryAfter - $this->realMemoryBefore) / 1024;
+    }
+
+    public int $gcRootsDelta {
+        get => $this->gcRootsAfter - $this->gcRootsBefore;
+    }
+
+    public bool $hasKernelMetrics {
+        get => $this->zendMemoryBefore !== 0
+            || $this->zendMemoryAfter !== 0
+            || $this->gcRootsBefore !== 0
+            || $this->gcRootsAfter !== 0;
     }
 
     public function p95Us(): float
@@ -80,8 +109,20 @@ final class BenchmarkResult
             'mem_after' => $this->memoryAfter,
             'mem_peak' => $this->memoryPeak,
             'mem_delta_kb' => $this->memoryDeltaKb,
+            'zend_memory_before' => $this->zendMemoryBefore,
+            'zend_memory_after' => $this->zendMemoryAfter,
+            'zend_memory_peak' => $this->zendMemoryPeak,
+            'zend_memory_delta_kb' => $this->zendMemoryDeltaKb,
+            'real_memory_before' => $this->realMemoryBefore,
+            'real_memory_after' => $this->realMemoryAfter,
+            'real_memory_peak' => $this->realMemoryPeak,
+            'real_memory_delta_kb' => $this->realMemoryDeltaKb,
+            'gc_roots_before' => $this->gcRootsBefore,
+            'gc_roots_after' => $this->gcRootsAfter,
+            'gc_roots_delta' => $this->gcRootsDelta,
             'errors' => $this->errors,
             'cleanup' => $this->cleanup,
+            'diagnostics' => $this->diagnostics,
         ];
     }
 }

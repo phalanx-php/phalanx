@@ -66,7 +66,7 @@ final class Loop implements Activity\Executor
             $text    = '';
             $outcome = Outcome::Continue;
             $error   = null;
-            $stream  = CompositeStream::wrap($this->provider->perform($invocation, $runtime), $scope);
+            $stream  = CompositeStream::wrap($scope, $this->provider->perform($invocation, $runtime));
 
             foreach ($stream->stream() as $cue) {
                 $cues[] = $cue;

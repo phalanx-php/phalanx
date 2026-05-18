@@ -41,7 +41,7 @@ final class Activity implements Executor
     private static function withLifecycle(TaskScope $scope, Config $config, Agent $agent, Result $result): Result
     {
         $innerCues = $result->stream->toArray();
-        $composite = CompositeStream::wrap(Stream::from($innerCues), $scope);
+        $composite = CompositeStream::wrap($scope, Stream::from($innerCues));
         $composite->emit(self::started($config, $agent, $innerCues));
 
         $terminal = self::terminalCue($config, $agent, $result, $innerCues);
@@ -62,7 +62,7 @@ final class Activity implements Executor
 
     private static function cancelled(TaskScope $scope, Config $config, ?Log $log, ScopeCancelled $error): Result
     {
-        $composite = CompositeStream::wrap(Stream::from([]), $scope);
+        $composite = CompositeStream::wrap($scope, Stream::from([]));
         $composite->emit(new ActivityCue\Started(
             id: 'cue_' . Id::generate(),
             sequence: 1,
@@ -94,7 +94,7 @@ final class Activity implements Executor
 
     private static function failed(TaskScope $scope, Config $config, ?Log $log, \Throwable $error): Result
     {
-        $composite = CompositeStream::wrap(Stream::from([]), $scope);
+        $composite = CompositeStream::wrap($scope, Stream::from([]));
         $composite->emit(new ActivityCue\Started(
             id: 'cue_' . Id::generate(),
             sequence: 1,

@@ -72,10 +72,15 @@ parameters:
         - packages/phalanx-hydra/src/WorkerPool/WorkerPool.php
     phalanxCoroutineInternalPaths:
         - packages/phalanx-aegis/src/Scope/ExecutionLifecycleScope.php
+        - benchmarks/kernel/cases/ContextSwitchCases.php
     ignoreErrors:
         -
             identifier: phalanx.testing.useBenchmarkHarness
             path: benchmarks/http/cases/StoaCases.php
+            reportUnmatched: true
+        -
+            identifier: phalanx.testing.useBenchmarkHarness
+            path: benchmarks/http/server.php
             reportUnmatched: true
     tmpDir: .phpstan-cache
     treatPhpDocTypesAsCertain: false

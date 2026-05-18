@@ -147,7 +147,7 @@ final class ConsoleInput
         $current->throwIfFailed('snapshot stty state');
         $this->savedSttyState = trim($current->output);
 
-        $enable = (new SystemCommand('stty -icanon -echo min 1 time 0'))($scope);
+        $enable = (new SystemCommand('stty -icanon -echo -ixon -isig min 1 time 0'))($scope);
         $enable->throwIfFailed('enable raw stty mode');
         $this->rawModeActive = true;
     }

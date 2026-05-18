@@ -14,6 +14,8 @@ interface HttpBenchmarkCase extends BenchmarkCase
 
 abstract class AbstractHttpBenchmarkCase implements HttpBenchmarkCase
 {
+    abstract public function run(BenchmarkApp $app): void;
+
     public function __construct(
         private readonly string $caseName,
         private readonly int $caseIterations,
@@ -35,6 +37,4 @@ abstract class AbstractHttpBenchmarkCase implements HttpBenchmarkCase
     {
         return $this->caseWarmups;
     }
-
-    abstract public function run(BenchmarkApp $app): void;
 }

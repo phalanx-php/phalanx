@@ -39,6 +39,12 @@ use Phalanx\Worker\WorkerDispatch;
  */
 class ApplicationBuilder
 {
+    private(set) int $taskRunPoolCapacity = 256;
+
+    private(set) int $scopeFramePoolCapacity = 256;
+
+    private(set) int $tokenPoolCapacity = 512;
+
     /** @var list<ServiceBundle> */
     private array $providers = [];
 
@@ -115,6 +121,14 @@ class ApplicationBuilder
         return $this;
     }
 
+    public function withPoolCapacities(int $taskRun, int $scopeFrame, int $token): self
+    {
+        $this->taskRunPoolCapacity = $taskRun;
+        $this->scopeFramePoolCapacity = $scopeFrame;
+        $this->tokenPoolCapacity = $token;
+        return $this;
+    }
+
     /**
      * Override the supervisor's ledger backend. The runtime default is the
      * primitive Swoole table ledger; InProcessLedger is only for narrow tests.
@@ -170,7 +184,13 @@ class ApplicationBuilder
                 ],
             );
         });
-        $supervisor = new Supervisor($ledger, $trace);
+        $supervisor = new Supervisor(
+            $ledger,
+            $trace,
+            $this->taskRunPoolCapacity,
+            $this->scopeFramePoolCapacity,
+            $this->tokenPoolCapacity,
+        );
         $resolvedWorkerDispatch = $this->workerDispatch;
         $workerDispatchType = $graph->alias(WorkerDispatch::class);
         $workerDispatchConfig = $graph->configs[$workerDispatchType] ?? null;

@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace Phalanx\Benchmarks\Kit;
 
 use Phalanx\Benchmarks\Http\HttpBenchmarkCase;
-use Phalanx\Benchmarks\Http\HttpBenchmarkContext;
-use Phalanx\Benchmarks\Kernel\BenchmarkCase as KernelBenchmarkCase;
 use Phalanx\Benchmarks\Kernel\BenchmarkContext;
+use Phalanx\Benchmarks\Kernel\KernelBenchmarkCase;
 use RuntimeException;
 
 /**
@@ -64,21 +63,32 @@ final class BenchmarkReport
             }
 
             if ($case instanceof HttpBenchmarkCase) {
-                $httpContext = new HttpBenchmarkContext();
                 $this->measure(
                     $case->name(),
                     $case->iterations(),
-                    static fn(BenchmarkApp $_app) => $case->run($httpContext),
+                    static fn(BenchmarkApp $app) => $case->run($app),
                     $case->warmups()
                 );
             } elseif ($case instanceof KernelBenchmarkCase) {
                 $kernelContext = new BenchmarkContext();
-                $this->measure(
-                    $case->name(),
-                    $case->iterations(),
-                    static fn(BenchmarkApp $_app) => $case->run($kernelContext),
-                    $case->warmups()
-                );
+                $caseName = $case->name();
+
+                try {
+                    $this->measure(
+                        $caseName,
+                        $case->iterations(),
+                        static fn(BenchmarkApp $_app) => $case->run($kernelContext),
+                        $case->warmups(),
+                        static function () use ($case, $kernelContext, $caseName): array {
+                            $case->cleanup();
+                            $kernelContext->assertClean($caseName);
+                            return $kernelContext->diagnostics();
+                        },
+                    );
+                } finally {
+                    $case->cleanup();
+                    $kernelContext->shutdown();
+                }
             } else {
                 throw new RuntimeException(sprintf('Unknown benchmark case type: %s', $case::class));
             }
@@ -87,21 +97,28 @@ final class BenchmarkReport
 
     /**
      * Measures a specific operation and records the result.
+     *
+     * @param \Closure(): array<string, mixed> $captureExtras
      */
-    public function measure(string $name, int $iterations, \Closure $work, int $warmups = 10): void
-    {
+    public function measure(
+        string $name,
+        int $iterations,
+        \Closure $work,
+        int $warmups = 10,
+        ?\Closure $captureExtras = null,
+    ): void {
         if ($this->runner === null) {
             throw new RuntimeException('BenchmarkReport: runner not set.');
         }
 
-        $result = $this->runner->measure($name, $iterations, $work, $warmups);
+        $result = $this->runner->measure($name, $iterations, $work, $warmups, $captureExtras);
         $this->record($result);
     }
 
     public function record(BenchmarkResult $result): void
     {
         $this->results[] = $result;
-        
+
         if (($this->options['format'] ?? 'table') === 'table') {
             $this->printHeaderOnce();
             printf(
@@ -146,6 +163,13 @@ final class BenchmarkReport
 
     private function renderTable(): void
     {
+        $hasKernel = array_any($this->results, static fn(BenchmarkResult $r): bool => $r->hasKernelMetrics);
+
+        if ($hasKernel) {
+            $this->renderKernelTable();
+            return;
+        }
+
         printf("\nSummary:\n");
         printf(
             "%-38s %8s %10s %10s %10s %12s %13s %8s %8s\n",
@@ -173,6 +197,39 @@ final class BenchmarkReport
                 $result->memoryDeltaKb,
                 $result->errors,
                 $result->cleanup,
+            );
+        }
+    }
+
+    private function renderKernelTable(): void
+    {
+        printf("\nSummary:\n");
+        printf(
+            "%-34s %8s %10s %10s %10s %12s %13s %13s %8s\n",
+            'case',
+            'iter',
+            'mean_us',
+            'p95_us',
+            'p99_us',
+            'ops_sec',
+            'real_delta_kb',
+            'zend_delta_kb',
+            'gc_roots',
+        );
+        printf("%s\n", str_repeat('-', 135));
+
+        foreach ($this->results as $result) {
+            printf(
+                "%-34s %8d %10.2f %10.2f %10.2f %12.2f %13.2f %13.2f %8d\n",
+                $result->case,
+                $result->iterations,
+                $result->meanUs,
+                $result->p95Us(),
+                $result->p99Us(),
+                $result->opsPerSec,
+                $result->realMemoryDeltaKb,
+                $result->zendMemoryDeltaKb,
+                $result->gcRootsDelta,
             );
         }
     }
@@ -207,7 +264,9 @@ final class BenchmarkReport
             }
 
             $prevMean = (float) ($baseline['mean_us'] ?? 0);
-            if ($prevMean <= 0) continue;
+            if ($prevMean <= 0) {
+                continue;
+            }
 
             $threshold = $this->thresholdForCase($result->case);
             $change = ($result->meanUs - $prevMean) / $prevMean;
@@ -227,6 +286,14 @@ final class BenchmarkReport
 
     private function thresholdForCase(string $case): float
     {
+        $fanout = str_starts_with($case, 'concurrent_')
+            || str_starts_with($case, 'singleflight_')
+            || str_starts_with($case, 'cancel_');
+
+        if ($fanout) {
+            return (float) ($this->options['fanout-threshold'] ?? 0.20);
+        }
+
         if ($case === 'stoa_drain_cleanup') {
             return (float) ($this->options['drain-threshold'] ?? 0.20);
         }
@@ -242,14 +309,16 @@ final class BenchmarkReport
 
         $this->headerPrinted = true;
         printf("%s\n%s\n", $this->title, str_repeat('=', strlen($this->title)));
-        
-        printf("commit=%s dirty=%s php=%s openswoole=%s\n",
+
+        printf(
+            "commit=%s dirty=%s php=%s openswoole=%s\n",
             $this->metadata['commit'] ?? 'unknown',
             $this->metadata['dirty'] ?? 'unknown',
             $this->metadata['php'] ?? PHP_VERSION,
             $this->metadata['openswoole'] ?? 'unknown'
         );
-        printf("php_binary=%s xdebug=%s\n\n",
+        printf(
+            "php_binary=%s xdebug=%s\n\n",
             $this->metadata['php_binary'] ?? PHP_BINARY,
             $this->metadata['xdebug'] ?? 'no'
         );

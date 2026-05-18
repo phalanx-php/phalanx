@@ -103,16 +103,32 @@ final class BenchmarkRunner
 
     /**
      * Measures a specific operation and returns the result.
+     *
+     * @param \Closure(): array<string, mixed> $captureExtras
      */
-    public function measure(string $name, int $iterations, Closure $work, int $warmups = 10): BenchmarkResult
-    {
+    public function measure(
+        string $name,
+        int $iterations,
+        Closure $work,
+        int $warmups = 10,
+        ?Closure $captureExtras = null,
+    ): BenchmarkResult {
         $errors = 0;
         $cleanup = 'ok';
         $samples = [];
         $memoryBefore = 0;
         $memoryAfter = 0;
         $memoryPeak = 0;
+        $zendMemoryBefore = 0;
+        $zendMemoryAfter = 0;
+        $zendMemoryPeak = 0;
+        $realMemoryBefore = 0;
+        $realMemoryAfter = 0;
+        $realMemoryPeak = 0;
+        $gcRootsBefore = 0;
+        $gcRootsAfter = 0;
         $totalNs = 0;
+        $diagnostics = [];
 
         try {
             // 1. Warmup
@@ -129,7 +145,11 @@ final class BenchmarkRunner
                 memory_reset_peak_usage();
             }
 
+            $gcBefore = gc_status();
+            $gcRootsBefore = $gcBefore['roots'];
             $memoryBefore = memory_get_usage(false);
+            $zendMemoryBefore = memory_get_usage(false);
+            $realMemoryBefore = memory_get_usage(true);
             $started = hrtime(true);
 
             // 4. Iterate
@@ -141,20 +161,25 @@ final class BenchmarkRunner
 
             $totalNs = hrtime(true) - $started;
 
+            $gcAfter = gc_status();
+            $gcRootsAfter = $gcAfter['roots'];
+            $zendMemoryAfter = memory_get_usage(false);
+            $realMemoryAfter = memory_get_usage(true);
+            $memoryAfter = $realMemoryAfter;
+            $zendMemoryPeak = memory_get_peak_usage(false);
+            $realMemoryPeak = memory_get_peak_usage(true);
+            $memoryPeak = $realMemoryPeak;
+
             // 5. Post-flight Check
             $this->harness->assertClean($name);
-            
-            $memoryPeak = memory_get_peak_usage(true);
+
+            $diagnostics = $captureExtras !== null ? $captureExtras() : [];
         } catch (Throwable $e) {
             $errors++;
             $cleanup = 'failed';
             throw $e;
         } finally {
-            // Always shutdown and clear harness tracked apps for this case
             $this->harness->shutdown();
-            
-            gc_collect_cycles();
-            $memoryAfter = memory_get_usage(false);
         }
 
         gc_collect_cycles();
@@ -169,6 +194,15 @@ final class BenchmarkRunner
             errors: $errors,
             cleanup: $cleanup,
             samplesNs: $samples,
+            zendMemoryBefore: $zendMemoryBefore,
+            zendMemoryAfter: $zendMemoryAfter,
+            zendMemoryPeak: $zendMemoryPeak,
+            realMemoryBefore: $realMemoryBefore,
+            realMemoryAfter: $realMemoryAfter,
+            realMemoryPeak: $realMemoryPeak,
+            gcRootsBefore: $gcRootsBefore,
+            gcRootsAfter: $gcRootsAfter,
+            diagnostics: $diagnostics,
         );
     }
 }

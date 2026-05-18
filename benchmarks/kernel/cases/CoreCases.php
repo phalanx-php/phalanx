@@ -59,6 +59,33 @@ final class ExecuteNoopTaskCase extends AbstractBenchmarkCase
     }
 }
 
+final class ExecuteNoopTaskUnpooledCase extends AbstractBenchmarkCase
+{
+    private ?ExecutionScope $scope = null;
+
+    private ?Task $task = null;
+
+    public function __construct()
+    {
+        parent::__construct('execute_noop_task_unpooled', 10_000, 100);
+    }
+
+    public function run(BenchmarkContext $context): void
+    {
+        $this->scope ??= $context->appWithPoolCapacities(0, 0, 0)->createScope();
+        $this->task ??= Task::named('bench.noop.unpooled', static fn(ExecutionScope $_scope): null => null);
+
+        $this->scope->execute($this->task);
+    }
+
+    public function cleanup(): void
+    {
+        $this->scope?->dispose();
+        $this->scope = null;
+        $this->task = null;
+    }
+}
+
 final class ExecuteStaticTaskOfCase extends AbstractBenchmarkCase
 {
     private ?ExecutionScope $scope = null;
@@ -160,6 +187,39 @@ final class ConcurrentNoopCase extends AbstractBenchmarkCase
         if ($this->tasks === []) {
             for ($i = 0; $i < $this->count; $i++) {
                 $this->tasks[] = Task::named("bench.concurrent.noop.{$i}", static fn(ExecutionScope $_scope): int => 1);
+            }
+        }
+
+        $this->scope->concurrent(...$this->tasks);
+    }
+
+    public function cleanup(): void
+    {
+        $this->scope?->dispose();
+        $this->scope = null;
+        $this->tasks = [];
+    }
+}
+
+final class ConcurrentNoopUnpooledCase extends AbstractBenchmarkCase
+{
+    /** @var array<int, Task> */
+    private array $tasks = [];
+
+    private ?ExecutionScope $scope = null;
+
+    public function __construct(private readonly int $count)
+    {
+        parent::__construct("concurrent_noop_unpooled_{$count}", max(50, intdiv(10_000, $count)), 10);
+    }
+
+    public function run(BenchmarkContext $context): void
+    {
+        $this->scope ??= $context->appWithPoolCapacities(0, 0, 0)->createScope();
+
+        if ($this->tasks === []) {
+            for ($i = 0; $i < $this->count; $i++) {
+                $this->tasks[] = Task::named("bench.concurrent.noop.unpooled.{$i}", static fn(ExecutionScope $_scope): int => 1);
             }
         }
 
@@ -446,24 +506,4 @@ final class TransactionScopeEnterExitCase extends AbstractBenchmarkCase
         $this->scope = null;
         $this->task = null;
     }
-}
-
-/** @return list<\Phalanx\Benchmarks\Kernel\BenchmarkCase> */
-function aegisKernelCases(): array
-{
-    return [
-        new ScopeCreateDisposeCase(),
-        new ExecuteNoopTaskCase(),
-        new ExecuteStaticTaskOfCase(),
-        new SupervisorLifecycleCase(),
-        new TraceLogChurnCase(),
-        new ConcurrentNoopCase(100),
-        new ConcurrentDelayCase(100),
-        new SingleflightWaitersCase(100),
-        new CancelSleepingChildrenCase(100),
-        new InProcessLedgerLifecycleCase(),
-        new SwooleTableLedgerLifecycleCase(),
-        new SwooleTableLedgerProjectionCase(),
-        new TransactionScopeEnterExitCase(),
-    ];
 }

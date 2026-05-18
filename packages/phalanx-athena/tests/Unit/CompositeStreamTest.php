@@ -27,7 +27,7 @@ final class CompositeStreamTest extends TestCase
             new TokenDelta('cue_1', 1, 'act_1', null, 'agent_1', $at, 'hello'),
             new TokenStop('cue_2', 2, 'act_1', null, 'agent_1', $at, StopReason::EndOfTurn),
         ]);
-        $composite = CompositeStream::wrap($provider, new ScopeStub());
+        $composite = CompositeStream::wrap(new ScopeStub(), $provider);
 
         $cues = $composite->stream()->toArray();
 
@@ -42,7 +42,7 @@ final class CompositeStreamTest extends TestCase
             new TokenDelta('cue_2', 2, 'act_1', null, 'agent_1', $at, 'hello'),
             new TokenStop('cue_4', 4, 'act_1', null, 'agent_1', $at, StopReason::EndOfTurn),
         ]);
-        $composite = CompositeStream::wrap($provider, new ScopeStub());
+        $composite = CompositeStream::wrap(new ScopeStub(), $provider);
         $composite->emit(new Started('cue_1', 1, 'act_1', null, 'agent_1', $at));
 
         $sequences = [];
@@ -60,7 +60,7 @@ final class CompositeStreamTest extends TestCase
     public function hostCuesOnlyYieldInSequenceOrderWhenProviderIsEmpty(): void
     {
         $at = new \DateTimeImmutable('2026-05-17T12:00:00Z');
-        $composite = CompositeStream::wrap(Stream::from([]), new ScopeStub());
+        $composite = CompositeStream::wrap(new ScopeStub(), Stream::from([]));
         $composite->emit(new Completed('cue_3', 3, 'act_1', null, 'agent_1', $at));
         $composite->emit(new Started('cue_1', 1, 'act_1', null, 'agent_1', $at));
         $composite->emit(new Started('cue_2', 2, 'act_1', null, 'agent_1', $at));
@@ -91,7 +91,7 @@ final class CompositeStreamTest extends TestCase
                 summary: 'read file',
             ),
         ]);
-        $composite = CompositeStream::wrap($provider, new ScopeStub());
+        $composite = CompositeStream::wrap(new ScopeStub(), $provider);
         $composite->emit(new Started('cue_1', 1, 'act_1', null, 'agent_1', $at));
         $stream = $composite->stream();
 

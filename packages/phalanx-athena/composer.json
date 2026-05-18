@@ -14,14 +14,16 @@
     "require": {
         "php": "^8.4",
         "phalanx-php/aegis": "^0.6",
+        "phalanx-php/iris": "^0.6",
         "phalanx-php/panoply": "^0.6",
+        "phalanx-php/styx": "^0.6",
+        "phalanx-php/surreal": "^0.6",
         "symfony/uid": "^7.0 || ^8.0"
     },
     "suggest": {
-        "phalanx-php/archon": "For CLI and REPL surfaces over Athena activities",
-        "phalanx-php/iris": "For OpenSwoole-native HTTP and streaming transports",
-        "phalanx-php/styx": "For future host-generated cue stream composition",
-        "phalanx-php/surreal": "For durable activity, grant, artifact, and knowledge persistence"
+        "phalanx-php/archon": "CLI agent commands via Archon command lifecycle",
+        "phalanx-php/hermes": "Real-time agent sessions over WebSocket",
+        "phalanx-php/theatron": "TUI rendering of agent work via CompositeStream"
     },
     "autoload": {
         "psr-4": {

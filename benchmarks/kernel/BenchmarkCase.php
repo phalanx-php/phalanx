@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Benchmarks\Kernel;
 
 use Phalanx\Application;
+use Phalanx\Benchmarks\Kit\BenchmarkCase;
 use Phalanx\Runtime\Memory\RuntimeTableStats;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Supervisor\InProcessLedger;
@@ -13,14 +14,8 @@ use Phalanx\Supervisor\SwooleTableLedger;
 use Phalanx\Supervisor\TaskTreeFormatter;
 use RuntimeException;
 
-interface BenchmarkCase
+interface KernelBenchmarkCase extends BenchmarkCase
 {
-    public function name(): string;
-
-    public function iterations(): int;
-
-    public function warmups(): int;
-
     public function run(BenchmarkContext $context): void;
 
     public function cleanup(): void;
@@ -33,13 +28,6 @@ final class BenchmarkContext
     /** @var array<int, Application> */
     private array $apps = [];
 
-    private function track(Application $app): Application
-    {
-        $this->apps[spl_object_id($app)] = $app;
-
-        return $app;
-    }
-
     public function app(?LedgerStorage $ledger = null): Application
     {
         if ($ledger === null) {
@@ -50,6 +38,14 @@ final class BenchmarkContext
 
         return $this->track(Application::starting([])
             ->withLedger($ledger)
+            ->compile());
+    }
+
+    public function appWithPoolCapacities(int $taskRun, int $scopeFrame, int $token): Application
+    {
+        return $this->track(Application::starting([])
+            ->withLedger(new InProcessLedger())
+            ->withPoolCapacities($taskRun, $scopeFrame, $token)
             ->compile());
     }
 
@@ -131,136 +127,21 @@ final class BenchmarkContext
         $this->apps = [];
         $this->defaultApp = null;
     }
-}
 
-final class BenchmarkResult
-{
-    /**
-     * @param list<int> $samplesNs
-     * @param array<string, string> $metadata
-     * @param array<string, mixed> $diagnostics
-     */
-    public function __construct(
-        private(set) string $case,
-        private(set) int $iterations,
-        private(set) int $totalNs,
-        private(set) int $zendMemoryBefore,
-        private(set) int $zendMemoryAfter,
-        private(set) int $realMemoryBefore,
-        private(set) int $realMemoryAfter,
-        private(set) int $memoryPeak,
-        private(set) int $zendMemoryPeak,
-        private(set) int $gcRootsBefore,
-        private(set) int $gcRootsAfter,
-        private(set) array $samplesNs,
-        private(set) array $metadata,
-        private(set) array $diagnostics,
-    ) {
-    }
-
-    public function meanUs(): float
+    private function track(Application $app): Application
     {
-        return ($this->totalNs / max(1, $this->iterations)) / 1_000;
-    }
+        $this->apps[spl_object_id($app)] = $app;
 
-    public function p50Us(): float
-    {
-        return $this->percentileUs(0.50);
-    }
-
-    public function p95Us(): float
-    {
-        return $this->percentileUs(0.95);
-    }
-
-    public function p99Us(): float
-    {
-        return $this->percentileUs(0.99);
-    }
-
-    public function opsPerSec(): float
-    {
-        if ($this->totalNs === 0) {
-            return 0.0;
-        }
-
-        return $this->iterations / ($this->totalNs / 1_000_000_000);
-    }
-
-    public function memoryDeltaKb(): float
-    {
-        return $this->realMemoryDeltaKb();
-    }
-
-    public function zendMemoryDeltaKb(): float
-    {
-        return ($this->zendMemoryAfter - $this->zendMemoryBefore) / 1024;
-    }
-
-    public function realMemoryDeltaKb(): float
-    {
-        return ($this->realMemoryAfter - $this->realMemoryBefore) / 1024;
-    }
-
-    public function gcRootsDelta(): int
-    {
-        return $this->gcRootsAfter - $this->gcRootsBefore;
-    }
-
-    /** @return array<string, mixed> */
-    public function toArray(): array
-    {
-        return [
-            'case' => $this->case,
-            'iterations' => $this->iterations,
-            'total_ns' => $this->totalNs,
-            'mean_us' => $this->meanUs(),
-            'p50_us' => $this->p50Us(),
-            'p95_us' => $this->p95Us(),
-            'p99_us' => $this->p99Us(),
-            'ops_sec' => $this->opsPerSec(),
-            'memory_before' => $this->realMemoryBefore,
-            'memory_after' => $this->realMemoryAfter,
-            'memory_peak' => $this->memoryPeak,
-            'memory_delta_kb' => $this->memoryDeltaKb(),
-            'zend_memory_before' => $this->zendMemoryBefore,
-            'zend_memory_after' => $this->zendMemoryAfter,
-            'zend_memory_peak' => $this->zendMemoryPeak,
-            'zend_memory_delta_kb' => $this->zendMemoryDeltaKb(),
-            'real_memory_before' => $this->realMemoryBefore,
-            'real_memory_after' => $this->realMemoryAfter,
-            'real_memory_peak' => $this->memoryPeak,
-            'real_memory_delta_kb' => $this->realMemoryDeltaKb(),
-            'gc_roots_before' => $this->gcRootsBefore,
-            'gc_roots_after' => $this->gcRootsAfter,
-            'gc_roots_delta' => $this->gcRootsDelta(),
-            'diagnostics' => $this->diagnostics,
-            'metadata' => $this->metadata,
-        ];
-    }
-
-    private function percentileUs(float $percentile): float
-    {
-        if ($this->samplesNs === []) {
-            return 0.0;
-        }
-
-        $samples = $this->samplesNs;
-        sort($samples);
-
-        $index = (int) ceil($percentile * count($samples)) - 1;
-        $index = max(0, min($index, count($samples) - 1));
-
-        return $samples[$index] / 1_000;
+        return $app;
     }
 }
 
-abstract class AbstractBenchmarkCase implements BenchmarkCase
+abstract class AbstractBenchmarkCase implements KernelBenchmarkCase
 {
     public function __construct(
-        private readonly string $caseName,
-        private readonly int $caseIterations,
-        private readonly int $caseWarmups = 5,
+        private(set) string $caseName,
+        private(set) int $caseIterations,
+        private(set) int $caseWarmups = 5,
     ) {
     }
 
