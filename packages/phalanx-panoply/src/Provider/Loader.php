@@ -18,6 +18,12 @@ use Symfony\Component\Yaml\Yaml;
  * violations before throwing {@see ValidationError}, so callers see the
  * complete error surface in one pass.
  *
+ * YAML co-location convention: vendor-specific YAMLs live in their vendor
+ * namespace directory (e.g., `Provider/HuggingFace/huggingface-dedicated.panoply.yaml`)
+ * even when they reuse a shared `wire_translator` (e.g., `OpenAI\ChatProvider`).
+ * The `Provider/OpenAICompatible/` umbrella is the exception — it covers
+ * providers that are wire-equivalent to OpenAI and have no vendor-specific tier.
+ *
  * Validation rules:
  * - Required top-level keys: id, display_name, models, capabilities,
  *   transport, wire_translator

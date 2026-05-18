@@ -77,6 +77,7 @@ final class ChatCueMapper
 
     public function __construct(
         private(set) Invocation $invocation,
+        private(set) string $providerId = 'openai',
     ) {
     }
 
@@ -129,7 +130,7 @@ final class ChatCueMapper
         if (!$this->started && isset($delta['role'])) {
             $this->started = true;
             $model         = (string) ($data['model'] ?? '');
-            yield $this->resolved('openai', $model, $now);
+            yield $this->resolved($this->providerId, $model, $now);
             yield $this->invocationStarted($now);
         }
 

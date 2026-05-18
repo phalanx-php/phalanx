@@ -1,0 +1,37 @@
+id: huggingface
+display_name: "Hugging Face Inference"
+base_url: "https://api-inference.huggingface.co"
+models:
+  - name: meta-llama-3.1-70b-instruct
+    model_id: meta-llama/Meta-Llama-3.1-70B-Instruct
+    aliases: ["llama-70b", "llama-3.1"]
+    capabilities:
+      closed: ["tool-use"]
+      custom: []
+    input_pricing: 0
+    output_pricing: 0
+  - name: mistral-7b-instruct
+    model_id: mistralai/Mistral-7B-Instruct-v0.3
+    aliases: ["mistral", "mistral-7b"]
+    capabilities:
+      closed: []
+      custom: []
+    input_pricing: 0
+    output_pricing: 0
+  - name: qwen-2.5-72b-instruct
+    model_id: Qwen/Qwen2.5-72B-Instruct
+    aliases: ["qwen", "qwen-72b"]
+    capabilities:
+      closed: ["tool-use"]
+      custom: []
+    input_pricing: 0
+    output_pricing: 0
+capabilities:
+  closed: ["tool-use"]
+  custom: []
+transport:
+  streaming: true
+  cancellable: true
+  backpressure: true
+  partial_json: true
+wire_translator: "Phalanx\\Panoply\\Provider\\HuggingFace\\InferenceProvider"

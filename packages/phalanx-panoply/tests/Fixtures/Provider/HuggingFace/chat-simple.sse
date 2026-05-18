@@ -1,0 +1,9 @@
+data: {"id":"chatcmpl-POSEIDON01","object":"chat.completion.chunk","model":"meta-llama/Meta-Llama-3.1-70B-Instruct","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-POSEIDON01","object":"chat.completion.chunk","model":"meta-llama/Meta-Llama-3.1-70B-Instruct","choices":[{"index":0,"delta":{"content":"Themistocles "},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-POSEIDON01","object":"chat.completion.chunk","model":"meta-llama/Meta-Llama-3.1-70B-Instruct","choices":[{"index":0,"delta":{"content":"commands the fleet."},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-POSEIDON01","object":"chat.completion.chunk","model":"meta-llama/Meta-Llama-3.1-70B-Instruct","choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":14,"completion_tokens":4,"total_tokens":18}}
+
+data: [DONE]

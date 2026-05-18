@@ -466,6 +466,24 @@ final class ChatCueMapperTest extends TestCase
         self::assertSame(3, $cues2[1]->sequence);
     }
 
+    #[Test]
+    public function providerIdPropagatesToResolvedCue(): void
+    {
+        // Proves that constructing with a custom providerId is reflected in the
+        // emitted Resolved cue — the mechanism HuggingFace\InferenceProvider uses.
+        $mapper = new ChatCueMapper(invocation: self::invocation(), providerId: 'huggingface');
+        $event  = new Event('', [
+            'model'   => 'meta-llama/Meta-Llama-3.1-70B-Instruct',
+            'choices' => [['index' => 0, 'delta' => ['role' => 'assistant'], 'finish_reason' => null]],
+        ]);
+
+        $cues = iterator_to_array($mapper->translate($event), preserve_keys: false);
+
+        $resolved = array_values(array_filter($cues, static fn ($c) => $c instanceof Resolved));
+        self::assertCount(1, $resolved);
+        self::assertSame('huggingface', $resolved[0]->provider);
+    }
+
     private static function fixture(): ChatCueMapper
     {
         return new ChatCueMapper(self::invocation());
