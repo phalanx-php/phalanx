@@ -277,7 +277,7 @@ YAML;
     #[Test]
     public function fakeYamlRoundTrip(): void
     {
-        $path   = dirname(__DIR__, 3) . '/src/Panoply/Provider/Fake/fake.panoply.yaml';
+        $path   = dirname(__DIR__, 3) . '/src/Provider/Fake/fake.panoply.yaml';
         $config = Loader::fromFile($path);
 
         self::assertSame('fake', $config->id);

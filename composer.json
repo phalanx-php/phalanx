@@ -11,13 +11,13 @@
     "type": "project",
     "require": {
         "php": "^8.4",
-
         "mlocati/ip-lib": "^1.22",
         "nikic/fast-route": "^2.0",
         "openswoole/core": "^26.2",
         "symfony/console": "^7.0 || ^8.0",
         "symfony/process": "^7.0 || ^8.0",
-        "symfony/uid": "^7.0 || ^8.0"
+        "symfony/uid": "^7.0 || ^8.0",
+        "symfony/yaml": "^8.0"
     },
     "require-dev": {
         "guzzlehttp/guzzle": "^7.10",
@@ -49,7 +49,7 @@
             "Phalanx\\Grammata\\": "packages/phalanx-grammata/src/",
             "Phalanx\\Enigma\\": "packages/phalanx-enigma/src/",
             "Phalanx\\Eidolon\\": "packages/phalanx-eidolon/src/",
-            "Phalanx\\Panoply\\": "packages/phalanx-panoply/src/Panoply/",
+            "Phalanx\\Panoply\\": "packages/phalanx-panoply/src/",
             "Phalanx\\PHPStan\\": "packages/phalanx-phpstan/src/",
             "Phalanx\\Skopos\\": "packages/phalanx-skopos/src/",
             "Phalanx\\Cli\\": "packages/phalanx-cli/src/"
@@ -135,6 +135,7 @@
         "cs:fix": "php vendor/bin/phpcbf --standard=packages/phalanx-aegis/phpcs.xml",
         "bench:aegis": "php -d memory_limit=512M benchmarks/kernel/run.php",
         "bench:stoa": "php -d memory_limit=512M benchmarks/http/run.php",
+        "bench:wrk": "php -d memory_limit=512M benchmarks/http/server.php",
         "demo:aegis": ["@demo:aegis:runtime", "@demo:aegis:supervision", "@demo:aegis:cancellation", "@demo:aegis:singleflight", "@demo:aegis:memory"],
         "demo:aegis:runtime": "php demos/aegis/01-runtime-policy/demo.php",
         "demo:aegis:supervision": "php demos/aegis/02-scope-supervision/demo.php",

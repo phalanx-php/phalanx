@@ -192,6 +192,6 @@ final class BundledYamlsLoadTest extends TestCase
 
     private static function yamlPath(string $file): string
     {
-        return dirname(__DIR__, 4) . '/src/Panoply/Provider/OpenAICompatible/' . $file;
+        return dirname(__DIR__, 4) . '/src/Provider/OpenAICompatible/' . $file;
     }
 }
