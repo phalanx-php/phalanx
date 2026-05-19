@@ -154,8 +154,11 @@ final class Settings implements SettingsInterface
             return [[], false];
         }
 
-        // Check for yosymfony/toml (most common PHP TOML library).
-        if (class_exists('Yosymfony\Toml\Toml')) {
+        // yosymfony/toml v1.0.4 is the only mature PHP TOML parser on Packagist;
+        // abandoned 2018, emits PHP 8.4 deprecation. Users may install
+        // a maintained replacement and Settings will detect either parser via
+        // class_exists, but currently only yosymfony/toml's API is supported.
+        if (class_exists(\Yosymfony\Toml\Toml::class)) {
             try {
                 /** @var array<string, mixed> $parsed */
                 $parsed = \Yosymfony\Toml\Toml::parse(file_get_contents($path) ?: '');

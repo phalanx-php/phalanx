@@ -18,6 +18,7 @@ use Phalanx\Panoply\Cue\Usage\FinalUsage;
 use Phalanx\Panoply\Effect\Kind;
 use Phalanx\Panoply\Id;
 use Phalanx\Panoply\Invocation;
+use Phalanx\Panoply\Provider\NdjsonStreamingCueMapper;
 
 /**
  * Stateful mapper that translates Ollama NDJSON lines into panoply
@@ -35,7 +36,7 @@ use Phalanx\Panoply\Invocation;
  * Final — sealed stateful mapper; the sequence counter and start-state
  * flag are correctness properties that subclasses cannot safely alter.
  */
-final class CueMapper
+final class CueMapper implements NdjsonStreamingCueMapper
 {
     private int $sequence = 0;
 
@@ -60,9 +61,9 @@ final class CueMapper
     }
 
     /**
-     * Translate one NDJSON line (decoded array) into zero or more Cues.
+     * Translate one Ollama NDJSON line (decoded array) into zero or more Cues.
      *
-     * @param array<string, mixed> $line
+     * @param array<string, mixed> $line Decoded NDJSON line from the Ollama wire format.
      * @return \Generator<int, Cue>
      */
     public function translate(array $line): \Generator

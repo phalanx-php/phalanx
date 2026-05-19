@@ -241,8 +241,11 @@ final class SettingsTest extends TestCase
     #[Test]
     public function tomlAvailableReflectsActualExtensionState(): void
     {
-        $settings = self::noopSettings();
-        $extensionPresent = class_exists('Yosymfony\Toml\Toml');
+        // Use loadedSettings() (real file path) so the parser presence can
+        // actually be reflected — noopSettings() uses a non-existent path and
+        // returns tomlAvailable:false regardless of parser state.
+        $settings = self::loadedSettings();
+        $extensionPresent = class_exists(\Yosymfony\Toml\Toml::class);
 
         self::assertSame($extensionPresent, $settings->tomlAvailable);
     }

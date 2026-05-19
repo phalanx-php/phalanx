@@ -19,6 +19,7 @@ use Phalanx\Panoply\Cue\Usage\FinalUsage;
 use Phalanx\Panoply\Effect\Kind;
 use Phalanx\Panoply\Id;
 use Phalanx\Panoply\Invocation;
+use Phalanx\Panoply\Provider\SseStreamingCueMapper;
 use Phalanx\Panoply\Sse\Event;
 
 /**
@@ -35,7 +36,7 @@ use Phalanx\Panoply\Sse\Event;
  * Final — sealed stateful mapper; the sequence counter and effect-id registry
  * are correctness properties that subclasses cannot safely alter.
  */
-final class ResponsesCueMapper
+final class ResponsesCueMapper implements SseStreamingCueMapper
 {
     private int $sequence = 0;
 
@@ -69,7 +70,7 @@ final class ResponsesCueMapper
     }
 
     /**
-     * Translate one SSE event into zero or more Cues.
+     * Translate one OpenAI Responses API SSE event into zero or more Cues.
      *
      * @return \Generator<int, Cue>
      */

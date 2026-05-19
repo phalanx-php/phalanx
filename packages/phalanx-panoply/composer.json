@@ -32,7 +32,8 @@
     "phpunit/phpunit": "^13.0",
     "rector/rector": "^2.0",
     "slevomat/coding-standard": "^8.15",
-    "squizlabs/php_codesniffer": "^3.10 || ^4.0"
+    "squizlabs/php_codesniffer": "^3.10 || ^4.0",
+    "yosymfony/toml": "^1.0"
   },
   "suggest": {
     "phalanx-php/aegis": "Required for the Aegis Runtime adapter; enables scope-bound cancellation and cleanup",
@@ -41,7 +42,8 @@
     "phalanx-php/grammata": "Required for HomeDir parsers; managed file I/O with FilePool",
     "phalanx-php/archon": "Required for the panoply:agents:scan Archon command",
     "ext-sqlite3": "Required for Codex HomeDir sqlite-backed history",
-    "ext-openswoole": "Required for the Iris transport and Aegis runtime"
+    "ext-openswoole": "Required for the Iris transport and Aegis runtime",
+    "yosymfony/toml": "Required for reading Codex config.toml settings; without it Settings operates in no-op mode and asString/asInt/etc. throw"
   },
   "scripts": {
     "rector": "rector process",

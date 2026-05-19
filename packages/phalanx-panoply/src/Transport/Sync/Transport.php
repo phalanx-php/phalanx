@@ -56,8 +56,12 @@ final class Transport implements TransportContract
                     $chunks[] = $data;
                     return strlen($data);
                 },
-                // phpcs:ignore Generic.Files.LineLength.TooLong
-                CURLOPT_PROGRESSFUNCTION => static fn(\CurlHandle $ch, int $downloadTotal, int $downloaded, int $uploadTotal, int $uploaded): int => $runtime->isCancelled() ? 1 : 0,
+                CURLOPT_PROGRESSFUNCTION => static fn(
+                    \CurlHandle $ch,
+                    int $downloadTotal,
+                    int $downloaded,
+                    int $uploadTotal,
+                    int $uploaded): int => $runtime->isCancelled() ? 1 : 0,
             ]);
 
             if ($request->method === 'POST') {

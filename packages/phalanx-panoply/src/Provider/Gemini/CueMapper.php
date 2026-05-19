@@ -18,6 +18,7 @@ use Phalanx\Panoply\Cue\Usage\FinalUsage;
 use Phalanx\Panoply\Effect\Kind;
 use Phalanx\Panoply\Id;
 use Phalanx\Panoply\Invocation;
+use Phalanx\Panoply\Provider\SseStreamingCueMapper;
 use Phalanx\Panoply\Sse\Event;
 
 /**
@@ -49,7 +50,7 @@ use Phalanx\Panoply\Sse\Event;
  * Final — sealed stateful mapper; the sequence counter and completion guard
  * are correctness properties that subclasses cannot safely alter.
  */
-final class CueMapper
+final class CueMapper implements SseStreamingCueMapper
 {
     private int $sequence = 0;
 
@@ -81,7 +82,7 @@ final class CueMapper
     }
 
     /**
-     * Translate one SSE event into zero or more Cues.
+     * Translate one Gemini SSE event into zero or more Cues.
      *
      * @return \Generator<int, Cue>
      */

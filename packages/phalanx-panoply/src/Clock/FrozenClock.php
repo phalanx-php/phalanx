@@ -8,7 +8,7 @@ use Phalanx\Panoply\Clock;
 use Phalanx\Panoply\Duration;
 
 /**
- * Test seam. Holds a fixed microsecond counter that advances only when
+ * Test seam only. Holds a fixed microsecond counter that advances only when
  * {@see self::advance()} or {@see self::set()} are called explicitly.
  *
  * `nowMicroseconds()` is the controllable monotonic seam used by coalescing
@@ -22,11 +22,19 @@ use Phalanx\Panoply\Duration;
  * synchronized with the production `SystemClock::now()` wall-clock source —
  * the two sources are intentionally independent (see {@see Clock} docblock).
  *
+ * WARNING — {@see self::set()} may move time backward (non-monotonic) on
+ * purpose to support scenario-style tests. Do NOT use this class in
+ * production code or in any path that depends on the Clock monotonicity
+ * guarantee. Production code must construct {@see \Phalanx\Panoply\Clock\SystemClock},
+ * which uses `hrtime(true)` and is strictly non-decreasing.
+ *
  * The backing field is `private int` — mutable by design. The Clock
  * interface is a test seam, not a value object, so `readonly` and
  * `private(set)` are intentionally absent.
  *
  * Final — sealed against subclassing; not a production type.
+ *
+ * @internal
  */
 final class FrozenClock implements Clock
 {
