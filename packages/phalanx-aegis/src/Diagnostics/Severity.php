@@ -22,7 +22,6 @@ enum Severity: string
 
     /**
      * Returns true when a failed probe with this severity gates health.
-     * Future cases default to non-gating unless explicitly opted in here.
      */
     public function gates(): bool
     {

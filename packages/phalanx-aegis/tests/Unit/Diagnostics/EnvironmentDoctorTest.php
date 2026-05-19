@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Tests\Unit\Diagnostics;
 
 use Phalanx\Diagnostics\DoctorCheck;
+use Phalanx\Diagnostics\DoctorReport;
 use Phalanx\Diagnostics\EnvironmentDoctor;
 use Phalanx\Diagnostics\Severity;
 use Phalanx\Runtime\Identity\AegisCounterSid;
@@ -210,20 +211,18 @@ final class EnvironmentDoctorTest extends TestCase
 
     public function testPostgresqlProbeCarriesOptionalSeverity(): void
     {
-        $report = new EnvironmentDoctor()->check();
-
-        // The check object carries severity; the toArray() representation carries the string value.
-        // Assert on the object directly by iterating the report.
-        $pgCheck = null;
-        foreach ($report as $check) {
-            if ($check->name === 'openswoole.postgresql') {
-                $pgCheck = $check;
-                break;
-            }
-        }
+        $pgCheck = self::findCheck(new EnvironmentDoctor()->check(), 'openswoole.postgresql');
 
         self::assertNotNull($pgCheck, 'openswoole.postgresql probe not found in report');
         self::assertSame(Severity::Optional, $pgCheck->severity);
+    }
+
+    public function testCoroutineProbeCarriesRequiredSeverity(): void
+    {
+        $coroutineCheck = self::findCheck(new EnvironmentDoctor()->check(), 'openswoole.coroutine');
+
+        self::assertNotNull($coroutineCheck, 'openswoole.coroutine probe not found in report');
+        self::assertSame(Severity::Required, $coroutineCheck->severity);
     }
 
     #[Test]
@@ -256,5 +255,16 @@ final class EnvironmentDoctorTest extends TestCase
         }
 
         self::fail("Missing doctor check {$name}.");
+    }
+
+    private static function findCheck(DoctorReport $report, string $name): ?DoctorCheck
+    {
+        foreach ($report as $check) {
+            if ($check->name === $name) {
+                return $check;
+            }
+        }
+
+        return null;
     }
 }

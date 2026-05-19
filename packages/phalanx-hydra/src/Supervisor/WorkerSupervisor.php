@@ -106,18 +106,6 @@ class WorkerSupervisor
 
     private function createDispatcher(): Dispatcher
     {
-        // Force-load both dispatcher classes BEFORE the match expression. The match
-        // body lazily references whichever arm fires; in the OpenSwoole parallel
-        // coroutine context where this method runs (ExecutionLifecycleScope::parallel),
-        // lazy autoload through Symfony's ErrorHandler can fail to resolve cold-path
-        // classes even when they are PSR-4 autoloadable in the parent process.
-        // Without this pre-warm, the cold-path arm raises "Class not found" at match
-        // dispatch time even though PSR-4 resolution is correct in a non-coroutine
-        // context. Calling class_exists() with autoload=true warms the autoloader
-        // without instantiation overhead.
-        \class_exists(RoundRobinDispatcher::class, true);
-        \class_exists(LeastMailboxDispatcher::class, true);
-
         return match ($this->config->dispatchStrategy) {
             DispatchStrategy::RoundRobin => new RoundRobinDispatcher($this->agents),
             DispatchStrategy::LeastMailbox => new LeastMailboxDispatcher($this->agents),

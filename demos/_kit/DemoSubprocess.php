@@ -7,6 +7,7 @@ namespace Phalanx\Demos\Kit;
 use Closure;
 use OpenSwoole\Coroutine;
 use OpenSwoole\Process;
+use Phalanx\System\PhpExtensionFlags;
 
 /**
  * Subprocess orchestration for demos. Replaces the Process+SIGTERM/SIGKILL
@@ -65,47 +66,12 @@ final class DemoSubprocess
      * process's loaded shared extensions. Required when an exec'd child boots a
      * Phalanx kernel that depends on extensions like openswoole.
      *
-     * Iterates a fixed list of extensions Phalanx kernels commonly require
-     * (openswoole, sqlite3) and adds `-d extension=<path>` for each that the
-     * parent has loaded. Resolves the .so path by checking the standard
-     * extension_dir first, then falling back to the Homebrew PECL layout
-     * (/opt/homebrew/lib/php/pecl/<BUILD_ID>/) which is common on macOS when
-     * the PHP binary and PECL-installed extensions live in separate trees.
-     *
      * @param list<string> $scriptArgs
      * @return array{0: string, 1: list<string>}
      */
     public static function phpCommand(string $scriptPath, array $scriptArgs = []): array
     {
-        $extDir  = rtrim((string) ini_get('extension_dir'), '/\\');
-        $buildId = basename($extDir); // e.g. "no-debug-non-zts-20240924"
-        $args    = [];
-
-        foreach (['openswoole', 'sqlite3'] as $extension) {
-            if (!extension_loaded($extension)) {
-                continue;
-            }
-
-            // Primary: standard extension_dir (works when PECL and PHP share a tree)
-            $primary = $extDir . DIRECTORY_SEPARATOR . $extension . '.so';
-            if (is_file($primary)) {
-                $args[] = '-d';
-                $args[] = "extension={$primary}";
-                continue;
-            }
-
-            // Fallback: Homebrew PECL layout — the build ID suffix inside the
-            // standard extension_dir path also appears in the PECL tree. Strip
-            // the "no-debug-non-zts-" prefix to get the API version date stamp
-            // that Homebrew uses as the PECL directory name.
-            $apiDate  = ltrim($buildId, 'no-debug-non-zts-');
-            $peclPath = '/opt/homebrew/lib/php/pecl/' . $apiDate . '/' . $extension . '.so';
-            if (is_file($peclPath)) {
-                $args[] = '-d';
-                $args[] = "extension={$peclPath}";
-            }
-        }
-
+        $args   = PhpExtensionFlags::forLoaded(['openswoole', 'sqlite3']);
         $args[] = $scriptPath;
         foreach ($scriptArgs as $arg) {
             $args[] = $arg;
@@ -186,7 +152,7 @@ final class DemoSubprocess
             if ($status !== false) {
                 return;
             }
-            usleep(20_000);
+            Coroutine::usleep(20_000);
         } while (microtime(true) < $deadline);
 
         Process::kill($this->pid, SIGKILL);

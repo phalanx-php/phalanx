@@ -17,7 +17,7 @@ use Phalanx\Service\Services;
  * so interactive prompts short-circuit to their defaults and the demo
  * produces deterministic output for assertion.
  */
-class InputBundle extends ServiceBundle
+final class InputBundle extends ServiceBundle
 {
     public function __construct(
         private StreamOutput $output,
