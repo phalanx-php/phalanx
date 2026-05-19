@@ -91,7 +91,7 @@ final class RuntimeTest extends TestCase
         $adapter = new Runtime(self::stub());
 
         $adapter->throwIfCancelled();
-        self::assertTrue(true);
+        self::addToAssertionCount(1); // No exception thrown — test passes by reaching this line.
     }
 
     #[Test]
@@ -179,6 +179,9 @@ final class RuntimeTest extends TestCase
      * {@see CancellationToken}. The stub's `call()` delegates to the work
      * closure directly; `onDispose()` accumulates callbacks and `dispose()`
      * runs them LIFO.
+     */
+    /**
+     * @return TaskScope&object{lastWaitReason: ?WaitReason}
      */
     private static function stub(?CancellationToken $token = null, bool $disposed = false): TaskScope
     {

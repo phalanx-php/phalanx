@@ -49,6 +49,7 @@ final class CueMapperTest extends TestCase
 
         $cues = iterator_to_array($mapper->translate($line), preserve_keys: false);
 
+        self::assertInstanceOf(Resolved::class, $cues[0]);
         self::assertSame('ollama', $cues[0]->provider);
         self::assertSame('llama3.1', $cues[0]->model);
     }

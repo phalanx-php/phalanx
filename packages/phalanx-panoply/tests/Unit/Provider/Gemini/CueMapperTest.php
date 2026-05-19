@@ -391,6 +391,7 @@ final class CueMapperTest extends TestCase
     }
 
     /**
+     * @param array<string, mixed> $data
      * @return list<\Phalanx\Panoply\Cue>
      */
     private static function translateChunk(CueMapper $mapper, array $data): array

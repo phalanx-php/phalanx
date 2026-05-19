@@ -223,6 +223,7 @@ final class ChatProviderTest extends TestCase
         return ['POST http://localhost:11434/api/chat' => $chunks];
     }
 
+    /** @param array<string, list<string>> $script */
     private static function provider(array $script, ?ChatOptions $options = null): ChatProvider
     {
         return new ChatProvider(

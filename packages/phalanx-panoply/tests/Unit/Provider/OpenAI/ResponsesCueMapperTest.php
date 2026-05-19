@@ -54,6 +54,7 @@ final class ResponsesCueMapperTest extends TestCase
 
         $cues = iterator_to_array($mapper->translate($event), preserve_keys: false);
 
+        self::assertInstanceOf(Resolved::class, $cues[0]);
         self::assertSame('openai', $cues[0]->provider);
         self::assertSame('o3', $cues[0]->model);
     }

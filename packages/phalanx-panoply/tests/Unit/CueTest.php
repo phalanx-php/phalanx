@@ -38,11 +38,13 @@ final class CueTest extends TestCase
     #[Test]
     public function instanceofNarrowsConcreteSubclass(): void
     {
-        $cue = self::tokenDelta();
+        // Construct as the base type so instanceof narrowing is meaningful.
+        $cue = self::cueBase();
 
+        // Check negative case first (before PHPStan narrows the type via assertInstanceOf).
+        self::assertNotInstanceOf(Activity\Started::class, $cue);
         self::assertInstanceOf(Cue::class, $cue);
         self::assertInstanceOf(Output\TokenDelta::class, $cue);
-        self::assertNotInstanceOf(Activity\Started::class, $cue);
     }
 
     #[Test]
@@ -82,6 +84,12 @@ final class CueTest extends TestCase
 
         self::assertSame(64, strlen($hash));
         self::assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $hash);
+    }
+
+    /** Returns a TokenDelta typed as the base Cue class so instanceof assertions are non-trivial. */
+    private static function cueBase(): Cue
+    {
+        return self::tokenDelta();
     }
 
     private static function tokenDelta(string $text = 'hello '): Output\TokenDelta

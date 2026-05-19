@@ -58,6 +58,8 @@ final class CoalescingTest extends TestCase
         $cues = $stream->toArray();
 
         self::assertCount(2, $cues);
+        self::assertInstanceOf(TokenDelta::class, $cues[0]);
+        self::assertInstanceOf(TokenDelta::class, $cues[1]);
         self::assertSame(Channel::Message, $cues[0]->channel);
         self::assertSame(Channel::Thinking, $cues[1]->channel);
     }
@@ -78,6 +80,8 @@ final class CoalescingTest extends TestCase
         $cues = $stream->coalescing(Duration::ms(50), $clock)->toArray();
 
         self::assertCount(2, $cues);
+        self::assertInstanceOf(TokenDelta::class, $cues[0]);
+        self::assertInstanceOf(TokenDelta::class, $cues[1]);
         self::assertSame('Achilles', $cues[0]->text);
         self::assertSame(' charges.', $cues[1]->text);
     }
@@ -230,6 +234,8 @@ final class CoalescingTest extends TestCase
         // elapsed == window (50 µs × 1000 = 50 000 µs), condition is `< window`
         // so the second delta falls outside and flushes the buffer.
         self::assertCount(2, $cues);
+        self::assertInstanceOf(TokenDelta::class, $cues[0]);
+        self::assertInstanceOf(TokenDelta::class, $cues[1]);
         self::assertSame('Achilles', $cues[0]->text);
         self::assertSame(' runs.', $cues[1]->text);
     }
@@ -253,6 +259,10 @@ final class CoalescingTest extends TestCase
         $cues = $stream->toArray();
 
         self::assertCount(4, $cues);
+        self::assertInstanceOf(TokenDelta::class, $cues[0]);
+        self::assertInstanceOf(TokenDelta::class, $cues[1]);
+        self::assertInstanceOf(TokenDelta::class, $cues[2]);
+        self::assertInstanceOf(TokenDelta::class, $cues[3]);
         self::assertSame('Leonidas', $cues[0]->text);
         self::assertSame('ponders.', $cues[1]->text);
         self::assertSame('Commands.', $cues[2]->text);
@@ -301,6 +311,9 @@ final class CoalescingTest extends TestCase
         $cues = $stream->toArray();
 
         self::assertCount(3, $cues);
+        self::assertInstanceOf(TokenDelta::class, $cues[0]);
+        self::assertInstanceOf(TokenDelta::class, $cues[1]);
+        self::assertInstanceOf(TokenDelta::class, $cues[2]);
         self::assertSame(Channel::Message, $cues[0]->channel);
         self::assertSame(Channel::Thinking, $cues[1]->channel);
         self::assertSame(Channel::Reasoning, $cues[2]->channel);
@@ -323,6 +336,9 @@ final class CoalescingTest extends TestCase
         $cues = $stream->toArray();
 
         self::assertCount(3, $cues, 'Zero-window coalescing must emit each delta separately');
+        self::assertInstanceOf(TokenDelta::class, $cues[0]);
+        self::assertInstanceOf(TokenDelta::class, $cues[1]);
+        self::assertInstanceOf(TokenDelta::class, $cues[2]);
         self::assertSame('First.', $cues[0]->text);
         self::assertSame(' Second.', $cues[1]->text);
         self::assertSame(' Third.', $cues[2]->text);

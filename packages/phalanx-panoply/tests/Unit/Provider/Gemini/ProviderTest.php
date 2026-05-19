@@ -80,6 +80,7 @@ final class ProviderTest extends TestCase
         $stops = $stream->ofKind(TokenStop::class)->toArray();
 
         self::assertCount(1, $stops);
+        self::assertInstanceOf(TokenStop::class, $stops[0]);
         self::assertSame(StopReason::EndOfTurn, $stops[0]->reason);
     }
 
@@ -104,6 +105,7 @@ final class ProviderTest extends TestCase
         $stops = $stream->ofKind(TokenStop::class)->toArray();
 
         self::assertCount(1, $stops);
+        self::assertInstanceOf(TokenStop::class, $stops[0]);
         self::assertSame(StopReason::EndOfTurn, $stops[0]->reason);
     }
 
@@ -131,6 +133,7 @@ final class ProviderTest extends TestCase
         $failed = array_values(array_filter($cues, static fn ($c) => $c instanceof Failed));
 
         self::assertCount(1, $failed);
+        self::assertInstanceOf(Failed::class, $failed[0]);
         self::assertStringContainsString('Hephaestus', $failed[0]->reason);
         // Failed is terminal — no Completed must follow it.
         self::assertCount(0, array_filter($cues, static fn ($c) => $c instanceof Completed));
@@ -161,6 +164,7 @@ final class ProviderTest extends TestCase
         $resolved = $stream->ofKind(Resolved::class)->toArray();
 
         self::assertCount(1, $resolved);
+        self::assertInstanceOf(Resolved::class, $resolved[0]);
         self::assertSame('gemini', $resolved[0]->provider);
     }
 
@@ -239,6 +243,7 @@ final class ProviderTest extends TestCase
         self::assertTrue($runtime->isCancelled());
     }
 
+    /** @param array<string, list<string>> $script */
     private static function provider(array $script, ?Options $options = null): Provider
     {
         return new Provider(

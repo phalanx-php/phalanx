@@ -24,7 +24,7 @@ final class SqliteReaderTest extends TestCase
     #[RequiresPhpExtension('sqlite3')]
     public function readsAllRowsFromDatabase(): void
     {
-        $rows = iterator_to_array(SqliteReader::read($this->dbPath));
+        $rows = iterator_to_array(SqliteReader::read($this->path()));
 
         self::assertCount(5, $rows);
     }
@@ -33,7 +33,7 @@ final class SqliteReaderTest extends TestCase
     #[RequiresPhpExtension('sqlite3')]
     public function rowsAreOrderedByTimestamp(): void
     {
-        $rows = iterator_to_array(SqliteReader::read($this->dbPath));
+        $rows = iterator_to_array(SqliteReader::read($this->path()));
 
         $timestamps = array_column($rows, 'ts');
         $sorted = $timestamps;
@@ -46,7 +46,7 @@ final class SqliteReaderTest extends TestCase
     #[RequiresPhpExtension('sqlite3')]
     public function rowsContainExpectedColumns(): void
     {
-        $rows = iterator_to_array(SqliteReader::read($this->dbPath));
+        $rows = iterator_to_array(SqliteReader::read($this->path()));
 
         self::assertArrayHasKey('id', $rows[0]);
         self::assertArrayHasKey('ts', $rows[0]);
@@ -60,7 +60,7 @@ final class SqliteReaderTest extends TestCase
     #[RequiresPhpExtension('sqlite3')]
     public function firstRowIsSystemMessage(): void
     {
-        $rows = iterator_to_array(SqliteReader::read($this->dbPath));
+        $rows = iterator_to_array(SqliteReader::read($this->path()));
 
         self::assertSame('message', $rows[0]['type']);
         self::assertSame('system', $rows[0]['role']);
@@ -79,7 +79,7 @@ final class SqliteReaderTest extends TestCase
     #[RequiresPhpExtension('sqlite3')]
     public function rawHashColumnIsPopulated(): void
     {
-        $rows = iterator_to_array(SqliteReader::read($this->dbPath));
+        $rows = iterator_to_array(SqliteReader::read($this->path()));
 
         foreach ($rows as $row) {
             self::assertNotEmpty($row['raw_hash']);
@@ -110,5 +110,13 @@ final class SqliteReaderTest extends TestCase
             SqliteFixtureBuilder::cleanup($this->dbPath);
             $this->dbPath = null;
         }
+    }
+
+    /** Returns the db path, asserting setUp() has run and it is non-null. */
+    private function path(): string
+    {
+        self::assertNotNull($this->dbPath, 'dbPath must be set by setUp()');
+
+        return $this->dbPath;
     }
 }

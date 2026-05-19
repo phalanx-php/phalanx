@@ -12,9 +12,10 @@ use Phalanx\Panoply\Hash\Canonicalizable;
  *
  * Agent-side declaration of how context is positioned in the assembled
  * prompt envelope. Three slots — `front`, `middle`, `tail` — each carry
- * an ordered list of class-string references to context sources.
+ * an ordered list of string identifiers for context sources (typically
+ * class names, but any stable identifier is accepted).
  *
- * Assembly (resolving class-strings into actual content) lives in the
+ * Assembly (resolving source identifiers into actual content) lives in the
  * agent runtime. This type only carries the declaration.
  *
  * Build fluently:
@@ -33,19 +34,19 @@ use Phalanx\Panoply\Hash\Canonicalizable;
  */
 final class Context implements Canonicalizable
 {
-    /** @var list<class-string> */
+    /** @var list<string> */
     private(set) array $frontSources;
 
-    /** @var list<class-string> */
+    /** @var list<string> */
     private(set) array $middleSources;
 
-    /** @var list<class-string> */
+    /** @var list<string> */
     private(set) array $tailSources;
 
     /**
-     * @param list<class-string> $front
-     * @param list<class-string> $middle
-     * @param list<class-string> $tail
+     * @param list<string> $front
+     * @param list<string> $middle
+     * @param list<string> $tail
      */
     public function __construct(array $front = [], array $middle = [], array $tail = [])
     {
@@ -72,7 +73,7 @@ final class Context implements Canonicalizable
     }
 
     /**
-     * @param class-string ...$sources
+     * @param string ...$sources
      */
     public function front(string ...$sources): self
     {
@@ -88,7 +89,7 @@ final class Context implements Canonicalizable
     }
 
     /**
-     * @param class-string ...$sources
+     * @param string ...$sources
      */
     public function middle(string ...$sources): self
     {
@@ -104,7 +105,7 @@ final class Context implements Canonicalizable
     }
 
     /**
-     * @param class-string ...$sources
+     * @param string ...$sources
      */
     public function tail(string ...$sources): self
     {
@@ -120,7 +121,7 @@ final class Context implements Canonicalizable
     }
 
     /**
-     * @return list<class-string>
+     * @return list<string>
      */
     public function all(): array
     {
@@ -135,8 +136,8 @@ final class Context implements Canonicalizable
     }
 
     /**
-     * @param list<class-string> $sources
-     * @return list<class-string>
+     * @param list<string> $sources
+     * @return list<string>
      */
     private static function dedup(array $sources): array
     {

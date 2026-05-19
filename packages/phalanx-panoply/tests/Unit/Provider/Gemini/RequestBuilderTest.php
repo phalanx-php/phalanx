@@ -310,6 +310,9 @@ final class RequestBuilderTest extends TestCase
         self::assertSame('list_phalanx_units', $body['tools'][0]['functionDeclarations'][0]['name']);
     }
 
+    /**
+     * @param array<string, mixed>|null $dynamicContext
+     */
     private static function invocation(
         string $userInput = 'What is the battle plan?',
         string $instructions = 'You are a Spartan strategos.',

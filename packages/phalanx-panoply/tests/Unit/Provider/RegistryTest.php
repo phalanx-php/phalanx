@@ -173,6 +173,9 @@ final class RegistryTest extends TestCase
         );
     }
 
+    /**
+     * @param list<string> $aliases
+     */
     private static function configWithModel(
         string $providerId,
         string $modelName,

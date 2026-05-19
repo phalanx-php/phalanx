@@ -53,7 +53,7 @@ final class RuntimeTest extends TestCase
 
         // No exception thrown.
         $runtime->throwIfCancelled();
-        self::assertTrue(true);
+        self::addToAssertionCount(1);
     }
 
     #[Test]

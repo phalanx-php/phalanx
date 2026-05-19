@@ -2,6 +2,9 @@ parameters:
     level: 8
     paths:
         - src
+        - tests/Unit
+        - tests/Integration
+        - tests/Acceptance
     scanDirectories:
         - ../../vendor/openswoole/ide-helper
     tmpDir: .phpstan-cache

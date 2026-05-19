@@ -87,6 +87,7 @@ final class InferenceProviderTest extends TestCase
         $resolved = $stream->ofKind(Resolved::class)->toArray();
 
         self::assertCount(1, $resolved);
+        self::assertInstanceOf(Resolved::class, $resolved[0]);
         self::assertSame('huggingface', $resolved[0]->provider);
     }
 
@@ -99,6 +100,7 @@ final class InferenceProviderTest extends TestCase
         $stops = $stream->ofKind(TokenStop::class)->toArray();
 
         self::assertCount(1, $stops);
+        self::assertInstanceOf(TokenStop::class, $stops[0]);
         self::assertSame(StopReason::EndOfTurn, $stops[0]->reason);
     }
 
@@ -124,6 +126,7 @@ final class InferenceProviderTest extends TestCase
         $stops = $stream->ofKind(TokenStop::class)->toArray();
 
         self::assertCount(1, $stops);
+        self::assertInstanceOf(TokenStop::class, $stops[0]);
         self::assertSame(StopReason::ToolUse, $stops[0]->reason);
     }
 
@@ -164,6 +167,7 @@ final class InferenceProviderTest extends TestCase
         $failed = array_values(array_filter($cues, static fn ($c) => $c instanceof Failed));
 
         self::assertCount(1, $failed);
+        self::assertInstanceOf(Failed::class, $failed[0]);
         self::assertStringContainsString('Sparta rate limit', $failed[0]->reason);
         self::assertSame('rate_limit_exceeded', $failed[0]->errorClass);
         // Failed is terminal — no Completed must follow it.
@@ -237,6 +241,7 @@ final class InferenceProviderTest extends TestCase
         self::assertSame($model->capabilities, $provider->capabilities());
     }
 
+    /** @param array<string, list<string>> $script */
     private static function provider(array $script, ?Options $options = null): InferenceProvider
     {
         return new InferenceProvider(

@@ -46,14 +46,14 @@ final class ContractsExistTest extends TestCase
         $params = $perform->getParameters();
         self::assertCount(2, $params);
         self::assertSame('invocation', $params[0]->getName());
-        self::assertSame(Invocation::class, $params[0]->getType()?->getName());
+        self::assertSame(Invocation::class, self::namedTypeName($params[0]->getType()));
         self::assertSame('runtime', $params[1]->getName());
-        self::assertSame(Runtime::class, $params[1]->getType()?->getName());
-        self::assertSame(Stream::class, $perform->getReturnType()?->getName());
+        self::assertSame(Runtime::class, self::namedTypeName($params[1]->getType()));
+        self::assertSame(Stream::class, self::namedTypeName($perform->getReturnType()));
 
         $capabilities = $r->getMethod('capabilities');
         self::assertCount(0, $capabilities->getParameters());
-        self::assertSame(Capabilities::class, $capabilities->getReturnType()?->getName());
+        self::assertSame(Capabilities::class, self::namedTypeName($capabilities->getReturnType()));
     }
 
     #[Test]
@@ -66,10 +66,10 @@ final class ContractsExistTest extends TestCase
         $params = $stream->getParameters();
         self::assertCount(2, $params);
         self::assertSame('request', $params[0]->getName());
-        self::assertSame(TransportRequest::class, $params[0]->getType()?->getName());
+        self::assertSame(TransportRequest::class, self::namedTypeName($params[0]->getType()));
         self::assertSame('runtime', $params[1]->getName());
-        self::assertSame(Runtime::class, $params[1]->getType()?->getName());
-        self::assertSame(\Generator::class, $stream->getReturnType()?->getName());
+        self::assertSame(Runtime::class, self::namedTypeName($params[1]->getType()));
+        self::assertSame(\Generator::class, self::namedTypeName($stream->getReturnType()));
     }
 
     #[Test]
@@ -87,7 +87,7 @@ final class ContractsExistTest extends TestCase
         $params = $call->getParameters();
         self::assertCount(2, $params, 'Runtime::call accepts (closure, ?waitReason)');
         self::assertSame('work', $params[0]->getName());
-        self::assertSame(\Closure::class, $params[0]->getType()?->getName());
+        self::assertSame(\Closure::class, self::namedTypeName($params[0]->getType()));
         self::assertSame('waitReason', $params[1]->getName());
         self::assertTrue($params[1]->allowsNull());
 
@@ -107,13 +107,13 @@ final class ContractsExistTest extends TestCase
         self::assertTrue($r->hasMethod('parser'));
         self::assertTrue($r->hasMethod('settings'));
 
-        self::assertSame(Projects::class, $r->getMethod('projects')->getReturnType()?->getName());
-        self::assertSame(Locators::class, $r->getMethod('locators')->getReturnType()?->getName());
-        self::assertSame(Parser::class, $r->getMethod('parser')->getReturnType()?->getName());
+        self::assertSame(Projects::class, self::namedTypeName($r->getMethod('projects')->getReturnType()));
+        self::assertSame(Locators::class, self::namedTypeName($r->getMethod('locators')->getReturnType()));
+        self::assertSame(Parser::class, self::namedTypeName($r->getMethod('parser')->getReturnType()));
 
         $settings = $r->getMethod('settings');
         self::assertCount(0, $settings->getParameters());
-        self::assertSame(Settings::class, $settings->getReturnType()?->getName());
+        self::assertSame(Settings::class, self::namedTypeName($settings->getReturnType()));
     }
 
     #[Test]
@@ -126,10 +126,10 @@ final class ContractsExistTest extends TestCase
         $params = $parse->getParameters();
         self::assertCount(2, $params);
         self::assertSame('source', $params[0]->getName());
-        self::assertSame(Source::class, $params[0]->getType()?->getName());
+        self::assertSame(Source::class, self::namedTypeName($params[0]->getType()));
         self::assertSame('options', $params[1]->getName());
         self::assertTrue($params[1]->allowsNull());
-        self::assertSame(Log::class, $parse->getReturnType()?->getName());
+        self::assertSame(Log::class, self::namedTypeName($parse->getReturnType()));
     }
 
     #[Test]
@@ -142,10 +142,10 @@ final class ContractsExistTest extends TestCase
         $params = $evaluate->getParameters();
         self::assertCount(2, $params);
         self::assertSame('effect', $params[0]->getName());
-        self::assertSame(Effect::class, $params[0]->getType()?->getName());
+        self::assertSame(Effect::class, self::namedTypeName($params[0]->getType()));
         self::assertSame('grant', $params[1]->getName());
         self::assertTrue($params[1]->allowsNull());
-        self::assertSame(Decision::class, $evaluate->getReturnType()?->getName());
+        self::assertSame(Decision::class, self::namedTypeName($evaluate->getReturnType()));
     }
 
     #[Test]
@@ -158,8 +158,8 @@ final class ContractsExistTest extends TestCase
         $params = $score->getParameters();
         self::assertCount(1, $params);
         self::assertSame('effect', $params[0]->getName());
-        self::assertSame(Effect::class, $params[0]->getType()?->getName());
-        self::assertSame(Hazard::class, $score->getReturnType()?->getName());
+        self::assertSame(Effect::class, self::namedTypeName($params[0]->getType()));
+        self::assertSame(Hazard::class, self::namedTypeName($score->getReturnType()));
     }
 
     #[Test]
@@ -176,12 +176,24 @@ final class ContractsExistTest extends TestCase
         $save = $r->getMethod('save');
         $saveParams = $save->getParameters();
         self::assertCount(1, $saveParams);
-        self::assertSame(Artifact::class, $saveParams[0]->getType()?->getName());
+        self::assertSame(Artifact::class, self::namedTypeName($saveParams[0]->getType()));
 
         $byId = $r->getMethod('byId');
         self::assertTrue($byId->getReturnType()?->allowsNull());
 
         $all = $r->getMethod('all');
-        self::assertSame(Collection::class, $all->getReturnType()?->getName());
+        self::assertSame(Collection::class, self::namedTypeName($all->getReturnType()));
+    }
+
+    /**
+     * Extract the type name from a ReflectionType, asserting it is a
+     * ReflectionNamedType first. Intersection and union types are not expected
+     * in the panoply contract layer.
+     */
+    private static function namedTypeName(\ReflectionType|null $type): string
+    {
+        self::assertInstanceOf(\ReflectionNamedType::class, $type, 'Expected a named (non-union/intersection) type');
+
+        return $type->getName();
     }
 }

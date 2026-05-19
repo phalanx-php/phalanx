@@ -80,6 +80,7 @@ final class ChatProviderTest extends TestCase
         $stops = $stream->ofKind(TokenStop::class)->toArray();
 
         self::assertCount(1, $stops);
+        self::assertInstanceOf(TokenStop::class, $stops[0]);
         self::assertSame(StopReason::EndOfTurn, $stops[0]->reason);
     }
 
@@ -105,6 +106,7 @@ final class ChatProviderTest extends TestCase
         $stops = $stream->ofKind(TokenStop::class)->toArray();
 
         self::assertCount(1, $stops);
+        self::assertInstanceOf(TokenStop::class, $stops[0]);
         self::assertSame(StopReason::ToolUse, $stops[0]->reason);
     }
 
@@ -321,6 +323,7 @@ final class ChatProviderTest extends TestCase
         return ['POST https://api.openai.com/v1/chat/completions' => $chunks];
     }
 
+    /** @param array<string, list<string>> $script */
     private static function provider(array $script, ?ChatOptions $options = null): ChatProvider
     {
         return new ChatProvider(
