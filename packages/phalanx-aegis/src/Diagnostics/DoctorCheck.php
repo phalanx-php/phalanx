@@ -10,16 +10,18 @@ final readonly class DoctorCheck
         public string $name,
         public bool $ok,
         public string $detail = '',
+        public Severity $severity = Severity::Required,
     ) {
     }
 
-    /** @return array{name: string, ok: bool, detail: string} */
+    /** @return array{name: string, ok: bool, detail: string, severity: string} */
     public function toArray(): array
     {
         return [
-            'name' => $this->name,
-            'ok' => $this->ok,
-            'detail' => $this->detail,
+            'name'     => $this->name,
+            'ok'       => $this->ok,
+            'detail'   => $this->detail,
+            'severity' => $this->severity->value,
         ];
     }
 }

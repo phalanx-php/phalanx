@@ -16,13 +16,10 @@ final readonly class DoctorReport implements \IteratorAggregate
 
     public function isHealthy(): bool
     {
-        foreach ($this->checks as $check) {
-            if (!$check->ok) {
-                return false;
-            }
-        }
-
-        return true;
+        return array_all(
+            $this->checks,
+            static fn(DoctorCheck $check): bool => !($check->severity->gates() && !$check->ok),
+        );
     }
 
     public function getIterator(): \Traversable
@@ -30,7 +27,7 @@ final readonly class DoctorReport implements \IteratorAggregate
         yield from $this->checks;
     }
 
-    /** @return list<array{name: string, ok: bool, detail: string}> */
+    /** @return list<array{name: string, ok: bool, detail: string, severity: string}> */
     public function toArray(): array
     {
         return array_map(static fn(DoctorCheck $check): array => $check->toArray(), $this->checks);

@@ -55,31 +55,42 @@ final readonly class EnvironmentDoctor
                 class_exists(Table::class),
                 Table::class,
             ),
+            // OpenSwoole's coroutine PostgreSQL client is an optional capability. No Phalanx
+            // core code depends on it; only phalanx-postgres (when built with PG support) does.
+            // A missing PostgreSQL class is not a runtime blocker.
             new DoctorCheck(
                 'openswoole.postgresql',
                 class_exists(PostgreSQL::class),
                 PostgreSQL::class,
+                Severity::Optional,
             ),
+            // Policy name and flag details are diagnostic context — always ok=true, never block health.
             new DoctorCheck(
                 'openswoole.runtime_policy',
                 true,
                 $hooks->policyName,
+                Severity::Informational,
             ),
             new DoctorCheck(
                 'openswoole.hook_flags',
                 true,
                 sprintf('%d (%s)', $hooks->currentFlags, self::formatNames($hooks->currentFlagNames())),
+                Severity::Informational,
             ),
             new DoctorCheck(
                 'openswoole.hooks.required',
                 true,
                 sprintf('%d (%s)', $hooks->requiredFlags, self::formatNames($hooks->requiredFlagNames())),
+                Severity::Informational,
             ),
+            // Missing required hooks means the hook policy is broken — the runtime cannot
+            // deliver coroutine-safe I/O to application code.
             new DoctorCheck(
                 'openswoole.hooks.missing',
                 $hooks->isHealthy(),
                 sprintf('%d (%s)', $hooks->missingFlags, self::formatNames($hooks->missingFlagNames())),
             ),
+            // Sensitive flag reporting is diagnostic context only.
             new DoctorCheck(
                 'openswoole.hooks.sensitive',
                 true,
@@ -88,23 +99,29 @@ final readonly class EnvironmentDoctor
                     $hooks->sensitiveEnabledFlags,
                     self::formatNames($hooks->sensitiveEnabledFlagNames()),
                 ),
+                Severity::Informational,
             ),
         ];
 
         if ($this->ledger !== null) {
+            // Which ledger backend is active is diagnostic context, not a health gate.
             $checks[] = new DoctorCheck(
                 'supervisor.ledger',
                 true,
                 $this->ledger::class,
+                Severity::Informational,
             );
         }
 
         if ($this->supervisor !== null) {
+            // Pool stats are diagnostic context — borrowed/free counts inform capacity planning
+            // but never indicate a fault on their own.
             foreach ($this->supervisor->poolStats()->toArray() as $name => $stats) {
                 $checks[] = new DoctorCheck(
                     "supervisor.pool.{$name}",
                     true,
                     self::poolStatsDetail($stats),
+                    Severity::Informational,
                 );
             }
         }
@@ -115,23 +132,26 @@ final readonly class EnvironmentDoctor
             $terminalResources = self::terminalResourceCount(...$resources);
             $liveResources = $totalResources - $terminalResources;
 
+            // Resource live/state counts are diagnostic context.
             $checks[] = new DoctorCheck(
                 'runtime.resources.live',
                 true,
                 sprintf(
-                    'live=%d, total=%d, terminal=%d, non_terminal=%d',
+                    'live=%d, total=%d, terminal=%d',
                     $liveResources,
                     $totalResources,
                     $terminalResources,
-                    $liveResources,
                 ),
+                Severity::Informational,
             );
             $checks[] = new DoctorCheck(
                 'runtime.resources.states',
                 true,
                 self::formatCounts(self::resourceStateCounts(...$resources)),
+                Severity::Informational,
             );
 
+            // Listener failures and dropped events both indicate broken runtime event bus — Required.
             $listenerFailures = count($this->memory->events->listenerErrors());
             $checks[] = new DoctorCheck(
                 'runtime.events.listener_failures',
@@ -139,6 +159,9 @@ final readonly class EnvironmentDoctor
                 self::listenerFailureDetail($listenerFailures),
             );
 
+            // Intentionally Required: once dropped events accumulate, runtime is degraded
+            // for its entire lifecycle (counter is monotonic, no reset). Operators see this
+            // as a sticky failure; only a restart clears it.
             $droppedEvents = $this->memory->counters->get(AegisCounterSid::RuntimeEventsDropped);
             $checks[] = new DoctorCheck(
                 'runtime.events.dropped',
@@ -146,6 +169,7 @@ final readonly class EnvironmentDoctor
                 self::droppedEventDetail($droppedEvents),
             );
 
+            // Table overflow means the runtime will start losing data — Required.
             foreach ($this->memory->stats() as $stats) {
                 $checks[] = new DoctorCheck(
                     'runtime.memory.' . $stats->name,

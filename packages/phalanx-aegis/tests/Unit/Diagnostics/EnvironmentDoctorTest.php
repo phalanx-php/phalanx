@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Tests\Unit\Diagnostics;
 
+use Phalanx\Diagnostics\DoctorCheck;
 use Phalanx\Diagnostics\EnvironmentDoctor;
+use Phalanx\Diagnostics\Severity;
 use Phalanx\Runtime\Identity\AegisCounterSid;
 use Phalanx\Runtime\Identity\AegisEventSid;
 use Phalanx\Runtime\Identity\AegisResourceSid;
@@ -19,6 +21,7 @@ use Phalanx\Supervisor\InProcessLedger;
 use Phalanx\Supervisor\Supervisor;
 use Phalanx\Task\Task;
 use Phalanx\Trace\Trace;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
@@ -29,7 +32,7 @@ final class EnvironmentDoctorTest extends TestCase
         $policy = RuntimePolicy::phalanxManaged();
         RuntimeHooks::ensure($policy);
 
-        $report = (new EnvironmentDoctor(new InProcessLedger(), $policy))->check();
+        $report = new EnvironmentDoctor(new InProcessLedger(), $policy)->check();
         $checks = $report->toArray();
 
         self::assertTrue($report->isHealthy());
@@ -46,7 +49,7 @@ final class EnvironmentDoctorTest extends TestCase
     public function testReportContainsInformationalSupervisorPoolChecks(): void
     {
         $supervisor = new Supervisor(new InProcessLedger(), new Trace());
-        $report = (new EnvironmentDoctor(supervisor: $supervisor))->check();
+        $report = new EnvironmentDoctor(supervisor: $supervisor)->check();
         $checks = $report->toArray();
 
         self::assertTrue($report->isHealthy());
@@ -64,7 +67,7 @@ final class EnvironmentDoctorTest extends TestCase
         $run = $supervisor->start($task, $scope, DispatchMode::Inline);
 
         try {
-            $report = (new EnvironmentDoctor(supervisor: $supervisor))->check();
+            $report = new EnvironmentDoctor(supervisor: $supervisor)->check();
             $check = self::check($report->toArray(), 'supervisor.pool.taskRun');
 
             self::assertTrue($check['ok']);
@@ -83,7 +86,7 @@ final class EnvironmentDoctorTest extends TestCase
             sensitiveFlags: 0,
         );
 
-        $report = (new EnvironmentDoctor(runtimePolicy: $policy))->check();
+        $report = new EnvironmentDoctor(runtimePolicy: $policy)->check();
         $check = self::check($report->toArray(), 'openswoole.hooks.missing');
 
         self::assertFalse($report->isHealthy());
@@ -95,12 +98,12 @@ final class EnvironmentDoctorTest extends TestCase
         $memory = new RuntimeMemory(new RuntimeMemoryConfig());
 
         try {
-            $report = (new EnvironmentDoctor(memory: $memory))->check();
+            $report = new EnvironmentDoctor(memory: $memory)->check();
             $checks = $report->toArray();
 
             self::assertTrue($report->isHealthy());
             self::assertSame(
-                'live=0, total=0, terminal=0, non_terminal=0',
+                'live=0, total=0, terminal=0',
                 self::check($checks, 'runtime.resources.live')['detail'],
             );
             self::assertSame(
@@ -125,7 +128,7 @@ final class EnvironmentDoctorTest extends TestCase
             });
             $memory->events->record(AegisEventSid::ResourceOpened);
 
-            $report = (new EnvironmentDoctor(memory: $memory))->check();
+            $report = new EnvironmentDoctor(memory: $memory)->check();
             $check = self::check($report->toArray(), 'runtime.events.listener_failures');
 
             self::assertFalse($report->isHealthy());
@@ -143,7 +146,7 @@ final class EnvironmentDoctorTest extends TestCase
         try {
             $memory->counters->incr(AegisCounterSid::RuntimeEventsDropped);
 
-            $report = (new EnvironmentDoctor(memory: $memory))->check();
+            $report = new EnvironmentDoctor(memory: $memory)->check();
             $check = self::check($report->toArray(), 'runtime.events.dropped');
 
             self::assertFalse($report->isHealthy());
@@ -171,11 +174,11 @@ final class EnvironmentDoctorTest extends TestCase
                 state: ManagedResourceState::Closed,
             );
 
-            $report = (new EnvironmentDoctor(memory: $memory))->check();
+            $report = new EnvironmentDoctor(memory: $memory)->check();
             $checks = $report->toArray();
 
             self::assertSame(
-                'live=2, total=3, terminal=1, non_terminal=2',
+                'live=2, total=3, terminal=1',
                 self::check($checks, 'runtime.resources.live')['detail'],
             );
             self::assertStringContainsString('opening=1', self::check($checks, 'runtime.resources.states')['detail']);
@@ -193,7 +196,7 @@ final class EnvironmentDoctorTest extends TestCase
         try {
             $memory->resources->open(AegisResourceSid::Test, id: 'full-resource-table');
 
-            $report = (new EnvironmentDoctor(memory: $memory))->check();
+            $report = new EnvironmentDoctor(memory: $memory)->check();
             $check = self::check($report->toArray(), 'runtime.memory.resources');
 
             self::assertFalse($report->isHealthy());
@@ -205,9 +208,44 @@ final class EnvironmentDoctorTest extends TestCase
         }
     }
 
+    public function testPostgresqlProbeCarriesOptionalSeverity(): void
+    {
+        $report = new EnvironmentDoctor()->check();
+
+        // The check object carries severity; the toArray() representation carries the string value.
+        // Assert on the object directly by iterating the report.
+        $pgCheck = null;
+        foreach ($report as $check) {
+            if ($check->name === 'openswoole.postgresql') {
+                $pgCheck = $check;
+                break;
+            }
+        }
+
+        self::assertNotNull($pgCheck, 'openswoole.postgresql probe not found in report');
+        self::assertSame(Severity::Optional, $pgCheck->severity);
+    }
+
+    #[Test]
+    public function freshDoctorEmitsAtLeastOneRequiredProbe(): void
+    {
+        $doctor = new EnvironmentDoctor();
+        $report = $doctor->check();
+
+        $requiredProbes = array_filter(
+            $report->checks,
+            static fn(DoctorCheck $check): bool => $check->severity === Severity::Required,
+        );
+
+        self::assertNotEmpty(
+            $requiredProbes,
+            'EnvironmentDoctor must emit at least one Required probe; without it, isHealthy() would be vacuously true.',
+        );
+    }
+
     /**
-     * @param list<array{name: string, ok: bool, detail: string}> $checks
-     * @return array{name: string, ok: bool, detail: string}
+     * @param list<array{name: string, ok: bool, detail: string, severity: string}> $checks
+     * @return array{name: string, ok: bool, detail: string, severity: string}
      */
     private static function check(array $checks, string $name): array
     {

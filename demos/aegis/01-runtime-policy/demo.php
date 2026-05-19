@@ -6,6 +6,7 @@ require __DIR__ . '/../../../vendor/autoload_runtime.php';
 
 use Phalanx\Demos\Kit\DemoApp;
 use Phalanx\Demos\Kit\DemoReport;
+use Phalanx\Diagnostics\Severity;
 use Phalanx\Task\Task;
 
 return DemoApp::boot(
@@ -27,7 +28,13 @@ return DemoApp::boot(
                         continue;
                     }
 
-                    $report->record(sprintf('%s — %s', $check->name, $check->detail), $check->ok);
+                    $label = sprintf('%s — %s', $check->name, $check->detail);
+
+                    match ($check->severity) {
+                        Severity::Required      => $report->record($label, $check->ok),
+                        Severity::Optional      => $report->note("{$label} [optional]"),
+                        Severity::Informational => $report->note("{$label} [info]"),
+                    };
                 }
             },
         ));
