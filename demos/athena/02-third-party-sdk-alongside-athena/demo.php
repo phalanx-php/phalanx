@@ -1,16 +1,19 @@
 <?php
 
 /**
- * Guzzle SDK coexistence with Athena native streaming.
+ * Third-party SDK (Guzzle) alongside Athena native streaming.
  *
  * Many third-party SDKs (AWS, Stripe, official provider clients) are built on
- * Guzzle. This demo shows that a Guzzle-backed HTTP call can coexist with an
+ * Guzzle. This demo shows that a Guzzle-backed HTTP call can run alongside an
  * Athena-native streaming invocation inside the same Aegis execution scope
  * without interfering with task supervision, cancellation, or cleanup.
  *
- * Both legs run concurrently inside $scope->settle():
+ * Both legs settle through $scope->settle():
  *   - Athena leg: streams a short Anthropic response via the panoply provider.
  *   - Guzzle leg: fetches a URL supplied through GUZZLE_DEMO_URL.
+ *
+ * With Aegis runtime hooks enabled, the Guzzle leg is coroutine-aware; without
+ * hooks, it blocks the worker. This demo does not assert which regime is active.
  *
  * Prerequisites:
  *   - openswoole extension loaded
@@ -20,7 +23,7 @@
  *
  * Usage:
  *   ANTHROPIC_API_KEY=sk-... GUZZLE_DEMO_URL=https://httpbin.org/status/200 \
- *     php -d extension=openswoole demos/athena/02-guzzle-sdk-coexistence/demo.php
+ *     php -d extension=openswoole demos/athena/02-third-party-sdk-alongside-athena/demo.php
  */
 
 declare(strict_types=1);
@@ -31,7 +34,6 @@ use Phalanx\Athena\Activity\Config as ActivityConfig;
 use Phalanx\Athena\Athena;
 use Phalanx\Athena\AthenaBundle;
 use Phalanx\Athena\Router\SingleProviderRouter;
-use Phalanx\Boot\AppContext;
 use Phalanx\Demos\Kit\DemoApp;
 use Phalanx\Demos\Kit\DemoReport;
 use Phalanx\Panoply\Capabilities;
@@ -53,11 +55,12 @@ use Phalanx\Task\Task;
 // Aegis kernel requires OpenSwoole\Table; guard before boot.
 if (!extension_loaded('openswoole')) {
     return DemoReport::demo(
-        'Athena Guzzle SDK Coexistence',
+        'Athena Third-Party SDK Alongside Athena',
         static function (DemoReport $report): void {
             $report->cannotRun(
                 'openswoole extension required',
-                'Run with: ANTHROPIC_API_KEY=sk-... GUZZLE_DEMO_URL=https://httpbin.org/status/200 php -d extension=openswoole demos/athena/02-guzzle-sdk-coexistence/demo.php',
+                'Run with: ANTHROPIC_API_KEY=sk-... GUZZLE_DEMO_URL=https://example.com'
+                    . ' php -d extension=openswoole demos/athena/02-third-party-sdk-alongside-athena/demo.php',
             );
         },
     );
@@ -74,7 +77,7 @@ return static function (array $context): Closure {
     // immediately so we never boot the Aegis kernel unnecessarily.
     if (!class_exists(\GuzzleHttp\Client::class)) {
         $inner = DemoReport::demo(
-            'Athena Guzzle SDK Coexistence',
+            'Athena Third-Party SDK Alongside Athena',
             static function (DemoReport $report): void {
                 $report->cannotRun(
                     'guzzlehttp/guzzle is not installed',
@@ -82,25 +85,27 @@ return static function (array $context): Closure {
                 );
             },
         );
+        // context not needed for preflight-only paths; body never executes DemoApp.
         return ($inner)([]);
     }
 
     if ($apiKey === '') {
         $inner = DemoReport::demo(
-            'Athena Guzzle SDK Coexistence',
+            'Athena Third-Party SDK Alongside Athena',
             static function (DemoReport $report): void {
                 $report->cannotRun(
                     'a live Anthropic API key was not provided',
-                    'rerun with ANTHROPIC_API_KEY=sk-... GUZZLE_DEMO_URL=https://httpbin.org/status/200 plus openswoole',
+                    'rerun with ANTHROPIC_API_KEY=sk-... GUZZLE_DEMO_URL=https://example.com plus openswoole',
                 );
             },
         );
+        // context not needed for preflight-only paths; body never executes DemoApp.
         return ($inner)([]);
     }
 
     if ($guzzleUrl === '') {
         $inner = DemoReport::demo(
-            'Athena Guzzle SDK Coexistence',
+            'Athena Third-Party SDK Alongside Athena',
             static function (DemoReport $report): void {
                 $report->cannotRun(
                     'a Guzzle target URL was not provided',
@@ -108,6 +113,7 @@ return static function (array $context): Closure {
                 );
             },
         );
+        // context not needed for preflight-only paths; body never executes DemoApp.
         return ($inner)([]);
     }
 
@@ -116,7 +122,7 @@ return static function (array $context): Closure {
 
     if (!in_array($scheme, ['http', 'https'], true)) {
         $inner = DemoReport::demo(
-            'Athena Guzzle SDK Coexistence',
+            'Athena Third-Party SDK Alongside Athena',
             static function (DemoReport $report): void {
                 $report->cannotRun(
                     'GUZZLE_DEMO_URL must start with http:// or https://',
@@ -124,12 +130,13 @@ return static function (array $context): Closure {
                 );
             },
         );
+        // context not needed for preflight-only paths; body never executes DemoApp.
         return ($inner)([]);
     }
 
     if ($scheme === 'https' && is_string($host) && in_array($host, ['localhost', '127.0.0.1', '::1'], true)) {
         $inner = DemoReport::demo(
-            'Athena Guzzle SDK Coexistence',
+            'Athena Third-Party SDK Alongside Athena',
             static function (DemoReport $report): void {
                 $report->cannotRun(
                     'GUZZLE_DEMO_URL points HTTPS at a local address',
@@ -137,6 +144,7 @@ return static function (array $context): Closure {
                 );
             },
         );
+        // context not needed for preflight-only paths; body never executes DemoApp.
         return ($inner)([]);
     }
 
@@ -181,7 +189,7 @@ return static function (array $context): Closure {
     // DemoApp::boot returns the inner Closure directly; symfony/runtime
     // invokes our outer static fn and calls the returned Closure.
     $bootClosure = DemoApp::boot(
-        'Athena Guzzle SDK Coexistence',
+        'Athena Third-Party SDK Alongside Athena',
         static function (DemoApp $app, DemoReport $report) use ($agent, $capturedUrl): void {
             $report->note(sprintf('guzzle target: %s', $capturedUrl));
             $report->note('topic: Athena as strategist and patron of wisdom');

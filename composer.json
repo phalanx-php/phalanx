@@ -171,7 +171,7 @@
         "demo:archon:errors:deep": "php demos/archon/05-error-diagnostics/ultra_deep.php",
         "demo:athena": ["@demo:athena:streaming", "@demo:athena:mcp-stdio", "@demo:athena:mcp-sse"],
         "demo:athena:streaming": "php demos/athena/01-streaming-providers/demo.php",
-        "demo:athena:guzzle": "php demos/athena/02-guzzle-sdk-coexistence/demo.php",
+        "demo:athena:guzzle": "php demos/athena/02-third-party-sdk-alongside-athena/demo.php",
         "demo:athena:mcp-stdio": "php demos/athena/03-mcp-stdio/demo.php",
         "demo:athena:mcp-sse": "php demos/athena/04-mcp-sse/demo.php",
         "demo:athena:serve:support-triage": "php demos/athena/support-triage/server.php",
