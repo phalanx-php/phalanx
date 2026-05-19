@@ -4,91 +4,70 @@ declare(strict_types=1);
 
 namespace Acme;
 
-use GuzzleHttp\Psr7\Response;
-use Phalanx\Athena\AgentLoop;
-use Phalanx\Athena\Event\AgentEventKind;
-use Phalanx\Athena\Message\Message;
-use Phalanx\Athena\Provider\ProviderConfig;
-use Phalanx\Athena\Turn;
+use Phalanx\Athena\Activity\Config as ActivityConfig;
+use Phalanx\Athena\Athena;
+use Phalanx\Cancellation\Cancelled;
+use Phalanx\Panoply\Context;
+use Phalanx\Panoply\Cue\Effect\Executed;
+use Phalanx\Panoply\Cue\Effect\Requested;
+use Phalanx\Panoply\Cue\Output\TokenDelta;
+use Phalanx\Panoply\Id;
+use Phalanx\Panoply\Runtime\CancellationException;
 use Phalanx\Stoa\RequestScope;
 use Phalanx\Stoa\Sse\SseStream;
 use Phalanx\Stoa\Sse\SseStreamFactory;
 use Phalanx\Task\Scopeable;
-use Psr\Http\Message\ResponseInterface;
 use Throwable;
 
 final class TriageHandler implements Scopeable
 {
-    public function __construct(
-        private readonly ProviderConfig $providers,
-    ) {
-    }
-
-    public function __invoke(RequestScope $scope): ResponseInterface|SseStream
+    public function __invoke(RequestScope $scope): SseStream
     {
-        if (!array_key_exists('anthropic', $this->providers->all())) {
-            return new Response(
-                503,
-                ['Content-Type' => 'application/json'],
-                json_encode([
-                    'error' => 'Anthropic provider is not configured.',
-                    'hint' => 'Run with ATHENA_DEMO_LIVE=1 and ANTHROPIC_API_KEY set.',
-                ], JSON_THROW_ON_ERROR),
-            );
-        }
+        $agent  = new SupportTriageAgent();
+        $config = new ActivityConfig(
+            id: Id::generate(),
+            context: Context::new(),
+            maxInvocations: 4,
+            timeoutSeconds: 25.0,
+        );
 
-        $body = $scope->body->json();
-
-        $turn = Turn::begin(new SupportTriageAgent())
-            ->message(Message::user(
-                "Ticket from: {$body['customer_email']}\n" .
-                "Subject: {$body['subject']}\n\n" .
-                $body['body']
-            ))
-            ->output(TriageResult::class)
-            ->maxSteps(4);
-
-        $stream = $this->openStream($scope);
+        $stream = self::openStream($scope);
 
         try {
-            foreach (AgentLoop::run($turn, $scope)($scope) as $event) {
-                if (!$event->kind->isUserFacing()) {
+            $result = Athena::run($scope, $agent, $config);
+
+            foreach ($result->stream->toArray() as $cue) {
+                $payload = match (true) {
+                    $cue instanceof TokenDelta => [
+                        'type' => 'token',
+                        'text' => $cue->text,
+                    ],
+                    $cue instanceof Requested => [
+                        'type' => 'tool_start',
+                        'tool' => $cue->effectId,
+                    ],
+                    $cue instanceof Executed => [
+                        'type' => 'tool_done',
+                        'tool' => $cue->effectId,
+                    ],
+                    default => null,
+                };
+
+                if ($payload === null) {
                     continue;
                 }
 
                 $stream->writeEvent(
-                    json_encode(match ($event->kind) {
-                    AgentEventKind::TokenDelta => [
-                        'type' => 'token',
-                        'text' => $event->data->text,
-                    ],
-                    AgentEventKind::ToolCallStart => [
-                        'type' => 'tool_start',
-                        'tool' => $event->data->toolName,
-                    ],
-                    AgentEventKind::ToolCallComplete => [
-                        'type' => 'tool_done',
-                        'ms' => $event->elapsed,
-                        'tool' => $event->data->toolName,
-                    ],
-                    AgentEventKind::StructuredOutput => [
-                        'type' => 'triage',
-                        'priority' => $event->data->value->priority->value,
-                        'category' => $event->data->value->category->value,
-                        'auto_resolvable' => $event->data->value->autoResolvable,
-                    ],
-                    default => [
-                        'type' => 'event',
-                        'kind' => $event->kind->value,
-                    ],
-                }, JSON_THROW_ON_ERROR),
+                    json_encode($payload, JSON_THROW_ON_ERROR),
                     event: 'triage',
                 );
             }
+        } catch (Cancelled | CancellationException $e) {
+            throw $e;
         } catch (Throwable $e) {
             $stream->writeEvent(
                 json_encode([
-                    'type' => 'error',
+                    'type'    => 'error',
                     'message' => $e->getMessage(),
                 ], JSON_THROW_ON_ERROR),
                 event: 'triage',
@@ -100,7 +79,7 @@ final class TriageHandler implements Scopeable
         return $stream;
     }
 
-    private function openStream(RequestScope $scope): SseStream
+    private static function openStream(RequestScope $scope): SseStream
     {
         return (new SseStreamFactory())->open($scope);
     }

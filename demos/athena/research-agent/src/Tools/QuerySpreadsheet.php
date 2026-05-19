@@ -4,37 +4,40 @@ declare(strict_types=1);
 
 namespace Acme\Tools;
 
+use Phalanx\Athena\Effect\Context as EffectContext;
+use Phalanx\Athena\Effect\Outcome as EffectOutcome;
+use Phalanx\Athena\Effect\Resolution;
 use Phalanx\Athena\Tool\Param;
 use Phalanx\Athena\Tool\Tool;
-use Phalanx\Athena\Tool\ToolOutcome;
-use Phalanx\Scope\Scope;
+use Phalanx\Scope\TaskScope;
+use Phalanx\SelfDescribed;
 
 /**
- * Runs calculations or lookups against a CSV/Excel file.
- *
- * Spawns a DataAnalyst sub-agent to interpret the spreadsheet data
- * and answer the specific query.
+ * Runs calculations or lookups against a CSV/Excel file given a natural
+ * language query. Returns scripted tabular results covering Spartan campaign
+ * statistics so the ResearchAgent can reason over data without a live file system.
  */
-final class QuerySpreadsheet implements Tool
+final class QuerySpreadsheet implements Tool, SelfDescribed
 {
     public string $description {
-        get => 'Run calculations or lookups against a CSV/Excel file';
+        get => 'Run calculations or data lookups against a spreadsheet file using a natural language query.';
     }
 
     public function __construct(
         #[Param('Path to the spreadsheet file')]
-        private readonly string $filePath,
+        private(set) string $filePath,
         #[Param('Natural language description of the calculation or lookup')]
-        private readonly string $query,
+        private(set) string $query,
     ) {
     }
 
-    public function __invoke(Scope $scope): ToolOutcome
+    public function __invoke(TaskScope $scope, EffectContext $ctx): EffectOutcome
     {
-        return ToolOutcome::data([
-            'file' => $this->filePath,
-            'query' => $this->query,
-            'result' => 'Athena appears most often in wisdom, craft, and strategic-war contexts.',
+        return EffectOutcome::routed(Resolution::LocalTool, data: [
+            'file'   => $this->filePath,
+            'query'  => $this->query,
+            'result' => 'Spartan campaigns: 14 engagements, 11 decisive victories, 3 tactical retreats. ' .
+                        'Average hoplite count per engagement: 7,200.',
         ]);
     }
 }

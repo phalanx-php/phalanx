@@ -4,16 +4,20 @@ declare(strict_types=1);
 
 namespace Acme\Tools;
 
+use Phalanx\Athena\Effect\Context as EffectContext;
+use Phalanx\Athena\Effect\Outcome as EffectOutcome;
+use Phalanx\Athena\Effect\Resolution;
 use Phalanx\Athena\Tool\Param;
 use Phalanx\Athena\Tool\Tool;
-use Phalanx\Athena\Tool\ToolOutcome;
-use Phalanx\Scope\Scope;
+use Phalanx\Scope\TaskScope;
+use Phalanx\SelfDescribed;
 
-final class GetRecentTickets implements Tool
+final class GetRecentTickets implements Tool, SelfDescribed
 {
     public string $description {
-        get => 'Get recent support tickets from this customer';
+        get => 'Retrieve the most recent support tickets for a customer by their account ID.';
     }
+
 
     public function __construct(
         #[Param('Customer ID')]
@@ -23,17 +27,17 @@ final class GetRecentTickets implements Tool
     ) {
     }
 
-    public function __invoke(Scope $scope): ToolOutcome
+    public function __invoke(TaskScope $scope, EffectContext $ctx): EffectOutcome
     {
         $tickets = [
-            ['id' => 501, 'subject' => 'Athena epithet clarification', 'status' => 'resolved', 'created_at' => '2026-03-10'],
-            ['id' => 508, 'subject' => 'Wisdom exhibit labels', 'status' => 'open', 'created_at' => '2026-03-12'],
-            ['id' => 519, 'subject' => 'Strategy tour accessibility', 'status' => 'pending', 'created_at' => '2026-03-14'],
+            ['id' => 501, 'subject' => 'Sarissa length inconsistency', 'status' => 'resolved', 'created_at' => '2026-04-10'],
+            ['id' => 508, 'subject' => 'Hoplite formation spacing', 'status' => 'open', 'created_at' => '2026-04-12'],
+            ['id' => 519, 'subject' => 'Battle order delivery to Marathon', 'status' => 'pending', 'created_at' => '2026-05-01'],
         ];
 
-        return ToolOutcome::data([
+        return EffectOutcome::routed(Resolution::LocalTool, data: [
             'customer_id' => $this->customerId,
-            'tickets' => array_slice($tickets, 0, $this->limit),
+            'tickets'     => array_slice($tickets, 0, $this->limit),
         ]);
     }
 }

@@ -4,16 +4,20 @@ declare(strict_types=1);
 
 namespace Acme\Tools;
 
+use Phalanx\Athena\Effect\Context as EffectContext;
+use Phalanx\Athena\Effect\Outcome as EffectOutcome;
+use Phalanx\Athena\Effect\Resolution;
 use Phalanx\Athena\Tool\Param;
 use Phalanx\Athena\Tool\Tool;
-use Phalanx\Athena\Tool\ToolOutcome;
-use Phalanx\Scope\Scope;
+use Phalanx\Scope\TaskScope;
+use Phalanx\SelfDescribed;
 
-final class SearchKnowledgeBase implements Tool
+final class SearchKnowledgeBase implements Tool, SelfDescribed
 {
     public string $description {
-        get => 'Search the knowledge base for articles matching a query';
+        get => 'Search the support knowledge base for articles relevant to a described issue, returning the top matching entries.';
     }
+
 
     public function __construct(
         #[Param('Search query describing the issue')]
@@ -23,16 +27,16 @@ final class SearchKnowledgeBase implements Tool
     ) {
     }
 
-    public function __invoke(Scope $scope): ToolOutcome
+    public function __invoke(TaskScope $scope, EffectContext $ctx): EffectOutcome
     {
         $articles = [
-            ['id' => 101, 'title' => 'Athena and the Owl Symbol', 'relevance' => 0.92],
-            ['id' => 204, 'title' => 'Athena as Strategist and Patron of Wisdom', 'relevance' => 0.78],
-            ['id' => 337, 'title' => 'Explaining Greek Epithets in Museum Copy', 'relevance' => 0.64],
+            ['id' => 101, 'title' => 'The Phalanx Formation: coordination under pressure', 'relevance' => 0.92],
+            ['id' => 204, 'title' => 'Doru maintenance and field replacement', 'relevance' => 0.78],
+            ['id' => 337, 'title' => 'Aspis delivery timelines from the agora', 'relevance' => 0.64],
         ];
 
-        return ToolOutcome::data([
-            'query' => $this->query,
+        return EffectOutcome::routed(Resolution::LocalTool, data: [
+            'query'    => $this->query,
             'articles' => array_slice($articles, 0, $this->limit),
         ]);
     }

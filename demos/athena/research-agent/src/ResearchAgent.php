@@ -4,20 +4,30 @@ declare(strict_types=1);
 
 namespace Acme;
 
-use Acme\Tools\CrossReference;
-use Acme\Tools\ExtractDocumentContent;
-use Acme\Tools\QuerySpreadsheet;
-use Phalanx\Athena\AgentDefinition;
-use Phalanx\Athena\AgentLoop;
-use Phalanx\Athena\Turn;
-use Phalanx\Concurrency\RetryPolicy;
-use Phalanx\Scope\ExecutionScope;
-use Phalanx\Task\HasTimeout;
-use Phalanx\Task\Retryable;
+use Phalanx\Panoply\Agent;
+use Phalanx\Panoply\Artifact\Kind as ArtifactKind;
+use Phalanx\Panoply\Capabilities;
+use Phalanx\Panoply\Capability;
+use Phalanx\Panoply\Context;
+use Phalanx\Panoply\Effect\Kind as EffectKind;
+use Phalanx\Panoply\Effects;
+use Phalanx\Panoply\Output;
+use Phalanx\Panoply\Provider\Needs as ProviderNeeds;
+use Phalanx\Panoply\Provider\Preference;
+use Phalanx\Panoply\Transport\Needs as TransportNeeds;
 
-final class ResearchAgent implements AgentDefinition, Retryable, HasTimeout
+/**
+ * Research agent that uses three tools (extract_document_content, query_spreadsheet,
+ * cross_reference) to compile findings across uploaded documents. Tools return
+ * scripted research data so the activity runs without a live file system or provider.
+ */
+final class ResearchAgent implements Agent
 {
-    public string $instructions {
+    public string $id { get => 'research-agent'; }
+
+    public string $name { get => 'Research Agent'; }
+
+    public string $purpose {
         get => <<<'PROMPT'
             You are a research analyst. Given a set of uploaded documents and a
             research question:
@@ -34,30 +44,29 @@ final class ResearchAgent implements AgentDefinition, Retryable, HasTimeout
             PROMPT;
     }
 
-    public RetryPolicy $retryPolicy {
-        get => RetryPolicy::exponential(2);
+    public Output $output {
+        get => Output::artifact(ArtifactKind::InvestigationReport);
     }
 
-    public float $timeout {
-        get => 60.0;
+    public Context $context {
+        get => Context::new();
     }
 
-    public function __invoke(ExecutionScope $scope): mixed
-    {
-        return AgentLoop::run(Turn::begin($this), $scope);
+    public Effects $effects {
+        get => Effects::allow(EffectKind::FileRead);
     }
 
-    public function tools(): array
-    {
-        return [
-            ExtractDocumentContent::class,
-            QuerySpreadsheet::class,
-            CrossReference::class,
-        ];
+    public ProviderNeeds $provider {
+        get => ProviderNeeds::new()
+            ->prefer(Preference::LocalFirst)
+            ->require(Capability::ToolUse);
     }
 
-    public function provider(): string
-    {
-        return 'anthropic';
+    public Capabilities $capabilities {
+        get => Capabilities::of(Capability::ToolUse, Capability::Streaming);
+    }
+
+    public TransportNeeds $transport {
+        get => TransportNeeds::new()->streaming()->cancellable();
     }
 }

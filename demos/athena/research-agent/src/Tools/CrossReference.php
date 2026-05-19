@@ -4,15 +4,23 @@ declare(strict_types=1);
 
 namespace Acme\Tools;
 
+use Phalanx\Athena\Effect\Context as EffectContext;
+use Phalanx\Athena\Effect\Outcome as EffectOutcome;
+use Phalanx\Athena\Effect\Resolution;
 use Phalanx\Athena\Tool\Param;
 use Phalanx\Athena\Tool\Tool;
-use Phalanx\Athena\Tool\ToolOutcome;
-use Phalanx\Scope\Scope;
+use Phalanx\Scope\TaskScope;
+use Phalanx\SelfDescribed;
 
-final class CrossReference implements Tool
+/**
+ * Cross-references findings across multiple document summaries to answer
+ * a focused question. Receives document summary IDs and a specific question,
+ * then returns scripted cross-referenced analysis results.
+ */
+final class CrossReference implements Tool, SelfDescribed
 {
     public string $description {
-        get => 'Cross-reference data points across multiple document summaries';
+        get => 'Cross-reference findings across multiple document summaries to answer a specific research question.';
     }
 
     /**
@@ -20,18 +28,22 @@ final class CrossReference implements Tool
      */
     public function __construct(
         #[Param('The specific question to answer by cross-referencing')]
-        private readonly string $question,
+        private(set) string $question,
         #[Param('Array of document summary IDs to cross-reference')]
-        private readonly array $documentIds,
+        private(set) array $documentIds,
     ) {
     }
 
-    public function __invoke(Scope $scope): ToolOutcome
+    public function __invoke(TaskScope $scope, EffectContext $ctx): EffectOutcome
     {
-        return ToolOutcome::data([
+        return EffectOutcome::routed(Resolution::LocalTool, data: [
             'question' => $this->question,
-            'sources' => $this->documentIds,
-            'findings' => 'Cross-referenced data across ' . count($this->documentIds) . ' documents.',
+            'sources'  => $this->documentIds,
+            'findings' => sprintf(
+                'Cross-referenced %d documents. The phalanx formation accounts for ' .
+                '73%% of decisive Spartan engagements recorded across all sources.',
+                count($this->documentIds),
+            ),
         ]);
     }
 }

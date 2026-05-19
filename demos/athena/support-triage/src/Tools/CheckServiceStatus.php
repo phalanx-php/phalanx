@@ -4,26 +4,26 @@ declare(strict_types=1);
 
 namespace Acme\Tools;
 
+use Phalanx\Athena\Effect\Context as EffectContext;
+use Phalanx\Athena\Effect\Outcome as EffectOutcome;
+use Phalanx\Athena\Effect\Resolution;
 use Phalanx\Athena\Tool\Tool;
-use Phalanx\Athena\Tool\ToolOutcome;
-use Phalanx\Scope\Scope;
+use Phalanx\Scope\TaskScope;
+use Phalanx\SelfDescribed;
 
-final class CheckServiceStatus implements Tool
+final class CheckServiceStatus implements Tool, SelfDescribed
 {
     public string $description {
-        get => 'Check if any services are currently experiencing issues';
+        get => 'Check current service status for active incidents or degraded components across the platform.';
     }
 
-    public function __construct()
-    {
-    }
 
-    public function __invoke(Scope $scope): ToolOutcome
+    public function __invoke(TaskScope $scope, EffectContext $ctx): EffectOutcome
     {
-        return ToolOutcome::data([
-            'active_incidents' => [],
-            'degraded_services' => [],
-            'all_operational' => true,
+        return EffectOutcome::routed(Resolution::LocalTool, data: [
+            'active_incidents'   => [],
+            'degraded_services'  => [],
+            'all_operational'    => true,
         ]);
     }
 }

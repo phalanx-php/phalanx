@@ -4,19 +4,24 @@ declare(strict_types=1);
 
 namespace Acme;
 
-use Acme\Tools\CheckServiceStatus;
-use Acme\Tools\GetRecentTickets;
-use Acme\Tools\LookupCustomer;
-use Acme\Tools\SearchKnowledgeBase;
-use Phalanx\Athena\AgentDefinition;
-use Phalanx\Athena\AgentLoop;
-use Phalanx\Athena\Turn;
-use Phalanx\Scope\ExecutionScope;
-use Phalanx\Task\HasTimeout;
+use Phalanx\Panoply\Agent;
+use Phalanx\Panoply\Capabilities;
+use Phalanx\Panoply\Capability;
+use Phalanx\Panoply\Context;
+use Phalanx\Panoply\Effect\Kind as EffectKind;
+use Phalanx\Panoply\Effects;
+use Phalanx\Panoply\Output;
+use Phalanx\Panoply\Provider\Needs as ProviderNeeds;
+use Phalanx\Panoply\Provider\Preference;
+use Phalanx\Panoply\Transport\Needs as TransportNeeds;
 
-final class SupportTriageAgent implements AgentDefinition, HasTimeout
+final class SupportTriageAgent implements Agent
 {
-    public string $instructions {
+    public string $id { get => 'support-triage-agent'; }
+
+    public string $name { get => 'Support Triage Agent'; }
+
+    public string $purpose {
         get => <<<'PROMPT'
             You are a senior support specialist. When given a support ticket:
 
@@ -33,27 +38,33 @@ final class SupportTriageAgent implements AgentDefinition, HasTimeout
             PROMPT;
     }
 
-    public float $timeout {
-        get => 25.0;
+    public Output $output {
+        get => Output::text();
     }
 
-    public function __invoke(ExecutionScope $scope): mixed
-    {
-        return AgentLoop::run(Turn::begin($this), $scope);
+    public Context $context {
+        get => Context::new();
     }
 
-    public function tools(): array
-    {
-        return [
-            LookupCustomer::class,
-            SearchKnowledgeBase::class,
-            GetRecentTickets::class,
-            CheckServiceStatus::class,
-        ];
+    public Effects $effects {
+        get => Effects::allow(
+            EffectKind::FileRead,
+            EffectKind::CodeSearch,
+            EffectKind::WebFetch,
+        );
     }
 
-    public function provider(): string
-    {
-        return 'anthropic';
+    public ProviderNeeds $provider {
+        get => ProviderNeeds::new()
+            ->prefer(Preference::LocalFirst)
+            ->require(Capability::ToolUse);
+    }
+
+    public Capabilities $capabilities {
+        get => Capabilities::of(Capability::ToolUse, Capability::Streaming);
+    }
+
+    public TransportNeeds $transport {
+        get => TransportNeeds::new()->streaming()->cancellable();
     }
 }

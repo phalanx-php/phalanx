@@ -4,15 +4,18 @@ declare(strict_types=1);
 
 namespace Acme\Tools;
 
+use Phalanx\Athena\Effect\Context as EffectContext;
+use Phalanx\Athena\Effect\Outcome as EffectOutcome;
+use Phalanx\Athena\Effect\Resolution;
 use Phalanx\Athena\Tool\Param;
 use Phalanx\Athena\Tool\Tool;
-use Phalanx\Athena\Tool\ToolOutcome;
-use Phalanx\Scope\Scope;
+use Phalanx\Scope\TaskScope;
+use Phalanx\SelfDescribed;
 
-final class LookupCustomer implements Tool
+final class LookupCustomer implements Tool, SelfDescribed
 {
     public string $description {
-        get => 'Look up customer account details by email or ID';
+        get => 'Look up a customer account by email or account ID, returning profile details and recent activity history.';
     }
 
     public function __construct(
@@ -21,20 +24,20 @@ final class LookupCustomer implements Tool
     ) {
     }
 
-    public function __invoke(Scope $scope): ToolOutcome
+    public function __invoke(TaskScope $scope, EffectContext $ctx): EffectOutcome
     {
-        return ToolOutcome::data([
+        return EffectOutcome::routed(Resolution::LocalTool, data: [
             'customer' => [
-                'id' => 42,
-                'email' => $this->identifier,
-                'name' => 'Sarah Johnson',
-                'plan' => 'Professional',
-                'mrr' => 99.00,
+                'id'     => 42,
+                'email'  => $this->identifier,
+                'name'   => 'Leonidas of Sparta',
+                'plan'   => 'Professional',
+                'mrr'    => 99.00,
                 'status' => 'active',
             ],
             'recent_activity' => [
-                ['action' => 'login', 'created_at' => '2026-03-25T14:30:00Z'],
-                ['action' => 'view_athena_exhibit_notes', 'created_at' => '2026-03-25T14:35:00Z'],
+                ['action' => 'login', 'created_at' => '2026-05-15T09:00:00Z'],
+                ['action' => 'view_phalanx_docs', 'created_at' => '2026-05-15T09:10:00Z'],
             ],
         ]);
     }
