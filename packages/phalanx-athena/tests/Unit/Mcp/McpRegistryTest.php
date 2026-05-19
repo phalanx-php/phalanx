@@ -9,7 +9,7 @@ use Phalanx\Athena\Effect\Resolution;
 use Phalanx\Athena\Mcp\McpConnection;
 use Phalanx\Athena\Mcp\McpRegistry;
 use Phalanx\Athena\Mcp\McpTool;
-use Phalanx\Athena\Tests\Fixtures\ScopeStub;
+use Phalanx\Athena\Testing\ScopeStub;
 use Phalanx\Scope\TaskScope;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;

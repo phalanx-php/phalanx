@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Athena\Tests\Unit;
 
-use Phalanx\Athena\Tests\Fixtures\ScopeStub;
+use Phalanx\Athena\Testing\ScopeStub;
 use Phalanx\Athena\Tests\Fixtures\TestAgent;
 use Phalanx\Athena\Turn\Config;
 use Phalanx\Athena\Turn\DefaultBuilder;

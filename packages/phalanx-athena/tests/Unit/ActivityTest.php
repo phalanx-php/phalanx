@@ -9,7 +9,7 @@ use Phalanx\Athena\Activity\Config;
 use Phalanx\Athena\Activity\Executor;
 use Phalanx\Athena\Activity\Result;
 use Phalanx\Athena\Activity\State;
-use Phalanx\Athena\Tests\Fixtures\ScopeStub;
+use Phalanx\Athena\Testing\ScopeStub;
 use Phalanx\Athena\Tests\Fixtures\TestAgent;
 use Phalanx\Athena\Turn\Outcome;
 use Phalanx\Panoply\Agent;

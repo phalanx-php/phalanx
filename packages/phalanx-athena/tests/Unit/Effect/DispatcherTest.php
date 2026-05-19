@@ -14,7 +14,7 @@ use Phalanx\Athena\Mcp\McpConnection;
 use Phalanx\Athena\Mcp\McpRegistry;
 use Phalanx\Athena\Mcp\McpTool;
 use Phalanx\Athena\Stream\CompositeStream;
-use Phalanx\Athena\Tests\Fixtures\ScopeStub;
+use Phalanx\Athena\Testing\ScopeStub;
 use Phalanx\Athena\Tool\Tool;
 use Phalanx\Athena\Tool\ToolRegistry;
 use Phalanx\Athena\Turn;

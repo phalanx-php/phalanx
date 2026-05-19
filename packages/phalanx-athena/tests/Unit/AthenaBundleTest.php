@@ -43,7 +43,7 @@ final class AthenaBundleTest extends TestCase
     {
         $router = new SingleProviderRouter(new NullProvider());
         $tools = new ToolBundle();
-        $bundle = Athena::services($router, $tools);
+        $bundle = Athena::services($router, toolBundles: [$tools]);
 
         self::assertInstanceOf(AthenaBundle::class, $bundle);
     }

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Athena\Tests\Fixtures;
+namespace Phalanx\Athena\Testing;
 
 use Phalanx\Iris\HttpClient;
 use Phalanx\Iris\HttpRequest;
@@ -12,11 +12,18 @@ use Phalanx\Scope\Scope;
 use Phalanx\Scope\Suspendable;
 
 /**
- * Deterministic HttpClient replacement for unit tests.
+ * Deterministic HttpClient replacement for tests and demos alike.
+ *
+ * Promoted to public package surface (Phalanx\Athena\Testing) so Athena's
+ * own unit tests AND demo scripts can share the same offline SSE simulation
+ * without each carrying a private copy.
  *
  * stream() always returns the configured FakeHttpStream.
  * post() pops and returns the next queued HttpResponse; if the queue is
  * exhausted it returns a generic 202 Accepted.
+ *
+ * Constructed without any live Aegis runtime or OpenSwoole dependencies — safe
+ * to use in unit tests, acceptance tests, and demo scripts alike.
  */
 final class FakeHttpClient extends HttpClient
 {

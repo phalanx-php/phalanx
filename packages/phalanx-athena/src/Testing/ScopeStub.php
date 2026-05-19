@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Athena\Tests\Fixtures;
+namespace Phalanx\Athena\Testing;
 
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Runtime\RuntimeContext;
@@ -12,6 +12,11 @@ use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 use Phalanx\Trace\Trace;
 
+/**
+ * Minimal TaskScope implementation for tests and demos that need a scope
+ * without a live Aegis runtime. Supports cancellation and disposal; throws
+ * on service resolution and trace access.
+ */
 final class ScopeStub implements TaskScope
 {
     public bool $isCancelled { get => $this->token->isCancelled; }
@@ -32,6 +37,12 @@ final class ScopeStub implements TaskScope
 
     public function call(\Closure $fn, ?WaitReason $waitReason = null): mixed
     {
+        if (!new \ReflectionFunction($fn)->isStatic()) {
+            throw new \LogicException(
+                self::class . '::call() requires a static closure (matches ExecutionLifecycleScope contract).',
+            );
+        }
+
         return $fn();
     }
 

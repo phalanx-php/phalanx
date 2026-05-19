@@ -24,13 +24,9 @@ require __DIR__ . '/../../../vendor/autoload_runtime.php';
 
 use Phalanx\Athena\Mcp\Client\SseClient;
 use Phalanx\Athena\Mcp\McpServer;
-// FakeHttpClient, FakeHttpStream, and ScopeStub are autoload-dev fixtures.
-// This demo uses them directly so it can run without a network dependency.
-// The authoritative SSE protocol coverage lives in the acceptance test suite
-// at packages/phalanx-athena/tests/Acceptance/McpSseClientTest.php.
-use Phalanx\Athena\Tests\Fixtures\FakeHttpClient;
-use Phalanx\Athena\Tests\Fixtures\FakeHttpStream;
-use Phalanx\Athena\Tests\Fixtures\ScopeStub;
+use Phalanx\Athena\Testing\FakeHttpClient;
+use Phalanx\Athena\Testing\FakeHttpStream;
+use Phalanx\Athena\Testing\ScopeStub;
 use Phalanx\Boot\AppContext;
 use Phalanx\Demos\Kit\DemoReport;
 use Phalanx\Iris\HttpResponse;

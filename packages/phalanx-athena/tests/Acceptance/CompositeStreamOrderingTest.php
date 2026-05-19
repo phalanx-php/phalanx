@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Athena\Tests\Acceptance;
 
 use Phalanx\Athena\Stream\CompositeStream;
-use Phalanx\Athena\Tests\Fixtures\ScopeStub;
+use Phalanx\Athena\Testing\ScopeStub;
 use Phalanx\Panoply\Cue;
 use Phalanx\Panoply\Cue\Output\TokenDelta;
 use Phalanx\Panoply\Stream;

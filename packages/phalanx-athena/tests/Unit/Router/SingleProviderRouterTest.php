@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Athena\Tests\Unit\Router;
 
 use Phalanx\Athena\Router\SingleProviderRouter;
-use Phalanx\Athena\Tests\Fixtures\ScopeStub;
+use Phalanx\Athena\Testing\ScopeStub;
 use Phalanx\Panoply\Agent;
 use Phalanx\Panoply\Capabilities;
 use Phalanx\Panoply\Capability;

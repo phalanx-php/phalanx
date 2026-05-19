@@ -7,9 +7,9 @@ namespace Phalanx\Athena\Tests\Unit\Mcp\Client;
 use Phalanx\Athena\Mcp\Client\SseClient;
 use Phalanx\Athena\Mcp\Client\SseConnection;
 use Phalanx\Athena\Mcp\McpServer;
-use Phalanx\Athena\Tests\Fixtures\FakeHttpClient;
-use Phalanx\Athena\Tests\Fixtures\FakeHttpStream;
-use Phalanx\Athena\Tests\Fixtures\ScopeStub;
+use Phalanx\Athena\Testing\FakeHttpClient;
+use Phalanx\Athena\Testing\FakeHttpStream;
+use Phalanx\Athena\Testing\ScopeStub;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 

@@ -7,7 +7,7 @@ namespace Phalanx\Athena\Tests\Unit\Tool;
 use Phalanx\Athena\Effect\Context as EffectContext;
 use Phalanx\Athena\Effect\Outcome as EffectOutcome;
 use Phalanx\Athena\Effect\Resolution;
-use Phalanx\Athena\Tests\Fixtures\ScopeStub;
+use Phalanx\Athena\Testing\ScopeStub;
 use Phalanx\Athena\Tool\Param;
 use Phalanx\Athena\Tool\Tool;
 use Phalanx\Athena\Tool\ToolExecutor;

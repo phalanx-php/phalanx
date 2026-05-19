@@ -9,7 +9,9 @@ use Phalanx\Athena\Activity\Config as ActivityConfig;
 use Phalanx\Athena\Activity\Result;
 use Phalanx\Athena\Activity\Suspender;
 use Phalanx\Athena\Effect\Dispatcher;
+use Phalanx\Athena\Hook\StepHook;
 use Phalanx\Athena\Mcp\McpRegistry;
+use Phalanx\Athena\Mcp\McpServer;
 use Phalanx\Athena\Router\InvocationRouter;
 use Phalanx\Athena\Tool\ToolBundle;
 use Phalanx\Athena\Turn\Builder;
@@ -29,11 +31,18 @@ final class Athena
     {
     }
 
+    /**
+     * @param list<ToolBundle> $toolBundles
+     * @param list<McpServer>  $mcpServers
+     * @param list<StepHook>   $hooks
+     */
     public static function services(
         InvocationRouter $router,
-        ToolBundle ...$toolBundles,
+        array $toolBundles = [],
+        array $mcpServers = [],
+        array $hooks = [],
     ): AthenaBundle {
-        return new AthenaBundle($router, array_values($toolBundles));
+        return new AthenaBundle($router, $toolBundles, $mcpServers, $hooks);
     }
 
     public static function run(

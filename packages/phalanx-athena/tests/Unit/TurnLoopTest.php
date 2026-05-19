@@ -9,7 +9,7 @@ use Phalanx\Athena\Exception\MaxInvocationsReached;
 use Phalanx\Athena\Hook\StepContext;
 use Phalanx\Athena\Hook\StepHook;
 use Phalanx\Athena\Hook\StepHookResult;
-use Phalanx\Athena\Tests\Fixtures\ScopeStub;
+use Phalanx\Athena\Testing\ScopeStub;
 use Phalanx\Athena\Tests\Fixtures\SyncRuntimeFactory;
 use Phalanx\Athena\Tests\Fixtures\TestAgent;
 use Phalanx\Athena\Turn\DefaultBuilder;

@@ -19,7 +19,7 @@ use Phalanx\Athena\Persistence\InvocationRecord;
 use Phalanx\Athena\Persistence\PromptHashRecord;
 use Phalanx\Athena\Persistence\SuspendedState;
 use Phalanx\Athena\Stream\CompositeStream;
-use Phalanx\Athena\Tests\Fixtures\ScopeStub;
+use Phalanx\Athena\Testing\ScopeStub;
 use Phalanx\Athena\Tool\Tool;
 use Phalanx\Athena\Tool\ToolRegistry;
 use Phalanx\Athena\Turn\Outcome as TurnOutcome;

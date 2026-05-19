@@ -6,7 +6,7 @@ namespace Phalanx\Athena\Tests\Unit\Output;
 
 use Phalanx\Athena\Exception\OutputHydrationError;
 use Phalanx\Athena\Output\OutputHydrator;
-use Phalanx\Athena\Tests\Fixtures\ScopeStub;
+use Phalanx\Athena\Testing\ScopeStub;
 use Phalanx\Panoply\Agent;
 use Phalanx\Panoply\Artifact\Kind as ArtifactKind;
 use Phalanx\Panoply\Capabilities;

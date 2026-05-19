@@ -2,16 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Athena\Tests\Fixtures;
+namespace Phalanx\Athena\Testing;
 
 use Phalanx\Iris\HttpStream;
 use Phalanx\Scope\Suspendable;
 
 /**
- * Minimal HttpStream stand-in for unit tests. Replays a fixed byte string
+ * Minimal HttpStream stand-in for tests and demos. Replays a fixed byte string
  * through read() in fixed-size chunks and tracks close() calls.
  *
- * Constructed without any Aegis runtime dependencies.
+ * Constructed without any Aegis runtime dependencies so it is safe to use
+ * in unit tests, acceptance tests, and demo scripts alike.
  */
 final class FakeHttpStream extends HttpStream
 {

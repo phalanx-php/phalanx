@@ -7,7 +7,7 @@ namespace Phalanx\Athena\Tests\Unit\Effect;
 use Phalanx\Athena\Effect\BuiltInExecutor;
 use Phalanx\Athena\Effect\Context;
 use Phalanx\Athena\Effect\Resolution;
-use Phalanx\Athena\Tests\Fixtures\ScopeStub;
+use Phalanx\Athena\Testing\ScopeStub;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Panoply\Cue\Effect\Requested;

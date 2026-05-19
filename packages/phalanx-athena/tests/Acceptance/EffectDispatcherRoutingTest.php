@@ -11,7 +11,7 @@ use Phalanx\Athena\Effect\Resolution;
 use Phalanx\Athena\Grant\MemoryGrantStore;
 use Phalanx\Athena\Mcp\McpRegistry;
 use Phalanx\Athena\Stream\CompositeStream;
-use Phalanx\Athena\Tests\Fixtures\ScopeStub;
+use Phalanx\Athena\Testing\ScopeStub;
 use Phalanx\Athena\Tool\Tool;
 use Phalanx\Athena\Tool\ToolRegistry;
 use Phalanx\Panoply\Cue\Effect\Executed;

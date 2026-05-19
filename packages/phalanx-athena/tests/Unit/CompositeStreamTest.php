@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Athena\Tests\Unit;
 
 use Phalanx\Athena\Stream\CompositeStream;
-use Phalanx\Athena\Tests\Fixtures\ScopeStub;
+use Phalanx\Athena\Testing\ScopeStub;
 use Phalanx\Panoply\Cue\Activity\Completed;
 use Phalanx\Panoply\Cue\Activity\Started;
 use Phalanx\Panoply\Cue\Effect\Requested;

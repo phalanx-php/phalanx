@@ -8,7 +8,7 @@ use Phalanx\Athena\Hook\StepContext;
 use Phalanx\Athena\Hook\StepHook;
 use Phalanx\Athena\Hook\StepHookChain;
 use Phalanx\Athena\Hook\StepHookResult;
-use Phalanx\Athena\Tests\Fixtures\ScopeStub;
+use Phalanx\Athena\Testing\ScopeStub;
 use Phalanx\Athena\Turn\Config;
 use Phalanx\Athena\Turn\Outcome;
 use Phalanx\Panoply\Context;
