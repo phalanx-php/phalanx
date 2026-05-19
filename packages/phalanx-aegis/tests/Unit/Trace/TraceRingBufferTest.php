@@ -193,6 +193,37 @@ final class TraceRingBufferTest extends TestCase
         self::assertSame(['simple' => true], $recycled->attrs);
     }
 
+    public function testSlotReusesIdentityAfterWrap(): void
+    {
+        $trace = new Trace();
+        $ringSize = self::ringSize();
+
+        // Fill the ring completely.
+        for ($i = 0; $i < $ringSize; $i++) {
+            $trace->log(TraceType::Execute, "event-$i");
+        }
+
+        // Snapshot before the wrap write — these are clones, stable forever.
+        $beforeWrap = $trace->events();
+
+        // One more write wraps cursor back to slot 0.
+        $trace->log(TraceType::Execute, 'wrapped');
+
+        $afterWrap = $trace->events();
+
+        // The clone taken before the wrap still has the pre-wrap data at index 0.
+        // When cursor=0 (just filled), events() returns slots[0..] ++ slots[0..0-1(empty)],
+        // so index 0 of the snapshot is the oldest surviving event: event-0.
+        self::assertSame('event-0', $beforeWrap[0]->name);
+
+        // The clone taken after the wrap has the recycled data at the tail.
+        self::assertSame('wrapped', $afterWrap[$ringSize - 1]->name);
+
+        // The two clones at the same logical position are distinct objects —
+        // events() always materialises fresh clones.
+        self::assertNotSame(spl_object_id($beforeWrap[0]), spl_object_id($afterWrap[0]));
+    }
+
     private static function ringSize(): int
     {
         return (new \ReflectionClassConstant(Trace::class, 'RING_SIZE'))->getValue();

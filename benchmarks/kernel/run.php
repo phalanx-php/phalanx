@@ -7,11 +7,18 @@ use Phalanx\Benchmarks\Kernel\Cases\CancelSleepingChildrenCase;
 use Phalanx\Benchmarks\Kernel\Cases\ConcurrentDelayCase;
 use Phalanx\Benchmarks\Kernel\Cases\ConcurrentNoopCase;
 use Phalanx\Benchmarks\Kernel\Cases\ConcurrentNoopUnpooledCase;
+use Phalanx\Benchmarks\Kernel\Cases\CueAllocationNewCase;
+use Phalanx\Benchmarks\Kernel\Cases\CueAllocationResetCase;
 use Phalanx\Benchmarks\Kernel\Cases\ExecuteNoopTaskCase;
 use Phalanx\Benchmarks\Kernel\Cases\ExecuteNoopTaskUnpooledCase;
 use Phalanx\Benchmarks\Kernel\Cases\ExecuteStaticTaskOfCase;
+use Phalanx\Benchmarks\Kernel\Cases\FreshAllocationBaselineCase;
 use Phalanx\Benchmarks\Kernel\Cases\InProcessLedgerLifecycleCase;
+use Phalanx\Benchmarks\Kernel\Cases\MemoryGrowthPooledCase;
+use Phalanx\Benchmarks\Kernel\Cases\MemoryGrowthUnpooledCase;
+use Phalanx\Benchmarks\Kernel\Cases\ObjectPoolCycleCase;
 use Phalanx\Benchmarks\Kernel\Cases\PhalanxManagedContextSwitchCase;
+use Phalanx\Benchmarks\Kernel\Cases\PoolRingWithBorrowedCase;
 use Phalanx\Benchmarks\Kernel\Cases\RawFiberContextSwitchCase;
 use Phalanx\Benchmarks\Kernel\Cases\RawSwooleContextSwitchCase;
 use Phalanx\Benchmarks\Kernel\Cases\ScopeCreateDisposeCase;
@@ -29,6 +36,7 @@ require __DIR__ . '/../../vendor/autoload_runtime.php';
 require __DIR__ . '/BenchmarkCase.php';
 require __DIR__ . '/cases/CoreCases.php';
 require __DIR__ . '/cases/ContextSwitchCases.php';
+require __DIR__ . '/cases/PoolCases.php';
 
 return BenchmarkRunner::boot('Aegis Kernel Benchmarks', static function (BenchmarkReport $report, AppContext $_context): void {
     $report->group([
@@ -50,5 +58,12 @@ return BenchmarkRunner::boot('Aegis Kernel Benchmarks', static function (Benchma
         new RawFiberContextSwitchCase(),
         new RawSwooleContextSwitchCase(),
         new PhalanxManagedContextSwitchCase(),
+        new ObjectPoolCycleCase(),
+        new FreshAllocationBaselineCase(),
+        new PoolRingWithBorrowedCase(),
+        new CueAllocationNewCase(),
+        new CueAllocationResetCase(),
+        new MemoryGrowthPooledCase(),
+        new MemoryGrowthUnpooledCase(),
     ]);
 });
