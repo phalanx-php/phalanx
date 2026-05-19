@@ -29,7 +29,7 @@ return static fn(array $context): \Closure => static function () use ($context):
     );
 
     $baseUrl = (string) ($effective->get(DemoContextKeys::OLLAMA_BASE_URL) ?? DemoProvider::OLLAMA_BASE);
-    $model   = (string) ($effective->get(DemoContextKeys::OLLAMA_MODEL) ?? 'llama3.1');
+    $model   = (string) ($effective->get(DemoContextKeys::OLLAMA_MODEL) ?? 'qwen2.5-coder:7b');
     $enabled = $effective->get(DemoContextKeys::OLLAMA_ENABLED, '1') !== '0';
 
     $choice = $enabled
@@ -60,7 +60,7 @@ return static fn(array $context): \Closure => static function () use ($context):
             "Example JSON:\n" .
             "  {\"customer_email\":\"hoplite@sparta.polis\",\"subject\":\"Aspis delivery delay\",\"body\":\"My shield order has not arrived before the battle at Thermopylae.\"}\n\n" .
             "Run with Ollama:\n" .
-            "  OLLAMA_MODEL=llama3.1 php demos/athena/support-triage/server.php",
+            "  OLLAMA_MODEL=qwen2.5-coder:7b php demos/athena/support-triage/server.php",
             $choice->description,
         ))
         ->run();

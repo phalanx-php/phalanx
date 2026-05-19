@@ -19,7 +19,7 @@ Starts an SSE endpoint at `POST /triage`. The handler runs the triage agent and 
 ```bash
 composer demo:athena:serve:support-triage
 # or with a specific Ollama model:
-OLLAMA_MODEL=llama3.1 php -d extension=openswoole demos/athena/support-triage/server.php
+OLLAMA_MODEL=qwen2.5-coder:7b php -d extension=openswoole demos/athena/support-triage/server.php
 ```
 
 Submit a ticket:

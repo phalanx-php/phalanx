@@ -15,7 +15,7 @@
  *
  * Environment variables (read from $context via symfony/runtime):
  *   OLLAMA_BASE_URL  — Ollama base URL (default: http://localhost:11434)
- *   OLLAMA_MODEL     — model name (default: llama3.1)
+ *   OLLAMA_MODEL     — model name (default: qwen2.5-coder:7b)
  *   OLLAMA_ENABLED   — set to "0" to skip Ollama probe and use Fake directly
  *
  * Usage:
@@ -72,7 +72,7 @@ return static function (array $context): Closure {
     );
 
     $baseUrl = (string) ($context['OLLAMA_BASE_URL'] ?? DemoProvider::OLLAMA_BASE);
-    $model   = (string) ($context['OLLAMA_MODEL']    ?? 'llama3.1');
+    $model   = (string) ($context['OLLAMA_MODEL']    ?? 'qwen2.5-coder:7b');
     $enabled = ($context['OLLAMA_ENABLED'] ?? '1') !== '0';
 
     $choice = $enabled

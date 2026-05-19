@@ -15,7 +15,7 @@
  *
  * Environment variables (read from $context via symfony/runtime):
  *   OLLAMA_BASE_URL  — Ollama base URL (default: http://localhost:11434)
- *   OLLAMA_MODEL     — model name to request (default: llama3.1)
+ *   OLLAMA_MODEL     — model name to request (default: qwen2.5-coder:7b)
  *   OLLAMA_ENABLED   — set to "0" to skip the Ollama probe entirely
  *
  * Usage:
@@ -77,7 +77,7 @@ return static function (array $context): Closure {
     // Resolve Ollama config from $context. OLLAMA_ENABLED=0 skips the probe
     // entirely and goes straight to the Fake provider.
     $baseUrl = (string) ($context['OLLAMA_BASE_URL'] ?? DemoProvider::OLLAMA_BASE);
-    $model   = (string) ($context['OLLAMA_MODEL']    ?? 'llama3.1');
+    $model   = (string) ($context['OLLAMA_MODEL']    ?? 'qwen2.5-coder:7b');
     $enabled = ($context['OLLAMA_ENABLED'] ?? '1') !== '0';
 
     // The probe is a plain curl call with no Aegis dependency; safe to run
