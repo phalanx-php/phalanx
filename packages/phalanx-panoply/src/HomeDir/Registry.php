@@ -65,7 +65,11 @@ final class Registry
             $adapterClass = $config->adapter;
 
             if (!class_exists($adapterClass)) {
-                continue;
+                throw new \LogicException(sprintf(
+                    'HomeDir adapter class "%s" referenced in %s does not exist',
+                    $adapterClass,
+                    $fileInfo->getPathname(),
+                ));
             }
 
             if (!is_a($adapterClass, AdapterFactory::class, allow_string: true)) {

@@ -48,9 +48,9 @@
     "rector:dry": "rector process --dry-run",
     "cs": "phpcs",
     "cs:fix": "phpcbf",
-    "test": "php vendor/bin/phpunit --testsuite=Unit",
-    "test:integration": "php vendor/bin/phpunit --testsuite=Integration",
-    "test:acceptance": "php vendor/bin/phpunit --testsuite=Acceptance"
+    "test": "php ../../vendor/bin/phpunit --testsuite=Unit",
+    "test:integration": "php ../../vendor/bin/phpunit --testsuite=Integration",
+    "test:acceptance": "php ../../vendor/bin/phpunit --testsuite=Acceptance"
   },
   "autoload": {
     "psr-4": {

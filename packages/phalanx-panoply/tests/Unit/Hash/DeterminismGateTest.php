@@ -10,14 +10,22 @@ use Phalanx\Panoply\Capabilities;
 use Phalanx\Panoply\Capability;
 use Phalanx\Panoply\Context;
 use Phalanx\Panoply\Conversation\Options;
+use Phalanx\Panoply\Conversation\Record\Error as ConversationRecordError;
 use Phalanx\Panoply\Conversation\Record\Message;
+use Phalanx\Panoply\Conversation\Record\ToolCall;
+use Phalanx\Panoply\Conversation\Record\ToolResult;
 use Phalanx\Panoply\Cue\Activity\Started as CueActivityStarted;
 use Phalanx\Panoply\Cue\Artifact\Finalized as CueArtifactFinalized;
 use Phalanx\Panoply\Cue\Effect\Authorized as CueEffectAuthorized;
 use Phalanx\Panoply\Cue\Invocation\Completed as CueInvocationCompleted;
 use Phalanx\Panoply\Cue\Output\Channel;
+use Phalanx\Panoply\Cue\Output\StructuredDelta;
 use Phalanx\Panoply\Cue\Output\TokenDelta;
+use Phalanx\Panoply\Cue\Output\TokenStop;
+use Phalanx\Panoply\Cue\Provider\RateLimited as CueProviderRateLimited;
+use Phalanx\Panoply\Cue\Runtime\Error as CueRuntimeError;
 use Phalanx\Panoply\Cue\StopReason;
+use Phalanx\Panoply\Cue\Usage\FinalUsage;
 use Phalanx\Panoply\Effect;
 use Phalanx\Panoply\Effect\Decision;
 use Phalanx\Panoply\Effect\Kind as EffectKind;
@@ -566,6 +574,289 @@ final class DeterminismGateTest extends TestCase
             Canonical::of($fileShell),
             Canonical::of($shellFile),
             'Effects::allow() insertion order must not affect the canonical hash',
+        );
+    }
+
+    // ── Additional Cue family anchors (S3) ───────────────────────────────────
+
+    #[Test]
+    public function canonicalAlgorithmAnchorForCueUsageFinalUsage(): void
+    {
+        $at = new \DateTimeImmutable('2026-05-17T12:00:00.123456+00:00');
+        $cue = new FinalUsage(
+            '01HZ000000000000000000USG001',
+            1,
+            'act.thermopylae',
+            '01HZ000000000000000000INV001',
+            'agent.leonidas',
+            $at,
+            inputTokens: 100,
+            outputTokens: 50,
+            cacheReadTokens: 20,
+            cacheWriteTokens: 5,
+            costUsd: 0.0015,
+        );
+
+        self::assertSame(
+            'd6d247162162c631dfa582a0c90a27e0a3dadc63879cd8fc36707408107ea601',
+            Canonical::of($cue),
+            'Canonical algorithm output drifted for Cue\Usage\FinalUsage',
+        );
+    }
+
+    #[Test]
+    public function canonicalAlgorithmAnchorForCueProviderRateLimited(): void
+    {
+        $at = new \DateTimeImmutable('2026-05-17T12:00:00.123456+00:00');
+        $cue = new CueProviderRateLimited(
+            '01HZ000000000000000000RL0001',
+            1,
+            'act.thermopylae',
+            '01HZ000000000000000000INV001',
+            'agent.leonidas',
+            $at,
+            provider: 'anthropic',
+            model: 'claude-opus-4-7',
+            retryAfterSeconds: 60,
+        );
+
+        self::assertSame(
+            'f8e0c256c482b7aa2ed9565ab22149e436483bcbd426893f70180b24b743de17',
+            Canonical::of($cue),
+            'Canonical algorithm output drifted for Cue\Provider\RateLimited',
+        );
+    }
+
+    #[Test]
+    public function canonicalAlgorithmAnchorForCueRuntimeError(): void
+    {
+        $at = new \DateTimeImmutable('2026-05-17T12:00:00.123456+00:00');
+        $cue = new CueRuntimeError(
+            '01HZ000000000000000000RTE001',
+            1,
+            'act.thermopylae',
+            '01HZ000000000000000000INV001',
+            'agent.leonidas',
+            $at,
+            message: 'Connection refused',
+            code: 'ECONNREFUSED',
+            errorClass: \Phalanx\Panoply\Transport\Sync\HttpError::class,
+        );
+
+        self::assertSame(
+            'b79102009abe7c5fa003984e196c3cfdc3f81983f204046f433077759bd2a821',
+            Canonical::of($cue),
+            'Canonical algorithm output drifted for Cue\Runtime\Error',
+        );
+    }
+
+    #[Test]
+    public function canonicalAlgorithmAnchorForCueOutputTokenStop(): void
+    {
+        $at = new \DateTimeImmutable('2026-05-17T12:00:00.123456+00:00');
+        $cue = new TokenStop(
+            '01HZ000000000000000000STP001',
+            1,
+            'act.thermopylae',
+            '01HZ000000000000000000INV001',
+            'agent.leonidas',
+            $at,
+            StopReason::EndOfTurn,
+            Channel::Message,
+        );
+
+        self::assertSame(
+            'c134e9cbbf2b0831616ecbcf33f5d1be9904eeb0ae0b4dd98692fcd7a5903a06',
+            Canonical::of($cue),
+            'Canonical algorithm output drifted for Cue\Output\TokenStop',
+        );
+    }
+
+    #[Test]
+    public function canonicalAlgorithmAnchorForCueOutputStructuredDelta(): void
+    {
+        $at = new \DateTimeImmutable('2026-05-17T12:00:00.123456+00:00');
+        $cue = new StructuredDelta(
+            '01HZ000000000000000000SDT001',
+            1,
+            'act.thermopylae',
+            '01HZ000000000000000000INV001',
+            'agent.leonidas',
+            $at,
+            jsonDelta: '{"key":"value"}',
+            path: 'result.data',
+        );
+
+        self::assertSame(
+            'b619b40d610dcf9cfff0817659acc6e90777ba61e110e829f3af745f37a33ada',
+            Canonical::of($cue),
+            'Canonical algorithm output drifted for Cue\Output\StructuredDelta',
+        );
+    }
+
+    // ── Record subclass anchors (S3) ─────────────────────────────────────────
+
+    #[Test]
+    public function canonicalAlgorithmAnchorForRecordToolCall(): void
+    {
+        $at = new \DateTimeImmutable('2026-05-17T12:00:00.123456+00:00');
+        $record = new ToolCall(
+            '01HZ000000000000000000TC0001',
+            1,
+            $at,
+            callId: 'call_agora_01',
+            toolName: 'bash',
+            arguments: ['command' => 'ls -la', 'cwd' => '/tmp'],
+        );
+
+        self::assertSame(
+            '8e372451facc6fc28c4ff7f6934acda7c50812e82d56b601abe0135994771720',
+            Canonical::of($record),
+            'Canonical algorithm output drifted for Conversation\Record\ToolCall',
+        );
+    }
+
+    #[Test]
+    public function canonicalAlgorithmAnchorForRecordToolResult(): void
+    {
+        $at = new \DateTimeImmutable('2026-05-17T12:00:00.123456+00:00');
+        $record = new ToolResult(
+            '01HZ000000000000000000TR0001',
+            1,
+            $at,
+            callId: 'call_agora_01',
+            output: 'total 0\ndrwxr-xr-x 2 root root 40 May 17 12:00 .\n',
+            isError: false,
+        );
+
+        self::assertSame(
+            'eed12f306826825d8017e4e4b71c07d704e46f571b81a265b227113a02e12869',
+            Canonical::of($record),
+            'Canonical algorithm output drifted for Conversation\Record\ToolResult',
+        );
+    }
+
+    #[Test]
+    public function canonicalAlgorithmAnchorForRecordError(): void
+    {
+        $at = new \DateTimeImmutable('2026-05-17T12:00:00.123456+00:00');
+        $record = new ConversationRecordError(
+            '01HZ000000000000000000RE0001',
+            1,
+            $at,
+            code: 'tool-execution-failed',
+            message: 'Tool bash exited with code 1',
+            details: ['exit_code' => 1, 'stderr' => 'permission denied'],
+        );
+
+        self::assertSame(
+            '2559109935f9d93e9fdb5deee0e3dd3beac961308120a8575249a1e1364e645f',
+            Canonical::of($record),
+            'Canonical algorithm output drifted for Conversation\Record\Error',
+        );
+    }
+
+    // ── List-of-cues anchor (S4) ──────────────────────────────────────────────
+
+    #[Test]
+    public function canonicalAlgorithmAnchorForCueStream(): void
+    {
+        // A deterministic array of 3 cues — guards against base Cue::toCanonical()
+        // field-reshape regressions that would silently alter streaming fingerprints.
+        $at = new \DateTimeImmutable('2026-05-17T12:00:00.123456+00:00');
+        $cues = [
+            new CueActivityStarted(
+                '01HZ000000000000000000STRT01',
+                1,
+                'act.thermopylae',
+                '01HZ000000000000000000INV001',
+                'agent.leonidas',
+                $at,
+            ),
+            new TokenDelta(
+                '01HZ000000000000000000TD0001',
+                2,
+                'act.thermopylae',
+                '01HZ000000000000000000INV001',
+                'agent.leonidas',
+                $at,
+                text: 'Hold the pass.',
+                channel: Channel::Message,
+            ),
+            new CueInvocationCompleted(
+                '01HZ000000000000000000COMP01',
+                3,
+                'act.thermopylae',
+                '01HZ000000000000000000INV001',
+                'agent.leonidas',
+                $at,
+                StopReason::EndOfTurn,
+            ),
+        ];
+
+        self::assertSame(
+            '696875489e6598d644b0a8e12aa8571192d3340c49fef314ab6b6f17d290b7c0',
+            Canonical::of($cues),
+            'Canonical algorithm output drifted for a list-of-cues (CueStream anchor)',
+        );
+    }
+
+    // ── Order-invariance (S5) ─────────────────────────────────────────────────
+
+    #[Test]
+    public function grantAllowedEffectsOrderInvariant(): void
+    {
+        // Grant::of() with allowed_effects in two different orderings must produce
+        // the same canonical hash — the set is sorted during normalization.
+        $fileShell = Grant::of(
+            id: '01HZ000000000000000000GRTORD',
+            subject: 'agent.leonidas',
+            allowedEffects: [EffectKind::FileRead, EffectKind::ShellExec],
+            scope: 'thermopylae',
+            hazardCeiling: Hazard::High,
+        );
+        $shellFile = Grant::of(
+            id: '01HZ000000000000000000GRTORD',
+            subject: 'agent.leonidas',
+            allowedEffects: [EffectKind::ShellExec, EffectKind::FileRead],
+            scope: 'thermopylae',
+            hazardCeiling: Hazard::High,
+        );
+
+        self::assertSame(
+            Canonical::of($fileShell),
+            Canonical::of($shellFile),
+            'Grant allowedEffects insertion order must not affect the canonical hash',
+        );
+    }
+
+    #[Test]
+    public function decisionReasonCodesOrderInvariant(): void
+    {
+        // Decision::denied() sorts reason_codes before hashing — insertion order
+        // must not affect the canonical hash.
+        $ab = Decision::denied('a', 'b');
+        $ba = Decision::denied('b', 'a');
+
+        self::assertSame(
+            Canonical::of($ab),
+            Canonical::of($ba),
+            'Decision reason_codes insertion order must not affect the canonical hash',
+        );
+    }
+
+    #[Test]
+    public function providerNeedsPreferencesAreOrderSensitive(): void
+    {
+        // Prefer() is an ordered list — the caller's priority matters.
+        // LocalFirst-then-Hosted and Hosted-then-LocalFirst must hash DIFFERENTLY.
+        $localFirst = ProviderNeeds::new()->prefer(Preference::LocalFirst)->prefer(Preference::Hosted);
+        $hostedFirst = ProviderNeeds::new()->prefer(Preference::Hosted)->prefer(Preference::LocalFirst);
+
+        self::assertNotSame(
+            Canonical::of($localFirst),
+            Canonical::of($hostedFirst),
+            'ProviderNeeds::prefer() is ordered; different preference order must produce a different hash',
         );
     }
 

@@ -104,14 +104,14 @@ final class ParserTest extends TestCase
     #[Test]
     public function allSourceAvailableSourcesReflectsConfiguredSources(): void
     {
-        // availableSources is determined at construction — no parse needed.
+        // configuredSources is determined at construction — no parse needed.
         $source = new All(
             sessions: new Sessions(self::fixtureRoot() . '/sessions'),
             history: new History(self::fixtureRoot() . '/history.jsonl'),
             sqlite: null,
         );
 
-        $available = $source->availableSources();
+        $available = $source->configuredSources();
         self::assertContains('sessions', $available);
         self::assertContains('history', $available);
         self::assertNotContains('sqlite', $available);
@@ -244,9 +244,9 @@ final class ParserTest extends TestCase
         // At minimum sessions (6) + history (4) minus dedup (3) = 7 records.
         self::assertGreaterThanOrEqual(7, count($records));
 
-        // availableSources reports sqlite as CONFIGURED even though it was
+        // configuredSources reports sqlite as CONFIGURED even though it was
         // either absent or threw at runtime.
-        self::assertContains('sqlite', $source->availableSources());
+        self::assertContains('sqlite', $source->configuredSources());
     }
 
     #[Test]

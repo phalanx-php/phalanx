@@ -13,6 +13,6 @@ use Phalanx\Panoply\Series;
  *
  * @extends Series<\Phalanx\Panoply\Artifact>
  */
-class Collection extends Series
+final class Collection extends Series
 {
 }

@@ -44,15 +44,15 @@ final class AllTest extends TestCase
     }
 
     #[Test]
-    public function availableSourcesIsEmptyWhenAllNull(): void
+    public function configuredSourcesIsEmptyWhenAllNull(): void
     {
         $all = new All(sessions: null, history: null, sqlite: null);
 
-        self::assertSame([], $all->availableSources());
+        self::assertSame([], $all->configuredSources());
     }
 
     #[Test]
-    public function availableSourcesReflectsConfiguredSourcesAtConstruction(): void
+    public function configuredSourcesReflectsConfiguredSourcesAtConstruction(): void
     {
         $all = new All(
             sessions: new Sessions('/s'),
@@ -60,11 +60,11 @@ final class AllTest extends TestCase
             sqlite: null,
         );
 
-        self::assertSame(['sessions'], $all->availableSources());
+        self::assertSame(['sessions'], $all->configuredSources());
     }
 
     #[Test]
-    public function availableSourcesContainsAllThreeWhenAllPresent(): void
+    public function configuredSourcesContainsAllThreeWhenAllPresent(): void
     {
         $all = new All(
             sessions: new Sessions('/s'),
@@ -72,14 +72,14 @@ final class AllTest extends TestCase
             sqlite: new Sqlite('/db.sqlite'),
         );
 
-        self::assertContains('sessions', $all->availableSources());
-        self::assertContains('history', $all->availableSources());
-        self::assertContains('sqlite', $all->availableSources());
-        self::assertCount(3, $all->availableSources());
+        self::assertContains('sessions', $all->configuredSources());
+        self::assertContains('history', $all->configuredSources());
+        self::assertContains('sqlite', $all->configuredSources());
+        self::assertCount(3, $all->configuredSources());
     }
 
     #[Test]
-    public function availableSourcesExcludesNullSources(): void
+    public function configuredSourcesExcludesNullSources(): void
     {
         $all = new All(
             sessions: new Sessions('/s'),
@@ -87,21 +87,21 @@ final class AllTest extends TestCase
             sqlite: null,
         );
 
-        self::assertContains('sessions', $all->availableSources());
-        self::assertContains('history', $all->availableSources());
-        self::assertNotContains('sqlite', $all->availableSources());
-        self::assertCount(2, $all->availableSources());
+        self::assertContains('sessions', $all->configuredSources());
+        self::assertContains('history', $all->configuredSources());
+        self::assertNotContains('sqlite', $all->configuredSources());
+        self::assertCount(2, $all->configuredSources());
     }
 
     #[Test]
-    public function availableSourcesIsImmutableAfterConstruction(): void
+    public function configuredSourcesIsImmutableAfterConstruction(): void
     {
-        // availableSources is computed once at construction — reading it twice
+        // configuredSources is computed once at construction — reading it twice
         // returns the same value and there is no public mutator.
         $all = new All(sessions: new Sessions('/s'), history: null, sqlite: null);
 
-        $first = $all->availableSources();
-        $second = $all->availableSources();
+        $first = $all->configuredSources();
+        $second = $all->configuredSources();
 
         self::assertSame($first, $second);
     }

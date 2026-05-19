@@ -14,7 +14,7 @@ namespace Phalanx\Panoply\Sse;
  * the WHATWG spec. Lines starting with `:` are comments and are silently
  * ignored. Events whose data is not valid JSON are silently dropped so the
  * stream survives wire-format terminators (e.g., `data: [DONE]`) and
- * unknown future event shapes.
+ * unknown or unrecognized event shapes.
  *
  * The `event:` field is optional. When absent the resulting {@see Event}
  * carries an empty-string type; mappers dispatch on the JSON payload shape

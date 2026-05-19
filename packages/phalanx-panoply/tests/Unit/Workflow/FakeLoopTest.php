@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Panoply\Tests\Unit\Integration;
+namespace Phalanx\Panoply\Tests\Unit\Workflow;
 
 use Phalanx\Panoply\Artifact\Kind as ArtifactKind;
 use Phalanx\Panoply\Capabilities;
@@ -27,10 +27,14 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Acceptance test #3: end-to-end fake loop.
+ * In-process fake provider workflow loop.
  * Drives Fake\Provider with a scripted cue stream, collects via
  * Stream::tokens(), concatenates text deltas, and asserts the assembled
  * transcript matches expectations.
+ *
+ * Cross-reference: the v0 acceptance gate harness covers the same provider
+ * surface at a coarser level via
+ * {@see \Phalanx\Panoply\Tests\Acceptance\V0AcceptanceGateTest::gate03FakeProviderEndToEndProducesValidCueStream()}.
  */
 final class FakeLoopTest extends TestCase
 {

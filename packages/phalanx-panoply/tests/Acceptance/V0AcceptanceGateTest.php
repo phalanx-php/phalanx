@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace Phalanx\Panoply\Tests\Acceptance;
 
-use Phalanx\Panoply\Artifact\Kind as ArtifactKind;
 use Phalanx\Panoply\Capabilities;
 use Phalanx\Panoply\Capability;
+use Phalanx\Panoply\Clock\FrozenClock;
 use Phalanx\Panoply\Conversation\Options;
-use Phalanx\Panoply\Cue\Activity\Started;
+use Phalanx\Panoply\Conversation\Record\Message;
+use Phalanx\Panoply\Conversation\Record\ToolCall;
+use Phalanx\Panoply\Conversation\Record\ToolResult;
 use Phalanx\Panoply\Cue\Activity\Completed as ActivityCompleted;
+use Phalanx\Panoply\Cue\Activity\Started;
 use Phalanx\Panoply\Cue\Invocation\Cancelled as InvocationCancelled;
 use Phalanx\Panoply\Cue\Invocation\Completed as InvocationCompleted;
 use Phalanx\Panoply\Cue\Output\Channel;
@@ -17,7 +20,6 @@ use Phalanx\Panoply\Cue\Output\TokenDelta;
 use Phalanx\Panoply\Cue\Output\TokenStop;
 use Phalanx\Panoply\Cue\StopReason;
 use Phalanx\Panoply\Cue\Usage\FinalUsage;
-use Phalanx\Panoply\Clock\FrozenClock;
 use Phalanx\Panoply\Duration;
 use Phalanx\Panoply\Effect;
 use Phalanx\Panoply\Effect\Authorizer\Rules\Authorizer;
@@ -25,10 +27,10 @@ use Phalanx\Panoply\Effect\Kind as EffectKind;
 use Phalanx\Panoply\Effects;
 use Phalanx\Panoply\Grant;
 use Phalanx\Panoply\Hash\Canonical;
-use Phalanx\Panoply\Hazard;
 use Phalanx\Panoply\Hazard\Scorer\Rules\Scorer;
 use Phalanx\Panoply\HomeDir\ClaudeCode\Parser as ClaudeCodeParser;
 use Phalanx\Panoply\HomeDir\ClaudeCode\Source as ClaudeCodeSource;
+use Phalanx\Panoply\HomeDir\Codex\Parser as CodexParser;
 use Phalanx\Panoply\HomeDir\Codex\Source\All as CodexAll;
 use Phalanx\Panoply\HomeDir\Codex\Source\History as CodexHistory;
 use Phalanx\Panoply\HomeDir\Codex\Source\Sessions as CodexSessions;
@@ -42,12 +44,12 @@ use Phalanx\Panoply\Provider\Needs as ProviderNeeds;
 use Phalanx\Panoply\Provider\Registry;
 use Phalanx\Panoply\Provider\ValidationError;
 use Phalanx\Panoply\Runtime\CancellationException;
-use Phalanx\Panoply\Transport\Sync\HttpError;
 use Phalanx\Panoply\Runtime\Sync\Runtime as SyncRuntime;
 use Phalanx\Panoply\Series;
 use Phalanx\Panoply\Stream;
 use Phalanx\Panoply\Tests\Fixtures\Agent\Discovered\HoplitesAgent;
 use Phalanx\Panoply\Transport\Needs as TransportNeeds;
+use Phalanx\Panoply\Transport\Sync\HttpError;
 use Phalanx\Testing\TestApp;
 use PHPUnit\Framework\Attributes\RequiresEnvironment;
 use PHPUnit\Framework\Attributes\RequiresPhpExtension;
@@ -73,7 +75,7 @@ final class V0AcceptanceGateTest extends TestCase
      * Provider, Transport, or Runtime namespaces — those are host concerns.
      */
     #[Test]
-    public function gate01_agentClassAuthorsViaDiscoveredAttributeWithoutLeakingProviderImports(): void
+    public function gate01AgentClassAuthorsViaDiscoveredAttributeWithoutLeakingProviderImports(): void
     {
         $agent = new HoplitesAgent();
 
@@ -110,7 +112,7 @@ final class V0AcceptanceGateTest extends TestCase
      * (JSON_PRESERVE_ZERO_FRACTION).
      */
     #[Test]
-    public function gate02_hashCanonicalProducesIdenticalHashesAcrossKeyOrdersAndFloats(): void
+    public function gate02HashCanonicalProducesIdenticalHashesAcrossKeyOrdersAndFloats(): void
     {
         // Key-order independence
         $ab = Canonical::of(['a' => 1, 'b' => 2, 'c' => 3]);
@@ -131,7 +133,7 @@ final class V0AcceptanceGateTest extends TestCase
      * end-to-end, producing the full expected lifecycle sequence.
      */
     #[Test]
-    public function gate03_fakeProviderEndToEndProducesValidCueStream(): void
+    public function gate03FakeProviderEndToEndProducesValidCueStream(): void
     {
         $at = new \DateTimeImmutable('2026-05-18T00:00:00Z');
         $script = [
@@ -163,7 +165,7 @@ final class V0AcceptanceGateTest extends TestCase
      * advances the source generator exactly 5 steps.
      */
     #[Test]
-    public function gate04_seriesCombinatorsLazyEvaluate(): void
+    public function gate04SeriesCombinatorsLazyEvaluate(): void
     {
         $steps = 0;
 
@@ -189,7 +191,7 @@ final class V0AcceptanceGateTest extends TestCase
      * correctly — mirroring the spec example.
      */
     #[Test]
-    public function gate05_streamCoalescingMergesAdjacentTokenDeltasWithinWindow(): void
+    public function gate05StreamCoalescingMergesAdjacentTokenDeltasWithinWindow(): void
     {
         $clock = new FrozenClock(0);
         $at = new \DateTimeImmutable('2026-05-18T00:00:00Z');
@@ -219,9 +221,35 @@ final class V0AcceptanceGateTest extends TestCase
 
         $chainedCues = $chained->toArray();
 
-        self::assertCount(1, $chainedCues, 'tokens()->coalescing() chain must also merge three within-window deltas into one');
+        self::assertCount(
+            1,
+            $chainedCues,
+            'tokens()->coalescing() chain must also merge three within-window deltas into one',
+        );
         self::assertInstanceOf(TokenDelta::class, $chainedCues[0]);
         self::assertSame('Hold the pass.', $chainedCues[0]->text);
+
+        // Negative half: a non-TokenDelta cue between two TokenDeltas must
+        // flush the accumulated buffer rather than being absorbed. The Started
+        // cue acts as a separator here.
+        $clock3 = new FrozenClock(0);
+        $mixed = Stream::from([
+            new TokenDelta('d1', 1, 'act.agora', 'inv.01', 'agent.pericles', $at, 'First ', Channel::Message),
+            new TokenDelta('d2', 2, 'act.agora', 'inv.01', 'agent.pericles', $at, 'half.', Channel::Message),
+            new Started('sep', 3, 'act.agora', 'inv.01', 'agent.pericles', $at),
+            new TokenDelta('d3', 4, 'act.agora', 'inv.01', 'agent.pericles', $at, 'Second.', Channel::Message),
+        ])->coalescing(Duration::ms(50), $clock3);
+
+        $mixedCues = $mixed->toArray();
+
+        // The two pre-separator deltas merge, then Started passes through, then
+        // the trailing delta is emitted individually on EOF flush.
+        self::assertCount(3, $mixedCues, 'Started between deltas must flush buffer: [merged, Started, trailing]');
+        self::assertInstanceOf(TokenDelta::class, $mixedCues[0]);
+        self::assertSame('First half.', $mixedCues[0]->text);
+        self::assertInstanceOf(Started::class, $mixedCues[1]);
+        self::assertInstanceOf(TokenDelta::class, $mixedCues[2]);
+        self::assertSame('Second.', $mixedCues[2]->text);
     }
 
     /**
@@ -229,7 +257,7 @@ final class V0AcceptanceGateTest extends TestCase
      * from a real fixture file.
      */
     #[Test]
-    public function gate06_realClaudeCodeSessionJsonlParses(): void
+    public function gate06RealClaudeCodeSessionJsonlParses(): void
     {
         $fixture = dirname(__DIR__)
             . '/Fixtures/HomeDir/ClaudeCode/projects/-Users-jhavens-sparta/abc-leonidas.jsonl';
@@ -239,31 +267,92 @@ final class V0AcceptanceGateTest extends TestCase
         $parser = new ClaudeCodeParser();
         $records = $parser->parse(new ClaudeCodeSource($fixture), Options::lenient())->toArray();
 
-        self::assertNotEmpty($records, 'Parser must produce at least one Record from the sparta fixture');
+        // Fixture abc-leonidas.jsonl has 7 records: 4 Messages, 1 ToolCall,
+        // 1 ToolResult, 1 Metadata (summary). Exact count guards against
+        // silent parse regressions that drop or duplicate records.
+        self::assertCount(7, $records, 'Parser must produce exactly 7 records from the sparta fixture');
+        self::assertInstanceOf(Message::class, $records[0], 'First record must be a system Message');
+
+        $toolCalls = array_filter($records, static fn ($r): bool => $r instanceof ToolCall);
+        $toolResults = array_filter($records, static fn ($r): bool => $r instanceof ToolResult);
+        $messages = array_filter($records, static fn ($r): bool => $r instanceof Message);
+
+        self::assertCount(1, $toolCalls, 'Fixture must contain exactly one ToolCall');
+        self::assertCount(1, $toolResults, 'Fixture must contain exactly one ToolResult');
+        self::assertGreaterThanOrEqual(2, count($messages), 'Fixture must contain at least two Messages');
     }
 
     /**
-     * Gate 7: Codex Source\All reports all configured sources and tracks
-     * availability correctly.
+     * Gate 7: Codex Parser interleaves sessions + history sources with
+     * raw_hash deduplication via Source\All composition.
+     *
+     * Interleave-and-dedup unit coverage lives in
+     * tests/Unit/HomeDir/Codex/ParserTest.php (allSourceMergesAndDeduplicates).
+     * This gate exercises the public Source\All composition path against the
+     * canonical Codex fixtures to confirm the full stack wires correctly.
+     *
+     * Fixture summary (tests/Fixtures/HomeDir/Codex/):
+     *   sessions/2026/05-17/abc.jsonl — 3 records (raw_hash: hash_sys_pericles,
+     *                                    hash_user_parthenon, hash_asst_delian)
+     *   sessions/2026/05-17/def.jsonl — 3 records (hash_user_agora,
+     *                                    hash_tool_call_agora, hash_tool_result_agora)
+     *   history.jsonl                 — 4 records; 3 share raw_hash with sessions
+     *                                   (hash_sys_pericles, hash_user_parthenon,
+     *                                    hash_user_agora); 1 is unique
+     *                                   (hash_asst_agora_answer)
+     *
+     * Note: interleaveByDedup requires each input source to be pre-sorted by
+     * the merge key. The Sessions parser iterates JSONL files in filesystem
+     * order and does not guarantee global timestamp ordering across files.
+     * The gate therefore asserts dedup count and record-type presence — not
+     * strict global chronological order, which is only guaranteed when each
+     * individual source is already timestamp-sorted.
+     *
+     * Expected after merge+dedup: 6 + 4 − 3 duplicates = 7 unique records.
      */
     #[Test]
-    public function gate07_codexParserInterleavesThreeSourcesWithDedup(): void
+    public function gate07CodexParserInterleavesThreeSourcesWithDedup(): void
     {
-        // Three sources: sessions + history present, sqlite absent
-        $all = new CodexAll(
-            sessions: new CodexSessions('/srv/phalanx/sessions'),
-            history: new CodexHistory('/srv/phalanx/history.jsonl'),
+        $fixtureRoot = dirname(__DIR__) . '/Fixtures/HomeDir/Codex';
+
+        $source = new CodexAll(
+            sessions: new CodexSessions($fixtureRoot . '/sessions'),
+            history: new CodexHistory($fixtureRoot . '/history.jsonl'),
             sqlite: null,
         );
 
-        self::assertContains('sessions', $all->availableSources());
-        self::assertContains('history', $all->availableSources());
-        self::assertNotContains('sqlite', $all->availableSources());
-        self::assertCount(2, $all->availableSources());
+        // Configuration report: sessions + history present, sqlite absent.
+        self::assertContains('sessions', $source->configuredSources());
+        self::assertContains('history', $source->configuredSources());
+        self::assertNotContains('sqlite', $source->configuredSources());
+        self::assertCount(2, $source->configuredSources());
 
-        // All-null variant
+        // Parse and verify interleave + dedup produces the correct unique count.
+        $parser = new CodexParser();
+        $records = $parser->parse($source, Options::lenient())->toArray();
+
+        // 6 session records + 4 history records − 3 duplicates = 7 unique.
+        self::assertCount(7, $records, 'Parser must dedup overlapping records across sessions and history');
+
+        // At least one Message and one ToolCall must survive the merge.
+        $messages = array_filter($records, static fn ($r): bool => $r instanceof Message);
+        $toolCalls = array_filter($records, static fn ($r): bool => $r instanceof ToolCall);
+        self::assertNotEmpty($messages, 'Merged log must contain at least one Message record');
+        self::assertNotEmpty($toolCalls, 'Merged log must contain at least one ToolCall record');
+
+        // The unique history record (hash_asst_agora_answer — "The agora is the
+        // civic heart...") must appear in the merged output exactly once.
+        $agoraAnswers = array_filter(
+            $records,
+            static fn ($r): bool => $r instanceof Message && str_contains($r->text, 'civic heart'),
+        );
+        self::assertCount(1, $agoraAnswers, 'The unique history record must appear exactly once in the merged log');
+
+        // All-null variant produces an empty log.
         $empty = new CodexAll(sessions: null, history: null, sqlite: null);
-        self::assertSame([], $empty->availableSources());
+        self::assertSame([], $empty->configuredSources());
+        $emptyRecords = $parser->parse($empty, Options::lenient())->toArray();
+        self::assertSame([], $emptyRecords);
     }
 
     /**
@@ -272,12 +361,9 @@ final class V0AcceptanceGateTest extends TestCase
      */
     #[Test]
     #[RequiresEnvironment('ANTHROPIC_API_KEY')]
-    public function gate08_syncTransportCallsAnthropicMessagesApiAndEmitsCues(): void
+    public function gate08SyncTransportCallsAnthropicMessagesApiAndEmitsCues(): void
     {
-        $apiKey = getenv('ANTHROPIC_API_KEY');
-        if ($apiKey === false || $apiKey === '') {
-            self::markTestSkipped('ANTHROPIC_API_KEY not set');
-        }
+        $apiKey = (string) getenv('ANTHROPIC_API_KEY');
 
         $model = Model::of(
             name: 'claude-haiku-3-5',
@@ -350,9 +436,9 @@ final class V0AcceptanceGateTest extends TestCase
      * Blocked — phalanx-iris is not yet OpenSwoole-native.
      */
     #[Test]
-    public function gate09_irisTransportConcurrentInvocationsCancellable(): void
+    public function gate09IrisTransportConcurrentInvocationsCancellable(): void
     {
-        self::markTestSkipped('Iris transport blocked on phalanx-iris OpenSwoole-native readiness (PA-06.08)');
+        self::markTestSkipped('Iris transport is blocked until phalanx-iris has an OpenSwoole-native implementation.');
     }
 
     /**
@@ -368,7 +454,7 @@ final class V0AcceptanceGateTest extends TestCase
      */
     #[Test]
     #[RequiresPhpExtension('openswoole')]
-    public function gate10_cancellationEmitsCancelledCueWithoutLeaks(): void
+    public function gate10CancellationEmitsCancelledCueWithoutLeaks(): void
     {
         $at = new \DateTimeImmutable('2026-05-18T00:00:00Z');
         $runtime = new SyncRuntime();
@@ -418,13 +504,27 @@ final class V0AcceptanceGateTest extends TestCase
      * is provided.
      */
     #[Test]
-    public function gate11_rulesAuthorizerDeniesShellExecWithoutGrant(): void
+    public function gate11RulesAuthorizerDeniesShellExecWithoutGrant(): void
     {
         $effect = Effect::of('eff.01', EffectKind::ShellExec, 'execute rm -rf /');
-        $decision = new Authorizer()->evaluate($effect, null);
 
-        self::assertTrue($decision->isDenied(), 'Null grant must produce a denied decision');
-        self::assertContains('no-grant', $decision->reasonCodes);
+        // Null grant: no authorization context at all — must deny with no-grant.
+        $nullDecision = new Authorizer()->evaluate($effect, null);
+        self::assertTrue($nullDecision->isDenied(), 'Null grant must produce a denied decision');
+        self::assertContains('no-grant', $nullDecision->reasonCodes);
+
+        // Insufficient grant: grants FileRead only, not ShellExec — must deny
+        // with effect-not-allowed regardless of the hazard ceiling.
+        $fileOnlyGrant = Grant::of(
+            id: 'grant_gate11_insufficient',
+            subject: 'agent.sparta',
+            allowedEffects: [EffectKind::FileRead],
+            scope: 'thermopylae',
+            hazardCeiling: \Phalanx\Panoply\Hazard::Critical,
+        );
+        $insufficientDecision = new Authorizer()->evaluate($effect, $fileOnlyGrant);
+        self::assertTrue($insufficientDecision->isDenied(), 'FileRead-only grant must deny ShellExec');
+        self::assertContains('effect-not-allowed', $insufficientDecision->reasonCodes);
     }
 
     /**
@@ -432,15 +532,51 @@ final class V0AcceptanceGateTest extends TestCase
      * Effect on repeated calls — the scorer is deterministic.
      */
     #[Test]
-    public function gate12_rulesScorerDeterministicAcrossRuns(): void
+    public function gate12RulesScorerDeterministicAcrossRuns(): void
     {
-        $scorer = new Scorer();
-        $effect = Effect::of('eff.01', EffectKind::ShellExec, 'run formation drill');
+        $scorer1 = new Scorer();
+        $scorer2 = new Scorer();
 
-        $first = $scorer->score($effect);
-        $second = $scorer->score($effect);
+        $shellExec = Effect::of('eff.01', EffectKind::ShellExec, 'run formation drill');
+        $fileRead = Effect::of('eff.02', EffectKind::FileRead, 'read scroll from agora');
+        $webFetch = Effect::of('eff.03', EffectKind::WebFetch, 'fetch oracle guidance');
 
-        self::assertSame($first, $second, 'Scorer must return the same Hazard for the same Effect every time');
+        // Same scorer, same effect, called twice → identical result.
+        self::assertSame(
+            $scorer1->score($shellExec),
+            $scorer1->score($shellExec),
+            'Same scorer must return the same Hazard for the same Effect on repeated calls',
+        );
+
+        // Two distinct scorer instances must produce identical results per effect.
+        self::assertSame(
+            $scorer1->score($shellExec),
+            $scorer2->score($shellExec),
+            'Two Scorer instances must agree on ShellExec hazard rating',
+        );
+        self::assertSame(
+            $scorer1->score($fileRead),
+            $scorer2->score($fileRead),
+            'Two Scorer instances must agree on FileRead hazard rating',
+        );
+        self::assertSame(
+            $scorer1->score($webFetch),
+            $scorer2->score($webFetch),
+            'Two Scorer instances must agree on WebFetch hazard rating',
+        );
+
+        // The three distinct effect kinds must not all produce the same hazard —
+        // defends against a trivially-constant scorer.
+        $hazards = [
+            $scorer1->score($shellExec)->value,
+            $scorer1->score($fileRead)->value,
+            $scorer1->score($webFetch)->value,
+        ];
+        self::assertGreaterThan(
+            1,
+            count(array_unique($hazards)),
+            'Scorer must differentiate hazard levels across effect kinds',
+        );
     }
 
     /**
@@ -448,7 +584,7 @@ final class V0AcceptanceGateTest extends TestCase
      * keys and accumulates all violations into one ValidationError.
      */
     #[Test]
-    public function gate13_providerLoaderRejectsUnknownKeysWithValidationError(): void
+    public function gate13ProviderLoaderRejectsUnknownKeysWithValidationError(): void
     {
         // Minimal document: only has `id` — everything else is missing
         $yaml = 'id: sparta';
@@ -461,12 +597,22 @@ final class V0AcceptanceGateTest extends TestCase
         }
 
         self::assertNotNull($caught, 'ValidationError must be thrown for a document missing required keys');
-        // Required keys: display_name, models, capabilities, transport, wire_translator
-        self::assertGreaterThanOrEqual(
+
+        // Exactly 5 violations — one per missing required key.
+        self::assertCount(
             5,
-            count($caught->violations),
-            'At least 5 violations must be reported (one per missing required key)',
+            $caught->violations,
+            'Exactly 5 violations must be reported (one per missing required key)',
         );
+
+        // Each violation message names the missing key.
+        foreach (['display_name', 'models', 'capabilities', 'transport', 'wire_translator'] as $key) {
+            $matched = array_filter(
+                $caught->violations,
+                static fn (string $v): bool => str_contains($v, $key),
+            );
+            self::assertNotEmpty($matched, "Expected a violation mentioning required key \"{$key}\"");
+        }
     }
 
     /**
@@ -474,7 +620,7 @@ final class V0AcceptanceGateTest extends TestCase
      * Anthropic YAML and returns the expected provider id and model id.
      */
     #[Test]
-    public function gate14_registryByModelAliasOpusReturnsAnthropicAndClaudeOpus47(): void
+    public function gate14RegistryByModelAliasOpusReturnsAnthropicAndClaudeOpus47(): void
     {
         $yamlPath = dirname(__DIR__)
             . '/Fixtures/Provider/anthropic.panoply.yaml';
@@ -497,7 +643,7 @@ final class V0AcceptanceGateTest extends TestCase
      * from a synthetic home directory structure.
      */
     #[Test]
-    public function gate15_homeDirAutoDetectReturnsPresentToolsAndFailsLoudlyOnMalformed(): void
+    public function gate15HomeDirAutoDetectReturnsPresentTools(): void
     {
         $fixtureBase = dirname(__DIR__) . '/Fixtures/HomeDir/autoDetect';
 
@@ -516,6 +662,36 @@ final class V0AcceptanceGateTest extends TestCase
         // None fixture: no tools
         $noneRegistry = HomeDirRegistry::autoDetect($fixtureBase . '/none');
         self::assertCount(0, $noneRegistry->all(), 'None fixture must detect 0 tools');
+    }
+
+    /**
+     * Gate 15b: Registry::autoDetect() fails loudly when a bundled
+     * HomeDir YAML is malformed (missing required keys, invalid shape).
+     *
+     * Implementation gap: autoDetect() hardcodes the bundled YAML scan path
+     * to `src/HomeDir` relative to Registry.php and exposes no seam to
+     * redirect it to a fixture directory. The loud-fail contract IS implemented
+     * in src/ (Loader::fromFile() throws ValidationError; autoDetect() throws
+     * LogicException for a missing adapter class), but it cannot be exercised
+     * through the public autoDetect($home) surface without a configurable scan
+     * path or a separate test-seam constructor.
+     *
+     * Loud-fail unit coverage lives in:
+     *   - tests/Unit/HomeDir/LoaderTest.php (ValidationError for malformed YAML)
+     *   - Registry::autoDetect() LogicException branch (class_exists check)
+     *
+     * To make this gate exercisable, Registry::autoDetect() needs a second
+     * optional parameter (e.g. `string $bundledDir = null`) or an extracted
+     * factory method that can be given an alternate YAML directory in tests.
+     */
+    #[Test]
+    public function gate15bMalformedBundledYamlFailsLoudly(): void
+    {
+        self::markTestIncomplete(
+            'Registry::autoDetect() has no injectable scan-path seam. '
+            . 'Malformed-YAML loud-fail is covered at the unit level in LoaderTest. '
+            . 'Add a $bundledDir parameter to autoDetect() to make this gate green.',
+        );
     }
 
     // ── helpers ──────────────────────────────────────────────────────────────

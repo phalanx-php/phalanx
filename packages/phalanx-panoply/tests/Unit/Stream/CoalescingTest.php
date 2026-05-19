@@ -306,6 +306,28 @@ final class CoalescingTest extends TestCase
         self::assertSame(Channel::Reasoning, $cues[2]->channel);
     }
 
+    #[Test]
+    public function coalesceWithZeroWindowFlushesEveryDelta(): void
+    {
+        // Duration::ms(0) means every delta is already beyond the window the
+        // moment it arrives. Each delta must be emitted individually — no merging.
+        $clock = new FrozenClock(0);
+        $at = new \DateTimeImmutable('2026-05-18T00:00:00Z');
+
+        $stream = Stream::from([
+            self::delta('z1', 1, 'First.', Channel::Message, $at),
+            self::delta('z2', 2, ' Second.', Channel::Message, $at),
+            self::delta('z3', 3, ' Third.', Channel::Message, $at),
+        ])->coalescing(Duration::ms(0), $clock);
+
+        $cues = $stream->toArray();
+
+        self::assertCount(3, $cues, 'Zero-window coalescing must emit each delta separately');
+        self::assertSame('First.', $cues[0]->text);
+        self::assertSame(' Second.', $cues[1]->text);
+        self::assertSame(' Third.', $cues[2]->text);
+    }
+
     private static function delta(
         string $id,
         int $sequence,

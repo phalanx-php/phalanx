@@ -13,6 +13,6 @@ use Phalanx\Panoply\Series;
  *
  * @extends Series<Record>
  */
-class Log extends Series
+final class Log extends Series
 {
 }

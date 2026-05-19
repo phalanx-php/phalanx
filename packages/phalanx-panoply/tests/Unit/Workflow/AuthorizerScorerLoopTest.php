@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Panoply\Tests\Unit\Integration;
+namespace Phalanx\Panoply\Tests\Unit\Workflow;
 
 use Phalanx\Panoply\Effect;
 use Phalanx\Panoply\Effect\Authorizer\Rules\Authorizer;
@@ -14,9 +14,14 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Acceptance test #11: end-to-end Scorer → Authorizer loop.
+ * In-process Scorer → Authorizer workflow loop.
  * Verifies that the canonical ruleset correctly denies and grants across
  * the full combination of effect kind, grant surface, and hazard ceiling.
+ *
+ * Cross-reference: the v0 acceptance gate harness covers the same
+ * Scorer/Authorizer surfaces at a coarser level via
+ * {@see \Phalanx\Panoply\Tests\Acceptance\V0AcceptanceGateTest::gate11RulesAuthorizerDeniesShellExecWithoutGrant()}
+ * and gate12. These unit tests exercise the full decision matrix in depth.
  */
 final class AuthorizerScorerLoopTest extends TestCase
 {
