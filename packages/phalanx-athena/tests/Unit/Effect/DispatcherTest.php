@@ -494,6 +494,11 @@ final class FakeConnection implements McpConnection
         return Outcome::routed(Resolution::McpTool, PanoplyOutcome::succeeded(null, 0), ['found' => true]);
     }
 
+    public function isRunning(): bool
+    {
+        return true;
+    }
+
     public function disconnect(TaskScope $scope): void
     {
     }

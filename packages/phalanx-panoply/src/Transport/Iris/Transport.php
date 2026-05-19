@@ -27,7 +27,7 @@ use Phalanx\Scope\Suspendable;
  * This file imports from {@see Phalanx\Iris}, {@see Phalanx\Scope}, and
  * {@see Phalanx\Cancellation}, which are outside panoply's usual
  * Phalanx-independence boundary. The exception is deliberate and mirrors
- * the precedent set by:
+ * conventions followed in:
  *
  *   - {@see \Phalanx\Panoply\Runtime\Aegis\Runtime} (imports Phalanx\Scope\TaskScope)
  *   - {@see \Phalanx\Panoply\Archon\PanoplyAgentsScanCommand} (imports Phalanx\Scope\Scope, Phalanx\Task\Scopeable)

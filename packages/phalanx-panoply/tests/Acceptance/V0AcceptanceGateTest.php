@@ -465,7 +465,7 @@ final class V0AcceptanceGateTest extends TestCase
     #[RequiresPhpExtension('openswoole')]
     public function gate09IrisTransportSequentialStreamingAndCancellation(): void
     {
-        $successScript = self::writeGate09Server('echo "pericles won at marathon";');
+        $successScript = self::writeGate09Server('echo "pericles won at marathon\n";');
         $errorScript = self::writeGate09Server('http_response_code(503); echo "service unavailable";');
         $slowScript = self::writeGate09Server('sleep(3); echo "never reached";');
 

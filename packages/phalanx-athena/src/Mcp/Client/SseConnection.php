@@ -98,6 +98,11 @@ final class SseConnection implements McpConnection
         );
     }
 
+    public function isRunning(): bool
+    {
+        return $this->events->valid();
+    }
+
     public function disconnect(TaskScope $scope): void
     {
         $this->sendRequest($scope, new Request($this->nextId(), 'shutdown'));

@@ -30,11 +30,11 @@ final class HoplitesAgent implements Agent
 
     public string $purpose { get => 'Defend the phalanx formation with coordinated reasoning.'; }
 
-    public Capabilities $capabilities { get => Capabilities::of(Capability::Reasoning); }
-
     public Context $context { get => Context::new(); }
 
     public Effects $effects { get => Effects::allow(EffectKind::FileRead); }
+    
+    public Capabilities $capabilities { get => Capabilities::of(Capability::Reasoning); }
 
     public ProviderNeeds $provider {
         get => ProviderNeeds::new()->prefer(Preference::LocalFirst)->require(Capability::Reasoning);

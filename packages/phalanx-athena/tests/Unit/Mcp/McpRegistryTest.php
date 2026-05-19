@@ -125,6 +125,11 @@ final class McpRegistryTest extends TestCase
                 return $this->fixedOutcome;
             }
 
+            public function isRunning(): bool
+            {
+                return true;
+            }
+
             public function disconnect(TaskScope $scope): void
             {
             }

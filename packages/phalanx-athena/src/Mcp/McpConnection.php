@@ -15,5 +15,12 @@ interface McpConnection
     /** @param array<string, mixed> $args */
     public function invoke(TaskScope $scope, string $toolName, array $args): Outcome;
 
+    /**
+     * Whether the underlying transport is still open and able to accept
+     * requests. Callers can use this to assert liveness before sending
+     * further messages or before a clean disconnect.
+     */
+    public function isRunning(): bool;
+
     public function disconnect(TaskScope $scope): void;
 }
