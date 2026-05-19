@@ -302,7 +302,7 @@ final class CombinatorTest extends TestCase
     #[Test]
     public function whereOnEmptyYieldsEmpty(): void
     {
-        self::assertSame([], Series::from([])->where(static fn ($x): bool => true)->toArray());
+        self::assertSame([], Series::from([])->where(static fn ($_x): bool => true)->toArray());
     }
 
     #[Test]

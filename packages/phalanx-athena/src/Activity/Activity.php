@@ -27,15 +27,16 @@ final class Activity implements Executor
     public function __invoke(TaskScope $scope, Agent $agent, Config $config, ?Log $log = null): Result
     {
         if (!$scope instanceof ExecutionScope) {
-            return $this->runInline($scope, $agent, $config, $log);
+            return self::runInline($this->executor, $scope, $agent, $config, $log);
         }
 
-        $self = $this;
+        $executor = $this->executor;
 
         try {
             return $scope->execute(Task::named(
                 'athena.activity.' . $config->id,
-                static fn(ExecutionScope $activityScope): Result => $self->runInline($activityScope, $agent, $config, $log),
+                static fn(ExecutionScope $activityScope): Result
+                    => self::runInline($executor, $activityScope, $agent, $config, $log),
             ));
         } catch (ScopeCancelled $error) {
             return self::cancelled($scope, $config, $log, $error);
@@ -188,7 +189,14 @@ final class Activity implements Executor
             return 1;
         }
 
-        return min(array_map(static fn(Cue $cue): int => $cue->sequence, $cues)) - 1;
+        $min = PHP_INT_MAX;
+        foreach ($cues as $cue) {
+            if ($cue->sequence < $min) {
+                $min = $cue->sequence;
+            }
+        }
+
+        return $min - 1;
     }
 
     /** @param list<Cue> $cues */
@@ -198,13 +206,25 @@ final class Activity implements Executor
             return 2;
         }
 
-        return max(array_map(static fn(Cue $cue): int => $cue->sequence, $cues)) + 1;
+        $max = PHP_INT_MIN;
+        foreach ($cues as $cue) {
+            if ($cue->sequence > $max) {
+                $max = $cue->sequence;
+            }
+        }
+
+        return $max + 1;
     }
 
-    private function runInline(TaskScope $scope, Agent $agent, Config $config, ?Log $log): Result
-    {
+    private static function runInline(
+        Executor $executor,
+        TaskScope $scope,
+        Agent $agent,
+        Config $config,
+        ?Log $log,
+    ): Result {
         try {
-            $result = ($this->executor)($scope, $agent, $config, $log);
+            $result = ($executor)($scope, $agent, $config, $log);
         } catch (ScopeCancelled $error) {
             return self::cancelled($scope, $config, $log, $error);
         } catch (\Throwable $error) {

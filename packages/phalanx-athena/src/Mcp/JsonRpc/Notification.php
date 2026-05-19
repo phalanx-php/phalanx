@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Athena\Mcp\JsonRpc;
 
-class Notification
+final class Notification
 {
     /** @param array<string, mixed> $params */
     public function __construct(

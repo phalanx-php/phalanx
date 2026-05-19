@@ -50,7 +50,7 @@ final class SqliteFixtureBuilder
         $stmt = $db->prepare('
             INSERT INTO events (ts, type, role, content, raw_hash)
             VALUES (:ts, :type, :role, :content, :raw_hash)
-        ');
+        ') ?: throw new \RuntimeException('Failed to prepare INSERT statement');
 
         $rows = [
             [

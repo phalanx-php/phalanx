@@ -1,120 +1,142 @@
 <?php
 
 /**
- * Concurrent streaming across LLM providers.
+ * Streaming provider — Athena v2 activity run.
  *
- * Boots Aegis, opens a streaming completion against every configured
- * provider in parallel, and prints each completed provider response.
- * Local Ollama can be enabled through the runtime context. Anthropic
- * and OpenAI are additive: they fan in when their respective keys are
- * present in the runtime context.
+ * Boots Aegis with AthenaBundle, probes Ollama at localhost:11434 and
+ * falls back to a deterministic Fake provider when Ollama is unreachable.
+ * Runs one Athena activity with a simple wisdom-and-strategy prompt and
+ * streams the resulting TokenDelta cues to stdout.
  *
- * Without a configured provider, the demo exits with one actionable fix.
+ * Either path exits 0: real token output when Ollama is up; scripted Cue
+ * replay otherwise.
  *
  * Usage:
- *   cp .env.example .env && php demo.php
- *   ATHENA_DEMO_LIVE=1 ANTHROPIC_API_KEY=sk-... php demo.php
+ *   php demos/athena/01-streaming-providers/demo.php
+ *   php -d extension=openswoole demos/athena/01-streaming-providers/demo.php
  */
 
 declare(strict_types=1);
 
 require __DIR__ . '/../../../vendor/autoload_runtime.php';
 
+use Phalanx\Athena\Activity\Config as ActivityConfig;
 use Phalanx\Athena\Athena;
-use Phalanx\Athena\Event\AgentEventKind;
-use Phalanx\Athena\Message\Conversation;
-use Phalanx\Athena\Provider\GenerateRequest;
-use Phalanx\Athena\Provider\ProviderConfig;
-use Phalanx\Boot\AppContext;
-use Phalanx\Demos\Athena\Support\DemoContextKeys;
-use Phalanx\Demos\Athena\Support\LiveModeFlag;
-use Phalanx\Demos\Athena\Support\OllamaAutoDetect;
+use Phalanx\Athena\AthenaBundle;
+use Phalanx\Athena\Router\SingleProviderRouter;
+use Phalanx\Demos\Kit\DemoApp;
+use Phalanx\Demos\Kit\DemoProvider;
 use Phalanx\Demos\Kit\DemoReport;
-use Phalanx\Scope\ExecutionScope;
-use Phalanx\Task\Task;
+use Phalanx\Demos\Kit\FakeCueScript;
+use Phalanx\Panoply\Capabilities;
+use Phalanx\Panoply\Capability;
+use Phalanx\Panoply\Context;
+use Phalanx\Panoply\Cue\Output\TokenDelta;
+use Phalanx\Panoply\Effects;
+use Phalanx\Panoply\Output;
+use Phalanx\Panoply\Provider\Needs as ProviderNeeds;
+use Phalanx\Panoply\Provider\Preference;
+use Phalanx\Panoply\Transport\Needs as TransportNeeds;
+use Phalanx\Scope\TaskScope;
 
-return DemoReport::demo(
-    'Athena Streaming Providers',
-    static function (DemoReport $report, AppContext $context): void {
-        $ctx = (new LiveModeFlag($context))->effective();
-        $ctx = (new OllamaAutoDetect())($ctx);
-
-        $anthropicKey = $ctx->get(DemoContextKeys::ANTHROPIC_API_KEY, '');
-        $openaiKey    = $ctx->get(DemoContextKeys::OPENAI_API_KEY, '');
-
-        $providers = [];
-        if (
-            $ctx->bool(DemoContextKeys::OLLAMA_ENABLED, false) === true
-            || $ctx->has(DemoContextKeys::OLLAMA_MODEL)
-            || $ctx->has(DemoContextKeys::OLLAMA_BASE_URL)
-        ) {
-            $providers[] = 'ollama';
-        }
-        if (is_string($anthropicKey) && $anthropicKey !== '') {
-            $providers[] = 'anthropic';
-        }
-        if (is_string($openaiKey) && $openaiKey !== '') {
-            $providers[] = 'openai';
-        }
-
-        if ($providers === []) {
+// DemoApp::boot() constructs the Aegis kernel which requires OpenSwoole\Table.
+// Guard before boot so a missing extension produces a clean cannotRun message.
+if (!extension_loaded('openswoole')) {
+    return DemoReport::demo(
+        'Athena Streaming Providers',
+        static function (DemoReport $report): void {
             $report->cannotRun(
-                'no runnable local Ollama model or live provider credentials were found.',
-                'start Ollama, run `ollama pull llama3:8b`, then rerun this command.',
+                'openswoole extension required',
+                'Run with: php -d extension=openswoole demos/athena/01-streaming-providers/demo.php',
             );
-            return;
-        }
+        },
+    );
+}
 
-        $report->note('Providers: ' . implode(', ', $providers));
-        $report->note("Topic: Athena's disciplined wisdom and strategic clarity");
+// Resolve the provider before boot — the probe is a plain curl call with no
+// Aegis dependency. We can build AthenaBundle here and capture it in the boot
+// closure.
+$fakeScript = FakeCueScript::tokens(
+    'Disciplined wisdom is strategy made executable: ' .
+    'scope every decision, cancel what drifts, observe what remains.',
+    activityId: 'demo-streaming-providers',
+    agentId: 'leonidas-advisor',
+);
 
-        $request = GenerateRequest::from(
-            Conversation::create()->user('In 18 words or fewer, connect Athena\'s disciplined wisdom and strategic clarity to an AI agent runtime.'),
-        )->withMaxTokens(60);
+$choice = DemoProvider::ollamaOrFake($fakeScript);
+$bundle = new AthenaBundle(new SingleProviderRouter($choice->provider));
 
-        Athena::starting($ctx->values)->run(Task::named(
-            'demo.athena.streaming-providers',
-            static function (ExecutionScope $scope) use ($request, $report): void {
-                $providerConfig = $scope->service(ProviderConfig::class);
-                $tasks = [];
+return DemoApp::boot(
+    'Athena Streaming Providers',
+    static function (DemoApp $app, DemoReport $report) use ($choice): void {
+        $report->note(sprintf('provider: %s', $choice->description));
+        $report->note('topic: disciplined wisdom and strategic clarity as an agent runtime');
 
-                foreach ($providerConfig->all() as $name => $provider) {
-                    $tasks[$name] = Task::of(static function (ExecutionScope $s) use ($provider, $request): array {
-                        $out = '';
-                        $usage = null;
+        // LeonidusAdvisor — a hoplite-themed agent that summarizes strategic
+        // wisdom without tool use, purely through the streaming text channel.
+        $agent = new class () implements \Phalanx\Panoply\Agent {
+            public string $id { get => 'leonidas-advisor'; }
+            public string $name { get => 'Leonidas Advisor'; }
+            public string $purpose {
+                get => 'In 20 words or fewer, connect disciplined wisdom and strategic clarity to an AI agent runtime.';
+            }
+            public Output $output { get => Output::text(); }
+            public Context $context { get => Context::new(); }
+            public Effects $effects { get => Effects::none(); }
+            public ProviderNeeds $provider {
+                get => ProviderNeeds::new()->prefer(Preference::LocalFirst);
+            }
+            public Capabilities $capabilities {
+                get => Capabilities::of(Capability::Streaming);
+            }
+            public TransportNeeds $transport {
+                get => TransportNeeds::new()->streaming();
+            }
+        };
 
-                        try {
-                            foreach ($provider->generate($request)($s) as $event) {
-                                if ($event->kind === AgentEventKind::TokenDelta) {
-                                    $out .= (string) ($event->data->text ?? '');
-                                }
-                                if ($event->kind === AgentEventKind::TokenComplete) {
-                                    $usage = $event->usageSoFar;
-                                }
-                            }
-                        } catch (\Throwable $e) {
-                            return ['text' => $out, 'usage' => $usage, 'error' => $e->getMessage()];
-                        }
+        $config = new ActivityConfig(
+            id: 'demo-streaming-providers',
+            context: Context::new(),
+            maxInvocations: 1,
+        );
 
-                        return ['text' => $out, 'usage' => $usage, 'error' => null];
-                    });
-                }
+        $tokenCount = 0;
+        $fullText = '';
 
-                $results = $scope->concurrent(...$tasks);
+        // Run inside the Aegis task so Athena::run() can resolve its services.
+        $result = $app->run(
+            static function (TaskScope $scope) use ($agent, $config, &$tokenCount, &$fullText): \Phalanx\Athena\Activity\Result {
+                $result = Athena::run($scope, $agent, $config);
 
-                foreach ($results as $name => $r) {
-                    if ($r['text'] !== '') {
-                        $report->note(sprintf('[%s] %s', $name, trim((string) $r['text'])));
+                foreach ($result->stream->toArray() as $cue) {
+                    if ($cue instanceof TokenDelta) {
+                        $fullText .= $cue->text;
+                        $tokenCount++;
                     }
                 }
 
-                foreach ($results as $name => $r) {
-                    $usage = $r['usage'];
-                    $tokens = $usage !== null ? "{$usage->input}/{$usage->output}" : 'n/a';
-                    $detail = $r['error'] ?? sprintf('tokens in/out: %s', $tokens);
-                    $report->record(sprintf('%-10s — %s', $name, $detail), $r['error'] === null);
-                }
+                return $result;
             },
-        ));
+        );
+
+        if ($fullText !== '') {
+            $report->note(sprintf('output: %s', trim($fullText)));
+        }
+
+        $report->record(
+            'activity completed',
+            $result->state === \Phalanx\Athena\Activity\State::Completed,
+        );
+
+        $report->record(
+            'at least one TokenDelta emitted',
+            $tokenCount >= 1,
+        );
+
+        $report->record(
+            'scope cleanup left no orphaned tasks',
+            $app->ledger()->liveTaskCount() === 0,
+        );
     },
+    [$bundle],
 );

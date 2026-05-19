@@ -18,6 +18,8 @@ use Phalanx\Athena\Turn\Outcome;
 use Phalanx\Panoply\Capabilities;
 use Phalanx\Panoply\Context;
 use Phalanx\Panoply\Conversation\Record\Message;
+use Phalanx\Panoply\Conversation\Record\ToolCall;
+use Phalanx\Panoply\Conversation\Record\ToolResult;
 use Phalanx\Panoply\Cue\Effect\Requested;
 use Phalanx\Panoply\Cue\Output\TokenDelta;
 use Phalanx\Panoply\Cue\Output\TokenStop;
@@ -177,6 +179,74 @@ final class TurnLoopTest extends TestCase
     }
 
     #[Test]
+    public function toolCallPushesToolCallAndToolResultIntoConversationLog(): void
+    {
+        $at = new \DateTimeImmutable('2026-05-17T12:00:00Z');
+
+        $provider = new SequencedProvider([
+            [
+                new Requested(
+                    id: 'cue_1',
+                    sequence: 1,
+                    activityId: 'act_1',
+                    invocationId: null,
+                    agentId: 'athena-test-agent',
+                    at: $at,
+                    effectId: 'lookup_tool',
+                    kind: EffectKind::Custom,
+                    summary: 'look up data',
+                ),
+            ],
+            [
+                new TokenDelta('cue_2', 2, 'act_1', null, 'athena-test-agent', $at, 'done'),
+                new TokenStop('cue_3', 3, 'act_1', null, 'athena-test-agent', $at, StopReason::EndOfTurn),
+            ],
+        ]);
+
+        $registry = new \Phalanx\Athena\Tool\ToolRegistry();
+        $registry->register('lookup_tool', LoopTestTool::class);
+
+        $grantStore = new \Phalanx\Athena\Grant\MemoryGrantStore();
+        $scope = new ScopeStub();
+        $grantStore->remember($scope, \Phalanx\Panoply\Grant::of(
+            id: 'grant_loop',
+            subject: 'athena-test-agent',
+            allowedEffects: [EffectKind::Custom],
+            scope: 'session',
+            hazardCeiling: \Phalanx\Panoply\Hazard::Critical,
+        ));
+
+        $dispatcher = new \Phalanx\Athena\Effect\Dispatcher(
+            authorizer: new \Phalanx\Panoply\Effect\Authorizer\Rules\Authorizer(),
+            scorer: new \Phalanx\Panoply\Hazard\Scorer\Rules\Scorer(),
+            grantStore: $grantStore,
+            toolRegistry: $registry,
+            mcpRegistry: new \Phalanx\Athena\Mcp\McpRegistry(),
+        );
+
+        $loop = new Loop(new DefaultBuilder(), $provider, new SyncRuntimeFactory(), dispatcher: $dispatcher);
+
+        $result = $loop($scope, new TestAgent(), new Activity\Config('act_1', Context::new(), 3));
+
+        self::assertSame(Outcome::Complete, $result->outcome);
+        self::assertSame(2, $result->invocations);
+
+        $records = $result->log->toArray();
+        self::assertCount(3, $records);
+
+        self::assertInstanceOf(ToolCall::class, $records[0]);
+        self::assertSame('lookup_tool', $records[0]->toolName);
+        self::assertSame('lookup_tool', $records[0]->callId);
+
+        self::assertInstanceOf(ToolResult::class, $records[1]);
+        self::assertSame('lookup_tool', $records[1]->callId);
+        self::assertStringContainsString('found', $records[1]->output);
+
+        self::assertInstanceOf(Message::class, $records[2]);
+        self::assertSame('done', $records[2]->text);
+    }
+
+    #[Test]
     public function requestedEffectWithoutDispatcherFailsFast(): void
     {
         $at = new \DateTimeImmutable('2026-05-17T12:00:00Z');
@@ -217,7 +287,15 @@ final class SequencedProvider implements ProviderContract
 
     public function perform(Invocation $invocation, Runtime $runtime): Stream
     {
-        $script = $this->scripts[$this->calls] ?? [];
+        if ($this->calls >= count($this->scripts)) {
+            throw new \RuntimeException(sprintf(
+                'SequencedProvider: invocation %d exceeds %d scripted responses',
+                $this->calls + 1,
+                count($this->scripts),
+            ));
+        }
+
+        $script = $this->scripts[$this->calls];
         $this->calls++;
 
         return Stream::from($script);
@@ -241,6 +319,17 @@ final class FailAfterCueHook implements StepHook
         return $context->cue !== null
             ? StepHookResult::fail($this->error)
             : StepHookResult::continue();
+    }
+}
+
+final class LoopTestTool implements \Phalanx\Athena\Tool\Tool
+{
+    public function __invoke(TaskScope $scope, \Phalanx\Athena\Effect\Context $ctx): \Phalanx\Athena\Effect\Outcome
+    {
+        return \Phalanx\Athena\Effect\Outcome::routed(
+            \Phalanx\Athena\Effect\Resolution::LocalTool,
+            data: 'found',
+        );
     }
 }
 

@@ -52,16 +52,16 @@ final class Transport implements TransportContract
                 CURLOPT_FOLLOWLOCATION => false,
                 CURLOPT_HTTPHEADER => self::flattenHeaders($request->headers),
                 CURLOPT_NOPROGRESS => false,
-                CURLOPT_WRITEFUNCTION => static function (\CurlHandle $ch, string $data) use (&$chunks): int {
+                CURLOPT_WRITEFUNCTION => static function (\CurlHandle $_ch, string $data) use (&$chunks): int {
                     $chunks[] = $data;
                     return strlen($data);
                 },
                 CURLOPT_PROGRESSFUNCTION => static fn(
-                    \CurlHandle $ch,
-                    int $downloadTotal,
-                    int $downloaded,
-                    int $uploadTotal,
-                    int $uploaded): int => $runtime->isCancelled() ? 1 : 0,
+                    \CurlHandle $_ch,
+                    int $_downloadTotal,
+                    int $_downloaded,
+                    int $_uploadTotal,
+                    int $_uploaded): int => $runtime->isCancelled() ? 1 : 0,
             ]);
 
             if ($request->method === 'POST') {

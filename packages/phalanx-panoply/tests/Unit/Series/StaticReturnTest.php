@@ -27,7 +27,7 @@ final class StaticReturnTest extends TestCase
     public function streamWhereReturnsStream(): void
     {
         $stream = self::stream();
-        $filtered = $stream->where(static fn (Cue $c): bool => true);
+        $filtered = $stream->where(static fn (Cue $_c): bool => true);
 
         self::assertInstanceOf(Stream::class, $filtered);
         self::assertNotInstanceOf(Stream::class, Series::from([]));
@@ -73,11 +73,11 @@ final class StaticReturnTest extends TestCase
     public function subclassTypePreservedAcrossChainedCombinators(): void
     {
         $chained = self::stream()
-            ->where(static fn (Cue $c): bool => true)
+            ->where(static fn (Cue $_c): bool => true)
             ->take(2)
             ->skip(0)
             ->merge(self::stream())
-            ->tee(static fn (Cue $c): null => null);
+            ->tee(static fn (Cue $_c): null => null);
 
         self::assertInstanceOf(Stream::class, $chained);
     }
@@ -96,7 +96,7 @@ final class StaticReturnTest extends TestCase
     public function logWhereReturnsLog(): void
     {
         $log = Log::from([]);
-        self::assertInstanceOf(Log::class, $log->where(static fn ($r): bool => true));
+        self::assertInstanceOf(Log::class, $log->where(static fn ($_r): bool => true));
     }
 
     #[Test]
@@ -114,7 +114,7 @@ final class StaticReturnTest extends TestCase
     public function collectionWhereReturnsCollection(): void
     {
         $col = Collection::from([]);
-        self::assertInstanceOf(Collection::class, $col->where(static fn ($a): bool => true));
+        self::assertInstanceOf(Collection::class, $col->where(static fn ($_a): bool => true));
     }
 
     #[Test]
@@ -132,7 +132,7 @@ final class StaticReturnTest extends TestCase
     public function projectsWhereReturnsProjects(): void
     {
         $projects = Projects::from([]);
-        self::assertInstanceOf(Projects::class, $projects->where(static fn ($p): bool => true));
+        self::assertInstanceOf(Projects::class, $projects->where(static fn ($_p): bool => true));
     }
 
     #[Test]
@@ -150,7 +150,7 @@ final class StaticReturnTest extends TestCase
     public function locatorsWhereReturnsLocators(): void
     {
         $locators = Locators::from([]);
-        self::assertInstanceOf(Locators::class, $locators->where(static fn ($l): bool => true));
+        self::assertInstanceOf(Locators::class, $locators->where(static fn ($_l): bool => true));
     }
 
     #[Test]
