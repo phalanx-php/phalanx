@@ -33,6 +33,8 @@ class InputBundle extends ServiceBundle
         $reader = $this->reader;
         $services->singleton(StreamOutput::class)->factory(static fn(): StreamOutput => $output);
         $services->singleton(Theme::class)->factory(static fn(): Theme => $theme);
-        $services->scoped(KeyReader::class)->factory(static fn(): RawInput => $reader);
+        // eager() is required: KeyReader is an interface and cannot be resolved
+        // via the default lazy newLazyProxy path, which requires a concrete class.
+        $services->scoped(KeyReader::class)->eager()->factory(static fn(): KeyReader => $reader);
     }
 }

@@ -56,11 +56,9 @@ class ProcessHandle
 
         $this->cleanup();
 
-        $this->process = StreamingProcess::command([
-            PHP_BINARY,
-            $this->config->workerScript,
-            "--autoload={$this->config->autoloadPath}",
-        ])->start($scope);
+        $this->process = StreamingProcess::command(
+            $this->config->workerCommand(),
+        )->start($scope);
 
         $process = $this->process;
         $this->state = ProcessState::Idle;

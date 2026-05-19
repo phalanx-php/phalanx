@@ -39,7 +39,12 @@ class ConsoleServiceBundle extends ServiceBundle
         }
 
         if (!$services->has(KeyReader::class)) {
+            // eager() is required here because KeyReader is an interface. The default
+            // scoped() registration is lazy (newLazyProxy), which requires a concrete
+            // instantiable class — PHP cannot create a lazy proxy for an interface.
+            // The factory already handles construction; no proxy is needed.
             $services->scoped(KeyReader::class)
+                ->eager()
                 ->needs(ConsoleInput::class)
                 ->factory(static fn(ConsoleInput $input): KeyReader => new RawInput($input));
         }

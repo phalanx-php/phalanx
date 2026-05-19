@@ -22,7 +22,8 @@ return DemoReport::demo(
             float $timeout = 5.0,
         ) use ($runnerPath): string {
             $proc = DemoSubprocess::capture(static function (Process $worker) use ($runnerPath, $argv): void {
-                $worker->exec(PHP_BINARY, [$runnerPath, ...$argv]);
+                [$bin, $args] = DemoSubprocess::phpCommand($runnerPath, array_values($argv));
+                $worker->exec($bin, $args);
             });
 
             if ($proc === null) {
