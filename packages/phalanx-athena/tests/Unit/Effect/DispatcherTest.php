@@ -13,13 +13,14 @@ use Phalanx\Athena\Grant\Store as GrantStore;
 use Phalanx\Athena\Mcp\McpConnection;
 use Phalanx\Athena\Mcp\McpRegistry;
 use Phalanx\Athena\Mcp\McpTool;
-use Phalanx\Athena\Stream\CompositeStream;
+use Phalanx\Athena\Stream\CueEmitter;
 use Phalanx\Athena\Testing\ScopeStub;
 use Phalanx\Athena\Tool\Tool;
 use Phalanx\Athena\Tool\ToolRegistry;
 use Phalanx\Athena\Turn;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Cancellation\Cancelled;
+use Phalanx\Panoply\Cue;
 use Phalanx\Panoply\Cue\Effect\Authorized;
 use Phalanx\Panoply\Cue\Effect\Denied;
 use Phalanx\Panoply\Cue\Effect\Executed;
@@ -34,7 +35,6 @@ use Phalanx\Panoply\Effect\Outcome as PanoplyOutcome;
 use Phalanx\Panoply\Grant;
 use Phalanx\Panoply\Hazard;
 use Phalanx\Panoply\Hazard\Scorer\Rules\Scorer;
-use Phalanx\Panoply\Stream;
 use Phalanx\Scope\TaskScope;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -53,17 +53,17 @@ final class DispatcherTest extends TestCase
         );
 
         $scope = new ScopeStub();
-        $stream = CompositeStream::wrap($scope, Stream::from([]));
+        $emitter = new ArrayCueEmitter();
         $request = self::request('read_file', Kind::FileRead, arguments: ['path' => '/tmp/test']);
 
-        $result = $dispatcher->dispatch($scope, $request, $stream);
+        $result = $dispatcher->dispatch($scope, $request, $emitter);
 
         self::assertSame(Turn\Outcome::Continue, $result->turnOutcome);
         self::assertNotNull($result->effectOutcome);
         self::assertSame(Resolution::LocalTool, $result->effectOutcome->resolution);
         self::assertSame('echoed', $result->data);
 
-        $cues = $stream->stream()->toArray();
+        $cues = $emitter->cues;
         self::assertCount(2, $cues);
         self::assertInstanceOf(Authorized::class, $cues[0]);
         self::assertSame('read_file', $cues[0]->effectId);
@@ -86,15 +86,15 @@ final class DispatcherTest extends TestCase
         );
 
         $scope = new ScopeStub();
-        $stream = CompositeStream::wrap($scope, Stream::from([]));
+        $emitter = new ArrayCueEmitter();
         $request = self::request('read_file', Kind::FileRead);
 
-        $result = $dispatcher->dispatch($scope, $request, $stream);
+        $result = $dispatcher->dispatch($scope, $request, $emitter);
 
         self::assertSame(Turn\Outcome::Failed, $result->turnOutcome);
         self::assertInstanceOf(EffectDenied::class, $result->error);
 
-        $cues = $stream->stream()->toArray();
+        $cues = $emitter->cues;
         self::assertCount(1, $cues);
         self::assertInstanceOf(Denied::class, $cues[0]);
         self::assertSame('read_file', $cues[0]->effectId);
@@ -116,15 +116,15 @@ final class DispatcherTest extends TestCase
         );
 
         $scope = new ScopeStub();
-        $stream = CompositeStream::wrap($scope, Stream::from([]));
+        $emitter = new ArrayCueEmitter();
         $request = self::request('shell_exec', Kind::ShellExec);
 
-        $result = $dispatcher->dispatch($scope, $request, $stream);
+        $result = $dispatcher->dispatch($scope, $request, $emitter);
 
         self::assertSame(Turn\Outcome::Failed, $result->turnOutcome);
         self::assertInstanceOf(EffectDenied::class, $result->error);
 
-        $cues = $stream->stream()->toArray();
+        $cues = $emitter->cues;
         self::assertInstanceOf(Denied::class, $cues[0]);
         self::assertSame('shell_exec', $cues[0]->effectId);
         self::assertContains('hazard-exceeds-ceiling', $cues[0]->reasonCodes);
@@ -143,15 +143,15 @@ final class DispatcherTest extends TestCase
         );
 
         $scope = new ScopeStub();
-        $stream = CompositeStream::wrap($scope, Stream::from([]));
+        $emitter = new ArrayCueEmitter();
         $request = self::request('write_file', Kind::FileWrite);
 
-        $result = $dispatcher->dispatch($scope, $request, $stream);
+        $result = $dispatcher->dispatch($scope, $request, $emitter);
 
         self::assertSame(Turn\Outcome::WaitingForApproval, $result->turnOutcome);
         self::assertNull($result->error);
 
-        $cues = $stream->stream()->toArray();
+        $cues = $emitter->cues;
         self::assertCount(1, $cues);
         self::assertInstanceOf(Paused::class, $cues[0]);
         self::assertSame('write_file', $cues[0]->effectId);
@@ -170,16 +170,16 @@ final class DispatcherTest extends TestCase
         );
 
         $scope = new ScopeStub();
-        $stream = CompositeStream::wrap($scope, Stream::from([]));
+        $emitter = new ArrayCueEmitter();
         $request = self::request('fail_tool', Kind::Custom);
 
-        $result = $dispatcher->dispatch($scope, $request, $stream);
+        $result = $dispatcher->dispatch($scope, $request, $emitter);
 
         self::assertSame(Turn\Outcome::Failed, $result->turnOutcome);
         self::assertNotNull($result->error);
         self::assertSame('Tool broke', $result->error->getMessage());
 
-        $cues = $stream->stream()->toArray();
+        $cues = $emitter->cues;
         self::assertCount(2, $cues);
         self::assertInstanceOf(Authorized::class, $cues[0]);
         self::assertInstanceOf(Failed::class, $cues[1]);
@@ -196,10 +196,10 @@ final class DispatcherTest extends TestCase
         );
 
         $scope = new ScopeStub();
-        $stream = CompositeStream::wrap($scope, Stream::from([]));
+        $emitter = new ArrayCueEmitter();
         $request = self::request('noop', Kind::Custom);
 
-        $result = $dispatcher->dispatch($scope, $request, $stream);
+        $result = $dispatcher->dispatch($scope, $request, $emitter);
 
         self::assertSame(Turn\Outcome::Continue, $result->turnOutcome);
         self::assertNotNull($result->effectOutcome);
@@ -214,10 +214,10 @@ final class DispatcherTest extends TestCase
         );
 
         $scope = new ScopeStub();
-        $stream = CompositeStream::wrap($scope, Stream::from([]));
+        $emitter = new ArrayCueEmitter();
         $request = self::request('halt', Kind::Custom);
 
-        $result = $dispatcher->dispatch($scope, $request, $stream);
+        $result = $dispatcher->dispatch($scope, $request, $emitter);
 
         self::assertSame(Turn\Outcome::Complete, $result->turnOutcome);
     }
@@ -234,10 +234,10 @@ final class DispatcherTest extends TestCase
         );
 
         $scope = new ScopeStub();
-        $stream = CompositeStream::wrap($scope, Stream::from([]));
+        $emitter = new ArrayCueEmitter();
         $request = self::request('search', Kind::CodeSearch, arguments: ['query' => 'test']);
 
-        $result = $dispatcher->dispatch($scope, $request, $stream);
+        $result = $dispatcher->dispatch($scope, $request, $emitter);
 
         self::assertSame(Turn\Outcome::Continue, $result->turnOutcome);
         self::assertNotNull($result->effectOutcome);
@@ -252,13 +252,13 @@ final class DispatcherTest extends TestCase
         );
 
         $scope = new ScopeStub();
-        $stream = CompositeStream::wrap($scope, Stream::from([]));
+        $emitter = new ArrayCueEmitter();
         $request = self::request('nonexistent_tool', Kind::Custom);
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Unresolvable effect: nonexistent_tool');
 
-        $dispatcher->dispatch($scope, $request, $stream);
+        $dispatcher->dispatch($scope, $request, $emitter);
     }
 
     #[Test]
@@ -273,12 +273,12 @@ final class DispatcherTest extends TestCase
         );
 
         $scope = new ScopeStub();
-        $stream = CompositeStream::wrap($scope, Stream::from([]));
+        $emitter = new ArrayCueEmitter();
         $request = self::request('cancel_tool', Kind::Custom);
 
         $this->expectException(Cancelled::class);
 
-        $dispatcher->dispatch($scope, $request, $stream);
+        $dispatcher->dispatch($scope, $request, $emitter);
     }
 
     #[Test]
@@ -293,14 +293,14 @@ final class DispatcherTest extends TestCase
         );
 
         $scope = new ScopeStub();
-        $stream = CompositeStream::wrap($scope, Stream::from([]));
+        $emitter = new ArrayCueEmitter();
         $request = self::request('read_file', Kind::FileRead, requiresApproval: true);
 
-        $result = $dispatcher->dispatch($scope, $request, $stream);
+        $result = $dispatcher->dispatch($scope, $request, $emitter);
 
         self::assertSame(Turn\Outcome::Continue, $result->turnOutcome);
 
-        $cues = $stream->stream()->toArray();
+        $cues = $emitter->cues;
         self::assertInstanceOf(Authorized::class, $cues[0]);
     }
 
@@ -316,10 +316,10 @@ final class DispatcherTest extends TestCase
         );
 
         $scope = new ScopeStub();
-        $stream = CompositeStream::wrap($scope, Stream::from([]));
+        $emitter = new ArrayCueEmitter();
         $request = self::request('mcp_search', Kind::Custom, arguments: ['q' => 'sparta']);
 
-        $result = $dispatcher->dispatch($scope, $request, $stream);
+        $result = $dispatcher->dispatch($scope, $request, $emitter);
 
         self::assertSame(Turn\Outcome::Continue, $result->turnOutcome);
         self::assertNotNull($result->effectOutcome);
@@ -338,12 +338,12 @@ final class DispatcherTest extends TestCase
             grantStore: new FixedGrantStore(self::grant(Kind::Custom)),
         );
 
-        $stream = CompositeStream::wrap($scope, Stream::from([]));
+        $emitter = new ArrayCueEmitter();
         $request = self::request('noop', Kind::Custom);
 
         $this->expectException(Cancelled::class);
 
-        $dispatcher->dispatch($scope, $request, $stream);
+        $dispatcher->dispatch($scope, $request, $emitter);
     }
 
     #[Test]
@@ -358,10 +358,10 @@ final class DispatcherTest extends TestCase
         );
 
         $scope = new ScopeStub();
-        $stream = CompositeStream::wrap($scope, Stream::from([]));
+        $emitter = new ArrayCueEmitter();
         $request = self::request('noop', Kind::Custom);
 
-        $result = $dispatcher->dispatch($scope, $request, $stream);
+        $result = $dispatcher->dispatch($scope, $request, $emitter);
 
         self::assertNotNull($result->effectOutcome);
         self::assertSame(Resolution::BuiltIn, $result->effectOutcome->resolution);
@@ -416,6 +416,17 @@ final class DispatcherTest extends TestCase
             scope: 'session',
             hazardCeiling: $hazardCeiling,
         );
+    }
+}
+
+final class ArrayCueEmitter implements CueEmitter
+{
+    /** @var list<Cue> */
+    public array $cues = [];
+
+    public function emit(Cue $cue): void
+    {
+        $this->cues[] = $cue;
     }
 }
 

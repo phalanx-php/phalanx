@@ -78,8 +78,8 @@ final class EffectApprovalFlowTest extends PhalanxTestCase
 
         $spyStore = new ApprovalSpyStore();
 
-        $result = $this->scope->run(
-            static function (ExecutionScope $scope) use ($provider, $grant, $spyStore): Activity\Result {
+        $this->scope->run(
+            static function (ExecutionScope $scope) use ($provider, $grant, $spyStore): void {
                 $registry = new ToolRegistry();
                 $registry->register('write_approved', ApprovalWriteTool::class);
 
@@ -97,19 +97,21 @@ final class EffectApprovalFlowTest extends PhalanxTestCase
                 $suspender = new Suspender($spyStore, $monitor);
                 $loop = new Loop(new DefaultBuilder(), $provider, suspender: $suspender, dispatcher: $dispatcher);
 
-                return $loop($scope, new TestAgent(), new Activity\Config('act_approval', Context::new(), 2));
+                $result = $loop($scope, new TestAgent(), new Activity\Config('act_approval', Context::new(), 2));
+
+                $cues = $result->stream->toArray();
+                $types = array_map(static fn($cue): string => $cue->type, $cues);
+
+                self::assertSame(Activity\State::Completed, $result->state);
+                self::assertSame(Outcome::Complete, $result->outcome);
+                self::assertContains('cue.effect.paused', $types);
+                self::assertContains('cue.effect.authorized', $types);
+                self::assertContains('cue.effect.executed', $types);
             },
         );
 
-        self::assertSame(Activity\State::Completed, $result->state);
-        self::assertSame(Outcome::Complete, $result->outcome);
         self::assertTrue($spyStore->suspended, 'State must be persisted during suspension');
         self::assertSame('act_approval', $spyStore->suspendedActivityId);
-
-        $types = array_map(static fn($cue): string => $cue->type, $result->stream->toArray());
-        self::assertContains('cue.effect.paused', $types);
-        self::assertContains('cue.effect.authorized', $types);
-        self::assertContains('cue.effect.executed', $types);
 
         $this->scope->expect->runtime()->clean();
     }

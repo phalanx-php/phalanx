@@ -6,13 +6,18 @@ namespace Phalanx\Athena\Turn;
 
 use Phalanx\Athena\Activity;
 use Phalanx\Athena\Activity\Suspender;
+use Phalanx\Athena\Activity\TerminalCell;
+use Phalanx\Athena\Activity\TerminalState;
 use Phalanx\Athena\Effect\Dispatcher;
 use Phalanx\Athena\Exception\ActivityFailed;
 use Phalanx\Athena\Exception\MaxInvocationsReached;
 use Phalanx\Athena\Hook\StepContext;
 use Phalanx\Athena\Hook\StepHook;
 use Phalanx\Athena\Hook\StepHookChain;
+use Phalanx\Athena\Stream\ChannelCueEmitter;
 use Phalanx\Athena\Stream\CompositeStream;
+use Phalanx\Athena\Stream\CueEmitter;
+use Phalanx\Cancellation\Cancelled;
 use Phalanx\Panoply\Agent;
 use Phalanx\Panoply\Conversation\Log;
 use Phalanx\Panoply\Conversation\Record\Message;
@@ -26,8 +31,8 @@ use Phalanx\Panoply\Id;
 use Phalanx\Panoply\Invocation;
 use Phalanx\Panoply\Provider;
 use Phalanx\Panoply\Stream;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\TaskScope;
-
 final class Loop implements Activity\Executor
 {
     /**
@@ -40,15 +45,199 @@ final class Loop implements Activity\Executor
         private(set) array $hooks = [],
         private(set) ?Dispatcher $dispatcher = null,
         private(set) ?Suspender $suspender = null,
+        private(set) int $channelBuffer = 32,
     ) {
     }
 
     public function __invoke(TaskScope $scope, Agent $agent, Activity\Config $config, ?Log $log = null): Activity\Result
     {
+        if ($scope instanceof ExecutionScope) {
+            return self::invokeStreaming($scope, $agent, $config, $log, $this);
+        }
+
+        return self::invokeMaterialized($scope, $agent, $config, $log, $this);
+    }
+
+    private static function invokeStreaming(
+        ExecutionScope $scope,
+        Agent $agent,
+        Activity\Config $config,
+        ?Log $log,
+        self $loop,
+    ): Activity\Result {
+        $cueChannel = new \Phalanx\Styx\Channel($loop->channelBuffer);
+        $cell = new TerminalCell();
+
         $records = $log !== null ? $log->toArray() : [];
         $turn = new Config($config->id, $config->context, $config->maxInvocations);
-        $runtime = ($this->runtimeFactory)($scope);
-        $chain = new StepHookChain([...$this->hooks, ...$config->hooks]);
+        $runtime = ($loop->runtimeFactory)($scope);
+        $chain = new StepHookChain([...$loop->hooks, ...$config->hooks]);
+        $emitter = new ChannelCueEmitter($cueChannel);
+
+        $builder = $loop->builder;
+        $provider = $loop->provider;
+        $dispatcher = $loop->dispatcher;
+        $suspender = $loop->suspender;
+
+        $scope->go(static function (ExecutionScope $producerScope) use (
+            $cueChannel,
+            $cell,
+            $emitter,
+            $records,
+            $turn,
+            $runtime,
+            $chain,
+            $builder,
+            $provider,
+            $dispatcher,
+            $suspender,
+            $agent,
+            $config,
+        ): void {
+            $outcome = Outcome::Continue;
+            $error = null;
+            $invocationCount = 0;
+
+            try {
+                for ($i = 1; $i <= $config->maxInvocations; $i++) {
+                    $producerScope->throwIfCancelled();
+                    $runtime->throwIfCancelled();
+
+                    $current = Log::from($records);
+                    $turnConfig = $turn->forInvocation($i);
+                    $invocation = $builder->build($producerScope, $agent, $current, $turnConfig);
+
+                    $hookResult = $chain->notify($producerScope, StepContext::beforeInvocation($turnConfig, $current, $invocation));
+
+                    if ($hookResult->outcome->terminal()) {
+                        $outcome = $hookResult->outcome;
+                        $error = $hookResult->error;
+                        $invocationCount = $i;
+                        break;
+                    }
+
+                    $text = '';
+                    $providerStream = $provider->perform($invocation, $runtime);
+
+                    foreach ($providerStream as $cue) {
+                        $emitter->emit($cue);
+
+                        $hookResult = $chain->notify($producerScope, StepContext::afterCue($turnConfig, $current, $invocation, $cue));
+
+                        if ($hookResult->outcome->terminal()) {
+                            $outcome = $hookResult->outcome;
+                            $error = $hookResult->error;
+                            break 2;
+                        }
+
+                        if ($cue instanceof TokenDelta) {
+                            $text .= $cue->text;
+                            continue;
+                        }
+
+                        if ($cue instanceof TokenStop) {
+                            $outcome = Outcome::Complete;
+                            continue;
+                        }
+
+                        if ($cue instanceof Requested) {
+                            [$outcome, $error] = self::handleRequestedEffect(
+                                $producerScope,
+                                $cue,
+                                $emitter,
+                                $records,
+                                $config->id,
+                                $dispatcher,
+                                $suspender,
+                            );
+
+                            if ($outcome->terminal()) {
+                                break 2;
+                            }
+                        }
+                    }
+
+                    if ($text !== '') {
+                        self::pushAssistantMessage($records, $text);
+                    }
+
+                    $invocationCount = $i;
+
+                    $current = Log::from($records);
+                    $afterCtx = StepContext::afterInvocation($turnConfig, $current, $invocation, $outcome);
+                    $hookResult = $chain->notify($producerScope, $afterCtx);
+
+                    if ($hookResult->outcome->terminal()) {
+                        $outcome = $hookResult->outcome;
+                        $error = $hookResult->error;
+                    }
+
+                    if ($outcome->terminal()) {
+                        break;
+                    }
+                }
+
+                if ($invocationCount === 0) {
+                    $invocationCount = 1;
+                }
+
+                if (!$outcome->terminal()) {
+                    $outcome = Outcome::MaxInvocationsReached;
+                }
+
+                $cell->resolve(new TerminalState(
+                    state: self::stateFor($outcome),
+                    outcome: $outcome,
+                    log: Log::from($records),
+                    invocations: $invocationCount,
+                    error: $error,
+                ));
+                $records = [];
+            } catch (Cancelled $e) {
+                $cueChannel->error($e);
+                $cell->resolve(new TerminalState(
+                    state: Activity\State::Cancelled,
+                    outcome: Outcome::Cancelled,
+                    log: Log::from($records),
+                    invocations: max($invocationCount, 1),
+                    error: $e,
+                ));
+                $records = [];
+            } catch (\Throwable $e) {
+                $cueChannel->error($e);
+                $cell->resolve(new TerminalState(
+                    state: Activity\State::Failed,
+                    outcome: Outcome::Failed,
+                    log: Log::from($records),
+                    invocations: max($invocationCount, 1),
+                    error: $e,
+                ));
+                $records = [];
+            } finally {
+                if ($cueChannel->isOpen) {
+                    $cueChannel->complete();
+                }
+            }
+        }, 'athena.loop.' . $config->id);
+
+        return Activity\Result::lazy(
+            activityId: $config->id,
+            stream: Stream::from($cueChannel->consume()),
+            cell: $cell,
+        );
+    }
+
+    private static function invokeMaterialized(
+        TaskScope $scope,
+        Agent $agent,
+        Activity\Config $config,
+        ?Log $log,
+        self $loop,
+    ): Activity\Result {
+        $records = $log !== null ? $log->toArray() : [];
+        $turn = new Config($config->id, $config->context, $config->maxInvocations);
+        $runtime = ($loop->runtimeFactory)($scope);
+        $chain = new StepHookChain([...$loop->hooks, ...$config->hooks]);
         $cues = [];
 
         for ($i = 1; $i <= $config->maxInvocations; $i++) {
@@ -57,16 +246,16 @@ final class Loop implements Activity\Executor
 
             $current = Log::from($records);
             $turnConfig = $turn->forInvocation($i);
-            $invocation = $this->builder->build($scope, $agent, $current, $turnConfig);
+            $invocation = $loop->builder->build($scope, $agent, $current, $turnConfig);
 
             $hookResult = $chain->notify($scope, StepContext::beforeInvocation($turnConfig, $current, $invocation));
 
             if ($hookResult->outcome->terminal()) {
-                return self::buildResult($config->id, $hookResult->outcome, $current, $i, $hookResult->error, $cues);
+                return self::buildEagerResult($config->id, $hookResult->outcome, $current, $i, $hookResult->error, $cues);
             }
 
-            $stream = CompositeStream::wrap($scope, $this->provider->perform($invocation, $runtime));
-            [$outcome, $error, $text] = $this->processCueStream(
+            $stream = CompositeStream::wrap($scope, $loop->provider->perform($invocation, $runtime));
+            [$outcome, $error, $text] = self::processCueStreamMaterialized(
                 $scope,
                 $stream,
                 $chain,
@@ -76,6 +265,8 @@ final class Loop implements Activity\Executor
                 $records,
                 $cues,
                 $config->id,
+                $loop->dispatcher,
+                $loop->suspender,
             );
 
             if ($text !== '') {
@@ -92,7 +283,7 @@ final class Loop implements Activity\Executor
             }
 
             if ($outcome->terminal()) {
-                return self::buildResult($config->id, $outcome, $current, $i, $error, $cues);
+                return self::buildEagerResult($config->id, $outcome, $current, $i, $error, $cues);
             }
         }
 
@@ -101,8 +292,109 @@ final class Loop implements Activity\Executor
 
     /**
      * @param list<Cue> $cues
+     * @param list<\Phalanx\Panoply\Conversation\Record> $records
+     * @return array{0: Outcome, 1: ?\Throwable, 2: string}
      */
-    private static function buildResult(
+    private static function processCueStreamMaterialized(
+        TaskScope $scope,
+        CompositeStream $stream,
+        StepHookChain $chain,
+        Config $turnConfig,
+        Log $current,
+        Invocation $invocation,
+        array &$records,
+        array &$cues,
+        string $activityId,
+        ?Dispatcher $dispatcher,
+        ?Suspender $suspender,
+    ): array {
+        $text = '';
+        $outcome = Outcome::Continue;
+        $error = null;
+
+        foreach ($stream->stream() as $cue) {
+            $cues[] = $cue;
+
+            $hookResult = $chain->notify($scope, StepContext::afterCue($turnConfig, $current, $invocation, $cue));
+
+            if ($hookResult->outcome->terminal()) {
+                return [$hookResult->outcome, $hookResult->error, $text];
+            }
+
+            if ($cue instanceof TokenDelta) {
+                $text .= $cue->text;
+                continue;
+            }
+
+            if ($cue instanceof TokenStop) {
+                $outcome = Outcome::Complete;
+                continue;
+            }
+
+            if ($cue instanceof Requested) {
+                [$outcome, $error] = self::handleRequestedEffect(
+                    $scope,
+                    $cue,
+                    $stream,
+                    $records,
+                    $activityId,
+                    $dispatcher,
+                    $suspender,
+                );
+
+                if ($outcome->terminal()) {
+                    return [$outcome, $error, $text];
+                }
+            }
+        }
+
+        return [$outcome, $error, $text];
+    }
+
+    /**
+     * @param list<\Phalanx\Panoply\Conversation\Record> $records
+     * @return array{0: Outcome, 1: ?\Throwable}
+     */
+    private static function handleRequestedEffect(
+        TaskScope $scope,
+        Requested $cue,
+        CueEmitter $emitter,
+        array &$records,
+        string $activityId,
+        ?Dispatcher $dispatcher,
+        ?Suspender $suspender,
+    ): array {
+        if ($dispatcher === null) {
+            return self::effectOutcome($cue);
+        }
+
+        $result = $dispatcher->dispatch($scope, $cue, $emitter);
+
+        if ($result->turnOutcome === Outcome::WaitingForApproval && $suspender !== null) {
+            $result = ($suspender)(
+                $scope,
+                $activityId,
+                Log::from($records),
+                $cue,
+                $dispatcher,
+                $emitter,
+            );
+        }
+
+        if ($result->turnOutcome === Outcome::Continue) {
+            self::pushToolCall($records, $cue);
+            self::pushToolResult($records, $cue, $result->data);
+
+            return [Outcome::Continue, null];
+        }
+
+        return [$result->turnOutcome, $result->error];
+    }
+
+    /**
+     * @param list<Cue> $cues
+     */
+    private static function buildEagerResult(
         string $activityId,
         Outcome $outcome,
         Log $log,
@@ -181,94 +473,5 @@ final class Loop implements Activity\Executor
             Outcome::Cancelled => Activity\State::Cancelled,
             default => Activity\State::Failed,
         };
-    }
-
-    /**
-     * @param list<Cue> $cues
-     * @param list<\Phalanx\Panoply\Conversation\Record> $records
-     * @return array{0: Outcome, 1: ?\Throwable, 2: string}
-     */
-    private function processCueStream(
-        TaskScope $scope,
-        CompositeStream $stream,
-        StepHookChain $chain,
-        Config $turnConfig,
-        Log $current,
-        Invocation $invocation,
-        array &$records,
-        array &$cues,
-        string $activityId,
-    ): array {
-        $text = '';
-        $outcome = Outcome::Continue;
-        $error = null;
-
-        foreach ($stream->stream() as $cue) {
-            $cues[] = $cue;
-
-            $hookResult = $chain->notify($scope, StepContext::afterCue($turnConfig, $current, $invocation, $cue));
-
-            if ($hookResult->outcome->terminal()) {
-                return [$hookResult->outcome, $hookResult->error, $text];
-            }
-
-            if ($cue instanceof TokenDelta) {
-                $text .= $cue->text;
-                continue;
-            }
-
-            if ($cue instanceof TokenStop) {
-                $outcome = Outcome::Complete;
-                continue;
-            }
-
-            if ($cue instanceof Requested) {
-                [$outcome, $error] = $this->handleRequestedEffect($scope, $cue, $stream, $records, $activityId);
-
-                if ($outcome->terminal()) {
-                    return [$outcome, $error, $text];
-                }
-            }
-        }
-
-        return [$outcome, $error, $text];
-    }
-
-    /**
-     * @param list<\Phalanx\Panoply\Conversation\Record> $records
-     * @return array{0: Outcome, 1: ?\Throwable}
-     */
-    private function handleRequestedEffect(
-        TaskScope $scope,
-        Requested $cue,
-        CompositeStream $stream,
-        array &$records,
-        string $activityId,
-    ): array {
-        if ($this->dispatcher === null) {
-            return self::effectOutcome($cue);
-        }
-
-        $result = $this->dispatcher->dispatch($scope, $cue, $stream);
-
-        if ($result->turnOutcome === Outcome::WaitingForApproval && $this->suspender !== null) {
-            $result = ($this->suspender)(
-                $scope,
-                $activityId,
-                Log::from($records),
-                $cue,
-                $this->dispatcher,
-                $stream,
-            );
-        }
-
-        if ($result->turnOutcome === Outcome::Continue) {
-            self::pushToolCall($records, $cue);
-            self::pushToolResult($records, $cue, $result->data);
-
-            return [Outcome::Continue, null];
-        }
-
-        return [$result->turnOutcome, $result->error];
     }
 }

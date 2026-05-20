@@ -7,7 +7,7 @@ namespace Phalanx\Athena\Effect;
 use Phalanx\Athena\Exception\EffectDenied;
 use Phalanx\Athena\Grant\Store as GrantStore;
 use Phalanx\Athena\Mcp\McpRegistry;
-use Phalanx\Athena\Stream\CompositeStream;
+use Phalanx\Athena\Stream\CueEmitter;
 use Phalanx\Athena\Tool\ToolExecutor;
 use Phalanx\Athena\Tool\ToolRegistry;
 use Phalanx\Cancellation\Cancelled;
@@ -42,7 +42,7 @@ final class Dispatcher
         $this->toolExecutor = $toolExecutor ?? new ToolExecutor($this->toolRegistry);
     }
 
-    public function dispatch(TaskScope $scope, Requested $request, CompositeStream $stream): DispatchResult
+    public function dispatch(TaskScope $scope, Requested $request, CueEmitter $emitter): DispatchResult
     {
         $scope->throwIfCancelled();
 
@@ -53,14 +53,14 @@ final class Dispatcher
         $seq = $request->sequence;
 
         if ($decision->isDenied()) {
-            return self::handleDenied($request, $stream, $decision, $resolution, ++$seq);
+            return self::handleDenied($request, $emitter, $decision, $resolution, ++$seq);
         }
 
         if ($decision->isPaused()) {
-            return self::handlePaused($request, $stream, $decision, $resolution, ++$seq);
+            return self::handlePaused($request, $emitter, $decision, $resolution, ++$seq);
         }
 
-        return $this->handleGranted($scope, $request, $stream, $decision, $resolution, $grant, $seq);
+        return $this->handleGranted($scope, $request, $emitter, $decision, $resolution, $grant, $seq);
     }
 
     private static function resolve(Requested $request, ToolRegistry $tools, McpRegistry $mcp): Resolution
@@ -95,12 +95,12 @@ final class Dispatcher
 
     private static function handleDenied(
         Requested $request,
-        CompositeStream $stream,
+        CueEmitter $emitter,
         Decision $decision,
         Resolution $resolution,
         int $sequence,
     ): DispatchResult {
-        $stream->emit(new Denied(
+        $emitter->emit(new Denied(
             id: 'cue_' . Id::generate(),
             sequence: $sequence,
             activityId: $request->activityId,
@@ -125,12 +125,12 @@ final class Dispatcher
 
     private static function handlePaused(
         Requested $request,
-        CompositeStream $stream,
+        CueEmitter $emitter,
         Decision $decision,
         Resolution $resolution,
         int $sequence,
     ): DispatchResult {
-        $stream->emit(new Paused(
+        $emitter->emit(new Paused(
             id: 'cue_' . Id::generate(),
             sequence: $sequence,
             activityId: $request->activityId,
@@ -164,13 +164,13 @@ final class Dispatcher
     private function handleGranted(
         TaskScope $scope,
         Requested $request,
-        CompositeStream $stream,
+        CueEmitter $emitter,
         Decision $decision,
         Resolution $resolution,
         ?Grant $grant,
         int $seq,
     ): DispatchResult {
-        $stream->emit(new Authorized(
+        $emitter->emit(new Authorized(
             id: 'cue_' . Id::generate(),
             sequence: ++$seq,
             activityId: $request->activityId,
@@ -194,7 +194,7 @@ final class Dispatcher
             $outcome = $this->executeEffect($scope, $request, $context, $resolution);
             $elapsed = (int) ((hrtime(true) - $start) / 1_000_000);
 
-            $stream->emit(new Executed(
+            $emitter->emit(new Executed(
                 id: 'cue_' . Id::generate(),
                 sequence: ++$seq,
                 activityId: $request->activityId,
@@ -215,7 +215,7 @@ final class Dispatcher
         } catch (\Throwable $e) {
             $elapsed = (int) ((hrtime(true) - $start) / 1_000_000);
 
-            $stream->emit(new Failed(
+            $emitter->emit(new Failed(
                 id: 'cue_' . Id::generate(),
                 sequence: ++$seq,
                 activityId: $request->activityId,

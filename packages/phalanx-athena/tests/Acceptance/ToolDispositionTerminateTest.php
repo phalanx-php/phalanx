@@ -47,8 +47,8 @@ final class ToolDispositionTerminateTest extends PhalanxTestCase
             ),
         ], Capabilities::empty());
 
-        $result = $this->scope->run(
-            static function (ExecutionScope $scope) use ($provider): Activity\Result {
+        $this->scope->run(
+            static function (ExecutionScope $scope) use ($provider): void {
                 $grantStore = new MemoryGrantStore();
                 $grantStore->remember($scope, Grant::of(
                     id: 'grant_halt',
@@ -68,16 +68,17 @@ final class ToolDispositionTerminateTest extends PhalanxTestCase
 
                 $loop = new Loop(new DefaultBuilder(), $provider, dispatcher: $dispatcher);
 
-                return $loop($scope, new TestAgent(), new Activity\Config('act_terminate', Context::new(), 1));
+                $result = $loop($scope, new TestAgent(), new Activity\Config('act_terminate', Context::new(), 1));
+
+                $cues = $result->stream->toArray();
+                $types = array_map(static fn($cue): string => $cue->type, $cues);
+
+                self::assertSame(Activity\State::Completed, $result->state);
+                self::assertSame(Outcome::Complete, $result->outcome);
+                self::assertSame(1, $result->invocations);
+                self::assertContains('cue.effect.requested', $types);
             },
         );
-
-        self::assertSame(Activity\State::Completed, $result->state);
-        self::assertSame(Outcome::Complete, $result->outcome);
-        self::assertSame(1, $result->invocations);
-
-        $types = array_map(static fn($cue): string => $cue->type, $result->stream->toArray());
-        self::assertContains('cue.effect.requested', $types);
 
         $this->scope->expect->runtime()->clean();
     }

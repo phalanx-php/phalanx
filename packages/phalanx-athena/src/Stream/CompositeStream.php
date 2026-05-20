@@ -8,7 +8,7 @@ use Phalanx\Panoply\Cue;
 use Phalanx\Panoply\Stream;
 use Phalanx\Scope\TaskScope;
 
-final class CompositeStream
+final class CompositeStream implements CueEmitter
 {
     /** @var list<Cue> */
     private array $hostCues = [];

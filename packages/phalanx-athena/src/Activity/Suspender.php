@@ -7,7 +7,7 @@ namespace Phalanx\Athena\Activity;
 use Phalanx\Athena\Effect\Dispatcher;
 use Phalanx\Athena\Effect\DispatchResult;
 use Phalanx\Athena\Persistence\ExecutionStore;
-use Phalanx\Athena\Stream\CompositeStream;
+use Phalanx\Athena\Stream\CueEmitter;
 use Phalanx\Panoply\Conversation\Log;
 use Phalanx\Panoply\Cue\Effect\Requested;
 use Phalanx\Scope\TaskScope;
@@ -26,7 +26,7 @@ final class Suspender
         Log $log,
         Requested $pendingEffect,
         Dispatcher $dispatcher,
-        CompositeStream $stream,
+        CueEmitter $emitter,
     ): DispatchResult {
         $this->executionStore->suspendActivity($scope, $activityId, $log, $pendingEffect);
 
@@ -37,6 +37,6 @@ final class Suspender
             $pendingEffect->arguments,
         );
 
-        return $dispatcher->dispatch($scope, $pendingEffect, $stream);
+        return $dispatcher->dispatch($scope, $pendingEffect, $emitter);
     }
 }

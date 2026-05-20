@@ -18,7 +18,7 @@ use Phalanx\Athena\Persistence\ExecutionStore;
 use Phalanx\Athena\Persistence\InvocationRecord;
 use Phalanx\Athena\Persistence\PromptHashRecord;
 use Phalanx\Athena\Persistence\SuspendedState;
-use Phalanx\Athena\Stream\CompositeStream;
+use Phalanx\Athena\Stream\CueEmitter;
 use Phalanx\Athena\Testing\ScopeStub;
 use Phalanx\Athena\Tool\Tool;
 use Phalanx\Athena\Tool\ToolRegistry;
@@ -31,7 +31,7 @@ use Phalanx\Panoply\Effect\Kind;
 use Phalanx\Panoply\Grant;
 use Phalanx\Panoply\Hazard;
 use Phalanx\Panoply\Hazard\Scorer\Rules\Scorer;
-use Phalanx\Panoply\Stream;
+use Phalanx\Panoply\Cue;
 use Phalanx\Scope\TaskScope;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -50,10 +50,10 @@ final class SuspenderTest extends TestCase
 
         $suspender = new Suspender($store, $monitor);
         $scope = new ScopeStub();
-        $stream = CompositeStream::wrap($scope, Stream::from([]));
+        $emitter = new ArrayCueEmitter();
         $request = self::request();
 
-        $result = $suspender($scope, 'act_1', Log::from([]), $request, $dispatcher, $stream);
+        $result = $suspender($scope, 'act_1', Log::from([]), $request, $dispatcher, $emitter);
 
         self::assertSame(TurnOutcome::Continue, $result->turnOutcome);
         self::assertTrue($store->suspended);
@@ -70,12 +70,12 @@ final class SuspenderTest extends TestCase
 
         $suspender = new Suspender($store, $monitor);
         $scope = new ScopeStub();
-        $stream = CompositeStream::wrap($scope, Stream::from([]));
+        $emitter = new ArrayCueEmitter();
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('grant check failed');
 
-        $suspender($scope, 'act_1', Log::from([]), self::request(), $dispatcher, $stream);
+        $suspender($scope, 'act_1', Log::from([]), self::request(), $dispatcher, $emitter);
     }
 
     #[Test]
@@ -87,11 +87,11 @@ final class SuspenderTest extends TestCase
 
         $suspender = new Suspender($store, $monitor);
         $scope = new ScopeStub();
-        $stream = CompositeStream::wrap($scope, Stream::from([]));
+        $emitter = new ArrayCueEmitter();
 
         $this->expectException(Cancelled::class);
 
-        $suspender($scope, 'act_1', Log::from([]), self::request(), $dispatcher, $stream);
+        $suspender($scope, 'act_1', Log::from([]), self::request(), $dispatcher, $emitter);
     }
 
     #[Test]
@@ -106,11 +106,11 @@ final class SuspenderTest extends TestCase
 
         $suspender = new Suspender($store, $monitor);
         $scope = new ScopeStub();
-        $stream = CompositeStream::wrap($scope, Stream::from([]));
+        $emitter = new ArrayCueEmitter();
         $log = Log::from([]);
         $request = self::request();
 
-        $suspender($scope, 'act_1', $log, $request, $dispatcher, $stream);
+        $suspender($scope, 'act_1', $log, $request, $dispatcher, $emitter);
 
         self::assertSame($log, $store->suspendedLog);
     }
@@ -126,10 +126,10 @@ final class SuspenderTest extends TestCase
 
         $suspender = new Suspender(new SuspenderSpyStore(), $monitor);
         $scope = new ScopeStub();
-        $stream = CompositeStream::wrap($scope, Stream::from([]));
+        $emitter = new ArrayCueEmitter();
         $request = self::request();
 
-        $suspender($scope, 'act_1', Log::from([]), $request, $dispatcher, $stream);
+        $suspender($scope, 'act_1', Log::from([]), $request, $dispatcher, $emitter);
 
         self::assertTrue($monitor->wasCalled);
         self::assertSame('agent_1', $monitor->capturedSubject);
@@ -173,6 +173,17 @@ final class SuspenderTest extends TestCase
             summary: 'write a file',
             requiresApproval: true,
         );
+    }
+}
+
+final class ArrayCueEmitter implements CueEmitter
+{
+    /** @var list<Cue> */
+    public array $cues = [];
+
+    public function emit(Cue $cue): void
+    {
+        $this->cues[] = $cue;
     }
 }
 

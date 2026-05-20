@@ -10,7 +10,7 @@ use Phalanx\Athena\Effect\Outcome as EffectOutcome;
 use Phalanx\Athena\Effect\Resolution;
 use Phalanx\Athena\Grant\MemoryGrantStore;
 use Phalanx\Athena\Mcp\McpRegistry;
-use Phalanx\Athena\Stream\CompositeStream;
+use Phalanx\Athena\Stream\CueEmitter;
 use Phalanx\Athena\Testing\ScopeStub;
 use Phalanx\Athena\Tool\Tool;
 use Phalanx\Athena\Tool\ToolRegistry;
@@ -21,7 +21,7 @@ use Phalanx\Panoply\Effect\Kind;
 use Phalanx\Panoply\Grant;
 use Phalanx\Panoply\Hazard;
 use Phalanx\Panoply\Hazard\Scorer\Rules\Scorer;
-use Phalanx\Panoply\Stream;
+use Phalanx\Panoply\Cue;
 use Phalanx\Scope\TaskScope;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -65,10 +65,10 @@ final class EffectDispatcherRoutingTest extends TestCase
             summary: 'read config',
         );
 
-        $stream = CompositeStream::wrap($scope, Stream::from([]));
-        $dispatcher->dispatch($scope, $request, $stream);
+        $emitter = new ArrayCueEmitter();
+        $dispatcher->dispatch($scope, $request, $emitter);
 
-        $emitted = $stream->stream()->toArray();
+        $emitted = $emitter->cues;
         $types = array_map(static fn($cue): string => $cue->type, $emitted);
 
         self::assertContains('cue.effect.authorized', $types);
@@ -85,5 +85,16 @@ final class RoutingEchoTool implements Tool
     public function __invoke(TaskScope $scope, EffectContext $ctx): EffectOutcome
     {
         return EffectOutcome::routed(Resolution::LocalTool, data: 'content');
+    }
+}
+
+final class ArrayCueEmitter implements CueEmitter
+{
+    /** @var list<Cue> */
+    public array $cues = [];
+
+    public function emit(Cue $cue): void
+    {
+        $this->cues[] = $cue;
     }
 }
