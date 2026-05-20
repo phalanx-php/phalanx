@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120">
+  <defs>
+    <linearGradient id="shield" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#C62840"/>
+      <stop offset="100%" stop-color="#891428"/>
+    </linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#9E1E32"/>
+      <stop offset="100%" stop-color="#5C0A16"/>
+    </linearGradient>
+    <linearGradient id="bronze" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0%" stop-color="#ECD48E"/>
+      <stop offset="50%" stop-color="#C9A55A"/>
+      <stop offset="100%" stop-color="#A07828"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Shield outer rim — darker border -->
+  <path d="M 80,18 C 12,36 12,88 80,108 C 148,88 148,36 80,18 Z" fill="url(#rim)"/>
+
+  <!-- Shield body — main surface -->
+  <path d="M 80,22 C 18,38 18,86 80,105 C 142,86 142,38 80,22 Z" fill="url(#shield)"/>
+
+  <!-- Shield inner ring — bronze accent -->
+  <path d="M 80,30 C 30,44 30,80 80,99 C 130,80 130,44 80,30 Z"
+        fill="none" stroke="url(#bronze)" stroke-width="0.8" opacity="0.35"/>
+
+  <!-- Lambda spearhead — on top of shield -->
+  <path d="M 80,8 L 100,112 L 92,112 L 80,38 L 68,112 L 60,112 Z" fill="url(#bronze)"/>
+</svg>

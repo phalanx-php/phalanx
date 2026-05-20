@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <defs>
+    <!-- Shield body — darker, moodier, convex highlight subtle -->
+    <radialGradient id="body" cx="0.38" cy="0.34" r="0.58">
+      <stop offset="0%" stop-color="#B82838"/>
+      <stop offset="40%" stop-color="#9E2030"/>
+      <stop offset="100%" stop-color="#4E0A14"/>
+    </radialGradient>
+
+    <!-- Outer rim -->
+    <linearGradient id="rim" x1="0.3" y1="0" x2="0.7" y2="1">
+      <stop offset="0%" stop-color="#5A0E18"/>
+      <stop offset="100%" stop-color="#2A0408"/>
+    </linearGradient>
+
+    <!-- Bronze for insignia -->
+    <linearGradient id="bronze" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0%" stop-color="#ECD48E"/>
+      <stop offset="40%" stop-color="#C9A55A"/>
+      <stop offset="100%" stop-color="#A07828"/>
+    </linearGradient>
+
+    <!-- Bronze lit face -->
+    <linearGradient id="bronzeLight" x1="0.2" y1="0" x2="0.6" y2="1">
+      <stop offset="0%" stop-color="#F5E4A8"/>
+      <stop offset="100%" stop-color="#D4B06A"/>
+    </linearGradient>
+
+    <!-- Star glow — warm point of light -->
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#FFFDE8" stop-opacity="0.6"/>
+      <stop offset="30%" stop-color="#ECD48E" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#C9A55A" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Depth shadow — heavier lower-right -->
+    <radialGradient id="depth" cx="0.62" cy="0.66" r="0.55">
+      <stop offset="0%" stop-color="black" stop-opacity="0"/>
+      <stop offset="55%" stop-color="black" stop-opacity="0"/>
+      <stop offset="100%" stop-color="black" stop-opacity="0.35"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Drop shadow -->
+  <circle cx="62" cy="62" r="53" fill="black" opacity="0.2"/>
+
+  <!-- Outer rim -->
+  <circle cx="60" cy="60" r="53" fill="url(#rim)"/>
+
+  <!-- Shield body -->
+  <circle cx="60" cy="60" r="49" fill="url(#body)"/>
+
+  <!-- Bronze outer trim ring -->
+  <circle cx="60" cy="60" r="49" fill="none" stroke="url(#bronze)" stroke-width="1.2" opacity="0.4"/>
+
+  <!-- Bronze inner trim ring -->
+  <circle cx="60" cy="60" r="41" fill="none" stroke="url(#bronze)" stroke-width="0.7" opacity="0.2"/>
+
+  <!-- Depth shadow overlay -->
+  <circle cx="60" cy="60" r="49" fill="url(#depth)"/>
+
+  <!-- Specular highlight — very subtle -->
+  <ellipse cx="46" cy="42" rx="18" ry="12" fill="white" opacity="0.04"
+           transform="rotate(-20 46 42)"/>
+
+  <!-- === INSIGNIA === -->
+
+  <!-- Upward chevron (^) — shadow layer -->
+  <path d="M 61,27 L 80,68 L 74,68 L 61,40 L 48,68 L 42,68 Z"
+        fill="black" opacity="0.2"/>
+
+  <!-- Upward chevron (^) — main -->
+  <path d="M 60,25 L 79,66 L 73,66 L 60,38 L 47,66 L 41,66 Z"
+        fill="url(#bronze)"/>
+
+  <!-- Chevron lit face (left leg catches light) -->
+  <path d="M 60,25 L 47,66 L 41,66 Z"
+        fill="url(#bronzeLight)" opacity="0.35"/>
+
+  <!-- Star glow behind the sparkle -->
+  <circle cx="60" cy="74" r="8" fill="url(#glow)"/>
+
+  <!-- 4-pointed star / sparkle — the + as a point of light -->
+  <!-- Vertical ray (longer) -->
+  <path d="M 60,68 L 61.2,73 L 60,80 L 58.8,73 Z" fill="url(#bronzeLight)" opacity="0.9"/>
+  <!-- Horizontal ray (shorter) -->
+  <path d="M 54,74 L 59,72.8 L 66,74 L 59,75.2 Z" fill="url(#bronzeLight)" opacity="0.9"/>
+
+  <!-- Bright center point -->
+  <circle cx="60" cy="74" r="1.2" fill="#FFFDE8" opacity="0.8"/>
+
+  <!-- Faint light beam from star up into chevron -->
+  <path d="M 59.4,68 L 60,40 L 60.6,68 Z" fill="url(#bronzeLight)" opacity="0.1"/>
+</svg>

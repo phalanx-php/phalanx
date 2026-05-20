@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120">
+  <defs>
+    <linearGradient id="shield" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#C62840"/>
+      <stop offset="100%" stop-color="#891428"/>
+    </linearGradient>
+    <linearGradient id="bronze" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0%" stop-color="#ECD48E"/>
+      <stop offset="50%" stop-color="#C9A55A"/>
+      <stop offset="100%" stop-color="#A07828"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Left sweep — subtle, converges at spear tip -->
+  <path d="M 46,90 C 32,72 38,46 80,13 C 42,48 36,72 50,88 Z" fill="url(#shield)"/>
+
+  <!-- Right sweep — mirror -->
+  <path d="M 114,90 C 128,72 122,46 80,13 C 118,48 124,72 110,88 Z" fill="url(#shield)"/>
+
+  <!-- Lambda spearhead Λ -->
+  <path d="M 80,12 L 100,108 L 92,108 L 80,40 L 68,108 L 60,108 Z" fill="url(#bronze)"/>
+
+  <!-- Crossguard -->
+  <path d="M 70,105 L 90,105 L 90.5,107.5 L 69.5,107.5 Z" fill="url(#shield)"/>
+
+  <!-- Shaft notch — angled flat top -->
+  <path d="M 79,102.5 L 81.5,101.5 L 81.5,111 L 79,111 Z" fill="url(#shield)"/>
+</svg>
