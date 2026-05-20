@@ -10,7 +10,7 @@ use Phalanx\Athena\Effect\Outcome as EffectOutcome;
 use Phalanx\Athena\Effect\Resolution;
 use Phalanx\Athena\Grant\MemoryGrantStore;
 use Phalanx\Athena\Mcp\McpRegistry;
-use Phalanx\Athena\Stream\CueEmitter;
+use Phalanx\Athena\Stream\ArrayCueEmitter;
 use Phalanx\Athena\Testing\ScopeStub;
 use Phalanx\Athena\Tool\Tool;
 use Phalanx\Athena\Tool\ToolRegistry;
@@ -21,7 +21,6 @@ use Phalanx\Panoply\Effect\Kind;
 use Phalanx\Panoply\Grant;
 use Phalanx\Panoply\Hazard;
 use Phalanx\Panoply\Hazard\Scorer\Rules\Scorer;
-use Phalanx\Panoply\Cue;
 use Phalanx\Scope\TaskScope;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -88,13 +87,3 @@ final class RoutingEchoTool implements Tool
     }
 }
 
-final class ArrayCueEmitter implements CueEmitter
-{
-    /** @var list<Cue> */
-    public array $cues = [];
-
-    public function emit(Cue $cue): void
-    {
-        $this->cues[] = $cue;
-    }
-}

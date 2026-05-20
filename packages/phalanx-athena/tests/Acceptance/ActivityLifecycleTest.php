@@ -56,7 +56,7 @@ final class ActivityLifecycleTest extends PhalanxTestCase
             new TokenStop('cue_2', 2, 'act_lifecycle', null, 'athena-test-agent', $at, StopReason::EndOfTurn),
         ], Capabilities::empty());
 
-        $result = $this->scope->run(static function (ExecutionScope $scope) use ($provider): Activity\Result {
+        [$types, $state, $outcome] = $this->scope->run(static function (ExecutionScope $scope) use ($provider): array {
             $registry = new ToolRegistry();
             $registry->register('echo_tool', AcceptanceEchoTool::class);
 
@@ -80,13 +80,14 @@ final class ActivityLifecycleTest extends PhalanxTestCase
             $loop = new Loop(new DefaultBuilder(), $provider, dispatcher: $dispatcher);
             $activity = new ActivityRunner($loop);
 
-            return $activity($scope, new TestAgent(), new Activity\Config('act_lifecycle', Context::new(), 2));
+            $result = $activity($scope, new TestAgent(), new Activity\Config('act_lifecycle', Context::new(), 2));
+            $types = array_map(static fn($cue): string => $cue->type, $result->stream->toArray());
+
+            return [$types, $result->state, $result->outcome];
         });
 
-        self::assertSame(Activity\State::Completed, $result->state);
-        self::assertSame(Outcome::Complete, $result->outcome);
-
-        $types = array_map(static fn($cue): string => $cue->type, $result->stream->toArray());
+        self::assertSame(Activity\State::Completed, $state);
+        self::assertSame(Outcome::Complete, $outcome);
 
         self::assertContains('cue.activity.started', $types);
         self::assertContains('cue.effect.authorized', $types);

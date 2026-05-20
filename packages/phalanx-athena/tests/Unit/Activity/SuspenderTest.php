@@ -18,7 +18,7 @@ use Phalanx\Athena\Persistence\ExecutionStore;
 use Phalanx\Athena\Persistence\InvocationRecord;
 use Phalanx\Athena\Persistence\PromptHashRecord;
 use Phalanx\Athena\Persistence\SuspendedState;
-use Phalanx\Athena\Stream\CueEmitter;
+use Phalanx\Athena\Stream\ArrayCueEmitter;
 use Phalanx\Athena\Testing\ScopeStub;
 use Phalanx\Athena\Tool\Tool;
 use Phalanx\Athena\Tool\ToolRegistry;
@@ -31,7 +31,6 @@ use Phalanx\Panoply\Effect\Kind;
 use Phalanx\Panoply\Grant;
 use Phalanx\Panoply\Hazard;
 use Phalanx\Panoply\Hazard\Scorer\Rules\Scorer;
-use Phalanx\Panoply\Cue;
 use Phalanx\Scope\TaskScope;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -173,17 +172,6 @@ final class SuspenderTest extends TestCase
             summary: 'write a file',
             requiresApproval: true,
         );
-    }
-}
-
-final class ArrayCueEmitter implements CueEmitter
-{
-    /** @var list<Cue> */
-    public array $cues = [];
-
-    public function emit(Cue $cue): void
-    {
-        $this->cues[] = $cue;
     }
 }
 

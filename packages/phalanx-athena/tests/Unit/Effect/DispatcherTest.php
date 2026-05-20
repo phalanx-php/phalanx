@@ -13,14 +13,13 @@ use Phalanx\Athena\Grant\Store as GrantStore;
 use Phalanx\Athena\Mcp\McpConnection;
 use Phalanx\Athena\Mcp\McpRegistry;
 use Phalanx\Athena\Mcp\McpTool;
-use Phalanx\Athena\Stream\CueEmitter;
+use Phalanx\Athena\Stream\ArrayCueEmitter;
 use Phalanx\Athena\Testing\ScopeStub;
 use Phalanx\Athena\Tool\Tool;
 use Phalanx\Athena\Tool\ToolRegistry;
 use Phalanx\Athena\Turn;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Cancellation\Cancelled;
-use Phalanx\Panoply\Cue;
 use Phalanx\Panoply\Cue\Effect\Authorized;
 use Phalanx\Panoply\Cue\Effect\Denied;
 use Phalanx\Panoply\Cue\Effect\Executed;
@@ -416,17 +415,6 @@ final class DispatcherTest extends TestCase
             scope: 'session',
             hazardCeiling: $hazardCeiling,
         );
-    }
-}
-
-final class ArrayCueEmitter implements CueEmitter
-{
-    /** @var list<Cue> */
-    public array $cues = [];
-
-    public function emit(Cue $cue): void
-    {
-        $this->cues[] = $cue;
     }
 }
 

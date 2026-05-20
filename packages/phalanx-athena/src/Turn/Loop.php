@@ -14,8 +14,8 @@ use Phalanx\Athena\Exception\MaxInvocationsReached;
 use Phalanx\Athena\Hook\StepContext;
 use Phalanx\Athena\Hook\StepHook;
 use Phalanx\Athena\Hook\StepHookChain;
+use Phalanx\Athena\Stream\ArrayCueEmitter;
 use Phalanx\Athena\Stream\ChannelCueEmitter;
-use Phalanx\Athena\Stream\CompositeStream;
 use Phalanx\Athena\Stream\CueEmitter;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Panoply\Agent;
@@ -254,10 +254,9 @@ final class Loop implements Activity\Executor
                 return self::buildEagerResult($config->id, $hookResult->outcome, $current, $i, $hookResult->error, $cues);
             }
 
-            $stream = CompositeStream::wrap($scope, $loop->provider->perform($invocation, $runtime));
             [$outcome, $error, $text] = self::processCueStreamMaterialized(
                 $scope,
-                $stream,
+                $loop->provider->perform($invocation, $runtime),
                 $chain,
                 $turnConfig,
                 $current,
@@ -291,13 +290,14 @@ final class Loop implements Activity\Executor
     }
 
     /**
+     * @param iterable<Cue> $providerCues
      * @param list<Cue> $cues
      * @param list<\Phalanx\Panoply\Conversation\Record> $records
      * @return array{0: Outcome, 1: ?\Throwable, 2: string}
      */
     private static function processCueStreamMaterialized(
         TaskScope $scope,
-        CompositeStream $stream,
+        iterable $providerCues,
         StepHookChain $chain,
         Config $turnConfig,
         Log $current,
@@ -311,8 +311,10 @@ final class Loop implements Activity\Executor
         $text = '';
         $outcome = Outcome::Continue;
         $error = null;
+        $emitter = new ArrayCueEmitter();
 
-        foreach ($stream->stream() as $cue) {
+        foreach ($providerCues as $cue) {
+            $scope->throwIfCancelled();
             $cues[] = $cue;
 
             $hookResult = $chain->notify($scope, StepContext::afterCue($turnConfig, $current, $invocation, $cue));
@@ -335,12 +337,14 @@ final class Loop implements Activity\Executor
                 [$outcome, $error] = self::handleRequestedEffect(
                     $scope,
                     $cue,
-                    $stream,
+                    $emitter,
                     $records,
                     $activityId,
                     $dispatcher,
                     $suspender,
                 );
+
+                array_push($cues, ...$emitter->drain());
 
                 if ($outcome->terminal()) {
                     return [$outcome, $error, $text];

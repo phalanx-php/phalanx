@@ -52,13 +52,14 @@ final class TurnLoopRuntimeTest extends PhalanxTestCase
             new TokenStop('cue_2', 2, 'act_1', null, 'athena-test-agent', $at, StopReason::EndOfTurn),
         ], Capabilities::empty());
 
-        $result = $this->scope->run(static function (ExecutionScope $scope) use ($provider): Activity\Result {
+        [$types, $state] = $this->scope->run(static function (ExecutionScope $scope) use ($provider): array {
             $activity = new Activity\Activity(new Loop(new DefaultBuilder(), $provider));
+            $result = $activity($scope, new TestAgent(), new Activity\Config('act_1', Context::new(), 1));
+            $types = array_map(static fn($cue): string => $cue->type, $result->stream->toArray());
 
-            return $activity($scope, new TestAgent(), new Activity\Config('act_1', Context::new(), 1));
+            return [$types, $result->state];
         });
 
-        self::assertSame(Activity\State::Completed, $result->state);
         self::assertSame(
             [
                 'cue.activity.started',
@@ -66,8 +67,9 @@ final class TurnLoopRuntimeTest extends PhalanxTestCase
                 'cue.output.token_stop',
                 'cue.activity.completed',
             ],
-            array_map(static fn($cue): string => $cue->type, $result->stream->toArray()),
+            $types,
         );
+        self::assertSame(Activity\State::Completed, $state);
         $this->scope->expect->runtime()->clean();
     }
 
@@ -89,18 +91,17 @@ final class TurnLoopRuntimeTest extends PhalanxTestCase
             ),
         ], Capabilities::empty());
 
-        $result = $this->scope->run(static function (ExecutionScope $scope) use ($provider): Activity\Result {
+        [$types, $state, $error] = $this->scope->run(static function (ExecutionScope $scope) use ($provider): array {
             $activity = new Activity\Activity(new Loop(new DefaultBuilder(), $provider));
+            $result = $activity($scope, new TestAgent(), new Activity\Config('act_1', Context::new(), 1));
+            $types = array_map(static fn($cue): string => $cue->type, $result->stream->toArray());
 
-            return $activity($scope, new TestAgent(), new Activity\Config('act_1', Context::new(), 1));
+            return [$types, $result->state, $result->error];
         });
 
-        self::assertSame(Activity\State::Failed, $result->state);
-        self::assertNotNull($result->error);
-        self::assertContains(
-            'cue.activity.failed',
-            array_map(static fn($cue): string => $cue->type, $result->stream->toArray()),
-        );
+        self::assertContains('cue.activity.failed', $types);
+        self::assertSame(Activity\State::Failed, $state);
+        self::assertNotNull($error);
         $this->scope->expect->runtime()->clean();
     }
 }

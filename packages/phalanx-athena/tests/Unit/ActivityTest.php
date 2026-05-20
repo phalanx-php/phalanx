@@ -42,11 +42,11 @@ final class ActivityTest extends TestCase
         $config = new Config('act_1', Context::new());
         $result = $activity(new ScopeStub(), new TestAgent(), $config);
 
-        self::assertSame(State::Completed, $result->state);
-        self::assertSame(Outcome::Complete, $result->outcome);
-
         $cues = $result->stream->toArray();
         $types = array_map(static fn(Cue $c): string => $c::class, $cues);
+
+        self::assertSame(State::Completed, $result->state);
+        self::assertSame(Outcome::Complete, $result->outcome);
 
         self::assertContains(Started::class, $types);
         self::assertContains(Completed::class, $types);

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Athena\Activity;
 
-use Phalanx\Athena\Stream\CompositeStream;
 use Phalanx\Athena\Turn\Outcome;
 use Phalanx\Cancellation\Cancelled as ScopeCancelled;
 use Phalanx\Panoply\Agent;
@@ -39,53 +38,52 @@ final class Activity implements Executor
                     => self::runInline($executor, $activityScope, $agent, $config, $log),
             ));
         } catch (ScopeCancelled $error) {
-            return self::cancelled($scope, $config, $log, $error);
+            return self::cancelled($config, $log, $error);
         }
     }
 
-    private static function withLifecycle(TaskScope $scope, Config $config, Agent $agent, Result $result): Result
+    private static function withLifecycle(Config $config, Agent $agent, Result $result): Result
     {
-        $innerCues = $result->stream->toArray();
-        $composite = CompositeStream::wrap($scope, Stream::from($innerCues));
-        $composite->emit(self::started($config, $agent, $innerCues));
+        $outerCell = new TerminalCell();
+        $innerResult = $result;
 
-        $terminal = self::terminalCue($config, $agent, $result, $innerCues);
-        if ($terminal !== null) {
-            $composite->emit($terminal);
-        }
+        $stream = new Stream(static function () use ($config, $agent, $innerResult, $outerCell): \Generator {
+            yield new ActivityCue\Started(
+                id: 'cue_' . Id::generate(),
+                sequence: 0,
+                activityId: $config->id,
+                invocationId: null,
+                agentId: $agent->id,
+                at: new \DateTimeImmutable(),
+            );
 
-        return new Result(
-            activityId: $result->activityId,
-            state: $result->state,
-            outcome: $result->outcome,
-            log: $result->log,
-            invocations: $result->invocations,
-            error: $result->error,
-            stream: $composite->stream(),
-        );
+            $maxSeq = 0;
+            foreach ($innerResult->stream as $cue) {
+                if ($cue->sequence > $maxSeq) {
+                    $maxSeq = $cue->sequence;
+                }
+                yield $cue;
+            }
+
+            $terminal = self::terminalCue($config, $agent, $innerResult, $maxSeq + 1);
+            if ($terminal !== null) {
+                yield $terminal;
+            }
+
+            $outerCell->resolve(new TerminalState(
+                state: $innerResult->state,
+                outcome: $innerResult->outcome,
+                log: $innerResult->log,
+                invocations: $innerResult->invocations,
+                error: $innerResult->error,
+            ));
+        });
+
+        return Result::lazy($result->activityId, $stream, $outerCell);
     }
 
-    private static function cancelled(TaskScope $scope, Config $config, ?Log $log, ScopeCancelled $error): Result
+    private static function cancelled(Config $config, ?Log $log, ScopeCancelled $error): Result
     {
-        $composite = CompositeStream::wrap($scope, Stream::from([]));
-        $composite->emit(new ActivityCue\Started(
-            id: 'cue_' . Id::generate(),
-            sequence: 1,
-            activityId: $config->id,
-            invocationId: null,
-            agentId: null,
-            at: new \DateTimeImmutable(),
-        ));
-        $composite->emit(new ActivityCue\Cancelled(
-            id: 'cue_' . Id::generate(),
-            sequence: 2,
-            activityId: $config->id,
-            invocationId: null,
-            agentId: null,
-            at: new \DateTimeImmutable(),
-            reason: $error->getMessage(),
-        ));
-
         return new Result(
             activityId: $config->id,
             state: State::Cancelled,
@@ -93,32 +91,30 @@ final class Activity implements Executor
             log: $log ?? Log::from([]),
             invocations: 0,
             error: $error,
-            stream: $composite->stream(),
+            stream: Stream::from([
+                new ActivityCue\Started(
+                    id: 'cue_' . Id::generate(),
+                    sequence: 1,
+                    activityId: $config->id,
+                    invocationId: null,
+                    agentId: null,
+                    at: new \DateTimeImmutable(),
+                ),
+                new ActivityCue\Cancelled(
+                    id: 'cue_' . Id::generate(),
+                    sequence: 2,
+                    activityId: $config->id,
+                    invocationId: null,
+                    agentId: null,
+                    at: new \DateTimeImmutable(),
+                    reason: $error->getMessage(),
+                ),
+            ]),
         );
     }
 
-    private static function failed(TaskScope $scope, Config $config, ?Log $log, \Throwable $error): Result
+    private static function failed(Config $config, ?Log $log, \Throwable $error): Result
     {
-        $composite = CompositeStream::wrap($scope, Stream::from([]));
-        $composite->emit(new ActivityCue\Started(
-            id: 'cue_' . Id::generate(),
-            sequence: 1,
-            activityId: $config->id,
-            invocationId: null,
-            agentId: null,
-            at: new \DateTimeImmutable(),
-        ));
-        $composite->emit(new ActivityCue\Failed(
-            id: 'cue_' . Id::generate(),
-            sequence: 2,
-            activityId: $config->id,
-            invocationId: null,
-            agentId: null,
-            at: new \DateTimeImmutable(),
-            reason: $error->getMessage(),
-            errorClass: $error::class,
-        ));
-
         return new Result(
             activityId: $config->id,
             state: State::Failed,
@@ -126,34 +122,35 @@ final class Activity implements Executor
             log: $log ?? Log::from([]),
             invocations: 0,
             error: $error,
-            stream: $composite->stream(),
+            stream: Stream::from([
+                new ActivityCue\Started(
+                    id: 'cue_' . Id::generate(),
+                    sequence: 1,
+                    activityId: $config->id,
+                    invocationId: null,
+                    agentId: null,
+                    at: new \DateTimeImmutable(),
+                ),
+                new ActivityCue\Failed(
+                    id: 'cue_' . Id::generate(),
+                    sequence: 2,
+                    activityId: $config->id,
+                    invocationId: null,
+                    agentId: null,
+                    at: new \DateTimeImmutable(),
+                    reason: $error->getMessage(),
+                    errorClass: $error::class,
+                ),
+            ]),
         );
     }
 
-    /**
-     * @param list<Cue> $innerCues
-     */
-    private static function started(Config $config, Agent $agent, array $innerCues): ActivityCue\Started
-    {
-        return new ActivityCue\Started(
-            id: 'cue_' . Id::generate(),
-            sequence: self::startingSequence($innerCues),
-            activityId: $config->id,
-            invocationId: null,
-            agentId: $agent->id,
-            at: new \DateTimeImmutable(),
-        );
-    }
-
-    /**
-     * @param list<Cue> $innerCues
-     */
-    private static function terminalCue(Config $config, Agent $agent, Result $result, array $innerCues): ?Cue
+    private static function terminalCue(Config $config, Agent $agent, Result $result, int $sequence): ?Cue
     {
         return match ($result->state) {
             State::Completed => new ActivityCue\Completed(
                 id: 'cue_' . Id::generate(),
-                sequence: self::endingSequence($innerCues),
+                sequence: $sequence,
                 activityId: $config->id,
                 invocationId: null,
                 agentId: $agent->id,
@@ -161,7 +158,7 @@ final class Activity implements Executor
             ),
             State::Failed => new ActivityCue\Failed(
                 id: 'cue_' . Id::generate(),
-                sequence: self::endingSequence($innerCues),
+                sequence: $sequence,
                 activityId: $config->id,
                 invocationId: null,
                 agentId: $agent->id,
@@ -171,7 +168,7 @@ final class Activity implements Executor
             ),
             State::Cancelled => new ActivityCue\Cancelled(
                 id: 'cue_' . Id::generate(),
-                sequence: self::endingSequence($innerCues),
+                sequence: $sequence,
                 activityId: $config->id,
                 invocationId: null,
                 agentId: $agent->id,
@@ -180,40 +177,6 @@ final class Activity implements Executor
             ),
             default => null,
         };
-    }
-
-    /** @param list<Cue> $cues */
-    private static function startingSequence(array $cues): int
-    {
-        if ($cues === []) {
-            return 1;
-        }
-
-        $min = PHP_INT_MAX;
-        foreach ($cues as $cue) {
-            if ($cue->sequence < $min) {
-                $min = $cue->sequence;
-            }
-        }
-
-        return $min - 1;
-    }
-
-    /** @param list<Cue> $cues */
-    private static function endingSequence(array $cues): int
-    {
-        if ($cues === []) {
-            return 2;
-        }
-
-        $max = PHP_INT_MIN;
-        foreach ($cues as $cue) {
-            if ($cue->sequence > $max) {
-                $max = $cue->sequence;
-            }
-        }
-
-        return $max + 1;
     }
 
     private static function runInline(
@@ -226,11 +189,11 @@ final class Activity implements Executor
         try {
             $result = ($executor)($scope, $agent, $config, $log);
         } catch (ScopeCancelled $error) {
-            return self::cancelled($scope, $config, $log, $error);
+            return self::cancelled($config, $log, $error);
         } catch (\Throwable $error) {
-            return self::failed($scope, $config, $log, $error);
+            return self::failed($config, $log, $error);
         }
 
-        return self::withLifecycle($scope, $config, $agent, $result);
+        return self::withLifecycle($config, $agent, $result);
     }
 }
