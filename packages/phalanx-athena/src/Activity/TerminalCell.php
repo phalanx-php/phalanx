@@ -10,6 +10,10 @@ final class TerminalCell
 
     public function resolve(TerminalState $state): void
     {
+        if ($this->value !== null) {
+            throw new \LogicException('TerminalCell has already been resolved.');
+        }
+
         $this->value = $state;
     }
 }

@@ -58,25 +58,39 @@ final class Activity implements Executor
             );
 
             $maxSeq = 0;
-            foreach ($innerResult->stream as $cue) {
-                if ($cue->sequence > $maxSeq) {
-                    $maxSeq = $cue->sequence;
+            try {
+                foreach ($innerResult->stream as $cue) {
+                    if ($cue->sequence > $maxSeq) {
+                        $maxSeq = $cue->sequence;
+                    }
+                    yield $cue;
                 }
-                yield $cue;
-            }
 
-            $terminal = self::terminalCue($config, $agent, $innerResult, $maxSeq + 1);
-            if ($terminal !== null) {
-                yield $terminal;
-            }
+                $terminal = self::terminalCue($config, $agent, $innerResult, $maxSeq + 1);
+                if ($terminal !== null) {
+                    yield $terminal;
+                }
 
-            $outerCell->resolve(new TerminalState(
-                state: $innerResult->state,
-                outcome: $innerResult->outcome,
-                log: $innerResult->log,
-                invocations: $innerResult->invocations,
-                error: $innerResult->error,
-            ));
+                $outerCell->resolve(new TerminalState(
+                    state: $innerResult->state,
+                    outcome: $innerResult->outcome,
+                    log: $innerResult->log,
+                    invocations: $innerResult->invocations,
+                    error: $innerResult->error,
+                ));
+                unset($innerResult);
+            } catch (\Throwable $e) {
+                $outerCell->resolve(new TerminalState(
+                    state: $innerResult->state,
+                    outcome: $innerResult->outcome,
+                    log: $innerResult->log,
+                    invocations: $innerResult->invocations,
+                    error: $e,
+                ));
+                unset($innerResult);
+
+                throw $e;
+            }
         });
 
         return Result::lazy($result->activityId, $stream, $outerCell);

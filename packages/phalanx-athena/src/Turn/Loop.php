@@ -33,6 +33,7 @@ use Phalanx\Panoply\Provider;
 use Phalanx\Panoply\Stream;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\TaskScope;
+
 final class Loop implements Activity\Executor
 {
     /**

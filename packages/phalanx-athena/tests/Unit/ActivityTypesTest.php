@@ -7,6 +7,8 @@ namespace Phalanx\Athena\Tests\Unit;
 use Phalanx\Athena\Activity\Config;
 use Phalanx\Athena\Activity\Result;
 use Phalanx\Athena\Activity\State;
+use Phalanx\Athena\Activity\TerminalCell;
+use Phalanx\Athena\Activity\TerminalState;
 use Phalanx\Athena\Hook\StepContext;
 use Phalanx\Athena\Hook\StepHook;
 use Phalanx\Athena\Hook\StepHookResult;
@@ -61,5 +63,27 @@ final class ActivityTypesTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
 
         new Config('act_1', Context::new(), timeoutSeconds: 0.0);
+    }
+
+    #[Test]
+    public function terminalCellRejectsDoubleResolve(): void
+    {
+        $cell = new TerminalCell();
+        $state = new TerminalState(State::Completed, Outcome::Complete, Log::from([]), 1);
+
+        $cell->resolve($state);
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('TerminalCell has already been resolved.');
+
+        $cell->resolve($state);
+    }
+
+    #[Test]
+    public function terminalCellStartsUnresolved(): void
+    {
+        $cell = new TerminalCell();
+
+        self::assertNull($cell->value);
     }
 }
