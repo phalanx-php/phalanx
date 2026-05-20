@@ -1,6 +1,5 @@
 <p align="center">
-  <img src="phalanx-mark-draft-v3.svg" alt="Phalanx" width="520">
-  <!--<img src="logo.svg" alt="Phalanx" width="520">-->
+  <img src="banner.svg" alt="Phalanx" width="520">
 </p>
 
 # Phalanx
