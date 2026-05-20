@@ -39,10 +39,16 @@ final class PhpExtensionFlags
     {
         $extDir   = rtrim((string) ini_get('extension_dir'), '/\\');
         $buildId  = basename($extDir);
+        $iniFiles = null;
         $flags    = [];
 
         foreach ($extensions as $extension) {
             if (!extension_loaded($extension)) {
+                continue;
+            }
+
+            $iniFiles ??= self::collectIniFiles();
+            if (self::isIniConfigured($extension, $iniFiles)) {
                 continue;
             }
 
@@ -56,6 +62,48 @@ final class PhpExtensionFlags
         }
 
         return $flags;
+    }
+
+    /** @return list<string> */
+    private static function collectIniFiles(): array
+    {
+        $files = [];
+
+        $loaded = php_ini_loaded_file();
+        if ($loaded !== false) {
+            $files[] = $loaded;
+        }
+
+        $scanned = php_ini_scanned_files();
+        if ($scanned !== false && $scanned !== '') {
+            foreach (explode(',', $scanned) as $file) {
+                $file = trim($file);
+                if ($file !== '') {
+                    $files[] = $file;
+                }
+            }
+        }
+
+        return $files;
+    }
+
+    /** @param list<string> $iniFiles */
+    private static function isIniConfigured(string $extension, array $iniFiles): bool
+    {
+        $pattern = '/^\s*extension\s*=\s*[^;]*?' . preg_quote($extension, '/') . '/mi';
+
+        foreach ($iniFiles as $file) {
+            if (!is_file($file)) {
+                continue;
+            }
+
+            $content = file_get_contents($file);
+            if ($content !== false && preg_match($pattern, $content)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static function resolvePath(string $extension, string $extDir, string $buildId): ?string
