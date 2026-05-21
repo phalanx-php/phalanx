@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="banner.svg" alt="Phalanx" width="520">
+  <img src="assets/banner.svg" alt="Phalanx" width="520">
 </p>
 
 # Phalanx

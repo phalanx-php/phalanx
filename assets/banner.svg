@@ -73,5 +73,5 @@
 
   <!-- === TAGLINE === -->
   <text x="131" y="82" font-family="'Helvetica Neue', 'Arial', sans-serif"
-        font-size="13" fill="#808080" letter-spacing="1.8">supervised execution runtime for PHP 8.4+</text>
+        font-size="17" fill="#808080" letter-spacing="1.8">supervised execution runtime for PHP 8.4+</text>
 </svg>

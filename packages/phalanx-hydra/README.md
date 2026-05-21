@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="brand/logo.svg" alt="Phalanx" width="520">
+  <img src="brand/banner.svg" alt="Phalanx" width="520">
 </p>
 
 # Phalanx Hydra
