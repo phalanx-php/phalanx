@@ -9,6 +9,7 @@ use Phalanx\Athena\Effect\Dispatcher;
 use Phalanx\Athena\Effect\Outcome;
 use Phalanx\Athena\Effect\Resolution;
 use Phalanx\Athena\Exception\EffectDenied;
+use Phalanx\Athena\Grant\Scope as GrantScope;
 use Phalanx\Athena\Grant\Store as GrantStore;
 use Phalanx\Athena\Mcp\McpConnection;
 use Phalanx\Athena\Mcp\McpRegistry;
@@ -71,6 +72,55 @@ final class DispatcherTest extends TestCase
         self::assertSame('read_file', $cues[1]->effectId);
         self::assertSame(12, $cues[1]->sequence);
         self::assertGreaterThanOrEqual(0, $cues[1]->durationMs);
+    }
+
+    #[Test]
+    public function onceGrantIsConsumedAfterGrantedEffect(): void
+    {
+        $registry = new ToolRegistry();
+        $registry->register('read_file', EchoTool::class);
+        $grant = Grant::of(
+            id: 'grant_once',
+            subject: 'agent_1',
+            allowedEffects: [Kind::FileRead],
+            scope: GrantScope::Once->value,
+            hazardCeiling: Hazard::Critical,
+        );
+        $grantStore = new FixedGrantStore($grant);
+
+        $dispatcher = self::dispatcher(
+            toolRegistry: $registry,
+            grantStore: $grantStore,
+        );
+
+        $dispatcher->dispatch(
+            new ScopeStub(),
+            self::request('read_file', Kind::FileRead, arguments: ['path' => '/tmp/test']),
+            new ArrayCueEmitter(),
+        );
+
+        self::assertSame([$grant], $grantStore->consumed);
+    }
+
+    #[Test]
+    public function sessionGrantIsNotConsumedAfterGrantedEffect(): void
+    {
+        $registry = new ToolRegistry();
+        $registry->register('read_file', EchoTool::class);
+        $grantStore = new FixedGrantStore(self::grant(Kind::FileRead));
+
+        $dispatcher = self::dispatcher(
+            toolRegistry: $registry,
+            grantStore: $grantStore,
+        );
+
+        $dispatcher->dispatch(
+            new ScopeStub(),
+            self::request('read_file', Kind::FileRead, arguments: ['path' => '/tmp/test']),
+            new ArrayCueEmitter(),
+        );
+
+        self::assertSame([], $grantStore->consumed);
     }
 
     #[Test]
@@ -436,6 +486,9 @@ final class FailingTool implements Tool
 
 final class FixedGrantStore implements GrantStore
 {
+    /** @var list<Grant> */
+    public array $consumed = [];
+
     public function __construct(private(set) ?Grant $grant)
     {
     }
@@ -451,6 +504,7 @@ final class FixedGrantStore implements GrantStore
 
     public function consume(TaskScope $scope, Grant $grant): void
     {
+        $this->consumed[] = $grant;
     }
 
     public function revoke(TaskScope $scope, string $grantId): void

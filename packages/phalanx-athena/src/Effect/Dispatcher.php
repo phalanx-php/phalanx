@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Athena\Effect;
 
 use Phalanx\Athena\Exception\EffectDenied;
+use Phalanx\Athena\Grant\Scope as GrantScope;
 use Phalanx\Athena\Grant\Store as GrantStore;
 use Phalanx\Athena\Mcp\McpRegistry;
 use Phalanx\Athena\Stream\CueEmitter;
@@ -231,6 +232,10 @@ final class Dispatcher
                 Outcome::failed($resolution, $e, PanoplyOutcome::failed($e::class, $e->getMessage(), $elapsed)),
                 $e,
             );
+        } finally {
+            if ($grant?->scope === GrantScope::Once->value) {
+                $this->grantStore->consume($scope, $grant);
+            }
         }
     }
 
