@@ -13,7 +13,7 @@
     "require": {
         "php": "^8.4",
         "ext-openswoole": "^26.0",
-        "phalanx-php/aegis": "^0.6"
+        "phalanx-php/aegis": "^0.2"
     },
     "bin": ["bin/skopos"],
     "autoload": {
