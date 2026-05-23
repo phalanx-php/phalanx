@@ -1,0 +1,9 @@
+.*
+*.md
+
+!.gitignore
+!.env.dist
+!README.md
+
+/vendor/
+/.phpunit.cache/

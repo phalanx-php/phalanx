@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/11.0/phpunit.xsd"
+         bootstrap="../../vendor/autoload.php"
+         colors="true"
+         cacheDirectory=".phpunit.cache"
+         executionOrder="depends,defects"
+         requireCoverageMetadata="false"
+         beStrictAboutOutputDuringTests="true"
+         displayDetailsOnIncompleteTests="true"
+         displayDetailsOnSkippedTests="true"
+         displayDetailsOnTestsThatTriggerDeprecations="true"
+         displayDetailsOnTestsThatTriggerErrors="true"
+         displayDetailsOnTestsThatTriggerNotices="true"
+         displayDetailsOnTestsThatTriggerWarnings="true"
+         failOnRisky="true"
+         failOnWarning="false">
+    <!--
+        PHPUnit runs the first-declared testsuite by default when no testsuite
+        flag is supplied. "Unit" is the safe default: no live API calls, no
+        OpenSwoole extension, no network I/O.
+
+        To run each suite explicitly from the project root:
+          php vendor/bin/phpunit -c framework/src/Panoply/phpunit.xml.dist
+          php vendor/bin/phpunit -c framework/src/Panoply/phpunit.xml.dist - -testsuite=Integration
+          php vendor/bin/phpunit -c framework/src/Panoply/phpunit.xml.dist - -testsuite=Acceptance
+
+        Integration requires ANTHROPIC_API_KEY and makes real API calls.
+        Acceptance requires ANTHROPIC_API_KEY and the openswoole extension for gate 10.
+
+        The package-level "composer test" script explicitly passes the Unit suite.
+    -->
+    <testsuites>
+        <testsuite name="Unit">
+            <directory>tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Integration">
+            <directory>tests/Integration</directory>
+        </testsuite>
+        <testsuite name="Acceptance">
+            <directory>tests/Acceptance</directory>
+        </testsuite>
+    </testsuites>
+
+    <source>
+        <include>
+            <directory>src</directory>
+        </include>
+    </source>
+</phpunit>

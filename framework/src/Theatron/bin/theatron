@@ -1,0 +1,31 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+$autoload = dirname(__DIR__) . '/vendor/autoload_runtime.php';
+
+if (!is_file($autoload)) {
+    $autoload = dirname(__DIR__, 4) . '/vendor/autoload_runtime.php';
+}
+
+require_once $autoload;
+
+use Phalanx\Iris\HttpServiceBundle;
+use Phalanx\Theatron\Agent\AthenaServiceBundle;
+use Phalanx\Theatron\Template\TemplateApp;
+use Phalanx\Theatron\Theatron;
+use Phalanx\Theatron\TheatronApp;
+use Phalanx\Theatron\TheatronServiceBundle;
+
+return static fn(array $context): \Closure => static fn(): int => Theatron::app($context)
+    ->store(TemplateApp::store())
+    ->screens(TemplateApp::screens())
+    ->globalBindings(TemplateApp::bindings())
+    ->providers(
+        static fn(TheatronApp $app): TheatronServiceBundle => new TheatronServiceBundle($app),
+        new HttpServiceBundle(),
+        AthenaServiceBundle::ollama(),
+    )
+    ->devtools()
+    ->run();

@@ -36,7 +36,7 @@ use Phalanx\Demos\Kit\DemoReport;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Task;
 
-return static function (array $context): Closure {
+return static function (array $_context): Closure {
     // DemoApp::boot() eagerly constructs the Aegis kernel, which requires
     // OpenSwoole\Table. Guard before boot so a missing extension produces a
     // clean cannotRun message rather than a fatal ClassNotFoundError.
@@ -55,7 +55,7 @@ return static function (array $context): Closure {
     }
 
     $serverScript = __DIR__ . '/../../..'
-        . '/packages/phalanx-athena/tests/Fixtures/mcp-echo-server.php';
+        . '/framework/src/Athena/tests/Fixtures/mcp-echo-server.php';
 
     // Register the echo-server descriptor in the bundle so McpRegistry
     // knows about it before the task body runs. StdioClient still handles

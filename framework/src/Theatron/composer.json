@@ -1,0 +1,55 @@
+{
+    "name": "phalanx-php/theatron",
+    "description": "Async terminal UI framework for Phalanx PHP",
+    "license": "MIT",
+    "type": "library",
+    "require": {
+        "php": "^8.4",
+        "ext-openswoole": "^26.2",
+        "ext-pcntl": "*",
+        "ext-mbstring": "*",
+        "phalanx-php/aegis": "dev-main as 0.6.0",
+        "phalanx-php/archon": "dev-main as 0.6.0",
+        "phalanx-php/athena": "dev-main as 0.6.0",
+        "phalanx-php/hermes": "dev-main as 0.6.0",
+        "phalanx-php/hydra": "dev-main as 0.6.0",
+        "phalanx-php/iris": "dev-main as 0.6.0",
+        "phalanx-php/panoply": "dev-main as 0.6.0",
+        "phalanx-php/stoa": "dev-main as 0.6.0",
+        "phalanx-php/surreal": "dev-main as 0.6.0",
+        "phalanx-php/styx": "dev-main as 0.6.0",
+        "league/commonmark": "^2.7",
+        "symfony/runtime": "^7.0",
+        "symfony/dotenv": "^7.0"
+    },
+    "bin": ["bin/theatron"],
+    "autoload": {
+        "files": [
+            "src/Ui/functions.php"
+        ],
+        "psr-4": {
+            "Phalanx\\Theatron\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Phalanx\\Theatron\\Tests\\": "tests/"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "config": {
+        "allow-plugins": {
+            "symfony/runtime": true,
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    },
+    "require-dev": {
+        "slevomat/coding-standard": "*",
+        "squizlabs/php_codesniffer": "*",
+        "rector/rector": "^2.4",
+        "rector/swiss-knife": "^2.3",
+        "phpunit/phpunit": "^13.1",
+        "phpstan/phpstan": "^2.0"
+    }
+}

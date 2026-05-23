@@ -17,7 +17,7 @@ final class PHPUnitProcessIsolationPolicyTest extends TestCase
         $root = dirname(__DIR__, 2);
         $files = [];
 
-        foreach ([$root . '/tests', ...glob($root . '/packages/*/tests') ?: []] as $dir) {
+        foreach ([$root . '/tests', ...glob($root . '/framework/src/*/tests') ?: []] as $dir) {
             if (!is_dir($dir)) {
                 continue;
             }

@@ -17,93 +17,96 @@
     </groups>
     <testsuites>
         <testsuite name="Core Unit">
-            <directory>packages/phalanx-aegis/tests/Unit</directory>
+            <directory>framework/src/Aegis/tests/Unit</directory>
         </testsuite>
         <testsuite name="Core Integration">
-            <directory>packages/phalanx-aegis/tests/Integration</directory>
+            <directory>framework/src/Aegis/tests/Integration</directory>
         </testsuite>
         <testsuite name="Core Smoke">
-            <directory>packages/phalanx-aegis/tests/Smoke</directory>
+            <directory>framework/src/Aegis/tests/Smoke</directory>
         </testsuite>
         <testsuite name="Core Resilience">
-            <directory>packages/phalanx-aegis/tests/Resilience</directory>
+            <directory>framework/src/Aegis/tests/Resilience</directory>
         </testsuite>
         <testsuite name="Styx Unit">
-            <directory>packages/phalanx-styx/tests/Unit</directory>
+            <directory>framework/src/Styx/tests/Unit</directory>
         </testsuite>
         <testsuite name="Styx Integration">
-            <directory>packages/phalanx-styx/tests/Integration</directory>
+            <directory>framework/src/Styx/tests/Integration</directory>
         </testsuite>
         <testsuite name="Archon Unit">
-            <directory>packages/phalanx-archon/tests/Unit</directory>
+            <directory>framework/src/Archon/tests/Unit</directory>
         </testsuite>
         <testsuite name="Archon Integration">
-            <directory>packages/phalanx-archon/tests/Integration</directory>
+            <directory>framework/src/Archon/tests/Integration</directory>
         </testsuite>
         <testsuite name="Stoa Unit">
-            <directory>packages/phalanx-stoa/tests/Unit</directory>
+            <directory>framework/src/Stoa/tests/Unit</directory>
         </testsuite>
         <testsuite name="Iris Unit">
-            <directory>packages/phalanx-iris/tests/Unit</directory>
+            <directory>framework/src/Iris/tests/Unit</directory>
         </testsuite>
         <testsuite name="Iris Integration">
-            <directory>packages/phalanx-iris/tests/Integration</directory>
+            <directory>framework/src/Iris/tests/Integration</directory>
         </testsuite>
         <testsuite name="Hydra Unit">
-            <directory>packages/phalanx-hydra/tests/Unit</directory>
+            <directory>framework/src/Hydra/tests/Unit</directory>
         </testsuite>
         <testsuite name="Hydra Integration">
-            <directory>packages/phalanx-hydra/tests/Integration</directory>
+            <directory>framework/src/Hydra/tests/Integration</directory>
         </testsuite>
         <testsuite name="Hermes Unit">
-            <directory>packages/phalanx-hermes/tests/Unit</directory>
+            <directory>framework/src/Hermes/tests/Unit</directory>
         </testsuite>
         <testsuite name="Hermes Integration">
-            <directory>packages/phalanx-hermes/tests/Integration</directory>
+            <directory>framework/src/Hermes/tests/Integration</directory>
         </testsuite>
         <testsuite name="Hermes Client Unit">
-            <directory>packages/phalanx-hermes/tests/Client/Unit</directory>
+            <directory>framework/src/Hermes/tests/Client/Unit</directory>
         </testsuite>
         <testsuite name="Athena Unit">
-            <directory>packages/phalanx-athena/tests/Unit</directory>
+            <directory>framework/src/Athena/tests/Unit</directory>
         </testsuite>
         <testsuite name="Athena Integration">
-            <directory>packages/phalanx-athena/tests/Integration</directory>
+            <directory>framework/src/Athena/tests/Integration</directory>
         </testsuite>
         <testsuite name="Enigma Unit">
-            <directory>packages/phalanx-enigma/tests/Unit</directory>
+            <directory>framework/src/Enigma/tests/Unit</directory>
         </testsuite>
         <testsuite name="Surreal Unit">
-            <directory>packages/phalanx-surreal/tests/Unit</directory>
+            <directory>framework/src/Surreal/tests/Unit</directory>
         </testsuite>
         <testsuite name="Eidolon Unit">
-            <directory>packages/phalanx-eidolon/tests/Unit</directory>
+            <directory>framework/src/Eidolon/tests/Unit</directory>
         </testsuite>
         <testsuite name="Grammata Unit">
-            <directory>packages/phalanx-grammata/tests/Unit</directory>
+            <directory>framework/src/Grammata/tests/Unit</directory>
         </testsuite>
         <testsuite name="Argos Unit">
-            <directory>packages/phalanx-argos/tests/Unit</directory>
+            <directory>framework/src/Argos/tests/Unit</directory>
         </testsuite>
         <testsuite name="Skopos">
-            <directory>packages/phalanx-skopos/tests</directory>
+            <directory>framework/src/Skopos/tests</directory>
         </testsuite>
         <testsuite name="CLI Unit">
-            <directory>packages/phalanx-cli/tests/Unit</directory>
+            <directory>framework/src/Cli/tests/Unit</directory>
         </testsuite>
         <testsuite name="CLI Integration">
-            <directory>packages/phalanx-cli/tests/Integration</directory>
+            <directory>framework/src/Cli/tests/Integration</directory>
         </testsuite>
         <testsuite name="Architecture">
             <directory>tests/Architecture</directory>
         </testsuite>
         <testsuite name="PHPStan Extension">
-            <directory>packages/phalanx-phpstan/tests</directory>
+            <directory>framework/src/PHPStan/tests</directory>
+        </testsuite>
+        <testsuite name="Theatron">
+            <directory>framework/src/Theatron/tests</directory>
         </testsuite>
         <!-- Keep Stoa's HTTP-lens integration last. OpenSwoole does not fully
              reset its event-loop state inside one PHPUnit process. -->
         <testsuite name="Stoa Integration">
-            <directory>packages/phalanx-stoa/tests/Integration</directory>
+            <directory>framework/src/Stoa/tests/Integration</directory>
         </testsuite>
     </testsuites>
 </phpunit>

@@ -1,5 +1,5 @@
 includes:
-    - packages/phalanx-phpstan/extension.neon
+    - framework/src/PHPStan/extension.neon
 
 parameters:
     level: 8
@@ -7,71 +7,72 @@ parameters:
     # Legacy and parallel-lane packages are classified in vault context and
     # reintroduced package-by-package as their 0.2 ports land.
     paths:
-        - packages/phalanx-aegis/src
-        - packages/phalanx-archon/src
-        - packages/phalanx-argos/src
-        - packages/phalanx-athena/src
-        - packages/phalanx-cli/src
-        - packages/phalanx-eidolon/src
-        - packages/phalanx-enigma/src
-        - packages/phalanx-grammata/src
-        - packages/phalanx-hermes/src
-        - packages/phalanx-hydra/src
-        - packages/phalanx-iris/src
-        - packages/phalanx-panoply/src
-        - packages/phalanx-phpstan/src
-        - packages/phalanx-skopos/src
-        - packages/phalanx-stoa/src
-        - packages/phalanx-surreal/src
-        - packages/phalanx-styx/src
+        - framework/src/Aegis/src
+        - framework/src/Archon/src
+        - framework/src/Argos/src
+        - framework/src/Athena/src
+        - framework/src/Cli/src
+        - framework/src/Eidolon/src
+        - framework/src/Enigma/src
+        - framework/src/Grammata/src
+        - framework/src/Hermes/src
+        - framework/src/Hydra/src
+        - framework/src/Iris/src
+        - framework/src/Panoply/src
+        - framework/src/PHPStan/src
+        - framework/src/Skopos/src
+        - framework/src/Stoa/src
+        - framework/src/Surreal/src
+        - framework/src/Theatron/src
+        - framework/src/Styx/src
         - benchmarks
         - demos
     scanDirectories:
         - vendor/openswoole/ide-helper
     phalanxInternalPaths:
-        - packages/phalanx-aegis/src/Concurrency/Co.php
-        - packages/phalanx-aegis/src/Cancellation/CancellationToken.php
-        - packages/phalanx-aegis/src/Pool/ObjectPool.php
-        - packages/phalanx-aegis/src/Pool/PoolRing.php
-        - packages/phalanx-aegis/src/Runtime/CoroutineRuntime.php
-        - packages/phalanx-aegis/src/Runtime/RuntimeHooks.php
-        - packages/phalanx-aegis/src/Scope/BorrowedScopeFrame.php
-        - packages/phalanx-aegis/src/Scope/ExecutionLifecycleScope.php
-        - packages/phalanx-aegis/src/Scope/TransactionLifecycleScope.php
-        - packages/phalanx-aegis/src/Service/LazySingleton.php
-        - packages/phalanx-aegis/src/Support/ExecutionScopeDelegate.php
-        - packages/phalanx-aegis/src/Supervisor/InProcessLedger.php
-        - packages/phalanx-aegis/src/Supervisor/LedgerStorage.php
-        - packages/phalanx-aegis/src/Supervisor/Supervisor.php
-        - packages/phalanx-aegis/src/Supervisor/SwooleTableLedger.php
-        - packages/phalanx-aegis/src/Supervisor/TaskRun.php
-        - packages/phalanx-aegis/src/Worker/
-        - packages/phalanx-stoa/src/StoaRunner.php
+        - framework/src/Aegis/src/Concurrency/Co.php
+        - framework/src/Aegis/src/Cancellation/CancellationToken.php
+        - framework/src/Aegis/src/Pool/ObjectPool.php
+        - framework/src/Aegis/src/Pool/PoolRing.php
+        - framework/src/Aegis/src/Runtime/CoroutineRuntime.php
+        - framework/src/Aegis/src/Runtime/RuntimeHooks.php
+        - framework/src/Aegis/src/Scope/BorrowedScopeFrame.php
+        - framework/src/Aegis/src/Scope/ExecutionLifecycleScope.php
+        - framework/src/Aegis/src/Scope/TransactionLifecycleScope.php
+        - framework/src/Aegis/src/Service/LazySingleton.php
+        - framework/src/Aegis/src/Support/ExecutionScopeDelegate.php
+        - framework/src/Aegis/src/Supervisor/InProcessLedger.php
+        - framework/src/Aegis/src/Supervisor/LedgerStorage.php
+        - framework/src/Aegis/src/Supervisor/Supervisor.php
+        - framework/src/Aegis/src/Supervisor/SwooleTableLedger.php
+        - framework/src/Aegis/src/Supervisor/TaskRun.php
+        - framework/src/Aegis/src/Worker/
+        - framework/src/Stoa/src/StoaRunner.php
     phalanxEnforcedPaths:
-        - packages/phalanx-aegis/src
-        - packages/phalanx-archon/src
-        - packages/phalanx-athena/src
-        - packages/phalanx-enigma/src
-        - packages/phalanx-grammata/src
-        - packages/phalanx-hermes/src
-        - packages/phalanx-hydra/src
-        - packages/phalanx-iris/src
-        - packages/phalanx-phpstan/src
-        - packages/phalanx-skopos/src
-        - packages/phalanx-stoa/src
-        - packages/phalanx-surreal/src
-        - packages/phalanx-styx/src
+        - framework/src/Aegis/src
+        - framework/src/Archon/src
+        - framework/src/Athena/src
+        - framework/src/Enigma/src
+        - framework/src/Grammata/src
+        - framework/src/Hermes/src
+        - framework/src/Hydra/src
+        - framework/src/Iris/src
+        - framework/src/PHPStan/src
+        - framework/src/Skopos/src
+        - framework/src/Stoa/src
+        - framework/src/Surreal/src
+        - framework/src/Styx/src
     phalanxAuditPaths: []
     phalanxRuntimeHookInternalPaths:
-        - packages/phalanx-aegis/src/Runtime/RuntimeCapability.php
-        - packages/phalanx-aegis/src/Runtime/RuntimeHookNames.php
-        - packages/phalanx-aegis/src/Runtime/RuntimeHooks.php
-        - packages/phalanx-aegis/src/Runtime/RuntimePolicy.php
+        - framework/src/Aegis/src/Runtime/RuntimeCapability.php
+        - framework/src/Aegis/src/Runtime/RuntimeHookNames.php
+        - framework/src/Aegis/src/Runtime/RuntimeHooks.php
+        - framework/src/Aegis/src/Runtime/RuntimePolicy.php
     phalanxProcessInternalPaths:
-        - packages/phalanx-aegis/src/System/Internal/SymfonyProcessAdapter.php
-        - packages/phalanx-hydra/src/WorkerPool/WorkerPool.php
+        - framework/src/Aegis/src/System/Internal/SymfonyProcessAdapter.php
+        - framework/src/Hydra/src/WorkerPool/WorkerPool.php
     phalanxCoroutineInternalPaths:
-        - packages/phalanx-aegis/src/Scope/ExecutionLifecycleScope.php
+        - framework/src/Aegis/src/Scope/ExecutionLifecycleScope.php
         - benchmarks/kernel/cases/ContextSwitchCases.php
     ignoreErrors:
         -
