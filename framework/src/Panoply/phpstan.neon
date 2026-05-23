@@ -6,6 +6,6 @@ parameters:
         - tests/Integration
         - tests/Acceptance
     scanDirectories:
-        - ../../vendor/openswoole/ide-helper
+        - vendor/openswoole/ide-helper
     tmpDir: .phpstan-cache
     treatPhpDocTypesAsCertain: false

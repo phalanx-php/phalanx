@@ -40,6 +40,8 @@ final class Transport implements TransportContract
      */
     public function stream(Request $request, Runtime $runtime): \Generator
     {
+        $runtime->throwIfCancelled();
+
         $chunks = [];
 
         $handle = curl_init();

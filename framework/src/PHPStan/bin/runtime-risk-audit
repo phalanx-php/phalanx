@@ -6,16 +6,27 @@ declare(strict_types=1);
 use Phalanx\PHPStan\Audit\RuntimeRisk;
 use Phalanx\PHPStan\Audit\RuntimeRiskScanner;
 
-$autoload = __DIR__ . '/../../../vendor/autoload.php';
-if (!is_file($autoload)) {
-    $autoload = __DIR__ . '/../vendor/autoload.php';
+$autoload = null;
+foreach ([
+    __DIR__ . '/../../../../vendor/autoload.php',
+    __DIR__ . '/../vendor/autoload.php',
+] as $candidate) {
+    if (is_file($candidate)) {
+        $autoload = $candidate;
+        break;
+    }
+}
+
+if ($autoload === null) {
+    fwrite(STDERR, "Cannot find autoload.php\n");
+    exit(1);
 }
 
 require $autoload;
 
 $paths = array_values(array_slice($argv, 1));
 if ($paths === []) {
-    $paths = ['packages', 'composer.json', 'composer.lock'];
+    $paths = ['framework/src', 'composer.json', 'composer.lock'];
 }
 
 $risks = (new RuntimeRiskScanner())->scanPaths($paths);

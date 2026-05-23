@@ -9,8 +9,7 @@ $autoloadPath = $options['autoload'] ?? null;
 if ($autoloadPath === null) {
     $candidates = [
         __DIR__ . '/../vendor/autoload.php',
-        __DIR__ . '/../../../vendor/autoload.php',
-        __DIR__ . '/../../../../../vendor/autoload.php',
+        __DIR__ . '/../../../../vendor/autoload.php',
     ];
 
     foreach ($candidates as $candidate) {

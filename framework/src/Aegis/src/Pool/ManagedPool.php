@@ -190,10 +190,12 @@ final class ManagedPool
 
     public function close(): void
     {
+        $self = $this;
+
         CoroutineRuntime::run(
             RuntimePolicy::phalanxManaged(),
-            function (): void {
-                $this->closeInsideCoroutine();
+            static function () use ($self): void {
+                $self->closeInsideCoroutine();
             },
         );
     }

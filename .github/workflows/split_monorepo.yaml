@@ -38,6 +38,8 @@ jobs:
             module: Hydra
           - package: phalanx-iris
             module: Iris
+          - package: phalanx-panoply
+            module: Panoply
           - package: phalanx-phpstan
             module: PHPStan
           - package: phalanx-skopos
@@ -48,6 +50,8 @@ jobs:
             module: Styx
           - package: phalanx-surreal
             module: Surreal
+          - package: phalanx-theatron
+            module: Theatron
 
     steps:
       - uses: actions/checkout@v4

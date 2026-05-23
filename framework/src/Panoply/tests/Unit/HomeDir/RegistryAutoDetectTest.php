@@ -113,10 +113,7 @@ final class RegistryAutoDetectTest extends TestCase
 
     private static function fixtureHome(string ...$roots): string
     {
-        $base = tempnam(sys_get_temp_dir(), 'panoply_home_');
-        self::assertIsString($base);
-
-        @unlink($base);
+        $base = sys_get_temp_dir() . '/' . uniqid('panoply_home_', true);
         mkdir($base, 0777, true);
 
         foreach ($roots as $root) {

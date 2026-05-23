@@ -123,42 +123,20 @@ final class TransportTest extends TestCase
     }
 
     #[Test]
-    public function cancellationMidStreamThrowsCancellationException(): void
+    public function cancellationBeforeCurlStartsThrowsCancellationException(): void
     {
         if (!extension_loaded('curl')) {
             self::markTestSkipped('curl extension not available');
         }
 
-        // Spin up a local PHP server that sleeps before responding so the
-        // progress callback has a chance to fire and abort curl.
-        $serverScript = self::writeSlowServerScript();
-        [$proc, $pipes, $port] = self::startServer($serverScript);
+        $transport = self::fixture();
+        $request = Request::of('GET', 'http://127.0.0.1:1/');
+        $runtime = new SyncRuntime();
+        $runtime->cancel();
 
-        if ($proc === null) {
-            @unlink($serverScript);
-            self::markTestSkipped('Could not bind a local PHP server after 5 attempts');
-        }
+        $this->expectException(CancellationException::class);
 
-        try {
-            $transport = self::fixture();
-            $request = Request::of('GET', "http://127.0.0.1:{$port}/");
-            $runtime = new SyncRuntime();
-
-            // Cancel before curl starts — the progress callback fires
-            // immediately on the first poll and returns 1, triggering abort.
-            $runtime->cancel();
-
-            $this->expectException(CancellationException::class);
-
-            iterator_to_array($transport->stream($request, $runtime), preserve_keys: false);
-        } finally {
-            fclose($pipes[0]);
-            fclose($pipes[1]);
-            fclose($pipes[2]);
-            proc_terminate($proc);
-            proc_close($proc);
-            @unlink($serverScript);
-        }
+        iterator_to_array($transport->stream($request, $runtime), preserve_keys: false);
     }
 
     private static function fixture(): Transport
@@ -224,21 +202,8 @@ final class TransportTest extends TestCase
 
     private static function writeServerScript(): string
     {
-        $base = tempnam(sys_get_temp_dir(), 'panoply_sync_');
-        $path = $base . '_server_' . getmypid() . '.php';
-        @unlink($base);
+        $path = sys_get_temp_dir() . '/' . uniqid('panoply_sync_', true) . '_server_' . getmypid() . '.php';
         $content = '<?php header("Content-Type: text/plain"); echo "agora response";';
-        file_put_contents($path, $content);
-
-        return $path;
-    }
-
-    private static function writeSlowServerScript(): string
-    {
-        $base = tempnam(sys_get_temp_dir(), 'panoply_sync_');
-        $path = $base . '_slow_' . getmypid() . '.php';
-        @unlink($base);
-        $content = '<?php sleep(2); header("Content-Type: text/plain"); echo "thermopylae";';
         file_put_contents($path, $content);
 
         return $path;

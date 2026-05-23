@@ -162,8 +162,9 @@ class ApplicationBuilder
             ->factory(static fn(): Trace => $trace);
         $catalog->singleton(HandlerResolver::class)
             ->factory(static fn(): HandlerResolver => new HandlerResolver());
+        $errorHandlers = $this->errorHandlers;
         $catalog->singleton(\Phalanx\Exception\ErrorRegistry::class)
-            ->factory(fn() => new \Phalanx\Exception\ErrorRegistry($this->errorHandlers));
+            ->factory(static fn() => new \Phalanx\Exception\ErrorRegistry($errorHandlers));
         foreach ($this->providers as $provider) {
             $provider->services($catalog, $this->context);
         }

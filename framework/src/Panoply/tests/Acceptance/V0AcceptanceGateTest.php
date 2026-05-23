@@ -836,9 +836,7 @@ final class V0AcceptanceGateTest extends TestCase
 
     private static function writeGate09Server(string $phpBody): string
     {
-        $base = tempnam(sys_get_temp_dir(), 'gate09_');
-        $path = $base . '_' . getmypid() . '.php';
-        @unlink($base);
+        $path = sys_get_temp_dir() . '/' . uniqid('gate09_', true) . '_' . getmypid() . '.php';
         file_put_contents($path, "<?php {$phpBody}");
 
         return $path;
@@ -895,10 +893,7 @@ final class V0AcceptanceGateTest extends TestCase
 
     private static function writeGate15Home(string ...$roots): string
     {
-        $base = tempnam(sys_get_temp_dir(), 'gate15_home_');
-        self::assertIsString($base);
-
-        @unlink($base);
+        $base = sys_get_temp_dir() . '/' . uniqid('gate15_home_', true);
         mkdir($base, 0777, true);
 
         foreach ($roots as $root) {

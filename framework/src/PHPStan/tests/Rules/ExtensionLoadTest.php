@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Phalanx\PHPStan\Tests\Rules;
 
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class ExtensionLoadTest extends TestCase
 {
+    #[Test]
     public function testExtensionNeonLoads(): void
     {
         $phpstan = null;
@@ -32,6 +34,10 @@ final class ExtensionLoadTest extends TestCase
 
         exec($command . ' 2>&1', $output, $exitCode);
 
-        self::assertSame(0, $exitCode, implode(PHP_EOL, $output));
+        self::assertSame(1, $exitCode, implode(PHP_EOL, $output));
+        self::assertStringContainsString(
+            'Use Phalanx\Scope\ExecutionScope instead of stale root-level Phalanx\ExecutionScope.',
+            implode(PHP_EOL, $output),
+        );
     }
 }

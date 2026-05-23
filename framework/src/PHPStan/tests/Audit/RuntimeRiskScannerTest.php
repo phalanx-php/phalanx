@@ -6,10 +6,12 @@ namespace Phalanx\PHPStan\Tests\Audit;
 
 use Phalanx\PHPStan\Audit\RuntimeRisk;
 use Phalanx\PHPStan\Audit\RuntimeRiskScanner;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class RuntimeRiskScannerTest extends TestCase
 {
+    #[Test]
     public function testScansRuntimeRiskSymbolsWithoutFailingThePhpstanGate(): void
     {
         $risks = (new RuntimeRiskScanner())->scanFile(__DIR__ . '/Fixtures/runtime-risk.php');
@@ -36,6 +38,7 @@ final class RuntimeRiskScannerTest extends TestCase
         self::assertContains('stale_async_dependency:Revolt\EventLoop', $symbols);
     }
 
+    #[Test]
     public function testDoesNotReportSameNamespaceChannelWrapperAsRawOpenSwooleChannel(): void
     {
         $file = sys_get_temp_dir() . '/' . uniqid('phalanx-risk-', true) . '.php';
@@ -65,6 +68,7 @@ PHP);
         }
     }
 
+    #[Test]
     public function testSkipsNestedVendorTrees(): void
     {
         $root = sys_get_temp_dir() . '/' . uniqid('phalanx-risk-', true);
@@ -94,6 +98,7 @@ PHP);
         }
     }
 
+    #[Test]
     public function testScansComposerManifestsForStaleAsyncPackages(): void
     {
         $root = sys_get_temp_dir() . '/' . uniqid('phalanx-risk-', true);
@@ -140,6 +145,7 @@ JSON);
         }
     }
 
+    #[Test]
     public function testScansComposerManifestWhenPassedAsAFilePath(): void
     {
         $root = sys_get_temp_dir() . '/' . uniqid('phalanx-risk-', true);
@@ -168,6 +174,7 @@ JSON);
         }
     }
 
+    #[Test]
     public function testScansGroupedUseStaleAsyncImports(): void
     {
         $file = sys_get_temp_dir() . '/' . uniqid('phalanx-risk-', true) . '.php';

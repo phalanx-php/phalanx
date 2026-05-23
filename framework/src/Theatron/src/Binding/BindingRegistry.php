@@ -33,9 +33,6 @@ final class BindingRegistry
     /** @var list<array{id: string, bindings: list<Binding>}> */
     private array $overlayStack = [];
 
-    // -------------------------------------------------------------------------
-    // Layer management
-
     /** @param list<Binding> $bindings */
     public function setGlobal(array $bindings): void
     {
@@ -87,9 +84,6 @@ final class BindingRegistry
         $this->overlayStack = [];
     }
 
-    // -------------------------------------------------------------------------
-    // Resolution
-
     public function resolve(KeyEvent $event): ?Binding
     {
         for ($i = count($this->overlayStack) - 1; $i >= 0; $i--) {
@@ -118,9 +112,6 @@ final class BindingRegistry
 
         return null;
     }
-
-    // -------------------------------------------------------------------------
-    // Introspection
 
     /**
      * Return all bindings visible in the current layer configuration.
@@ -167,9 +158,6 @@ final class BindingRegistry
 
         return $result;
     }
-
-    // -------------------------------------------------------------------------
-    // Internals
 
     private static function comboKey(Binding $b): string
     {

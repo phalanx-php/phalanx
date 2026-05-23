@@ -11,6 +11,7 @@ use Phalanx\Scope\Suspendable;
 use Phalanx\System\TcpConnection;
 use Phalanx\System\TlsOptions;
 use Phalanx\Testing\TestScope;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -28,6 +29,7 @@ final class HttpStreamChunkedTest extends TestCase
 {
     private const string HOST = '127.0.0.1';
 
+    #[Test]
     public function testChunkedSseStreamYieldsEachChunkInOrder(): void
     {
         $connection = ScriptedTcpConnection::withResponseChunks([

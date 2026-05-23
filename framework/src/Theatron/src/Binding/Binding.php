@@ -23,9 +23,6 @@ final class Binding
     ) {
     }
 
-    // -------------------------------------------------------------------------
-    // Static factories
-
     public static function ctrl(string $key): self
     {
         return new self($key, ctrl: true, alt: false, shift: false);
@@ -40,9 +37,6 @@ final class Binding
     {
         return new self($key, ctrl: false, alt: false, shift: false);
     }
-
-    // -------------------------------------------------------------------------
-    // Action setters (fluent; clone so callers can reuse a base binding)
 
     public function quit(): self
     {
@@ -83,9 +77,6 @@ final class Binding
         return $this->withAction(BindingAction::action($callback));
     }
 
-    // -------------------------------------------------------------------------
-    // Metadata
-
     public function label(string $label): self
     {
         $clone = clone $this;
@@ -93,9 +84,6 @@ final class Binding
 
         return $clone;
     }
-
-    // -------------------------------------------------------------------------
-    // Matching
 
     public function matches(KeyEvent $event): bool
     {
@@ -117,9 +105,6 @@ final class Binding
 
         return true;
     }
-
-    // -------------------------------------------------------------------------
-    // Internals
 
     private function withAction(BindingAction $action): self
     {

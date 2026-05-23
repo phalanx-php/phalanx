@@ -26,10 +26,9 @@ use PHPUnit\Framework\TestCase;
  * Unit tests for {@see Transport}.
  *
  * Constructor shape and generator-return tests run without OpenSwoole.
- * Live streaming tests annotated {@see RequiresPhpExtension}('openswoole')
- * use a PHP built-in HTTP server fixture and a real Aegis scope via
- * {@see Application::scoped()} — mirroring the Sync\Transport integration
- * pattern.
+     * Streaming tests annotated {@see RequiresPhpExtension}('openswoole') use
+     * scripted TCP connections and a real Aegis scope via
+     * {@see Application::scoped()}.
  *
  * Transport\Iris\Transport is the third documented boundary exception in
  * panoply: it bridges the adapter family to phalanx-iris. Concurrent +
@@ -65,32 +64,13 @@ final class TransportTest extends TestCase
     #[RequiresPhpExtension('openswoole')]
     public function happyPathStreamingYieldsBodyChunks(): void
     {
-        $serverScript = self::writeServer('header("Content-Type: text/plain"); echo "agora sparta thermopylae";');
-        [$proc, $pipes, $port] = self::startServer($serverScript);
-
-        if ($proc === null) {
-            @unlink($serverScript);
-            self::markTestSkipped('Could not bind local PHP server');
-        }
-
-        $body = '';
-
-        try {
-            self::bootApp()->scoped(
-                static function (ExecutionScope $aegisScope) use ($port, &$body): void {
-                    $client = Iris::client($aegisScope);
-                    $transport = new Transport($client, $aegisScope);
-                    $request = Request::of('GET', "http://127.0.0.1:{$port}/");
-                    $runtime = new SyncRuntime();
-
-                    foreach ($transport->stream($request, $runtime) as $chunk) {
-                        $body .= $chunk;
-                    }
-                },
-            );
-        } finally {
-            self::stopServer($proc, $pipes, $serverScript);
-        }
+        $connection = self::scriptedConnection([
+            self::httpResponseHeaders(),
+            self::httpChunk('agora '),
+            self::httpChunk('sparta thermopylae'),
+            "0\r\n\r\n",
+        ]);
+        $body = self::streamFromConnection($connection);
 
         self::assertStringContainsString('agora', $body);
         self::assertStringContainsString('sparta', $body);
@@ -100,35 +80,17 @@ final class TransportTest extends TestCase
     #[RequiresPhpExtension('openswoole')]
     public function errorResponseMapsToHttpError(): void
     {
-        $serverScript = self::writeServer('http_response_code(404); echo \'{"error":"thermopylae not found"}\';');
-        [$proc, $pipes, $port] = self::startServer($serverScript);
-
-        if ($proc === null) {
-            @unlink($serverScript);
-            self::markTestSkipped('Could not bind local PHP server');
-        }
-
+        $connection = self::scriptedConnection([
+            self::httpResponseHeaders(404),
+            self::httpChunk('{"error":"thermopylae not found"}'),
+            "0\r\n\r\n",
+        ]);
         $caught = null;
 
         try {
-            self::bootApp()->scoped(
-                static function (ExecutionScope $aegisScope) use ($port, &$caught): void {
-                    $client = Iris::client($aegisScope);
-                    $transport = new Transport($client, $aegisScope);
-                    $request = Request::of('GET', "http://127.0.0.1:{$port}/");
-                    $runtime = new SyncRuntime();
-
-                    try {
-                        // Must iterate — generator is lazy.
-                        foreach ($transport->stream($request, $runtime) as $_) {
-                        }
-                    } catch (HttpError $e) {
-                        $caught = $e;
-                    }
-                },
-            );
-        } finally {
-            self::stopServer($proc, $pipes, $serverScript);
+            self::streamFromConnection($connection);
+        } catch (HttpError $e) {
+            $caught = $e;
         }
 
         self::assertNotNull($caught, 'HttpError must be thrown for non-2xx responses');
@@ -140,39 +102,15 @@ final class TransportTest extends TestCase
     #[RequiresPhpExtension('openswoole')]
     public function cancellationBeforeIterationThrowsCancellationException(): void
     {
-        // Slow server: delay gives cancellation time to register before bytes arrive.
-        $serverScript = self::writeServer('sleep(3); echo "leonidas survived";');
-        [$proc, $pipes, $port] = self::startServer($serverScript);
-
-        if ($proc === null) {
-            @unlink($serverScript);
-            self::markTestSkipped('Could not bind local PHP server');
-        }
-
+        $connection = self::scriptedConnection([self::httpResponseHeaders(), self::httpChunk('leonidas survived')]);
         $caught = null;
 
         try {
-            self::bootApp()->scoped(
-                static function (ExecutionScope $aegisScope) use ($port, &$caught): void {
-                    $client = Iris::client($aegisScope);
-                    $transport = new Transport($client, $aegisScope);
-                    $request = Request::of('GET', "http://127.0.0.1:{$port}/");
-
-                    // Cancel the SyncRuntime before iteration so the first
-                    // throwIfCancelled() in the stream generator fires.
-                    $runtime = new SyncRuntime();
-                    $runtime->cancel();
-
-                    try {
-                        foreach ($transport->stream($request, $runtime) as $_) {
-                        }
-                    } catch (CancellationException $e) {
-                        $caught = $e;
-                    }
-                },
-            );
-        } finally {
-            self::stopServer($proc, $pipes, $serverScript);
+            self::streamFromConnection($connection, static function (SyncRuntime $runtime): void {
+                $runtime->cancel();
+            });
+        } catch (CancellationException $e) {
+            $caught = $e;
         }
 
         self::assertNotNull($caught, 'CancellationException must propagate when runtime is cancelled before iteration');
@@ -182,38 +120,9 @@ final class TransportTest extends TestCase
     #[RequiresPhpExtension('openswoole')]
     public function eofTerminatesGeneratorCleanly(): void
     {
-        $serverScript = self::writeServer('header("Content-Type: text/plain");');
-        [$proc, $pipes, $port] = self::startServer($serverScript);
+        $connection = self::scriptedConnection([self::httpResponseHeaders(), "0\r\n\r\n"]);
 
-        if ($proc === null) {
-            @unlink($serverScript);
-            self::markTestSkipped('Could not bind local PHP server');
-        }
-
-        $completed = false;
-        $chunks = [];
-
-        try {
-            self::bootApp()->scoped(
-                static function (ExecutionScope $aegisScope) use ($port, &$chunks, &$completed): void {
-                    $client = Iris::client($aegisScope);
-                    $transport = new Transport($client, $aegisScope);
-                    $request = Request::of('GET', "http://127.0.0.1:{$port}/");
-                    $runtime = new SyncRuntime();
-
-                    foreach ($transport->stream($request, $runtime) as $chunk) {
-                        $chunks[] = $chunk;
-                    }
-
-                    $completed = true;
-                },
-            );
-        } finally {
-            self::stopServer($proc, $pipes, $serverScript);
-        }
-
-        self::assertTrue($completed, 'Generator must complete without exception on empty 200 response');
-        self::assertSame([], $chunks);
+        self::assertSame('', self::streamFromConnection($connection));
     }
 
     #[Test]
@@ -221,73 +130,37 @@ final class TransportTest extends TestCase
     public function largeResponsePreservesAllBytes(): void
     {
         $expected = 'athens sparta corinth thebes argos olympia delphi marathon salamis plataea';
-        $serverScript = self::writeServer('echo ' . var_export($expected, return: true) . ';');
-        [$proc, $pipes, $port] = self::startServer($serverScript);
+        $connection = self::scriptedConnection([
+            self::httpResponseHeaders(),
+            self::httpChunk($expected),
+            "0\r\n\r\n",
+        ]);
 
-        if ($proc === null) {
-            @unlink($serverScript);
-            self::markTestSkipped('Could not bind local PHP server');
-        }
-
-        $body = '';
-
-        try {
-            self::bootApp()->scoped(
-                static function (ExecutionScope $aegisScope) use ($port, &$body): void {
-                    $client = Iris::client($aegisScope);
-                    $transport = new Transport($client, $aegisScope);
-                    $request = Request::of('GET', "http://127.0.0.1:{$port}/");
-                    $runtime = new SyncRuntime();
-
-                    foreach ($transport->stream($request, $runtime) as $chunk) {
-                        $body .= $chunk;
-                    }
-                },
-            );
-        } finally {
-            self::stopServer($proc, $pipes, $serverScript);
-        }
-
-        self::assertSame($expected, $body, 'All bytes must be preserved across chunked delivery');
+        self::assertSame($expected, self::streamFromConnection($connection), 'All bytes must be preserved across chunked delivery');
     }
 
     #[Test]
     #[RequiresPhpExtension('openswoole')]
     public function postRequestBodyIsSentToServer(): void
     {
-        $serverScript = self::writeServer('echo file_get_contents("php://input");');
-        [$proc, $pipes, $port] = self::startServer($serverScript);
+        $connection = self::scriptedConnection([
+            self::httpResponseHeaders(),
+            self::httpChunk('accepted'),
+            "0\r\n\r\n",
+        ]);
+        $body = self::streamFromConnection(
+            $connection,
+            request: Request::of(
+                'POST',
+                'http://127.0.0.1:8123/',
+                ['Content-Type' => 'application/json'],
+                '{"polis":"agora","strategos":"themistocles"}',
+            ),
+        );
 
-        if ($proc === null) {
-            @unlink($serverScript);
-            self::markTestSkipped('Could not bind local PHP server');
-        }
-
-        $body = '';
-
-        try {
-            self::bootApp()->scoped(
-                static function (ExecutionScope $aegisScope) use ($port, &$body): void {
-                    $client = Iris::client($aegisScope);
-                    $transport = new Transport($client, $aegisScope);
-                    $request = Request::of(
-                        'POST',
-                        "http://127.0.0.1:{$port}/",
-                        ['Content-Type' => 'application/json'],
-                        '{"polis":"agora","strategos":"themistocles"}',
-                    );
-                    $runtime = new SyncRuntime();
-
-                    foreach ($transport->stream($request, $runtime) as $chunk) {
-                        $body .= $chunk;
-                    }
-                },
-            );
-        } finally {
-            self::stopServer($proc, $pipes, $serverScript);
-        }
-
-        self::assertStringContainsString('themistocles', $body);
+        self::assertSame('accepted', $body);
+        self::assertStringContainsString('POST / HTTP/1.1', $connection->sent);
+        self::assertStringContainsString('{"polis":"agora","strategos":"themistocles"}', $connection->sent);
     }
 
     #[Test]
@@ -373,81 +246,12 @@ final class TransportTest extends TestCase
         };
     }
 
-    /**
-     * Attempt to start a `php -S` server on a random high port. Retries up
-     * to five times on different ports to survive parallel test execution.
-     *
-     * @return array{0: resource|null, 1: array<int, resource>, 2: int}
-     */
-    private static function startServer(string $serverScript): array
+    private static function httpResponseHeaders(int $status = 200): string
     {
-        for ($attempt = 0; $attempt < 5; $attempt++) {
-            $port = random_int(20000, 60000);
-            $proc = proc_open(
-                'php -S 127.0.0.1:' . $port . ' ' . $serverScript,
-                [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
-                $pipes,
-            );
-
-            if (!is_resource($proc)) {
-                continue;
-            }
-
-            if (self::waitForServer($port)) {
-                return [$proc, $pipes, $port];
-            }
-
-            fclose($pipes[0]);
-            fclose($pipes[1]);
-            fclose($pipes[2]);
-            proc_close($proc);
-        }
-
-        return [null, [], 0];
-    }
-
-    private static function waitForServer(int $port): bool
-    {
-        $deadline = microtime(true) + 2.0;
-
-        do {
-            $socket = @fsockopen('127.0.0.1', $port, $errno, $error, 0.05);
-
-            if (is_resource($socket)) {
-                fclose($socket);
-
-                return true;
-            }
-
-            usleep(50_000);
-        } while (microtime(true) < $deadline);
-
-        return false;
-    }
-
-    /**
-     * @param resource $proc
-     * @param array<int, resource> $pipes
-     */
-    private static function stopServer($proc, array $pipes, string $serverScript): void
-    {
-        fclose($pipes[0]);
-        fclose($pipes[1]);
-        fclose($pipes[2]);
-        proc_terminate($proc);
-        proc_close($proc);
-        @unlink($serverScript);
-    }
-
-    /** Writes a minimal PHP built-in server script with the given body PHP code. */
-    private static function writeServer(string $phpBody): string
-    {
-        $base = tempnam(sys_get_temp_dir(), 'panoply_iris_');
-        $path = $base . '_' . getmypid() . '.php';
-        @unlink($base);
-        file_put_contents($path, "<?php {$phpBody}");
-
-        return $path;
+        return "HTTP/1.1 {$status} OK\r\n"
+            . "content-type: text/plain\r\n"
+            . "transfer-encoding: chunked\r\n"
+            . "\r\n";
     }
 
     private static function httpChunk(string $payload): string
@@ -456,13 +260,47 @@ final class TransportTest extends TestCase
     }
 
     /**
+     * @param null|\Closure(SyncRuntime): void $beforeRead
+     */
+    private static function streamFromConnection(
+        TcpConnection $connection,
+        ?\Closure $beforeRead = null,
+        ?Request $request = null,
+    ): string {
+        $body = '';
+
+        self::bootApp()->scoped(
+            static function (ExecutionScope $aegisScope) use ($connection, $beforeRead, $request, &$body): void {
+                $client = new HttpClient(
+                    tcpFactory: static fn(
+                        string $_scheme,
+                        string $_host,
+                        ?TlsOptions $_tlsOptions,
+                    ): TcpConnection => $connection,
+                );
+                $transport = new Transport($client, $aegisScope);
+                $runtime = new SyncRuntime();
+                $beforeRead?->__invoke($runtime);
+
+                foreach ($transport->stream($request ?? Request::of('GET', 'http://127.0.0.1:8123/'), $runtime) as $chunk) {
+                    $body .= $chunk;
+                }
+            },
+        );
+
+        return $body;
+    }
+
+    /**
      * @param list<string> $responseChunks
-     * @return TcpConnection&object{closed: bool}
+     * @return TcpConnection&object{closed: bool, sent: string}
      */
     private static function scriptedConnection(array $responseChunks): TcpConnection
     {
         return new class ($responseChunks) implements TcpConnection {
             public bool $closed = false;
+
+            public string $sent = '';
 
             /** @param list<string> $responseChunks */
             public function __construct(private array $responseChunks)
@@ -476,6 +314,8 @@ final class TransportTest extends TestCase
 
             public function send(Suspendable $_scope, string $_payload, float $_timeout = 1.0): int
             {
+                $this->sent .= $_payload;
+
                 return strlen($_payload);
             }
 
