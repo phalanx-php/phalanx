@@ -13,17 +13,28 @@
     "require": {
         "php": "^8.4",
         "ext-openswoole": "^26.0",
-        "phalanx-php/aegis": "^0.2"
+        "phalanx-php/aegis": "^0.6"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^13.0"
     },
     "bin": ["bin/skopos"],
+    "scripts": {
+        "test": "php vendor/bin/phpunit"
+    },
     "autoload": {
         "psr-4": {
             "Phalanx\\Skopos\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Phalanx\\Skopos\\Tests\\": "tests/"
+        }
+    },
     "extra": {
         "branch-alias": {
-            "dev-main": "0.2.x-dev"
+            "dev-main": "0.6.x-dev"
         }
     },
     "minimum-stability": "dev",

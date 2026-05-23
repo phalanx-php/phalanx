@@ -100,6 +100,9 @@
         <testsuite name="PHPStan Extension">
             <directory>framework/src/PHPStan/tests</directory>
         </testsuite>
+        <testsuite name="Panoply Unit">
+            <directory>framework/src/Panoply/tests/Unit</directory>
+        </testsuite>
         <testsuite name="Theatron">
             <directory>framework/src/Theatron/tests</directory>
         </testsuite>

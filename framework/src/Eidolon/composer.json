@@ -21,6 +21,12 @@
         "phalanx-php/hermes": "For WebSocket signal transport",
         "phalanx-php/athena": "For agent streaming to frontend"
     },
+    "require-dev": {
+        "phpunit/phpunit": "^13.0"
+    },
+    "scripts": {
+        "test": "php vendor/bin/phpunit"
+    },
     "autoload": {
         "psr-4": {
             "Phalanx\\Eidolon\\": "src/"
@@ -33,7 +39,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-main": "0.2.x-dev"
+            "dev-main": "0.6.x-dev"
         }
     },
     "minimum-stability": "dev",

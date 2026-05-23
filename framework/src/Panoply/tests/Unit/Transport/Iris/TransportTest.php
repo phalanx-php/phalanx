@@ -25,10 +25,9 @@ use PHPUnit\Framework\TestCase;
 /**
  * Unit tests for {@see Transport}.
  *
- * Constructor shape and generator-return tests run without OpenSwoole.
-     * Streaming tests annotated {@see RequiresPhpExtension}('openswoole') use
-     * scripted TCP connections and a real Aegis scope via
-     * {@see Application::scoped()}.
+ * Constructor shape and generator-return tests run without OpenSwoole. Streaming
+ * tests annotated {@see RequiresPhpExtension}('openswoole') use scripted TCP
+ * connections and a real Aegis scope via {@see Application::scoped()}.
  *
  * Transport\Iris\Transport is the third documented boundary exception in
  * panoply: it bridges the adapter family to phalanx-iris. Concurrent +
@@ -193,23 +192,16 @@ final class TransportTest extends TestCase
 
                 $gen = $transport->stream($request, $runtime);
 
-                // Advance to first chunk then abandon without completing.
                 $chunkSeen = $gen->current() === 'first chunk' && $gen->valid();
 
-                // Abandon mid-stream: unset triggers generator cleanup
-                // (finally block in stream() closes the underlying HttpStream).
                 unset($gen);
             },
         );
 
-        // The generator produced at least one chunk before abandonment.
         self::assertTrue($chunkSeen, 'Generator must yield at least one chunk before abandonment');
         self::assertTrue($connection->closed, 'Abandoning the generator must close the underlying stream');
     }
 
-    // ── helpers ──────────────────────────────────────────────────────────────
-
-    /** Boot an Aegis Application with Iris registered. Requires OpenSwoole. */
     private static function bootApp(): Application
     {
         return Application::starting()

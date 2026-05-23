@@ -175,6 +175,7 @@ final class TransportTest extends TestCase
             fclose($pipes[0]);
             fclose($pipes[1]);
             fclose($pipes[2]);
+            proc_terminate($proc);
             proc_close($proc);
         }
 

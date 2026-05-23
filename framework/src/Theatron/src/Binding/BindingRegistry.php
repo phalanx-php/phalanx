@@ -71,7 +71,6 @@ final class BindingRegistry
         $this->overlayStack[] = ['id' => $id, 'bindings' => $bindings];
     }
 
-    /** Pop the top overlay layer. No-op if the stack is empty. */
     public function popOverlay(): void
     {
         if ($this->overlayStack !== []) {

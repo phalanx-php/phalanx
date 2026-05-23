@@ -28,6 +28,8 @@
   },
   "require-dev": {
     "openswoole/ide-helper": "^26.2",
+    "phalanx-php/aegis": "^0.6",
+    "phalanx-php/iris": "^0.6",
     "phpstan/phpstan": "^2.0",
     "phpunit/phpunit": "^13.0",
     "rector/rector": "^2.0",
@@ -66,7 +68,7 @@
   },
   "extra": {
     "branch-alias": {
-      "dev-main": "0.2.x-dev"
+      "dev-main": "0.6.x-dev"
     }
   },
   "config": {

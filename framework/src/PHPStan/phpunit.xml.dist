@@ -7,15 +7,9 @@
          failOnWarning="true">
     <testsuites>
         <testsuite name="Unit">
-            <directory>tests/Unit</directory>
-        </testsuite>
-        <testsuite name="Integration">
-            <directory>tests/Integration</directory>
+            <directory>tests/Rules</directory>
+            <directory>tests/Support</directory>
+            <directory>tests/Audit</directory>
         </testsuite>
     </testsuites>
-    <source>
-        <include>
-            <directory>src</directory>
-        </include>
-    </source>
 </phpunit>

@@ -23,6 +23,9 @@
         "symfony/dotenv": "^7.0"
     },
     "bin": ["bin/theatron"],
+    "scripts": {
+        "test": "php vendor/bin/phpunit"
+    },
     "autoload": {
         "files": [
             "src/Ui/functions.php"

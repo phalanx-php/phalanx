@@ -3,14 +3,15 @@
 
 declare(strict_types=1);
 
-use Phalanx\PHPStan\Audit\RuntimeRisk;
 use Phalanx\PHPStan\Audit\RuntimeRiskScanner;
 
 $autoload = null;
-foreach ([
+$autoloadCandidates = [
     __DIR__ . '/../../../../vendor/autoload.php',
     __DIR__ . '/../vendor/autoload.php',
-] as $candidate) {
+];
+
+foreach ($autoloadCandidates as $candidate) {
     if (is_file($candidate)) {
         $autoload = $candidate;
         break;
