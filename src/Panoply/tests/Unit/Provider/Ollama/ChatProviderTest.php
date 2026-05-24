@@ -11,6 +11,7 @@ use Phalanx\Panoply\Cue\Effect\Requested;
 use Phalanx\Panoply\Cue\Invocation\Completed;
 use Phalanx\Panoply\Cue\Invocation\Failed;
 use Phalanx\Panoply\Cue\Invocation\Started;
+use Phalanx\Panoply\Cue\Output\Channel;
 use Phalanx\Panoply\Cue\Output\TokenDelta;
 use Phalanx\Panoply\Cue\Output\TokenStop;
 use Phalanx\Panoply\Cue\Provider\Resolved;
@@ -63,6 +64,34 @@ final class ChatProviderTest extends TestCase
         }
 
         self::assertSame('Leonidas led the hoplites at Thermopylae.', $transcript);
+    }
+
+    #[Test]
+    public function thinkingFixtureKeepsThinkingSeparateFromFinalAnswer(): void
+    {
+        $provider = self::provider(self::script('chat-thinking.ndjson'));
+        $stream = $provider->perform(self::invocation(), new Runtime());
+        $cues = $stream->toArray();
+
+        $thinking = '';
+        $answer = '';
+        foreach ($cues as $cue) {
+            if (!$cue instanceof TokenDelta) {
+                continue;
+            }
+
+            if ($cue->channel === Channel::Thinking) {
+                $thinking .= $cue->text;
+                continue;
+            }
+
+            if ($cue->channel === Channel::Message) {
+                $answer .= $cue->text;
+            }
+        }
+
+        self::assertSame('First, identify the pass. Then answer.', $thinking);
+        self::assertSame('Hold Thermopylae.', $answer);
     }
 
     #[Test]

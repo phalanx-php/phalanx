@@ -26,9 +26,10 @@ use Phalanx\Panoply\Provider\NdjsonStreamingCueMapper;
  *
  * Ollama's `/api/chat` streaming response emits one JSON object per line.
  * The first line carries `message.role`; subsequent lines carry
- * `message.content` deltas. The final line has `done: true` and includes
- * `eval_count` (output tokens) and `prompt_eval_count` (input tokens).
- * Tool calls appear only in the final line's `message.tool_calls[]` array.
+ * `message.thinking` and/or `message.content` deltas. The final line has
+ * `done: true` and includes `eval_count` (output tokens) and
+ * `prompt_eval_count` (input tokens). Tool calls appear only in the final
+ * line's `message.tool_calls[]` array.
  *
  * One instance covers exactly one invocation. Create a fresh CueMapper
  * per {@see ChatProvider::perform()} call.
@@ -91,6 +92,7 @@ final class CueMapper implements NdjsonStreamingCueMapper
         $message = is_array($line['message'] ?? null) ? $line['message'] : [];
         $role = isset($message['role']) ? (string) $message['role'] : '';
         $content = isset($message['content']) ? (string) $message['content'] : '';
+        $thinking = isset($message['thinking']) ? (string) $message['thinking'] : '';
         $done = (bool) ($line['done'] ?? false);
 
         // First line — role present signals stream start.
@@ -120,7 +122,19 @@ final class CueMapper implements NdjsonStreamingCueMapper
             );
         }
 
-        // Content delta.
+        if ($thinking !== '') {
+            yield new TokenDelta(
+                id: (string) Id::ulid(),
+                sequence: $this->sequence++,
+                activityId: $this->invocation->activityId,
+                invocationId: $this->invocation->id,
+                agentId: $this->invocation->agentId,
+                at: $now,
+                text: $thinking,
+                channel: Channel::Thinking,
+            );
+        }
+
         if ($content !== '') {
             yield new TokenDelta(
                 id: (string) Id::ulid(),
