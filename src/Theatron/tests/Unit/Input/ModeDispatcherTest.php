@@ -77,6 +77,20 @@ final class ModeDispatcherTest extends TestCase
     }
 
     #[Test]
+    public function restoreFallsBackToActiveFocusWhenSavedTargetIsMissing(): void
+    {
+        $focus = new FocusManager();
+        $focus->register('conversation', new class () implements Focusable {
+        });
+
+        $dispatcher = new ModeDispatcher($focus);
+        $dispatcher->restore(InputMode::Insert, 'input');
+
+        self::assertSame('conversation', $focus->activeName());
+        self::assertSame(InputMode::Normal, $dispatcher->mode);
+    }
+
+    #[Test]
     public function tabCyclesFocusInNormalMode(): void
     {
         $focus = new FocusManager();

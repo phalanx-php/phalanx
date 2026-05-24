@@ -571,19 +571,55 @@ final class ChatScreenTest extends TestCase
     }
 
     #[Test]
+    public function selectedConversationBlockDoesNotCollapseChatThread(): void
+    {
+        $store = new AppStore();
+        $store->conversation = new ConversationSlice()
+            ->addUserMessage('first message')
+            ->appendToken('first answer')
+            ->finalizeMessage()
+            ->addUserMessage('second message')
+            ->appendToken('second answer')
+            ->finalizeMessage()
+            ->addUserMessage('third message')
+            ->appendToken('third answer')
+            ->finalizeMessage();
+        $store->workspaceView = $store->workspaceView
+            ->scrollChatUp($store->conversation)
+            ->selectFocusedChatTurn($store->conversation);
+        $screen = new ChatScreen($store);
+
+        $text = self::flatten($screen($this->makeContext($store)));
+
+        self::assertSame('turn_2', $store->workspaceView->selectedTurnId);
+        self::assertStringContainsString('> first message', $text);
+        self::assertStringContainsString('> second message', $text);
+        self::assertStringContainsString('you: third message', $text);
+        self::assertStringContainsString('third answer', $text);
+    }
+
+    #[Test]
     public function submitInputAddsUserMessageAndStartsActivity(): void
     {
         $store = new AppStore();
+        $store->conversation = $this->conversationWithUserMessages(2);
+        $store->workspaceView = $store->workspaceView
+            ->scrollChatUp($store->conversation)
+            ->expandFocusedChatTurn($store->conversation)
+            ->selectFocusedChatTurn($store->conversation);
         $screen = new ChatScreen($store);
 
         $screen->inputText->set('Rally the phalanx at the agora.');
 
         self::assertTrue($screen->submitInput());
-        self::assertCount(1, $store->conversation->messages);
-        self::assertCount(1, $store->conversation->turns);
-        self::assertSame('user', $store->conversation->messages[0]->role);
-        self::assertSame('Rally the phalanx at the agora.', $store->conversation->messages[0]->text);
-        self::assertSame('Rally the phalanx at the agora.', $store->conversation->turns[0]->userText);
+        self::assertCount(3, $store->conversation->messages);
+        self::assertCount(3, $store->conversation->turns);
+        self::assertSame('user', $store->conversation->messages[2]->role);
+        self::assertSame('Rally the phalanx at the agora.', $store->conversation->messages[2]->text);
+        self::assertSame('Rally the phalanx at the agora.', $store->conversation->turns[2]->userText);
+        self::assertSame(0, $store->workspaceView->chatScrollOffset);
+        self::assertNull($store->workspaceView->expandedTurnId);
+        self::assertNull($store->workspaceView->selectedTurnId);
         self::assertSame(ActivityStatus::Running, $store->activity->status);
         self::assertSame('', $screen->inputText->get());
         self::assertSame('', $store->input->text);

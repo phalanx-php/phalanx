@@ -180,6 +180,7 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, DeclaresBinding
         }
 
         $this->store->conversation = $this->store->conversation->addUserMessage($text);
+        $this->store->workspaceView = $this->store->workspaceView->startChatTurn();
         $this->store->activity = $this->store->activity->withStatus(ActivityStatus::Running);
         $this->runtime?->send($this->scope ?? throw new \RuntimeException('ChatScreen is not mounted.'), $text);
 

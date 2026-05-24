@@ -110,6 +110,13 @@ final class AgentRuntimeTest extends TestCase
             status: ActivityStatus::AwaitingApproval,
             pendingEffect: $effect,
         );
+        $store->conversation = $store->conversation
+            ->addUserMessage('older message')
+            ->addUserMessage('selected message');
+        $store->workspaceView = $store->workspaceView
+            ->scrollChatUp($store->conversation)
+            ->expandFocusedChatTurn($store->conversation)
+            ->selectFocusedChatTurn($store->conversation);
         $store->input = $store->input->enqueue('follow-up message');
 
         new AgentRuntime($store, $executor)->approve(new RecordingTaskScope());
@@ -121,6 +128,9 @@ final class AgentRuntimeTest extends TestCase
         self::assertSame(ActivityStatus::Completed, $store->activity->status);
         self::assertSame(EffectStatus::Executed, $store->effects->entries[0]->status);
         self::assertSame(25, $store->effects->entries[0]->durationMs);
-        self::assertSame('follow-up message', $store->conversation->messages[0]->text);
+        self::assertSame('follow-up message', $store->conversation->messages[2]->text);
+        self::assertSame(0, $store->workspaceView->chatScrollOffset);
+        self::assertNull($store->workspaceView->expandedTurnId);
+        self::assertNull($store->workspaceView->selectedTurnId);
     }
 }

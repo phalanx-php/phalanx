@@ -86,6 +86,7 @@ final class AgentRuntime
         while (!$store->activity->isBusy() && ($message = $store->input->peek()) !== null) {
             $store->input = $store->input->dequeue();
             $store->conversation = $store->conversation->addUserMessage($message);
+            $store->workspaceView = $store->workspaceView->startChatTurn();
             $store->activity = $store->activity->withStatus(ActivityStatus::Running);
 
             self::consume($executor->send($message), $store);

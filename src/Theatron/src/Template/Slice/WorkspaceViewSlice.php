@@ -68,6 +68,18 @@ class WorkspaceViewSlice
         return $this->withChatScroll(0);
     }
 
+    public function startChatTurn(): self
+    {
+        return new self(
+            chatScrollOffset: 0,
+            expandedTurnId: null,
+            selectedTurnId: null,
+            showThinking: $this->showThinking,
+            returnTarget: null,
+            inputModes: $this->inputModes,
+        );
+    }
+
     public function expandFocusedChatTurn(ConversationSlice $conversation): self
     {
         $turn = $this->focusedTurn($conversation);

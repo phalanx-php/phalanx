@@ -61,6 +61,25 @@ final class WorkspaceViewSliceTest extends TestCase
     }
 
     #[Test]
+    public function startingChatTurnClearsTransientChatViewState(): void
+    {
+        $conversation = $this->conversationWithTurns(2);
+        $view = (new WorkspaceViewSlice(showThinking: true))
+            ->withInputMode(ChatScreen::class, InputMode::Insert, 'input')
+            ->scrollChatUp($conversation)
+            ->expandFocusedChatTurn($conversation)
+            ->selectFocusedChatTurn($conversation, returnTarget: ChatScreen::class)
+            ->startChatTurn();
+
+        self::assertSame(0, $view->chatScrollOffset);
+        self::assertNull($view->expandedTurnId);
+        self::assertNull($view->selectedTurnId);
+        self::assertNull($view->returnTarget);
+        self::assertTrue($view->showThinking);
+        self::assertSame(InputMode::Insert, $view->inputModeFor(ChatScreen::class)?->mode);
+    }
+
+    #[Test]
     public function inputModeSnapshotsAreStoredPerWorkspace(): void
     {
         $view = (new WorkspaceViewSlice())
