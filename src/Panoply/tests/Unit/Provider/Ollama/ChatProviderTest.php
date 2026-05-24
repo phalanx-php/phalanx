@@ -73,25 +73,21 @@ final class ChatProviderTest extends TestCase
         $stream = $provider->perform(self::invocation(), new Runtime());
         $cues = $stream->toArray();
 
-        $thinking = '';
-        $answer = '';
+        $deltas = [];
         foreach ($cues as $cue) {
             if (!$cue instanceof TokenDelta) {
                 continue;
             }
 
-            if ($cue->channel === Channel::Thinking) {
-                $thinking .= $cue->text;
-                continue;
-            }
-
-            if ($cue->channel === Channel::Message) {
-                $answer .= $cue->text;
-            }
+            $deltas[] = [$cue->channel, $cue->text];
         }
 
-        self::assertSame('First, identify the pass. Then answer.', $thinking);
-        self::assertSame('Hold Thermopylae.', $answer);
+        self::assertSame([
+            [Channel::Thinking, 'First, '],
+            [Channel::Thinking, 'identify the pass. '],
+            [Channel::Thinking, 'Then answer.'],
+            [Channel::Message, 'Hold Thermopylae.'],
+        ], $deltas);
     }
 
     #[Test]
