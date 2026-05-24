@@ -81,6 +81,14 @@ final class TurnLoopTest extends TestCase
         self::assertInstanceOf(Message::class, $records[0]);
         self::assertSame('final answer', $records[0]->text);
         self::assertCount(4, $result->stream->toArray());
+        self::assertSame(
+            [
+                [Channel::Thinking, 'thinking '],
+                [Channel::Reasoning, 'reasoning '],
+                [Channel::Message, 'final answer'],
+            ],
+            self::streamedTokenDeltas($result->stream),
+        );
     }
 
     #[Test]
@@ -294,6 +302,24 @@ final class TurnLoopTest extends TestCase
         self::assertSame(Outcome::Failed, $result->outcome);
         self::assertNotNull($result->error);
         self::assertStringContainsString('No effect dispatcher', $result->error->getMessage());
+    }
+
+    /**
+     * @return list<array{Channel, string}>
+     */
+    private static function streamedTokenDeltas(Stream $stream): array
+    {
+        $deltas = [];
+
+        foreach ($stream->toArray() as $cue) {
+            if (!$cue instanceof TokenDelta) {
+                continue;
+            }
+
+            $deltas[] = [$cue->channel, $cue->text];
+        }
+
+        return $deltas;
     }
 }
 

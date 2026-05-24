@@ -15,8 +15,6 @@ use Phalanx\Panoply\Cue\Effect\Executed as EffectExecuted;
 use Phalanx\Panoply\Cue\Effect\Failed as EffectFailed;
 use Phalanx\Panoply\Cue\Effect\Paused as EffectPaused;
 use Phalanx\Panoply\Cue\Effect\Requested as EffectRequested;
-use Phalanx\Panoply\Cue\Output\TokenDelta;
-use Phalanx\Panoply\Cue\Output\TokenStop;
 use Phalanx\Panoply\Cue\Usage\Delta as UsageDelta;
 use Phalanx\Panoply\Cue\Usage\FinalUsage;
 use Phalanx\Panoply\Effect;
@@ -44,8 +42,6 @@ final class StreamReactor
         $store->conversation = $store->conversation->appendCue($cue);
 
         match (true) {
-            $cue instanceof TokenStop => null,
-            $cue instanceof TokenDelta => null,
             $cue instanceof EffectAuthorized => self::onEffectAuthorized($cue, $store),
             $cue instanceof EffectPaused => self::onEffectPaused($cue, $store),
             $cue instanceof EffectFailed => self::onEffectFailed($cue, $store),

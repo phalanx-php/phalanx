@@ -10,10 +10,14 @@ use Phalanx\Panoply\Cue\Activity\Cancelled as ActivityCancelled;
 use Phalanx\Panoply\Cue\Activity\Completed as ActivityCompleted;
 use Phalanx\Panoply\Cue\Activity\Failed as ActivityFailed;
 use Phalanx\Panoply\Cue\Activity\Started as ActivityStarted;
+use Phalanx\Panoply\Cue\Effect\Denied as EffectDenied;
+use Phalanx\Panoply\Cue\Effect\Executed as EffectExecuted;
+use Phalanx\Panoply\Cue\Effect\Failed as EffectFailed;
 use Phalanx\Panoply\Cue\Effect\Requested as EffectRequested;
 use Phalanx\Panoply\Cue\Output\Channel;
 use Phalanx\Panoply\Cue\Output\TokenDelta;
 use Phalanx\Panoply\Cue\Output\TokenStop;
+use Phalanx\Panoply\Cue\StopReason;
 
 class ConversationSlice
 {
@@ -35,17 +39,18 @@ class ConversationSlice
 
     public function addUserMessage(string $text): self
     {
+        $at = new DateTimeImmutable();
         $turn = new ConversationTurn(
             id: $this->nextTurnId(),
             userText: $text,
-            at: new DateTimeImmutable(),
+            at: $at,
         );
         $message = new ConversationMessage(
             role: 'user',
             text: $text,
             channel: null,
             complete: true,
-            at: new DateTimeImmutable(),
+            at: $at,
         );
 
         return new self(
@@ -98,14 +103,21 @@ class ConversationSlice
         }
 
         if ($cue instanceof TokenStop) {
-            return $this->appendEvent($event, ConversationTurnStatus::Completed)
-                ->finalizeMessage();
+            $status = self::statusForStopReason($cue->reason);
+
+            return $this->appendEvent($event, $status)
+                ->finalizeMessage($status);
+        }
+
+        if ($status !== null && self::isTerminalStatus($status)) {
+            return $this->appendEvent($event, $status)
+                ->finalizeMessage($status);
         }
 
         return $this->appendEvent($event, $status);
     }
 
-    public function finalizeMessage(): self
+    public function finalizeMessage(ConversationTurnStatus $status = ConversationTurnStatus::Completed): self
     {
         $messages = $this->messages;
 
@@ -121,10 +133,10 @@ class ConversationSlice
         }
 
         $turns = $this->turns;
-        $activeIndex = $this->activeTurnIndex($turns);
+        $activeIndex = self::activeTurnIndex($turns);
 
         if ($activeIndex !== null) {
-            $turns[$activeIndex] = $turns[$activeIndex]->withStatus(ConversationTurnStatus::Completed);
+            $turns[$activeIndex] = $turns[$activeIndex]->withStatus($status);
         }
 
         return new self(
@@ -274,11 +286,62 @@ class ConversationSlice
     {
         return match (true) {
             $cue instanceof EffectRequested && $cue->requiresApproval => ConversationTurnStatus::AwaitingApproval,
+            $cue instanceof EffectExecuted => ConversationTurnStatus::Running,
+            $cue instanceof EffectDenied => ConversationTurnStatus::Running,
+            $cue instanceof EffectFailed => ConversationTurnStatus::Running,
             $cue instanceof ActivityCompleted => ConversationTurnStatus::Completed,
             $cue instanceof ActivityFailed => ConversationTurnStatus::Failed,
             $cue instanceof ActivityCancelled => ConversationTurnStatus::Cancelled,
             default => null,
         };
+    }
+
+    private static function statusForStopReason(StopReason $reason): ConversationTurnStatus
+    {
+        return match ($reason) {
+            StopReason::Error => ConversationTurnStatus::Failed,
+            StopReason::Cancelled => ConversationTurnStatus::Cancelled,
+            default => ConversationTurnStatus::Completed,
+        };
+    }
+
+    private static function isTerminalStatus(ConversationTurnStatus $status): bool
+    {
+        return match ($status) {
+            ConversationTurnStatus::Completed,
+            ConversationTurnStatus::Failed,
+            ConversationTurnStatus::Cancelled => true,
+            ConversationTurnStatus::Running,
+            ConversationTurnStatus::AwaitingApproval => false,
+        };
+    }
+
+    /**
+     * @param list<ConversationTurn> $turns
+     */
+    private static function canAppendToLastTurn(array $turns, ConversationTurnEvent $event): bool
+    {
+        return $turns !== []
+            && !$event->cue instanceof ActivityStarted
+            && !$event->cue instanceof TokenDelta;
+    }
+
+    /**
+     * @param list<ConversationTurn> $turns
+     */
+    private static function activeTurnIndex(array $turns): ?int
+    {
+        for ($i = count($turns) - 1; $i >= 0; $i--) {
+            if ($turns[$i]->status === ConversationTurnStatus::Running) {
+                return $i;
+            }
+
+            if ($turns[$i]->status === ConversationTurnStatus::AwaitingApproval) {
+                return $i;
+            }
+        }
+
+        return null;
     }
 
     private function withScroll(int $scrollOffset): self
@@ -345,9 +408,9 @@ class ConversationSlice
     private function appendEvent(ConversationTurnEvent $event, ?ConversationTurnStatus $status): self
     {
         $turns = $this->turns;
-        $activeIndex = $this->activeTurnIndex($turns);
+        $activeIndex = self::activeTurnIndex($turns);
 
-        if ($activeIndex === null && $turns !== [] && !$event->cue instanceof ActivityStarted && !$event->cue instanceof TokenDelta) {
+        if ($activeIndex === null && self::canAppendToLastTurn($turns, $event)) {
             $activeIndex = array_key_last($turns);
         }
 
@@ -373,24 +436,6 @@ class ConversationSlice
             selectedTurnId: $this->selectedTurnId,
             showThinking: $this->showThinking,
         );
-    }
-
-    /**
-     * @param list<ConversationTurn> $turns
-     */
-    private function activeTurnIndex(array $turns): ?int
-    {
-        for ($i = count($turns) - 1; $i >= 0; $i--) {
-            if ($turns[$i]->status === ConversationTurnStatus::Running) {
-                return $i;
-            }
-
-            if ($turns[$i]->status === ConversationTurnStatus::AwaitingApproval) {
-                return $i;
-            }
-        }
-
-        return null;
     }
 
     private function nextTurnId(): string

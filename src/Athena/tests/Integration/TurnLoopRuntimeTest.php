@@ -51,22 +51,43 @@ final class TurnLoopRuntimeTest extends PhalanxTestCase
         $at = new \DateTimeImmutable('2026-05-17T12:00:00Z');
         $provider = new Provider([
             new TokenDelta('cue_1', 1, 'act_1', null, 'athena-test-agent', $at, 'thinking ', Channel::Thinking),
-            new TokenDelta('cue_2', 2, 'act_1', null, 'athena-test-agent', $at, 'answer', Channel::Message),
-            new TokenStop('cue_3', 3, 'act_1', null, 'athena-test-agent', $at, StopReason::EndOfTurn),
+            new TokenDelta('cue_2', 2, 'act_1', null, 'athena-test-agent', $at, 'reasoning ', Channel::Reasoning),
+            new TokenDelta('cue_3', 3, 'act_1', null, 'athena-test-agent', $at, 'answer', Channel::Message),
+            new TokenStop('cue_4', 4, 'act_1', null, 'athena-test-agent', $at, StopReason::EndOfTurn),
         ], Capabilities::empty());
 
-        [$text, $types] = $this->scope->run(static function (ExecutionScope $scope) use ($provider): array {
+        [$text, $types, $deltas] = $this->scope->run(static function (ExecutionScope $scope) use ($provider): array {
             $loop = new Loop(new DefaultBuilder(), $provider);
             $result = $loop($scope, new TestAgent(), new Activity\Config('act_1', Context::new(), 1));
-            $types = array_map(static fn($cue): string => $cue->type, $result->stream->toArray());
+            $cues = $result->stream->toArray();
+            $types = array_map(static fn($cue): string => $cue->type, $cues);
+            $deltas = [];
+
+            foreach ($cues as $cue) {
+                if (!$cue instanceof TokenDelta) {
+                    continue;
+                }
+
+                $deltas[] = [$cue->channel, $cue->text];
+            }
+
             $records = $result->log->toArray();
 
-            return [$records[0] instanceof Message ? $records[0]->text : null, $types];
+            return [$records[0] instanceof Message ? $records[0]->text : null, $types, $deltas];
         });
 
         self::assertSame('answer', $text);
         self::assertSame(
             [
+                [Channel::Thinking, 'thinking '],
+                [Channel::Reasoning, 'reasoning '],
+                [Channel::Message, 'answer'],
+            ],
+            $deltas,
+        );
+        self::assertSame(
+            [
+                'cue.output.token_delta',
                 'cue.output.token_delta',
                 'cue.output.token_delta',
                 'cue.output.token_stop',

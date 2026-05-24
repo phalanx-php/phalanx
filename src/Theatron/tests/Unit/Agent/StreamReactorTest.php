@@ -72,6 +72,40 @@ final class StreamReactorTest extends TestCase
     }
 
     #[Test]
+    public function tokenStopWithErrorMarksTurnFailed(): void
+    {
+        $store = new AppStore();
+        $at = new DateTimeImmutable();
+
+        StreamReactor::consume([
+            new TokenDelta('cue_1', 1, 'act_apollo', null, null, $at, 'Partial prophecy'),
+            new TokenStop('cue_2', 2, 'act_apollo', null, null, $at, StopReason::Error),
+        ], $store);
+
+        self::assertFalse($store->conversation->isStreaming);
+        self::assertTrue($store->conversation->messages[0]->complete);
+        self::assertSame(ConversationTurnStatus::Failed, $store->conversation->turns[0]->status);
+        self::assertSame(['cue_1', 'cue_2'], self::conversationEventIds($store));
+    }
+
+    #[Test]
+    public function tokenStopWithCancellationMarksTurnCancelled(): void
+    {
+        $store = new AppStore();
+        $at = new DateTimeImmutable();
+
+        StreamReactor::consume([
+            new TokenDelta('cue_1', 1, 'act_apollo', null, null, $at, 'Interrupted prophecy'),
+            new TokenStop('cue_2', 2, 'act_apollo', null, null, $at, StopReason::Cancelled),
+        ], $store);
+
+        self::assertFalse($store->conversation->isStreaming);
+        self::assertTrue($store->conversation->messages[0]->complete);
+        self::assertSame(ConversationTurnStatus::Cancelled, $store->conversation->turns[0]->status);
+        self::assertSame(['cue_1', 'cue_2'], self::conversationEventIds($store));
+    }
+
+    #[Test]
     public function thinkingChannelRoutesToThinkingBuffer(): void
     {
         $store = new AppStore();
@@ -189,6 +223,8 @@ final class StreamReactorTest extends TestCase
         self::assertNull($store->activity->pendingEffect);
         self::assertSame(EffectStatus::Executed, $store->effects->entries[0]->status);
         self::assertSame(42, $store->effects->entries[0]->durationMs);
+        self::assertSame(ConversationTurnStatus::Running, $store->conversation->turns[0]->status);
+        self::assertSame(['cue_1', 'cue_2'], self::conversationEventIds($store));
     }
 
     #[Test]
@@ -217,6 +253,8 @@ final class StreamReactorTest extends TestCase
         self::assertSame(ActivityStatus::Running, $store->activity->status);
         self::assertSame(EffectStatus::Denied, $store->effects->entries[0]->status);
         self::assertSame(['unauthorized'], $store->effects->entries[0]->reasonCodes);
+        self::assertSame(ConversationTurnStatus::Running, $store->conversation->turns[0]->status);
+        self::assertSame(['cue_1', 'cue_2'], self::conversationEventIds($store));
     }
 
     #[Test]
@@ -244,6 +282,8 @@ final class StreamReactorTest extends TestCase
 
         self::assertSame(EffectStatus::Paused, $store->effects->entries[0]->status);
         self::assertSame(['Approval required'], $store->effects->entries[0]->reasonCodes);
+        self::assertSame(ConversationTurnStatus::AwaitingApproval, $store->conversation->turns[0]->status);
+        self::assertSame(['cue_1', 'cue_2'], self::conversationEventIds($store));
     }
 
     #[Test]
@@ -271,6 +311,8 @@ final class StreamReactorTest extends TestCase
 
         self::assertSame(EffectStatus::Approved, $store->effects->entries[0]->status);
         self::assertSame('grant_1', $store->effects->entries[0]->grantId);
+        self::assertSame(ConversationTurnStatus::AwaitingApproval, $store->conversation->turns[0]->status);
+        self::assertSame(['cue_1', 'cue_2'], self::conversationEventIds($store));
     }
 
     #[Test]
@@ -311,6 +353,8 @@ final class StreamReactorTest extends TestCase
         self::assertSame(EffectStatus::Failed, $store->effects->entries[0]->status);
         self::assertSame(['network unavailable'], $store->effects->entries[0]->reasonCodes);
         self::assertSame(\RuntimeException::class, $store->effects->entries[0]->errorClass);
+        self::assertSame(ConversationTurnStatus::Running, $store->conversation->turns[0]->status);
+        self::assertSame(['cue_1', 'cue_2'], self::conversationEventIds($store));
     }
 
     #[Test]
@@ -338,6 +382,8 @@ final class StreamReactorTest extends TestCase
         ], $store);
 
         self::assertSame(ActivityStatus::Completed, $store->activity->status);
+        self::assertSame(ConversationTurnStatus::Completed, $store->conversation->turns[0]->status);
+        self::assertSame(['cue_1', 'cue_2'], self::conversationEventIds($store));
     }
 
     #[Test]
@@ -348,10 +394,15 @@ final class StreamReactorTest extends TestCase
 
         StreamReactor::consume([
             new ActivityStarted('cue_1', 1, 'act_achilles', null, null, $at),
-            new ActivityFailed('cue_2', 2, 'act_achilles', null, null, $at, 'Struck by Paris'),
+            new TokenDelta('cue_2', 2, 'act_achilles', null, null, $at, 'The line is breaking'),
+            new ActivityFailed('cue_3', 3, 'act_achilles', null, null, $at, 'Struck by Paris'),
         ], $store);
 
         self::assertSame(ActivityStatus::Failed, $store->activity->status);
+        self::assertFalse($store->conversation->isStreaming);
+        self::assertTrue($store->conversation->messages[0]->complete);
+        self::assertSame(ConversationTurnStatus::Failed, $store->conversation->turns[0]->status);
+        self::assertSame(['cue_1', 'cue_2', 'cue_3'], self::conversationEventIds($store));
     }
 
     #[Test]
@@ -362,10 +413,15 @@ final class StreamReactorTest extends TestCase
 
         StreamReactor::consume([
             new ActivityStarted('cue_1', 1, 'act_odysseus', null, null, $at),
-            new ActivityCancelled('cue_2', 2, 'act_odysseus', null, null, $at, 'Sirens called'),
+            new TokenDelta('cue_2', 2, 'act_odysseus', null, null, $at, 'The voyage pauses'),
+            new ActivityCancelled('cue_3', 3, 'act_odysseus', null, null, $at, 'Sirens called'),
         ], $store);
 
         self::assertSame(ActivityStatus::Cancelled, $store->activity->status);
+        self::assertFalse($store->conversation->isStreaming);
+        self::assertTrue($store->conversation->messages[0]->complete);
+        self::assertSame(ConversationTurnStatus::Cancelled, $store->conversation->turns[0]->status);
+        self::assertSame(['cue_1', 'cue_2', 'cue_3'], self::conversationEventIds($store));
     }
 
     #[Test]
@@ -381,6 +437,7 @@ final class StreamReactorTest extends TestCase
         self::assertSame(150, $store->activity->inputTokens);
         self::assertSame(300, $store->activity->outputTokens);
         self::assertSame(450, $store->activity->totalTokens);
+        self::assertSame(['cue_1'], self::conversationEventIds($store));
     }
 
     #[Test]
@@ -397,6 +454,7 @@ final class StreamReactorTest extends TestCase
         self::assertSame(150, $store->activity->inputTokens);
         self::assertSame(300, $store->activity->outputTokens);
         self::assertSame(450, $store->activity->totalTokens);
+        self::assertSame(['cue_1', 'cue_2'], self::conversationEventIds($store));
     }
 
     #[Test]
@@ -462,5 +520,19 @@ final class StreamReactorTest extends TestCase
         self::assertSame('The fleet at Salamis holds the line.', $store->conversation->turns[0]->assistantText());
         self::assertSame(ConversationTurnStatus::Completed, $store->conversation->turns[0]->status);
         self::assertCount(6, $store->conversation->turns[0]->events);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function conversationEventIds(AppStore $store): array
+    {
+        $ids = [];
+
+        foreach ($store->conversation->turns[0]->events ?? [] as $event) {
+            $ids[] = $event->id;
+        }
+
+        return $ids;
     }
 }
