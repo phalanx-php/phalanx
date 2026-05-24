@@ -8,6 +8,7 @@ return [
         'description' => 'Managed async for PHP 8.4+ on OpenSwoole',
         'type' => 'library',
         'namespace' => 'Phalanx\\',
+        'smokeClass' => 'Phalanx\\Runtime\\RuntimePolicy',
         'testNamespace' => 'Phalanx\\Aegis\\Tests\\',
         'requires' => [
             'php' => '^8.4',
@@ -63,6 +64,7 @@ return [
         'description' => 'CLI application framework for Phalanx',
         'type' => 'library',
         'namespace' => 'Phalanx\\Archon\\',
+        'smokeClass' => 'Phalanx\\Archon\\Application\\Archon',
         'testNamespace' => 'Phalanx\\Archon\\Tests\\',
         'requires' => [
             'php' => '^8.4',
@@ -93,6 +95,7 @@ return [
         'description' => 'Network discovery, probing, and device management for Phalanx',
         'type' => 'library',
         'namespace' => 'Phalanx\\Argos\\',
+        'smokeClass' => 'Phalanx\\Argos\\NetworkConfig',
         'testNamespace' => 'Phalanx\\Argos\\Tests\\',
         'requires' => [
             'php' => '^8.4',
@@ -123,6 +126,7 @@ return [
         'description' => 'Agent activity runtime for Phalanx - supervised turns, effects, grants, hooks, and Panoply invocation loops',
         'type' => 'library',
         'namespace' => 'Phalanx\\Athena\\',
+        'smokeClass' => 'Phalanx\\Athena\\Athena',
         'testNamespace' => 'Phalanx\\Athena\\Tests\\',
         'requires' => [
             'php' => '^8.4',
@@ -161,6 +165,7 @@ return [
         'description' => 'Phalanx CLI: doctor, OpenSwoole installer using PIE, and project scaffolding',
         'type' => 'library',
         'namespace' => 'Phalanx\\Cli\\',
+        'smokeClass' => 'Phalanx\\Cli\\PhalanxApplication',
         'testNamespace' => 'Phalanx\\Cli\\Tests\\',
         'requires' => [
             'php' => '^8.4',
@@ -188,6 +193,7 @@ return [
         'description' => 'Frontend bridge for Phalanx - typed route contracts, OpenAPI generation, Kubb integration, and signal-based reactivity',
         'type' => 'library',
         'namespace' => 'Phalanx\\Eidolon\\',
+        'smokeClass' => 'Phalanx\\Eidolon\\SignalServiceBundle',
         'testNamespace' => 'Phalanx\\Eidolon\\Tests\\',
         'requires' => [
             'php' => '^8.4',
@@ -220,6 +226,7 @@ return [
         'description' => 'Non-blocking SSH command execution, file transfer, and tunnel management as Phalanx tasks',
         'type' => 'library',
         'namespace' => 'Phalanx\\Enigma\\',
+        'smokeClass' => 'Phalanx\\Enigma\\SshConfig',
         'testNamespace' => 'Phalanx\\Enigma\\Tests\\',
         'requires' => [
             'php' => '^8.4',
@@ -239,6 +246,7 @@ return [
         'description' => 'Async-aware filesystem operations for Phalanx',
         'type' => 'library',
         'namespace' => 'Phalanx\\Grammata\\',
+        'smokeClass' => 'Phalanx\\Grammata\\Grammata',
         'testNamespace' => 'Phalanx\\Grammata\\Tests\\',
         'requires' => [
             'php' => '^8.4',
@@ -266,6 +274,7 @@ return [
         'description' => 'Native WebSocket server and client for Phalanx',
         'type' => 'library',
         'namespace' => 'Phalanx\\Hermes\\',
+        'smokeClass' => 'Phalanx\\Hermes\\Hermes',
         'testNamespace' => 'Phalanx\\Hermes\\Tests\\',
         'testNamespaces' => [
             'Phalanx\\Hermes\\Tests\\' => 'tests/',
@@ -297,6 +306,7 @@ return [
         'description' => 'Worker process parallelism for Phalanx',
         'type' => 'library',
         'namespace' => 'Phalanx\\Hydra\\',
+        'smokeClass' => 'Phalanx\\Hydra\\Hydra',
         'testNamespace' => 'Phalanx\\Hydra\\Tests\\',
         'requires' => [
             'php' => '^8.4',
@@ -323,6 +333,7 @@ return [
         'description' => 'Outbound HTTP client for Phalanx',
         'type' => 'library',
         'namespace' => 'Phalanx\\Iris\\',
+        'smokeClass' => 'Phalanx\\Iris\\Iris',
         'testNamespace' => 'Phalanx\\Iris\\Tests\\',
         'requires' => [
             'php' => '^8.4',
@@ -347,6 +358,7 @@ return [
         'description' => 'PHPStan safety rules for Phalanx concurrent and parallel PHP',
         'type' => 'phpstan-extension',
         'namespace' => 'Phalanx\\PHPStan\\',
+        'smokeClass' => 'Phalanx\\PHPStan\\Support\\PathPolicy',
         'testNamespace' => 'Phalanx\\PHPStan\\Tests\\',
         'requires' => [
             'php' => '^8.4',
@@ -375,6 +387,7 @@ return [
         'description' => 'Agent abstraction for PHP 8.4+: contracts, provider/transport adapters, conversation parsers, vendor HomeDirs',
         'type' => 'library',
         'namespace' => 'Phalanx\\Panoply\\',
+        'smokeClass' => 'Phalanx\\Panoply\\Agent',
         'testNamespace' => 'Phalanx\\Panoply\\Tests\\',
         'requires' => [
             'php' => '^8.4',
@@ -425,6 +438,7 @@ return [
         'description' => 'Dev server orchestrator with process management, output multiplexing, and file watching',
         'type' => 'library',
         'namespace' => 'Phalanx\\Skopos\\',
+        'smokeClass' => 'Phalanx\\Skopos\\Skopos',
         'testNamespace' => 'Phalanx\\Skopos\\Tests\\',
         'requires' => [
             'php' => '^8.4',
@@ -446,6 +460,7 @@ return [
         'description' => 'HTTP server framework for Phalanx',
         'type' => 'library',
         'namespace' => 'Phalanx\\Stoa\\',
+        'smokeClass' => 'Phalanx\\Stoa\\Stoa',
         'testNamespace' => 'Phalanx\\Stoa\\Tests\\',
         'requires' => [
             'php' => '^8.4',
@@ -481,6 +496,7 @@ return [
         'description' => 'Reactive stream primitives for Phalanx',
         'type' => 'library',
         'namespace' => 'Phalanx\\Styx\\',
+        'smokeClass' => 'Phalanx\\Styx\\Styx',
         'testNamespace' => 'Phalanx\\Styx\\Tests\\',
         'requires' => [
             'php' => '^8.4',
@@ -508,6 +524,7 @@ return [
         'description' => 'SurrealDB RPC and live-query client for Phalanx using Iris, Hermes, and Aegis runtime supervision',
         'type' => 'library',
         'namespace' => 'Phalanx\\Surreal\\',
+        'smokeClass' => 'Phalanx\\Surreal\\Surreal',
         'testNamespace' => 'Phalanx\\Surreal\\Tests\\',
         'requires' => [
             'php' => '^8.4',
@@ -535,6 +552,7 @@ return [
         'description' => 'Async terminal UI framework for Phalanx PHP',
         'type' => 'library',
         'namespace' => 'Phalanx\\Theatron\\',
+        'smokeClass' => 'Phalanx\\Theatron\\Theatron',
         'testNamespace' => 'Phalanx\\Theatron\\Tests\\',
         'requires' => [
             'php' => '^8.4',

@@ -3,42 +3,70 @@
 
 declare(strict_types=1);
 
-$root = dirname(__DIR__);
-$modules = require $root . '/modules.php';
-$module = optionValue($argv, '--module') ?? 'Aegis';
-$keep = in_array('--keep', $argv, true);
+use Symfony\Component\Process\Process;
 
-if (!isset($modules[$module])) {
-    fwrite(STDERR, "Unknown module: {$module}\n");
+$root = dirname(__DIR__);
+$autoload = $root . '/vendor/autoload.php';
+
+if (!is_file($autoload)) {
+    fwrite(STDERR, "Missing vendor/autoload.php. Run composer install before the proof tool.\n");
     exit(1);
 }
 
-$package = $modules[$module]['package'];
-$fixture = sys_get_temp_dir() . '/phalanx-install-proof-' . strtolower($module) . '-' . getmypid();
+require $autoload;
 
-if (is_dir($fixture)) {
-    removeTree($fixture);
+$modules = require $root . '/modules.php';
+$targets = in_array('--all', $argv, true)
+    ? array_keys($modules)
+    : [optionValue($argv, '--module') ?? 'Aegis'];
+$keep = in_array('--keep', $argv, true);
+
+foreach ($targets as $module) {
+    proveModule($module, $modules, $root, $keep);
 }
 
-mkdir($fixture, 0777, true);
+function proveModule(string $module, array $modules, string $root, bool $keep): void
+{
+    if (!isset($modules[$module])) {
+        fwrite(STDERR, "Unknown module: {$module}\n");
+        exit(1);
+    }
 
-try {
-    file_put_contents(
-        $fixture . '/composer.json',
-        json_encode(fixtureComposer($package, $root, $module), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . PHP_EOL,
-    );
+    $package = $modules[$module]['package'];
+    $smokeClass = $modules[$module]['smokeClass'] ?? null;
+    $fixture = sys_get_temp_dir() . '/' . uniqid('phalanx-install-proof-' . strtolower($module) . '-', true);
 
-    file_put_contents($fixture . '/smoke.php', smokeScript());
+    if (!is_string($smokeClass) || $smokeClass === '') {
+        fwrite(STDERR, "Missing smokeClass metadata for module: {$module}\n");
+        exit(1);
+    }
 
-    run(['composer', 'install', '--no-interaction', '--no-progress'], $fixture);
-    run([PHP_BINARY, 'smoke.php'], $fixture);
+    if (!mkdir($fixture, 0777, true) && !is_dir($fixture)) {
+        fwrite(STDERR, "Failed to create proof fixture: {$fixture}\n");
+        exit(1);
+    }
 
-    printf("Independent install proof OK: %s from src/%s\n", $package, $module);
-} finally {
-    if ($keep) {
-        printf("Kept proof fixture: %s\n", $fixture);
-    } else {
-        removeTree($fixture);
+    try {
+        file_put_contents(
+            $fixture . '/composer.json',
+            json_encode(
+                fixtureComposer($package, $modules, $root),
+                JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR,
+            ) . PHP_EOL,
+        );
+
+        file_put_contents($fixture . '/smoke.php', smokeScript($module, $smokeClass));
+
+        run([composerBinary(), 'install', '--no-interaction', '--no-progress'], $fixture, 300);
+        run([PHP_BINARY, 'smoke.php'], $fixture, 30);
+
+        printf("Independent install proof OK: %s from src/%s\n", $package, $module);
+    } finally {
+        if ($keep) {
+            printf("Kept proof fixture: %s\n", $fixture);
+        } else {
+            removeTree($fixture);
+        }
     }
 }
 
@@ -53,7 +81,14 @@ function optionValue(array $argv, string $name): ?string
     return null;
 }
 
-function fixtureComposer(string $package, string $root, string $module): array
+function composerBinary(): string
+{
+    $binary = getenv('COMPOSER_BINARY');
+
+    return is_string($binary) && $binary !== '' ? $binary : 'composer';
+}
+
+function fixtureComposer(string $package, array $modules, string $root): array
 {
     return [
         'name' => 'phalanx-php/module-install-proof',
@@ -62,62 +97,103 @@ function fixtureComposer(string $package, string $root, string $module): array
             'php' => '^8.4',
             $package => '*',
         ],
-        'repositories' => [
-            [
-                'type' => 'path',
-                'url' => $root . '/src/' . $module,
-                'options' => [
-                    'symlink' => false,
-                ],
-            ],
-        ],
+        'repositories' => pathRepositories($modules, $root),
         'minimum-stability' => 'dev',
         'prefer-stable' => true,
         'config' => [
             'sort-packages' => true,
-            'allow-plugins' => [
-                'dealerdirect/phpcodesniffer-composer-installer' => true,
-            ],
+            'allow-plugins' => allowPlugins($modules),
         ],
     ];
 }
 
-function smokeScript(): string
+function allowPlugins(array $modules): array
 {
-    return <<<'PHP'
+    $allowPlugins = [
+        'dealerdirect/phpcodesniffer-composer-installer' => true,
+    ];
+
+    foreach ($modules as $meta) {
+        foreach (($meta['allowPlugins'] ?? []) as $plugin => $allowed) {
+            $allowPlugins[$plugin] = $allowed;
+        }
+    }
+
+    ksort($allowPlugins);
+
+    return $allowPlugins;
+}
+
+function pathRepositories(array $modules, string $root): array
+{
+    $repositories = [];
+
+    foreach (array_keys($modules) as $module) {
+        $repositories[] = [
+            'type' => 'path',
+            'url' => $root . '/src/' . $module,
+            'options' => [
+                'symlink' => false,
+            ],
+        ];
+    }
+
+    return $repositories;
+}
+
+function smokeScript(string $module, string $smokeClass): string
+{
+    $moduleLiteral = var_export($module, true);
+    $classLiteral = var_export($smokeClass, true);
+
+    return <<<PHP
         <?php
 
         declare(strict_types=1);
 
         require __DIR__ . '/vendor/autoload.php';
 
-        $policy = Phalanx\Runtime\RuntimePolicy::phalanxManaged();
+        \$module = {$moduleLiteral};
+        \$smokeClass = {$classLiteral};
 
-        if ($policy->name === '') {
-            fwrite(STDERR, "Runtime policy did not initialize.\n");
+        \$exists = class_exists(\$smokeClass)
+            || interface_exists(\$smokeClass)
+            || enum_exists(\$smokeClass)
+            || trait_exists(\$smokeClass);
+
+        if (!\$exists) {
+            fwrite(STDERR, "Smoke class did not autoload: {\$smokeClass}\n");
             exit(1);
         }
 
-        echo "Aegis autoload smoke OK: {$policy->name}\n";
+        if (\$smokeClass === Phalanx\Runtime\RuntimePolicy::class) {
+            \$policy = Phalanx\Runtime\RuntimePolicy::phalanxManaged();
+
+            if (\$policy->name === '') {
+                fwrite(STDERR, "Runtime policy did not initialize.\n");
+                exit(1);
+            }
+
+            echo "Aegis autoload smoke OK: {\$policy->name}\n";
+            exit(0);
+        }
+
+        echo "{\$module} autoload smoke OK: {\$smokeClass}\n";
         PHP;
 }
 
-function run(array $command, string $cwd): void
+function run(array $command, string $cwd, float $timeout): void
 {
     $display = implode(' ', array_map('escapeshellarg', $command));
-    $descriptorSpec = [
-        0 => STDIN,
-        1 => STDOUT,
-        2 => STDERR,
-    ];
-    $process = proc_open($command, $descriptorSpec, $pipes, $cwd);
+    $process = new Process(
+        command: $command,
+        cwd: $cwd,
+        timeout: $timeout,
+    );
 
-    if (!is_resource($process)) {
-        fwrite(STDERR, "Failed to start command: {$display}\n");
-        exit(1);
-    }
-
-    $exitCode = proc_close($process);
+    $exitCode = $process->run(static function (string $type, string $buffer): void {
+        fwrite($type === Process::ERR ? STDERR : STDOUT, $buffer);
+    });
 
     if ($exitCode !== 0) {
         fwrite(STDERR, "Command failed ({$exitCode}): {$display}\n");
