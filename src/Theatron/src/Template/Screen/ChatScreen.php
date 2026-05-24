@@ -27,10 +27,13 @@ use Phalanx\Theatron\Template\AppStore;
 use Phalanx\Theatron\Template\Keymap\ComposerChordMap;
 use Phalanx\Theatron\Template\Keymap\KeymapEntry;
 use Phalanx\Theatron\Template\Overlay\KeymapOverlay;
+use Phalanx\Theatron\Template\Render\ConversationEventFormatter;
 use Phalanx\Theatron\Template\Render\MarkdownRenderer;
 use Phalanx\Theatron\Template\Slice\ActivityStatus;
 use Phalanx\Theatron\Template\Slice\ConversationSlice;
 use Phalanx\Theatron\Template\Slice\ConversationTurn;
+use Phalanx\Theatron\Template\Slice\ConversationTurnEvent;
+use Phalanx\Theatron\Template\Slice\ConversationTurnEventSeverity;
 use Phalanx\Theatron\Text\Line;
 use Phalanx\Theatron\Text\Span;
 
@@ -533,6 +536,8 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, DeclaresBinding
             $rows = [...$rows, ...$this->markdown->render($turn->assistantText(), $wrapWidth, '    ')];
         }
 
+        $rows = [...$rows, ...$this->renderTurnProjections($turn, $wrapWidth)];
+
         if ($conversation->showThinking && !$ephemeralThinking && $turn->hasThinkingText()) {
             $thinkingStyle = TextStyle::new()->fg(Color::indexed(242));
             foreach (self::wrapIndented($turn->thinkingText(), $wrapWidth, '    ', $thinkingStyle) as $line) {
@@ -546,6 +551,29 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, DeclaresBinding
     private function activityBlocksFocused(): bool
     {
         return $this->store->inputMode->focusTarget === 'conversation';
+    }
+
+    /**
+     * @return list<Renderable>
+     */
+    private function renderTurnProjections(ConversationTurn $turn, int $wrapWidth): array
+    {
+        $rows = [];
+
+        foreach ($turn->projectionEvents() as $event) {
+            $lines = self::wrapIndented(
+                ConversationEventFormatter::summary($event),
+                $wrapWidth,
+                '    ' . $this->projectionMarker($event) . ' ',
+                $this->projectionStyle($event->projection->severity),
+            );
+
+            foreach ($lines as $line) {
+                $rows[] = self::row($line);
+            }
+        }
+
+        return $rows;
     }
 
     private function shouldRenderEphemeralThinking(ConversationSlice $conversation, ConversationTurn $turn): bool
@@ -580,6 +608,28 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, DeclaresBinding
         }
 
         return $rows;
+    }
+
+    private function projectionMarker(ConversationTurnEvent $event): string
+    {
+        return match ($event->projection->severity) {
+            ConversationTurnEventSeverity::Error => '!',
+            ConversationTurnEventSeverity::Success => '✓',
+            ConversationTurnEventSeverity::Warning => '?',
+            ConversationTurnEventSeverity::Info,
+            ConversationTurnEventSeverity::Muted => '·',
+        };
+    }
+
+    private function projectionStyle(ConversationTurnEventSeverity $severity): TextStyle
+    {
+        return match ($severity) {
+            ConversationTurnEventSeverity::Error => TextStyle::new()->fg(Color::indexed(203))->bold(),
+            ConversationTurnEventSeverity::Success => TextStyle::new()->fg(Color::indexed(114)),
+            ConversationTurnEventSeverity::Warning => TextStyle::new()->fg(Color::indexed(214)),
+            ConversationTurnEventSeverity::Info => TextStyle::new()->fg(Color::indexed(245)),
+            ConversationTurnEventSeverity::Muted => TextStyle::new()->fg(Color::indexed(242))->dim(),
+        };
     }
 
     private function renderStatusLine(): Renderable

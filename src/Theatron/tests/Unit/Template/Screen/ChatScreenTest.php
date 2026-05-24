@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace Phalanx\Theatron\Tests\Unit\Template\Screen;
 
+use DateTimeImmutable;
+use Phalanx\Panoply\Cue\Activity\Failed as ActivityFailed;
+use Phalanx\Panoply\Cue\Effect\Executed as EffectExecuted;
+use Phalanx\Panoply\Cue\Effect\Requested as EffectRequested;
+use Phalanx\Panoply\Cue\Usage\FinalUsage;
+use Phalanx\Panoply\Effect\Kind;
 use Phalanx\Scope\TaskScope;
 use Phalanx\Theatron\Buffer\Buffer;
 use Phalanx\Theatron\Buffer\Rect;
@@ -187,6 +193,96 @@ final class ChatScreenTest extends TestCase
 
         self::assertStringContainsString('hidden reasoning', $expandedText);
         self::assertStringNotContainsString('thinking.', $expandedText);
+    }
+
+    #[Test]
+    public function rendersTurnProjectionEventsAfterAssistantAnswer(): void
+    {
+        $at = new DateTimeImmutable('2026-05-23T21:00:00Z');
+        $store = new AppStore();
+        $store->conversation = (new ConversationSlice())
+            ->addUserMessage('Use the tool')
+            ->appendToken('Tool result summarized.')
+            ->appendCue(new EffectRequested(
+                id: 'cue_1',
+                sequence: 1,
+                activityId: 'act_1',
+                invocationId: 'inv_1',
+                agentId: 'agent_1',
+                at: $at,
+                effectId: 'eff_1',
+                kind: Kind::FileRead,
+                summary: 'Read a strategy note',
+                requiresApproval: true,
+            ))
+            ->appendCue(new EffectExecuted(
+                id: 'cue_2',
+                sequence: 2,
+                activityId: 'act_1',
+                invocationId: 'inv_1',
+                agentId: 'agent_1',
+                at: $at,
+                effectId: 'eff_1',
+                durationMs: 42,
+                resultDigest: 'sha256:abc',
+            ))
+            ->appendCue(new FinalUsage(
+                id: 'cue_3',
+                sequence: 3,
+                activityId: 'act_1',
+                invocationId: 'inv_1',
+                agentId: 'agent_1',
+                at: $at,
+                inputTokens: 12,
+                outputTokens: 24,
+                cacheReadTokens: 3,
+                cacheWriteTokens: 4,
+                costUsd: 0.01,
+            ))
+            ->finalizeMessage();
+        $screen = new ChatScreen($store);
+
+        $text = self::flatten($screen($this->makeContext($store)));
+
+        self::assertStringContainsString('Tool result summarized.', $text);
+        self::assertStringContainsString('approval: file.read eff_1', $text);
+        self::assertStringContainsString('Read a strategy note', $text);
+        self::assertStringContainsString('executed: eff_1', $text);
+        self::assertStringContainsString('42ms', $text);
+        self::assertStringContainsString('usage: 12 in', $text);
+        self::assertStringContainsString('cache read 3', $text);
+        self::assertStringContainsString('cache write 4', $text);
+        self::assertLessThan(
+            strpos($text, 'approval: file.read eff_1'),
+            strpos($text, 'Tool result summarized.'),
+        );
+    }
+
+    #[Test]
+    public function rendersTurnProjectionFailuresWithoutDroppingAnswerText(): void
+    {
+        $at = new DateTimeImmutable('2026-05-23T21:00:00Z');
+        $store = new AppStore();
+        $store->conversation = (new ConversationSlice())
+            ->addUserMessage('Try a risky turn')
+            ->appendToken('Partial answer survived.')
+            ->appendCue(new ActivityFailed(
+                id: 'cue_1',
+                sequence: 1,
+                activityId: 'act_1',
+                invocationId: 'inv_1',
+                agentId: 'agent_1',
+                at: $at,
+                reason: 'Provider stream failed',
+                errorClass: 'RuntimeException',
+            ));
+        $screen = new ChatScreen($store);
+
+        $text = self::flatten($screen($this->makeContext($store)));
+
+        self::assertStringContainsString('Partial answer survived.', $text);
+        self::assertStringContainsString('activity failed: Provider stream failed', $text);
+        self::assertStringContainsString('RuntimeException', $text);
     }
 
     #[Test]
@@ -389,6 +485,7 @@ final class ChatScreenTest extends TestCase
     #[Test]
     public function conversationBlockDetailRendersSelectedTurnProjection(): void
     {
+        $at = new DateTimeImmutable('2026-05-23T21:00:00Z');
         $store = new AppStore();
         $store->conversation = (new ConversationSlice())
             ->addUserMessage('first message')
@@ -396,6 +493,28 @@ final class ChatScreenTest extends TestCase
             ->finalizeMessage()
             ->addUserMessage('second message')
             ->appendToken('second answer')
+            ->appendCue(new EffectRequested(
+                id: 'cue_1',
+                sequence: 1,
+                activityId: 'act_1',
+                invocationId: 'inv_1',
+                agentId: 'agent_1',
+                at: $at,
+                effectId: 'eff_1',
+                kind: Kind::FileRead,
+                summary: 'Read a strategy note',
+            ))
+            ->appendCue(new FinalUsage(
+                id: 'cue_2',
+                sequence: 2,
+                activityId: 'act_1',
+                invocationId: 'inv_1',
+                agentId: 'agent_1',
+                at: $at,
+                inputTokens: 20,
+                outputTokens: 30,
+                cacheReadTokens: 2,
+            ))
             ->finalizeMessage()
             ->expandFocused();
         $screen = new ConversationBlockDetailScreen($store);
@@ -404,6 +523,11 @@ final class ChatScreenTest extends TestCase
 
         self::assertStringContainsString('you: second message', $text);
         self::assertStringContainsString('second answer', $text);
+        self::assertStringContainsString('events:', $text);
+        self::assertStringContainsString('cue_1 effect.requested cue.effect.requested', $text);
+        self::assertStringContainsString('Read a strategy note', $text);
+        self::assertStringContainsString('cue_2 usage.final cue.usage.final', $text);
+        self::assertStringContainsString('cache read 2', $text);
         self::assertStringNotContainsString('first answer', $text);
     }
 

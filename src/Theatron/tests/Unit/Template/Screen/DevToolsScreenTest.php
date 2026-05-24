@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Phalanx\Theatron\Tests\Unit\Template\Screen;
 
+use DateTimeImmutable;
+use Phalanx\Panoply\Cue\Effect\Requested as EffectRequested;
+use Phalanx\Panoply\Cue\Usage\FinalUsage;
+use Phalanx\Panoply\Effect\Kind;
 use Phalanx\Scope\TaskScope;
 use Phalanx\Theatron\Component\MountSystem;
 use Phalanx\Theatron\Context\RenderContext;
@@ -325,11 +329,34 @@ final class DevToolsScreenTest extends TestCase
     #[Test]
     public function storeTabShowsSliceInfo(): void
     {
+        $at = new DateTimeImmutable('2026-05-23T21:00:00Z');
         $store = new AppStore();
         $store->devtools = $store->devtools->nextTab()->nextTab()->nextTab()->nextTab();
-        $store->conversation = new ConversationSlice()
+        $store->conversation = (new ConversationSlice())
             ->addUserMessage('The agora stands.')
-            ->appendToken('As does the phalanx.');
+            ->appendToken('As does the phalanx.')
+            ->appendCue(new EffectRequested(
+                id: 'cue_1',
+                sequence: 1,
+                activityId: 'act_1',
+                invocationId: 'inv_1',
+                agentId: 'agent_1',
+                at: $at,
+                effectId: 'eff_1',
+                kind: Kind::FileRead,
+                summary: 'Read a strategy note',
+            ))
+            ->appendCue(new FinalUsage(
+                id: 'cue_2',
+                sequence: 2,
+                activityId: 'act_1',
+                invocationId: 'inv_1',
+                agentId: 'agent_1',
+                at: $at,
+                inputTokens: 100,
+                outputTokens: 200,
+                cacheReadTokens: 10,
+            ));
         $store->agents = new AgentRegistrySlice()
             ->register(new AgentSummary(id: 'agent_leonidas', name: 'Leonidas', capabilities: ['tactics']));
         $store->activity = new ActivitySlice()->updateUsage(100, 200);
@@ -348,6 +375,44 @@ final class DevToolsScreenTest extends TestCase
         self::assertStringContainsString('turns', $text);
         self::assertStringContainsString('agents', $text);
         self::assertStringContainsString('total', $text);
+        self::assertStringContainsString('Conversation Events', $text);
+        self::assertStringContainsString('cue_1 effect.requested cue.effect.requested', $text);
+        self::assertStringContainsString('Read a strategy note', $text);
+        self::assertStringContainsString('cue_2 usage.final cue.usage.final', $text);
+        self::assertStringContainsString('cache read 10', $text);
+    }
+
+    #[Test]
+    public function metricsTabShowsRecentConversationProjectionSummaries(): void
+    {
+        $at = new DateTimeImmutable('2026-05-23T21:00:00Z');
+        $store = new AppStore();
+        $store->conversation = (new ConversationSlice())
+            ->addUserMessage('Inspect the exchange')
+            ->appendToken('Projection visible.')
+            ->appendCue(new EffectRequested(
+                id: 'cue_1',
+                sequence: 1,
+                activityId: 'act_1',
+                invocationId: 'inv_1',
+                agentId: 'agent_1',
+                at: $at,
+                effectId: 'eff_1',
+                kind: Kind::FileRead,
+                summary: 'Read a strategy note',
+            ));
+        $screen = new DevToolsScreen(
+            $store,
+            new MountSystem($this->createStub(TaskScope::class)),
+            new RecordingNavigator(),
+        );
+
+        $text = self::flatten($screen($this->makeContext(new RecordingNavigator())));
+
+        self::assertStringContainsString('Exchange History', $text);
+        self::assertStringContainsString('cue_1', $text);
+        self::assertStringContainsString('effect: file.read eff_1', $text);
+        self::assertStringContainsString('Read a strategy note', $text);
     }
 
     #[Test]

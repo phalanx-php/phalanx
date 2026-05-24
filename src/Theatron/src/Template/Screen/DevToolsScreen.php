@@ -27,6 +27,7 @@ use Phalanx\Theatron\Styling\Theme;
 use Phalanx\Theatron\Tdom\Renderable;
 use Phalanx\Theatron\Tdom\Style as TdomStyle;
 use Phalanx\Theatron\Template\AppStore;
+use Phalanx\Theatron\Template\Render\ConversationEventFormatter;
 use Phalanx\Theatron\Template\Slice\ActivityStatus;
 use Phalanx\Theatron\Template\Slice\DevToolsTab;
 use Phalanx\Theatron\Template\Slice\LlmRequestEntry;
@@ -286,6 +287,10 @@ class DevToolsScreen implements
                     "  [{$i}]",
                     $turn->id . ' user=' . mb_strlen($turn->userText) . 'c events=' . count($turn->events),
                 );
+
+                foreach (array_slice($turn->projectionEvents(), -3) as $event) {
+                    $rows[] = self::kv('     ' . $event->id, ConversationEventFormatter::summary($event));
+                }
             }
             $rows[] = self::blank();
         }
@@ -436,6 +441,24 @@ class DevToolsScreen implements
             self::kv('out', (string) $activity->outputTokens),
             self::kv('total', (string) $activity->totalTokens),
         ];
+
+        $rows[] = self::blank();
+        $rows[] = self::row(Line::from(Span::styled('  Conversation Events', self::headerStyle())));
+
+        $events = [];
+        foreach ($conversation->turns as $turn) {
+            foreach ($turn->projectionEvents() as $event) {
+                $events[] = $event;
+            }
+        }
+
+        if ($events === []) {
+            $rows[] = self::kv('events', 'none');
+        } else {
+            foreach (array_slice($events, -6) as $event) {
+                $rows[] = self::kv($event->id, ConversationEventFormatter::detail($event));
+            }
+        }
 
         $rows[] = self::blank();
         $rows[] = self::row(Line::from(Span::styled('  EffectLogSlice', self::headerStyle())));

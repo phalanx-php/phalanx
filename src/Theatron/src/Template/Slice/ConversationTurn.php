@@ -71,6 +71,17 @@ class ConversationTurn
         return $this->thinkingText() !== '';
     }
 
+    /**
+     * @return list<ConversationTurnEvent>
+     */
+    public function projectionEvents(): array
+    {
+        return array_values(array_filter(
+            $this->events,
+            static fn(ConversationTurnEvent $event): bool => $event->projection->rendersInThread(),
+        ));
+    }
+
     private function textFor(Channel $channel): string
     {
         $text = '';

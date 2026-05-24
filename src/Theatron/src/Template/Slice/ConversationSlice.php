@@ -14,6 +14,9 @@ use Phalanx\Panoply\Cue\Effect\Denied as EffectDenied;
 use Phalanx\Panoply\Cue\Effect\Executed as EffectExecuted;
 use Phalanx\Panoply\Cue\Effect\Failed as EffectFailed;
 use Phalanx\Panoply\Cue\Effect\Requested as EffectRequested;
+use Phalanx\Panoply\Cue\Invocation\Cancelled as InvocationCancelled;
+use Phalanx\Panoply\Cue\Invocation\Completed as InvocationCompleted;
+use Phalanx\Panoply\Cue\Invocation\Failed as InvocationFailed;
 use Phalanx\Panoply\Cue\Output\Channel;
 use Phalanx\Panoply\Cue\Output\TokenDelta;
 use Phalanx\Panoply\Cue\Output\TokenStop;
@@ -292,6 +295,9 @@ class ConversationSlice
             $cue instanceof ActivityCompleted => ConversationTurnStatus::Completed,
             $cue instanceof ActivityFailed => ConversationTurnStatus::Failed,
             $cue instanceof ActivityCancelled => ConversationTurnStatus::Cancelled,
+            $cue instanceof InvocationCompleted => self::statusForStopReason($cue->stopReason),
+            $cue instanceof InvocationFailed => ConversationTurnStatus::Failed,
+            $cue instanceof InvocationCancelled => ConversationTurnStatus::Cancelled,
             default => null,
         };
     }
