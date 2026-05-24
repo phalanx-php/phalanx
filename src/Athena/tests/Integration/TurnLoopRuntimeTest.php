@@ -11,7 +11,9 @@ use Phalanx\Athena\Turn\Loop;
 use Phalanx\Athena\Turn\Outcome;
 use Phalanx\Panoply\Capabilities;
 use Phalanx\Panoply\Context;
+use Phalanx\Panoply\Conversation\Record\Message;
 use Phalanx\Panoply\Cue\Effect\Requested;
+use Phalanx\Panoply\Cue\Output\Channel;
 use Phalanx\Panoply\Cue\Output\TokenDelta;
 use Phalanx\Panoply\Cue\Output\TokenStop;
 use Phalanx\Panoply\Cue\StopReason;
@@ -40,6 +42,37 @@ final class TurnLoopRuntimeTest extends PhalanxTestCase
 
         self::assertSame(Activity\State::Completed, $result->state);
         self::assertSame(Outcome::Complete, $result->outcome);
+        $this->scope->expect->runtime()->clean();
+    }
+
+    #[Test]
+    public function streamingTurnLoopKeepsThinkingOutOfConversationLog(): void
+    {
+        $at = new \DateTimeImmutable('2026-05-17T12:00:00Z');
+        $provider = new Provider([
+            new TokenDelta('cue_1', 1, 'act_1', null, 'athena-test-agent', $at, 'thinking ', Channel::Thinking),
+            new TokenDelta('cue_2', 2, 'act_1', null, 'athena-test-agent', $at, 'answer', Channel::Message),
+            new TokenStop('cue_3', 3, 'act_1', null, 'athena-test-agent', $at, StopReason::EndOfTurn),
+        ], Capabilities::empty());
+
+        [$text, $types] = $this->scope->run(static function (ExecutionScope $scope) use ($provider): array {
+            $loop = new Loop(new DefaultBuilder(), $provider);
+            $result = $loop($scope, new TestAgent(), new Activity\Config('act_1', Context::new(), 1));
+            $types = array_map(static fn($cue): string => $cue->type, $result->stream->toArray());
+            $records = $result->log->toArray();
+
+            return [$records[0] instanceof Message ? $records[0]->text : null, $types];
+        });
+
+        self::assertSame('answer', $text);
+        self::assertSame(
+            [
+                'cue.output.token_delta',
+                'cue.output.token_delta',
+                'cue.output.token_stop',
+            ],
+            $types,
+        );
         $this->scope->expect->runtime()->clean();
     }
 

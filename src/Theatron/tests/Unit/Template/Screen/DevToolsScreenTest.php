@@ -345,6 +345,7 @@ final class DevToolsScreenTest extends TestCase
         self::assertStringContainsString('AgentRegistrySlice', $text);
         self::assertStringContainsString('ActivitySlice', $text);
         self::assertStringContainsString('messages', $text);
+        self::assertStringContainsString('turns', $text);
         self::assertStringContainsString('agents', $text);
         self::assertStringContainsString('total', $text);
     }

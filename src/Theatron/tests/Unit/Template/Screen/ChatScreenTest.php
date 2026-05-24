@@ -243,6 +243,28 @@ final class ChatScreenTest extends TestCase
 
         self::assertSame(ConversationBlockDetailScreen::class, $navigator->target);
         self::assertSame(2, $store->conversation->expandedIndex);
+        self::assertSame('turn_2', $store->conversation->selectedTurnId);
+    }
+
+    #[Test]
+    public function conversationBlockDetailRendersSelectedTurnProjection(): void
+    {
+        $store = new AppStore();
+        $store->conversation = (new ConversationSlice())
+            ->addUserMessage('first message')
+            ->appendToken('first answer')
+            ->finalizeMessage()
+            ->addUserMessage('second message')
+            ->appendToken('second answer')
+            ->finalizeMessage()
+            ->expandFocused();
+        $screen = new ConversationBlockDetailScreen($store);
+
+        $text = self::flatten($screen($this->makeContext($store)));
+
+        self::assertStringContainsString('you: second message', $text);
+        self::assertStringContainsString('second answer', $text);
+        self::assertStringNotContainsString('first answer', $text);
     }
 
     #[Test]
@@ -255,8 +277,10 @@ final class ChatScreenTest extends TestCase
 
         self::assertTrue($screen->submitInput());
         self::assertCount(1, $store->conversation->messages);
+        self::assertCount(1, $store->conversation->turns);
         self::assertSame('user', $store->conversation->messages[0]->role);
         self::assertSame('Rally the phalanx at the agora.', $store->conversation->messages[0]->text);
+        self::assertSame('Rally the phalanx at the agora.', $store->conversation->turns[0]->userText);
         self::assertSame(ActivityStatus::Running, $store->activity->status);
         self::assertSame('', $screen->inputText->get());
         self::assertSame('', $store->input->text);
@@ -302,6 +326,7 @@ final class ChatScreenTest extends TestCase
 
         self::assertTrue($handler->handleInput(new KeyEvent(Key::Enter)));
         self::assertNotNull($store->conversation->expandedIndex);
+        self::assertSame('turn_2', $store->conversation->selectedTurnId);
         self::assertCount(3, $store->conversation->messages);
     }
 

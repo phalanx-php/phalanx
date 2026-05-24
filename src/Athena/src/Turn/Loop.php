@@ -25,6 +25,7 @@ use Phalanx\Panoply\Conversation\Record\ToolCall;
 use Phalanx\Panoply\Conversation\Record\ToolResult;
 use Phalanx\Panoply\Cue;
 use Phalanx\Panoply\Cue\Effect\Requested;
+use Phalanx\Panoply\Cue\Output\Channel;
 use Phalanx\Panoply\Cue\Output\TokenDelta;
 use Phalanx\Panoply\Cue\Output\TokenStop;
 use Phalanx\Panoply\Id;
@@ -132,7 +133,10 @@ final class Loop implements Activity\Executor
                         }
 
                         if ($cue instanceof TokenDelta) {
-                            $text .= $cue->text;
+                            if ($cue->channel === Channel::Message) {
+                                $text .= $cue->text;
+                            }
+
                             continue;
                         }
 
@@ -322,7 +326,10 @@ final class Loop implements Activity\Executor
             }
 
             if ($cue instanceof TokenDelta) {
-                $text .= $cue->text;
+                if ($cue->channel === Channel::Message) {
+                    $text .= $cue->text;
+                }
+
                 continue;
             }
 

@@ -29,8 +29,8 @@ use Phalanx\Theatron\Template\Keymap\KeymapEntry;
 use Phalanx\Theatron\Template\Overlay\KeymapOverlay;
 use Phalanx\Theatron\Template\Render\MarkdownRenderer;
 use Phalanx\Theatron\Template\Slice\ActivityStatus;
-use Phalanx\Theatron\Template\Slice\ConversationMessage;
 use Phalanx\Theatron\Template\Slice\ConversationSlice;
+use Phalanx\Theatron\Template\Slice\ConversationTurn;
 use Phalanx\Theatron\Text\Line;
 use Phalanx\Theatron\Text\Span;
 
@@ -137,7 +137,7 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, DeclaresBinding
 
         if ($event->is('G')) {
             $slice = $this->store->conversation;
-            foreach ($slice->exchangeIndexes() as $_) {
+            foreach ($slice->turns as $_) {
                 $slice = $slice->scrollUp();
             }
             $this->store->conversation = $slice;
@@ -262,7 +262,7 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, DeclaresBinding
     {
         $conversation = $this->store->conversation->expandFocused();
 
-        if ($conversation->expandedIndex === null || $this->navigator === null) {
+        if ($conversation->selectedTurnId === null || $this->navigator === null) {
             return false;
         }
 
@@ -443,7 +443,7 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, DeclaresBinding
     /** @return list<Renderable> */
     private function renderConversationRows(ConversationSlice $conversation, int $wrapWidth): array
     {
-        if ($conversation->messages === []) {
+        if ($conversation->turns === []) {
             return [
                 self::row(Line::from(
                     Span::styled('  Type a message to begin.', TextStyle::new()->fg(Color::indexed(242))),
@@ -451,36 +451,35 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, DeclaresBinding
             ];
         }
 
-        if ($conversation->expandedIndex !== null) {
-            return $this->renderExchange($conversation, $conversation->expandedIndex, $wrapWidth);
+        $selected = $conversation->selectedTurn();
+
+        if ($selected !== null) {
+            return $this->renderExchange($conversation, $selected, $wrapWidth);
         }
 
         $rows = [];
-        $indexes = $conversation->exchangeIndexes();
-        $lastUserIndex = end($indexes);
+        $lastTurn = $conversation->turns[array_key_last($conversation->turns)];
 
-        foreach ($indexes as $userIndex) {
-            if ($userIndex === $lastUserIndex) {
-                $rows = [...$rows, ...$this->renderExchange($conversation, $userIndex, $wrapWidth)];
+        foreach ($conversation->turns as $turn) {
+            if ($turn->id === $lastTurn->id) {
+                $rows = [...$rows, ...$this->renderExchange($conversation, $turn, $wrapWidth)];
                 continue;
             }
 
-            $rows = [...$rows, ...$this->renderSummary($conversation, $userIndex, $wrapWidth)];
+            $rows = [...$rows, ...$this->renderSummary($conversation, $turn, $wrapWidth)];
         }
 
         return $rows;
     }
 
     /** @return list<Renderable> */
-    private function renderSummary(ConversationSlice $conversation, int $userIndex, int $wrapWidth): array
+    private function renderSummary(ConversationSlice $conversation, ConversationTurn $turn, int $wrapWidth): array
     {
-        $user = $conversation->messages[$userIndex];
-        $assistant = $this->assistantAfter($conversation, $userIndex);
         $rows = [];
-        $focused = $this->activityBlocksFocused() && $conversation->focusedExchangeIndex() === $userIndex;
+        $focused = $this->activityBlocksFocused() && $conversation->focusedTurn()?->id === $turn->id;
 
         $userStyle = TextStyle::new()->fg(Color::indexed(250));
-        foreach (self::wrapIndented($user->text, $wrapWidth, $focused ? '  ▶ ' : '  > ', $userStyle) as $line) {
+        foreach (self::wrapIndented($turn->userText, $wrapWidth, $focused ? '  ▶ ' : '  > ', $userStyle) as $line) {
             $rows[] = self::row($line);
         }
 
@@ -489,8 +488,8 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, DeclaresBinding
             Span::styled($summaryRule, TextStyle::new()->fg(Color::indexed(238))),
         ));
 
-        if ($assistant !== null) {
-            $preview = MarkdownRenderer::stripSyntax(mb_substr($assistant->text, 0, 100));
+        if ($turn->hasAssistantText()) {
+            $preview = MarkdownRenderer::stripSyntax(mb_substr($turn->assistantText(), 0, 100));
             $previewStyle = TextStyle::new()->fg(Color::indexed(245));
             foreach (self::wrapIndented($preview, $wrapWidth, '    ', $previewStyle) as $line) {
                 $rows[] = self::row($line);
@@ -503,29 +502,27 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, DeclaresBinding
     }
 
     /** @return list<Renderable> */
-    private function renderExchange(ConversationSlice $conversation, int $userIndex, int $wrapWidth): array
+    private function renderExchange(ConversationSlice $conversation, ConversationTurn $turn, int $wrapWidth): array
     {
-        $user = $conversation->messages[$userIndex];
-        $assistant = $this->assistantAfter($conversation, $userIndex);
-        $focused = $this->activityBlocksFocused() && $conversation->focusedExchangeIndex() === $userIndex;
+        $focused = $this->activityBlocksFocused() && $conversation->focusedTurn()?->id === $turn->id;
         $rows = [self::row(Line::plain(''))];
         $rows[] = self::row(Line::from(
             Span::styled($focused ? '  ▶ you: ' : '  you: ', TextStyle::new()->fg(Color::indexed(255))->bold()),
-            Span::styled($user->text, TextStyle::new()->fg(Color::indexed(252))),
+            Span::styled($turn->userText, TextStyle::new()->fg(Color::indexed(252))),
         ));
         $exchangeRule = '  ' . str_repeat('─', min(24, (int) ($wrapWidth * 0.2)));
         $rows[] = self::row(Line::from(Span::styled($exchangeRule, TextStyle::new()->fg(Color::indexed(236)))));
 
-        if ($assistant !== null) {
+        if ($turn->hasAssistantText()) {
             $rows[] = self::row(Line::from(
                 Span::styled('  assistant:', TextStyle::new()->fg(Color::indexed(252))->bold()),
             ));
-            $rows = [...$rows, ...$this->markdown->render($assistant->text, $wrapWidth, '    ')];
+            $rows = [...$rows, ...$this->markdown->render($turn->assistantText(), $wrapWidth, '    ')];
         }
 
-        if ($conversation->showThinking && $conversation->thinkingBuffer !== '') {
+        if ($conversation->showThinking && $turn->hasThinkingText()) {
             $thinkingStyle = TextStyle::new()->fg(Color::indexed(242));
-            foreach (self::wrapIndented($conversation->thinkingBuffer, $wrapWidth, '    ', $thinkingStyle) as $line) {
+            foreach (self::wrapIndented($turn->thinkingText(), $wrapWidth, '    ', $thinkingStyle) as $line) {
                 $rows[] = self::row($line);
             }
         }
@@ -647,22 +644,5 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, DeclaresBinding
         $this->inputText->set($text);
         $this->inputCursor->set(mb_strlen($text));
         $this->inputChordPrefix->set(false);
-    }
-
-    private function assistantAfter(ConversationSlice $conversation, int $userIndex): ?ConversationMessage
-    {
-        for ($i = $userIndex + 1; $i < count($conversation->messages); $i++) {
-            $message = $conversation->messages[$i];
-
-            if ($message->role === 'user') {
-                return null;
-            }
-
-            if ($message->channel !== 'thinking') {
-                return $message;
-            }
-        }
-
-        return null;
     }
 }

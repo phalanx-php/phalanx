@@ -269,8 +269,8 @@ class DevToolsScreen implements
             self::row(Line::from(Span::styled('  Store Slices', self::headerStyle()))),
             self::kv(
                 'repl.convo',
-                count($conversation->exchangeIndexes()) . ' exchanges, scroll=' . $conversation->scrollOffset
-                    . ', expanded=' . ($conversation->expandedIndex ?? 'none'),
+                count($conversation->turns) . ' turns, scroll=' . $conversation->scrollOffset
+                    . ', selected=' . ($conversation->selectedTurnId ?? 'none'),
             ),
             self::kv('repl.status', 'Agent [' . strtolower($activity->status->name) . ']'),
             self::kv('repl.input', mb_strlen($input->text) . ' chars'),
@@ -279,11 +279,13 @@ class DevToolsScreen implements
             self::blank(),
         ];
 
-        if ($conversation->messages !== []) {
+        if ($conversation->turns !== []) {
             $rows[] = self::row(Line::from(Span::styled('  Exchange History', self::headerStyle())));
-            foreach ($conversation->exchangeIndexes() as $i => $messageIndex) {
-                $user = $conversation->messages[$messageIndex];
-                $rows[] = self::kv("  [{$i}]", 'user=' . mb_strlen($user->text) . 'c');
+            foreach ($conversation->turns as $i => $turn) {
+                $rows[] = self::kv(
+                    "  [{$i}]",
+                    $turn->id . ' user=' . mb_strlen($turn->userText) . 'c events=' . count($turn->events),
+                );
             }
             $rows[] = self::blank();
         }
@@ -420,6 +422,7 @@ class DevToolsScreen implements
             self::blank(),
             self::row(Line::from(Span::styled('  ConversationSlice', self::headerStyle()))),
             self::kv('messages', (string) count($conversation->messages)),
+            self::kv('turns', (string) count($conversation->turns)),
             self::kv('streaming', $conversation->isStreaming ? 'yes' : 'no'),
             self::kv('thinking', (string) mb_strlen($conversation->thinkingBuffer)),
             self::blank(),

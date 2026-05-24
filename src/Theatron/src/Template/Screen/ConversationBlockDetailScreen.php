@@ -21,7 +21,6 @@ use Phalanx\Theatron\Tdom\Renderable;
 use Phalanx\Theatron\Tdom\Style as TdomStyle;
 use Phalanx\Theatron\Template\AppStore;
 use Phalanx\Theatron\Template\Render\MarkdownRenderer;
-use Phalanx\Theatron\Template\Slice\ConversationMessage;
 use Phalanx\Theatron\Text\Line;
 use Phalanx\Theatron\Text\Span;
 
@@ -40,15 +39,9 @@ class ConversationBlockDetailScreen implements Screen, HasStatusBar, HasFocusabl
 
     public function __invoke(ScreenContext $ctx): Renderable
     {
-        $index = $this->store->conversation->expandedIndex;
+        $turn = $this->store->conversation->selectedTurn();
 
-        if ($index === null) {
-            return text('  No conversation block selected.');
-        }
-
-        $user = $this->store->conversation->messages[$index] ?? null;
-
-        if ($user === null) {
+        if ($turn === null) {
             return text('  No conversation block selected.');
         }
 
@@ -59,18 +52,16 @@ class ConversationBlockDetailScreen implements Screen, HasStatusBar, HasFocusabl
             self::blank(),
             self::row(Line::from(
                 Span::styled('  you: ', TextStyle::new()->fg(Color::indexed(255))->bold()),
-                Span::styled($user->text, TextStyle::new()->fg(Color::indexed(252))),
+                Span::styled($turn->userText, TextStyle::new()->fg(Color::indexed(252))),
             )),
             self::blank(),
         ];
 
-        $assistant = $this->assistantAfter($index);
-
-        if ($assistant !== null) {
+        if ($turn->hasAssistantText()) {
             $rows[] = self::row(Line::from(
                 Span::styled('  assistant:', TextStyle::new()->fg(Color::indexed(252))->bold()),
             ));
-            $rows = [...$rows, ...$this->markdown->render($assistant->text, max(20, $ctx->width - 2), '    ')];
+            $rows = [...$rows, ...$this->markdown->render($turn->assistantText(), max(20, $ctx->width - 2), '    ')];
         }
 
         return column(...array_slice($rows, 0, max(1, $ctx->height)));
@@ -127,22 +118,5 @@ class ConversationBlockDetailScreen implements Screen, HasStatusBar, HasFocusabl
     private static function headerStyle(): TextStyle
     {
         return TextStyle::new()->fg(Color::indexed(252))->bold();
-    }
-
-    private function assistantAfter(int $userIndex): ?ConversationMessage
-    {
-        for ($i = $userIndex + 1; $i < count($this->store->conversation->messages); $i++) {
-            $message = $this->store->conversation->messages[$i];
-
-            if ($message->role === 'user') {
-                return null;
-            }
-
-            if ($message->channel !== 'thinking') {
-                return $message;
-            }
-        }
-
-        return null;
     }
 }

@@ -21,6 +21,7 @@ use Phalanx\Panoply\Conversation\Record\Message;
 use Phalanx\Panoply\Conversation\Record\ToolCall;
 use Phalanx\Panoply\Conversation\Record\ToolResult;
 use Phalanx\Panoply\Cue\Effect\Requested;
+use Phalanx\Panoply\Cue\Output\Channel;
 use Phalanx\Panoply\Cue\Output\TokenDelta;
 use Phalanx\Panoply\Cue\Output\TokenStop;
 use Phalanx\Panoply\Cue\StopReason;
@@ -58,6 +59,28 @@ final class TurnLoopTest extends TestCase
         self::assertCount(1, $records);
         self::assertInstanceOf(Message::class, $records[0]);
         self::assertSame('Hello world', $records[0]->text);
+    }
+
+    #[Test]
+    public function thinkingAndReasoningDeltasDoNotBecomeAssistantMessageText(): void
+    {
+        $at = new \DateTimeImmutable('2026-05-17T12:00:00Z');
+        $provider = new Provider([
+            new TokenDelta('cue_1', 1, 'act_1', null, 'athena-test-agent', $at, 'thinking ', Channel::Thinking),
+            new TokenDelta('cue_2', 2, 'act_1', null, 'athena-test-agent', $at, 'reasoning ', Channel::Reasoning),
+            new TokenDelta('cue_3', 3, 'act_1', null, 'athena-test-agent', $at, 'final answer', Channel::Message),
+            new TokenStop('cue_4', 4, 'act_1', null, 'athena-test-agent', $at, StopReason::EndOfTurn),
+        ], Capabilities::empty());
+
+        $loop = new Loop(new DefaultBuilder(), $provider, new SyncRuntimeFactory());
+
+        $result = $loop(new ScopeStub(), new TestAgent(), new Activity\Config('act_1', Context::new(), 1));
+        $records = $result->log->toArray();
+
+        self::assertCount(1, $records);
+        self::assertInstanceOf(Message::class, $records[0]);
+        self::assertSame('final answer', $records[0]->text);
+        self::assertCount(4, $result->stream->toArray());
     }
 
     #[Test]

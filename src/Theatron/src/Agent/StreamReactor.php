@@ -15,7 +15,6 @@ use Phalanx\Panoply\Cue\Effect\Executed as EffectExecuted;
 use Phalanx\Panoply\Cue\Effect\Failed as EffectFailed;
 use Phalanx\Panoply\Cue\Effect\Paused as EffectPaused;
 use Phalanx\Panoply\Cue\Effect\Requested as EffectRequested;
-use Phalanx\Panoply\Cue\Output\Channel;
 use Phalanx\Panoply\Cue\Output\TokenDelta;
 use Phalanx\Panoply\Cue\Output\TokenStop;
 use Phalanx\Panoply\Cue\Usage\Delta as UsageDelta;
@@ -42,9 +41,11 @@ final class StreamReactor
 
     private static function dispatch(Cue $cue, AppStore $store): void
     {
+        $store->conversation = $store->conversation->appendCue($cue);
+
         match (true) {
-            $cue instanceof TokenStop => self::onTokenStop($store),
-            $cue instanceof TokenDelta => self::onTokenDelta($cue, $store),
+            $cue instanceof TokenStop => null,
+            $cue instanceof TokenDelta => null,
             $cue instanceof EffectAuthorized => self::onEffectAuthorized($cue, $store),
             $cue instanceof EffectPaused => self::onEffectPaused($cue, $store),
             $cue instanceof EffectFailed => self::onEffectFailed($cue, $store),
@@ -59,21 +60,6 @@ final class StreamReactor
             $cue instanceof FinalUsage => self::onFinalUsage($cue, $store),
             default => null,
         };
-    }
-
-    private static function onTokenDelta(TokenDelta $cue, AppStore $store): void
-    {
-        $channel = match ($cue->channel) {
-            Channel::Message => 'message',
-            Channel::Thinking, Channel::Reasoning => 'thinking',
-        };
-
-        $store->conversation = $store->conversation->appendToken($cue->text, $channel);
-    }
-
-    private static function onTokenStop(AppStore $store): void
-    {
-        $store->conversation = $store->conversation->finalizeMessage();
     }
 
     private static function onEffectRequested(EffectRequested $cue, AppStore $store): void

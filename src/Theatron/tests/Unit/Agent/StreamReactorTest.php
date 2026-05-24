@@ -25,6 +25,7 @@ use Phalanx\Panoply\Effect\Kind;
 use Phalanx\Theatron\Agent\StreamReactor;
 use Phalanx\Theatron\Template\AppStore;
 use Phalanx\Theatron\Template\Slice\ActivityStatus;
+use Phalanx\Theatron\Template\Slice\ConversationTurnStatus;
 use Phalanx\Theatron\Template\Slice\EffectStatus;
 use Phalanx\Theatron\Template\Slice\LlmRequestEntry;
 use PHPUnit\Framework\Attributes\Test;
@@ -47,6 +48,9 @@ final class StreamReactorTest extends TestCase
         self::assertSame('Hail from Olympus', $messages[0]->text);
         self::assertSame('assistant', $messages[0]->role);
         self::assertSame('message', $messages[0]->channel);
+        self::assertCount(1, $store->conversation->turns);
+        self::assertSame('Hail from Olympus', $store->conversation->turns[0]->assistantText());
+        self::assertSame('cue_1', $store->conversation->turns[0]->events[0]->id);
     }
 
     #[Test]
@@ -64,6 +68,7 @@ final class StreamReactorTest extends TestCase
         self::assertCount(1, $messages);
         self::assertTrue($messages[0]->complete);
         self::assertFalse($store->conversation->isStreaming);
+        self::assertSame(ConversationTurnStatus::Completed, $store->conversation->turns[0]->status);
     }
 
     #[Test]
@@ -91,6 +96,8 @@ final class StreamReactorTest extends TestCase
         $messages = $store->conversation->messages;
         self::assertCount(1, $messages);
         self::assertSame('thinking', $messages[0]->channel);
+        self::assertSame('Pondering the fate of Sparta...', $store->conversation->turns[0]->thinkingText());
+        self::assertSame('', $store->conversation->turns[0]->assistantText());
     }
 
     #[Test]
@@ -123,6 +130,8 @@ final class StreamReactorTest extends TestCase
         self::assertSame('medium', $store->activity->pendingEffect->hazard);
         self::assertCount(1, $store->effects->entries);
         self::assertSame(EffectStatus::Requested, $store->effects->entries[0]->status);
+        self::assertSame(ConversationTurnStatus::AwaitingApproval, $store->conversation->turns[0]->status);
+        self::assertSame('cue_1', $store->conversation->turns[0]->events[0]->id);
     }
 
     #[Test]
@@ -449,5 +458,9 @@ final class StreamReactorTest extends TestCase
         self::assertSame('The fleet at Salamis holds the line.', $messages[0]->text);
         self::assertTrue($messages[0]->complete);
         self::assertSame('message', $messages[0]->channel);
+        self::assertCount(1, $store->conversation->turns);
+        self::assertSame('The fleet at Salamis holds the line.', $store->conversation->turns[0]->assistantText());
+        self::assertSame(ConversationTurnStatus::Completed, $store->conversation->turns[0]->status);
+        self::assertCount(6, $store->conversation->turns[0]->events);
     }
 }
