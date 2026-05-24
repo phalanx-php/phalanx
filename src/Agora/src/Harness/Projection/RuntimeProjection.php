@@ -83,6 +83,7 @@ final class RuntimeProjection extends EventProjection
         $effect['arguments'] = is_array($arguments) ? $arguments : [];
         $effect['arguments_hash'] = Canonical::of($effect['arguments']);
         $effect['requires_approval'] = $payload['requires_approval'] ?? false;
+        unset($effect['duration_ms'], $effect['error_class'], $effect['grant_id'], $effect['reason'], $effect['reason_codes'], $effect['result_digest']);
 
         return $effect;
     }
@@ -98,6 +99,7 @@ final class RuntimeProjection extends EventProjection
     ): array {
         $effect['status'] = 'authorized';
         $effect['grant_id'] = $payload['grant_id'] ?? null;
+        unset($effect['duration_ms'], $effect['error_class'], $effect['reason'], $effect['reason_codes'], $effect['result_digest']);
 
         return $effect;
     }
@@ -138,6 +140,7 @@ final class RuntimeProjection extends EventProjection
         $effect['status'] = 'executed';
         $effect['duration_ms'] = $payload['duration_ms'] ?? null;
         $effect['result_digest'] = $payload['result_digest'] ?? null;
+        unset($effect['error_class'], $effect['reason'], $effect['reason_codes']);
 
         return $effect;
     }
@@ -154,6 +157,7 @@ final class RuntimeProjection extends EventProjection
         $effect['status'] = 'failed';
         $effect['reason'] = $payload['reason'] ?? null;
         $effect['error_class'] = $payload['error_class'] ?? null;
+        unset($effect['duration_ms'], $effect['reason_codes'], $effect['result_digest']);
 
         return $effect;
     }
@@ -171,6 +175,7 @@ final class RuntimeProjection extends EventProjection
         $effect['status'] = $status;
         $effect['reason'] = $payload['reason'] ?? null;
         $effect['reason_codes'] = $payload['reason_codes'] ?? null;
+        unset($effect['duration_ms'], $effect['error_class'], $effect['result_digest']);
 
         return $effect;
     }
@@ -182,6 +187,13 @@ final class RuntimeProjection extends EventProjection
         $payload = $event->payload['payload'] ?? [];
 
         return is_array($payload) ? $payload : [];
+    }
+
+    private static function effectKey(
+        HarnessEvent $event,
+        string $effectId,
+    ): string {
+        return sprintf('%s:%s', $event->turnId ?? 'session', $effectId);
     }
 
     private function recordAthenaEffect(
@@ -212,8 +224,10 @@ final class RuntimeProjection extends EventProjection
             return;
         }
 
-        $effect = $this->effects[$effectId] ?? [
+        $effectKey = self::effectKey($event, $effectId);
+        $effect = $this->effects[$effectKey] ?? [
             'effect_id' => $effectId,
+            'turn_id' => $event->turnId,
             'events' => [],
             'status' => 'requested',
         ];
@@ -221,7 +235,7 @@ final class RuntimeProjection extends EventProjection
         $effect['events'][] = $event->cueType;
         $effect['event_id'] = $event->id;
 
-        $this->effects[$effectId] = match ($event->cueType) {
+        $this->effects[$effectKey] = match ($event->cueType) {
             'cue.effect.requested' => self::requestedEffect($effect, $payload),
             'cue.effect.authorized' => self::authorizedEffect($effect, $payload),
             'cue.effect.arguments_delta' => self::argumentsDeltaEffect($effect, $payload),

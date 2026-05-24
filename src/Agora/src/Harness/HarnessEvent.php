@@ -34,17 +34,19 @@ final class HarnessEvent implements Canonicalizable
     public static function fromCue(
         Cue $cue,
         string $sessionId,
+        int $sequence,
         ?string $turnId = null,
         ?\DateTimeImmutable $receivedAt = null,
         ?string $id = null,
     ): self {
         $canonical = $cue->toCanonical();
+        $canonical['source_sequence'] = $cue->sequence;
 
         return new self(
-            id: $id ?? self::eventId($sessionId, $cue->sequence),
+            id: $id ?? self::eventId($sessionId, $sequence),
             sessionId: $sessionId,
             turnId: $turnId,
-            sequence: $cue->sequence,
+            sequence: $sequence,
             cueId: $cue->id,
             cueType: $cue->type,
             channel: self::channelFrom($canonical),
@@ -96,13 +98,11 @@ final class HarnessEvent implements Canonicalizable
         int $sequence,
         string $cueType,
         EventSource $source,
+        \DateTimeImmutable $occurredAt,
         array $payload = [],
         ?string $turnId = null,
-        ?\DateTimeImmutable $occurredAt = null,
         ?\DateTimeImmutable $receivedAt = null,
     ): self {
-        $at = $occurredAt ?? new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
-
         return new self(
             id: $id,
             sessionId: $sessionId,
@@ -113,8 +113,8 @@ final class HarnessEvent implements Canonicalizable
             channel: null,
             source: $source,
             payload: $payload,
-            occurredAt: $at,
-            receivedAt: $receivedAt ?? $at,
+            occurredAt: $occurredAt,
+            receivedAt: $receivedAt ?? $occurredAt,
         );
     }
 
