@@ -1,0 +1,53 @@
+{
+    "name": "phalanx-php/agora",
+    "description": "Database-backed agent harness for Phalanx sessions, turns, events, tools, effects, and replay state",
+    "license": "MIT",
+    "type": "library",
+    "keywords": [
+        "agent-harness",
+        "agora",
+        "surrealdb",
+        "agents",
+        "replay",
+        "tools"
+    ],
+    "homepage": "https://github.com/phalanx-php/phalanx-agora",
+    "authors": [
+        {
+            "name": "Jonathan Havens",
+            "email": "mail@phalanx-php.com"
+        }
+    ],
+    "require": {
+        "php": "^8.4",
+        "phalanx-php/athena": "^0.6",
+        "phalanx-php/panoply": "^0.6",
+        "phalanx-php/surreal": "^0.6"
+    },
+    "suggest": {
+        "phalanx-php/theatron": "TUI stage and projections for Agora harness sessions"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^13.0"
+    },
+    "scripts": {
+        "test": "php -d memory_limit=512M vendor/bin/phpunit -c phpunit.xml.dist"
+    },
+    "autoload": {
+        "psr-4": {
+            "Phalanx\\Agora\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Phalanx\\Agora\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "0.6.x-dev"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

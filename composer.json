@@ -41,6 +41,7 @@
         ],
         "psr-4": {
             "Phalanx\\": "src/Aegis/src/",
+            "Phalanx\\Agora\\": "src/Agora/src/",
             "Phalanx\\Archon\\": "src/Archon/src/",
             "Phalanx\\Argos\\": "src/Argos/src/",
             "Phalanx\\Athena\\": "src/Athena/src/",
@@ -70,6 +71,7 @@
             "Phalanx\\Demos\\Surreal\\": "demos/surreal/",
             "Phalanx\\Tests\\": "tests/",
             "Phalanx\\Aegis\\Tests\\": "src/Aegis/tests/",
+            "Phalanx\\Agora\\Tests\\": "src/Agora/tests/",
             "Phalanx\\Archon\\Tests\\": "src/Archon/tests/",
             "Phalanx\\Argos\\Tests\\": "src/Argos/tests/",
             "Phalanx\\Athena\\Tests\\": "src/Athena/tests/",
@@ -218,6 +220,7 @@
             "@examples:lint"
         ],
         "test:aegis": "php -d memory_limit=512M vendor/bin/phpunit -c src/Aegis/phpunit.xml.dist",
+        "test:agora": "php -d memory_limit=512M vendor/bin/phpunit -c src/Agora/phpunit.xml.dist",
         "test:archon": "php -d memory_limit=512M vendor/bin/phpunit -c src/Archon/phpunit.xml",
         "test:argos": "php -d memory_limit=512M vendor/bin/phpunit -c src/Argos/phpunit.xml",
         "test:athena": "php -d memory_limit=512M vendor/bin/phpunit -c src/Athena/phpunit.xml.dist",
@@ -251,6 +254,7 @@
     },
     "replace": {
         "phalanx-php/aegis": "self.version",
+        "phalanx-php/agora": "self.version",
         "phalanx-php/archon": "self.version",
         "phalanx-php/argos": "self.version",
         "phalanx-php/athena": "self.version",

@@ -28,6 +28,9 @@
         <testsuite name="Core Resilience">
             <directory>src/Aegis/tests/Resilience</directory>
         </testsuite>
+        <testsuite name="Agora Unit">
+            <directory>src/Agora/tests/Unit</directory>
+        </testsuite>
         <testsuite name="Styx Unit">
             <directory>src/Styx/tests/Unit</directory>
         </testsuite>

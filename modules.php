@@ -59,6 +59,36 @@ return [
             'tests/Support/Fixtures/',
         ],
     ],
+    'Agora' => [
+        'package' => 'phalanx-php/agora',
+        'description' => 'Database-backed agent harness for Phalanx sessions, turns, events, tools, effects, and replay state',
+        'type' => 'library',
+        'namespace' => 'Phalanx\\Agora\\',
+        'smokeClass' => 'Phalanx\\Agora\\Agora',
+        'testNamespace' => 'Phalanx\\Agora\\Tests\\',
+        'requires' => [
+            'php' => '^8.4',
+            'phalanx-php/athena' => '^0.6',
+            'phalanx-php/panoply' => '^0.6',
+            'phalanx-php/surreal' => '^0.6',
+        ],
+        'devRequires' => [
+            'phpunit/phpunit' => '^13.0',
+        ],
+        'bins' => [],
+        'branchAlias' => '0.6.x-dev',
+        'keywords' => [
+            'agent-harness',
+            'agora',
+            'surrealdb',
+            'agents',
+            'replay',
+            'tools',
+        ],
+        'suggests' => [
+            'phalanx-php/theatron' => 'TUI stage and projections for Agora harness sessions',
+        ],
+    ],
     'Archon' => [
         'package' => 'phalanx-php/archon',
         'description' => 'CLI application framework for Phalanx',
