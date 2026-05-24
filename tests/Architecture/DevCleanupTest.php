@@ -17,7 +17,7 @@ final class DevCleanupTest extends TestCase
     #[Test]
     public function no_commented_code_in_source(): void
     {
-        $dirs = glob(__DIR__ . '/../../framework/src/*/src');
+        $dirs = glob(__DIR__ . '/../../src/*/src');
         self::assertNotEmpty($dirs, 'No package src/ directories found');
 
         $root = dirname(__DIR__, 2);

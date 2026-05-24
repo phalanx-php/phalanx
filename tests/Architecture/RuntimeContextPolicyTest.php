@@ -17,7 +17,7 @@ final class RuntimeContextPolicyTest extends TestCase
         $root = dirname(__DIR__, 2);
         $files = [];
 
-        foreach (glob($root . '/framework/src/*/src') ?: [] as $dir) {
+        foreach (glob($root . '/src/*/src') ?: [] as $dir) {
             $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($dir));
 
             foreach ($iterator as $file) {

@@ -17,99 +17,99 @@
     </groups>
     <testsuites>
         <testsuite name="Core Unit">
-            <directory>framework/src/Aegis/tests/Unit</directory>
+            <directory>src/Aegis/tests/Unit</directory>
         </testsuite>
         <testsuite name="Core Integration">
-            <directory>framework/src/Aegis/tests/Integration</directory>
+            <directory>src/Aegis/tests/Integration</directory>
         </testsuite>
         <testsuite name="Core Smoke">
-            <directory>framework/src/Aegis/tests/Smoke</directory>
+            <directory>src/Aegis/tests/Smoke</directory>
         </testsuite>
         <testsuite name="Core Resilience">
-            <directory>framework/src/Aegis/tests/Resilience</directory>
+            <directory>src/Aegis/tests/Resilience</directory>
         </testsuite>
         <testsuite name="Styx Unit">
-            <directory>framework/src/Styx/tests/Unit</directory>
+            <directory>src/Styx/tests/Unit</directory>
         </testsuite>
         <testsuite name="Styx Integration">
-            <directory>framework/src/Styx/tests/Integration</directory>
+            <directory>src/Styx/tests/Integration</directory>
         </testsuite>
         <testsuite name="Archon Unit">
-            <directory>framework/src/Archon/tests/Unit</directory>
+            <directory>src/Archon/tests/Unit</directory>
         </testsuite>
         <testsuite name="Archon Integration">
-            <directory>framework/src/Archon/tests/Integration</directory>
+            <directory>src/Archon/tests/Integration</directory>
         </testsuite>
         <testsuite name="Stoa Unit">
-            <directory>framework/src/Stoa/tests/Unit</directory>
+            <directory>src/Stoa/tests/Unit</directory>
         </testsuite>
         <testsuite name="Iris Unit">
-            <directory>framework/src/Iris/tests/Unit</directory>
+            <directory>src/Iris/tests/Unit</directory>
         </testsuite>
         <testsuite name="Iris Integration">
-            <directory>framework/src/Iris/tests/Integration</directory>
+            <directory>src/Iris/tests/Integration</directory>
         </testsuite>
         <testsuite name="Hydra Unit">
-            <directory>framework/src/Hydra/tests/Unit</directory>
+            <directory>src/Hydra/tests/Unit</directory>
         </testsuite>
         <testsuite name="Hydra Integration">
-            <directory>framework/src/Hydra/tests/Integration</directory>
+            <directory>src/Hydra/tests/Integration</directory>
         </testsuite>
         <testsuite name="Hermes Unit">
-            <directory>framework/src/Hermes/tests/Unit</directory>
+            <directory>src/Hermes/tests/Unit</directory>
         </testsuite>
         <testsuite name="Hermes Integration">
-            <directory>framework/src/Hermes/tests/Integration</directory>
+            <directory>src/Hermes/tests/Integration</directory>
         </testsuite>
         <testsuite name="Hermes Client Unit">
-            <directory>framework/src/Hermes/tests/Client/Unit</directory>
+            <directory>src/Hermes/tests/Client/Unit</directory>
         </testsuite>
         <testsuite name="Athena Unit">
-            <directory>framework/src/Athena/tests/Unit</directory>
+            <directory>src/Athena/tests/Unit</directory>
         </testsuite>
         <testsuite name="Athena Integration">
-            <directory>framework/src/Athena/tests/Integration</directory>
+            <directory>src/Athena/tests/Integration</directory>
         </testsuite>
         <testsuite name="Enigma Unit">
-            <directory>framework/src/Enigma/tests/Unit</directory>
+            <directory>src/Enigma/tests/Unit</directory>
         </testsuite>
         <testsuite name="Surreal Unit">
-            <directory>framework/src/Surreal/tests/Unit</directory>
+            <directory>src/Surreal/tests/Unit</directory>
         </testsuite>
         <testsuite name="Eidolon Unit">
-            <directory>framework/src/Eidolon/tests/Unit</directory>
+            <directory>src/Eidolon/tests/Unit</directory>
         </testsuite>
         <testsuite name="Grammata Unit">
-            <directory>framework/src/Grammata/tests/Unit</directory>
+            <directory>src/Grammata/tests/Unit</directory>
         </testsuite>
         <testsuite name="Argos Unit">
-            <directory>framework/src/Argos/tests/Unit</directory>
+            <directory>src/Argos/tests/Unit</directory>
         </testsuite>
         <testsuite name="Skopos">
-            <directory>framework/src/Skopos/tests</directory>
+            <directory>src/Skopos/tests</directory>
         </testsuite>
         <testsuite name="CLI Unit">
-            <directory>framework/src/Cli/tests/Unit</directory>
+            <directory>src/Cli/tests/Unit</directory>
         </testsuite>
         <testsuite name="CLI Integration">
-            <directory>framework/src/Cli/tests/Integration</directory>
+            <directory>src/Cli/tests/Integration</directory>
         </testsuite>
         <testsuite name="Architecture">
             <directory>tests/Architecture</directory>
         </testsuite>
         <testsuite name="PHPStan Extension">
-            <directory>framework/src/PHPStan/tests</directory>
+            <directory>src/PHPStan/tests</directory>
         </testsuite>
         <testsuite name="Panoply Unit">
-            <directory>framework/src/Panoply/tests/Unit</directory>
+            <directory>src/Panoply/tests/Unit</directory>
         </testsuite>
         <testsuite name="Theatron">
-            <directory>framework/src/Theatron/tests</directory>
+            <directory>src/Theatron/tests</directory>
         </testsuite>
         <!-- Keep Stoa's HTTP-lens integration last. OpenSwoole does not fully
              reset its event-loop state inside one PHPUnit process. -->
         <testsuite name="Stoa Integration">
-            <directory>framework/src/Stoa/tests/Integration</directory>
+            <directory>src/Stoa/tests/Integration</directory>
         </testsuite>
     </testsuites>
 </phpunit>

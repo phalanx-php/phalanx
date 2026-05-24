@@ -1,0 +1,56 @@
+{
+    "name": "phalanx-php/archon",
+    "description": "CLI application framework for Phalanx",
+    "license": "MIT",
+    "type": "library",
+    "keywords": [
+        "cli",
+        "console",
+        "async",
+        "phalanx"
+    ],
+    "homepage": "https://github.com/phalanx-php/phalanx-archon",
+    "authors": [
+        {
+            "name": "Jonathan Havens",
+            "email": "mail@phalanx-php.com"
+        }
+    ],
+    "require": {
+        "php": "^8.4",
+        "phalanx-php/aegis": "^0.6"
+    },
+    "suggest": {
+        "symfony/runtime": "For Symfony Runtime integration via Archon::starting()",
+        "phalanx-php/styx": "For streaming data through console commands",
+        "phalanx-php/hydra": "For worker process parallelism in CLI tasks"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^13.0"
+    },
+    "scripts": {
+        "test": "php -d memory_limit=512M ../../vendor/bin/phpunit -c phpunit.xml"
+    },
+    "autoload": {
+        "psr-4": {
+            "Phalanx\\Archon\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Phalanx\\Archon\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "0.6.x-dev"
+        },
+        "phalanx": {
+            "bundles": [
+                "Phalanx\\Archon\\Testing\\ArchonTestableBundle"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

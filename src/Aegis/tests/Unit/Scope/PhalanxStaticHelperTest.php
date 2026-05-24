@@ -1,0 +1,116 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Phalanx\Aegis\Tests\Unit\Scope;
+
+use OpenSwoole\Coroutine;
+use Phalanx\Boot\AppContext;
+use Phalanx\Application;
+use Phalanx\OutsideScopeException;
+use Phalanx\Phalanx;
+use Phalanx\Runtime\RuntimeHooks;
+use Phalanx\Runtime\RuntimePolicy;
+use Phalanx\Scope\ExecutionScope;
+use Phalanx\Service\ServiceBundle;
+use Phalanx\Service\Services;
+use Phalanx\Supervisor\InProcessLedger;
+use Phalanx\Task\Task;
+use Phalanx\Testing\PhalanxTestCase;
+
+final class PhalanxStaticHelperTest extends PhalanxTestCase
+{
+    public function testScopeReturnsCurrentlyInstalledScope(): void
+    {
+        $this->scope->run(static function (ExecutionScope $_scope): void {
+            $app = self::buildApp();
+            $inner = $app->createScope();
+
+            $observed = null;
+            $inner->execute(Task::of(static function (ExecutionScope $_s) use (&$observed): void {
+                $observed = Phalanx::scope();
+            }));
+
+            self::assertNotNull($observed);
+            self::assertInstanceOf(\Phalanx\Scope\Scope::class, $observed);
+
+            $inner->dispose();
+        });
+    }
+
+    public function testScopeThrowsOutsideAnyInstalledScope(): void
+    {
+        // Run in a fresh coroutine with NO scope installed.
+        RuntimeHooks::ensure(RuntimePolicy::phalanxManaged());
+        $caught = null;
+        Coroutine::run(static function () use (&$caught): void {
+            try {
+                Phalanx::scope();
+            } catch (OutsideScopeException $e) {
+                $caught = $e;
+            }
+        });
+
+        self::assertNotNull($caught);
+        self::assertStringContainsString('outside any installed scope', $caught->getMessage());
+        self::assertStringContainsString('$scope->go', $caught->getMessage());
+    }
+
+    public function testTryScopeReturnsNullOutsideScope(): void
+    {
+        RuntimeHooks::ensure(RuntimePolicy::phalanxManaged());
+        $observed = 'sentinel';
+        Coroutine::run(static function () use (&$observed): void {
+            $observed = Phalanx::tryScope();
+        });
+        self::assertNull($observed);
+    }
+
+    public function testEachCoroutineSeesItsOwnInstalledScope(): void
+    {
+        $this->scope->run(static function (ExecutionScope $scope): void {
+            $app = self::buildApp();
+            $scopeA = $app->createScope();
+            $scopeB = $app->createScope();
+
+            $observedA = null;
+            $observedB = null;
+
+            $scopeA->concurrent(
+                a: Task::of(static function (ExecutionScope $_s) use (&$observedA): void {
+                    $observedA = Phalanx::scope();
+                }),
+            );
+
+            $scopeB->concurrent(
+                b: Task::of(static function (ExecutionScope $_s) use (&$observedB): void {
+                    $observedB = Phalanx::scope();
+                }),
+            );
+
+            self::assertNotNull($observedA);
+            self::assertNotNull($observedB);
+            self::assertNotSame(
+                spl_object_id($observedA),
+                spl_object_id($observedB),
+                'each coroutine must see its own scope',
+            );
+
+            $scopeA->dispose();
+            $scopeB->dispose();
+        });
+    }
+
+    private static function buildApp(): Application
+    {
+        $bundle = new class extends ServiceBundle {
+            public function services(Services $services, AppContext $context): void
+            {
+            }
+        };
+        return Application::starting()
+            ->providers($bundle)
+            ->withLedger(new InProcessLedger())
+            ->compile();
+    }
+}

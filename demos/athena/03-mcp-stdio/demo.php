@@ -55,7 +55,7 @@ return static function (array $_context): Closure {
     }
 
     $serverScript = __DIR__ . '/../../..'
-        . '/framework/src/Athena/tests/Fixtures/mcp-echo-server.php';
+        . '/src/Athena/tests/Fixtures/mcp-echo-server.php';
 
     // Register the echo-server descriptor in the bundle so McpRegistry
     // knows about it before the task body runs. StdioClient still handles

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 $finder = PhpCsFixer\Finder::create()
     ->in([
-        __DIR__ . '/framework/src/*/src',
-        __DIR__ . '/framework/src/*/tests',
+        __DIR__ . '/src/*/src',
+        __DIR__ . '/src/*/tests',
     ])
     ->notPath([
         'Testing/Generated/',

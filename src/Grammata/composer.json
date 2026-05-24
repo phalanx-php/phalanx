@@ -1,0 +1,51 @@
+{
+    "name": "phalanx-php/grammata",
+    "description": "Async-aware filesystem operations for Phalanx",
+    "license": "MIT",
+    "type": "library",
+    "keywords": [
+        "filesystem",
+        "async",
+        "file",
+        "stream",
+        "openswoole"
+    ],
+    "authors": [
+        {
+            "name": "Jonathan Havens",
+            "email": "mail@phalanx-php.com"
+        }
+    ],
+    "homepage": "https://github.com/phalanx-php/phalanx-grammata",
+    "require": {
+        "php": "^8.4",
+        "phalanx-php/aegis": "^0.6",
+        "phalanx-php/styx": "^0.6"
+    },
+    "suggest": {
+        "phalanx-php/hydra": "Use for application-owned slow-storage offload when filesystem work should run in workers"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^13.0"
+    },
+    "scripts": {
+        "test": "php -d memory_limit=512M ../../vendor/bin/phpunit -c phpunit.xml"
+    },
+    "autoload": {
+        "psr-4": {
+            "Phalanx\\Grammata\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Phalanx\\Grammata\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "0.6.x-dev"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

@@ -5,8 +5,8 @@ declare(strict_types=1);
 use Rector\Config\RectorConfig;
 
 return RectorConfig::configure()
-    ->withPaths([__DIR__ . '/framework/src'])
-    ->withBootstrapFiles([__DIR__ . '/framework/src/Aegis/phpstan-bootstrap.php'])
+    ->withPaths([__DIR__ . '/src'])
+    ->withBootstrapFiles([__DIR__ . '/src/Aegis/phpstan-bootstrap.php'])
     ->withPhpSets(php84: true)
     ->withSkip([
         __DIR__ . '/vendor',

@@ -244,4 +244,4 @@ Measures Stoa's request lifecycle in isolation -- request factory, routing, hand
 
 ---
 
-Monorepo with automatic read-only package splits — all development happens here.
+One framework source tree with metadata-driven module splits; all development happens here.

@@ -1,8 +1,0 @@
-parameters:
-    level: 8
-    paths:
-        - src
-    scanDirectories:
-        - vendor/openswoole/ide-helper
-    tmpDir: .phpstan-cache
-    treatPhpDocTypesAsCertain: false

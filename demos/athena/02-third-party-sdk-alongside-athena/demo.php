@@ -83,7 +83,7 @@ return static function (array $context): Closure {
             static function (DemoReport $report): void {
                 $report->cannotRun(
                     'guzzlehttp/guzzle is not installed',
-                    'run `composer install` from the monorepo root',
+                    'run `composer install` from the framework root',
                 );
             },
         );
