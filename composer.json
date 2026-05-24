@@ -238,6 +238,7 @@
         "modules:check": "php tools/check-modules.php",
         "modules:manifests": "php tools/generate-module-manifests.php --write",
         "modules:manifests:check": "php tools/generate-module-manifests.php --check",
+        "modules:install-proof": "php tools/prove-module-install.php",
         "split:dry": "php tools/split-modules.php --dry-run"
     },
     "config": {
