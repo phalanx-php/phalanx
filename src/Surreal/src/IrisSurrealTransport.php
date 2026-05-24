@@ -81,7 +81,7 @@ final class IrisSurrealTransport implements SurrealTransport
     private static function encodeJson(array $payload): string
     {
         try {
-            return json_encode($payload, JSON_THROW_ON_ERROR);
+            return json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
         } catch (JsonException $e) {
             throw new SurrealException("Failed to encode Surreal RPC payload: {$e->getMessage()}", previous: $e);
         }

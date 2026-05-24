@@ -8,6 +8,7 @@ parameters:
     # reintroduced package-by-package as their 0.2 ports land.
     paths:
         - src/Aegis/src
+        - src/Agora/src
         - src/Archon/src
         - src/Argos/src
         - src/Athena/src
@@ -50,6 +51,7 @@ parameters:
         - src/Stoa/src/StoaRunner.php
     phalanxEnforcedPaths:
         - src/Aegis/src
+        - src/Agora/src
         - src/Archon/src
         - src/Argos/src
         - src/Athena/src

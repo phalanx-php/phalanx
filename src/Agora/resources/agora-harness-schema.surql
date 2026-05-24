@@ -39,6 +39,13 @@ DEFINE INDEX agora_event_session_sequence ON TABLE agora_event FIELDS session_id
 DEFINE INDEX agora_event_turn_sequence ON TABLE agora_event FIELDS turn_id, sequence;
 DEFINE INDEX agora_event_cue_type ON TABLE agora_event FIELDS cue_type;
 
+DEFINE TABLE agora_event_sequence TYPE NORMAL SCHEMAFULL
+    PERMISSIONS FOR select, create, update WHERE true, FOR delete NONE;
+DEFINE FIELD session_id ON TABLE agora_event_sequence TYPE record<agora_session>;
+DEFINE FIELD event_sequence ON TABLE agora_event_sequence TYPE int ASSERT $value >= 0;
+DEFINE FIELD updated_at ON TABLE agora_event_sequence TYPE datetime;
+DEFINE INDEX agora_event_sequence_session ON TABLE agora_event_sequence FIELDS session_id UNIQUE;
+
 DEFINE TABLE agora_tool_call TYPE NORMAL SCHEMAFULL
     PERMISSIONS FOR select, create WHERE true, FOR update, delete NONE;
 DEFINE FIELD session_id ON TABLE agora_tool_call TYPE record<agora_session>;

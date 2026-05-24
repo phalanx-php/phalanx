@@ -36,6 +36,14 @@ final class AgoraHarnessSchemaTest extends TestCase
             'DEFINE INDEX agora_event_session_sequence ON TABLE agora_event FIELDS session_id, sequence UNIQUE;',
             $schema,
         );
+        self::assertStringContainsString(
+            'DEFINE TABLE agora_event_sequence TYPE NORMAL SCHEMAFULL',
+            $schema,
+        );
+        self::assertStringContainsString(
+            'DEFINE FIELD event_sequence ON TABLE agora_event_sequence TYPE int ASSERT $value >= 0;',
+            $schema,
+        );
         self::assertStringContainsString('DEFINE FIELD cue_type ON TABLE agora_event TYPE string;', $schema);
         self::assertStringContainsString(
             self::eventSourceField(),
