@@ -152,7 +152,6 @@ class ConversationTurnEvent
                 summary: $cue->summary,
                 effectId: $cue->effectId,
                 effectKind: $cue->kind->value,
-                toolName: $cue->effectId,
                 arguments: $cue->arguments,
                 requiresApproval: $cue->requiresApproval,
             ),
@@ -431,17 +430,23 @@ class ConversationTurnEvent
 
     private static function severityForEffectOutcome(string $outcome): ConversationTurnEventSeverity
     {
-        $value = strtolower($outcome);
-
-        if (str_contains($value, 'denied') || str_contains($value, 'fail') || str_contains($value, 'error')) {
-            return ConversationTurnEventSeverity::Error;
-        }
-
-        if (str_contains($value, 'paused') || str_contains($value, 'suspend')) {
-            return ConversationTurnEventSeverity::Warning;
-        }
-
-        return ConversationTurnEventSeverity::Success;
+        return match (strtolower(trim($outcome))) {
+            'ok',
+            'success',
+            'succeeded',
+            'complete',
+            'completed',
+            'exit_0' => ConversationTurnEventSeverity::Success,
+            'denied',
+            'error',
+            'failed',
+            'failure' => ConversationTurnEventSeverity::Error,
+            'paused',
+            'suspended',
+            'waiting_for_approval',
+            'waiting-for-approval' => ConversationTurnEventSeverity::Warning,
+            default => ConversationTurnEventSeverity::Info,
+        };
     }
 
     private static function labelForResolution(Resolution $resolution): string

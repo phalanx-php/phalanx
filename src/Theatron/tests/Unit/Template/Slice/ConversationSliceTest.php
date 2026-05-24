@@ -494,6 +494,7 @@ final class ConversationSliceTest extends TestCase
         self::assertSame(ConversationTurnEventSeverity::Warning, $events[0]->projection->severity);
         self::assertSame('eff_1', $events[0]->projection->effectId);
         self::assertSame('file.read', $events[0]->projection->effectKind);
+        self::assertNull($events[0]->projection->toolName);
         self::assertSame(['path' => 'notes/strategy.md'], $events[0]->projection->arguments);
         self::assertSame(ConversationTurnEventKind::EffectArgumentsDelta, $events[1]->projection->kind);
         self::assertSame('{"path"', $events[1]->projection->argumentsDelta);
@@ -550,6 +551,50 @@ final class ConversationSliceTest extends TestCase
         self::assertSame('search_docs', $events[1]->projection->toolName);
         self::assertTrue($events[0]->projection->rendersInThread());
         self::assertTrue($events[1]->projection->rendersInThread());
+    }
+
+    #[Test]
+    public function effectLogSeverityUsesKnownOutcomesAndLeavesUnknownsInformational(): void
+    {
+        $at = new DateTimeImmutable('2026-05-23T21:00:00Z');
+        $slice = (new ConversationSlice())
+            ->addUserMessage('Classify tool outcomes')
+            ->appendEffectLog(new EffectLogRecord(
+                id: 'effect_log_1',
+                invocationId: 'inv_1',
+                kind: 'tool_call',
+                toolName: 'read_file',
+                argsHash: 'sha256:abc',
+                resolution: Resolution::LocalTool,
+                outcome: 'exit_0',
+                at: $at,
+            ))
+            ->appendEffectLog(new EffectLogRecord(
+                id: 'effect_log_2',
+                invocationId: 'inv_1',
+                kind: 'tool_call',
+                toolName: 'request_approval',
+                argsHash: 'sha256:def',
+                resolution: Resolution::BuiltIn,
+                outcome: 'waiting-for-approval',
+                at: $at,
+            ))
+            ->appendEffectLog(new EffectLogRecord(
+                id: 'effect_log_3',
+                invocationId: 'inv_1',
+                kind: 'tool_call',
+                toolName: 'ambiguous',
+                argsHash: 'sha256:ghi',
+                resolution: Resolution::SubAgent,
+                outcome: 'not_error',
+                at: $at,
+            ));
+
+        $events = $slice->turns[0]->projectionEvents();
+
+        self::assertSame(ConversationTurnEventSeverity::Success, $events[0]->projection->severity);
+        self::assertSame(ConversationTurnEventSeverity::Warning, $events[1]->projection->severity);
+        self::assertSame(ConversationTurnEventSeverity::Info, $events[2]->projection->severity);
     }
 
     #[Test]
