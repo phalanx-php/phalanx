@@ -6,7 +6,9 @@ namespace Phalanx\Theatron\Template\Render;
 
 use Phalanx\Panoply\Effect\Kind as EffectKind;
 use Phalanx\Theatron\Template\Slice\ConversationTurnEvent;
+use Phalanx\Theatron\Template\Slice\ConversationTurnEventKind;
 use Phalanx\Theatron\Template\Slice\ConversationTurnEventProjection;
+use Phalanx\Theatron\Template\Slice\ConversationTurnEventSeverity;
 
 class ConversationEventFormatter
 {
@@ -26,6 +28,41 @@ class ConversationEventFormatter
         $body = self::body($event->projection, includeInspectionFields: true);
 
         return trim($event->id . ' ' . $event->projection->kind->value . ' ' . $cueType . ' ' . $body);
+    }
+
+    /**
+     * @param list<ConversationTurnEvent> $events
+     * @return list<ConversationEventRenderLine>
+     */
+    public static function threadLines(array $events): array
+    {
+        $lines = [];
+        $consumedEffectIds = [];
+
+        foreach ($events as $event) {
+            if (!self::isThreadVisible($event)) {
+                continue;
+            }
+
+            $effectId = $event->projection->effectId;
+            if ($effectId !== null && self::isEffectLifecycle($event)) {
+                if (isset($consumedEffectIds[$effectId])) {
+                    continue;
+                }
+
+                $lines[] = self::effectLifecycleLine($effectId, $events);
+                $consumedEffectIds[$effectId] = true;
+
+                continue;
+            }
+
+            $lines[] = new ConversationEventRenderLine(
+                text: self::summary($event),
+                severity: $event->projection->severity,
+            );
+        }
+
+        return $lines;
     }
 
     private static function body(ConversationTurnEventProjection $projection, bool $includeInspectionFields): string
@@ -117,6 +154,135 @@ class ConversationEventFormatter
 
         if ($projection->costUsd !== null) {
             $parts[] = '$' . number_format($projection->costUsd, 4);
+        }
+
+        return implode(' · ', array_values(array_filter($parts, static fn(string $part): bool => $part !== '')));
+    }
+
+    private static function isThreadVisible(ConversationTurnEvent $event): bool
+    {
+        if (!$event->projection->rendersInThread()) {
+            return false;
+        }
+
+        return $event->projection->kind !== ConversationTurnEventKind::EffectArgumentsDelta;
+    }
+
+    private static function isEffectLifecycle(ConversationTurnEvent $event): bool
+    {
+        return match ($event->projection->kind) {
+            ConversationTurnEventKind::EffectAuthorized,
+            ConversationTurnEventKind::EffectDenied,
+            ConversationTurnEventKind::EffectExecuted,
+            ConversationTurnEventKind::EffectFailed,
+            ConversationTurnEventKind::EffectPaused,
+            ConversationTurnEventKind::EffectRequested => true,
+            default => false,
+        };
+    }
+
+    /**
+     * @param list<ConversationTurnEvent> $events
+     */
+    private static function effectLifecycleLine(string $effectId, array $events): ConversationEventRenderLine
+    {
+        $group = array_values(array_filter(
+            $events,
+            static fn(ConversationTurnEvent $event): bool => $event->projection->effectId === $effectId
+                && self::isEffectLifecycle($event),
+        ));
+
+        if ($group === []) {
+            return new ConversationEventRenderLine(
+                text: 'effect: ' . $effectId,
+                severity: ConversationTurnEventSeverity::Info,
+            );
+        }
+
+        $requested = self::first($group, ConversationTurnEventKind::EffectRequested);
+        $terminal = self::last($group);
+
+        $label = self::effectLifecycleLabel($terminal);
+        $body = self::effectLifecycleBody($effectId, $requested, $terminal);
+
+        return new ConversationEventRenderLine(
+            text: $body === '' ? $label : $label . ': ' . $body,
+            severity: $terminal->projection->severity,
+        );
+    }
+
+    /**
+     * @param list<ConversationTurnEvent> $events
+     */
+    private static function first(array $events, ConversationTurnEventKind $kind): ?ConversationTurnEvent
+    {
+        return array_find(
+            $events,
+            static fn(ConversationTurnEvent $event): bool => $event->projection->kind === $kind,
+        );
+    }
+
+    /**
+     * @param non-empty-list<ConversationTurnEvent> $events
+     */
+    private static function last(array $events): ConversationTurnEvent
+    {
+        return $events[array_key_last($events)];
+    }
+
+    private static function effectLifecycleLabel(ConversationTurnEvent $event): string
+    {
+        return match ($event->projection->kind) {
+            ConversationTurnEventKind::EffectAuthorized => 'effect approved',
+            ConversationTurnEventKind::EffectDenied => 'effect denied',
+            ConversationTurnEventKind::EffectExecuted => 'effect executed',
+            ConversationTurnEventKind::EffectFailed => 'effect failed',
+            ConversationTurnEventKind::EffectPaused => 'approval needed',
+            ConversationTurnEventKind::EffectRequested => $event->projection->requiresApproval
+                ? 'approval needed'
+                : 'effect requested',
+            default => $event->projection->label,
+        };
+    }
+
+    private static function effectLifecycleBody(
+        string $effectId,
+        ?ConversationTurnEvent $requested,
+        ConversationTurnEvent $terminal,
+    ): string {
+        $projection = $terminal->projection;
+        $request = $requested === null ? null : $requested->projection;
+        $effectKind = $request === null ? $projection->effectKind : ($request->effectKind ?? $projection->effectKind);
+        $parts = [
+            trim(($effectKind ?? '') . ' ' . $effectId),
+        ];
+
+        if ($request !== null && $request->summary !== null && $request->summary !== '') {
+            $parts[] = $request->summary;
+        }
+
+        if ($projection->reason !== null && $projection->reason !== '') {
+            $parts[] = $projection->reason;
+        }
+
+        if ($projection->reasonCodes !== []) {
+            $parts[] = implode(', ', $projection->reasonCodes);
+        }
+
+        if ($projection->grantId !== null && $projection->grantId !== '') {
+            $parts[] = 'grant ' . $projection->grantId;
+        }
+
+        if ($projection->durationMs !== null) {
+            $parts[] = $projection->durationMs . 'ms';
+        }
+
+        if ($projection->resultDigest !== null && $projection->resultDigest !== '') {
+            $parts[] = $projection->resultDigest;
+        }
+
+        if ($projection->errorClass !== null && $projection->errorClass !== '') {
+            $parts[] = $projection->errorClass;
         }
 
         return implode(' · ', array_values(array_filter($parts, static fn(string $part): bool => $part !== '')));

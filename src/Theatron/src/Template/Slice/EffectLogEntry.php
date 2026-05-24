@@ -60,9 +60,9 @@ class EffectLogEntry
             arguments: $this->arguments,
             status: $status,
             reasonCodes: $reasonCodes,
-            grantId: $grantId,
-            durationMs: $durationMs,
-            errorClass: $errorClass,
+            grantId: $grantId ?? $this->grantId,
+            durationMs: $durationMs ?? $this->durationMs,
+            errorClass: $errorClass ?? $this->errorClass,
         );
     }
 }

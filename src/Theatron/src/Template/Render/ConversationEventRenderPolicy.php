@@ -13,7 +13,12 @@ class ConversationEventRenderPolicy
 {
     public static function marker(ConversationTurnEvent $event): string
     {
-        return match ($event->projection->severity) {
+        return self::markerForSeverity($event->projection->severity);
+    }
+
+    public static function markerForSeverity(ConversationTurnEventSeverity $severity): string
+    {
+        return match ($severity) {
             ConversationTurnEventSeverity::Error => '!',
             ConversationTurnEventSeverity::Success => '✓',
             ConversationTurnEventSeverity::Warning => '?',

@@ -566,12 +566,12 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, DeclaresBinding
     {
         $rows = [];
 
-        foreach ($turn->threadProjectionEvents() as $event) {
+        foreach (ConversationEventFormatter::threadLines($turn->threadProjectionEvents()) as $line) {
             $lines = self::wrapIndented(
-                ConversationEventFormatter::summary($event),
+                $line->text,
                 $wrapWidth,
-                '    ' . ConversationEventRenderPolicy::marker($event) . ' ',
-                ConversationEventRenderPolicy::style($event->projection->severity),
+                '    ' . ConversationEventRenderPolicy::markerForSeverity($line->severity) . ' ',
+                ConversationEventRenderPolicy::style($line->severity),
             );
 
             foreach ($lines as $line) {

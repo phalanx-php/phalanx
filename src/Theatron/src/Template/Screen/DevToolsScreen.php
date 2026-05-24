@@ -30,6 +30,7 @@ use Phalanx\Theatron\Template\AppStore;
 use Phalanx\Theatron\Template\Render\ConversationEventFormatter;
 use Phalanx\Theatron\Template\Slice\ActivityStatus;
 use Phalanx\Theatron\Template\Slice\DevToolsTab;
+use Phalanx\Theatron\Template\Slice\EffectLogEntry;
 use Phalanx\Theatron\Template\Slice\LlmRequestEntry;
 use Phalanx\Theatron\Text\Line;
 use Phalanx\Theatron\Text\Span;
@@ -456,7 +457,7 @@ class DevToolsScreen implements
         if ($events === []) {
             $rows[] = self::kv('events', 'none');
         } else {
-            foreach (array_slice($events, -6) as $event) {
+            foreach (array_slice($events, -8) as $event) {
                 $rows[] = self::kv($event->id, ConversationEventFormatter::detail($event));
             }
         }
@@ -473,10 +474,40 @@ class DevToolsScreen implements
         foreach (array_slice($effects->entries, -6) as $entry) {
             $rows[] = self::kv(
                 $entry->effectId,
-                $entry->status->value . ' ' . $entry->kind . ' [' . $entry->hazard . ']',
+                $this->effectLogSummary($entry),
             );
         }
 
         return $rows;
+    }
+
+    private function effectLogSummary(EffectLogEntry $entry): string
+    {
+        $parts = [
+            $entry->status->value . ' ' . $entry->kind . ' [' . $entry->hazard . ']',
+            $entry->summary,
+        ];
+
+        if ($entry->grantId !== null) {
+            $parts[] = 'grant ' . $entry->grantId;
+        }
+
+        if ($entry->durationMs !== null) {
+            $parts[] = $entry->durationMs . 'ms';
+        }
+
+        if ($entry->reasonCodes !== []) {
+            $parts[] = implode(', ', $entry->reasonCodes);
+        }
+
+        if ($entry->errorClass !== null) {
+            $parts[] = $entry->errorClass;
+        }
+
+        if ($entry->arguments !== []) {
+            $parts[] = 'args ' . json_encode($entry->arguments, JSON_THROW_ON_ERROR);
+        }
+
+        return implode(' · ', $parts);
     }
 }

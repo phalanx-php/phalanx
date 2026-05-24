@@ -98,7 +98,7 @@ final class ConversationSliceTest extends TestCase
             new EffectArgumentsDelta(...$base, effectId: 'eff_1', jsonDelta: '{"path"'),
             ConversationTurnEventKind::EffectArgumentsDelta,
             ConversationTurnEventSeverity::Muted,
-            true,
+            false,
         ];
         yield 'effect authorized' => [
             new EffectAuthorized(...$base, effectId: 'eff_1', grantId: 'grant_1'),

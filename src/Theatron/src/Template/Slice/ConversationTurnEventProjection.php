@@ -105,6 +105,7 @@ final class ConversationTurnEventProjection
         return $this->kind !== ConversationTurnEventKind::ActivityCompleted
             && $this->kind !== ConversationTurnEventKind::ActivityStarted
             && $this->kind !== ConversationTurnEventKind::ArtifactDelta
+            && $this->kind !== ConversationTurnEventKind::EffectArgumentsDelta
             && $this->kind !== ConversationTurnEventKind::InvocationStarted
             && $this->kind !== ConversationTurnEventKind::ProviderResolved
             && $this->kind !== ConversationTurnEventKind::RuntimeClientConnected

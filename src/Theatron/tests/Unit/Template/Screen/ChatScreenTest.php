@@ -9,7 +9,11 @@ use Phalanx\Athena\Effect\Resolution;
 use Phalanx\Athena\Persistence\EffectLogRecord;
 use Phalanx\Panoply\Cue\Activity\Failed as ActivityFailed;
 use Phalanx\Panoply\Cue\Activity\Started as ActivityStarted;
+use Phalanx\Panoply\Cue\Effect\Authorized as EffectAuthorized;
+use Phalanx\Panoply\Cue\Effect\Denied as EffectDenied;
 use Phalanx\Panoply\Cue\Effect\Executed as EffectExecuted;
+use Phalanx\Panoply\Cue\Effect\Failed as EffectFailed;
+use Phalanx\Panoply\Cue\Effect\Paused as EffectPaused;
 use Phalanx\Panoply\Cue\Effect\Requested as EffectRequested;
 use Phalanx\Panoply\Cue\Provider\Resolved as ProviderResolved;
 use Phalanx\Panoply\Cue\Usage\Delta as UsageDelta;
@@ -221,9 +225,19 @@ final class ChatScreenTest extends TestCase
                 arguments: ['path' => 'notes/strategy.md'],
                 requiresApproval: true,
             ))
-            ->appendCue(new EffectExecuted(
+            ->appendCue(new EffectAuthorized(
                 id: 'cue_2',
                 sequence: 2,
+                activityId: 'act_1',
+                invocationId: 'inv_1',
+                agentId: 'agent_1',
+                at: $at,
+                effectId: 'eff_1',
+                grantId: 'grant_1',
+            ))
+            ->appendCue(new EffectExecuted(
+                id: 'cue_3',
+                sequence: 3,
                 activityId: 'act_1',
                 invocationId: 'inv_1',
                 agentId: 'agent_1',
@@ -233,8 +247,8 @@ final class ChatScreenTest extends TestCase
                 resultDigest: 'sha256:abc',
             ))
             ->appendCue(new ProviderResolved(
-                id: 'cue_3',
-                sequence: 3,
+                id: 'cue_4',
+                sequence: 4,
                 activityId: 'act_1',
                 invocationId: 'inv_1',
                 agentId: 'agent_1',
@@ -244,8 +258,8 @@ final class ChatScreenTest extends TestCase
                 reasonCode: 'configured',
             ))
             ->appendCue(new UsageDelta(
-                id: 'cue_4',
-                sequence: 4,
+                id: 'cue_5',
+                sequence: 5,
                 activityId: 'act_1',
                 invocationId: 'inv_1',
                 agentId: 'agent_1',
@@ -254,8 +268,8 @@ final class ChatScreenTest extends TestCase
                 outputTokens: 2,
             ))
             ->appendCue(new FinalUsage(
-                id: 'cue_5',
-                sequence: 5,
+                id: 'cue_6',
+                sequence: 6,
                 activityId: 'act_1',
                 invocationId: 'inv_1',
                 agentId: 'agent_1',
@@ -272,20 +286,106 @@ final class ChatScreenTest extends TestCase
         $text = self::flatten($screen($this->makeContext($store)));
 
         self::assertStringContainsString('Tool result summarized.', $text);
-        self::assertStringContainsString('approval: file.read eff_1', $text);
+        self::assertStringContainsString('effect executed: file.read eff_1', $text);
         self::assertStringContainsString('Read a strategy note', $text);
-        self::assertStringContainsString('executed: eff_1', $text);
         self::assertStringContainsString('42ms', $text);
+        self::assertStringContainsString('sha256:abc', $text);
         self::assertStringContainsString('usage: 12 in', $text);
         self::assertStringContainsString('cache read 3', $text);
         self::assertStringContainsString('cache write 4', $text);
+        self::assertStringNotContainsString('effect approved', $text);
         self::assertStringNotContainsString('openai gpt-5.1', $text);
         self::assertStringNotContainsString('1 in · 2 out', $text);
         self::assertStringNotContainsString('notes/strategy.md', $text);
         self::assertLessThan(
-            strpos($text, 'approval: file.read eff_1'),
+            strpos($text, 'effect executed: file.read eff_1'),
             strpos($text, 'Tool result summarized.'),
         );
+    }
+
+    #[Test]
+    public function rendersPausedDeniedAndFailedEffectLifecyclesInThread(): void
+    {
+        $at = new DateTimeImmutable('2026-05-23T21:00:00Z');
+        $store = new AppStore();
+        $store->conversation = (new ConversationSlice())
+            ->addUserMessage('Show effect outcomes')
+            ->appendCue(new EffectRequested(
+                id: 'cue_1',
+                sequence: 1,
+                activityId: 'act_1',
+                invocationId: 'inv_1',
+                agentId: 'agent_1',
+                at: $at,
+                effectId: 'eff_paused',
+                kind: Kind::FileWrite,
+                summary: 'Write config',
+                requiresApproval: true,
+            ))
+            ->appendCue(new EffectPaused(
+                id: 'cue_2',
+                sequence: 2,
+                activityId: 'act_1',
+                invocationId: 'inv_1',
+                agentId: 'agent_1',
+                at: $at,
+                effectId: 'eff_paused',
+                reason: 'Approval required',
+            ))
+            ->appendCue(new EffectRequested(
+                id: 'cue_3',
+                sequence: 3,
+                activityId: 'act_1',
+                invocationId: 'inv_1',
+                agentId: 'agent_1',
+                at: $at,
+                effectId: 'eff_denied',
+                kind: Kind::ShellExec,
+                summary: 'Run deploy',
+                requiresApproval: true,
+            ))
+            ->appendCue(new EffectDenied(
+                id: 'cue_4',
+                sequence: 4,
+                activityId: 'act_1',
+                invocationId: 'inv_1',
+                agentId: 'agent_1',
+                at: $at,
+                effectId: 'eff_denied',
+                reasonCodes: ['policy', 'user-denied'],
+            ))
+            ->appendCue(new EffectRequested(
+                id: 'cue_5',
+                sequence: 5,
+                activityId: 'act_1',
+                invocationId: 'inv_1',
+                agentId: 'agent_1',
+                at: $at,
+                effectId: 'eff_failed',
+                kind: Kind::CodeSearch,
+                summary: 'Search code',
+            ))
+            ->appendCue(new EffectFailed(
+                id: 'cue_6',
+                sequence: 6,
+                activityId: 'act_1',
+                invocationId: 'inv_1',
+                agentId: 'agent_1',
+                at: $at,
+                effectId: 'eff_failed',
+                reason: 'Tool crashed',
+                errorClass: 'RuntimeException',
+            ));
+        $screen = new ChatScreen($store);
+
+        $text = self::flatten($screen($this->makeContext($store)));
+
+        self::assertStringContainsString('approval needed: file.write eff_paused', $text);
+        self::assertStringContainsString('Approval required', $text);
+        self::assertStringContainsString('effect denied: shell.exec eff_denied', $text);
+        self::assertStringContainsString('policy, user-denied', $text);
+        self::assertStringContainsString('effect failed: code.search eff_failed', $text);
+        self::assertStringContainsString('RuntimeException', $text);
     }
 
     #[Test]

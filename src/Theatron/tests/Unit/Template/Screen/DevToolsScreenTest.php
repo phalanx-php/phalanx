@@ -7,6 +7,8 @@ namespace Phalanx\Theatron\Tests\Unit\Template\Screen;
 use DateTimeImmutable;
 use Phalanx\Athena\Effect\Resolution;
 use Phalanx\Athena\Persistence\EffectLogRecord;
+use Phalanx\Panoply\Cue\Effect\Authorized as EffectAuthorized;
+use Phalanx\Panoply\Cue\Effect\Executed as EffectExecuted;
 use Phalanx\Panoply\Cue\Effect\Requested as EffectRequested;
 use Phalanx\Panoply\Cue\Provider\Resolved as ProviderResolved;
 use Phalanx\Panoply\Cue\Usage\Delta as UsageDelta;
@@ -39,7 +41,9 @@ use Phalanx\Theatron\Template\Slice\AgentRegistrySlice;
 use Phalanx\Theatron\Template\Slice\AgentSummary;
 use Phalanx\Theatron\Template\Slice\ConversationSlice;
 use Phalanx\Theatron\Template\Slice\DevToolsTab;
+use Phalanx\Theatron\Template\Slice\EffectStatus;
 use Phalanx\Theatron\Template\Slice\LlmRequestEntry;
+use Phalanx\Theatron\Template\Slice\PendingEffect;
 use Phalanx\Theatron\Text\Line;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -349,10 +353,31 @@ final class DevToolsScreenTest extends TestCase
                 effectId: 'eff_1',
                 kind: Kind::FileRead,
                 summary: 'Read a strategy note',
+                arguments: ['path' => 'notes/strategy.md'],
             ))
-            ->appendCue(new ProviderResolved(
+            ->appendCue(new EffectAuthorized(
                 id: 'cue_2',
                 sequence: 2,
+                activityId: 'act_1',
+                invocationId: 'inv_1',
+                agentId: 'agent_1',
+                at: $at,
+                effectId: 'eff_1',
+                grantId: 'grant_1',
+            ))
+            ->appendCue(new EffectExecuted(
+                id: 'cue_3',
+                sequence: 3,
+                activityId: 'act_1',
+                invocationId: 'inv_1',
+                agentId: 'agent_1',
+                at: $at,
+                effectId: 'eff_1',
+                durationMs: 42,
+            ))
+            ->appendCue(new ProviderResolved(
+                id: 'cue_4',
+                sequence: 4,
                 activityId: 'act_1',
                 invocationId: 'inv_1',
                 agentId: 'agent_1',
@@ -362,8 +387,8 @@ final class DevToolsScreenTest extends TestCase
                 reasonCode: 'configured',
             ))
             ->appendCue(new UsageDelta(
-                id: 'cue_3',
-                sequence: 3,
+                id: 'cue_5',
+                sequence: 5,
                 activityId: 'act_1',
                 invocationId: 'inv_1',
                 agentId: 'agent_1',
@@ -372,8 +397,8 @@ final class DevToolsScreenTest extends TestCase
                 outputTokens: 2,
             ))
             ->appendCue(new FinalUsage(
-                id: 'cue_4',
-                sequence: 4,
+                id: 'cue_6',
+                sequence: 6,
                 activityId: 'act_1',
                 invocationId: 'inv_1',
                 agentId: 'agent_1',
@@ -392,6 +417,25 @@ final class DevToolsScreenTest extends TestCase
                 outcome: 'ok',
                 at: $at,
             ));
+        $store->effects = $store->effects
+            ->appendRequested(new PendingEffect(
+                kind: 'file.read',
+                summary: 'Read a strategy note',
+                arguments: ['path' => 'notes/strategy.md'],
+                hazardLevel: 1,
+                effectId: 'eff_1',
+                hazard: 'low',
+            ))
+            ->mark(
+                effectId: 'eff_1',
+                status: EffectStatus::Approved,
+                grantId: 'grant_1',
+            )
+            ->mark(
+                effectId: 'eff_1',
+                status: EffectStatus::Executed,
+                durationMs: 42,
+            );
         $store->agents = new AgentRegistrySlice()
             ->register(new AgentSummary(id: 'agent_leonidas', name: 'Leonidas', capabilities: ['tactics']));
         $store->activity = new ActivitySlice()->updateUsage(100, 200);
@@ -413,15 +457,23 @@ final class DevToolsScreenTest extends TestCase
         self::assertStringContainsString('Conversation Events', $text);
         self::assertStringContainsString('cue_1 effect.requested cue.effect.requested', $text);
         self::assertStringContainsString('Read a strategy note', $text);
-        self::assertStringContainsString('cue_2 provider.resolved cue.provider.resolved', $text);
+        self::assertStringContainsString('args {"path":"notes\\/strategy.md"}', $text);
+        self::assertStringContainsString('cue_2 effect.authorized cue.effect.authorized', $text);
+        self::assertStringContainsString('grant grant_1', $text);
+        self::assertStringContainsString('cue_3 effect.executed cue.effect.executed', $text);
+        self::assertStringContainsString('cue_4 provider.resolved cue.provider.resolved', $text);
         self::assertStringContainsString('openai gpt-5.1', $text);
-        self::assertStringContainsString('cue_3 usage.delta cue.usage.delta', $text);
+        self::assertStringContainsString('cue_5 usage.delta cue.usage.delta', $text);
         self::assertStringContainsString('1 in', $text);
-        self::assertStringContainsString('cue_4 usage.final cue.usage.final', $text);
+        self::assertStringContainsString('cue_6 usage.final cue.usage.final', $text);
         self::assertStringContainsString('cache read 10', $text);
         self::assertStringContainsString('effect_log_1 effect.logged effect.logged', $text);
         self::assertStringContainsString('mcp-tool search_docs', $text);
         self::assertStringContainsString('args hash sha256:def', $text);
+        self::assertStringContainsString('EffectLogSlice', $text);
+        self::assertStringContainsString('executed file.read [low]', $text);
+        self::assertStringContainsString('grant grant_1', $text);
+        self::assertStringContainsString('42ms', $text);
     }
 
     #[Test]
