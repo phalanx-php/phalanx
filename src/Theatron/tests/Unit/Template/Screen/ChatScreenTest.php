@@ -17,6 +17,7 @@ use Phalanx\Theatron\Tdom\Element\ColumnElement;
 use Phalanx\Theatron\Tdom\Element\InputElement;
 use Phalanx\Theatron\Tdom\Element\PanelElement;
 use Phalanx\Theatron\Tdom\Element\RowElement;
+use Phalanx\Theatron\Tdom\Element\SpinnerElement;
 use Phalanx\Theatron\Tdom\Element\TextElement;
 use Phalanx\Theatron\Tdom\Painter\PaintContext;
 use Phalanx\Theatron\Tdom\Painter\Painter;
@@ -81,6 +82,103 @@ final class ChatScreenTest extends TestCase
         self::assertStringContainsString('you: and another', $text);
         self::assertStringContainsString('assistant:', $text);
         self::assertStringContainsString('Final answer stays expanded.', $text);
+    }
+
+    #[Test]
+    public function streamingThinkingRendersBoundedEphemeralRows(): void
+    {
+        $store = new AppStore();
+        $store->conversation = (new ConversationSlice())
+            ->addUserMessage('think through this')
+            ->appendToken(
+                'thought-01 thought-02 thought-03 thought-04 thought-05 '
+                . 'thought-06 thought-07 thought-08 thought-09 thought-10',
+                'thinking',
+            );
+        $screen = new ChatScreen($store);
+
+        $text = self::flatten($screen($this->makeContext($store, width: 24, height: 30)));
+
+        self::assertStringContainsString('thinking.', $text);
+        self::assertStringNotContainsString('thought-01', $text);
+        self::assertStringNotContainsString('thought-02', $text);
+        self::assertStringNotContainsString('thought-03', $text);
+        self::assertStringContainsString('thought-04', $text);
+        self::assertStringContainsString('thought-10', $text);
+    }
+
+    #[Test]
+    public function streamingThinkingUsesPulseFrameForDots(): void
+    {
+        $store = new AppStore();
+        $store->activity = (new ActivitySlice(status: ActivityStatus::Running))
+            ->tick()
+            ->tick()
+            ->tick();
+        $store->conversation = (new ConversationSlice())
+            ->addUserMessage('think with motion')
+            ->appendToken('deliberating', 'thinking');
+        $screen = new ChatScreen($store);
+
+        $text = self::flatten($screen($this->makeContext($store)));
+
+        self::assertStringContainsString('thinking..', $text);
+    }
+
+    #[Test]
+    public function streamingThinkingStaysBeforeFinalAnswerProjection(): void
+    {
+        $store = new AppStore();
+        $store->conversation = (new ConversationSlice())
+            ->addUserMessage('answer after thinking')
+            ->appendToken('quiet deliberation', 'thinking')
+            ->appendToken('final answer');
+        $screen = new ChatScreen($store);
+
+        $text = self::flatten($screen($this->makeContext($store)));
+        $buffer = self::paint(
+            $screen($this->makeContext($store, width: 50, height: 24)),
+            width: 50,
+            height: 24,
+        );
+
+        self::assertStringContainsString('thinking.', $text);
+        self::assertStringContainsString('quiet deliberation', $text);
+        self::assertStringContainsString('assistant:', $text);
+        self::assertStringContainsString('final answer', $text);
+        self::assertLessThan(
+            strpos($text, 'assistant:'),
+            strpos($text, 'quiet deliberation'),
+        );
+        self::assertGreaterThan(
+            self::findRowContaining($buffer, 'thinking.'),
+            self::findRowContaining($buffer, 'final answer'),
+        );
+    }
+
+    #[Test]
+    public function completedThinkingIsHiddenUnlessExplicitlyEnabled(): void
+    {
+        $store = new AppStore();
+        $store->conversation = (new ConversationSlice())
+            ->addUserMessage('finished turn')
+            ->appendToken('hidden reasoning', 'thinking')
+            ->appendToken('visible answer')
+            ->finalizeMessage();
+        $screen = new ChatScreen($store);
+
+        $defaultText = self::flatten($screen($this->makeContext($store)));
+
+        self::assertStringContainsString('visible answer', $defaultText);
+        self::assertStringNotContainsString('thinking.', $defaultText);
+        self::assertStringNotContainsString('hidden reasoning', $defaultText);
+
+        $store->conversation = $store->conversation->toggleThinking();
+
+        $expandedText = self::flatten($screen($this->makeContext($store)));
+
+        self::assertStringContainsString('hidden reasoning', $expandedText);
+        self::assertStringNotContainsString('thinking.', $expandedText);
     }
 
     #[Test]
@@ -517,6 +615,10 @@ final class ChatScreenTest extends TestCase
 
         if ($renderable instanceof InputElement) {
             return self::lineToText($renderable->prompt) . $renderable->value;
+        }
+
+        if ($renderable instanceof SpinnerElement) {
+            return self::lineToText($renderable->label ?? '');
         }
 
         if ($renderable instanceof ColumnElement || $renderable instanceof RowElement) {

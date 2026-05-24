@@ -36,12 +36,14 @@ use Phalanx\Theatron\Text\Span;
 
 use function Phalanx\Theatron\Ui\column;
 use function Phalanx\Theatron\Ui\input;
+use function Phalanx\Theatron\Ui\spinner;
 use function Phalanx\Theatron\Ui\text;
 
 class ChatScreen implements Screen, HasStatusBar, HasFocusables, DeclaresBindings, Mountable
 {
     private const array PULSE_COLORS = [242, 245, 248, 251, 254, 251, 248, 245];
     private const int MAX_COMPOSER_ROWS = 5;
+    private const int THINKING_PREVIEW_ROWS = 7;
 
     private(set) Signal $inputText;
     private(set) Signal $inputCursor;
@@ -370,6 +372,11 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, DeclaresBinding
         return Span::styled('  │  ', TextStyle::new()->fg(Color::indexed(238)));
     }
 
+    private static function thinkingLabel(int $pulseFrame): string
+    {
+        return 'thinking' . str_repeat('.', (intdiv($pulseFrame, 3) % 3) + 1);
+    }
+
     /**
      * @return list<Line>
      */
@@ -513,6 +520,12 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, DeclaresBinding
         $exchangeRule = '  ' . str_repeat('─', min(24, (int) ($wrapWidth * 0.2)));
         $rows[] = self::row(Line::from(Span::styled($exchangeRule, TextStyle::new()->fg(Color::indexed(236)))));
 
+        $ephemeralThinking = $this->shouldRenderEphemeralThinking($conversation, $turn);
+
+        if ($ephemeralThinking) {
+            $rows = [...$rows, ...$this->renderEphemeralThinking($turn, $wrapWidth)];
+        }
+
         if ($turn->hasAssistantText()) {
             $rows[] = self::row(Line::from(
                 Span::styled('  assistant:', TextStyle::new()->fg(Color::indexed(252))->bold()),
@@ -520,7 +533,7 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, DeclaresBinding
             $rows = [...$rows, ...$this->markdown->render($turn->assistantText(), $wrapWidth, '    ')];
         }
 
-        if ($conversation->showThinking && $turn->hasThinkingText()) {
+        if ($conversation->showThinking && !$ephemeralThinking && $turn->hasThinkingText()) {
             $thinkingStyle = TextStyle::new()->fg(Color::indexed(242));
             foreach (self::wrapIndented($turn->thinkingText(), $wrapWidth, '    ', $thinkingStyle) as $line) {
                 $rows[] = self::row($line);
@@ -533,6 +546,40 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, DeclaresBinding
     private function activityBlocksFocused(): bool
     {
         return $this->store->inputMode->focusTarget === 'conversation';
+    }
+
+    private function shouldRenderEphemeralThinking(ConversationSlice $conversation, ConversationTurn $turn): bool
+    {
+        if (!$conversation->isStreaming || !$turn->hasThinkingText()) {
+            return false;
+        }
+
+        $lastTurn = $conversation->turns[array_key_last($conversation->turns)] ?? null;
+
+        return $lastTurn?->id === $turn->id;
+    }
+
+    /**
+     * @return list<Renderable>
+     */
+    private function renderEphemeralThinking(ConversationTurn $turn, int $wrapWidth): array
+    {
+        $pulseFrame = $this->store->activity->pulseFrame;
+        $thinkingStyle = TextStyle::new()->fg(Color::indexed(242))->dim();
+        $wrapped = self::wrapIndented($turn->thinkingText(), $wrapWidth, '    ', $thinkingStyle);
+        $rows = [
+            spinner(
+                label: self::thinkingLabel($pulseFrame),
+                frame: $pulseFrame,
+                style: TdomStyle::of(size: Size::fixed(1), color: Color::indexed(242)),
+            ),
+        ];
+
+        foreach (array_slice($wrapped, -self::THINKING_PREVIEW_ROWS) as $line) {
+            $rows[] = self::row($line);
+        }
+
+        return $rows;
     }
 
     private function renderStatusLine(): Renderable
