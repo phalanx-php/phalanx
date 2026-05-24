@@ -242,8 +242,51 @@ final class EventParserTest extends TestCase
         self::assertFalse($events[0]->alt);
     }
 
+    #[Test]
+    public function modifiedArrowMatrixPreservesShiftAltAndCtrlModifiers(): void
+    {
+        $shiftLeft = $this->parseSingleKey("\033[1;2D");
+        self::assertTrue($shiftLeft->is(Key::Left));
+        self::assertTrue($shiftLeft->shift);
+        self::assertFalse($shiftLeft->alt);
+        self::assertFalse($shiftLeft->ctrl);
+
+        $altRight = $this->parseSingleKey("\033[1;3C");
+        self::assertTrue($altRight->is(Key::Right));
+        self::assertFalse($altRight->shift);
+        self::assertTrue($altRight->alt);
+        self::assertFalse($altRight->ctrl);
+
+        $ctrlLeft = $this->parseSingleKey("\033[1;5D");
+        self::assertTrue($ctrlLeft->is(Key::Left));
+        self::assertFalse($ctrlLeft->shift);
+        self::assertFalse($ctrlLeft->alt);
+        self::assertTrue($ctrlLeft->ctrl);
+    }
+
+    #[Test]
+    public function superArrowModifierCurrentlyFallsBackToControl(): void
+    {
+        $event = $this->parseSingleKey("\033[1;9C");
+
+        self::assertTrue($event->is(Key::Right));
+        self::assertTrue($event->ctrl);
+        self::assertFalse($event->alt);
+        self::assertFalse($event->shift);
+    }
+
     protected function setUp(): void
     {
         $this->parser = new EventParser();
+    }
+
+    private function parseSingleKey(string $input): KeyEvent
+    {
+        $events = $this->parser->parse($input);
+
+        self::assertCount(1, $events);
+        self::assertInstanceOf(KeyEvent::class, $events[0]);
+
+        return $events[0];
     }
 }
