@@ -12,8 +12,8 @@ use Phalanx\Scope\Scope;
 use Phalanx\Scope\ScopeIdentity;
 use Phalanx\Scope\Suspendable;
 use Phalanx\System\DnsResolver;
-use Phalanx\System\TcpConnection;
 use Phalanx\System\TcpClient;
+use Phalanx\System\TcpConnection;
 use Phalanx\System\TlsOptions;
 use Throwable;
 

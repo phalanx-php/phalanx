@@ -15,7 +15,8 @@ final readonly class ProbeStrategy
     private function __construct(
         private string $taskClass,
         private array $baseParams,
-    ) {}
+    ) {
+    }
 
     public static function udp(int $port, string $payload, float $timeout = 2.0): self
     {

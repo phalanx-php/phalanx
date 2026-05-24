@@ -17,6 +17,13 @@ use Phalanx\Service\Services;
 
 class SurrealBundle extends ServiceBundle
 {
+    public function __construct(
+        private ?SurrealConfig $config = null,
+        private ?SurrealTransport $transport = null,
+        private ?SurrealLiveTransport $liveTransport = null,
+    ) {
+    }
+
     /**
      * SurrealConfig::fromContext reads `surreal_namespace`/`SURREAL_NAMESPACE`
      * and `surreal_database`/`SURREAL_DATABASE` — both have defaults ('phalanx'
@@ -36,13 +43,6 @@ class SurrealBundle extends ServiceBundle
             Optional::env('SURREAL_PASSWORD', description: 'SurrealDB password'),
             Optional::env('SURREAL_TOKEN', description: 'SurrealDB authentication token'),
         );
-    }
-
-    public function __construct(
-        private ?SurrealConfig $config = null,
-        private ?SurrealTransport $transport = null,
-        private ?SurrealLiveTransport $liveTransport = null,
-    ) {
     }
 
     public function services(Services $services, AppContext $context): void

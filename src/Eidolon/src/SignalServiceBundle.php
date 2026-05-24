@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Phalanx\Eidolon;
 
 use Phalanx\Boot\AppContext;
+use Phalanx\Eidolon\Signal\SignalCollector;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
-use Phalanx\Eidolon\Signal\SignalCollector;
 
 final class SignalServiceBundle extends ServiceBundle
 {

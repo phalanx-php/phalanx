@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Phalanx\PHPStan\Rules\Runtime;
 
-use PhpParser\Node;
-use PhpParser\Node\Expr\ClassConstFetch;
-use PhpParser\Node\Expr\ConstFetch;
-use PhpParser\Node\Expr\StaticCall;
 use Phalanx\PHPStan\Support\NodeNames;
 use Phalanx\PHPStan\Support\PathPolicy;
 use Phalanx\PHPStan\Support\RuleErrors;
 use Phalanx\PHPStan\Support\ScopedRulePolicy;
+use PhpParser\Node;
+use PhpParser\Node\Expr\ClassConstFetch;
+use PhpParser\Node\Expr\ConstFetch;
+use PhpParser\Node\Expr\StaticCall;
 use PHPStan\Analyser\Scope;
 use PHPStan\Rules\IdentifierRuleError;
 use PHPStan\Rules\Rule;

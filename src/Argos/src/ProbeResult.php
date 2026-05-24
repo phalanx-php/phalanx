@@ -13,5 +13,6 @@ final readonly class ProbeResult
         public ?string $method = null,
         public ?int $port = null,
         public ?string $responseData = null,
-    ) {}
+    ) {
+    }
 }

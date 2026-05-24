@@ -21,6 +21,7 @@ use Phalanx\Theatron\Tdom\Renderable;
 use Phalanx\Theatron\Tdom\Style as TdomStyle;
 use Phalanx\Theatron\Template\AppStore;
 use Phalanx\Theatron\Template\Slice\PendingEffect;
+
 use function Phalanx\Theatron\Ui\column;
 use function Phalanx\Theatron\Ui\divider;
 use function Phalanx\Theatron\Ui\panel;

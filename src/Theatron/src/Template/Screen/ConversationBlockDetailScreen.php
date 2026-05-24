@@ -24,6 +24,7 @@ use Phalanx\Theatron\Template\Render\MarkdownRenderer;
 use Phalanx\Theatron\Template\Slice\ConversationMessage;
 use Phalanx\Theatron\Text\Line;
 use Phalanx\Theatron\Text\Span;
+
 use function Phalanx\Theatron\Ui\column;
 use function Phalanx\Theatron\Ui\text;
 

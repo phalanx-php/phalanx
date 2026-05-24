@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 namespace Phalanx\PHPStan\Rules\Worker;
 
-use PhpParser\Node;
-use PhpParser\Node\Expr\ArrowFunction;
-use PhpParser\Node\Expr\Array_;
-use PhpParser\Node\Expr\Closure;
-use PhpParser\Node\Expr\MethodCall;
-use PhpParser\Node\Expr\StaticCall;
-use PhpParser\Node\Stmt\Return_;
-use PhpParser\Node\VariadicPlaceholder;
 use Phalanx\PHPStan\Support\NodeNames;
 use Phalanx\PHPStan\Support\PathPolicy;
 use Phalanx\PHPStan\Support\RuleErrors;
 use Phalanx\Scope\TaskExecutor;
 use Phalanx\Worker\WorkerTask;
+use PhpParser\Node;
+use PhpParser\Node\Expr\Array_;
+use PhpParser\Node\Expr\ArrowFunction;
+use PhpParser\Node\Expr\Closure;
+use PhpParser\Node\Expr\MethodCall;
+use PhpParser\Node\Expr\StaticCall;
+use PhpParser\Node\Stmt\Return_;
+use PhpParser\Node\VariadicPlaceholder;
 use PHPStan\Analyser\Scope;
 use PHPStan\Rules\IdentifierRuleError;
 use PHPStan\Rules\Rule;

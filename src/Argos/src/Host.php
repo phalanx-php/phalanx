@@ -16,7 +16,8 @@ final readonly class Host
         public ?string $hostname = null,
         public array $services = [],
         public array $metadata = [],
-    ) {}
+    ) {
+    }
 
     public function withMac(string $mac): self
     {

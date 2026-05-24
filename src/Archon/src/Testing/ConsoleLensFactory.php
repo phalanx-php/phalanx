@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Archon\Testing;
 
-use Phalanx\Testing\TestApp;
 use Phalanx\Testing\Lens;
 use Phalanx\Testing\LensFactory;
+use Phalanx\Testing\TestApp;
 
 final class ConsoleLensFactory implements LensFactory
 {

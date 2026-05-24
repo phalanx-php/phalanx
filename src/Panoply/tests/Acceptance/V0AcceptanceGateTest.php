@@ -35,6 +35,7 @@ use Phalanx\Panoply\HomeDir\Codex\Source\All as CodexAll;
 use Phalanx\Panoply\HomeDir\Codex\Source\History as CodexHistory;
 use Phalanx\Panoply\HomeDir\Codex\Source\Sessions as CodexSessions;
 use Phalanx\Panoply\HomeDir\Registry as HomeDirRegistry;
+use Phalanx\Panoply\HomeDir\ValidationError as HomeDirValidationError;
 use Phalanx\Panoply\Invocation;
 use Phalanx\Panoply\Output;
 use Phalanx\Panoply\Provider\Config\Model;
@@ -804,30 +805,33 @@ final class V0AcceptanceGateTest extends TestCase
      * Gate 15b: Registry::autoDetect() fails loudly when a bundled
      * HomeDir YAML is malformed (missing required keys, invalid shape).
      *
-     * Implementation gap: autoDetect() hardcodes the bundled YAML scan path
-     * to `src/HomeDir` relative to Registry.php and exposes no seam to
-     * redirect it to a fixture directory. The loud-fail contract IS implemented
-     * in src/ (Loader::fromFile() throws ValidationError; autoDetect() throws
-     * LogicException for a missing adapter class), but it cannot be exercised
-     * through the public autoDetect($home) surface without a configurable scan
-     * path or a separate test-seam constructor.
-     *
-     * Loud-fail unit coverage lives in:
-     *   - tests/Unit/HomeDir/LoaderTest.php (ValidationError for malformed YAML)
-     *   - Registry::autoDetect() LogicException branch (class_exists check)
-     *
-     * To make this gate exercisable, Registry::autoDetect() needs a second
-     * optional parameter (e.g. `string $bundledDir = null`) or an extracted
-     * factory method that can be given an alternate YAML directory in tests.
+     * The production scan path remains the default. The test supplies a fixture
+     * bundle directory so the public autoDetect() flow exercises Loader failure.
      */
     #[Test]
     public function gate15bMalformedBundledYamlFailsLoudly(): void
     {
-        self::markTestIncomplete(
-            'Registry::autoDetect() has no injectable scan-path seam. '
-            . 'Malformed-YAML loud-fail is covered at the unit level in LoaderTest. '
-            . 'Add a $bundledDir parameter to autoDetect() to make this gate green.',
-        );
+        $home = self::writeGate15Home('.broken');
+        $bundledDir = sys_get_temp_dir() . '/' . uniqid('gate15_bundle_', true);
+        $fixtureDir = $bundledDir . '/broken';
+        mkdir($fixtureDir, 0777, true);
+
+        file_put_contents($fixtureDir . '/broken.panoply.yaml', <<<'YAML'
+            display_name: "Broken"
+            roots:
+              - "~/.broken"
+            adapter: "Phalanx\\Panoply\\HomeDir\\ClaudeCode\\HomeDir"
+            YAML);
+
+        try {
+            $this->expectException(HomeDirValidationError::class);
+            $this->expectExceptionMessage('Missing required key: id');
+
+            HomeDirRegistry::autoDetect($home, $bundledDir);
+        } finally {
+            self::removeTree($home);
+            self::removeTree($bundledDir);
+        }
     }
 
     // ── helpers ──────────────────────────────────────────────────────────────

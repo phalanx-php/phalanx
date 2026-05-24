@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Grammata\Task;
 
-use Phalanx\Scope\ExecutionScope;
 use Phalanx\Grammata\Exception\FilesystemException;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
 
 final readonly class ReadJsonFile implements Executable
@@ -13,7 +13,8 @@ final readonly class ReadJsonFile implements Executable
     public function __construct(
         private string $path,
         private bool $assoc = true,
-    ) {}
+    ) {
+    }
 
     public function __invoke(ExecutionScope $scope): mixed
     {

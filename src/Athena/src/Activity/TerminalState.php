@@ -15,5 +15,6 @@ final class TerminalState
         private(set) Log $log,
         private(set) int $invocations,
         private(set) ?\Throwable $error = null,
-    ) {}
+    ) {
+    }
 }

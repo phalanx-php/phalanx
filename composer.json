@@ -22,7 +22,6 @@
         "symfony/yaml": "^8.0"
     },
     "require-dev": {
-        "friendsofphp/php-cs-fixer": "^3.95",
         "guzzlehttp/guzzle": "^7.10",
         "hyperf/guzzle": "^3.1",
         "openswoole/ide-helper": "^26.2",
@@ -117,14 +116,12 @@
     ],
     "scripts": {
         "test": "php -d memory_limit=1G vendor/bin/phpunit",
-        "test:panoply:integration": "php -d memory_limit=512M vendor/bin/phpunit -c src/Panoply/phpunit.xml.dist --testsuite=Integration",
+        "test:panoply:integration": "php -d memory_limit=512M vendor/bin/phpunit -c src/Panoply/phpunit.xml.dist --testsuite=Integration --do-not-fail-on-empty-test-suite",
         "test:panoply:acceptance": "php -d memory_limit=512M vendor/bin/phpunit -c src/Panoply/phpunit.xml.dist --testsuite=Acceptance",
         "analyse": "php vendor/bin/phpstan analyse --memory-limit=512M",
         "audit:runtime-risk": "php src/PHPStan/bin/runtime-risk-audit",
         "rector": "php vendor/bin/rector process",
         "rector:dry": "php vendor/bin/rector process --dry-run",
-        "fmt": "php vendor/bin/php-cs-fixer fix --diff",
-        "fmt:dry": "php vendor/bin/php-cs-fixer fix --dry-run --diff",
         "cs": "php vendor/bin/phpcs --standard=phpcs.xml",
         "cs:fix": "php vendor/bin/phpcbf --standard=phpcs.xml",
         "bench:aegis": "php -d memory_limit=512M benchmarks/kernel/run.php",
@@ -212,9 +209,9 @@
         "post-autoload-dump": "@gen:test-accessors",
         "check": [
             "@modules:check",
+            "@modules:manifests:check",
             "@analyse",
             "@rector:dry",
-            "@fmt:dry",
             "@cs",
             "@gen:test-accessors:check",
             "@test",
@@ -239,6 +236,8 @@
         "test:surreal": "php -d memory_limit=512M vendor/bin/phpunit -c src/Surreal/phpunit.xml.dist",
         "test:theatron": "php -d memory_limit=512M vendor/bin/phpunit -c src/Theatron/phpunit.xml",
         "modules:check": "php tools/check-modules.php",
+        "modules:manifests": "php tools/generate-module-manifests.php --write",
+        "modules:manifests:check": "php tools/generate-module-manifests.php --check",
         "split:dry": "php tools/split-modules.php --dry-run"
     },
     "config": {

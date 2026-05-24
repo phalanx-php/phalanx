@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Phalanx\PHPStan\Rules\Worker;
 
-use PhpParser\Node;
-use PhpParser\Node\Name;
-use PhpParser\Node\Stmt\Class_;
-use PhpParser\Node\UnionType;
 use Phalanx\PHPStan\Support\NodeNames;
 use Phalanx\PHPStan\Support\PathPolicy;
 use Phalanx\PHPStan\Support\RuleErrors;
 use Phalanx\Worker\WorkerTask;
+use PhpParser\Node;
+use PhpParser\Node\Name;
+use PhpParser\Node\Stmt\Class_;
+use PhpParser\Node\UnionType;
 use PHPStan\Analyser\Scope;
 use PHPStan\Reflection\ReflectionProvider;
 use PHPStan\Rules\IdentifierRuleError;

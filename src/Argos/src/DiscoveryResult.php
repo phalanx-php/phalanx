@@ -11,5 +11,6 @@ final readonly class DiscoveryResult
         public string $ip,
         public string $protocol,
         public array $metadata = [],
-    ) {}
+    ) {
+    }
 }

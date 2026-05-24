@@ -26,6 +26,15 @@
         "symfony/process": "^7.0 || ^8.0",
         "symfony/uid": "^7.0 || ^8.0"
     },
+    "suggest": {
+        "phalanx-php/styx": "Reactive stream primitives (Emitter, ScopedStream, Channel)",
+        "phalanx-php/archon": "CLI application framework",
+        "phalanx-php/stoa": "HTTP server framework",
+        "phalanx-php/hydra": "Worker process parallelism",
+        "spatie/backtrace": "Enhanced stack traces",
+        "symfony/runtime": "For symfony/runtime integration",
+        "symfony/dotenv": "For .env file support"
+    },
     "require-dev": {
         "phalanx-php/archon": "^0.6",
         "phalanx-php/stoa": "^0.6",
@@ -37,17 +46,12 @@
         "slevomat/coding-standard": "^8.15",
         "squizlabs/php_codesniffer": "^3.10 || ^4.0"
     },
+    "bin": [
+        "bin/regenerate-accessors",
+        "bin/check-accessors-in-sync"
+    ],
     "scripts": {
-        "test": "php -d memory_limit=512M ../../vendor/bin/phpunit -c phpunit.xml.dist"
-    },
-    "suggest": {
-        "phalanx-php/styx": "Reactive stream primitives (Emitter, ScopedStream, Channel)",
-        "phalanx-php/archon": "CLI application framework",
-        "phalanx-php/stoa": "HTTP server framework",
-        "phalanx-php/hydra": "Worker process parallelism",
-        "spatie/backtrace": "Enhanced stack traces",
-        "symfony/runtime": "For symfony/runtime integration",
-        "symfony/dotenv": "For .env file support"
+        "test": "php -d memory_limit=512M vendor/bin/phpunit -c phpunit.xml.dist"
     },
     "autoload": {
         "psr-4": {
@@ -62,10 +66,6 @@
             "tests/Support/Fixtures/"
         ]
     },
-    "bin": [
-        "bin/regenerate-accessors",
-        "bin/check-accessors-in-sync"
-    ],
     "extra": {
         "branch-alias": {
             "dev-main": "0.6.x-dev"
@@ -76,5 +76,7 @@
         "allow-plugins": {
             "dealerdirect/phpcodesniffer-composer-installer": true
         }
-    }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
 }

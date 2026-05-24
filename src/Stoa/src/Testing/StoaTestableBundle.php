@@ -27,13 +27,13 @@ use Phalanx\Testing\TestLens;
  */
 class StoaTestableBundle extends ServiceBundle
 {
-    public function services(Services $services, AppContext $context): void
-    {
-    }
-
     #[\Override]
     public static function lens(): TestLens
     {
         return TestLens::of(HttpLens::class);
+    }
+
+    public function services(Services $services, AppContext $context): void
+    {
     }
 }

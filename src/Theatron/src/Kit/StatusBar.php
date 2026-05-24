@@ -9,6 +9,7 @@ use Phalanx\Theatron\Style\Color;
 use Phalanx\Theatron\Styling\Theme;
 use Phalanx\Theatron\Tdom\Element\StatusLineElement;
 use Phalanx\Theatron\Tdom\Style;
+
 use function Phalanx\Theatron\Ui\text;
 
 final class StatusBar

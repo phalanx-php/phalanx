@@ -20,7 +20,7 @@ final class SystemToolCheck
 
         try {
             $process->run();
-        } catch (\Throwable) {
+        } catch (\RuntimeException) {
             return self::notFound($this->tool);
         }
 

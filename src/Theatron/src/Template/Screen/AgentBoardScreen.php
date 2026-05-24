@@ -24,6 +24,7 @@ use Phalanx\Theatron\Template\Slice\AgentRegistrySlice;
 use Phalanx\Theatron\Template\Slice\AgentSummary;
 use Phalanx\Theatron\Text\Line;
 use Phalanx\Theatron\Text\Span;
+
 use function Phalanx\Theatron\Ui\column;
 use function Phalanx\Theatron\Ui\panel;
 use function Phalanx\Theatron\Ui\row;

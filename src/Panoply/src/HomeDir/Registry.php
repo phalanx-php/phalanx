@@ -44,12 +44,13 @@ final class Registry
      *    errors propagate to the caller.
      *
      * @param string $home the user's home directory path
+     * @param ?string $bundledDir alternate bundled YAML directory, used by tests
      */
-    public static function autoDetect(string $home): self
+    public static function autoDetect(string $home, ?string $bundledDir = null): self
     {
         $registry = self::empty();
 
-        $bundledDir = dirname(__DIR__, 2) . '/src/HomeDir';
+        $bundledDir ??= dirname(__DIR__, 2) . '/src/HomeDir';
 
         $iter = new \GlobIterator($bundledDir . '/*/*.panoply.yaml');
 

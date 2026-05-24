@@ -25,11 +25,11 @@ use Throwable;
  */
 final class Channel
 {
+    private(set) bool $isOpen = true;
+
     private static ?\stdClass $sentinel = null;
 
     private readonly SwooleChannel $chan;
-
-    private(set) bool $isOpen = true;
 
     private ?Throwable $error = null;
 

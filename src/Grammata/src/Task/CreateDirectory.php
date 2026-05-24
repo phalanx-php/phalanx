@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Grammata\Task;
 
-use Phalanx\Scope\ExecutionScope;
 use Phalanx\Grammata\Exception\FilesystemException;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
 
 final readonly class CreateDirectory implements Executable
@@ -14,7 +14,8 @@ final readonly class CreateDirectory implements Executable
         private string $path,
         private bool $recursive = true,
         private int $permissions = 0755,
-    ) {}
+    ) {
+    }
 
     public function __invoke(ExecutionScope $scope): mixed
     {

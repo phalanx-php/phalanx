@@ -193,7 +193,6 @@ final class Loop implements Activity\Executor
                     invocations: $invocationCount,
                     error: $error,
                 ));
-                $records = [];
             } catch (Cancelled $e) {
                 $cueChannel->error($e);
                 $cell->resolve(new TerminalState(
@@ -203,7 +202,6 @@ final class Loop implements Activity\Executor
                     invocations: max($invocationCount, 1),
                     error: $e,
                 ));
-                $records = [];
             } catch (\Throwable $e) {
                 $cueChannel->error($e);
                 $cell->resolve(new TerminalState(
@@ -213,7 +211,6 @@ final class Loop implements Activity\Executor
                     invocations: max($invocationCount, 1),
                     error: $e,
                 ));
-                $records = [];
             } finally {
                 if ($cueChannel->isOpen) {
                     $cueChannel->complete();

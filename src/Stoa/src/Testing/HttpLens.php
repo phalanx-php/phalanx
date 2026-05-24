@@ -8,8 +8,8 @@ use GuzzleHttp\Psr7\ServerRequest;
 use GuzzleHttp\Psr7\Utils;
 use Phalanx\Stoa\StoaApplication;
 use Phalanx\Testing\Attribute\Lens;
-use Phalanx\Testing\TestApp;
 use Phalanx\Testing\Lens as LensContract;
+use Phalanx\Testing\TestApp;
 use Psr\Http\Message\ServerRequestInterface;
 
 /**

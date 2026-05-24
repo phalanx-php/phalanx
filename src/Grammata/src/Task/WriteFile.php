@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Grammata\Task;
 
-use Phalanx\Scope\ExecutionScope;
 use Phalanx\Grammata\Exception\FilesystemException;
 use Phalanx\Grammata\NativeFastPath\NativeFastPath;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
 use RuntimeException;
 
@@ -15,7 +15,8 @@ final readonly class WriteFile implements Executable
     public function __construct(
         private string $path,
         private string $contents,
-    ) {}
+    ) {
+    }
 
     public function __invoke(ExecutionScope $scope): mixed
     {

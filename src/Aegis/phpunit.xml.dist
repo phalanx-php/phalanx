@@ -22,6 +22,12 @@
         <testsuite name="Integration">
             <directory>tests/Integration</directory>
         </testsuite>
+        <testsuite name="Smoke">
+            <directory>tests/Smoke</directory>
+        </testsuite>
+        <testsuite name="Resilience">
+            <directory>tests/Resilience</directory>
+        </testsuite>
     </testsuites>
 
     <source>

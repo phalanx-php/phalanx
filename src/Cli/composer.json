@@ -3,19 +3,19 @@
     "description": "Phalanx CLI: doctor, OpenSwoole installer using PIE, and project scaffolding",
     "license": "MIT",
     "type": "library",
-    "homepage": "https://github.com/phalanx-php/phalanx-cli",
-    "authors": [
-        {
-            "name": "Jonathan Havens",
-            "email": "mail@jhavens.tech"
-        }
-    ],
     "keywords": [
         "cli",
         "phalanx",
         "openswoole",
         "installer",
         "doctor"
+    ],
+    "homepage": "https://github.com/phalanx-php/phalanx-cli",
+    "authors": [
+        {
+            "name": "Jonathan Havens",
+            "email": "mail@phalanx-php.com"
+        }
     ],
     "require": {
         "php": "^8.4",
@@ -29,7 +29,7 @@
         "bin/phalanx"
     ],
     "scripts": {
-        "test": "php -d memory_limit=512M ../../vendor/bin/phpunit -c phpunit.xml.dist"
+        "test": "php -d memory_limit=512M vendor/bin/phpunit -c phpunit.xml.dist"
     },
     "autoload": {
         "psr-4": {

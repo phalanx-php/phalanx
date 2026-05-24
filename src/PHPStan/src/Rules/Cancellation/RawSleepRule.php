@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Phalanx\PHPStan\Rules\Cancellation;
 
-use PhpParser\Node\Expr\StaticCall;
 use Phalanx\PHPStan\Support\NodeNames;
 use Phalanx\PHPStan\Support\PathPolicy;
 use Phalanx\PHPStan\Support\RuleErrors;
+use PhpParser\Node\Expr\StaticCall;
 use PHPStan\Analyser\Scope;
 use PHPStan\Rules\IdentifierRuleError;
 use PHPStan\Rules\Rule;

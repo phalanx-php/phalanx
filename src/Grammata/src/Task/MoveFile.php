@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Grammata\Task;
 
-use Phalanx\Scope\ExecutionScope;
 use Phalanx\Grammata\Exception\FilesystemException;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
 
 final readonly class MoveFile implements Executable
@@ -13,7 +13,8 @@ final readonly class MoveFile implements Executable
     public function __construct(
         private string $from,
         private string $to,
-    ) {}
+    ) {
+    }
 
     public function __invoke(ExecutionScope $scope): mixed
     {

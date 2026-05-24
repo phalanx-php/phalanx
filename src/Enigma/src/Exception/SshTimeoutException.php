@@ -4,4 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Enigma\Exception;
 
-class SshTimeoutException extends SshException {}
+class SshTimeoutException extends SshException
+{
+}

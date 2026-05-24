@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace Phalanx\Stoa\Response;
 
-use Closure;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Stoa\RequestScope;
 use Phalanx\Stoa\Response\Ignition\PhalanxErrorPageViewModel;
-use Phalanx\Stoa\StoaServerConfig;
 use Phalanx\Stoa\StoaRequestDiagnostics;
 use Phalanx\Stoa\StoaRequestResource;
+use Phalanx\Stoa\StoaServerConfig;
 use Phalanx\Supervisor\TaskTreeFormatter;
 use Psr\Http\Message\ResponseInterface;
 use Spatie\Ignition\Config\IgnitionConfig;
@@ -64,7 +63,7 @@ final readonly class IgnitionErrorResponseRenderer implements ErrorResponseRende
                 $e,
                 IgnitionConfig::loadFromConfigFile(),
                 $report,
-                [], 
+                [],
                 SolutionTransformer::class,
                 $this->getCustomHead(),
                 $this->getCustomBody($ledger)

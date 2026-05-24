@@ -10,11 +10,11 @@ final class Compositor
 {
     public bool $isDirty {
         get {
-            foreach ($this->regions as $region) {
-                if ($region->isDirty) {
-                    return true;
-                }
-            }
+    foreach ($this->regions as $region) {
+        if ($region->isDirty) {
+            return true;
+        }
+    }
 
             return false;
         }

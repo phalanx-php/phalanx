@@ -25,6 +25,7 @@ use Phalanx\Theatron\Template\AppStore;
 use Phalanx\Theatron\Template\Slice\SettingsTab;
 use Phalanx\Theatron\Text\Line;
 use Phalanx\Theatron\Text\Span;
+
 use function Phalanx\Theatron\Ui\column;
 use function Phalanx\Theatron\Ui\text;
 

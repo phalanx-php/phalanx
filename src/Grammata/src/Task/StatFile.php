@@ -4,16 +4,17 @@ declare(strict_types=1);
 
 namespace Phalanx\Grammata\Task;
 
-use Phalanx\Scope\ExecutionScope;
 use Phalanx\Grammata\Exception\FilesystemException;
 use Phalanx\Grammata\FileInfo;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
 
 final readonly class StatFile implements Executable
 {
     public function __construct(
         private string $path,
-    ) {}
+    ) {
+    }
 
     public function __invoke(ExecutionScope $scope): FileInfo
     {

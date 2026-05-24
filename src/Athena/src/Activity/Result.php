@@ -11,13 +11,6 @@ use ReflectionClass;
 
 final class Result
 {
-    /** @var ?ReflectionClass<self> */
-    private static ?ReflectionClass $reflection = null;
-
-    private ?TerminalState $resolved = null;
-
-    private ?TerminalCell $cell = null;
-
     private(set) string $activityId;
 
     private(set) Stream $stream;
@@ -41,6 +34,13 @@ final class Result
     public ?\Throwable $error {
         get => $this->resolve()->error;
     }
+
+    /** @var ?ReflectionClass<self> */
+    private static ?ReflectionClass $reflection = null;
+
+    private ?TerminalState $resolved = null;
+
+    private ?TerminalCell $cell = null;
 
     public function __construct(
         string $activityId,

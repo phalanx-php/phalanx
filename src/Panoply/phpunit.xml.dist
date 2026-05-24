@@ -15,6 +15,11 @@
          displayDetailsOnTestsThatTriggerWarnings="true"
          failOnRisky="true"
          failOnWarning="false">
+    <groups>
+        <exclude>
+            <group>live</group>
+        </exclude>
+    </groups>
     <testsuites>
         <testsuite name="Unit">
             <directory>tests/Unit</directory>

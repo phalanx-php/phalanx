@@ -1,8 +1,8 @@
 {
     "name": "phalanx-php/skopos",
     "description": "Dev server orchestrator with process management, output multiplexing, and file watching",
-    "type": "library",
     "license": "MIT",
+    "type": "library",
     "homepage": "https://github.com/phalanx-php/phalanx-skopos",
     "authors": [
         {
@@ -22,7 +22,7 @@
         "bin/skopos"
     ],
     "scripts": {
-        "test": "php -d memory_limit=512M ../../vendor/bin/phpunit -c phpunit.xml.dist"
+        "test": "php -d memory_limit=512M vendor/bin/phpunit -c phpunit.xml.dist"
     },
     "autoload": {
         "psr-4": {

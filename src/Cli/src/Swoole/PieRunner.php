@@ -49,7 +49,7 @@ final class PieRunner
 
         try {
             $process->run();
-        } catch (\Throwable) {
+        } catch (\RuntimeException) {
             return null;
         }
 

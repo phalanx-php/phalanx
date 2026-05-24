@@ -17,7 +17,8 @@ final readonly class ReadFileStream implements Executable
 
     public function __construct(
         private string $path,
-    ) {}
+    ) {
+    }
 
     public function __invoke(ExecutionScope $scope): Emitter
     {

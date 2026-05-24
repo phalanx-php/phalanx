@@ -14,6 +14,11 @@ use Phalanx\Service\Services;
 
 final class WsServiceBundle extends ServiceBundle
 {
+    public function __construct(
+        private ?WsClientConfig $clientConfig = null,
+    ) {
+    }
+
     /**
      * Hermes' WebSocket surface is feature-flagged; absence of host/port
      * env keys must not block boot. Both entries warn on missing rather
@@ -26,11 +31,6 @@ final class WsServiceBundle extends ServiceBundle
             Optional::env('PHALANX_WS_HOST', fallback: '0.0.0.0', description: 'Hermes WebSocket bind host'),
             Optional::env('PHALANX_WS_PORT', fallback: '8081', description: 'Hermes WebSocket bind port'),
         );
-    }
-
-    public function __construct(
-        private ?WsClientConfig $clientConfig = null,
-    ) {
     }
 
     public function services(Services $services, AppContext $context): void

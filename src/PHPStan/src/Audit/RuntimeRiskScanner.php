@@ -123,6 +123,86 @@ final class RuntimeRiskScanner
         return $risks;
     }
 
+    private static function isVendorPath(string $path): bool
+    {
+        $normalized = str_replace('\\', '/', $path);
+
+        return $normalized === 'vendor'
+            || str_starts_with($normalized, 'vendor/')
+            || str_contains($normalized, '/vendor/');
+    }
+
+    private static function isComposerManifest(string $path): bool
+    {
+        $name = basename($path);
+
+        return $name === 'composer.json' || $name === 'composer.lock';
+    }
+
+    /**
+     * @param array<string, mixed> $decoded
+     * @return list<string>
+     */
+    private static function composerPackageNames(array $decoded): array
+    {
+        $packages = [];
+        foreach (['require', 'require-dev', 'suggest', 'conflict', 'replace', 'provide'] as $section) {
+            if (!isset($decoded[$section]) || !is_array($decoded[$section])) {
+                continue;
+            }
+
+            foreach (array_keys($decoded[$section]) as $package) {
+                if (is_string($package)) {
+                    $packages[] = $package;
+                }
+            }
+        }
+
+        foreach (['packages', 'packages-dev'] as $section) {
+            if (!isset($decoded[$section]) || !is_array($decoded[$section])) {
+                continue;
+            }
+
+            foreach ($decoded[$section] as $package) {
+                if (is_array($package) && isset($package['name']) && is_string($package['name'])) {
+                    $packages[] = $package['name'];
+                }
+            }
+        }
+
+        return array_values(array_unique($packages));
+    }
+
+    private static function isStaleComposerPackage(string $package): bool
+    {
+        foreach (self::STALE_COMPOSER_PREFIXES as $prefix) {
+            if (str_starts_with($package, $prefix)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static function isStaleAsyncSymbol(string $symbol): bool
+    {
+        $trimmed = ltrim($symbol, '\\');
+
+        return str_starts_with($trimmed, 'React\\')
+            || str_starts_with($trimmed, 'Amp\\')
+            || str_starts_with($trimmed, 'Revolt\\');
+    }
+
+    private static function lineFor(string $source, string $needle): int
+    {
+        $position = strpos($source, $needle);
+        if ($position === false) {
+            return 1;
+        }
+
+        return substr_count(substr($source, 0, $position), "\n") + 1;
+    }
+
     /** @return list<RuntimeRisk> */
     private function scanComposerFile(string $file): array
     {
@@ -220,7 +300,8 @@ final class RuntimeRiskScanner
             return new RuntimeRisk('process', 'new ' . $trimmed, $file, $line);
         }
 
-        if ($trimmed === 'OpenSwoole\\Coroutine\\Channel'
+        if (
+            $trimmed === 'OpenSwoole\\Coroutine\\Channel'
             || $trimmed === 'Swoole\\Coroutine\\Channel'
         ) {
             return new RuntimeRisk('raw_channel', 'new ' . $trimmed, $file, $line);
@@ -556,85 +637,5 @@ final class RuntimeRiskScanner
         $parts = explode('\\', trim($name, '\\'));
 
         return end($parts) ?: $name;
-    }
-
-    private static function isVendorPath(string $path): bool
-    {
-        $normalized = str_replace('\\', '/', $path);
-
-        return $normalized === 'vendor'
-            || str_starts_with($normalized, 'vendor/')
-            || str_contains($normalized, '/vendor/');
-    }
-
-    private static function isComposerManifest(string $path): bool
-    {
-        $name = basename($path);
-
-        return $name === 'composer.json' || $name === 'composer.lock';
-    }
-
-    /**
-     * @param array<string, mixed> $decoded
-     * @return list<string>
-     */
-    private static function composerPackageNames(array $decoded): array
-    {
-        $packages = [];
-        foreach (['require', 'require-dev', 'suggest', 'conflict', 'replace', 'provide'] as $section) {
-            if (!isset($decoded[$section]) || !is_array($decoded[$section])) {
-                continue;
-            }
-
-            foreach (array_keys($decoded[$section]) as $package) {
-                if (is_string($package)) {
-                    $packages[] = $package;
-                }
-            }
-        }
-
-        foreach (['packages', 'packages-dev'] as $section) {
-            if (!isset($decoded[$section]) || !is_array($decoded[$section])) {
-                continue;
-            }
-
-            foreach ($decoded[$section] as $package) {
-                if (is_array($package) && isset($package['name']) && is_string($package['name'])) {
-                    $packages[] = $package['name'];
-                }
-            }
-        }
-
-        return array_values(array_unique($packages));
-    }
-
-    private static function isStaleComposerPackage(string $package): bool
-    {
-        foreach (self::STALE_COMPOSER_PREFIXES as $prefix) {
-            if (str_starts_with($package, $prefix)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static function isStaleAsyncSymbol(string $symbol): bool
-    {
-        $trimmed = ltrim($symbol, '\\');
-
-        return str_starts_with($trimmed, 'React\\')
-            || str_starts_with($trimmed, 'Amp\\')
-            || str_starts_with($trimmed, 'Revolt\\');
-    }
-
-    private static function lineFor(string $source, string $needle): int
-    {
-        $position = strpos($source, $needle);
-        if ($position === false) {
-            return 1;
-        }
-
-        return substr_count(substr($source, 0, $position), "\n") + 1;
     }
 }

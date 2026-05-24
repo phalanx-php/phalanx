@@ -17,14 +17,15 @@ use Phalanx\Grammata\Task\StatFile;
 use Phalanx\Grammata\Task\WriteFile;
 use Phalanx\Grammata\Task\WriteFileStream;
 use Phalanx\Grammata\Task\WriteJsonFile;
-use Phalanx\Styx\Emitter;
 use Phalanx\Scope\TaskScope;
+use Phalanx\Styx\Emitter;
 
 final class Files
 {
     public function __construct(
         private readonly TaskScope $scope,
-    ) {}
+    ) {
+    }
 
     public function read(string $path): string
     {

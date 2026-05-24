@@ -6,6 +6,7 @@ namespace Phalanx\Theatron\Binding;
 
 use Phalanx\Theatron\Input\Key;
 use Phalanx\Theatron\Tdom\Element\RowElement;
+
 use function Phalanx\Theatron\Ui\row;
 use function Phalanx\Theatron\Ui\text;
 

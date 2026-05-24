@@ -19,6 +19,7 @@ use Phalanx\Panoply\Runtime\Sync\Runtime;
 use Phalanx\Panoply\Transport\Needs as TransportNeeds;
 use Phalanx\Panoply\Transport\Sync\HttpError;
 use Phalanx\Panoply\Transport\Sync\Transport;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RequiresEnvironmentVariable;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -37,6 +38,7 @@ use PHPUnit\Framework\TestCase;
 final class AnthropicLiveTest extends TestCase
 {
     #[Test]
+    #[Group('live')]
     #[RequiresEnvironmentVariable('ANTHROPIC_API_KEY')]
     public function realAnthropicApiCallEmitsCueStream(): void
     {

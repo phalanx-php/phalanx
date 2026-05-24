@@ -51,16 +51,21 @@ parameters:
     phalanxEnforcedPaths:
         - src/Aegis/src
         - src/Archon/src
+        - src/Argos/src
         - src/Athena/src
+        - src/Cli/src
+        - src/Eidolon/src
         - src/Enigma/src
         - src/Grammata/src
         - src/Hermes/src
         - src/Hydra/src
         - src/Iris/src
+        - src/Panoply/src
         - src/PHPStan/src
         - src/Skopos/src
         - src/Stoa/src
         - src/Surreal/src
+        - src/Theatron/src
         - src/Styx/src
     phalanxAuditPaths: []
     phalanxRuntimeHookInternalPaths:
@@ -70,7 +75,9 @@ parameters:
         - src/Aegis/src/Runtime/RuntimePolicy.php
     phalanxProcessInternalPaths:
         - src/Aegis/src/System/Internal/SymfonyProcessAdapter.php
+        - src/Cli/src
         - src/Hydra/src/WorkerPool/WorkerPool.php
+        - src/Theatron/src/Terminal/Terminal.php
     phalanxCoroutineInternalPaths:
         - src/Aegis/src/Scope/ExecutionLifecycleScope.php
         - benchmarks/kernel/cases/ContextSwitchCases.php

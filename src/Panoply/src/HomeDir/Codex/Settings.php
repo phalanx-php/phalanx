@@ -161,7 +161,7 @@ final class Settings implements SettingsInterface
                 $parsed = \Yosymfony\Toml\Toml::parse(file_get_contents($path) ?: '');
 
                 return [$parsed, true];
-            } catch (\Throwable) {
+            } catch (\RuntimeException) {
                 return [[], true];
             }
         }

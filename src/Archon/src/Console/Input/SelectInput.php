@@ -66,17 +66,13 @@ class SelectInput extends BasePrompt
 
         $lines = [];
         $rowIndex = 0;
-        foreach ($visible as $value => $label) {
+        foreach ($visible as $label) {
             $absoluteIdx = $this->firstVisible + $rowIndex;
             $isActive = $absoluteIdx === $this->highlighted;
 
             $prefix = $isActive
                 ? $this->theme->accent->apply("  {$this->activeGlyph} ")
                 : '    ';
-
-            $labelText = $isActive
-                ? $this->theme->accent->apply($label)
-                : $label;
 
             // -4 for box margins, -4 for prefix, -1 for scrollbar column
             $innerWidth = $width - 9;

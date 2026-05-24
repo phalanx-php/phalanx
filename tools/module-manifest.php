@@ -1,0 +1,128 @@
+<?php
+
+declare(strict_types=1);
+
+function phalanx_module_manifest(string $module, array $meta): array
+{
+    $manifest = [
+        'name' => $meta['package'],
+        'description' => $meta['description'],
+        'license' => 'MIT',
+        'type' => $meta['type'],
+    ];
+
+    if (($meta['keywords'] ?? []) !== []) {
+        $manifest['keywords'] = $meta['keywords'];
+    }
+
+    $manifest['homepage'] = 'https://github.com/phalanx-php/phalanx-' . phalanx_package_slug($meta['package']);
+    $manifest['authors'] = [
+        [
+            'name' => 'Jonathan Havens',
+            'email' => 'mail@phalanx-php.com',
+        ],
+    ];
+    $manifest['require'] = $meta['requires'];
+
+    if (($meta['suggests'] ?? []) !== []) {
+        $manifest['suggest'] = $meta['suggests'];
+    }
+
+    $manifest['require-dev'] = $meta['devRequires'];
+
+    if ($meta['bins'] !== []) {
+        $manifest['bin'] = $meta['bins'];
+    }
+
+    $manifest['scripts'] = [
+        'test' => phalanx_package_test_script($module),
+    ];
+
+    $autoload = [
+        'psr-4' => [
+            $meta['namespace'] => 'src/',
+        ],
+    ];
+
+    if (($meta['autoloadFiles'] ?? []) !== []) {
+        $autoload = [
+            'files' => $meta['autoloadFiles'],
+            'psr-4' => $autoload['psr-4'],
+        ];
+    }
+
+    $manifest['autoload'] = $autoload;
+    $manifest['autoload-dev'] = [
+        'psr-4' => $meta['testNamespaces'] ?? [$meta['testNamespace'] => 'tests/'],
+    ];
+
+    if (($meta['devClassmap'] ?? []) !== []) {
+        $manifest['autoload-dev']['classmap'] = $meta['devClassmap'];
+    }
+
+    $extra = [
+        'branch-alias' => [
+            'dev-main' => $meta['branchAlias'],
+        ],
+    ];
+
+    if (($meta['bundles'] ?? []) !== []) {
+        $extra['phalanx'] = [
+            'bundles' => $meta['bundles'],
+        ];
+    }
+
+    if (($meta['phpstanIncludes'] ?? []) !== []) {
+        $extra['phpstan'] = [
+            'includes' => $meta['phpstanIncludes'],
+        ];
+    }
+
+    $manifest['extra'] = $extra;
+
+    if (($meta['allowPlugins'] ?? []) !== [] || ($meta['sortPackages'] ?? false) === true) {
+        $manifest['config'] = [];
+
+        if (($meta['sortPackages'] ?? false) === true) {
+            $manifest['config']['sort-packages'] = true;
+        }
+
+        if (($meta['allowPlugins'] ?? []) !== []) {
+            $manifest['config']['allow-plugins'] = $meta['allowPlugins'];
+        }
+    }
+
+    $manifest['minimum-stability'] = 'dev';
+    $manifest['prefer-stable'] = true;
+
+    return $manifest;
+}
+
+function phalanx_package_test_script(string $module): string
+{
+    $config = is_file(__DIR__ . '/../src/' . $module . '/phpunit.xml.dist')
+        ? 'phpunit.xml.dist'
+        : 'phpunit.xml';
+
+    return 'php -d memory_limit=512M vendor/bin/phpunit -c ' . $config;
+}
+
+function phalanx_package_slug(string $package): string
+{
+    [, $name] = explode('/', $package, 2);
+
+    return $name;
+}
+
+function phalanx_normalized_manifest(array $manifest): array
+{
+    ksort($manifest);
+
+    foreach ($manifest as $key => $value) {
+        if (is_array($value)) {
+            $manifest[$key] = phalanx_normalized_manifest($value);
+        }
+    }
+
+    return $manifest;
+}

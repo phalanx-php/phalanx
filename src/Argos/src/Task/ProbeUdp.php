@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Argos\Task;
 
 use Phalanx\Argos\ProbeResult;
+use Phalanx\Cancellation\Cancelled;
 use Phalanx\Scope\TaskScope;
 use Phalanx\System\UdpSocket;
 use Phalanx\Task\HasTimeout;
@@ -30,6 +31,8 @@ final class ProbeUdp implements Scopeable, HasTimeout
 
         try {
             $client->connect($scope, $this->ip, $this->port, $this->timeoutSeconds);
+        } catch (Cancelled $e) {
+            throw $e;
         } catch (\Throwable) {
             return new ProbeResult(
                 ip: $this->ip,

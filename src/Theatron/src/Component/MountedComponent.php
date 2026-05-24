@@ -23,6 +23,7 @@ use Phalanx\Theatron\Styling\Theme;
 use Phalanx\Theatron\Tdom\Renderable;
 use Phalanx\Theatron\Tdom\Style;
 use Throwable;
+
 use function Phalanx\Theatron\Ui\text;
 
 final class MountedComponent implements Renderable

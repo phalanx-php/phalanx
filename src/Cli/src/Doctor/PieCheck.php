@@ -15,7 +15,7 @@ final class PieCheck
 
         try {
             $process->run();
-        } catch (\Throwable) {
+        } catch (\RuntimeException) {
             return self::notFound();
         }
 

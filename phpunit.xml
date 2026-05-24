@@ -70,6 +70,9 @@
         <testsuite name="Athena Integration">
             <directory>src/Athena/tests/Integration</directory>
         </testsuite>
+        <testsuite name="Athena Acceptance">
+            <directory>src/Athena/tests/Acceptance</directory>
+        </testsuite>
         <testsuite name="Enigma Unit">
             <directory>src/Enigma/tests/Unit</directory>
         </testsuite>
@@ -84,6 +87,9 @@
         </testsuite>
         <testsuite name="Argos Unit">
             <directory>src/Argos/tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Argos Integration">
+            <directory>src/Argos/tests/Integration</directory>
         </testsuite>
         <testsuite name="Skopos">
             <directory>src/Skopos/tests</directory>
@@ -102,6 +108,12 @@
         </testsuite>
         <testsuite name="Panoply Unit">
             <directory>src/Panoply/tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Panoply Integration">
+            <directory>src/Panoply/tests/Integration</directory>
+        </testsuite>
+        <testsuite name="Panoply Acceptance">
+            <directory>src/Panoply/tests/Acceptance</directory>
         </testsuite>
         <testsuite name="Theatron">
             <directory>src/Theatron/tests</directory>

@@ -12,13 +12,13 @@
         "async",
         "openswoole"
     ],
+    "homepage": "https://github.com/phalanx-php/phalanx-styx",
     "authors": [
         {
             "name": "Jonathan Havens",
             "email": "mail@phalanx-php.com"
         }
     ],
-    "homepage": "https://github.com/phalanx-php/phalanx-styx",
     "require": {
         "php": "^8.4",
         "ext-openswoole": "^26.0",
@@ -28,7 +28,7 @@
         "phpunit/phpunit": "^13.0"
     },
     "scripts": {
-        "test": "php -d memory_limit=512M ../../vendor/bin/phpunit -c phpunit.xml"
+        "test": "php -d memory_limit=512M vendor/bin/phpunit -c phpunit.xml"
     },
     "autoload": {
         "psr-4": {

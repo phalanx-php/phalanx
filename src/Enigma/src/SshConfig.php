@@ -13,5 +13,6 @@ final readonly class SshConfig
         public float $defaultTimeoutSeconds = 30.0,
         public float $connectionTimeoutSeconds = 10.0,
         public bool $strictHostKeyChecking = true,
-    ) {}
+    ) {
+    }
 }

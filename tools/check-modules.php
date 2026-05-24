@@ -3,6 +3,8 @@
 
 declare(strict_types=1);
 
+require __DIR__ . '/module-manifest.php';
+
 $root = dirname(__DIR__);
 $modules = require $root . '/modules.php';
 $rootComposer = json_decode((string) file_get_contents($root . '/composer.json'), true, flags: JSON_THROW_ON_ERROR);
@@ -32,22 +34,14 @@ foreach ($modules as $module => $meta) {
     $composer = json_decode((string) file_get_contents($composerPath), true, flags: JSON_THROW_ON_ERROR);
     $package = $meta['package'];
     $packages[$package] = $module;
-
-    expect($errors, $module, 'name', $package, $composer['name'] ?? null);
-    expect($errors, $module, 'description', $meta['description'], $composer['description'] ?? null);
-    expect($errors, $module, 'type', $meta['type'], $composer['type'] ?? null);
-    expect($errors, $module, 'require', $meta['requires'], $composer['require'] ?? []);
-    expect($errors, $module, 'require-dev', $meta['devRequires'], $composer['require-dev'] ?? []);
-    expect($errors, $module, 'bin', $meta['bins'], $composer['bin'] ?? []);
-    expect($errors, $module, 'branch alias', $meta['branchAlias'], $composer['extra']['branch-alias']['dev-main'] ?? null);
     $testNamespaces = $meta['testNamespaces'] ?? [$meta['testNamespace'] => 'tests/'];
 
-    expect($errors, $module, 'autoload namespace', [$meta['namespace'] => 'src/'], $composer['autoload']['psr-4'] ?? []);
-    expect($errors, $module, 'test namespace', $testNamespaces, $composer['autoload-dev']['psr-4'] ?? []);
-    expect($errors, $module, 'scripts', ['test' => packageTestScript($module)], $composer['scripts'] ?? []);
+    if (phalanx_normalized_manifest($composer) !== phalanx_normalized_manifest(phalanx_module_manifest($module, $meta))) {
+        $errors[] = "$module: composer.json does not match generated module manifest";
+    }
 
-    if (($meta['autoloadFiles'] ?? []) !== ($composer['autoload']['files'] ?? [])) {
-        expect($errors, $module, 'autoload files', $meta['autoloadFiles'] ?? [], $composer['autoload']['files'] ?? []);
+    if (! is_file($path . '/LICENSE')) {
+        $errors[] = "$module: missing LICENSE for split package";
     }
 
     expect($errors, $module, 'root replace', 'self.version', $rootComposer['replace'][$package] ?? null);
@@ -98,15 +92,6 @@ function expect(array &$errors, string $module, string $field, mixed $expected, 
         json_encode($expected, JSON_UNESCAPED_SLASHES),
         json_encode($actual, JSON_UNESCAPED_SLASHES),
     );
-}
-
-function packageTestScript(string $module): string
-{
-    $config = is_file(__DIR__ . '/../src/' . $module . '/phpunit.xml.dist')
-        ? 'phpunit.xml.dist'
-        : 'phpunit.xml';
-
-    return 'php -d memory_limit=512M ../../vendor/bin/phpunit -c ' . $config;
 }
 
 function graphErrors(array $modules): array

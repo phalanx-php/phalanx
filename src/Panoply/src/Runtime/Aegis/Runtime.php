@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Panoply\Runtime\Aegis;
 
+use Phalanx\Cancellation\Cancelled;
 use Phalanx\Panoply\Runtime as RuntimeContract;
 use Phalanx\Panoply\Runtime\CancellationException;
 // Importing Phalanx\Scope and Phalanx\Supervisor here is the documented
@@ -50,6 +51,8 @@ final class Runtime implements RuntimeContract
     {
         try {
             $this->scope->throwIfCancelled();
+        } catch (Cancelled $e) {
+            throw new CancellationException($e->getMessage(), 0, $e);
         } catch (\Throwable $e) {
             // Keep panoply's cancellation type while preserving diagnostics.
             throw new CancellationException($e->getMessage(), 0, $e);

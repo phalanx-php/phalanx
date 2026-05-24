@@ -15,7 +15,8 @@ final readonly class WriteFileStream implements Executable
     public function __construct(
         private string $path,
         private Emitter $source,
-    ) {}
+    ) {
+    }
 
     public function __invoke(ExecutionScope $scope): mixed
     {

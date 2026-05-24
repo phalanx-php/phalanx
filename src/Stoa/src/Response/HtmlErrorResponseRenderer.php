@@ -15,7 +15,7 @@ use Throwable;
 
 /**
  * High-fidelity HTML error response implementation.
- * 
+ *
  * Renders a modern, branded error page when Stoa is in debug mode
  * and the client accepts HTML. Includes high-fidelity syntax highlighting
  * (Prism.js), active ledger snapshot, and full stack trace.
@@ -128,7 +128,7 @@ final readonly class HtmlErrorResponseRenderer implements ErrorResponseRenderer
         $logo = $this->getLogo();
         $escapedCode = htmlspecialchars($code, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 
-        $sourceContent = $code !== '' 
+        $sourceContent = $code !== ''
             ? "<pre class='line-numbers language-php' data-line='{$line}' id='copy-source-content'><code class='language-php'>{$escapedCode}</code></pre>"
             : "<div class='empty-state'><i data-lucide='file-x' size='48'></i><div>Source code unavailable for this frame</div></div>";
 

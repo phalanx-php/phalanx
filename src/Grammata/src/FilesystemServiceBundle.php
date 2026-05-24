@@ -8,12 +8,17 @@ use Phalanx\Boot\AppContext;
 use Phalanx\Boot\BootHarness;
 use Phalanx\Boot\Optional;
 use Phalanx\Grammata\NativeFastPath\NativeFastPath;
+use Phalanx\Scope\TaskScope;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
-use Phalanx\Scope\TaskScope;
 
 class FilesystemServiceBundle extends ServiceBundle
 {
+    public function __construct(
+        private ?int $maxOpen = null,
+    ) {
+    }
+
     /**
      * File pool size is optional — the bundle defaults to 64 concurrent
      * file handles when the env var is absent.
@@ -25,10 +30,6 @@ class FilesystemServiceBundle extends ServiceBundle
             Optional::env('FILESYSTEM_MAX_OPEN', fallback: '64', description: 'Maximum concurrent file handles'),
         );
     }
-
-    public function __construct(
-        private ?int $maxOpen = null,
-    ) {}
 
     public function services(Services $services, AppContext $context): void
     {

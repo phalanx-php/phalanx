@@ -12,5 +12,6 @@ final readonly class NetworkConfig
         public string $pingBinary = 'ping',
         public string $broadcastAddress = '255.255.255.255',
         public int $wolPort = 9,
-    ) {}
+    ) {
+    }
 }

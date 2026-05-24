@@ -77,6 +77,19 @@ class WorkerScope implements AegisWorkerScope
         return $this->waitForResponse($id)->unwrap();
     }
 
+    /** @param array<string, mixed> $payload Must be JSON-serializable (no closures, resources, or objects). */
+    public function streamEmit(string $eventClass, array $payload = []): void
+    {
+        $message = new StreamEmit(
+            taskId: $this->taskId,
+            eventClass: $eventClass,
+            payload: $payload,
+        );
+
+        fwrite($this->stdout, Codec::encode($message));
+        fflush($this->stdout);
+    }
+
     private function waitForResponse(string $expectedId, int $timeoutSeconds = 30): Response
     {
         stream_set_timeout($this->stdin, $timeoutSeconds);
@@ -98,19 +111,6 @@ class WorkerScope implements AegisWorkerScope
                 return $response;
             }
         }
-    }
-
-    /** @param array<string, mixed> $payload Must be JSON-serializable (no closures, resources, or objects). */
-    public function streamEmit(string $eventClass, array $payload = []): void
-    {
-        $message = new StreamEmit(
-            taskId: $this->taskId,
-            eventClass: $eventClass,
-            payload: $payload,
-        );
-
-        fwrite($this->stdout, Codec::encode($message));
-        fflush($this->stdout);
     }
 
     private function write(ServiceCall $call): void

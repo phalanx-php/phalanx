@@ -10,13 +10,13 @@
         "server",
         "openswoole"
     ],
+    "homepage": "https://github.com/phalanx-php/phalanx-hermes",
     "authors": [
         {
             "name": "Jonathan Havens",
             "email": "mail@phalanx-php.com"
         }
     ],
-    "homepage": "https://github.com/phalanx-php/phalanx-hermes",
     "require": {
         "php": "^8.4",
         "openswoole/core": "^26.2",
@@ -28,7 +28,7 @@
         "phpunit/phpunit": "^13.0"
     },
     "scripts": {
-        "test": "php -d memory_limit=512M ../../vendor/bin/phpunit -c phpunit.xml.dist"
+        "test": "php -d memory_limit=512M vendor/bin/phpunit -c phpunit.xml.dist"
     },
     "autoload": {
         "psr-4": {

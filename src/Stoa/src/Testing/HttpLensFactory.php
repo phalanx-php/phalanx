@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Phalanx\Stoa\Testing;
 
 use Phalanx\Stoa\StoaApplication;
-use Phalanx\Testing\TestApp;
 use Phalanx\Testing\Lens;
 use Phalanx\Testing\LensFactory;
+use Phalanx\Testing\TestApp;
 
 final class HttpLensFactory implements LensFactory
 {

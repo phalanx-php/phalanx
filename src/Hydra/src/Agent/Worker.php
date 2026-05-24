@@ -6,8 +6,6 @@ namespace Phalanx\Hydra\Agent;
 
 use OpenSwoole\Coroutine;
 use OpenSwoole\Coroutine\Channel;
-use Phalanx\Runtime\CoroutineRuntime;
-use Phalanx\Runtime\RuntimePolicy;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Hydra\Process\ProcessConfig;
 use Phalanx\Hydra\Process\ProcessHandle;
@@ -15,6 +13,8 @@ use Phalanx\Hydra\Process\ProcessState;
 use Phalanx\Hydra\Protocol\ServiceCall;
 use Phalanx\Hydra\Protocol\TaskRequest;
 use Phalanx\Hydra\Runtime\ParentServiceProxy;
+use Phalanx\Runtime\CoroutineRuntime;
+use Phalanx\Runtime\RuntimePolicy;
 use Phalanx\Scope\TaskExecutor;
 use Phalanx\Scope\TaskScope;
 use Phalanx\Supervisor\WaitReason;

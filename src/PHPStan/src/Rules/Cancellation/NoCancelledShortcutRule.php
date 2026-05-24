@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\PHPStan\Rules\Cancellation;
 
+use Phalanx\PHPStan\Support\PathPolicy;
+use Phalanx\PHPStan\Support\RuleErrors;
 use PhpParser\Node;
 use PhpParser\Node\Expr\BinaryOp\BooleanAnd;
 use PhpParser\Node\Expr\BinaryOp\BooleanOr;
@@ -15,8 +17,6 @@ use PhpParser\Node\Stmt\Catch_;
 use PhpParser\Node\Stmt\Expression;
 use PhpParser\Node\Stmt\If_;
 use PhpParser\Node\Stmt\TryCatch;
-use Phalanx\PHPStan\Support\PathPolicy;
-use Phalanx\PHPStan\Support\RuleErrors;
 use PHPStan\Analyser\Scope;
 use PHPStan\Rules\IdentifierRuleError;
 use PHPStan\Rules\Rule;

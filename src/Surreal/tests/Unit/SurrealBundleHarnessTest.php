@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+namespace Phalanx\Surreal\Tests\Unit;
+
 use Phalanx\Boot\AppContext;
 use Phalanx\Boot\BootHarnessRunner;
 use Phalanx\Boot\Optional;

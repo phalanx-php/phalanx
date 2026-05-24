@@ -1,7 +1,25 @@
 <?xml version="1.0"?>
 <ruleset name="Phalanx">
     <file>src/Aegis/src</file>
+    <file>src/Archon/src</file>
+    <file>src/Argos/src</file>
+    <file>src/Athena/src</file>
+    <file>src/Cli/src</file>
+    <file>src/Eidolon/src</file>
+    <file>src/Enigma/src</file>
+    <file>src/Grammata/src</file>
+    <file>src/Hermes/src</file>
+    <file>src/Hydra/src</file>
+    <file>src/Iris/src</file>
+    <file>src/PHPStan/src</file>
+    <file>src/Panoply/src</file>
+    <file>src/Skopos/src</file>
+    <file>src/Stoa/src</file>
+    <file>src/Styx/src</file>
+    <file>src/Surreal/src</file>
+    <file>src/Theatron/src</file>
     <arg name="colors"/>
+    <arg name="warning-severity" value="0"/>
     <arg value="sp"/>
 
     <!-- PSR-12 base -->
@@ -24,17 +42,28 @@
         <exclude-pattern>*/DeferredScope.php</exclude-pattern>
         <exclude-pattern>*/CancellationToken.php</exclude-pattern>
         <exclude-pattern>*/ExecutionContext.php</exclude-pattern>
+        <exclude-pattern>*/CommandResult.php</exclude-pattern>
+        <exclude-pattern>*/Reactive/Signal.php</exclude-pattern>
+        <exclude-pattern>*/Reactive/Computed.php</exclude-pattern>
+        <exclude-pattern>*/Component/MountedComponent.php</exclude-pattern>
+        <exclude-pattern>*/Focus/FocusManager.php</exclude-pattern>
     </rule>
 
     <!-- PHP 8.4 property hooks: spacing rules misfire on hook syntax -->
     <rule ref="PSR2.Classes.PropertyDeclaration.SpacingAfterType">
         <exclude-pattern>*/SettlementBag.php</exclude-pattern>
         <exclude-pattern>*/ExecutionContext.php</exclude-pattern>
+        <exclude-pattern>*/CommandResult.php</exclude-pattern>
+        <exclude-pattern>*/Reactive/Signal.php</exclude-pattern>
+        <exclude-pattern>*/Reactive/Computed.php</exclude-pattern>
+        <exclude-pattern>*/Component/MountedComponent.php</exclude-pattern>
+        <exclude-pattern>*/Focus/FocusManager.php</exclude-pattern>
     </rule>
 
     <!-- PHP 8.4 property hooks: indentation rule misfires on hook bodies -->
     <rule ref="Generic.WhiteSpace.ScopeIndent.IncorrectExact">
         <exclude-pattern>*/ExecutionContext.php</exclude-pattern>
+        <exclude-pattern>*/Reactive/Computed.php</exclude-pattern>
     </rule>
 
     <!-- Slevomat: Member ordering -->

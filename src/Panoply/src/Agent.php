@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Phalanx\Panoply;
 
 /**
- * The agent authoring contract - and why this lib is called 'panoply'. 
- * An agent IS a bounded capability package — identity, declared capabilities, 
- * context positioning, provider transport requirements, effect surface, and 
- * output commitment. The model is the reasoning engine inside one invocation; 
+ * The agent authoring contract - and why this lib is called 'panoply'.
+ * An agent IS a bounded capability package — identity, declared capabilities,
+ * context positioning, provider transport requirements, effect surface, and
+ * output commitment. The model is the reasoning engine inside one invocation;
  * the agent is the package the runtime arms it with.
  *
  * Implementations declare each surface as a property hook returning an

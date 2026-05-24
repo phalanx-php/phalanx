@@ -1,8 +1,8 @@
 {
     "name": "phalanx-php/enigma",
     "description": "Non-blocking SSH command execution, file transfer, and tunnel management as Phalanx tasks",
-    "type": "library",
     "license": "MIT",
+    "type": "library",
     "homepage": "https://github.com/phalanx-php/phalanx-enigma",
     "authors": [
         {
@@ -19,12 +19,7 @@
         "phpunit/phpunit": "^13.0"
     },
     "scripts": {
-        "test": "php -d memory_limit=512M ../../vendor/bin/phpunit -c phpunit.xml.dist"
-    },
-    "extra": {
-        "branch-alias": {
-            "dev-main": "0.6.x-dev"
-        }
+        "test": "php -d memory_limit=512M vendor/bin/phpunit -c phpunit.xml.dist"
     },
     "autoload": {
         "psr-4": {
@@ -35,5 +30,12 @@
         "psr-4": {
             "Phalanx\\Enigma\\Tests\\": "tests/"
         }
-    }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "0.6.x-dev"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
 }

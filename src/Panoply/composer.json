@@ -26,6 +26,16 @@
         "symfony/uid": "^7.0 || ^8.0",
         "symfony/yaml": "^7.0 || ^8.0"
     },
+    "suggest": {
+        "phalanx-php/aegis": "Required for the Aegis Runtime adapter; enables scope-bound cancellation and cleanup",
+        "phalanx-php/athena": "Required for the Athena Provider adapter; bridges Athena's AgentEvent stream to panoply Cues",
+        "phalanx-php/iris": "Required for the Iris Transport adapter; OpenSwoole-native streaming HTTP",
+        "phalanx-php/grammata": "Required for HomeDir parsers; managed file I/O with FilePool",
+        "phalanx-php/archon": "Required for the panoply:agents:scan Archon command",
+        "ext-sqlite3": "Required for Codex HomeDir sqlite-backed history",
+        "ext-openswoole": "Required for the Iris transport and Aegis runtime",
+        "yosymfony/toml": "Required for reading Codex config.toml settings; without it Settings operates in no-op mode and asString/asInt/etc. throw"
+    },
     "require-dev": {
         "openswoole/ide-helper": "^26.2",
         "phalanx-php/aegis": "^0.6",
@@ -37,18 +47,8 @@
         "squizlabs/php_codesniffer": "^3.10 || ^4.0",
         "yosymfony/toml": "^1.0"
     },
-    "suggest": {
-        "phalanx-php/aegis": "Required for the Aegis Runtime adapter; enables scope-bound cancellation and cleanup",
-        "phalanx-php/athena": "Required for the Athena Provider adapter; bridges Athena's AgentEvent stream to panoply Cues",
-        "phalanx-php/iris": "Required for the Iris Transport adapter; OpenSwoole-native streaming HTTP",
-        "phalanx-php/grammata": "Required for HomeDir parsers; managed file I/O with FilePool",
-        "phalanx-php/archon": "Required for the panoply:agents:scan Archon command",
-        "ext-sqlite3": "Required for Codex HomeDir sqlite-backed history",
-        "ext-openswoole": "Required for the Iris transport and Aegis runtime",
-        "yosymfony/toml": "Required for reading Codex config.toml settings; without it Settings operates in no-op mode and asString/asInt/etc. throw"
-    },
     "scripts": {
-        "test": "php -d memory_limit=512M ../../vendor/bin/phpunit -c phpunit.xml.dist"
+        "test": "php -d memory_limit=512M vendor/bin/phpunit -c phpunit.xml.dist"
     },
     "autoload": {
         "psr-4": {
@@ -70,5 +70,7 @@
         "allow-plugins": {
             "dealerdirect/phpcodesniffer-composer-installer": true
         }
-    }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
 }

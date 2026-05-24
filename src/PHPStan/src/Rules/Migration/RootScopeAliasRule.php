@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Phalanx\PHPStan\Rules\Migration;
 
-use PhpParser\Node;
-use PhpParser\Node\Stmt\Use_;
 use Phalanx\PHPStan\Support\PathPolicy;
 use Phalanx\PHPStan\Support\RuleErrors;
+use PhpParser\Node;
+use PhpParser\Node\Stmt\Use_;
 use PHPStan\Analyser\Scope;
 use PHPStan\Rules\IdentifierRuleError;
 use PHPStan\Rules\Rule;

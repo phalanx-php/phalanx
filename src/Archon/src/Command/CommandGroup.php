@@ -161,8 +161,7 @@ final class CommandGroup implements Executable
         self $group,
         array $args,
         string $resourceId,
-    ): mixed
-    {
+    ): mixed {
         $subcommand = $args[0] ?? null;
 
         if ($subcommand === null || $subcommand === '--help' || $subcommand === 'help') {
