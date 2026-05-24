@@ -60,9 +60,21 @@ class EffectLogEntry
             arguments: $this->arguments,
             status: $status,
             reasonCodes: $reasonCodes,
-            grantId: $grantId ?? $this->grantId,
-            durationMs: $durationMs ?? $this->durationMs,
-            errorClass: $errorClass ?? $this->errorClass,
+            grantId: $this->grantIdFor($status, $grantId),
+            durationMs: $status === EffectStatus::Executed ? $durationMs : null,
+            errorClass: $status === EffectStatus::Failed ? $errorClass : null,
         );
+    }
+
+    private function grantIdFor(EffectStatus $status, ?string $grantId): ?string
+    {
+        return match ($status) {
+            EffectStatus::Approved,
+            EffectStatus::Denied,
+            EffectStatus::Executed,
+            EffectStatus::Failed => $grantId ?? $this->grantId,
+            EffectStatus::Paused,
+            EffectStatus::Requested => null,
+        };
     }
 }

@@ -288,6 +288,7 @@ final class ChatScreenTest extends TestCase
         self::assertStringContainsString('Tool result summarized.', $text);
         self::assertStringContainsString('effect executed: file.read eff_1', $text);
         self::assertStringContainsString('Read a strategy note', $text);
+        self::assertStringContainsString('grant grant_1', $text);
         self::assertStringContainsString('42ms', $text);
         self::assertStringContainsString('sha256:abc', $text);
         self::assertStringContainsString('usage: 12 in', $text);

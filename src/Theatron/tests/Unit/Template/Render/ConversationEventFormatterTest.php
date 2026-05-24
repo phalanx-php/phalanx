@@ -197,6 +197,53 @@ final class ConversationEventFormatterTest extends TestCase
     }
 
     #[Test]
+    public function threadLinesCarryApprovalGrantIntoExecutedLifecycle(): void
+    {
+        $at = new DateTimeImmutable('2026-05-23T21:00:00Z');
+        $lines = ConversationEventFormatter::threadLines([
+            ConversationTurnEvent::fromCue(new EffectRequested(
+                id: 'cue_1',
+                sequence: 1,
+                activityId: 'act_1',
+                invocationId: 'inv_1',
+                agentId: 'agent_1',
+                at: $at,
+                effectId: 'eff_1',
+                kind: EffectKind::FileRead,
+                summary: 'Read a strategy note',
+                requiresApproval: true,
+            )),
+            ConversationTurnEvent::fromCue(new EffectAuthorized(
+                id: 'cue_2',
+                sequence: 2,
+                activityId: 'act_1',
+                invocationId: 'inv_1',
+                agentId: 'agent_1',
+                at: $at,
+                effectId: 'eff_1',
+                grantId: 'grant_1',
+            )),
+            ConversationTurnEvent::fromCue(new EffectExecuted(
+                id: 'cue_3',
+                sequence: 3,
+                activityId: 'act_1',
+                invocationId: 'inv_1',
+                agentId: 'agent_1',
+                at: $at,
+                effectId: 'eff_1',
+                durationMs: 42,
+                resultDigest: 'sha256:abc',
+            )),
+        ]);
+
+        self::assertCount(1, $lines);
+        self::assertSame(
+            'effect executed: file.read eff_1 · Read a strategy note · grant grant_1 · 42ms · sha256:abc',
+            $lines[0]->text,
+        );
+    }
+
+    #[Test]
     public function effectLogSummaryShowsResolutionToolAndOutcomeWithoutInspectionHash(): void
     {
         $event = ConversationTurnEvent::fromEffectLog(new EffectLogRecord(

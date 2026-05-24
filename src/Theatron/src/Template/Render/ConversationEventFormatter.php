@@ -200,10 +200,11 @@ class ConversationEventFormatter
         }
 
         $requested = self::first($group, ConversationTurnEventKind::EffectRequested);
+        $authorization = self::lastOfKind($group, ConversationTurnEventKind::EffectAuthorized);
         $terminal = self::last($group);
 
         $label = self::effectLifecycleLabel($terminal);
-        $body = self::effectLifecycleBody($effectId, $requested, $terminal);
+        $body = self::effectLifecycleBody($effectId, $requested, $authorization, $terminal);
 
         return new ConversationEventRenderLine(
             text: $body === '' ? $label : $label . ': ' . $body,
@@ -220,6 +221,22 @@ class ConversationEventFormatter
             $events,
             static fn(ConversationTurnEvent $event): bool => $event->projection->kind === $kind,
         );
+    }
+
+    /**
+     * @param list<ConversationTurnEvent> $events
+     */
+    private static function lastOfKind(array $events, ConversationTurnEventKind $kind): ?ConversationTurnEvent
+    {
+        $match = null;
+
+        foreach ($events as $event) {
+            if ($event->projection->kind === $kind) {
+                $match = $event;
+            }
+        }
+
+        return $match;
     }
 
     /**
@@ -248,11 +265,14 @@ class ConversationEventFormatter
     private static function effectLifecycleBody(
         string $effectId,
         ?ConversationTurnEvent $requested,
+        ?ConversationTurnEvent $authorization,
         ConversationTurnEvent $terminal,
     ): string {
         $projection = $terminal->projection;
         $request = $requested === null ? null : $requested->projection;
+        $approval = $authorization === null ? null : $authorization->projection;
         $effectKind = $request === null ? $projection->effectKind : ($request->effectKind ?? $projection->effectKind);
+        $grantId = $projection->grantId ?? $approval?->grantId;
         $parts = [
             trim(($effectKind ?? '') . ' ' . $effectId),
         ];
@@ -269,8 +289,8 @@ class ConversationEventFormatter
             $parts[] = implode(', ', $projection->reasonCodes);
         }
 
-        if ($projection->grantId !== null && $projection->grantId !== '') {
-            $parts[] = 'grant ' . $projection->grantId;
+        if ($grantId !== null && $grantId !== '') {
+            $parts[] = 'grant ' . $grantId;
         }
 
         if ($projection->durationMs !== null) {
