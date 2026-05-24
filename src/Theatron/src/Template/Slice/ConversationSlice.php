@@ -33,10 +33,6 @@ class ConversationSlice
         private(set) array $turns = [],
         private(set) bool $isStreaming = false,
         private(set) string $thinkingBuffer = '',
-        private(set) int $scrollOffset = 0,
-        private(set) ?int $expandedIndex = null,
-        private(set) ?string $selectedTurnId = null,
-        private(set) bool $showThinking = false,
     ) {
     }
 
@@ -61,10 +57,6 @@ class ConversationSlice
             turns: [...$this->turns, $turn],
             isStreaming: $this->isStreaming,
             thinkingBuffer: $this->thinkingBuffer,
-            scrollOffset: 0,
-            expandedIndex: null,
-            selectedTurnId: null,
-            showThinking: $this->showThinking,
         );
     }
 
@@ -147,125 +139,6 @@ class ConversationSlice
             turns: array_values($turns),
             isStreaming: false,
             thinkingBuffer: '',
-            scrollOffset: $this->scrollOffset,
-            expandedIndex: $this->expandedIndex,
-            selectedTurnId: $this->selectedTurnId,
-            showThinking: $this->showThinking,
-        );
-    }
-
-    public function selectedTurn(): ?ConversationTurn
-    {
-        if ($this->selectedTurnId === null) {
-            return null;
-        }
-
-        foreach ($this->turns as $turn) {
-            if ($turn->id === $this->selectedTurnId) {
-                return $turn;
-            }
-        }
-
-        return null;
-    }
-
-    public function focusedTurn(): ?ConversationTurn
-    {
-        if ($this->turns === []) {
-            return null;
-        }
-
-        $index = count($this->turns) - 1 - $this->scrollOffset;
-
-        return $this->turns[$index] ?? null;
-    }
-
-    public function scrollUp(): self
-    {
-        $max = max(0, count($this->turns) - 1);
-
-        return $this->withScroll(min($max, $this->scrollOffset + 1));
-    }
-
-    public function scrollDown(): self
-    {
-        return $this->withScroll(max(0, $this->scrollOffset - 1));
-    }
-
-    public function expandAtScroll(): self
-    {
-        if ($this->scrollOffset === 0) {
-            return $this;
-        }
-
-        $turn = $this->focusedTurn();
-
-        if ($turn === null) {
-            return $this;
-        }
-
-        return new self(
-            messages: $this->messages,
-            turns: $this->turns,
-            isStreaming: $this->isStreaming,
-            thinkingBuffer: $this->thinkingBuffer,
-            scrollOffset: $this->scrollOffset,
-            expandedIndex: $this->focusedExchangeIndex(),
-            selectedTurnId: $turn->id,
-            showThinking: $this->showThinking,
-        );
-    }
-
-    public function expandFocused(): self
-    {
-        $turn = $this->focusedTurn();
-        $index = $this->focusedExchangeIndex();
-
-        if ($turn === null || $index === null) {
-            return $this;
-        }
-
-        return new self(
-            messages: $this->messages,
-            turns: $this->turns,
-            isStreaming: $this->isStreaming,
-            thinkingBuffer: $this->thinkingBuffer,
-            scrollOffset: $this->scrollOffset,
-            expandedIndex: $index,
-            selectedTurnId: $turn->id,
-            showThinking: $this->showThinking,
-        );
-    }
-
-    public function focusedExchangeIndex(): ?int
-    {
-        $indexes = $this->exchangeIndexes();
-
-        if ($indexes === []) {
-            return null;
-        }
-
-        $index = count($indexes) - 1 - $this->scrollOffset;
-
-        return $indexes[$index] ?? null;
-    }
-
-    public function refocus(): self
-    {
-        return $this->withScroll(0);
-    }
-
-    public function toggleThinking(): self
-    {
-        return new self(
-            messages: $this->messages,
-            turns: $this->turns,
-            isStreaming: $this->isStreaming,
-            thinkingBuffer: $this->thinkingBuffer,
-            scrollOffset: $this->scrollOffset,
-            expandedIndex: $this->expandedIndex,
-            selectedTurnId: $this->selectedTurnId,
-            showThinking: !$this->showThinking,
         );
     }
 
@@ -351,20 +224,6 @@ class ConversationSlice
         return null;
     }
 
-    private function withScroll(int $scrollOffset): self
-    {
-        return new self(
-            messages: $this->messages,
-            turns: $this->turns,
-            isStreaming: $this->isStreaming,
-            thinkingBuffer: $this->thinkingBuffer,
-            scrollOffset: $scrollOffset,
-            expandedIndex: null,
-            selectedTurnId: null,
-            showThinking: $this->showThinking,
-        );
-    }
-
     /** @param 'message'|'thinking' $channel */
     private function appendTokenProjection(
         string $text,
@@ -403,10 +262,6 @@ class ConversationSlice
             turns: $this->turns,
             isStreaming: true,
             thinkingBuffer: $thinkingBuffer,
-            scrollOffset: 0,
-            expandedIndex: null,
-            selectedTurnId: null,
-            showThinking: $this->showThinking,
         );
 
         return $next->appendEvent($event, $status);
@@ -438,10 +293,6 @@ class ConversationSlice
             turns: array_values($turns),
             isStreaming: $this->isStreaming,
             thinkingBuffer: $this->thinkingBuffer,
-            scrollOffset: $this->scrollOffset,
-            expandedIndex: $this->expandedIndex,
-            selectedTurnId: $this->selectedTurnId,
-            showThinking: $this->showThinking,
         );
     }
 

@@ -264,14 +264,15 @@ class DevToolsScreen implements
     private function metricRows(): array
     {
         $conversation = $this->store->conversation;
+        $workspaceView = $this->store->workspaceView;
         $activity = $this->store->activity;
         $input = $this->store->input;
         $rows = [
             self::row(Line::from(Span::styled('  Store Slices', self::headerStyle()))),
             self::kv(
                 'repl.convo',
-                count($conversation->turns) . ' turns, scroll=' . $conversation->scrollOffset
-                    . ', selected=' . ($conversation->selectedTurnId ?? 'none'),
+                count($conversation->turns) . ' turns, scroll=' . $workspaceView->chatScrollOffset
+                    . ', selected=' . ($workspaceView->selectedTurnId ?? 'none'),
             ),
             self::kv('repl.status', 'Agent [' . strtolower($activity->status->name) . ']'),
             self::kv('repl.input', mb_strlen($input->text) . ' chars'),

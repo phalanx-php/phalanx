@@ -57,6 +57,26 @@ final class ModeDispatcherTest extends TestCase
     }
 
     #[Test]
+    public function restoreCanKeepInputFocusedInNormalMode(): void
+    {
+        $focus = new FocusManager();
+        $focus->register('conversation', new class () implements Focusable {
+        });
+        $focus->register('input', new class () implements Focusable, AcceptsInput {
+            public function handleInput(KeyEvent $event): bool
+            {
+                return true;
+            }
+        });
+
+        $dispatcher = new ModeDispatcher($focus);
+        $dispatcher->restore(InputMode::Normal, 'input');
+
+        self::assertSame('input', $focus->activeName());
+        self::assertSame(InputMode::Normal, $dispatcher->mode);
+    }
+
+    #[Test]
     public function tabCyclesFocusInNormalMode(): void
     {
         $focus = new FocusManager();

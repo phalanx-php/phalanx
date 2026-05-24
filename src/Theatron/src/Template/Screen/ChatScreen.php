@@ -33,6 +33,7 @@ use Phalanx\Theatron\Template\Render\MarkdownRenderer;
 use Phalanx\Theatron\Template\Slice\ActivityStatus;
 use Phalanx\Theatron\Template\Slice\ConversationSlice;
 use Phalanx\Theatron\Template\Slice\ConversationTurn;
+use Phalanx\Theatron\Template\Slice\WorkspaceViewSlice;
 use Phalanx\Theatron\Text\Line;
 use Phalanx\Theatron\Text\Span;
 
@@ -128,23 +129,19 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, DeclaresBinding
     public function handleScroll(KeyEvent $event): bool
     {
         if ($event->is('j') || $event->is(Key::Down) || ($event->ctrl && $event->is('n'))) {
-            $this->store->conversation = $this->store->conversation->scrollDown();
+            $this->store->workspaceView = $this->store->workspaceView->scrollChatDown();
 
             return true;
         }
 
         if ($event->is('k') || $event->is(Key::Up) || ($event->ctrl && $event->is('p'))) {
-            $this->store->conversation = $this->store->conversation->scrollUp();
+            $this->store->workspaceView = $this->store->workspaceView->scrollChatUp($this->store->conversation);
 
             return true;
         }
 
         if ($event->is('G')) {
-            $slice = $this->store->conversation;
-            foreach ($slice->turns as $_) {
-                $slice = $slice->scrollUp();
-            }
-            $this->store->conversation = $slice;
+            $this->store->workspaceView = $this->store->workspaceView->scrollChatToOldest($this->store->conversation);
 
             return true;
         }
@@ -154,10 +151,10 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, DeclaresBinding
 
     public function submitOrExpand(): bool
     {
-        $conversation = $this->store->conversation;
+        $workspaceView = $this->store->workspaceView;
 
-        if ($conversation->scrollOffset > 0) {
-            $this->store->conversation = $conversation->expandAtScroll();
+        if ($workspaceView->chatScrollOffset > 0) {
+            $this->store->workspaceView = $workspaceView->expandFocusedChatTurn($this->store->conversation);
 
             return true;
         }
@@ -264,13 +261,16 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, DeclaresBinding
 
     public function openFocusedActivityBlock(): bool
     {
-        $conversation = $this->store->conversation->expandFocused();
+        $workspaceView = $this->store->workspaceView->selectFocusedChatTurn(
+            $this->store->conversation,
+            returnTarget: self::class,
+        );
 
-        if ($conversation->selectedTurnId === null || $this->navigator === null) {
+        if ($workspaceView->selectedTurnId === null || $this->navigator === null) {
             return false;
         }
 
-        $this->store->conversation = $conversation;
+        $this->store->workspaceView = $workspaceView;
         $this->navigator->go(ConversationBlockDetailScreen::class);
 
         return true;
@@ -434,6 +434,7 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, DeclaresBinding
     private function renderConversation(int $width, int $availableHeight): Renderable
     {
         $conversation = $this->store->conversation;
+        $workspaceView = $this->store->workspaceView;
         $rows = [
             self::row(Line::from(
                 Span::styled("  Λ̬ ", TextStyle::new()->fg(Color::indexed(250))),
@@ -443,15 +444,18 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, DeclaresBinding
             )),
         ];
 
-        $body = $this->renderConversationRows($conversation, max(20, $width - 2));
-        $visible = self::viewport($body, max(1, $availableHeight - 1), $conversation->scrollOffset === 0);
+        $body = $this->renderConversationRows($conversation, $workspaceView, max(20, $width - 2));
+        $visible = self::viewport($body, max(1, $availableHeight - 1), $workspaceView->chatScrollOffset === 0);
 
         return column(...[...$rows, ...$visible])->styled(TdomStyle::of(size: Size::fill()));
     }
 
     /** @return list<Renderable> */
-    private function renderConversationRows(ConversationSlice $conversation, int $wrapWidth): array
-    {
+    private function renderConversationRows(
+        ConversationSlice $conversation,
+        WorkspaceViewSlice $workspaceView,
+        int $wrapWidth,
+    ): array {
         if ($conversation->turns === []) {
             return [
                 self::row(Line::from(
@@ -460,32 +464,30 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, DeclaresBinding
             ];
         }
 
-        $selected = $conversation->selectedTurn();
-
-        if ($selected !== null) {
-            return $this->renderExchange($conversation, $selected, $wrapWidth);
-        }
-
         $rows = [];
         $lastTurn = $conversation->turns[array_key_last($conversation->turns)];
 
         foreach ($conversation->turns as $turn) {
-            if ($turn->id === $lastTurn->id) {
-                $rows = [...$rows, ...$this->renderExchange($conversation, $turn, $wrapWidth)];
+            if ($turn->id === $lastTurn->id || $turn->id === $workspaceView->expandedTurnId) {
+                $rows = [...$rows, ...$this->renderExchange($conversation, $workspaceView, $turn, $wrapWidth)];
                 continue;
             }
 
-            $rows = [...$rows, ...$this->renderSummary($conversation, $turn, $wrapWidth)];
+            $rows = [...$rows, ...$this->renderSummary($conversation, $workspaceView, $turn, $wrapWidth)];
         }
 
         return $rows;
     }
 
     /** @return list<Renderable> */
-    private function renderSummary(ConversationSlice $conversation, ConversationTurn $turn, int $wrapWidth): array
-    {
+    private function renderSummary(
+        ConversationSlice $conversation,
+        WorkspaceViewSlice $workspaceView,
+        ConversationTurn $turn,
+        int $wrapWidth,
+    ): array {
         $rows = [];
-        $focused = $this->activityBlocksFocused() && $conversation->focusedTurn()?->id === $turn->id;
+        $focused = $this->activityBlocksFocused() && $workspaceView->focusedTurn($conversation)?->id === $turn->id;
 
         $userStyle = TextStyle::new()->fg(Color::indexed(250));
         foreach (self::wrapIndented($turn->userText, $wrapWidth, $focused ? '  ▶ ' : '  > ', $userStyle) as $line) {
@@ -511,9 +513,13 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, DeclaresBinding
     }
 
     /** @return list<Renderable> */
-    private function renderExchange(ConversationSlice $conversation, ConversationTurn $turn, int $wrapWidth): array
-    {
-        $focused = $this->activityBlocksFocused() && $conversation->focusedTurn()?->id === $turn->id;
+    private function renderExchange(
+        ConversationSlice $conversation,
+        WorkspaceViewSlice $workspaceView,
+        ConversationTurn $turn,
+        int $wrapWidth,
+    ): array {
+        $focused = $this->activityBlocksFocused() && $workspaceView->focusedTurn($conversation)?->id === $turn->id;
         $rows = [self::row(Line::plain(''))];
         $rows[] = self::row(Line::from(
             Span::styled($focused ? '  ▶ you: ' : '  you: ', TextStyle::new()->fg(Color::indexed(255))->bold()),
@@ -537,7 +543,7 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, DeclaresBinding
 
         $rows = [...$rows, ...$this->renderTurnProjections($turn, $wrapWidth)];
 
-        if ($conversation->showThinking && !$ephemeralThinking && $turn->hasThinkingText()) {
+        if ($workspaceView->showThinking && !$ephemeralThinking && $turn->hasThinkingText()) {
             $thinkingStyle = TextStyle::new()->fg(Color::indexed(242));
             foreach (self::wrapIndented($turn->thinkingText(), $wrapWidth, '    ', $thinkingStyle) as $line) {
                 $rows[] = self::row($line);

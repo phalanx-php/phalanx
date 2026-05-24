@@ -41,7 +41,7 @@ class ConversationBlockDetailScreen implements Screen, HasStatusBar, HasFocusabl
 
     public function __invoke(ScreenContext $ctx): Renderable
     {
-        $turn = $this->store->conversation->selectedTurn();
+        $turn = $this->store->workspaceView->selectedTurn($this->store->conversation);
 
         if ($turn === null) {
             return text('  No conversation block selected.');

@@ -190,7 +190,7 @@ final class ChatScreenTest extends TestCase
         self::assertStringNotContainsString('thinking.', $defaultText);
         self::assertStringNotContainsString('hidden reasoning', $defaultText);
 
-        $store->conversation = $store->conversation->toggleThinking();
+        $store->workspaceView = $store->workspaceView->toggleThinking();
 
         $expandedText = self::flatten($screen($this->makeContext($store)));
 
@@ -319,8 +319,8 @@ final class ChatScreenTest extends TestCase
         $store = new AppStore();
         $store->conversation = (new ConversationSlice())
             ->addUserMessage('streaming expanded turn')
-            ->appendToken('single-streaming-thought', 'thinking')
-            ->toggleThinking();
+            ->appendToken('single-streaming-thought', 'thinking');
+        $store->workspaceView = $store->workspaceView->toggleThinking();
         $screen = new ChatScreen($store);
 
         $text = self::flatten($screen($this->makeContext($store)));
@@ -472,19 +472,19 @@ final class ChatScreenTest extends TestCase
         $store->conversation = $this->conversationWithUserMessages(4);
         $screen = new ChatScreen($store);
 
-        self::assertSame(0, $store->conversation->scrollOffset);
+        self::assertSame(0, $store->workspaceView->chatScrollOffset);
 
         self::assertTrue($screen->handleScroll(new KeyEvent(Key::Up)));
-        self::assertSame(1, $store->conversation->scrollOffset);
+        self::assertSame(1, $store->workspaceView->chatScrollOffset);
 
         self::assertTrue($screen->handleScroll(new KeyEvent('k')));
-        self::assertSame(2, $store->conversation->scrollOffset);
+        self::assertSame(2, $store->workspaceView->chatScrollOffset);
 
         self::assertTrue($screen->handleScroll(new KeyEvent(Key::Down)));
-        self::assertSame(1, $store->conversation->scrollOffset);
+        self::assertSame(1, $store->workspaceView->chatScrollOffset);
 
         self::assertTrue($screen->handleScroll(new KeyEvent('j')));
-        self::assertSame(0, $store->conversation->scrollOffset);
+        self::assertSame(0, $store->workspaceView->chatScrollOffset);
     }
 
     #[Test]
@@ -506,8 +506,8 @@ final class ChatScreenTest extends TestCase
         self::assertTrue($handler->handleNormalKey(new KeyEvent(Key::Enter)));
 
         self::assertSame(ConversationBlockDetailScreen::class, $navigator->target);
-        self::assertSame(2, $store->conversation->expandedIndex);
-        self::assertSame('turn_2', $store->conversation->selectedTurnId);
+        self::assertNull($store->workspaceView->expandedTurnId);
+        self::assertSame('turn_2', $store->workspaceView->selectedTurnId);
     }
 
     #[Test]
@@ -552,8 +552,8 @@ final class ChatScreenTest extends TestCase
                 outputTokens: 30,
                 cacheReadTokens: 2,
             ))
-            ->finalizeMessage()
-            ->expandFocused();
+            ->finalizeMessage();
+        $store->workspaceView = $store->workspaceView->selectFocusedChatTurn($store->conversation);
         $screen = new ConversationBlockDetailScreen($store);
 
         $text = self::flatten($screen($this->makeContext($store)));
@@ -621,15 +621,16 @@ final class ChatScreenTest extends TestCase
     public function inputHandlerEnterExpandsScrolledHistoryInsteadOfSubmitting(): void
     {
         $store = new AppStore();
-        $store->conversation = $this->conversationWithUserMessages(3)->scrollUp();
+        $store->conversation = $this->conversationWithUserMessages(3);
+        $store->workspaceView = $store->workspaceView->scrollChatUp($store->conversation);
         $screen = new ChatScreen($store);
         $handler = new ChatInputHandler($screen);
 
         $screen->inputText->set('This should not submit yet.');
 
         self::assertTrue($handler->handleInput(new KeyEvent(Key::Enter)));
-        self::assertNotNull($store->conversation->expandedIndex);
-        self::assertSame('turn_2', $store->conversation->selectedTurnId);
+        self::assertSame('turn_2', $store->workspaceView->expandedTurnId);
+        self::assertNull($store->workspaceView->selectedTurnId);
         self::assertCount(3, $store->conversation->messages);
     }
 

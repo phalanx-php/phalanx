@@ -46,6 +46,15 @@ class ModeDispatcher
         $this->autoModeForActive();
     }
 
+    public function restore(InputMode $mode, ?string $focusTarget): void
+    {
+        if ($focusTarget !== null && in_array($focusTarget, $this->focus->names(), true)) {
+            $this->focus->focus($focusTarget);
+        }
+
+        $this->setMode($mode);
+    }
+
     private function dispatchNormal(KeyEvent $event): bool
     {
         if ($event->is(Key::Tab)) {

@@ -14,6 +14,7 @@ use Phalanx\Theatron\Template\Slice\EffectLogSlice;
 use Phalanx\Theatron\Template\Slice\InputSlice;
 use Phalanx\Theatron\Template\Slice\LlmRequestSlice;
 use Phalanx\Theatron\Template\Slice\SettingsSlice;
+use Phalanx\Theatron\Template\Slice\WorkspaceViewSlice;
 
 class AppStore extends Store
 {
@@ -80,6 +81,13 @@ class AppStore extends Store
         }
     }
 
+    public WorkspaceViewSlice $workspaceView {
+        get => $this->read(WorkspaceViewSlice::class);
+        set {
+            $this->write(WorkspaceViewSlice::class, $value);
+        }
+    }
+
     public function __construct()
     {
         $this->register(ConversationSlice::class, new ConversationSlice());
@@ -91,5 +99,6 @@ class AppStore extends Store
         $this->register(DevToolsSlice::class, new DevToolsSlice());
         $this->register(SettingsSlice::class, new SettingsSlice());
         $this->register(InputModeSlice::class, new InputModeSlice());
+        $this->register(WorkspaceViewSlice::class, new WorkspaceViewSlice());
     }
 }

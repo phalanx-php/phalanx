@@ -47,6 +47,7 @@ use Phalanx\Theatron\Tdom\Painter\PaintContext;
 use Phalanx\Theatron\Tdom\Painter\Painter;
 use Phalanx\Theatron\Tdom\Renderable;
 use Phalanx\Theatron\Template\AppStore;
+use Phalanx\Theatron\Template\Slice\WorkspaceViewSlice;
 
 final class TheatronApp
 {
@@ -117,16 +118,23 @@ final class TheatronApp
         $dispatcher = new ModeDispatcher($focus);
 
         if ($store !== null) {
-            $dispatcher->onModeChange(static function (InputMode $mode, ?string $focusTarget) use ($store): void {
+            $dispatcher->onModeChange(static function (InputMode $mode, ?string $focusTarget) use ($store, $navigator): void {
                 $store->mutate(
                     InputModeSlice::class,
                     static fn(InputModeSlice $_) => new InputModeSlice($mode, $focusTarget),
                 );
+
+                if ($store instanceof AppStore) {
+                    $workspace = $navigator->active();
+                    $store->mutate(
+                        WorkspaceViewSlice::class,
+                        static fn(WorkspaceViewSlice $view) => $view->withInputMode($workspace, $mode, $focusTarget),
+                    );
+                }
             });
         }
 
-        self::rebuildFocus($focus, $navigator);
-        $dispatcher->syncModeWithActiveFocus();
+        self::restoreFocusAndMode($focus, $dispatcher, $navigator, $store);
 
         $lastActivityPulseAt = 0.0;
         $lastScreenRefreshAt = 0.0;
@@ -238,7 +246,7 @@ final class TheatronApp
 
         $stage = $this->stage;
         $this->stage->onInput(
-            static function (InputEvent $event) use ($registry, $navigator, $scope, $focus, $dispatcher, $stage): void {
+            static function (InputEvent $event) use ($registry, $navigator, $scope, $focus, $dispatcher, $stage, $store): void {
                 if (!$event instanceof KeyEvent) {
                     return;
                 }
@@ -274,8 +282,7 @@ final class TheatronApp
                             $navigator->go($target);
                             $registry->activateScreen($target);
                             self::rebuildBindings($registry, $navigator);
-                            self::rebuildFocus($focus, $navigator);
-                            $dispatcher->syncModeWithActiveFocus();
+                            self::restoreFocusAndMode($focus, $dispatcher, $navigator, $store);
                             $stage->requestFrame();
 
                             return;
@@ -285,8 +292,7 @@ final class TheatronApp
                             if ($navigator->back()) {
                                 $registry->activateScreen($navigator->active());
                                 self::rebuildBindings($registry, $navigator);
-                                self::rebuildFocus($focus, $navigator);
-                                $dispatcher->syncModeWithActiveFocus();
+                                self::restoreFocusAndMode($focus, $dispatcher, $navigator, $store);
                                 $stage->requestFrame();
                             }
 
@@ -327,8 +333,7 @@ final class TheatronApp
                 if ($navigator->active() !== $activeBeforeDispatch) {
                     $registry->activateScreen($navigator->active());
                     self::rebuildBindings($registry, $navigator);
-                    self::rebuildFocus($focus, $navigator);
-                    $dispatcher->syncModeWithActiveFocus();
+                    self::restoreFocusAndMode($focus, $dispatcher, $navigator, $store);
                     $stage->requestFrame();
                 }
             },
@@ -359,7 +364,32 @@ final class TheatronApp
         return $this->globalBindings;
     }
 
-    private static function rebuildFocus(FocusManager $focus, WorkspaceNavigator $navigator): void
+    private static function restoreFocusAndMode(
+        FocusManager $focus,
+        ModeDispatcher $dispatcher,
+        WorkspaceNavigator $navigator,
+        ?Store $store,
+    ): void {
+        self::rebuildFocus($focus, $navigator, $store);
+
+        if (!$store instanceof AppStore) {
+            $dispatcher->syncModeWithActiveFocus();
+
+            return;
+        }
+
+        $saved = $store->workspaceView->inputModeFor($navigator->active());
+
+        if ($saved === null) {
+            $dispatcher->syncModeWithActiveFocus();
+
+            return;
+        }
+
+        $dispatcher->restore($saved->mode, $saved->focusTarget);
+    }
+
+    private static function rebuildFocus(FocusManager $focus, WorkspaceNavigator $navigator, ?Store $store): void
     {
         $focus->reset();
         $screen = $navigator->activeWorkspace()->screen;
@@ -369,7 +399,13 @@ final class TheatronApp
                 $focus->register($name, $focusable);
             }
 
-            if (in_array('input', $focus->names(), true)) {
+            $saved = $store instanceof AppStore
+                ? $store->workspaceView->inputModeFor($navigator->active())
+                : null;
+
+            if ($saved?->focusTarget !== null && in_array($saved->focusTarget, $focus->names(), true)) {
+                $focus->focus($saved->focusTarget);
+            } elseif (in_array('input', $focus->names(), true)) {
                 $focus->focus('input');
             }
         }

@@ -13,6 +13,7 @@ use Phalanx\Theatron\Template\Slice\ActivityStatus;
 use Phalanx\Theatron\Template\Slice\AgentRegistrySlice;
 use Phalanx\Theatron\Template\Slice\AgentSummary;
 use Phalanx\Theatron\Template\Slice\ConversationSlice;
+use Phalanx\Theatron\Template\Slice\WorkspaceViewSlice;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -24,6 +25,7 @@ final class AppStoreTest extends TestCase
         $store = new AppStore();
 
         self::assertInstanceOf(ConversationSlice::class, $store->conversation);
+        self::assertInstanceOf(WorkspaceViewSlice::class, $store->workspaceView);
         self::assertInstanceOf(AgentRegistrySlice::class, $store->agents);
         self::assertInstanceOf(ActivitySlice::class, $store->activity);
     }
@@ -120,6 +122,23 @@ final class AppStoreTest extends TestCase
     }
 
     #[Test]
+    public function workspaceViewPropertyHookWriteUpdatesSlice(): void
+    {
+        $store = new AppStore();
+        $calls = 0;
+
+        $store->subscribe(static function () use (&$calls): void {
+            $calls++;
+        });
+
+        $store->workspaceView = new WorkspaceViewSlice(chatScrollOffset: 2, selectedTurnId: 'turn_2');
+
+        self::assertSame(1, $calls);
+        self::assertSame(2, $store->workspaceView->chatScrollOffset);
+        self::assertSame('turn_2', $store->workspaceView->selectedTurnId);
+    }
+
+    #[Test]
     public function inputModePropertyHookWriteUpdatesSlice(): void
     {
         $store = new AppStore();
@@ -155,7 +174,7 @@ final class AppStoreTest extends TestCase
         $store = new AppStore();
         $frame = Tracker::push();
 
-        $_ = $store->conversation;
+        self::assertInstanceOf(ConversationSlice::class, $store->conversation);
 
         $deps = Tracker::pop($frame);
         self::assertCount(1, $deps);
