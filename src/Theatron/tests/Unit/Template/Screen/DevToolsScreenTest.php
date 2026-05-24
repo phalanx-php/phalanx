@@ -6,6 +6,8 @@ namespace Phalanx\Theatron\Tests\Unit\Template\Screen;
 
 use DateTimeImmutable;
 use Phalanx\Panoply\Cue\Effect\Requested as EffectRequested;
+use Phalanx\Panoply\Cue\Provider\Resolved as ProviderResolved;
+use Phalanx\Panoply\Cue\Usage\Delta as UsageDelta;
 use Phalanx\Panoply\Cue\Usage\FinalUsage;
 use Phalanx\Panoply\Effect\Kind;
 use Phalanx\Scope\TaskScope;
@@ -346,9 +348,30 @@ final class DevToolsScreenTest extends TestCase
                 kind: Kind::FileRead,
                 summary: 'Read a strategy note',
             ))
-            ->appendCue(new FinalUsage(
+            ->appendCue(new ProviderResolved(
                 id: 'cue_2',
                 sequence: 2,
+                activityId: 'act_1',
+                invocationId: 'inv_1',
+                agentId: 'agent_1',
+                at: $at,
+                provider: 'openai',
+                model: 'gpt-5.1',
+                reasonCode: 'configured',
+            ))
+            ->appendCue(new UsageDelta(
+                id: 'cue_3',
+                sequence: 3,
+                activityId: 'act_1',
+                invocationId: 'inv_1',
+                agentId: 'agent_1',
+                at: $at,
+                inputTokens: 1,
+                outputTokens: 2,
+            ))
+            ->appendCue(new FinalUsage(
+                id: 'cue_4',
+                sequence: 4,
                 activityId: 'act_1',
                 invocationId: 'inv_1',
                 agentId: 'agent_1',
@@ -378,7 +401,11 @@ final class DevToolsScreenTest extends TestCase
         self::assertStringContainsString('Conversation Events', $text);
         self::assertStringContainsString('cue_1 effect.requested cue.effect.requested', $text);
         self::assertStringContainsString('Read a strategy note', $text);
-        self::assertStringContainsString('cue_2 usage.final cue.usage.final', $text);
+        self::assertStringContainsString('cue_2 provider.resolved cue.provider.resolved', $text);
+        self::assertStringContainsString('openai gpt-5.1', $text);
+        self::assertStringContainsString('cue_3 usage.delta cue.usage.delta', $text);
+        self::assertStringContainsString('1 in', $text);
+        self::assertStringContainsString('cue_4 usage.final cue.usage.final', $text);
         self::assertStringContainsString('cache read 10', $text);
     }
 

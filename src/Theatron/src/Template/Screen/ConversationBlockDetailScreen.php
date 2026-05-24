@@ -21,9 +21,8 @@ use Phalanx\Theatron\Tdom\Renderable;
 use Phalanx\Theatron\Tdom\Style as TdomStyle;
 use Phalanx\Theatron\Template\AppStore;
 use Phalanx\Theatron\Template\Render\ConversationEventFormatter;
+use Phalanx\Theatron\Template\Render\ConversationEventRenderPolicy;
 use Phalanx\Theatron\Template\Render\MarkdownRenderer;
-use Phalanx\Theatron\Template\Slice\ConversationTurnEvent;
-use Phalanx\Theatron\Template\Slice\ConversationTurnEventSeverity;
 use Phalanx\Theatron\Text\Line;
 use Phalanx\Theatron\Text\Span;
 
@@ -75,8 +74,8 @@ class ConversationBlockDetailScreen implements Screen, HasStatusBar, HasFocusabl
 
             foreach ($turn->projectionEvents() as $event) {
                 $rows[] = self::row(Line::from(
-                    Span::styled('    ' . self::projectionMarker($event) . ' ', self::projectionStyle($event->projection->severity)),
-                    Span::styled(ConversationEventFormatter::detail($event), self::projectionStyle($event->projection->severity)),
+                    Span::styled('    ' . ConversationEventRenderPolicy::marker($event) . ' ', ConversationEventRenderPolicy::style($event->projection->severity)),
+                    Span::styled(ConversationEventFormatter::detail($event), ConversationEventRenderPolicy::style($event->projection->severity)),
                 ));
             }
         }
@@ -135,27 +134,5 @@ class ConversationBlockDetailScreen implements Screen, HasStatusBar, HasFocusabl
     private static function headerStyle(): TextStyle
     {
         return TextStyle::new()->fg(Color::indexed(252))->bold();
-    }
-
-    private static function projectionMarker(ConversationTurnEvent $event): string
-    {
-        return match ($event->projection->severity) {
-            ConversationTurnEventSeverity::Error => '!',
-            ConversationTurnEventSeverity::Success => '✓',
-            ConversationTurnEventSeverity::Warning => '?',
-            ConversationTurnEventSeverity::Info,
-            ConversationTurnEventSeverity::Muted => '·',
-        };
-    }
-
-    private static function projectionStyle(ConversationTurnEventSeverity $severity): TextStyle
-    {
-        return match ($severity) {
-            ConversationTurnEventSeverity::Error => TextStyle::new()->fg(Color::indexed(203))->bold(),
-            ConversationTurnEventSeverity::Success => TextStyle::new()->fg(Color::indexed(114)),
-            ConversationTurnEventSeverity::Warning => TextStyle::new()->fg(Color::indexed(214)),
-            ConversationTurnEventSeverity::Info => TextStyle::new()->fg(Color::indexed(245)),
-            ConversationTurnEventSeverity::Muted => TextStyle::new()->fg(Color::indexed(242))->dim(),
-        };
     }
 }

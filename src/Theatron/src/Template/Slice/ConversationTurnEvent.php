@@ -10,6 +10,9 @@ use Phalanx\Panoply\Cue\Activity\Cancelled as ActivityCancelled;
 use Phalanx\Panoply\Cue\Activity\Completed as ActivityCompleted;
 use Phalanx\Panoply\Cue\Activity\Failed as ActivityFailed;
 use Phalanx\Panoply\Cue\Activity\Started as ActivityStarted;
+use Phalanx\Panoply\Cue\Artifact\Delta as ArtifactDelta;
+use Phalanx\Panoply\Cue\Artifact\Drafting as ArtifactDrafting;
+use Phalanx\Panoply\Cue\Artifact\Finalized as ArtifactFinalized;
 use Phalanx\Panoply\Cue\Effect\ArgumentsDelta as EffectArgumentsDelta;
 use Phalanx\Panoply\Cue\Effect\Authorized as EffectAuthorized;
 use Phalanx\Panoply\Cue\Effect\Denied as EffectDenied;
@@ -22,11 +25,18 @@ use Phalanx\Panoply\Cue\Invocation\Completed as InvocationCompleted;
 use Phalanx\Panoply\Cue\Invocation\Failed as InvocationFailed;
 use Phalanx\Panoply\Cue\Invocation\Started as InvocationStarted;
 use Phalanx\Panoply\Cue\Output\Channel;
+use Phalanx\Panoply\Cue\Output\StructuredDelta;
 use Phalanx\Panoply\Cue\Output\TokenDelta;
 use Phalanx\Panoply\Cue\Output\TokenStop;
+use Phalanx\Panoply\Cue\Provider\RateLimited as ProviderRateLimited;
+use Phalanx\Panoply\Cue\Provider\Resolved as ProviderResolved;
+use Phalanx\Panoply\Cue\Provider\Retrying as ProviderRetrying;
+use Phalanx\Panoply\Cue\Runtime\ClientConnected as RuntimeClientConnected;
+use Phalanx\Panoply\Cue\Runtime\ClientDisconnected as RuntimeClientDisconnected;
 use Phalanx\Panoply\Cue\Runtime\Error as RuntimeError;
 use Phalanx\Panoply\Cue\Runtime\Notice as RuntimeNotice;
 use Phalanx\Panoply\Cue\Runtime\Warning as RuntimeWarning;
+use Phalanx\Panoply\Cue\StopReason;
 use Phalanx\Panoply\Cue\Usage\Delta as UsageDelta;
 use Phalanx\Panoply\Cue\Usage\FinalUsage;
 
@@ -77,10 +87,18 @@ class ConversationTurnEvent
             $cue instanceof TokenDelta => self::projectionForToken($cue->channel),
             $cue instanceof TokenStop => new ConversationTurnEventProjection(
                 kind: ConversationTurnEventKind::TokenStop,
-                severity: self::severityForStopReason($cue->reason->value),
+                severity: self::severityForStopReason($cue->reason),
                 label: 'stop',
                 summary: $cue->reason->value,
-                stopReason: $cue->reason->value,
+                stopReason: $cue->reason,
+            ),
+            $cue instanceof StructuredDelta => new ConversationTurnEventProjection(
+                kind: ConversationTurnEventKind::StructuredDelta,
+                severity: ConversationTurnEventSeverity::Muted,
+                label: 'structured',
+                summary: self::pathSummary($cue->path, $cue->jsonDelta),
+                structuredDelta: $cue->jsonDelta,
+                structuredPath: $cue->path,
             ),
             $cue instanceof EffectRequested => new ConversationTurnEventProjection(
                 kind: ConversationTurnEventKind::EffectRequested,
@@ -150,10 +168,10 @@ class ConversationTurnEvent
             ),
             $cue instanceof InvocationCompleted => new ConversationTurnEventProjection(
                 kind: ConversationTurnEventKind::InvocationCompleted,
-                severity: self::severityForStopReason($cue->stopReason->value),
+                severity: self::severityForStopReason($cue->stopReason),
                 label: 'invocation',
                 summary: $cue->stopReason->value,
-                stopReason: $cue->stopReason->value,
+                stopReason: $cue->stopReason,
             ),
             $cue instanceof InvocationFailed => new ConversationTurnEventProjection(
                 kind: ConversationTurnEventKind::InvocationFailed,
@@ -217,6 +235,76 @@ class ConversationTurnEvent
                 label: 'activity cancelled',
                 summary: $cue->reason,
                 reason: $cue->reason,
+            ),
+            $cue instanceof ArtifactDrafting => new ConversationTurnEventProjection(
+                kind: ConversationTurnEventKind::ArtifactDrafting,
+                severity: ConversationTurnEventSeverity::Info,
+                label: 'artifact',
+                summary: $cue->title ?? $cue->kind->value,
+                artifactId: $cue->artifactId,
+                artifactKind: $cue->kind->value,
+            ),
+            $cue instanceof ArtifactDelta => new ConversationTurnEventProjection(
+                kind: ConversationTurnEventKind::ArtifactDelta,
+                severity: ConversationTurnEventSeverity::Muted,
+                label: 'artifact delta',
+                summary: self::pathSummary($cue->path, $cue->contentDelta),
+                artifactId: $cue->artifactId,
+                artifactPath: $cue->path,
+            ),
+            $cue instanceof ArtifactFinalized => new ConversationTurnEventProjection(
+                kind: ConversationTurnEventKind::ArtifactFinalized,
+                severity: ConversationTurnEventSeverity::Success,
+                label: 'artifact',
+                summary: 'finalized',
+                artifactId: $cue->artifactId,
+                contentHash: $cue->contentHash,
+            ),
+            $cue instanceof ProviderResolved => new ConversationTurnEventProjection(
+                kind: ConversationTurnEventKind::ProviderResolved,
+                severity: ConversationTurnEventSeverity::Muted,
+                label: 'provider',
+                summary: self::providerModelSummary($cue->provider, $cue->model, $cue->reasonCode),
+                provider: $cue->provider,
+                model: $cue->model,
+                reason: $cue->reasonCode,
+            ),
+            $cue instanceof ProviderRetrying => new ConversationTurnEventProjection(
+                kind: ConversationTurnEventKind::ProviderRetrying,
+                severity: ConversationTurnEventSeverity::Warning,
+                label: 'retrying',
+                summary: self::retrySummary($cue->provider, $cue->attempt, $cue->maxAttempts, $cue->backoffMs),
+                provider: $cue->provider,
+                attempt: $cue->attempt,
+                maxAttempts: $cue->maxAttempts,
+                backoffMs: $cue->backoffMs,
+            ),
+            $cue instanceof ProviderRateLimited => new ConversationTurnEventProjection(
+                kind: ConversationTurnEventKind::ProviderRateLimited,
+                severity: ConversationTurnEventSeverity::Warning,
+                label: 'rate limited',
+                summary: self::rateLimitSummary($cue->provider, $cue->model, $cue->retryAfterSeconds),
+                provider: $cue->provider,
+                model: $cue->model,
+                retryAfterSeconds: $cue->retryAfterSeconds,
+            ),
+            $cue instanceof RuntimeClientConnected => new ConversationTurnEventProjection(
+                kind: ConversationTurnEventKind::RuntimeClientConnected,
+                severity: ConversationTurnEventSeverity::Muted,
+                label: 'client',
+                summary: $cue->clientKind,
+                clientId: $cue->clientId,
+                clientKind: $cue->clientKind,
+            ),
+            $cue instanceof RuntimeClientDisconnected => new ConversationTurnEventProjection(
+                kind: ConversationTurnEventKind::RuntimeClientDisconnected,
+                severity: $cue->reason === null
+                    ? ConversationTurnEventSeverity::Muted
+                    : ConversationTurnEventSeverity::Warning,
+                label: 'client disconnected',
+                summary: $cue->reason,
+                reason: $cue->reason,
+                clientId: $cue->clientId,
             ),
             $cue instanceof RuntimeError => new ConversationTurnEventProjection(
                 kind: ConversationTurnEventKind::RuntimeError,
@@ -285,14 +373,50 @@ class ConversationTurnEvent
         return $inputTokens . ' in · ' . $outputTokens . ' out · ' . ($inputTokens + $outputTokens) . ' total';
     }
 
-    private static function severityForStopReason(string $reason): ConversationTurnEventSeverity
+    private static function severityForStopReason(StopReason $reason): ConversationTurnEventSeverity
     {
         return match ($reason) {
-            'error' => ConversationTurnEventSeverity::Error,
-            'max-tokens' => ConversationTurnEventSeverity::Warning,
-            'tool-use' => ConversationTurnEventSeverity::Info,
-            'cancelled' => ConversationTurnEventSeverity::Warning,
+            StopReason::Error => ConversationTurnEventSeverity::Error,
+            StopReason::MaxTokens => ConversationTurnEventSeverity::Warning,
+            StopReason::ToolUse => ConversationTurnEventSeverity::Info,
+            StopReason::Cancelled => ConversationTurnEventSeverity::Warning,
             default => ConversationTurnEventSeverity::Muted,
         };
+    }
+
+    private static function pathSummary(?string $path, string $body): string
+    {
+        if ($path === null || $path === '') {
+            return $body;
+        }
+
+        return $path . ' · ' . $body;
+    }
+
+    private static function providerModelSummary(string $provider, string $model, string $reason): string
+    {
+        return $provider . ' ' . $model . ' · ' . $reason;
+    }
+
+    private static function retrySummary(string $provider, int $attempt, int $maxAttempts, ?int $backoffMs): string
+    {
+        $summary = $provider . ' attempt ' . $attempt . '/' . $maxAttempts;
+
+        if ($backoffMs !== null) {
+            $summary .= ' · backoff ' . $backoffMs . 'ms';
+        }
+
+        return $summary;
+    }
+
+    private static function rateLimitSummary(string $provider, string $model, ?int $retryAfterSeconds): string
+    {
+        $summary = $provider . ' ' . $model;
+
+        if ($retryAfterSeconds !== null) {
+            $summary .= ' · retry after ' . $retryAfterSeconds . 's';
+        }
+
+        return $summary;
     }
 }

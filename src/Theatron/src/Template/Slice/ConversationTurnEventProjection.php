@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Theatron\Template\Slice;
 
+use Phalanx\Panoply\Cue\StopReason;
+
 final class ConversationTurnEventProjection
 {
     /**
@@ -30,7 +32,21 @@ final class ConversationTurnEventProjection
         private(set) ?int $cacheReadTokens = null,
         private(set) ?int $cacheWriteTokens = null,
         private(set) ?float $costUsd = null,
-        private(set) ?string $stopReason = null,
+        private(set) ?StopReason $stopReason = null,
+        private(set) ?string $artifactId = null,
+        private(set) ?string $artifactKind = null,
+        private(set) ?string $artifactPath = null,
+        private(set) ?string $contentHash = null,
+        private(set) ?string $structuredDelta = null,
+        private(set) ?string $structuredPath = null,
+        private(set) ?string $provider = null,
+        private(set) ?string $model = null,
+        private(set) ?int $attempt = null,
+        private(set) ?int $maxAttempts = null,
+        private(set) ?int $backoffMs = null,
+        private(set) ?int $retryAfterSeconds = null,
+        private(set) ?string $clientId = null,
+        private(set) ?string $clientKind = null,
     ) {
     }
 
@@ -60,17 +76,25 @@ final class ConversationTurnEventProjection
         }
 
         if ($this->kind === ConversationTurnEventKind::TokenStop) {
-            return $this->stopReason !== 'end-of-turn'
-                && $this->stopReason !== 'stop-sequence';
+            return $this->stopReason !== StopReason::EndOfTurn
+                && $this->stopReason !== StopReason::StopSequence
+                && $this->stopReason !== StopReason::ToolUse;
         }
 
         if ($this->kind === ConversationTurnEventKind::InvocationCompleted) {
-            return $this->stopReason !== 'end-of-turn'
-                && $this->stopReason !== 'stop-sequence';
+            return $this->stopReason !== StopReason::EndOfTurn
+                && $this->stopReason !== StopReason::StopSequence
+                && $this->stopReason !== StopReason::ToolUse;
         }
 
         return $this->kind !== ConversationTurnEventKind::ActivityCompleted
             && $this->kind !== ConversationTurnEventKind::ActivityStarted
-            && $this->kind !== ConversationTurnEventKind::InvocationStarted;
+            && $this->kind !== ConversationTurnEventKind::ArtifactDelta
+            && $this->kind !== ConversationTurnEventKind::InvocationStarted
+            && $this->kind !== ConversationTurnEventKind::ProviderResolved
+            && $this->kind !== ConversationTurnEventKind::RuntimeClientConnected
+            && $this->kind !== ConversationTurnEventKind::RuntimeClientDisconnected
+            && $this->kind !== ConversationTurnEventKind::StructuredDelta
+            && $this->kind !== ConversationTurnEventKind::UsageDelta;
     }
 }

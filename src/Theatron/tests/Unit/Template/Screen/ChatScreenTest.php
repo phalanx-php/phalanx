@@ -6,8 +6,11 @@ namespace Phalanx\Theatron\Tests\Unit\Template\Screen;
 
 use DateTimeImmutable;
 use Phalanx\Panoply\Cue\Activity\Failed as ActivityFailed;
+use Phalanx\Panoply\Cue\Activity\Started as ActivityStarted;
 use Phalanx\Panoply\Cue\Effect\Executed as EffectExecuted;
 use Phalanx\Panoply\Cue\Effect\Requested as EffectRequested;
+use Phalanx\Panoply\Cue\Provider\Resolved as ProviderResolved;
+use Phalanx\Panoply\Cue\Usage\Delta as UsageDelta;
 use Phalanx\Panoply\Cue\Usage\FinalUsage;
 use Phalanx\Panoply\Effect\Kind;
 use Phalanx\Scope\TaskScope;
@@ -213,6 +216,7 @@ final class ChatScreenTest extends TestCase
                 effectId: 'eff_1',
                 kind: Kind::FileRead,
                 summary: 'Read a strategy note',
+                arguments: ['path' => 'notes/strategy.md'],
                 requiresApproval: true,
             ))
             ->appendCue(new EffectExecuted(
@@ -226,9 +230,30 @@ final class ChatScreenTest extends TestCase
                 durationMs: 42,
                 resultDigest: 'sha256:abc',
             ))
-            ->appendCue(new FinalUsage(
+            ->appendCue(new ProviderResolved(
                 id: 'cue_3',
                 sequence: 3,
+                activityId: 'act_1',
+                invocationId: 'inv_1',
+                agentId: 'agent_1',
+                at: $at,
+                provider: 'openai',
+                model: 'gpt-5.1',
+                reasonCode: 'configured',
+            ))
+            ->appendCue(new UsageDelta(
+                id: 'cue_4',
+                sequence: 4,
+                activityId: 'act_1',
+                invocationId: 'inv_1',
+                agentId: 'agent_1',
+                at: $at,
+                inputTokens: 1,
+                outputTokens: 2,
+            ))
+            ->appendCue(new FinalUsage(
+                id: 'cue_5',
+                sequence: 5,
                 activityId: 'act_1',
                 invocationId: 'inv_1',
                 agentId: 'agent_1',
@@ -252,6 +277,9 @@ final class ChatScreenTest extends TestCase
         self::assertStringContainsString('usage: 12 in', $text);
         self::assertStringContainsString('cache read 3', $text);
         self::assertStringContainsString('cache write 4', $text);
+        self::assertStringNotContainsString('openai gpt-5.1', $text);
+        self::assertStringNotContainsString('1 in · 2 out', $text);
+        self::assertStringNotContainsString('notes/strategy.md', $text);
         self::assertLessThan(
             strpos($text, 'approval: file.read eff_1'),
             strpos($text, 'Tool result summarized.'),
@@ -493,6 +521,14 @@ final class ChatScreenTest extends TestCase
             ->finalizeMessage()
             ->addUserMessage('second message')
             ->appendToken('second answer')
+            ->appendCue(new ActivityStarted(
+                id: 'cue_0',
+                sequence: 0,
+                activityId: 'act_1',
+                invocationId: 'inv_1',
+                agentId: 'agent_1',
+                at: $at,
+            ))
             ->appendCue(new EffectRequested(
                 id: 'cue_1',
                 sequence: 1,
@@ -503,6 +539,7 @@ final class ChatScreenTest extends TestCase
                 effectId: 'eff_1',
                 kind: Kind::FileRead,
                 summary: 'Read a strategy note',
+                arguments: ['path' => 'notes/strategy.md'],
             ))
             ->appendCue(new FinalUsage(
                 id: 'cue_2',
@@ -524,8 +561,10 @@ final class ChatScreenTest extends TestCase
         self::assertStringContainsString('you: second message', $text);
         self::assertStringContainsString('second answer', $text);
         self::assertStringContainsString('events:', $text);
+        self::assertStringContainsString('cue_0 activity.started cue.activity.started', $text);
         self::assertStringContainsString('cue_1 effect.requested cue.effect.requested', $text);
         self::assertStringContainsString('Read a strategy note', $text);
+        self::assertStringContainsString('args {"path":"notes\\/strategy.md"}', $text);
         self::assertStringContainsString('cue_2 usage.final cue.usage.final', $text);
         self::assertStringContainsString('cache read 2', $text);
         self::assertStringNotContainsString('first answer', $text);

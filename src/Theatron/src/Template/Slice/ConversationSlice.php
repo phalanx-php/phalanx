@@ -307,6 +307,7 @@ class ConversationSlice
         return match ($reason) {
             StopReason::Error => ConversationTurnStatus::Failed,
             StopReason::Cancelled => ConversationTurnStatus::Cancelled,
+            StopReason::ToolUse => ConversationTurnStatus::Running,
             default => ConversationTurnStatus::Completed,
         };
     }

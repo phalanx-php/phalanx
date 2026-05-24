@@ -78,6 +78,17 @@ class ConversationTurn
     {
         return array_values(array_filter(
             $this->events,
+            static fn(ConversationTurnEvent $event): bool => !$event->projection->isTokenText(),
+        ));
+    }
+
+    /**
+     * @return list<ConversationTurnEvent>
+     */
+    public function threadProjectionEvents(): array
+    {
+        return array_values(array_filter(
+            $this->events,
             static fn(ConversationTurnEvent $event): bool => $event->projection->rendersInThread(),
         ));
     }

@@ -28,12 +28,11 @@ use Phalanx\Theatron\Template\Keymap\ComposerChordMap;
 use Phalanx\Theatron\Template\Keymap\KeymapEntry;
 use Phalanx\Theatron\Template\Overlay\KeymapOverlay;
 use Phalanx\Theatron\Template\Render\ConversationEventFormatter;
+use Phalanx\Theatron\Template\Render\ConversationEventRenderPolicy;
 use Phalanx\Theatron\Template\Render\MarkdownRenderer;
 use Phalanx\Theatron\Template\Slice\ActivityStatus;
 use Phalanx\Theatron\Template\Slice\ConversationSlice;
 use Phalanx\Theatron\Template\Slice\ConversationTurn;
-use Phalanx\Theatron\Template\Slice\ConversationTurnEvent;
-use Phalanx\Theatron\Template\Slice\ConversationTurnEventSeverity;
 use Phalanx\Theatron\Text\Line;
 use Phalanx\Theatron\Text\Span;
 
@@ -560,12 +559,12 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, DeclaresBinding
     {
         $rows = [];
 
-        foreach ($turn->projectionEvents() as $event) {
+        foreach ($turn->threadProjectionEvents() as $event) {
             $lines = self::wrapIndented(
                 ConversationEventFormatter::summary($event),
                 $wrapWidth,
-                '    ' . $this->projectionMarker($event) . ' ',
-                $this->projectionStyle($event->projection->severity),
+                '    ' . ConversationEventRenderPolicy::marker($event) . ' ',
+                ConversationEventRenderPolicy::style($event->projection->severity),
             );
 
             foreach ($lines as $line) {
@@ -608,28 +607,6 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, DeclaresBinding
         }
 
         return $rows;
-    }
-
-    private function projectionMarker(ConversationTurnEvent $event): string
-    {
-        return match ($event->projection->severity) {
-            ConversationTurnEventSeverity::Error => '!',
-            ConversationTurnEventSeverity::Success => '✓',
-            ConversationTurnEventSeverity::Warning => '?',
-            ConversationTurnEventSeverity::Info,
-            ConversationTurnEventSeverity::Muted => '·',
-        };
-    }
-
-    private function projectionStyle(ConversationTurnEventSeverity $severity): TextStyle
-    {
-        return match ($severity) {
-            ConversationTurnEventSeverity::Error => TextStyle::new()->fg(Color::indexed(203))->bold(),
-            ConversationTurnEventSeverity::Success => TextStyle::new()->fg(Color::indexed(114)),
-            ConversationTurnEventSeverity::Warning => TextStyle::new()->fg(Color::indexed(214)),
-            ConversationTurnEventSeverity::Info => TextStyle::new()->fg(Color::indexed(245)),
-            ConversationTurnEventSeverity::Muted => TextStyle::new()->fg(Color::indexed(242))->dim(),
-        };
     }
 
     private function renderStatusLine(): Renderable

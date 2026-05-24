@@ -5,29 +5,261 @@ declare(strict_types=1);
 namespace Phalanx\Theatron\Tests\Unit\Template\Slice;
 
 use DateTimeImmutable;
+use Phalanx\Panoply\Artifact\Kind as ArtifactKind;
+use Phalanx\Panoply\Cue;
+use Phalanx\Panoply\Cue\Activity\Cancelled as ActivityCancelled;
+use Phalanx\Panoply\Cue\Activity\Completed as ActivityCompleted;
 use Phalanx\Panoply\Cue\Activity\Failed as ActivityFailed;
+use Phalanx\Panoply\Cue\Activity\Started as ActivityStarted;
+use Phalanx\Panoply\Cue\Artifact\Delta as ArtifactDelta;
+use Phalanx\Panoply\Cue\Artifact\Drafting as ArtifactDrafting;
+use Phalanx\Panoply\Cue\Artifact\Finalized as ArtifactFinalized;
 use Phalanx\Panoply\Cue\Effect\ArgumentsDelta as EffectArgumentsDelta;
 use Phalanx\Panoply\Cue\Effect\Authorized as EffectAuthorized;
+use Phalanx\Panoply\Cue\Effect\Denied as EffectDenied;
 use Phalanx\Panoply\Cue\Effect\Executed as EffectExecuted;
 use Phalanx\Panoply\Cue\Effect\Failed as EffectFailed;
+use Phalanx\Panoply\Cue\Effect\Paused as EffectPaused;
 use Phalanx\Panoply\Cue\Effect\Requested as EffectRequested;
+use Phalanx\Panoply\Cue\Invocation\Cancelled as InvocationCancelled;
+use Phalanx\Panoply\Cue\Invocation\Completed as InvocationCompleted;
 use Phalanx\Panoply\Cue\Invocation\Failed as InvocationFailed;
+use Phalanx\Panoply\Cue\Invocation\Started as InvocationStarted;
 use Phalanx\Panoply\Cue\Output\Channel;
+use Phalanx\Panoply\Cue\Output\StructuredDelta;
 use Phalanx\Panoply\Cue\Output\TokenDelta;
 use Phalanx\Panoply\Cue\Output\TokenStop;
+use Phalanx\Panoply\Cue\Provider\RateLimited as ProviderRateLimited;
+use Phalanx\Panoply\Cue\Provider\Resolved as ProviderResolved;
+use Phalanx\Panoply\Cue\Provider\Retrying as ProviderRetrying;
+use Phalanx\Panoply\Cue\Runtime\ClientConnected as RuntimeClientConnected;
+use Phalanx\Panoply\Cue\Runtime\ClientDisconnected as RuntimeClientDisconnected;
 use Phalanx\Panoply\Cue\Runtime\Error as RuntimeError;
+use Phalanx\Panoply\Cue\Runtime\Notice as RuntimeNotice;
+use Phalanx\Panoply\Cue\Runtime\Warning as RuntimeWarning;
 use Phalanx\Panoply\Cue\StopReason;
+use Phalanx\Panoply\Cue\Usage\Delta as UsageDelta;
 use Phalanx\Panoply\Cue\Usage\FinalUsage;
-use Phalanx\Panoply\Effect\Kind;
+use Phalanx\Panoply\Effect\Kind as EffectKind;
 use Phalanx\Theatron\Template\Slice\ConversationSlice;
+use Phalanx\Theatron\Template\Slice\ConversationTurnEvent;
 use Phalanx\Theatron\Template\Slice\ConversationTurnEventKind;
 use Phalanx\Theatron\Template\Slice\ConversationTurnEventSeverity;
 use Phalanx\Theatron\Template\Slice\ConversationTurnStatus;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class ConversationSliceTest extends TestCase
 {
+    /**
+     * @return iterable<string, array{Cue, ConversationTurnEventKind, ConversationTurnEventSeverity, bool}>
+     */
+    public static function projectionCueProvider(): iterable
+    {
+        $at = new DateTimeImmutable('2026-05-23T21:00:00Z');
+        $base = ['cue_1', 1, 'act_1', 'inv_1', 'agent_1', $at];
+
+        yield 'token stop normal' => [
+            new TokenStop(...$base, reason: StopReason::EndOfTurn),
+            ConversationTurnEventKind::TokenStop,
+            ConversationTurnEventSeverity::Muted,
+            false,
+        ];
+        yield 'token stop tool-use' => [
+            new TokenStop(...$base, reason: StopReason::ToolUse),
+            ConversationTurnEventKind::TokenStop,
+            ConversationTurnEventSeverity::Info,
+            false,
+        ];
+        yield 'token stop max-tokens' => [
+            new TokenStop(...$base, reason: StopReason::MaxTokens),
+            ConversationTurnEventKind::TokenStop,
+            ConversationTurnEventSeverity::Warning,
+            true,
+        ];
+        yield 'structured delta' => [
+            new StructuredDelta(...$base, jsonDelta: '{"path":"value"}', path: '$.path'),
+            ConversationTurnEventKind::StructuredDelta,
+            ConversationTurnEventSeverity::Muted,
+            false,
+        ];
+        yield 'effect requested' => [
+            new EffectRequested(...$base, effectId: 'eff_1', kind: EffectKind::FileRead, summary: 'Read file', requiresApproval: true),
+            ConversationTurnEventKind::EffectRequested,
+            ConversationTurnEventSeverity::Warning,
+            true,
+        ];
+        yield 'effect arguments delta' => [
+            new EffectArgumentsDelta(...$base, effectId: 'eff_1', jsonDelta: '{"path"'),
+            ConversationTurnEventKind::EffectArgumentsDelta,
+            ConversationTurnEventSeverity::Muted,
+            true,
+        ];
+        yield 'effect authorized' => [
+            new EffectAuthorized(...$base, effectId: 'eff_1', grantId: 'grant_1'),
+            ConversationTurnEventKind::EffectAuthorized,
+            ConversationTurnEventSeverity::Success,
+            true,
+        ];
+        yield 'effect paused' => [
+            new EffectPaused(...$base, effectId: 'eff_1', reason: 'approval'),
+            ConversationTurnEventKind::EffectPaused,
+            ConversationTurnEventSeverity::Warning,
+            true,
+        ];
+        yield 'effect denied' => [
+            new EffectDenied(...$base, effectId: 'eff_1', reasonCodes: ['policy']),
+            ConversationTurnEventKind::EffectDenied,
+            ConversationTurnEventSeverity::Warning,
+            true,
+        ];
+        yield 'effect executed' => [
+            new EffectExecuted(...$base, effectId: 'eff_1', durationMs: 42, resultDigest: 'ok'),
+            ConversationTurnEventKind::EffectExecuted,
+            ConversationTurnEventSeverity::Success,
+            true,
+        ];
+        yield 'effect failed' => [
+            new EffectFailed(...$base, effectId: 'eff_1', reason: 'failed', errorClass: 'RuntimeException'),
+            ConversationTurnEventKind::EffectFailed,
+            ConversationTurnEventSeverity::Error,
+            true,
+        ];
+        yield 'invocation started' => [
+            new InvocationStarted(...$base),
+            ConversationTurnEventKind::InvocationStarted,
+            ConversationTurnEventSeverity::Muted,
+            false,
+        ];
+        yield 'invocation completed normal' => [
+            new InvocationCompleted(...$base, stopReason: StopReason::EndOfTurn),
+            ConversationTurnEventKind::InvocationCompleted,
+            ConversationTurnEventSeverity::Muted,
+            false,
+        ];
+        yield 'invocation completed max-tokens' => [
+            new InvocationCompleted(...$base, stopReason: StopReason::MaxTokens),
+            ConversationTurnEventKind::InvocationCompleted,
+            ConversationTurnEventSeverity::Warning,
+            true,
+        ];
+        yield 'invocation failed' => [
+            new InvocationFailed(...$base, reason: 'failed', errorClass: 'ProviderException'),
+            ConversationTurnEventKind::InvocationFailed,
+            ConversationTurnEventSeverity::Error,
+            true,
+        ];
+        yield 'invocation cancelled' => [
+            new InvocationCancelled(...$base, reason: 'cancelled'),
+            ConversationTurnEventKind::InvocationCancelled,
+            ConversationTurnEventSeverity::Warning,
+            true,
+        ];
+        yield 'usage delta' => [
+            new UsageDelta(...$base, inputTokens: 1, outputTokens: 2, cacheReadTokens: 0, cacheWriteTokens: 0),
+            ConversationTurnEventKind::UsageDelta,
+            ConversationTurnEventSeverity::Muted,
+            false,
+        ];
+        yield 'final usage' => [
+            new FinalUsage(...$base, inputTokens: 1, outputTokens: 2, cacheReadTokens: 0, cacheWriteTokens: 0, costUsd: 0.01),
+            ConversationTurnEventKind::UsageFinal,
+            ConversationTurnEventSeverity::Muted,
+            true,
+        ];
+        yield 'activity started' => [
+            new ActivityStarted(...$base),
+            ConversationTurnEventKind::ActivityStarted,
+            ConversationTurnEventSeverity::Muted,
+            false,
+        ];
+        yield 'activity completed' => [
+            new ActivityCompleted(...$base),
+            ConversationTurnEventKind::ActivityCompleted,
+            ConversationTurnEventSeverity::Success,
+            false,
+        ];
+        yield 'activity failed' => [
+            new ActivityFailed(...$base, reason: 'failed', errorClass: 'ActivityException'),
+            ConversationTurnEventKind::ActivityFailed,
+            ConversationTurnEventSeverity::Error,
+            true,
+        ];
+        yield 'activity cancelled' => [
+            new ActivityCancelled(...$base, reason: 'cancelled'),
+            ConversationTurnEventKind::ActivityCancelled,
+            ConversationTurnEventSeverity::Warning,
+            true,
+        ];
+        yield 'artifact drafting' => [
+            new ArtifactDrafting(...$base, artifactId: 'art_1', kind: ArtifactKind::PatchDraft, title: 'Patch'),
+            ConversationTurnEventKind::ArtifactDrafting,
+            ConversationTurnEventSeverity::Info,
+            true,
+        ];
+        yield 'artifact delta' => [
+            new ArtifactDelta(...$base, artifactId: 'art_1', contentDelta: 'diff', path: 'patch.diff'),
+            ConversationTurnEventKind::ArtifactDelta,
+            ConversationTurnEventSeverity::Muted,
+            false,
+        ];
+        yield 'artifact finalized' => [
+            new ArtifactFinalized(...$base, artifactId: 'art_1', contentHash: 'sha256:abc'),
+            ConversationTurnEventKind::ArtifactFinalized,
+            ConversationTurnEventSeverity::Success,
+            true,
+        ];
+        yield 'provider resolved' => [
+            new ProviderResolved(...$base, provider: 'openai', model: 'gpt-5.1', reasonCode: 'configured'),
+            ConversationTurnEventKind::ProviderResolved,
+            ConversationTurnEventSeverity::Muted,
+            false,
+        ];
+        yield 'provider retrying' => [
+            new ProviderRetrying(...$base, provider: 'openai', attempt: 2, maxAttempts: 3, backoffMs: 100),
+            ConversationTurnEventKind::ProviderRetrying,
+            ConversationTurnEventSeverity::Warning,
+            true,
+        ];
+        yield 'provider rate limited' => [
+            new ProviderRateLimited(...$base, provider: 'openai', model: 'gpt-5.1', retryAfterSeconds: 30),
+            ConversationTurnEventKind::ProviderRateLimited,
+            ConversationTurnEventSeverity::Warning,
+            true,
+        ];
+        yield 'runtime client connected' => [
+            new RuntimeClientConnected(...$base, clientId: 'client_1', clientKind: 'cli'),
+            ConversationTurnEventKind::RuntimeClientConnected,
+            ConversationTurnEventSeverity::Muted,
+            false,
+        ];
+        yield 'runtime client disconnected' => [
+            new RuntimeClientDisconnected(...$base, clientId: 'client_1', reason: 'closed'),
+            ConversationTurnEventKind::RuntimeClientDisconnected,
+            ConversationTurnEventSeverity::Warning,
+            false,
+        ];
+        yield 'runtime error' => [
+            new RuntimeError(...$base, message: 'failed', code: 'runtime.failed', errorClass: 'RuntimeException'),
+            ConversationTurnEventKind::RuntimeError,
+            ConversationTurnEventSeverity::Error,
+            true,
+        ];
+        yield 'runtime warning' => [
+            new RuntimeWarning(...$base, message: 'warn', code: 'runtime.warn'),
+            ConversationTurnEventKind::RuntimeWarning,
+            ConversationTurnEventSeverity::Warning,
+            true,
+        ];
+        yield 'runtime notice' => [
+            new RuntimeNotice(...$base, message: 'notice', code: 'runtime.notice'),
+            ConversationTurnEventKind::RuntimeNotice,
+            ConversationTurnEventSeverity::Info,
+            true,
+        ];
+    }
+
     #[Test]
     public function defaultStateIsEmptyAndNotStreaming(): void
     {
@@ -176,7 +408,7 @@ final class ConversationSliceTest extends TestCase
                 agentId: 'agent_1',
                 at: $at,
                 effectId: 'eff_1',
-                kind: Kind::FileRead,
+                kind: EffectKind::FileRead,
                 summary: 'Read a strategy note',
                 requiresApproval: true,
             ));
@@ -201,7 +433,7 @@ final class ConversationSliceTest extends TestCase
                 agentId: 'agent_1',
                 at: $at,
                 effectId: 'eff_1',
-                kind: Kind::FileRead,
+                kind: EffectKind::FileRead,
                 summary: 'Read a strategy note',
                 arguments: ['path' => 'notes/strategy.md'],
                 requiresApproval: true,
@@ -348,7 +580,8 @@ final class ConversationSliceTest extends TestCase
             ->appendCue(new TokenDelta('cue_1', 1, 'act_1', 'inv_1', 'agent_1', $at, 'answer', Channel::Message))
             ->appendCue(new TokenStop('cue_2', 2, 'act_1', 'inv_1', 'agent_1', $at, StopReason::EndOfTurn));
 
-        self::assertSame([], $slice->turns[0]->projectionEvents());
+        self::assertCount(1, $slice->turns[0]->projectionEvents());
+        self::assertSame([], $slice->turns[0]->threadProjectionEvents());
     }
 
     #[Test]
@@ -360,11 +593,57 @@ final class ConversationSliceTest extends TestCase
             ->appendCue(new TokenDelta('cue_1', 1, 'act_1', 'inv_1', 'agent_1', $at, 'answer', Channel::Message))
             ->appendCue(new TokenStop('cue_2', 2, 'act_1', 'inv_1', 'agent_1', $at, StopReason::MaxTokens));
 
-        $events = $slice->turns[0]->projectionEvents();
+        $events = $slice->turns[0]->threadProjectionEvents();
 
         self::assertCount(1, $events);
         self::assertSame(ConversationTurnEventKind::TokenStop, $events[0]->projection->kind);
         self::assertSame(ConversationTurnEventSeverity::Warning, $events[0]->projection->severity);
-        self::assertSame('max-tokens', $events[0]->projection->stopReason);
+        self::assertSame(StopReason::MaxTokens, $events[0]->projection->stopReason);
+    }
+
+    #[Test]
+    public function toolUseStopKeepsTheCurrentTurnOpenForTheFinalAnswer(): void
+    {
+        $at = new DateTimeImmutable('2026-05-23T21:00:00Z');
+        $slice = (new ConversationSlice())
+            ->addUserMessage('Use a tool, then answer')
+            ->appendCue(new TokenDelta('cue_1', 1, 'act_1', 'inv_1', 'agent_1', $at, 'Thinking', Channel::Thinking))
+            ->appendCue(new TokenStop('cue_2', 2, 'act_1', 'inv_1', 'agent_1', $at, StopReason::ToolUse))
+            ->appendCue(new EffectExecuted(
+                id: 'cue_3',
+                sequence: 3,
+                activityId: 'act_1',
+                invocationId: 'inv_1',
+                agentId: 'agent_1',
+                at: $at,
+                effectId: 'eff_1',
+                durationMs: 12,
+                resultDigest: 'ok',
+            ))
+            ->appendCue(new TokenDelta('cue_4', 4, 'act_1', 'inv_1', 'agent_1', $at, 'Final answer', Channel::Message));
+
+        self::assertCount(1, $slice->turns);
+        self::assertSame('Use a tool, then answer', $slice->turns[0]->userText);
+        self::assertSame('Final answer', $slice->turns[0]->assistantText());
+        self::assertSame(ConversationTurnStatus::Running, $slice->turns[0]->status);
+        self::assertFalse($slice->turns[0]->projectionEvents()[0]->projection->rendersInThread());
+    }
+
+    /**
+     * @param bool $rendersInThread
+     */
+    #[DataProvider('projectionCueProvider')]
+    #[Test]
+    public function panoplyCuesExposeSpecificProjectionContracts(
+        Cue $cue,
+        ConversationTurnEventKind $kind,
+        ConversationTurnEventSeverity $severity,
+        bool $rendersInThread,
+    ): void {
+        $projection = ConversationTurnEvent::fromCue($cue)->projection;
+
+        self::assertSame($kind, $projection->kind);
+        self::assertSame($severity, $projection->severity);
+        self::assertSame($rendersInThread, $projection->rendersInThread());
     }
 }
