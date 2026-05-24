@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Phalanx\Theatron\Template\Slice;
 
 use DateTimeImmutable;
+use Phalanx\Athena\Effect\Resolution;
+use Phalanx\Athena\Persistence\EffectLogRecord;
 use Phalanx\Panoply\Cue;
 use Phalanx\Panoply\Cue\Activity\Cancelled as ActivityCancelled;
 use Phalanx\Panoply\Cue\Activity\Completed as ActivityCompleted;
@@ -39,6 +41,7 @@ use Phalanx\Panoply\Cue\Runtime\Warning as RuntimeWarning;
 use Phalanx\Panoply\Cue\StopReason;
 use Phalanx\Panoply\Cue\Usage\Delta as UsageDelta;
 use Phalanx\Panoply\Cue\Usage\FinalUsage;
+use Phalanx\Panoply\Grant;
 
 class ConversationTurnEvent
 {
@@ -81,6 +84,46 @@ class ConversationTurnEvent
         );
     }
 
+    public static function fromEffectLog(EffectLogRecord $record): self
+    {
+        return new self(
+            id: $record->id,
+            at: $record->at,
+            projection: new ConversationTurnEventProjection(
+                kind: ConversationTurnEventKind::EffectLogged,
+                severity: self::severityForEffectOutcome($record->outcome),
+                label: self::labelForResolution($record->resolution),
+                summary: $record->outcome,
+                effectKind: $record->kind,
+                resolution: $record->resolution,
+                toolName: $record->toolName,
+                argsHash: $record->argsHash,
+                outcome: $record->outcome,
+            ),
+        );
+    }
+
+    public static function fromGrant(Grant $grant, ?DateTimeImmutable $at = null): self
+    {
+        return new self(
+            id: $grant->id,
+            at: $at ?? new DateTimeImmutable(),
+            projection: new ConversationTurnEventProjection(
+                kind: ConversationTurnEventKind::GrantAvailable,
+                severity: ConversationTurnEventSeverity::Info,
+                label: 'grant',
+                summary: $grant->scope . ' · ' . $grant->hazardCeiling->value,
+                grantId: $grant->id,
+                subject: $grant->subject,
+                scope: $grant->scope,
+                hazardCeiling: $grant->hazardCeiling->value,
+                expiresAt: $grant->expiresAt,
+                allowedEffects: $grant->allowedEffects,
+                conditions: $grant->conditions,
+            ),
+        );
+    }
+
     private static function projectionForCue(Cue $cue): ConversationTurnEventProjection
     {
         return match (true) {
@@ -109,7 +152,9 @@ class ConversationTurnEvent
                 summary: $cue->summary,
                 effectId: $cue->effectId,
                 effectKind: $cue->kind->value,
+                toolName: $cue->effectId,
                 arguments: $cue->arguments,
+                requiresApproval: $cue->requiresApproval,
             ),
             $cue instanceof EffectArgumentsDelta => new ConversationTurnEventProjection(
                 kind: ConversationTurnEventKind::EffectArgumentsDelta,
@@ -381,6 +426,31 @@ class ConversationTurnEvent
             StopReason::ToolUse => ConversationTurnEventSeverity::Info,
             StopReason::Cancelled => ConversationTurnEventSeverity::Warning,
             default => ConversationTurnEventSeverity::Muted,
+        };
+    }
+
+    private static function severityForEffectOutcome(string $outcome): ConversationTurnEventSeverity
+    {
+        $value = strtolower($outcome);
+
+        if (str_contains($value, 'denied') || str_contains($value, 'fail') || str_contains($value, 'error')) {
+            return ConversationTurnEventSeverity::Error;
+        }
+
+        if (str_contains($value, 'paused') || str_contains($value, 'suspend')) {
+            return ConversationTurnEventSeverity::Warning;
+        }
+
+        return ConversationTurnEventSeverity::Success;
+    }
+
+    private static function labelForResolution(Resolution $resolution): string
+    {
+        return match ($resolution) {
+            Resolution::BuiltIn => 'built-in',
+            Resolution::LocalTool => 'local tool',
+            Resolution::McpTool => 'mcp tool',
+            Resolution::SubAgent => 'sub-agent',
         };
     }
 

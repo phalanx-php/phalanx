@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Theatron\Template\Render;
 
+use Phalanx\Panoply\Effect\Kind as EffectKind;
 use Phalanx\Theatron\Template\Slice\ConversationTurnEvent;
 use Phalanx\Theatron\Template\Slice\ConversationTurnEventProjection;
 
@@ -35,6 +36,10 @@ class ConversationEventFormatter
             $parts[] = trim(($projection->effectKind ?? '') . ' ' . ($projection->effectId ?? ''));
         }
 
+        if ($projection->resolution !== null && $projection->toolName !== null) {
+            $parts[] = $projection->resolution->value . ' ' . $projection->toolName;
+        }
+
         if ($projection->summary !== null && $projection->summary !== '') {
             $parts[] = $projection->summary;
         }
@@ -45,6 +50,10 @@ class ConversationEventFormatter
 
         if ($includeInspectionFields && $projection->argumentsDelta !== null) {
             $parts[] = 'args delta ' . $projection->argumentsDelta;
+        }
+
+        if ($includeInspectionFields && $projection->argsHash !== null) {
+            $parts[] = 'args hash ' . $projection->argsHash;
         }
 
         if ($includeInspectionFields && $projection->structuredDelta !== null) {
@@ -69,6 +78,29 @@ class ConversationEventFormatter
 
         if ($projection->grantId !== null) {
             $parts[] = 'grant ' . $projection->grantId;
+        }
+
+        if ($projection->subject !== null) {
+            $parts[] = 'subject ' . $projection->subject;
+        }
+
+        if ($projection->scope !== null && $projection->hazardCeiling !== null) {
+            $parts[] = 'scope ' . $projection->scope . ' hazard ' . $projection->hazardCeiling;
+        }
+
+        if ($includeInspectionFields && $projection->allowedEffects !== []) {
+            $parts[] = 'allows ' . implode(
+                ', ',
+                array_map(static fn(EffectKind $kind): string => $kind->value, $projection->allowedEffects),
+            );
+        }
+
+        if ($includeInspectionFields && $projection->conditions !== []) {
+            $parts[] = 'conditions ' . json_encode($projection->conditions, JSON_THROW_ON_ERROR);
+        }
+
+        if ($projection->expiresAt !== null) {
+            $parts[] = 'expires ' . $projection->expiresAt->format(\DateTimeInterface::RFC3339);
         }
 
         if ($projection->cacheReadTokens !== null && $projection->cacheReadTokens > 0) {

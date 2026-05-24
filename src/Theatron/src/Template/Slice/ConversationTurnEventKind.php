@@ -18,8 +18,10 @@ enum ConversationTurnEventKind: string
     case EffectDenied = 'effect.denied';
     case EffectExecuted = 'effect.executed';
     case EffectFailed = 'effect.failed';
+    case EffectLogged = 'effect.logged';
     case EffectPaused = 'effect.paused';
     case EffectRequested = 'effect.requested';
+    case GrantAvailable = 'grant.available';
     case InvocationCancelled = 'invocation.cancelled';
     case InvocationCompleted = 'invocation.completed';
     case InvocationFailed = 'invocation.failed';

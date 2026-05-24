@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Phalanx\Theatron\Tests\Unit\Template\Screen;
 
 use DateTimeImmutable;
+use Phalanx\Athena\Effect\Resolution;
+use Phalanx\Athena\Persistence\EffectLogRecord;
 use Phalanx\Panoply\Cue\Activity\Failed as ActivityFailed;
 use Phalanx\Panoply\Cue\Activity\Started as ActivityStarted;
 use Phalanx\Panoply\Cue\Effect\Executed as EffectExecuted;
@@ -311,6 +313,43 @@ final class ChatScreenTest extends TestCase
         self::assertStringContainsString('Partial answer survived.', $text);
         self::assertStringContainsString('activity failed: Provider stream failed', $text);
         self::assertStringContainsString('RuntimeException', $text);
+    }
+
+    #[Test]
+    public function rendersAthenaRuntimeResolutionFromEffectLogs(): void
+    {
+        $at = new DateTimeImmutable('2026-05-23T21:00:00Z');
+        $store = new AppStore();
+        $store->conversation = (new ConversationSlice())
+            ->addUserMessage('Run tools')
+            ->appendToken('Tool work complete.')
+            ->appendEffectLog(new EffectLogRecord(
+                id: 'effect_log_1',
+                invocationId: 'inv_1',
+                kind: 'tool_call',
+                toolName: 'read_file',
+                argsHash: 'sha256:abc',
+                resolution: Resolution::LocalTool,
+                outcome: 'ok',
+                at: $at,
+            ))
+            ->appendEffectLog(new EffectLogRecord(
+                id: 'effect_log_2',
+                invocationId: 'inv_1',
+                kind: 'tool_call',
+                toolName: 'search_docs',
+                argsHash: 'sha256:def',
+                resolution: Resolution::McpTool,
+                outcome: 'failed',
+                at: $at,
+            ));
+        $screen = new ChatScreen($store);
+
+        $text = self::flatten($screen($this->makeContext($store)));
+
+        self::assertStringContainsString('Tool work complete.', $text);
+        self::assertStringContainsString('local tool: tool_call · local-tool read_file · ok', $text);
+        self::assertStringContainsString('mcp tool: tool_call · mcp-tool search_docs · failed', $text);
     }
 
     #[Test]

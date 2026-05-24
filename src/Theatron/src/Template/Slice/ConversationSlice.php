@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Theatron\Template\Slice;
 
 use DateTimeImmutable;
+use Phalanx\Athena\Persistence\EffectLogRecord;
 use Phalanx\Panoply\Cue;
 use Phalanx\Panoply\Cue\Activity\Cancelled as ActivityCancelled;
 use Phalanx\Panoply\Cue\Activity\Completed as ActivityCompleted;
@@ -21,6 +22,7 @@ use Phalanx\Panoply\Cue\Output\Channel;
 use Phalanx\Panoply\Cue\Output\TokenDelta;
 use Phalanx\Panoply\Cue\Output\TokenStop;
 use Phalanx\Panoply\Cue\StopReason;
+use Phalanx\Panoply\Grant;
 
 class ConversationSlice
 {
@@ -110,6 +112,16 @@ class ConversationSlice
         }
 
         return $this->appendEvent($event, $status);
+    }
+
+    public function appendEffectLog(EffectLogRecord $record): self
+    {
+        return $this->appendEvent(ConversationTurnEvent::fromEffectLog($record), null);
+    }
+
+    public function appendGrant(Grant $grant, ?DateTimeImmutable $at = null): self
+    {
+        return $this->appendEvent(ConversationTurnEvent::fromGrant($grant, $at), null);
     }
 
     public function finalizeMessage(ConversationTurnStatus $status = ConversationTurnStatus::Completed): self

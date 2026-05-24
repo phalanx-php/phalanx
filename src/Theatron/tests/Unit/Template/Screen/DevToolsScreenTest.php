@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Phalanx\Theatron\Tests\Unit\Template\Screen;
 
 use DateTimeImmutable;
+use Phalanx\Athena\Effect\Resolution;
+use Phalanx\Athena\Persistence\EffectLogRecord;
 use Phalanx\Panoply\Cue\Effect\Requested as EffectRequested;
 use Phalanx\Panoply\Cue\Provider\Resolved as ProviderResolved;
 use Phalanx\Panoply\Cue\Usage\Delta as UsageDelta;
@@ -379,6 +381,16 @@ final class DevToolsScreenTest extends TestCase
                 inputTokens: 100,
                 outputTokens: 200,
                 cacheReadTokens: 10,
+            ))
+            ->appendEffectLog(new EffectLogRecord(
+                id: 'effect_log_1',
+                invocationId: 'inv_1',
+                kind: 'tool_call',
+                toolName: 'search_docs',
+                argsHash: 'sha256:def',
+                resolution: Resolution::McpTool,
+                outcome: 'ok',
+                at: $at,
             ));
         $store->agents = new AgentRegistrySlice()
             ->register(new AgentSummary(id: 'agent_leonidas', name: 'Leonidas', capabilities: ['tactics']));
@@ -407,6 +419,9 @@ final class DevToolsScreenTest extends TestCase
         self::assertStringContainsString('1 in', $text);
         self::assertStringContainsString('cue_4 usage.final cue.usage.final', $text);
         self::assertStringContainsString('cache read 10', $text);
+        self::assertStringContainsString('effect_log_1 effect.logged effect.logged', $text);
+        self::assertStringContainsString('mcp-tool search_docs', $text);
+        self::assertStringContainsString('args hash sha256:def', $text);
     }
 
     #[Test]

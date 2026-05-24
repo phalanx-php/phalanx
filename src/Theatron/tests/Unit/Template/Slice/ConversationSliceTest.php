@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Phalanx\Theatron\Tests\Unit\Template\Slice;
 
 use DateTimeImmutable;
+use Phalanx\Athena\Effect\Resolution;
+use Phalanx\Athena\Persistence\EffectLogRecord;
 use Phalanx\Panoply\Artifact\Kind as ArtifactKind;
 use Phalanx\Panoply\Cue;
 use Phalanx\Panoply\Cue\Activity\Cancelled as ActivityCancelled;
@@ -41,6 +43,8 @@ use Phalanx\Panoply\Cue\StopReason;
 use Phalanx\Panoply\Cue\Usage\Delta as UsageDelta;
 use Phalanx\Panoply\Cue\Usage\FinalUsage;
 use Phalanx\Panoply\Effect\Kind as EffectKind;
+use Phalanx\Panoply\Grant;
+use Phalanx\Panoply\Hazard;
 use Phalanx\Theatron\Template\Slice\ConversationSlice;
 use Phalanx\Theatron\Template\Slice\ConversationTurnEvent;
 use Phalanx\Theatron\Template\Slice\ConversationTurnEventKind;
@@ -503,6 +507,80 @@ final class ConversationSliceTest extends TestCase
         self::assertSame(300, $events[4]->projection->outputTokens);
         self::assertSame(450, $events[4]->projection->usageTotal());
         self::assertSame(0.04, $events[4]->projection->costUsd);
+    }
+
+    #[Test]
+    public function effectLogsExposeAthenaResolutionProjectionForRuntimeRendering(): void
+    {
+        $at = new DateTimeImmutable('2026-05-23T21:00:00Z');
+        $slice = (new ConversationSlice())
+            ->addUserMessage('Use runtime tools')
+            ->appendEffectLog(new EffectLogRecord(
+                id: 'effect_log_1',
+                invocationId: 'inv_1',
+                kind: 'tool_call',
+                toolName: 'read_file',
+                argsHash: 'sha256:abc',
+                resolution: Resolution::LocalTool,
+                outcome: 'ok',
+                at: $at,
+            ))
+            ->appendEffectLog(new EffectLogRecord(
+                id: 'effect_log_2',
+                invocationId: 'inv_1',
+                kind: 'tool_call',
+                toolName: 'search_docs',
+                argsHash: 'sha256:def',
+                resolution: Resolution::McpTool,
+                outcome: 'failed',
+                at: $at,
+            ));
+
+        $events = $slice->turns[0]->projectionEvents();
+
+        self::assertCount(2, $events);
+        self::assertSame(ConversationTurnEventKind::EffectLogged, $events[0]->projection->kind);
+        self::assertSame(ConversationTurnEventSeverity::Success, $events[0]->projection->severity);
+        self::assertSame(Resolution::LocalTool, $events[0]->projection->resolution);
+        self::assertSame('read_file', $events[0]->projection->toolName);
+        self::assertSame('sha256:abc', $events[0]->projection->argsHash);
+        self::assertSame('ok', $events[0]->projection->outcome);
+        self::assertSame(ConversationTurnEventSeverity::Error, $events[1]->projection->severity);
+        self::assertSame(Resolution::McpTool, $events[1]->projection->resolution);
+        self::assertSame('search_docs', $events[1]->projection->toolName);
+        self::assertTrue($events[0]->projection->rendersInThread());
+        self::assertTrue($events[1]->projection->rendersInThread());
+    }
+
+    #[Test]
+    public function grantsExposeApprovalScopeProjectionForRuntimeRendering(): void
+    {
+        $expiresAt = new DateTimeImmutable('2026-05-24T21:00:00Z');
+        $slice = (new ConversationSlice())
+            ->addUserMessage('Show grants')
+            ->appendGrant(new Grant(
+                id: 'grant_1',
+                subject: 'agent_1',
+                allowedEffects: [EffectKind::FileRead, EffectKind::CodeSearch],
+                scope: 'session',
+                hazardCeiling: Hazard::Medium,
+                expiresAt: $expiresAt,
+                conditions: ['cwd' => '/workspace'],
+            ), new DateTimeImmutable('2026-05-23T21:00:00Z'));
+
+        $events = $slice->turns[0]->projectionEvents();
+
+        self::assertCount(1, $events);
+        self::assertSame(ConversationTurnEventKind::GrantAvailable, $events[0]->projection->kind);
+        self::assertSame(ConversationTurnEventSeverity::Info, $events[0]->projection->severity);
+        self::assertSame('grant_1', $events[0]->projection->grantId);
+        self::assertSame('agent_1', $events[0]->projection->subject);
+        self::assertSame('session', $events[0]->projection->scope);
+        self::assertSame('medium', $events[0]->projection->hazardCeiling);
+        self::assertSame($expiresAt, $events[0]->projection->expiresAt);
+        self::assertSame([EffectKind::FileRead, EffectKind::CodeSearch], $events[0]->projection->allowedEffects);
+        self::assertSame(['cwd' => '/workspace'], $events[0]->projection->conditions);
+        self::assertTrue($events[0]->projection->rendersInThread());
     }
 
     #[Test]

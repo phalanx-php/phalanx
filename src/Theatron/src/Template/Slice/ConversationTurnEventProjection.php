@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace Phalanx\Theatron\Template\Slice;
 
+use Phalanx\Athena\Effect\Resolution;
 use Phalanx\Panoply\Cue\StopReason;
+use Phalanx\Panoply\Effect\Kind as EffectKind;
 
 final class ConversationTurnEventProjection
 {
     /**
      * @param array<string, mixed> $arguments
      * @param list<string> $reasonCodes
+     * @param list<EffectKind> $allowedEffects
+     * @param array<string, mixed> $conditions
      */
     public function __construct(
         private(set) ConversationTurnEventKind $kind,
@@ -19,9 +23,20 @@ final class ConversationTurnEventProjection
         private(set) ?string $summary = null,
         private(set) ?string $effectId = null,
         private(set) ?string $effectKind = null,
+        private(set) ?Resolution $resolution = null,
+        private(set) ?string $toolName = null,
+        private(set) ?string $argsHash = null,
+        private(set) ?string $outcome = null,
+        private(set) ?string $subject = null,
+        private(set) ?string $scope = null,
+        private(set) ?string $hazardCeiling = null,
+        private(set) ?\DateTimeImmutable $expiresAt = null,
         private(set) array $arguments = [],
         private(set) ?string $argumentsDelta = null,
         private(set) ?string $grantId = null,
+        private(set) bool $requiresApproval = false,
+        private(set) array $allowedEffects = [],
+        private(set) array $conditions = [],
         private(set) ?int $durationMs = null,
         private(set) ?string $resultDigest = null,
         private(set) array $reasonCodes = [],
