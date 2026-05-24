@@ -103,6 +103,15 @@ final class AgoraHarnessSchemaTest extends TestCase
             $schema,
         );
         self::assertStringContainsString(
+            'DEFINE FIELD event_sequence ON TABLE agora_replay_checkpoint TYPE int ASSERT $value >= 0;',
+            $schema,
+        );
+        self::assertStringContainsString(
+            'DEFINE FIELD schema_version ON TABLE agora_replay_checkpoint TYPE int ASSERT $value >= 1;',
+            $schema,
+        );
+        self::assertStringNotContainsString('DEFINE FIELD sequence ON TABLE agora_replay_checkpoint', $schema);
+        self::assertStringContainsString(
             'DEFINE FIELD state ON TABLE agora_replay_checkpoint TYPE object FLEXIBLE;',
             $schema,
         );
@@ -112,6 +121,12 @@ final class AgoraHarnessSchemaTest extends TestCase
         );
         self::assertStringContainsString(
             self::resumeStatusField(),
+            $schema,
+        );
+        self::assertMatchesRegularExpression(
+            '/DEFINE TABLE agora_resume_state TYPE NORMAL SCHEMAFULL\s+'
+                . preg_quote('PERMISSIONS FOR select, create, update WHERE true, FOR delete NONE;', '/')
+                . '/',
             $schema,
         );
     }

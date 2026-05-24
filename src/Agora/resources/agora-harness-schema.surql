@@ -143,15 +143,16 @@ DEFINE INDEX agora_usage_session_recorded ON TABLE agora_usage FIELDS session_id
 DEFINE TABLE agora_replay_checkpoint TYPE NORMAL SCHEMAFULL
     PERMISSIONS FOR select, create WHERE true, FOR update, delete NONE;
 DEFINE FIELD session_id ON TABLE agora_replay_checkpoint TYPE record<agora_session>;
-DEFINE FIELD sequence ON TABLE agora_replay_checkpoint TYPE int ASSERT $value >= 1;
+DEFINE FIELD event_sequence ON TABLE agora_replay_checkpoint TYPE int ASSERT $value >= 0;
 DEFINE FIELD state_kind ON TABLE agora_replay_checkpoint TYPE string ASSERT $value INSIDE ['conversation', 'runtime', 'activity', 'workspace'];
+DEFINE FIELD schema_version ON TABLE agora_replay_checkpoint TYPE int ASSERT $value >= 1;
 DEFINE FIELD projection_hash ON TABLE agora_replay_checkpoint TYPE string;
 DEFINE FIELD state ON TABLE agora_replay_checkpoint TYPE object FLEXIBLE;
 DEFINE FIELD created_at ON TABLE agora_replay_checkpoint TYPE datetime;
-DEFINE INDEX agora_replay_checkpoint_session_sequence ON TABLE agora_replay_checkpoint FIELDS session_id, sequence, state_kind UNIQUE;
+DEFINE INDEX agora_replay_checkpoint_session_sequence ON TABLE agora_replay_checkpoint FIELDS session_id, event_sequence, state_kind UNIQUE;
 
 DEFINE TABLE agora_resume_state TYPE NORMAL SCHEMAFULL
-    PERMISSIONS FOR select, create WHERE true, FOR update, delete NONE;
+    PERMISSIONS FOR select, create, update WHERE true, FOR delete NONE;
 DEFINE FIELD session_id ON TABLE agora_resume_state TYPE record<agora_session>;
 DEFINE FIELD turn_id ON TABLE agora_resume_state TYPE option<record<agora_turn>>;
 DEFINE FIELD event_sequence ON TABLE agora_resume_state TYPE int ASSERT $value >= 0;
