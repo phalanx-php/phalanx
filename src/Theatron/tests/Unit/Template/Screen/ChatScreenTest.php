@@ -12,6 +12,8 @@ use Phalanx\Theatron\Context\ScreenContext;
 use Phalanx\Theatron\Input\Key;
 use Phalanx\Theatron\Input\KeyEvent;
 use Phalanx\Theatron\Navigation\Navigator;
+use Phalanx\Theatron\Style\Color;
+use Phalanx\Theatron\Style\Modifier;
 use Phalanx\Theatron\Styling\Theme;
 use Phalanx\Theatron\Tdom\Element\ColumnElement;
 use Phalanx\Theatron\Tdom\Element\InputElement;
@@ -110,19 +112,25 @@ final class ChatScreenTest extends TestCase
     #[Test]
     public function streamingThinkingUsesPulseFrameForDots(): void
     {
-        $store = new AppStore();
-        $store->activity = (new ActivitySlice(status: ActivityStatus::Running))
-            ->tick()
-            ->tick()
-            ->tick();
-        $store->conversation = (new ConversationSlice())
-            ->addUserMessage('think with motion')
-            ->appendToken('deliberating', 'thinking');
-        $screen = new ChatScreen($store);
+        foreach ([0 => 'thinking.', 3 => 'thinking..', 6 => 'thinking...', 9 => 'thinking.'] as $ticks => $label) {
+            $store = new AppStore();
+            $activity = new ActivitySlice(status: ActivityStatus::Running);
 
-        $text = self::flatten($screen($this->makeContext($store)));
+            for ($i = 0; $i < $ticks; $i++) {
+                $activity = $activity->tick();
+            }
 
-        self::assertStringContainsString('thinking..', $text);
+            $store->activity = $activity;
+            $store->conversation = (new ConversationSlice())
+                ->addUserMessage('think with motion')
+                ->appendToken('deliberating', 'thinking');
+            $screen = new ChatScreen($store);
+
+            self::assertSame(
+                [$label],
+                self::spinnerLabels($screen($this->makeContext($store))),
+            );
+        }
     }
 
     #[Test]
@@ -179,6 +187,40 @@ final class ChatScreenTest extends TestCase
 
         self::assertStringContainsString('hidden reasoning', $expandedText);
         self::assertStringNotContainsString('thinking.', $expandedText);
+    }
+
+    #[Test]
+    public function streamingThinkingRemainsEphemeralWhenThinkingIsExpanded(): void
+    {
+        $store = new AppStore();
+        $store->conversation = (new ConversationSlice())
+            ->addUserMessage('streaming expanded turn')
+            ->appendToken('single-streaming-thought', 'thinking')
+            ->toggleThinking();
+        $screen = new ChatScreen($store);
+
+        $text = self::flatten($screen($this->makeContext($store)));
+
+        self::assertStringContainsString('thinking.', $text);
+        self::assertSame(1, substr_count($text, 'single-streaming-thought'));
+    }
+
+    #[Test]
+    public function streamingThinkingRowsUseMutedStyle(): void
+    {
+        $store = new AppStore();
+        $store->conversation = (new ConversationSlice())
+            ->addUserMessage('style the stream')
+            ->appendToken('muted-streaming-thought', 'thinking');
+        $screen = new ChatScreen($store);
+
+        $line = self::findLineContaining(
+            $screen($this->makeContext($store)),
+            'muted-streaming-thought',
+        );
+
+        self::assertTrue($line->spans[0]->style->hasModifier(Modifier::Dim));
+        self::assertTrue($line->spans[0]->style->foreground?->equals(Color::indexed(242)));
     }
 
     #[Test]
@@ -630,6 +672,70 @@ final class ChatScreenTest extends TestCase
         }
 
         return '';
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function spinnerLabels(Renderable|string $renderable): array
+    {
+        if (is_string($renderable)) {
+            return [];
+        }
+
+        if ($renderable instanceof SpinnerElement) {
+            return [$renderable->label === null ? '' : self::lineToText($renderable->label)];
+        }
+
+        if ($renderable instanceof ColumnElement || $renderable instanceof RowElement) {
+            return array_merge([], ...array_map(self::spinnerLabels(...), $renderable->children));
+        }
+
+        if ($renderable instanceof PanelElement) {
+            return self::spinnerLabels($renderable->child);
+        }
+
+        return [];
+    }
+
+    private static function findLineContaining(Renderable|string $renderable, string $needle): Line
+    {
+        $line = self::lineContaining($renderable, $needle);
+
+        if ($line !== null) {
+            return $line;
+        }
+
+        self::fail(sprintf('Unable to find "%s" in render tree.', $needle));
+    }
+
+    private static function lineContaining(Renderable|string $renderable, string $needle): ?Line
+    {
+        if (is_string($renderable)) {
+            return null;
+        }
+
+        if ($renderable instanceof TextElement && str_contains(self::lineToText($renderable->content), $needle)) {
+            return is_string($renderable->content)
+                ? Line::plain($renderable->content)
+                : $renderable->content;
+        }
+
+        if ($renderable instanceof ColumnElement || $renderable instanceof RowElement) {
+            foreach ($renderable->children as $child) {
+                $line = self::lineContaining($child, $needle);
+
+                if ($line !== null) {
+                    return $line;
+                }
+            }
+        }
+
+        if ($renderable instanceof PanelElement) {
+            return self::lineContaining($renderable->child, $needle);
+        }
+
+        return null;
     }
 
     private static function lineToText(string|Line $content): string
