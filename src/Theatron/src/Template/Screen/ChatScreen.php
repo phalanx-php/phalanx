@@ -340,6 +340,11 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, HandlesKeySeque
         return $composerRows + 5;
     }
 
+    private static function controlBarMemory(int $bytes): string
+    {
+        return str_replace(' ', '', Metrics::memory($bytes));
+    }
+
     private static function activityControlLine(): Line
     {
         return Line::from(
@@ -584,9 +589,9 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, HandlesKeySeque
             Span::styled(' ' . $this->store->activity->modelName, TextStyle::new()->fg(Color::indexed(250))),
             Span::styled('  ' . $this->store->runtimeStatus->cwdLabel(), TextStyle::new()->fg(Color::indexed(242))),
             Span::styled('  mem ', TextStyle::new()->fg(Color::indexed(242))),
-            Span::styled(Metrics::memory(memory_get_usage(false)), TextStyle::new()->fg(Color::indexed(250))),
+            Span::styled(self::controlBarMemory(memory_get_usage(false)), TextStyle::new()->fg(Color::indexed(250))),
             Span::styled(' · alloc ', TextStyle::new()->fg(Color::indexed(242))),
-            Span::styled(Metrics::memory(memory_get_usage(true)), TextStyle::new()->fg(Color::indexed(250))),
+            Span::styled(self::controlBarMemory(memory_get_usage(true)), TextStyle::new()->fg(Color::indexed(250))),
             Span::styled('  ' . $this->store->inputMode->mode->value, TextStyle::new()->fg(Color::indexed(250))),
             Span::styled('  ^X ?', TextStyle::new()->fg(Color::indexed(245))),
             Span::styled(' keymap', TextStyle::new()->fg(Color::indexed(250))),

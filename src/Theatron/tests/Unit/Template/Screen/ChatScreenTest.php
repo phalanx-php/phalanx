@@ -592,8 +592,11 @@ final class ChatScreenTest extends TestCase
         self::assertStringContainsString('alloc', $text);
         self::assertStringContainsString('insert', $text);
         self::assertStringContainsString('^X ? keymap', $text);
-        self::assertMatchesRegularExpression('/mem [0-9,.]+ (?:B|KB|MB)/', $text);
-        self::assertMatchesRegularExpression('/alloc [0-9,.]+ (?:B|KB|MB)/', $text);
+        self::assertMatchesRegularExpression(
+            '/\(Λ\) qwen3:4b\s+~\/project\s+mem [0-9,.]+(?:B|KB|MB) · alloc [0-9,.]+(?:B|KB|MB)\s+insert\s+\^X \? keymap/',
+            $text,
+        );
+        self::assertDoesNotMatchRegularExpression('/(?:mem|alloc) [0-9,.]+ (?:B|KB|MB)/', $text);
         self::assertStringNotContainsString('^P blocks', $text);
         self::assertStringNotContainsString('^X u undo', $text);
         self::assertStringNotContainsString('^X a undo all', $text);
@@ -601,6 +604,25 @@ final class ChatScreenTest extends TestCase
         self::assertStringNotContainsString('^X s settings', $text);
         self::assertStringNotContainsString('Enter send', $text);
         self::assertStringNotContainsString('^C quit', $text);
+    }
+
+    #[Test]
+    public function statusBarKeepsActivityBlockControlsWhenConversationIsFocused(): void
+    {
+        $store = new AppStore();
+        $store->inputMode = new InputModeSlice(InputMode::Normal, 'conversation');
+        $screen = new ChatScreen($store);
+
+        $text = self::flatten($screen->statusBar());
+
+        self::assertStringContainsString('↑ focus', $text);
+        self::assertStringContainsString('↓ focus', $text);
+        self::assertStringContainsString('Enter open', $text);
+        self::assertStringContainsString('i compose', $text);
+        self::assertStringContainsString('^C quit', $text);
+        self::assertStringNotContainsString('(Λ)', $text);
+        self::assertStringNotContainsString('mem', $text);
+        self::assertStringNotContainsString('^X ? keymap', $text);
     }
 
     #[Test]
