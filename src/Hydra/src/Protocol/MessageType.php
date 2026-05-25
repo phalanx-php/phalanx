@@ -7,8 +7,8 @@ namespace Phalanx\Hydra\Protocol;
 enum MessageType: string
 {
     case TaskRequest = 'task';
+    case StreamEmit = 'stream_emit';
     case ServiceCall = 'service_call';
     case TaskResponse = 'task_response';
     case ServiceResponse = 'service_response';
-    case StreamEmit = 'stream_emit';
 }

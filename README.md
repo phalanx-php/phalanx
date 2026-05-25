@@ -25,7 +25,8 @@ Phalanx starts from a small premise:
 
 _We'll get right into some code:_
 
-```text
+```php
+<?php
 class CreateProject implements Executable
 {
     // ctor omitted for brevity -- you'll see this throughout this README
@@ -66,7 +67,9 @@ Technically, we could've injected the `ImagePipeline` in the constructor but Pha
 > [!NOTE]
 > Phalanx's `Theatron` (TUI) library leans into this pattern heavily for the function-based UI syntax it provides.
 
-```text
+```php
+<?php
+
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
 
@@ -92,7 +95,8 @@ The class is still just PHP. The difference is that Phalanx can supervise the wo
 
 Async PHP makes some problems look ordinary until they are not. Lock-order inversion is one of those. Each task below is valid code in isolation, but together they can deadlock if a developer misses their circular dependencies:
 
-```text
+```php
+<?php
 // Some details omitted for brevity.
 
 class MoveCustomerCredit implements Executable, Retryable, HasTimeout
@@ -129,7 +133,8 @@ Phalanx does not pretend PHP can guarantee safety. It gives the runtime enough s
 
 If the business operation is ordered, you can say that with the `series()` method. This keeps the named tasks separate, runs them one at a time, and returns the ordered results.
 
-```text
+```php
+<?php
 // ...
 
 class ReconcileBillingInOrder implements Executable, Retryable, HasTimeout
@@ -146,7 +151,9 @@ class ReconcileBillingInOrder implements Executable, Retryable, HasTimeout
 
 If the operations really are concurrent, keep them concurrent, but a little refactoring would be needed:
 
-```text
+```php
+<?php
+
 // again, some details removed for brevity
 
 class MoveCustomerCredit implements Executable, Retryable, HasTimeout
@@ -239,6 +246,22 @@ The repo includes runnable demos for the current surfaces. Development is moving
 | [Surreal](demos/surreal) | in-memory RPC and live queries | `composer demo:surreal` |
 | [Skopos](demos/skopos) | basic dev server orchestration | `composer demo:skopos:basic-dev` |
 | [Theatron](demos/theatron) | non-interactive terminal pipeline rendering | `composer demo:theatron` |
+
+## Installation
+
+Phalanx uses PIE, PHP's modern extension installer. `phalanx-php/cli` ships the doctor and the OpenSwoole installer with platform-aware flag selection.
+
+```bash
+composer require phalanx-php/cli
+
+# Check your environment (PHP version, extensions, build tooling)
+vendor/bin/phalanx doctor
+
+# Install OpenSwoole via PIE with optimal platform flags
+vendor/bin/phalanx swoole:install
+```
+
+`swoole:install` runs `pie install openswoole/ext-openswoole` with guided flag selection. Defaults cover TLS, sockets, HTTP/2, and cURL hooks; optional flags cover MySQL, Postgres, c-ares, io_uring, and custom OpenSSL paths.
 
 ## Benchmarks
 

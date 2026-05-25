@@ -32,10 +32,10 @@ final class Codec
         }
 
         return match ($type) {
+            MessageType::StreamEmit => StreamEmit::fromArray($data),
             MessageType::TaskRequest => TaskRequest::fromArray($data),
             MessageType::ServiceCall => ServiceCall::fromArray($data),
             MessageType::TaskResponse, MessageType::ServiceResponse => Response::fromArray($data),
-            MessageType::StreamEmit => StreamEmit::fromArray($data),
         };
     }
 

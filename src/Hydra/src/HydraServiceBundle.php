@@ -27,8 +27,8 @@ final class HydraServiceBundle extends ServiceBundle
         self::prewarmHookSafeClasses();
 
         $parallelConfig = $this->config ?? ParallelConfig::fromContext($context);
-
         $services->config(ParallelConfig::class, static fn(): ParallelConfig => $parallelConfig);
+
         $services->singleton(WorkerDispatch::class)
             ->needs(ParallelConfig::class)
             ->factory(static fn(ParallelConfig $config): WorkerDispatch => new ParallelWorkerDispatch($config))

@@ -120,7 +120,6 @@ final class IrisSurrealTransport implements SurrealTransport
 
     private function head(Scope&Suspendable $scope, SurrealConfig $config, ?string $token, string $path): int
     {
-        $http = $this->http;
         $request = new HttpRequest(
             method: 'GET',
             url: $config->endpoint . $path,
@@ -129,7 +128,7 @@ final class IrisSurrealTransport implements SurrealTransport
             readTimeout: $config->readTimeout,
         );
 
-        $response = $http->request($scope, $request);
+        $response = $this->http->request($scope, $request);
 
         return $response->status;
     }
