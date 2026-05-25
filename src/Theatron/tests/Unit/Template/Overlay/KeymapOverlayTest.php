@@ -15,6 +15,8 @@ use Phalanx\Theatron\Tdom\Element\ColumnElement;
 use Phalanx\Theatron\Tdom\Element\PanelElement;
 use Phalanx\Theatron\Tdom\Element\TextElement;
 use Phalanx\Theatron\Tdom\Renderable;
+use Phalanx\Theatron\Template\Keymap\ComposerChordMap;
+use Phalanx\Theatron\Template\Keymap\TemplateKeymap;
 use Phalanx\Theatron\Template\Overlay\KeymapOverlay;
 use Phalanx\Theatron\Template\Screen\ChatScreen;
 use PHPUnit\Framework\Attributes\Test;
@@ -35,18 +37,60 @@ final class KeymapOverlayTest extends TestCase
         $text = self::flatten($result);
         self::assertStringContainsString('Composer', $text);
         self::assertStringContainsString('Queue', $text);
+        self::assertStringContainsString('Blocks', $text);
+        self::assertStringContainsString('DevTools', $text);
+        self::assertStringContainsString('Settings', $text);
+        self::assertStringContainsString('Detail', $text);
+        self::assertStringContainsString('Agent Board', $text);
+        self::assertStringContainsString('Effect Approval', $text);
         self::assertStringContainsString('App', $text);
-        self::assertStringNotContainsString('Navigation', $text);
+        self::assertStringContainsString('Overlay', $text);
         self::assertStringContainsString('^X ?', $text);
         self::assertStringContainsString('keymap', $text);
         self::assertStringContainsString('^X a', $text);
         self::assertStringContainsString('undo all', $text);
+        self::assertStringContainsString('Ctrl+A/E', $text);
+        self::assertStringContainsString('line start/end', $text);
         self::assertStringContainsString('Ctrl+U', $text);
         self::assertStringContainsString('clear before cursor', $text);
+        self::assertStringContainsString('Left/Right', $text);
+        self::assertStringContainsString('switch tab', $text);
+        self::assertStringContainsString('Space', $text);
+        self::assertStringContainsString('toggle item', $text);
+        self::assertStringContainsString('A', $text);
+        self::assertStringContainsString('approve effect', $text);
         self::assertStringContainsString('Ctrl+C', $text);
         self::assertStringContainsString('quit', $text);
         self::assertStringContainsString('Esc', $text);
         self::assertStringContainsString('close overlay', $text);
+    }
+
+    #[Test]
+    public function templateKeymapContainsEveryComposerChordExactlyOnce(): void
+    {
+        $entries = TemplateKeymap::entries();
+
+        foreach (ComposerChordMap::entries() as $chord) {
+            $matches = array_filter(
+                $entries,
+                static fn($entry): bool => $entry->combo === $chord->combo
+                    && $entry->label === $chord->label
+                    && $entry->section === $chord->section,
+            );
+
+            self::assertCount(1, $matches, $chord->combo);
+        }
+    }
+
+    #[Test]
+    public function templateKeymapDoesNotDuplicateRows(): void
+    {
+        $keys = array_map(
+            static fn($entry): string => $entry->section . '|' . $entry->combo . '|' . $entry->label,
+            TemplateKeymap::entries(),
+        );
+
+        self::assertSame($keys, array_values(array_unique($keys)));
     }
 
     #[Test]
