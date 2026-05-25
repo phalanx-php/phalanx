@@ -6,13 +6,14 @@ namespace Phalanx\Panoply\HomeDir\Codex;
 
 use Phalanx\Panoply\HomeDir\Settings as SettingsInterface;
 use Phalanx\Panoply\HomeDir\SettingsError;
+use PhpCollective\Toml\Toml;
 
 /**
  * Settings accessor for Codex's `config.toml` configuration file.
  *
  * TOML support: PHP has no stable built-in TOML parser in standard
- * distributions. When a `toml_decode` function or a registered TOML parser
- * class is not available, this implementation operates in no-op mode:
+ * distributions. When php-collective/toml is not available, this
+ * implementation operates in no-op mode:
  * {@see self::has()} returns `false` for all keys, `get*()` variants
  * return `null` or the supplied default, and `as*()` variants throw
  * {@see SettingsError}. This degraded mode is intentional — Codex settings
@@ -154,16 +155,16 @@ final class Settings implements SettingsInterface
             return [[], false];
         }
 
-        // Support yosymfony/toml when installed despite its PHP 8.4 deprecation.
-        if (class_exists(\Yosymfony\Toml\Toml::class)) {
-            try {
+        if (class_exists(Toml::class)) {
+            $result = Toml::tryParse(file_get_contents($path) ?: '');
+            if ($result->isValid()) {
                 /** @var array<string, mixed> $parsed */
-                $parsed = \Yosymfony\Toml\Toml::parse(file_get_contents($path) ?: '');
+                $parsed = $result->getValue() ?? [];
 
                 return [$parsed, true];
-            } catch (\RuntimeException) {
-                return [[], true];
             }
+
+            return [[], true];
         }
 
         // No TOML parser available — operate in no-op mode.

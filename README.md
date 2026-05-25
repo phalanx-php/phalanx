@@ -4,192 +4,252 @@
 
 # Phalanx
 
-**A supervised execution runtime for PHP 8.4+.**
+Phalanx is a supervised execution framework for PHP 8.4+ applications built on OpenSwoole.
 
-Phalanx is an altogether unique take on the potential of what PHP8.4+ can become, given the firepower available to it in 2026. [PIE](https://github.com/php/pie) is finding its footing right now and I'm seeing more and more people getting involved/releasing [extensions](https://packagist.org/extensions). This coupled with features added from PHP 8+, both syntactically and [under the hood](https://www.php.net/manual/en/language.oop5.lazy-objects.php) (for lazy init and obj/mem pooling), have paved the way for something with powerful potential. Phalanx PHP is my personal take on bringing all these factors together and in a way that strikes just the right balance between explicitness and a great DX.
+PHP has plenty of frameworks. Plenty of async libraries too. Phalanx is for the part they tend to leave implicit: the footguns that appear when correct-looking async PHP is composed, retried, deferred, streamed, pooled, or left running long enough to matter.
 
-<expand>
-    <summary>Quick backstory</summary>
-    This idea has evolved since I started working on it in late 2024. Seeing so many anonymous closures and deadlocks plaguing the async PHP world, I'd originally built an IP scanner over UDP. I'd also recently finished this [.NET Book on DI](https://www.ebay.com/itm/366054262373) and found the impact that scopes can have to be much more profound then anything were currently seeing the PHP ecosystem.
-</expand>
+The name is intentional: Phalanx is about disciplined units of work moving in deliberate unison, stronger as one formation than as scattered parts.
 
-## Whats Phalanx?
+Requests. Commands. TUIs. WebSockets. Workers. Networks. Agent turns. One general shape.
 
-PHP's model is fire-and-forget. Request comes in, runs, process dies. That's fine until you want the process to stay alive -- and then every assumption breaks. State leaks, closures capture object graphs, timers outlive their owners, and background work drifts untethered. The async PHP ecosystem has answers for pieces of this, but nothing that owns the whole problem.
+> Look useful? Consider starring the repo
+>
+> Stay in the loop on X: [![Follow @j_havenz on X](https://img.shields.io/badge/Follow%20%40j_havenz-000000?logo=x&logoColor=white)](https://x.com/j_havenz)
 
-That's what I'm trying to build. The operative word is *trying*.
+## The Mental Model
 
-The idea is a runtime where every unit of work -- HTTP request, CLI command, WebSocket session, AI agent turn -- flows through one supervised execution path. The core primitive is the **scope**: a hierarchy where parent owns children, and ownership means cleanup, cancellation, and resource disposal all propagate automatically. In theory, no orphaned fibers, no leaked connections, no silent background work outliving its owner. Early kernel benchmarks are encouraging here -- the managed runtime overhead has been hovering in the low single digits over raw OpenSwoole, and scope creation, supervisor registration, cancellation propagation, and disposal are all cheap. Those numbers will move as the surface grows, but the trend line is healthy.
+Phalanx starts from a small premise:
 
-All concurrency primitives -- `concurrent()`, `race()`, `map()`, `retry()`, `timeout()`, `inWorker()` -- route through a single centralized supervisor. The supervisor ledger tracks every TaskRun: what's executing, what's waiting, why it's waiting, and who owns it. Whether work is concurrent (fiber interleaving in one process) or parallel (child processes), one scheduler, one execution contract. That part is working and tested -- the HTTP dispatch path, CLI runner, and WebSocket lifecycle all flow through it today, though the edges are still being found.
+> Every meaningful unit of work should have an owner.
 
-Memory management is where long-running PHP gets truly unforgiving -- one surviving reference in a 2MB ZMM chunk pins the whole thing. Phalanx addresses this with object pooling via `resetAsLazyGhost()`, recycling slots across thousands of iterations without deallocation churn. PHPStan rules catch the worst footguns (non-static closures, escaped borrowed values, raw OpenSwoole calls outside the framework) at compile time. Allocation pressure in benchmarks has stayed flat so far, and the static analysis surface is tightening with each round -- but "so far" is doing a lot of work in that sentence. Real workloads will find what synthetic ones missed.
 
-I haven't run this under real traffic with real failure modes and real operator pressure. That's an entirely different bar, and I'm aware of the distance between where this is and where I want it to be. The supervision only works if you work with it -- follow the scope conventions, use the tooling, let PHPStan yell at you. Do that, and there's serious firepower under the hood.
+_We'll get right into some code:_
 
-PHP has always been a language for getting things done -- you hit a problem, you write some PHP, and it works. The tools available to it now are more powerful than most people realize, and they haven't come together yet in a way that brings all that firepower to bear for everyday developers. Concurrency, streaming, AI agents, realtime protocols -- these shouldn't require a different stack. Phalanx is my attempt to make PHP the language you'd *want* to default to when these demands come up, where even a newcomer looks at the problem and thinks: yeah, I can do that -- give me a couple days.
-
-If this resonates, **a star helps us gauge whether to keep pushing**. We're early; signal matters.
-
-### A working HTTP app, top to bottom
-
-```php
-#!/usr/bin/env php
-<?php
-
-declare(strict_types=1);
-
-require __DIR__ . '/../vendor/autoload_runtime.php';
-
-use Phalanx\Boot\AppContext;
-use Phalanx\Service\ServiceBundle;
-use Phalanx\Service\Services;
-use Phalanx\Stoa\RequestScope;
-use Phalanx\Stoa\RouteGroup;
-use Phalanx\Stoa\Stoa;
-use Phalanx\Task\Scopeable;
-
-class UserRepo
+```text
+class CreateProject implements Executable
 {
-    private array $users = [
-        1 => ['id' => 1, 'name' => 'Ada Lovelace'],
-        2 => ['id' => 2, 'name' => 'Alan Turing'],
-    ];
+    // ctor omitted for brevity -- you'll see this throughout this README
 
-    public function find(int $id): ?array
+    public function __invoke(RequestContext $ctx): Project
     {
-        return $this->users[$id] ?? null;
+        [$project] = $ctx->scope->series(
+            create: new InsertProject($this->input),
+            audit: new WriteAuditEntry('project.created'),
+            cache: new RefreshProjectList($this->input->ownerId),
+        );
+
+        return $project;
     }
 }
-
-class AppBundle extends ServiceBundle
-{
-    public function services(Services $services, AppContext $context): void
-    {
-        $services->singleton(UserRepo::class)->factory(static fn() => new UserRepo());
-    }
-}
-
-class ShowUser implements Scopeable
-{
-    public function __invoke(RequestScope $scope): array
-    {
-        $id = (int) $scope->params->get('id');
-        $user = $scope->service(UserRepo::class)->find($id);
-
-        return ['user' => $user];
-    }
-}
-
-return static function (array $context): \Closure {
-    $app = Stoa::starting($context)
-        ->bundles(new AppBundle())
-        ->routes(RouteGroup::of([
-            'GET /users/{id:int}' => ShowUser::class,
-        ]))
-        ->build();
-
-    return static fn (): int => $app->run();
-};
 ```
 
-That's the whole thing -- entry point, service registration, routing, handler. `ShowUser` is a plain invokable class that receives a `RequestScope`. The scope knows the route params, the request, the active services, and what to clean up when the request ends. No `await`. No fiber bookkeeping. It reads like synchronous PHP.
+The insert, audit write, and cache refresh are separate pieces of work, but they are not scattered side effects. They are named children of the request scope, run in the order the use case requires, with cancellation, timeouts, cleanup, and diagnostics attached to the same parent.
+
+That is the phalanx mindset. Individual pieces still matter, but the system gets stronger when participation is explicit: tasks declare what they are, scopes own what they start, and the runtime keeps the formation visible.
+
+That owner is a scope. A scope owns the work it starts. When the scope ends, Phalanx has a place to cancel child work, dispose managed resources, close services, record diagnostics, and show what was waiting on what.
+
+The public API leans into invokable objects:
+
+- constructor arguments describe the input to the computation
+- `__invoke(...)` performs the coordination
+- interfaces describe runtime signals like timeouts, tracing, cleanup, or supervision
+- the scope carries the runtime affordances for the thing currently executing
+
+That gives Phalanx an "OO, but functional enough" shape. Objects carry dependencies and intent. Invocations run like explicit computations. The runtime is intimately aware of each one.
+
+## Args and DI
+
+This will feel a little foreign to most PHP devs.
+Technically, we could've injected the `ImagePipeline` in the constructor but Phalanx emphasizes constructor usage for call site arguments; then the `$scope` being the place for service resolution. In traditional DI, you've likely run into the scenario when you need to pass args, but you also need to resolve dependencies. In Phalanx, there's a clear convention/separation for this.
 
 > [!NOTE]
-> Most of what you see on `RequestScope` -- and indeed, throughout Phalanx's public APIs -- doesn't cost anything until you use it. The request body isn't parsed until you call `$scope->body->json()`. Service resolution on `$scope->ctx` is deferred until first access. Input DTOs are hydrated as lazy ghosts -- the object exists, passes `instanceof`, but its properties aren't populated until you read one. The expensive work only happens if you ask for it.
+> Phalanx's `Theatron` (TUI) library leans into this pattern heavily for the function-based UI syntax it provides.
 
-### The same contract, different transport
-
-The CLI runner looks almost identical. Here's a command that fetches two things concurrently:
-
-```php
-#!/usr/bin/env php
-<?php
-
-declare(strict_types=1);
-
-require __DIR__ . '/../vendor/autoload_runtime.php';
-
-use Phalanx\Archon\Application\Archon;
-use Phalanx\Archon\Command\CommandConfig;
-use Phalanx\Archon\Command\CommandGroup;
-use Phalanx\Archon\Command\CommandScope;
-use Phalanx\Archon\Console\Output\StreamOutput;
+```text
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
 
-class FetchReport implements Executable
+class ResizeAvatar implements Executable
 {
-    public function __invoke(CommandScope $scope): int
+    public function __construct(
+        private UserId $userId,
+        private UploadedFile $file,
+    ) {}
+
+    public function __invoke(ExecutionScope $scope): Avatar
     {
-        [$users, $metrics] = $scope->concurrent(
-            new FetchUsers(),
-            new FetchMetrics(),
-        );
+        $images = $scope->service(ImagePipeline::class);
 
-        $scope->service(StreamOutput::class)->persist(
-            sprintf('%d users, %d metrics', count($users), count($metrics)),
-        );
+        return $images->resizeAvatar($this->userId, $this->file);
+    }
+}
+```
 
-        return 0;
+The class is still just PHP. The difference is that Phalanx can supervise the work because the work has a visible boundary.
+
+## The Footgun It Catches
+
+Async PHP makes some problems look ordinary until they are not. Lock-order inversion is one of those. Each task below is valid code in isolation, but together they can deadlock if a developer misses their circular dependencies:
+
+```text
+// Some details omitted for brevity.
+
+class MoveCustomerCredit implements Executable, Retryable, HasTimeout
+{
+    public function __invoke(ExecutionScope $scope): void
+    {
+        $scope->service(BillingLedger::class)->customerThenInvoice($this->customerId, $this->invoiceId);
     }
 }
 
-return static function (array $context): \Closure {
-    $app = Archon::starting($context)
-        ->commands(CommandGroup::of([
-            'report' => [FetchReport::class, new CommandConfig(
-                description: 'Fetch users and metrics concurrently.',
-            )],
-        ]))
-        ->build();
+class MoveInvoiceCredit implements Executable, Retryable, HasTimeout
+{
+    public function __invoke(ExecutionScope $scope): void
+    {
+        $scope->service(BillingLedger::class)->invoiceThenCustomer($this->invoiceId, $this->customerId);
+    }
+}
 
-    return static fn (): int => $app->run();
-};
+class ReconcileBilling implements Executable, Retryable, HasTimeout
+{
+    public function __invoke(ExecutionScope $scope): void
+    {
+        $scope->concurrent(
+            new MoveCustomerCredit($this->customerId, $this->invoiceId),
+            new MoveInvoiceCredit($this->invoiceId, $this->customerId),
+        );
+    }
+}
 ```
 
-> [!NOTE]
-> Every Phalanx entry point goes through [symfony/runtime](https://symfony.com/doc/current/components/runtime.html). At boot, it collects `$_SERVER` and `$_ENV` into one `$context` array, then hands it to your closure. From that point on, nothing in the framework touches superglobals. Config flows through `AppContext` -- typed accessors, missing-key exceptions, no silent nulls. Environment values reach your services through the container, not through `getenv()` or `$_SERVER`.
+This is the kind of thing even vigilant async PHP programmers can miss. The code is local. The bug is relational.
 
-The difference between `Scopeable` and `Executable` is what the handler needs. `Scopeable` gets service resolution and cancellation -- enough for most handlers. `Executable` adds the concurrency primitives: `concurrent()`, `race()`, `map()`, `retry()`, `timeout()`, `inWorker()`. Same scope hierarchy either way. Same supervisor underneath. Whether the work runs over HTTP, CLI, WebSocket, or a background job, it flows through the same execution path.
+Phalanx does not pretend PHP can guarantee safety. It gives the runtime enough structure to help. Aegis has supervised leases, wait reasons, and `DiagnosticCode::LockOrderViolation`, so this turns into a runtime-visible `LeaseViolation` with a clear `[PHX-LOCK-001]` out-of-order lock acquire message.
 
-### What's under the hood
+If the business operation is ordered, you can say that with the `series()` method. This keeps the named tasks separate, runs them one at a time, and returns the ordered results.
 
-Every unit of work runs inside an owned scope, and every scope registers with a centralized supervisor. In practice, that means:
+```text
+// ...
 
-- **Task identity** -- every job becomes a tracked `TaskRun` with a name, owner, and lifecycle. If something is running, you can see it.
-- **Cancellation propagation** -- disconnects, timeouts, and explicit cancels flow down the scope tree. A cancelled parent cancels its children. This has been one of the more reliable parts of the system in testing.
-- **Disposal** -- `onDispose()` hooks fire when a scope ends, even on abrupt shutdown. Resources registered with a scope get cleaned up with that scope.
-- **Wait diagnostics** -- the supervisor tracks why each coroutine is suspended and for how long. Mostly an operator tool, but it's already caught real issues during development.
-- **Service lifecycle** -- singletons live for the application; scoped services live for the request or command. Startup and shutdown are managed, not ad-hoc.
-- **Worker boundaries** -- closures and unserializable state don't cross process lines. PHPStan catches this at compile time; the runtime catches it if PHPStan didn't.
+class ReconcileBillingInOrder implements Executable, Retryable, HasTimeout
+{
+    public function __invoke(ExecutionScope $scope): void
+    {
+        $scope->series(
+            move: new MoveCustomerCredit($this->customerId, $this->invoiceId),
+            refund: new MoveInvoiceCredit($this->invoiceId, $this->customerId),
+        );
+    }
+}
+```
 
-None of this requires the application developer to think about fibers or event loops. You pick the scope interface that fits, and the runtime handles the rest. That's the idea -- and it's holding up in testing so far.
+If the operations really are concurrent, keep them concurrent, but a little refactoring would be needed:
 
-### Built on OpenSwoole 26
+```text
+// again, some details removed for brevity
 
-Phalanx runs on OpenSwoole 26 -- native PHP fibers, `io_uring`, `Channel`, `WaitGroup`, `ClientPool`. The kernel benchmarks are healthy, the boot harness catches misconfiguration before workers spin up, and the test surface is stabilizing. You're welcome to start kicking the tires -- you can clone the code and run/review the
+class MoveCustomerCredit implements Executable, Retryable, HasTimeout
+{
+    public function __invoke(ExecutionScope $scope): void
+    {
+        $scope
+            ->service(BillingLedger::class)
+            ->withCreditPair($this->customerId, $this->invoiceId, static function (BillingLedger $ledger): void {
+                $ledger->moveCustomerCredit();
+            });
+    }
+}
 
-### Demos
+class MoveInvoiceCredit implements Executable, Retryable, HasTimeout
+{
+    public function __invoke(ExecutionScope $scope): void
+    {
+        $scope
+            ->service(BillingLedger::class)
+            ->withCreditPair($this->customerId, $this->invoiceId, static function (BillingLedger $ledger): void {
+                $ledger->moveInvoiceCredit();
+            });
+    }
+}
+```
 
-Real, runnable examples covering the core surface. Each ships with a `.env.example` and runs via `php demo.php`:
+Same work. One resource order. Something the runtime, and the person reading the code, can reason about.
 
-- [Aegis kernel](demos/aegis) — runtime policy, scope supervision, cancellation, singleflight, runtime memory
-- [Stoa HTTP](demos/stoa) — basic routing, JSON API, realtime SSE, runtime lifecycle
-- [Archon CLI](demos/archon) — basic commands, interactive input, supervised concurrency, runtime lifecycle
-- [Athena AI](demos/athena) — concurrent streaming across providers, Guzzle SDK coexistence
-- [Surreal](demos/surreal) — in-memory RPC, live queries
 
-### Benchmarks
+## Scope And Context
 
-The managed runtime tax is about 4%. Every unit of work flows through the full Aegis kernel -- scope creation, supervisor registration, cancellation propagation, disposal -- and the cost is negligible against raw OpenSwoole.
+Phalanx uses both:
+
+A **scope** owns lifetime: services, child work, cancellation, cleanup, runtime memory, diagnostics.
+
+A **context** has data attributes which live for the lifetime of a specific scope's execution: an HTTP request, a CLI command, a TUI render pass, Websocket session, etc.
+
+The context's lifetime lives inside the scope and accesses it using `$ctx->scope`.
+
+## Potential Use Cases
+
+The Phalanx objective is to give PHP dev teams superpowers without having to leave the ecosystem. Personally, I've experienced the types of knowledge silos and overly-complicated red tape from using too many languages.
+
+Productivity is what PHP is good at, and Phalanx is laser-focused on exactly that:
+
+- HTTP APIs, SSE streams, request diagnostics, middleware, and route dispatch
+- CLI tools, interactive commands, supervised console flows, and process lifecycles
+- terminal UIs with screens, stores, input bindings, settings, devtools, and model request inspection
+- WebSocket servers and clients
+- worker processes and structured parallelism
+- UDP and network tooling
+- reverse proxies, load balancers, and operational sidecars
+- devops scripts that need cancellation, supervision, retries, and runtime visibility
+- AI harnesses that need provider adapters, tool calls, grants, effects, and MCP
+
+## Framework Modules
+
+The modules are in one cohesive framework. The names are still useful when reading the code:
+
+| Module | Runtime surface |
+| --- | --- |
+| Aegis | managed execution, scopes, supervision, leases, runtime memory |
+| Stoa | HTTP server, routing, middleware, SSE, request lifecycle |
+| Archon | CLI applications, commands, arguments, interactive input |
+| Theatron | terminal UI screens, stores, bindings, devtools, request inspection |
+| Hydra | worker processes and structured parallelism |
+| Hermes | WebSocket server and client work |
+| Athena | supervised AI turns, effects, grants, tools, MCP |
+| Panoply | provider-neutral AI surface and adapters |
+| Iris | outbound HTTP |
+| Grammata | filesystem work |
+| Enigma | SSH and tunnels |
+| Surreal | SurrealDB RPC and live queries |
+| Skopos | dev server orchestration |
+| Eidolon | frontend bridge contracts |
+| PHPStan rules | static safety checks for runtime-sensitive patterns |
+
+## Demos
+
+The repo includes runnable demos for the current surfaces. Development is moving quickly, so keep checking in.
+
+| Demo | Covers | Command |
+| --- | --- | --- |
+| [Aegis kernel](demos/aegis) | runtime policy, scope supervision, cancellation, singleflight, runtime memory | `composer demo:aegis` |
+| [Stoa HTTP](demos/stoa) | routing, JSON APIs, realtime SSE, runtime lifecycle, diagnostics | `composer demo:stoa` |
+| [Archon CLI](demos/archon) | commands, interactive input, supervised concurrency, lifecycle, diagnostics | `composer demo:archon` |
+| [Hydra workers](demos/hydra) | workers, structured parallelism, cancellation behavior | `composer demo:hydra` |
+| [Athena AI](demos/athena) | streaming providers, SDK coexistence, MCP stdio/SSE, support triage, research agents | `composer demo:athena` |
+| [Surreal](demos/surreal) | in-memory RPC and live queries | `composer demo:surreal` |
+| [Skopos](demos/skopos) | basic dev server orchestration | `composer demo:skopos:basic-dev` |
+
+## Benchmarks
+
+The managed runtime tax is about 4%. Every unit of work flows through the full Aegis kernel: scope creation, supervisor registration, cancellation propagation, disposal, and ledger updates. The current numbers keep that cost close to raw OpenSwoole.
 
 > PHP 8.4.16, OpenSwoole 26.2.0, Apple M-series.
 > Run `composer bench:aegis` and `composer bench:stoa` to reproduce.
 
 <details>
-<summary><strong>Context switching</strong> -- 1M managed switches vs raw OpenSwoole vs raw Fibers</summary>
+<summary><strong>Context switching</strong> - 1M managed switches vs raw OpenSwoole vs raw Fibers</summary>
 
-1,000 units x 1,000 suspends per iteration. The Fiber number is the theoretical floor (no Phalanx code path can reach it -- all suspension routes through OpenSwoole's reactor). The number that matters is managed vs raw Swoole.
+1,000 units x 1,000 suspends per iteration. The Fiber number is the theoretical floor. No Phalanx code path can reach it because all suspension routes through OpenSwoole's reactor. The number that matters is managed vs raw Swoole.
 
 | Tier | Mean (us) | P95 (us) | Ops/sec | Note |
 |------|-----------|----------|---------|------|
@@ -200,9 +260,9 @@ The managed runtime tax is about 4%. Every unit of work flows through the full A
 </details>
 
 <details>
-<summary><strong>Aegis kernel</strong> -- scope, task, supervision, cancellation primitives</summary>
+<summary><strong>Aegis kernel</strong> - scope, task, supervision, cancellation primitives</summary>
 
-Isolates the cost of individual Aegis operations. `ObjectPool` + `resetAsLazyGhost()` recycles TaskRun and scope frame objects to avoid ZMM fragmentation from alloc/free churn.
+Isolates the cost of individual Aegis operations. `ObjectPool` and `resetAsLazyGhost()` recycle TaskRun and scope frame objects to avoid ZMM fragmentation from alloc/free churn.
 
 | Case | Mean (us) | P95 (us) | Ops/sec | GC roots |
 |------|-----------|----------|---------|----------|
@@ -225,9 +285,9 @@ Isolates the cost of individual Aegis operations. `ObjectPool` + `resetAsLazyGho
 </details>
 
 <details>
-<summary><strong>Stoa HTTP dispatch</strong> -- internal per-request overhead (no network)</summary>
+<summary><strong>Stoa HTTP dispatch</strong> - internal per-request overhead (no network)</summary>
 
-Measures Stoa's request lifecycle in isolation -- request factory, routing, handler dispatch, scope cleanup. No TCP/TLS involved.
+Measures Stoa's request lifecycle in isolation: request factory, routing, handler dispatch, scope cleanup. No TCP/TLS involved.
 
 | Case | Mean (us) | P95 (us) | Ops/sec |
 |------|-----------|----------|---------|
@@ -241,7 +301,3 @@ Measures Stoa's request lifecycle in isolation -- request factory, routing, hand
 | stoa_dispatch_dto_used | 459 | 516 | 2,176 |
 
 </details>
-
----
-
-One framework source tree with metadata-driven module splits; all development happens here.

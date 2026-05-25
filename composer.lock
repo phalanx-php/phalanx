@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "f3830617b9ff0aaef579e43a8a5c1a32",
+    "content-hash": "dae844b3c45578bf1215b8cca44abba5",
     "packages": [
         {
             "name": "dflydev/dot-access-data",
@@ -3830,6 +3830,66 @@
             "time": "2022-02-21T01:04:05+00:00"
         },
         {
+            "name": "php-collective/toml",
+            "version": "0.1.3",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/php-collective/toml.git",
+                "reference": "305fc5a9234ef49644a945bcaad81a9e8b67f0ce"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/php-collective/toml/zipball/305fc5a9234ef49644a945bcaad81a9e8b67f0ce",
+                "reference": "305fc5a9234ef49644a945bcaad81a9e8b67f0ce",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.2",
+                "symfony/polyfill-mbstring": "^1.30"
+            },
+            "require-dev": {
+                "php-collective/code-sniffer": "dev-master",
+                "phpstan/phpstan": "^2.0",
+                "phpunit/phpunit": "^11.5 || ^12.5 || ^13.0"
+            },
+            "suggest": {
+                "ext-ds": "For improved performance with Set-based key tracking"
+            },
+            "bin": [
+                "bin/toml-validate"
+            ],
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "PhpCollective\\Toml\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Mark Scherer"
+                }
+            ],
+            "description": "A TOML parser and encoder for PHP with AST access and collected parse errors",
+            "homepage": "https://github.com/php-collective/toml",
+            "keywords": [
+                "config",
+                "configuration",
+                "developer-tools",
+                "encoder",
+                "parser",
+                "toml"
+            ],
+            "support": {
+                "issues": "https://github.com/php-collective/toml/issues",
+                "source": "https://github.com/php-collective/toml/tree/0.1.3"
+            },
+            "time": "2026-03-30T21:08:12+00:00"
+        },
+        {
             "name": "phpstan/phpdoc-parser",
             "version": "2.3.2",
             "source": {
@@ -7274,116 +7334,6 @@
                 }
             ],
             "time": "2026-04-26T05:33:54+00:00"
-        },
-        {
-            "name": "yosymfony/parser-utils",
-            "version": "v2.0.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/yosymfony/parser-utils.git",
-                "reference": "00bec9a12722b21f2baf7f9db35f127e90c162c9"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/yosymfony/parser-utils/zipball/00bec9a12722b21f2baf7f9db35f127e90c162c9",
-                "reference": "00bec9a12722b21f2baf7f9db35f127e90c162c9",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=7.1"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "^6"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "2.0-dev"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "Yosymfony\\ParserUtils\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Victor Puertas",
-                    "email": "vpgugr@gmail.com",
-                    "homepage": "http://yosymfony.com"
-                }
-            ],
-            "description": "Parser utilities",
-            "homepage": "http://github.com/yosymfony/toml",
-            "keywords": [
-                "lexer",
-                "parser"
-            ],
-            "support": {
-                "issues": "https://github.com/yosymfony/parser-utils/issues",
-                "source": "https://github.com/yosymfony/parser-utils/tree/master"
-            },
-            "time": "2018-06-29T15:31:11+00:00"
-        },
-        {
-            "name": "yosymfony/toml",
-            "version": "v1.0.4",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/yosymfony/toml.git",
-                "reference": "bdab92ad920d0e36810a3a3e4a998d23f3498f8e"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/yosymfony/toml/zipball/bdab92ad920d0e36810a3a3e4a998d23f3498f8e",
-                "reference": "bdab92ad920d0e36810a3a3e4a998d23f3498f8e",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=7.1",
-                "yosymfony/parser-utils": "^2.0"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "^7.1"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "1.0-dev"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "Yosymfony\\Toml\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Victor Puertas",
-                    "email": "vpgugr@gmail.com",
-                    "homepage": "http://yosymfony.com"
-                }
-            ],
-            "description": "A PHP parser for TOML compatible with specification 0.4.0",
-            "homepage": "http://github.com/yosymfony/toml",
-            "keywords": [
-                "mojombo",
-                "parser",
-                "toml"
-            ],
-            "support": {
-                "issues": "https://github.com/yosymfony/toml/issues",
-                "source": "https://github.com/yosymfony/toml/tree/master"
-            },
-            "time": "2018-08-08T15:08:14+00:00"
         }
     ],
     "aliases": [],

@@ -432,7 +432,7 @@ return [
             'rector/rector' => '^2.0',
             'slevomat/coding-standard' => '^8.15',
             'squizlabs/php_codesniffer' => '^3.10 || ^4.0',
-            'yosymfony/toml' => '^1.0',
+            'php-collective/toml' => '^0.1.3',
         ],
         'bins' => [],
         'branchAlias' => '0.6.x-dev',
@@ -455,7 +455,7 @@ return [
             'phalanx-php/archon' => 'Required for the panoply:agents:scan Archon command',
             'ext-sqlite3' => 'Required for Codex HomeDir sqlite-backed history',
             'ext-openswoole' => 'Required for the Iris transport and Aegis runtime',
-            'yosymfony/toml' => 'Required for reading Codex config.toml settings; without it Settings operates in no-op mode and asString/asInt/etc. throw',
+            'php-collective/toml' => 'Required for reading Codex config.toml settings; without it Settings operates in no-op mode and asString/asInt/etc. throw',
         ],
         'allowPlugins' => [
             'dealerdirect/phpcodesniffer-composer-installer' => true,
