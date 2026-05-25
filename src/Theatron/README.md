@@ -152,7 +152,6 @@ screen scope, theme, navigator, and mount system.
 use Phalanx\Theatron\Context\ScreenContext;
 use Phalanx\Theatron\Contract\Screen;
 use Phalanx\Theatron\Tdom\Renderable;
-use Phalanx\Theatron\Template\AppStore;
 
 use function Phalanx\Theatron\Ui\column;
 use function Phalanx\Theatron\Ui\text;
@@ -168,7 +167,7 @@ class DashboardScreen implements Screen
     {
         return column(
             text('Dashboard'),
-            text('Messages: ' . count($this->store->conversation->messages)),
+            text($this->store->status->message),
         );
     }
 }
@@ -234,25 +233,30 @@ new immutable value.
 <?php
 
 use Phalanx\Theatron\State\Store;
-use Phalanx\Theatron\Template\Slice\ActivitySlice;
-use Phalanx\Theatron\Template\Slice\ConversationSlice;
 
-final class AppStore extends Store
+class StatusSlice
 {
-    public ConversationSlice $conversation {
-        get => $this->read(ConversationSlice::class);
-        set { $this->write(ConversationSlice::class, $value); }
+    public function __construct(
+        private(set) string $message = 'Ready',
+    ) {
     }
 
-    public ActivitySlice $activity {
-        get => $this->read(ActivitySlice::class);
-        set { $this->write(ActivitySlice::class, $value); }
+    public function withMessage(string $message): self
+    {
+        return new self($message);
+    }
+}
+
+class AppStore extends Store
+{
+    public StatusSlice $status {
+        get => $this->read(StatusSlice::class);
+        set { $this->write(StatusSlice::class, $value); }
     }
 
     public function __construct()
     {
-        $this->register(ConversationSlice::class, new ConversationSlice());
-        $this->register(ActivitySlice::class, new ActivitySlice());
+        $this->register(StatusSlice::class, new StatusSlice());
     }
 }
 ```
@@ -262,8 +266,7 @@ Slices return new instances:
 ```php
 <?php
 
-$store->conversation = $store->conversation->addUserMessage($text);
-$store->activity = $store->activity->withStatus(ActivityStatus::Running);
+$store->status = $store->status->withMessage('Connected');
 ```
 
 `mutate()` still exists for batched slice updates:
@@ -272,8 +275,8 @@ $store->activity = $store->activity->withStatus(ActivityStatus::Running);
 <?php
 
 $store->mutate(
-    ConversationSlice::class,
-    static fn(ConversationSlice $slice): ConversationSlice => $slice->addUserMessage($text),
+    StatusSlice::class,
+    static fn(StatusSlice $slice): StatusSlice => $slice->withMessage('Connected'),
 );
 ```
 

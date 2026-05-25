@@ -109,6 +109,18 @@ final class HarnessBoundaryTest extends TestCase
     }
 
     #[Test]
+    public function harnessBinCanFindTheMonorepoRuntimeAutoloader(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $bin = $root . '/src/Harness/bin/harness';
+        $source = file_get_contents($bin);
+        self::assertIsString($source);
+
+        self::assertStringContainsString("dirname(__DIR__, 3) . '/vendor/autoload_runtime.php'", $source);
+        self::assertFileExists(dirname($bin, 4) . '/vendor/autoload_runtime.php');
+    }
+
+    #[Test]
     public function rootReadmeDoesNotAdvertiseHarnessStarterCommandsBeforeBootProof(): void
     {
         $readme = file_get_contents(dirname(__DIR__, 2) . '/README.md');
@@ -117,6 +129,28 @@ final class HarnessBoundaryTest extends TestCase
         self::assertStringNotContainsString('phalanx-php/harness', $readme);
         self::assertStringNotContainsString('bin/harness', $readme);
         self::assertStringNotContainsString('php bin/harness', $readme);
+    }
+
+    #[Test]
+    public function harnessReadmeDoesNotAdvertiseStarterRunCommandBeforeBootProof(): void
+    {
+        $readme = file_get_contents(dirname(__DIR__, 2) . '/src/Harness/README.md');
+        self::assertIsString($readme);
+
+        self::assertStringContainsString('assets/banner.svg', $readme);
+        self::assertStringNotContainsString('php bin/harness', $readme);
+    }
+
+    #[Test]
+    public function theatronReadmeDoesNotDocumentMovedHarnessTemplateTypes(): void
+    {
+        $readme = file_get_contents(dirname(__DIR__, 2) . '/src/Theatron/README.md');
+        self::assertIsString($readme);
+
+        self::assertStringNotContainsString('Phalanx\\Theatron\\Template', $readme);
+        self::assertStringNotContainsString('src/Theatron/bin/theatron', $readme);
+        self::assertStringNotContainsString('bin/theatron', $readme);
+        self::assertStringContainsString('phalanx-php/harness', $readme);
     }
 
     /**
