@@ -113,7 +113,7 @@ PHP);
     protected function phalanxServices(): ?Closure
     {
         return static function (Services $services): void {
-            $services->config(SshConfig::class, static fn(AppContext $ctx): SshConfig => new SshConfig(
+            $services->contextConfig(SshConfig::class, static fn(AppContext $ctx): SshConfig => new SshConfig(
                 sshBinaryPath: $ctx->string('sshBinaryPath'),
                 scpBinaryPath: $ctx->string('scpBinaryPath'),
                 sftpBinaryPath: $ctx->string('sftpBinaryPath'),

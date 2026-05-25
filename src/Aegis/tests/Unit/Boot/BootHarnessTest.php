@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Aegis\Tests\Unit\Boot;
 
 use Phalanx\Boot\BootHarness;
+use Phalanx\Boot\Optional;
 use Phalanx\Boot\Required;
 use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
@@ -82,5 +83,24 @@ final class BootHarnessTest extends PhalanxTestCase
         self::assertSame($first, $all[0]);
         self::assertSame($second, $all[1]);
         self::assertSame($third, $all[2]);
+    }
+
+    #[Test]
+    public function contextSchemaCollectsEnvironmentRequirements(): void
+    {
+        $schema = BootHarness::of(
+            Required::env('REQUIRED_KEY', 'Required key'),
+            Optional::env('OPTIONAL_KEY', fallback: 'fallback', description: 'Optional key'),
+        )->contextSchema('test.bundle');
+
+        $keys = $schema->all();
+
+        self::assertCount(2, $keys);
+        self::assertSame('REQUIRED_KEY', $keys[0]->name);
+        self::assertTrue($keys[0]->required);
+        self::assertSame('test.bundle', $keys[0]->owner);
+        self::assertSame('OPTIONAL_KEY', $keys[1]->name);
+        self::assertFalse($keys[1]->required);
+        self::assertSame('fallback', $keys[1]->fallback);
     }
 }

@@ -26,7 +26,7 @@ interface Services
      *
      * @param class-string $type
      */
-    public function config(string $type, Closure $fromContext): void;
+    public function contextConfig(string $type, Closure $fromContext): void;
 
     /**
      * @param class-string $interface

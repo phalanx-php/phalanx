@@ -12,7 +12,7 @@ class SshServiceBundle extends ServiceBundle
 {
     public function services(Services $services, AppContext $context): void
     {
-        $services->config(SshConfig::class, static fn(AppContext $ctx): SshConfig => new SshConfig(
+        $services->contextConfig(SshConfig::class, static fn(AppContext $ctx): SshConfig => new SshConfig(
             sshBinaryPath: $ctx->string('SSH_BINARY_PATH', 'ssh'),
             scpBinaryPath: $ctx->string('SCP_BINARY_PATH', 'scp'),
             sftpBinaryPath: $ctx->string('SFTP_BINARY_PATH', 'sftp'),

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Phalanx\Harness\Agent;
 
 use Phalanx\Boot\AppContext;
+use Phalanx\Boot\ContextKey;
+use Phalanx\Boot\ContextSchema;
 
 final class OllamaConfig
 {
@@ -25,6 +27,20 @@ final class OllamaConfig
             baseUrl: $context->string('HARNESS_OLLAMA_BASE_URL', self::DEFAULT_BASE_URL),
             model: $context->string('HARNESS_OLLAMA_MODEL', self::DEFAULT_MODEL),
             maxInvocations: $context->int('HARNESS_MAX_INVOCATIONS', self::DEFAULT_MAX_INVOCATIONS),
+        );
+    }
+
+    public static function contextSchema(): ContextSchema
+    {
+        return ContextSchema::of(
+            ContextKey::optional('HARNESS_OLLAMA_BASE_URL', self::DEFAULT_BASE_URL, 'Ollama API base URL', 'string'),
+            ContextKey::optional('HARNESS_OLLAMA_MODEL', self::DEFAULT_MODEL, 'Default harness chat model', 'string'),
+            ContextKey::optional(
+                'HARNESS_MAX_INVOCATIONS',
+                (string) self::DEFAULT_MAX_INVOCATIONS,
+                'Maximum agent invocations per activity',
+                'int',
+            ),
         );
     }
 }

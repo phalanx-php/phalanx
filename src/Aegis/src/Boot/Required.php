@@ -17,16 +17,17 @@ final class Required extends BootRequirement
         string $kind,
         string $description,
         private Closure $check,
+        private ?ContextKey $contextKey = null,
     ) {
         parent::__construct($kind, $description);
     }
 
     public static function env(string $name, ?string $description = null): self
     {
-        $message = $description ?? sprintf('Required environment variable "%s"', $name);
+        $key = ContextKey::required($name, description: $description);
         return new self(
             self::KIND_ENV,
-            $message,
+            $key->description,
             static fn (AppContext $ctx): BootEvaluation =>
                 $ctx->has($name) && $ctx->get($name) !== '' && $ctx->get($name) !== null
                     ? BootEvaluation::pass(sprintf('%s present', $name))
@@ -34,6 +35,7 @@ final class Required extends BootRequirement
                         sprintf('Missing required env var "%s"', $name),
                         sprintf('Add "%s=..." to your .env file or set it in the process environment.', $name),
                     ),
+            $key,
         );
     }
 
@@ -68,5 +70,11 @@ final class Required extends BootRequirement
     public function evaluate(AppContext $context): BootEvaluation
     {
         return ($this->check)($context);
+    }
+
+    #[\Override]
+    public function contextKey(): ?ContextKey
+    {
+        return $this->contextKey;
     }
 }

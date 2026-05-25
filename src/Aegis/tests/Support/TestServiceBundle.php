@@ -68,7 +68,7 @@ final class TestServiceBundle extends ServiceBundle
         return $this;
     }
 
-    public function config(string $type, Closure $fromContext): self
+    public function contextConfig(string $type, Closure $fromContext): self
     {
         $this->configs[$type] = $fromContext;
         return $this;
@@ -137,7 +137,7 @@ final class TestServiceBundle extends ServiceBundle
         }
 
         foreach ($this->configs as $type => $fromContext) {
-            $services->config($type, $fromContext);
+            $services->contextConfig($type, $fromContext);
         }
     }
 }

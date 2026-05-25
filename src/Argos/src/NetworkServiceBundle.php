@@ -22,7 +22,7 @@ class NetworkServiceBundle extends ServiceBundle
 {
     public function services(Services $services, AppContext $context): void
     {
-        $services->config(NetworkConfig::class, static fn(AppContext $ctx): NetworkConfig => new NetworkConfig(
+        $services->contextConfig(NetworkConfig::class, static fn(AppContext $ctx): NetworkConfig => new NetworkConfig(
             defaultTimeout: $ctx->float('NETWORK_DEFAULT_TIMEOUT', 5.0),
             defaultConcurrency: $ctx->int('NETWORK_DEFAULT_CONCURRENCY', 50),
             pingBinary: $ctx->string('NETWORK_PING_BINARY', 'ping'),

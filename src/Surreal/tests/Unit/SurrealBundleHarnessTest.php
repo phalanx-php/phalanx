@@ -27,14 +27,37 @@ final class SurrealBundleHarnessTest extends TestCase
         $harness = SurrealBundle::harness();
         $requirements = $harness->all();
 
-        self::assertCount(6, $requirements);
+        self::assertCount(10, $requirements);
 
         $kinds = array_map(static fn($r) => $r->kind, $requirements);
         self::assertSame(
-            array_fill(0, 6, Optional::KIND_ENV),
+            array_fill(0, 10, Optional::KIND_ENV),
             $kinds,
-            'All six SurrealDB requirements must be Optional::env entries',
+            'All SurrealDB requirements must be Optional::env entries',
         );
+    }
+
+    #[Test]
+    public function contextSchemaListsSurrealConfigKeys(): void
+    {
+        $schema = SurrealBundle::contextSchema();
+        $keys = array_map(static fn($key): string => $key->name, $schema->all());
+
+        self::assertSame([
+            'SURREAL_ENDPOINT',
+            'SURREAL_WS_ENDPOINT',
+            'SURREAL_NAMESPACE',
+            'SURREAL_DATABASE',
+            'SURREAL_USERNAME',
+            'SURREAL_PASSWORD',
+            'SURREAL_TOKEN',
+            'SURREAL_CONNECT_TIMEOUT',
+            'SURREAL_READ_TIMEOUT',
+            'SURREAL_MAX_RESPONSE_BYTES',
+        ], $keys);
+
+        self::assertStringContainsString('SURREAL_ENDPOINT', $schema->render());
+        self::assertStringContainsString(SurrealBundle::class, $schema->render());
     }
 
     #[Test]

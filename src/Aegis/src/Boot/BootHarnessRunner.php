@@ -51,6 +51,20 @@ class BootHarnessRunner
     }
 
     /**
+     * @param list<ServiceBundle|class-string<ServiceBundle>> $bundles
+     */
+    public function contextSchema(array $bundles, ?string $vendorDir = null): ContextSchema
+    {
+        $schema = $this->collectBundleSchema($bundles);
+
+        if ($vendorDir !== null) {
+            $schema = $schema->merge($this->collectComposerExtraHarness($vendorDir)->contextSchema('composer-extra'));
+        }
+
+        return $schema;
+    }
+
+    /**
      * Throw CannotBootException if the report carries any failures.
      * Use after a dryRun() when the caller wants control over when the throw happens.
      */
@@ -77,6 +91,25 @@ class BootHarnessRunner
         }
 
         return $harness;
+    }
+
+    /**
+     * @param list<ServiceBundle|class-string<ServiceBundle>> $bundles
+     */
+    private function collectBundleSchema(array $bundles): ContextSchema
+    {
+        $schema = ContextSchema::none();
+
+        foreach ($bundles as $bundle) {
+            $class = is_string($bundle) ? $bundle : $bundle::class;
+            if (!is_subclass_of($class, ServiceBundle::class)) {
+                continue;
+            }
+
+            $schema = $schema->merge($class::contextSchema());
+        }
+
+        return $schema;
     }
 
     private function evaluate(BootHarness $harness, AppContext $context): BootHarnessReport

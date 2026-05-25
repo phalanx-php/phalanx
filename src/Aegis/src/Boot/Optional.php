@@ -17,22 +17,24 @@ final class Optional extends BootRequirement
         string $kind,
         string $description,
         private Closure $check,
+        private ?ContextKey $contextKey = null,
     ) {
         parent::__construct($kind, $description);
     }
 
     public static function env(string $name, ?string $fallback = null, ?string $description = null): self
     {
-        $message = $description ?? sprintf('Optional environment variable "%s"', $name);
+        $key = ContextKey::optional($name, fallback: $fallback, description: $description);
         return new self(
             self::KIND_ENV,
-            $message,
+            $key->description,
             static fn (AppContext $ctx): BootEvaluation =>
                 $ctx->has($name) && $ctx->get($name) !== '' && $ctx->get($name) !== null
                     ? BootEvaluation::pass(sprintf('%s set', $name))
                     : BootEvaluation::warn(
                         sprintf('Optional env "%s" not set; using fallback "%s"', $name, $fallback ?? '<none>'),
                     ),
+            $key,
         );
     }
 
@@ -67,5 +69,11 @@ final class Optional extends BootRequirement
     public function evaluate(AppContext $context): BootEvaluation
     {
         return ($this->check)($context);
+    }
+
+    #[\Override]
+    public function contextKey(): ?ContextKey
+    {
+        return $this->contextKey;
     }
 }

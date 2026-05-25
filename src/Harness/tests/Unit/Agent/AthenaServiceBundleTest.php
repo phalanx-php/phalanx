@@ -125,6 +125,21 @@ final class AthenaServiceBundleTest extends TestCase
         self::assertSame(3, $config->maxInvocations);
     }
 
+    #[Test]
+    public function ollamaHarnessExposesContextSchema(): void
+    {
+        $schema = AthenaServiceBundle::contextSchema();
+        $keys = array_map(static fn($key): string => $key->name, $schema->all());
+
+        self::assertSame([
+            'HARNESS_OLLAMA_BASE_URL',
+            'HARNESS_OLLAMA_MODEL',
+            'HARNESS_MAX_INVOCATIONS',
+        ], $keys);
+        self::assertSame(AthenaServiceBundle::class, $schema->all()[0]->owner);
+        self::assertStringContainsString('HARNESS_OLLAMA_MODEL', $schema->render());
+    }
+
     private static function makeAthenaBundle(): AthenaBundle
     {
         $router = new class implements InvocationRouter {

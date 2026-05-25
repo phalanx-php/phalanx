@@ -24,7 +24,7 @@ class HttpServiceBundle extends ServiceBundle
     {
         $config = $this->config;
 
-        $services->config(
+        $services->contextConfig(
             HttpClientConfig::class,
             static fn(AppContext $ctx): HttpClientConfig => $config ?? new HttpClientConfig(
                 connectTimeout: $ctx->float('IRIS_CONNECT_TIMEOUT', self::DEFAULT_CONNECT_TIMEOUT),

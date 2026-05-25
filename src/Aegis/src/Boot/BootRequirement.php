@@ -13,4 +13,9 @@ abstract class BootRequirement
     }
 
     abstract public function evaluate(AppContext $context): BootEvaluation;
+
+    public function contextKey(): ?ContextKey
+    {
+        return null;
+    }
 }

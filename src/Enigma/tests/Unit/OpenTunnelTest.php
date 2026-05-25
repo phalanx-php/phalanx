@@ -96,7 +96,7 @@ PHP);
     protected function phalanxServices(): ?Closure
     {
         return static function (Services $services): void {
-            $services->config(SshConfig::class, static fn(AppContext $ctx): SshConfig => new SshConfig(
+            $services->contextConfig(SshConfig::class, static fn(AppContext $ctx): SshConfig => new SshConfig(
                 sshBinaryPath: $ctx->string('sshBinaryPath'),
                 defaultTimeoutSeconds: $ctx->float('defaultTimeoutSeconds', 30.0),
                 connectionTimeoutSeconds: 1.0,

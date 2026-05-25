@@ -32,6 +32,22 @@ class BootHarness
         return $this->requirements === [];
     }
 
+    public function contextSchema(?string $owner = null): ContextSchema
+    {
+        $keys = [];
+
+        foreach ($this->requirements as $requirement) {
+            $key = $requirement->contextKey();
+            if ($key === null) {
+                continue;
+            }
+
+            $keys[] = $owner === null ? $key : $key->ownedBy($owner);
+        }
+
+        return ContextSchema::of(...$keys);
+    }
+
     public function merge(self $other): self
     {
         if ($other->isEmpty()) {

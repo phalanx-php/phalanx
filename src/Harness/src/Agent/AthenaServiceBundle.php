@@ -14,6 +14,7 @@ use Phalanx\Athena\Turn\Builder;
 use Phalanx\Athena\Turn\Loop;
 use Phalanx\Athena\Turn\RuntimeFactory;
 use Phalanx\Boot\AppContext;
+use Phalanx\Boot\BootHarness;
 use Phalanx\Panoply\Agent;
 use Phalanx\Panoply\Context;
 use Phalanx\Panoply\Effect\Authorizer;
@@ -41,6 +42,12 @@ final class AthenaServiceBundle extends ServiceBundle
         return new self();
     }
 
+    #[\Override]
+    public static function harness(): BootHarness
+    {
+        return OllamaConfig::contextSchema()->harness();
+    }
+
     public function services(Services $services, AppContext $context): void
     {
         $ollamaConfig = OllamaConfig::fromContext($context);
@@ -60,7 +67,7 @@ final class AthenaServiceBundle extends ServiceBundle
             ->factory(static fn(RulesAuthorizer $inner): ApprovalAuthorizer => new ApprovalAuthorizer($inner));
         $services->alias(Authorizer::class, ApprovalAuthorizer::class);
 
-        $services->config(OllamaConfig::class, static fn(): OllamaConfig => $ollamaConfig);
+        $services->contextConfig(OllamaConfig::class, static fn(): OllamaConfig => $ollamaConfig);
 
         $services->singleton(TemplateAgent::class)
             ->factory(static fn(): TemplateAgent => new TemplateAgent());

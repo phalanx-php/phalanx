@@ -6,6 +6,7 @@ namespace Phalanx\Service;
 
 use Phalanx\Boot\AppContext;
 use Phalanx\Boot\BootHarness;
+use Phalanx\Boot\ContextSchema;
 use Phalanx\Testing\TestLens;
 
 /**
@@ -37,6 +38,11 @@ abstract class ServiceBundle
     public static function harness(): BootHarness
     {
         return BootHarness::none();
+    }
+
+    public static function contextSchema(): ContextSchema
+    {
+        return static::harness()->contextSchema(static::class);
     }
 
     /**

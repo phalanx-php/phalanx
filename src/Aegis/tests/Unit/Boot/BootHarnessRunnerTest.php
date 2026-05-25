@@ -15,7 +15,6 @@ use Phalanx\Service\Services;
 use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
 
-// Stub bundle whose harness() returns a Required::env check.
 final class RequiredEnvBundle extends ServiceBundle
 {
     #[\Override]
@@ -27,7 +26,6 @@ final class RequiredEnvBundle extends ServiceBundle
     public function services(Services $services, AppContext $context): void {}
 }
 
-// Stub bundle whose harness() returns an Optional::env check.
 final class OptionalEnvBundle extends ServiceBundle
 {
     #[\Override]
@@ -39,13 +37,11 @@ final class OptionalEnvBundle extends ServiceBundle
     public function services(Services $services, AppContext $context): void {}
 }
 
-// Stub bundle with the default (empty) harness.
 final class DefaultHarnessBundle extends ServiceBundle
 {
     public function services(Services $services, AppContext $context): void {}
 }
 
-// Stub used by the composer-extra fallback test.
 final class ComposerExtraHarnessStub
 {
     public static function buildHarness(): BootHarness
@@ -56,10 +52,6 @@ final class ComposerExtraHarnessStub
 
 final class BootHarnessRunnerTest extends PhalanxTestCase
 {
-    // -------------------------------------------------------------------------
-    // 1. No bundles + empty context → clean report
-    // -------------------------------------------------------------------------
-
     #[Test]
     public function runWithNoBundlesAndEmptyContextIsClean(): void
     {
@@ -72,10 +64,6 @@ final class BootHarnessRunnerTest extends PhalanxTestCase
         self::assertSame([], $report->failed);
         self::assertSame([], $report->warned);
     }
-
-    // -------------------------------------------------------------------------
-    // 2. Bundle with Required::env + missing key → report.hasFailures() true
-    // -------------------------------------------------------------------------
 
     #[Test]
     public function runWithMissingRequiredEnvProducesFailure(): void
@@ -96,10 +84,6 @@ final class BootHarnessRunnerTest extends PhalanxTestCase
         }
     }
 
-    // -------------------------------------------------------------------------
-    // 3. Bundle with Optional::env + missing key → warn, not fail
-    // -------------------------------------------------------------------------
-
     #[Test]
     public function runWithMissingOptionalEnvProducesWarning(): void
     {
@@ -109,10 +93,6 @@ final class BootHarnessRunnerTest extends PhalanxTestCase
         self::assertTrue($report->hasWarnings());
         self::assertFalse($report->hasFailures());
     }
-
-    // -------------------------------------------------------------------------
-    // 4. throwIfFailed() throws CannotBootException with key + remediation
-    // -------------------------------------------------------------------------
 
     #[Test]
     public function throwIfFailedThrowsWithMeaningfulMessage(): void
@@ -130,10 +110,6 @@ final class BootHarnessRunnerTest extends PhalanxTestCase
         $runner->throwIfFailed($report);
     }
 
-    // -------------------------------------------------------------------------
-    // 5. dryRun() evaluates without bundle iteration
-    // -------------------------------------------------------------------------
-
     #[Test]
     public function dryRunEvaluatesSuppliedHarnessDirectly(): void
     {
@@ -142,7 +118,6 @@ final class BootHarnessRunnerTest extends PhalanxTestCase
             Required::env('A'),
             Optional::env('B'),
         );
-        // A present, B absent.
         $report = $runner->dryRun(new AppContext(['A' => 'value']), $harness);
 
         self::assertFalse($report->hasFailures());
@@ -150,10 +125,6 @@ final class BootHarnessRunnerTest extends PhalanxTestCase
         self::assertCount(1, $report->passed);
         self::assertCount(1, $report->warned);
     }
-
-    // -------------------------------------------------------------------------
-    // 6. Composer-extra fallback via fake installed.json
-    // -------------------------------------------------------------------------
 
     #[Test]
     public function runPicksUpComposerExtraHarness(): void
@@ -192,10 +163,6 @@ final class BootHarnessRunnerTest extends PhalanxTestCase
         }
     }
 
-    // -------------------------------------------------------------------------
-    // 7. Default-harness bundles contribute nothing to the report
-    // -------------------------------------------------------------------------
-
     #[Test]
     public function bundlesWithDefaultHarnessAreNoOps(): void
     {
@@ -208,10 +175,6 @@ final class BootHarnessRunnerTest extends PhalanxTestCase
         self::assertTrue($report->isClean());
         self::assertSame([], $report->passed);
     }
-
-    // -------------------------------------------------------------------------
-    // Extra: class-string form of bundles is also accepted
-    // -------------------------------------------------------------------------
 
     #[Test]
     public function runAcceptsBundleClassStrings(): void
@@ -226,10 +189,6 @@ final class BootHarnessRunnerTest extends PhalanxTestCase
         }
     }
 
-    // -------------------------------------------------------------------------
-    // Extra: run() with all requirements satisfied returns clean report
-    // -------------------------------------------------------------------------
-
     #[Test]
     public function runWithAllRequirementsSatisfiedReturnsCleanReport(): void
     {
@@ -241,5 +200,47 @@ final class BootHarnessRunnerTest extends PhalanxTestCase
 
         self::assertTrue($report->isClean());
         self::assertCount(2, $report->passed);
+    }
+
+    #[Test]
+    public function contextSchemaListsBundleAndComposerExtraKeys(): void
+    {
+        $tmpDir = sys_get_temp_dir() . '/phalanx_harness_schema_' . uniqid('plx_', true);
+        mkdir($tmpDir . '/composer', recursive: true);
+
+        $stub = ComposerExtraHarnessStub::class;
+        $installed = [
+            'packages' => [
+                [
+                    'name' => 'test/pkg',
+                    'extra' => [
+                        'phalanx' => [
+                            'harness' => $stub . '::buildHarness',
+                        ],
+                    ],
+                ],
+            ],
+        ];
+        file_put_contents(
+            $tmpDir . '/composer/installed.json',
+            json_encode($installed),
+        );
+
+        try {
+            $schema = (new BootHarnessRunner())->contextSchema([RequiredEnvBundle::class], $tmpDir);
+            $keys = $schema->all();
+
+            self::assertCount(2, $keys);
+            self::assertSame('CRITICAL_KEY', $keys[0]->name);
+            self::assertSame(RequiredEnvBundle::class, $keys[0]->owner);
+            self::assertSame('FROM_EXTRA', $keys[1]->name);
+            self::assertSame('composer-extra', $keys[1]->owner);
+            self::assertStringContainsString('CRITICAL_KEY', $schema->render());
+            self::assertStringContainsString(RequiredEnvBundle::class, $schema->render());
+        } finally {
+            unlink($tmpDir . '/composer/installed.json');
+            rmdir($tmpDir . '/composer');
+            rmdir($tmpDir);
+        }
     }
 }
