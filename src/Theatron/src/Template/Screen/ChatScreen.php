@@ -431,17 +431,10 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, HandlesKeySeque
     {
         $conversation = $this->store->conversation;
         $workspaceView = $this->store->workspaceView;
-        $rows = [
-            self::row(Line::from(
-                Span::styled("  Λ̬ ", TextStyle::new()->fg(Color::indexed(250))),
-                Span::styled('Theatron', TextStyle::new()->fg(Color::indexed(250))->bold()),
-                self::pipe(),
-                Span::styled('Powered by Phalanx PHP', TextStyle::new()->fg(Color::indexed(242))),
-            )),
-        ];
+        $rows = [];
 
         $body = $this->renderConversationRows($conversation, $workspaceView, max(20, $width - 2));
-        $visible = self::viewport($body, max(1, $availableHeight - 1), $workspaceView->chatScrollOffset === 0);
+        $visible = self::viewport($body, max(1, $availableHeight), $workspaceView->chatScrollOffset === 0);
 
         return column(...[...$rows, ...$visible])->styled(TdomStyle::of(size: Size::fill()));
     }

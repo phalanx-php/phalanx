@@ -67,9 +67,10 @@ final class ChatScreenTest extends TestCase
         self::assertCount(7, $result->children);
 
         $text = self::flatten($result);
-        self::assertStringContainsString('Theatron', $text);
-        self::assertStringContainsString('Powered by Phalanx PHP', $text);
         self::assertStringContainsString('Type a message to begin.', $text);
+        self::assertStringNotContainsString('Theatron', $text);
+        self::assertStringNotContainsString('Powered by Phalanx PHP', $text);
+        self::assertStringNotContainsString('Λ̬', $text);
         self::assertStringContainsString('Λ idle', $text);
         self::assertStringContainsString('+> ', $text);
     }

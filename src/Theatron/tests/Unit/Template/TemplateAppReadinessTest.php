@@ -72,14 +72,15 @@ final class TemplateAppReadinessTest extends PhalanxTestCase
             rewind($stream);
             $output = self::stripAnsi((string) stream_get_contents($stream));
 
-            self::assertStringContainsString('Theatron', $output);
-            self::assertStringContainsString('Powered by Phalanx PHP', $output);
             self::assertStringContainsString('Type a message to begin.', $output);
             self::assertStringContainsString('+>', $output);
             self::assertStringContainsString('(Λ)', $output);
             self::assertStringContainsString('mem', $output);
             self::assertStringContainsString('alloc', $output);
             self::assertStringContainsString('^X ? keymap', $output);
+            self::assertStringNotContainsString('Theatron', $output);
+            self::assertStringNotContainsString('Powered by Phalanx PHP', $output);
+            self::assertStringNotContainsString('Λ̬', $output);
             self::assertStringNotContainsString('^X d devtools', $output);
             self::assertStringNotContainsString('^X s settings', $output);
             self::assertStringNotContainsString('DevToolsOverlay', $output);
