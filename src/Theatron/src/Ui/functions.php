@@ -68,12 +68,14 @@ function input(
     string|Line $prompt = '> ',
     int $cursor = 0,
     ?Style $style = null,
+    ?int $selectionStart = null,
+    ?int $selectionEnd = null,
 ): InputElement {
     if (is_string($prompt) && ($theme = RenderEnvironment::theme()) !== null && str_contains($prompt, '[')) {
         $prompt = BBCode::parse($prompt, $theme);
     }
 
-    return new InputElement($value, $prompt, $cursor, $style);
+    return new InputElement($value, $prompt, $cursor, $style, $selectionStart, $selectionEnd);
 }
 
 function statusLine(Renderable ...$sections): StatusLineElement

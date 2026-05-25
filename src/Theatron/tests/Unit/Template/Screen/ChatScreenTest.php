@@ -558,6 +558,27 @@ final class ChatScreenTest extends TestCase
     }
 
     #[Test]
+    public function composerPaintsSelectedText(): void
+    {
+        $store = new AppStore();
+        $screen = new ChatScreen($store);
+        $screen->inputText->set('alpha beta');
+        $screen->inputCursor->set(10);
+        $screen->inputSelectionAnchor->set(6);
+        $buffer = self::paint(
+            $screen($this->makeContext($store, width: 120, height: 24)),
+            width: 120,
+            height: 24,
+        );
+
+        $row = self::findRowContaining($buffer, 'alpha beta');
+
+        self::assertFalse($buffer->get(10, $row)->style->hasModifier(Modifier::Reverse));
+        self::assertTrue($buffer->get(11, $row)->style->hasModifier(Modifier::Reverse));
+        self::assertTrue($buffer->get(14, $row)->style->hasModifier(Modifier::Reverse));
+    }
+
+    #[Test]
     public function composerRuleExtendsToStatusControlEnd(): void
     {
         $store = new AppStore();

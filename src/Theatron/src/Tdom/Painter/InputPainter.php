@@ -11,6 +11,7 @@ use Phalanx\Theatron\Text\Line;
 final class InputPainter
 {
     private static ?AnsiStyle $cursorStyle = null;
+    private static ?AnsiStyle $selectionStyle = null;
 
     public static function paint(InputElement $element, PaintContext $ctx): void
     {
@@ -45,6 +46,8 @@ final class InputPainter
             $ctx->buffer->putString($ctx->area->x, $ctx->area->y, $text, $ansi);
         }
 
+        self::paintSelection($element, $ctx, $promptWidth);
+
         $cursorX = $ctx->area->x + $promptWidth + $element->cursor;
         $totalWidth = $promptWidth + mb_strlen($element->value);
 
@@ -57,6 +60,33 @@ final class InputPainter
                     : ' ')
                 : ' ';
             $ctx->buffer->set($cursorX, $ctx->area->y, $cursorChar, $cursorStyle);
+        }
+    }
+
+    private static function paintSelection(InputElement $element, PaintContext $ctx, int $promptWidth): void
+    {
+        if ($element->selectionStart === null || $element->selectionEnd === null) {
+            return;
+        }
+
+        $length = mb_strlen($element->value);
+        $start = max(0, min($element->selectionStart, $element->selectionEnd, $length));
+        $end = min($length, max($element->selectionStart, $element->selectionEnd));
+
+        if ($start === $end) {
+            return;
+        }
+
+        $selectionStyle = self::$selectionStyle ??= AnsiStyle::new()->reverse();
+
+        for ($i = $start; $i < $end; $i++) {
+            $x = $ctx->area->x + $promptWidth + $i;
+
+            if ($x < $ctx->area->x || $x >= $ctx->area->right) {
+                continue;
+            }
+
+            $ctx->buffer->set($x, $ctx->area->y, mb_substr($element->value, $i, 1), $selectionStyle);
         }
     }
 }

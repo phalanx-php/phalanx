@@ -57,6 +57,9 @@ final class TemplateKeymap
             new KeymapEntry('Composer', 'Ctrl+W', 'delete word before cursor'),
             new KeymapEntry('Composer', 'Ctrl+Y', 'yank last kill'),
             new KeymapEntry('Composer', 'Alt+B/F', 'move by word'),
+            new KeymapEntry('Composer', 'Alt+Left/Right', 'move by word'),
+            new KeymapEntry('Composer', 'Shift+Left/Right', 'select character'),
+            new KeymapEntry('Composer', 'Shift+Alt+Left/Right', 'select word'),
             new KeymapEntry('Composer', 'Alt+D', 'delete next word'),
             new KeymapEntry('Composer', 'Alt+Backspace', 'delete previous word'),
         ];

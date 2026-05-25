@@ -55,6 +55,10 @@ final class KeymapOverlayTest extends TestCase
         self::assertStringContainsString('line start/end', $text);
         self::assertStringContainsString('Ctrl+U', $text);
         self::assertStringContainsString('clear before cursor', $text);
+        self::assertStringContainsString('Shift+Left/Right', $text);
+        self::assertStringContainsString('select character', $text);
+        self::assertStringContainsString('Shift+Alt+Left/Right', $text);
+        self::assertStringContainsString('select word', $text);
         self::assertStringContainsString('Ctrl+P', $text);
         self::assertStringContainsString('focus chat thread', $text);
         self::assertStringNotContainsString('focus activity blocks', $text);
@@ -98,6 +102,9 @@ final class KeymapOverlayTest extends TestCase
         self::assertKeymapEntry('Workspace', 'Tab', 'next focus');
         self::assertKeymapEntry('Workspace', 'Shift+Tab', 'previous focus');
         self::assertKeymapEntry('Workspace', 'Esc', 'normal mode');
+        self::assertKeymapEntry('Composer', 'Alt+Left/Right', 'move by word');
+        self::assertKeymapEntry('Composer', 'Shift+Left/Right', 'select character');
+        self::assertKeymapEntry('Composer', 'Shift+Alt+Left/Right', 'select word');
         self::assertKeymapEntry('Chat', 'Ctrl+P', 'focus chat thread');
         self::assertKeymapEntry('Chat', 'j/Ctrl+N', 'scroll down');
         self::assertKeymapEntry('Chat', 'k/Ctrl+P', 'scroll up');

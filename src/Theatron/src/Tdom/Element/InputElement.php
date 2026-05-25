@@ -21,6 +21,8 @@ final class InputElement implements Element
         private(set) string|Line $prompt = '> ',
         private(set) int $cursor = 0,
         private(set) ?Style $style = null,
+        private(set) ?int $selectionStart = null,
+        private(set) ?int $selectionEnd = null,
     ) {
     }
 }

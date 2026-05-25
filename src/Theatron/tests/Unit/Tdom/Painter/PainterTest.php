@@ -306,6 +306,23 @@ final class PainterTest extends TestCase
     }
 
     #[Test]
+    public function inputPaintsSelectionBeforeCursor(): void
+    {
+        $buf = Buffer::empty(20, 1);
+        $ctx = new PaintContext(Rect::sized(20, 1), $buf);
+
+        Painter::paint(new InputElement('hello', '> ', 3, selectionStart: 1, selectionEnd: 4), $ctx);
+
+        self::assertFalse($buf->get(2, 0)->style->hasModifier(Modifier::Reverse));
+        self::assertTrue($buf->get(3, 0)->style->hasModifier(Modifier::Reverse));
+        self::assertTrue($buf->get(4, 0)->style->hasModifier(Modifier::Reverse));
+
+        $cursorCell = $buf->get(5, 0);
+        self::assertSame('l', $cursorCell->char);
+        self::assertTrue($cursorCell->style->hasModifier(Modifier::Reverse));
+    }
+
+    #[Test]
     public function spinnerPaintsFrameAndLabel(): void
     {
         $buf = Buffer::empty(20, 1);

@@ -54,6 +54,7 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, HandlesKeySeque
     private(set) Signal $inputText;
     private(set) Signal $inputCursor;
     private(set) Signal $inputKillRing;
+    private(set) Signal $inputSelectionAnchor;
     private(set) ChatConversationHandler $conversationHandler;
     private(set) ChatInputHandler $inputHandler;
     private MarkdownRenderer $markdown;
@@ -67,6 +68,7 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, HandlesKeySeque
         $this->inputText = new Signal('');
         $this->inputCursor = new Signal(0);
         $this->inputKillRing = new Signal('');
+        $this->inputSelectionAnchor = new Signal(null);
         $this->conversationHandler = new ChatConversationHandler($this);
         $this->inputHandler = new ChatInputHandler($this);
         $this->markdown = new MarkdownRenderer();
@@ -257,6 +259,7 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, HandlesKeySeque
     {
         $text = (string) $this->inputText->get();
         $this->inputCursor->set($this->clampCursor((int) $this->inputCursor->get(), $text));
+        $this->clampInputSelection($text);
         $this->store->input = $this->store->input->withText($text);
     }
 
@@ -676,6 +679,8 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, HandlesKeySeque
             prompt: '  +> ',
             cursor: $this->clampCursor((int) $this->inputCursor->get(), $text),
             style: TdomStyle::of(size: Size::fixed(1)),
+            selectionStart: $this->selectionStartForLine($text, 0, mb_strlen($text)),
+            selectionEnd: $this->selectionEndForLine($text, 0, mb_strlen($text)),
         );
     }
 
@@ -690,6 +695,9 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, HandlesKeySeque
         foreach ($visible as $i => $line) {
             $prompt = $firstVisible + $i === 0 ? '  +> ' : '     ';
             $isCursorLine = $firstVisible + $i === $cursorLine;
+            $lineIndex = $firstVisible + $i;
+            $lineStart = $this->lineStartOffset($lines, $lineIndex);
+            $lineEnd = $lineStart + mb_strlen($line);
 
             if ($isCursorLine) {
                 $children[] = input(
@@ -697,14 +705,19 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, HandlesKeySeque
                     prompt: $prompt,
                     cursor: $cursorColumn,
                     style: TdomStyle::of(size: Size::fixed(1)),
+                    selectionStart: $this->selectionStartForLine($text, $lineStart, $lineEnd),
+                    selectionEnd: $this->selectionEndForLine($text, $lineStart, $lineEnd),
                 );
 
                 continue;
             }
 
-            $children[] = self::row(Line::from(
-                Span::styled($prompt . $line, TextStyle::new()->fg(Color::indexed(252))),
-            ));
+            $children[] = $this->renderReadonlyInputLine(
+                $prompt,
+                $line,
+                $this->selectionStartForLine($text, $lineStart, $lineEnd),
+                $this->selectionEndForLine($text, $lineStart, $lineEnd),
+            );
         }
 
         return column(...$children)->styled(TdomStyle::of(size: Size::fixed($rows)));
@@ -733,6 +746,87 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, HandlesKeySeque
     {
         $this->inputText->set($text);
         $this->inputCursor->set(mb_strlen($text));
+        $this->inputSelectionAnchor->set(null);
         $this->clearInputChordPrefix();
+    }
+
+    private function clampInputSelection(string $text): void
+    {
+        $anchor = $this->inputSelectionAnchor->get();
+
+        if (!is_int($anchor)) {
+            return;
+        }
+
+        $this->inputSelectionAnchor->set($this->clampCursor($anchor, $text));
+    }
+
+    /** @param list<string> $lines */
+    private function lineStartOffset(array $lines, int $line): int
+    {
+        $offset = 0;
+
+        for ($i = 0; $i < $line; $i++) {
+            $offset += mb_strlen($lines[$i] ?? '') + 1;
+        }
+
+        return $offset;
+    }
+
+    private function selectionStartForLine(string $text, int $lineStart, int $lineEnd): ?int
+    {
+        $range = $this->selectionRange($text, $lineStart, $lineEnd);
+
+        return $range === null ? null : $range[0] - $lineStart;
+    }
+
+    private function selectionEndForLine(string $text, int $lineStart, int $lineEnd): ?int
+    {
+        $range = $this->selectionRange($text, $lineStart, $lineEnd);
+
+        return $range === null ? null : $range[1] - $lineStart;
+    }
+
+    private function renderReadonlyInputLine(
+        string $prompt,
+        string $line,
+        ?int $selectionStart,
+        ?int $selectionEnd,
+    ): Renderable {
+        $style = TextStyle::new()->fg(Color::indexed(252));
+
+        if ($selectionStart === null || $selectionEnd === null || $selectionStart === $selectionEnd) {
+            return self::row(Line::from(Span::styled($prompt . $line, $style)));
+        }
+
+        $start = max(0, min($selectionStart, $selectionEnd, mb_strlen($line)));
+        $end = min(mb_strlen($line), max($selectionStart, $selectionEnd));
+
+        return self::row(Line::from(
+            Span::styled($prompt . mb_substr($line, 0, $start), $style),
+            Span::styled(mb_substr($line, $start, $end - $start), $style->reverse()),
+            Span::styled(mb_substr($line, $end), $style),
+        ));
+    }
+
+    /** @return ?array{int, int} */
+    private function selectionRange(string $text, int $lineStart, int $lineEnd): ?array
+    {
+        $anchor = $this->inputSelectionAnchor->get();
+
+        if (!is_int($anchor)) {
+            return null;
+        }
+
+        $cursor = $this->clampCursor((int) $this->inputCursor->get(), $text);
+        $anchor = $this->clampCursor($anchor, $text);
+        $start = max(min($anchor, $cursor), $lineStart);
+        $end = min(max($anchor, $cursor), $lineEnd);
+
+        if ($start >= $end) {
+            return null;
+        }
+
+        return [$start, $end];
     }
 }

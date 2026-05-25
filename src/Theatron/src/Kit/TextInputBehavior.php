@@ -12,6 +12,7 @@ trait TextInputBehavior
 {
     private ?Signal $textInputCursorSignal = null;
     private ?Signal $textInputKillRingSignal = null;
+    private ?Signal $textInputSelectionAnchorSignal = null;
 
     abstract protected function inputSignal(): Signal;
 
@@ -30,15 +31,20 @@ trait TextInputBehavior
         return $this->textInputKillRingSignal ??= new Signal('');
     }
 
+    protected function inputSelectionAnchorSignal(): Signal
+    {
+        return $this->textInputSelectionAnchorSignal ??= new Signal(null);
+    }
+
     protected function handleTextInput(KeyEvent $event): bool
     {
         $signal = $this->inputSignal();
 
-        if ($this->handleControlInput($event, $signal)) {
+        if ($this->handleAltInput($event, $signal)) {
             return true;
         }
 
-        if ($this->handleAltInput($event, $signal)) {
+        if ($this->handleControlInput($event, $signal)) {
             return true;
         }
 
@@ -59,8 +65,8 @@ trait TextInputBehavior
             return match (true) {
                 $event->is(Key::Backspace) => $this->deleteBeforeCursor($signal),
                 $event->is(Key::Delete) => $this->deleteAtCursor($signal),
-                $event->is(Key::Left) => $this->moveCursor($signal, -1),
-                $event->is(Key::Right) => $this->moveCursor($signal, 1),
+                $event->is(Key::Left) => $this->moveCursor($signal, -1, $event->shift),
+                $event->is(Key::Right) => $this->moveCursor($signal, 1, $event->shift),
                 $event->is(Key::Home) => $this->moveCursorToLineStart($signal),
                 $event->is(Key::End) => $this->moveCursorToLineEnd($signal),
                 default => false,
@@ -88,6 +94,8 @@ trait TextInputBehavior
         }
 
         return match (true) {
+            $event->is(Key::Left) => $this->moveCursorToPreviousWord($signal, $event->shift),
+            $event->is(Key::Right) => $this->moveCursorToNextWord($signal, $event->shift),
             $event->is('b') => $this->moveCursorToPreviousWord($signal),
             $event->is('f') => $this->moveCursorToNextWord($signal),
             $event->is('d') => $this->killNextWord($signal),
@@ -161,23 +169,45 @@ trait TextInputBehavior
     private function insertText(Signal $signal, string $insert): void
     {
         $text = (string) $signal->get();
-        $cursor = $this->textCursor($text);
+        $selection = $this->selectionRange($text);
 
+        if ($selection !== null) {
+            [$start, $end] = $selection;
+            $signal->set($this->splice($text, $start, $end, $insert));
+            $this->setCursor($start + mb_strlen($insert));
+            $this->clearSelection();
+
+            return;
+        }
+
+        $cursor = $this->textCursor($text);
         $signal->set($this->splice($text, $cursor, $cursor, $insert));
         $this->setCursor($cursor + mb_strlen($insert));
+        $this->clearSelection();
     }
 
     private function deleteBeforeCursor(Signal $signal): bool
     {
         $text = (string) $signal->get();
-        $cursor = $this->textCursor($text);
+        $selection = $this->selectionRange($text);
 
+        if ($selection !== null) {
+            [$start, $end] = $selection;
+            $signal->set($this->splice($text, $start, $end));
+            $this->setCursor($start);
+            $this->clearSelection();
+
+            return true;
+        }
+
+        $cursor = $this->textCursor($text);
         if ($cursor === 0) {
             return true;
         }
 
         $signal->set($this->splice($text, $cursor - 1, $cursor));
         $this->setCursor($cursor - 1);
+        $this->clearSelection();
 
         return true;
     }
@@ -185,22 +215,35 @@ trait TextInputBehavior
     private function deleteAtCursor(Signal $signal): bool
     {
         $text = (string) $signal->get();
-        $cursor = $this->textCursor($text);
+        $selection = $this->selectionRange($text);
 
+        if ($selection !== null) {
+            [$start, $end] = $selection;
+            $signal->set($this->splice($text, $start, $end));
+            $this->setCursor($start);
+            $this->clearSelection();
+
+            return true;
+        }
+
+        $cursor = $this->textCursor($text);
         if ($cursor >= mb_strlen($text)) {
             return $text === '';
         }
 
         $signal->set($this->splice($text, $cursor, $cursor + 1));
         $this->setCursor($cursor);
+        $this->clearSelection();
 
         return true;
     }
 
-    private function moveCursor(Signal $signal, int $delta): bool
+    private function moveCursor(Signal $signal, int $delta, bool $selecting = false): bool
     {
         $text = (string) $signal->get();
-        $this->setCursor($this->textCursor($text) + $delta, $text);
+        $cursor = $this->textCursor($text);
+        $this->setCursor($cursor + $delta, $text);
+        $this->updateSelection($text, $cursor, $selecting);
 
         return true;
     }
@@ -209,6 +252,7 @@ trait TextInputBehavior
     {
         $text = (string) $signal->get();
         $this->setCursor($this->lineStart($text, $this->textCursor($text)), $text);
+        $this->clearSelection();
 
         return true;
     }
@@ -217,22 +261,27 @@ trait TextInputBehavior
     {
         $text = (string) $signal->get();
         $this->setCursor($this->lineEnd($text, $this->textCursor($text)), $text);
+        $this->clearSelection();
 
         return true;
     }
 
-    private function moveCursorToPreviousWord(Signal $signal): bool
+    private function moveCursorToPreviousWord(Signal $signal, bool $selecting = false): bool
     {
         $text = (string) $signal->get();
-        $this->setCursor($this->previousWord($text, $this->textCursor($text)), $text);
+        $cursor = $this->textCursor($text);
+        $this->setCursor($this->previousWord($text, $cursor), $text);
+        $this->updateSelection($text, $cursor, $selecting);
 
         return true;
     }
 
-    private function moveCursorToNextWord(Signal $signal): bool
+    private function moveCursorToNextWord(Signal $signal, bool $selecting = false): bool
     {
         $text = (string) $signal->get();
-        $this->setCursor($this->nextWord($text, $this->textCursor($text)), $text);
+        $cursor = $this->textCursor($text);
+        $this->setCursor($this->nextWord($text, $cursor), $text);
+        $this->updateSelection($text, $cursor, $selecting);
 
         return true;
     }
@@ -240,6 +289,12 @@ trait TextInputBehavior
     private function killToLineStart(Signal $signal): bool
     {
         $text = (string) $signal->get();
+        $selection = $this->selectionRange($text);
+
+        if ($selection !== null) {
+            return $this->killSelection($signal, $text, $selection);
+        }
+
         $cursor = $this->textCursor($text);
         $start = $this->lineStart($text, $cursor);
 
@@ -249,6 +304,12 @@ trait TextInputBehavior
     private function killToLineEnd(Signal $signal): bool
     {
         $text = (string) $signal->get();
+        $selection = $this->selectionRange($text);
+
+        if ($selection !== null) {
+            return $this->killSelection($signal, $text, $selection);
+        }
+
         $cursor = $this->textCursor($text);
         $end = $this->lineEnd($text, $cursor);
 
@@ -262,6 +323,12 @@ trait TextInputBehavior
     private function killPreviousWord(Signal $signal): bool
     {
         $text = (string) $signal->get();
+        $selection = $this->selectionRange($text);
+
+        if ($selection !== null) {
+            return $this->killSelection($signal, $text, $selection);
+        }
+
         $cursor = $this->textCursor($text);
         $start = $this->previousWord($text, $cursor);
 
@@ -271,6 +338,12 @@ trait TextInputBehavior
     private function killNextWord(Signal $signal): bool
     {
         $text = (string) $signal->get();
+        $selection = $this->selectionRange($text);
+
+        if ($selection !== null) {
+            return $this->killSelection($signal, $text, $selection);
+        }
+
         $cursor = $this->textCursor($text);
         $end = $this->nextWord($text, $cursor);
 
@@ -286,8 +359,17 @@ trait TextInputBehavior
         $this->setKillRing(mb_substr($text, $start, $end - $start));
         $signal->set($this->splice($text, $start, $end));
         $this->setCursor($cursor);
+        $this->clearSelection();
 
         return true;
+    }
+
+    /** @param array{int, int} $selection */
+    private function killSelection(Signal $signal, string $text, array $selection): bool
+    {
+        [$start, $end] = $selection;
+
+        return $this->killRange($signal, $text, $start, $end, $start);
     }
 
     private function yank(Signal $signal): bool
@@ -319,5 +401,48 @@ trait TextInputBehavior
     private function setKillRing(string $text): void
     {
         $this->inputKillRingSignal()->set($text);
+    }
+
+    /** @return ?array{int, int} */
+    private function selectionRange(string $text): ?array
+    {
+        $anchor = $this->inputSelectionAnchorSignal()->get();
+
+        if (!is_int($anchor)) {
+            return null;
+        }
+
+        $cursor = $this->textCursor($text);
+        $anchor = $this->clampCursor($anchor, $text);
+
+        if ($anchor === $cursor) {
+            return null;
+        }
+
+        return [min($anchor, $cursor), max($anchor, $cursor)];
+    }
+
+    private function updateSelection(string $text, int $anchor, bool $selecting): void
+    {
+        if (!$selecting) {
+            $this->clearSelection();
+
+            return;
+        }
+
+        $selection = $this->inputSelectionAnchorSignal();
+
+        if (!is_int($selection->get())) {
+            $selection->set($this->clampCursor($anchor, $text));
+        }
+
+        if ($this->selectionRange($text) === null) {
+            $this->clearSelection();
+        }
+    }
+
+    private function clearSelection(): void
+    {
+        $this->inputSelectionAnchorSignal()->set(null);
     }
 }

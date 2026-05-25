@@ -16,6 +16,7 @@ final class TextInputFixture
         private ?Signal $signal,
         private ?Signal $cursor = null,
         private ?Signal $killRing = null,
+        private ?Signal $selectionAnchor = null,
     ) {
     }
 
@@ -32,6 +33,11 @@ final class TextInputFixture
     public function killRing(): ?Signal
     {
         return $this->killRing;
+    }
+
+    public function selectionAnchor(): ?Signal
+    {
+        return $this->selectionAnchor;
     }
 
     public function handle(KeyEvent $event): bool
@@ -56,5 +62,10 @@ final class TextInputFixture
     protected function inputKillRingSignal(): Signal
     {
         return $this->killRing ??= new Signal('');
+    }
+
+    protected function inputSelectionAnchorSignal(): Signal
+    {
+        return $this->selectionAnchor ??= new Signal(null);
     }
 }

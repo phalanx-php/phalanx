@@ -68,4 +68,9 @@ final class ChatInputHandler implements Focusable, AcceptsInput
     {
         return $this->screen->inputKillRing;
     }
+
+    protected function inputSelectionAnchorSignal(): Signal
+    {
+        return $this->screen->inputSelectionAnchor;
+    }
 }

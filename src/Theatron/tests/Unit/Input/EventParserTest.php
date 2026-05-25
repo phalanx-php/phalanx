@@ -32,6 +32,7 @@ final class EventParserTest extends TestCase
         foreach ($directions as $direction => [$suffix, $key]) {
             yield "shift {$direction}" => ["\033[1;2{$suffix}", $key, false, false, true];
             yield "alt {$direction}" => ["\033[1;3{$suffix}", $key, false, true, false];
+            yield "shift alt {$direction}" => ["\033[1;4{$suffix}", $key, false, true, true];
             yield "ctrl {$direction}" => ["\033[1;5{$suffix}", $key, true, false, false];
         }
     }
