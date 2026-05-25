@@ -10,12 +10,21 @@ use Phalanx\Agora\Harness\HarnessEvent;
 use Phalanx\Agora\Harness\ProjectionSet;
 use Phalanx\Agora\Harness\Replay\ReplaySession;
 use Phalanx\Agora\Theatron\TheatronReplayHydrator;
+use Phalanx\Panoply\Cue;
+use Phalanx\Panoply\Cue\Activity\Cancelled as ActivityCancelled;
+use Phalanx\Panoply\Cue\Activity\Failed as ActivityFailed;
+use Phalanx\Panoply\Cue\Effect\Denied as EffectDenied;
 use Phalanx\Panoply\Cue\Effect\Executed as EffectExecuted;
+use Phalanx\Panoply\Cue\Effect\Failed as EffectFailed;
+use Phalanx\Panoply\Cue\Effect\Paused as EffectPaused;
 use Phalanx\Panoply\Cue\Effect\Requested as EffectRequested;
+use Phalanx\Panoply\Cue\Invocation\Failed as InvocationFailed;
+use Phalanx\Panoply\Cue\Invocation\Started as InvocationStarted;
 use Phalanx\Panoply\Cue\Output\Channel;
 use Phalanx\Panoply\Cue\Output\TokenDelta;
 use Phalanx\Panoply\Cue\Output\TokenStop;
 use Phalanx\Panoply\Cue\StopReason;
+use Phalanx\Panoply\Cue\Usage\Delta as UsageDelta;
 use Phalanx\Panoply\Cue\Usage\FinalUsage;
 use Phalanx\Panoply\Effect\Kind as EffectKind;
 use Phalanx\Theatron\Input\InputMode;
@@ -108,6 +117,247 @@ final class TheatronReplayHydratorTest extends TestCase
         self::assertNull($store->workspaceView->selectedTurnId);
         self::assertNull($store->workspaceView->expandedTurnId);
         self::assertNull($store->workspaceView->inputModeFor(ChatScreen::class));
+    }
+
+    #[Test]
+    public function itHydratesFromTheFullEventReplayInsteadOfAStaleCheckpointSnapshot(): void
+    {
+        $events = self::events();
+        $staleEvents = [
+            self::userEvent(1),
+            self::workspaceRestore(2, 99, 'turn.stale', InputMode::Normal),
+            self::eventFromCue(new FinalUsage(
+                id: 'cue.usage.stale',
+                sequence: 3,
+                activityId: 'activity.ui',
+                invocationId: 'invocation.ui',
+                agentId: 'agent.ui',
+                at: self::at(3),
+                inputTokens: 99,
+                outputTokens: 1,
+            )),
+        ];
+        $store = new AppStore();
+
+        (new TheatronReplayHydrator())->hydrate(
+            store: $store,
+            session: new ReplaySession(self::SESSION_ID, self::project($staleEvents), $events, checkpointSequence: 3),
+        );
+
+        self::assertSame(3, $store->workspaceView->chatScrollOffset);
+        self::assertSame(self::TURN_ID, $store->workspaceView->selectedTurnId);
+        self::assertSame(InputMode::Insert, $store->workspaceView->inputModeFor(ChatScreen::class)?->mode);
+        self::assertSame(12, $store->activity->totalTokens);
+    }
+
+    #[Test]
+    public function itKeepsRepeatedEffectIdsSeparateAcrossTurns(): void
+    {
+        $events = [
+            self::userEvent(1, 'turn.one', 'first'),
+            self::eventFromCue(self::effectRequested(2, 'turn.one', 'Read first file', ['path' => 'one.txt']), 'turn.one'),
+            self::eventFromCue(new EffectExecuted(
+                id: 'cue.effect.executed.one',
+                sequence: 3,
+                activityId: 'activity.ui',
+                invocationId: 'invocation.ui',
+                agentId: 'agent.ui',
+                at: self::at(3),
+                effectId: 'effect.read',
+                durationMs: 10,
+                resultDigest: 'first',
+            ), 'turn.one'),
+            self::userEvent(4, 'turn.two', 'second'),
+            self::eventFromCue(self::effectRequested(5, 'turn.two', 'Read second file', ['path' => 'two.txt']), 'turn.two'),
+            self::eventFromCue(new EffectFailed(
+                id: 'cue.effect.failed.two',
+                sequence: 6,
+                activityId: 'activity.ui',
+                invocationId: 'invocation.ui',
+                agentId: 'agent.ui',
+                at: self::at(6),
+                effectId: 'effect.read',
+                reason: 'missing file',
+                errorClass: 'RuntimeException',
+            ), 'turn.two'),
+        ];
+        $store = new AppStore();
+
+        (new TheatronReplayHydrator())->hydrate(
+            store: $store,
+            session: new ReplaySession(self::SESSION_ID, self::project($events), $events, checkpointSequence: 0),
+        );
+
+        self::assertCount(2, $store->effects->entries);
+        self::assertSame('Read first file', $store->effects->entries[0]->summary);
+        self::assertSame(EffectStatus::Executed, $store->effects->entries[0]->status);
+        self::assertSame(['path' => 'one.txt'], $store->effects->entries[0]->arguments);
+        self::assertSame('Read second file', $store->effects->entries[1]->summary);
+        self::assertSame(EffectStatus::Failed, $store->effects->entries[1]->status);
+        self::assertSame(['path' => 'two.txt'], $store->effects->entries[1]->arguments);
+        self::assertSame('RuntimeException', $store->effects->entries[1]->errorClass);
+    }
+
+    #[Test]
+    public function itHydratesReplayStatusTransitionsForFailureCancellationAndToolUse(): void
+    {
+        $events = [
+            self::userEvent(1, 'turn.error', 'error'),
+            self::tokenStop(2, 'turn.error', StopReason::Error),
+            self::userEvent(3, 'turn.cancelled', 'cancelled'),
+            self::tokenStop(4, 'turn.cancelled', StopReason::Cancelled),
+            self::userEvent(5, 'turn.tool', 'tool'),
+            self::tokenStop(6, 'turn.tool', StopReason::ToolUse),
+            self::userEvent(7, 'turn.invocation.failed', 'invocation failed'),
+            self::eventFromCue(new InvocationFailed(
+                id: 'cue.invocation.failed',
+                sequence: 8,
+                activityId: 'activity.ui',
+                invocationId: 'invocation.ui',
+                agentId: 'agent.ui',
+                at: self::at(8),
+                reason: 'provider error',
+                errorClass: 'ProviderException',
+            ), 'turn.invocation.failed'),
+            self::userEvent(9, 'turn.activity.cancelled', 'activity cancelled'),
+            self::eventFromCue(new ActivityCancelled(
+                id: 'cue.activity.cancelled',
+                sequence: 10,
+                activityId: 'activity.ui',
+                invocationId: 'invocation.ui',
+                agentId: 'agent.ui',
+                at: self::at(10),
+                reason: 'user aborted',
+            ), 'turn.activity.cancelled'),
+        ];
+        $store = new AppStore();
+
+        (new TheatronReplayHydrator())->hydrate(
+            store: $store,
+            session: new ReplaySession(self::SESSION_ID, self::project($events), $events, checkpointSequence: 0),
+        );
+
+        self::assertSame(ConversationTurnStatus::Failed, $store->conversation->turns[0]->status);
+        self::assertSame(ConversationTurnStatus::Cancelled, $store->conversation->turns[1]->status);
+        self::assertSame(ConversationTurnStatus::Running, $store->conversation->turns[2]->status);
+        self::assertSame(ConversationTurnStatus::Failed, $store->conversation->turns[3]->status);
+        self::assertSame(ConversationTurnStatus::Cancelled, $store->conversation->turns[4]->status);
+        self::assertSame(ActivityStatus::Failed, $store->activity->status);
+    }
+
+    #[Test]
+    public function itHydratesMidStreamReplayState(): void
+    {
+        $events = [
+            self::userEvent(1),
+            self::eventFromCue(new InvocationStarted(
+                id: 'cue.invocation.started',
+                sequence: 2,
+                activityId: 'activity.ui',
+                invocationId: 'invocation.ui',
+                agentId: 'agent.ui',
+                at: self::at(2),
+            )),
+            self::token(3, 'still ', Channel::Thinking),
+            self::token(4, 'answering', Channel::Message),
+            self::eventFromCue(new UsageDelta(
+                id: 'cue.usage.delta',
+                sequence: 5,
+                activityId: 'activity.ui',
+                invocationId: 'invocation.ui',
+                agentId: 'agent.ui',
+                at: self::at(5),
+                inputTokens: 2,
+                outputTokens: 3,
+            )),
+        ];
+        $store = new AppStore();
+
+        (new TheatronReplayHydrator())->hydrate(
+            store: $store,
+            session: new ReplaySession(self::SESSION_ID, self::project($events), $events, checkpointSequence: 0),
+        );
+
+        self::assertTrue($store->conversation->isStreaming);
+        self::assertSame(ActivityStatus::Running, $store->activity->status);
+        self::assertSame(5, $store->activity->totalTokens);
+        self::assertSame('still ', $store->conversation->turns[0]->thinkingText());
+        self::assertSame('answering', $store->conversation->turns[0]->assistantText());
+    }
+
+    #[Test]
+    public function itHydratesDeniedPausedFailedAndRuntimeEvents(): void
+    {
+        $events = [
+            self::userEvent(1),
+            self::eventFromCue(self::effectRequested(2, self::TURN_ID, 'Needs approval', ['path' => 'one.txt']), self::TURN_ID),
+            self::eventFromCue(new EffectPaused(
+                id: 'cue.effect.paused',
+                sequence: 3,
+                activityId: 'activity.ui',
+                invocationId: 'invocation.ui',
+                agentId: 'agent.ui',
+                at: self::at(3),
+                effectId: 'effect.read',
+                reason: 'policy',
+            )),
+            self::eventFromCue(new EffectDenied(
+                id: 'cue.effect.denied',
+                sequence: 4,
+                activityId: 'activity.ui',
+                invocationId: 'invocation.ui',
+                agentId: 'agent.ui',
+                at: self::at(4),
+                effectId: 'effect.read',
+                reasonCodes: ['policy'],
+            )),
+            self::eventFromCue(new ActivityFailed(
+                id: 'cue.activity.failed',
+                sequence: 5,
+                activityId: 'activity.ui',
+                invocationId: 'invocation.ui',
+                agentId: 'agent.ui',
+                at: self::at(5),
+                reason: 'runtime crashed',
+                errorClass: 'RuntimeException',
+            )),
+            HarnessEvent::marker(
+                id: 'event.runtime.error',
+                sessionId: self::SESSION_ID,
+                sequence: 6,
+                cueType: 'cue.runtime.error',
+                source: EventSource::Panoply,
+                occurredAt: self::at(6),
+                payload: [
+                    'payload' => [
+                        'message' => 'runtime crashed',
+                        'code' => 'runtime.error',
+                        'error_class' => 'RuntimeException',
+                    ],
+                ],
+                turnId: self::TURN_ID,
+            ),
+        ];
+        $store = new AppStore();
+
+        (new TheatronReplayHydrator())->hydrate(
+            store: $store,
+            session: new ReplaySession(self::SESSION_ID, self::project($events), $events, checkpointSequence: 0),
+        );
+
+        $projectionKinds = array_map(
+            static fn($event) => $event->projection->kind,
+            $store->conversation->turns[0]->projectionEvents(),
+        );
+
+        self::assertContains(ConversationTurnEventKind::EffectPaused, $projectionKinds);
+        self::assertContains(ConversationTurnEventKind::EffectDenied, $projectionKinds);
+        self::assertContains(ConversationTurnEventKind::ActivityFailed, $projectionKinds);
+        self::assertContains(ConversationTurnEventKind::RuntimeError, $projectionKinds);
+        self::assertSame(ConversationTurnStatus::Failed, $store->conversation->turns[0]->status);
+        self::assertSame(ActivityStatus::Failed, $store->activity->status);
+        self::assertSame(EffectStatus::Denied, $store->effects->entries[0]->status);
+        self::assertSame(['policy'], $store->effects->entries[0]->reasonCodes);
     }
 
     /** @return list<HarnessEvent> */
@@ -203,6 +453,81 @@ final class TheatronReplayHydratorTest extends TestCase
         ];
     }
 
+    private static function eventFromCue(
+        Cue $cue,
+        string $turnId = self::TURN_ID,
+    ): HarnessEvent {
+        return HarnessEvent::fromCue(
+            cue: $cue,
+            sessionId: self::SESSION_ID,
+            sequence: $cue->sequence,
+            turnId: $turnId,
+            id: "event.{$cue->sequence}",
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $arguments
+     */
+    private static function effectRequested(
+        int $sequence,
+        string $turnId,
+        string $summary,
+        array $arguments,
+    ): EffectRequested {
+        return new EffectRequested(
+            id: "cue.effect.requested.{$sequence}",
+            sequence: $sequence,
+            activityId: 'activity.ui',
+            invocationId: 'invocation.ui',
+            agentId: 'agent.ui',
+            at: self::at($sequence),
+            effectId: 'effect.read',
+            kind: EffectKind::FileRead,
+            summary: $summary,
+            arguments: $arguments,
+            requiresApproval: true,
+        );
+    }
+
+    private static function tokenStop(
+        int $sequence,
+        string $turnId,
+        StopReason $reason,
+    ): HarnessEvent {
+        return self::eventFromCue(new TokenStop(
+            id: "cue.stop.{$sequence}",
+            sequence: $sequence,
+            activityId: 'activity.ui',
+            invocationId: 'invocation.ui',
+            agentId: 'agent.ui',
+            at: self::at($sequence),
+            reason: $reason,
+        ), $turnId);
+    }
+
+    private static function workspaceRestore(
+        int $sequence,
+        int $scrollOffset,
+        string $turnId,
+        InputMode $inputMode,
+    ): HarnessEvent {
+        return HarnessEvent::marker(
+            id: "event.workspace.restore.{$sequence}",
+            sessionId: self::SESSION_ID,
+            sequence: $sequence,
+            cueType: 'agora.workspace.restore',
+            source: EventSource::Agora,
+            occurredAt: self::at($sequence),
+            payload: [
+                'scroll_offset' => $scrollOffset,
+                'selected_turn_id' => $turnId,
+                'expanded_block' => $turnId,
+                'input_mode' => $inputMode->value,
+            ],
+        );
+    }
+
     /**
      * @param list<HarnessEvent> $events
      */
@@ -220,6 +545,8 @@ final class TheatronReplayHydratorTest extends TestCase
 
     private static function userEvent(
         int $sequence,
+        string $turnId = self::TURN_ID,
+        string $text = 'and what makes you so sure?',
     ): HarnessEvent {
         return HarnessEvent::marker(
             id: "event.{$sequence}",
@@ -228,8 +555,8 @@ final class TheatronReplayHydratorTest extends TestCase
             cueType: 'agora.turn.user_message',
             source: EventSource::Agora,
             occurredAt: self::at($sequence),
-            payload: ['user_text' => 'and what makes you so sure?'],
-            turnId: self::TURN_ID,
+            payload: ['user_text' => $text],
+            turnId: $turnId,
         );
     }
 
@@ -237,6 +564,7 @@ final class TheatronReplayHydratorTest extends TestCase
         int $sequence,
         string $text,
         Channel $channel,
+        string $turnId = self::TURN_ID,
     ): HarnessEvent {
         return HarnessEvent::fromCue(
             cue: new TokenDelta(
@@ -251,7 +579,7 @@ final class TheatronReplayHydratorTest extends TestCase
             ),
             sessionId: self::SESSION_ID,
             sequence: $sequence,
-            turnId: self::TURN_ID,
+            turnId: $turnId,
             id: "event.{$sequence}",
         );
     }

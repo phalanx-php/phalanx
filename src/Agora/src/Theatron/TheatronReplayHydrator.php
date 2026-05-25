@@ -34,15 +34,15 @@ final class TheatronReplayHydrator
         AppStore $store,
         ReplaySession $session,
     ): void {
-        $projections = $this->project($session);
+        $projections = self::project($session);
 
         $store->conversation = ConversationSlice::fromTurns(
-            turns: $this->turns($session->events),
-            isStreaming: $projections->activity->status->value === 'streaming',
+            turns: self::turns($session->events),
+            isStreaming: self::isStreaming($projections),
         );
-        $store->activity = $this->activity($projections);
-        $store->effects = new EffectLogSlice($this->effectEntries($session->events));
-        $store->workspaceView = $this->workspace($projections);
+        $store->activity = self::activity($projections);
+        $store->effects = new EffectLogSlice(self::effectEntries($session->events));
+        $store->workspaceView = self::workspace($projections);
     }
 
     private static function tokenProjection(
@@ -287,7 +287,7 @@ final class TheatronReplayHydrator
         return array_values(array_filter($value, static fn(mixed $item): bool => is_string($item)));
     }
 
-    private function project(
+    private static function project(
         ReplaySession $session,
     ): ProjectionSet {
         $projections = ProjectionSet::empty($session->sessionId);
@@ -303,7 +303,7 @@ final class TheatronReplayHydrator
      * @param list<HarnessEvent> $events
      * @return list<ConversationTurn>
      */
-    private function turns(
+    private static function turns(
         array $events,
     ): array {
         $turns = [];
@@ -333,7 +333,7 @@ final class TheatronReplayHydrator
                 );
             }
 
-            $projection = $this->projection($event);
+            $projection = self::projection($event);
             if ($projection !== null) {
                 $turns[$event->turnId] = $turns[$event->turnId]->withEvent(new ConversationTurnEvent(
                     id: $event->id,
@@ -344,7 +344,7 @@ final class TheatronReplayHydrator
                 ));
             }
 
-            $status = $this->turnStatus($event);
+            $status = self::turnStatus($event);
             if ($status !== null) {
                 $turns[$event->turnId] = $turns[$event->turnId]->withStatus($status);
             }
@@ -356,7 +356,13 @@ final class TheatronReplayHydrator
         ));
     }
 
-    private function activity(
+    private static function isStreaming(
+        ProjectionSet $projections,
+    ): bool {
+        return $projections->activity->status->value === 'streaming';
+    }
+
+    private static function activity(
         ProjectionSet $projections,
     ): ActivitySlice {
         $usage = $projections->activity->usage;
@@ -375,7 +381,7 @@ final class TheatronReplayHydrator
         );
     }
 
-    private function workspace(
+    private static function workspace(
         ProjectionSet $projections,
     ): WorkspaceViewSlice {
         $restore = $projections->workspace->restore;
@@ -401,14 +407,14 @@ final class TheatronReplayHydrator
      * @param list<HarnessEvent> $events
      * @return list<EffectLogEntry>
      */
-    private function effectEntries(
+    private static function effectEntries(
         array $events,
     ): array {
         $entries = [];
 
         foreach ($events as $event) {
             if ($event->cueType === 'athena.effect_log') {
-                $entries[$event->id] = $this->athenaEffectEntry($event);
+                $entries[$event->id] = self::athenaEffectEntry($event);
 
                 continue;
             }
@@ -423,13 +429,23 @@ final class TheatronReplayHydrator
                 continue;
             }
 
-            $entries[$effectId] = $this->effectEntry($event, $entries[$effectId] ?? null);
+            $entryKey = self::effectEntryKey($event, $effectId);
+            $entries[$entryKey] = self::effectEntry($event, $entries[$entryKey] ?? null);
         }
 
         return array_values($entries);
     }
 
-    private function projection(
+    private static function effectEntryKey(
+        HarnessEvent $event,
+        string $effectId,
+    ): string {
+        $activityId = self::stringValue($event->payload['activity_id'] ?? null);
+
+        return ($event->turnId ?? $activityId ?? 'session') . ':' . $effectId;
+    }
+
+    private static function projection(
         HarnessEvent $event,
     ): ?ConversationTurnEventProjection {
         $payload = self::payload($event);
@@ -546,7 +562,7 @@ final class TheatronReplayHydrator
                 summary: self::stringValue($payload['reason'] ?? null),
                 reason: self::stringValue($payload['reason'] ?? null),
             ),
-            'cue.usage.delta', 'cue.usage.final' => $this->usageProjection($event),
+            'cue.usage.delta', 'cue.usage.final' => self::usageProjection($event),
             'cue.activity.started' => new ConversationTurnEventProjection(
                 kind: ConversationTurnEventKind::ActivityStarted,
                 severity: ConversationTurnEventSeverity::Muted,
@@ -623,12 +639,12 @@ final class TheatronReplayHydrator
             'cue.runtime.error' => self::runtimeProjection($payload, ConversationTurnEventKind::RuntimeError, ConversationTurnEventSeverity::Error, 'runtime error'),
             'cue.runtime.warning' => self::runtimeProjection($payload, ConversationTurnEventKind::RuntimeWarning, ConversationTurnEventSeverity::Warning, 'runtime warning'),
             'cue.runtime.notice' => self::runtimeProjection($payload, ConversationTurnEventKind::RuntimeNotice, ConversationTurnEventSeverity::Info, 'runtime notice'),
-            'athena.effect_log' => $this->athenaProjection($event),
+            'athena.effect_log' => self::athenaProjection($event),
             default => null,
         };
     }
 
-    private function usageProjection(
+    private static function usageProjection(
         HarnessEvent $event,
     ): ConversationTurnEventProjection {
         $payload = self::payload($event);
@@ -650,7 +666,7 @@ final class TheatronReplayHydrator
         );
     }
 
-    private function athenaProjection(
+    private static function athenaProjection(
         HarnessEvent $event,
     ): ConversationTurnEventProjection {
         $resolution = Resolution::tryFrom(self::stringValue($event->payload['resolution'] ?? null) ?? '');
@@ -669,7 +685,7 @@ final class TheatronReplayHydrator
         );
     }
 
-    private function turnStatus(
+    private static function turnStatus(
         HarnessEvent $event,
     ): ?ConversationTurnStatus {
         $payload = self::payload($event);
@@ -689,7 +705,7 @@ final class TheatronReplayHydrator
         };
     }
 
-    private function effectEntry(
+    private static function effectEntry(
         HarnessEvent $event,
         ?EffectLogEntry $existing,
     ): EffectLogEntry {
@@ -728,7 +744,7 @@ final class TheatronReplayHydrator
         );
     }
 
-    private function athenaEffectEntry(
+    private static function athenaEffectEntry(
         HarnessEvent $event,
     ): EffectLogEntry {
         $outcome = self::stringValue($event->payload['outcome'] ?? null) ?? '';

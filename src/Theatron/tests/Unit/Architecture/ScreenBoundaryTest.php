@@ -10,9 +10,9 @@ use PHPUnit\Framework\TestCase;
 final class ScreenBoundaryTest extends TestCase
 {
     #[Test]
-    public function templateScreensDoNotDependOnAgoraOrSurrealPersistence(): void
+    public function sourceDoesNotDependOnAgoraOrSurrealPersistence(): void
     {
-        foreach (self::screenFiles() as $file) {
+        foreach (self::sourceFiles() as $file) {
             $source = file_get_contents($file);
             self::assertIsString($source);
 
@@ -25,9 +25,9 @@ final class ScreenBoundaryTest extends TestCase
     /**
      * @return list<string>
      */
-    private static function screenFiles(): array
+    private static function sourceFiles(): array
     {
-        $directory = dirname(__DIR__, 3) . '/src/Template/Screen';
+        $directory = dirname(__DIR__, 3) . '/src';
         $files = [];
 
         foreach (new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($directory)) as $file) {
