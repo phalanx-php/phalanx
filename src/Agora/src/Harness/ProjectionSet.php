@@ -103,6 +103,11 @@ final class ProjectionSet
         );
     }
 
+    public function eventSequence(): int
+    {
+        return $this->conversation->eventSequence();
+    }
+
     /** @return list<ProjectionCheckpoint> */
     public function checkpoints(
         ?\DateTimeImmutable $createdAt = null,

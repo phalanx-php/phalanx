@@ -9,12 +9,13 @@ use DateTimeZone;
 use Phalanx\Agora\Harness\ProjectionCheckpoint;
 use Phalanx\Agora\Harness\ProjectionKind;
 use Phalanx\Agora\Harness\ProjectionSet;
+use Phalanx\Agora\Harness\Replay\ProjectionCheckpointReader;
 use Phalanx\Agora\Harness\ResumePoint;
 use Phalanx\Agora\Harness\ResumeStatus;
 use Phalanx\Surreal\Surreal;
 use Phalanx\Surreal\SurrealException;
 
-final class SurrealHarnessStore
+final class SurrealHarnessStore implements ProjectionCheckpointReader
 {
     private SurrealEventLog $events;
 

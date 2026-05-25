@@ -71,6 +71,7 @@ return [
             'phalanx-php/athena' => '^0.6',
             'phalanx-php/panoply' => '^0.6',
             'phalanx-php/surreal' => '^0.6',
+            'phalanx-php/theatron' => '^0.6',
         ],
         'devRequires' => [
             'phpunit/phpunit' => '^13.0',
@@ -85,9 +86,7 @@ return [
             'replay',
             'tools',
         ],
-        'suggests' => [
-            'phalanx-php/theatron' => 'TUI stage and projections for Agora harness sessions',
-        ],
+        'suggests' => [],
     ],
     'Archon' => [
         'package' => 'phalanx-php/archon',

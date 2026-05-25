@@ -38,6 +38,52 @@ class ConversationSlice
     ) {
     }
 
+    /**
+     * @param list<ConversationTurn> $turns
+     */
+    public static function fromTurns(
+        array $turns,
+        bool $isStreaming = false,
+    ): self {
+        $messages = [];
+
+        foreach ($turns as $turn) {
+            $messages[] = new ConversationMessage(
+                role: 'user',
+                text: $turn->userText,
+                channel: null,
+                complete: true,
+                at: $turn->at,
+            );
+
+            if ($turn->thinkingText() !== '') {
+                $messages[] = new ConversationMessage(
+                    role: 'assistant',
+                    text: $turn->thinkingText(),
+                    channel: 'thinking',
+                    complete: true,
+                    at: $turn->at,
+                );
+            }
+
+            if ($turn->assistantText() !== '') {
+                $messages[] = new ConversationMessage(
+                    role: 'assistant',
+                    text: $turn->assistantText(),
+                    channel: 'message',
+                    complete: true,
+                    at: $turn->at,
+                );
+            }
+        }
+
+        return new self(
+            messages: $messages,
+            turns: $turns,
+            isStreaming: $isStreaming,
+        );
+    }
+
     public function addUserMessage(string $text): self
     {
         $at = new DateTimeImmutable();
