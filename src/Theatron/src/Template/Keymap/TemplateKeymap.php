@@ -10,8 +10,10 @@ final class TemplateKeymap
     public static function entries(): array
     {
         return [
+            ...self::workspaceEntries(),
             ...self::composerEntries(),
             ...self::queueEntries(),
+            ...self::chatEntries(),
             ...self::blockEntries(),
             ...self::devToolsEntries(),
             ...self::settingsEntries(),
@@ -21,6 +23,19 @@ final class TemplateKeymap
             ...self::appEntries(),
             new KeymapEntry('Overlay', 'Esc', 'close overlay'),
             new KeymapEntry('Overlay', 'q', 'close overlay'),
+        ];
+    }
+
+    /** @return list<KeymapEntry> */
+    private static function workspaceEntries(): array
+    {
+        return [
+            new KeymapEntry('Workspace', 'h/Left', 'previous focus'),
+            new KeymapEntry('Workspace', 'l/Right', 'next focus'),
+            new KeymapEntry('Workspace', 'i/Enter', 'enter insert mode'),
+            new KeymapEntry('Workspace', 'Tab', 'next focus'),
+            new KeymapEntry('Workspace', 'Shift+Tab', 'previous focus'),
+            new KeymapEntry('Workspace', 'Esc', 'normal mode'),
         ];
     }
 
@@ -57,10 +72,21 @@ final class TemplateKeymap
     }
 
     /** @return list<KeymapEntry> */
+    private static function chatEntries(): array
+    {
+        return [
+            new KeymapEntry('Chat', 'Ctrl+P', 'focus chat thread'),
+            new KeymapEntry('Chat', 'j/Ctrl+N', 'scroll down'),
+            new KeymapEntry('Chat', 'k/Ctrl+P', 'scroll up'),
+            new KeymapEntry('Chat', 'G', 'oldest turn'),
+            new KeymapEntry('Chat', 'Enter', 'send or expand'),
+        ];
+    }
+
+    /** @return list<KeymapEntry> */
     private static function blockEntries(): array
     {
         return [
-            new KeymapEntry('Blocks', 'Ctrl+P', 'focus activity blocks'),
             new KeymapEntry('Blocks', 'Up/Down', 'move focused block'),
             new KeymapEntry('Blocks', 'Enter', 'open focused block'),
             new KeymapEntry('Blocks', 'i', 'return to composer'),

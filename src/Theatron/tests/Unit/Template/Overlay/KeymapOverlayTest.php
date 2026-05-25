@@ -35,8 +35,10 @@ final class KeymapOverlayTest extends TestCase
         self::assertSame('Keymap', $result->title);
 
         $text = self::flatten($result);
+        self::assertStringContainsString('Workspace', $text);
         self::assertStringContainsString('Composer', $text);
         self::assertStringContainsString('Queue', $text);
+        self::assertStringContainsString('Chat', $text);
         self::assertStringContainsString('Blocks', $text);
         self::assertStringContainsString('DevTools', $text);
         self::assertStringContainsString('Settings', $text);
@@ -53,6 +55,11 @@ final class KeymapOverlayTest extends TestCase
         self::assertStringContainsString('line start/end', $text);
         self::assertStringContainsString('Ctrl+U', $text);
         self::assertStringContainsString('clear before cursor', $text);
+        self::assertStringContainsString('Ctrl+P', $text);
+        self::assertStringContainsString('focus chat thread', $text);
+        self::assertStringNotContainsString('focus activity blocks', $text);
+        self::assertStringContainsString('j/Ctrl+N', $text);
+        self::assertStringContainsString('scroll down', $text);
         self::assertStringContainsString('Left/Right', $text);
         self::assertStringContainsString('switch tab', $text);
         self::assertStringContainsString('Space', $text);
@@ -80,6 +87,40 @@ final class KeymapOverlayTest extends TestCase
 
             self::assertCount(1, $matches, $chord->combo);
         }
+    }
+
+    #[Test]
+    public function templateKeymapContainsSourceBackedScreenBindings(): void
+    {
+        self::assertKeymapEntry('Workspace', 'h/Left', 'previous focus');
+        self::assertKeymapEntry('Workspace', 'l/Right', 'next focus');
+        self::assertKeymapEntry('Workspace', 'i/Enter', 'enter insert mode');
+        self::assertKeymapEntry('Workspace', 'Tab', 'next focus');
+        self::assertKeymapEntry('Workspace', 'Shift+Tab', 'previous focus');
+        self::assertKeymapEntry('Workspace', 'Esc', 'normal mode');
+        self::assertKeymapEntry('Chat', 'Ctrl+P', 'focus chat thread');
+        self::assertKeymapEntry('Chat', 'j/Ctrl+N', 'scroll down');
+        self::assertKeymapEntry('Chat', 'k/Ctrl+P', 'scroll up');
+        self::assertKeymapEntry('Chat', 'G', 'oldest turn');
+        self::assertKeymapEntry('Chat', 'Enter', 'send or expand');
+        self::assertKeymapEntry('Blocks', 'Up/Down', 'move focused block');
+        self::assertKeymapEntry('Blocks', 'Enter', 'open focused block');
+        self::assertKeymapEntry('Blocks', 'i', 'return to composer');
+        self::assertKeymapEntry('DevTools', 'Left/Right', 'switch tab');
+        self::assertKeymapEntry('DevTools', 'Up/Down', 'move request focus');
+        self::assertKeymapEntry('DevTools', 'Enter', 'open request detail');
+        self::assertKeymapEntry('DevTools', 'Esc', 'back');
+        self::assertKeymapEntry('Settings', 'Left/Right', 'switch tab');
+        self::assertKeymapEntry('Settings', 'Up/Down', 'move item focus');
+        self::assertKeymapEntry('Settings', 'Space', 'toggle item');
+        self::assertKeymapEntry('Settings', 'Enter', 'toggle item');
+        self::assertKeymapEntry('Settings', 'Esc', 'back');
+        self::assertKeymapEntry('Detail', 'Up/Down', 'scroll request detail');
+        self::assertKeymapEntry('Detail', 'Esc', 'back');
+        self::assertKeymapEntry('Agent Board', 'j/k', 'move agent focus');
+        self::assertKeymapEntry('Agent Board', 'Up/Down', 'move agent focus');
+        self::assertKeymapEntry('Effect Approval', 'A', 'approve effect');
+        self::assertKeymapEntry('Effect Approval', 'D', 'deny effect');
     }
 
     #[Test]
@@ -139,6 +180,18 @@ final class KeymapOverlayTest extends TestCase
         self::assertInstanceOf(KeymapOverlay::class, $mounted->component);
         self::assertStringContainsString('^X ?', self::flatten($rendered));
         self::assertStringContainsString('close overlay', self::flatten($rendered));
+    }
+
+    private static function assertKeymapEntry(string $section, string $combo, string $label): void
+    {
+        $matches = array_filter(
+            TemplateKeymap::entries(),
+            static fn($entry): bool => $entry->section === $section
+                && $entry->combo === $combo
+                && $entry->label === $label,
+        );
+
+        self::assertCount(1, $matches, "{$section} {$combo} {$label}");
     }
 
     private static function flatten(Renderable $renderable): string
