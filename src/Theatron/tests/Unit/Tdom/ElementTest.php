@@ -27,6 +27,7 @@ use Phalanx\Theatron\Text\Line;
 use Phalanx\Theatron\Text\Span;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+
 use function Phalanx\Theatron\Ui\text;
 
 final class ElementTest extends TestCase

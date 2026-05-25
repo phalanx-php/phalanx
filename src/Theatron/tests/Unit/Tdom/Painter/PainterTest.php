@@ -38,6 +38,7 @@ use Phalanx\Theatron\Text\Line;
 use Phalanx\Theatron\Text\Span;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+
 use function Phalanx\Theatron\Ui\column;
 use function Phalanx\Theatron\Ui\mount;
 use function Phalanx\Theatron\Ui\panel;

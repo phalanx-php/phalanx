@@ -36,6 +36,11 @@ final class ComposerChordMap
         };
     }
 
+    public static function startsSequence(KeyEvent $event): bool
+    {
+        return $event->ctrl && $event->is('x');
+    }
+
     public static function entryFor(string $combo): ?KeymapEntry
     {
         foreach (self::entries() as $entry) {

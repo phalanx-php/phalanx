@@ -24,8 +24,6 @@ final class ChatInputHandler implements Focusable, AcceptsInput
 {
     use TextInputBehavior;
 
-    private bool $awaitingChord = false;
-
     public function __construct(
         private ChatScreen $screen,
     ) {
@@ -33,16 +31,20 @@ final class ChatInputHandler implements Focusable, AcceptsInput
 
     public function handleInput(KeyEvent $event): bool
     {
-        if ($this->awaitingChord) {
-            $this->awaitingChord = false;
-            $this->screen->setInputChordPrefix(false);
+        if ($this->screen->isAwaitingInputChord()) {
+            $this->screen->clearInputChordPrefix();
 
-            return $this->handleChord($event);
+            if ($event->is(Key::Escape)) {
+                return true;
+            }
+
+            $this->handleChord($event);
+
+            return true;
         }
 
-        if ($event->ctrl && $event->is('x')) {
-            $this->awaitingChord = true;
-            $this->screen->setInputChordPrefix(true);
+        if (ComposerChordMap::startsSequence($event)) {
+            $this->screen->beginInputChordPrefix();
 
             return true;
         }

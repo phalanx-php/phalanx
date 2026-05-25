@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Theatron\Template;
 
 use Phalanx\Theatron\Input\InputModeSlice;
+use Phalanx\Theatron\Input\KeySequenceState;
 use Phalanx\Theatron\State\Store;
 use Phalanx\Theatron\Template\Slice\ActivitySlice;
 use Phalanx\Theatron\Template\Slice\AgentRegistrySlice;
@@ -88,6 +89,13 @@ class AppStore extends Store
         }
     }
 
+    public KeySequenceState $keySequence {
+        get => $this->read(KeySequenceState::class);
+        set {
+            $this->write(KeySequenceState::class, $value);
+        }
+    }
+
     public function __construct()
     {
         $this->register(ConversationSlice::class, new ConversationSlice());
@@ -100,5 +108,6 @@ class AppStore extends Store
         $this->register(SettingsSlice::class, new SettingsSlice());
         $this->register(InputModeSlice::class, new InputModeSlice());
         $this->register(WorkspaceViewSlice::class, new WorkspaceViewSlice());
+        $this->register(KeySequenceState::class, new KeySequenceState());
     }
 }

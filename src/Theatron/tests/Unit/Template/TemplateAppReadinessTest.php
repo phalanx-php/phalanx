@@ -20,6 +20,7 @@ use Phalanx\Theatron\Input\ModeDispatcher;
 use Phalanx\Theatron\Navigation\Navigator;
 use Phalanx\Theatron\Reactive\SignalRegistry;
 use Phalanx\Theatron\Stage\ScreenMode;
+use Phalanx\Theatron\Stage\Stage;
 use Phalanx\Theatron\Stage\StageConfig;
 use Phalanx\Theatron\Styling\Theme;
 use Phalanx\Theatron\Tdom\Element\ColumnElement;
@@ -98,6 +99,38 @@ final class TemplateAppReadinessTest extends PhalanxTestCase
         self::assertNull($registry->resolve(new KeyEvent('d', ctrl: true)));
         self::assertNull($registry->resolve(new KeyEvent('s', ctrl: true)));
         self::assertNotNull($registry->resolve(new KeyEvent('c', ctrl: true)));
+    }
+
+    #[Test]
+    public function templateKeySequenceEscapeCancelsPrefixThroughAppDispatch(): void
+    {
+        $stream = fopen('php://memory', 'w+');
+        self::assertIsResource($stream);
+
+        $app = self::templateBuilder($stream)->build();
+        $testApp = $this->testApp([], new TheatronServiceBundle($app));
+
+        $testApp->application->scoped(static function (ExecutionScope $scope) use ($app, $stream): void {
+            $store = $scope->service(AppStore::class);
+            $scope->go(static function () use ($app, $scope): void {
+                $app->start($scope);
+            }, 'theatron-app');
+            $scope->delay(0.01);
+
+            self::dispatchInput($app->stage, new KeyEvent('x', ctrl: true));
+            $scope->delay(0.01);
+
+            self::assertTrue($store->keySequence->isAwaitingControlX());
+            rewind($stream);
+            self::assertStringContainsString('^X …', self::stripAnsi((string) stream_get_contents($stream)));
+
+            self::dispatchInput($app->stage, new KeyEvent(Key::Escape));
+            $scope->delay(0.01);
+
+            self::assertFalse($store->keySequence->isAwaitingControlX());
+
+            $scope->cancellation()->cancel();
+        });
     }
 
     #[Test]
@@ -187,6 +220,12 @@ final class TemplateAppReadinessTest extends PhalanxTestCase
     private static function stripAnsi(string $text): string
     {
         return (string) preg_replace('/\x1B(?:[@-Z\\\\-_]|\[[0-?]*[ -\/]*[@-~])/', '', $text);
+    }
+
+    private static function dispatchInput(Stage $stage, KeyEvent $event): void
+    {
+        $method = new \ReflectionMethod($stage, 'dispatchInput');
+        $method->invoke($stage, $event);
     }
 
     private static function flatten(Renderable|string $renderable): string

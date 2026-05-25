@@ -43,12 +43,12 @@ final class ComputedTest extends TestCase
             return $sig->get() + 1;
         });
 
-        $_ = $computed->value;
-        $_ = $computed->value;
+        self::assertSame(4, $computed->value);
+        self::assertSame(4, $computed->value);
         self::assertSame(1, $evals);
 
         $sig->set(10);
-        $_ = $computed->value;
+        self::assertSame(11, $computed->value);
         self::assertSame(2, $evals);
     }
 
@@ -76,7 +76,7 @@ final class ComputedTest extends TestCase
             return $computed->value + 1;
         });
 
-        $_ = $computed->value;
+        self::assertIsInt($computed->value);
     }
 
     #[Test]
@@ -90,7 +90,7 @@ final class ComputedTest extends TestCase
             return $sig->get();
         });
 
-        $_ = $computed->value;
+        self::assertSame(1, $computed->value);
         self::assertSame(1, $evals);
 
         $computed->dispose();
@@ -116,7 +116,7 @@ final class ComputedTest extends TestCase
         $notified = 0;
 
         $computed = new Computed(static fn(): int => $sig->get() + 10);
-        $_ = $computed->value;
+        self::assertSame(11, $computed->value);
 
         $computed->subscribe(static function () use (&$notified): void {
             $notified++;
@@ -166,7 +166,7 @@ final class ComputedTest extends TestCase
             $notified++;
         });
 
-        $_ = $computed->value;
+        self::assertSame(1, $computed->value);
 
         $computed->dispose();
         self::assertSame(0, $computed->subscriberCount);

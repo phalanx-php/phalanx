@@ -51,7 +51,6 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, DeclaresBinding
     private(set) Signal $inputText;
     private(set) Signal $inputCursor;
     private(set) Signal $inputKillRing;
-    private(set) Signal $inputChordPrefix;
     private(set) ChatConversationHandler $conversationHandler;
     private(set) ChatInputHandler $inputHandler;
     private MarkdownRenderer $markdown;
@@ -65,7 +64,6 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, DeclaresBinding
         $this->inputText = new Signal('');
         $this->inputCursor = new Signal(0);
         $this->inputKillRing = new Signal('');
-        $this->inputChordPrefix = new Signal(false);
         $this->conversationHandler = new ChatConversationHandler($this);
         $this->inputHandler = new ChatInputHandler($this);
         $this->markdown = new MarkdownRenderer();
@@ -234,9 +232,19 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, DeclaresBinding
         $this->store->input = $this->store->input->withText($text);
     }
 
-    public function setInputChordPrefix(bool $active): void
+    public function beginInputChordPrefix(): void
     {
-        $this->inputChordPrefix->set($active);
+        $this->store->keySequence = $this->store->keySequence->beginControlX();
+    }
+
+    public function clearInputChordPrefix(): void
+    {
+        $this->store->keySequence = $this->store->keySequence->clear();
+    }
+
+    public function isAwaitingInputChord(): bool
+    {
+        return $this->store->keySequence->isAwaitingControlX();
     }
 
     public function openDevTools(): bool
@@ -646,7 +654,7 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, DeclaresBinding
             }
         }
 
-        if ((bool) $this->inputChordPrefix->get()) {
+        if ($this->store->keySequence->isAwaitingControlX()) {
             $spans[] = self::pipe();
             $spans[] = Span::styled('^X …', TextStyle::new()->fg(Color::indexed(245)));
         }
@@ -724,6 +732,6 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, DeclaresBinding
     {
         $this->inputText->set($text);
         $this->inputCursor->set(mb_strlen($text));
-        $this->inputChordPrefix->set(false);
+        $this->clearInputChordPrefix();
     }
 }

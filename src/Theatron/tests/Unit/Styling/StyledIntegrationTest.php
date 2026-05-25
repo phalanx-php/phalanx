@@ -27,11 +27,6 @@ use PHPUnit\Framework\TestCase;
 
 final class StyledIntegrationTest extends TestCase
 {
-    protected function setUp(): void
-    {
-        Painter::reset();
-    }
-
     #[Test]
     public function paintContextPropagatesStylesheet(): void
     {
@@ -212,6 +207,11 @@ final class StyledIntegrationTest extends TestCase
 
         $mounted->dispose();
         self::assertNull($mounted->stylesheet());
+    }
+
+    protected function setUp(): void
+    {
+        Painter::reset();
     }
 
     protected function tearDown(): void

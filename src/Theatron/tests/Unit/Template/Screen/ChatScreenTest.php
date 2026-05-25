@@ -842,8 +842,10 @@ final class ChatScreenTest extends TestCase
         $handler = new ChatInputHandler($screen);
 
         self::assertTrue($handler->handleInput(new KeyEvent('x', ctrl: true)));
+        self::assertTrue($store->keySequence->isAwaitingControlX());
         self::assertTrue($handler->handleInput(new KeyEvent('u')));
 
+        self::assertFalse($store->keySequence->isAwaitingControlX());
         self::assertSame('second queued', $screen->inputText->get());
         self::assertSame('second queued', $store->input->text);
         self::assertSame(['first queued'], $store->input->queue);
@@ -861,8 +863,10 @@ final class ChatScreenTest extends TestCase
         $handler = new ChatInputHandler($screen);
 
         self::assertTrue($handler->handleInput(new KeyEvent('x', ctrl: true)));
+        self::assertTrue($store->keySequence->isAwaitingControlX());
         self::assertTrue($handler->handleInput(new KeyEvent('a')));
 
+        self::assertFalse($store->keySequence->isAwaitingControlX());
         self::assertSame("first queued\n\nsecond queued\n\nthird queued", $screen->inputText->get());
         self::assertSame("first queued\n\nsecond queued\n\nthird queued", $store->input->text);
         self::assertSame([], $store->input->queue);
@@ -888,6 +892,60 @@ final class ChatScreenTest extends TestCase
         self::assertTrue($handler->handleInput(new KeyEvent('x', ctrl: true)));
         self::assertTrue($handler->handleInput(new KeyEvent('?')));
         self::assertSame(KeymapOverlay::class, $navigator->overlay);
+        self::assertFalse($store->keySequence->isAwaitingControlX());
+    }
+
+    #[Test]
+    public function inputHandlerCtrlXPrefixIsVisibleInSharedStatusState(): void
+    {
+        $store = new AppStore();
+        $screen = new ChatScreen($store);
+        $handler = new ChatInputHandler($screen);
+
+        self::assertFalse($store->keySequence->isAwaitingControlX());
+
+        self::assertTrue($handler->handleInput(new KeyEvent('x', ctrl: true)));
+
+        self::assertTrue($store->keySequence->isAwaitingControlX());
+        self::assertStringContainsString('^X …', self::flatten($screen($this->makeContext($store))));
+
+        self::assertTrue($handler->handleInput(new KeyEvent(Key::Escape)));
+
+        self::assertFalse($store->keySequence->isAwaitingControlX());
+        self::assertStringNotContainsString('^X …', self::flatten($screen($this->makeContext($store))));
+    }
+
+    #[Test]
+    public function inputHandlerInvalidCtrlXChordClearsPrefixWithoutInsertingText(): void
+    {
+        $store = new AppStore();
+        $screen = new ChatScreen($store);
+        $handler = new ChatInputHandler($screen);
+
+        self::assertTrue($handler->handleInput(new KeyEvent('x', ctrl: true)));
+        self::assertTrue($handler->handleInput(new KeyEvent('z')));
+
+        self::assertFalse($store->keySequence->isAwaitingControlX());
+        self::assertSame('', $screen->inputText->get());
+        self::assertSame('', $store->input->text);
+    }
+
+    #[Test]
+    public function inputHandlerNativeControlKeysDoNotEnterAppChordState(): void
+    {
+        $store = new AppStore();
+        $screen = new ChatScreen($store);
+        $handler = new ChatInputHandler($screen);
+
+        self::assertTrue($handler->handleInput(new KeyEvent('Z')));
+        self::assertTrue($handler->handleInput(new KeyEvent('e')));
+        self::assertTrue($handler->handleInput(new KeyEvent('u')));
+        self::assertTrue($handler->handleInput(new KeyEvent('s')));
+        self::assertTrue($handler->handleInput(new KeyEvent('u', ctrl: true)));
+
+        self::assertFalse($store->keySequence->isAwaitingControlX());
+        self::assertSame('', $screen->inputText->get());
+        self::assertSame('', $store->input->text);
     }
 
     #[Test]
@@ -920,9 +978,9 @@ final class ChatScreenTest extends TestCase
 
         self::assertFalse($handler->handleInput(new KeyEvent(Key::Up)));
         self::assertTrue($handler->handleInput(new KeyEvent('x', ctrl: true)));
-        self::assertFalse($handler->handleInput(new KeyEvent('u')));
+        self::assertTrue($handler->handleInput(new KeyEvent('u')));
         self::assertTrue($handler->handleInput(new KeyEvent('x', ctrl: true)));
-        self::assertFalse($handler->handleInput(new KeyEvent('a')));
+        self::assertTrue($handler->handleInput(new KeyEvent('a')));
 
         self::assertSame('draft', $screen->inputText->get());
         self::assertSame('draft', $store->input->text);

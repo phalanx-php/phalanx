@@ -11,6 +11,7 @@ use Phalanx\Theatron\Styling\Theme;
 use Phalanx\Theatron\Text\Line;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+
 use function Phalanx\Theatron\Ui\input;
 use function Phalanx\Theatron\Ui\panel;
 use function Phalanx\Theatron\Ui\progress;

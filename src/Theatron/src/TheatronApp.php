@@ -29,6 +29,7 @@ use Phalanx\Theatron\Focus\FocusManager;
 use Phalanx\Theatron\Input\InputEvent;
 use Phalanx\Theatron\Input\InputMode;
 use Phalanx\Theatron\Input\InputModeSlice;
+use Phalanx\Theatron\Input\Key;
 use Phalanx\Theatron\Input\KeyEvent;
 use Phalanx\Theatron\Input\ModeDispatcher;
 use Phalanx\Theatron\Input\NormalModeHandler;
@@ -47,6 +48,7 @@ use Phalanx\Theatron\Tdom\Painter\PaintContext;
 use Phalanx\Theatron\Tdom\Painter\Painter;
 use Phalanx\Theatron\Tdom\Renderable;
 use Phalanx\Theatron\Template\AppStore;
+use Phalanx\Theatron\Template\Screen\ChatScreen;
 use Phalanx\Theatron\Template\Slice\WorkspaceViewSlice;
 
 final class TheatronApp
@@ -324,6 +326,18 @@ final class TheatronApp
 
                 $activeBeforeDispatch = $navigator->active();
 
+                $templateKeySequence = $store instanceof AppStore ? $store : null;
+
+                if (
+                    $templateKeySequence !== null
+                    && self::cancelTemplateKeySequence($event, $templateKeySequence, $activeBeforeDispatch)
+                ) {
+                    $templateKeySequence->keySequence = $templateKeySequence->keySequence->clear();
+                    $stage->requestFrame();
+
+                    return;
+                }
+
                 $handled = $dispatcher->dispatch($event);
 
                 if ($handled) {
@@ -387,6 +401,18 @@ final class TheatronApp
         }
 
         $dispatcher->restore($saved->mode, $saved->focusTarget);
+    }
+
+    /** @param class-string<Screen> $activeScreen */
+    private static function cancelTemplateKeySequence(
+        KeyEvent $event,
+        ?AppStore $store,
+        string $activeScreen,
+    ): bool {
+        return $event->is(Key::Escape)
+            && $store instanceof AppStore
+            && $store->keySequence->isAwaitingControlX()
+            && $activeScreen === ChatScreen::class;
     }
 
     private static function rebuildFocus(FocusManager $focus, WorkspaceNavigator $navigator, ?Store $store): void

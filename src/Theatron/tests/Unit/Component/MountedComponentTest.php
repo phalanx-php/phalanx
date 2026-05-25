@@ -27,6 +27,7 @@ use Phalanx\Theatron\Tests\Support\RecordingTaskScope;
 use Phalanx\Trace\TraceType;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+
 use function Phalanx\Theatron\Ui\mount;
 
 final class MountedComponentTest extends TestCase
@@ -106,8 +107,6 @@ final class MountedComponentTest extends TestCase
     #[Test]
     public function renderRunsInsideTrackerFrame(): void
     {
-        $trackedDeps = null;
-
         $signal = new Signal('hello');
         $component = new class ($signal) implements Component {
             public function __construct(

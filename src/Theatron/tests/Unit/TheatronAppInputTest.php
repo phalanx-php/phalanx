@@ -31,6 +31,7 @@ use Phalanx\Theatron\TheatronServiceBundle;
 use PHPUnit\Framework\Attributes\Test;
 use ReflectionMethod;
 use ReflectionProperty;
+
 use function Phalanx\Theatron\Ui\text;
 
 final class TheatronAppInputTest extends PhalanxTestCase

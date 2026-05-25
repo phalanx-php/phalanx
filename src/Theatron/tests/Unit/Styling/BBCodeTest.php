@@ -15,11 +15,6 @@ final class BBCodeTest extends TestCase
 {
     private Theme $theme;
 
-    protected function setUp(): void
-    {
-        $this->theme = Theme::default();
-    }
-
     #[Test]
     public function plainTextFastPath(): void
     {
@@ -293,5 +288,10 @@ final class BBCodeTest extends TestCase
 
         $text = implode('', array_map(static fn ($s) => $s->content, $line->spans));
         self::assertSame('hello', $text);
+    }
+
+    protected function setUp(): void
+    {
+        $this->theme = Theme::default();
     }
 }

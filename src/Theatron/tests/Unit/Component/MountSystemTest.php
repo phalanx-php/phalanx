@@ -25,6 +25,7 @@ use Phalanx\Theatron\Tdom\Renderable;
 use Phalanx\Theatron\Tdom\Style;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+
 use function Phalanx\Theatron\Ui\column;
 use function Phalanx\Theatron\Ui\mount;
 use function Phalanx\Theatron\Ui\row;

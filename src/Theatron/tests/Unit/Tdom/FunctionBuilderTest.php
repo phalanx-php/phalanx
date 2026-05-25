@@ -28,6 +28,7 @@ use Phalanx\Theatron\Text\Span;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+
 use function Phalanx\Theatron\Ui\column;
 use function Phalanx\Theatron\Ui\divider;
 use function Phalanx\Theatron\Ui\grid;

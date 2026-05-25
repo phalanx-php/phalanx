@@ -27,7 +27,7 @@ final class StoreTest extends TestCase
         $store = new OlympusStore();
         $frame = Tracker::push();
 
-        $_ = $store->heroes;
+        self::assertSame([], $store->heroes->names);
 
         $deps = Tracker::pop($frame);
         self::assertCount(1, $deps);

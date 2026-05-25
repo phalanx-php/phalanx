@@ -71,7 +71,7 @@ final class ResourceTest extends TestCase
         $callCount = 0;
 
         $resource = new Resource(
-            fetcher: static function (mixed $key) use (&$callCount): string {
+            fetcher: static function (mixed $_key) use (&$callCount): string {
                 $callCount++;
                 return "v{$callCount}";
             },
