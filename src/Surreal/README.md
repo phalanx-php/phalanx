@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/banner.svg" alt="Phalanx" width="520">
+</p>
+
 # Phalanx Surreal
 
 Native SurrealDB HTTP and live-query RPC integration for Phalanx through Iris, Hermes, and Aegis-managed waits.

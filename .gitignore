@@ -4,6 +4,7 @@
 
 # Explicit includes
 !.gitignore
+!.gitattributes
 !.github/
 !.env.example
 !.php-cs-fixer.php

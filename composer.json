@@ -116,6 +116,37 @@
             "url": "src/*"
         }
     ],
+    "archive": {
+        "exclude": [
+            "/.aimind",
+            "/.claude",
+            "/.daemon8",
+            "/.DS_Store",
+            "/.github",
+            "/.idea",
+            "/.php-cs-fixer.cache",
+            "/.phpstan-cache",
+            "/.phpunit.result.cache",
+            "/README.ai-draft.md",
+            "/benchmarks",
+            "/demos",
+            "/docs",
+            "/examples",
+            "/history.txt",
+            "/phpcs.xml",
+            "/phpstan.neon",
+            "/phpunit.xml",
+            "/rector.php",
+            "/src/*/demos",
+            "/src/*/phpunit.xml",
+            "/src/*/phpunit.xml.dist",
+            "/src/*/tests",
+            "/tests",
+            "/tmp",
+            "/tools",
+            "/vendor"
+        ]
+    },
     "scripts": {
         "test": "php -d memory_limit=1G vendor/bin/phpunit",
         "test:panoply:integration": "php -d memory_limit=512M vendor/bin/phpunit -c src/Panoply/phpunit.xml.dist --testsuite=Integration --do-not-fail-on-empty-test-suite",
@@ -203,15 +234,16 @@
         ],
         "demo:surreal:memory": "php demos/surreal/01-in-memory-rpc/demo.php",
         "demo:surreal:live": "php demos/surreal/02-live-query/demo.php",
-        "demo:theatron": "php src/Theatron/demos/full.php",
+        "demo:theatron": "php demos/theatron/full.php",
         "demo:skopos:basic-dev": "php demos/skopos/01-basic-dev/skopos.php",
-        "examples:lint": "find demos src/Theatron/demos -name '*.php' -not -path '*/vendor/*' -print0 | xargs -0 -n1 php -l > /dev/null",
+        "examples:lint": "find demos -name '*.php' -not -path '*/vendor/*' -print0 | xargs -0 -n1 php -l > /dev/null",
         "gen:test-accessors": "php src/Aegis/bin/regenerate-accessors",
         "gen:test-accessors:check": "php src/Aegis/bin/check-accessors-in-sync",
         "post-autoload-dump": "@gen:test-accessors",
         "check": [
             "@modules:check",
             "@modules:manifests:check",
+            "@modules:split-proof",
             "@analyse",
             "@rector:dry",
             "@cs",
@@ -242,6 +274,7 @@
         "modules:manifests": "php tools/generate-module-manifests.php --write",
         "modules:manifests:check": "php tools/generate-module-manifests.php --check",
         "modules:install-proof": "php tools/prove-module-install.php",
+        "modules:split-proof": "php tools/prove-module-split.php",
         "split:dry": "php tools/split-modules.php --dry-run"
     },
     "config": {

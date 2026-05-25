@@ -1,16 +1,10 @@
-#!/usr/bin/env php
 <?php
 
 declare(strict_types=1);
 
-$autoload = dirname(__DIR__) . '/vendor/autoload.php';
+require __DIR__ . '/../../vendor/autoload.php';
 
-if (!is_file($autoload)) {
-    $autoload = dirname(__DIR__, 3) . '/vendor/autoload.php';
-}
-
-require_once $autoload;
-
+use Phalanx\Demos\Kit\DemoReport;
 use Phalanx\Panoply\Cue\Activity\Completed as ActivityCompleted;
 use Phalanx\Panoply\Cue\Activity\Started as ActivityStarted;
 use Phalanx\Panoply\Cue\Output\Channel;
@@ -25,10 +19,9 @@ use Phalanx\Theatron\Agent\LlmRequestRecordingTransport;
 use Phalanx\Theatron\Agent\MockAgentExecutor;
 use Phalanx\Theatron\Agent\StreamReactor;
 use Phalanx\Theatron\Template\AppStore;
+use Phalanx\Theatron\Template\Slice\ActivityStatus;
 
-// Scripted Panoply cue stream that mimics a Zeus oracle response.
-// No OpenSwoole, no Ollama — validates the reactive pipeline from cues to store.
-
+$report = new DemoReport('Theatron Reactive Pipeline');
 $activityId = 'zeus-oracle-001';
 $now = new DateTimeImmutable();
 
@@ -133,19 +126,24 @@ iterator_to_array($requestTransport->stream(
 $conversation = $store->conversation;
 $activity = $store->activity;
 $request = $store->requests->focused();
+$message = $conversation->messages[0] ?? null;
 
-echo "--- Theatron reactive pipeline demo ---\n";
-echo sprintf("Messages: %d\n", count($conversation->messages));
+$report->record(
+    'reactive stream writes one assistant message',
+    count($conversation->messages) === 1
+        && $message !== null
+        && $message->role === 'assistant'
+        && $message->text === 'From Olympus, the phalanx holds.',
+);
+$report->record('streaming flag is cleared', !$conversation->isStreaming);
+$report->record('activity completes', $activity->status === ActivityStatus::Completed);
+$report->record('usage accumulates input tokens', $activity->inputTokens === 12);
+$report->record('usage accumulates output tokens', $activity->outputTokens === 5);
+$report->record('usage totals tokens', $activity->totalTokens === 17);
+$report->record('request recorder captures one request', count($store->requests->entries) === 1);
+$report->record(
+    'request recorder keeps focused method and path',
+    $request !== null && $request->method === 'POST' && $request->path === '/api/chat',
+);
 
-foreach ($conversation->messages as $i => $message) {
-    echo sprintf("  [%d] role=%s text=%s\n", $i, $message->role, $message->text);
-}
-
-echo sprintf("Streaming: %s\n", $conversation->isStreaming ? 'yes' : 'no');
-echo sprintf("Activity status: %s\n", $activity->status->name);
-echo sprintf("Input tokens: %d\n", $activity->inputTokens);
-echo sprintf("Output tokens: %d\n", $activity->outputTokens);
-echo sprintf("Total tokens: %d\n", $activity->totalTokens);
-echo sprintf("Recorded requests: %d\n", count($store->requests->entries));
-echo sprintf("Latest request: %s %s\n", $request->method, $request->path);
-echo "--- done ---\n";
+exit($report->exitCode());

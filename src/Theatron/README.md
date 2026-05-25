@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/banner.svg" alt="Phalanx" width="520">
+</p>
+
 # Theatron
 
 Async terminal UI framework for PHP 8.4+, built on the Phalanx runtime.
@@ -23,12 +27,6 @@ Run the bundled template app:
 
 ```bash
 php bin/theatron
-```
-
-Run the non-interactive pipeline demo:
-
-```bash
-php demos/full.php
 ```
 
 ## Current App Shape
@@ -407,5 +405,4 @@ vendor/bin/phpunit
 vendor/bin/phpstan analyse --memory-limit=1G
 vendor/bin/phpcs
 vendor/bin/rector process --dry-run
-php demos/full.php
 ```

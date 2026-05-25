@@ -34,6 +34,48 @@ function phalanx_module_manifest(string $module, array $meta): array
         $manifest['bin'] = $meta['bins'];
     }
 
+    $manifest['archive'] = [
+        'exclude' => [
+            '/.aimind',
+            '/.aimind/**',
+            '/.claude',
+            '/.claude/**',
+            '/.daemon8',
+            '/.daemon8/**',
+            '/.DS_Store',
+            '/.github',
+            '/.github/**',
+            '/.idea',
+            '/.idea/**',
+            '/.php-cs-fixer.cache',
+            '/.phpstan-cache',
+            '/.phpstan-cache/**',
+            '/.phpunit.result.cache',
+            '/brand',
+            '/brand/**',
+            '/demos',
+            '/demos/**',
+            '/docs',
+            '/docs/**',
+            '/examples',
+            '/examples/**',
+            '/phpcs.xml',
+            '/phpstan.neon',
+            '/phpunit.xml',
+            '/phpunit.xml.dist',
+            '/rector.php',
+            '/SPEC.md',
+            '/tests',
+            '/tests/**',
+            '/tmp',
+            '/tmp/**',
+            '/tools',
+            '/tools/**',
+            '/vendor',
+            '/vendor/**',
+        ],
+    ];
+
     $manifest['scripts'] = [
         'test' => phalanx_package_test_script($module),
     ];

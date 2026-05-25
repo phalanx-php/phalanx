@@ -10,7 +10,8 @@ final class SurrealBinaryLocator
 {
     public function __invoke(
         AppContext $ctx,
-    ): ?string {
+    ): ?string
+    {
         $path = $ctx->string('PATH', '');
 
         if ($path === '') {

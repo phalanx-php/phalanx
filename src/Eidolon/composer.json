@@ -33,6 +33,47 @@
     "require-dev": {
         "phpunit/phpunit": "^13.0"
     },
+    "archive": {
+        "exclude": [
+            "/.aimind",
+            "/.aimind/**",
+            "/.claude",
+            "/.claude/**",
+            "/.daemon8",
+            "/.daemon8/**",
+            "/.DS_Store",
+            "/.github",
+            "/.github/**",
+            "/.idea",
+            "/.idea/**",
+            "/.php-cs-fixer.cache",
+            "/.phpstan-cache",
+            "/.phpstan-cache/**",
+            "/.phpunit.result.cache",
+            "/brand",
+            "/brand/**",
+            "/demos",
+            "/demos/**",
+            "/docs",
+            "/docs/**",
+            "/examples",
+            "/examples/**",
+            "/phpcs.xml",
+            "/phpstan.neon",
+            "/phpunit.xml",
+            "/phpunit.xml.dist",
+            "/rector.php",
+            "/SPEC.md",
+            "/tests",
+            "/tests/**",
+            "/tmp",
+            "/tmp/**",
+            "/tools",
+            "/tools/**",
+            "/vendor",
+            "/vendor/**"
+        ]
+    },
     "scripts": {
         "test": "php -d memory_limit=512M vendor/bin/phpunit -c phpunit.xml.dist"
     },

@@ -2,8 +2,8 @@
   <img src="assets/banner.svg" alt="Phalanx" width="520">
 </p>
 
-# Phalanx Eidolon
+# Phalanx Agora
 
-Frontend bridge for Phalanx focused on typed route contracts, OpenAPI generation, Kubb integration, and signal-driven UI reactivity.
+Database-backed agent harness for Phalanx sessions, turns, events, tools, effects, and replay state.
 
 Part of the [Phalanx framework](https://github.com/phalanx-php/phalanx).
