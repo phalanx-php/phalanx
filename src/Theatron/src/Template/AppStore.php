@@ -14,6 +14,7 @@ use Phalanx\Theatron\Template\Slice\DevToolsSlice;
 use Phalanx\Theatron\Template\Slice\EffectLogSlice;
 use Phalanx\Theatron\Template\Slice\InputSlice;
 use Phalanx\Theatron\Template\Slice\LlmRequestSlice;
+use Phalanx\Theatron\Template\Slice\RuntimeStatusSlice;
 use Phalanx\Theatron\Template\Slice\SettingsSlice;
 use Phalanx\Theatron\Template\Slice\WorkspaceViewSlice;
 
@@ -82,6 +83,13 @@ class AppStore extends Store
         }
     }
 
+    public RuntimeStatusSlice $runtimeStatus {
+        get => $this->read(RuntimeStatusSlice::class);
+        set {
+            $this->write(RuntimeStatusSlice::class, $value);
+        }
+    }
+
     public WorkspaceViewSlice $workspaceView {
         get => $this->read(WorkspaceViewSlice::class);
         set {
@@ -107,6 +115,7 @@ class AppStore extends Store
         $this->register(DevToolsSlice::class, new DevToolsSlice());
         $this->register(SettingsSlice::class, new SettingsSlice());
         $this->register(InputModeSlice::class, new InputModeSlice());
+        $this->register(RuntimeStatusSlice::class, new RuntimeStatusSlice());
         $this->register(WorkspaceViewSlice::class, new WorkspaceViewSlice());
         $this->register(KeySequenceState::class, new KeySequenceState());
     }

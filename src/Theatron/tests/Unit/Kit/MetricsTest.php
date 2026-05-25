@@ -20,8 +20,14 @@ final class MetricsTest extends TestCase
     #[Test]
     public function memoryFormatsLargeValuesAsKilobytes(): void
     {
-        self::assertSame('1,024.0 KB', Metrics::memory(1_048_576));
-        self::assertSame('2,560.0 KB', Metrics::memory(2 * 1_048_576 + 524_288));
+        self::assertSame('1,023.0 KB', Metrics::memory(1_047_552));
+    }
+
+    #[Test]
+    public function memoryFormatsMegabytesAtOneMegabyteAndAbove(): void
+    {
+        self::assertSame('1.0 MB', Metrics::memory(1_048_576));
+        self::assertSame('2.5 MB', Metrics::memory(2 * 1_048_576 + 524_288));
     }
 
     #[Test]

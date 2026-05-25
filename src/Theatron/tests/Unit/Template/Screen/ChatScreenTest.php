@@ -24,6 +24,8 @@ use Phalanx\Theatron\Buffer\Buffer;
 use Phalanx\Theatron\Buffer\Rect;
 use Phalanx\Theatron\Component\MountSystem;
 use Phalanx\Theatron\Context\ScreenContext;
+use Phalanx\Theatron\Input\InputMode;
+use Phalanx\Theatron\Input\InputModeSlice;
 use Phalanx\Theatron\Input\Key;
 use Phalanx\Theatron\Input\KeyEvent;
 use Phalanx\Theatron\Navigation\Navigator;
@@ -47,6 +49,7 @@ use Phalanx\Theatron\Template\Screen\ConversationBlockDetailScreen;
 use Phalanx\Theatron\Template\Slice\ActivitySlice;
 use Phalanx\Theatron\Template\Slice\ActivityStatus;
 use Phalanx\Theatron\Template\Slice\ConversationSlice;
+use Phalanx\Theatron\Template\Slice\RuntimeStatusSlice;
 use Phalanx\Theatron\Text\Line;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -572,20 +575,32 @@ final class ChatScreenTest extends TestCase
     }
 
     #[Test]
-    public function statusBarRendersPocControls(): void
+    public function statusBarRendersSituationalHud(): void
     {
-        $screen = new ChatScreen(new AppStore());
+        $store = new AppStore();
+        $store->activity = $store->activity->withModelName('qwen3:4b');
+        $store->inputMode = new InputModeSlice(InputMode::Insert, 'input');
+        $store->runtimeStatus = new RuntimeStatusSlice('/home/sparta/project', '/home/sparta');
+        $screen = new ChatScreen($store);
 
         $text = self::flatten($screen->statusBar());
 
-        self::assertStringContainsString('^P blocks', $text);
+        self::assertStringContainsString('(Λ)', $text);
+        self::assertStringContainsString('qwen3:4b', $text);
+        self::assertStringContainsString('~/project', $text);
+        self::assertStringContainsString('mem', $text);
+        self::assertStringContainsString('alloc', $text);
+        self::assertStringContainsString('insert', $text);
         self::assertStringContainsString('^X ? keymap', $text);
-        self::assertStringContainsString('^X u undo', $text);
-        self::assertStringContainsString('^X a undo all', $text);
-        self::assertStringContainsString('^X d devtools', $text);
-        self::assertStringContainsString('^X s settings', $text);
-        self::assertStringContainsString('Enter send', $text);
-        self::assertStringContainsString('^C quit', $text);
+        self::assertMatchesRegularExpression('/mem [0-9,.]+ (?:B|KB|MB)/', $text);
+        self::assertMatchesRegularExpression('/alloc [0-9,.]+ (?:B|KB|MB)/', $text);
+        self::assertStringNotContainsString('^P blocks', $text);
+        self::assertStringNotContainsString('^X u undo', $text);
+        self::assertStringNotContainsString('^X a undo all', $text);
+        self::assertStringNotContainsString('^X d devtools', $text);
+        self::assertStringNotContainsString('^X s settings', $text);
+        self::assertStringNotContainsString('Enter send', $text);
+        self::assertStringNotContainsString('^C quit', $text);
     }
 
     #[Test]

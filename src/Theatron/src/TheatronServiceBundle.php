@@ -13,6 +13,8 @@ use Phalanx\Theatron\Stage\Stage;
 use Phalanx\Theatron\Stage\StageConfig;
 use Phalanx\Theatron\State\Store;
 use Phalanx\Theatron\Styling\Theme;
+use Phalanx\Theatron\Template\AppStore;
+use Phalanx\Theatron\Template\Slice\RuntimeStatusSlice;
 
 final class TheatronServiceBundle extends ServiceBundle
 {
@@ -43,8 +45,20 @@ final class TheatronServiceBundle extends ServiceBundle
         if ($this->app->storeClass !== null) {
             $storeClass = $this->app->storeClass;
             $services->singleton($storeClass)
-                ->factory(static fn(): Store => new $storeClass());
+                ->factory(static fn(): Store => self::buildStore($storeClass, $context));
             $services->alias(Store::class, $storeClass);
         }
+    }
+
+    /** @param class-string<Store> $storeClass */
+    private static function buildStore(string $storeClass, AppContext $context): Store
+    {
+        $store = new $storeClass();
+
+        if ($store instanceof AppStore) {
+            $store->runtimeStatus = RuntimeStatusSlice::fromContext($context);
+        }
+
+        return $store;
     }
 }

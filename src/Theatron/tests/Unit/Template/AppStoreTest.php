@@ -13,6 +13,7 @@ use Phalanx\Theatron\Template\Slice\ActivityStatus;
 use Phalanx\Theatron\Template\Slice\AgentRegistrySlice;
 use Phalanx\Theatron\Template\Slice\AgentSummary;
 use Phalanx\Theatron\Template\Slice\ConversationSlice;
+use Phalanx\Theatron\Template\Slice\RuntimeStatusSlice;
 use Phalanx\Theatron\Template\Slice\WorkspaceViewSlice;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -28,6 +29,7 @@ final class AppStoreTest extends TestCase
         self::assertInstanceOf(WorkspaceViewSlice::class, $store->workspaceView);
         self::assertInstanceOf(AgentRegistrySlice::class, $store->agents);
         self::assertInstanceOf(ActivitySlice::class, $store->activity);
+        self::assertInstanceOf(RuntimeStatusSlice::class, $store->runtimeStatus);
     }
 
     #[Test]
@@ -153,6 +155,22 @@ final class AppStoreTest extends TestCase
         self::assertSame(1, $calls);
         self::assertSame(InputMode::Insert, $store->inputMode->mode);
         self::assertSame('command-input', $store->inputMode->focusTarget);
+    }
+
+    #[Test]
+    public function runtimeStatusPropertyHookWriteUpdatesSlice(): void
+    {
+        $store = new AppStore();
+        $calls = 0;
+
+        $store->subscribe(static function () use (&$calls): void {
+            $calls++;
+        });
+
+        $store->runtimeStatus = new RuntimeStatusSlice('/home/sparta/project', '/home/sparta');
+
+        self::assertSame(1, $calls);
+        self::assertSame('~/project', $store->runtimeStatus->cwdLabel());
     }
 
     #[Test]

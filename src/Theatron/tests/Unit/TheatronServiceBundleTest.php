@@ -14,6 +14,7 @@ use Phalanx\Theatron\Stage\StageConfig;
 use Phalanx\Theatron\State\Store;
 use Phalanx\Theatron\Styling\Theme;
 use Phalanx\Theatron\Tdom\Renderable;
+use Phalanx\Theatron\Template\AppStore;
 use Phalanx\Theatron\TheatronApp;
 use Phalanx\Theatron\TheatronServiceBundle;
 use PHPUnit\Framework\Attributes\Test;
@@ -105,6 +106,26 @@ final class TheatronServiceBundleTest extends TestCase
         $bundle->services($catalog, new AppContext());
 
         self::assertTrue($catalog->has(ApolloStore::class));
+    }
+
+    #[Test]
+    public function seedsAppStoreRuntimeStatusFromContext(): void
+    {
+        $context = new AppContext([
+            'PWD' => '/workspace/phalanx',
+            'HOME' => '/workspace',
+        ]);
+        $catalog = new ServiceCatalog($context);
+        $bundle = new TheatronServiceBundle($this->app(storeClass: AppStore::class));
+        $bundle->services($catalog, $context);
+
+        $factory = $catalog->compile()->resolve(AppStore::class)->factoryFn;
+        self::assertNotNull($factory);
+
+        $store = $factory();
+
+        self::assertInstanceOf(AppStore::class, $store);
+        self::assertSame('~/phalanx', $store->runtimeStatus->cwdLabel());
     }
 
     #[Test]

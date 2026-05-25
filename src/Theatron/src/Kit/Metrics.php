@@ -12,7 +12,11 @@ final class Metrics
             return number_format($bytes) . ' B';
         }
 
-        return number_format($bytes / 1024, 1) . ' KB';
+        if ($bytes < 1_048_576) {
+            return number_format($bytes / 1024, 1) . ' KB';
+        }
+
+        return number_format($bytes / 1_048_576, 1) . ' MB';
     }
 
     public static function memoryDelta(int $bytes): string

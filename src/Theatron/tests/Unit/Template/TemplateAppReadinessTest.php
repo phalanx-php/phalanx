@@ -57,7 +57,10 @@ final class TemplateAppReadinessTest extends PhalanxTestCase
         self::assertIsResource($stream);
 
         $app = self::templateBuilder($stream)->build();
-        $testApp = $this->testApp([], new TheatronServiceBundle($app));
+        $testApp = $this->testApp([
+            'PWD' => '/workspace/phalanx',
+            'HOME' => '/workspace',
+        ], new TheatronServiceBundle($app));
 
         $testApp->application->scoped(static function (ExecutionScope $scope) use ($app, $stream): void {
             $app->stage->onFrame(static function () use ($scope): void {
@@ -73,9 +76,12 @@ final class TemplateAppReadinessTest extends PhalanxTestCase
             self::assertStringContainsString('Powered by Phalanx PHP', $output);
             self::assertStringContainsString('Type a message to begin.', $output);
             self::assertStringContainsString('+>', $output);
+            self::assertStringContainsString('(Λ)', $output);
+            self::assertStringContainsString('mem', $output);
+            self::assertStringContainsString('alloc', $output);
             self::assertStringContainsString('^X ? keymap', $output);
-            self::assertStringContainsString('^X d devtools', $output);
-            self::assertStringContainsString('^X s settings', $output);
+            self::assertStringNotContainsString('^X d devtools', $output);
+            self::assertStringNotContainsString('^X s settings', $output);
             self::assertStringNotContainsString('DevToolsOverlay', $output);
         });
     }

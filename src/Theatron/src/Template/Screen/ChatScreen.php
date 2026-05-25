@@ -18,6 +18,7 @@ use Phalanx\Theatron\Contract\Screen;
 use Phalanx\Theatron\Input\Key;
 use Phalanx\Theatron\Input\KeyEvent;
 use Phalanx\Theatron\Input\KeySequenceState;
+use Phalanx\Theatron\Kit\Metrics;
 use Phalanx\Theatron\Layout\Size;
 use Phalanx\Theatron\Navigation\Navigator;
 use Phalanx\Theatron\Reactive\Signal;
@@ -28,7 +29,6 @@ use Phalanx\Theatron\Tdom\Style as TdomStyle;
 use Phalanx\Theatron\Template\AppStore;
 use Phalanx\Theatron\Template\Keymap\ComposerChordAction;
 use Phalanx\Theatron\Template\Keymap\ComposerChordMap;
-use Phalanx\Theatron\Template\Keymap\KeymapEntry;
 use Phalanx\Theatron\Template\Overlay\KeymapOverlay;
 use Phalanx\Theatron\Template\Render\ConversationEventFormatter;
 use Phalanx\Theatron\Template\Render\ConversationEventRenderPolicy;
@@ -83,7 +83,7 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, HandlesKeySeque
             $this->renderStatusLine(),
             self::spacer(),
             $this->renderInput($composerRows),
-            self::rule(self::ruleWidth($ctx->width)),
+            self::rule($this->ruleWidth($ctx->width)),
             self::spacer(),
         );
     }
@@ -102,7 +102,7 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, HandlesKeySeque
     {
         $line = $this->activityBlocksFocused()
             ? self::activityControlLine()
-            : self::controlPanelLine();
+            : $this->controlPanelLine();
 
         return text($line, TdomStyle::of(size: Size::fixed(1)));
     }
@@ -340,52 +340,6 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, HandlesKeySeque
         return $composerRows + 5;
     }
 
-    private static function ruleWidth(int $screenWidth): int
-    {
-        return min(max(1, $screenWidth - 2), max(1, self::controlPanelLine()->width - 2));
-    }
-
-    private static function controlPanelLine(): Line
-    {
-        $spans = [
-            Span::styled('  ^P', TextStyle::new()->fg(Color::indexed(245))),
-            Span::styled(' blocks', TextStyle::new()->fg(Color::indexed(250))),
-        ];
-
-        foreach (
-            [
-                ['^X ?', 'keymap'],
-                ['^X u', 'undo'],
-                ['^X a', 'undo all'],
-                ['^X d', 'devtools'],
-                ['^X s', 'settings'],
-            ] as [$combo, $fallback]
-        ) {
-            $spans[] = self::pipe();
-            array_push($spans, ...self::controlChord($combo, $fallback));
-        }
-
-        $spans[] = self::pipe();
-        $spans[] = Span::styled('Enter', TextStyle::new()->fg(Color::indexed(245)));
-        $spans[] = Span::styled(' send', TextStyle::new()->fg(Color::indexed(250)));
-        $spans[] = self::pipe();
-        $spans[] = Span::styled('^C', TextStyle::new()->fg(Color::indexed(245)));
-        $spans[] = Span::styled(' quit', TextStyle::new()->fg(Color::indexed(250)));
-
-        return Line::from(...$spans);
-    }
-
-    /** @return list<Span> */
-    private static function controlChord(string $combo, string $fallback): array
-    {
-        $entry = ComposerChordMap::entryFor($combo) ?? new KeymapEntry('App', $combo, $fallback);
-
-        return [
-            Span::styled($entry->combo, TextStyle::new()->fg(Color::indexed(245))),
-            Span::styled(' ' . $entry->label, TextStyle::new()->fg(Color::indexed(250))),
-        ];
-    }
-
     private static function activityControlLine(): Line
     {
         return Line::from(
@@ -616,6 +570,27 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, HandlesKeySeque
         }
 
         return $rows;
+    }
+
+    private function ruleWidth(int $screenWidth): int
+    {
+        return min(max(1, $screenWidth - 2), max(1, $this->controlPanelLine()->width - 2));
+    }
+
+    private function controlPanelLine(): Line
+    {
+        return Line::from(
+            Span::styled('  (Λ)', TextStyle::new()->fg(Color::indexed(245))),
+            Span::styled(' ' . $this->store->activity->modelName, TextStyle::new()->fg(Color::indexed(250))),
+            Span::styled('  ' . $this->store->runtimeStatus->cwdLabel(), TextStyle::new()->fg(Color::indexed(242))),
+            Span::styled('  mem ', TextStyle::new()->fg(Color::indexed(242))),
+            Span::styled(Metrics::memory(memory_get_usage(false)), TextStyle::new()->fg(Color::indexed(250))),
+            Span::styled(' · alloc ', TextStyle::new()->fg(Color::indexed(242))),
+            Span::styled(Metrics::memory(memory_get_usage(true)), TextStyle::new()->fg(Color::indexed(250))),
+            Span::styled('  ' . $this->store->inputMode->mode->value, TextStyle::new()->fg(Color::indexed(250))),
+            Span::styled('  ^X ?', TextStyle::new()->fg(Color::indexed(245))),
+            Span::styled(' keymap', TextStyle::new()->fg(Color::indexed(250))),
+        );
     }
 
     private function shouldRenderEphemeralThinking(ConversationSlice $conversation, ConversationTurn $turn): bool
