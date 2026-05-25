@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Harness\Tests\Unit\Template;
 
+use Closure;
 use Phalanx\Harness\Agent\AthenaServiceBundle;
 use Phalanx\Harness\Harness;
 use Phalanx\Harness\Template\AppStore;
@@ -18,6 +19,7 @@ use Phalanx\Harness\Template\TemplateApp;
 use Phalanx\Iris\HttpServiceBundle;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\TaskScope;
+use Phalanx\Service\ServiceBundle;
 use Phalanx\Testing\PhalanxTestCase;
 use Phalanx\Theatron\Binding\Binding;
 use Phalanx\Theatron\Binding\BindingRegistry;
@@ -42,6 +44,7 @@ use Phalanx\Theatron\Tdom\Element\RowElement;
 use Phalanx\Theatron\Tdom\Element\TextElement;
 use Phalanx\Theatron\Tdom\Renderable;
 use Phalanx\Theatron\Text\Line;
+use Phalanx\Theatron\TheatronApp;
 use Phalanx\Theatron\TheatronBuilder;
 use Phalanx\Theatron\TheatronServiceBundle;
 use PHPUnit\Framework\Attributes\Test;
@@ -104,6 +107,7 @@ final class TemplateAppReadinessTest extends PhalanxTestCase
         self::assertCount(1, $builder->registeredGlobalBindings());
         self::assertRegisteredProvider($builder->registeredProviders(), HttpServiceBundle::class);
         self::assertRegisteredProvider($builder->registeredProviders(), AthenaServiceBundle::class);
+        self::assertSame($app, self::resolvedTheatronBundle($builder->registeredProviders(), $app)->app);
         self::assertSame(AppStore::class, $builder->registeredStore());
         self::assertTrue($app->devtools);
         self::assertInstanceOf(SignalRegistry::class, $app->registry);
@@ -384,6 +388,26 @@ final class TemplateAppReadinessTest extends PhalanxTestCase
             $providers,
             static fn(mixed $provider): bool => $provider instanceof $type,
         ));
+    }
+
+    /**
+     * @param list<mixed> $providers
+     */
+    private static function resolvedTheatronBundle(array $providers, TheatronApp $app): TheatronServiceBundle
+    {
+        $closures = array_values(array_filter(
+            $providers,
+            static fn(mixed $provider): bool => $provider instanceof Closure,
+        ));
+
+        self::assertCount(1, $closures);
+
+        $bundle = $closures[0]($app);
+
+        self::assertInstanceOf(TheatronServiceBundle::class, $bundle);
+        self::assertInstanceOf(ServiceBundle::class, $bundle);
+
+        return $bundle;
     }
 }
 

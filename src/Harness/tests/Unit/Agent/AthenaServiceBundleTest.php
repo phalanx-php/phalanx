@@ -109,6 +109,22 @@ final class AthenaServiceBundleTest extends TestCase
         self::assertSame(Config::class, $graph->resolve(Config::class)->type);
     }
 
+    #[Test]
+    public function ollamaConfigIgnoresOldTheatronContextKeys(): void
+    {
+        $context = new AppContext([
+            'THEATRON_OLLAMA_BASE_URL' => 'http://old.example.test:11434',
+            'THEATRON_OLLAMA_MODEL' => 'old-model',
+            'THEATRON_MAX_INVOCATIONS' => '99',
+        ]);
+
+        $config = OllamaConfig::fromContext($context);
+
+        self::assertSame('http://localhost:11434', $config->baseUrl);
+        self::assertSame('qwen3:4b', $config->model);
+        self::assertSame(3, $config->maxInvocations);
+    }
+
     private static function makeAthenaBundle(): AthenaBundle
     {
         $router = new class implements InvocationRouter {
