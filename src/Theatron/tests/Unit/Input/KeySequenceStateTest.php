@@ -15,7 +15,6 @@ final class KeySequenceStateTest extends TestCase
     {
         $state = new KeySequenceState();
 
-        self::assertNull($state->prefix);
         self::assertFalse($state->isAwaitingControlX());
     }
 
@@ -26,19 +25,17 @@ final class KeySequenceStateTest extends TestCase
 
         $next = $state->beginControlX();
 
-        self::assertNull($state->prefix);
-        self::assertSame(KeySequenceState::CONTROL_X_PREFIX, $next->prefix);
+        self::assertFalse($state->isAwaitingControlX());
         self::assertTrue($next->isAwaitingControlX());
     }
 
     #[Test]
     public function clearRemovesActivePrefix(): void
     {
-        $state = new KeySequenceState(KeySequenceState::CONTROL_X_PREFIX);
+        $state = (new KeySequenceState())->beginControlX();
 
         $next = $state->clear();
 
-        self::assertNull($next->prefix);
         self::assertFalse($next->isAwaitingControlX());
     }
 }

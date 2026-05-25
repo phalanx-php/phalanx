@@ -10,12 +10,14 @@ use Phalanx\Theatron\Binding\Binding;
 use Phalanx\Theatron\Context\ScreenContext;
 use Phalanx\Theatron\Contract\DeclaresBindings;
 use Phalanx\Theatron\Contract\Focusable;
+use Phalanx\Theatron\Contract\HandlesKeySequences;
 use Phalanx\Theatron\Contract\HasFocusables;
 use Phalanx\Theatron\Contract\HasStatusBar;
 use Phalanx\Theatron\Contract\Mountable;
 use Phalanx\Theatron\Contract\Screen;
 use Phalanx\Theatron\Input\Key;
 use Phalanx\Theatron\Input\KeyEvent;
+use Phalanx\Theatron\Input\KeySequenceState;
 use Phalanx\Theatron\Layout\Size;
 use Phalanx\Theatron\Navigation\Navigator;
 use Phalanx\Theatron\Reactive\Signal;
@@ -24,6 +26,7 @@ use Phalanx\Theatron\Style\Style as TextStyle;
 use Phalanx\Theatron\Tdom\Renderable;
 use Phalanx\Theatron\Tdom\Style as TdomStyle;
 use Phalanx\Theatron\Template\AppStore;
+use Phalanx\Theatron\Template\Keymap\ComposerChordAction;
 use Phalanx\Theatron\Template\Keymap\ComposerChordMap;
 use Phalanx\Theatron\Template\Keymap\KeymapEntry;
 use Phalanx\Theatron\Template\Overlay\KeymapOverlay;
@@ -42,7 +45,7 @@ use function Phalanx\Theatron\Ui\input;
 use function Phalanx\Theatron\Ui\spinner;
 use function Phalanx\Theatron\Ui\text;
 
-class ChatScreen implements Screen, HasStatusBar, HasFocusables, DeclaresBindings, Mountable
+class ChatScreen implements Screen, HasStatusBar, HasFocusables, HandlesKeySequences, DeclaresBindings, Mountable
 {
     private const array PULSE_COLORS = [242, 245, 248, 251, 254, 251, 248, 245];
     private const int MAX_COMPOSER_ROWS = 5;
@@ -145,6 +148,31 @@ class ChatScreen implements Screen, HasStatusBar, HasFocusables, DeclaresBinding
         }
 
         return false;
+    }
+
+    public function startsKeySequence(KeyEvent $event): bool
+    {
+        return ComposerChordMap::startsSequence($event);
+    }
+
+    public function handleKeySequence(KeySequenceState $state, KeyEvent $event): bool
+    {
+        if (!$state->isAwaitingControlX()) {
+            return false;
+        }
+
+        if ($event->is(Key::Escape)) {
+            return true;
+        }
+
+        return match (ComposerChordMap::actionFor($event)) {
+            ComposerChordAction::OpenKeymap => $this->openKeymap(),
+            ComposerChordAction::OpenDevTools => $this->openDevTools(),
+            ComposerChordAction::OpenSettings => $this->openSettings(),
+            ComposerChordAction::UndoQueuedInput => $this->undoLastQueuedInput(),
+            ComposerChordAction::UndoAllQueuedInput => $this->undoAllQueuedInput(),
+            default => false,
+        };
     }
 
     public function submitOrExpand(): bool

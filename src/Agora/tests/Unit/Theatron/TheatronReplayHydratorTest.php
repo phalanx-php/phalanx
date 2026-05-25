@@ -151,6 +151,25 @@ final class TheatronReplayHydratorTest extends TestCase
     }
 
     #[Test]
+    public function itClearsTransientKeySequenceStateDuringHydration(): void
+    {
+        $store = new AppStore();
+        $store->keySequence = $store->keySequence->beginControlX();
+
+        (new TheatronReplayHydrator())->hydrate(
+            store: $store,
+            session: new ReplaySession(
+                self::SESSION_ID,
+                ProjectionSet::empty(self::SESSION_ID),
+                [],
+                checkpointSequence: 0,
+            ),
+        );
+
+        self::assertFalse($store->keySequence->isAwaitingControlX());
+    }
+
+    #[Test]
     public function itKeepsRepeatedEffectIdsSeparateAcrossTurns(): void
     {
         $events = [

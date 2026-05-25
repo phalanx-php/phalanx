@@ -43,6 +43,7 @@ final class TheatronReplayHydrator
         $store->activity = self::activity($projections);
         $store->effects = new EffectLogSlice(self::effectEntries($session->events));
         $store->workspaceView = self::workspace($projections);
+        $store->keySequence = $store->keySequence->clear();
     }
 
     private static function tokenProjection(

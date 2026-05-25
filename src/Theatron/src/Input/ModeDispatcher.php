@@ -123,12 +123,6 @@ class ModeDispatcher
             return true;
         }
 
-        if ($event->is(Key::Escape)) {
-            $this->setMode(InputMode::Normal);
-
-            return true;
-        }
-
         if ($event->is(Key::Tab)) {
             if ($event->shift) {
                 $this->focus->previous();
@@ -143,8 +137,14 @@ class ModeDispatcher
 
         $active = $this->focus->active();
 
-        if ($active instanceof AcceptsInput) {
-            return $active->handleInput($event);
+        if ($active instanceof AcceptsInput && $active->handleInput($event)) {
+            return true;
+        }
+
+        if ($event->is(Key::Escape)) {
+            $this->setMode(InputMode::Normal);
+
+            return true;
         }
 
         return false;

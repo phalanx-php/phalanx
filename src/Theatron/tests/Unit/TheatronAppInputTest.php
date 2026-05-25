@@ -12,10 +12,12 @@ use Phalanx\Theatron\Context\ScreenContext;
 use Phalanx\Theatron\Contract\AcceptsInput;
 use Phalanx\Theatron\Contract\Component;
 use Phalanx\Theatron\Contract\Focusable;
+use Phalanx\Theatron\Contract\HandlesKeySequences;
 use Phalanx\Theatron\Contract\HasFocusables;
 use Phalanx\Theatron\Contract\HasStatusBar;
 use Phalanx\Theatron\Contract\Screen;
 use Phalanx\Theatron\Input\KeyEvent;
+use Phalanx\Theatron\Input\KeySequenceState;
 use Phalanx\Theatron\Input\NormalModeHandler;
 use Phalanx\Theatron\Reactive\Signal;
 use Phalanx\Theatron\Stage\ScreenMode;
@@ -135,6 +137,55 @@ final class TheatronAppInputTest extends PhalanxTestCase
 
         self::assertSame(1, OverlayPriorityProbe::$handled);
         self::assertSame(0, OverlayPriorityProbe::$global);
+    }
+
+    #[Test]
+    public function overlayNormalHandlerReceivesPrefixKeysBeforeScreenKeySequences(): void
+    {
+        KeySequencePriorityOverlay::$handled = 0;
+        KeySequencePriorityScreen::$started = 0;
+
+        $stream = fopen('php://memory', 'w+');
+        self::assertIsResource($stream);
+
+        $app = new TheatronApp(
+            Stage::boot(new StageConfig(
+                screenMode: ScreenMode::Inline,
+                bracketedPaste: false,
+                handleInput: false,
+                defaultExitHandler: false,
+                activeIntervalUs: 1_000,
+                stream: $stream,
+                env: [
+                    'COLUMNS' => '20',
+                    'LINES' => '5',
+                ],
+            )),
+            Theme::default(),
+            [KeySequencePriorityScreen::class],
+            [Binding::key('o')->toggle(KeySequencePriorityOverlay::class)],
+            AppStore::class,
+            false,
+        );
+        $testApp = $this->testApp([], new TheatronServiceBundle($app));
+
+        $testApp->application->scoped(static function (ExecutionScope $scope) use ($app): void {
+            $store = $scope->service(AppStore::class);
+            $scope->go(static function () use ($app, $scope): void {
+                $app->start($scope);
+            }, 'theatron-app');
+            $scope->delay(0.01);
+
+            self::dispatchInput($app->stage, new KeyEvent('o'));
+            self::dispatchInput($app->stage, new KeyEvent('x', ctrl: true));
+
+            self::assertFalse($store->keySequence->isAwaitingControlX());
+
+            $scope->cancellation()->cancel();
+        });
+
+        self::assertSame(1, KeySequencePriorityOverlay::$handled);
+        self::assertSame(0, KeySequencePriorityScreen::$started);
     }
 
     #[Test]
@@ -370,6 +421,53 @@ final class OverlayPriorityProbe implements Component, NormalModeHandler
     public function handleNormalKey(KeyEvent $event): bool
     {
         if (!$event->is('a')) {
+            return false;
+        }
+
+        self::$handled++;
+
+        return true;
+    }
+}
+
+final class KeySequencePriorityScreen implements Screen, HandlesKeySequences
+{
+    public static int $started = 0;
+
+    public function __invoke(ScreenContext $ctx): Renderable
+    {
+        return text('screen');
+    }
+
+    public function startsKeySequence(KeyEvent $event): bool
+    {
+        if (!$event->is('x') || !$event->ctrl) {
+            return false;
+        }
+
+        self::$started++;
+
+        return true;
+    }
+
+    public function handleKeySequence(KeySequenceState $state, KeyEvent $event): bool
+    {
+        return $state->isAwaitingControlX();
+    }
+}
+
+final class KeySequencePriorityOverlay implements Component, NormalModeHandler
+{
+    public static int $handled = 0;
+
+    public function __invoke(RenderContext $ctx): Renderable
+    {
+        return text('overlay');
+    }
+
+    public function handleNormalKey(KeyEvent $event): bool
+    {
+        if (!$event->is('x') || !$event->ctrl) {
             return false;
         }
 

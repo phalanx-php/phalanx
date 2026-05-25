@@ -9,11 +9,13 @@ use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\TaskScope;
 use Phalanx\Testing\PhalanxTestCase;
 use Phalanx\Theatron\Agent\AthenaServiceBundle;
+use Phalanx\Theatron\Binding\Binding;
 use Phalanx\Theatron\Binding\BindingRegistry;
 use Phalanx\Theatron\Component\MountSystem;
 use Phalanx\Theatron\Context\ScreenContext;
 use Phalanx\Theatron\Contract\Component;
 use Phalanx\Theatron\Contract\Screen;
+use Phalanx\Theatron\Input\InputMode;
 use Phalanx\Theatron\Input\Key;
 use Phalanx\Theatron\Input\KeyEvent;
 use Phalanx\Theatron\Input\ModeDispatcher;
@@ -46,6 +48,8 @@ use PHPUnit\Framework\Attributes\Test;
 
 final class TemplateAppReadinessTest extends PhalanxTestCase
 {
+    private static int $sequenceBindingHits = 0;
+
     #[Test]
     public function templateAppDrawsFirstFrameWithBinBootstrapShape(): void
     {
@@ -128,6 +132,105 @@ final class TemplateAppReadinessTest extends PhalanxTestCase
             $scope->delay(0.01);
 
             self::assertFalse($store->keySequence->isAwaitingControlX());
+            self::assertSame(InputMode::Insert, $store->inputMode->mode);
+            self::assertSame('input', $store->inputMode->focusTarget);
+
+            $scope->cancellation()->cancel();
+        });
+    }
+
+    #[Test]
+    public function templateInvalidKeySequenceClearsPrefixBeforeBindings(): void
+    {
+        self::$sequenceBindingHits = 0;
+        $stream = fopen('php://memory', 'w+');
+        self::assertIsResource($stream);
+
+        $app = self::templateBuilder($stream, [
+            Binding::key('z')->action(static function (): void {
+                self::$sequenceBindingHits++;
+            }),
+        ])->build();
+        $testApp = $this->testApp([], new TheatronServiceBundle($app));
+
+        $testApp->application->scoped(static function (ExecutionScope $scope) use ($app): void {
+            $store = $scope->service(AppStore::class);
+            $scope->go(static function () use ($app, $scope): void {
+                $app->start($scope);
+            }, 'theatron-app');
+            $scope->delay(0.01);
+
+            self::dispatchInput($app->stage, new KeyEvent('x', ctrl: true));
+            self::assertTrue($store->keySequence->isAwaitingControlX());
+
+            self::dispatchInput($app->stage, new KeyEvent('z'));
+
+            self::assertFalse($store->keySequence->isAwaitingControlX());
+            self::assertSame('', $store->input->text);
+            self::assertSame(0, self::$sequenceBindingHits);
+
+            $scope->cancellation()->cancel();
+        });
+    }
+
+    #[Test]
+    public function templateNativeControlUStaysSingleStrokeEditorCommandThroughAppDispatch(): void
+    {
+        $stream = fopen('php://memory', 'w+');
+        self::assertIsResource($stream);
+
+        $app = self::templateBuilder($stream)->build();
+        $testApp = $this->testApp([], new TheatronServiceBundle($app));
+
+        $testApp->application->scoped(static function (ExecutionScope $scope) use ($app): void {
+            $store = $scope->service(AppStore::class);
+            $scope->go(static function () use ($app, $scope): void {
+                $app->start($scope);
+            }, 'theatron-app');
+            $scope->delay(0.01);
+
+            foreach (['Z', 'e', 'u', 's'] as $key) {
+                self::dispatchInput($app->stage, new KeyEvent($key));
+            }
+
+            self::assertSame('Zeus', $store->input->text);
+
+            self::dispatchInput($app->stage, new KeyEvent('u', ctrl: true));
+
+            self::assertSame('', $store->input->text);
+            self::assertFalse($store->keySequence->isAwaitingControlX());
+            self::assertSame(InputMode::Insert, $store->inputMode->mode);
+            self::assertSame('input', $store->inputMode->focusTarget);
+
+            $scope->cancellation()->cancel();
+        });
+    }
+
+    #[Test]
+    public function templateQueueKeySequencesRestoreThroughAppDispatch(): void
+    {
+        $stream = fopen('php://memory', 'w+');
+        self::assertIsResource($stream);
+
+        $app = self::templateBuilder($stream)->build();
+        $testApp = $this->testApp([], new TheatronServiceBundle($app));
+
+        $testApp->application->scoped(static function (ExecutionScope $scope) use ($app): void {
+            $store = $scope->service(AppStore::class);
+            $store->input = $store->input
+                ->enqueue('first queued')
+                ->enqueue('second queued');
+            $scope->go(static function () use ($app, $scope): void {
+                $app->start($scope);
+            }, 'theatron-app');
+            $scope->delay(0.01);
+
+            self::dispatchInput($app->stage, new KeyEvent('x', ctrl: true));
+            self::dispatchInput($app->stage, new KeyEvent('u'));
+
+            self::assertSame('second queued', $store->input->text);
+            self::assertSame(['first queued'], $store->input->queue);
+            self::assertFalse($store->keySequence->isAwaitingControlX());
 
             $scope->cancellation()->cancel();
         });
@@ -190,13 +293,14 @@ final class TemplateAppReadinessTest extends PhalanxTestCase
 
     /**
      * @param resource $stream
+     * @param list<Binding> $bindings
      */
-    private static function templateBuilder(mixed $stream): \Phalanx\Theatron\TheatronBuilder
+    private static function templateBuilder(mixed $stream, array $bindings = []): \Phalanx\Theatron\TheatronBuilder
     {
         return Theatron::app(['APP_ENV' => 'test'])
             ->store(TemplateApp::store())
             ->screens(TemplateApp::screens())
-            ->globalBindings(TemplateApp::bindings())
+            ->globalBindings([...TemplateApp::bindings(), ...$bindings])
             ->stageConfig(new StageConfig(
                 screenMode: ScreenMode::Inline,
                 bracketedPaste: false,

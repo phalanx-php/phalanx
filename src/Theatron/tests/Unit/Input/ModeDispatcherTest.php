@@ -161,7 +161,7 @@ final class ModeDispatcherTest extends TestCase
         $focus->register('input', new class () implements Focusable, AcceptsInput {
             public function handleInput(KeyEvent $event): bool
             {
-                return true;
+                return false;
             }
         });
 
@@ -171,6 +171,36 @@ final class ModeDispatcherTest extends TestCase
 
         $dispatcher->dispatch(new KeyEvent(key: Key::Escape));
         self::assertSame(InputMode::Normal, $dispatcher->mode);
+    }
+
+    #[Test]
+    public function activeInputCanConsumeEscapeBeforeInsertModeFallback(): void
+    {
+        $focus = new FocusManager();
+        $widget = new class () implements Focusable, AcceptsInput {
+            public int $callCount = 0;
+
+            public function handleInput(KeyEvent $event): bool
+            {
+                if (!$event->is(Key::Escape)) {
+                    return false;
+                }
+
+                $this->callCount++;
+
+                return true;
+            }
+        };
+        $focus->register('input', $widget);
+
+        $dispatcher = new ModeDispatcher($focus);
+        $dispatcher->dispatch(new KeyEvent(key: 'i'));
+        self::assertSame(InputMode::Insert, $dispatcher->mode);
+
+        $dispatcher->dispatch(new KeyEvent(key: Key::Escape));
+
+        self::assertSame(1, $widget->callCount);
+        self::assertSame(InputMode::Insert, $dispatcher->mode);
     }
 
     #[Test]

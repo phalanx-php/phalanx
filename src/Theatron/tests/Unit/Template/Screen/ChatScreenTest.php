@@ -40,13 +40,10 @@ use Phalanx\Theatron\Tdom\Painter\PaintContext;
 use Phalanx\Theatron\Tdom\Painter\Painter;
 use Phalanx\Theatron\Tdom\Renderable;
 use Phalanx\Theatron\Template\AppStore;
-use Phalanx\Theatron\Template\Overlay\KeymapOverlay;
 use Phalanx\Theatron\Template\Screen\ChatConversationHandler;
 use Phalanx\Theatron\Template\Screen\ChatInputHandler;
 use Phalanx\Theatron\Template\Screen\ChatScreen;
 use Phalanx\Theatron\Template\Screen\ConversationBlockDetailScreen;
-use Phalanx\Theatron\Template\Screen\DevToolsScreen;
-use Phalanx\Theatron\Template\Screen\SettingsScreen;
 use Phalanx\Theatron\Template\Slice\ActivitySlice;
 use Phalanx\Theatron\Template\Slice\ActivityStatus;
 use Phalanx\Theatron\Template\Slice\ConversationSlice;
@@ -832,120 +829,22 @@ final class ChatScreenTest extends TestCase
     }
 
     #[Test]
-    public function inputHandlerCtrlXURestoresLastQueuedMessageIntoEmptyComposer(): void
-    {
-        $store = new AppStore();
-        $store->input = $store->input
-            ->enqueue('first queued')
-            ->enqueue('second queued');
-        $screen = new ChatScreen($store);
-        $handler = new ChatInputHandler($screen);
-
-        self::assertTrue($handler->handleInput(new KeyEvent('x', ctrl: true)));
-        self::assertTrue($store->keySequence->isAwaitingControlX());
-        self::assertTrue($handler->handleInput(new KeyEvent('u')));
-
-        self::assertFalse($store->keySequence->isAwaitingControlX());
-        self::assertSame('second queued', $screen->inputText->get());
-        self::assertSame('second queued', $store->input->text);
-        self::assertSame(['first queued'], $store->input->queue);
-    }
-
-    #[Test]
-    public function inputHandlerCtrlXARestoresAllQueuedMessagesIntoEmptyComposer(): void
-    {
-        $store = new AppStore();
-        $store->input = $store->input
-            ->enqueue('first queued')
-            ->enqueue('second queued')
-            ->enqueue('third queued');
-        $screen = new ChatScreen($store);
-        $handler = new ChatInputHandler($screen);
-
-        self::assertTrue($handler->handleInput(new KeyEvent('x', ctrl: true)));
-        self::assertTrue($store->keySequence->isAwaitingControlX());
-        self::assertTrue($handler->handleInput(new KeyEvent('a')));
-
-        self::assertFalse($store->keySequence->isAwaitingControlX());
-        self::assertSame("first queued\n\nsecond queued\n\nthird queued", $screen->inputText->get());
-        self::assertSame("first queued\n\nsecond queued\n\nthird queued", $store->input->text);
-        self::assertSame([], $store->input->queue);
-    }
-
-    #[Test]
-    public function inputHandlerCtrlXChordsOpenTemplateWorkspaces(): void
-    {
-        $store = new AppStore();
-        $navigator = new ChatScreenRecordingNavigator();
-        $screen = new ChatScreen($store);
-        $screen($this->makeContext($store, navigator: $navigator));
-        $handler = new ChatInputHandler($screen);
-
-        self::assertTrue($handler->handleInput(new KeyEvent('x', ctrl: true)));
-        self::assertTrue($handler->handleInput(new KeyEvent('d')));
-        self::assertSame(DevToolsScreen::class, $navigator->target);
-
-        self::assertTrue($handler->handleInput(new KeyEvent('x', ctrl: true)));
-        self::assertTrue($handler->handleInput(new KeyEvent('s')));
-        self::assertSame(SettingsScreen::class, $navigator->target);
-
-        self::assertTrue($handler->handleInput(new KeyEvent('x', ctrl: true)));
-        self::assertTrue($handler->handleInput(new KeyEvent('?')));
-        self::assertSame(KeymapOverlay::class, $navigator->overlay);
-        self::assertFalse($store->keySequence->isAwaitingControlX());
-    }
-
-    #[Test]
-    public function inputHandlerCtrlXPrefixIsVisibleInSharedStatusState(): void
+    public function keySequencePrefixIsVisibleInSharedStatusState(): void
     {
         $store = new AppStore();
         $screen = new ChatScreen($store);
-        $handler = new ChatInputHandler($screen);
 
         self::assertFalse($store->keySequence->isAwaitingControlX());
 
-        self::assertTrue($handler->handleInput(new KeyEvent('x', ctrl: true)));
+        $screen->beginInputChordPrefix();
 
         self::assertTrue($store->keySequence->isAwaitingControlX());
         self::assertStringContainsString('^X …', self::flatten($screen($this->makeContext($store))));
 
-        self::assertTrue($handler->handleInput(new KeyEvent(Key::Escape)));
+        $screen->clearInputChordPrefix();
 
         self::assertFalse($store->keySequence->isAwaitingControlX());
         self::assertStringNotContainsString('^X …', self::flatten($screen($this->makeContext($store))));
-    }
-
-    #[Test]
-    public function inputHandlerInvalidCtrlXChordClearsPrefixWithoutInsertingText(): void
-    {
-        $store = new AppStore();
-        $screen = new ChatScreen($store);
-        $handler = new ChatInputHandler($screen);
-
-        self::assertTrue($handler->handleInput(new KeyEvent('x', ctrl: true)));
-        self::assertTrue($handler->handleInput(new KeyEvent('z')));
-
-        self::assertFalse($store->keySequence->isAwaitingControlX());
-        self::assertSame('', $screen->inputText->get());
-        self::assertSame('', $store->input->text);
-    }
-
-    #[Test]
-    public function inputHandlerNativeControlKeysDoNotEnterAppChordState(): void
-    {
-        $store = new AppStore();
-        $screen = new ChatScreen($store);
-        $handler = new ChatInputHandler($screen);
-
-        self::assertTrue($handler->handleInput(new KeyEvent('Z')));
-        self::assertTrue($handler->handleInput(new KeyEvent('e')));
-        self::assertTrue($handler->handleInput(new KeyEvent('u')));
-        self::assertTrue($handler->handleInput(new KeyEvent('s')));
-        self::assertTrue($handler->handleInput(new KeyEvent('u', ctrl: true)));
-
-        self::assertFalse($store->keySequence->isAwaitingControlX());
-        self::assertSame('', $screen->inputText->get());
-        self::assertSame('', $store->input->text);
     }
 
     #[Test]
@@ -963,28 +862,6 @@ final class ChatScreenTest extends TestCase
         self::assertSame('', $screen->inputText->get());
         self::assertSame('', $store->input->text);
         self::assertSame(['first queued', 'second queued'], $store->input->queue);
-    }
-
-    #[Test]
-    public function queuedRestoreDoesNothingWhenComposerHasText(): void
-    {
-        $store = new AppStore();
-        $store->input = $store->input
-            ->withText('draft')
-            ->enqueue('queued');
-        $screen = new ChatScreen($store);
-        $handler = new ChatInputHandler($screen);
-        $screen->inputText->set('draft');
-
-        self::assertFalse($handler->handleInput(new KeyEvent(Key::Up)));
-        self::assertTrue($handler->handleInput(new KeyEvent('x', ctrl: true)));
-        self::assertTrue($handler->handleInput(new KeyEvent('u')));
-        self::assertTrue($handler->handleInput(new KeyEvent('x', ctrl: true)));
-        self::assertTrue($handler->handleInput(new KeyEvent('a')));
-
-        self::assertSame('draft', $screen->inputText->get());
-        self::assertSame('draft', $store->input->text);
-        self::assertSame(['queued'], $store->input->queue);
     }
 
     #[Test]

@@ -20,6 +20,7 @@ use Phalanx\Theatron\Context\RenderContext;
 use Phalanx\Theatron\Context\RenderEnvironment;
 use Phalanx\Theatron\Context\ScreenContext;
 use Phalanx\Theatron\Contract\DeclaresBindings;
+use Phalanx\Theatron\Contract\HandlesKeySequences;
 use Phalanx\Theatron\Contract\HasFocusables;
 use Phalanx\Theatron\Contract\HasOverlayFrame;
 use Phalanx\Theatron\Contract\HasStatusBar;
@@ -29,7 +30,6 @@ use Phalanx\Theatron\Focus\FocusManager;
 use Phalanx\Theatron\Input\InputEvent;
 use Phalanx\Theatron\Input\InputMode;
 use Phalanx\Theatron\Input\InputModeSlice;
-use Phalanx\Theatron\Input\Key;
 use Phalanx\Theatron\Input\KeyEvent;
 use Phalanx\Theatron\Input\ModeDispatcher;
 use Phalanx\Theatron\Input\NormalModeHandler;
@@ -48,7 +48,6 @@ use Phalanx\Theatron\Tdom\Painter\PaintContext;
 use Phalanx\Theatron\Tdom\Painter\Painter;
 use Phalanx\Theatron\Tdom\Renderable;
 use Phalanx\Theatron\Template\AppStore;
-use Phalanx\Theatron\Template\Screen\ChatScreen;
 use Phalanx\Theatron\Template\Slice\WorkspaceViewSlice;
 
 final class TheatronApp
@@ -265,6 +264,16 @@ final class TheatronApp
                     return;
                 }
 
+                if (
+                    $store instanceof AppStore
+                    && $store->keySequence->isAwaitingControlX()
+                    && self::dispatchKeySequence($event, $store, $navigator)
+                ) {
+                    $stage->requestFrame();
+
+                    return;
+                }
+
                 $binding = $registry->resolve($event);
 
                 if ($binding !== null) {
@@ -326,13 +335,7 @@ final class TheatronApp
 
                 $activeBeforeDispatch = $navigator->active();
 
-                $templateKeySequence = $store instanceof AppStore ? $store : null;
-
-                if (
-                    $templateKeySequence !== null
-                    && self::cancelTemplateKeySequence($event, $templateKeySequence, $activeBeforeDispatch)
-                ) {
-                    $templateKeySequence->keySequence = $templateKeySequence->keySequence->clear();
+                if ($store instanceof AppStore && self::dispatchKeySequence($event, $store, $navigator)) {
                     $stage->requestFrame();
 
                     return;
@@ -403,16 +406,37 @@ final class TheatronApp
         $dispatcher->restore($saved->mode, $saved->focusTarget);
     }
 
-    /** @param class-string<Screen> $activeScreen */
-    private static function cancelTemplateKeySequence(
+    private static function dispatchKeySequence(
         KeyEvent $event,
-        ?AppStore $store,
-        string $activeScreen,
+        AppStore $store,
+        WorkspaceNavigator $navigator,
     ): bool {
-        return $event->is(Key::Escape)
-            && $store instanceof AppStore
-            && $store->keySequence->isAwaitingControlX()
-            && $activeScreen === ChatScreen::class;
+        $screen = $navigator->activeWorkspace()->screen;
+
+        if (!$screen instanceof HandlesKeySequences) {
+            if (!$store->keySequence->isAwaitingControlX()) {
+                return false;
+            }
+
+            $store->keySequence = $store->keySequence->clear();
+
+            return true;
+        }
+
+        if ($store->keySequence->isAwaitingControlX()) {
+            $screen->handleKeySequence($store->keySequence, $event);
+            $store->keySequence = $store->keySequence->clear();
+
+            return true;
+        }
+
+        if (!$screen->startsKeySequence($event)) {
+            return false;
+        }
+
+        $store->keySequence = $store->keySequence->beginControlX();
+
+        return true;
     }
 
     private static function rebuildFocus(FocusManager $focus, WorkspaceNavigator $navigator, ?Store $store): void
