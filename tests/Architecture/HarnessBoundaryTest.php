@@ -15,10 +15,15 @@ final class HarnessBoundaryTest extends TestCase
     public function moduleMetadataKeepsHarnessBoundaryDirectional(): void
     {
         $modules = require dirname(__DIR__, 2) . '/modules.php';
+        $theatronManifest = json_decode(
+            (string) file_get_contents(dirname(__DIR__, 2) . '/src/Theatron/composer.json'),
+            true,
+        );
 
         self::assertArrayHasKey('Agora', $modules);
         self::assertArrayHasKey('Theatron', $modules);
         self::assertArrayHasKey('Surreal', $modules);
+        self::assertIsArray($theatronManifest);
 
         self::assertSame('phalanx-php/agora', $modules['Agora']['package']);
         self::assertSame('phalanx-php/theatron', $modules['Theatron']['package']);
@@ -29,6 +34,8 @@ final class HarnessBoundaryTest extends TestCase
         self::assertArrayHasKey('phalanx-php/surreal', $modules['Agora']['requires']);
         self::assertArrayNotHasKey('phalanx-php/agora', $modules['Theatron']['requires']);
         self::assertArrayNotHasKey('phalanx-php/harness', $modules['Theatron']['requires']);
+        self::assertArrayNotHasKey('phalanx-php/surreal', $modules['Theatron']['requires']);
+        self::assertArrayNotHasKey('phalanx-php/surreal', $theatronManifest['require']);
     }
 
     #[Test]

@@ -596,7 +596,6 @@ return [
             'phalanx-php/iris' => '^0.6',
             'phalanx-php/panoply' => '^0.6',
             'phalanx-php/stoa' => '^0.6',
-            'phalanx-php/surreal' => '^0.6',
             'phalanx-php/styx' => '^0.6',
             'league/commonmark' => '^2.7',
             'symfony/runtime' => '^7.0',

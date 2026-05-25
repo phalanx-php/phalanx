@@ -130,7 +130,7 @@ final class Channel
         return $value;
     }
 
-    /** @param \Closure(bool): void $fn - (bool) isPaused; static closure (required) */
+    /** @param \Closure(bool): void $fn Must be static; non-static pressure callbacks can create reference-cycle leaks. */
     public function withPressure(Closure $fn): self
     {
         $this->pressureCallback = $fn;
