@@ -32,10 +32,12 @@ DEFINE FIELD cue_id ON TABLE agora_event TYPE option<string>;
 DEFINE FIELD cue_type ON TABLE agora_event TYPE string;
 DEFINE FIELD channel ON TABLE agora_event TYPE option<string>;
 DEFINE FIELD source ON TABLE agora_event TYPE string ASSERT $value INSIDE ['panoply', 'athena', 'agora', 'runtime'];
+DEFINE FIELD source_key ON TABLE agora_event TYPE string;
 DEFINE FIELD payload ON TABLE agora_event TYPE object FLEXIBLE;
 DEFINE FIELD occurred_at ON TABLE agora_event TYPE datetime;
 DEFINE FIELD received_at ON TABLE agora_event TYPE datetime;
 DEFINE INDEX agora_event_session_sequence ON TABLE agora_event FIELDS session_id, sequence UNIQUE;
+DEFINE INDEX agora_event_source_key ON TABLE agora_event FIELDS session_id, source_key UNIQUE;
 DEFINE INDEX agora_event_turn_sequence ON TABLE agora_event FIELDS turn_id, sequence;
 DEFINE INDEX agora_event_cue_type ON TABLE agora_event FIELDS cue_type;
 
@@ -148,7 +150,7 @@ DEFINE INDEX agora_usage_turn ON TABLE agora_usage FIELDS turn_id, recorded_at;
 DEFINE INDEX agora_usage_session_recorded ON TABLE agora_usage FIELDS session_id, recorded_at;
 
 DEFINE TABLE agora_replay_checkpoint TYPE NORMAL SCHEMAFULL
-    PERMISSIONS FOR select, create WHERE true, FOR update, delete NONE;
+    PERMISSIONS FOR select, create, update WHERE true, FOR delete NONE;
 DEFINE FIELD session_id ON TABLE agora_replay_checkpoint TYPE record<agora_session>;
 DEFINE FIELD event_sequence ON TABLE agora_replay_checkpoint TYPE int ASSERT $value >= 0;
 DEFINE FIELD state_kind ON TABLE agora_replay_checkpoint TYPE string ASSERT $value INSIDE ['conversation', 'runtime', 'activity', 'workspace'];

@@ -25,6 +25,7 @@ final class HarnessEvent implements Canonicalizable
         private(set) array $payload,
         private(set) \DateTimeImmutable $occurredAt,
         private(set) \DateTimeImmutable $receivedAt,
+        private(set) ?string $recordId = null,
     ) {
         if ($this->sequence < 1) {
             throw new \InvalidArgumentException('Harness event sequence must be greater than zero.');
@@ -118,6 +119,13 @@ final class HarnessEvent implements Canonicalizable
         );
     }
 
+    public static function eventId(
+        string $sessionId,
+        int $sequence,
+    ): string {
+        return sprintf('agora.event.%s.%d', $sessionId, $sequence);
+    }
+
     /** @return array<string, mixed> */
     public function toCanonical(): array
     {
@@ -134,13 +142,6 @@ final class HarnessEvent implements Canonicalizable
             'occurred_at' => self::formatInstant($this->occurredAt),
             'received_at' => self::formatInstant($this->receivedAt),
         ];
-    }
-
-    private static function eventId(
-        string $sessionId,
-        int $sequence,
-    ): string {
-        return sprintf('agora.event.%s.%d', $sessionId, $sequence);
     }
 
     /**

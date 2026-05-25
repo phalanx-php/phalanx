@@ -4,15 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Agora\Harness;
 
-interface EventLog
+interface EventLog extends EventReader
 {
     public function append(
         HarnessEvent $event,
     ): HarnessEvent;
-
-    /** @return iterable<HarnessEvent> */
-    public function readAfter(
-        string $sessionId,
-        int $sequence,
-    ): iterable;
 }

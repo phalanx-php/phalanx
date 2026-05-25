@@ -155,7 +155,7 @@ final class SurrealHarnessStore
                 event_sequence = {$resume->eventSequence},
                 status = {$this->literal($resume->status->value)},
                 pending_effect_record_id = {$pendingEffectRecord},
-                serialized_context = {$this->literal($resume->serializedContext)},
+                serialized_context = {$this->objectLiteral($resume->serializedContext)},
                 updated_at = {$this->datetimeLiteral(self::formatInstant($resume->updatedAt))};
             SURREAL,
         ));
@@ -252,6 +252,10 @@ final class SurrealHarnessStore
     private static function arrayField(
         mixed $value,
     ): array {
+        if ($value === []) {
+            return [];
+        }
+
         if (!is_array($value) || array_is_list($value)) {
             throw new SurrealException('Surreal row object field was missing or invalid.');
         }
@@ -337,15 +341,19 @@ final class SurrealHarnessStore
         ProjectionCheckpoint $checkpoint,
     ): string {
         $sessionRecord = self::recordLiteral('agora_session', $checkpoint->sessionId);
+        $checkpointRecord = self::recordLiteral(
+            'agora_replay_checkpoint',
+            sprintf('%s.%d.%s', $checkpoint->sessionId, $checkpoint->eventSequence, $checkpoint->stateKind->value),
+        );
 
         return <<<SURREAL
-        CREATE agora_replay_checkpoint SET
+        UPSERT ONLY {$checkpointRecord} SET
             session_id = {$sessionRecord},
             event_sequence = {$checkpoint->eventSequence},
             state_kind = {$this->literal($checkpoint->stateKind->value)},
             schema_version = {$checkpoint->schemaVersion},
             projection_hash = {$this->literal($checkpoint->projectionHash)},
-            state = {$this->literal($checkpoint->state)},
+            state = {$this->objectLiteral($checkpoint->state)},
             created_at = {$this->datetimeLiteral(self::formatInstant($checkpoint->createdAt))};
         SURREAL;
     }
@@ -399,5 +407,15 @@ final class SurrealHarnessStore
         } catch (\JsonException $e) {
             throw new SurrealException("Failed to encode Surreal literal: {$e->getMessage()}", previous: $e);
         }
+    }
+
+    private function objectLiteral(
+        mixed $value,
+    ): string {
+        if ($value === []) {
+            return '{}';
+        }
+
+        return $this->literal($value);
     }
 }

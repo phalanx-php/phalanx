@@ -14,10 +14,10 @@ use Phalanx\Agora\Harness\Persistence\SurrealHarnessStore;
 use Phalanx\Agora\Harness\ProjectionSet;
 use Phalanx\Agora\Harness\ResumePoint;
 use Phalanx\Agora\Harness\ResumeStatus;
+use Phalanx\Agora\Tests\Support\SurrealBinaryLocator;
+use Phalanx\Agora\Tests\Support\SurrealFreePort;
+use Phalanx\Agora\Tests\Support\SurrealServerReadiness;
 use Phalanx\Boot\AppContext;
-use Phalanx\Demos\Surreal\Support\SurrealBinaryLocator;
-use Phalanx\Demos\Surreal\Support\SurrealFreePort;
-use Phalanx\Demos\Surreal\Support\SurrealServerReadiness;
 use Phalanx\Iris\HttpClient;
 use Phalanx\Iris\HttpRequest;
 use Phalanx\Panoply\Cue\Invocation\Started as InvocationStarted;
@@ -45,12 +45,16 @@ final class SurrealPersistenceProofTest extends PhalanxTestCase
     #[Test]
     public function surrealHarnessStorePersistsEventsCheckpointsResumeAndRecordRefs(): void
     {
-        $this->runAgainstSurreal(static function (Surreal $surreal): void {
-            self::assertSurrealOk($surreal->queryRaw((string) file_get_contents(Agora::HARNESS_SCHEMA_RESOURCE)));
+        $schema = (string) file_get_contents(Agora::HARNESS_SCHEMA_RESOURCE);
+
+        $this->runAgainstSurreal(static function (Surreal $surreal) use ($schema): void {
+            self::assertSurrealOk($surreal->queryRaw($schema));
 
             $at = self::at(1);
             $sessionId = uniqid('session-', true);
             $turnId = uniqid('turn-', true);
+            $otherSessionId = uniqid('session-', true);
+            $otherTurnId = uniqid('turn-', true);
             $store = new SurrealHarnessStore($surreal);
 
             $store->createSession(
@@ -62,14 +66,26 @@ final class SurrealPersistenceProofTest extends PhalanxTestCase
                 workingDirectory: '~/project',
             );
             $store->createTurn($sessionId, $turnId, 1, 'assistant', $at);
+            $store->createSession(
+                sessionId: $otherSessionId,
+                startedAt: $at,
+            );
+            $store->createTurn($otherSessionId, $otherTurnId, 1, 'assistant', $at);
 
             $eventLog = $store->events();
+            $firstDraft = HarnessEventDraft::fromCue(
+                self::invocationStarted(10, $at),
+                $sessionId,
+                $turnId,
+            );
+            $first = $eventLog->append($firstDraft);
+            $firstRetry = $eventLog->append($firstDraft);
+            self::assertSame($first->id, $firstRetry->id);
+            self::assertSame($first->sequence, $firstRetry->sequence);
+            self::assertSame($first->recordId, $firstRetry->recordId);
+
             $persisted = [
-                $eventLog->append(HarnessEventDraft::fromCue(
-                    self::invocationStarted(10, $at),
-                    $sessionId,
-                    $turnId,
-                )),
+                $first,
                 $eventLog->append(HarnessEventDraft::fromCue(
                     self::token(20, 'thinking ', Channel::Thinking, $at),
                     $sessionId,
@@ -99,21 +115,50 @@ final class SurrealPersistenceProofTest extends PhalanxTestCase
                     ],
                     turnId: $turnId,
                 )),
+                $eventLog->append(HarnessEventDraft::marker(
+                    sessionId: $sessionId,
+                    cueType: 'agora.empty_marker',
+                    source: EventSource::Runtime,
+                    occurredAt: $at,
+                    turnId: $turnId,
+                )),
             ];
+            $other = $eventLog->append(HarnessEventDraft::fromCue(
+                self::token(20, 'other', Channel::Message, $at),
+                $otherSessionId,
+                $otherTurnId,
+            ));
 
-            self::assertSame([1, 2, 3, 4, 5], array_map(static fn($event): int => $event->sequence, $persisted));
+            self::assertSame([1, 2, 3, 4, 5, 6], array_map(static fn($event): int => $event->sequence, $persisted));
             self::assertSame(20, $persisted[1]->payload['source_sequence']);
+            self::assertSame([], $persisted[5]->payload);
+            self::assertSame(1, $other->sequence);
+            self::assertSame([], iterator_to_array($eventLog->readAfter($otherSessionId, 1)));
+            self::assertSame(
+                [1, 2, 3, 4, 5, 6],
+                array_map(
+                    static fn($event): int => $event->sequence,
+                    iterator_to_array($eventLog->readAfter($sessionId, 0)),
+                ),
+            );
 
             $checkpointProjection = ProjectionSet::empty($sessionId)
                 ->apply($persisted[0])
                 ->apply($persisted[1])
                 ->apply($persisted[2]);
             $store->saveCheckpoints($checkpointProjection, self::at(2));
+            $store->saveCheckpoints($checkpointProjection, self::at(2));
 
             $loaded = $store->latestProjectionSet($sessionId);
             self::assertNotNull($loaded);
 
-            foreach ($eventLog->readAfter($sessionId, $loaded->conversation->eventSequence()) as $event) {
+            $tail = iterator_to_array($eventLog->readAfter($sessionId, $loaded->conversation->eventSequence()));
+            self::assertSame(
+                [4, 5, 6],
+                array_map(static fn($event): int => $event->sequence, $tail),
+            );
+
+            foreach ($tail as $event) {
                 $loaded = $loaded->apply($event);
             }
 
@@ -122,29 +167,45 @@ final class SurrealPersistenceProofTest extends PhalanxTestCase
                 $full = $full->apply($event);
             }
 
-            self::assertEquals($full->conversation->state(), $loaded->conversation->state());
-            self::assertEquals($full->runtime->state(), $loaded->runtime->state());
-            self::assertEquals($full->activity->state(), $loaded->activity->state());
-            self::assertEquals($full->workspace->state(), $loaded->workspace->state());
+            self::assertSameState($full->conversation->state(), $loaded->conversation->state());
+            self::assertSameState($full->runtime->state(), $loaded->runtime->state());
+            self::assertSameState($full->activity->state(), $loaded->activity->state());
+            self::assertSameState($full->workspace->state(), $loaded->workspace->state());
             self::assertSame(
                 $full->conversation->checkpoint(self::at(3))->projectionHash,
                 $loaded->conversation->checkpoint(self::at(3))->projectionHash,
             );
+            self::assertSame(
+                $full->runtime->checkpoint(self::at(3))->projectionHash,
+                $loaded->runtime->checkpoint(self::at(3))->projectionHash,
+            );
+            self::assertSame(
+                $full->activity->checkpoint(self::at(3))->projectionHash,
+                $loaded->activity->checkpoint(self::at(3))->projectionHash,
+            );
+            self::assertSame(
+                $full->workspace->checkpoint(self::at(3))->projectionHash,
+                $loaded->workspace->checkpoint(self::at(3))->projectionHash,
+            );
+            self::assertSame("agora.event.{$sessionId}.4", $persisted[3]->id);
+            $usageEventRecordId = $persisted[3]->recordId;
+            self::assertNotNull($usageEventRecordId);
+            self::assertStringStartsWith('agora_event:', $usageEventRecordId);
 
             $effectRecordId = self::createEffectRecord(
                 surreal: $surreal,
                 sessionId: $sessionId,
                 turnId: $turnId,
-                eventId: $persisted[3]->id,
+                eventId: $usageEventRecordId,
                 at: $at,
             );
             $resume = new ResumePoint(
                 sessionId: $sessionId,
                 turnId: $turnId,
-                eventSequence: 5,
+                eventSequence: 6,
                 status: ResumeStatus::WaitingApproval,
                 pendingEffectRecordId: $effectRecordId,
-                serializedContext: ['pending_effect_id' => 'effect.read'],
+                serializedContext: [],
                 updatedAt: self::at(4),
             );
 
@@ -152,7 +213,7 @@ final class SurrealPersistenceProofTest extends PhalanxTestCase
                 $store->saveResumePoint(new ResumePoint(
                     sessionId: $sessionId,
                     turnId: $turnId,
-                    eventSequence: 5,
+                    eventSequence: 6,
                     status: ResumeStatus::WaitingApproval,
                     pendingEffectRecordId: 'effect.read',
                     serializedContext: [],
@@ -168,7 +229,7 @@ final class SurrealPersistenceProofTest extends PhalanxTestCase
 
             self::assertNotNull($loadedResume);
             self::assertSame($resume->toCanonical(), $loadedResume->toCanonical());
-            self::assertSame($persisted[3]->id, self::storedEffectEventRef($surreal, $effectRecordId));
+            self::assertSame($usageEventRecordId, self::storedEffectEventRef($surreal, $effectRecordId));
         });
     }
 
@@ -324,6 +385,36 @@ final class SurrealPersistenceProofTest extends PhalanxTestCase
         self::assertIsString($eventId);
 
         return $eventId;
+    }
+
+    /**
+     * @param array<string, mixed> $expected
+     * @param array<string, mixed> $actual
+     */
+    private static function assertSameState(
+        array $expected,
+        array $actual,
+    ): void {
+        self::sortState($expected);
+        self::sortState($actual);
+
+        self::assertSame($expected, $actual);
+    }
+
+    /**
+     * @param array<mixed> $state
+     */
+    private static function sortState(
+        array &$state,
+    ): void {
+        foreach ($state as &$value) {
+            if (is_array($value)) {
+                self::sortState($value);
+            }
+        }
+        unset($value);
+
+        ksort($state);
     }
 
     /**

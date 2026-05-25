@@ -37,6 +37,14 @@ final class AgoraHarnessSchemaTest extends TestCase
             $schema,
         );
         self::assertStringContainsString(
+            'DEFINE FIELD source_key ON TABLE agora_event TYPE string;',
+            $schema,
+        );
+        self::assertStringContainsString(
+            'DEFINE INDEX agora_event_source_key ON TABLE agora_event FIELDS session_id, source_key UNIQUE;',
+            $schema,
+        );
+        self::assertStringContainsString(
             'DEFINE TABLE agora_event_sequence TYPE NORMAL SCHEMAFULL',
             $schema,
         );

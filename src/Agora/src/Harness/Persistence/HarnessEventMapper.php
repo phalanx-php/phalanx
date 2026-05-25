@@ -19,11 +19,14 @@ final class HarnessEventMapper
         array $row,
         ?string $sessionId = null,
     ): HarnessEvent {
+        $resolvedSessionId = $sessionId ?? self::recordKey($row['session_id'] ?? null, 'agora_session');
+        $sequence = self::intField($row, 'sequence');
+
         return new HarnessEvent(
-            id: self::recordId($row['id'] ?? null),
-            sessionId: $sessionId ?? self::recordKey($row['session_id'] ?? null, 'agora_session'),
+            id: HarnessEvent::eventId($resolvedSessionId, $sequence),
+            sessionId: $resolvedSessionId,
             turnId: self::nullableRecordKey($row['turn_id'] ?? null, 'agora_turn'),
-            sequence: self::intField($row, 'sequence'),
+            sequence: $sequence,
             cueId: self::nullableString($row['cue_id'] ?? null),
             cueType: self::stringField($row, 'cue_type'),
             channel: self::nullableString($row['channel'] ?? null),
@@ -31,6 +34,7 @@ final class HarnessEventMapper
             payload: self::arrayField($row['payload'] ?? []),
             occurredAt: self::instant($row['occurred_at'] ?? null),
             receivedAt: self::instant($row['received_at'] ?? null),
+            recordId: self::recordId($row['id'] ?? null),
         );
     }
 
@@ -94,6 +98,10 @@ final class HarnessEventMapper
     private static function arrayField(
         mixed $value,
     ): array {
+        if ($value === []) {
+            return [];
+        }
+
         if (!is_array($value) || array_is_list($value)) {
             throw new \UnexpectedValueException('Surreal event payload was missing or invalid.');
         }

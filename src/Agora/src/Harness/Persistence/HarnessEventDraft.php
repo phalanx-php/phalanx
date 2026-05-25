@@ -24,6 +24,7 @@ final class HarnessEventDraft
         private(set) array $payload,
         private(set) DateTimeImmutable $occurredAt,
         private(set) DateTimeImmutable $receivedAt,
+        private(set) string $sourceKey,
     ) {
     }
 
@@ -46,6 +47,7 @@ final class HarnessEventDraft
             payload: $canonical,
             occurredAt: $cue->at,
             receivedAt: $receivedAt ?? $cue->at,
+            sourceKey: self::sourceKey(EventSource::Panoply, $cue->id, $cue->type, $turnId, $cue->at, $canonical),
         );
     }
 
@@ -71,6 +73,7 @@ final class HarnessEventDraft
             payload: $payload,
             occurredAt: $occurredAt,
             receivedAt: $receivedAt ?? $occurredAt,
+            sourceKey: self::sourceKey($source, null, $cueType, $turnId, $occurredAt, $payload),
         );
     }
 
@@ -82,6 +85,7 @@ final class HarnessEventDraft
             'cuetype' => $this->cueType,
             'channel' => $this->channel,
             'source' => $this->source->value,
+            'sourcekey' => $this->sourceKey,
             'payload' => $this->payload,
             'occurred' => self::formatInstant($this->occurredAt),
             'received' => self::formatInstant($this->receivedAt),
@@ -108,5 +112,35 @@ final class HarnessEventDraft
         DateTimeImmutable $instant,
     ): string {
         return $instant->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d\TH:i:s.u\Z');
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    private static function sourceKey(
+        EventSource $source,
+        ?string $cueId,
+        string $cueType,
+        ?string $turnId,
+        DateTimeImmutable $occurredAt,
+        array $payload,
+    ): string {
+        if ($cueId !== null) {
+            return "{$source->value}:{$cueId}";
+        }
+
+        try {
+            $encoded = json_encode([
+                'source' => $source->value,
+                'cue_type' => $cueType,
+                'turn_id' => $turnId,
+                'occurred_at' => self::formatInstant($occurredAt),
+                'payload' => $payload,
+            ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
+        } catch (\JsonException $e) {
+            throw new \InvalidArgumentException("Failed to encode harness event source key: {$e->getMessage()}", previous: $e);
+        }
+
+        return "{$source->value}:" . hash('sha256', $encoded);
     }
 }
