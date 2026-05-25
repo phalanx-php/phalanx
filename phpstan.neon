@@ -16,6 +16,7 @@ parameters:
         - src/Eidolon/src
         - src/Enigma/src
         - src/Grammata/src
+        - src/Harness/src
         - src/Hermes/src
         - src/Hydra/src
         - src/Iris/src
@@ -59,6 +60,7 @@ parameters:
         - src/Eidolon/src
         - src/Enigma/src
         - src/Grammata/src
+        - src/Harness/src
         - src/Hermes/src
         - src/Hydra/src
         - src/Iris/src

@@ -12,9 +12,9 @@ use Phalanx\Theatron\Contract\Screen;
 use Phalanx\Theatron\Stage\ScreenMode;
 use Phalanx\Theatron\Stage\Stage;
 use Phalanx\Theatron\Stage\StageConfig;
+use Phalanx\Theatron\State\Store;
 use Phalanx\Theatron\Styling\Theme;
 use Phalanx\Theatron\Tdom\Renderable;
-use Phalanx\Theatron\Template\AppStore;
 use Phalanx\Theatron\TheatronApp;
 use Phalanx\Theatron\TheatronServiceBundle;
 use PHPUnit\Framework\Attributes\Test;
@@ -117,8 +117,11 @@ final class AppRenderDiagnosticsProbeScreen implements Screen
     }
 }
 
-final class StoreInstanceProbeStore extends AppStore
+final class StoreInstanceProbeStore extends Store
 {
+    public function __construct()
+    {
+    }
 }
 
 final class StoreInstanceProbeScreen implements Screen

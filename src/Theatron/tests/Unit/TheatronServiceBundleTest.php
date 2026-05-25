@@ -8,13 +8,13 @@ use Phalanx\Boot\AppContext;
 use Phalanx\Service\ServiceCatalog;
 use Phalanx\Theatron\Binding\BindingRegistry;
 use Phalanx\Theatron\Context\ScreenContext;
+use Phalanx\Theatron\Contract\HasRuntimeContext;
 use Phalanx\Theatron\Contract\Screen;
 use Phalanx\Theatron\Stage\Stage;
 use Phalanx\Theatron\Stage\StageConfig;
 use Phalanx\Theatron\State\Store;
 use Phalanx\Theatron\Styling\Theme;
 use Phalanx\Theatron\Tdom\Renderable;
-use Phalanx\Theatron\Template\AppStore;
 use Phalanx\Theatron\TheatronApp;
 use Phalanx\Theatron\TheatronServiceBundle;
 use PHPUnit\Framework\Attributes\Test;
@@ -24,6 +24,16 @@ final class ApolloStore extends Store
 {
     public function __construct()
     {
+    }
+}
+
+final class ContextAwareStore extends Store implements HasRuntimeContext
+{
+    public ?AppContext $context = null;
+
+    public function receiveRuntimeContext(AppContext $context): void
+    {
+        $this->context = $context;
     }
 }
 
@@ -109,23 +119,23 @@ final class TheatronServiceBundleTest extends TestCase
     }
 
     #[Test]
-    public function seedsAppStoreRuntimeStatusFromContext(): void
+    public function passesRuntimeContextToContextAwareStore(): void
     {
         $context = new AppContext([
             'PWD' => '/workspace/phalanx',
             'HOME' => '/workspace',
         ]);
         $catalog = new ServiceCatalog($context);
-        $bundle = new TheatronServiceBundle($this->app(storeClass: AppStore::class));
+        $bundle = new TheatronServiceBundle($this->app(storeClass: ContextAwareStore::class));
         $bundle->services($catalog, $context);
 
-        $factory = $catalog->compile()->resolve(AppStore::class)->factoryFn;
+        $factory = $catalog->compile()->resolve(ContextAwareStore::class)->factoryFn;
         self::assertNotNull($factory);
 
         $store = $factory();
 
-        self::assertInstanceOf(AppStore::class, $store);
-        self::assertSame('~/phalanx', $store->runtimeStatus->cwdLabel());
+        self::assertInstanceOf(ContextAwareStore::class, $store);
+        self::assertSame($context, $store->context);
     }
 
     #[Test]

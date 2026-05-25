@@ -9,12 +9,11 @@ use Phalanx\Console\Input\ConsoleInput;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 use Phalanx\Theatron\Binding\BindingRegistry;
+use Phalanx\Theatron\Contract\HasRuntimeContext;
 use Phalanx\Theatron\Stage\Stage;
 use Phalanx\Theatron\Stage\StageConfig;
 use Phalanx\Theatron\State\Store;
 use Phalanx\Theatron\Styling\Theme;
-use Phalanx\Theatron\Template\AppStore;
-use Phalanx\Theatron\Template\Slice\RuntimeStatusSlice;
 
 final class TheatronServiceBundle extends ServiceBundle
 {
@@ -55,8 +54,8 @@ final class TheatronServiceBundle extends ServiceBundle
     {
         $store = new $storeClass();
 
-        if ($store instanceof AppStore) {
-            $store->runtimeStatus = RuntimeStatusSlice::fromContext($context);
+        if ($store instanceof HasRuntimeContext) {
+            $store->receiveRuntimeContext($context);
         }
 
         return $store;

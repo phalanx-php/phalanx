@@ -21,17 +21,26 @@ final class HarnessBoundaryTest extends TestCase
         );
 
         self::assertArrayHasKey('Agora', $modules);
+        self::assertArrayHasKey('Harness', $modules);
         self::assertArrayHasKey('Theatron', $modules);
         self::assertArrayHasKey('Surreal', $modules);
         self::assertIsArray($theatronManifest);
 
         self::assertSame('phalanx-php/agora', $modules['Agora']['package']);
+        self::assertSame('phalanx-php/harness', $modules['Harness']['package']);
         self::assertSame('phalanx-php/theatron', $modules['Theatron']['package']);
         self::assertSame('library', $modules['Agora']['type']);
+        self::assertSame('library', $modules['Harness']['type']);
         self::assertSame('library', $modules['Theatron']['type']);
 
-        self::assertArrayHasKey('phalanx-php/theatron', $modules['Agora']['requires']);
         self::assertArrayHasKey('phalanx-php/surreal', $modules['Agora']['requires']);
+        self::assertArrayHasKey('phalanx-php/agora', $modules['Harness']['requires']);
+        self::assertArrayHasKey('phalanx-php/athena', $modules['Harness']['requires']);
+        self::assertArrayHasKey('phalanx-php/panoply', $modules['Harness']['requires']);
+        self::assertArrayHasKey('phalanx-php/surreal', $modules['Harness']['requires']);
+        self::assertArrayHasKey('phalanx-php/theatron', $modules['Harness']['requires']);
+        self::assertArrayNotHasKey('phalanx-php/harness', $modules['Agora']['requires']);
+        self::assertArrayNotHasKey('phalanx-php/theatron', $modules['Agora']['requires']);
         self::assertArrayNotHasKey('phalanx-php/agora', $modules['Theatron']['requires']);
         self::assertArrayNotHasKey('phalanx-php/harness', $modules['Theatron']['requires']);
         self::assertArrayNotHasKey('phalanx-php/surreal', $modules['Theatron']['requires']);
@@ -39,7 +48,7 @@ final class HarnessBoundaryTest extends TestCase
     }
 
     #[Test]
-    public function agoraTheatronReferencesStayInsideTheBridgeNamespace(): void
+    public function agoraDoesNotOwnTheatronOrHarnessUiComposition(): void
     {
         $root = dirname(__DIR__, 2);
         $offenders = [];
@@ -48,18 +57,17 @@ final class HarnessBoundaryTest extends TestCase
             $source = file_get_contents($file);
             self::assertIsString($source);
 
-            if (
-                str_contains($source, 'Phalanx\\Theatron\\')
-                && !str_starts_with($file, $root . '/src/Agora/src/Theatron/')
-            ) {
-                $offenders[] = self::relative($root, $file);
+            foreach (['Phalanx\\Theatron\\', 'Phalanx\\Harness\\'] as $token) {
+                if (str_contains($source, $token)) {
+                    $offenders[] = self::relative($root, $file) . " contains {$token}";
+                }
             }
         }
 
         self::assertSame(
             [],
             $offenders,
-            "Agora may bridge into Theatron only from src/Agora/src/Theatron:\n" . implode("\n", $offenders),
+            "Agora must stay durable harness state/replay infrastructure; Harness owns UI composition:\n" . implode("\n", $offenders),
         );
     }
 
@@ -73,7 +81,7 @@ final class HarnessBoundaryTest extends TestCase
             $source = file_get_contents($file);
             self::assertIsString($source);
 
-            foreach (['Phalanx\\Agora\\', 'Phalanx\\Harness\\', 'Phalanx\\Surreal\\', 'phalanx-php/harness'] as $token) {
+            foreach (['Phalanx\\Agora\\', 'Phalanx\\Athena\\', 'Phalanx\\Harness\\', 'Phalanx\\Panoply\\', 'Phalanx\\Surreal\\', 'phalanx-php/harness'] as $token) {
                 if (str_contains($source, $token)) {
                     $offenders[] = self::relative($root, $file) . " contains {$token}";
                 }
@@ -85,6 +93,19 @@ final class HarnessBoundaryTest extends TestCase
             $offenders,
             "Theatron must stay a generic TUI layer, not the Harness app shell:\n" . implode("\n", $offenders),
         );
+    }
+
+    #[Test]
+    public function harnessOwnsTheAppShellAndReplayHydration(): void
+    {
+        $root = dirname(__DIR__, 2);
+
+        self::assertDirectoryExists($root . '/src/Harness/src/Agent');
+        self::assertDirectoryExists($root . '/src/Harness/src/Template');
+        self::assertFileExists($root . '/src/Harness/src/Replay/TheatronReplayHydrator.php');
+        self::assertDirectoryDoesNotExist($root . '/src/Theatron/src/Agent');
+        self::assertDirectoryDoesNotExist($root . '/src/Theatron/src/Template');
+        self::assertFileDoesNotExist($root . '/src/Agora/src/Theatron/TheatronReplayHydrator.php');
     }
 
     #[Test]

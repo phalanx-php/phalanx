@@ -23,60 +23,36 @@ paint loop.
 composer install
 ```
 
-Run the bundled template app:
+## App Shape
 
-```bash
-php bin/theatron
-```
-
-## Current App Shape
-
-Configure and start the app with `Theatron::app()`. External runtime bundles are
-registered directly on the same builder.
+Configure and start a terminal UI with `Theatron::app()`. Apps provide their own
+store, screens, bindings, and service bundles.
 
 ```php
 <?php
 
-use Phalanx\Iris\HttpServiceBundle;
-use Phalanx\Theatron\Agent\AthenaServiceBundle;
 use Phalanx\Theatron\Binding\Binding;
+use Phalanx\Theatron\Contract\Screen;
+use Phalanx\Theatron\State\Store;
 use Phalanx\Theatron\Theatron;
-use Phalanx\Theatron\TheatronApp;
-use Phalanx\Theatron\TheatronServiceBundle;
-use Phalanx\Theatron\Template\AppStore;
-use Phalanx\Theatron\Template\Screen\ChatScreen;
-use Phalanx\Theatron\Template\Screen\ConversationBlockDetailScreen;
-use Phalanx\Theatron\Template\Screen\DevToolsScreen;
-use Phalanx\Theatron\Template\Screen\SettingsScreen;
 
-$screens = [
-    ChatScreen::class,
-    ConversationBlockDetailScreen::class,
-    DevToolsScreen::class,
-    SettingsScreen::class,
-];
+/** @var list<class-string<Screen>> $screens */
+$screens = [StatusScreen::class];
+/** @var class-string<Store> $store */
+$store = AppStore::class;
 
 return Theatron::app($context)
-    ->store(AppStore::class)
+    ->store($store)
     ->screens($screens)
     ->globalBindings([
         Binding::ctrl('c')->quit()->label('quit'),
     ])
-    ->providers(
-        static fn(TheatronApp $app): TheatronServiceBundle => new TheatronServiceBundle($app),
-        new HttpServiceBundle(),
-        AthenaServiceBundle::ollama(),
-    )
-    ->devtools()
     ->run();
 ```
 
-`Theatron::app(...)` owns the Theatron app configuration and Aegis startup path.
-Runtime bundles are declared in the bootstrap. The Theatron bundle receives the
-built app, so it registers the same stage/store instances the renderer uses.
-The bundled app uses Ollama through Athena by default. Override
-`THEATRON_OLLAMA_BASE_URL`, `THEATRON_OLLAMA_MODEL`, or
-`THEATRON_MAX_INVOCATIONS` in the runtime context when needed.
+`Theatron::app(...)` owns terminal stage configuration, screen registration,
+input dispatch, and the Aegis startup path. The agent harness app shell lives in
+`phalanx-php/harness`.
 
 ## Components
 

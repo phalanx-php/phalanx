@@ -1,0 +1,107 @@
+{
+    "name": "phalanx-php/harness",
+    "description": "Starter agent harness app for Phalanx, composing Theatron UI, Athena execution, Panoply cues, Agora replay, and Surreal persistence",
+    "license": "MIT",
+    "type": "library",
+    "keywords": [
+        "agent-harness",
+        "theatron",
+        "agora",
+        "athena",
+        "surrealdb"
+    ],
+    "homepage": "https://github.com/phalanx-php/phalanx-harness",
+    "authors": [
+        {
+            "name": "Jonathan Havens",
+            "email": "mail@phalanx-php.com"
+        }
+    ],
+    "require": {
+        "php": "^8.4",
+        "ext-openswoole": "^26.2",
+        "ext-pcntl": "*",
+        "ext-mbstring": "*",
+        "league/commonmark": "^2.7",
+        "phalanx-php/aegis": "^0.6",
+        "phalanx-php/agora": "^0.6",
+        "phalanx-php/athena": "^0.6",
+        "phalanx-php/iris": "^0.6",
+        "phalanx-php/panoply": "^0.6",
+        "phalanx-php/surreal": "^0.6",
+        "phalanx-php/theatron": "^0.6",
+        "symfony/runtime": "^7.0 || ^8.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^13.0"
+    },
+    "bin": [
+        "bin/harness"
+    ],
+    "archive": {
+        "exclude": [
+            "/.aimind",
+            "/.aimind/**",
+            "/.claude",
+            "/.claude/**",
+            "/.daemon8",
+            "/.daemon8/**",
+            "/.DS_Store",
+            "/.github",
+            "/.github/**",
+            "/.idea",
+            "/.idea/**",
+            "/.php-cs-fixer.cache",
+            "/.phpstan-cache",
+            "/.phpstan-cache/**",
+            "/.phpunit.result.cache",
+            "/brand",
+            "/brand/**",
+            "/demos",
+            "/demos/**",
+            "/docs",
+            "/docs/**",
+            "/examples",
+            "/examples/**",
+            "/phpcs.xml",
+            "/phpstan.neon",
+            "/phpunit.xml",
+            "/phpunit.xml.dist",
+            "/rector.php",
+            "/SPEC.md",
+            "/tests",
+            "/tests/**",
+            "/tmp",
+            "/tmp/**",
+            "/tools",
+            "/tools/**",
+            "/vendor",
+            "/vendor/**"
+        ]
+    },
+    "scripts": {
+        "test": "php -d memory_limit=512M vendor/bin/phpunit -c phpunit.xml.dist"
+    },
+    "autoload": {
+        "psr-4": {
+            "Phalanx\\Harness\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Phalanx\\Harness\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "0.6.x-dev"
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "symfony/runtime": true
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

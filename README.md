@@ -245,7 +245,7 @@ The repo includes runnable demos for the current surfaces. Development is moving
 | [Athena AI](demos/athena) | streaming providers, SDK coexistence, MCP stdio/SSE, support triage, research agents | `composer demo:athena` |
 | [Surreal](demos/surreal) | in-memory RPC and live queries | `composer demo:surreal` |
 | [Skopos](demos/skopos) | basic dev server orchestration | `composer demo:skopos:basic-dev` |
-| [Theatron](demos/theatron) | non-interactive terminal pipeline rendering | `composer demo:theatron` |
+| [Harness](demos/harness) | non-interactive harness pipeline rendering | `composer demo:harness` |
 
 ## Installation
 

@@ -15,18 +15,7 @@
         "ext-openswoole": "^26.2",
         "ext-pcntl": "*",
         "ext-mbstring": "*",
-        "phalanx-php/aegis": "^0.6",
-        "phalanx-php/archon": "^0.6",
-        "phalanx-php/athena": "^0.6",
-        "phalanx-php/hermes": "^0.6",
-        "phalanx-php/hydra": "^0.6",
-        "phalanx-php/iris": "^0.6",
-        "phalanx-php/panoply": "^0.6",
-        "phalanx-php/stoa": "^0.6",
-        "phalanx-php/styx": "^0.6",
-        "league/commonmark": "^2.7",
-        "symfony/runtime": "^7.0",
-        "symfony/dotenv": "^7.0"
+        "phalanx-php/aegis": "^0.6"
     },
     "require-dev": {
         "slevomat/coding-standard": "*",
@@ -36,9 +25,6 @@
         "phpunit/phpunit": "^13.1",
         "phpstan/phpstan": "^2.0"
     },
-    "bin": [
-        "bin/theatron"
-    ],
     "archive": {
         "exclude": [
             "/.aimind",
@@ -103,7 +89,6 @@
     },
     "config": {
         "allow-plugins": {
-            "symfony/runtime": true,
             "dealerdirect/phpcodesniffer-composer-installer": true
         }
     },

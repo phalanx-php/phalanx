@@ -10,13 +10,16 @@ use PHPUnit\Framework\TestCase;
 final class ScreenBoundaryTest extends TestCase
 {
     #[Test]
-    public function sourceDoesNotDependOnAgoraOrSurrealPersistence(): void
+    public function sourceDoesNotDependOnHarnessRuntimeOrDurableState(): void
     {
         foreach (self::sourceFiles() as $file) {
             $source = file_get_contents($file);
             self::assertIsString($source);
 
             self::assertStringNotContainsString('Phalanx\\Agora\\', $source, $file);
+            self::assertStringNotContainsString('Phalanx\\Athena\\', $source, $file);
+            self::assertStringNotContainsString('Phalanx\\Harness\\', $source, $file);
+            self::assertStringNotContainsString('Phalanx\\Panoply\\', $source, $file);
             self::assertStringNotContainsString('Phalanx\\Surreal\\', $source, $file);
             self::assertStringNotContainsString('Harness\\Replay', $source, $file);
         }

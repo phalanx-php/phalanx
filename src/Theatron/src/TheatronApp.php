@@ -7,9 +7,6 @@ namespace Phalanx\Theatron;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Exception\ServiceNotFoundException;
 use Phalanx\Scope\ExecutionScope;
-use Phalanx\Theatron\Agent\AgentExecutorContract;
-use Phalanx\Theatron\Agent\AgentRuntime;
-use Phalanx\Theatron\Agent\EffectApprovalReactor;
 use Phalanx\Theatron\Binding\Binding;
 use Phalanx\Theatron\Binding\BindingRegistry;
 use Phalanx\Theatron\Buffer\Buffer;
@@ -21,9 +18,14 @@ use Phalanx\Theatron\Context\RenderEnvironment;
 use Phalanx\Theatron\Context\ScreenContext;
 use Phalanx\Theatron\Contract\DeclaresBindings;
 use Phalanx\Theatron\Contract\HandlesKeySequences;
+use Phalanx\Theatron\Contract\HasActivityPulse;
 use Phalanx\Theatron\Contract\HasFocusables;
+use Phalanx\Theatron\Contract\HasKeySequenceState;
 use Phalanx\Theatron\Contract\HasOverlayFrame;
 use Phalanx\Theatron\Contract\HasStatusBar;
+use Phalanx\Theatron\Contract\HasWorkspaceInputModes;
+use Phalanx\Theatron\Contract\PreparesWorkspaceDraw;
+use Phalanx\Theatron\Contract\ProvidesMountServices;
 use Phalanx\Theatron\Contract\RefreshesPeriodically;
 use Phalanx\Theatron\Contract\Screen;
 use Phalanx\Theatron\Focus\FocusManager;
@@ -47,8 +49,6 @@ use Phalanx\Theatron\Styling\Theme;
 use Phalanx\Theatron\Tdom\Painter\PaintContext;
 use Phalanx\Theatron\Tdom\Painter\Painter;
 use Phalanx\Theatron\Tdom\Renderable;
-use Phalanx\Theatron\Template\AppStore;
-use Phalanx\Theatron\Template\Slice\WorkspaceViewSlice;
 
 final class TheatronApp
 {
@@ -94,12 +94,8 @@ final class TheatronApp
             $store = null;
         }
 
-        if ($store instanceof AppStore) {
-            try {
-                $executor = $scope->service(AgentExecutorContract::class);
-                $mountSystem->provide(AgentRuntime::class, new AgentRuntime($store, $executor));
-            } catch (ServiceNotFoundException) {
-            }
+        if ($store instanceof ProvidesMountServices) {
+            $store->provideMountServices($mountSystem, $scope);
         }
 
         $navigator = new WorkspaceNavigator($mountSystem, $this->screens[0]);
@@ -125,12 +121,9 @@ final class TheatronApp
                     static fn(InputModeSlice $_) => new InputModeSlice($mode, $focusTarget),
                 );
 
-                if ($store instanceof AppStore) {
+                if ($store instanceof HasWorkspaceInputModes) {
                     $workspace = $navigator->active();
-                    $store->mutate(
-                        WorkspaceViewSlice::class,
-                        static fn(WorkspaceViewSlice $view) => $view->withInputMode($workspace, $mode, $focusTarget),
-                    );
+                    $store->saveInputModeForWorkspace($workspace, $mode, $focusTarget);
                 }
             });
         }
@@ -164,11 +157,13 @@ final class TheatronApp
             $mainHeight = $mainRegion->area->height;
             $viewportChanged = $mainWidth !== $lastMainWidth || $mainHeight !== $lastMainHeight;
 
-            if ($store instanceof AppStore) {
-                EffectApprovalReactor::check($store, $navigator);
+            if ($store instanceof PreparesWorkspaceDraw) {
+                $store->prepareWorkspaceDraw($navigator);
+            }
 
-                if ($store->activity->isBusy() && $now - $lastActivityPulseAt >= 0.25) {
-                    $store->activity = $store->activity->tick();
+            if ($store instanceof HasActivityPulse) {
+                if ($store->activityIsBusy() && $now - $lastActivityPulseAt >= 0.25) {
+                    $store->tickActivity();
                     $workspace->markDirty();
                     $lastActivityPulseAt = $now;
                 }
@@ -265,8 +260,8 @@ final class TheatronApp
                 }
 
                 if (
-                    $store instanceof AppStore
-                    && $store->keySequence->isAwaitingControlX()
+                    $store instanceof HasKeySequenceState
+                    && $store->keySequenceState()->isAwaitingControlX()
                     && self::dispatchKeySequence($event, $store, $navigator)
                 ) {
                     $stage->requestFrame();
@@ -335,7 +330,7 @@ final class TheatronApp
 
                 $activeBeforeDispatch = $navigator->active();
 
-                if ($store instanceof AppStore && self::dispatchKeySequence($event, $store, $navigator)) {
+                if ($store instanceof HasKeySequenceState && self::dispatchKeySequence($event, $store, $navigator)) {
                     $stage->requestFrame();
 
                     return;
@@ -389,13 +384,13 @@ final class TheatronApp
     ): void {
         self::rebuildFocus($focus, $navigator, $store);
 
-        if (!$store instanceof AppStore) {
+        if (!$store instanceof HasWorkspaceInputModes) {
             $dispatcher->syncModeWithActiveFocus();
 
             return;
         }
 
-        $saved = $store->workspaceView->inputModeFor($navigator->active());
+        $saved = $store->inputModeForWorkspace($navigator->active());
 
         if ($saved === null) {
             $dispatcher->syncModeWithActiveFocus();
@@ -408,24 +403,24 @@ final class TheatronApp
 
     private static function dispatchKeySequence(
         KeyEvent $event,
-        AppStore $store,
+        HasKeySequenceState $store,
         WorkspaceNavigator $navigator,
     ): bool {
         $screen = $navigator->activeWorkspace()->screen;
 
         if (!$screen instanceof HandlesKeySequences) {
-            if (!$store->keySequence->isAwaitingControlX()) {
+            if (!$store->keySequenceState()->isAwaitingControlX()) {
                 return false;
             }
 
-            $store->keySequence = $store->keySequence->clear();
+            $store->updateKeySequence($store->keySequenceState()->clear());
 
             return true;
         }
 
-        if ($store->keySequence->isAwaitingControlX()) {
-            $screen->handleKeySequence($store->keySequence, $event);
-            $store->keySequence = $store->keySequence->clear();
+        if ($store->keySequenceState()->isAwaitingControlX()) {
+            $screen->handleKeySequence($store->keySequenceState(), $event);
+            $store->updateKeySequence($store->keySequenceState()->clear());
 
             return true;
         }
@@ -434,7 +429,7 @@ final class TheatronApp
             return false;
         }
 
-        $store->keySequence = $store->keySequence->beginControlX();
+        $store->updateKeySequence($store->keySequenceState()->beginControlX());
 
         return true;
     }
@@ -449,8 +444,8 @@ final class TheatronApp
                 $focus->register($name, $focusable);
             }
 
-            $saved = $store instanceof AppStore
-                ? $store->workspaceView->inputModeFor($navigator->active())
+            $saved = $store instanceof HasWorkspaceInputModes
+                ? $store->inputModeForWorkspace($navigator->active())
                 : null;
 
             if ($saved?->focusTarget !== null && in_array($saved->focusTarget, $focus->names(), true)) {
