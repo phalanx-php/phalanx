@@ -121,6 +121,42 @@ final class HarnessBoundaryTest extends TestCase
     }
 
     #[Test]
+    public function harnessBinDelegatesToTheHarnessAppFactory(): void
+    {
+        $source = file_get_contents(dirname(__DIR__, 2) . '/src/Harness/bin/harness');
+        self::assertIsString($source);
+
+        self::assertStringContainsString('use Phalanx\\Harness\\Harness;', $source);
+        self::assertStringContainsString('Harness::app($context)->run()', $source);
+        self::assertStringNotContainsString('TemplateApp::store()', $source);
+        self::assertStringNotContainsString('Theatron::app($context)', $source);
+    }
+
+    #[Test]
+    public function harnessSourceUsesHarnessConfigKeys(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $offenders = [];
+
+        foreach (self::sourceFiles($root . '/src/Harness/src') as $file) {
+            $source = file_get_contents($file);
+            self::assertIsString($source);
+
+            foreach (['THEATRON_OLLAMA', 'THEATRON_MAX_INVOCATIONS'] as $token) {
+                if (str_contains($source, $token)) {
+                    $offenders[] = self::relative($root, $file) . " contains {$token}";
+                }
+            }
+        }
+
+        self::assertSame(
+            [],
+            $offenders,
+            "Harness runtime config must use HARNESS_* keys:\n" . implode("\n", $offenders),
+        );
+    }
+
+    #[Test]
     public function rootReadmeDoesNotAdvertiseHarnessStarterCommandsBeforeBootProof(): void
     {
         $readme = file_get_contents(dirname(__DIR__, 2) . '/README.md');

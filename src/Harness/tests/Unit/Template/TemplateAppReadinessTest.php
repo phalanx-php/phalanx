@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Harness\Tests\Unit\Template;
 
 use Phalanx\Harness\Agent\AthenaServiceBundle;
+use Phalanx\Harness\Harness;
 use Phalanx\Harness\Template\AppStore;
 use Phalanx\Harness\Template\Screen\ChatScreen;
 use Phalanx\Harness\Template\Screen\DevToolsScreen;
@@ -41,8 +42,7 @@ use Phalanx\Theatron\Tdom\Element\RowElement;
 use Phalanx\Theatron\Tdom\Element\TextElement;
 use Phalanx\Theatron\Tdom\Renderable;
 use Phalanx\Theatron\Text\Line;
-use Phalanx\Theatron\Theatron;
-use Phalanx\Theatron\TheatronApp;
+use Phalanx\Theatron\TheatronBuilder;
 use Phalanx\Theatron\TheatronServiceBundle;
 use PHPUnit\Framework\Attributes\Test;
 
@@ -93,9 +93,13 @@ final class TemplateAppReadinessTest extends PhalanxTestCase
         $stream = fopen('php://memory', 'w+');
         self::assertIsResource($stream);
 
-        $builder = self::templateBuilder($stream);
+        $builder = self::templateBuilder($stream, context: [
+            'APP_ENV' => 'test',
+            'HARNESS_OLLAMA_MODEL' => 'llama3.1',
+        ]);
         $app = $builder->build();
 
+        self::assertSame('llama3.1', $builder->context->get('HARNESS_OLLAMA_MODEL'));
         self::assertSame(TemplateApp::screens(), $builder->registeredScreens());
         self::assertCount(1, $builder->registeredGlobalBindings());
         self::assertRegisteredProvider($builder->registeredProviders(), HttpServiceBundle::class);
@@ -301,12 +305,14 @@ final class TemplateAppReadinessTest extends PhalanxTestCase
     /**
      * @param resource $stream
      * @param list<Binding> $bindings
+     * @param array<string,mixed> $context
      */
-    private static function templateBuilder(mixed $stream, array $bindings = []): \Phalanx\Theatron\TheatronBuilder
-    {
-        return Theatron::app(['APP_ENV' => 'test'])
-            ->store(TemplateApp::store())
-            ->screens(TemplateApp::screens())
+    private static function templateBuilder(
+        mixed $stream,
+        array $bindings = [],
+        array $context = ['APP_ENV' => 'test'],
+    ): TheatronBuilder {
+        return Harness::app($context)
             ->globalBindings([...TemplateApp::bindings(), ...$bindings])
             ->stageConfig(new StageConfig(
                 screenMode: ScreenMode::Inline,
@@ -320,11 +326,6 @@ final class TemplateAppReadinessTest extends PhalanxTestCase
                     'LINES' => '30',
                 ],
             ))
-            ->providers(
-                static fn(TheatronApp $app): TheatronServiceBundle => new TheatronServiceBundle($app),
-                new HttpServiceBundle(),
-                AthenaServiceBundle::ollama(),
-            )
             ->devtools();
     }
 

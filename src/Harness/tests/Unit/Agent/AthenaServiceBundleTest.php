@@ -89,9 +89,9 @@ final class AthenaServiceBundleTest extends TestCase
     public function ollamaServicesInstallDefaultAgentExecutorAndConfig(): void
     {
         $context = new AppContext([
-            'THEATRON_OLLAMA_BASE_URL' => 'http://example.test:11434',
-            'THEATRON_OLLAMA_MODEL' => 'llama3.1',
-            'THEATRON_MAX_INVOCATIONS' => '2',
+            'HARNESS_OLLAMA_BASE_URL' => 'http://example.test:11434',
+            'HARNESS_OLLAMA_MODEL' => 'llama3.1',
+            'HARNESS_MAX_INVOCATIONS' => '2',
         ]);
         $catalog = new ServiceCatalog($context);
 

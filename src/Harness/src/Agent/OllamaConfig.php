@@ -22,9 +22,9 @@ final class OllamaConfig
     public static function fromContext(AppContext $context): self
     {
         return new self(
-            baseUrl: $context->string('THEATRON_OLLAMA_BASE_URL', self::DEFAULT_BASE_URL),
-            model: $context->string('THEATRON_OLLAMA_MODEL', self::DEFAULT_MODEL),
-            maxInvocations: $context->int('THEATRON_MAX_INVOCATIONS', self::DEFAULT_MAX_INVOCATIONS),
+            baseUrl: $context->string('HARNESS_OLLAMA_BASE_URL', self::DEFAULT_BASE_URL),
+            model: $context->string('HARNESS_OLLAMA_MODEL', self::DEFAULT_MODEL),
+            maxInvocations: $context->int('HARNESS_MAX_INVOCATIONS', self::DEFAULT_MAX_INVOCATIONS),
         );
     }
 }

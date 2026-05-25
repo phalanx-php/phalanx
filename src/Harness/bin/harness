@@ -11,21 +11,6 @@ if (!is_file($autoload)) {
 
 require_once $autoload;
 
-use Phalanx\Harness\Agent\AthenaServiceBundle;
-use Phalanx\Harness\Template\TemplateApp;
-use Phalanx\Iris\HttpServiceBundle;
-use Phalanx\Theatron\Theatron;
-use Phalanx\Theatron\TheatronApp;
-use Phalanx\Theatron\TheatronServiceBundle;
+use Phalanx\Harness\Harness;
 
-return static fn(array $context): \Closure => static fn(): int => Theatron::app($context)
-    ->store(TemplateApp::store())
-    ->screens(TemplateApp::screens())
-    ->globalBindings(TemplateApp::bindings())
-    ->providers(
-        static fn(TheatronApp $app): TheatronServiceBundle => new TheatronServiceBundle($app),
-        new HttpServiceBundle(),
-        AthenaServiceBundle::ollama(),
-    )
-    ->devtools()
-    ->run();
+return static fn(array $context): \Closure => static fn(): int => Harness::app($context)->run();
