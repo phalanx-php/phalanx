@@ -241,6 +241,16 @@ trait TextInputBehavior
     private function moveCursor(Signal $signal, int $delta, bool $selecting = false): bool
     {
         $text = (string) $signal->get();
+        $selection = $this->selectionRange($text);
+
+        if (!$selecting && $selection !== null) {
+            [$start, $end] = $selection;
+            $this->setCursor($delta < 0 ? $start : $end, $text);
+            $this->clearSelection();
+
+            return true;
+        }
+
         $cursor = $this->textCursor($text);
         $this->setCursor($cursor + $delta, $text);
         $this->updateSelection($text, $cursor, $selecting);

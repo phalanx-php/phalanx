@@ -323,6 +323,31 @@ final class PainterTest extends TestCase
     }
 
     #[Test]
+    public function inputSelectionPreservesBaseStyle(): void
+    {
+        $buf = Buffer::empty(20, 1);
+        $ctx = new PaintContext(Rect::sized(20, 1), $buf);
+
+        Painter::paint(
+            new InputElement(
+                value: 'hello',
+                prompt: '> ',
+                cursor: 5,
+                style: Style::of(color: Color::red()),
+                selectionStart: 1,
+                selectionEnd: 3,
+            ),
+            $ctx,
+        );
+
+        $selectedCell = $buf->get(3, 0);
+
+        self::assertTrue($selectedCell->style->hasModifier(Modifier::Reverse));
+        self::assertNotNull($selectedCell->style->foreground);
+        self::assertTrue($selectedCell->style->foreground->equals(Color::red()));
+    }
+
+    #[Test]
     public function spinnerPaintsFrameAndLabel(): void
     {
         $buf = Buffer::empty(20, 1);

@@ -173,6 +173,21 @@ final class TextInputBehaviorTest extends TestCase
     }
 
     #[Test]
+    public function plainArrowCollapsesSelectionToRangeEdge(): void
+    {
+        $fixture = new TextInputFixture(new Signal('hello'), new Signal(5));
+
+        self::assertTrue($fixture->handle(new KeyEvent(Key::Left, shift: true)));
+        self::assertTrue($fixture->handle(new KeyEvent(Key::Left, shift: true)));
+        self::assertTrue($fixture->handle(new KeyEvent(Key::Left)));
+
+        self::assertNotNull($fixture->cursor());
+        self::assertNotNull($fixture->selectionAnchor());
+        self::assertSame(3, $fixture->cursor()->get());
+        self::assertNull($fixture->selectionAnchor()->get());
+    }
+
+    #[Test]
     public function shiftAltArrowsSelectWords(): void
     {
         $fixture = new TextInputFixture(new Signal('alpha beta gamma'), new Signal(16));
