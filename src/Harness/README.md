@@ -18,7 +18,3 @@ Part of the [Phalanx framework](https://github.com/phalanx-php/phalanx).
 - `ext-pcntl`
 - `ext-mbstring`
 
-## Status
-
-The app shell has been extracted into this module. Runnable starter bootstrap
-and fresh-install instructions are tracked by the Harness starter-kit roadmap.
