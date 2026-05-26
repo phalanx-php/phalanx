@@ -13,6 +13,7 @@ parameters:
         - src/Argos/src
         - src/Athena/src
         - src/Cli/src
+        - src/Dory/src
         - src/Eidolon/src
         - src/Enigma/src
         - src/Grammata/src
@@ -58,6 +59,7 @@ parameters:
         - src/Argos/src
         - src/Athena/src
         - src/Cli/src
+        - src/Dory/src
         - src/Eidolon/src
         - src/Enigma/src
         - src/Grammata/src

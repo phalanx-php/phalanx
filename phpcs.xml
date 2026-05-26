@@ -6,6 +6,7 @@
     <file>src/Argos/src</file>
     <file>src/Athena/src</file>
     <file>src/Cli/src</file>
+    <file>src/Dory/src</file>
     <file>src/Eidolon/src</file>
     <file>src/Enigma/src</file>
     <file>src/Grammata/src</file>
@@ -59,6 +60,7 @@
         <exclude-pattern>*/Reactive/Computed.php</exclude-pattern>
         <exclude-pattern>*/Component/MountedComponent.php</exclude-pattern>
         <exclude-pattern>*/Focus/FocusManager.php</exclude-pattern>
+        <exclude-pattern>*/ScriptContext.php</exclude-pattern>
     </rule>
 
     <!-- PHP 8.4 property hooks: indentation rule misfires on hook bodies -->
