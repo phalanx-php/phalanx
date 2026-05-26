@@ -42,7 +42,7 @@ final class TheatronServiceBundleTest extends TestCase
     #[Test]
     public function registersStageAsSingleton(): void
     {
-        $catalog = new ServiceCatalog(new AppContext());
+        $catalog = new ServiceCatalog();
         $app = $this->app();
         $bundle = new TheatronServiceBundle($app);
         $bundle->services($catalog, new AppContext());
@@ -53,7 +53,7 @@ final class TheatronServiceBundleTest extends TestCase
     #[Test]
     public function registersProvidedStageInstance(): void
     {
-        $catalog = new ServiceCatalog(new AppContext());
+        $catalog = new ServiceCatalog();
         $app = $this->app();
         $bundle = new TheatronServiceBundle($app);
         $bundle->services($catalog, new AppContext());
@@ -67,7 +67,7 @@ final class TheatronServiceBundleTest extends TestCase
     #[Test]
     public function registersAppStageConfigAsSingleton(): void
     {
-        $catalog = new ServiceCatalog(new AppContext());
+        $catalog = new ServiceCatalog();
         $app = $this->app();
         $bundle = new TheatronServiceBundle($app);
         $bundle->services($catalog, new AppContext());
@@ -81,7 +81,7 @@ final class TheatronServiceBundleTest extends TestCase
     #[Test]
     public function registersBindingRegistryAsSingleton(): void
     {
-        $catalog = new ServiceCatalog(new AppContext());
+        $catalog = new ServiceCatalog();
         $bundle = new TheatronServiceBundle($this->app());
         $bundle->services($catalog, new AppContext());
 
@@ -91,7 +91,7 @@ final class TheatronServiceBundleTest extends TestCase
     #[Test]
     public function registersThemeAsSingleton(): void
     {
-        $catalog = new ServiceCatalog(new AppContext());
+        $catalog = new ServiceCatalog();
         $bundle = new TheatronServiceBundle($this->app());
         $bundle->services($catalog, new AppContext());
 
@@ -101,7 +101,7 @@ final class TheatronServiceBundleTest extends TestCase
     #[Test]
     public function doesNotRegisterStoreWhenNotConfigured(): void
     {
-        $catalog = new ServiceCatalog(new AppContext());
+        $catalog = new ServiceCatalog();
         $bundle = new TheatronServiceBundle($this->app());
         $bundle->services($catalog, new AppContext());
 
@@ -111,7 +111,7 @@ final class TheatronServiceBundleTest extends TestCase
     #[Test]
     public function registersStoreWhenConfigured(): void
     {
-        $catalog = new ServiceCatalog(new AppContext());
+        $catalog = new ServiceCatalog();
         $bundle = new TheatronServiceBundle($this->app(storeClass: ApolloStore::class));
         $bundle->services($catalog, new AppContext());
 
@@ -125,7 +125,7 @@ final class TheatronServiceBundleTest extends TestCase
             'PWD' => '/workspace/phalanx',
             'HOME' => '/workspace',
         ]);
-        $catalog = new ServiceCatalog($context);
+        $catalog = new ServiceCatalog();
         $bundle = new TheatronServiceBundle($this->app(storeClass: ContextAwareStore::class));
         $bundle->services($catalog, $context);
 
@@ -141,7 +141,7 @@ final class TheatronServiceBundleTest extends TestCase
     #[Test]
     public function aliasesStoreBaseClassToConfiguredStore(): void
     {
-        $catalog = new ServiceCatalog(new AppContext());
+        $catalog = new ServiceCatalog();
         $bundle = new TheatronServiceBundle($this->app(storeClass: ApolloStore::class));
         $bundle->services($catalog, new AppContext());
 
@@ -160,7 +160,7 @@ final class TheatronServiceBundleTest extends TestCase
     #[Test]
     public function registersAppTheme(): void
     {
-        $catalog = new ServiceCatalog(new AppContext());
+        $catalog = new ServiceCatalog();
         $theme = Theme::default();
         $app = $this->app(theme: $theme);
         $bundle = new TheatronServiceBundle($app);

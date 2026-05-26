@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Config;
+namespace Phalanx\Themis;
 
 final class EnvExampleGenerator
 {
@@ -30,7 +30,7 @@ final class EnvExampleGenerator
                     }
 
                     $seen[$entry->envKey] = true;
-                    $value = $known[$entry->envKey] ?? $entry->default ?? '';
+                    $value = $known[$entry->envKey] ?? $entry->example ?? $entry->default ?? '';
                     $lines[] = $entry->envKey . '=' . $value;
                     unset($known[$entry->envKey]);
                 }

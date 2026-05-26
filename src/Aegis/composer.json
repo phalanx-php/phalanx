@@ -23,6 +23,7 @@
         "php": "^8.4",
         "ext-openswoole": "^26.2",
         "openswoole/core": "^26.2",
+        "phalanx-php/themis": "^0.6",
         "symfony/process": "^7.0 || ^8.0",
         "symfony/uid": "^7.0 || ^8.0"
     },

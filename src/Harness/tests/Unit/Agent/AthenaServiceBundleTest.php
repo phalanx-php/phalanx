@@ -61,7 +61,7 @@ final class AthenaServiceBundleTest extends TestCase
     #[Test]
     public function servicesInstallRequestRecordingRouter(): void
     {
-        $catalog = new ServiceCatalog(new AppContext());
+        $catalog = new ServiceCatalog();
         $bundle = AthenaServiceBundle::from(self::makeAthenaBundle());
 
         $bundle->services($catalog, new AppContext());
@@ -83,7 +83,7 @@ final class AthenaServiceBundleTest extends TestCase
             'HARNESS_OLLAMA_MODEL' => 'llama3.1',
             'HARNESS_MAX_INVOCATIONS' => '2',
         ]);
-        $catalog = new ServiceCatalog($context);
+        $catalog = new ServiceCatalog();
 
         AthenaServiceBundle::ollama()->services($catalog, $context);
 
@@ -136,7 +136,7 @@ final class AthenaServiceBundleTest extends TestCase
     public function ollamaWithCustomAgentClassResolvesToThatAgent(): void
     {
         $context = new AppContext([]);
-        $catalog = new ServiceCatalog($context);
+        $catalog = new ServiceCatalog();
 
         AthenaServiceBundle::ollama(TemplateAgent::class)->services($catalog, $context);
         $graph = $catalog->compile();

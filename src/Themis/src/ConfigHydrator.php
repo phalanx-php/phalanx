@@ -2,22 +2,27 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Config;
+namespace Phalanx\Themis;
 
 use BackedEnum;
-use Phalanx\Boot\AppContext;
 use ReflectionClass;
 use ReflectionNamedType;
 use ReflectionParameter;
 use ValueError;
 
+/**
+ * @internal Hydrates Config objects from a flat key-value context array.
+ *           Use ConfigFactory as the public API.
+ */
 final readonly class ConfigHydrator
 {
-    public function __construct(private AppContext $context)
+    /** @param array<string, mixed> $context */
+    private function __construct(private array $context)
     {
     }
 
-    public static function from(AppContext $context): self
+    /** @param array<string, mixed> $context */
+    public static function from(array $context): self
     {
         return new self($context);
     }
@@ -129,7 +134,10 @@ final readonly class ConfigHydrator
             throw new ConfigHydrationException($issues);
         }
 
-        if (!$this->context->has($env->key) || $this->context->get($env->key) === '') {
+        $hasKey = array_key_exists($env->key, $this->context);
+        $rawValue = $this->context[$env->key] ?? null;
+
+        if (!$hasKey || $rawValue === '') {
             if ($typeName === Secret::class) {
                 return Secret::empty();
             }
@@ -154,7 +162,7 @@ final readonly class ConfigHydrator
         }
 
         return $this->coerce(
-            $this->context->get($env->key),
+            $rawValue,
             $typeName,
             $type->allowsNull(),
             $env->key,

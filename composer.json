@@ -59,7 +59,8 @@
             "Phalanx\\Stoa\\": "src/Stoa/src/",
             "Phalanx\\Styx\\": "src/Styx/src/",
             "Phalanx\\Surreal\\": "src/Surreal/src/",
-            "Phalanx\\Theatron\\": "src/Theatron/src/"
+            "Phalanx\\Theatron\\": "src/Theatron/src/",
+            "Phalanx\\Themis\\": "src/Themis/src/"
         }
     },
     "autoload-dev": {
@@ -91,6 +92,7 @@
             "Phalanx\\Styx\\Tests\\": "src/Styx/tests/",
             "Phalanx\\Surreal\\Tests\\": "src/Surreal/tests/",
             "Phalanx\\Theatron\\Tests\\": "src/Theatron/tests/",
+            "Phalanx\\Themis\\Tests\\": "src/Themis/tests/",
             "Phalanx\\Hermes\\Client\\Tests\\": "src/Hermes/tests/Client/"
         },
         "classmap": [
@@ -273,6 +275,7 @@
         "test:styx": "php -d memory_limit=512M vendor/bin/phpunit -c src/Styx/phpunit.xml",
         "test:surreal": "php -d memory_limit=512M vendor/bin/phpunit -c src/Surreal/phpunit.xml.dist",
         "test:theatron": "php -d memory_limit=512M vendor/bin/phpunit -c src/Theatron/phpunit.xml",
+        "test:themis": "php -d memory_limit=512M vendor/bin/phpunit -c src/Themis/phpunit.xml",
         "modules:check": "php tools/check-modules.php",
         "modules:manifests": "php tools/generate-module-manifests.php --write",
         "modules:manifests:check": "php tools/generate-module-manifests.php --check",
@@ -308,7 +311,8 @@
         "phalanx-php/stoa": "self.version",
         "phalanx-php/styx": "self.version",
         "phalanx-php/surreal": "self.version",
-        "phalanx-php/theatron": "self.version"
+        "phalanx-php/theatron": "self.version",
+        "phalanx-php/themis": "self.version"
     },
     "minimum-stability": "dev",
     "prefer-stable": true

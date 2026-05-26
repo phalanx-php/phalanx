@@ -112,15 +112,17 @@ PHP);
 
     protected function phalanxServices(): ?Closure
     {
-        return static function (Services $services): void {
-            $services->contextConfig(SshConfig::class, static fn(AppContext $ctx): SshConfig => new SshConfig(
-                sshBinaryPath: $ctx->string('sshBinaryPath'),
-                scpBinaryPath: $ctx->string('scpBinaryPath'),
-                sftpBinaryPath: $ctx->string('sftpBinaryPath'),
+        return static function (Services $services, AppContext $context): void {
+            $config = new SshConfig(
+                sshBinaryPath: $context->string('sshBinaryPath'),
+                scpBinaryPath: $context->string('scpBinaryPath'),
+                sftpBinaryPath: $context->string('sftpBinaryPath'),
                 defaultTimeoutSeconds: 1.0,
                 connectionTimeoutSeconds: 1.0,
                 strictHostKeyChecking: false,
-            ));
+            );
+            $services->singleton(SshConfig::class)
+                ->factory(static fn(): SshConfig => $config);
         };
     }
 

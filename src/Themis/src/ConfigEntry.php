@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Config;
+namespace Phalanx\Themis;
 
 final readonly class ConfigEntry
 {
@@ -14,6 +14,8 @@ final readonly class ConfigEntry
         public ?string $default = null,
         public ?string $description = null,
         public bool $secret = false,
+        public ?string $group = null,
+        public ?string $example = null,
     ) {
     }
 }

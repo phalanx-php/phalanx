@@ -7,11 +7,11 @@ namespace Phalanx\Harness\Agent;
 use Phalanx\Boot\AppContext;
 use Phalanx\Boot\ContextKey;
 use Phalanx\Boot\ContextSchema;
-use Phalanx\Config\Config;
-use Phalanx\Config\Env;
-use Phalanx\Config\Issue;
-use Phalanx\Config\IssueLevel;
-use Phalanx\Config\ValidationContext;
+use Phalanx\Themis\Config;
+use Phalanx\Themis\Env;
+use Phalanx\Themis\Issue;
+use Phalanx\Themis\IssueLevel;
+use Phalanx\Themis\ValidationContext;
 
 final class OllamaConfig implements Config
 {
@@ -25,11 +25,11 @@ final class OllamaConfig implements Config
     }
 
     public function __construct(
-        #[Env('HARNESS_OLLAMA_BASE_URL', 'Ollama API base URL')]
+        #[Env(key: 'HARNESS_OLLAMA_BASE_URL', description: 'Ollama API base URL')]
         private(set) string $baseUrl = self::DEFAULT_BASE_URL,
-        #[Env('HARNESS_OLLAMA_MODEL', 'Default harness chat model')]
+        #[Env(key: 'HARNESS_OLLAMA_MODEL', description: 'Default harness chat model')]
         private(set) string $model = self::DEFAULT_MODEL,
-        #[Env('HARNESS_MAX_INVOCATIONS', 'Maximum agent invocations per activity')]
+        #[Env(key: 'HARNESS_MAX_INVOCATIONS', description: 'Maximum agent invocations per activity')]
         private(set) int $maxInvocations = self::DEFAULT_MAX_INVOCATIONS,
     ) {
         $this->baseUrl = rtrim($baseUrl, '/');

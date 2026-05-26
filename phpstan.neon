@@ -27,6 +27,7 @@ parameters:
         - src/Surreal/src
         - src/Theatron/src
         - src/Styx/src
+        - src/Themis/src
         - benchmarks
         - demos
     scanDirectories:
@@ -71,6 +72,7 @@ parameters:
         - src/Surreal/src
         - src/Theatron/src
         - src/Styx/src
+        - src/Themis/src
     phalanxAuditPaths: []
     phalanxRuntimeHookInternalPaths:
         - src/Aegis/src/Runtime/RuntimeCapability.php

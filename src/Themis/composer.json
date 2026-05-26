@@ -1,17 +1,15 @@
 {
-    "name": "phalanx-php/surreal",
-    "description": "SurrealDB RPC and live-query client for Phalanx using Iris, Hermes, and Aegis runtime supervision",
+    "name": "phalanx-php/themis",
+    "description": "Config hydration and environment validation primitives for Phalanx",
     "license": "MIT",
     "type": "library",
     "keywords": [
-        "surrealdb",
-        "phalanx",
-        "aegis",
-        "iris",
-        "http",
-        "rpc"
+        "config",
+        "env",
+        "hydration",
+        "validation"
     ],
-    "homepage": "https://github.com/phalanx-php/phalanx-surreal",
+    "homepage": "https://github.com/phalanx-php/phalanx-themis",
     "authors": [
         {
             "name": "Jonathan Havens",
@@ -19,11 +17,7 @@
         }
     ],
     "require": {
-        "php": "^8.4",
-        "phalanx-php/aegis": "^0.6",
-        "phalanx-php/hermes": "^0.6",
-        "phalanx-php/iris": "^0.6",
-        "phalanx-php/themis": "^0.6"
+        "php": "^8.4"
     },
     "require-dev": {
         "phpunit/phpunit": "^13.0"
@@ -70,16 +64,16 @@
         ]
     },
     "scripts": {
-        "test": "php -d memory_limit=512M vendor/bin/phpunit -c phpunit.xml.dist"
+        "test": "php -d memory_limit=512M vendor/bin/phpunit -c phpunit.xml"
     },
     "autoload": {
         "psr-4": {
-            "Phalanx\\Surreal\\": "src/"
+            "Phalanx\\Themis\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Phalanx\\Surreal\\Tests\\": "tests/"
+            "Phalanx\\Themis\\Tests\\": "tests/"
         }
     },
     "extra": {

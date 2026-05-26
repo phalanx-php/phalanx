@@ -7,14 +7,14 @@ namespace Phalanx\Surreal;
 use Phalanx\Boot\AppContext;
 use Phalanx\Boot\ContextKey;
 use Phalanx\Boot\ContextSchema;
-use Phalanx\Config\Config;
-use Phalanx\Config\ConfigHydrator;
-use Phalanx\Config\Env;
-use Phalanx\Config\Issue;
-use Phalanx\Config\IssueLevel;
-use Phalanx\Config\ValidationContext;
+use Phalanx\Themis\Config;
+use Phalanx\Themis\ConfigFactory;
+use Phalanx\Themis\Env;
+use Phalanx\Themis\Issue;
+use Phalanx\Themis\IssueLevel;
+use Phalanx\Themis\ValidationContext;
 
-class SurrealConfig implements Config
+final class SurrealConfig implements Config
 {
     private const string DEFAULT_NAMESPACE = 'phalanx';
     private const string DEFAULT_DATABASE = 'app';
@@ -29,25 +29,25 @@ class SurrealConfig implements Config
     }
 
     public function __construct(
-        #[Env('SURREAL_NAMESPACE', 'SurrealDB namespace')]
+        #[Env(key: 'SURREAL_NAMESPACE', description: 'SurrealDB namespace')]
         private(set) string $namespace = self::DEFAULT_NAMESPACE,
-        #[Env('SURREAL_DATABASE', 'SurrealDB database')]
+        #[Env(key: 'SURREAL_DATABASE', description: 'SurrealDB database')]
         private(set) string $database = self::DEFAULT_DATABASE,
-        #[Env('SURREAL_ENDPOINT', 'SurrealDB HTTP endpoint')]
+        #[Env(key: 'SURREAL_ENDPOINT', description: 'SurrealDB HTTP endpoint')]
         private(set) string $endpoint = self::DEFAULT_ENDPOINT,
-        #[Env('SURREAL_WS_ENDPOINT', 'SurrealDB WebSocket endpoint')]
+        #[Env(key: 'SURREAL_WS_ENDPOINT', description: 'SurrealDB WebSocket endpoint')]
         private(set) ?string $websocketEndpoint = null,
-        #[Env('SURREAL_USERNAME', 'SurrealDB username')]
+        #[Env(key: 'SURREAL_USERNAME', description: 'SurrealDB username')]
         private(set) ?string $username = null,
-        #[Env('SURREAL_PASSWORD', 'SurrealDB password', secret: true)]
+        #[Env(key: 'SURREAL_PASSWORD', description: 'SurrealDB password', secret: true)]
         private(set) ?string $password = null,
-        #[Env('SURREAL_TOKEN', 'SurrealDB authentication token', secret: true)]
+        #[Env(key: 'SURREAL_TOKEN', description: 'SurrealDB authentication token', secret: true)]
         private(set) ?string $token = null,
-        #[Env('SURREAL_CONNECT_TIMEOUT', 'SurrealDB connect timeout in seconds')]
+        #[Env(key: 'SURREAL_CONNECT_TIMEOUT', description: 'SurrealDB connect timeout in seconds')]
         private(set) float $connectTimeout = self::DEFAULT_CONNECT_TIMEOUT,
-        #[Env('SURREAL_READ_TIMEOUT', 'SurrealDB read timeout in seconds')]
+        #[Env(key: 'SURREAL_READ_TIMEOUT', description: 'SurrealDB read timeout in seconds')]
         private(set) float $readTimeout = self::DEFAULT_READ_TIMEOUT,
-        #[Env('SURREAL_MAX_RESPONSE_BYTES', 'SurrealDB maximum response bytes')]
+        #[Env(key: 'SURREAL_MAX_RESPONSE_BYTES', description: 'SurrealDB maximum response bytes')]
         private(set) int $maxResponseBytes = self::DEFAULT_MAX_RESPONSE_BYTES,
     ) {
         $this->endpoint = rtrim($endpoint, '/');
@@ -56,7 +56,7 @@ class SurrealConfig implements Config
 
     public static function fromContext(AppContext $context): self
     {
-        return ConfigHydrator::from($context)->hydrate(self::class);
+        return ConfigFactory::fromContext($context->values)->hydrate(self::class);
     }
 
     public static function contextSchema(): ContextSchema

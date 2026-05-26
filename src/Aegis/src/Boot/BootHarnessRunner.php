@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Phalanx\Boot;
 
 use Phalanx\Boot\Exception\CannotBootException;
-use Phalanx\Config\Config;
-use Phalanx\Config\ConfigHydrator;
-use Phalanx\Config\ConfigReflection;
-use Phalanx\Config\Issue;
-use Phalanx\Config\IssueLevel;
-use Phalanx\Config\ValidationContext;
 use Phalanx\Service\ServiceBundle;
+use Phalanx\Themis\Config;
+use Phalanx\Themis\ConfigFactory;
+use Phalanx\Themis\ConfigReflection;
+use Phalanx\Themis\Issue;
+use Phalanx\Themis\IssueLevel;
+use Phalanx\Themis\ValidationContext;
 
 /**
  * Aggregates BootRequirement declarations from registered bundles plus
@@ -35,7 +35,8 @@ class BootHarnessRunner
      */
     public function run(AppContext $context, array $bundles, ?string $vendorDir = null): BootHarnessReport
     {
-        $harness = $this->collectBundleHarness($bundles)
+        $harness = $this
+            ->collectBundleHarness($bundles)
             ->merge($this->collectBundleConfigHarness($bundles));
 
         if ($vendorDir !== null) {
@@ -62,7 +63,8 @@ class BootHarnessRunner
      */
     public function contextSchema(array $bundles, ?string $vendorDir = null): ContextSchema
     {
-        $schema = $this->collectBundleSchema($bundles)
+        $schema = $this
+            ->collectBundleSchema($bundles)
             ->merge($this->collectBundleConfigSchema($bundles));
 
         if ($vendorDir !== null) {
@@ -172,7 +174,7 @@ class BootHarnessRunner
             $requirements[] = Required::callable(
                 static function (AppContext $context) use ($config): BootEvaluation {
                     $validationContext = self::validationContext($context);
-                    $result = ConfigHydrator::from($context)->tryHydrate($config, $validationContext);
+                    $result = ConfigFactory::fromContext($context->values)->tryHydrate($config, $validationContext);
 
                     if ($result->issues === []) {
                         return BootEvaluation::pass("Config {$config} validated.");

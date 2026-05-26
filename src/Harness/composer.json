@@ -30,6 +30,7 @@
         "phalanx-php/panoply": "^0.6",
         "phalanx-php/surreal": "^0.6",
         "phalanx-php/theatron": "^0.6",
+        "phalanx-php/themis": "^0.6",
         "symfony/runtime": "^7.0 || ^8.0"
     },
     "require-dev": {

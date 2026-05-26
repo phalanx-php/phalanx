@@ -167,13 +167,6 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             return $instance;
         }
 
-        if ($this->graph->hasContextConfig($type)) {
-            /** @var T $config */
-            $config = $this->graph->contextConfig($type);
-
-            return $config;
-        }
-
         $config = $this->graph->resolve($type);
 
         $scope = $this;

@@ -18,9 +18,6 @@ final class TestServiceBundle extends ServiceBundle
     /** @var array<string, string> */
     private array $aliases = [];
 
-    /** @var array<string, Closure> */
-    private array $configs = [];
-
     public static function create(): self
     {
         return new self();
@@ -65,12 +62,6 @@ final class TestServiceBundle extends ServiceBundle
     public function alias(string $interface, string $concrete): self
     {
         $this->aliases[$interface] = $concrete;
-        return $this;
-    }
-
-    public function contextConfig(string $type, Closure $fromContext): self
-    {
-        $this->configs[$type] = $fromContext;
         return $this;
     }
 
@@ -134,10 +125,6 @@ final class TestServiceBundle extends ServiceBundle
 
         foreach ($this->aliases as $interface => $concrete) {
             $services->alias($interface, $concrete);
-        }
-
-        foreach ($this->configs as $type => $fromContext) {
-            $services->contextConfig($type, $fromContext);
         }
     }
 }

@@ -2,18 +2,20 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Config;
+namespace Phalanx\Themis;
 
-/** @phpstan-type EntryList list<ConfigEntry> */
-final readonly class ConfigDefinition
+final readonly class CatalogNode
 {
     /**
      * @param class-string<Config> $type
-     * @param EntryList $entries
+     * @param list<ConfigEntry> $entries
+     * @param list<self> $children
      */
     public function __construct(
         public string $type,
+        public string $path,
         public array $entries,
+        public array $children,
     ) {
     }
 }

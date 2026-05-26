@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Config;
+namespace Phalanx\Themis;
 
 use BackedEnum;
 use ReflectionClass;
@@ -60,6 +60,8 @@ final class ConfigReflection
                     default: $this->defaultLabel($parameter),
                     description: $env->description,
                     secret: $env->secret || $this->typeName($parameter) === Secret::class,
+                    group: $env->group,
+                    example: $env->example,
                 );
             }
         }

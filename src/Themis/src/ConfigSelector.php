@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Config;
+namespace Phalanx\Themis;
 
 interface ConfigSelector extends Config
 {

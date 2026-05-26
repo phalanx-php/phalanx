@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Config;
+namespace Phalanx\Themis;
 
 final class ValidationReport
 {
@@ -28,20 +28,14 @@ final class ValidationReport
 
     /** @param list<Issue> $issues */
     public function __construct(
-        public Config $config,
-        public ValidationContext $context,
-        public array $issues,
+        private(set) Config $config,
+        private(set) ValidationContext $context,
+        private(set) array $issues,
     ) {
     }
 
     private function has(IssueLevel $level): bool
     {
-        foreach ($this->issues as $issue) {
-            if ($issue->level === $level) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any($this->issues, static fn(Issue $issue): bool => $issue->level === $level);
     }
 }

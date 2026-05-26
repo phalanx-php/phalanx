@@ -6,7 +6,6 @@ namespace Phalanx\Surreal;
 
 use Phalanx\Boot\AppContext;
 use Phalanx\Boot\BootHarness;
-use Phalanx\Config\Config;
 use Phalanx\Hermes\Client\WsClient;
 use Phalanx\Hermes\Client\WsClientConfig;
 use Phalanx\Iris\HttpClient;
@@ -14,6 +13,7 @@ use Phalanx\Iris\HttpClientConfig;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
+use Phalanx\Themis\Config;
 
 class SurrealBundle extends ServiceBundle
 {

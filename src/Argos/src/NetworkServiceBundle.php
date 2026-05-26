@@ -7,6 +7,7 @@ namespace Phalanx\Argos;
 use Phalanx\Boot\AppContext;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
+use Phalanx\Themis\Config;
 
 /**
  * Argos service registration.
@@ -20,14 +21,14 @@ use Phalanx\Service\Services;
  */
 class NetworkServiceBundle extends ServiceBundle
 {
+    /** @return list<class-string<Config>> */
+    #[\Override]
+    public static function configs(): array
+    {
+        return [NetworkConfig::class];
+    }
+
     public function services(Services $services, AppContext $context): void
     {
-        $services->contextConfig(NetworkConfig::class, static fn(AppContext $ctx): NetworkConfig => new NetworkConfig(
-            defaultTimeout: $ctx->float('NETWORK_DEFAULT_TIMEOUT', 5.0),
-            defaultConcurrency: $ctx->int('NETWORK_DEFAULT_CONCURRENCY', 50),
-            pingBinary: $ctx->string('NETWORK_PING_BINARY', 'ping'),
-            broadcastAddress: $ctx->string('NETWORK_BROADCAST_ADDRESS', '255.255.255.255'),
-            wolPort: $ctx->int('NETWORK_WOL_PORT', 9),
-        ));
     }
 }

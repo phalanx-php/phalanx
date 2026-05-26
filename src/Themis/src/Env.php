@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Config;
+namespace Phalanx\Themis;
 
 use Attribute;
 use ReflectionParameter;
@@ -14,6 +14,8 @@ final readonly class Env
         public string $key,
         public ?string $description = null,
         public bool $secret = false,
+        public ?string $group = null,
+        public ?string $example = null,
     ) {
     }
 

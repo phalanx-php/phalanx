@@ -9,6 +9,7 @@ use Phalanx\Boot\AppContext;
 use Phalanx\Boot\BootHarnessReport;
 use Phalanx\Boot\BootHarnessRunner;
 use Phalanx\Cancellation\CancellationToken;
+use Phalanx\Exception\ErrorRegistry;
 use Phalanx\Handler\HandlerResolver;
 use Phalanx\Middleware\ServiceTransformationMiddleware;
 use Phalanx\Middleware\TaskMiddleware;
@@ -25,6 +26,10 @@ use Phalanx\Supervisor\Supervisor;
 use Phalanx\Supervisor\SwooleTableLedger;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
+use Phalanx\Themis\Config;
+use Phalanx\Themis\ConfigCatalog;
+use Phalanx\Themis\ConfigFactory;
+use Phalanx\Themis\ConfigValidator;
 use Phalanx\Trace\Trace;
 use Phalanx\Trace\TraceType;
 use Phalanx\Worker\WorkerDispatch;
@@ -153,24 +158,37 @@ class ApplicationBuilder
         $runner = new BootHarnessRunner();
         $this->lastBootReport = $runner->run($this->context, $this->providers, $this->vendorDir());
 
-        $runtimeContext = new RuntimeContext(RuntimeMemory::fromContext($this->context));
         $trace = $this->trace ?? new Trace();
-        $catalog = new ServiceCatalog($this->context);
-        $catalog->singleton(RuntimeContext::class)
+        $runtimeContext = new RuntimeContext(RuntimeMemory::fromContext($this->context));
+
+        $catalog = new ServiceCatalog();
+        $catalog
+            ->singleton(RuntimeContext::class)
             ->factory(static fn(): RuntimeContext => $runtimeContext);
-        $catalog->singleton(Trace::class)
+
+        $catalog
+            ->singleton(Trace::class)
             ->factory(static fn(): Trace => $trace);
-        $catalog->singleton(HandlerResolver::class)
+
+        $catalog
+            ->singleton(HandlerResolver::class)
             ->factory(static fn(): HandlerResolver => new HandlerResolver());
+
         $errorHandlers = $this->errorHandlers;
-        $catalog->singleton(\Phalanx\Exception\ErrorRegistry::class)
-            ->factory(static fn() => new \Phalanx\Exception\ErrorRegistry($errorHandlers));
+        $catalog
+            ->singleton(ErrorRegistry::class)
+            ->factory(static fn() => new ErrorRegistry($errorHandlers));
+
         foreach ($this->providers as $provider) {
             $provider->services($catalog, $this->context);
         }
+
+        $this->autoRegisterConfigs($catalog);
+
         $graph = $catalog->compile();
         $singletons = new LazySingleton($graph);
         $ledger = $this->ledger ?? new SwooleTableLedger(memory: $runtimeContext->memory);
+
         $runtimeContext->memory->events->listen(static function ($event) use ($trace): void {
             $trace->log(
                 TraceType::Lifecycle,
@@ -185,6 +203,7 @@ class ApplicationBuilder
                 ],
             );
         });
+
         $supervisor = new Supervisor(
             $ledger,
             $trace,
@@ -192,9 +211,11 @@ class ApplicationBuilder
             $this->scopeFramePoolCapacity,
             $this->tokenPoolCapacity,
         );
+
         $resolvedWorkerDispatch = $this->workerDispatch;
         $workerDispatchType = $graph->alias(WorkerDispatch::class);
         $workerDispatchConfig = $graph->configs[$workerDispatchType] ?? null;
+
         if ($resolvedWorkerDispatch === null && $workerDispatchConfig !== null) {
             if ($workerDispatchConfig->lifetime !== ServiceLifetime::Singleton) {
                 throw new \RuntimeException(
@@ -216,6 +237,7 @@ class ApplicationBuilder
                 $resolverScope->dispose();
             }
         }
+
         $runtimePolicy = $this->runtimePolicy ?? RuntimePolicy::fromContext($this->context);
         $strictRuntimeHooks = $this->strictRuntimeHooks ?? $this->context->bool(
             RuntimePolicy::CONTEXT_STRICT_HOOKS,
@@ -242,9 +264,43 @@ class ApplicationBuilder
         return $this->compile()->run($task, $token);
     }
 
+    private function autoRegisterConfigs(ServiceCatalog $catalog): void
+    {
+        /** @var list<class-string<Config>> $configClasses */
+        $configClasses = [];
+        foreach ($this->providers as $provider) {
+            foreach ($provider::configs() as $configClass) {
+                if (!in_array($configClass, $configClasses, true)) {
+                    $configClasses[] = $configClass;
+                }
+            }
+        }
+
+        $contextValues = $this->context->values;
+        $catalog->singleton(ConfigFactory::class)
+            ->factory(static fn(): ConfigFactory => ConfigFactory::fromContext($contextValues));
+
+        $catalog->singleton(ConfigCatalog::class)
+            ->factory(static fn(): ConfigCatalog => ConfigCatalog::of(...$configClasses));
+
+        $catalog->singleton(ConfigValidator::class)
+            ->needs(ConfigFactory::class)
+            ->factory(static fn(ConfigFactory $factory): ConfigValidator => new ConfigValidator($factory));
+
+        foreach ($configClasses as $configClass) {
+            if ($catalog->has($configClass)) {
+                continue;
+            }
+
+            $catalog->singleton($configClass)
+                ->needs(ConfigFactory::class)
+                ->factory(static fn(ConfigFactory $factory): Config => $factory->hydrate($configClass));
+        }
+    }
+
     private function vendorDir(): ?string
     {
-        // Resolve from the Composer autoloader registration point so the path
+        // resolve from the composer autoloader registration point so the path
         // is stable regardless of the process working directory.
         foreach (
             [

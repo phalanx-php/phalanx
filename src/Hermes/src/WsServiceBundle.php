@@ -42,10 +42,8 @@ final class WsServiceBundle extends ServiceBundle
         }
 
         if (!$services->has(WsClientConfig::class)) {
-            $services->contextConfig(
-                WsClientConfig::class,
-                static fn(): WsClientConfig => $clientConfig ?? WsClientConfig::default(),
-            );
+            $services->singleton(WsClientConfig::class)
+                ->factory(static fn(): WsClientConfig => $clientConfig ?? WsClientConfig::default());
         }
 
         if (!$services->has(WsClient::class)) {

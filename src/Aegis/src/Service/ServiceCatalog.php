@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Service;
 
-use Closure;
-use Phalanx\Boot\AppContext;
 use RuntimeException;
 
 class ServiceCatalog implements Services
@@ -13,15 +11,8 @@ class ServiceCatalog implements Services
     /** @var array<class-string, CompiledServiceConfig> */
     private array $configs = [];
 
-    /** @var array<class-string, mixed> */
-    private array $contextConfigs = [];
-
     /** @var array<class-string, class-string> */
     private array $aliases = [];
-
-    public function __construct(private readonly AppContext $context = new AppContext())
-    {
-    }
 
     /** @param class-string $type */
     public function singleton(string $type): ServiceConfig
@@ -45,14 +36,7 @@ class ServiceCatalog implements Services
     public function has(string $type): bool
     {
         return isset($this->configs[$type])
-            || isset($this->aliases[$type])
-            || array_key_exists($type, $this->contextConfigs);
-    }
-
-    /** @param class-string $type */
-    public function contextConfig(string $type, Closure $fromContext): void
-    {
-        $this->contextConfigs[$type] = $fromContext($this->context);
+            || isset($this->aliases[$type]);
     }
 
     /**
@@ -66,7 +50,7 @@ class ServiceCatalog implements Services
 
     public function compile(): ServiceGraph
     {
-        return new ServiceGraph($this->configs, $this->contextConfigs, $this->aliases);
+        return new ServiceGraph($this->configs, $this->aliases);
     }
 
     /** @param class-string $type */

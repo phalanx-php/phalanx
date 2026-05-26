@@ -12,6 +12,7 @@ use Phalanx\ApplicationBuilder;
 use Phalanx\Archon\Command\CommandConfig;
 use Phalanx\Archon\Command\CommandGroup;
 use Phalanx\Archon\Command\CommandLoader;
+use Phalanx\Archon\Command\Config\ConfigCommandGroup;
 use Phalanx\Archon\Command\InlineCommand;
 use Phalanx\Archon\Console\Style\ConsoleServiceBundle;
 use Phalanx\Boot\AppContext;
@@ -147,7 +148,9 @@ final class ArchonBuilder
     {
         $this->app->providers(new ConsoleServiceBundle());
         $host = $this->app->compile();
-        $commands = CommandGroup::of([]);
+
+        // Built-in commands are the base layer; user-defined commands take precedence.
+        $commands = ConfigCommandGroup::commands();
 
         foreach ($this->commandSources as $source) {
             $commands = $commands->merge(self::resolveCommands($host, $source));

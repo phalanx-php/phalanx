@@ -14,6 +14,7 @@ return [
             'php' => '^8.4',
             'ext-openswoole' => '^26.2',
             'openswoole/core' => '^26.2',
+            'phalanx-php/themis' => '^0.6',
             'symfony/process' => '^7.0 || ^8.0',
             'symfony/uid' => '^7.0 || ^8.0',
         ],
@@ -317,6 +318,7 @@ return [
             'phalanx-php/panoply' => '^0.6',
             'phalanx-php/surreal' => '^0.6',
             'phalanx-php/theatron' => '^0.6',
+            'phalanx-php/themis' => '^0.6',
             'symfony/runtime' => '^7.0 || ^8.0',
         ],
         'devRequires' => [
@@ -600,6 +602,7 @@ return [
             'phalanx-php/aegis' => '^0.6',
             'phalanx-php/hermes' => '^0.6',
             'phalanx-php/iris' => '^0.6',
+            'phalanx-php/themis' => '^0.6',
         ],
         'devRequires' => [
             'phpunit/phpunit' => '^13.0',
@@ -613,6 +616,29 @@ return [
             'iris',
             'http',
             'rpc',
+        ],
+        'suggests' => [],
+    ],
+    'Themis' => [
+        'package' => 'phalanx-php/themis',
+        'description' => 'Config hydration and environment validation primitives for Phalanx',
+        'type' => 'library',
+        'namespace' => 'Phalanx\\Themis\\',
+        'smokeClass' => 'Phalanx\\Themis\\ConfigFactory',
+        'testNamespace' => 'Phalanx\\Themis\\Tests\\',
+        'requires' => [
+            'php' => '^8.4',
+        ],
+        'devRequires' => [
+            'phpunit/phpunit' => '^13.0',
+        ],
+        'bins' => [],
+        'branchAlias' => '0.6.x-dev',
+        'keywords' => [
+            'config',
+            'env',
+            'hydration',
+            'validation',
         ],
         'suggests' => [],
     ],

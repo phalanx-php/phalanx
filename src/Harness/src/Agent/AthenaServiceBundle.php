@@ -16,8 +16,8 @@ use Phalanx\Athena\Turn\Loop;
 use Phalanx\Athena\Turn\RuntimeFactory;
 use Phalanx\Boot\AppContext;
 use Phalanx\Boot\BootHarness;
-use Phalanx\Config\Config as PhalanxConfig;
-use Phalanx\Config\ConfigHydrator;
+use Phalanx\Themis\Config as PhalanxConfig;
+use Phalanx\Themis\ConfigFactory;
 use Phalanx\Panoply\Agent;
 use Phalanx\Panoply\Context;
 use Phalanx\Panoply\Effect\Authorizer;
@@ -66,7 +66,7 @@ final class AthenaServiceBundle extends ServiceBundle
 
     public function services(Services $services, AppContext $context): void
     {
-        $ollamaConfig = ConfigHydrator::from($context)->hydrate(OllamaConfig::class);
+        $ollamaConfig = ConfigFactory::fromContext($context->values)->hydrate(OllamaConfig::class);
         $athenaBundle = $this->athenaBundle ?? self::buildDefaultBundle($ollamaConfig);
 
         $bundle = new AthenaBundle(

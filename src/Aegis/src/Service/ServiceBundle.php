@@ -7,8 +7,8 @@ namespace Phalanx\Service;
 use Phalanx\Boot\AppContext;
 use Phalanx\Boot\BootHarness;
 use Phalanx\Boot\ContextSchema;
-use Phalanx\Config\Config;
 use Phalanx\Testing\TestLens;
+use Phalanx\Themis\Config;
 
 /**
  * Member ordering note: phpcs ClassStructure (Slevomat) places public

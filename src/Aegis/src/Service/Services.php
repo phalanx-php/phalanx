@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Service;
 
-use Closure;
-
 interface Services
 {
     /** @param class-string $type */
@@ -19,14 +17,6 @@ interface Services
 
     /** @param class-string $type */
     public function has(string $type): bool;
-
-    /**
-     * Register a context-derived config value. The closure receives the
-     * AppContext at compile time and returns the typed config object.
-     *
-     * @param class-string $type
-     */
-    public function contextConfig(string $type, Closure $fromContext): void;
 
     /**
      * @param class-string $interface

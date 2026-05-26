@@ -95,13 +95,15 @@ PHP);
 
     protected function phalanxServices(): ?Closure
     {
-        return static function (Services $services): void {
-            $services->contextConfig(SshConfig::class, static fn(AppContext $ctx): SshConfig => new SshConfig(
-                sshBinaryPath: $ctx->string('sshBinaryPath'),
-                defaultTimeoutSeconds: $ctx->float('defaultTimeoutSeconds', 30.0),
+        return static function (Services $services, AppContext $context): void {
+            $config = new SshConfig(
+                sshBinaryPath: $context->string('sshBinaryPath'),
+                defaultTimeoutSeconds: $context->float('defaultTimeoutSeconds', 30.0),
                 connectionTimeoutSeconds: 1.0,
                 strictHostKeyChecking: false,
-            ));
+            );
+            $services->singleton(SshConfig::class)
+                ->factory(static fn(): SshConfig => $config);
         };
     }
 
