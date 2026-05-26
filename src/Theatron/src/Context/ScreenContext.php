@@ -12,16 +12,16 @@ use Phalanx\Theatron\Styling\Theme;
 
 class ScreenContext
 {
-    private(set) RenderDiagnostics $renderDiagnostics;
+    protected(set) RenderDiagnostics $renderDiagnostics;
 
     public function __construct(
-        private(set) TaskScope $scope,
-        private(set) Theme $theme,
-        private(set) Navigator $navigator,
-        private(set) MountSystem $mountSystem,
+        protected(set) TaskScope $scope,
+        protected(set) Theme $theme,
+        protected(set) Navigator $navigator,
+        protected(set) MountSystem $mountSystem,
         ?RenderDiagnostics $renderDiagnostics = null,
-        private(set) int $width = 120,
-        private(set) int $height = 24,
+        protected(set) int $width = 120,
+        protected(set) int $height = 24,
     ) {
         $this->renderDiagnostics = $renderDiagnostics ?? new RenderDiagnostics();
     }

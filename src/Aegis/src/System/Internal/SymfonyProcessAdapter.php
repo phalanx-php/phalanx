@@ -100,6 +100,7 @@ final class SymfonyProcessAdapter
     public function getTermSignal(): ?int
     {
         $signal = $this->process->getTermSignal();
+
         return $signal > 0 ? $signal : null;
     }
 
@@ -120,6 +121,7 @@ final class SymfonyProcessAdapter
         }
 
         $this->process->stop($timeout, $signal);
+
         $this->closeInput();
     }
 

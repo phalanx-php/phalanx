@@ -14,7 +14,7 @@ final class Computed
     public mixed $value {
         get {
             if ($this->dirty) {
-                $this->recompute();
+        $this->recompute();
             }
 
             Tracker::recordAccess($this);
@@ -27,12 +27,13 @@ final class Computed
         get => count($this->subscribers);
     }
 
-    private(set) bool $isDisposed = false;
-
-    private mixed $storedValue = null;
     private bool $dirty = true;
     private bool $computing = false;
+    private(set) bool $isDisposed = false;
+
     private int $nextSubscriberId = 0;
+
+    private mixed $storedValue = null;
 
     /** @var array<int, Closure(): void> */
     private array $subscribers = [];

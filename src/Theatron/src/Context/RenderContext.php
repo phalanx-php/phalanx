@@ -16,13 +16,13 @@ use function Phalanx\Theatron\Ui\row;
 
 class RenderContext
 {
-    private(set) RenderDiagnostics $renderDiagnostics;
+    protected(set) RenderDiagnostics $renderDiagnostics;
 
     public function __construct(
-        private(set) Scope $scope,
-        private(set) Theme $theme,
-        private(set) MountSystem $mountSystem,
-        private ?BindingRegistry $bindings = null,
+        protected(set) Scope $scope,
+        protected(set) Theme $theme,
+        protected(set) MountSystem $mountSystem,
+        protected ?BindingRegistry $bindings = null,
         ?RenderDiagnostics $renderDiagnostics = null,
     ) {
         $this->renderDiagnostics = $renderDiagnostics ?? new RenderDiagnostics();
