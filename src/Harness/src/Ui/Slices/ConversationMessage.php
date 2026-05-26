@@ -7,7 +7,7 @@ namespace Phalanx\Harness\Ui\Slices;
 use DateTimeImmutable;
 use InvalidArgumentException;
 
-class ConversationMessage
+final class ConversationMessage
 {
     /**
      * @param 'message'|'thinking'|null $channel null for user messages

@@ -38,7 +38,7 @@ use Phalanx\Theatron\Text\Span;
 use function Phalanx\Theatron\Ui\column;
 use function Phalanx\Theatron\Ui\text;
 
-class DevToolsScreen implements
+final class DevToolsScreen implements
     Screen,
     HasStatusBar,
     HasFocusables,

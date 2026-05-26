@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Harness\Ui\Slices;
 
-class EffectLogEntry
+final class EffectLogEntry
 {
     /**
      * @param array<string, mixed> $arguments

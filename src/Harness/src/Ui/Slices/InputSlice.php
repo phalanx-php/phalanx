@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Harness\Ui\Slices;
 
-class InputSlice
+final class InputSlice
 {
     /** @param list<string> $queue */
     public function __construct(

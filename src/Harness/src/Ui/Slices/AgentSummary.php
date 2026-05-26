@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Harness\Ui\Slices;
 
-class AgentSummary
+final class AgentSummary
 {
     /**
      * @param list<string> $capabilities

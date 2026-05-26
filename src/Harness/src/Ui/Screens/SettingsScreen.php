@@ -29,7 +29,7 @@ use Phalanx\Theatron\Text\Span;
 use function Phalanx\Theatron\Ui\column;
 use function Phalanx\Theatron\Ui\text;
 
-class SettingsScreen implements Screen, HasStatusBar, HasFocusables, DeclaresBindings, NormalModeHandler
+final class SettingsScreen implements Screen, HasStatusBar, HasFocusables, DeclaresBindings, NormalModeHandler
 {
     public function __construct(
         private(set) AppStore $store,

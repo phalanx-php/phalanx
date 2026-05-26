@@ -30,7 +30,7 @@ use function Phalanx\Theatron\Ui\panel;
 use function Phalanx\Theatron\Ui\row;
 use function Phalanx\Theatron\Ui\text;
 
-class AgentBoardScreen implements Screen, HasStatusBar, HasFocusables, NormalModeHandler
+final class AgentBoardScreen implements Screen, HasStatusBar, HasFocusables, NormalModeHandler
 {
     private int $selectedIndex = 0;
 

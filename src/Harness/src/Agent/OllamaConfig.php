@@ -19,7 +19,6 @@ final class OllamaConfig implements Config
     private const string DEFAULT_MODEL = 'qwen3:4b';
     private const int DEFAULT_MAX_INVOCATIONS = 3;
 
-    /** Computed from the minimum values needed to route an Ollama activity. */
     public bool $configured {
         get => $this->baseUrl !== '' && $this->model !== '' && $this->maxInvocations > 0;
     }

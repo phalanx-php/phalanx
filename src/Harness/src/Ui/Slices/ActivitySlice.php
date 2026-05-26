@@ -6,7 +6,7 @@ namespace Phalanx\Harness\Ui\Slices;
 
 use InvalidArgumentException;
 
-class ActivitySlice
+final class ActivitySlice
 {
     public function __construct(
         private(set) ActivityStatus $status = ActivityStatus::Idle,

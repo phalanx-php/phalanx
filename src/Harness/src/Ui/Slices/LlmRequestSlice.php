@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Harness\Ui\Slices;
 
-class LlmRequestSlice
+final class LlmRequestSlice
 {
     private const int MAX_ENTRIES = 50;
 

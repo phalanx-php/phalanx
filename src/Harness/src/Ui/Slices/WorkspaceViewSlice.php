@@ -7,7 +7,7 @@ namespace Phalanx\Harness\Ui\Slices;
 use Phalanx\Theatron\Input\InputMode;
 use Phalanx\Theatron\Input\InputModeSlice;
 
-class WorkspaceViewSlice
+final class WorkspaceViewSlice
 {
     /** @param array<string, InputModeSlice> $inputModes */
     public function __construct(

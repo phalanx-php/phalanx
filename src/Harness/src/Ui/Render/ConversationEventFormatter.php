@@ -10,7 +10,7 @@ use Phalanx\Harness\Ui\Slices\ConversationTurnEventProjection;
 use Phalanx\Harness\Ui\Slices\ConversationTurnEventSeverity;
 use Phalanx\Panoply\Effect\Kind as EffectKind;
 
-class ConversationEventFormatter
+final class ConversationEventFormatter
 {
     public static function summary(ConversationTurnEvent $event): string
     {

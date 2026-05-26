@@ -6,7 +6,7 @@ namespace Phalanx\Harness\Ui\Slices;
 
 use InvalidArgumentException;
 
-class AgentRegistrySlice
+final class AgentRegistrySlice
 {
     /**
      * @param list<AgentSummary> $agents

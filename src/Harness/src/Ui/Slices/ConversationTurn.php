@@ -7,7 +7,7 @@ namespace Phalanx\Harness\Ui\Slices;
 use DateTimeImmutable;
 use Phalanx\Panoply\Cue\Output\Channel;
 
-class ConversationTurn
+final class ConversationTurn
 {
     /**
      * @param list<ConversationTurnEvent> $events

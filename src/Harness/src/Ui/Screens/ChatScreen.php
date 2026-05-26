@@ -45,7 +45,7 @@ use function Phalanx\Theatron\Ui\input;
 use function Phalanx\Theatron\Ui\spinner;
 use function Phalanx\Theatron\Ui\text;
 
-class ChatScreen implements Screen, HasStatusBar, HasFocusables, HandlesKeySequences, DeclaresBindings, Mountable
+final class ChatScreen implements Screen, HasStatusBar, HasFocusables, HandlesKeySequences, DeclaresBindings, Mountable
 {
     private const array PULSE_COLORS = [242, 245, 248, 251, 254, 251, 248, 245];
     private const int MAX_COMPOSER_ROWS = 5;

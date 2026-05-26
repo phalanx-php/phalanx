@@ -26,10 +26,10 @@ use Phalanx\Panoply\Provider\Loader;
 use Phalanx\Panoply\Provider\Ollama\ChatProvider;
 use Phalanx\Panoply\Provider\Registry;
 use Phalanx\Scope\TaskScope;
-use Phalanx\Themis\Config as PhalanxConfig;
-use Phalanx\Themis\ConfigFactory;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
+use Phalanx\Themis\Config as PhalanxConfig;
+use Phalanx\Themis\ConfigFactory;
 
 final class AthenaServiceBundle extends ServiceBundle
 {

@@ -24,7 +24,7 @@ use Phalanx\Panoply\Cue\Output\TokenStop;
 use Phalanx\Panoply\Cue\StopReason;
 use Phalanx\Panoply\Grant;
 
-class ConversationSlice
+final class ConversationSlice
 {
     /**
      * @param list<ConversationMessage> $messages

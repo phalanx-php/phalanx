@@ -9,7 +9,7 @@ use Phalanx\Theatron\Style\Style;
 use Phalanx\Theatron\Text\Line;
 use Phalanx\Theatron\Text\Span;
 
-class CodeHighlighter
+final class CodeHighlighter
 {
     private const string JSON_TOKEN_PATTERN =
         '/("(?:[^"\\\\]|\\\\.)*"|\btrue\b|\bfalse\b|\bnull\b|-?\d+(?:\.\d+)?|[{}\[\],:])/';

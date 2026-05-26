@@ -27,7 +27,7 @@ use function Phalanx\Theatron\Ui\divider;
 use function Phalanx\Theatron\Ui\panel;
 use function Phalanx\Theatron\Ui\text;
 
-class EffectApprovalOverlay implements Component, HasOverlayFrame, NormalModeHandler, Mountable
+final class EffectApprovalOverlay implements Component, HasOverlayFrame, NormalModeHandler, Mountable
 {
     private ?TaskScope $scope = null;
 

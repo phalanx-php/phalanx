@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Harness\Ui\Slices;
 
-class SettingsSlice
+final class SettingsSlice
 {
     /**
      * @param array<string, bool> $toggles

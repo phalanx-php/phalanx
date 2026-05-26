@@ -11,13 +11,6 @@ use Phalanx\Theatron\Input\KeyEvent;
 use Phalanx\Theatron\Kit\TextInputBehavior;
 use Phalanx\Theatron\Reactive\Signal;
 
-/**
- * Handles typed text input and Enter-to-submit for the chat composer.
- * Returned by ChatScreen::focusables() as the 'input' focusable.
- *
- * Characters are accumulated in ChatScreen::$inputText via TextInputBehavior.
- * Enter submits the accumulated text through ChatScreen::submitInput().
- */
 final class ChatInputHandler implements Focusable, AcceptsInput
 {
     use TextInputBehavior;

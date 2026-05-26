@@ -6,7 +6,7 @@ namespace Phalanx\Harness\Ui\Slices;
 
 use Phalanx\Boot\AppContext;
 
-class RuntimeStatusSlice
+final class RuntimeStatusSlice
 {
     public function __construct(
         private(set) ?string $workingDirectory = null,

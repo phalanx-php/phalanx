@@ -29,7 +29,7 @@ use Phalanx\Theatron\Text\Span;
 
 use function Phalanx\Theatron\Ui\text;
 
-class MarkdownRenderer
+final class MarkdownRenderer
 {
     private MarkdownParser $parser;
     private CodeHighlighter $highlighter;

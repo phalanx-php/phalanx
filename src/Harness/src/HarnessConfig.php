@@ -12,9 +12,7 @@ use Phalanx\Themis\ValidationContext;
 
 final class HarnessConfig implements Config
 {
-    public bool $configured {
-        get => true;
-    }
+    private(set) bool $configured = true;
 
     public HarnessMode $mode {
         get => $this->durable ? HarnessMode::Durable : HarnessMode::Ephemeral;

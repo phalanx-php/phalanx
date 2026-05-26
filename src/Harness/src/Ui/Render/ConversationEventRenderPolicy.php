@@ -9,7 +9,7 @@ use Phalanx\Harness\Ui\Slices\ConversationTurnEventSeverity;
 use Phalanx\Theatron\Style\Color;
 use Phalanx\Theatron\Style\Style as TextStyle;
 
-class ConversationEventRenderPolicy
+final class ConversationEventRenderPolicy
 {
     public static function marker(ConversationTurnEvent $event): string
     {

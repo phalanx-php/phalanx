@@ -25,6 +25,10 @@ use Phalanx\Theatron\TheatronServiceBundle;
 
 final class HarnessBuilder
 {
+    public AppContext $context {
+        get => $this->theatron->context;
+    }
+
     private TheatronBuilder $theatron;
 
     /** @var class-string<Agent>|null */
@@ -35,10 +39,6 @@ final class HarnessBuilder
     private bool $providersConfigured = false;
 
     private HarnessMode $mode = HarnessMode::Ephemeral;
-
-    public AppContext $context {
-        get => $this->theatron->context;
-    }
 
     /** @param array<string, mixed> $context */
     public function __construct(array $context = [])

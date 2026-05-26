@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Harness\Ui\Slices;
 
-class DevToolsSlice
+final class DevToolsSlice
 {
     public function __construct(
         private(set) DevToolsTab $activeTab = DevToolsTab::Metrics,

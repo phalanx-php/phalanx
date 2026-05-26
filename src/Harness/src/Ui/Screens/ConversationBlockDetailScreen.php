@@ -29,7 +29,7 @@ use Phalanx\Theatron\Text\Span;
 use function Phalanx\Theatron\Ui\column;
 use function Phalanx\Theatron\Ui\text;
 
-class ConversationBlockDetailScreen implements Screen, HasStatusBar, HasFocusables, DeclaresBindings, NormalModeHandler
+final class ConversationBlockDetailScreen implements Screen, HasStatusBar, HasFocusables, DeclaresBindings, NormalModeHandler
 {
     private MarkdownRenderer $markdown;
 

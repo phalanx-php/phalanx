@@ -43,7 +43,7 @@ use Phalanx\Panoply\Cue\Usage\Delta as UsageDelta;
 use Phalanx\Panoply\Cue\Usage\FinalUsage;
 use Phalanx\Panoply\Grant;
 
-class ConversationTurnEvent
+final class ConversationTurnEvent
 {
     public function __construct(
         private(set) string $id,

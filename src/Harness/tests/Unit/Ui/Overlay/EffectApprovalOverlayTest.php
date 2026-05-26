@@ -6,14 +6,14 @@ namespace Phalanx\Harness\Tests\Unit\Ui\Overlay;
 
 use DateTimeImmutable;
 use Phalanx\Harness\Agent\AgentRuntime;
+use Phalanx\Harness\Tests\Support\RecordingAgentExecutor;
+use Phalanx\Harness\Tests\Support\RecordingTaskScope;
 use Phalanx\Harness\Ui\AppStore;
 use Phalanx\Harness\Ui\Overlay\EffectApprovalOverlay;
 use Phalanx\Harness\Ui\Screens\ChatScreen;
 use Phalanx\Harness\Ui\Slices\ActivitySlice;
 use Phalanx\Harness\Ui\Slices\EffectStatus;
 use Phalanx\Harness\Ui\Slices\PendingEffect;
-use Phalanx\Harness\Tests\Support\RecordingAgentExecutor;
-use Phalanx\Harness\Tests\Support\RecordingTaskScope;
 use Phalanx\Panoply\Cue\Effect\Authorized as EffectAuthorized;
 use Phalanx\Panoply\Cue\Effect\Denied as EffectDenied;
 use Phalanx\Scope\TaskScope;

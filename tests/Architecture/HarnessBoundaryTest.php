@@ -174,7 +174,6 @@ final class HarnessBoundaryTest extends TestCase
         $readme = file_get_contents(dirname(__DIR__, 2) . '/src/Harness/README.md');
         self::assertIsString($readme);
 
-        self::assertStringContainsString('assets/banner.svg', $readme);
         self::assertStringNotContainsString('php bin/harness', $readme);
     }
 

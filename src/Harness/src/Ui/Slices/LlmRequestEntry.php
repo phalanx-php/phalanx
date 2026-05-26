@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Harness\Ui\Slices;
 
-class LlmRequestEntry
+final class LlmRequestEntry
 {
     public function __construct(
         private(set) string $requestId,
