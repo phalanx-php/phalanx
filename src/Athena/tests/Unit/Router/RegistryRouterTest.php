@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Athena\Tests\Unit\Router;
 
+use RuntimeException;
+
 use Phalanx\Athena\Router\RegistryRouter;
 use Phalanx\Iris\HttpClient;
 use Phalanx\Panoply\Agent;
@@ -21,14 +23,13 @@ use Phalanx\Panoply\Transport\Needs as TransportNeeds;
 use Phalanx\Scope\TaskScope;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use RuntimeException;
 
 final class RegistryRouterTest extends TestCase
 {
     #[Test]
     public function routesOllamaModelAlias(): void
     {
-        $config = Loader::fromFile(self::ollamaYamlPath());
+        $config = Loader::fromFile(ChatProvider::configPath());
         $registry = Registry::empty()->with($config);
         $router = new RegistryRouter($registry, 'llama3.1');
 
@@ -53,7 +54,7 @@ final class RegistryRouterTest extends TestCase
     #[Test]
     public function passesCredentialsToFactoryForAuthFreeProvider(): void
     {
-        $config = Loader::fromFile(self::ollamaYamlPath());
+        $config = Loader::fromFile(ChatProvider::configPath());
         $registry = Registry::empty()->with($config);
         $router = new RegistryRouter($registry, 'llama3.1', credentials: ['ollama' => 'unused-key']);
 
@@ -70,11 +71,6 @@ final class RegistryRouterTest extends TestCase
         $scope->method('service')->willReturn($httpClient);
 
         return $scope;
-    }
-
-    private static function ollamaYamlPath(): string
-    {
-        return ChatProvider::configPath();
     }
 
     private static function agent(): Agent

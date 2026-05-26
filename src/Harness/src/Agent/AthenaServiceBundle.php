@@ -16,8 +16,6 @@ use Phalanx\Athena\Turn\Loop;
 use Phalanx\Athena\Turn\RuntimeFactory;
 use Phalanx\Boot\AppContext;
 use Phalanx\Boot\BootHarness;
-use Phalanx\Themis\Config as PhalanxConfig;
-use Phalanx\Themis\ConfigFactory;
 use Phalanx\Panoply\Agent;
 use Phalanx\Panoply\Context;
 use Phalanx\Panoply\Effect\Authorizer;
@@ -28,6 +26,8 @@ use Phalanx\Panoply\Provider\Loader;
 use Phalanx\Panoply\Provider\Ollama\ChatProvider;
 use Phalanx\Panoply\Provider\Registry;
 use Phalanx\Scope\TaskScope;
+use Phalanx\Themis\Config as PhalanxConfig;
+use Phalanx\Themis\ConfigFactory;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 
