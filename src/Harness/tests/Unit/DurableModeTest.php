@@ -9,7 +9,6 @@ use Phalanx\Agora\Harness\HarnessEvent;
 use Phalanx\Agora\Harness\ProjectionSet;
 use Phalanx\Agora\Harness\Replay\ReplaySession;
 use Phalanx\Harness\Agent\AgentRuntime;
-use Phalanx\Harness\Agent\AthenaServiceBundle;
 use Phalanx\Harness\AgoraServiceBundle;
 use Phalanx\Harness\Harness;
 use Phalanx\Harness\HarnessConfig;
@@ -21,7 +20,6 @@ use Phalanx\Harness\Tests\Support\RecordingTaskScope;
 use Phalanx\Harness\Ui\AppStore;
 use Phalanx\Harness\Ui\Slices\ActivityStatus;
 use Phalanx\Harness\Ui\Slices\ConversationTurnStatus;
-use Phalanx\Iris\HttpServiceBundle;
 use Phalanx\Panoply\Cue\Activity\Completed as ActivityCompleted;
 use Phalanx\Panoply\Cue\Activity\Failed as ActivityFailed;
 use Phalanx\Panoply\Cue\Activity\Started as ActivityStarted;
@@ -159,10 +157,11 @@ final class DurableModeTest extends TestCase
         $at = new DateTimeImmutable();
         $activityId = 'activity-olympus';
         $started = new ActivityStarted('cue-start', 1, $activityId, null, null, $at);
-        $delta = new TokenDelta('cue-delta', 2, $activityId, null, null, $at, 'Shields up, hoplites.');
-        $stop = new TokenStop('cue-stop', 3, $activityId, null, null, $at, StopReason::EndOfTurn);
-        $completed = new ActivityCompleted('cue-done', 4, $activityId, null, null, $at);
-        $executor = new RecordingAgentExecutor(sendCues: [$started, $delta, $stop, $completed]);
+        $delta1 = new TokenDelta('cue-delta-1', 2, $activityId, null, null, $at, 'Shields up, ');
+        $delta2 = new TokenDelta('cue-delta-2', 3, $activityId, null, null, $at, 'hoplites.');
+        $stop = new TokenStop('cue-stop', 4, $activityId, null, null, $at, StopReason::EndOfTurn);
+        $completed = new ActivityCompleted('cue-done', 5, $activityId, null, null, $at);
+        $executor = new RecordingAgentExecutor(sendCues: [$started, $delta1, $delta2, $stop, $completed]);
         $store = new AppStore();
         $scope = new RecordingTaskScope();
 
@@ -200,6 +199,11 @@ final class DurableModeTest extends TestCase
         $runtime->send($scope, 'advance on plataea');
 
         self::assertSame(ActivityStatus::Failed, $store->activity->status);
+        self::assertFalse($store->conversation->isStreaming);
+
+        $turns = $store->conversation->turns;
+        self::assertGreaterThanOrEqual(1, count($turns));
+        self::assertSame(ConversationTurnStatus::Failed, $turns[count($turns) - 1]->status);
     }
 
     #[Test]
@@ -247,6 +251,25 @@ final class DurableModeTest extends TestCase
         self::assertNotEmpty($assistantMessages);
         self::assertSame('The assembly has spoken.', $assistantMessages[0]->text);
         self::assertTrue($assistantMessages[0]->complete);
+    }
+
+    #[Test]
+    public function replayHydrationWithNoEventsProducesCleanStore(): void
+    {
+        $session = new ReplaySession(
+            sessionId: 'session-solon',
+            projections: ProjectionSet::empty('session-solon'),
+            events: [],
+            checkpointSequence: 0,
+        );
+
+        $store = new AppStore();
+        $hydrator = new TheatronReplayHydrator();
+        $hydrator->hydrate($store, $session);
+
+        self::assertEmpty($store->conversation->turns);
+        self::assertEmpty($store->conversation->messages);
+        self::assertFalse($store->conversation->isStreaming);
     }
 
     private static function inlineStageConfig(): StageConfig

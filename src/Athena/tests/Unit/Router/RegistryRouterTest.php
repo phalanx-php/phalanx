@@ -74,7 +74,7 @@ final class RegistryRouterTest extends TestCase
 
     private static function ollamaYamlPath(): string
     {
-        return dirname(__DIR__, 4) . '/Panoply/src/Provider/Ollama/ollama.panoply.yaml';
+        return ChatProvider::configPath();
     }
 
     private static function agent(): Agent

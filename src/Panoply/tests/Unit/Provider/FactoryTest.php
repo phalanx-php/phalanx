@@ -24,7 +24,7 @@ final class FactoryTest extends TestCase
     #[Test]
     public function createsOllamaProviderWithoutApiKey(): void
     {
-        $config = Loader::fromFile(dirname(__DIR__, 3) . '/src/Provider/Ollama/ollama.panoply.yaml');
+        $config = Loader::fromFile(OllamaChatProvider::configPath());
         $model = $config->models[0];
         $transport = $this->createStub(Transport::class);
 
@@ -79,7 +79,7 @@ final class FactoryTest extends TestCase
     #[Test]
     public function usesBaseUrlFromConfig(): void
     {
-        $config = Loader::fromFile(dirname(__DIR__, 3) . '/src/Provider/Ollama/ollama.panoply.yaml');
+        $config = Loader::fromFile(OllamaChatProvider::configPath());
         $transport = $this->createStub(Transport::class);
 
         $provider = Factory::create(new Resolution($config, $config->models[0]), $transport);
