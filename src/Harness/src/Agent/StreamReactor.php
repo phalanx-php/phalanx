@@ -37,7 +37,7 @@ final class StreamReactor
         }
     }
 
-    private static function dispatch(Cue $cue, AppStore $store): void
+    public static function dispatch(Cue $cue, AppStore $store): void
     {
         $store->conversation = $store->conversation->appendCue($cue);
 

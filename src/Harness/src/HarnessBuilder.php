@@ -12,6 +12,7 @@ use Phalanx\Harness\Ui\UiApp;
 use Phalanx\Iris\HttpServiceBundle;
 use Phalanx\Panoply\Agent;
 use Phalanx\Service\ServiceBundle;
+use Phalanx\Surreal\SurrealBundle;
 use Phalanx\Theatron\Binding\Binding;
 use Phalanx\Theatron\Contract\Screen;
 use Phalanx\Theatron\Stage\StageConfig;
@@ -32,6 +33,8 @@ final class HarnessBuilder
     private ?AthenaBundle $athenaBundle = null;
 
     private bool $providersConfigured = false;
+
+    private HarnessMode $mode = HarnessMode::Ephemeral;
 
     public AppContext $context {
         get => $this->theatron->context;
@@ -58,6 +61,13 @@ final class HarnessBuilder
     public function athena(AthenaBundle $bundle): self
     {
         $this->athenaBundle = $bundle;
+
+        return $this;
+    }
+
+    public function durable(): self
+    {
+        $this->mode = HarnessMode::Durable;
 
         return $this;
     }
@@ -152,6 +162,7 @@ final class HarnessBuilder
             static fn(TheatronApp $app): TheatronServiceBundle => new TheatronServiceBundle($app),
             new HttpServiceBundle(),
             $athenaBundle,
+            ...($this->mode === HarnessMode::Durable ? [new SurrealBundle(), new AgoraServiceBundle($this->mode)] : []),
         );
 
         $this->providersConfigured = true;

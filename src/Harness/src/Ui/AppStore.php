@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace Phalanx\Harness\Ui;
 
+use Phalanx\Agora\Harness\CueRecorder;
+use Phalanx\Agora\Harness\Replay\ReplaySessionReader;
 use Phalanx\Boot\AppContext;
 use Phalanx\Exception\ServiceNotFoundException;
 use Phalanx\Harness\Agent\AgentExecutorContract;
 use Phalanx\Harness\Agent\AgentRuntime;
 use Phalanx\Harness\Agent\EffectApprovalReactor;
+use Phalanx\Harness\HarnessConfig;
+use Phalanx\Harness\Replay\TheatronReplayHydrator;
 use Phalanx\Harness\Ui\Slices\ActivitySlice;
 use Phalanx\Harness\Ui\Slices\AgentRegistrySlice;
 use Phalanx\Harness\Ui\Slices\ConversationSlice;
@@ -33,7 +37,7 @@ use Phalanx\Theatron\Input\KeySequenceState;
 use Phalanx\Theatron\Navigation\Navigator;
 use Phalanx\Theatron\State\Store;
 
-class AppStore extends Store implements
+final class AppStore extends Store implements
     HasActivityPulse,
     HasKeySequenceState,
     HasRuntimeContext,
@@ -163,10 +167,35 @@ class AppStore extends Store implements
 
     public function provideMountServices(MountSystem $mountSystem, ExecutionScope $scope): void
     {
+        $recorder = null;
+        $config = null;
+
         try {
             $executor = $scope->service(AgentExecutorContract::class);
-            $mountSystem->provide(AgentRuntime::class, new AgentRuntime($this, $executor));
+
+            try {
+                $recorder = $scope->service(CueRecorder::class);
+            } catch (ServiceNotFoundException) {
+            }
+
+            try {
+                $config = $scope->service(HarnessConfig::class);
+            } catch (ServiceNotFoundException) {
+            }
+
+            $mountSystem->provide(AgentRuntime::class, new AgentRuntime($this, $executor, $recorder, $config?->sessionId));
         } catch (ServiceNotFoundException) {
+        }
+
+        try {
+            $reader = $scope->service(ReplaySessionReader::class);
+            $hydrator = $scope->service(TheatronReplayHydrator::class);
+        } catch (ServiceNotFoundException) {
+            return;
+        }
+
+        if ($config?->sessionId !== null) {
+            $hydrator->hydrate($this, $reader->read($config->sessionId));
         }
     }
 
