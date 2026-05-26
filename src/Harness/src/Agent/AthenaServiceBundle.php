@@ -25,6 +25,7 @@ use Phalanx\Panoply\Effect\Authorizer\Rules\Authorizer as RulesAuthorizer;
 use Phalanx\Panoply\Id;
 use Phalanx\Panoply\Invocation;
 use Phalanx\Panoply\Provider\Loader;
+use Phalanx\Panoply\Provider\Ollama\ChatProvider;
 use Phalanx\Panoply\Provider\Registry;
 use Phalanx\Scope\TaskScope;
 use Phalanx\Service\ServiceBundle;
@@ -148,7 +149,7 @@ final class AthenaServiceBundle extends ServiceBundle
 
     private static function buildDefaultBundle(OllamaConfig $config): AthenaBundle
     {
-        $ollamaYaml = dirname(__DIR__, 3) . '/Panoply/src/Provider/Ollama/ollama.panoply.yaml';
+        $ollamaYaml = ChatProvider::configPath();
         $registry = Registry::empty()->with(Loader::fromFile($ollamaYaml));
 
         return new AthenaBundle(new RegistryRouter(

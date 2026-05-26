@@ -40,6 +40,11 @@ final class ChatProvider implements ProviderContract
     ) {
     }
 
+    public static function configPath(): string
+    {
+        return __DIR__ . '/ollama.panoply.yaml';
+    }
+
     public function perform(Invocation $invocation, Runtime $runtime): Stream
     {
         $request = RequestBuilder::build($invocation, $this->model, $this->baseUrl, $this->chatOptions);

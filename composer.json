@@ -276,6 +276,7 @@
         "test:surreal": "php -d memory_limit=512M vendor/bin/phpunit -c src/Surreal/phpunit.xml.dist",
         "test:theatron": "php -d memory_limit=512M vendor/bin/phpunit -c src/Theatron/phpunit.xml",
         "test:themis": "php -d memory_limit=512M vendor/bin/phpunit -c src/Themis/phpunit.xml",
+        "prove:harness-install": "php tools/prove-harness-install.php",
         "modules:check": "php tools/check-modules.php",
         "modules:manifests": "php tools/generate-module-manifests.php --write",
         "modules:manifests:check": "php tools/generate-module-manifests.php --check",
