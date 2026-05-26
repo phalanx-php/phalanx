@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Harness\Tests\Support;
 
 use Phalanx\Harness\Agent\AgentExecutorContract;
-use Phalanx\Harness\Template\Slice\PendingEffect;
+use Phalanx\Harness\Ui\Slices\PendingEffect;
 use Phalanx\Panoply\Cue;
 
 final class RecordingAgentExecutor implements AgentExecutorContract

@@ -9,7 +9,7 @@ use Phalanx\Athena\Activity\Config;
 use Phalanx\Athena\Activity\Result;
 use Phalanx\Athena\Grant\Scope as GrantScope;
 use Phalanx\Athena\Grant\Store as GrantStore;
-use Phalanx\Harness\Template\Slice\PendingEffect;
+use Phalanx\Harness\Ui\Slices\PendingEffect;
 use Phalanx\Panoply\Agent;
 use Phalanx\Panoply\Conversation\Log;
 use Phalanx\Panoply\Cue;

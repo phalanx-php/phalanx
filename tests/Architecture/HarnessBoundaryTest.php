@@ -101,7 +101,7 @@ final class HarnessBoundaryTest extends TestCase
         $root = dirname(__DIR__, 2);
 
         self::assertDirectoryExists($root . '/src/Harness/src/Agent');
-        self::assertDirectoryExists($root . '/src/Harness/src/Template');
+        self::assertDirectoryExists($root . '/src/Harness/src/Ui');
         self::assertFileExists($root . '/src/Harness/src/Replay/TheatronReplayHydrator.php');
         self::assertDirectoryDoesNotExist($root . '/src/Theatron/src/Agent');
         self::assertDirectoryDoesNotExist($root . '/src/Theatron/src/Template');
@@ -128,7 +128,7 @@ final class HarnessBoundaryTest extends TestCase
 
         self::assertStringContainsString('use Phalanx\\Harness\\Harness;', $source);
         self::assertStringContainsString('Harness::app($context)->run()', $source);
-        self::assertStringNotContainsString('TemplateApp::store()', $source);
+        self::assertStringNotContainsString('UiApp::store()', $source);
         self::assertStringNotContainsString('Theatron::app($context)', $source);
     }
 

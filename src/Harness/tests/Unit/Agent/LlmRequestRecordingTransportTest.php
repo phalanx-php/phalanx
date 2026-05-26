@@ -6,7 +6,7 @@ namespace Phalanx\Harness\Tests\Unit\Agent;
 
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Harness\Agent\LlmRequestRecordingTransport;
-use Phalanx\Harness\Template\AppStore;
+use Phalanx\Harness\Ui\AppStore;
 use Phalanx\Panoply\Runtime;
 use Phalanx\Panoply\Transport;
 use Phalanx\Panoply\Transport\Request;

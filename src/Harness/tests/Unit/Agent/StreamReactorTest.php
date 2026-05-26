@@ -6,11 +6,11 @@ namespace Phalanx\Harness\Tests\Unit\Agent;
 
 use DateTimeImmutable;
 use Phalanx\Harness\Agent\StreamReactor;
-use Phalanx\Harness\Template\AppStore;
-use Phalanx\Harness\Template\Slice\ActivityStatus;
-use Phalanx\Harness\Template\Slice\ConversationTurnStatus;
-use Phalanx\Harness\Template\Slice\EffectStatus;
-use Phalanx\Harness\Template\Slice\LlmRequestEntry;
+use Phalanx\Harness\Ui\AppStore;
+use Phalanx\Harness\Ui\Slices\ActivityStatus;
+use Phalanx\Harness\Ui\Slices\ConversationTurnStatus;
+use Phalanx\Harness\Ui\Slices\EffectStatus;
+use Phalanx\Harness\Ui\Slices\LlmRequestEntry;
 use Phalanx\Panoply\Cue\Activity\Cancelled as ActivityCancelled;
 use Phalanx\Panoply\Cue\Activity\Completed as ActivityCompleted;
 use Phalanx\Panoply\Cue\Activity\Failed as ActivityFailed;

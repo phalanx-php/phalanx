@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Phalanx\Harness\Agent;
 
 use Closure;
-use Phalanx\Harness\Template\AppStore;
-use Phalanx\Harness\Template\Slice\ActivityStatus;
-use Phalanx\Harness\Template\Slice\PendingEffect;
+use Phalanx\Harness\Ui\AppStore;
+use Phalanx\Harness\Ui\Slices\ActivityStatus;
+use Phalanx\Harness\Ui\Slices\PendingEffect;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\TaskScope;
 use Phalanx\Supervisor\TaskHandle;

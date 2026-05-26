@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Harness\Agent;
 
-use Phalanx\Harness\Template\Slice\PendingEffect;
+use Phalanx\Harness\Ui\Slices\PendingEffect;
 
 final class MockAgentExecutor implements AgentExecutorContract
 {

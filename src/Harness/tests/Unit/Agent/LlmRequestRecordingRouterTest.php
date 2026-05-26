@@ -9,7 +9,7 @@ use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Exception\ServiceNotFoundException;
 use Phalanx\Harness\Agent\LlmRequestRecordingRouter;
 use Phalanx\Harness\Agent\LlmRequestRecordingTransport;
-use Phalanx\Harness\Template\AppStore;
+use Phalanx\Harness\Ui\AppStore;
 use Phalanx\Panoply\Agent;
 use Phalanx\Panoply\Capabilities;
 use Phalanx\Panoply\Context;

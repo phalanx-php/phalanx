@@ -13,7 +13,7 @@ use Phalanx\Athena\Grant\Scope as GrantScope;
 use Phalanx\Athena\Grant\Store as GrantStore;
 use Phalanx\Athena\Turn\Outcome;
 use Phalanx\Harness\Agent\AgentExecutor;
-use Phalanx\Harness\Template\Slice\PendingEffect;
+use Phalanx\Harness\Ui\Slices\PendingEffect;
 use Phalanx\Harness\Tests\Support\RecordingTaskScope;
 use Phalanx\Panoply\Agent;
 use Phalanx\Panoply\Artifact\Kind as ArtifactKind;

@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Phalanx\Harness\Tests\Unit\Agent;
 
 use Phalanx\Harness\Agent\EffectApprovalReactor;
-use Phalanx\Harness\Template\AppStore;
-use Phalanx\Harness\Template\Overlay\EffectApprovalOverlay;
-use Phalanx\Harness\Template\Slice\ActivitySlice;
-use Phalanx\Harness\Template\Slice\ActivityStatus;
-use Phalanx\Harness\Template\Slice\PendingEffect;
+use Phalanx\Harness\Ui\AppStore;
+use Phalanx\Harness\Ui\Overlay\EffectApprovalOverlay;
+use Phalanx\Harness\Ui\Slices\ActivitySlice;
+use Phalanx\Harness\Ui\Slices\ActivityStatus;
+use Phalanx\Harness\Ui\Slices\PendingEffect;
 use Phalanx\Theatron\Contract\Screen;
 use Phalanx\Theatron\Navigation\Navigator;
 use PHPUnit\Framework\Attributes\Test;

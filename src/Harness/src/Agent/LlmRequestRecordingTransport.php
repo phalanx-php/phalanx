@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Phalanx\Harness\Agent;
 
 use Phalanx\Cancellation\Cancelled;
-use Phalanx\Harness\Template\AppStore;
-use Phalanx\Harness\Template\Slice\LlmRequestEntry;
+use Phalanx\Harness\Ui\AppStore;
+use Phalanx\Harness\Ui\Slices\LlmRequestEntry;
 use Phalanx\Panoply\Runtime;
 use Phalanx\Panoply\Transport;
 use Phalanx\Panoply\Transport\Request;

@@ -6,7 +6,7 @@ namespace Phalanx\Harness\Agent;
 
 use Phalanx\Athena\Router\InvocationRouter;
 use Phalanx\Exception\ServiceNotFoundException;
-use Phalanx\Harness\Template\AppStore;
+use Phalanx\Harness\Ui\AppStore;
 use Phalanx\Panoply\Agent;
 use Phalanx\Panoply\Invocation;
 use Phalanx\Panoply\Provider;

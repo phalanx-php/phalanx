@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Harness\Agent;
 
-use Phalanx\Harness\Template\AppStore;
-use Phalanx\Harness\Template\Overlay\EffectApprovalOverlay;
-use Phalanx\Harness\Template\Slice\ActivityStatus;
+use Phalanx\Harness\Ui\AppStore;
+use Phalanx\Harness\Ui\Overlay\EffectApprovalOverlay;
+use Phalanx\Harness\Ui\Slices\ActivityStatus;
 use Phalanx\Theatron\Navigation\Navigator;
 use Phalanx\Theatron\Navigation\WorkspaceNavigator;
 
