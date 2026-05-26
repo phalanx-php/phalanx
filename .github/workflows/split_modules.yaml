@@ -28,6 +28,20 @@ jobs:
       - name: Prove module splits
         run: php tools/prove-module-split.php
 
+      - name: Ensure split repositories exist
+        env:
+          GH_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
+        run: |
+          php -r '
+            $modules = require "modules.php";
+            foreach ($modules as $meta) {
+              [, $slug] = explode("/", $meta["package"]);
+              echo "phalanx-" . $slug . "\n";
+            }
+          ' | while read repo; do
+            gh repo create "phalanx-php/$repo" --public --description "Read-only split of phalanx-php/phalanx" 2>/dev/null || true
+          done
+
       - name: Split modules
         env:
           GH_ACCESS_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
