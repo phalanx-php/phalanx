@@ -44,8 +44,8 @@ use Phalanx\Theatron\Tdom\Element\RowElement;
 use Phalanx\Theatron\Tdom\Element\TextElement;
 use Phalanx\Theatron\Tdom\Renderable;
 use Phalanx\Theatron\Text\Line;
+use Phalanx\Harness\HarnessBuilder;
 use Phalanx\Theatron\TheatronApp;
-use Phalanx\Theatron\TheatronBuilder;
 use Phalanx\Theatron\TheatronServiceBundle;
 use PHPUnit\Framework\Attributes\Test;
 
@@ -315,7 +315,7 @@ final class UiAppReadinessTest extends PhalanxTestCase
         mixed $stream,
         array $bindings = [],
         array $context = ['APP_ENV' => 'test'],
-    ): TheatronBuilder {
+    ): HarnessBuilder {
         return Harness::app($context)
             ->globalBindings([...UiApp::bindings(), ...$bindings])
             ->stageConfig(new StageConfig(

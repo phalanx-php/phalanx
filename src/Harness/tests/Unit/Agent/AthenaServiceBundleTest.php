@@ -37,16 +37,6 @@ final class AthenaServiceBundleTest extends TestCase
     }
 
     #[Test]
-    public function fromHoldsDelegate(): void
-    {
-        $athenaBundle = self::makeAthenaBundle();
-
-        $bundle = AthenaServiceBundle::from($athenaBundle);
-
-        self::assertSame($athenaBundle, $bundle->athenaBundle);
-    }
-
-    #[Test]
     public function delegatesToAthenaBundleOnServices(): void
     {
         $athenaBundle = self::makeAthenaBundle();
@@ -140,6 +130,18 @@ final class AthenaServiceBundleTest extends TestCase
         ], $keys);
         self::assertSame(AthenaServiceBundle::class, $schema->all()[0]->owner);
         self::assertStringContainsString('HARNESS_OLLAMA_MODEL', $schema->render());
+    }
+
+    #[Test]
+    public function ollamaWithCustomAgentClassResolvesToThatAgent(): void
+    {
+        $context = new AppContext([]);
+        $catalog = new ServiceCatalog($context);
+
+        AthenaServiceBundle::ollama(TemplateAgent::class)->services($catalog, $context);
+        $graph = $catalog->compile();
+
+        self::assertSame(TemplateAgent::class, $graph->alias(Agent::class));
     }
 
     private static function makeAthenaBundle(): AthenaBundle

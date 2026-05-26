@@ -102,6 +102,7 @@ final class HarnessBoundaryTest extends TestCase
 
         self::assertDirectoryExists($root . '/src/Harness/src/Agent');
         self::assertDirectoryExists($root . '/src/Harness/src/Ui');
+        self::assertFileExists($root . '/src/Harness/src/HarnessBuilder.php');
         self::assertFileExists($root . '/src/Harness/src/Replay/TheatronReplayHydrator.php');
         self::assertDirectoryDoesNotExist($root . '/src/Theatron/src/Agent');
         self::assertDirectoryDoesNotExist($root . '/src/Theatron/src/Template');
