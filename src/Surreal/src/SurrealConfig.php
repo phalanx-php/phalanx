@@ -7,8 +7,14 @@ namespace Phalanx\Surreal;
 use Phalanx\Boot\AppContext;
 use Phalanx\Boot\ContextKey;
 use Phalanx\Boot\ContextSchema;
+use Phalanx\Config\Config;
+use Phalanx\Config\ConfigHydrator;
+use Phalanx\Config\Env;
+use Phalanx\Config\Issue;
+use Phalanx\Config\IssueLevel;
+use Phalanx\Config\ValidationContext;
 
-class SurrealConfig
+class SurrealConfig implements Config
 {
     private const string DEFAULT_NAMESPACE = 'phalanx';
     private const string DEFAULT_DATABASE = 'app';
@@ -17,16 +23,31 @@ class SurrealConfig
     private const float DEFAULT_READ_TIMEOUT = 30.0;
     private const int DEFAULT_MAX_RESPONSE_BYTES = 16 * 1024 * 1024;
 
+    /** Computed from the minimum values needed to address a Surreal database. */
+    public bool $configured {
+        get => $this->namespace !== '' && $this->database !== '' && $this->endpoint !== '';
+    }
+
     public function __construct(
-        private(set) string $namespace,
-        private(set) string $database,
+        #[Env('SURREAL_NAMESPACE', 'SurrealDB namespace')]
+        private(set) string $namespace = self::DEFAULT_NAMESPACE,
+        #[Env('SURREAL_DATABASE', 'SurrealDB database')]
+        private(set) string $database = self::DEFAULT_DATABASE,
+        #[Env('SURREAL_ENDPOINT', 'SurrealDB HTTP endpoint')]
         private(set) string $endpoint = self::DEFAULT_ENDPOINT,
+        #[Env('SURREAL_WS_ENDPOINT', 'SurrealDB WebSocket endpoint')]
         private(set) ?string $websocketEndpoint = null,
+        #[Env('SURREAL_USERNAME', 'SurrealDB username')]
         private(set) ?string $username = null,
+        #[Env('SURREAL_PASSWORD', 'SurrealDB password', secret: true)]
         private(set) ?string $password = null,
+        #[Env('SURREAL_TOKEN', 'SurrealDB authentication token', secret: true)]
         private(set) ?string $token = null,
+        #[Env('SURREAL_CONNECT_TIMEOUT', 'SurrealDB connect timeout in seconds')]
         private(set) float $connectTimeout = self::DEFAULT_CONNECT_TIMEOUT,
+        #[Env('SURREAL_READ_TIMEOUT', 'SurrealDB read timeout in seconds')]
         private(set) float $readTimeout = self::DEFAULT_READ_TIMEOUT,
+        #[Env('SURREAL_MAX_RESPONSE_BYTES', 'SurrealDB maximum response bytes')]
         private(set) int $maxResponseBytes = self::DEFAULT_MAX_RESPONSE_BYTES,
     ) {
         $this->endpoint = rtrim($endpoint, '/');
@@ -35,30 +56,7 @@ class SurrealConfig
 
     public static function fromContext(AppContext $context): self
     {
-        return new self(
-            namespace: self::stringValue($context->values, ['surreal_namespace', 'SURREAL_NAMESPACE'], self::DEFAULT_NAMESPACE),
-            database: self::stringValue($context->values, ['surreal_database', 'SURREAL_DATABASE'], self::DEFAULT_DATABASE),
-            endpoint: self::stringValue($context->values, ['surreal_endpoint', 'SURREAL_ENDPOINT'], self::DEFAULT_ENDPOINT),
-            websocketEndpoint: self::nullableStringValue($context->values, ['surreal_ws_endpoint', 'SURREAL_WS_ENDPOINT']),
-            username: self::nullableStringValue($context->values, ['surreal_username', 'SURREAL_USERNAME']),
-            password: self::nullableStringValue($context->values, ['surreal_password', 'SURREAL_PASSWORD']),
-            token: self::nullableStringValue($context->values, ['surreal_token', 'SURREAL_TOKEN']),
-            connectTimeout: self::floatValue(
-                $context->values,
-                ['surreal_connect_timeout', 'SURREAL_CONNECT_TIMEOUT'],
-                self::DEFAULT_CONNECT_TIMEOUT,
-            ),
-            readTimeout: self::floatValue(
-                $context->values,
-                ['surreal_read_timeout', 'SURREAL_READ_TIMEOUT'],
-                self::DEFAULT_READ_TIMEOUT,
-            ),
-            maxResponseBytes: self::intValue(
-                $context->values,
-                ['surreal_max_response_bytes', 'SURREAL_MAX_RESPONSE_BYTES'],
-                self::DEFAULT_MAX_RESPONSE_BYTES,
-            ),
-        );
+        return ConfigHydrator::from($context)->hydrate(self::class);
     }
 
     public static function contextSchema(): ContextSchema
@@ -108,6 +106,44 @@ class SurrealConfig
         );
     }
 
+    /** @return list<Issue> */
+    public function validate(ValidationContext $context): array
+    {
+        $issues = [];
+
+        if ($this->namespace === '') {
+            $issues[] = new Issue(
+                IssueLevel::Error,
+                'surreal.namespace-empty',
+                'SurrealDB namespace cannot be empty.',
+                envKey: 'SURREAL_NAMESPACE',
+                path: 'namespace',
+            );
+        }
+
+        if ($this->database === '') {
+            $issues[] = new Issue(
+                IssueLevel::Error,
+                'surreal.database-empty',
+                'SurrealDB database cannot be empty.',
+                envKey: 'SURREAL_DATABASE',
+                path: 'database',
+            );
+        }
+
+        if ($this->token === null && ($this->username === null || $this->password === null)) {
+            $issues[] = new Issue(
+                IssueLevel::Warning,
+                'surreal.auth-missing',
+                'SurrealDB auth is not configured; this only works for unauthenticated local instances.',
+                envKey: 'SURREAL_TOKEN',
+                hint: 'Set SURREAL_TOKEN or SURREAL_USERNAME and SURREAL_PASSWORD for authenticated deployments.',
+            );
+        }
+
+        return $issues;
+    }
+
     private static function deriveWebsocketEndpoint(string $endpoint): string
     {
         if (str_starts_with($endpoint, 'https://')) {
@@ -119,72 +155,5 @@ class SurrealConfig
         }
 
         return $endpoint;
-    }
-
-    /**
-     * @param array<string, mixed> $context
-     * @param list<string> $keys
-     */
-    private static function stringValue(array $context, array $keys, string $default): string
-    {
-        foreach ($keys as $key) {
-            if (array_key_exists($key, $context)) {
-                return (string) $context[$key];
-            }
-        }
-
-        return $default;
-    }
-
-    /**
-     * @param array<string, mixed> $context
-     * @param list<string> $keys
-     */
-    private static function nullableStringValue(array $context, array $keys): ?string
-    {
-        foreach ($keys as $key) {
-            if (!array_key_exists($key, $context)) {
-                continue;
-            }
-
-            $value = $context[$key];
-            if ($value === null || $value === '') {
-                return null;
-            }
-
-            return (string) $value;
-        }
-
-        return null;
-    }
-
-    /**
-     * @param array<string, mixed> $context
-     * @param list<string> $keys
-     */
-    private static function floatValue(array $context, array $keys, float $default): float
-    {
-        foreach ($keys as $key) {
-            if (array_key_exists($key, $context)) {
-                return (float) $context[$key];
-            }
-        }
-
-        return $default;
-    }
-
-    /**
-     * @param array<string, mixed> $context
-     * @param list<string> $keys
-     */
-    private static function intValue(array $context, array $keys, int $default): int
-    {
-        foreach ($keys as $key) {
-            if (array_key_exists($key, $context)) {
-                return (int) $context[$key];
-            }
-        }
-
-        return $default;
     }
 }

@@ -98,7 +98,9 @@ final class AthenaServiceBundleTest extends TestCase
         AthenaServiceBundle::ollama()->services($catalog, $context);
 
         $graph = $catalog->compile();
-        $config = $graph->contextConfig(OllamaConfig::class);
+        $factory = $graph->resolve(OllamaConfig::class)->factoryFn;
+        self::assertNotNull($factory);
+        $config = $factory();
 
         self::assertInstanceOf(OllamaConfig::class, $config);
         self::assertSame('http://example.test:11434', $config->baseUrl);

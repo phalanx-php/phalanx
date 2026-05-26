@@ -10,6 +10,11 @@ use Phalanx\Boot\BootHarnessRunner;
 use Phalanx\Boot\Exception\CannotBootException;
 use Phalanx\Boot\Optional;
 use Phalanx\Boot\Required;
+use Phalanx\Config\Config;
+use Phalanx\Config\Env;
+use Phalanx\Config\Issue;
+use Phalanx\Config\IssueLevel;
+use Phalanx\Config\ValidationContext;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 use Phalanx\Testing\PhalanxTestCase;
@@ -23,7 +28,9 @@ final class RequiredEnvBundle extends ServiceBundle
         return BootHarness::of(Required::env('CRITICAL_KEY'));
     }
 
-    public function services(Services $services, AppContext $context): void {}
+    public function services(Services $services, AppContext $context): void
+    {
+    }
 }
 
 final class OptionalEnvBundle extends ServiceBundle
@@ -34,12 +41,78 @@ final class OptionalEnvBundle extends ServiceBundle
         return BootHarness::of(Optional::env('OPTIONAL_KEY'));
     }
 
-    public function services(Services $services, AppContext $context): void {}
+    public function services(Services $services, AppContext $context): void
+    {
+    }
 }
 
 final class DefaultHarnessBundle extends ServiceBundle
 {
-    public function services(Services $services, AppContext $context): void {}
+    public function services(Services $services, AppContext $context): void
+    {
+    }
+}
+
+final class ConfiguredBundle extends ServiceBundle
+{
+    /** @return list<class-string<Config>> */
+    #[\Override]
+    public static function configs(): array
+    {
+        return [BootRunnerConfig::class];
+    }
+
+    public function services(Services $services, AppContext $context): void
+    {
+    }
+}
+
+final class BootRunnerConfig implements Config
+{
+    public bool $configured {
+        get => $this->limit > 0;
+    }
+
+    public function __construct(
+        #[Env('BOOT_RUNNER_LIMIT', 'Boot runner limit')]
+        public int $limit = 1,
+    ) {
+    }
+
+    /** @return list<Issue> */
+    public function validate(ValidationContext $context): array
+    {
+        return $this->limit > 0
+            ? []
+            : [new Issue(IssueLevel::Error, 'boot-runner.limit', 'BOOT_RUNNER_LIMIT must be positive.', 'BOOT_RUNNER_LIMIT')];
+    }
+}
+
+final class WarningConfigBundle extends ServiceBundle
+{
+    /** @return list<class-string<Config>> */
+    #[\Override]
+    public static function configs(): array
+    {
+        return [WarningBootRunnerConfig::class];
+    }
+
+    public function services(Services $services, AppContext $context): void
+    {
+    }
+}
+
+final class WarningBootRunnerConfig implements Config
+{
+    public bool $configured {
+        get => true;
+    }
+
+    /** @return list<Issue> */
+    public function validate(ValidationContext $context): array
+    {
+        return [new Issue(IssueLevel::Warning, 'boot-runner.warning', 'Config warning.')];
+    }
 }
 
 final class ComposerExtraHarnessStub
@@ -203,6 +276,37 @@ final class BootHarnessRunnerTest extends PhalanxTestCase
     }
 
     #[Test]
+    public function runFailsWhenTypedConfigValidationFails(): void
+    {
+        $runner = new BootHarnessRunner();
+
+        try {
+            $runner->run(new AppContext(['BOOT_RUNNER_LIMIT' => '0']), [new ConfiguredBundle()]);
+            self::fail('Expected CannotBootException was not thrown.');
+        } catch (CannotBootException $e) {
+            self::assertStringContainsString('BOOT_RUNNER_LIMIT must be positive', $e->getMessage());
+            self::assertTrue($e->report->hasFailures());
+        }
+    }
+
+    #[Test]
+    public function runWarnsForTypedConfigWarningsUnlessStrict(): void
+    {
+        $runner = new BootHarnessRunner();
+
+        $report = $runner->run(new AppContext([]), [new WarningConfigBundle()]);
+        self::assertFalse($report->hasFailures());
+        self::assertTrue($report->hasWarnings());
+
+        try {
+            $runner->run(new AppContext(['PHALANX_CONFIG_STRICT' => 'true']), [new WarningConfigBundle()]);
+            self::fail('Expected CannotBootException was not thrown.');
+        } catch (CannotBootException $e) {
+            self::assertStringContainsString('Config warning.', $e->getMessage());
+        }
+    }
+
+    #[Test]
     public function contextSchemaListsBundleAndComposerExtraKeys(): void
     {
         $tmpDir = sys_get_temp_dir() . '/phalanx_harness_schema_' . uniqid('plx_', true);
@@ -242,5 +346,16 @@ final class BootHarnessRunnerTest extends PhalanxTestCase
             rmdir($tmpDir . '/composer');
             rmdir($tmpDir);
         }
+    }
+
+    #[Test]
+    public function contextSchemaIncludesTypedConfigKeys(): void
+    {
+        $schema = (new BootHarnessRunner())->contextSchema([ConfiguredBundle::class], vendorDir: null);
+        $keys = $schema->all();
+
+        self::assertSame('BOOT_RUNNER_LIMIT', $keys[0]->name);
+        self::assertSame(BootRunnerConfig::class, $keys[0]->owner);
+        self::assertStringContainsString('BOOT_RUNNER_LIMIT', $schema->render());
     }
 }

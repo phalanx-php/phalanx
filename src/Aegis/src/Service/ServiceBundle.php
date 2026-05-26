@@ -7,6 +7,7 @@ namespace Phalanx\Service;
 use Phalanx\Boot\AppContext;
 use Phalanx\Boot\BootHarness;
 use Phalanx\Boot\ContextSchema;
+use Phalanx\Config\Config;
 use Phalanx\Testing\TestLens;
 
 /**
@@ -43,6 +44,12 @@ abstract class ServiceBundle
     public static function contextSchema(): ContextSchema
     {
         return static::harness()->contextSchema(static::class);
+    }
+
+    /** @return list<class-string<Config>> */
+    public static function configs(): array
+    {
+        return [];
     }
 
     /**

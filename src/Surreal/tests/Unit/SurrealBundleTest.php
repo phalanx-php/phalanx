@@ -64,8 +64,8 @@ final class SurrealBundleTest extends PhalanxTestCase
     public function constructorConfigIsCanonicalForRegisteredSurrealConfig(): void
     {
         $result = Application::starting([
-            'surreal_namespace' => 'context',
-            'surreal_database' => 'context',
+            'SURREAL_NAMESPACE' => 'context',
+            'SURREAL_DATABASE' => 'context',
         ])
             ->providers(new SurrealBundle(new SurrealConfig(
                 namespace: 'olympus',
@@ -203,9 +203,9 @@ final class SurrealBundleTest extends PhalanxTestCase
     protected function phalanxContext(): array
     {
         return [
-            'surreal_namespace' => 'olympus',
-            'surreal_database' => 'pantheon',
-            'surreal_endpoint' => 'http://surreal.test:8000',
+            'SURREAL_NAMESPACE' => 'olympus',
+            'SURREAL_DATABASE' => 'pantheon',
+            'SURREAL_ENDPOINT' => 'http://surreal.test:8000',
         ];
     }
 

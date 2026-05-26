@@ -6,6 +6,7 @@ namespace Phalanx\Surreal;
 
 use Phalanx\Boot\AppContext;
 use Phalanx\Boot\BootHarness;
+use Phalanx\Config\Config;
 use Phalanx\Hermes\Client\WsClient;
 use Phalanx\Hermes\Client\WsClientConfig;
 use Phalanx\Iris\HttpClient;
@@ -29,16 +30,21 @@ class SurrealBundle extends ServiceBundle
         return SurrealConfig::contextSchema()->harness();
     }
 
+    /** @return list<class-string<Config>> */
+    #[\Override]
+    public static function configs(): array
+    {
+        return [SurrealConfig::class];
+    }
+
     public function services(Services $services, AppContext $context): void
     {
         $config = $this->config;
         $transport = $this->transport;
         $liveTransport = $this->liveTransport;
 
-        $services->contextConfig(
-            SurrealConfig::class,
-            static fn(AppContext $ctx): SurrealConfig => $config ?? SurrealConfig::fromContext($ctx),
-        );
+        $services->singleton(SurrealConfig::class)
+            ->factory(static fn(): SurrealConfig => $config ?? SurrealConfig::fromContext($context));
 
         $services->singleton(HttpClient::class)
             ->needs(SurrealConfig::class)
@@ -53,17 +59,12 @@ class SurrealBundle extends ServiceBundle
             ->needs(HttpClient::class)
             ->factory(static fn(HttpClient $http): SurrealTransport => $transport ?? new IrisSurrealTransport($http));
 
-        $services->contextConfig(
-            WsClientConfig::class,
-            static function (AppContext $ctx) use ($config): WsClientConfig {
-                $surreal = $config ?? SurrealConfig::fromContext($ctx);
-
-                return new WsClientConfig(
-                    connectTimeout: $surreal->connectTimeout,
-                    recvTimeout: $surreal->readTimeout,
-                );
-            },
-        );
+        $services->singleton(WsClientConfig::class)
+            ->needs(SurrealConfig::class)
+            ->factory(static fn(SurrealConfig $config): WsClientConfig => new WsClientConfig(
+                connectTimeout: $config->connectTimeout,
+                recvTimeout: $config->readTimeout,
+            ));
 
         $services->singleton(WsClient::class)
             ->needs(WsClientConfig::class)

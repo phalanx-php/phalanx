@@ -15,15 +15,15 @@ final class SurrealConfigTest extends TestCase
     public function contextProvidesExplicitDatabaseAndTransportSettings(): void
     {
         $config = SurrealConfig::fromContext(new AppContext([
-            'surreal_namespace' => 'olympus',
-            'surreal_database' => 'pantheon',
-            'surreal_endpoint' => 'http://surreal.test:8000/',
-            'surreal_ws_endpoint' => 'ws://surreal.test:8000/rpc/',
-            'surreal_username' => 'root',
-            'surreal_password' => 'secret',
-            'surreal_connect_timeout' => '1.5',
-            'surreal_read_timeout' => '7.5',
-            'surreal_max_response_bytes' => '4096',
+            'SURREAL_NAMESPACE' => 'olympus',
+            'SURREAL_DATABASE' => 'pantheon',
+            'SURREAL_ENDPOINT' => 'http://surreal.test:8000/',
+            'SURREAL_WS_ENDPOINT' => 'ws://surreal.test:8000/rpc/',
+            'SURREAL_USERNAME' => 'root',
+            'SURREAL_PASSWORD' => 'secret',
+            'SURREAL_CONNECT_TIMEOUT' => '1.5',
+            'SURREAL_READ_TIMEOUT' => '7.5',
+            'SURREAL_MAX_RESPONSE_BYTES' => '4096',
         ]));
 
         self::assertSame('olympus', $config->namespace);
@@ -38,20 +38,20 @@ final class SurrealConfigTest extends TestCase
     }
 
     #[Test]
-    public function contextAcceptsEnvironmentStyleKeys(): void
+    public function contextIgnoresLegacyLowercaseKeys(): void
     {
         $config = SurrealConfig::fromContext(new AppContext([
-            'SURREAL_NAMESPACE' => 'olympus',
-            'SURREAL_DATABASE' => 'pantheon',
-            'SURREAL_ENDPOINT' => 'http://surreal.test:8000/',
-            'SURREAL_TOKEN' => 'jwt',
+            'surreal_namespace' => 'olympus',
+            'surreal_database' => 'pantheon',
+            'surreal_endpoint' => 'http://surreal.test:8000/',
+            'surreal_token' => 'jwt',
         ]));
 
-        self::assertSame('olympus', $config->namespace);
-        self::assertSame('pantheon', $config->database);
-        self::assertSame('http://surreal.test:8000', $config->endpoint);
-        self::assertSame('ws://surreal.test:8000/rpc', $config->websocketEndpoint);
-        self::assertSame('jwt', $config->token);
+        self::assertSame('phalanx', $config->namespace);
+        self::assertSame('app', $config->database);
+        self::assertSame('http://127.0.0.1:8000', $config->endpoint);
+        self::assertSame('ws://127.0.0.1:8000/rpc', $config->websocketEndpoint);
+        self::assertNull($config->token);
     }
 
     #[Test]

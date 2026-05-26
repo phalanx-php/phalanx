@@ -15,6 +15,8 @@ use Phalanx\Athena\Turn\Loop;
 use Phalanx\Athena\Turn\RuntimeFactory;
 use Phalanx\Boot\AppContext;
 use Phalanx\Boot\BootHarness;
+use Phalanx\Config\Config as PhalanxConfig;
+use Phalanx\Config\ConfigHydrator;
 use Phalanx\Panoply\Agent;
 use Phalanx\Panoply\Context;
 use Phalanx\Panoply\Effect\Authorizer;
@@ -48,9 +50,16 @@ final class AthenaServiceBundle extends ServiceBundle
         return OllamaConfig::contextSchema()->harness();
     }
 
+    /** @return list<class-string<PhalanxConfig>> */
+    #[\Override]
+    public static function configs(): array
+    {
+        return [OllamaConfig::class];
+    }
+
     public function services(Services $services, AppContext $context): void
     {
-        $ollamaConfig = OllamaConfig::fromContext($context);
+        $ollamaConfig = ConfigHydrator::from($context)->hydrate(OllamaConfig::class);
         $athenaBundle = $this->athenaBundle ?? new AthenaBundle(new OllamaInvocationRouter($ollamaConfig));
 
         $bundle = new AthenaBundle(
@@ -67,7 +76,8 @@ final class AthenaServiceBundle extends ServiceBundle
             ->factory(static fn(RulesAuthorizer $inner): ApprovalAuthorizer => new ApprovalAuthorizer($inner));
         $services->alias(Authorizer::class, ApprovalAuthorizer::class);
 
-        $services->contextConfig(OllamaConfig::class, static fn(): OllamaConfig => $ollamaConfig);
+        $services->singleton(OllamaConfig::class)
+            ->factory(static fn(): OllamaConfig => $ollamaConfig);
 
         $services->singleton(TemplateAgent::class)
             ->factory(static fn(): TemplateAgent => new TemplateAgent());

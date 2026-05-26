@@ -261,6 +261,11 @@ TEMPLATE;
     private static function gitignoreTemplate(): string
     {
         return <<<'TEMPLATE'
+.*
+*.md
+!.gitignore
+!.env.example
+!README.md
 /vendor/
 .env
 TEMPLATE;
