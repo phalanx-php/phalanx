@@ -12,8 +12,9 @@ use Phalanx\Themis\ValidationContext;
 
 final class DoryConfig implements Config
 {
-    private const float DEFAULT_SCRIPT_TIMEOUT = 30.0;
     private const int DEFAULT_MAX_CONCURRENCY = 50;
+
+    private const float DEFAULT_SCRIPT_TIMEOUT = 30.0;
 
     public bool $configured {
         get => $this->scriptTimeout > 0 && $this->maxConcurrency > 0;

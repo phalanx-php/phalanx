@@ -6,8 +6,9 @@ namespace Phalanx\Themis;
 
 final class ConfigValidator
 {
-    public function __construct(private ConfigFactory $factory)
-    {
+    public function __construct(
+        private ConfigFactory $factory
+    ) {
     }
 
     /**

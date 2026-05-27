@@ -20,6 +20,7 @@ use Phalanx\Themis\ConfigFactory;
 
 final class DoryServiceBundle extends ServiceBundle
 {
+    #[\Override]
     public static function configs(): array
     {
         return [DoryConfig::class];
@@ -27,7 +28,8 @@ final class DoryServiceBundle extends ServiceBundle
 
     public function services(Services $services, AppContext $context): void
     {
-        $services->singleton(DoryConfig::class)
+        $services
+            ->singleton(DoryConfig::class)
             ->factory(static fn(): DoryConfig => ConfigFactory::fromContext($context->values)
                 ->hydrate(DoryConfig::class));
 

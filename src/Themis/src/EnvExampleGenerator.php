@@ -12,11 +12,11 @@ final class EnvExampleGenerator
      */
     public function generate(array $configs, array $knownValues = []): string
     {
-        $reflection = new ConfigReflection();
-        $lines = [];
         $known = $knownValues;
-        $seen = [];
+        $reflection = new ConfigReflection();
 
+        $seen = [];
+        $lines = [];
         foreach ($configs as $config) {
             foreach ($reflection->describe($config) as $definition) {
                 if ($definition->entries === []) {

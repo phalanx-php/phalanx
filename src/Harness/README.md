@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/banner.svg" alt="Phalanx" width="520">
+</p>
+
 # Phalanx Harness
 
 Starter agent harness app for Phalanx.
