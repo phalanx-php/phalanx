@@ -16,7 +16,7 @@ vendor/
 node_modules/
 
 # Build artifacts
-build/
+/build/
 dist/
 coverage/
 

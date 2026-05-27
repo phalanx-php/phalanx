@@ -3,6 +3,38 @@
 
 declare(strict_types=1);
 
+// Static binary mode: the binary is a raw PHP CLI with an embedded PHAR appended.
+// PHP's PHAR loader finds the archive by scanning backwards from EOF for the
+// __HALT_COMPILER() signature, so \Phar::running() returns non-empty when we are
+// executing from that embedded PHAR.
+if (extension_loaded('Phar') && \Phar::running() !== '') {
+    $pharAutoload = 'phar://' . \Phar::running() . '/vendor/autoload.php';
+
+    if (is_file($pharAutoload)) {
+        require $pharAutoload;
+
+        // symfony/runtime is not embedded in the binary, so we construct the
+        // context array manually to match what AppContext expects from Archon::starting().
+        $context = [
+            'argv' => $argv ?? $_SERVER['argv'] ?? [],
+            'env'  => array_filter(
+                $_ENV + $_SERVER,
+                static fn(string $key): bool => !str_starts_with($key, 'HTTP_'),
+                ARRAY_FILTER_USE_KEY,
+            ),
+        ];
+
+        exit(
+            \Phalanx\Archon\Application\Archon::starting($context)
+                ->providers(new \Phalanx\Dory\DoryServiceBundle())
+                ->commands(\Phalanx\Dory\Command\DoryCommandGroup::commands())
+                ->default('run')
+                ->run()
+        );
+    }
+}
+
+// Development mode: Composer install with symfony/runtime present.
 $autoload = dirname(__DIR__) . '/vendor/autoload_runtime.php';
 
 if (!is_file($autoload)) {
