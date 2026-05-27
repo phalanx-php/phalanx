@@ -1,0 +1,76 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Phalanx\Dory\Command;
+
+use Phalanx\Archon\Command\CommandScope;
+use Phalanx\Archon\Console\Output\StreamOutput;
+use Phalanx\Dory\DoryConfig;
+use Phalanx\Task\Scopeable;
+use Phalanx\Themis\ValidationContext;
+
+final class DoctorCommand implements Scopeable
+{
+    private const string PASS = '[pass]';
+    private const string FAIL = '[fail]';
+
+    private const array OPTIONAL_EXTENSIONS = ['curl', 'mbstring', 'openssl', 'pcntl', 'posix', 'sockets'];
+
+    public function __invoke(CommandScope $scope): int
+    {
+        $output = $scope->service(StreamOutput::class);
+
+        $phpOk = self::checkPhpVersion($output);
+        $swooleOk = self::checkSwoole($output);
+        self::checkOptionalExtensions($output);
+        self::checkDoryConfig($scope, $output);
+
+        return ($phpOk && $swooleOk) ? 0 : 1;
+    }
+
+    private static function checkPhpVersion(StreamOutput $output): bool
+    {
+        $version = PHP_VERSION;
+        $ok = version_compare($version, '8.4.0', '>=');
+        $marker = $ok ? self::PASS : self::FAIL;
+        $output->persist("  {$marker} PHP >= 8.4 ({$version})");
+
+        return $ok;
+    }
+
+    private static function checkSwoole(StreamOutput $output): bool
+    {
+        $ok = extension_loaded('openswoole');
+        $marker = $ok ? self::PASS : self::FAIL;
+        $output->persist("  {$marker} OpenSwoole extension loaded");
+
+        return $ok;
+    }
+
+    private static function checkOptionalExtensions(StreamOutput $output): void
+    {
+        foreach (self::OPTIONAL_EXTENSIONS as $ext) {
+            $ok = extension_loaded($ext);
+            $marker = $ok ? self::PASS : self::FAIL;
+            $output->persist("  {$marker} {$ext} extension");
+        }
+    }
+
+    private static function checkDoryConfig(CommandScope $scope, StreamOutput $output): void
+    {
+        $config = $scope->service(DoryConfig::class);
+        $issues = $config->validate(new ValidationContext());
+
+        if ($issues === []) {
+            $output->persist('  ' . self::PASS . ' Dory config valid');
+            return;
+        }
+
+        $output->persist('  ' . self::FAIL . ' Dory config invalid:');
+
+        foreach ($issues as $issue) {
+            $output->persist("    [{$issue->code}] {$issue->message}");
+        }
+    }
+}

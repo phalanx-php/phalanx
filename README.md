@@ -221,16 +221,23 @@ The modules are in one cohesive framework. The names are still useful when readi
 | Archon | CLI applications, commands, arguments, interactive input |
 | Theatron | terminal UI screens, stores, bindings, devtools, request inspection |
 | Hydra | worker processes and structured parallelism |
-| Hermes | WebSocket server and client work |
+| Hermes | WebSocket server and client |
 | Athena | supervised AI turns, effects, grants, tools, MCP |
 | Panoply | provider-neutral AI surface and adapters |
+| Agora | durable agent state, event log, replay, session resume |
+| Harness | composable starter agent app (Theatron + Athena + Agora + Surreal) |
+| Dory | native scripting, supervised execution, fluent orchestration |
 | Iris | outbound HTTP |
 | Grammata | filesystem work |
+| Styx | reactive stream primitives (Emitter, ScopedStream, Channel) |
 | Enigma | SSH and tunnels |
 | Surreal | SurrealDB RPC and live queries |
+| Argos | network discovery, probing, device management |
 | Skopos | dev server orchestration |
 | Eidolon | frontend bridge contracts |
-| PHPStan rules | static safety checks for runtime-sensitive patterns |
+| Themis | typed config hydration, env validation, secrets |
+| Cli | doctor, OpenSwoole installer (PIE), project scaffolding |
+| PHPStan | static safety checks for runtime-sensitive patterns |
 
 ## Demos
 

@@ -231,7 +231,7 @@ return [
             'phalanx-php/themis' => '^0.6',
         ],
         'devRequires' => ['phpunit/phpunit' => '^13.0'],
-        'bins' => [],
+        'bins' => ['bin/dory'],
         'branchAlias' => '0.6.x-dev',
         'keywords' => ['scripting', 'cli', 'async', 'phalanx', 'openswoole'],
         'suggests' => [

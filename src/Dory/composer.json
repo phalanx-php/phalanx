@@ -32,6 +32,9 @@
     "require-dev": {
         "phpunit/phpunit": "^13.0"
     },
+    "bin": [
+        "bin/dory"
+    ],
     "archive": {
         "exclude": [
             "/.aimind",

@@ -1,0 +1,13 @@
+{
+    "main": "bin/dory",
+    "output": "build/dory.phar",
+    "compression": "GZ",
+    "finder": [
+        {
+            "in": ["src"],
+            "name": "*.php"
+        }
+    ],
+    "directories": ["vendor"],
+    "force-autodiscovery": true
+}

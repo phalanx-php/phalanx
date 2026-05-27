@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Dory\Tests\Unit\Orchestration;
 
 use Closure;
+use Phalanx\Cancellation\Cancelled;
 use Phalanx\Concurrency\RetryPolicy;
 use Phalanx\Dory\Orchestration\AttemptBuilder;
 use Phalanx\Scope\ExecutionScope;
@@ -220,6 +221,30 @@ final class AttemptBuilderTest extends TestCase
 
         self::assertSame('ares', $result);
         self::assertSame(['singleflight', 'timeout', 'retry'], $callOrder);
+    }
+
+    #[Test]
+    public function cancelled_propagates_through_catch_handler(): void
+    {
+        $scope = $this->createMock(ExecutionScope::class);
+        $scope->method('execute')
+            ->willThrowException(new Cancelled('scope ended'));
+
+        $catchCalled = false;
+
+        $builder = new AttemptBuilder($scope, static fn(): string => 'ignored');
+        $builder->catch(static function () use (&$catchCalled): string {
+            $catchCalled = true;
+            return 'swallowed';
+        });
+
+        $this->expectException(Cancelled::class);
+
+        try {
+            $builder->run();
+        } finally {
+            self::assertFalse($catchCalled);
+        }
     }
 
     private function mockScope(mixed $expectedResult): ExecutionScope

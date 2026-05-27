@@ -1,0 +1,38 @@
+name: Build Dory PHAR
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'dory-v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: openswoole, mbstring, curl, openssl, pcntl, sockets, posix
+          tools: composer
+
+      - name: Install dependencies
+        run: composer install --no-dev --optimize-autoloader --working-dir=src/Dory
+
+      - name: Download Box
+        run: curl -LSs https://github.com/box-project/box/releases/latest/download/box.phar -o box.phar && chmod +x box.phar
+
+      - name: Compile PHAR
+        run: php box.phar compile --config=src/Dory/box.json.dist
+
+      - name: Verify PHAR boots
+        run: php src/Dory/build/dory.phar --help
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dory-phar
+          path: src/Dory/build/dory.phar

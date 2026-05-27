@@ -134,20 +134,20 @@ final class ScriptContextTest extends TestCase
     }
 
     #[Test]
-    public function fs_property_calls_service_with_files_class(): void
+    public function fs_property_resolves_via_service(): void
     {
+        $innerScope = $this->createMock(ExecutionScope::class);
+        $files = new Files($innerScope);
+
         $scope = $this->createMock(ExecutionScope::class);
         $scope->expects(self::once())
             ->method('service')
             ->with(Files::class)
-            ->willThrowException(new \RuntimeException('service called'));
+            ->willReturn($files);
 
         $config = new DoryConfig();
         $dory = new ScriptContext($scope, '/tmp/test.php', $config);
 
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('service called');
-
-        $dory->fs;
+        self::assertSame($files, $dory->fs);
     }
 }

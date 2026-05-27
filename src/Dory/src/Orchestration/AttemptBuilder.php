@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Dory\Orchestration;
 
 use Closure;
+use Phalanx\Cancellation\Cancelled;
 use Phalanx\Concurrency\RetryPolicy;
 use Phalanx\Scope\ExecutionScope;
 use Throwable;
@@ -93,6 +94,9 @@ final class AttemptBuilder
             try {
                 return $execute();
             } catch (Throwable $e) {
+                if ($e instanceof Cancelled) {
+                    throw $e;
+                }
                 if ($catchHandler !== null) {
                     return $catchHandler($e);
                 }
