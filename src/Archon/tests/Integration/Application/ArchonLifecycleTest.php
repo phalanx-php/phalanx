@@ -51,7 +51,7 @@ final class ArchonLifecycleTest extends TestCase
     }
 
     #[Test]
-    public function disposesLoaderScopeAndLoadedCommandScope(): void
+    public function disposesLoaderScopeAndLoadedCommandContext(): void
     {
         $dir = $this->makeCommandDirectory();
 

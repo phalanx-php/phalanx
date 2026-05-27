@@ -298,12 +298,12 @@ final class RouteGroup implements Executable
     /**
      * @param array<string, RouteParamValidator> $validators
      */
-    private static function enforceParamValidators(array $validators, RequestContext $scope): void
+    private static function enforceParamValidators(array $validators, RequestContext $ctx): void
     {
         $errors = [];
 
         foreach ($validators as $paramName => $validator) {
-            $value = $scope->params->get($paramName);
+            $value = $ctx->params->get($paramName);
 
             if ($value === null) {
                 continue;
@@ -323,12 +323,12 @@ final class RouteGroup implements Executable
     /**
      * @param list<Header> $required
      */
-    private static function enforceRequiredHeaders(array $required, RequestContext $scope): void
+    private static function enforceRequiredHeaders(array $required, RequestContext $ctx): void
     {
         $errors = [];
 
         foreach ($required as $header) {
-            $value = $scope->header($header->name);
+            $value = $ctx->header($header->name);
 
             if ($value === '') {
                 if ($header->required) {

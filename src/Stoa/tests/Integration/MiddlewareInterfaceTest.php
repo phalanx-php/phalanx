@@ -35,7 +35,7 @@ final class MiddlewareInterfaceTest extends TestCase
         $result = $this->dispatch($group, $request);
 
         // Same order as PrefixingMiddleware: outermost runs first and last
-        $this->assertSame('before:ok:after', $result);
+        self::assertSame('before:ok:after', $result);
     }
 
     #[Test]
@@ -49,7 +49,7 @@ final class MiddlewareInterfaceTest extends TestCase
 
         $result = $this->dispatch($group, $request);
 
-        $this->assertSame('aborted', $result);
+        self::assertSame('aborted', $result);
     }
 
     protected function setUp(): void

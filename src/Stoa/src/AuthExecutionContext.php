@@ -38,7 +38,7 @@ class AuthExecutionContext implements AuthRequestContext
     }
 
     public function __construct(
-        private readonly RequestContext $inner,
+        private(set) RequestContext $inner,
         private(set) AuthContext $auth,
     ) {
     }

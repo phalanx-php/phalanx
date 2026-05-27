@@ -30,7 +30,7 @@ final class RequireAbilityTest extends TestCase
 
         $v = new RequireAbility('admin');
 
-        $this->assertSame([], $v->validate(null, $scope));
+        self::assertSame([], $v->validate(null, $scope));
     }
 
     #[Test]

@@ -19,15 +19,15 @@ final class Authenticate implements Executable
     }
 
     /** @param Closure(WsContext): mixed $next */
-    public function __invoke(WsContext $scope, Closure $next): mixed
+    public function __invoke(WsContext $ctx, Closure $next): mixed
     {
-        $auth = $this->guard->authenticate($scope->request);
+        $auth = $this->guard->authenticate($ctx->request);
 
         if ($auth === null) {
             throw new AuthenticationException();
         }
 
-        $authenticated = new AuthExecutionContext($scope, $auth);
+        $authenticated = new AuthExecutionContext($ctx, $auth);
 
         return $next($authenticated);
     }

@@ -31,7 +31,7 @@ class AuthExecutionContext implements AuthWsContext
     }
 
     public function __construct(
-        private readonly WsContext $wsContext,
+        private(set) WsContext $wsContext,
         private(set) AuthContext $auth,
     ) {
     }

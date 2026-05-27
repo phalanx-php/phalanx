@@ -86,7 +86,7 @@ final class ArchonApplicationTest extends PhalanxTestCase
     }
 
     #[Test]
-    public function oneOffCommandFacadeReceivesCommandScopeAndParsedInput(): void
+    public function oneOffCommandFacadeReceivesCommandContextAndParsedInput(): void
     {
         $received = null;
         $config = new CommandConfig(

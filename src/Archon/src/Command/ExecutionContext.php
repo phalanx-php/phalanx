@@ -12,7 +12,7 @@ class ExecutionContext implements CommandContext
     use ExecutionScopeDelegate;
 
     public function __construct(
-        private readonly ExecutionScope $inner,
+        private(set) ExecutionScope $inner,
         private(set) string $commandName,
         private(set) CommandArgs $args,
         private(set) CommandOptions $options,

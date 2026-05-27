@@ -43,12 +43,12 @@ final class AuthenticateTest extends TestCase
             },
         );
 
-        $this->assertSame('ok', $result);
-        $this->assertInstanceOf(AuthExecutionContext::class, $capturedScope);
-        $this->assertInstanceOf(AuthRequestContext::class, $capturedScope);
-        $this->assertTrue($capturedScope->auth->isAuthenticated);
-        $this->assertSame(42, $capturedScope->auth->identity->id);
-        $this->assertSame('tok_abc', $capturedScope->auth->token());
+        self::assertSame('ok', $result);
+        self::assertInstanceOf(AuthExecutionContext::class, $capturedScope);
+        self::assertInstanceOf(AuthRequestContext::class, $capturedScope);
+        self::assertTrue($capturedScope->auth->isAuthenticated);
+        self::assertSame(42, $capturedScope->auth->identity->id);
+        self::assertSame('tok_abc', $capturedScope->auth->token());
     }
 
     #[Test]
@@ -79,9 +79,9 @@ final class AuthenticateTest extends TestCase
             },
         );
 
-        $this->assertSame('GET', $capturedScope->method());
-        $this->assertSame('/test', $capturedScope->path());
-        $this->assertSame('lobby', $capturedScope->params->get('room'));
+        self::assertSame('GET', $capturedScope->method());
+        self::assertSame('/test', $capturedScope->path());
+        self::assertSame('lobby', $capturedScope->params->get('room'));
     }
 
     private function createRequestContext(): ExecutionContext

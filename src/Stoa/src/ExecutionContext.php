@@ -14,9 +14,10 @@ class ExecutionContext implements RequestContext
     use ExecutionScopeDelegate;
 
     private ?RequestBody $requestBody = null;
+    private ?string $requestIdBacking = null;
 
     public string $requestId {
-        get => $this->requestResource()->id;
+        get => $this->requestIdBacking ??= $this->requestResource()->id;
     }
 
     public RequestBody $body {

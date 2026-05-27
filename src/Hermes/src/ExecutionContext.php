@@ -14,7 +14,7 @@ class ExecutionContext implements WsContext
     use ExecutionScopeDelegate;
 
     public function __construct(
-        private readonly BaseExecutionScope $inner,
+        private(set) BaseExecutionScope $inner,
         private(set) WsConnection $connection,
         private(set) WsConfig $config,
         private(set) ServerRequestInterface $request,
