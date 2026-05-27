@@ -51,7 +51,7 @@ final class CheckTest extends TestCase
     #[Test]
     public function failFactoryProducesFailStatus(): void
     {
-        $check = Check::fail('OpenSwoole', 'Not loaded', 'Install via PIE');
+        $check = Check::fail('Swoole', 'Not loaded', 'Install via PIE');
 
         self::assertSame(CheckStatus::Fail, $check->status);
         self::assertSame('Not loaded', $check->message);

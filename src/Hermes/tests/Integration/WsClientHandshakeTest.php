@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Phalanx\Hermes\Tests\Integration;
 
-use OpenSwoole\Coroutine\Channel;
-use OpenSwoole\Coroutine\Socket;
-use OpenSwoole\WebSocket\Frame;
-use OpenSwoole\WebSocket\Server as WebSocketServer;
+use Swoole\Coroutine\Channel;
+use Swoole\Coroutine\Socket;
+use Swoole\WebSocket\Frame;
+use Swoole\WebSocket\Server as WebSocketServer;
 use Phalanx\Application;
 use Phalanx\Hermes\Client\WsClient;
 use Phalanx\Hermes\Hermes;
@@ -18,12 +18,12 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 /**
- * End-to-end proof for the OpenSwoole-native WebSocket client handshake.
+ * End-to-end proof for the Swoole-native WebSocket client handshake.
  *
  * Spins up a coroutine-native TCP listener on an ephemeral port inside the
  * test coroutine, accepts a single client connection, hand-crafts the
  * RFC6455 101 Switching Protocols response (Sec-WebSocket-Accept computed
- * against the spec GUID), pushes a single OpenSwoole-framed text payload,
+ * against the spec GUID), pushes a single Swoole-framed text payload,
  * then waits for the client's close frame before tearing the listener down.
  */
 final class WsClientHandshakeTest extends TestCase

@@ -19,11 +19,10 @@ use PHPStan\Rules\Rule;
  */
 final class RawCoroutineSpawnRule implements Rule
 {
-    private const string IDENTIFIER = 'phalanx.openswoole.rawSpawn';
+    private const string IDENTIFIER = 'phalanx.concurrency.rawSpawn';
 
     /** @var list<string> */
     private const array COROUTINE_CLASSES = [
-        'OpenSwoole\\Coroutine',
         'Swoole\\Coroutine',
     ];
 

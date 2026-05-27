@@ -270,7 +270,7 @@ final class StoaApplicationBuilder
             tagline: $base->tagline,
             docsUrl: $base->docsUrl,
             githubUrl: $base->githubUrl,
-            openswooleDocsUrl: $base->openswooleDocsUrl,
+            swooleDocsUrl: $base->swooleDocsUrl,
             banner: $this->banner ?? $base->banner,
         );
     }

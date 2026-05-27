@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Hydra\Agent;
 
-use OpenSwoole\Coroutine;
-use OpenSwoole\Coroutine\Channel;
+use Swoole\Coroutine;
+use Swoole\Coroutine\Channel;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Hydra\Process\ProcessConfig;
 use Phalanx\Hydra\Process\ProcessHandle;

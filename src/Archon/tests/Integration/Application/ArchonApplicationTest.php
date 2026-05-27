@@ -347,8 +347,8 @@ final class ArchonApplicationTest extends PhalanxTestCase
     #[Test]
     public function runCancelsThroughConfiguredSignalTrap(): void
     {
-        if (!defined('SIGUSR1') || !extension_loaded('openswoole')) {
-            self::markTestSkipped('Signal integration requires SIGUSR1 and OpenSwoole.');
+        if (!defined('SIGUSR1') || (!extension_loaded('swoole') && !extension_loaded('openswoole'))) {
+            self::markTestSkipped('Signal integration requires SIGUSR1 and Swoole.');
         }
 
         $stream = StreamOutputHelper::open();
@@ -358,8 +358,8 @@ final class ArchonApplicationTest extends PhalanxTestCase
                 $pid = getmypid();
                 self::assertIsInt($pid);
 
-                \OpenSwoole\Process::kill($pid, SIGUSR1);
-                \OpenSwoole\Coroutine::usleep(50_000);
+                \Swoole\Process::kill($pid, SIGUSR1);
+                \Swoole\Coroutine::usleep(50_000);
                 $ctx->throwIfCancelled();
 
                 return 0;

@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * The reactor type is metadata; `serverConfigValue()` materializes it
- * into the shape OpenSwoole's `Server::set` consumes, with Auto returning
+ * into the shape Swoole's `Server::set` consumes, with Auto returning
  * null so callers omit the key entirely.
  */
 final class ReactorTypeTest extends TestCase

@@ -38,12 +38,12 @@ final class EnvironmentDoctorTest extends TestCase
 
         self::assertTrue($report->isHealthy());
         self::assertContains('php.version', array_column($checks, 'name'));
-        self::assertContains('openswoole.extension', array_column($checks, 'name'));
-        self::assertContains('openswoole.runtime_policy', array_column($checks, 'name'));
-        self::assertContains('openswoole.hook_flags', array_column($checks, 'name'));
-        self::assertContains('openswoole.hooks.required', array_column($checks, 'name'));
-        self::assertContains('openswoole.hooks.missing', array_column($checks, 'name'));
-        self::assertContains('openswoole.hooks.sensitive', array_column($checks, 'name'));
+        self::assertContains('swoole.extension', array_column($checks, 'name'));
+        self::assertContains('swoole.runtime_policy', array_column($checks, 'name'));
+        self::assertContains('swoole.hook_flags', array_column($checks, 'name'));
+        self::assertContains('swoole.hooks.required', array_column($checks, 'name'));
+        self::assertContains('swoole.hooks.missing', array_column($checks, 'name'));
+        self::assertContains('swoole.hooks.sensitive', array_column($checks, 'name'));
         self::assertContains('supervisor.ledger', array_column($checks, 'name'));
     }
 
@@ -88,7 +88,7 @@ final class EnvironmentDoctorTest extends TestCase
         );
 
         $report = new EnvironmentDoctor(runtimePolicy: $policy)->check();
-        $check = self::check($report->toArray(), 'openswoole.hooks.missing');
+        $check = self::check($report->toArray(), 'swoole.hooks.missing');
 
         self::assertFalse($report->isHealthy());
         self::assertFalse($check['ok']);
@@ -211,17 +211,17 @@ final class EnvironmentDoctorTest extends TestCase
 
     public function testPostgresqlProbeCarriesOptionalSeverity(): void
     {
-        $pgCheck = self::findCheck(new EnvironmentDoctor()->check(), 'openswoole.postgresql');
+        $pgCheck = self::findCheck(new EnvironmentDoctor()->check(), 'swoole.postgresql');
 
-        self::assertNotNull($pgCheck, 'openswoole.postgresql probe not found in report');
+        self::assertNotNull($pgCheck, 'swoole.postgresql probe not found in report');
         self::assertSame(Severity::Optional, $pgCheck->severity);
     }
 
     public function testCoroutineProbeCarriesRequiredSeverity(): void
     {
-        $coroutineCheck = self::findCheck(new EnvironmentDoctor()->check(), 'openswoole.coroutine');
+        $coroutineCheck = self::findCheck(new EnvironmentDoctor()->check(), 'swoole.coroutine');
 
-        self::assertNotNull($coroutineCheck, 'openswoole.coroutine probe not found in report');
+        self::assertNotNull($coroutineCheck, 'swoole.coroutine probe not found in report');
         self::assertSame(Severity::Required, $coroutineCheck->severity);
     }
 

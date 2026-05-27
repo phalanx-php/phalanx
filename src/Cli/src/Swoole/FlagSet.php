@@ -7,7 +7,7 @@ namespace Phalanx\Cli\Swoole;
 final class FlagSet
 {
     /**
-     * @param list<OpenSwooleFlag> $flags
+     * @param list<SwooleFlag> $flags
      * @param array<string, string> $values
      */
     public function __construct(
@@ -19,8 +19,8 @@ final class FlagSet
     public static function defaults(): self
     {
         return new self(array_values(array_filter(
-            OpenSwooleFlag::cases(),
-            static fn (OpenSwooleFlag $flag): bool => $flag->defaultEnabled(),
+            SwooleFlag::cases(),
+            static fn (SwooleFlag $flag): bool => $flag->defaultEnabled(),
         )));
     }
 
@@ -72,7 +72,7 @@ final class FlagSet
         return $this->flags === [];
     }
 
-    public function contains(OpenSwooleFlag $flag): bool
+    public function contains(SwooleFlag $flag): bool
     {
         return in_array($flag, $this->flags, true);
     }

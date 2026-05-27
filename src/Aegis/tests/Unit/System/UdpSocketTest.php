@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Aegis\Tests\Unit\System;
 
-use OpenSwoole\Coroutine;
+use Swoole\Coroutine;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\System\UdpSocket;
 use Phalanx\Testing\PhalanxTestCase;

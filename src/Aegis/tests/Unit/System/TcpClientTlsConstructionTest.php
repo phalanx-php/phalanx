@@ -14,7 +14,7 @@ use RuntimeException;
  * lives in integration tests where a localhost TLS endpoint is available.
  *
  * The setTlsOptions guard exists because applying SSL options to a plain
- * SWOOLE_SOCK_TCP socket is silently ignored by OpenSwoole — better to
+ * SWOOLE_SOCK_TCP socket is silently ignored by Swoole — better to
  * surface the misuse with an explicit error than have a "TLS off but I
  * passed options" mode that looks correct at construction.
  */

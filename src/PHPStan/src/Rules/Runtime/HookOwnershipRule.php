@@ -25,13 +25,11 @@ final class HookOwnershipRule implements Rule
 
     /** @var list<string> */
     private const array RUNTIME_CLASSES = [
-        'OpenSwoole\\Runtime',
         'Swoole\\Runtime',
     ];
 
     /** @var list<string> */
     private const array COROUTINE_CLASSES = [
-        'OpenSwoole\\Coroutine',
         'Swoole\\Coroutine',
     ];
 
@@ -132,7 +130,7 @@ final class HookOwnershipRule implements Rule
     {
         return RuleErrors::build(
             sprintf(
-                'Aegis owns OpenSwoole %s; use RuntimePolicy, RuntimeHooks, or RuntimeCapability instead of configuring hooks in package code.',
+                'Aegis owns Swoole %s; use RuntimePolicy, RuntimeHooks, or RuntimeCapability instead of configuring hooks in package code.',
                 $shape,
             ),
             self::IDENTIFIER,

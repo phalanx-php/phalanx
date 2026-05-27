@@ -32,8 +32,8 @@ final class SiblingCancelIsolationStressTest extends PhalanxTestCase
             $token = $appScope->cancellation();
 
             // Schedule cancellation after siblings are running.
-            \OpenSwoole\Coroutine::create(static function () use ($token): void {
-                \OpenSwoole\Coroutine::usleep(20_000);
+            \Swoole\Coroutine::create(static function () use ($token): void {
+                \Swoole\Coroutine::usleep(20_000);
                 $token->cancel();
             });
 

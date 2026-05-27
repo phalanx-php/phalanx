@@ -38,7 +38,7 @@ final readonly class ProcessConfig
         return [
             PHP_BINARY,
             '-d', 'display_errors=stderr',
-            ...PhpExtensionFlags::forLoaded(['openswoole', 'sqlite3']),
+            ...PhpExtensionFlags::forLoaded(['swoole', 'openswoole', 'sqlite3']),
             $this->workerScript,
             "--autoload={$this->autoloadPath}",
         ];

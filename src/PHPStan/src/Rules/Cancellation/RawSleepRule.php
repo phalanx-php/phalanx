@@ -39,7 +39,7 @@ final class RawSleepRule implements Rule
 
         $class = NodeNames::calledClassName($node, $scope);
         $method = NodeNames::calledMethodName($node);
-        if (!in_array($class, ['OpenSwoole\\Coroutine', 'Swoole\\Coroutine'], true)) {
+        if ($class !== 'Swoole\\Coroutine') {
             return [];
         }
 

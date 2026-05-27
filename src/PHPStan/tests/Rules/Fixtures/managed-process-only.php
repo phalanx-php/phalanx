@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Phalanx\PHPStan\Tests\Rules\Fixtures;
 
 use OpenSwoole\Core\Process\Manager;
-use OpenSwoole\Process as OpenSwooleProcess;
-use OpenSwoole\Process\Pool as OpenSwooleProcessPool;
+use Swoole\Process as SwooleProcess;
+use Swoole\Process\Pool as SwooleProcessPool;
 use Phalanx\System\StreamingProcess;
 use Symfony\Component\Process\Process;
 
@@ -21,9 +21,9 @@ final class ManagedProcessOnlyFixture
 
         new Process(['php', '-v']);
         Process::fromShellCommandline('php -v');
-        new OpenSwooleProcess(static function (): void {
+        new SwooleProcess(static function (): void {
         });
-        new OpenSwooleProcessPool(1);
+        new SwooleProcessPool(1);
         new \Swoole\Process(static function (): void {
         });
         new \Swoole\Process\Pool(1);

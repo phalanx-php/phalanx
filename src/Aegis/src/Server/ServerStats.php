@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Server;
 
 use Closure;
-use OpenSwoole\Server;
+use Swoole\Server;
 use Phalanx\Registry\RegistryScope;
 
 /**

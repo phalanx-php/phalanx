@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Stoa\Udp;
 
-use OpenSwoole\Server;
+use Swoole\Server;
 use Phalanx\AppHost;
 use Phalanx\Runtime\Memory\ManagedResourceHandle;
 use Phalanx\Stoa\Runtime\Identity\StoaResourceSid;

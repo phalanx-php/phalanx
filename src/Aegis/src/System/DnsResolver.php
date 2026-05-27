@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\System;
 
-use OpenSwoole\Coroutine\System;
+use Swoole\Coroutine\System;
 use Phalanx\Scope\Suspendable;
 use Phalanx\Supervisor\WaitReason;
 

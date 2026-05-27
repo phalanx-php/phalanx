@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Runtime;
 
-use OpenSwoole\Coroutine;
+use Swoole\Coroutine;
 
 /**
  * Typed snapshot of OpenSwoole\Coroutine::stats().

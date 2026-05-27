@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Hermes\Server;
 
-use OpenSwoole\Http\Response as SwooleHttpResponse;
-use OpenSwoole\WebSocket\Frame;
+use Swoole\Http\Response as SwooleHttpResponse;
+use Swoole\WebSocket\Frame;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Hermes\Runtime\Identity\HermesEventSid;
 use Phalanx\Hermes\WsCloseCode;

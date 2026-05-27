@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Stoa\Http\Upgrade;
 
-use OpenSwoole\Http\Response;
+use Swoole\Http\Response;
 use Phalanx\Runtime\Memory\ManagedResourceHandle;
 use Phalanx\Stoa\StoaRequestResource;
 use Psr\Http\Message\ServerRequestInterface;

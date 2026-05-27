@@ -48,7 +48,7 @@ final class DoctorCommandTest extends TestCase
         rewind($stream);
         $output = stream_get_contents($stream);
 
-        self::assertStringContainsString('OpenSwoole extension', $output);
+        self::assertStringContainsString('Swoole extension', $output);
     }
 
     #[Test]

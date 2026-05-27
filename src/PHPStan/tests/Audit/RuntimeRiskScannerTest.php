@@ -27,11 +27,11 @@ final class RuntimeRiskScannerTest extends TestCase
         self::assertContains('raw_coroutine_spawn:Coroutine::create', $symbols);
         self::assertContains('process:proc_open()', $symbols);
         self::assertContains('raw_stream_io:fread()', $symbols);
-        self::assertContains('raw_channel:new OpenSwoole\Coroutine\Channel', $symbols);
+        self::assertContains('raw_channel:new Swoole\Coroutine\Channel', $symbols);
         self::assertContains('process:new Symfony\Component\Process\Process', $symbols);
         self::assertContains('process:Symfony\Component\Process\Process::fromShellCommandline', $symbols);
-        self::assertContains('process:new OpenSwoole\Process', $symbols);
-        self::assertContains('process:new OpenSwoole\Process\Pool', $symbols);
+        self::assertContains('process:new Swoole\Process', $symbols);
+        self::assertContains('process:new Swoole\Process\Pool', $symbols);
         self::assertContains('process:new OpenSwoole\Core\Process\Manager', $symbols);
         self::assertContains('stale_async_dependency:React\EventLoop\Loop', $symbols);
         self::assertContains('stale_async_dependency:Amp\Future', $symbols);
@@ -39,7 +39,7 @@ final class RuntimeRiskScannerTest extends TestCase
     }
 
     #[Test]
-    public function testDoesNotReportSameNamespaceChannelWrapperAsRawOpenSwooleChannel(): void
+    public function testDoesNotReportSameNamespaceChannelWrapperAsRawSwooleChannel(): void
     {
         $file = sys_get_temp_dir() . '/' . uniqid('phalanx-risk-', true) . '.php';
 

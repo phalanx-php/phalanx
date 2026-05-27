@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Phalanx\Scope;
 
 use Closure;
-use OpenSwoole\Core\Coroutine\WaitGroup;
-use OpenSwoole\Coroutine;
-use OpenSwoole\Coroutine\Channel;
-use OpenSwoole\Timer;
+use Swoole\Coroutine;
+use Swoole\Coroutine\Channel;
+use Phalanx\Substrate\ChannelWaitGroup;
+use Swoole\Timer;
 use Phalanx\Cancellation\AggregateException;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Cancellation\Cancelled;
@@ -388,7 +388,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             return [];
         }
 
-        $wg = new WaitGroup();
+        $wg = new ChannelWaitGroup();
         $wg->add(count($tasks));
         $results = [];
         $errors = [];
@@ -624,7 +624,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
 
         $effectiveLimit = max(1, min($limit, count($itemsArr)));
         $sem = new Channel($effectiveLimit);
-        $wg = new WaitGroup();
+        $wg = new ChannelWaitGroup();
         $wg->add(count($itemsArr));
         $results = [];
         $errors = [];
@@ -734,7 +734,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             return new SettlementBag([]);
         }
 
-        $wg = new WaitGroup();
+        $wg = new ChannelWaitGroup();
         $wg->add(count($tasks));
         $bag = [];
         $cids = [];
@@ -1090,7 +1090,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             return [];
         }
 
-        $wg = new WaitGroup();
+        $wg = new ChannelWaitGroup();
         $results = [];
         $errors = [];
         $firstError = null;
@@ -1187,7 +1187,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             return new SettlementBag([]);
         }
 
-        $wg = new WaitGroup();
+        $wg = new ChannelWaitGroup();
         $bag = [];
         $cids = [];
         /** @var list<self> $childScopes */
@@ -1271,7 +1271,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         }
 
         $effectiveLimit = max(1, min($limit, count($entries)));
-        $wg = new WaitGroup();
+        $wg = new ChannelWaitGroup();
         $results = [];
         $errors = [];
         $firstError = null;

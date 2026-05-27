@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Diagnostics;
 
-use OpenSwoole\Coroutine;
-use OpenSwoole\Coroutine\PostgreSQL;
-use OpenSwoole\Table;
+use Swoole\Coroutine;
+use Swoole\Coroutine\PostgreSQL;
+use Swoole\Table;
 use Phalanx\Runtime\Identity\AegisCounterSid;
 use Phalanx\Runtime\Memory\ManagedResource;
 use Phalanx\Runtime\Memory\ManagedResourceState;
@@ -41,42 +41,42 @@ final readonly class EnvironmentDoctor
                 PHP_VERSION,
             ),
             new DoctorCheck(
-                'openswoole.extension',
-                extension_loaded('openswoole'),
-                phpversion('openswoole') ?: 'not loaded',
+                'swoole.extension',
+                extension_loaded('swoole') || extension_loaded('openswoole'),
+                phpversion('swoole') ?: phpversion('openswoole') ?: 'not loaded',
             ),
             new DoctorCheck(
-                'openswoole.coroutine',
+                'swoole.coroutine',
                 class_exists(Coroutine::class),
                 Coroutine::class,
             ),
             new DoctorCheck(
-                'openswoole.table',
+                'swoole.table',
                 class_exists(Table::class),
                 Table::class,
             ),
             // PostgreSQL coroutine support is optional; core Phalanx does not require it.
             new DoctorCheck(
-                'openswoole.postgresql',
+                'swoole.postgresql',
                 class_exists(PostgreSQL::class),
                 PostgreSQL::class,
                 Severity::Optional,
             ),
             // Policy name and flag details are diagnostic context — always ok=true, never block health.
             new DoctorCheck(
-                'openswoole.runtime_policy',
+                'swoole.runtime_policy',
                 true,
                 $hooks->policyName,
                 Severity::Informational,
             ),
             new DoctorCheck(
-                'openswoole.hook_flags',
+                'swoole.hook_flags',
                 true,
                 sprintf('%d (%s)', $hooks->currentFlags, self::formatNames($hooks->currentFlagNames())),
                 Severity::Informational,
             ),
             new DoctorCheck(
-                'openswoole.hooks.required',
+                'swoole.hooks.required',
                 true,
                 sprintf('%d (%s)', $hooks->requiredFlags, self::formatNames($hooks->requiredFlagNames())),
                 Severity::Informational,
@@ -84,13 +84,13 @@ final readonly class EnvironmentDoctor
             // Missing required hooks means the hook policy is broken — the runtime cannot
             // deliver coroutine-safe I/O to application code.
             new DoctorCheck(
-                'openswoole.hooks.missing',
+                'swoole.hooks.missing',
                 $hooks->isHealthy(),
                 sprintf('%d (%s)', $hooks->missingFlags, self::formatNames($hooks->missingFlagNames())),
             ),
             // Sensitive flag reporting is diagnostic context only.
             new DoctorCheck(
-                'openswoole.hooks.sensitive',
+                'swoole.hooks.sensitive',
                 true,
                 sprintf(
                     '%d (%s)',

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Theatron\Stage;
 
 use Closure;
-use OpenSwoole\Process;
+use Swoole\Process;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Console\Input\ConsoleInput;
 use Phalanx\Scope\ExecutionScope;

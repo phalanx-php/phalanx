@@ -19,7 +19,7 @@ final class RawSleepRuleTest extends RuleTestCase
         $this->analyse(
             [__DIR__ . '/Fixtures/raw-sleep.php'],
             [
-                ['Use $scope->delay() instead of OpenSwoole\Coroutine::usleep() inside scoped task code; raw sleep does not observe the Phalanx cancellation token.', 13],
+                ['Use $scope->delay() instead of Swoole\Coroutine::usleep() inside scoped task code; raw sleep does not observe the Phalanx cancellation token.', 13],
                 ['Use $scope->delay() instead of Swoole\Coroutine::sleep() inside scoped task code; raw sleep does not observe the Phalanx cancellation token.', 14],
             ],
         );

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Hermes\Tests\Integration;
 
-use OpenSwoole\Coroutine\Channel;
-use OpenSwoole\Coroutine\Socket;
+use Swoole\Coroutine\Channel;
+use Swoole\Coroutine\Socket;
 use Phalanx\Application;
 use Phalanx\Hermes\Client\WsClient;
 use Phalanx\Hermes\Hermes;

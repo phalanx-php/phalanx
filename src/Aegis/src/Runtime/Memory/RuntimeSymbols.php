@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Runtime\Memory;
 
-use OpenSwoole\Atomic\Long;
-use OpenSwoole\Exception as OpenSwooleException;
+use Swoole\Atomic\Long;
+use Swoole\Exception as SwooleException;
 
 final class RuntimeSymbols
 {
@@ -42,7 +42,7 @@ final class RuntimeSymbols
                 'value' => $stored,
                 'created_at' => microtime(true),
             ]);
-        } catch (OpenSwooleException) {
+        } catch (SwooleException) {
             throw RuntimeMemoryCapacityExceeded::forTable('symbols', $key);
         }
 

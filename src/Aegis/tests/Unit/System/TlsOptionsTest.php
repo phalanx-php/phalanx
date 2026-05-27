@@ -8,10 +8,10 @@ use Phalanx\System\TlsOptions;
 use PHPUnit\Framework\TestCase;
 
 /**
- * The TlsOptions value object renders to the OpenSwoole Client::set()
- * shape. The defaults match OpenSwoole's documented secure-by-default
+ * The TlsOptions value object renders to the Swoole Client::set()
+ * shape. The defaults match Swoole's documented secure-by-default
  * stance (verify_peer on, allow_self_signed off). Null fields fall through
- * to OpenSwoole's own defaults rather than emitting empty option keys.
+ * to Swoole's own defaults rather than emitting empty option keys.
  */
 final class TlsOptionsTest extends TestCase
 {

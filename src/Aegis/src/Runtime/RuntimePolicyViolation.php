@@ -12,7 +12,7 @@ final class RuntimePolicyViolation extends RuntimeException
     public static function missingRequiredFlags(RuntimePolicy $policy, int $missingFlags): self
     {
         return new self(sprintf(
-            'OpenSwoole runtime policy "%s" is missing required hook flags: %s.',
+            'Swoole runtime policy "%s" is missing required hook flags: %s.',
             $policy->name,
             implode(', ', RuntimeHookNames::forMask($missingFlags)),
         ));
@@ -21,7 +21,7 @@ final class RuntimePolicyViolation extends RuntimeException
     public static function enableFailed(RuntimePolicy $policy, int $missingFlags, Throwable $previous): self
     {
         return new self(sprintf(
-            'OpenSwoole runtime policy "%s" could not enable required hook flags: %s.',
+            'Swoole runtime policy "%s" could not enable required hook flags: %s.',
             $policy->name,
             implode(', ', RuntimeHookNames::forMask($missingFlags)),
         ), previous: $previous);

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Diagnostics;
 
-use OpenSwoole\Coroutine;
+use Swoole\Coroutine;
 use Phalanx\Runtime\CoroutineStats;
 
 /**

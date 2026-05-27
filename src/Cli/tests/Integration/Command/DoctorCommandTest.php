@@ -22,7 +22,7 @@ final class DoctorCommandTest extends TestCase
 
         self::assertStringContainsString('Phalanx Environment Check', $output);
         self::assertStringContainsString('PHP Version', $output);
-        self::assertStringContainsString('OpenSwoole', $output);
+        self::assertStringContainsString('Swoole', $output);
     }
 
     #[Test]
@@ -54,7 +54,7 @@ final class DoctorCommandTest extends TestCase
         $tester = new CommandTester(new DoctorCommand());
         $tester->execute([]);
 
-        if (extension_loaded('openswoole')) {
+        if (extension_loaded('swoole') || extension_loaded('openswoole')) {
             self::assertSame(Command::SUCCESS, $tester->getStatusCode());
         } else {
             self::assertSame(Command::FAILURE, $tester->getStatusCode());

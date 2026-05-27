@@ -20,9 +20,9 @@ use PHPUnit\Framework\Attributes\Test;
 /**
  * Wiring proof for the Stoa<->Hermes upgrade seam.
  *
- * The actual handshake call ({@see \OpenSwoole\Http\Response::upgrade()}) is a
+ * The actual handshake call ({@see \Swoole\Http\Response::upgrade()}) is a
  * native, non-stubbable C method that mutates kernel state — exercising it
- * outside a real {@see \OpenSwoole\Http\Server} context is undefined. This
+ * outside a real {@see \Swoole\Http\Server} context is undefined. This
  * test therefore asserts the registration plane up to the moment Stoa hands
  * off to the {@see WsServerUpgrade} instance: token resolution, registry
  * shape, and the missing-registrar contract that returns 426.
@@ -108,7 +108,7 @@ final class WsServerUpgradeTest extends PhalanxTestCase
         // After install, the upgrade resolution must point at the WsServerUpgrade
         // instance Hermes constructed — never null, and never the wrong type. The
         // request body itself is not dispatched here because that path enters
-        // OpenSwoole's native Response::upgrade() which has no test seam.
+        // Swoole's native Response::upgrade() which has no test seam.
         $this->scope->run(static function (ExecutionScope $_scope): void {
             $app = Application::starting()
                 ->withLedger(new InProcessLedger())

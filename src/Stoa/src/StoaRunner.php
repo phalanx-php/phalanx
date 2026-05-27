@@ -6,11 +6,11 @@ namespace Phalanx\Stoa;
 
 use GuzzleHttp\Psr7\Response as PsrResponse;
 use GuzzleHttp\Psr7\Utils;
-use OpenSwoole\Constant;
-use OpenSwoole\Http\Request;
-use OpenSwoole\Http\Response;
-use OpenSwoole\Http\Server;
-use OpenSwoole\Timer;
+use Swoole\Constant;
+use Swoole\Http\Request;
+use Swoole\Http\Response;
+use Swoole\Http\Server;
+use Swoole\Timer;
 use Phalanx\AppHost;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Cancellation\Cancelled;
@@ -327,7 +327,7 @@ final class StoaRunner
                 printf("Phalanx Server listening on %s\n", $this->listenAddress);
             }
         }
-        SignalHandler::register($this->shutdownOpenSwooleServer(...));
+        SignalHandler::register($this->shutdownSwooleServer(...));
     }
 
     private function onManagerStart(Server $server): void
@@ -682,7 +682,7 @@ final class StoaRunner
             $this->scheduleDrainTimer();
             $this->abortActiveRequests(StoaEventSid::ServerShutdown, 'server shutdown');
             if ($shouldShutdownServer) {
-                $this->shutdownOpenSwooleServer($server);
+                $this->shutdownSwooleServer($server);
             }
             return;
         }
@@ -701,11 +701,11 @@ final class StoaRunner
         $this->server = null;
 
         if ($shouldShutdownServer) {
-            $this->shutdownOpenSwooleServer($server);
+            $this->shutdownSwooleServer($server);
         }
     }
 
-    private function shutdownOpenSwooleServer(?Server $server = null): void
+    private function shutdownSwooleServer(?Server $server = null): void
     {
         if ($this->serverShutdownRequested) {
             return;

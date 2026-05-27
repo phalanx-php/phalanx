@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Cli\Command;
 
 use Phalanx\Cli\Swoole\FlagSet;
-use Phalanx\Cli\Swoole\OpenSwooleFlag;
+use Phalanx\Cli\Swoole\SwooleFlag;
 use Phalanx\Cli\Swoole\PieRunner;
 use Phalanx\Cli\Swoole\Platform;
 use Phalanx\Cli\Swoole\PlatformDetector;
@@ -18,16 +18,16 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ChoiceQuestion;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 
-#[AsCommand(name: 'swoole:install', description: 'Install OpenSwoole via PIE with guided flag selection')]
+#[AsCommand(name: 'swoole:install', description: 'Install Swoole via PIE with guided flag selection')]
 final class SwooleInstallCommand extends Command
 {
     protected function configure(): void
     {
-        foreach (OpenSwooleFlag::interactiveChoices() as $flag) {
+        foreach (SwooleFlag::interactiveChoices() as $flag) {
             $this->addOption($flag->value, null, InputOption::VALUE_NONE, $flag->description());
         }
 
-        foreach (OpenSwooleFlag::cases() as $flag) {
+        foreach (SwooleFlag::cases() as $flag) {
             if ($flag->needsValue()) {
                 $this->addOption($flag->value, null, InputOption::VALUE_REQUIRED, $flag->description());
             }
@@ -40,9 +40,9 @@ final class SwooleInstallCommand extends Command
     {
         $output->writeln('');
 
-        if (extension_loaded('openswoole')) {
-            $version = phpversion('openswoole');
-            $output->writeln("<info>OpenSwoole v{$version} is already installed.</info>");
+        if (extension_loaded('swoole') || extension_loaded('openswoole')) {
+            $version = phpversion('swoole') ?: phpversion('openswoole');
+            $output->writeln("<info>Swoole v{$version} is already installed.</info>");
             return Command::SUCCESS;
         }
 
@@ -77,7 +77,7 @@ final class SwooleInstallCommand extends Command
         }
 
         $output->writeln('');
-        $output->writeln('Installing OpenSwoole...');
+        $output->writeln('Installing Swoole...');
         $output->writeln('');
 
         $exitCode = $pie->install($flagSet, $output);
@@ -91,28 +91,28 @@ final class SwooleInstallCommand extends Command
         $output->writeln('');
 
         if (PieRunner::verifyExtensionLoaded()) {
-            $output->writeln('<info>OpenSwoole installed and loaded successfully.</info>');
+            $output->writeln('<info>Swoole installed and loaded successfully.</info>');
             $output->writeln('Run `phalanx doctor` to verify your environment.');
             return Command::SUCCESS;
         }
 
-        $output->writeln('<comment>OpenSwoole was installed but may not be loaded in your php.ini.</comment>');
+        $output->writeln('<comment>Swoole was installed but may not be loaded in your php.ini.</comment>');
         $output->writeln('');
         $output->writeln('Check your active php.ini:');
         $output->writeln('  php --ini');
         $output->writeln('');
         $output->writeln('Ensure this line is present:');
-        $output->writeln('  extension=openswoole');
+        $output->writeln('  extension=swoole');
 
         return Command::SUCCESS;
     }
 
-    /** @return list<array{OpenSwooleFlag, ?string}> */
+    /** @return list<array{SwooleFlag, ?string}> */
     private static function collectExplicitFlags(InputInterface $input): array
     {
         $flags = [];
 
-        foreach (OpenSwooleFlag::cases() as $flag) {
+        foreach (SwooleFlag::cases() as $flag) {
             $value = $input->getOption($flag->value);
 
             if ($value === false || $value === null) {
@@ -126,7 +126,7 @@ final class SwooleInstallCommand extends Command
     }
 
     /**
-     * @param list<array{OpenSwooleFlag, ?string}> $pairs
+     * @param list<array{SwooleFlag, ?string}> $pairs
      * @return array<string, string>
      */
     private static function collectFlagValues(array $pairs): array
@@ -175,7 +175,7 @@ final class SwooleInstallCommand extends Command
         if ($input->getOption('defaults')) {
             $flagSet = FlagSet::defaults();
             $output->writeln('Using default flags: ' . implode(', ', array_map(
-                static fn (OpenSwooleFlag $f): string => $f->value,
+                static fn (SwooleFlag $f): string => $f->value,
                 $flagSet->flags,
             )));
             return $flagSet;
@@ -185,7 +185,7 @@ final class SwooleInstallCommand extends Command
 
         if ($explicitFlags !== []) {
             return new FlagSet(
-                array_map(static fn (array $pair): OpenSwooleFlag => $pair[0], $explicitFlags),
+                array_map(static fn (array $pair): SwooleFlag => $pair[0], $explicitFlags),
                 self::collectFlagValues($explicitFlags),
             );
         }
@@ -201,7 +201,7 @@ final class SwooleInstallCommand extends Command
     {
         /** @var QuestionHelper $helper */
         $helper = $this->getHelper('question');
-        $choices = OpenSwooleFlag::interactiveChoices();
+        $choices = SwooleFlag::interactiveChoices();
 
         $labels = [];
         $defaults = [];
@@ -215,7 +215,7 @@ final class SwooleInstallCommand extends Command
         }
 
         $question = new ChoiceQuestion(
-            'Select OpenSwoole features to enable (comma-separated, Enter for defaults):',
+            'Select Swoole features to enable (comma-separated, Enter for defaults):',
             $labels,
             implode(',', $defaults),
         );
@@ -228,7 +228,7 @@ final class SwooleInstallCommand extends Command
 
         foreach ($selected as $label) {
             $value = explode(' - ', $label, 2)[0];
-            $flag = OpenSwooleFlag::tryFrom($value);
+            $flag = SwooleFlag::tryFrom($value);
 
             if ($flag !== null) {
                 $selectedFlags[] = $flag;
@@ -242,14 +242,14 @@ final class SwooleInstallCommand extends Command
         $values = [];
 
         if (
-            array_any($selectedFlags, static fn (OpenSwooleFlag $f): bool => $f === OpenSwooleFlag::EnableOpenssl)
+            array_any($selectedFlags, static fn (SwooleFlag $f): bool => $f === SwooleFlag::EnableOpenssl)
             && PHP_OS_FAMILY === 'Darwin'
         ) {
             $result = self::detectOpensslDir($input, $output, $helper);
 
             if ($result !== null) {
-                $selectedFlags[] = OpenSwooleFlag::WithOpensslDir;
-                $values[OpenSwooleFlag::WithOpensslDir->value] = $result;
+                $selectedFlags[] = SwooleFlag::WithOpensslDir;
+                $values[SwooleFlag::WithOpensslDir->value] = $result;
             }
         }
 

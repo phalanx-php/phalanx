@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Cli\Tests\Unit\Swoole;
 
 use Phalanx\Cli\Swoole\FlagSet;
-use Phalanx\Cli\Swoole\OpenSwooleFlag;
+use Phalanx\Cli\Swoole\SwooleFlag;
 use Phalanx\Cli\Swoole\Platform;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -17,20 +17,20 @@ final class FlagSetTest extends TestCase
     {
         $flagSet = FlagSet::defaults();
 
-        self::assertTrue($flagSet->contains(OpenSwooleFlag::EnableOpenssl));
-        self::assertTrue($flagSet->contains(OpenSwooleFlag::EnableSockets));
-        self::assertTrue($flagSet->contains(OpenSwooleFlag::EnableHttp2));
-        self::assertTrue($flagSet->contains(OpenSwooleFlag::EnableHookCurl));
-        self::assertFalse($flagSet->contains(OpenSwooleFlag::WithPostgres));
-        self::assertFalse($flagSet->contains(OpenSwooleFlag::EnableMysqlnd));
+        self::assertTrue($flagSet->contains(SwooleFlag::EnableOpenssl));
+        self::assertTrue($flagSet->contains(SwooleFlag::EnableSockets));
+        self::assertTrue($flagSet->contains(SwooleFlag::EnableHttp2));
+        self::assertTrue($flagSet->contains(SwooleFlag::EnableHookCurl));
+        self::assertFalse($flagSet->contains(SwooleFlag::WithPostgres));
+        self::assertFalse($flagSet->contains(SwooleFlag::EnableMysqlnd));
     }
 
     #[Test]
     public function toPieArgsProducesCorrectFlags(): void
     {
         $flagSet = new FlagSet([
-            OpenSwooleFlag::EnableOpenssl,
-            OpenSwooleFlag::EnableSockets,
+            SwooleFlag::EnableOpenssl,
+            SwooleFlag::EnableSockets,
         ]);
 
         self::assertSame([
@@ -43,8 +43,8 @@ final class FlagSetTest extends TestCase
     public function toPieArgsIncludesValuesForValueBearingFlags(): void
     {
         $flagSet = new FlagSet(
-            [OpenSwooleFlag::EnableOpenssl, OpenSwooleFlag::WithOpensslDir],
-            [OpenSwooleFlag::WithOpensslDir->value => '/opt/homebrew/opt/openssl'],
+            [SwooleFlag::EnableOpenssl, SwooleFlag::WithOpensslDir],
+            [SwooleFlag::WithOpensslDir->value => '/opt/homebrew/opt/openssl'],
         );
 
         $args = $flagSet->toPieArgs();
@@ -56,7 +56,7 @@ final class FlagSetTest extends TestCase
     #[Test]
     public function valueBearingFlagWithoutValueIsSkipped(): void
     {
-        $flagSet = new FlagSet([OpenSwooleFlag::WithPostgres]);
+        $flagSet = new FlagSet([SwooleFlag::WithPostgres]);
 
         self::assertSame([], $flagSet->toPieArgs());
     }
@@ -71,16 +71,16 @@ final class FlagSetTest extends TestCase
     #[Test]
     public function containsChecksPresence(): void
     {
-        $flagSet = new FlagSet([OpenSwooleFlag::EnableOpenssl]);
+        $flagSet = new FlagSet([SwooleFlag::EnableOpenssl]);
 
-        self::assertTrue($flagSet->contains(OpenSwooleFlag::EnableOpenssl));
-        self::assertFalse($flagSet->contains(OpenSwooleFlag::EnableSockets));
+        self::assertTrue($flagSet->contains(SwooleFlag::EnableOpenssl));
+        self::assertFalse($flagSet->contains(SwooleFlag::EnableSockets));
     }
 
     #[Test]
     public function systemDependenciesFiltersByPlatform(): void
     {
-        $flagSet = new FlagSet([OpenSwooleFlag::EnableOpenssl]);
+        $flagSet = new FlagSet([SwooleFlag::EnableOpenssl]);
 
         $macDeps = $flagSet->systemDependenciesFor(Platform::MacOS);
         $debDeps = $flagSet->systemDependenciesFor(Platform::Debian);
@@ -96,8 +96,8 @@ final class FlagSetTest extends TestCase
     public function systemDependenciesDeduplicates(): void
     {
         $flagSet = new FlagSet([
-            OpenSwooleFlag::EnableOpenssl,
-            OpenSwooleFlag::WithOpensslDir,
+            SwooleFlag::EnableOpenssl,
+            SwooleFlag::WithOpensslDir,
         ]);
 
         $deps = $flagSet->systemDependenciesFor(Platform::MacOS);

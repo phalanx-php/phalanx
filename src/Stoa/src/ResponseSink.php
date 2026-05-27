@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Stoa;
 
-use OpenSwoole\Http\Response;
+use Swoole\Http\Response;
 
 final readonly class ResponseSink
 {

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Scope;
 
-use OpenSwoole\Timer;
+use Swoole\Timer;
 
 /**
  * Concrete Subscription returned by TaskExecutor::periodic. Owns one

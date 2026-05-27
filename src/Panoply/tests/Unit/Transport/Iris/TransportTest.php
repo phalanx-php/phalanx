@@ -25,7 +25,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Unit tests for {@see Transport}.
  *
- * Constructor shape and generator-return tests run without OpenSwoole. Streaming
+ * Constructor shape and generator-return tests run without Swoole. Streaming
  * tests annotated {@see RequiresPhpExtension}('openswoole') use scripted TCP
  * connections and a real Aegis scope via {@see Application::scoped()}.
  *

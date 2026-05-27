@@ -38,8 +38,8 @@ final class TestPoolClient
 }
 
 /**
- * ManagedPool composes OpenSwoole core's ClientPool. The pool itself
- * requires the OpenSwoole coroutine runtime (Channel-backed acquire) so
+ * ManagedPool composes Swoole core's ClientPool. The pool itself
+ * requires the Swoole coroutine runtime (Channel-backed acquire) so
  * tests run inside the coroutine harness.
  *
  * Starvation-diagnostic exercise lives in integration tests where multi-

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Cancellation;
 
-use OpenSwoole\Timer;
+use Swoole\Timer;
 
 /**
  * Cooperative cancellation signal.

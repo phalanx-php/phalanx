@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Aegis\Tests\Unit\Runtime;
 
 use InvalidArgumentException;
-use OpenSwoole\Runtime;
+use Swoole\Runtime;
 use Phalanx\Application;
 use Phalanx\Boot\AppContext;
 use Phalanx\Boot\Exception\MissingContextValue;

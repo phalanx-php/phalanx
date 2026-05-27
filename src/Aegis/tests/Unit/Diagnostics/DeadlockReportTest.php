@@ -10,7 +10,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * Live-coroutine collection is exercised in integration tests where the
- * OpenSwoole runtime is active. Unit coverage exercises the report shape
+ * Swoole runtime is active. Unit coverage exercises the report shape
  * via the fromFrames() factory used by the formatter.
  */
 final class DeadlockReportTest extends TestCase

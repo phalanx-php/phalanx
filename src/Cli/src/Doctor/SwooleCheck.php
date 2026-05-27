@@ -4,20 +4,20 @@ declare(strict_types=1);
 
 namespace Phalanx\Cli\Doctor;
 
-final class OpenSwooleCheck
+final class SwooleCheck
 {
     public function __invoke(): Check
     {
-        if (!extension_loaded('openswoole')) {
+        if (!extension_loaded('swoole') && !extension_loaded('openswoole')) {
             return Check::fail(
-                'OpenSwoole',
+                'Swoole',
                 'Not loaded',
-                "Install via PIE: pie install openswoole/ext-openswoole\n"
+                "Install via PIE: pie install swoole/ext-swoole\n"
                 . '  Or run: phalanx swoole:install',
             );
         }
 
-        $version = phpversion('openswoole');
+        $version = phpversion('swoole') ?: phpversion('openswoole');
         $flags = self::detectBuildFlags();
         $detail = $version !== false ? "v{$version}" : 'loaded';
 
@@ -25,19 +25,19 @@ final class OpenSwooleCheck
             $detail .= ' (' . implode(', ', $flags) . ')';
         }
 
-        return Check::pass('OpenSwoole', $detail);
+        return Check::pass('Swoole', $detail);
     }
 
     /** @return list<string> */
     private static function detectBuildFlags(): array
     {
-        if (!class_exists(\OpenSwoole\Constant::class)) {
+        if (!class_exists(\Swoole\Constant::class)) {
             return [];
         }
 
         $flags = [];
 
-        foreach ((new \ReflectionClass(\OpenSwoole\Constant::class))->getConstants() as $name => $value) {
+        foreach ((new \ReflectionClass(\Swoole\Constant::class))->getConstants() as $name => $value) {
             if ($value !== 1) {
                 continue;
             }

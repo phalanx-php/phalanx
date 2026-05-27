@@ -12,7 +12,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Thin facade over Aegis ConsoleInput. The KeyReader contract is exercised
  * end-to-end by every prompt test via FakeKeyReader. The real read path
- * (System::waitEvent + non-blocking fread) is OpenSwoole-runtime dependent
+ * (System::waitEvent + non-blocking fread) is Swoole-runtime dependent
  * and lives in the integration suite.
  *
  * Unit-level concerns left to verify here:

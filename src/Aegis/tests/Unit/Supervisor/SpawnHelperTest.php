@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Aegis\Tests\Unit\Supervisor;
 
-use OpenSwoole\Coroutine;
-use OpenSwoole\Coroutine\Channel;
+use Swoole\Coroutine;
+use Swoole\Coroutine\Channel;
 use Phalanx\Application;
 use Phalanx\Boot\AppContext;
 use Phalanx\Diagnostics\DiagnosticCode;

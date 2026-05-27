@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Support;
 
-use OpenSwoole\Process;
+use Swoole\Process;
 
 final readonly class SignalHandler
 {

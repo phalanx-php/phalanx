@@ -23,7 +23,7 @@ final class PieRunner
         $process = new Process([
             PHP_BINARY,
             '-r',
-            "echo extension_loaded('openswoole') ? 'yes' : 'no';",
+            "echo (extension_loaded('swoole') || extension_loaded('openswoole')) ? 'yes' : 'no';",
         ]);
         $process->setTimeout(5);
         $process->run();
@@ -70,7 +70,7 @@ final class PieRunner
 
     public function install(FlagSet $flags, OutputInterface $output): int
     {
-        $argv = [$this->pieBinary, 'install', 'openswoole/ext-openswoole'];
+        $argv = [$this->pieBinary, 'install', 'swoole/ext-swoole'];
 
         foreach ($flags->toPieArgs() as $arg) {
             $argv[] = $arg;

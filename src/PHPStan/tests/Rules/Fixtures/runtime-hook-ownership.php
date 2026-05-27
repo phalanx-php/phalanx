@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\PHPStan\Tests\Rules\Fixtures;
 
-use OpenSwoole\Coroutine;
-use OpenSwoole\Runtime;
+use Swoole\Coroutine;
+use Swoole\Runtime;
 
 final class RuntimeHookOwnershipFixture
 {

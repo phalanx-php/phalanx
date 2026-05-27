@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Cli\Swoole;
 
-enum OpenSwooleFlag: string
+enum SwooleFlag: string
 {
     case EnableOpenssl = 'enable-openssl';
     case WithOpensslDir = 'with-openssl-dir';

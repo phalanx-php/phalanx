@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Runtime\Memory;
 
 use InvalidArgumentException;
-use OpenSwoole\Lock;
+use Swoole\Lock;
 
 final class ManagedResourceTransitionLocks
 {

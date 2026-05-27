@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Runtime\Memory;
 
-use OpenSwoole\Table;
+use Swoole\Table;
 use RuntimeException;
 
 final class ManagedSwooleTables
@@ -213,7 +213,7 @@ final class ManagedSwooleTables
         $columns($table);
 
         if (!$table->create()) {
-            throw new RuntimeException('failed to create OpenSwoole runtime table');
+            throw new RuntimeException('failed to create Swoole runtime table');
         }
 
         return $table;

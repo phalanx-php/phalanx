@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Scope;
 
-use OpenSwoole\Coroutine;
+use Swoole\Coroutine;
 
 /**
  * Coroutine-local scope storage backed by OpenSwoole\Coroutine::getContext().

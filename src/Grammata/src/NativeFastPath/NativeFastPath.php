@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Grammata\NativeFastPath;
 
-use OpenSwoole\Coroutine\System;
+use Swoole\Coroutine\System;
 use Phalanx\Scope\Suspendable;
 use Phalanx\Supervisor\WaitReason;
 use RuntimeException;
@@ -13,7 +13,7 @@ use RuntimeException;
  * Coroutine-native filesystem fast-path.
  *
  * Bypasses the hooked `file_get_contents`/`file_put_contents` codepath
- * in favor of OpenSwoole's explicit `Coroutine\System::readFile` and
+ * in favor of Swoole's explicit `Coroutine\System::readFile` and
  * `writeFile`. The hooked path works, but the explicit primitives are
  * documented as more stable and substantially faster on large assets,
  * particularly when paired with the `io_uring` reactor on Linux 5.13+.

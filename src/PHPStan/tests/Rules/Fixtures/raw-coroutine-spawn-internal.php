@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\PHPStan\Tests\Rules\Fixtures;
 
-use OpenSwoole\Coroutine;
+use Swoole\Coroutine;
 
 final class RawCoroutineSpawnInternalFixture
 {

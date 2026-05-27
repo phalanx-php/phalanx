@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Aegis\Tests\Unit\Runtime;
 
 use LogicException;
-use OpenSwoole\Coroutine;
+use Swoole\Coroutine;
 use Phalanx\Boot\AppContext;
 use Phalanx\Application;
 use Phalanx\Cancellation\CancellationToken;

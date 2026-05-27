@@ -34,6 +34,7 @@ parameters:
         - demos
     scanDirectories:
         - vendor/openswoole/ide-helper
+        - vendor/swoole/ide-helper
     phalanxInternalPaths:
         - src/Aegis/src/Concurrency/Co.php
         - src/Aegis/src/Cancellation/CancellationToken.php
@@ -51,6 +52,7 @@ parameters:
         - src/Aegis/src/Supervisor/Supervisor.php
         - src/Aegis/src/Supervisor/SwooleTableLedger.php
         - src/Aegis/src/Supervisor/TaskRun.php
+        - src/Aegis/src/Substrate/Swoole/
         - src/Aegis/src/Worker/
         - src/Stoa/src/StoaRunner.php
     phalanxEnforcedPaths:
@@ -83,6 +85,7 @@ parameters:
         - src/Aegis/src/Runtime/RuntimeHookNames.php
         - src/Aegis/src/Runtime/RuntimeHooks.php
         - src/Aegis/src/Runtime/RuntimePolicy.php
+        - src/Aegis/src/Substrate/Swoole/
     phalanxProcessInternalPaths:
         - src/Aegis/src/System/Internal/SymfonyProcessAdapter.php
         - src/Cli/src
@@ -90,8 +93,19 @@ parameters:
         - src/Theatron/src/Terminal/Terminal.php
     phalanxCoroutineInternalPaths:
         - src/Aegis/src/Scope/ExecutionLifecycleScope.php
+        - src/Aegis/src/Substrate/Swoole/
         - benchmarks/kernel/cases/ContextSwitchCases.php
     ignoreErrors:
+        # ext-openswoole provides Swoole\* classes with OpenSwoole signatures.
+        # Substrate targets ext-swoole 6 -- these resolve when the extension is swapped.
+        -
+            message: '#.*#'
+            path: src/Aegis/src/Substrate/Swoole/
+            reportUnmatched: false
+        -
+            message: '#return type#'
+            path: src/Aegis/src/Substrate/CoroutineDriver.php
+            reportUnmatched: false
         -
             identifier: phalanx.testing.useBenchmarkHarness
             path: benchmarks/http/cases/StoaCases.php
@@ -102,4 +116,5 @@ parameters:
             reportUnmatched: true
     tmpDir: .phpstan-cache
     treatPhpDocTypesAsCertain: false
-    bootstrapFiles: []
+    bootstrapFiles:
+        - src/Aegis/phpstan-bootstrap.php

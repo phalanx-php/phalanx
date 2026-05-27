@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Concurrency;
 
 use Closure;
-use OpenSwoole\Coroutine\Channel;
+use Swoole\Coroutine\Channel;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Cancellation\Cancelled;
 use Throwable;

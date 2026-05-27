@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Athena\Tests\Integration;
 
-use OpenSwoole\Coroutine as Co;
+use Swoole\Coroutine as Co;
 use Phalanx\Athena\Activity;
 use Phalanx\Athena\Hook\StepContext;
 use Phalanx\Athena\Hook\StepHookChain;

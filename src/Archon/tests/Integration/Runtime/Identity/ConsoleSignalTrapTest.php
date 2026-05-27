@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Archon\Tests\Integration\Runtime\Identity;
 
-use OpenSwoole\Coroutine;
-use OpenSwoole\Process;
+use Swoole\Coroutine;
+use Swoole\Process;
 use Phalanx\Archon\Runtime\Identity\ConsoleSignal;
 use Phalanx\Archon\Runtime\Identity\ConsoleSignalPolicy;
 use Phalanx\Archon\Runtime\Identity\ConsoleSignalTrap;

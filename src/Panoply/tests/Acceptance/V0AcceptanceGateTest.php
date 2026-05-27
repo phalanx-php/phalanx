@@ -193,7 +193,7 @@ final class V0AcceptanceGateTest extends TestCase
      * bundle. The current gate uses Application::starting() directly because
      * the Iris ServiceBundle registration path is not yet available via TestApp.
      *
-     * Requires OpenSwoole: phalanx-iris uses coroutine-backed TCP I/O via
+     * Requires Swoole: phalanx-iris uses coroutine-backed TCP I/O via
      * Aegis-managed ManagedResourceHandle. The Aegis Application boots the
      * runtime policy and wraps all work inside CoroutineRuntime::run().
      */
@@ -307,8 +307,8 @@ final class V0AcceptanceGateTest extends TestCase
      *
      * The unique value of this gate is the leak-ledger assertion: after a
      * cancelled FakeProvider stream, `TestApp::boot()` must report zero
-     * orphaned tasks. That path requires the OpenSwoole extension
-     * (TestApp::boot() calls into OpenSwoole\Table). Without it this gate is
+     * orphaned tasks. That path requires the Swoole extension
+     * (TestApp::boot() calls into Swoole\Table). Without it this gate is
      * skipped — SyncRuntime cancellation propagation is already covered by
      * unit tests for the SyncRuntime type.
      */

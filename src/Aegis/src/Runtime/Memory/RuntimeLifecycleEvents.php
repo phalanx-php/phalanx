@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Runtime\Memory;
 
-use OpenSwoole\Atomic\Long;
+use Swoole\Atomic\Long;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Runtime\Identity\AegisCounterSid;
 use Phalanx\Runtime\Identity\RuntimeEventId;

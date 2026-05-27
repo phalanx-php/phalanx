@@ -106,8 +106,8 @@ final class SiblingScopeIsolationTest extends PhalanxTestCase
 
             $inner = $app->createScope();
             $parentToken = $inner->cancellation();
-            \OpenSwoole\Coroutine::create(static function () use ($parentToken): void {
-                \OpenSwoole\Coroutine::usleep(20_000);
+            \Swoole\Coroutine::create(static function () use ($parentToken): void {
+                \Swoole\Coroutine::usleep(20_000);
                 $parentToken->cancel();
             });
 

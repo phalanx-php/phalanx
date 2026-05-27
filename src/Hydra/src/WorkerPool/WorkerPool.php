@@ -11,7 +11,7 @@ use OpenSwoole\Core\Process\Manager;
  * Aegis-managed worker pool primitive.
  *
  * Wraps `OpenSwoole\Core\Process\Manager` (which itself composes
- * `OpenSwoole\Process\Pool`) with a typed Phalanx-native facade. The
+ * `Swoole\Process\Pool`) with a typed Phalanx-native facade. The
  * existing `Phalanx\Hydra\Agent\Worker` request/response IPC serves
  * service-call workloads; this WorkerPool targets the simpler "spawn N
  * processes that run a function and stay alive under a supervisor" use
@@ -46,7 +46,7 @@ final class WorkerPool
      * Convenience helper for the most common configuration: one function,
      * N coroutine-enabled workers, no IPC.
      *
-     * @param Closure(\OpenSwoole\Process\Pool, int): void $func
+     * @param Closure(\Swoole\Process\Pool, int): void $func
      */
     public static function ofSize(int $workerNum, Closure $func): self
     {
@@ -57,17 +57,17 @@ final class WorkerPool
 
     public static function eventWorkerStart(): string
     {
-        $constant = 'OpenSwoole\\Constant::EVENT_WORKER_START';
+        $constant = 'Swoole\\Constant::EVENT_WORKER_START';
         return defined($constant) ? (string) constant($constant) : 'workerStart';
     }
 
     /**
      * Add a single worker function. The function receives the `Pool` and
      * its assigned worker id at runtime. When `$enableCoroutine` is true,
-     * OpenSwoole wraps the worker body in `Coroutine::run`, so coroutine-
-     * aware code (Aegis scopes, OpenSwoole clients) works inside it.
+     * Swoole wraps the worker body in `Coroutine::run`, so coroutine-
+     * aware code (Aegis scopes, Swoole clients) works inside it.
      *
-     * @param Closure(\OpenSwoole\Process\Pool, int): void $func
+     * @param Closure(\Swoole\Process\Pool, int): void $func
      */
     public function add(Closure $func, bool $enableCoroutine = true): self
     {
@@ -81,7 +81,7 @@ final class WorkerPool
      * Add `$workerNum` workers running the same function. Equivalent to
      * calling `add()` `$workerNum` times.
      *
-     * @param Closure(\OpenSwoole\Process\Pool, int): void $func
+     * @param Closure(\Swoole\Process\Pool, int): void $func
      */
     public function addBatch(int $workerNum, Closure $func, bool $enableCoroutine = true): self
     {
@@ -96,7 +96,7 @@ final class WorkerPool
     /**
      * Start the pool. Blocks the calling process until the master is
      * signalled to terminate. Workers crashing are restarted by the
-     * underlying `OpenSwoole\Process\Pool`.
+     * underlying `Swoole\Process\Pool`.
      */
     public function start(): void
     {

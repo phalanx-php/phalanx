@@ -210,7 +210,7 @@ final class ExecuteWiringTest extends TestCase
         // Retry uses Co::sleep between attempts; needs coroutine context.
         $caught = null;
         RuntimeHooks::ensure(RuntimePolicy::phalanxManaged());
-        \OpenSwoole\Coroutine::run(static function () use ($app, $task, &$caught): void {
+        \Swoole\Coroutine::run(static function () use ($app, $task, &$caught): void {
             try {
                 $scope = $app->createScope();
                 $value = $scope->execute($task);

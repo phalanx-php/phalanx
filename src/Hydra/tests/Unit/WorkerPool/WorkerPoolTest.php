@@ -8,7 +8,7 @@ use Phalanx\Hydra\WorkerPool\WorkerPool;
 use PHPUnit\Framework\TestCase;
 
 /**
- * The actual fork/exec lifecycle of `OpenSwoole\Process\Pool` is not
+ * The actual fork/exec lifecycle of `Swoole\Process\Pool` is not
  * exercised in unit tests because `start()` blocks the calling process
  * until SIGTERM. Integration coverage runs in a forked test process.
  *

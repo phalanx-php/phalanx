@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Runtime;
 
-use OpenSwoole\Runtime;
+use Swoole\Runtime;
 
 final class RuntimeHookNames
 {

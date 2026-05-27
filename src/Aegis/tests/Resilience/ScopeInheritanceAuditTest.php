@@ -10,7 +10,7 @@ use PHPUnit\Framework\TestCase;
  * Static-source audit. Every `Coroutine::create(...)` call inside
  * src/Scope/ MUST be followed within ~5 source lines by
  * `CoroutineScopeRegistry::install(...)` as the first action of the
- * spawned closure body. OpenSwoole child coroutines do NOT inherit
+ * spawned closure body. Swoole child coroutines do NOT inherit
  * parent context; missing the install call is the canonical foot-gun
  * that produces orphaned tasks invisible to the supervisor.
  *

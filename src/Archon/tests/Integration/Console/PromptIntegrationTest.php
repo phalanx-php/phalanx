@@ -16,7 +16,7 @@ use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
 
 /**
- * End-to-end smoke test: drive Archon prompts on a real OpenSwoole-managed
+ * End-to-end smoke test: drive Archon prompts on a real Swoole-managed
  * coroutine through a kernel-tracked pipe(2) descriptor — the same fd path
  * production STDIN takes. The Aegis ConsoleInput fix in 8c5610f means we
  * pass the resource itself to waitEvent (which php_stream_casts the kernel

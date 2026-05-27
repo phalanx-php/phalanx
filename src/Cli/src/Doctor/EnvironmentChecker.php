@@ -15,7 +15,7 @@ final class EnvironmentChecker
         $checks = [];
 
         $checks[] = (new PhpVersionCheck())();
-        $checks[] = (new OpenSwooleCheck())();
+        $checks[] = (new SwooleCheck())();
         $checks[] = (new PieCheck())();
 
         foreach (self::BUILD_TOOLS as $tool) {

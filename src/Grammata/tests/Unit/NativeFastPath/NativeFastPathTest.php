@@ -12,7 +12,7 @@ use Phalanx\Testing\PhalanxTestCase;
  * Round-trips a small payload through `Coroutine\System::readFile` /
  * `writeFile`. Larger-payload throughput is exercised in benchmarks where
  * io_uring vs hooked-fread comparisons make sense; unit coverage just
- * proves the wrapper invokes the OpenSwoole path inside a scope-supervised
+ * proves the wrapper invokes the Swoole path inside a scope-supervised
  * call().
  */
 final class NativeFastPathTest extends PhalanxTestCase

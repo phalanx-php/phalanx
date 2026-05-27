@@ -10,7 +10,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * ServerStats wraps a stats provider closure so production injects a live
- * OpenSwoole\Server (via fromServer) and tests inject a static array (via
+ * Swoole\Server (via fromServer) and tests inject a static array (via
  * fromArray). The snapshot reads through to the provider on every call so
  * downstream consumers see live counters.
  */

@@ -5,19 +5,19 @@ declare(strict_types=1);
 namespace Phalanx\Archon\Runtime\Identity;
 
 use Closure;
-use OpenSwoole\Process;
+use Swoole\Process;
 
 /**
- * Installs a policy's signal handlers on the OpenSwoole reactor.
+ * Installs a policy's signal handlers on the Swoole reactor.
  *
  * Each registered signal forwards to the supplied $onSignal closure with the
  * matching ConsoleSignal value. restore() clears the registrations by passing
- * `null` to Process::signal — the OpenSwoole reactor's documented removal
- * contract. We do not snapshot prior handlers because OpenSwoole exposes no
+ * `null` to Process::signal — the Swoole reactor's documented removal
+ * contract. We do not snapshot prior handlers because Swoole exposes no
  * read API for them; consumers that need to coexist with foreign handlers
  * must reinstall after restore().
  *
- * Skip-guard: install() is a no-op when the policy is empty or the openswoole
+ * Skip-guard: install() is a no-op when the policy is empty or the swoole
  * extension is not loaded. Process::signal requires a running reactor to
  * dispatch, but registration itself can occur before Coroutine::run starts —
  * the binding survives and fires once the loop is up.
@@ -40,7 +40,7 @@ final class ConsoleSignalTrap
     {
         $trap = new self();
 
-        if ($policy->exitCodes() === [] || !extension_loaded('openswoole')) {
+        if ($policy->exitCodes() === [] || (!extension_loaded('swoole') && !extension_loaded('openswoole'))) {
             return $trap;
         }
 

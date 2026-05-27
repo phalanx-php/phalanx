@@ -31,8 +31,6 @@ final class RuntimeRiskScanner
     /** @var list<string> */
     private const array PROCESS_CLASSES = [
         'OpenSwoole\\Core\\Process\\Manager',
-        'OpenSwoole\\Process',
-        'OpenSwoole\\Process\\Pool',
         'Swoole\\Process',
         'Swoole\\Process\\Pool',
         'Symfony\\Component\\Process\\Process',
@@ -300,10 +298,7 @@ final class RuntimeRiskScanner
             return new RuntimeRisk('process', 'new ' . $trimmed, $file, $line);
         }
 
-        if (
-            $trimmed === 'OpenSwoole\\Coroutine\\Channel'
-            || $trimmed === 'Swoole\\Coroutine\\Channel'
-        ) {
+        if ($trimmed === 'Swoole\\Coroutine\\Channel') {
             return new RuntimeRisk('raw_channel', 'new ' . $trimmed, $file, $line);
         }
 

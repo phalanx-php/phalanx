@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Runtime\Memory;
 
-use OpenSwoole\Coroutine;
-use OpenSwoole\Exception as OpenSwooleException;
+use Swoole\Coroutine;
+use Swoole\Exception as SwooleException;
 use Phalanx\Runtime\Identity\AegisEventSid;
 use Phalanx\Runtime\Identity\RuntimeAnnotationId;
 use Phalanx\Runtime\Identity\RuntimeEventId;
@@ -128,7 +128,7 @@ final readonly class ManagedResourceRegistry
 
             try {
                 $ok = $this->tables->resources->set($id, $row);
-            } catch (OpenSwooleException) {
+            } catch (SwooleException) {
                 throw RuntimeMemoryCapacityExceeded::forTable('resources', $id);
             }
 
@@ -175,7 +175,7 @@ final readonly class ManagedResourceRegistry
                 'updated_at' => microtime(true),
                 'expires_at' => $ttl > 0.0 ? microtime(true) + $ttl : 0.0,
             ]);
-        } catch (OpenSwooleException) {
+        } catch (SwooleException) {
             throw RuntimeMemoryCapacityExceeded::forTable('resource_annotations', $rowId);
         }
 
@@ -245,7 +245,7 @@ final readonly class ManagedResourceRegistry
                 'created_at' => microtime(true),
                 'expires_at' => 0.0,
             ]);
-        } catch (OpenSwooleException) {
+        } catch (SwooleException) {
             throw RuntimeMemoryCapacityExceeded::forTable('resource_edges', $edgeId);
         }
 
@@ -290,7 +290,7 @@ final readonly class ManagedResourceRegistry
                 'acquired_at' => (float) $lease['acquired_at'],
                 'expires_at' => 0.0,
             ]);
-        } catch (OpenSwooleException) {
+        } catch (SwooleException) {
             throw RuntimeMemoryCapacityExceeded::forTable('resource_leases', $leaseId);
         }
 

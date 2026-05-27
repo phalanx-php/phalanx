@@ -20,7 +20,7 @@ use Phalanx\Testing\PhalanxTestCase;
  *   - Ledger live count returns to zero after each batch
  *   - Ledger live count is zero at the end
  *   - PHP memory growth is bounded (slack budget set generously to absorb
- *     PHPUnit / OpenSwoole ambient noise on different machines)
+ *     PHPUnit / Swoole ambient noise on different machines)
  *
  * This is the tripwire that catches reference-cycle regressions in the
  * supervisor / scope / task path before they become a long-running-process
@@ -53,7 +53,7 @@ final class LedgerChurnTest extends PhalanxTestCase
 
             // Memory budget. 10k cycles routinely fit in well under 4MB on
             // dev hardware; pad to 16MB so test isn't flaky on first
-            // PHPUnit warmup / OpenSwoole timer churn.
+            // PHPUnit warmup / Swoole timer churn.
             $afterMem = memory_get_usage();
             $delta = $afterMem - $beforeMem;
             self::assertLessThan(16 * 1024 * 1024, $delta, sprintf(

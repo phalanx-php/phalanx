@@ -6,7 +6,7 @@ namespace Phalanx\Styx;
 
 use Closure;
 use Generator;
-use OpenSwoole\Coroutine\Channel as SwooleChannel;
+use Swoole\Coroutine\Channel as SwooleChannel;
 use Phalanx\Pool\BorrowedValue;
 use ReflectionFunction;
 use Throwable;
@@ -14,7 +14,7 @@ use Throwable;
 /**
  * Coroutine-aware channel: bounded, FIFO, suspending on full/empty.
  *
- * Backed by OpenSwoole\Coroutine\Channel. The producer's emit() suspends when
+ * Backed by Swoole\Coroutine\Channel. The producer's emit() suspends when
  * the buffer fills; the consumer's consume() suspends when the buffer empties.
  * Both wakeups are coroutine-scheduler driven — no manual deferred plumbing.
  *

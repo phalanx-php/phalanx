@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Runtime\Memory;
 
-use OpenSwoole\Exception as OpenSwooleException;
+use Swoole\Exception as SwooleException;
 use Phalanx\Runtime\Identity\RuntimeCounterId;
 
 final class RuntimeCounters
@@ -30,7 +30,7 @@ final class RuntimeCounters
     {
         try {
             return $this->incr($name, $by);
-        } catch (OpenSwooleException) {
+        } catch (SwooleException) {
             return null;
         }
     }

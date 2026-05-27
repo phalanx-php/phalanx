@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Runtime;
 
-use OpenSwoole\Coroutine;
-use OpenSwoole\Runtime;
+use Swoole\Coroutine;
+use Swoole\Runtime;
 use Throwable;
 
 final class RuntimeHooks

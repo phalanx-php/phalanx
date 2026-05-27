@@ -23,7 +23,7 @@ use PHPUnit\Framework\TestCase;
  *
  * This pins the chunked decoder + stream framing against an exact
  * known wire so future regressions show up immediately without
- * standing up a real OpenSwoole HTTP server.
+ * standing up a real Swoole HTTP server.
  */
 final class HttpStreamChunkedTest extends TestCase
 {

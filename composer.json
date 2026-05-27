@@ -33,6 +33,7 @@
         "slevomat/coding-standard": "^8.15",
         "spatie/ignition": "^1.15",
         "squizlabs/php_codesniffer": "^3.10 || ^4.0",
+        "swoole/ide-helper": "^6.0",
         "symfony/runtime": "^7.0 || ^8.0"
     },
     "autoload": {

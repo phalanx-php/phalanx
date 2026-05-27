@@ -8,7 +8,7 @@ use Phalanx\Server\StatsSnapshot;
 use PHPUnit\Framework\TestCase;
 
 /**
- * StatsSnapshot is a defensive read of the OpenSwoole stats payload —
+ * StatsSnapshot is a defensive read of the Swoole stats payload —
  * unrecognized keys must not break the snapshot, missing keys default to
  * 0, and event_loop_lag converts microseconds to milliseconds at read time.
  */
@@ -55,7 +55,7 @@ final class StatsSnapshotTest extends TestCase
 
     public function testAcceptsStringNumerics(): void
     {
-        // OpenSwoole occasionally returns numeric strings depending on
+        // Swoole occasionally returns numeric strings depending on
         // the underlying counter type; the snapshot coerces.
         $snapshot = StatsSnapshot::fromStatsArray([
             'connection_num' => '42',

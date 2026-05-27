@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Hermes\Client;
 
-use OpenSwoole\Coroutine\Http\Client as SwooleHttpClient;
+use Swoole\Coroutine\Http\Client as SwooleHttpClient;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Hermes\Runtime\Identity\HermesEventSid;
 use Phalanx\Hermes\Runtime\Identity\HermesResourceSid;

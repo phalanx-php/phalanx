@@ -11,7 +11,7 @@ use Phalanx\System\StreamingProcessState;
 use Phalanx\Testing\PhalanxTestCase;
 
 /**
- * Mechanism proof for the new OpenSwoole + Symfony Process based StreamingProcess.
+ * Mechanism proof for the new Swoole + Symfony Process based StreamingProcess.
  * The public surface is an Aegis-owned process resource plus a streaming handle.
  */
 final class StreamingProcessTest extends PhalanxTestCase

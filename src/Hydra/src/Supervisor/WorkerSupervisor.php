@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Hydra\Supervisor;
 
-use OpenSwoole\Atomic;
+use Swoole\Atomic;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Hydra\Agent\AgentState;
 use Phalanx\Hydra\Agent\Worker;

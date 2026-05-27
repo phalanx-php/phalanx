@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Stoa\Sse;
 
-use OpenSwoole\Http\Response;
+use Swoole\Http\Response;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Scope\Suspendable;

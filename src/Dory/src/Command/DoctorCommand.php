@@ -41,9 +41,9 @@ final class DoctorCommand implements Scopeable
 
     private static function checkSwoole(StreamOutput $output): bool
     {
-        $ok = extension_loaded('openswoole');
+        $ok = extension_loaded('swoole') || extension_loaded('openswoole');
         $marker = $ok ? self::PASS : self::FAIL;
-        $output->persist("  {$marker} OpenSwoole extension loaded");
+        $output->persist("  {$marker} Swoole extension loaded");
 
         return $ok;
     }

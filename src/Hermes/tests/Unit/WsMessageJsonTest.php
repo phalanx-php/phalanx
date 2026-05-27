@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Hermes\Tests\Unit;
 
-use OpenSwoole\WebSocket\Server as WebSocketServer;
+use Swoole\WebSocket\Server as WebSocketServer;
 use Phalanx\Hermes\WsMessage;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;

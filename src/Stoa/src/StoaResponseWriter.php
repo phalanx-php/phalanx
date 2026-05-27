@@ -4,23 +4,22 @@ declare(strict_types=1);
 
 namespace Phalanx\Stoa;
 
-use OpenSwoole\Core\Psr\Response as PsrResponseHelper;
-use OpenSwoole\Http\Response;
+use Swoole\Http\Response;
 use Psr\Http\Message\ResponseInterface;
 
 final readonly class StoaResponseWriter
 {
-    private const int CHUNK_SIZE = PsrResponseHelper::CHUNK_SIZE;
+    private const int CHUNK_SIZE = 2097152;
 
     public function write(ResponseInterface $source, Response $target, StoaRequestResource $request): void
     {
         if (!$target->isWritable()) {
             $request->abort('response is not writable before headers');
-            throw new ResponseWriteFailure('OpenSwoole response is not writable before headers.');
+            throw new ResponseWriteFailure('Swoole response is not writable before headers.');
         }
 
         if (!$target->status($source->getStatusCode(), $source->getReasonPhrase())) {
-            throw new ResponseWriteFailure('OpenSwoole failed to set response status.');
+            throw new ResponseWriteFailure('Swoole failed to set response status.');
         }
 
         $request->headersStarted();
@@ -28,7 +27,7 @@ final readonly class StoaResponseWriter
         foreach ($source->getHeaders() as $name => $values) {
             foreach ($values as $value) {
                 if (!$target->header($name, $value)) {
-                    throw new ResponseWriteFailure("OpenSwoole failed to write response header '{$name}'.");
+                    throw new ResponseWriteFailure("Swoole failed to write response header '{$name}'.");
                 }
             }
         }
@@ -36,7 +35,7 @@ final readonly class StoaResponseWriter
         // @phpstan-ignore booleanNot.alwaysFalse (client disconnect between header writes)
         if (!$target->isWritable()) {
             $request->abort('response closed before body');
-            throw new ResponseWriteFailure('OpenSwoole response closed before body.');
+            throw new ResponseWriteFailure('Swoole response closed before body.');
         }
 
         $request->bodyStarted();
@@ -51,7 +50,7 @@ final readonly class StoaResponseWriter
 
         if ($size !== null && $size <= self::CHUNK_SIZE) {
             if (!$target->end($body->getContents())) {
-                throw new ResponseWriteFailure('OpenSwoole failed to finish response body.');
+                throw new ResponseWriteFailure('Swoole failed to finish response body.');
             }
 
             return;
@@ -65,12 +64,12 @@ final readonly class StoaResponseWriter
             }
 
             if ($target->write($chunk) === false) {
-                throw new ResponseWriteFailure('OpenSwoole failed to write response body chunk.');
+                throw new ResponseWriteFailure('Swoole failed to write response body chunk.');
             }
         }
 
         if (!$target->end()) {
-            throw new ResponseWriteFailure('OpenSwoole failed to finish response body.');
+            throw new ResponseWriteFailure('Swoole failed to finish response body.');
         }
     }
 }

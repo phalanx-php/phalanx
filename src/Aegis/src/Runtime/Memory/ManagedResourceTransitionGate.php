@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Runtime\Memory;
 
-use OpenSwoole\Exception as OpenSwooleException;
+use Swoole\Exception as SwooleException;
 use Phalanx\Runtime\Identity\AegisEventSid;
 use Phalanx\Runtime\Identity\RuntimeEventId;
 
@@ -53,7 +53,7 @@ final readonly class ManagedResourceTransitionGate
                     'reason_symbol' => 0,
                     'cancel_requested' => 0,
                 ]);
-            } catch (OpenSwooleException) {
+            } catch (SwooleException) {
                 throw RuntimeMemoryCapacityExceeded::forTable('resources', $id);
             }
 
@@ -140,7 +140,7 @@ final readonly class ManagedResourceTransitionGate
 
             try {
                 $ok = $this->tables->resources->set($id, $row);
-            } catch (OpenSwooleException) {
+            } catch (SwooleException) {
                 throw RuntimeMemoryCapacityExceeded::forTable('resources', $id);
             }
 

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Aegis\Tests\Resilience;
 
-use OpenSwoole\Coroutine;
-use OpenSwoole\Coroutine\WaitGroup;
+use Swoole\Coroutine;
+use Swoole\Coroutine\WaitGroup;
 use Phalanx\Boot\AppContext;
 use Phalanx\Application;
 use Phalanx\Scope\ExecutionScope;

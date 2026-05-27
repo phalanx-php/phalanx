@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Phalanx\Hermes\Tests\Integration;
 
-use OpenSwoole\Coroutine\Channel;
-use OpenSwoole\Coroutine\Socket;
-use OpenSwoole\WebSocket\Frame;
-use OpenSwoole\WebSocket\Server as WebSocketServer;
+use Swoole\Coroutine\Channel;
+use Swoole\Coroutine\Socket;
+use Swoole\WebSocket\Frame;
+use Swoole\WebSocket\Server as WebSocketServer;
 use Phalanx\Application;
 use Phalanx\Hermes\Client\WsClient;
 use Phalanx\Hermes\Hermes;
@@ -21,7 +21,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Mechanism proofs for the WsClient cancellation surface.
  *
- * Three orthogonal cases share one OpenSwoole-native server fixture:
+ * Three orthogonal cases share one Swoole-native server fixture:
  *
  *  1. parent scope dispose cascades close()  -> resource ends Closed, no leak
  *  2. double-close from two coroutines       -> idempotent, single transition

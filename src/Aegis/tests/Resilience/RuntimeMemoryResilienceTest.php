@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Aegis\Tests\Resilience;
 
-use OpenSwoole\Coroutine;
-use OpenSwoole\Coroutine\Channel;
+use Swoole\Coroutine;
+use Swoole\Coroutine\Channel;
 use Phalanx\Runtime\Identity\AegisCounterSid;
 use Phalanx\Runtime\Identity\AegisEventSid;
 use Phalanx\Runtime\Identity\AegisResourceSid;

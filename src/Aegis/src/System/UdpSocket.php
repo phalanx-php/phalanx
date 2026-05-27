@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\System;
 
-use OpenSwoole\Coroutine\Client;
+use Swoole\Coroutine\Client;
 use Phalanx\Scope\Suspendable;
 use Phalanx\Supervisor\WaitReason;
 use RuntimeException;

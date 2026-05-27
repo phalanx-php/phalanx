@@ -6,9 +6,9 @@ namespace Phalanx\PHPStan\Tests\Audit\Fixtures;
 
 use Amp\Future;
 use OpenSwoole\Core\Process\Manager;
-use OpenSwoole\Coroutine;
-use OpenSwoole\Coroutine\Channel;
-use OpenSwoole\Runtime;
+use Swoole\Coroutine;
+use Swoole\Coroutine\Channel;
+use Swoole\Runtime;
 use React\EventLoop\Loop;
 use Revolt\EventLoop;
 use Symfony\Component\Process\Process;
@@ -28,9 +28,9 @@ final class RuntimeRiskFixture
         new Channel();
         new Process(['php', '-v']);
         Process::fromShellCommandline('php -v');
-        new \OpenSwoole\Process(static function (): void {
+        new \Swoole\Process(static function (): void {
         });
-        new \OpenSwoole\Process\Pool(1);
+        new \Swoole\Process\Pool(1);
         new Manager();
         Loop::get();
         Future::complete();

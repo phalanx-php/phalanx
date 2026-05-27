@@ -106,7 +106,7 @@ final class ProjectGenerator
     "license": "MIT",{$bin}
     "require": {
         "php": "^8.4",
-        "ext-openswoole": "^26.0",
+        "ext-swoole": "^6.0",
         "phalanx-php/aegis": "^0.6",
         {$framework},
         "symfony/runtime": "^7.0"

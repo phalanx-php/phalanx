@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Aegis\Tests\Unit\Scope;
 
-use OpenSwoole\Coroutine\Channel;
+use Swoole\Coroutine\Channel;
 use Phalanx\Application;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Cancellation\Cancelled;
@@ -257,7 +257,7 @@ final class LimitRecordingDispatch implements WorkerDispatch
         $this->maxActive = max($this->maxActive, $this->active);
 
         try {
-            \OpenSwoole\Coroutine::sleep(0);
+            \Swoole\Coroutine::sleep(0);
 
             if ($task instanceof ValueWorkerTask) {
                 return $task($scope);

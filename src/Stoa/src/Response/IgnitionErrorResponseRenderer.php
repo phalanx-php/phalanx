@@ -156,7 +156,7 @@ HTML;
         $logo = $this->getLogo();
         $escapedLedger = htmlspecialchars($ledger);
         $docsUrl = $this->config->docsUrl;
-        $osDocsUrl = $this->config->openswooleDocsUrl;
+        $osDocsUrl = $this->config->swooleDocsUrl;
         $githubUrl = $this->config->githubUrl;
         $tagline = $this->config->tagline;
 
@@ -218,8 +218,8 @@ HTML;
                                         <span>PHP</span>
                                     </a>
                                     <a href="{$osDocsUrl}" target="_blank" class="phx-doc-item">
-                                        <img src="https://openswoole.com/images/swoole-logo-white.svg" class="phx-doc-icon">
-                                        <span>OpenSwoole</span>
+                                        <img src="https://www.swoole.com/static/img/logo-white.png" class="phx-doc-icon">
+                                        <span>Swoole</span>
                                     </a>
                                     <a href="{$githubUrl}" target="_blank" class="phx-doc-item">
                                         <img src="https://raw.githubusercontent.com/phalanx-php/phalanx/refs/heads/main/mark.png" class="phx-doc-icon">

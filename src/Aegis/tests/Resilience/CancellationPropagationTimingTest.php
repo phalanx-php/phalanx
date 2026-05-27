@@ -106,7 +106,7 @@ final class CancellationPropagationTimingTest extends PhalanxTestCase
     {
         $this->assertCancelTimingOf(static function (ExecutionScope $scope): void {
             $scope->call(static function (): void {
-                \OpenSwoole\Coroutine::usleep(5_000_000);
+                \Swoole\Coroutine::usleep(5_000_000);
             });
         });
     }
@@ -136,8 +136,8 @@ final class CancellationPropagationTimingTest extends PhalanxTestCase
             $token = $appScope->cancellation();
 
             $cancelAfter = self::CANCEL_AFTER_USEC;
-            \OpenSwoole\Coroutine::create(static function () use ($token, $cancelAfter): void {
-                \OpenSwoole\Coroutine::usleep((int) $cancelAfter);
+            \Swoole\Coroutine::create(static function () use ($token, $cancelAfter): void {
+                \Swoole\Coroutine::usleep((int) $cancelAfter);
                 $token->cancel();
             });
 

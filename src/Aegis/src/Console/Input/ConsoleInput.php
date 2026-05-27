@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Console\Input;
 
-use OpenSwoole\Coroutine\Socket;
-use OpenSwoole\Coroutine\System;
+use Swoole\Coroutine\Socket;
+use Swoole\Coroutine\System;
 use Phalanx\Scope\Suspendable;
 use Phalanx\Supervisor\WaitReason;
 use Phalanx\System\SystemCommand;

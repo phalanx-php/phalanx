@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Hermes;
 
-use OpenSwoole\WebSocket\Frame;
-use OpenSwoole\WebSocket\Server as WebSocketServer;
+use Swoole\WebSocket\Frame;
+use Swoole\WebSocket\Server as WebSocketServer;
 
 final class WsMessage
 {

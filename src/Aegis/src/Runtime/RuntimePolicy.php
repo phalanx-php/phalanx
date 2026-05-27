@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Runtime;
 
 use InvalidArgumentException;
-use OpenSwoole\Runtime;
+use Swoole\Runtime;
 use Phalanx\Boot\AppContext;
 
 final readonly class RuntimePolicy

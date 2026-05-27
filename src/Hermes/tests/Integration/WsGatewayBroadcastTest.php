@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Hermes\Tests\Integration;
 
 use Closure;
-use OpenSwoole\Coroutine;
+use Swoole\Coroutine;
 use Phalanx\Hermes\WsConnection;
 use Phalanx\Hermes\WsGateway;
 use Phalanx\Hermes\WsMessage;
@@ -191,7 +191,7 @@ final class WsGatewayBroadcastTest extends TestCase
     }
 
     /**
-     * Wrap a test body that touches Channel ops in a single OpenSwoole
+     * Wrap a test body that touches Channel ops in a single Swoole
      * coroutine. emit, complete, and consume must share a scheduler; without
      * this wrapping the gateway's broadcast() (which calls outbound->emit)
      * has no scheduler to push into.

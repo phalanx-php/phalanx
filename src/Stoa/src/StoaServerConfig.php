@@ -24,7 +24,7 @@ final readonly class StoaServerConfig
         public string $tagline = 'Expression-based async coordination for PHP 8.4+',
         public string $docsUrl = 'https://github.com/phalanx-php/phalanx',
         public string $githubUrl = 'https://github.com/phalanx-php/phalanx',
-        public string $openswooleDocsUrl = 'https://openswoole.com/docs',
+        public string $swooleDocsUrl = 'https://wiki.swoole.com',
         public ?string $banner = null,
     ) {
     }
@@ -64,7 +64,7 @@ final readonly class StoaServerConfig
             tagline: self::stringValue($values, ['tagline', 'PHALANX_TAGLINE'], 'Expression-based async coordination for PHP 8.4+'),
             docsUrl: self::stringValue($values, ['docs_url', 'PHALANX_DOCS_URL'], 'https://github.com/phalanx-php/phalanx'),
             githubUrl: self::stringValue($values, ['github_url', 'PHALANX_GITHUB_URL'], 'https://github.com/phalanx-php/phalanx'),
-            openswooleDocsUrl: self::stringValue($values, ['openswoole_docs_url', 'PHALANX_OPENSWOOLE_DOCS_URL'], 'https://openswoole.com/docs'),
+            swooleDocsUrl: self::stringValue($values, ['swoole_docs_url', 'PHALANX_SWOOLE_DOCS_URL'], 'https://wiki.swoole.com'),
         );
     }
 

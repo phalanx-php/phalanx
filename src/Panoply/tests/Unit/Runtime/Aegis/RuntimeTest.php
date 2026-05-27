@@ -20,7 +20,7 @@ use PHPUnit\Framework\TestCase;
  * Unit tests for the Aegis-backed {@see Runtime} adapter.
  *
  * All tests use a hand-written {@see TaskScope} stub so the Aegis package
- * itself (and its OpenSwoole dependency) need not be booted. The adapter is
+ * itself (and its Swoole dependency) need not be booted. The adapter is
  * thin delegation; tests verify mapping, not Aegis internals.
  */
 final class RuntimeTest extends TestCase

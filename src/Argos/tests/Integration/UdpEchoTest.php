@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Argos\Tests\Integration;
 
-use OpenSwoole\Coroutine;
+use Swoole\Coroutine;
 use Phalanx\Argos\ProbeResult;
 use Phalanx\Argos\Task\ProbeUdp;
 use Phalanx\Scope\ExecutionScope;

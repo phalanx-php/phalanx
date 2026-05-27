@@ -7,7 +7,7 @@ namespace Phalanx\Stoa\Tests\Integration;
 use Closure;
 use GuzzleHttp\Psr7\Response as PsrResponse;
 use GuzzleHttp\Psr7\ServerRequest;
-use OpenSwoole\Http\Request as OpenSwooleRequest;
+use Swoole\Http\Request as SwooleRequest;
 use Phalanx\Application;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Runtime\Identity\RuntimeAnnotationId;
@@ -305,7 +305,7 @@ final class StoaRunnerTest extends PhalanxTestCase
     #[Test]
     public function translates_openswoole_request_to_psr_request(): void
     {
-        $request = new OpenSwooleRequest();
+        $request = new SwooleRequest();
         $request->server = [
             'request_method' => 'POST',
             'request_uri' => '/submit',
@@ -335,7 +335,7 @@ final class StoaRunnerTest extends PhalanxTestCase
         self::assertIsString($tmpFile);
         file_put_contents($tmpFile, 'upload-body');
 
-        $request = new OpenSwooleRequest();
+        $request = new SwooleRequest();
         $request->server = [
             'request_method' => 'POST',
             'request_uri' => '/upload',
@@ -381,7 +381,7 @@ final class StoaRunnerTest extends PhalanxTestCase
         file_put_contents($first, 'first-body');
         file_put_contents($second, 'second-body');
 
-        $request = new OpenSwooleRequest();
+        $request = new SwooleRequest();
         $request->server = [
             'request_method' => 'POST',
             'request_uri' => '/uploads',
@@ -419,7 +419,7 @@ final class StoaRunnerTest extends PhalanxTestCase
         self::assertIsString($present);
         file_put_contents($present, 'only-real');
 
-        $request = new OpenSwooleRequest();
+        $request = new SwooleRequest();
         $request->server = [
             'request_method' => 'POST',
             'request_uri' => '/uploads',
@@ -459,7 +459,7 @@ final class StoaRunnerTest extends PhalanxTestCase
     #[Test]
     public function preserves_psr_header_lookups_regardless_of_openswoole_header_case(): void
     {
-        $request = new OpenSwooleRequest();
+        $request = new SwooleRequest();
         $request->server = [
             'request_method' => 'GET',
             'request_uri' => '/headers',

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Stoa\Response;
 
-use OpenSwoole\Http\Server;
+use Swoole\Http\Server;
 use Phalanx\Stoa\Runtime\Identity\StoaEventSid;
 use Phalanx\Stoa\StoaRequestResource;
 

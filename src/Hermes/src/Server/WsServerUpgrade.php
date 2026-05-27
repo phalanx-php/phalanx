@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Hermes\Server;
 
-use OpenSwoole\Http\Response as SwooleHttpResponse;
+use Swoole\Http\Response as SwooleHttpResponse;
 use Phalanx\AppHost;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Cancellation\Cancelled;

@@ -24,11 +24,11 @@ final class ConsoleSignalTrapTest extends TestCase
     }
 
     #[Test]
-    public function defaultPolicyReflectsOpenSwooleAvailability(): void
+    public function defaultPolicyReflectsSwooleAvailability(): void
     {
         $policy = ConsoleSignalPolicy::default();
 
-        if (!extension_loaded('openswoole')) {
+        if (!extension_loaded('swoole') && !extension_loaded('openswoole')) {
             self::assertSame([], $policy->exitCodes());
             return;
         }

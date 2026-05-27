@@ -64,7 +64,7 @@ final class Tracker
     private static function getStack(): array
     {
         if (self::inCoroutine()) {
-            return \OpenSwoole\Coroutine::getContext()[self::KEY] ?? [];
+            return \Swoole\Coroutine::getContext()[self::KEY] ?? [];
         }
 
         return self::$fallbackStack;
@@ -74,7 +74,7 @@ final class Tracker
     private static function setStack(array $stack): void
     {
         if (self::inCoroutine()) {
-            \OpenSwoole\Coroutine::getContext()[self::KEY] = $stack;
+            \Swoole\Coroutine::getContext()[self::KEY] = $stack;
 
             return;
         }
@@ -84,7 +84,7 @@ final class Tracker
 
     private static function inCoroutine(): bool
     {
-        return class_exists(\OpenSwoole\Coroutine::class, false)
-            && \OpenSwoole\Coroutine::getCid() > 0;
+        return class_exists(\Swoole\Coroutine::class, false)
+            && \Swoole\Coroutine::getCid() > 0;
     }
 }

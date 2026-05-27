@@ -10,7 +10,7 @@ use Phalanx\Scope\ExecutionScope;
 use Phalanx\Testing\PhalanxTestCase;
 
 /**
- * The "read" tests need a kernel-tracked fd so OpenSwoole's reactor
+ * The "read" tests need a kernel-tracked fd so Swoole's reactor
  * can register the readiness watch. stream_socket_pair returns
  * userspace fds that the reactor cannot track — that path was the
  * source of "ReactorKqueue::add(): Bad file descriptor" warnings in
@@ -18,22 +18,22 @@ use Phalanx\Testing\PhalanxTestCase;
  * The deeper bug it masked: ConsoleInput was int-casting the PHP
  * stream resource (`(int) $resource`) and passing that to waitEvent,
  * which is the PHP resource ID, not the kernel fd. The fix is to pass
- * the resource itself; OpenSwoole's waitEvent extracts the fd via
+ * the resource itself; Swoole's waitEvent extracts the fd via
  * php_stream_cast(PHP_STREAM_AS_FD).
  *
  * proc_open() yields a PHP stream resource backed by a real kernel
  * pipe (pipe(2)) — same code path that production STDIN uses.
  *
  * Cross-platform: these tests run identically on macOS (kqueue) and
- * Linux (epoll) because OpenSwoole abstracts the reactor backend.
+ * Linux (epoll) because Swoole abstracts the reactor backend.
  * The php_stream_cast call is portable PHP API, the pipe(2) syscall
  * is POSIX, and the resulting fd is reactor-trackable on both. No
  * #[RequiresOperatingSystemFamily] gating is needed.
  *
  * The Coroutine\Socket branch of ConsoleInput is exercised by Hermes
- * integration tests where the OpenSwoole server hands the application
+ * integration tests where the Swoole server hands the application
  * a real Coroutine\Socket. We don't synthesize one in unit tests
- * because OpenSwoole\Process spawning interacts badly with the test
+ * because Swoole\Process spawning interacts badly with the test
  * runner's coroutine lifecycle.
  */
 final class ConsoleInputTest extends PhalanxTestCase

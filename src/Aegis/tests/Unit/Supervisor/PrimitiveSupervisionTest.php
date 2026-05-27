@@ -133,8 +133,8 @@ final class PrimitiveSupervisionTest extends PhalanxTestCase
                     }),
                 )),
                 waiter: Task::of(static function (ExecutionScope $s): string {
-                    \OpenSwoole\Coroutine::create(static function () use ($s): void {
-                        \OpenSwoole\Coroutine::usleep(10_000);
+                    \Swoole\Coroutine::create(static function () use ($s): void {
+                        \Swoole\Coroutine::usleep(10_000);
                         $s->cancellation()->cancel();
                     });
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Runtime\Memory;
 
-use OpenSwoole\Atomic\Long;
+use Swoole\Atomic\Long;
 use Phalanx\Runtime\Identity\RuntimeCounterId;
 use Symfony\Component\Uid\Ulid;
 

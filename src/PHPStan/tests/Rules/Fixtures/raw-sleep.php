@@ -10,7 +10,7 @@ final class RawSleepFixture
 {
     public function __invoke(ExecutionScope $scope): void
     {
-        \OpenSwoole\Coroutine::usleep(10);
+        \Swoole\Coroutine::usleep(10);
         \Swoole\Coroutine::sleep(1);
         $scope->delay(0.01);
     }

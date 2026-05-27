@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Runtime;
 
 use Closure;
-use OpenSwoole\Coroutine;
+use Swoole\Coroutine;
 use RuntimeException;
 use Throwable;
 
@@ -46,7 +46,7 @@ final class CoroutineRuntime
         }
 
         if (!$finished) {
-            throw new RuntimeException('OpenSwoole coroutine runtime did not execute the managed body.');
+            throw new RuntimeException('Swoole coroutine runtime did not execute the managed body.');
         }
 
         return $result;

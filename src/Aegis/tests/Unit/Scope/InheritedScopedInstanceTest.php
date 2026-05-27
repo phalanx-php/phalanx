@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Aegis\Tests\Unit\Scope;
 
-use OpenSwoole\Coroutine\Channel;
+use Swoole\Coroutine\Channel;
 use Phalanx\Exception\ServiceNotFoundException;
 use Phalanx\Scope\ExecutionLifecycleScope;
 use Phalanx\Scope\ExecutionScope;
