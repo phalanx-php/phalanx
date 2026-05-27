@@ -38,14 +38,14 @@ final class DoryApplication
             try {
                 $config = $scope->service(DoryConfig::class);
 
-                $dory = new DoryExecutionContext(
+                $context = new DoryExecutionContext(
                     inner: $scope,
                     scriptPath: realpath($this->scriptPath) ?: $this->scriptPath,
                     config: $config,
                 );
 
-                $result = $scope->timeout($config->scriptTimeout, static function () use ($dory): mixed {
-                    return ScriptRunner::execute($dory);
+                $result = $scope->timeout($config->scriptTimeout, static function () use ($context): mixed {
+                    return ScriptRunner::execute($context);
                 });
 
                 if (is_int($result)) {

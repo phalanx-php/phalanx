@@ -15,13 +15,13 @@ final class InitCommand implements Scopeable
 
         declare(strict_types=1);
 
-        $dory->println('Greetings from Olympus.');
+        dory()->println('Greetings from Olympus.');
 
-        $result = $dory->attempt(static fn(): string => 'The phalanx holds.')
+        $result = dory()->attempt(static fn(): string => 'The phalanx holds.')
             ->timeout(5.0)
             ->run();
 
-        $dory->dump($result);
+        dory()->dump($result);
 
         return 0;
         PHP;

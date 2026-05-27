@@ -6,10 +6,15 @@ namespace Phalanx\Dory;
 
 final class ScriptRunner
 {
-    public static function execute(ScriptContext $dory): mixed
+    public static function execute(ScriptContext $context): mixed
     {
-        return (static function (ScriptContext $dory): mixed {
-            return require $dory->scriptPath;
-        })($dory);
+        ScriptContextHolder::set($context);
+        try {
+            return (static function (string $scriptPath): mixed {
+                return require $scriptPath;
+            })($context->scriptPath);
+        } finally {
+            ScriptContextHolder::clear();
+        }
     }
 }

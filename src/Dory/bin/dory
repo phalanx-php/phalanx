@@ -24,9 +24,15 @@ if (extension_loaded('Phar') && \Phar::running() !== '') {
             ),
         ];
 
+        $providers = [new \Phalanx\Dory\DoryServiceBundle()];
+
+        if (class_exists(\Phalanx\DoryBin\DoryBinServiceBundle::class)) {
+            $providers[] = new \Phalanx\DoryBin\DoryBinServiceBundle();
+        }
+
         exit(
             \Phalanx\Archon\Application\Archon::starting($context)
-                ->providers(new \Phalanx\Dory\DoryServiceBundle())
+                ->providers(...$providers)
                 ->commands(\Phalanx\Dory\Command\DoryCommandGroup::commands())
                 ->default('run')
                 ->run()
@@ -56,8 +62,16 @@ use Phalanx\Archon\Application\Archon;
 use Phalanx\Dory\Command\DoryCommandGroup;
 use Phalanx\Dory\DoryServiceBundle;
 
-return static fn(array $context): \Closure => static fn(): int => Archon::starting($context)
-    ->providers(new DoryServiceBundle())
-    ->commands(DoryCommandGroup::commands())
-    ->default('run')
-    ->run();
+return static fn(array $context): \Closure => static function () use ($context): int {
+    $providers = [new DoryServiceBundle()];
+
+    if (class_exists(\Phalanx\DoryBin\DoryBinServiceBundle::class)) {
+        $providers[] = new \Phalanx\DoryBin\DoryBinServiceBundle();
+    }
+
+    return Archon::starting($context)
+        ->providers(...$providers)
+        ->commands(DoryCommandGroup::commands())
+        ->default('run')
+        ->run();
+};

@@ -1,16 +1,17 @@
 {
-    "name": "phalanx-php/dory",
-    "description": "Native scripting environment for Phalanx with supervised execution, lazy module services, and fluent orchestration",
+    "name": "phalanx-php/dorybin",
+    "description": "Static binary compiler for Phalanx using SPC (static-php-cli)",
     "license": "MIT",
     "type": "library",
     "keywords": [
-        "scripting",
-        "cli",
-        "async",
+        "binary",
+        "compiler",
+        "static-php",
+        "spc",
         "phalanx",
         "openswoole"
     ],
-    "homepage": "https://github.com/phalanx-php/phalanx-dory",
+    "homepage": "https://github.com/phalanx-php/phalanx-dorybin",
     "authors": [
         {
             "name": "Jonathan Havens",
@@ -21,21 +22,12 @@
         "php": "^8.4",
         "phalanx-php/aegis": "^0.6",
         "phalanx-php/archon": "^0.6",
-        "phalanx-php/themis": "^0.6"
-    },
-    "suggest": {
-        "phalanx-php/iris": "For HTTP client access via dory()->http",
-        "phalanx-php/grammata": "For filesystem access via dory()->fs",
-        "phalanx-php/styx": "For reactive stream primitives",
-        "phalanx-php/hydra": "For worker process parallelism",
-        "phalanx-php/dorybin": "For static binary compilation via SPC"
+        "phalanx-php/themis": "^0.6",
+        "symfony/yaml": "^7.0 || ^8.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^13.0"
     },
-    "bin": [
-        "bin/dory"
-    ],
     "archive": {
         "exclude": [
             "/.aimind",
@@ -82,12 +74,12 @@
     },
     "autoload": {
         "psr-4": {
-            "Phalanx\\Dory\\": "src/"
+            "Phalanx\\DoryBin\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Phalanx\\Dory\\Tests\\": "tests/"
+            "Phalanx\\DoryBin\\Tests\\": "tests/"
         }
     },
     "extra": {

@@ -7,14 +7,12 @@ namespace Phalanx\Dory\Command;
 use Phalanx\Archon\Command\Arg;
 use Phalanx\Archon\Command\CommandConfig;
 use Phalanx\Archon\Command\CommandGroup;
-use Phalanx\Dory\Command\Build\BuildCommandGroup;
 
 final class DoryCommandGroup
 {
     public static function commands(): CommandGroup
     {
         $commands = [
-            'build' => BuildCommandGroup::commands(),
             'run' => [
                 RunCommand::class,
                 new CommandConfig(
@@ -40,6 +38,10 @@ final class DoryCommandGroup
                 ),
             ],
         ];
+
+        if (class_exists(\Phalanx\DoryBin\Command\BuildCommandGroup::class)) {
+            $commands['build'] = \Phalanx\DoryBin\Command\BuildCommandGroup::commands();
+        }
 
         if (class_exists(\Phalanx\Skopos\FileWatcher::class)) {
             $commands['serve'] = [

@@ -14,6 +14,7 @@ parameters:
         - src/Athena/src
         - src/Cli/src
         - src/Dory/src
+        - src/DoryBin/src
         - src/Eidolon/src
         - src/Enigma/src
         - src/Grammata/src
@@ -60,6 +61,7 @@ parameters:
         - src/Athena/src
         - src/Cli/src
         - src/Dory/src
+        - src/DoryBin/src
         - src/Eidolon/src
         - src/Enigma/src
         - src/Grammata/src
