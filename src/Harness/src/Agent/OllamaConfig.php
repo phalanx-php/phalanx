@@ -26,8 +26,10 @@ final class OllamaConfig implements Config
     public function __construct(
         #[Env(key: 'HARNESS_OLLAMA_BASE_URL', description: 'Ollama API base URL')]
         private(set) string $baseUrl = self::DEFAULT_BASE_URL,
+
         #[Env(key: 'HARNESS_OLLAMA_MODEL', description: 'Default harness chat model')]
         private(set) string $model = self::DEFAULT_MODEL,
+
         #[Env(key: 'HARNESS_MAX_INVOCATIONS', description: 'Maximum agent invocations per activity')]
         private(set) int $maxInvocations = self::DEFAULT_MAX_INVOCATIONS,
     ) {

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Dory\Tests\Unit\Command;
 
 use Phalanx\Archon\Command\CommandArgs;
-use Phalanx\Archon\Command\CommandScope;
+use Phalanx\Archon\Command\CommandContext;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Archon\Console\Output\TerminalEnvironment;
 use Phalanx\Dory\Command\InitCommand;
@@ -103,7 +103,7 @@ final class InitCommandTest extends TestCase
         self::assertSame(0, $result);
     }
 
-    private function buildScope(string $directory): CommandScope
+    private function buildScope(string $directory): CommandContext
     {
         [$scope] = $this->buildScopeWithStream($directory);
 
@@ -111,7 +111,7 @@ final class InitCommandTest extends TestCase
     }
 
     /**
-     * @return array{CommandScope, resource}
+     * @return array{CommandContext, resource}
      */
     private function buildScopeWithStream(string $directory): array
     {
@@ -122,7 +122,7 @@ final class InitCommandTest extends TestCase
         $terminal = new TerminalEnvironment(isTty: false);
         $output = new StreamOutput($stream, $terminal);
 
-        $scope = $this->createStub(CommandScope::class);
+        $scope = $this->createStub(CommandContext::class);
         $scope->method('$args::get')->willReturn($args);
         $scope->method('service')->willReturnCallback(
             static fn(string $type) => match ($type) {

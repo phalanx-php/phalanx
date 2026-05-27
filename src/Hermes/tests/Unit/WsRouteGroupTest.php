@@ -12,8 +12,7 @@ use Phalanx\Hermes\WsRouteGroup;
 use Phalanx\Scope\ExecutionLifecycleScope;
 use Phalanx\Stoa\ExecutionContext as StoaExecutionContext;
 use Phalanx\Stoa\QueryParams;
-use Phalanx\Stoa\RequestCtx;
-use Phalanx\Stoa\RequestScope;
+use Phalanx\Stoa\RequestContext;
 use Phalanx\Stoa\RouteConfig;
 use Phalanx\Stoa\RouteMatcher;
 use Phalanx\Stoa\RouteParams;
@@ -36,10 +35,8 @@ final class WsRouteGroupTest extends TestCase
         $request = new ServerRequest('GET', '/socket/42');
         $token = CancellationToken::create();
         $resource = StoaRequestResource::open($app->runtime(), $request, $token, ownerScopeId: $scope->scopeId);
-        $requestCtx = new RequestCtx();
         $scope->bindScopedInstance(StoaRequestResource::class, $resource, inherit: true);
         $scope->bindScopedInstance(StoaRequestDiagnostics::class, new StoaRequestDiagnostics(), inherit: true);
-        $scope->bindScopedInstance(RequestCtx::class, $requestCtx, inherit: true);
 
         try {
             $routeScope = new StoaExecutionContext(
@@ -48,14 +45,13 @@ final class WsRouteGroupTest extends TestCase
                 new RouteParams(),
                 new QueryParams([]),
                 RouteConfig::compile('/'),
-                $requestCtx,
             );
             $routes = WsRouteGroup::of(['WS /socket/{id:int}' => MatchedWsRoute::class], new WsGateway());
 
             $match = (new RouteMatcher())->match($routeScope, $routes->inner->all());
 
             self::assertNotNull($match);
-            self::assertInstanceOf(RequestScope::class, $match->scope);
+            self::assertInstanceOf(RequestContext::class, $match->scope);
             self::assertSame('42', $match->scope->params->required('id'));
             self::assertSame(
                 '/socket/{id:int}',

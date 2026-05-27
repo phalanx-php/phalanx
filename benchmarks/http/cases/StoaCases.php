@@ -13,7 +13,7 @@ use Phalanx\Application;
 use Phalanx\Benchmarks\Http\AbstractHttpBenchmarkCase;
 use Phalanx\Benchmarks\Http\HttpBenchmarkCase;
 use Phalanx\Benchmarks\Kit\BenchmarkApp;
-use Phalanx\Stoa\RequestScope;
+use Phalanx\Stoa\RequestContext;
 use Phalanx\Stoa\RouteGroup;
 use Phalanx\Stoa\StoaRequestFactory;
 use Phalanx\Stoa\StoaRunner;
@@ -178,7 +178,7 @@ final class StoaDrainCleanupCase extends AbstractHttpBenchmarkCase
 
 final class BenchmarkPlaintextRoute implements Scopeable
 {
-    public function __invoke(RequestScope $scope): Response
+    public function __invoke(RequestContext $ctx): Response
     {
         return new Response(200, ['Content-Type' => 'text/plain'], 'Hello, World!');
     }
@@ -187,7 +187,7 @@ final class BenchmarkPlaintextRoute implements Scopeable
 final class BenchmarkJsonRoute implements Scopeable
 {
     /** @return array{message: string} */
-    public function __invoke(RequestScope $scope): array
+    public function __invoke(RequestContext $ctx): array
     {
         return ['message' => 'Hello, World!'];
     }
@@ -195,29 +195,29 @@ final class BenchmarkJsonRoute implements Scopeable
 
 final class BenchmarkRouteParamRoute implements Scopeable
 {
-    public function __invoke(RequestScope $scope): string
+    public function __invoke(RequestContext $ctx): string
     {
-        return $scope->params->required('id');
+        return $ctx->params->required('id');
     }
 }
 
 final class BenchmarkResourceRoute implements Scopeable
 {
-    public function __invoke(RequestScope $scope): Response
+    public function __invoke(RequestContext $ctx): Response
     {
-        if (!str_starts_with($scope->requestId, 'stoa-request-')) {
+        if (!str_starts_with($ctx->requestId, 'stoa-request-')) {
             throw new RuntimeException('Request resource id was not exposed to the benchmark route.');
         }
 
-        return new Response(200, ['Content-Type' => 'text/plain'], $scope->requestId);
+        return new Response(200, ['Content-Type' => 'text/plain'], $ctx->requestId);
     }
 }
 
 final class BenchmarkDrainRoute implements Scopeable
 {
-    public function __invoke(RequestScope $scope): string
+    public function __invoke(RequestContext $ctx): string
     {
-        $scope->delay(0.2);
+        $ctx->delay(0.2);
 
         return 'completed';
     }

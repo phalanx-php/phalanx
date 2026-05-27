@@ -22,8 +22,7 @@ use Phalanx\Scope\ExecutionLifecycleScope;
 use Phalanx\Stoa\ExecutionContext as StoaExecutionContext;
 use Phalanx\Stoa\Http\Upgrade\HttpUpgradeable;
 use Phalanx\Stoa\QueryParams;
-use Phalanx\Stoa\RequestCtx;
-use Phalanx\Stoa\RequestScope;
+use Phalanx\Stoa\RequestContext;
 use Phalanx\Stoa\RouteConfig;
 use Phalanx\Stoa\RouteMatcher;
 use Phalanx\Stoa\RouteParams;
@@ -64,13 +63,8 @@ final class WsServerUpgrade implements HttpUpgradeable
         if (!$sessionScope instanceof ExecutionLifecycleScope) {
             throw new RuntimeException('createScope() must return ExecutionLifecycleScope');
         }
-        $requestCtx = new RequestCtx();
         $sessionScope->bindScopedInstance(StoaRequestResource::class, $requestResource, inherit: true);
         $sessionScope->bindScopedInstance(StoaRequestDiagnostics::class, new StoaRequestDiagnostics(), inherit: true);
-        $sessionScope->bindScopedInstance(RequestCtx::class, $requestCtx, inherit: true);
-        $sessionScope->onDispose(static function () use ($requestCtx): void {
-            $requestCtx->clear();
-        });
 
         $routeScope = new StoaExecutionContext(
             $sessionScope,
@@ -78,7 +72,6 @@ final class WsServerUpgrade implements HttpUpgradeable
             new RouteParams(),
             new QueryParams($request->getQueryParams()),
             RouteConfig::compile('/'),
-            $requestCtx,
         );
 
         $match = $this->routeMatcher->match($routeScope, $this->routes->inner->all());
@@ -88,7 +81,7 @@ final class WsServerUpgrade implements HttpUpgradeable
             return $resources->fail($requestResource->id, 'no_route');
         }
 
-        if (!$match->scope instanceof RequestScope) {
+        if (!$match->scope instanceof RequestContext) {
             $sessionScope->dispose();
             $resources->recordEvent($requestResource->id, HermesEventSid::ServerUpgradeRejected, 'invalid_route_scope');
             return $resources->fail($requestResource->id, 'invalid_route_scope');
@@ -164,7 +157,6 @@ final class WsServerUpgrade implements HttpUpgradeable
             $wsConfig,
             $request,
             $params,
-            $requestCtx,
         );
 
         try {

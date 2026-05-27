@@ -6,7 +6,7 @@ namespace Phalanx\Stoa\Tests\Integration;
 
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\ServerRequest;
-use Phalanx\Stoa\RequestScope;
+use Phalanx\Stoa\RequestContext;
 use Phalanx\Stoa\RouteGroup;
 use Phalanx\Stoa\Stoa;
 use Phalanx\Stoa\StoaApplicationBuilder;
@@ -183,7 +183,7 @@ PHP);
 
 final class BuilderHelloRoute implements Scopeable
 {
-    public function __invoke(RequestScope $scope): string
+    public function __invoke(RequestContext $ctx): string
     {
         return 'hello';
     }
@@ -191,7 +191,7 @@ final class BuilderHelloRoute implements Scopeable
 
 final class BuilderExplicitPoweredByRoute implements Scopeable
 {
-    public function __invoke(RequestScope $scope): Response
+    public function __invoke(RequestContext $ctx): Response
     {
         return new Response(200, ['X-Powered-By' => 'Handler'], 'explicit');
     }
@@ -199,7 +199,7 @@ final class BuilderExplicitPoweredByRoute implements Scopeable
 
 final class BuilderLoadedRoute implements Scopeable
 {
-    public function __invoke(RequestScope $scope): string
+    public function __invoke(RequestContext $ctx): string
     {
         return 'loaded';
     }

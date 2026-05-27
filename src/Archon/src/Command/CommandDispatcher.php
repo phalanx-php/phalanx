@@ -129,7 +129,7 @@ final class CommandDispatcher
 
     private function renderError(\Phalanx\Scope\Scope $scope, Throwable $e): void
     {
-        $commandScope = $scope instanceof CommandScope ? $scope : null;
+        $commandScope = $scope instanceof CommandContext ? $scope : null;
 
         if ($commandScope !== null) {
             foreach ($this->errorRenderers as $renderer) {

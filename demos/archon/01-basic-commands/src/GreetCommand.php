@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Demos\Archon\BasicCommands;
 
-use Phalanx\Archon\Command\CommandScope;
+use Phalanx\Archon\Command\CommandContext;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Task\Scopeable;
 
@@ -13,11 +13,11 @@ use Phalanx\Task\Scopeable;
  */
 final class GreetCommand implements Scopeable
 {
-    public function __invoke(CommandScope $scope): int
+    public function __invoke(CommandContext $ctx): int
     {
-        $name = (string) $scope->args->required('name');
+        $name = (string) $ctx->args->required('name');
 
-        $scope->service(StreamOutput::class)->persist("Hello, {$name}.");
+        $ctx->service(StreamOutput::class)->persist("Hello, {$name}.");
 
         return 0;
     }

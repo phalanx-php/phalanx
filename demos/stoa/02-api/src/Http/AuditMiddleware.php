@@ -7,7 +7,7 @@ namespace Acme\StoaDemo\Api\Http;
 use Acme\StoaDemo\Api\Services\AuditLog;
 use Closure;
 use Phalanx\Stoa\Contract\Middleware;
-use Phalanx\Stoa\RequestScope;
+use Phalanx\Stoa\RequestContext;
 
 final class AuditMiddleware implements Middleware
 {
@@ -15,10 +15,10 @@ final class AuditMiddleware implements Middleware
     {
     }
 
-    public function __invoke(RequestScope $scope, Closure $next): mixed
+    public function __invoke(RequestContext $ctx, Closure $next): mixed
     {
-        $this->audit->record($scope->method(), $scope->path());
+        $this->audit->record($ctx->method(), $ctx->path());
 
-        return $next($scope);
+        return $next($ctx);
     }
 }

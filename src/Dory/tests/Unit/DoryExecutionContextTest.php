@@ -5,15 +5,15 @@ declare(strict_types=1);
 namespace Phalanx\Dory\Tests\Unit;
 
 use Phalanx\Dory\DoryConfig;
+use Phalanx\Dory\DoryExecutionContext;
 use Phalanx\Dory\Orchestration\AttemptBuilder;
-use Phalanx\Dory\ScriptContext;
 use Phalanx\Grammata\Files;
 use Phalanx\Iris\HttpClient;
 use Phalanx\Scope\ExecutionScope;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-final class ScriptContextTest extends TestCase
+final class DoryExecutionContextTest extends TestCase
 {
     #[Test]
     public function script_name_derives_from_path(): void
@@ -21,9 +21,9 @@ final class ScriptContextTest extends TestCase
         $scope = $this->createMock(ExecutionScope::class);
         $config = new DoryConfig();
 
-        $dory = new ScriptContext($scope, '/home/zeus/scripts/deploy.php', $config);
+        $ctx = new DoryExecutionContext($scope, '/home/zeus/scripts/deploy.php', $config);
 
-        self::assertSame('deploy.php', $dory->scriptName);
+        self::assertSame('deploy.php', $ctx->scriptName);
     }
 
     #[Test]
@@ -32,9 +32,9 @@ final class ScriptContextTest extends TestCase
         $scope = $this->createMock(ExecutionScope::class);
         $config = new DoryConfig();
 
-        $dory = new ScriptContext($scope, '/tmp/test.php', $config);
+        $ctx = new DoryExecutionContext($scope, '/tmp/test.php', $config);
 
-        self::assertSame('/tmp/test.php', $dory->scriptPath);
+        self::assertSame('/tmp/test.php', $ctx->scriptPath);
     }
 
     #[Test]
@@ -43,9 +43,9 @@ final class ScriptContextTest extends TestCase
         $scope = $this->createMock(ExecutionScope::class);
         $config = new DoryConfig(scriptTimeout: 99.0);
 
-        $dory = new ScriptContext($scope, '/tmp/test.php', $config);
+        $ctx = new DoryExecutionContext($scope, '/tmp/test.php', $config);
 
-        self::assertSame(99.0, $dory->config->scriptTimeout);
+        self::assertSame(99.0, $ctx->config->scriptTimeout);
     }
 
     #[Test]
@@ -53,9 +53,9 @@ final class ScriptContextTest extends TestCase
     {
         $scope = $this->createMock(ExecutionScope::class);
         $config = new DoryConfig();
-        $dory = new ScriptContext($scope, '/tmp/test.php', $config);
+        $ctx = new DoryExecutionContext($scope, '/tmp/test.php', $config);
 
-        $builder = $dory->attempt(static fn(): string => 'olympus');
+        $builder = $ctx->attempt(static fn(): string => 'olympus');
 
         self::assertInstanceOf(AttemptBuilder::class, $builder);
     }
@@ -65,10 +65,10 @@ final class ScriptContextTest extends TestCase
     {
         $scope = $this->createMock(ExecutionScope::class);
         $config = new DoryConfig();
-        $dory = new ScriptContext($scope, '/tmp/test.php', $config);
+        $ctx = new DoryExecutionContext($scope, '/tmp/test.php', $config);
 
         ob_start();
-        $dory->println('hoplite formation ready');
+        $ctx->println('hoplite formation ready');
         $output = ob_get_clean();
 
         self::assertSame("hoplite formation ready\n", $output);
@@ -79,10 +79,10 @@ final class ScriptContextTest extends TestCase
     {
         $scope = $this->createMock(ExecutionScope::class);
         $config = new DoryConfig();
-        $dory = new ScriptContext($scope, '/tmp/test.php', $config);
+        $ctx = new DoryExecutionContext($scope, '/tmp/test.php', $config);
 
         ob_start();
-        $dory->dump('sparta', 'thermopylae');
+        $ctx->dump('sparta', 'thermopylae');
         $output = ob_get_clean();
 
         self::assertSame("sparta\nthermopylae\n", $output);
@@ -93,10 +93,10 @@ final class ScriptContextTest extends TestCase
     {
         $scope = $this->createMock(ExecutionScope::class);
         $config = new DoryConfig();
-        $dory = new ScriptContext($scope, '/tmp/test.php', $config);
+        $ctx = new DoryExecutionContext($scope, '/tmp/test.php', $config);
 
         ob_start();
-        $dory->dump(42);
+        $ctx->dump(42);
         $output = ob_get_clean();
 
         self::assertSame("42\n", $output);
@@ -112,9 +112,9 @@ final class ScriptContextTest extends TestCase
             ->willReturn(new DoryConfig());
 
         $config = new DoryConfig();
-        $dory = new ScriptContext($scope, '/tmp/test.php', $config);
+        $ctx = new DoryExecutionContext($scope, '/tmp/test.php', $config);
 
-        $dory->service(DoryConfig::class);
+        $ctx->service(DoryConfig::class);
     }
 
     #[Test]
@@ -128,9 +128,9 @@ final class ScriptContextTest extends TestCase
             ->willReturn($httpClient);
 
         $config = new DoryConfig();
-        $dory = new ScriptContext($scope, '/tmp/test.php', $config);
+        $ctx = new DoryExecutionContext($scope, '/tmp/test.php', $config);
 
-        self::assertSame($httpClient, $dory->http);
+        self::assertSame($httpClient, $ctx->http);
     }
 
     #[Test]
@@ -146,8 +146,8 @@ final class ScriptContextTest extends TestCase
             ->willReturn($files);
 
         $config = new DoryConfig();
-        $dory = new ScriptContext($scope, '/tmp/test.php', $config);
+        $ctx = new DoryExecutionContext($scope, '/tmp/test.php', $config);
 
-        self::assertSame($files, $dory->fs);
+        self::assertSame($files, $ctx->fs);
     }
 }

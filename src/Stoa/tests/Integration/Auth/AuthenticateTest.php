@@ -13,7 +13,7 @@ use Phalanx\Auth\Identity;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Stoa\Auth\Authenticate;
 use Phalanx\Stoa\AuthExecutionContext;
-use Phalanx\Stoa\AuthRequestScope;
+use Phalanx\Stoa\AuthRequestContext;
 use Phalanx\Stoa\ExecutionContext;
 use Phalanx\Stoa\QueryParams;
 use Phalanx\Stoa\RouteConfig;
@@ -34,9 +34,9 @@ final class AuthenticateTest extends TestCase
         $capturedScope = null;
         $middleware = new Authenticate($guard);
 
-        $requestScope = $this->createRequestScope();
+        $requestCtx = $this->createRequestContext();
         $result = $middleware(
-            $requestScope,
+            $requestCtx,
             static function (ExecutionScope $scope) use (&$capturedScope): string {
                 $capturedScope = $scope;
                 return 'ok';
@@ -45,7 +45,7 @@ final class AuthenticateTest extends TestCase
 
         $this->assertSame('ok', $result);
         $this->assertInstanceOf(AuthExecutionContext::class, $capturedScope);
-        $this->assertInstanceOf(AuthRequestScope::class, $capturedScope);
+        $this->assertInstanceOf(AuthRequestContext::class, $capturedScope);
         $this->assertTrue($capturedScope->auth->isAuthenticated);
         $this->assertSame(42, $capturedScope->auth->identity->id);
         $this->assertSame('tok_abc', $capturedScope->auth->token());
@@ -59,7 +59,7 @@ final class AuthenticateTest extends TestCase
 
         $this->expectException(AuthenticationException::class);
         $middleware(
-            $this->createRequestScope(),
+            $this->createRequestContext(),
             static fn(): string => 'should not reach',
         );
     }
@@ -72,7 +72,7 @@ final class AuthenticateTest extends TestCase
         $capturedScope = null;
         $middleware = new Authenticate($guard);
         $middleware(
-            $this->createRequestScope(),
+            $this->createRequestContext(),
             static function (ExecutionScope $scope) use (&$capturedScope): null {
                 $capturedScope = $scope;
                 return null;
@@ -84,7 +84,7 @@ final class AuthenticateTest extends TestCase
         $this->assertSame('lobby', $capturedScope->params->get('room'));
     }
 
-    private function createRequestScope(): ExecutionContext
+    private function createRequestContext(): ExecutionContext
     {
         $bundle = TestServiceBundle::create();
         $app = Application::starting()->providers($bundle)->compile();

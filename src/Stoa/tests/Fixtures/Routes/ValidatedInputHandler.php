@@ -6,7 +6,7 @@ namespace Phalanx\Stoa\Tests\Fixtures\Routes;
 
 use Phalanx\Stoa\Contract\HasValidators;
 use Phalanx\Stoa\Contract\RouteValidator;
-use Phalanx\Stoa\RequestScope;
+use Phalanx\Stoa\RequestContext;
 use Phalanx\Task\Scopeable;
 
 /**
@@ -22,7 +22,7 @@ final class ValidatedInputHandler implements Scopeable, HasValidators
     }
 
     /** @return array{should_not_run: bool} */
-    public function __invoke(RequestScope $scope, SimpleInputDto $input): array
+    public function __invoke(RequestContext $ctx, SimpleInputDto $input): array
     {
         return ['should_not_run' => true];
     }

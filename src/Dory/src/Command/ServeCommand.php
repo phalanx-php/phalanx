@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Dory\Command;
 
-use Phalanx\Archon\Command\CommandScope;
+use Phalanx\Archon\Command\CommandContext;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Dory\DoryBuilder;
 use Phalanx\Skopos\FileWatcher;
@@ -14,9 +14,9 @@ final class ServeCommand implements Executable
 {
     private const int PARK_UNTIL_CANCELLED = PHP_INT_MAX;
 
-    public function __invoke(CommandScope $scope): int
+    public function __invoke(CommandContext $ctx): int
     {
-        $scriptPath = (string) $scope->args->required('script');
+        $scriptPath = (string) $ctx->args->required('script');
         $resolved = realpath($scriptPath);
 
         if ($resolved === false || !file_exists($resolved)) {
@@ -24,7 +24,7 @@ final class ServeCommand implements Executable
             return 1;
         }
 
-        $output = $scope->service(StreamOutput::class);
+        $output = $ctx->service(StreamOutput::class);
         $directory = dirname($resolved);
 
         $output->persist("Watching {$directory} for changes. Press Ctrl+C to stop.");
@@ -41,13 +41,13 @@ final class ServeCommand implements Executable
             },
         );
 
-        $watcher->start($scope);
+        $watcher->start($ctx);
 
-        $scope->onDispose(static function () use ($watcher): void {
+        $ctx->onDispose(static function () use ($watcher): void {
             $watcher->stop();
         });
 
-        $scope->delay(self::PARK_UNTIL_CANCELLED);
+        $ctx->delay(self::PARK_UNTIL_CANCELLED);
 
         return 0;
     }

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Acme\StoaDemo\Realtime\Routes;
 
 use OpenSwoole\Coroutine;
-use Phalanx\Stoa\RequestScope;
+use Phalanx\Stoa\RequestContext;
 use Phalanx\Stoa\Sse\SseStream;
 use Phalanx\Stoa\Sse\SseStreamFactory;
 use Phalanx\Supervisor\WaitReason;
@@ -17,18 +17,18 @@ final class Counter implements Scopeable
     {
     }
 
-    public function __invoke(RequestScope $scope): SseStream
+    public function __invoke(RequestContext $ctx): SseStream
     {
-        $stream = $this->streams->open($scope);
+        $stream = $this->streams->open($ctx);
 
         for ($i = 1; $i <= 5; $i++) {
-            if ($scope->isCancelled) {
+            if ($ctx->isCancelled) {
                 $stream->close('cancelled');
                 return $stream;
             }
 
             $stream->writeEvent("tick {$i}", event: 'count', id: (string) $i);
-            $scope->call(
+            $ctx->call(
                 static function (): bool {
                     Coroutine::usleep(100_000);
                     return true;

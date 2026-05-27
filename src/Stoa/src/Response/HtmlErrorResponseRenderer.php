@@ -6,7 +6,7 @@ namespace Phalanx\Stoa\Response;
 
 use GuzzleHttp\Psr7\Response as PsrResponse;
 use Phalanx\Cancellation\Cancelled;
-use Phalanx\Stoa\RequestScope;
+use Phalanx\Stoa\RequestContext;
 use Phalanx\Stoa\StoaRequestResource;
 use Phalanx\Supervisor\Supervisor;
 use Phalanx\Supervisor\TaskTreeFormatter;
@@ -26,20 +26,20 @@ final readonly class HtmlErrorResponseRenderer implements ErrorResponseRenderer
     {
     }
 
-    public function render(RequestScope $scope, Throwable $e): ?ResponseInterface
+    public function render(RequestContext $ctx, Throwable $e): ?ResponseInterface
     {
-        if (!$this->debug || !$scope->acceptsHtml()) {
+        if (!$this->debug || !$ctx->acceptsHtml()) {
             return null;
         }
 
-        $resource = $scope->service(StoaRequestResource::class);
+        $resource = $ctx->service(StoaRequestResource::class);
         $file = $e->getFile();
         $line = $e->getLine();
 
         $ledger = '';
         try {
             $ledger = (new TaskTreeFormatter())->format(
-                $scope->service(Supervisor::class)->tree(),
+                $ctx->service(Supervisor::class)->tree(),
             );
         } catch (Cancelled $c) {
             throw $c;

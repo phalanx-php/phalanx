@@ -13,7 +13,7 @@ if (!class_exists('IgnitionDemoHandler')) {
     {
         public function __invoke(\Phalanx\Scope\Scope $scope): mixed
         {
-            $es = $scope instanceof \Phalanx\Stoa\RequestScope ? $scope : throw new \Exception('Expected RequestScope');
+            $es = $scope instanceof \Phalanx\Stoa\RequestContext ? $scope : throw new \Exception('Expected RequestContext');
 
             return $es->execute(Task::of(static function (\Phalanx\Scope\ExecutionScope $es) {
 

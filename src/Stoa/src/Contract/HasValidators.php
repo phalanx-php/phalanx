@@ -13,7 +13,7 @@ namespace Phalanx\Stoa\Contract;
  * handler runs.
  *
  * Validators receive the hydrated input DTO (or null when the handler
- * declares no input parameter) and the RequestScope. A non-empty errors
+ * declares no input parameter) and the RequestContext. A non-empty errors
  * array from any validator aborts dispatch with a ValidationException.
  */
 interface HasValidators

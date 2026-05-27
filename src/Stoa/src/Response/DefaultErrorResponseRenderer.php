@@ -6,7 +6,7 @@ namespace Phalanx\Stoa\Response;
 
 use GuzzleHttp\Psr7\Response as PsrResponse;
 use Phalanx\Cancellation\Cancelled;
-use Phalanx\Stoa\RequestScope;
+use Phalanx\Stoa\RequestContext;
 use Phalanx\Stoa\StoaRequestResource;
 use Phalanx\Supervisor\Supervisor;
 use Phalanx\Supervisor\TaskTreeFormatter;
@@ -25,14 +25,14 @@ final readonly class DefaultErrorResponseRenderer implements ErrorResponseRender
     {
     }
 
-    public function render(RequestScope $scope, Throwable $e): ResponseInterface
+    public function render(RequestContext $ctx, Throwable $e): ResponseInterface
     {
         $body = [
             'error' => 'Internal Server Error',
         ];
 
         if ($this->debug) {
-            $resource = $scope->service(StoaRequestResource::class);
+            $resource = $ctx->service(StoaRequestResource::class);
             $body['message'] = $e->getMessage();
             $body['request'] = [
                 'id' => $resource->id,
@@ -46,7 +46,7 @@ final readonly class DefaultErrorResponseRenderer implements ErrorResponseRender
 
             try {
                 $body['tasks'] = (new TaskTreeFormatter())->format(
-                    $scope->service(Supervisor::class)->tree(),
+                    $ctx->service(Supervisor::class)->tree(),
                 );
             } catch (Cancelled $c) {
                 throw $c;

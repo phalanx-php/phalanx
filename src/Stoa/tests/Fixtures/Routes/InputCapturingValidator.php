@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Stoa\Tests\Fixtures\Routes;
 
 use Phalanx\Stoa\Contract\RouteValidator;
-use Phalanx\Stoa\RequestScope;
+use Phalanx\Stoa\RequestContext;
 
 /**
  * Test fixture validator: records the input object it receives and always fails.
@@ -21,7 +21,7 @@ final class InputCapturingValidator implements RouteValidator
         self::$capturedInput = null;
     }
 
-    public function validate(object|null $input, RequestScope $scope): array
+    public function validate(object|null $input, RequestContext $ctx): array
     {
         self::$capturedInput = $input;
         return ['captured' => ['validator received dto']];

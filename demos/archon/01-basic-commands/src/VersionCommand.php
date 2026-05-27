@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Demos\Archon\BasicCommands;
 
-use Phalanx\Archon\Command\CommandScope;
+use Phalanx\Archon\Command\CommandContext;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Task\Scopeable;
 
@@ -13,9 +13,9 @@ use Phalanx\Task\Scopeable;
  */
 final class VersionCommand implements Scopeable
 {
-    public function __invoke(CommandScope $scope): int
+    public function __invoke(CommandContext $ctx): int
     {
-        $scope->service(StreamOutput::class)->persist('archon-demo 0.2.0-alpha');
+        $ctx->service(StreamOutput::class)->persist('archon-demo 0.2.0-alpha');
 
         return 0;
     }

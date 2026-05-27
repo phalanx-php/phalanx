@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Stoa\Response;
 
-use Phalanx\Stoa\RequestScope;
+use Phalanx\Stoa\RequestContext;
 use Psr\Http\Message\ResponseInterface;
 use Throwable;
 
@@ -20,9 +20,9 @@ interface ErrorResponseRenderer
     /**
      * Renders a response for the given exception.
      *
-     * @param RequestScope $scope The HTTP request scope.
+     * @param RequestContext $ctx The HTTP request context.
      * @param Throwable $e The exception that occurred.
      * @return ResponseInterface|null The response, or null to delegate to the next renderer.
      */
-    public function render(RequestScope $scope, Throwable $e): ?ResponseInterface;
+    public function render(RequestContext $ctx, Throwable $e): ?ResponseInterface;
 }

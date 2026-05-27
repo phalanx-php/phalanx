@@ -6,7 +6,7 @@ declare(strict_types=1);
 require __DIR__ . '/../../vendor/autoload_runtime.php';
 
 use GuzzleHttp\Psr7\Response;
-use Phalanx\Stoa\RequestScope;
+use Phalanx\Stoa\RequestContext;
 use Phalanx\Stoa\RouteGroup;
 use Phalanx\Stoa\Stoa;
 use Phalanx\Task\Scopeable;
@@ -14,7 +14,7 @@ use Phalanx\Task\Scopeable;
 final class JsonHandler implements Scopeable
 {
     /** @return array{message: string} */
-    public function __invoke(RequestScope $scope): array
+    public function __invoke(RequestContext $ctx): array
     {
         return ['message' => 'Hello, World!'];
     }
@@ -22,7 +22,7 @@ final class JsonHandler implements Scopeable
 
 final class PlaintextHandler implements Scopeable
 {
-    public function __invoke(RequestScope $scope): Response
+    public function __invoke(RequestContext $ctx): Response
     {
         return new Response(200, ['Content-Type' => 'text/plain'], 'Hello, World!');
     }

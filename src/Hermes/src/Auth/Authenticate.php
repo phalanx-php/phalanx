@@ -8,7 +8,7 @@ use Closure;
 use Phalanx\Auth\AuthenticationException;
 use Phalanx\Auth\Guard;
 use Phalanx\Hermes\AuthExecutionContext;
-use Phalanx\Hermes\WsScope;
+use Phalanx\Hermes\WsContext;
 use Phalanx\Task\Executable;
 
 final class Authenticate implements Executable
@@ -18,8 +18,8 @@ final class Authenticate implements Executable
     ) {
     }
 
-    /** @param Closure(WsScope): mixed $next */
-    public function __invoke(WsScope $scope, Closure $next): mixed
+    /** @param Closure(WsContext): mixed $next */
+    public function __invoke(WsContext $scope, Closure $next): mixed
     {
         $auth = $this->guard->authenticate($scope->request);
 

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Stoa\Tests\Fixtures\Routes;
 
 use Phalanx\Stoa\Contract\RouteValidator;
-use Phalanx\Stoa\RequestScope;
+use Phalanx\Stoa\RequestContext;
 
 /**
  * Test fixture validator: always returns a known error.
@@ -13,7 +13,7 @@ use Phalanx\Stoa\RequestScope;
  */
 final class AlwaysFailValidator implements RouteValidator
 {
-    public function validate(object|null $input, RequestScope $scope): array
+    public function validate(object|null $input, RequestContext $ctx): array
     {
         return ['test_field' => ['validator ran']];
     }

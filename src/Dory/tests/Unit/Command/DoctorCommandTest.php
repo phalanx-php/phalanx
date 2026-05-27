@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Dory\Tests\Unit\Command;
 
-use Phalanx\Archon\Command\CommandScope;
+use Phalanx\Archon\Command\CommandContext;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Archon\Console\Output\TerminalEnvironment;
 use Phalanx\Dory\Command\DoctorCommand;
@@ -80,7 +80,7 @@ final class DoctorCommandTest extends TestCase
     }
 
     /**
-     * @return array{CommandScope, resource}
+     * @return array{CommandContext, resource}
      */
     private function buildScope(?DoryConfig $config = null): array
     {
@@ -91,7 +91,7 @@ final class DoctorCommandTest extends TestCase
         $terminal = new TerminalEnvironment(isTty: false);
         $output = new StreamOutput($stream, $terminal);
 
-        $scope = $this->createStub(CommandScope::class);
+        $scope = $this->createStub(CommandContext::class);
         $scope->method('service')->willReturnCallback(
             static fn(string $type) => match ($type) {
                 StreamOutput::class => $output,

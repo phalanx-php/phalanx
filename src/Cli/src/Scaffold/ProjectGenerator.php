@@ -167,17 +167,17 @@ declare(strict_types=1);
 
 namespace {{namespace}}\Routes;
 
-use Phalanx\Stoa\RequestScope;
+use Phalanx\Stoa\RequestContext;
 use Phalanx\Task\Scopeable;
 
 final class Home implements Scopeable
 {
-    public function __invoke(RequestScope $scope): array
+    public function __invoke(RequestContext $ctx): array
     {
         return [
             'message' => 'Welcome to Phalanx',
-            'method' => $scope->method(),
-            'path' => $scope->path(),
+            'method' => $ctx->method(),
+            'path' => $ctx->path(),
         ];
     }
 }
@@ -239,17 +239,17 @@ declare(strict_types=1);
 
 namespace {{namespace}}\Commands;
 
-use Phalanx\Archon\Command\CommandScope;
+use Phalanx\Archon\Command\CommandContext;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Task\Scopeable;
 
 final class Hello implements Scopeable
 {
-    public function __invoke(CommandScope $scope): int
+    public function __invoke(CommandContext $ctx): int
     {
-        $name = (string) $scope->args->required('name');
+        $name = (string) $ctx->args->required('name');
 
-        $output = $scope->service(StreamOutput::class);
+        $output = $ctx->service(StreamOutput::class);
         $output->persist("Hello, {$name}! Welcome to Phalanx.");
 
         return 0;

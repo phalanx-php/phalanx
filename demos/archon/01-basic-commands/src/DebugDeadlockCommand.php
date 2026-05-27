@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Demos\Archon\BasicCommands;
 
 use JsonException;
-use Phalanx\Archon\Command\CommandScope;
+use Phalanx\Archon\Command\CommandContext;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Diagnostics\DeadlockReport;
 use Phalanx\Task\Scopeable;
@@ -19,12 +19,12 @@ use Phalanx\Task\Scopeable;
  */
 final class DebugDeadlockCommand implements Scopeable
 {
-    public function __invoke(CommandScope $scope): int
+    public function __invoke(CommandContext $ctx): int
     {
-        $output = $scope->service(StreamOutput::class);
+        $output = $ctx->service(StreamOutput::class);
         $report = DeadlockReport::collect();
 
-        if ($scope->options->flag('json')) {
+        if ($ctx->options->flag('json')) {
             $output->persist(self::renderJson($report));
 
             return 0;

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Dory\Tests\Unit\Command;
 
 use Phalanx\Archon\Command\CommandArgs;
-use Phalanx\Archon\Command\CommandScope;
+use Phalanx\Archon\Command\CommandContext;
 use Phalanx\Dory\Command\RunCommand;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -34,11 +34,11 @@ final class RunCommandTest extends TestCase
         self::assertSame(1, $result);
     }
 
-    private function buildScope(string $scriptPath): CommandScope
+    private function buildScope(string $scriptPath): CommandContext
     {
         $args = new CommandArgs(['script' => $scriptPath]);
 
-        $scope = $this->createStub(CommandScope::class);
+        $scope = $this->createStub(CommandContext::class);
         $scope->method('$args::get')->willReturn($args);
 
         return $scope;

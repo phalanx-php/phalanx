@@ -9,13 +9,9 @@ use Phalanx\Scope\ExecutionScope;
 use Phalanx\Support\ExecutionScopeDelegate;
 use Psr\Http\Message\ServerRequestInterface;
 
-class AuthExecutionContext implements AuthRequestScope
+class AuthExecutionContext implements AuthRequestContext
 {
     use ExecutionScopeDelegate;
-
-    public RequestCtx $ctx {
-        get => $this->inner->ctx;
-    }
 
     public string $requestId {
         get => $this->inner->requestId;
@@ -42,7 +38,7 @@ class AuthExecutionContext implements AuthRequestScope
     }
 
     public function __construct(
-        private readonly RequestScope $inner,
+        private readonly RequestContext $inner,
         private(set) AuthContext $auth,
     ) {
     }

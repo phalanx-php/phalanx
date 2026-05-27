@@ -26,7 +26,7 @@ final class RequireAbilityTest extends TestCase
     public function returns_empty_when_user_has_ability(): void
     {
         $auth = AuthContext::authenticated(new TestAbilityIdentity(1), null, ['admin', 'write']);
-        $scope = new AuthExecutionContext($this->createRequestScope(), $auth);
+        $scope = new AuthExecutionContext($this->createRequestContext(), $auth);
 
         $v = new RequireAbility('admin');
 
@@ -37,7 +37,7 @@ final class RequireAbilityTest extends TestCase
     public function throws_when_user_lacks_ability(): void
     {
         $auth = AuthContext::authenticated(new TestAbilityIdentity(1), null, ['read']);
-        $scope = new AuthExecutionContext($this->createRequestScope(), $auth);
+        $scope = new AuthExecutionContext($this->createRequestContext(), $auth);
 
         $v = new RequireAbility('admin');
 
@@ -48,7 +48,7 @@ final class RequireAbilityTest extends TestCase
     #[Test]
     public function throws_when_scope_is_not_authenticated(): void
     {
-        $scope = $this->createRequestScope();
+        $scope = $this->createRequestContext();
 
         $v = new RequireAbility('admin');
 
@@ -66,7 +66,7 @@ final class RequireAbilityTest extends TestCase
         $this->app->shutdown();
     }
 
-    private function createRequestScope(): ExecutionContext
+    private function createRequestContext(): ExecutionContext
     {
         $inner = $this->app->createScope();
         $request = new ServerRequest('GET', '/test');

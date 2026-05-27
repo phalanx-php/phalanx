@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Stoa\Sse;
 
-use Phalanx\Stoa\RequestScope;
+use Phalanx\Stoa\RequestContext;
 use Phalanx\Stoa\ResponseSink;
 use Phalanx\Stoa\Runtime\Identity\StoaEventSid;
 use Phalanx\Stoa\StoaRequestResource;
@@ -20,10 +20,10 @@ use Phalanx\Stoa\StoaRequestResource;
  */
 final class SseStreamFactory
 {
-    public function open(RequestScope $scope): SseStream
+    public function open(RequestContext $ctx): SseStream
     {
-        $response = $scope->service(ResponseSink::class)->response;
-        $request = $scope->service(StoaRequestResource::class);
+        $response = $ctx->service(ResponseSink::class)->response;
+        $request = $ctx->service(StoaRequestResource::class);
 
         if ($request->fd !== null) {
             $request->acquireDeliveryLease($request->fd);
@@ -39,6 +39,6 @@ final class SseStreamFactory
         $request->bodyStarted();
         $request->event(StoaEventSid::SseStreamOpened);
 
-        return new SseStream($scope, $response, $request, $scope->cancellation());
+        return new SseStream($ctx, $response, $request, $ctx->cancellation());
     }
 }

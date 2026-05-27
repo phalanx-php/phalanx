@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Archon\Command\Config;
 
-use Phalanx\Archon\Command\CommandScope;
+use Phalanx\Archon\Command\CommandContext;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Task\Scopeable;
 use Phalanx\Themis\ConfigCatalog;
@@ -27,15 +27,15 @@ use Phalanx\Themis\ValidationResult;
  */
 final class ConfigDoctorCommand implements Scopeable
 {
-    public function __invoke(CommandScope $scope): int
+    public function __invoke(CommandContext $ctx): int
     {
-        $catalog = $scope->service(ConfigCatalog::class);
-        $output = $scope->service(StreamOutput::class);
-        $validator = $scope->service(ConfigValidator::class);
+        $catalog = $ctx->service(ConfigCatalog::class);
+        $output = $ctx->service(StreamOutput::class);
+        $validator = $ctx->service(ConfigValidator::class);
 
-        $strict = $scope->options->flag('strict');
-        $ctx = new ValidationContext(strict: $strict, purpose: ValidationPurpose::Doctor);
-        $result = $validator->validate($catalog->roots, $ctx);
+        $strict = $ctx->options->flag('strict');
+        $validationCtx = new ValidationContext(strict: $strict, purpose: ValidationPurpose::Doctor);
+        $result = $validator->validate($catalog->roots, $validationCtx);
 
         self::renderResult($output, $result);
 

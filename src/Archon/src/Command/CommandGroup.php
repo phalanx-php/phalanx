@@ -51,7 +51,11 @@ final class CommandGroup implements Executable
                 continue;
             }
 
-            $handlers[$name] = new Handler($command, new CommandConfig());
+            $config = is_a($command, DescribesCommand::class, true)
+                ? $command::commandConfig()
+                : new CommandConfig();
+
+            $handlers[$name] = new Handler($command, $config);
         }
 
         $this->inner = HandlerGroup::of($handlers);

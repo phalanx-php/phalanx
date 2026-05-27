@@ -16,7 +16,6 @@ use Phalanx\Dory\Rendering\ThrowableRenderer;
 use Phalanx\Dory\Rendering\ValueRendererPipeline;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
-use Phalanx\Themis\ConfigFactory;
 
 final class DoryServiceBundle extends ServiceBundle
 {
@@ -28,11 +27,6 @@ final class DoryServiceBundle extends ServiceBundle
 
     public function services(Services $services, AppContext $context): void
     {
-        $services
-            ->singleton(DoryConfig::class)
-            ->factory(static fn(): DoryConfig => ConfigFactory::fromContext($context->values)
-                ->hydrate(DoryConfig::class));
-
         $services->singleton(ValueRendererPipeline::class)
             ->factory(static fn(): ValueRendererPipeline => new ValueRendererPipeline([
                 new ScalarRenderer(),

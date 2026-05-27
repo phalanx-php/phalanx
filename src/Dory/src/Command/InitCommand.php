@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Dory\Command;
 
-use Phalanx\Archon\Command\CommandScope;
+use Phalanx\Archon\Command\CommandContext;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Task\Scopeable;
 
@@ -26,11 +26,11 @@ final class InitCommand implements Scopeable
         return 0;
         PHP;
 
-    public function __invoke(CommandScope $scope): int
+    public function __invoke(CommandContext $ctx): int
     {
-        $output = $scope->service(StreamOutput::class);
+        $output = $ctx->service(StreamOutput::class);
 
-        $directory = (string) $scope->args->get('directory', '.');
+        $directory = (string) $ctx->args->get('directory', '.');
         $absolute = realpath($directory) ?: $directory;
 
         if (!is_dir($absolute) && !mkdir($absolute, 0755, recursive: true)) {

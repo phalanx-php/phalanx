@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Stoa\Contract;
 
-use Phalanx\Stoa\RequestScope;
+use Phalanx\Stoa\RequestContext;
 
 /**
  * Business validator for an HTTP route.
@@ -25,5 +25,5 @@ interface RouteValidator
     /**
      * @return array<string, list<string>> field => error messages, empty = valid
      */
-    public function validate(object|null $input, RequestScope $scope): array;
+    public function validate(object|null $input, RequestContext $ctx): array;
 }

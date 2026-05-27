@@ -9,15 +9,11 @@ use Phalanx\Scope\ExecutionScope;
 use Phalanx\Support\ExecutionScopeDelegate;
 use Psr\Http\Message\ServerRequestInterface;
 
-class ExecutionContext implements RequestScope
+class ExecutionContext implements RequestContext
 {
     use ExecutionScopeDelegate;
 
     private ?RequestBody $requestBody = null;
-
-    public RequestCtx $ctx {
-        get => $this->requestCtx ??= $this->service(RequestCtx::class);
-    }
 
     public string $requestId {
         get => $this->requestResource()->id;
@@ -33,7 +29,6 @@ class ExecutionContext implements RequestScope
         private(set) RouteParams $params,
         private(set) QueryParams $query,
         private(set) RouteConfig $config,
-        private ?RequestCtx $requestCtx = null,
     ) {
     }
 

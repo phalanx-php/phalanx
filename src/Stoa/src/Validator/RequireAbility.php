@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Phalanx\Stoa\Validator;
 
 use Phalanx\Auth\AuthorizationException;
-use Phalanx\Stoa\AuthRequestScope;
+use Phalanx\Stoa\AuthRequestContext;
 use Phalanx\Stoa\Contract\RouteValidator;
-use Phalanx\Stoa\RequestScope;
+use Phalanx\Stoa\RequestContext;
 
 /**
  * Route validator that requires the authenticated user to hold a specific ability.
@@ -17,7 +17,7 @@ use Phalanx\Stoa\RequestScope;
  * validation problem. The runner's ToResponse handling converts this to
  * the appropriate HTTP response.
  *
- * Requires the scope to be an AuthRequestScope. If the scope is not
+ * Requires the context to be an AuthRequestContext. If the context is not
  * authenticated, throws AuthorizationException. Apply Authenticate middleware
  * before routes that use this validator.
  */
@@ -27,9 +27,9 @@ final class RequireAbility implements RouteValidator
     {
     }
 
-    public function validate(object|null $input, RequestScope $scope): array
+    public function validate(object|null $input, RequestContext $ctx): array
     {
-        if (!$scope instanceof AuthRequestScope || !$scope->auth->can($this->ability)) {
+        if (!$ctx instanceof AuthRequestContext || !$ctx->auth->can($this->ability)) {
             throw new AuthorizationException(
                 "Requires ability: {$this->ability}",
             );

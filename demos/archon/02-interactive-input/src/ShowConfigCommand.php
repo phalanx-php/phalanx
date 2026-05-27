@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Demos\Archon\InteractiveInput;
 
-use Phalanx\Archon\Command\CommandScope;
+use Phalanx\Archon\Command\CommandContext;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Task\Scopeable;
 
@@ -14,9 +14,9 @@ use Phalanx\Task\Scopeable;
  */
 final class ShowConfigCommand implements Scopeable
 {
-    public function __invoke(CommandScope $scope): int
+    public function __invoke(CommandContext $ctx): int
     {
-        $scope->service(StreamOutput::class)->persist(
+        $ctx->service(StreamOutput::class)->persist(
             "config:",
             "  endpoint = https://archon.local",
             "  retries  = 3",

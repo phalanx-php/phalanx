@@ -38,7 +38,7 @@ final class DoryApplication
             try {
                 $config = $scope->service(DoryConfig::class);
 
-                $dory = new ScriptContext(
+                $dory = new DoryExecutionContext(
                     inner: $scope,
                     scriptPath: realpath($this->scriptPath) ?: $this->scriptPath,
                     config: $config,

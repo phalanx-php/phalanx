@@ -6,7 +6,7 @@ namespace Phalanx\Archon\Tests\Integration\Application;
 
 use Phalanx\Archon\Application\Archon;
 use Phalanx\Archon\Command\CommandGroup;
-use Phalanx\Archon\Command\CommandScope;
+use Phalanx\Archon\Command\CommandContext;
 use Phalanx\Archon\Application\ConsoleConfig;
 use Phalanx\Task\Scopeable;
 use PHPUnit\Framework\Attributes\Test;
@@ -108,9 +108,9 @@ final class LifecycleCommand implements Scopeable
 {
     public static bool $disposed = false;
 
-    public function __invoke(CommandScope $scope): int
+    public function __invoke(CommandContext $ctx): int
     {
-        $scope->onDispose(static function (): void {
+        $ctx->onDispose(static function (): void {
             self::$disposed = true;
         });
 
@@ -122,9 +122,9 @@ final class ThrowingLifecycleCommand implements Scopeable
 {
     public static bool $disposed = false;
 
-    public function __invoke(CommandScope $scope): int
+    public function __invoke(CommandContext $ctx): int
     {
-        $scope->onDispose(static function (): void {
+        $ctx->onDispose(static function (): void {
             self::$disposed = true;
         });
 
@@ -134,9 +134,9 @@ final class ThrowingLifecycleCommand implements Scopeable
 
 final class LoadedLifecycleCommand implements Scopeable
 {
-    public function __invoke(CommandScope $scope): int
+    public function __invoke(CommandContext $ctx): int
     {
-        $scope->onDispose(static function (): void {
+        $ctx->onDispose(static function (): void {
             LoadedLifecycleState::$executionScopeDisposed = true;
         });
 

@@ -21,6 +21,7 @@ final class HarnessConfig implements Config
     public function __construct(
         #[Env(key: 'HARNESS_DURABLE', description: 'Enable Surreal-backed durable mode for session persistence and replay')]
         private(set) bool $durable = false,
+
         #[Env(key: 'HARNESS_SESSION_ID', description: 'Session ID to resume (durable mode only)')]
         private(set) ?string $sessionId = null,
     ) {

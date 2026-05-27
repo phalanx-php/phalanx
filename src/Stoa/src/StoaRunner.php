@@ -409,13 +409,8 @@ final class StoaRunner
             $resource->activate();
 
             $diagnostics = new StoaRequestDiagnostics();
-            $requestCtx = new RequestCtx();
             $rootScope->bindScopedInstance(StoaRequestResource::class, $resource, inherit: true);
             $rootScope->bindScopedInstance(StoaRequestDiagnostics::class, $diagnostics, inherit: true);
-            $rootScope->bindScopedInstance(RequestCtx::class, $requestCtx, inherit: true);
-            $rootScope->onDispose(static function () use ($requestCtx): void {
-                $requestCtx->clear();
-            });
             if ($target !== null) {
                 $rootScope->bindScopedInstance(ResponseSink::class, new ResponseSink($target), inherit: true);
             }
@@ -430,7 +425,6 @@ final class StoaRunner
                 new RouteParams([]),
                 new QueryParams($request->getQueryParams()),
                 RouteConfig::compile('/'),
-                $requestCtx,
             );
             $errorScope = $scope;
 
@@ -828,7 +822,7 @@ final class StoaRunner
 
     private function errorResponse(Scope $scope, Throwable $e, StoaRequestResource $request): ResponseInterface
     {
-        $requestScope = $scope instanceof RequestScope ? $scope : null;
+        $requestScope = $scope instanceof RequestContext ? $scope : null;
         $defaultRenderer = new DefaultErrorResponseRenderer($this->config->ignitionEnabled);
 
         if ($requestScope !== null) {
@@ -864,7 +858,6 @@ final class StoaRunner
                 new RouteParams([]),
                 new QueryParams([]),
                 RouteConfig::compile('/'),
-                new RequestCtx(),
             );
 
             return $defaultRenderer->render($dummy, $e);

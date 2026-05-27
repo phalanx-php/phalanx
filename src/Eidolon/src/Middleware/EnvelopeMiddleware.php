@@ -8,19 +8,19 @@ use Closure;
 use Phalanx\Eidolon\Signal\Envelope;
 use Phalanx\Eidolon\Signal\SignalCollector;
 use Phalanx\Stoa\Contract\Middleware;
-use Phalanx\Stoa\RequestScope;
+use Phalanx\Stoa\RequestContext;
 use Phalanx\Task\Executable;
 
 final class EnvelopeMiddleware implements Middleware, Executable
 {
-    public function __invoke(RequestScope $scope, Closure $next): mixed
+    public function __invoke(RequestContext $ctx, Closure $next): mixed
     {
-        return $this->handle($scope, $next);
+        return $this->handle($ctx, $next);
     }
 
-    public function handle(RequestScope $scope, Closure $next): mixed
+    public function handle(RequestContext $ctx, Closure $next): mixed
     {
-        $result = $next($scope);
+        $result = $next($ctx);
 
         if (!is_array($result)) {
             return $result;
@@ -30,9 +30,9 @@ final class EnvelopeMiddleware implements Middleware, Executable
             return $result;
         }
 
-        $collector = $scope->service(SignalCollector::class);
-        $traceId = $scope->ctx->get(EnvelopeCtxKey::TraceId);
+        $collector = $ctx->service(SignalCollector::class);
+        $traceId = $ctx->service(EnvelopeTraceId::class)->value;
 
-        return Envelope::wrap($result, $collector, is_string($traceId) ? $traceId : null);
+        return Envelope::wrap($result, $collector, $traceId);
     }
 }

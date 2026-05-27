@@ -16,7 +16,7 @@ final class RouteMatcher implements HandlerMatcher
     /** @param array<string, Handler> $handlers */
     public function match(ExecutionScope $scope, array $handlers): ?MatchResult
     {
-        if (!$scope instanceof RequestScope) {
+        if (!$scope instanceof RequestContext) {
             return null;
         }
 
@@ -41,7 +41,6 @@ final class RouteMatcher implements HandlerMatcher
             $params,
             $scope->query,
             $handler->config,
-            $scope->ctx,
         );
 
         return new MatchResult($handler, $scope);

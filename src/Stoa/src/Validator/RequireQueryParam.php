@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Stoa\Validator;
 
 use Phalanx\Stoa\Contract\RouteValidator;
-use Phalanx\Stoa\RequestScope;
+use Phalanx\Stoa\RequestContext;
 
 /**
  * Route validator that requires a specific query parameter to be present and
@@ -17,9 +17,9 @@ final class RequireQueryParam implements RouteValidator
     {
     }
 
-    public function validate(object|null $input, RequestScope $scope): array
+    public function validate(object|null $input, RequestContext $ctx): array
     {
-        $value = $scope->query->get($this->param);
+        $value = $ctx->query->get($this->param);
 
         if ($value === null || $value === '') {
             return [$this->param => ["Query parameter '{$this->param}' is required"]];

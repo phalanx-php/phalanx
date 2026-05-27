@@ -7,9 +7,8 @@ namespace Phalanx\Stoa;
 use Phalanx\Scope\ExecutionScope;
 use Psr\Http\Message\ServerRequestInterface;
 
-interface RequestScope extends ExecutionScope
+interface RequestContext extends ExecutionScope
 {
-    public RequestCtx $ctx { get; }
     public string $requestId { get; }
     public ServerRequestInterface $request { get; }
     public RouteParams $params { get; }

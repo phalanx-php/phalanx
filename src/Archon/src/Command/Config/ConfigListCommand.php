@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Archon\Command\Config;
 
-use Phalanx\Archon\Command\CommandScope;
+use Phalanx\Archon\Command\CommandContext;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Task\Scopeable;
 use Phalanx\Themis\CatalogNode;
@@ -20,10 +20,10 @@ use ReflectionClass;
  */
 final class ConfigListCommand implements Scopeable
 {
-    public function __invoke(CommandScope $scope): int
+    public function __invoke(CommandContext $ctx): int
     {
-        $catalog = $scope->service(ConfigCatalog::class);
-        $output = $scope->service(StreamOutput::class);
+        $catalog = $ctx->service(ConfigCatalog::class);
+        $output = $ctx->service(StreamOutput::class);
 
         $nodes = $catalog->tree();
 

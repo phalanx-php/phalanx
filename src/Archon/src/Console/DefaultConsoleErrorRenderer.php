@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Archon\Console;
 
-use Phalanx\Archon\Command\CommandScope;
+use Phalanx\Archon\Command\CommandContext;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Archon\Console\Style\Style;
 use Phalanx\Archon\Console\Style\Theme;
@@ -28,9 +28,9 @@ final readonly class DefaultConsoleErrorRenderer implements ConsoleErrorRenderer
     {
     }
 
-    public function render(CommandScope $scope, Throwable $e, StreamOutput $output): bool
+    public function render(CommandContext $ctx, Throwable $e, StreamOutput $output): bool
     {
-        $theme = $scope->service(Theme::class);
+        $theme = $ctx->service(Theme::class);
         $muted = $theme->muted;
         $accent = $theme->accent;
 
@@ -47,7 +47,7 @@ final readonly class DefaultConsoleErrorRenderer implements ConsoleErrorRenderer
         if ($this->debug) {
             $output->persist(self::MARGIN . $muted->apply("Active Ledger Snapshot:"));
             try {
-                $tree = (new TaskTreeFormatter())->format($scope->service(Supervisor::class)->tree());
+                $tree = (new TaskTreeFormatter())->format($ctx->service(Supervisor::class)->tree());
                 foreach (explode("\n", rtrim($tree)) as $treeLine) {
                     $output->persist(self::MARGIN . $treeLine);
                 }

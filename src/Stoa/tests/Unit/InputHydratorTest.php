@@ -186,7 +186,7 @@ final class InputHydratorTest extends TestCase
         }
     }
 
-    private function mockScope(string $method, array $data): \Phalanx\Stoa\RequestScope
+    private function mockScope(string $method, array $data): \Phalanx\Stoa\RequestContext
     {
         $inner = $this->createStub(\Phalanx\Scope\ExecutionScope::class);
         $request = $this->createStub(\Psr\Http\Message\ServerRequestInterface::class);

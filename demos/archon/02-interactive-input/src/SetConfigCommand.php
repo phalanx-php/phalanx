@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Demos\Archon\InteractiveInput;
 
-use Phalanx\Archon\Command\CommandScope;
+use Phalanx\Archon\Command\CommandContext;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Task\Scopeable;
 
@@ -14,12 +14,12 @@ use Phalanx\Task\Scopeable;
  */
 final class SetConfigCommand implements Scopeable
 {
-    public function __invoke(CommandScope $scope): int
+    public function __invoke(CommandContext $ctx): int
     {
-        $key   = (string) $scope->args->required('key');
-        $value = (string) $scope->args->required('value');
+        $key   = (string) $ctx->args->required('key');
+        $value = (string) $ctx->args->required('value');
 
-        $scope->service(StreamOutput::class)->persist("set {$key} = {$value}");
+        $ctx->service(StreamOutput::class)->persist("set {$key} = {$value}");
 
         return 0;
     }

@@ -10,12 +10,11 @@ use Phalanx\Auth\AuthenticationException;
 use Phalanx\Auth\Guard;
 use Phalanx\Auth\Identity;
 use Phalanx\Hermes\Auth\Authenticate;
-use Phalanx\Hermes\AuthWsScope;
+use Phalanx\Hermes\AuthWsContext;
 use Phalanx\Hermes\ExecutionContext;
 use Phalanx\Hermes\WsConfig;
 use Phalanx\Hermes\WsConnection;
 use Phalanx\Scope\ExecutionScope;
-use Phalanx\Stoa\RequestCtx;
 use Phalanx\Stoa\RouteParams;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -34,18 +33,17 @@ final class AuthenticateTest extends TestCase
             new WsConfig(),
             new ServerRequest('GET', '/socket/42'),
             new RouteParams(['id' => '42']),
-            new RequestCtx(),
         );
 
         $seen = null;
-        $result = $middleware($scope, static function (AuthWsScope $scope) use (&$seen): string {
-            $seen = $scope;
+        $result = $middleware($scope, static function (AuthWsContext $ctx) use (&$seen): string {
+            $seen = $ctx;
 
-            return $scope->auth->token() . ':' . $scope->params->required('id');
+            return $ctx->auth->token() . ':' . $ctx->params->required('id');
         });
 
         self::assertSame('tok_ws:42', $result);
-        self::assertInstanceOf(AuthWsScope::class, $seen);
+        self::assertInstanceOf(AuthWsContext::class, $seen);
         self::assertSame(42, $seen->auth->identity->id);
     }
 
@@ -59,7 +57,6 @@ final class AuthenticateTest extends TestCase
             new WsConfig(),
             new ServerRequest('GET', '/socket'),
             new RouteParams(),
-            new RequestCtx(),
         );
 
         $this->expectException(AuthenticationException::class);

@@ -8,7 +8,7 @@ use Phalanx\Archon\Application\Archon;
 use Phalanx\Archon\Command\Arg;
 use Phalanx\Archon\Command\CommandConfig;
 use Phalanx\Archon\Command\CommandGroup;
-use Phalanx\Archon\Command\CommandScope;
+use Phalanx\Archon\Command\CommandContext;
 use Phalanx\Archon\Application\ConsoleConfig;
 use Phalanx\Archon\Runtime\Identity\ConsoleSignalPolicy;
 use Phalanx\Archon\Runtime\Identity\ConsoleSignalState;
@@ -96,13 +96,13 @@ final class ArchonApplicationTest extends PhalanxTestCase
 
         $builder = Archon::command(
             'deploy',
-            static function (CommandScope $scope) use (&$received): string {
-                $commandName = $scope->commandName;
+            static function (CommandContext $ctx) use (&$received): string {
+                $commandName = $ctx->commandName;
                 $received = [
-                    $scope->commandName,
-                    $scope->args->get('image'),
-                    $scope->options->flag('detach'),
-                    $scope->execute(Task::named(
+                    $ctx->commandName,
+                    $ctx->args->get('image'),
+                    $ctx->options->flag('detach'),
+                    $ctx->execute(Task::named(
                         'archon.inline.probe',
                         static fn(): string => "task:$commandName",
                     )),
@@ -132,8 +132,8 @@ final class ArchonApplicationTest extends PhalanxTestCase
         $stream = StreamOutputHelper::open();
         $app = Archon::command(
             'fail',
-            static function (CommandScope $scope) use (&$disposed): int {
-                $scope->onDispose(static function () use (&$disposed): void {
+            static function (CommandContext $ctx) use (&$disposed): int {
+                $ctx->onDispose(static function () use (&$disposed): void {
                     $disposed = true;
                 });
 
@@ -163,7 +163,7 @@ final class ArchonApplicationTest extends PhalanxTestCase
     public function unknownCommandReturnsNonZeroWithAvailableCommands(): void
     {
         $stream = StreamOutputHelper::open();
-        $app = Archon::command('known', static fn(CommandScope $scope): int => 0)
+        $app = Archon::command('known', static fn(CommandContext $ctx): int => 0)
             ->withConsoleConfig(new ConsoleConfig(errorOutput: StreamOutputHelper::output($stream)))
             ->build();
 
@@ -188,7 +188,7 @@ final class ArchonApplicationTest extends PhalanxTestCase
     public function helpForMissingCommandReturnsNonZero(): void
     {
         $stream = StreamOutputHelper::open();
-        $app = Archon::command('known', static fn(CommandScope $scope): int => 0)
+        $app = Archon::command('known', static fn(CommandContext $ctx): int => 0)
             ->withConsoleConfig(new ConsoleConfig(errorOutput: StreamOutputHelper::output($stream)))
             ->build();
 
@@ -213,7 +213,7 @@ final class ArchonApplicationTest extends PhalanxTestCase
     {
         $stream = StreamOutputHelper::open();
         $missing = str_repeat('x', 400);
-        $app = Archon::command('known', static fn(CommandScope $scope): int => 0)
+        $app = Archon::command('known', static fn(CommandContext $ctx): int => 0)
             ->withConsoleConfig(new ConsoleConfig(errorOutput: StreamOutputHelper::output($stream)))
             ->build();
 
@@ -236,7 +236,7 @@ final class ArchonApplicationTest extends PhalanxTestCase
         $stream = StreamOutputHelper::open();
         $app = Archon::command(
             'cancel',
-            static function (CommandScope $scope): int {
+            static function (CommandContext $ctx): int {
                 throw new Cancelled('signal:int');
             },
         )
@@ -264,10 +264,10 @@ final class ArchonApplicationTest extends PhalanxTestCase
         $token = null;
         $app = Archon::command(
             'cancel',
-            static function (CommandScope $scope) use (&$token): int {
-                self::assertSame($token, $scope->cancellation());
-                $scope->cancellation()->cancel();
-                $scope->throwIfCancelled();
+            static function (CommandContext $ctx) use (&$token): int {
+                self::assertSame($token, $ctx->cancellation());
+                $ctx->cancellation()->cancel();
+                $ctx->throwIfCancelled();
 
                 return 0;
             },
@@ -311,9 +311,9 @@ final class ArchonApplicationTest extends PhalanxTestCase
 
         $app = Archon::command(
             'cancel',
-            static function (CommandScope $scope): int {
-                $scope->cancellation()->cancel();
-                $scope->throwIfCancelled();
+            static function (CommandContext $ctx): int {
+                $ctx->cancellation()->cancel();
+                $ctx->throwIfCancelled();
 
                 return 0;
             },
@@ -354,13 +354,13 @@ final class ArchonApplicationTest extends PhalanxTestCase
         $stream = StreamOutputHelper::open();
         $app = Archon::command(
             'signal',
-            static function (CommandScope $scope): int {
+            static function (CommandContext $ctx): int {
                 $pid = getmypid();
                 self::assertIsInt($pid);
 
                 \OpenSwoole\Process::kill($pid, SIGUSR1);
                 \OpenSwoole\Coroutine::usleep(50_000);
-                $scope->throwIfCancelled();
+                $ctx->throwIfCancelled();
 
                 return 0;
             },
@@ -382,7 +382,7 @@ final class ArchonApplicationTest extends PhalanxTestCase
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('inline commands require static closures');
 
-        Archon::command('leaky', fn(CommandScope $scope): int => 0);
+        Archon::command('leaky', fn(CommandContext $ctx): int => 0);
     }
 
     protected function setUp(): void
@@ -404,12 +404,12 @@ final class ArchonApplicationProbeCommand implements Scopeable
 
     public static ?string $taskResult = null;
 
-    public function __invoke(CommandScope $scope): int
+    public function __invoke(CommandContext $ctx): int
     {
-        self::$commandName = $scope->commandName;
-        self::$commandResourceId = $scope->commandResourceId;
-        $commandName = $scope->commandName;
-        self::$taskResult = $scope->execute(Task::named(
+        self::$commandName = $ctx->commandName;
+        self::$commandResourceId = $ctx->commandResourceId;
+        $commandName = $ctx->commandName;
+        self::$taskResult = $ctx->execute(Task::named(
             'archon.application.proof',
             static fn(): string => "task:$commandName",
         ));
@@ -422,9 +422,9 @@ final class CoroutineRuntimeProbeCommand implements Scopeable
 {
     public static bool $ran = false;
 
-    public function __invoke(CommandScope $scope): int
+    public function __invoke(CommandContext $ctx): int
     {
-        $scope->delay(0.001);
+        $ctx->delay(0.001);
         self::$ran = true;
 
         return 0;

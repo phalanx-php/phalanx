@@ -5,7 +5,7 @@ declare(strict_types=1);
 require __DIR__ . '/../../../vendor/autoload_runtime.php';
 
 use Phalanx\Archon\Application\Archon;
-use Phalanx\Archon\Command\CommandScope;
+use Phalanx\Archon\Command\CommandContext;
 use Phalanx\Boot\AppContext;
 use Phalanx\Demos\Kit\DemoReport;
 use Phalanx\Scope\ExecutionScope;
@@ -24,10 +24,10 @@ return DemoReport::demo(
         $report->note('This demo triggers an expected RuntimeException to showcase rich error rendering.');
         
         $app = Archon::starting($context->values)
-            ->command('demo:deep-error', static function (CommandScope $scope) {
-                
+            ->command('demo:deep-error', static function (CommandContext $ctx) {
+
                 // Spawn a complex background tree
-                $scope->go(static function (ExecutionScope $scope) {
+                $ctx->go(static function (ExecutionScope $scope) {
                     
                     // Sibling at Level 2
                     $scope->go(static function (ExecutionScope $scope) {
@@ -52,12 +52,12 @@ return DemoReport::demo(
                 }, 'ledger.level_1_active');
 
                 // Sibling at Level 1
-                $scope->go(static function (ExecutionScope $scope) {
+                $ctx->go(static function (ExecutionScope $scope) {
                     $scope->delay(10.0);
                 }, 'ledger.level_1_sibling');
 
                 // Small delay to ensure all fibers are registered
-                $scope->delay(0.1);
+                $ctx->delay(0.1);
 
                 throw new \RuntimeException(
                     "Critical failure in POC logic: Database connection lost!\n" .

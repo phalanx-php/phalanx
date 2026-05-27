@@ -6,7 +6,7 @@ namespace Phalanx\Archon\Tests\Integration\Application;
 
 use Phalanx\Archon\Application\Archon;
 use Phalanx\Archon\Command\CommandGroup;
-use Phalanx\Archon\Command\CommandScope;
+use Phalanx\Archon\Command\CommandContext;
 use Phalanx\Archon\Runtime\Identity\ArchonResourceSid;
 use Phalanx\Runtime\Memory\ManagedResourceState;
 use Phalanx\Scope\ExecutionScope;
@@ -29,7 +29,7 @@ final class ArchonApplicationScopeTest extends PhalanxTestCase
             self::assertSame(0, $app->dispatch(['probe']));
         });
 
-        self::assertTrue(ArchonProbeCommand::$receivedCommandScope);
+        self::assertTrue(ArchonProbeCommand::$receivedCommandContext);
         self::assertSame('probe', ArchonProbeCommand::$commandName);
         self::assertNotSame('', ArchonProbeCommand::$commandResourceId);
         self::assertSame('task:probe', ArchonProbeCommand::$taskResult);
@@ -44,7 +44,7 @@ final class ArchonApplicationScopeTest extends PhalanxTestCase
     {
         parent::setUp();
 
-        ArchonProbeCommand::$receivedCommandScope = false;
+        ArchonProbeCommand::$receivedCommandContext = false;
         ArchonProbeCommand::$commandName = null;
         ArchonProbeCommand::$commandResourceId = null;
         ArchonProbeCommand::$taskResult = null;
@@ -53,7 +53,7 @@ final class ArchonApplicationScopeTest extends PhalanxTestCase
 
 final class ArchonProbeCommand implements Scopeable
 {
-    public static bool $receivedCommandScope = false;
+    public static bool $receivedCommandContext = false;
 
     public static ?string $commandName = null;
 
@@ -61,13 +61,13 @@ final class ArchonProbeCommand implements Scopeable
 
     public static ?string $taskResult = null;
 
-    public function __invoke(CommandScope $scope): int
+    public function __invoke(CommandContext $ctx): int
     {
-        self::$receivedCommandScope = true;
-        self::$commandName = $scope->commandName;
-        self::$commandResourceId = $scope->commandResourceId;
-        $commandName = $scope->commandName;
-        self::$taskResult = $scope->execute(Task::named(
+        self::$receivedCommandContext = true;
+        self::$commandName = $ctx->commandName;
+        self::$commandResourceId = $ctx->commandResourceId;
+        $commandName = $ctx->commandName;
+        self::$taskResult = $ctx->execute(Task::named(
             'archon.proof',
             static fn(): string => "task:$commandName",
         ));

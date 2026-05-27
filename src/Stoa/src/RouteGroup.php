@@ -117,7 +117,6 @@ final class RouteGroup implements Executable
             new RouteParams(),
             new QueryParams($request->getQueryParams()),
             RouteConfig::compile('/'),
-            new RequestCtx(),
         ));
     }
 
@@ -233,7 +232,7 @@ final class RouteGroup implements Executable
     }
 
     /**
-     * HTTP-specific invoker. When the dispatch scope is a RequestScope, runs
+     * HTTP-specific invoker. When the dispatch scope is a RequestContext, runs
      * (in order): header checks, input hydration, then business validators
      * (validators receive the already-typed DTO so they operate on coerced
      * values). For non-HTTP scopes (e.g. tests using a raw ExecutionScope)
@@ -247,7 +246,7 @@ final class RouteGroup implements Executable
     private static function httpInvoker(): Closure
     {
         return static function (Scopeable|Executable $instance, ExecutionScope $scope): mixed {
-            if (!$scope instanceof RequestScope) {
+            if (!$scope instanceof RequestContext) {
                 if (!is_callable($instance)) {
                     throw new RuntimeException($instance::class . ' route handler must be invokable.');
                 }
@@ -299,7 +298,7 @@ final class RouteGroup implements Executable
     /**
      * @param array<string, RouteParamValidator> $validators
      */
-    private static function enforceParamValidators(array $validators, RequestScope $scope): void
+    private static function enforceParamValidators(array $validators, RequestContext $scope): void
     {
         $errors = [];
 
@@ -324,7 +323,7 @@ final class RouteGroup implements Executable
     /**
      * @param list<Header> $required
      */
-    private static function enforceRequiredHeaders(array $required, RequestScope $scope): void
+    private static function enforceRequiredHeaders(array $required, RequestContext $scope): void
     {
         $errors = [];
 

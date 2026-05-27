@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Dory\Command;
 
-use Phalanx\Archon\Command\CommandScope;
+use Phalanx\Archon\Command\CommandContext;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Dory\DoryConfig;
 use Phalanx\Task\Scopeable;
@@ -17,14 +17,14 @@ final class DoctorCommand implements Scopeable
 
     private const array OPTIONAL_EXTENSIONS = ['curl', 'mbstring', 'openssl', 'pcntl', 'posix', 'sockets'];
 
-    public function __invoke(CommandScope $scope): int
+    public function __invoke(CommandContext $ctx): int
     {
-        $output = $scope->service(StreamOutput::class);
+        $output = $ctx->service(StreamOutput::class);
 
         $phpOk = self::checkPhpVersion($output);
         $swooleOk = self::checkSwoole($output);
         self::checkOptionalExtensions($output);
-        self::checkDoryConfig($scope, $output);
+        self::checkDoryConfig($ctx, $output);
 
         return ($phpOk && $swooleOk) ? 0 : 1;
     }
@@ -57,9 +57,9 @@ final class DoctorCommand implements Scopeable
         }
     }
 
-    private static function checkDoryConfig(CommandScope $scope, StreamOutput $output): void
+    private static function checkDoryConfig(CommandContext $ctx, StreamOutput $output): void
     {
-        $config = $scope->service(DoryConfig::class);
+        $config = $ctx->service(DoryConfig::class);
         $issues = $config->validate(new ValidationContext());
 
         if ($issues === []) {

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Stoa;
+namespace Phalanx\Hermes;
 
 use Phalanx\Auth\AuthContext;
 
-interface AuthRequestScope extends RequestScope
+interface AuthWsContext extends WsContext
 {
     public AuthContext $auth { get; }
 }

@@ -7,7 +7,7 @@ namespace Phalanx\Stoa\Tests\Integration;
 use Closure;
 use Phalanx\Application;
 use Phalanx\Stoa\Contract\Middleware;
-use Phalanx\Stoa\RequestScope;
+use Phalanx\Stoa\RequestContext;
 use Phalanx\Stoa\RouteGroup;
 use Phalanx\Task\Scopeable;
 use PHPUnit\Framework\Attributes\Test;
@@ -86,7 +86,7 @@ final class MiddlewareInterfaceTest extends TestCase
  */
 final class PrefixingMiddlewareV2Handler implements Scopeable
 {
-    public function __invoke(RequestScope $scope): string
+    public function __invoke(RequestContext $ctx): string
     {
         return 'ok';
     }
@@ -99,9 +99,9 @@ final class PrefixingMiddlewareV2Handler implements Scopeable
  */
 final class PrefixingMiddlewareV2 implements Middleware
 {
-    public function __invoke(RequestScope $scope, Closure $next): mixed
+    public function __invoke(RequestContext $ctx, Closure $next): mixed
     {
-        $inner = $next($scope);
+        $inner = $next($ctx);
         return 'before:' . $inner . ':after';
     }
 }
@@ -111,7 +111,7 @@ final class PrefixingMiddlewareV2 implements Middleware
  */
 final class AbortingMiddlewareV2 implements Middleware
 {
-    public function __invoke(RequestScope $scope, Closure $next): mixed
+    public function __invoke(RequestContext $ctx, Closure $next): mixed
     {
         return 'aborted';
     }

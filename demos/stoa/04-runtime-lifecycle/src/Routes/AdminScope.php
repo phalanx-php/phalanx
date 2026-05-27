@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Acme\StoaDemo\Runtime\Routes;
 
-use Phalanx\Stoa\RequestScope;
+use Phalanx\Stoa\RequestContext;
 use Phalanx\Stoa\Response\ResponseLeaseDomain;
 use Phalanx\Stoa\Runtime\Identity\StoaResourceSid;
 use Phalanx\Task\Scopeable;
@@ -17,10 +17,10 @@ use Phalanx\Task\Scopeable;
 final class AdminScope implements Scopeable
 {
     /** @return array{response_leases: list<array{key: string}>, request_resources: int} */
-    public function __invoke(RequestScope $scope): array
+    public function __invoke(RequestContext $ctx): array
     {
         $leases = [];
-        foreach ($scope->runtime->memory->tables->resourceLeases as $row) {
+        foreach ($ctx->runtime->memory->tables->resourceLeases as $row) {
             if (is_array($row) && (string) $row['domain'] === ResponseLeaseDomain::DOMAIN) {
                 $leases[] = ['key' => (string) $row['resource_key']];
             }
@@ -28,7 +28,7 @@ final class AdminScope implements Scopeable
 
         // The current request's own resource is still active while this handler
         // runs, so subtract one to report the count of OTHER inflight requests.
-        $live = $scope->runtime->memory->resources->liveCount(StoaResourceSid::HttpRequest);
+        $live = $ctx->runtime->memory->resources->liveCount(StoaResourceSid::HttpRequest);
         $other = max(0, $live - 1);
 
         return [

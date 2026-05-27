@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Phalanx\Dory\Command;
 
-use Phalanx\Archon\Command\CommandScope;
+use Phalanx\Archon\Command\CommandContext;
 use Phalanx\Dory\DoryBuilder;
 use Phalanx\Task\Scopeable;
 
 final class RunCommand implements Scopeable
 {
-    public function __invoke(CommandScope $scope): int
+    public function __invoke(CommandContext $ctx): int
     {
-        $scriptPath = (string) $scope->args->required('script');
+        $scriptPath = (string) $ctx->args->required('script');
         $resolved = realpath($scriptPath);
 
         if ($resolved === false || !file_exists($resolved)) {

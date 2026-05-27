@@ -19,7 +19,7 @@ use Phalanx\Runtime\RuntimeContext;
 use Phalanx\Stoa\ExecutionContext;
 use Phalanx\Stoa\MissingRequestResource;
 use Phalanx\Stoa\QueryParams;
-use Phalanx\Stoa\RequestScope;
+use Phalanx\Stoa\RequestContext;
 use Phalanx\Stoa\RouteConfig;
 use Phalanx\Stoa\RouteGroup;
 use Phalanx\Stoa\RouteParams;
@@ -532,9 +532,9 @@ final class PlainTextStoaRoute implements Scopeable
 {
     public static bool $disposed = false;
 
-    public function __invoke(RequestScope $scope): string
+    public function __invoke(RequestContext $ctx): string
     {
-        $scope->onDispose(static function (): void {
+        $ctx->onDispose(static function (): void {
             self::$disposed = true;
         });
 
@@ -545,18 +545,18 @@ final class PlainTextStoaRoute implements Scopeable
 final class JsonStoaRoute implements Scopeable
 {
     /** @return array{path: string, name: string} */
-    public function __invoke(RequestScope $scope): array
+    public function __invoke(RequestContext $ctx): array
     {
         return [
-            'path' => $scope->path(),
-            'name' => (string) $scope->query->get('name'),
+            'path' => $ctx->path(),
+            'name' => (string) $ctx->query->get('name'),
         ];
     }
 }
 
 final class HeadStoaRoute implements Scopeable
 {
-    public function __invoke(RequestScope $scope): PsrResponse
+    public function __invoke(RequestContext $ctx): PsrResponse
     {
         return new PsrResponse(200, ['X-Head-Proof' => 'yes'], 'hidden body');
     }
@@ -564,7 +564,7 @@ final class HeadStoaRoute implements Scopeable
 
 final class NoContentStoaRoute implements Scopeable
 {
-    public function __invoke(RequestScope $scope): PsrResponse
+    public function __invoke(RequestContext $ctx): PsrResponse
     {
         return new PsrResponse(204, [], 'hidden body');
     }
@@ -572,7 +572,7 @@ final class NoContentStoaRoute implements Scopeable
 
 final class NotModifiedStoaRoute implements Scopeable
 {
-    public function __invoke(RequestScope $scope): PsrResponse
+    public function __invoke(RequestContext $ctx): PsrResponse
     {
         return new PsrResponse(304, ['ETag' => '"demo"'], 'hidden body');
     }
@@ -580,7 +580,7 @@ final class NotModifiedStoaRoute implements Scopeable
 
 final class ExistingPoweredByStoaRoute implements Scopeable
 {
-    public function __invoke(RequestScope $scope): PsrResponse
+    public function __invoke(RequestContext $ctx): PsrResponse
     {
         return new PsrResponse(200, ['X-Powered-By' => 'Existing'], 'powered');
     }
@@ -589,12 +589,12 @@ final class ExistingPoweredByStoaRoute implements Scopeable
 final class ResourceAwareStoaRoute implements Scopeable
 {
     /** @return array{request_id: string, route: string, param: string} */
-    public function __invoke(RequestScope $scope): array
+    public function __invoke(RequestContext $ctx): array
     {
         return [
-            'request_id' => $scope->requestId,
-            'route' => $scope->runtime->memory->resources->annotation($scope->requestId, StoaAnnotationSid::Route),
-            'param' => $scope->params->required('id'),
+            'request_id' => $ctx->requestId,
+            'route' => $ctx->runtime->memory->resources->annotation($ctx->requestId, StoaAnnotationSid::Route),
+            'param' => $ctx->params->required('id'),
         ];
     }
 }
@@ -602,12 +602,12 @@ final class ResourceAwareStoaRoute implements Scopeable
 final class LongPathStoaRoute implements Scopeable
 {
     /** @return array{path: string, path_annotation: string} */
-    public function __invoke(RequestScope $scope): array
+    public function __invoke(RequestContext $ctx): array
     {
         return [
-            'path' => $scope->path(),
-            'path_annotation' => $scope->runtime->memory->resources->annotation(
-                $scope->requestId,
+            'path' => $ctx->path(),
+            'path_annotation' => $ctx->runtime->memory->resources->annotation(
+                $ctx->requestId,
                 StoaAnnotationSid::Path,
             ),
         ];
@@ -618,9 +618,9 @@ final class FailingStoaRoute implements Scopeable
 {
     public static bool $disposed = false;
 
-    public function __invoke(RequestScope $scope): never
+    public function __invoke(RequestContext $ctx): never
     {
-        $scope->onDispose(static function (): void {
+        $ctx->onDispose(static function (): void {
             self::$disposed = true;
         });
 

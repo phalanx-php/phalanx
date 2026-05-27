@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Stoa\Contract;
 
 use Phalanx\Scope\Scope;
-use Phalanx\Stoa\RequestScope;
+use Phalanx\Stoa\RequestContext;
 use Phalanx\Stoa\ValidationException;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
@@ -108,7 +108,7 @@ class InputHydrator
      */
     public static function resolve(
         string|Scopeable|Executable $handler,
-        RequestScope $scope,
+        RequestContext $ctx,
     ): array {
         if (self::paramCount($handler) === 0) {
             return [];
@@ -117,13 +117,13 @@ class InputHydrator
         $meta = self::meta($handler);
 
         if ($meta === null) {
-            return [$scope];
+            return [$ctx];
         }
 
-        $source = InputSource::fromMethod($scope->method());
+        $source = InputSource::fromMethod($ctx->method());
         $data = match ($source) {
-            InputSource::Body => $scope->body->all(),
-            InputSource::Query => $scope->query->all(),
+            InputSource::Body => $ctx->body->all(),
+            InputSource::Query => $ctx->query->all(),
         };
 
         /** @var class-string $class */
@@ -150,7 +150,7 @@ class InputHydrator
             }
         }
 
-        return [$scope, $dto];
+        return [$ctx, $dto];
     }
 
     /**

@@ -21,9 +21,9 @@ final class StoaRequestLifecycleServiceAccessRuleTest extends RuleTestCase
         $this->analyse(
             [__DIR__ . '/Fixtures/stoa-request-lifecycle-service-access.php'],
             [
+                [StoaRequestLifecycleServiceAccessRule::MESSAGE, 16],
                 [StoaRequestLifecycleServiceAccessRule::MESSAGE, 17],
                 [StoaRequestLifecycleServiceAccessRule::MESSAGE, 18],
-                [StoaRequestLifecycleServiceAccessRule::MESSAGE, 19],
             ],
         );
     }

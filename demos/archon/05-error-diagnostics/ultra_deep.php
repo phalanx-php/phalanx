@@ -5,7 +5,7 @@ declare(strict_types=1);
 require __DIR__ . '/../../../vendor/autoload_runtime.php';
 
 use Phalanx\Archon\Application\Archon;
-use Phalanx\Archon\Command\CommandScope;
+use Phalanx\Archon\Command\CommandContext;
 use Phalanx\Boot\AppContext;
 use Phalanx\Demos\Kit\DemoReport;
 use Phalanx\Scope\ExecutionScope;
@@ -24,7 +24,7 @@ return DemoReport::demo(
         $report->note('This demo triggers a failure at level 15 to showcase hierarchy panning and the ⇗ connector.');
 
         $app = Archon::starting($context->values)
-            ->command('demo:ultra-deep', static function (CommandScope $scope) {
+            ->command('demo:ultra-deep', static function (CommandContext $ctx) {
                 
                 $buildDeepTree = static function (ExecutionScope $scope, int $depth, int $maxDepth, Closure $self): void {
                     if ($depth >= $maxDepth) {
@@ -44,7 +44,7 @@ return DemoReport::demo(
                 };
 
                 // Level 12 will trigger panning (12 - 10 = 2 levels shifted)
-                $buildDeepTree($scope, 1, 15, $buildDeepTree);
+                $buildDeepTree($ctx, 1, 15, $buildDeepTree);
             })
             ->build();
 

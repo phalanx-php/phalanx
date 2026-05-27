@@ -25,7 +25,7 @@ use PHPStan\Type\ObjectType;
 final class StoaRequestLifecycleServiceAccessRule implements Rule
 {
     public const string MESSAGE =
-        'Stoa request lifecycle services are framework-only; use RequestScope request accessors and $scope->ctx.';
+        'Stoa request lifecycle services are framework-only; use RequestContext accessors instead.';
 
     private const string IDENTIFIER = 'phalanx.scope.stoaLifecycleServiceAccess';
 

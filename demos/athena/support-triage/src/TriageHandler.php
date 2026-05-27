@@ -13,7 +13,7 @@ use Phalanx\Panoply\Cue\Effect\Requested;
 use Phalanx\Panoply\Cue\Output\TokenDelta;
 use Phalanx\Panoply\Id;
 use Phalanx\Panoply\Runtime\CancellationException;
-use Phalanx\Stoa\RequestScope;
+use Phalanx\Stoa\RequestContext;
 use Phalanx\Stoa\Sse\SseStream;
 use Phalanx\Stoa\Sse\SseStreamFactory;
 use Phalanx\Task\Scopeable;
@@ -21,7 +21,7 @@ use Throwable;
 
 final class TriageHandler implements Scopeable
 {
-    public function __invoke(RequestScope $scope): SseStream
+    public function __invoke(RequestContext $ctx): SseStream
     {
         $agent  = new SupportTriageAgent();
         $config = new ActivityConfig(
@@ -31,10 +31,10 @@ final class TriageHandler implements Scopeable
             timeoutSeconds: 25.0,
         );
 
-        $stream = self::openStream($scope);
+        $stream = self::openStream($ctx);
 
         try {
-            $result = Athena::run($scope, $agent, $config);
+            $result = Athena::run($ctx, $agent, $config);
 
             foreach ($result->stream->toArray() as $cue) {
                 $payload = match (true) {
@@ -79,8 +79,8 @@ final class TriageHandler implements Scopeable
         return $stream;
     }
 
-    private static function openStream(RequestScope $scope): SseStream
+    private static function openStream(RequestContext $ctx): SseStream
     {
-        return (new SseStreamFactory())->open($scope);
+        return (new SseStreamFactory())->open($ctx);
     }
 }

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Stoa\Response;
 
 use Phalanx\Cancellation\Cancelled;
-use Phalanx\Stoa\RequestScope;
+use Phalanx\Stoa\RequestContext;
 use Phalanx\Stoa\Response\Ignition\PhalanxErrorPageViewModel;
 use Phalanx\Stoa\StoaRequestDiagnostics;
 use Phalanx\Stoa\StoaRequestResource;
@@ -24,16 +24,16 @@ final readonly class IgnitionErrorResponseRenderer implements ErrorResponseRende
     {
     }
 
-    public function render(RequestScope $scope, Throwable $e): ?ResponseInterface
+    public function render(RequestContext $ctx, Throwable $e): ?ResponseInterface
     {
-        if (!$this->config->ignitionEnabled || !$scope->acceptsHtml()) {
+        if (!$this->config->ignitionEnabled || !$ctx->acceptsHtml()) {
             return null;
         }
 
         try {
-            $requestId = $scope->service(StoaRequestResource::class)->id;
+            $requestId = $ctx->service(StoaRequestResource::class)->id;
 
-            $snapshots = $scope->service(StoaRequestDiagnostics::class)->failureTree();
+            $snapshots = $ctx->service(StoaRequestDiagnostics::class)->failureTree();
             $ledger = '(no active tasks captured)';
             if ($snapshots !== []) {
                 try {
@@ -51,8 +51,8 @@ final readonly class IgnitionErrorResponseRenderer implements ErrorResponseRende
 
             $report->group('Phalanx', [
                 'Request ID' => $requestId,
-                'Method' => $scope->method(),
-                'Path' => $scope->path(),
+                'Method' => $ctx->method(),
+                'Path' => $ctx->path(),
             ]);
 
             $report->group('Active Ledger', [

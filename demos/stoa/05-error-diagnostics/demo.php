@@ -11,7 +11,7 @@ use OpenSwoole\Coroutine;
 use Phalanx\Boot\AppContext;
 use Phalanx\Demos\Kit\DemoReport;
 use Phalanx\Scope\ExecutionScope;
-use Phalanx\Stoa\RequestScope;
+use Phalanx\Stoa\RequestContext;
 use Phalanx\Stoa\RouteGroup;
 use Phalanx\Stoa\Stoa;
 use Phalanx\Task\Scopeable;
@@ -19,9 +19,9 @@ use Phalanx\Task\Task;
 
 final class FailingDemoHandler implements Scopeable
 {
-    public function __invoke(RequestScope $scope): mixed
+    public function __invoke(RequestContext $ctx): mixed
     {
-        return $scope->execute(Task::named('business_logic.process', static function (ExecutionScope $scope) {
+        return $ctx->execute(Task::named('business_logic.process', static function (ExecutionScope $scope) {
             return $scope->execute(Task::named('gateway.external_api', static function (ExecutionScope $scope) {
                 $scope->go(static fn(ExecutionScope $s) => $s->delay(10.0), 'stats.collector');
 

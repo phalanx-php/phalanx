@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Demos\Archon\InteractiveInput;
 
-use Phalanx\Archon\Command\CommandScope;
+use Phalanx\Archon\Command\CommandContext;
 use Phalanx\Archon\Console\Input\ConfirmInput;
 use Phalanx\Archon\Console\Input\KeyReader;
 use Phalanx\Archon\Console\Input\SelectInput;
@@ -23,11 +23,11 @@ use Phalanx\Task\Scopeable;
  */
 final class RegisterCommand implements Scopeable
 {
-    public function __invoke(CommandScope $scope): int
+    public function __invoke(CommandContext $ctx): int
     {
-        $theme  = $scope->service(Theme::class);
-        $output = $scope->service(StreamOutput::class);
-        $reader = $scope->service(KeyReader::class);
+        $theme  = $ctx->service(Theme::class);
+        $output = $ctx->service(StreamOutput::class);
+        $reader = $ctx->service(KeyReader::class);
 
         $form = (new Form())
             ->text('email', static fn() => new TextInput(
@@ -51,7 +51,7 @@ final class RegisterCommand implements Scopeable
             ));
 
         try {
-            $values = $form->submit($scope, $output, $reader);
+            $values = $form->submit($ctx, $output, $reader);
         } catch (FormRevertedException) {
             $output->persist('Cancelled.');
             return 0;

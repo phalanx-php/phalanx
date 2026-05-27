@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Dory\Tests\Unit;
 
 use Phalanx\Dory\DoryConfig;
-use Phalanx\Dory\ScriptContext;
+use Phalanx\Dory\DoryExecutionContext;
 use Phalanx\Dory\ScriptRunner;
 use Phalanx\Scope\ExecutionScope;
 use PHPUnit\Framework\Attributes\Test;
@@ -18,7 +18,7 @@ final class ScriptRunnerTest extends TestCase
     {
         $scope = $this->createMock(ExecutionScope::class);
         $config = new DoryConfig();
-        $dory = new ScriptContext($scope, __DIR__ . '/../Fixtures/return-42.php', $config);
+        $dory = new DoryExecutionContext($scope, __DIR__ . '/../Fixtures/return-42.php', $config);
 
         $result = ScriptRunner::execute($dory);
 
@@ -30,7 +30,7 @@ final class ScriptRunnerTest extends TestCase
     {
         $scope = $this->createMock(ExecutionScope::class);
         $config = new DoryConfig();
-        $dory = new ScriptContext($scope, __DIR__ . '/../Fixtures/echo-dory.php', $config);
+        $dory = new DoryExecutionContext($scope, __DIR__ . '/../Fixtures/echo-dory.php', $config);
 
         ob_start();
         $result = ScriptRunner::execute($dory);
@@ -45,7 +45,7 @@ final class ScriptRunnerTest extends TestCase
     {
         $scope = $this->createMock(ExecutionScope::class);
         $config = new DoryConfig();
-        $dory = new ScriptContext($scope, __DIR__ . '/../Fixtures/throw-error.php', $config);
+        $dory = new DoryExecutionContext($scope, __DIR__ . '/../Fixtures/throw-error.php', $config);
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('phalanx broken');

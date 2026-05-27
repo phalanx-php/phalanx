@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Archon\Command\Config;
 
-use Phalanx\Archon\Command\CommandScope;
+use Phalanx\Archon\Command\CommandContext;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Task\Scopeable;
 use Phalanx\Themis\ConfigCatalog;
@@ -23,13 +23,13 @@ use Phalanx\Themis\EnvExampleGenerator;
  */
 final class EnvExampleCommand implements Scopeable
 {
-    public function __invoke(CommandScope $scope): int
+    public function __invoke(CommandContext $ctx): int
     {
-        $catalog = $scope->service(ConfigCatalog::class);
-        $output = $scope->service(StreamOutput::class);
+        $catalog = $ctx->service(ConfigCatalog::class);
+        $output = $ctx->service(StreamOutput::class);
 
-        $dryRun = $scope->options->flag('dry-run');
-        $outputPath = (string) ($scope->options->get('output') ?? '.env.example');
+        $dryRun = $ctx->options->flag('dry-run');
+        $outputPath = (string) ($ctx->options->get('output') ?? '.env.example');
 
         $knownValues = self::parseExistingFile($outputPath);
         $generator = new EnvExampleGenerator();

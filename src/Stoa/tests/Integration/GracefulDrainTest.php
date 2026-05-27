@@ -11,7 +11,7 @@ use Phalanx\Cancellation\Cancelled;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
-use Phalanx\Stoa\RequestScope;
+use Phalanx\Stoa\RequestContext;
 use Phalanx\Stoa\RouteGroup;
 use Phalanx\Stoa\Runtime\Identity\StoaEventSid;
 use Phalanx\Stoa\StoaRunner;
@@ -216,10 +216,10 @@ final class DrainCompletingHandler implements Scopeable
 {
     public static Channel $entered;
 
-    public function __invoke(RequestScope $scope): string
+    public function __invoke(RequestContext $ctx): string
     {
         self::$entered->emit(true);
-        $scope->delay(0.3);
+        $ctx->delay(0.3);
 
         return 'completed';
     }
@@ -232,10 +232,10 @@ final class DrainEventTrackingHandler implements Scopeable
     /** @var list<string> */
     public static array $events = [];
 
-    public function __invoke(RequestScope $scope): string
+    public function __invoke(RequestContext $ctx): string
     {
         self::$entered->emit(true);
-        $scope->delay(0.3);
+        $ctx->delay(0.3);
         self::$events[] = 'handler:complete';
 
         return 'done';
@@ -248,13 +248,13 @@ final class DrainStuckHandler implements Scopeable
     public static Channel $entered;
     public static string $resourceId = '';
 
-    public function __invoke(RequestScope $scope): string
+    public function __invoke(RequestContext $ctx): string
     {
-        self::$resourceId = $scope->requestId;
+        self::$resourceId = $ctx->requestId;
         self::$entered->emit(true);
 
         try {
-            $scope->delay(1.5);
+            $ctx->delay(1.5);
         } catch (Cancelled $e) {
             self::$cancelled = true;
             throw $e;

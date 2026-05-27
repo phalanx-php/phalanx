@@ -10,7 +10,7 @@ use Phalanx\Demos\Archon\SupervisedConcurrency\Stages\RetryStage;
 use Phalanx\Demos\Archon\SupervisedConcurrency\Stages\ShipStage;
 use Phalanx\Demos\Archon\SupervisedConcurrency\Stages\TestStage;
 use Phalanx\Demos\Archon\SupervisedConcurrency\Stages\TimeoutStage;
-use Phalanx\Archon\Command\CommandScope;
+use Phalanx\Archon\Command\CommandContext;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Archon\Console\Style\Theme;
 use Phalanx\Archon\Console\Widget\ConcurrentTaskList;
@@ -26,19 +26,19 @@ use Phalanx\Task\Executable;
  */
 final class DeployCommand implements Executable
 {
-    public function __invoke(CommandScope $scope): int
+    public function __invoke(CommandContext $ctx): int
     {
-        $env = (string) $scope->args->get('env', 'staging');
+        $env = (string) $ctx->args->get('env', 'staging');
 
-        $theme  = $scope->service(Theme::class);
-        $output = $scope->service(StreamOutput::class);
+        $theme  = $ctx->service(Theme::class);
+        $output = $ctx->service(StreamOutput::class);
 
         $output->persist("deploy → {$env}");
 
         // Reset TestStage's static counter so the demo is deterministic across runs.
         TestStage::$attempts = 0;
 
-        (new ConcurrentTaskList($scope, $output, $theme))
+        (new ConcurrentTaskList($ctx, $output, $theme))
             ->add('build',   'Build',   new BuildStage())
             ->add('test',    'Test',    new RetryStage(new TestStage(), RetryPolicy::exponential(3, 30.0, 100.0)))
             ->add('package', 'Package', new PackageStage())

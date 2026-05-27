@@ -10,7 +10,7 @@ use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Runtime\Memory\RuntimeMemory;
 use Phalanx\Runtime\Memory\RuntimeMemoryConfig;
 use Phalanx\Runtime\RuntimeContext;
-use Phalanx\Stoa\RequestScope;
+use Phalanx\Stoa\RequestContext;
 use Phalanx\Stoa\Response\ResponseLeaseDomain;
 use Phalanx\Stoa\RouteGroup;
 use Phalanx\Stoa\StoaRequestResource;
@@ -125,7 +125,7 @@ final class StoaResponseLeaseTest extends PhalanxTestCase
 
 final class OkLeaseRoute implements Scopeable
 {
-    public function __invoke(RequestScope $scope): string
+    public function __invoke(RequestContext $ctx): string
     {
         return 'ok';
     }

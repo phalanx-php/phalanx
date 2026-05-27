@@ -8,7 +8,7 @@ use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\ServerRequest;
 use Phalanx\Benchmarks\Http\AbstractHttpBenchmarkCase;
 use Phalanx\Benchmarks\Kit\BenchmarkApp;
-use Phalanx\Stoa\RequestScope;
+use Phalanx\Stoa\RequestContext;
 use Phalanx\Stoa\RouteGroup;
 use Phalanx\Task\Scopeable;
 
@@ -74,7 +74,7 @@ final class StoaDispatchDtoUsedCase extends AbstractHttpBenchmarkCase
 
 final class BenchmarkDtoUnusedRoute implements Scopeable
 {
-    public function __invoke(RequestScope $scope, BenchmarkInput $input): Response
+    public function __invoke(RequestContext $ctx, BenchmarkInput $input): Response
     {
         // $input is NEVER used. JSON should never be parsed.
         return new Response(200, [], 'ignored');
@@ -83,7 +83,7 @@ final class BenchmarkDtoUnusedRoute implements Scopeable
 
 final class BenchmarkDtoUsedRoute implements Scopeable
 {
-    public function __invoke(RequestScope $scope, BenchmarkInput $input): Response
+    public function __invoke(RequestContext $ctx, BenchmarkInput $input): Response
     {
         // $input IS used. JSON will be parsed now.
         return new Response(200, [], $input->title);
