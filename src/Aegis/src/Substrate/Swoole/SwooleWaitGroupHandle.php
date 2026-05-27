@@ -9,7 +9,7 @@ use Swoole\Coroutine\WaitGroup;
 
 final class SwooleWaitGroupHandle implements WaitGroupHandle
 {
-    private(set) WaitGroup $inner;
+    private WaitGroup $inner;
 
     public function __construct()
     {

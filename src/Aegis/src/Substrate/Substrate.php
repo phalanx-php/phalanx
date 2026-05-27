@@ -8,8 +8,18 @@ final class Substrate
 {
     private static ?SubstrateEngine $engine = null;
 
+    private function __construct()
+    {
+    }
+
     public static function boot(SubstrateEngine $engine): void
     {
+        if (self::$engine !== null) {
+            throw new \RuntimeException(
+                'Substrate already booted. Call Substrate::reset() first in test tearDown if re-booting.',
+            );
+        }
+
         self::$engine = $engine;
     }
 
@@ -38,9 +48,9 @@ final class Substrate
         return self::engine()->signals();
     }
 
-    public static function waitGroup(): WaitGroupHandle
+    public static function createWaitGroup(): WaitGroupHandle
     {
-        return self::engine()->waitGroup();
+        return self::engine()->createWaitGroup();
     }
 
     public static function name(): string

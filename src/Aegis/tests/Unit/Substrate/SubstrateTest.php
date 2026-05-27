@@ -17,11 +17,6 @@ use RuntimeException;
 
 final class SubstrateTest extends TestCase
 {
-    protected function tearDown(): void
-    {
-        Substrate::reset();
-    }
-
     public function testNotBootedByDefault(): void
     {
         $this->assertFalse(Substrate::isBooted());
@@ -29,7 +24,7 @@ final class SubstrateTest extends TestCase
 
     public function testBootSetsEngine(): void
     {
-        $engine = $this->createMock(SubstrateEngine::class);
+        $engine = $this->createStub(SubstrateEngine::class);
         $engine->method('name')->willReturn('test');
 
         Substrate::boot($engine);
@@ -40,8 +35,8 @@ final class SubstrateTest extends TestCase
 
     public function testCoroutineAccessDelegatesToEngine(): void
     {
-        $driver = $this->createMock(CoroutineDriver::class);
-        $engine = $this->createMock(SubstrateEngine::class);
+        $driver = $this->createStub(CoroutineDriver::class);
+        $engine = $this->createStub(SubstrateEngine::class);
         $engine->method('coroutine')->willReturn($driver);
 
         Substrate::boot($engine);
@@ -51,8 +46,8 @@ final class SubstrateTest extends TestCase
 
     public function testChannelsAccessDelegatesToEngine(): void
     {
-        $factory = $this->createMock(ChannelFactory::class);
-        $engine = $this->createMock(SubstrateEngine::class);
+        $factory = $this->createStub(ChannelFactory::class);
+        $engine = $this->createStub(SubstrateEngine::class);
         $engine->method('channels')->willReturn($factory);
 
         Substrate::boot($engine);
@@ -62,8 +57,8 @@ final class SubstrateTest extends TestCase
 
     public function testTimersAccessDelegatesToEngine(): void
     {
-        $timers = $this->createMock(TimerDriver::class);
-        $engine = $this->createMock(SubstrateEngine::class);
+        $timers = $this->createStub(TimerDriver::class);
+        $engine = $this->createStub(SubstrateEngine::class);
         $engine->method('timers')->willReturn($timers);
 
         Substrate::boot($engine);
@@ -73,8 +68,8 @@ final class SubstrateTest extends TestCase
 
     public function testHooksAccessDelegatesToEngine(): void
     {
-        $hooks = $this->createMock(RuntimeHookDriver::class);
-        $engine = $this->createMock(SubstrateEngine::class);
+        $hooks = $this->createStub(RuntimeHookDriver::class);
+        $engine = $this->createStub(SubstrateEngine::class);
         $engine->method('hooks')->willReturn($hooks);
 
         Substrate::boot($engine);
@@ -84,8 +79,8 @@ final class SubstrateTest extends TestCase
 
     public function testSignalsAccessDelegatesToEngine(): void
     {
-        $signals = $this->createMock(SignalDriver::class);
-        $engine = $this->createMock(SubstrateEngine::class);
+        $signals = $this->createStub(SignalDriver::class);
+        $engine = $this->createStub(SubstrateEngine::class);
         $engine->method('signals')->willReturn($signals);
 
         Substrate::boot($engine);
@@ -93,15 +88,15 @@ final class SubstrateTest extends TestCase
         $this->assertSame($signals, Substrate::signals());
     }
 
-    public function testWaitGroupAccessDelegatesToEngine(): void
+    public function testCreateWaitGroupDelegatesToEngine(): void
     {
-        $wg = $this->createMock(WaitGroupHandle::class);
-        $engine = $this->createMock(SubstrateEngine::class);
-        $engine->method('waitGroup')->willReturn($wg);
+        $wg = $this->createStub(WaitGroupHandle::class);
+        $engine = $this->createStub(SubstrateEngine::class);
+        $engine->method('createWaitGroup')->willReturn($wg);
 
         Substrate::boot($engine);
 
-        $this->assertSame($wg, Substrate::waitGroup());
+        $this->assertSame($wg, Substrate::createWaitGroup());
     }
 
     public function testAccessBeforeBootThrows(): void
@@ -114,7 +109,7 @@ final class SubstrateTest extends TestCase
 
     public function testResetClearsEngine(): void
     {
-        $engine = $this->createMock(SubstrateEngine::class);
+        $engine = $this->createStub(SubstrateEngine::class);
         Substrate::boot($engine);
 
         $this->assertTrue(Substrate::isBooted());
@@ -122,5 +117,33 @@ final class SubstrateTest extends TestCase
         Substrate::reset();
 
         $this->assertFalse(Substrate::isBooted());
+    }
+
+    public function testDoubleBootThrows(): void
+    {
+        $engine = $this->createStub(SubstrateEngine::class);
+        Substrate::boot($engine);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Substrate already booted');
+
+        Substrate::boot($engine);
+    }
+
+    public function testAccessAfterResetThrows(): void
+    {
+        $engine = $this->createStub(SubstrateEngine::class);
+        Substrate::boot($engine);
+        Substrate::reset();
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Substrate not booted');
+
+        Substrate::coroutine();
+    }
+
+    protected function tearDown(): void
+    {
+        Substrate::reset();
     }
 }

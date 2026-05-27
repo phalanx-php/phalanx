@@ -6,5 +6,5 @@ namespace Phalanx\Substrate;
 
 interface SignalDriver
 {
-    public function signal(int $signo, \Closure $handler): void;
+    public function signal(int $signo, ?\Closure $handler): void;
 }

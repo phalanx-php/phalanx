@@ -23,11 +23,12 @@ final class ChannelPool
      * @param class-string $factoryClass must implement a static make(mixed): T method
      */
     public function __construct(
-        private readonly string $factoryClass,
-        private readonly mixed $config,
+        private string $factoryClass,
+        private mixed $config,
         private(set) int $size = self::DEFAULT_SIZE,
+        ?ChannelHandle $channel = null,
     ) {
-        $this->channel = Substrate::channels()->create($size);
+        $this->channel = $channel;
     }
 
     /**
@@ -35,7 +36,7 @@ final class ChannelPool
      */
     public function get(float $timeout = -1): mixed
     {
-        $channel = $this->channel;
+        $channel = $this->ensureChannel();
         if ($channel === null) {
             return false;
         }
@@ -44,9 +45,15 @@ final class ChannelPool
             $this->make();
         }
 
+        $result = $channel->pop($timeout);
+
+        if ($result === false) {
+            return false;
+        }
+
         $this->active++;
 
-        return $channel->pop($timeout);
+        return $result;
     }
 
     public function put(object $connection): void
@@ -56,7 +63,10 @@ final class ChannelPool
         }
 
         $this->channel->push($connection);
-        $this->active--;
+
+        if ($this->active > 0) {
+            $this->active--;
+        }
     }
 
     public function close(): void
@@ -79,17 +89,31 @@ final class ChannelPool
         $this->active = 0;
     }
 
-    public function compensateFailedCheckout(): void
+    private function ensureChannel(): ?ChannelHandle
     {
-        if ($this->active > 0) {
-            $this->active--;
+        if ($this->channel !== null) {
+            return $this->channel;
         }
+
+        if (!Substrate::isBooted()) {
+            return null;
+        }
+
+        $this->channel = Substrate::channels()->create($this->size);
+
+        return $this->channel;
     }
 
     private function make(): void
     {
         $this->created++;
-        $client = ($this->factoryClass)::make($this->config);
-        $this->channel?->push($client);
+
+        try {
+            $client = ($this->factoryClass)::make($this->config);
+            $this->channel?->push($client);
+        } catch (\Throwable $e) {
+            $this->created--;
+            throw $e;
+        }
     }
 }

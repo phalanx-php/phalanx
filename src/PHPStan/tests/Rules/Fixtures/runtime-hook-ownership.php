@@ -14,6 +14,9 @@ final class RuntimeHookOwnershipFixture
         Runtime::enableCoroutine(true, Runtime::HOOK_TCP);
         Coroutine::set(['hook_flags' => Runtime::HOOK_STDIO]);
 
-        return SWOOLE_HOOK_TCP;
+        $a = SWOOLE_HOOK_TCP;
+        $b = OPENSWOOLE_HOOK_TCP;
+
+        return $a | $b;
     }
 }

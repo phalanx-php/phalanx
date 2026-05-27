@@ -20,6 +20,7 @@ final class SwooleEngine implements SubstrateEngine
     private ?SwooleTimerDriver $timers = null;
     private ?SwooleRuntimeHookDriver $hooks = null;
     private ?SwooleSignalDriver $signals = null;
+    private ?bool $hasSwooleWaitGroup = null;
 
     public function coroutine(): CoroutineDriver
     {
@@ -46,9 +47,11 @@ final class SwooleEngine implements SubstrateEngine
         return $this->signals ??= new SwooleSignalDriver();
     }
 
-    public function waitGroup(): WaitGroupHandle
+    public function createWaitGroup(): WaitGroupHandle
     {
-        if (class_exists(\Swoole\Coroutine\WaitGroup::class, false)) {
+        $this->hasSwooleWaitGroup ??= class_exists(\Swoole\Coroutine\WaitGroup::class, false);
+
+        if ($this->hasSwooleWaitGroup) {
             return new SwooleWaitGroupHandle();
         }
 

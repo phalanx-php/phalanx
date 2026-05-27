@@ -16,7 +16,7 @@ interface SubstrateEngine
 
     public function signals(): SignalDriver;
 
-    public function waitGroup(): WaitGroupHandle;
+    public function createWaitGroup(): WaitGroupHandle;
 
     public function name(): string;
 }

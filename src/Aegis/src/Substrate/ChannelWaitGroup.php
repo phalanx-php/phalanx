@@ -24,8 +24,13 @@ final class ChannelWaitGroup implements WaitGroupHandle
 
     public function done(): void
     {
-        $this->count--;
         if ($this->count <= 0) {
+            return;
+        }
+
+        $this->count--;
+
+        if ($this->count === 0) {
             $this->channel->push(true);
         }
     }

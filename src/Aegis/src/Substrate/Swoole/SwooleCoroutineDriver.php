@@ -51,7 +51,7 @@ final class SwooleCoroutineDriver implements CoroutineDriver
 
     public function getContext(?int $cid = null): ?\ArrayObject
     {
-        return Coroutine::getContext($cid ?? 0);
+        return $cid === null ? Coroutine::getContext() : Coroutine::getContext($cid);
     }
 
     public function setOptions(array $options): void

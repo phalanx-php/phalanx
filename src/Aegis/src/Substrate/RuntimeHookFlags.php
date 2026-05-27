@@ -4,18 +4,19 @@ declare(strict_types=1);
 
 namespace Phalanx\Substrate;
 
-final readonly class RuntimeHookFlags
+final class RuntimeHookFlags
 {
     public function __construct(
-        public int $tcp,
-        public int $udp,
-        public int $unix,
-        public int $ssl,
-        public int $tls,
-        public int $file,
-        public int $sleep,
-        public int $curl,
-        public int $blocking,
-        public int $all,
-    ) {}
+        private(set) int $tcp,
+        private(set) int $udp,
+        private(set) int $unix,
+        private(set) int $ssl,
+        private(set) int $tls,
+        private(set) int $file,
+        private(set) int $sleep,
+        private(set) int $curl,
+        private(set) int $blocking,
+        private(set) int $all,
+    ) {
+    }
 }

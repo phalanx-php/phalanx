@@ -24,6 +24,7 @@ final class HookOwnershipRuleTest extends RuleTestCase
                 ['Aegis owns Swoole coroutine hook options; use RuntimePolicy, RuntimeHooks, or RuntimeCapability instead of configuring hooks in package code.', 15],
                 ['Aegis owns Swoole runtime hook flag; use RuntimePolicy, RuntimeHooks, or RuntimeCapability instead of configuring hooks in package code.', 15],
                 ['Aegis owns Swoole global runtime hook flag; use RuntimePolicy, RuntimeHooks, or RuntimeCapability instead of configuring hooks in package code.', 17],
+                ['Aegis owns Swoole global runtime hook flag; use RuntimePolicy, RuntimeHooks, or RuntimeCapability instead of configuring hooks in package code.', 18],
             ],
         );
     }

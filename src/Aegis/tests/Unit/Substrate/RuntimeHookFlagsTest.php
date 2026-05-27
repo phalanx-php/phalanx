@@ -36,7 +36,7 @@ final class RuntimeHookFlagsTest extends TestCase
         $this->assertSame(0x7FFFFFFF, $flags->all);
     }
 
-    public function testFlagsAreReadonly(): void
+    public function testPropertiesAreNotPubliclyWritable(): void
     {
         $flags = new RuntimeHookFlags(
             tcp: 2,
@@ -51,7 +51,10 @@ final class RuntimeHookFlagsTest extends TestCase
             all: 0x7FFFFFFF,
         );
 
-        $reflection = new \ReflectionClass($flags);
-        $this->assertTrue($reflection->isReadOnly());
+        $property = new \ReflectionProperty($flags, 'tcp');
+
+        $this->assertTrue($property->isPublic());
+        $this->assertFalse($property->isReadOnly());
+        $this->assertTrue($property->isProtectedSet() || $property->isPrivateSet());
     }
 }

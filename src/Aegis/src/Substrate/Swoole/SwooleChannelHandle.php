@@ -9,7 +9,7 @@ use Swoole\Coroutine\Channel;
 
 final class SwooleChannelHandle implements ChannelHandle
 {
-    private(set) Channel $inner;
+    private Channel $inner;
 
     public function __construct(int $capacity = 0)
     {
