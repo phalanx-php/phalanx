@@ -1,0 +1,21 @@
+[dory]
+# Target PHP version for the static build
+php_version = "8.4"
+
+# List of PHP extensions to compile into the static libphp.a
+# SPC will automatically resolve underlying C library dependencies.
+extensions = [
+    "swoole",
+    "pdo_pgsql",
+    "pdo_sqlite",
+    "redis",
+    "opcache",
+    "pcntl",
+    "posix",
+    "sockets",
+    "mbstring",
+    "curl",
+    "zstd",
+    "zip",
+    "ffi"
+]

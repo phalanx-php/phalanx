@@ -1,0 +1,9 @@
+[package]
+name = "dory"
+version = "0.1.0"
+edition = "2021"
+description = "Phalanx Scripting Environment (PLX-SE)"
+
+[dependencies]
+ripht-php-sapi = { path = "/Users/jhavens/Code/Me/Rust/ripht-php-sapi" }
+tempfile = "3.27.0"
