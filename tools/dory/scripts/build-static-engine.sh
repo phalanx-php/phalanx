@@ -1,23 +1,15 @@
 #!/usr/bin/env bash
-set -e
-
-# Dory Static Engine Builder
-# Orchestrates SPC (static-php-cli) to compile libphp.a based on dory.toml
+set -euo pipefail
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(dirname "$DIR")"
 BUILD_DIR="${BUILD_DIR:-/tmp/dory-spc-build}"
-RIPHT_PREFIX="$HOME/.ripht/php"
+DORY_STATIC_PHP_PREFIX="${DORY_STATIC_PHP_PREFIX:-$ROOT_DIR/.ripht/php}"
 
-echo "=== Dory Static Engine Builder ==="
+echo "=== Dory Static Runtime Builder ==="
 echo "Reading configuration from $ROOT_DIR/dory.toml"
 
-# Extract PHP version and extensions using robust PHP script
 EVAL_OUT=$(php "$DIR/parse-toml.php" "$ROOT_DIR/dory.toml")
-if [ $? -ne 0 ]; then
-    echo "Failed to parse dory.toml"
-    exit 1
-fi
 eval "$EVAL_OUT"
 
 echo "Target PHP: $PHP_VERSION"
@@ -39,21 +31,20 @@ echo "=== Phase 2: Build libphp.a ==="
 # We pin OpenSSL to 3.4.1 to avoid the 4.0 API incompatibility with PHP 8.4
 ./spc build php-src --build-embed --with-extensions="$EXTENSIONS"
 
-echo "=== Phase 3: Install to ~/.ripht/php ==="
-mkdir -p "$RIPHT_PREFIX/lib" "$RIPHT_PREFIX/include"
+echo "=== Phase 3: Install static PHP runtime ==="
+mkdir -p "$DORY_STATIC_PHP_PREFIX/lib" "$DORY_STATIC_PHP_PREFIX/include"
 
-cp "buildroot/lib/libphp.a" "$RIPHT_PREFIX/lib/libphp.a"
+cp "buildroot/lib/libphp.a" "$DORY_STATIC_PHP_PREFIX/lib/libphp.a"
 
-rm -rf "$RIPHT_PREFIX/include/php"
-cp -r "buildroot/include/php" "$RIPHT_PREFIX/include/php"
+rm -rf "$DORY_STATIC_PHP_PREFIX/include/php"
+cp -r "buildroot/include/php" "$DORY_STATIC_PHP_PREFIX/include/php"
 
-# Copy dependency static libraries (e.g., cares, curl, ssl, crypto)
 for src in buildroot/lib/*.a; do
     if [ -f "$src" ]; then
-        cp "$src" "$RIPHT_PREFIX/lib/"
+        cp "$src" "$DORY_STATIC_PHP_PREFIX/lib/"
     fi
 done
 
 echo "=== Success ==="
-echo "libphp.a installed to: $RIPHT_PREFIX/lib/libphp.a"
-ls -lh "$RIPHT_PREFIX/lib/libphp.a"
+echo "libphp.a installed to: $DORY_STATIC_PHP_PREFIX/lib/libphp.a"
+ls -lh "$DORY_STATIC_PHP_PREFIX/lib/libphp.a"

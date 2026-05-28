@@ -1,44 +1,46 @@
 use std::env;
 use std::fs;
-use std::path::Path;
+use std::path::PathBuf;
 
 fn main() {
-    let prefix = format!("{}/.ripht/php/lib", env::var("HOME").unwrap());
-    
-    // Tell Cargo where to find the static libraries built by SPC
-    println!("cargo:rustc-link-search=native={prefix}");
+    println!("cargo:rerun-if-changed=build.rs");
+    println!("cargo:rerun-if-env-changed=DORY_STATIC_PHP_PREFIX");
 
-    // The core PHP library must be linked
+    let prefix = env::var_os("DORY_STATIC_PHP_PREFIX")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| {
+            PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").expect("missing CARGO_MANIFEST_DIR"))
+                .join(".ripht/php")
+        });
+
+    let lib_dir = prefix.join("lib");
+    if !lib_dir.is_dir() {
+        println!(
+            "cargo:warning=Dory static PHP libraries not found at {}; run tools/dory/scripts/build-static-engine.sh or set DORY_STATIC_PHP_PREFIX",
+            prefix.display()
+        );
+        return;
+    }
+
+    println!("cargo:rustc-link-search=native={}", lib_dir.display());
     println!("cargo:rustc-link-lib=static=php");
 
-    // Dynamically link all other static libraries produced by SPC
-    let lib_dir = Path::new(&prefix);
-    if lib_dir.exists() && lib_dir.is_dir() {
-        for entry in fs::read_dir(lib_dir).expect("Failed to read lib directory") {
-            let entry = entry.expect("Failed to read directory entry");
-            let path = entry.path();
-            if path.is_file() {
-                if let Some(extension) = path.extension() {
-                    if extension == "a" {
-                        if let Some(file_name) = path.file_stem().and_then(|n| n.to_str()) {
-                            if file_name.starts_with("lib") && file_name != "libphp" {
-                                let lib_name = &file_name[3..];
-                                println!("cargo:rustc-link-lib=static={}", lib_name);
-                            }
-                        }
-                    }
+    for entry in fs::read_dir(&lib_dir).expect("failed to read Dory static PHP lib directory") {
+        let path = entry
+            .expect("failed to read Dory static PHP lib entry")
+            .path();
+        if path.extension().is_some_and(|extension| extension == "a") {
+            if let Some(file_name) = path.file_stem().and_then(|name| name.to_str()) {
+                if file_name.starts_with("lib") && file_name != "libphp" {
+                    println!("cargo:rustc-link-lib=static={}", &file_name[3..]);
                 }
             }
         }
     }
 
-    // macOS frameworks required by Swoole and other extensions
     println!("cargo:rustc-link-lib=framework=CoreServices");
     println!("cargo:rustc-link-lib=framework=CoreFoundation");
     println!("cargo:rustc-link-lib=framework=SystemConfiguration");
     println!("cargo:rustc-link-lib=framework=Security");
-    println!("cargo:rustc-link-lib=resolv"); // Commonly needed by DNS/networking
-    
-    // Re-run this build script if it changes
-    println!("cargo:rerun-if-changed=build.rs");
+    println!("cargo:rustc-link-lib=resolv");
 }

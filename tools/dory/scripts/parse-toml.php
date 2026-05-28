@@ -1,6 +1,10 @@
 <?php
 
-$autoloadPath = dirname(__DIR__, 4) . '/vendor/autoload.php';
+declare(strict_types=1);
+
+use PhpCollective\Toml\Toml;
+
+$autoloadPath = dirname(__DIR__, 3) . '/vendor/autoload.php';
 if (!file_exists($autoloadPath)) {
     fwrite(STDERR, "Error: vendor/autoload.php not found. Run 'composer install' in the monorepo root.\n");
     exit(1);
@@ -8,22 +12,20 @@ if (!file_exists($autoloadPath)) {
 
 require_once $autoloadPath;
 
-use Yosymfony\Toml\Toml;
-
 if ($argc < 2) {
     fwrite(STDERR, "Usage: php parse-toml.php <path/to/dory.toml>\n");
     exit(1);
 }
 
 $tomlFile = $argv[1];
-if (!file_exists($tomlFile)) {
+if (!is_file($tomlFile)) {
     fwrite(STDERR, "Error: Configuration file not found: $tomlFile\n");
     exit(1);
 }
 
 try {
-    $config = Toml::parseFile($tomlFile);
-} catch (\Exception $e) {
+    $config = Toml::decodeFile($tomlFile);
+} catch (Throwable $e) {
     fwrite(STDERR, "Error parsing TOML: " . $e->getMessage() . "\n");
     exit(1);
 }
