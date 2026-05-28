@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\PHPStan\Tests\Rules\Fixtures;
 
-use OpenSwoole\Core\Process\Manager;
 use Swoole\Process as SwooleProcess;
 use Swoole\Process\Pool as SwooleProcessPool;
 use Phalanx\System\StreamingProcess;
@@ -27,7 +26,6 @@ final class ManagedProcessOnlyFixture
         new \Swoole\Process(static function (): void {
         });
         new \Swoole\Process\Pool(1);
-        new Manager();
         StreamingProcess::from('php', '-v');
     }
 }

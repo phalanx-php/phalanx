@@ -26,7 +26,7 @@ use PHPUnit\Framework\TestCase;
  * Unit tests for {@see Transport}.
  *
  * Constructor shape and generator-return tests run without Swoole. Streaming
- * tests annotated {@see RequiresPhpExtension}('openswoole') use scripted TCP
+ * tests annotated {@see RequiresPhpExtension}('swoole') use scripted TCP
  * connections and a real Aegis scope via {@see Application::scoped()}.
  *
  * Transport\Iris\Transport is the third documented boundary exception in
@@ -60,7 +60,7 @@ final class TransportTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('openswoole')]
+    #[RequiresPhpExtension('swoole')]
     public function happyPathStreamingYieldsBodyChunks(): void
     {
         $connection = self::scriptedConnection([
@@ -76,7 +76,7 @@ final class TransportTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('openswoole')]
+    #[RequiresPhpExtension('swoole')]
     public function errorResponseMapsToHttpError(): void
     {
         $connection = self::scriptedConnection([
@@ -98,7 +98,7 @@ final class TransportTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('openswoole')]
+    #[RequiresPhpExtension('swoole')]
     public function cancellationBeforeIterationThrowsCancellationException(): void
     {
         $connection = self::scriptedConnection([self::httpResponseHeaders(), self::httpChunk('leonidas survived')]);
@@ -116,7 +116,7 @@ final class TransportTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('openswoole')]
+    #[RequiresPhpExtension('swoole')]
     public function eofTerminatesGeneratorCleanly(): void
     {
         $connection = self::scriptedConnection([self::httpResponseHeaders(), "0\r\n\r\n"]);
@@ -125,7 +125,7 @@ final class TransportTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('openswoole')]
+    #[RequiresPhpExtension('swoole')]
     public function largeResponsePreservesAllBytes(): void
     {
         $expected = 'athens sparta corinth thebes argos olympia delphi marathon salamis plataea';
@@ -139,7 +139,7 @@ final class TransportTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('openswoole')]
+    #[RequiresPhpExtension('swoole')]
     public function postRequestBodyIsSentToServer(): void
     {
         $connection = self::scriptedConnection([
@@ -163,7 +163,7 @@ final class TransportTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('openswoole')]
+    #[RequiresPhpExtension('swoole')]
     public function generatorAbandonedMidIterationReleasesStream(): void
     {
         $connection = self::scriptedConnection([

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Phalanx\PHPStan\Tests\Audit\Fixtures;
 
 use Amp\Future;
-use OpenSwoole\Core\Process\Manager;
 use Swoole\Coroutine;
 use Swoole\Coroutine\Channel;
 use Swoole\Runtime;
@@ -31,7 +30,6 @@ final class RuntimeRiskFixture
         new \Swoole\Process(static function (): void {
         });
         new \Swoole\Process\Pool(1);
-        new Manager();
         Loop::get();
         Future::complete();
         EventLoop::queue(static function (): void {

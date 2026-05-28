@@ -198,7 +198,7 @@ final class V0AcceptanceGateTest extends TestCase
      * runtime policy and wraps all work inside CoroutineRuntime::run().
      */
     #[Test]
-    #[RequiresPhpExtension('openswoole')]
+    #[RequiresPhpExtension('swoole')]
     public function gate09IrisTransportSequentialStreamingAndCancellation(): void
     {
         $successScript = self::writeGate09Server('echo "pericles won at marathon\n";');
@@ -313,7 +313,7 @@ final class V0AcceptanceGateTest extends TestCase
      * unit tests for the SyncRuntime type.
      */
     #[Test]
-    #[RequiresPhpExtension('openswoole')]
+    #[RequiresPhpExtension('swoole')]
     public function gate10CancellationEmitsCancelledCueWithoutLeaks(): void
     {
         $at = new \DateTimeImmutable('2026-05-18T00:00:00Z');

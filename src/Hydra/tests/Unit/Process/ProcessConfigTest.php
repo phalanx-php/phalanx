@@ -52,8 +52,8 @@ final class ProcessConfigTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('openswoole')]
-    public function workerCommandSkipsOpenswooleWhenIniConfigured(): void
+    #[RequiresPhpExtension('swoole')]
+    public function workerCommandSkipsSwooleWhenIniConfigured(): void
     {
         $config = new ProcessConfig(workerScript: '/tmp/worker', autoloadPath: '/tmp/autoload.php');
 
@@ -62,18 +62,18 @@ final class ProcessConfigTest extends TestCase
         $hasFlag = false;
         $count = count($cmd);
         for ($i = 0; $i < $count - 1; $i++) {
-            if ($cmd[$i] === '-d' && str_contains($cmd[$i + 1], 'openswoole')) {
+            if ($cmd[$i] === '-d' && str_contains($cmd[$i + 1], 'swoole')) {
                 $hasFlag = true;
                 break;
             }
         }
 
-        $iniConfigured = self::extensionInIniFiles('openswoole');
+        $iniConfigured = self::extensionInIniFiles('swoole');
 
         if ($iniConfigured) {
-            self::assertFalse($hasFlag, 'INI-configured openswoole must not get a -d extension flag (double-load poisons stdout)');
+            self::assertFalse($hasFlag, 'INI-configured swoole must not get a -d extension flag (double-load poisons stdout)');
         } else {
-            self::assertTrue($hasFlag, 'Non-INI openswoole must get a -d extension flag for the child process');
+            self::assertTrue($hasFlag, 'Non-INI swoole must get a -d extension flag for the child process');
         }
     }
 

@@ -46,7 +46,7 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\Attributes\Test;
 
-#[RequiresPhpExtension('openswoole')]
+#[RequiresPhpExtension('swoole')]
 final class ChannelBackedLoopTest extends PhalanxTestCase
 {
     // -- Scenario 1 --------------------------------------------------------

@@ -32,7 +32,6 @@ final class RuntimeRiskScannerTest extends TestCase
         self::assertContains('process:Symfony\Component\Process\Process::fromShellCommandline', $symbols);
         self::assertContains('process:new Swoole\Process', $symbols);
         self::assertContains('process:new Swoole\Process\Pool', $symbols);
-        self::assertContains('process:new OpenSwoole\Core\Process\Manager', $symbols);
         self::assertContains('stale_async_dependency:React\EventLoop\Loop', $symbols);
         self::assertContains('stale_async_dependency:Amp\Future', $symbols);
         self::assertContains('stale_async_dependency:Revolt\EventLoop', $symbols);

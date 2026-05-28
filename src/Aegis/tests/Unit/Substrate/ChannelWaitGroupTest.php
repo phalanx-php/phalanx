@@ -9,7 +9,7 @@ use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\TestCase;
 use Swoole\Coroutine;
 
-#[RequiresPhpExtension('openswoole')]
+#[RequiresPhpExtension('swoole')]
 final class ChannelWaitGroupTest extends TestCase
 {
     public function testWaitReturnsImmediatelyWhenCountIsZero(): void
