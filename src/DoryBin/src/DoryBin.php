@@ -10,7 +10,7 @@ use Phalanx\DoryBin\Stage\BuildLibraries;
 use Phalanx\DoryBin\Stage\BuildPhp;
 use Phalanx\DoryBin\Stage\DownloadSources;
 use Phalanx\DoryBin\Stage\EmbedPhalanx;
-use Phalanx\DoryBin\Stage\PatchOpenSwoole;
+use Phalanx\DoryBin\Stage\PatchSwoole;
 use Phalanx\DoryBin\Stage\PreflightCheck;
 use Phalanx\DoryBin\Stage\SetupRegistry;
 use Phalanx\DoryBin\Stage\StashSources;
@@ -49,7 +49,7 @@ final class DoryBin
             new StashSources(),
             new DownloadSources(),
             new BuildLibraries(),
-            new PatchOpenSwoole(),
+            new PatchSwoole(),
             new BuildPhp(),
             new EmbedPhalanx(),
             new VerifyBinary(),

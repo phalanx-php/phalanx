@@ -8,7 +8,7 @@ namespace Phalanx\System;
  * Builds `-d extension=<path>` CLI flags for each currently-loaded PHP
  * extension that a child PHP process must also load. Required when an
  * exec'd child boots a Phalanx kernel that depends on shared extensions
- * (openswoole, sqlite3) — process replacement does NOT inherit the parent's
+ * (swoole, sqlite3) — process replacement does NOT inherit the parent's
  * `-d extension=...` flags.
  *
  * Path resolution checks the standard `extension_dir` INI value first,

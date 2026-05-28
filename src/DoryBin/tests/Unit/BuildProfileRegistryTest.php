@@ -37,7 +37,7 @@ final class BuildProfileRegistryTest extends TestCase
         self::assertInstanceOf(BuildProfileDefinition::class, $definition);
         self::assertSame('mini', $definition->profile->value);
         self::assertNotEmpty($definition->requiredExtensions);
-        self::assertContains('openswoole', $definition->requiredExtensions);
+        self::assertContains('swoole', $definition->requiredExtensions);
     }
 
     #[Test]
@@ -161,12 +161,12 @@ final class BuildProfileRegistryTest extends TestCase
     }
 
     #[Test]
-    public function openswoole_version_is_set_from_yaml(): void
+    public function swoole_version_is_set_from_yaml(): void
     {
         $registry = new BuildProfileRegistry($this->profileDir);
         $definition = $registry->get(BuildProfile::Mini);
 
-        self::assertSame('26.2.0', $definition->openSwooleVersion);
+        self::assertSame('26.2.0', $definition->swooleVersion);
     }
 
     #[Test]

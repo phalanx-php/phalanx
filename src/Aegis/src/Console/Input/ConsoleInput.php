@@ -19,9 +19,9 @@ use RuntimeException;
  * source can be either:
  *   - a PHP stream resource backed by a real fd (STDIN, proc_open
  *     pipes, file streams). The read path yields via
- *     OpenSwoole\Coroutine\System::waitEvent($resource, READ, $timeout)
+ *     Swoole\Coroutine\System::waitEvent($resource, READ, $timeout)
  *     and drains via non-blocking fread().
- *   - an OpenSwoole\Coroutine\Socket. The read path yields via
+ *   - a Swoole\Coroutine\Socket. The read path yields via
  *     $socket->recv($bytes, $timeout), which is reactor-native.
  *
  * Both paths are wrapped in $scope->call(..., WaitReason::input()) so
@@ -40,7 +40,7 @@ use RuntimeException;
  * PHP resource ID, NOT the underlying kernel fd. Earlier revisions of this
  * class did the int-cast and passed the wrong number to waitEvent, which
  * the kqueue/epoll reactor rejected with "Bad file descriptor". The fix is
- * to pass the resource itself; OpenSwoole's waitEvent handles stream→fd
+ * to pass the resource itself; Swoole's waitEvent handles stream→fd
  * extraction internally via php_stream_cast(PHP_STREAM_AS_FD).
  */
 final class ConsoleInput

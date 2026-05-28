@@ -13,9 +13,9 @@ use Phalanx\Scope\TaskScope;
 
 final class WriteManifest implements BuildStage
 {
-    public string $name = 'write-manifest';
+    private(set) string $name = 'write-manifest';
 
-    public string $description = 'Generate build manifest';
+    private(set) string $description = 'Generate build manifest';
 
     public function __invoke(TaskScope&TaskExecutor $scope, SpcBuildContext $context): StageResult
     {

@@ -13,7 +13,7 @@ paint loop.
 ## Requirements
 
 - PHP `^8.4`
-- `ext-openswoole` `^26.2`
+- `ext-swoole`
 - `ext-pcntl`
 - `ext-mbstring`
 

@@ -4,6 +4,6 @@
 
 # Phalanx Aegis
 
-Managed async runtime for PHP 8.4+ on OpenSwoole. Aegis provides the scope, cancellation, service lifecycle, and concurrency primitives that the rest of Phalanx builds on.
+Managed async runtime for PHP 8.4+ on Swoole. Aegis provides the scope, cancellation, service lifecycle, and concurrency primitives that the rest of Phalanx builds on.
 
 Part of the [Phalanx framework](https://github.com/phalanx-php/phalanx).

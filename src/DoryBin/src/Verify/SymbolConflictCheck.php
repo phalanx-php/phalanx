@@ -12,9 +12,9 @@ use Phalanx\System\StreamingProcess;
 
 final class SymbolConflictCheck implements VerifyCheck
 {
-    public string $name = 'symbol-conflict';
+    private(set) string $name = 'symbol-conflict';
 
-    public string $description = 'Check for duplicate curl symbol definitions that indicate a linking conflict';
+    private(set) string $description = 'Check for duplicate curl symbol definitions that indicate a linking conflict';
 
     public function check(TaskScope&TaskExecutor $scope, string $binaryPath, BuildProfileDefinition $profile): VerifyResult
     {

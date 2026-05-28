@@ -18,7 +18,7 @@ use Phalanx\Stoa\Runtime\Identity\StoaResourceSid;
  * answer "live UDP sessions" queries. Sessions are short-lived: handler
  * returns, session closes, resource transitions to terminal.
  *
- * Closure policy: the OpenSwoole Server::on('Packet', ...) callback is
+ * Closure policy: the Swoole Server::on('Packet', ...) callback is
  * a first-class-callable bound to this listener instance so the call
  * site stays out of test/runner static-closure footguns.
  */

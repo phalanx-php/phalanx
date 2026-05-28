@@ -12,7 +12,7 @@ use RuntimeException;
 /**
  * Aegis-managed TCP client primitive.
  *
- * Wraps OpenSwoole\Coroutine\Client(SWOOLE_SOCK_TCP[ | SWOOLE_SSL]) under
+ * Wraps Swoole\Coroutine\Client(SWOOLE_SOCK_TCP[ | SWOOLE_SSL]) under
  * the scope's supervised call() so cancellation flows through scope
  * teardown, the supervisor records the wait, and downstream consumers
  * (Argos ProbePort port scans, future Hermes outbound TCP, custom protocol

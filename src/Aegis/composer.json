@@ -1,13 +1,13 @@
 {
     "name": "phalanx-php/aegis",
-    "description": "Managed async for PHP 8.4+ on OpenSwoole",
+    "description": "Managed async for PHP 8.4+ on Swoole",
     "license": "MIT",
     "type": "library",
     "keywords": [
         "async",
         "concurrency",
         "coroutines",
-        "openswoole",
+        "swoole",
         "supervisor",
         "parallel",
         "structured-concurrency"

@@ -12,7 +12,7 @@ use RuntimeException;
 /**
  * Aegis-managed UDP socket primitive.
  *
- * Wraps OpenSwoole\Coroutine\Client(SWOOLE_SOCK_UDP) under the scope's
+ * Wraps Swoole\Coroutine\Client(SWOOLE_SOCK_UDP) under the scope's
  * supervised call() so cancellation flows through the scope's
  * cancellation token, the supervisor records the wait, and downstream
  * consumers (Argos ProbeUdp/WakeHost, future Hermes UDP servers, mDNS

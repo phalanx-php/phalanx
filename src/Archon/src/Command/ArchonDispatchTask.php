@@ -16,7 +16,7 @@ use Phalanx\Task\Traceable;
 /**
  * Inside-the-coroutine dispatch entry. Installs the console signal trap from
  * here (rather than from ArchonApplication::run) so Process::signal binds
- * inside the OpenSwoole reactor that AppHost::run has already booted —
+ * inside the Swoole reactor that AppHost::run has already booted —
  * eager registration outside the reactor stalls the test process.
  *
  * @internal

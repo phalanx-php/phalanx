@@ -13,9 +13,9 @@ use Phalanx\Scope\TaskScope;
 
 final class BuildPhp implements BuildStage
 {
-    public string $name = 'build-php';
+    private(set) string $name = 'build-php';
 
-    public string $description = 'Build static PHP binary';
+    private(set) string $description = 'Build static PHP binary';
 
     public function __invoke(TaskScope&TaskExecutor $scope, SpcBuildContext $context): StageResult
     {

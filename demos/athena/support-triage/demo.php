@@ -20,8 +20,8 @@
  *
  * Usage:
  *   php demos/athena/support-triage/demo.php
- *   php -d extension=openswoole demos/athena/support-triage/demo.php
- *   OLLAMA_MODEL=mistral php -d extension=openswoole demos/athena/support-triage/demo.php
+ *   php -d extension=swoole demos/athena/support-triage/demo.php
+ *   OLLAMA_MODEL=mistral php -d extension=swoole demos/athena/support-triage/demo.php
  */
 
 declare(strict_types=1);
@@ -50,13 +50,13 @@ use Phalanx\Panoply\Id;
 use Phalanx\Scope\TaskScope;
 
 return static function (array $context): Closure {
-    if (!extension_loaded('openswoole')) {
+    if (!extension_loaded('swoole') && !extension_loaded('openswoole')) {
         $inner = DemoReport::demo(
             'Athena Support Triage Agent',
             static function (DemoReport $report): void {
                 $report->cannotRun(
-                    'openswoole extension required',
-                    'Run with: php -d extension=openswoole demos/athena/support-triage/demo.php',
+                    'swoole extension required',
+                    'Run with: php -d extension=swoole demos/athena/support-triage/demo.php',
                 );
             },
         );

@@ -36,7 +36,7 @@ use Throwable;
  * Hermes-side {@see HttpUpgradeable} implementation.
  *
  * Once `$target->upgrade()` returns true the underlying connection is in
- * WebSocket protocol state at the OpenSwoole C layer; sending an HTTP
+ * WebSocket protocol state at the Swoole C layer; sending an HTTP
  * response back is undefined. Therefore any post-handshake exception is
  * converted to a terminal-resource state and a clean return — never
  * propagated back to Stoa.

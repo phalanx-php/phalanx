@@ -8,7 +8,7 @@
         "async",
         "file",
         "stream",
-        "openswoole"
+        "swoole"
     ],
     "homepage": "https://github.com/phalanx-php/phalanx-grammata",
     "authors": [

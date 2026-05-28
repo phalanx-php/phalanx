@@ -7,7 +7,7 @@
         "http",
         "client",
         "outbound",
-        "openswoole"
+        "swoole"
     ],
     "homepage": "https://github.com/phalanx-php/phalanx-iris",
     "authors": [

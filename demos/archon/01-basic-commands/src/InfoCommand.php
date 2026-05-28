@@ -16,7 +16,7 @@ final class InfoCommand implements Scopeable
 {
     public function __invoke(CommandContext $ctx): int
     {
-        $body = "phalanx archon\nphp 8.4 + openswoole 26\nstatus: ready";
+        $body = "phalanx archon\nphp 8.4 + swoole\nstatus: ready";
 
         if ($ctx->options->flag('shout')) {
             $body = mb_strtoupper($body);

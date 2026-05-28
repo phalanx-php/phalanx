@@ -10,7 +10,7 @@ final class BuildProfileDefinition
      * @param array<string, string> $iniSettings
      * @param list<string>          $requiredExtensions
      * @param list<string>          $optionalExtensions
-     * @param array<string, bool>   $openSwooleFeatures
+     * @param array<string, bool>   $swooleFeatures
      * @param list<string>          $phalanxPackages
      * @param list<string>          $spcRegistries
      */
@@ -31,9 +31,9 @@ final class BuildProfileDefinition
 
         private(set) array $optionalExtensions,
 
-        private(set) string $openSwooleVersion,
+        private(set) string $swooleVersion,
 
-        private(set) array $openSwooleFeatures,
+        private(set) array $swooleFeatures,
 
         private(set) array $phalanxPackages,
 

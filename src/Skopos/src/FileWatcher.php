@@ -13,7 +13,7 @@ use Phalanx\Scope\TaskExecutor;
  * Subscription returned by scope.periodic() also auto-cancels on scope
  * disposal, so even callers that never invoke stop() leak nothing.
  *
- * The periodic tick fires on OpenSwoole's Timer thread, which is the
+ * The periodic tick fires on Swoole's Timer thread, which is the
  * reactor thread — not a coroutine context. A synchronous filesystem
  * walk inside the tick stalls every other coroutine for the duration
  * of the walk. Each tick therefore dispatches the scan into a fresh

@@ -17,9 +17,9 @@ use Throwable;
 /**
  * Native outbound WebSocket client.
  *
- * Builds a Phalanx-managed WebSocket session on top of OpenSwoole's
+ * Builds a Phalanx-managed WebSocket session on top of Swoole's
  * coroutine-aware HTTP client. RFC6455 framing, masking, and the 101
- * handshake are owned by OpenSwoole; Hermes layers Aegis scope ownership,
+ * handshake are owned by Swoole; Hermes layers Aegis scope ownership,
  * cancellation, managed-resource lifecycle, Styx backpressure, and
  * supervised reader/writer/ping coroutines.
  */

@@ -13,9 +13,9 @@ use Phalanx\Scope\TaskScope;
 
 final class StashSources implements BuildStage
 {
-    public string $name = 'stash-sources';
+    private(set) string $name = 'stash-sources';
 
-    public string $description = 'Download OpenSwoole sources';
+    private(set) string $description = 'Download Swoole sources';
 
     public function __invoke(TaskScope&TaskExecutor $scope, SpcBuildContext $context): StageResult
     {
@@ -31,13 +31,13 @@ final class StashSources implements BuildStage
             success: true,
             skipped: false,
             durationMs: $durationMs,
-            summary: 'OpenSwoole ' . $context->profile->openSwooleVersion . ' stashed',
+            summary: 'Swoole ' . $context->profile->swooleVersion . ' stashed',
         );
     }
 
     public function canSkip(SpcBuildContext $context): bool
     {
-        $stashDir = $context->sourcePath . '/ext-openswoole-stash';
+        $stashDir = $context->sourcePath . '/ext-swoole-stash';
         return is_dir($stashDir) && is_file($stashDir . '/config.m4');
     }
 }

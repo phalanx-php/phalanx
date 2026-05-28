@@ -8,7 +8,7 @@
         "worker",
         "process",
         "ipc",
-        "openswoole"
+        "swoole"
     ],
     "homepage": "https://github.com/phalanx-php/phalanx-hydra",
     "authors": [

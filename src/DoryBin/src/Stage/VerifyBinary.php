@@ -17,9 +17,9 @@ use Phalanx\Scope\TaskScope;
 
 final class VerifyBinary implements BuildStage
 {
-    public string $name = 'verify';
+    private(set) string $name = 'verify';
 
-    public string $description = 'Verify built binary';
+    private(set) string $description = 'Verify built binary';
 
     public function __invoke(TaskScope&TaskExecutor $scope, SpcBuildContext $context): StageResult
     {

@@ -4,7 +4,6 @@ description: Minimal runtime (Aegis + Stoa + Iris + Dory)
 php:
   version: "8.4"
   ini:
-    openswoole.use_fiber_context: "1"
     memory_limit: "256M"
     max_execution_time: "0"
   ini_path: "${DORY_INI_PATH:-~/.config/dory}"
@@ -12,7 +11,7 @@ php:
 
 extensions:
   required:
-    - openswoole
+    - swoole
     - openssl
     - curl
     - mbstring
@@ -25,7 +24,7 @@ extensions:
     - iconv
   optional: []
 
-openswoole:
+swoole:
   version: "26.2.0"
   features:
     openssl: true
@@ -48,4 +47,4 @@ phalanx:
 
 spc:
   registries:
-    - tools/spc-openswoole
+    - tools/spc-swoole

@@ -19,9 +19,9 @@ final class BinarySizeCheck implements VerifyCheck
         'custom' => 50 * 1_048_576,
     ];
 
-    public string $name = 'binary-size';
+    private(set) string $name = 'binary-size';
 
-    public string $description = 'Verify the built binary is within the expected size threshold for the profile';
+    private(set) string $description = 'Verify the built binary is within the expected size threshold for the profile';
 
     public function check(TaskScope&TaskExecutor $scope, string $binaryPath, BuildProfileDefinition $profile): VerifyResult
     {

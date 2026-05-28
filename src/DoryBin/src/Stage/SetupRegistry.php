@@ -13,9 +13,9 @@ use Phalanx\Scope\TaskScope;
 
 final class SetupRegistry implements BuildStage
 {
-    public string $name = 'setup-registry';
+    private(set) string $name = 'setup-registry';
 
-    public string $description = 'Generate spc build registry';
+    private(set) string $description = 'Generate spc build registry';
 
     public function __invoke(TaskScope&TaskExecutor $scope, SpcBuildContext $context): StageResult
     {

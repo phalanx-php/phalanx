@@ -10,7 +10,7 @@
         "emitter",
         "backpressure",
         "async",
-        "openswoole"
+        "swoole"
     ],
     "homepage": "https://github.com/phalanx-php/phalanx-styx",
     "authors": [

@@ -15,7 +15,7 @@ use RuntimeException;
 use Throwable;
 
 /**
- * OpenSwoole-table supervisor ledger backed by the managed-resource kernel.
+ * Swoole-table supervisor ledger backed by the managed-resource kernel.
  *
  * Task runs and scopes are resource rows. Edges, leases, wait reasons, and
  * task metadata remain primitive rows/annotations owned by Aegis.

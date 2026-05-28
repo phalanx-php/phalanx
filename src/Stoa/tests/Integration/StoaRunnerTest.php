@@ -303,7 +303,7 @@ final class StoaRunnerTest extends PhalanxTestCase
     }
 
     #[Test]
-    public function translates_openswoole_request_to_psr_request(): void
+    public function translates_swoole_request_to_psr_request(): void
     {
         $request = new SwooleRequest();
         $request->server = [
@@ -329,7 +329,7 @@ final class StoaRunnerTest extends PhalanxTestCase
     }
 
     #[Test]
-    public function translates_uploaded_files_from_openswoole_request(): void
+    public function translates_uploaded_files_from_swoole_request(): void
     {
         $tmpFile = tempnam(sys_get_temp_dir(), 'stoa-upload-');
         self::assertIsString($tmpFile);
@@ -372,7 +372,7 @@ final class StoaRunnerTest extends PhalanxTestCase
     }
 
     #[Test]
-    public function translates_indexed_uploaded_file_list_from_openswoole_request(): void
+    public function translates_indexed_uploaded_file_list_from_swoole_request(): void
     {
         $first = tempnam(sys_get_temp_dir(), 'stoa-upload-a-');
         $second = tempnam(sys_get_temp_dir(), 'stoa-upload-b-');
@@ -457,7 +457,7 @@ final class StoaRunnerTest extends PhalanxTestCase
     }
 
     #[Test]
-    public function preserves_psr_header_lookups_regardless_of_openswoole_header_case(): void
+    public function preserves_psr_header_lookups_regardless_of_swoole_header_case(): void
     {
         $request = new SwooleRequest();
         $request->server = [

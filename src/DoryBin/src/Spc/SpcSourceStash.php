@@ -14,8 +14,8 @@ final class SpcSourceStash
 {
     public function stash(TaskScope&TaskExecutor $scope, SpcBuildContext $context): void
     {
-        $stashDir = $context->sourcePath . '/ext-openswoole-stash';
-        $version = $context->profile->openSwooleVersion;
+        $stashDir = $context->sourcePath . '/ext-swoole-stash';
+        $version = $context->profile->swooleVersion;
 
         if (is_dir($stashDir) && is_file($stashDir . '/config.m4')) {
             return;
@@ -25,8 +25,8 @@ final class SpcSourceStash
             throw new RuntimeException("Failed to create source directory: {$context->sourcePath}");
         }
 
-        $tarballUrl = "https://github.com/openswoole/ext-openswoole/archive/refs/tags/v{$version}.tar.gz";
-        $tarballPath = $context->buildRoot . "/openswoole-{$version}.tar.gz";
+        $tarballUrl = "https://github.com/swoole/swoole-src/archive/refs/tags/v{$version}.tar.gz";
+        $tarballPath = $context->buildRoot . "/swoole-{$version}.tar.gz";
 
         $this->downloadFile($scope, $tarballUrl, $tarballPath, $context);
 

@@ -19,8 +19,8 @@ final class BuildManifestWriter
             os: $context->os,
             arch: $context->arch,
             phpVersion: $context->profile->phpVersion,
-            openSwooleVersion: $context->profile->openSwooleVersion,
-            openSwooleFeatures: $context->profile->openSwooleFeatures,
+            swooleVersion: $context->profile->swooleVersion,
+            swooleFeatures: $context->profile->swooleFeatures,
             extensions: $context->profile->allExtensions(),
             phalanxPackages: $context->profile->phalanxPackages,
             binaryPath: $binaryPath,
@@ -41,9 +41,9 @@ final class BuildManifestWriter
                 'arch' => $manifest->arch,
             ],
             'php' => ['version' => $manifest->phpVersion],
-            'openswoole' => [
-                'version' => $manifest->openSwooleVersion,
-                'features' => $manifest->openSwooleFeatures,
+            'swoole' => [
+                'version' => $manifest->swooleVersion,
+                'features' => $manifest->swooleFeatures,
             ],
             'extensions' => $manifest->extensions,
             'phalanx' => ['packages' => $manifest->phalanxPackages],

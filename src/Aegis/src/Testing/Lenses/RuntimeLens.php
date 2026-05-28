@@ -18,7 +18,7 @@ use PHPUnit\Framework\Assert;
  * Surfaces the same checks Aegis runs at boot — runtime hook policy state,
  * memory pressure on managed tables, dropped runtime events, listener
  * failures — but with a test-friendly assertion surface. Use to gate
- * integration tests on a clean OpenSwoole substrate before running work.
+ * integration tests on a clean Swoole substrate before running work.
  */
 #[Lens(
     accessor: 'runtime',

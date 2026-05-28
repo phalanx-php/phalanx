@@ -16,7 +16,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
-          extensions: openswoole, mbstring, curl, openssl, pcntl, sockets, posix
+          extensions: swoole, mbstring, curl, openssl, pcntl, sockets, posix
           tools: composer
 
       - name: Install dependencies

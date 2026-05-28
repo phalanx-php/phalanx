@@ -9,7 +9,7 @@
         "routing",
         "async",
         "fastroute",
-        "openswoole"
+        "swoole"
     ],
     "homepage": "https://github.com/phalanx-php/phalanx-stoa",
     "authors": [

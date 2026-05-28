@@ -12,9 +12,9 @@ use Phalanx\Scope\TaskScope;
 
 final class PreflightCheck implements BuildStage
 {
-    public string $name = 'preflight';
+    private(set) string $name = 'preflight';
 
-    public string $description = 'Check build prerequisites';
+    private(set) string $description = 'Check build prerequisites';
 
     public function __invoke(TaskScope&TaskExecutor $scope, SpcBuildContext $context): StageResult
     {

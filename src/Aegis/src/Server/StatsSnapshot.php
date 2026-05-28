@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Phalanx\Server;
 
 /**
- * Typed snapshot of OpenSwoole\Server::stats().
+ * Typed snapshot of Swoole\Server::stats().
  *
- * @see https://openswoole.com/docs/modules/swoole-server-stats
+ * @see https://wiki.swoole.com/en/#/server/methods?id=stats
  */
 final class StatsSnapshot
 {
@@ -24,7 +24,7 @@ final class StatsSnapshot
     }
 
     /**
-     * @param array<string, int|float|string> $stats raw payload from `OpenSwoole\Server::stats()`
+     * @param array<string, int|float|string> $stats raw payload from `Swoole\Server::stats()`
      */
     public static function fromStatsArray(array $stats): self
     {

@@ -13,9 +13,9 @@ use Phalanx\Scope\TaskScope;
 
 final class DownloadSources implements BuildStage
 {
-    public string $name = 'download';
+    private(set) string $name = 'download';
 
-    public string $description = 'Download PHP and extension sources';
+    private(set) string $description = 'Download PHP and extension sources';
 
     public function __invoke(TaskScope&TaskExecutor $scope, SpcBuildContext $context): StageResult
     {

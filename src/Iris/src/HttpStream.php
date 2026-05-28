@@ -30,7 +30,7 @@ use Phalanx\System\TcpConnection;
  * Lifecycle: the stream owns the TCP connection. {@see close()} closes the
  * underlying socket. Sharing a stream across coroutines is unsupported.
  *
- * HTTP/2 was the original substrate but OpenSwoole 26's
+ * HTTP/2 was the original substrate but Swoole's
  * `Coroutine\Http2\Client` does not deliver per-frame body data for
  * streaming responses (it buffers until END_STREAM), making real-time
  * SSE unworkable. Every LLM provider Athena targets accepts HTTP/1.1

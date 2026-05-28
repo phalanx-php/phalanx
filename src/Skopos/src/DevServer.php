@@ -33,8 +33,8 @@ use Throwable;
  * for each managed process — both shutdown paths are idempotent.
  *
  * LiveReload (SSE broadcast channel on file change) is intentionally
- * not implemented at this layer: OpenSwoole 26.2 does not ship a
- * coroutine-mode HTTP server and Skopos refuses to embed raw OpenSwoole
+ * not implemented at this layer: Swoole does not ship a
+ * coroutine-mode HTTP server and Skopos refuses to embed raw Swoole
  * HTTP server constructs without Aegis lifecycle wrapping. The feature
  * returns when a Stoa coroutine runner lands. File watchers still
  * trigger process restarts in the meantime.

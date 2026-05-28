@@ -11,7 +11,7 @@ use Phalanx\Supervisor\WaitReason;
 /**
  * Aegis-managed external command primitive.
  *
- * Wraps OpenSwoole\Coroutine\System::exec under a Suspendable::call so the
+ * Wraps Swoole\Coroutine\System::exec under a Suspendable::call so the
  * supervisor records the wait, cancellation propagates through scope tear-down,
  * and downstream consumers (Argos PingHost, Enigma SSH transport, Hydra worker
  * spawn diagnostics, Skopos managed processes) share one canonical exec path.

@@ -24,10 +24,10 @@ use Phalanx\System\PhpExtensionFlags;
  * SIGKILL after $gracePeriod. awaitExit() waits for natural completion
  * (used by capture() flows that complete on their own).
  *
- * Why OpenSwoole\Process and not Phalanx\System\StreamingProcess: demos
+ * Why Swoole\Process and not Phalanx\System\StreamingProcess: demos
  * that spawn an inline-defined server via closure (stoa-03/04 wrap a
  * Stoa::starting()->...->run() body in a child without needing a
- * separate server.php file) can only use OpenSwoole\Process(Closure).
+ * separate server.php file) can only use Swoole\Process(Closure).
  * StreamingProcess is binary-exec only and requires a scope to register
  * the process as a managed resource — neither fits the demo-driver
  * lifecycle here (the parent has no Phalanx scope; the child is the
@@ -64,14 +64,14 @@ final class DemoSubprocess
     /**
      * Build a {binary, args} tuple for $process->exec() that inherits the parent
      * process's loaded shared extensions. Required when an exec'd child boots a
-     * Phalanx kernel that depends on extensions like openswoole.
+     * Phalanx kernel that depends on extensions like swoole.
      *
      * @param list<string> $scriptArgs
      * @return array{0: string, 1: list<string>}
      */
     public static function phpCommand(string $scriptPath, array $scriptArgs = []): array
     {
-        $args   = PhpExtensionFlags::forLoaded(['openswoole', 'sqlite3']);
+        $args   = PhpExtensionFlags::forLoaded(['swoole', 'sqlite3']);
         $args[] = $scriptPath;
         foreach ($scriptArgs as $arg) {
             $args[] = $arg;

@@ -35,7 +35,7 @@ return DemoReport::demo(
         if ($server === null) {
             $report->cannotRun(
                 'unable to start the realtime server subprocess.',
-                'verify OpenSwoole is loaded and the port is free.',
+                'verify Swoole is loaded and the port is free.',
             );
             return;
         }

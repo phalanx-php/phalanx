@@ -14,7 +14,7 @@ use Phalanx\Supervisor\WaitReason;
 use Throwable;
 
 /**
- * Live SSE stream bound to a single OpenSwoole client fd.
+ * Live SSE stream bound to a single Swoole client fd.
  *
  * Writes go through {@see Suspendable::call()} so cancellation, supervisor
  * wait-reason classification, and diagnostics surface naturally. Each

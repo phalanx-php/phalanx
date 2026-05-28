@@ -18,7 +18,7 @@ use Phalanx\Scope\Scope;
 use Phalanx\Scope\Suspendable;
 
 /**
- * OpenSwoole-native HTTP transport for panoply. Bridges panoply's
+ * Swoole-native HTTP transport for panoply. Bridges panoply's
  * {@see TransportContract} adapter family to phalanx-iris's coroutine-aware
  * {@see HttpClient}, delivering true incremental streaming via HTTP/1.1
  * chunked transfer.

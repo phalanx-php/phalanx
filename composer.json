@@ -1,6 +1,6 @@
 {
     "name": "phalanx-php/phalanx",
-    "description": "Supervised execution framework for PHP 8.4+ on OpenSwoole",
+    "description": "Supervised execution framework for PHP 8.4+ on Swoole",
     "license": "MIT",
     "authors": [
         {

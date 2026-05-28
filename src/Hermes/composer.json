@@ -8,7 +8,7 @@
         "ws",
         "client",
         "server",
-        "openswoole"
+        "swoole"
     ],
     "homepage": "https://github.com/phalanx-php/phalanx-hermes",
     "authors": [

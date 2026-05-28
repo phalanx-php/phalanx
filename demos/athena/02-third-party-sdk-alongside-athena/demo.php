@@ -16,7 +16,7 @@
  * hooks, it blocks the worker. This demo does not assert which regime is active.
  *
  * Prerequisites:
- *   - openswoole extension loaded
+ *   - swoole extension loaded
  *   - guzzlehttp/guzzle installed (require-dev)
  *
  * Optional env:
@@ -26,7 +26,7 @@
  *   - GUZZLE_DEMO_URL — http(s) URL Guzzle should hit (default https://httpbin.org/status/200)
  *
  * Usage:
- *   php -d extension=openswoole demos/athena/02-third-party-sdk-alongside-athena/demo.php
+ *   php -d extension=swoole demos/athena/02-third-party-sdk-alongside-athena/demo.php
  */
 
 declare(strict_types=1);
@@ -54,14 +54,14 @@ use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\TaskScope;
 use Phalanx\Task\Task;
 
-// Aegis kernel requires OpenSwoole\Table; guard before boot.
-if (!extension_loaded('openswoole')) {
+// Aegis kernel requires Swoole\Table; guard before boot.
+if (!extension_loaded('swoole') && !extension_loaded('openswoole')) {
     return DemoReport::demo(
         'Athena Third-Party SDK Alongside Athena',
         static function (DemoReport $report): void {
             $report->cannotRun(
-                'openswoole extension required',
-                'Run with: php -d extension=openswoole demos/athena/02-third-party-sdk-alongside-athena/demo.php',
+                'swoole extension required',
+                'Run with: php -d extension=swoole demos/athena/02-third-party-sdk-alongside-athena/demo.php',
             );
         },
     );

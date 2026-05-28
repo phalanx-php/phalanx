@@ -6,7 +6,7 @@
     "keywords": [
         "phpstan",
         "phalanx",
-        "openswoole",
+        "swoole",
         "static-analysis",
         "async"
     ],

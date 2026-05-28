@@ -10,9 +10,9 @@ use Phalanx\Scope\TaskScope;
 
 final class ExtensionCheck implements VerifyCheck
 {
-    public string $name = 'extensions';
+    private(set) string $name = 'extensions';
 
-    public string $description = 'Verify all required extensions are loaded in the built binary';
+    private(set) string $description = 'Verify all required extensions are loaded in the built binary';
 
     public function check(TaskScope&TaskExecutor $scope, string $binaryPath, BuildProfileDefinition $profile): VerifyResult
     {

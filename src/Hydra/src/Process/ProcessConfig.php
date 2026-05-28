@@ -27,7 +27,7 @@ final readonly class ProcessConfig
     /**
      * Build the PHP command array for spawning this worker as a subprocess.
      * Index 0 is PHP_BINARY; subsequent elements are `-d extension=<path>`
-     * flags forwarding shared extensions the child needs (openswoole,
+     * flags forwarding shared extensions the child needs (swoole,
      * sqlite3), the worker script path, and the autoload argument. The
      * shape matches what StreamingProcess::command(array $argv) expects.
      *

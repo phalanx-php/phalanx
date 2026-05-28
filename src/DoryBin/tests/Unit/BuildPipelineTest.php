@@ -181,8 +181,8 @@ final class BuildPipelineTest extends TestCase
             iniScanDir: '/tmp',
             requiredExtensions: [],
             optionalExtensions: [],
-            openSwooleVersion: '26.2.0',
-            openSwooleFeatures: [],
+            swooleVersion: '26.2.0',
+            swooleFeatures: [],
             phalanxPackages: [],
             spcRegistries: [],
         );

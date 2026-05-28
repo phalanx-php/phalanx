@@ -1,12 +1,12 @@
 {
     "name": "phalanx-php/cli",
-    "description": "Phalanx CLI: doctor, OpenSwoole installer using PIE, and project scaffolding",
+    "description": "Phalanx CLI: doctor, Swoole installer using PIE, and project scaffolding",
     "license": "MIT",
     "type": "library",
     "keywords": [
         "cli",
         "phalanx",
-        "openswoole",
+        "swoole",
         "installer",
         "doctor"
     ],

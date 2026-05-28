@@ -22,7 +22,7 @@ use Phalanx\Scope\Suspendable;
  * post() pops and returns the next queued HttpResponse; if the queue is
  * exhausted it returns a generic 202 Accepted.
  *
- * Constructed without any live Aegis runtime or OpenSwoole dependencies — safe
+ * Constructed without any live Aegis runtime or Swoole dependencies — safe
  * to use in unit tests, acceptance tests, and demo scripts alike.
  */
 final class FakeHttpClient extends HttpClient

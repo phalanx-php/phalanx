@@ -19,8 +19,8 @@
  *
  * Usage:
  *   php demos/athena/research-agent/demo.php
- *   php -d extension=openswoole demos/athena/research-agent/demo.php
- *   OLLAMA_MODEL=mistral php -d extension=openswoole demos/athena/research-agent/demo.php
+ *   php -d extension=swoole demos/athena/research-agent/demo.php
+ *   OLLAMA_MODEL=mistral php -d extension=swoole demos/athena/research-agent/demo.php
  */
 
 declare(strict_types=1);
@@ -47,13 +47,13 @@ use Phalanx\Panoply\Id;
 use Phalanx\Scope\TaskScope;
 
 return static function (array $context): Closure {
-    if (!extension_loaded('openswoole')) {
+    if (!extension_loaded('swoole') && !extension_loaded('openswoole')) {
         $inner = DemoReport::demo(
             'Athena Research Agent',
             static function (DemoReport $report): void {
                 $report->cannotRun(
-                    'openswoole extension required',
-                    'Run with: php -d extension=openswoole demos/athena/research-agent/demo.php',
+                    'swoole extension required',
+                    'Run with: php -d extension=swoole demos/athena/research-agent/demo.php',
                 );
             },
         );

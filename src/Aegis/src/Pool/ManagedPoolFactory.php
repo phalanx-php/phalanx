@@ -9,8 +9,8 @@ namespace Phalanx\Pool;
  *
  * Implementations produce a fresh client object when the pool needs to
  * grow. The contract intentionally matches the static-`make()` shape used
- * by `OpenSwoole\Core\Coroutine\Pool\ClientPool` so a Phalanx ManagedPool
- * can be built on top of the OpenSwoole core pool by passing the factory
+ * by `Swoole\Core\Coroutine\Pool\ClientPool` so a Phalanx ManagedPool
+ * can be built on top of the Swoole core pool by passing the factory
  * class through directly. Callers compose a small named class implementing
  * this interface and `make()` (e.g. `PostgresClientFactory`,
  * `RedisClientFactory`).

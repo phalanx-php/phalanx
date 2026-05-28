@@ -3,7 +3,7 @@ includes:
 
 parameters:
     level: 8
-    # OSR-40 root gate: keep current OpenSwoole foundation packages green.
+    # OSR-40 root gate: keep current Swoole foundation packages green.
     # Legacy and parallel-lane packages are classified in vault context and
     # reintroduced package-by-package as their 0.2 ports land.
     paths:
@@ -33,6 +33,7 @@ parameters:
         - benchmarks
         - demos
     scanDirectories:
+        # TODO(OSR-156): swap to vendor/swoole/ide-helper after openswoole/ide-helper removal
         - vendor/openswoole/ide-helper
         - vendor/swoole/ide-helper
     phalanxInternalPaths:
@@ -52,7 +53,7 @@ parameters:
         - src/Aegis/src/Supervisor/Supervisor.php
         - src/Aegis/src/Supervisor/SwooleTableLedger.php
         - src/Aegis/src/Supervisor/TaskRun.php
-        - src/Aegis/src/Substrate/Swoole/
+        - src/Aegis/src/Engine/Swoole/
         - src/Aegis/src/Worker/
         - src/Stoa/src/StoaRunner.php
     phalanxEnforcedPaths:
@@ -85,7 +86,7 @@ parameters:
         - src/Aegis/src/Runtime/RuntimeHookNames.php
         - src/Aegis/src/Runtime/RuntimeHooks.php
         - src/Aegis/src/Runtime/RuntimePolicy.php
-        - src/Aegis/src/Substrate/Swoole/
+        - src/Aegis/src/Engine/Swoole/
     phalanxProcessInternalPaths:
         - src/Aegis/src/System/Internal/SymfonyProcessAdapter.php
         - src/Cli/src
@@ -93,18 +94,18 @@ parameters:
         - src/Theatron/src/Terminal/Terminal.php
     phalanxCoroutineInternalPaths:
         - src/Aegis/src/Scope/ExecutionLifecycleScope.php
-        - src/Aegis/src/Substrate/Swoole/
+        - src/Aegis/src/Engine/Swoole/
         - benchmarks/kernel/cases/ContextSwitchCases.php
     ignoreErrors:
-        # ext-openswoole provides Swoole\* classes with OpenSwoole signatures.
-        # Substrate targets ext-swoole 6 -- these resolve when the extension is swapped.
+        # ext-swoole provides Swoole\* classes. Engine targets ext-swoole 6.
+        # These resolve cleanly once the extension is in place.
         -
             message: '#.*#'
-            path: src/Aegis/src/Substrate/Swoole/
+            path: src/Aegis/src/Engine/Swoole/
             reportUnmatched: false
         -
             message: '#return type#'
-            path: src/Aegis/src/Substrate/CoroutineDriver.php
+            path: src/Aegis/src/Engine/CoroutineDriver.php
             reportUnmatched: false
         -
             identifier: phalanx.testing.useBenchmarkHarness

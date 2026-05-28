@@ -10,7 +10,7 @@ namespace Phalanx\Supervisor;
  *
  * Producers (Stoa SSE writers, WebSocket frame senders, raw TCP/UDP
  * emitters) register a DeliveryLease at write time and release it via
- * `OpenSwoole\Server::onBufferEmpty($fd)`. While the lease is held the
+ * `Swoole\Server::onBufferEmpty($fd)`. While the lease is held the
  * supervisor knows the task is parked on a buffered write — distinct
  * from a connection-pool checkout (PoolLease) or a transactional hold
  * (TransactionLease).

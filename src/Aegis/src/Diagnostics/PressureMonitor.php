@@ -14,7 +14,7 @@ use Phalanx\Trace\TraceType;
 /**
  * Periodic event-loop-lag watchdog.
  *
- * OpenSwoole 26 exposes `event_loop_lag` (microseconds since the reactor
+ * Swoole 26 exposes `event_loop_lag` (microseconds since the reactor
  * last drained the ready queue) on `$server->stats()`. Sustained lag is
  * the canonical signal that some PHP code is blocking the reactor —
  * unhooked I/O, tight CPU loops, or something stuck in a non-yielding

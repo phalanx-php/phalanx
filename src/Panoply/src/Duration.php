@@ -8,7 +8,7 @@ namespace Phalanx\Panoply;
  * Immutable non-negative time span with microsecond internal representation.
  *
  * The internal unit is microseconds — matching PHP's `microtime(true)` scale
- * and OpenSwoole timer resolution. All factories accept the natural unit of
+ * and Swoole timer resolution. All factories accept the natural unit of
  * the caller; all accessors return the natural unit of the consumer.
  *
  * Final — canonical representation is a sealed int-microsecond storage;

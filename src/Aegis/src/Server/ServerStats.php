@@ -9,16 +9,16 @@ use Swoole\Server;
 use Phalanx\Registry\RegistryScope;
 
 /**
- * Aegis-managed accessor over OpenSwoole\Server::stats().
+ * Aegis-managed accessor over Swoole\Server::stats().
  *
  * The master process tracks `connection_num`, `accept_count`, `close_count`,
  * `event_loop_lag`, etc. natively. This class exposes those counters as a
  * typed snapshot so callers (Stoa connection registries, admin endpoints,
  * the PressureMonitor) can ask Aegis for a server-wide read without
- * touching OpenSwoole APIs directly.
+ * touching Swoole APIs directly.
  *
  * Stoa is the typical injector: it constructs the ServerStats with the
- * live `OpenSwoole\Server` instance via {@see fromServer()} during boot.
+ * live `Swoole\Server` instance via {@see fromServer()} during boot.
  * Unit tests use {@see fromArray()} or {@see fromProvider()} to feed
  * synthetic stats without a live Server.
  *

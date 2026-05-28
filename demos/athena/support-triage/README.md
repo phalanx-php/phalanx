@@ -7,7 +7,7 @@ A single agent classifies support tickets, gathers customer context, and drafts 
 Runs one triage cycle with a scripted ticket payload and exits 0. No live provider or network required.
 
 ```bash
-php -d extension=openswoole demos/athena/support-triage/demo.php
+php -d extension=swoole demos/athena/support-triage/demo.php
 # or via composer:
 composer demo:athena:support-triage
 ```
@@ -19,7 +19,7 @@ Starts an SSE endpoint at `POST /triage`. The handler runs the triage agent and 
 ```bash
 composer demo:athena:serve:support-triage
 # or with a specific Ollama model:
-OLLAMA_MODEL=qwen2.5-coder:7b php -d extension=openswoole demos/athena/support-triage/server.php
+OLLAMA_MODEL=qwen2.5-coder:7b php -d extension=swoole demos/athena/support-triage/server.php
 ```
 
 Submit a ticket:

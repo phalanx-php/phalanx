@@ -10,9 +10,9 @@ use Phalanx\Scope\TaskScope;
 
 final class SmokeTestCheck implements VerifyCheck
 {
-    public string $name = 'smoke-test';
+    private(set) string $name = 'smoke-test';
 
-    public string $description = 'Verify the binary executes PHP without error';
+    private(set) string $description = 'Verify the binary executes PHP without error';
 
     public function check(TaskScope&TaskExecutor $scope, string $binaryPath, BuildProfileDefinition $profile): VerifyResult
     {

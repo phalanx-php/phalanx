@@ -13,9 +13,9 @@ use Phalanx\Scope\TaskScope;
 
 final class BuildLibraries implements BuildStage
 {
-    public string $name = 'build-libs';
+    private(set) string $name = 'build-libs';
 
-    public string $description = 'Build library dependencies';
+    private(set) string $description = 'Build library dependencies';
 
     public function __invoke(TaskScope&TaskExecutor $scope, SpcBuildContext $context): StageResult
     {

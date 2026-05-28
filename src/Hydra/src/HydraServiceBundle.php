@@ -40,7 +40,7 @@ final class HydraServiceBundle extends ServiceBundle
 
     /**
      * Force-load classes that fail to resolve when first referenced from inside
-     * an OpenSwoole coroutine with SWOOLE_HOOK_FILE active. The interaction is:
+     * a Swoole coroutine with SWOOLE_HOOK_FILE active. The interaction is:
      * SWOOLE_HOOK_FILE converts `include` to coroutine-aware I/O; Symfony's
      * DebugClassLoader (enabled in dev mode by symfony/runtime) wraps autoload
      * and calls `include` for each class in an inheritance chain. Inside a

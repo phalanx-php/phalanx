@@ -8,7 +8,7 @@
         "cli",
         "async",
         "phalanx",
-        "openswoole"
+        "swoole"
     ],
     "homepage": "https://github.com/phalanx-php/phalanx-dory",
     "authors": [

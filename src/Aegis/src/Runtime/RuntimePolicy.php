@@ -98,10 +98,10 @@ final readonly class RuntimePolicy
     }
 
     /**
-     * Render coroutine-level options for OpenSwoole\Coroutine::set().
+     * Render coroutine-level options for Swoole\Coroutine::set().
      *
      * `use_fiber_context` routes coroutine context through PHP's native
-     * zend_fiber API (OpenSwoole 26 default-ready). This makes Xdebug step
+     * zend_fiber API (Swoole 26 default-ready). This makes Xdebug step
      * debugging work across coroutines and prevents context drift when
      * Phalanx code shares a process with other Fiber-aware libraries.
      *

@@ -13,9 +13,9 @@ use Phalanx\Scope\TaskScope;
 
 final class EmbedPhalanx implements BuildStage
 {
-    public string $name = 'embed-phalanx';
+    private(set) string $name = 'embed-phalanx';
 
-    public string $description = 'Embed Phalanx sources into binary';
+    private(set) string $description = 'Embed Phalanx sources into binary';
 
     public function __invoke(TaskScope&TaskExecutor $scope, SpcBuildContext $context): StageResult
     {

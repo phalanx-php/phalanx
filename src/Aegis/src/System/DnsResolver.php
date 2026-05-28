@@ -11,7 +11,7 @@ use Phalanx\Supervisor\WaitReason;
 /**
  * Aegis-managed DNS resolver primitive.
  *
- * Wraps OpenSwoole\Coroutine\System::dnsLookup and getaddrinfo under
+ * Wraps Swoole\Coroutine\System::dnsLookup and getaddrinfo under
  * the scope's supervised call() so cancellation flows through scope
  * teardown and the supervisor records the wait reason. Downstream
  * consumers (Argos ResolveHostname, future Hermes outbound, agent

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Runtime;
 
-use Phalanx\Substrate\Substrate;
+use Phalanx\Engine\Engine;
 use Throwable;
 
 final class RuntimeHooks
@@ -15,7 +15,7 @@ final class RuntimeHooks
 
     public static function currentFlags(): int
     {
-        return Substrate::hooks()->getHookFlags();
+        return Engine::hooks()->getHookFlags();
     }
 
     public static function inspect(RuntimePolicy $policy): RuntimeHookSnapshot
@@ -33,7 +33,7 @@ final class RuntimeHooks
         }
 
         try {
-            Substrate::hooks()->enableCoroutine($before->currentFlags | $policy->requiredFlags);
+            Engine::hooks()->enableCoroutine($before->currentFlags | $policy->requiredFlags);
         } catch (Throwable $e) {
             if ($strict) {
                 throw RuntimePolicyViolation::enableFailed($policy, $before->missingFlags, $e);
@@ -52,7 +52,7 @@ final class RuntimeHooks
 
     /**
      * Push coroutine-level options (`use_fiber_context`, etc.) into
-     * OpenSwoole. This is best-effort: Coroutine::set is idempotent and
+     * Swoole. This is best-effort: Coroutine::set is idempotent and
      * safe to call before any coroutine is spawned. Failures are
      * swallowed because none of the options here are correctness-
      * critical at this seam — they are observability/compatibility
@@ -60,7 +60,7 @@ final class RuntimeHooks
      * the EnvironmentDoctor instead.
      *
      * `use_fiber_context` cannot be changed while coroutines are running
-     * (OpenSwoole emits a PHP warning and refuses). Phalanx applies the
+     * (Swoole emits a PHP warning and refuses). Phalanx applies the
      * setting at boot, so the active-coroutine guard short-circuits when
      * called from inside an already-live coroutine context (e.g. nested
      * test harnesses), keeping ensure() warning-free.
@@ -71,9 +71,9 @@ final class RuntimeHooks
             return;
         }
         try {
-            Substrate::coroutine()->setOptions($policy->coroutineOptions());
+            Engine::coroutine()->setOptions($policy->coroutineOptions());
         } catch (Throwable) {
-            // Older OpenSwoole builds may not recognize newer options;
+            // Older Swoole builds may not recognize newer options;
             // ignore and let inspect()/ensure() drive the policy gate.
         }
     }

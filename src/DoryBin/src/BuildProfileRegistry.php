@@ -94,8 +94,8 @@ final class BuildProfileRegistry
 
         $extensions = $data['extensions'] ?? [];
 
-        $openSwoole = $data['openswoole'] ?? [];
-        $featuresRaw = $openSwoole['features'] ?? [];
+        $swoole = $data['swoole'] ?? [];
+        $featuresRaw = $swoole['features'] ?? [];
         $features = [];
         foreach ($featuresRaw as $key => $value) {
             $features[$key] = (bool) $value;
@@ -113,8 +113,8 @@ final class BuildProfileRegistry
             iniScanDir: $iniScanDir,
             requiredExtensions: array_values((array) ($extensions['required'] ?? [])),
             optionalExtensions: array_values((array) ($extensions['optional'] ?? [])),
-            openSwooleVersion: (string) ($openSwoole['version'] ?? '26.2.0'),
-            openSwooleFeatures: $features,
+            swooleVersion: (string) ($swoole['version'] ?? '26.2.0'),
+            swooleFeatures: $features,
             phalanxPackages: array_values((array) ($phalanx['packages'] ?? [])),
             spcRegistries: array_values((array) ($spc['registries'] ?? [])),
         );

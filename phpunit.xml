@@ -124,7 +124,7 @@
         <testsuite name="Themis Unit">
             <directory>src/Themis/tests/Unit</directory>
         </testsuite>
-        <!-- Keep Stoa's HTTP-lens integration last. OpenSwoole does not fully
+        <!-- Keep Stoa's HTTP-lens integration last. Swoole does not fully
              reset its event-loop state inside one PHPUnit process. -->
         <testsuite name="Stoa Integration">
             <directory>src/Stoa/tests/Integration</directory>

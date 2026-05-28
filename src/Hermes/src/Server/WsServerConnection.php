@@ -27,7 +27,7 @@ use Throwable;
  * Bridges an existing {@see WsConnection} (the user-facing handle) to an
  * upgraded {@see SwooleHttpResponse} via supervised reader/writer/ping
  * coroutines. Reader feeds {@see WsConnection::$inbound}; writer drains
- * {@see WsConnection::$outbound} and pushes frames to the OpenSwoole
+ * {@see WsConnection::$outbound} and pushes frames to the Swoole
  * response. Close is idempotent and unregisters from the gateway.
  */
 final class WsServerConnection

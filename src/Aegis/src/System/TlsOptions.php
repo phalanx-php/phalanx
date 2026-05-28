@@ -5,15 +5,15 @@ declare(strict_types=1);
 namespace Phalanx\System;
 
 /**
- * Typed value object for the OpenSwoole SSL/TLS options accepted by
- * `OpenSwoole\Coroutine\Client::set()` when the SWOOLE_SSL flag is enabled.
+ * Typed value object for the Swoole SSL/TLS options accepted by
+ * `Swoole\Coroutine\Client::set()` when the SWOOLE_SSL flag is enabled.
  *
- * The whitelist below mirrors the option keys OpenSwoole 26.2 documents for
+ * The whitelist below mirrors the option keys Swoole 26.2 documents for
  * coroutine TLS clients. Using this object keeps SSL config out of the
  * stringly-typed `setOption()` surface and prevents key drift across
  * consumers.
  *
- * Reference: vendor/openswoole/ide-helper for the live ABI; OpenSwoole docs
+ * Reference: the Swoole IDE helper stubs for the live ABI; Swoole docs
  * for the tested option set.
  */
 final readonly class TlsOptions
@@ -33,8 +33,8 @@ final readonly class TlsOptions
     }
 
     /**
-     * Render to the associative array shape OpenSwoole's `Client::set()`
-     * consumes. Null entries are dropped so OpenSwoole defaults stay in
+     * Render to the associative array shape Swoole's `Client::set()`
+     * consumes. Null entries are dropped so Swoole defaults stay in
      * effect for unset fields.
      *
      * @return array<string, string|int|bool>

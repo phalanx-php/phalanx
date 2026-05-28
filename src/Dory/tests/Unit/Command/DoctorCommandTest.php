@@ -39,7 +39,7 @@ final class DoctorCommandTest extends TestCase
     }
 
     #[Test]
-    public function output_contains_openswoole_check(): void
+    public function output_contains_swoole_check(): void
     {
         [$scope, $stream] = $this->buildScope();
         $command = new DoctorCommand();

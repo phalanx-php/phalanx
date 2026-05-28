@@ -18,7 +18,7 @@
  * It only needs the Aegis runtime and PHP itself (no external services).
  *
  * Usage:
- *   php -d extension=openswoole demos/athena/03-mcp-stdio/demo.php
+ *   php -d extension=swoole demos/athena/03-mcp-stdio/demo.php
  */
 
 declare(strict_types=1);
@@ -38,15 +38,15 @@ use Phalanx\Task\Task;
 
 return static function (array $_context): Closure {
     // DemoApp::boot() eagerly constructs the Aegis kernel, which requires
-    // OpenSwoole\Table. Guard before boot so a missing extension produces a
+    // Swoole\Table. Guard before boot so a missing extension produces a
     // clean cannotRun message rather than a fatal ClassNotFoundError.
-    if (!extension_loaded('openswoole')) {
+    if (!extension_loaded('swoole') && !extension_loaded('openswoole')) {
         $inner = DemoReport::demo(
             'Athena MCP stdio client',
             static function (DemoReport $report): void {
                 $report->cannotRun(
-                    'openswoole extension required',
-                    'Run with: php -d extension=openswoole demos/athena/03-mcp-stdio/demo.php',
+                    'swoole extension required',
+                    'Run with: php -d extension=swoole demos/athena/03-mcp-stdio/demo.php',
                 );
             },
         );

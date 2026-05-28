@@ -10,7 +10,7 @@ namespace Phalanx\Registry;
  *
  * Used by ServerStats and any future registry/count accessor where the
  * caller asks "live count of X" and the answer differs depending on
- * whether the question is local-process or process-spanning. OpenSwoole's
+ * whether the question is local-process or process-spanning. Swoole's
  * master process tracks server-wide counts natively; the per-worker
  * answer is local registry size or filtered iteration over getClientList.
  */

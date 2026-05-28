@@ -11,7 +11,7 @@ interface Suspendable
 {
     /**
      * Run the closure in the calling coroutine, racing against scope cancellation.
-     * Under Aegis-managed OpenSwoole runtime hooks, supported blocking I/O
+     * Under Aegis-managed Swoole runtime hooks, supported blocking I/O
      * suspends transparently; cancellation is enforced by registering a
      * Coroutine::cancel listener on the scope's token for the duration of the
      * call.

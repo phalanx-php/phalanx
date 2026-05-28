@@ -12,7 +12,7 @@
         "ollama",
         "agent-abstraction",
         "conversation-parser",
-        "openswoole"
+        "swoole"
     ],
     "homepage": "https://github.com/phalanx-php/phalanx-panoply",
     "authors": [
@@ -29,11 +29,11 @@
     "suggest": {
         "phalanx-php/aegis": "Required for the Aegis Runtime adapter; enables scope-bound cancellation and cleanup",
         "phalanx-php/athena": "Required for the Athena Provider adapter; bridges Athena's AgentEvent stream to panoply Cues",
-        "phalanx-php/iris": "Required for the Iris Transport adapter; OpenSwoole-native streaming HTTP",
+        "phalanx-php/iris": "Required for the Iris Transport adapter; Swoole-native streaming HTTP",
         "phalanx-php/grammata": "Required for HomeDir parsers; managed file I/O with FilePool",
         "phalanx-php/archon": "Required for the panoply:agents:scan Archon command",
         "ext-sqlite3": "Required for Codex HomeDir sqlite-backed history",
-        "ext-openswoole": "Required for the Iris transport and Aegis runtime",
+        "ext-openswoole": "Required for the Iris transport and Aegis runtime (Swoole extension)",
         "php-collective/toml": "Required for reading Codex config.toml settings; without it Settings operates in no-op mode and asString/asInt/etc. throw"
     },
     "require-dev": {

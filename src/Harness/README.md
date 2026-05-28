@@ -14,7 +14,7 @@ Part of the [Phalanx framework](https://github.com/phalanx-php/phalanx).
 ## Requirements
 
 - PHP `^8.4`
-- `ext-openswoole` `^26.2`
+- `ext-swoole`
 - `ext-pcntl`
 - `ext-mbstring`
 

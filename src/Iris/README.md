@@ -4,6 +4,6 @@
 
 # Phalanx Iris
 
-Outbound HTTP client for Phalanx applications running on the OpenSwoole runtime.
+Outbound HTTP client for Phalanx applications running on the Swoole runtime.
 
 Part of the [Phalanx framework](https://github.com/phalanx-php/phalanx).

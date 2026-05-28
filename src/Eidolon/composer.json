@@ -11,7 +11,7 @@
         "ssr",
         "signals",
         "async",
-        "openswoole"
+        "swoole"
     ],
     "homepage": "https://github.com/phalanx-php/phalanx-eidolon",
     "authors": [

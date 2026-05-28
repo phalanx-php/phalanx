@@ -64,7 +64,7 @@ function fixtureComposer(array $modules, string $root): array
         'require' => [
             'php' => '^8.4',
             'ext-mbstring' => '*',
-            'ext-openswoole' => '^26.2',
+            'ext-swoole' => '*',
             'ext-pcntl' => '*',
             'phalanx-php/harness' => '*',
             'symfony/runtime' => '^7.0 || ^8.0',

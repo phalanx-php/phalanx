@@ -4,7 +4,7 @@
 
 # Phalanx
 
-Phalanx is a supervised execution framework for PHP 8.4+ applications built on OpenSwoole.
+Phalanx is a supervised execution framework for PHP 8.4+ applications built on Swoole.
 
 PHP has plenty of frameworks. Plenty of async libraries too. Phalanx is for the part they tend to leave implicit: the footguns that appear when correct-looking async PHP is composed, retried, deferred, streamed, pooled, or left running long enough to matter.
 
@@ -236,7 +236,7 @@ The modules are in one cohesive framework. The names are still useful when readi
 | Skopos | dev server orchestration |
 | Eidolon | frontend bridge contracts |
 | Themis | typed config hydration, env validation, secrets |
-| Cli | doctor, OpenSwoole installer (PIE), project scaffolding |
+| Cli | doctor, Swoole installer (PIE), project scaffolding |
 | PHPStan | static safety checks for runtime-sensitive patterns |
 
 ## Demos
@@ -256,7 +256,7 @@ The repo includes runnable demos for the current surfaces. Development is moving
 
 ## Installation
 
-Phalanx uses PIE, PHP's modern extension installer. `phalanx-php/cli` ships the doctor and the OpenSwoole installer with platform-aware flag selection.
+Phalanx uses PIE, PHP's modern extension installer. `phalanx-php/cli` ships the doctor and the Swoole installer with platform-aware flag selection.
 
 ```bash
 composer require phalanx-php/cli
@@ -264,28 +264,28 @@ composer require phalanx-php/cli
 # Check your environment (PHP version, extensions, build tooling)
 vendor/bin/phalanx doctor
 
-# Install OpenSwoole via PIE with optimal platform flags
+# Install Swoole via PIE with optimal platform flags
 vendor/bin/phalanx swoole:install
 ```
 
-`swoole:install` runs `pie install openswoole/ext-openswoole` with guided flag selection. Defaults cover TLS, sockets, HTTP/2, and cURL hooks; optional flags cover MySQL, Postgres, c-ares, io_uring, and custom OpenSSL paths.
+`swoole:install` runs `pie install swoole/swoole-src` with guided flag selection. Defaults cover TLS, sockets, HTTP/2, and cURL hooks; optional flags cover MySQL, Postgres, c-ares, io_uring, and custom OpenSSL paths.
 
 ## Benchmarks
 
-The managed runtime tax is about 4%. Every unit of work flows through the full Aegis kernel: scope creation, supervisor registration, cancellation propagation, disposal, and ledger updates. The current numbers keep that cost close to raw OpenSwoole.
+The managed runtime tax is about 4%. Every unit of work flows through the full Aegis kernel: scope creation, supervisor registration, cancellation propagation, disposal, and ledger updates. The current numbers keep that cost close to raw Swoole.
 
-> PHP 8.4.16, OpenSwoole 26.2.0, Apple M-series.
+> PHP 8.4.16, Swoole, Apple M-series.
 > Run `composer bench:aegis` and `composer bench:stoa` to reproduce.
 
 <details>
-<summary><strong>Context switching</strong> - 1M managed switches vs raw OpenSwoole vs raw Fibers</summary>
+<summary><strong>Context switching</strong> - 1M managed switches vs raw Swoole vs raw Fibers</summary>
 
-1,000 units x 1,000 suspends per iteration. The Fiber number is the theoretical floor. No Phalanx code path can reach it because all suspension routes through OpenSwoole's reactor. The number that matters is managed vs raw Swoole.
+1,000 units x 1,000 suspends per iteration. The Fiber number is the theoretical floor. No Phalanx code path can reach it because all suspension routes through Swoole's reactor. The number that matters is managed vs raw Swoole.
 
 | Tier | Mean (us) | P95 (us) | Ops/sec | Note |
 |------|-----------|----------|---------|------|
 | PHP Fiber | 150,651 | 170,983 | 6.64 | raw PHP baseline |
-| OpenSwoole Coroutine | 574,041 | 587,353 | 1.74 | OpenSwoole scheduler only |
+| Swoole Coroutine | 574,041 | 587,353 | 1.74 | Swoole scheduler only |
 | Phalanx Managed | 596,375 | 612,068 | 1.68 | full scope + supervisor overhead |
 
 </details>

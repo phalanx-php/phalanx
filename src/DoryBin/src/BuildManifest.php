@@ -7,7 +7,7 @@ namespace Phalanx\DoryBin;
 final class BuildManifest
 {
     /**
-     * @param array<string, bool>   $openSwooleFeatures
+     * @param array<string, bool>   $swooleFeatures
      * @param list<string>          $extensions
      * @param list<string>          $phalanxPackages
      * @param array<string, bool>   $verificationResults
@@ -25,9 +25,9 @@ final class BuildManifest
 
         private(set) string $phpVersion,
 
-        private(set) string $openSwooleVersion,
+        private(set) string $swooleVersion,
 
-        private(set) array $openSwooleFeatures,
+        private(set) array $swooleFeatures,
 
         private(set) array $extensions,
 

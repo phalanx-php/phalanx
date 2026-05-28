@@ -11,7 +11,7 @@ final class SpcRegistryGenerator
     public function generate(SpcBuildContext $context): void
     {
         $registryDir = $context->registryPath;
-        $toolsDir = $context->workspaceRoot . '/tools/spc-openswoole';
+        $toolsDir = $context->workspaceRoot . '/tools/spc-swoole';
 
         self::ensureDir($registryDir);
         self::ensureDir($registryDir . '/config/pkg/ext');
@@ -46,11 +46,11 @@ final class SpcRegistryGenerator
 
     private static function copyExtConfig(string $toolsDir, string $registryDir): void
     {
-        $src = $toolsDir . '/config/pkg/ext/ext-openswoole.yml';
-        $dst = $registryDir . '/config/pkg/ext/ext-openswoole.yml';
+        $src = $toolsDir . '/config/pkg/ext/ext-swoole.yml';
+        $dst = $registryDir . '/config/pkg/ext/ext-swoole.yml';
 
         if (!is_file($src)) {
-            throw new RuntimeException("Missing ext-openswoole.yml at: {$src}");
+            throw new RuntimeException("Missing ext-swoole.yml at: {$src}");
         }
 
         copy($src, $dst);
@@ -58,11 +58,11 @@ final class SpcRegistryGenerator
 
     private static function copyExtensionSource(string $toolsDir, string $registryDir): void
     {
-        $src = $toolsDir . '/src/Extension/openswoole.php';
-        $dst = $registryDir . '/src/Extension/openswoole.php';
+        $src = $toolsDir . '/src/Extension/swoole.php';
+        $dst = $registryDir . '/src/Extension/swoole.php';
 
         if (!is_file($src)) {
-            throw new RuntimeException("Missing openswoole.php extension source at: {$src}");
+            throw new RuntimeException("Missing swoole.php extension source at: {$src}");
         }
 
         copy($src, $dst);

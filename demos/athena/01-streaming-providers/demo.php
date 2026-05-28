@@ -20,8 +20,8 @@
  *
  * Usage:
  *   php demos/athena/01-streaming-providers/demo.php
- *   php -d extension=openswoole demos/athena/01-streaming-providers/demo.php
- *   OLLAMA_MODEL=mistral php -d extension=openswoole demos/athena/01-streaming-providers/demo.php
+ *   php -d extension=swoole demos/athena/01-streaming-providers/demo.php
+ *   OLLAMA_MODEL=mistral php -d extension=swoole demos/athena/01-streaming-providers/demo.php
  */
 
 declare(strict_types=1);
@@ -51,15 +51,15 @@ use Phalanx\Scope\TaskScope;
 // symfony/runtime calls this outer closure with $context (argv + env vars).
 // We read all config here — never getenv() or superglobals.
 return static function (array $context): Closure {
-    // DemoApp::boot() constructs the Aegis kernel which requires OpenSwoole\Table.
+    // DemoApp::boot() constructs the Aegis kernel which requires Swoole\Table.
     // Guard before boot so a missing extension produces a clean cannotRun message.
-    if (!extension_loaded('openswoole')) {
+    if (!extension_loaded('swoole') && !extension_loaded('openswoole')) {
         $inner = DemoReport::demo(
             'Athena Streaming Providers',
             static function (DemoReport $report): void {
                 $report->cannotRun(
-                    'openswoole extension required',
-                    'Run with: php -d extension=openswoole demos/athena/01-streaming-providers/demo.php',
+                    'swoole extension required',
+                    'Run with: php -d extension=swoole demos/athena/01-streaming-providers/demo.php',
                 );
             },
         );

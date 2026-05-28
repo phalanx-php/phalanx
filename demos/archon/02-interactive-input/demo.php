@@ -56,7 +56,7 @@ return DemoReport::demo(
 
             // Bind KeyReader to a /dev/null-backed ConsoleInput so prompts
             // short-circuit to their configured defaults. Routing through
-            // /dev/null avoids the OpenSwoole reactor's kqueue path on real
+            // /dev/null avoids the Swoole reactor's kqueue path on real
             // terminal fds and produces deterministic output.
             $nullStream = fopen('/dev/null', 'r');
             if ($nullStream === false) {

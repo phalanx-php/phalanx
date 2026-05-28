@@ -9,7 +9,7 @@
         "static-php",
         "spc",
         "phalanx",
-        "openswoole"
+        "swoole"
     ],
     "homepage": "https://github.com/phalanx-php/phalanx-dorybin",
     "authors": [
