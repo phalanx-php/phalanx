@@ -9,8 +9,8 @@ use GuzzleHttp\Psr7\Utils;
 use Phalanx\AppHost;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Cancellation\Cancelled;
-use Phalanx\Engine\Engine;
 use Phalanx\Registry\RegistryScope;
+use Phalanx\Runtime\Swoole\SwooleRuntime;
 use Phalanx\Scope\ExecutionLifecycleScope;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\Scope;
@@ -689,7 +689,7 @@ final class StoaRunner
 
         $this->draining = false;
         if ($this->drainTimer !== null) {
-            Engine::timers()->clear($this->drainTimer);
+            SwooleRuntime::clearTimer($this->drainTimer);
             $this->drainTimer = null;
         }
 
@@ -731,7 +731,7 @@ final class StoaRunner
             return;
         }
 
-        $timerId = Engine::timers()->after(
+        $timerId = SwooleRuntime::after(
             max(1, (int) round($this->config->drainTimeout * 1000)),
             $this->onDrainTimeout(...),
         );

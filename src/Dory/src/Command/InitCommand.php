@@ -29,16 +29,6 @@ final class InitCommand implements Scopeable, DescribesCommand
         return 0;
         PHP;
 
-    public static function commandConfig(): CommandConfig
-    {
-        return new CommandConfig(
-            description: 'Initialize a new Dory project',
-            arguments: [
-                Arg::optional('directory', 'Target directory', '.'),
-            ],
-        );
-    }
-
     public function __invoke(CommandContext $ctx): int
     {
         $output = $ctx->service(StreamOutput::class);
@@ -66,5 +56,15 @@ final class InitCommand implements Scopeable, DescribesCommand
         $output->persist("  dory run {$scriptPath}");
 
         return 0;
+    }
+
+    public static function commandConfig(): CommandConfig
+    {
+        return new CommandConfig(
+            description: 'Initialize a new Dory project',
+            arguments: [
+                Arg::optional('directory', 'Target directory', '.'),
+            ],
+        );
     }
 }

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Runtime;
 
 use Closure;
-use Phalanx\Engine\Engine;
+use Phalanx\Runtime\Swoole\SwooleRuntime;
 use RuntimeException;
 use Throwable;
 
@@ -23,7 +23,7 @@ final class CoroutineRuntime
     ): mixed {
         RuntimeHooks::ensure($policy, $strict);
 
-        if (Engine::coroutine()->getCid() >= 0) {
+        if (SwooleRuntime::getCid() >= 0) {
             return $body();
         }
 
@@ -31,7 +31,7 @@ final class CoroutineRuntime
         $caught = null;
         $finished = false;
 
-        Engine::coroutine()->run(static function () use ($body, &$result, &$caught, &$finished): void {
+        SwooleRuntime::run(static function () use ($body, &$result, &$caught, &$finished): void {
             try {
                 $result = $body();
             } catch (Throwable $e) {

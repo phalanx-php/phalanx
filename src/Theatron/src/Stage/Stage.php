@@ -7,7 +7,7 @@ namespace Phalanx\Theatron\Stage;
 use Closure;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Console\Input\ConsoleInput;
-use Phalanx\Engine\Engine;
+use Phalanx\Runtime\Swoole\SwooleRuntime;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\Subscription;
 use Phalanx\Theatron\Buffer\Buffer;
@@ -170,7 +170,7 @@ final class Stage
         $this->running = false;
         $this->tickSubscription?->cancel();
         $this->tickSubscription = null;
-        Engine::signals()->signal(SIGWINCH, null);
+        SwooleRuntime::signal(SIGWINCH, null);
         Painter::reset();
         $this->leaveScreen();
     }
@@ -308,8 +308,11 @@ final class Stage
     private function installResizeHandler(ExecutionScope $scope): void
     {
         $stage = $this;
-        Engine::signals()->signal(SIGWINCH, static function () use ($stage): void {
+        SwooleRuntime::signal(SIGWINCH, static function () use ($stage): void {
             $stage->handleResize();
+        });
+        $scope->onDispose(static function (): void {
+            SwooleRuntime::signal(SIGWINCH, null);
         });
     }
 

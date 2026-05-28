@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Cancellation;
 
-use Phalanx\Engine\Engine;
+use Phalanx\Runtime\Swoole\SwooleRuntime;
 
 /**
  * Cooperative cancellation signal.
@@ -65,7 +65,7 @@ class CancellationToken
     {
         $token = new self();
         $ms = max(1, (int) round($seconds * 1000));
-        $timerId = Engine::timers()->after($ms, static function () use ($token): void {
+        $timerId = SwooleRuntime::after($ms, static function () use ($token): void {
             $token->cancel();
         });
         $token->timerId = is_int($timerId) ? $timerId : null;
@@ -127,7 +127,7 @@ class CancellationToken
         $this->isCancelled = true;
 
         if ($this->timerId !== null) {
-            Engine::timers()->clear($this->timerId);
+            SwooleRuntime::clearTimer($this->timerId);
             $this->timerId = null;
         }
 
@@ -149,7 +149,7 @@ class CancellationToken
     public function release(): void
     {
         if ($this->timerId !== null) {
-            Engine::timers()->clear($this->timerId);
+            SwooleRuntime::clearTimer($this->timerId);
             $this->timerId = null;
         }
         foreach ($this->unregisters as [$source, $key]) {

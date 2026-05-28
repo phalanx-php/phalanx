@@ -13,16 +13,6 @@ use Phalanx\Task\Scopeable;
 
 final class RunCommand implements Scopeable, DescribesCommand
 {
-    public static function commandConfig(): CommandConfig
-    {
-        return new CommandConfig(
-            description: 'Run a Dory script',
-            arguments: [
-                Arg::required('script', 'Path to the Dory script'),
-            ],
-        );
-    }
-
     public function __invoke(CommandContext $ctx): int
     {
         $scriptPath = (string) $ctx->args->required('script');
@@ -37,5 +27,15 @@ final class RunCommand implements Scopeable, DescribesCommand
         $builder->script($resolved);
 
         return $builder->run();
+    }
+
+    public static function commandConfig(): CommandConfig
+    {
+        return new CommandConfig(
+            description: 'Run a Dory script',
+            arguments: [
+                Arg::required('script', 'Path to the Dory script'),
+            ],
+        );
     }
 }

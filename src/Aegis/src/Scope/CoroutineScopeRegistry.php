@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Scope;
 
-use Phalanx\Engine\Engine;
+use Phalanx\Runtime\Swoole\SwooleRuntime;
 
 /**
  * Coroutine-local scope storage backed by coroutine context.
@@ -15,7 +15,7 @@ use Phalanx\Engine\Engine;
  *
  * Pattern:
  *   $scope = CoroutineScopeRegistry::current();
- *   Engine::coroutine()->create(static function () use ($scope, $fn): void {
+ *   SwooleRuntime::create(static function () use ($scope, $fn): void {
  *       CoroutineScopeRegistry::install($scope);
  *       try { $fn(); } finally { CoroutineScopeRegistry::clear(); }
  *   });
@@ -26,7 +26,7 @@ final class CoroutineScopeRegistry
 
     public static function install(Scope $scope): void
     {
-        $context = Engine::coroutine()->getContext();
+        $context = SwooleRuntime::getContext();
         if ($context === null) {
             return; // not in a coroutine; nothing to do
         }
@@ -35,7 +35,7 @@ final class CoroutineScopeRegistry
 
     public static function current(): ?Scope
     {
-        $context = Engine::coroutine()->getContext();
+        $context = SwooleRuntime::getContext();
         if ($context === null) {
             return null;
         }
@@ -44,7 +44,7 @@ final class CoroutineScopeRegistry
 
     public static function clear(): void
     {
-        $context = Engine::coroutine()->getContext();
+        $context = SwooleRuntime::getContext();
         if ($context === null) {
             return;
         }

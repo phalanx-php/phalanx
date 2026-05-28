@@ -239,11 +239,11 @@ final class SurrealPersistenceProofTest extends PhalanxTestCase
     {
         return [
             'PATH' => getenv('PATH') ?: '',
-            'surreal_namespace' => 'phalanx',
-            'surreal_database' => $this->database,
-            'surreal_endpoint' => "http://127.0.0.1:{$this->port}",
-            'surreal_username' => self::ROOT_USER,
-            'surreal_password' => self::ROOT_PASSWORD,
+            'SURREAL_NAMESPACE' => 'phalanx',
+            'SURREAL_DATABASE' => $this->database,
+            'SURREAL_ENDPOINT' => "http://127.0.0.1:{$this->port}",
+            'SURREAL_USERNAME' => self::ROOT_USER,
+            'SURREAL_PASSWORD' => self::ROOT_PASSWORD,
         ];
     }
 

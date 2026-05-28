@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Runtime;
 
-use Phalanx\Engine\Engine;
+use Phalanx\Runtime\Swoole\SwooleRuntime;
 
 /**
  * Typed snapshot of coroutine stats.
@@ -25,7 +25,7 @@ final class CoroutineStats
 
     public static function capture(): self
     {
-        return self::fromArray(Engine::coroutine()->stats());
+        return self::fromArray(SwooleRuntime::stats());
     }
 
     /**

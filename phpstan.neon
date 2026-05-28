@@ -51,7 +51,7 @@ parameters:
         - src/Aegis/src/Supervisor/Supervisor.php
         - src/Aegis/src/Supervisor/SwooleTableLedger.php
         - src/Aegis/src/Supervisor/TaskRun.php
-        - src/Aegis/src/Engine/Swoole/
+        - src/Aegis/src/Runtime/Swoole/
         - src/Aegis/src/Worker/
         - src/Stoa/src/StoaRunner.php
     phalanxEnforcedPaths:
@@ -84,7 +84,7 @@ parameters:
         - src/Aegis/src/Runtime/RuntimeHookNames.php
         - src/Aegis/src/Runtime/RuntimeHooks.php
         - src/Aegis/src/Runtime/RuntimePolicy.php
-        - src/Aegis/src/Engine/Swoole/
+        - src/Aegis/src/Runtime/Swoole/
     phalanxProcessInternalPaths:
         - src/Aegis/src/System/Internal/SymfonyProcessAdapter.php
         - src/Cli/src
@@ -92,19 +92,9 @@ parameters:
         - src/Theatron/src/Terminal/Terminal.php
     phalanxCoroutineInternalPaths:
         - src/Aegis/src/Scope/ExecutionLifecycleScope.php
-        - src/Aegis/src/Engine/Swoole/
+        - src/Aegis/src/Runtime/Swoole/
         - benchmarks/kernel/cases/ContextSwitchCases.php
     ignoreErrors:
-        # ext-swoole provides Swoole\* classes. Engine targets ext-swoole 6.
-        # These resolve cleanly once the extension is in place.
-        -
-            message: '#.*#'
-            path: src/Aegis/src/Engine/Swoole/
-            reportUnmatched: false
-        -
-            message: '#return type#'
-            path: src/Aegis/src/Engine/CoroutineDriver.php
-            reportUnmatched: false
         -
             identifier: phalanx.testing.useBenchmarkHarness
             path: benchmarks/http/cases/StoaCases.php

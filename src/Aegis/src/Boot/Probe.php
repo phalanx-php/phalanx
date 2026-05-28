@@ -38,7 +38,11 @@ final class Probe extends BootRequirement
             static function (AppContext $_ctx) use ($host, $port, $timeout, $failureMode, $message): BootEvaluation {
                 $errno = 0;
                 $errstr = '';
-                $socket = @fsockopen($host, $port, $errno, $errstr, $timeout);
+                $socket = self::withoutNetworkWarnings(
+                    static function () use ($host, $port, $timeout, &$errno, &$errstr): mixed {
+                        return fsockopen($host, $port, $errno, $errstr, $timeout);
+                    },
+                );
                 if ($socket !== false) {
                     fclose($socket);
                     return BootEvaluation::pass(sprintf('%s reachable', $message));
@@ -80,7 +84,9 @@ final class Probe extends BootRequirement
             $context = stream_context_create([
                 'http' => ['method' => 'HEAD', 'timeout' => $timeout, 'ignore_errors' => true],
             ]);
-            $headers = @get_headers($url, true, $context);
+            $headers = self::withoutNetworkWarnings(
+                static fn(): array|false => get_headers($url, true, $context),
+            );
             if ($headers === false) {
                 $remediation = sprintf('Cannot reach %s. Verify URL and network connectivity.', $url);
                 if ($failureMode === ProbeOutcome::FailBoot) {
@@ -133,5 +139,23 @@ final class Probe extends BootRequirement
     public function evaluate(AppContext $context): BootEvaluation
     {
         return ($this->check)($context);
+    }
+
+    /**
+     * @template T
+     *
+     * @param Closure(): T $operation
+     *
+     * @return T
+     */
+    private static function withoutNetworkWarnings(Closure $operation): mixed
+    {
+        set_error_handler(static fn(): bool => true);
+
+        try {
+            return $operation();
+        } finally {
+            restore_error_handler();
+        }
     }
 }

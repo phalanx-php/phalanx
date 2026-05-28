@@ -9,12 +9,14 @@ use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Archon\Console\Output\TerminalEnvironment;
 use Phalanx\Dory\Command\DoctorCommand;
 use Phalanx\Dory\DoryConfig;
+use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class DoctorCommandTest extends TestCase
 {
     #[Test]
+    #[RequiresPhpExtension('swoole')]
     public function returns_zero_when_environment_is_healthy(): void
     {
         [$scope] = $this->buildScope();

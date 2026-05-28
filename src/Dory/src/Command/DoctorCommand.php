@@ -19,13 +19,6 @@ final class DoctorCommand implements Scopeable, DescribesCommand
 
     private const array OPTIONAL_EXTENSIONS = ['curl', 'mbstring', 'openssl', 'pcntl', 'posix', 'sockets'];
 
-    public static function commandConfig(): CommandConfig
-    {
-        return new CommandConfig(
-            description: 'Check environment readiness',
-        );
-    }
-
     public function __invoke(CommandContext $ctx): int
     {
         $output = $ctx->service(StreamOutput::class);
@@ -36,6 +29,13 @@ final class DoctorCommand implements Scopeable, DescribesCommand
         self::checkDoryConfig($ctx, $output);
 
         return ($phpOk && $swooleOk) ? 0 : 1;
+    }
+
+    public static function commandConfig(): CommandConfig
+    {
+        return new CommandConfig(
+            description: 'Check environment readiness',
+        );
     }
 
     private static function checkPhpVersion(StreamOutput $output): bool

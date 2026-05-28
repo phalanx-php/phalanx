@@ -14,10 +14,10 @@ use Phalanx\Concurrency\Settlement;
 use Phalanx\Concurrency\SettlementBag;
 use Phalanx\Concurrency\SingleflightGroup;
 use Phalanx\Diagnostics\DiagnosticCode;
-use Phalanx\Engine\Engine;
 use Phalanx\Middleware\ServiceTransformationMiddleware;
 use Phalanx\Middleware\TaskMiddleware;
 use Phalanx\Runtime\RuntimeContext;
+use Phalanx\Runtime\Swoole\SwooleRuntime;
 use Phalanx\Service\CompiledServiceConfig;
 use Phalanx\Service\LazySingleton;
 use Phalanx\Service\ServiceGraph;
@@ -107,7 +107,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                 $this->scopeId,
                 $this->parentScopeId,
                 self::class,
-                Engine::coroutine()->getCid(),
+                SwooleRuntime::getCid(),
             );
         } catch (Throwable $e) {
             $this->supervisor->releaseScopeFrame($this->frame);
@@ -259,8 +259,8 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         $frame->disposed = true;
 
         foreach ($frame->deferredCids as $cid) {
-            if (Engine::coroutine()->exists($cid)) {
-                Engine::coroutine()->cancel($cid);
+            if (SwooleRuntime::exists($cid)) {
+                SwooleRuntime::cancel($cid);
             }
         }
         $frame->deferredCids = [];
@@ -303,10 +303,10 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
     public function call(Closure $fn, ?WaitReason $waitReason = null): mixed
     {
         $this->throwIfCancelled();
-        $cid = Engine::coroutine()->getCid();
+        $cid = SwooleRuntime::getCid();
         $cancelKey = $this->cancellation->onCancel(static function () use ($cid): void {
-            if ($cid > 0 && Engine::coroutine()->exists($cid)) {
-                Engine::coroutine()->cancel($cid);
+            if ($cid > 0 && SwooleRuntime::exists($cid)) {
+                SwooleRuntime::cancel($cid);
             }
         });
         $clearWait = ($this->currentRun !== null && $waitReason !== null)
@@ -314,14 +314,14 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             : null;
         try {
             $result = $fn();
-            if ($this->isCancelled || Engine::coroutine()->isCanceled()) {
+            if ($this->isCancelled || SwooleRuntime::isCanceled()) {
                 throw new Cancelled('cancelled during call()');
             }
             return $result;
         } catch (Cancelled $e) {
             throw $e;
         } catch (Throwable $e) {
-            if ($this->isCancelled || Engine::coroutine()->isCanceled()) {
+            if ($this->isCancelled || SwooleRuntime::isCanceled()) {
                 throw new Cancelled('cancelled during call(): ' . $e->getMessage());
             }
             throw $e;
@@ -385,7 +385,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             return [];
         }
 
-        $wg = Engine::createWaitGroup();
+        $wg = SwooleRuntime::waitGroup();
         $wg->add(count($tasks));
         $results = [];
         $errors = [];
@@ -403,7 +403,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                 $childScope = $this->makeChildScope($parentRun);
                 $childScopes[] = $childScope;
 
-                $cid = Engine::coroutine()->create(static function () use (
+                $cid = SwooleRuntime::create(static function () use (
                     $childScope,
                     $task,
                     $key,
@@ -414,14 +414,14 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                     CoroutineScopeRegistry::install($childScope);
                     try {
                         $results[$key] = $childScope->dispatchSupervised($task, DispatchMode::Concurrent);
-                        if (Engine::coroutine()->isCanceled()) {
+                        if (SwooleRuntime::isCanceled()) {
                             unset($results[$key]);
                             $errors[$key] = new Cancelled("task {$key} cancelled");
                         }
                     } catch (Cancelled $e) {
                         $errors[$key] = $e;
                     } catch (Throwable $e) {
-                        $errors[$key] = Engine::coroutine()->isCanceled()
+                        $errors[$key] = SwooleRuntime::isCanceled()
                             ? new Cancelled("task {$key} cancelled: {$e->getMessage()}")
                             : $e;
                     } finally {
@@ -438,8 +438,8 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
 
             if ($errors !== []) {
                 foreach ($cids as $cid) {
-                    if (Engine::coroutine()->exists($cid)) {
-                        Engine::coroutine()->cancel($cid);
+                    if (SwooleRuntime::exists($cid)) {
+                        SwooleRuntime::cancel($cid);
                     }
                 }
                 throw reset($errors);
@@ -470,7 +470,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         }
 
         $count = count($tasks);
-        $channel = Engine::channels()->create($count);
+        $channel = SwooleRuntime::channel($count);
         $cids = [];
         /** @var list<self> $childScopes */
         $childScopes = [];
@@ -485,11 +485,11 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                 $childScope = $this->makeChildScope($parentRun);
                 $childScopes[] = $childScope;
 
-                $cid = Engine::coroutine()->create(static function () use ($childScope, $task, $key, $channel): void {
+                $cid = SwooleRuntime::create(static function () use ($childScope, $task, $key, $channel): void {
                     CoroutineScopeRegistry::install($childScope);
                     try {
                         $value = $childScope->dispatchSupervised($task, DispatchMode::Concurrent);
-                        if (Engine::coroutine()->isCanceled()) {
+                        if (SwooleRuntime::isCanceled()) {
                             $channel->push(['err', $key, new Cancelled("task {$key} cancelled")], 0.001);
                             return;
                         }
@@ -517,8 +517,8 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                 $child->cancellation->cancel();
             }
             foreach ($cids as $cid) {
-                if (Engine::coroutine()->exists($cid)) {
-                    Engine::coroutine()->cancel($cid);
+                if (SwooleRuntime::exists($cid)) {
+                    SwooleRuntime::cancel($cid);
                 }
             }
 
@@ -544,7 +544,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         }
 
         $count = count($tasks);
-        $channel = Engine::channels()->create($count);
+        $channel = SwooleRuntime::channel($count);
         $cids = [];
         $errors = [];
         $remaining = $count;
@@ -561,11 +561,11 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                 $childScope = $this->makeChildScope($parentRun);
                 $childScopes[] = $childScope;
 
-                $cid = Engine::coroutine()->create(static function () use ($childScope, $task, $key, $channel): void {
+                $cid = SwooleRuntime::create(static function () use ($childScope, $task, $key, $channel): void {
                     CoroutineScopeRegistry::install($childScope);
                     try {
                         $value = $childScope->dispatchSupervised($task, DispatchMode::Concurrent);
-                        if (Engine::coroutine()->isCanceled()) {
+                        if (SwooleRuntime::isCanceled()) {
                             $channel->push(['err', $key, new Cancelled("task {$key} cancelled")], 0.001);
                             return;
                         }
@@ -592,8 +592,8 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                         $child->cancellation->cancel();
                     }
                     foreach ($cids as $cid) {
-                        if (Engine::coroutine()->exists($cid)) {
-                            Engine::coroutine()->cancel($cid);
+                        if (SwooleRuntime::exists($cid)) {
+                            SwooleRuntime::cancel($cid);
                         }
                     }
                     return $value;
@@ -620,8 +620,8 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         }
 
         $effectiveLimit = max(1, min($limit, count($itemsArr)));
-        $sem = Engine::channels()->create($effectiveLimit);
-        $wg = Engine::createWaitGroup();
+        $sem = SwooleRuntime::channel($effectiveLimit);
+        $wg = SwooleRuntime::waitGroup();
         $wg->add(count($itemsArr));
         $results = [];
         $errors = [];
@@ -639,7 +639,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                 $childScope = $this->makeChildScope($parentRun);
                 $childScopes[] = $childScope;
 
-                $cid = Engine::coroutine()->create(static function () use (
+                $cid = SwooleRuntime::create(static function () use (
                     $childScope,
                     $fn,
                     $onEach,
@@ -655,7 +655,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                     try {
                         $task = $fn($item);
                         $value = $childScope->dispatchSupervised($task, DispatchMode::Concurrent);
-                        if (Engine::coroutine()->isCanceled()) {
+                        if (SwooleRuntime::isCanceled()) {
                             $errors[$key] = new Cancelled("map[{$key}] cancelled");
                         } else {
                             $results[$key] = $value;
@@ -666,7 +666,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                     } catch (Cancelled $e) {
                         $errors[$key] = $e;
                     } catch (Throwable $e) {
-                        $errors[$key] = Engine::coroutine()->isCanceled()
+                        $errors[$key] = SwooleRuntime::isCanceled()
                             ? new Cancelled("map[{$key}] cancelled: {$e->getMessage()}")
                             : $e;
                     } finally {
@@ -731,7 +731,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             return new SettlementBag([]);
         }
 
-        $wg = Engine::createWaitGroup();
+        $wg = SwooleRuntime::waitGroup();
         $wg->add(count($tasks));
         $bag = [];
         $cids = [];
@@ -748,18 +748,18 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                 $childScope = $this->makeChildScope($parentRun);
                 $childScopes[] = $childScope;
 
-                $cid = Engine::coroutine()->create(static function () use ($childScope, $task, $key, $wg, &$bag): void {
+                $cid = SwooleRuntime::create(static function () use ($childScope, $task, $key, $wg, &$bag): void {
                     CoroutineScopeRegistry::install($childScope);
                     try {
                         $value = $childScope->dispatchSupervised($task, DispatchMode::Concurrent);
-                        if (Engine::coroutine()->isCanceled()) {
+                        if (SwooleRuntime::isCanceled()) {
                             $bag[$key] = Settlement::err(new Cancelled("settle[{$key}] cancelled"));
                         } else {
                             $bag[$key] = Settlement::ok($value);
                         }
                     } catch (Throwable $e) {
                         $bag[$key] = Settlement::err(
-                            Engine::coroutine()->isCanceled()
+                            SwooleRuntime::isCanceled()
                                 ? new Cancelled("settle[{$key}] cancelled: {$e->getMessage()}")
                                 : $e,
                         );
@@ -854,10 +854,10 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
     public function delay(float $seconds): void
     {
         $this->throwIfCancelled();
-        $cid = Engine::coroutine()->getCid();
+        $cid = SwooleRuntime::getCid();
         $cancelKey = $this->cancellation->onCancel(static function () use ($cid): void {
-            if ($cid > 0 && Engine::coroutine()->exists($cid)) {
-                Engine::coroutine()->cancel($cid);
+            if ($cid > 0 && SwooleRuntime::exists($cid)) {
+                SwooleRuntime::cancel($cid);
             }
         });
         $clearWait = ($this->currentRun !== null)
@@ -882,7 +882,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         $ms = max(1, (int) round($interval * 1000));
         $self = $this;
 
-        $timerId = Engine::timers()->tick($ms, static function () use ($self, $tick): void {
+        $timerId = SwooleRuntime::tick($ms, static function () use ($self, $tick): void {
             if ($self->isDisposed()) {
                 return;
             }
@@ -917,7 +917,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         // @dev-cleanup-ignore — child scope disposed on completion; parent onDispose owns cancellation via deferredCids
         $childScope = $this->makeChildScope($this->currentRun);
         $traceLog = $this->traceLog;
-        $cid = Engine::coroutine()->create(static function () use ($childScope, $task, $traceLog): void {
+        $cid = SwooleRuntime::create(static function () use ($childScope, $task, $traceLog): void {
             CoroutineScopeRegistry::install($childScope);
             try {
                 $childScope->dispatchSupervised($task, DispatchMode::Concurrent);
@@ -965,7 +965,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
 
         $runCancelKey = -1;
 
-        $cid = Engine::coroutine()->create(static function () use (
+        $cid = SwooleRuntime::create(static function () use (
             $childScope,
             $fn,
             $run,
@@ -1019,12 +1019,12 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
 
         if (array_key_exists($spawnKey, $goSpawns)) {
             $run->cancellation->onCancel(static function () use ($cid): void {
-                if (Engine::coroutine()->exists($cid)) {
-                    Engine::coroutine()->cancel($cid);
+                if (SwooleRuntime::exists($cid)) {
+                    SwooleRuntime::cancel($cid);
                 }
             });
-            if ($run->cancellation->isCancelled && Engine::coroutine()->exists($cid)) {
-                Engine::coroutine()->cancel($cid);
+            if ($run->cancellation->isCancelled && SwooleRuntime::exists($cid)) {
+                SwooleRuntime::cancel($cid);
             }
             $goSpawns[$spawnKey] = [$cid, $run];
         }
@@ -1087,7 +1087,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             return [];
         }
 
-        $wg = Engine::createWaitGroup();
+        $wg = SwooleRuntime::waitGroup();
         $results = [];
         $errors = [];
         $firstError = null;
@@ -1110,7 +1110,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                 $childScopes[] = $childScope;
                 $wg->add(1);
 
-                $cid = Engine::coroutine()->create(static function () use (
+                $cid = SwooleRuntime::create(static function () use (
                     $childScope,
                     $task,
                     $key,
@@ -1124,7 +1124,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                     CoroutineScopeRegistry::install($childScope);
                     try {
                         $results[$key] = $childScope->dispatchWorkerSupervised($task);
-                        if (Engine::coroutine()->isCanceled()) {
+                        if (SwooleRuntime::isCanceled()) {
                             unset($results[$key]);
                             $errors[$key] = new Cancelled("parallel[{$key}] cancelled");
                         }
@@ -1132,7 +1132,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                         $errors[$key] = $e;
                         $firstError = self::failWorkerBatch($e, $firstError, $childScopes, $cids);
                     } catch (Throwable $e) {
-                        $errors[$key] = Engine::coroutine()->isCanceled()
+                        $errors[$key] = SwooleRuntime::isCanceled()
                             ? new Cancelled("parallel[{$key}] cancelled: {$e->getMessage()}")
                             : $e;
                         $firstError = self::failWorkerBatch($errors[$key], $firstError, $childScopes, $cids);
@@ -1184,7 +1184,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             return new SettlementBag([]);
         }
 
-        $wg = Engine::createWaitGroup();
+        $wg = SwooleRuntime::waitGroup();
         $bag = [];
         $cids = [];
         /** @var list<self> $childScopes */
@@ -1201,18 +1201,18 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                 $childScopes[] = $childScope;
                 $wg->add(1);
 
-                $cid = Engine::coroutine()->create(static function () use ($childScope, $task, $key, $wg, &$bag): void {
+                $cid = SwooleRuntime::create(static function () use ($childScope, $task, $key, $wg, &$bag): void {
                     CoroutineScopeRegistry::install($childScope);
                     try {
                         $value = $childScope->dispatchWorkerSupervised($task);
-                        if (Engine::coroutine()->isCanceled()) {
+                        if (SwooleRuntime::isCanceled()) {
                             $bag[$key] = Settlement::err(new Cancelled("settleParallel[{$key}] cancelled"));
                         } else {
                             $bag[$key] = Settlement::ok($value);
                         }
                     } catch (Throwable $e) {
                         $bag[$key] = Settlement::err(
-                            Engine::coroutine()->isCanceled()
+                            SwooleRuntime::isCanceled()
                                 ? new Cancelled("settleParallel[{$key}] cancelled: {$e->getMessage()}")
                                 : $e,
                         );
@@ -1268,7 +1268,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         }
 
         $effectiveLimit = max(1, min($limit, count($entries)));
-        $wg = Engine::createWaitGroup();
+        $wg = SwooleRuntime::waitGroup();
         $results = [];
         $errors = [];
         $firstError = null;
@@ -1292,7 +1292,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                 $childScopes[] = $childScope;
                 $wg->add(1);
 
-                $cid = Engine::coroutine()->create(static function () use (
+                $cid = SwooleRuntime::create(static function () use (
                     $childScope,
                     $fn,
                     $onEach,
@@ -1320,7 +1320,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                                     throw new RuntimeException('mapParallel() task factory must return a WorkerTask.');
                                 }
                                 $value = $childScope->dispatchWorkerSupervised($task);
-                                if (Engine::coroutine()->isCanceled()) {
+                                if (SwooleRuntime::isCanceled()) {
                                     $errors[$key] = new Cancelled("mapParallel[{$key}] cancelled");
                                 } else {
                                     $results[$key] = $value;
@@ -1332,7 +1332,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                                 $errors[$key] = $e;
                                 $firstError = self::failWorkerBatch($e, $firstError, $childScopes, $cids);
                             } catch (Throwable $e) {
-                                $errors[$key] = Engine::coroutine()->isCanceled()
+                                $errors[$key] = SwooleRuntime::isCanceled()
                                     ? new Cancelled("mapParallel[{$key}] cancelled: {$e->getMessage()}")
                                     : $e;
                                 $firstError = self::failWorkerBatch($errors[$key], $firstError, $childScopes, $cids);
@@ -1486,14 +1486,14 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
     /** @param list<int> $cids */
     private static function cancelCoroutines(array $cids): void
     {
-        $current = Engine::coroutine()->getCid();
+        $current = SwooleRuntime::getCid();
         foreach ($cids as $cid) {
             if ($cid === $current) {
                 continue;
             }
 
-            if (Engine::coroutine()->exists($cid)) {
-                Engine::coroutine()->cancel($cid);
+            if (SwooleRuntime::exists($cid)) {
+                SwooleRuntime::cancel($cid);
             }
         }
     }
@@ -1671,16 +1671,16 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                 ],
             );
             $this->supervisor->cancel($run);
-            if (Engine::coroutine()->exists($cid)) {
-                Engine::coroutine()->cancel($cid);
+            if (SwooleRuntime::exists($cid)) {
+                SwooleRuntime::cancel($cid);
             }
         }
 
-        if (Engine::coroutine()->getCid() >= 0) {
+        if (SwooleRuntime::getCid() >= 0) {
             $deadline = hrtime(true) + 50_000_000;
             foreach ($frame->goSpawns as [$cid, $run]) {
-                while (Engine::coroutine()->exists($cid) && hrtime(true) < $deadline) {
-                    Engine::coroutine()->usleep(1_000);
+                while (SwooleRuntime::exists($cid) && hrtime(true) < $deadline) {
+                    SwooleRuntime::usleep(1_000);
                 }
             }
         }
@@ -1808,7 +1808,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             $this->supervisor->markRunning($run);
             $clearWait = $this->supervisor->beginWait($run, WaitReason::worker('worker', $name));
             $value = $this->workerDispatch->dispatch($task, $scope, $run->cancellation);
-            if ($run->cancellation->isCancelled || Engine::coroutine()->isCanceled()) {
+            if ($run->cancellation->isCancelled || SwooleRuntime::isCanceled()) {
                 throw new Cancelled("worker task {$name} cancelled");
             }
             $this->supervisor->complete($run, $value);

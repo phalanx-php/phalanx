@@ -5,20 +5,15 @@ declare(strict_types=1);
 namespace Phalanx\Hermes\Tests\Integration;
 
 use Closure;
-use Swoole\Coroutine;
-use Phalanx\Engine\Engine;
-use Phalanx\Engine\Swoole\SwooleEngine;
 use Phalanx\Hermes\WsConnection;
 use Phalanx\Hermes\WsGateway;
 use Phalanx\Hermes\WsMessage;
+use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
-use Throwable;
 
-final class WsGatewayBroadcastTest extends TestCase
+final class WsGatewayBroadcastTest extends PhalanxTestCase
 {
     private WsGateway $gateway;
-    private bool $bootedEngine = false;
 
     #[Test]
     public function registerAndCount(): void
@@ -197,20 +192,7 @@ final class WsGatewayBroadcastTest extends TestCase
 
     protected function setUp(): void
     {
-        if (!Engine::isBooted()) {
-            Engine::boot(new SwooleEngine());
-            $this->bootedEngine = true;
-        }
-
         $this->gateway = new WsGateway();
-    }
-
-    protected function tearDown(): void
-    {
-        if ($this->bootedEngine) {
-            Engine::reset();
-            $this->bootedEngine = false;
-        }
     }
 
     private static function createConnection(): WsConnection
@@ -219,29 +201,21 @@ final class WsGatewayBroadcastTest extends TestCase
     }
 
     /**
-     * Wrap a test body that touches Channel ops in a single Swoole
-     * coroutine. emit, complete, and consume must share a scheduler; without
-     * this wrapping the gateway's broadcast() (which calls outbound->emit)
-     * has no scheduler to push into.
+     * Wrap a test body that touches Channel ops in a managed Phalanx test scope.
+     * emit, complete, and consume must share a scheduler; without this wrapping
+     * the gateway's broadcast() (which calls outbound->emit) has no scheduler
+     * to push into.
      */
     private function runAsync(Closure $body): void
     {
-        $caught = null;
-        Coroutine::run(static function () use ($body, &$caught): void {
-            try {
-                $body();
-            } catch (Throwable $e) {
-                $caught = $e;
-            }
+        $this->scope->run(static function () use ($body): void {
+            $body();
         });
-        if ($caught !== null) {
-            throw $caught;
-        }
     }
 
     /**
-     * Caller is already inside Coroutine::run. Drain helpers below assume
-     * that and call complete()+consume directly.
+     * Caller is already inside a managed Phalanx test scope. Drain helpers
+     * below assume that and call complete()+consume directly.
      */
     private static function assertOutboundContains(WsConnection $conn, string $expected): void
     {

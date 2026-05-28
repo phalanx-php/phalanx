@@ -7,8 +7,6 @@ namespace Phalanx;
 use Closure;
 use Phalanx\Boot\AppContext;
 use Phalanx\Cancellation\CancellationToken;
-use Phalanx\Engine\Engine;
-use Phalanx\Engine\Swoole\SwooleEngine;
 use Phalanx\Middleware\ServiceTransformationMiddleware;
 use Phalanx\Middleware\TaskMiddleware;
 use Phalanx\Runtime\CoroutineRuntime;
@@ -52,10 +50,6 @@ class Application implements AppHost
         private readonly bool $strictRuntimeHooks = true,
     ) {
         $this->runtimePolicy = $runtimePolicy ?? RuntimePolicy::phalanxManaged();
-
-        if (!Engine::isBooted()) {
-            Engine::boot(new SwooleEngine());
-        }
     }
 
     /** @param array<string,mixed> $context */

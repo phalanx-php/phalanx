@@ -17,16 +17,6 @@ final class ServeCommand implements Executable, DescribesCommand
 {
     private const int PARK_UNTIL_CANCELLED = PHP_INT_MAX;
 
-    public static function commandConfig(): CommandConfig
-    {
-        return new CommandConfig(
-            description: 'Run and watch a Dory script for changes',
-            arguments: [
-                Arg::required('script', 'Path to the Dory script'),
-            ],
-        );
-    }
-
     public function __invoke(CommandContext $ctx): int
     {
         $scriptPath = (string) $ctx->args->required('script');
@@ -63,6 +53,16 @@ final class ServeCommand implements Executable, DescribesCommand
         $ctx->delay(self::PARK_UNTIL_CANCELLED);
 
         return 0;
+    }
+
+    public static function commandConfig(): CommandConfig
+    {
+        return new CommandConfig(
+            description: 'Run and watch a Dory script for changes',
+            arguments: [
+                Arg::required('script', 'Path to the Dory script'),
+            ],
+        );
     }
 
     private static function runScript(string $resolved, StreamOutput $output): void

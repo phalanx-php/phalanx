@@ -2,21 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Engine\Swoole;
+namespace Phalanx\Runtime\Swoole;
 
-use Phalanx\Engine\WaitGroupHandle;
 use Swoole\Coroutine\Channel;
 
-final class SwooleChannelWaitGroup implements WaitGroupHandle
+final class SwooleWaitGroup
 {
     private int $count = 0;
 
-    private Channel $channel;
+    private ?Channel $waiter = null;
 
-    public function __construct()
-    {
-        $this->channel = new Channel(1);
-    }
+    private bool $waiting = false;
 
     public function add(int $delta = 1): void
     {
@@ -31,8 +27,8 @@ final class SwooleChannelWaitGroup implements WaitGroupHandle
 
         $this->count--;
 
-        if ($this->count === 0) {
-            $this->channel->push(true);
+        if ($this->count === 0 && $this->waiting && $this->waiter !== null) {
+            $this->waiter->push(true, 0.001);
         }
     }
 
@@ -42,7 +38,14 @@ final class SwooleChannelWaitGroup implements WaitGroupHandle
             return true;
         }
 
-        return $this->channel->pop($timeout) !== false;
+        $this->waiter ??= new Channel(1);
+        $this->waiting = true;
+
+        try {
+            return $this->waiter->pop($timeout) !== false;
+        } finally {
+            $this->waiting = false;
+        }
     }
 
     public function count(): int

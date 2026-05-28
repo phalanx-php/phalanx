@@ -16,13 +16,6 @@ use ReflectionClass;
 
 final class ConfigListCommand implements Scopeable, DescribesCommand
 {
-    public static function commandConfig(): CommandConfig
-    {
-        return new CommandConfig(
-            description: 'List all registered config classes and their env keys.',
-        );
-    }
-
     public function __invoke(CommandContext $ctx): int
     {
         $catalog = $ctx->service(ConfigCatalog::class);
@@ -40,6 +33,13 @@ final class ConfigListCommand implements Scopeable, DescribesCommand
         }
 
         return 0;
+    }
+
+    public static function commandConfig(): CommandConfig
+    {
+        return new CommandConfig(
+            description: 'List all registered config classes and their env keys.',
+        );
     }
 
     private static function renderNode(StreamOutput $output, CatalogNode $node, int $depth): void

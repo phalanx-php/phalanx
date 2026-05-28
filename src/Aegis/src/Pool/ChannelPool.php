@@ -2,10 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Engine;
+namespace Phalanx\Pool;
+
+use Phalanx\Runtime\Swoole\SwooleChannel;
 
 /**
- * Channel-backed connection pool replacing the swoole/core ClientPool it replaced.
+ * Channel-backed connection pool for coroutine-local client reuse.
  *
  * @template T of object
  */
@@ -17,7 +19,9 @@ final class ChannelPool
 
     private int $created = 0;
 
-    private ?ChannelHandle $channel;
+    private ?SwooleChannel $channel;
+
+    private bool $closed = false;
 
     /**
      * @param class-string $factoryClass must implement a static make(mixed): T method
@@ -26,7 +30,7 @@ final class ChannelPool
         private string $factoryClass,
         private mixed $config,
         private(set) int $size = self::DEFAULT_SIZE,
-        ?ChannelHandle $channel = null,
+        ?SwooleChannel $channel = null,
     ) {
         $this->channel = $channel;
     }
@@ -36,10 +40,11 @@ final class ChannelPool
      */
     public function get(float $timeout = -1): mixed
     {
-        $channel = $this->ensureChannel();
-        if ($channel === null) {
+        if ($this->closed) {
             return false;
         }
+
+        $channel = $this->ensureChannel();
 
         if ($channel->isEmpty() && $this->created < $this->size) {
             $this->make();
@@ -58,7 +63,7 @@ final class ChannelPool
 
     public function put(object $connection): void
     {
-        if ($this->channel === null) {
+        if ($this->closed || $this->channel === null) {
             return;
         }
 
@@ -71,6 +76,8 @@ final class ChannelPool
 
     public function close(): void
     {
+        $this->closed = true;
+
         $channel = $this->channel;
         if ($channel === null) {
             return;
@@ -89,19 +96,9 @@ final class ChannelPool
         $this->active = 0;
     }
 
-    private function ensureChannel(): ?ChannelHandle
+    private function ensureChannel(): SwooleChannel
     {
-        if ($this->channel !== null) {
-            return $this->channel;
-        }
-
-        if (!Engine::isBooted()) {
-            return null;
-        }
-
-        $this->channel = Engine::channels()->create($this->size);
-
-        return $this->channel;
+        return $this->channel ??= new SwooleChannel($this->size);
     }
 
     private function make(): void

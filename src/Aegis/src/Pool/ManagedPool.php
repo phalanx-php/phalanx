@@ -6,7 +6,6 @@ namespace Phalanx\Pool;
 
 use Closure;
 use Phalanx\Diagnostics\DiagnosticCode;
-use Phalanx\Engine\ChannelPool;
 use Phalanx\Runtime\CoroutineRuntime;
 use Phalanx\Runtime\RuntimePolicy;
 use Phalanx\Scope\ExecutionLifecycleScope;

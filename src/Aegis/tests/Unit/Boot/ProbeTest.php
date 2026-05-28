@@ -8,78 +8,78 @@ use Phalanx\Boot\AppContext;
 use Phalanx\Boot\BootEvaluation;
 use Phalanx\Boot\Probe;
 use Phalanx\Boot\ProbeOutcome;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Testing\PhalanxTestCase;
-use PHPUnit\Framework\Attributes\After;
-use PHPUnit\Framework\Attributes\Before;
 use PHPUnit\Framework\Attributes\Test;
 
 final class ProbeTest extends PhalanxTestCase
 {
-    /** @var resource|null */
-    private mixed $tcpServer = null;
-    private int $tcpPort = 0;
-
-    #[Before]
-    protected function bindTcpListener(): void
-    {
-        $server = stream_socket_server('tcp://127.0.0.1:0', $errno, $errstr);
-        self::assertNotFalse($server, sprintf('Could not bind TCP listener: %s (%d)', $errstr, $errno));
-        $this->tcpServer = $server;
-
-        $name = stream_socket_get_name($server, false);
-        self::assertNotFalse($name, 'Could not determine listener address');
-        $this->tcpPort = (int) substr($name, strrpos($name, ':') + 1);
-    }
-
-    #[After]
-    protected function closeTcpListener(): void
-    {
-        if ($this->tcpServer !== null) {
-            fclose($this->tcpServer);
-            $this->tcpServer = null;
-        }
-    }
-
     // ── TCP probe ────────────────────────────────────────────────────────────
 
     #[Test]
     public function tcpProbePassesWhenListenerIsPresent(): void
     {
-        $ev = Probe::tcp('127.0.0.1', $this->tcpPort)->evaluate(new AppContext());
+        $this->scope->run(
+            static function (): void {
+                [$server, $port] = self::openTcpListener();
 
-        self::assertTrue($ev->isPass(), sprintf('Expected pass but got %s: %s', $ev->status, $ev->message));
+                try {
+                    $ev = Probe::tcp('127.0.0.1', $port)->evaluate(new AppContext());
+
+                    self::assertTrue($ev->isPass(), sprintf('Expected pass but got %s: %s', $ev->status, $ev->message));
+                } finally {
+                    $server->close();
+                }
+            },
+            'test.boot.probe.tcp-present',
+        );
     }
 
     #[Test]
     public function tcpProbeFailsWhenPortIsUnused(): void
     {
-        // Pick a port known to be closed: close our listener first to free it.
-        $port = $this->tcpPort;
-        fclose($this->tcpServer);
-        $this->tcpServer = null;
+        $port = self::closedLocalTcpPort();
 
-        $ev = Probe::tcp('127.0.0.1', $port, 0.1, ProbeOutcome::FailBoot)->evaluate(new AppContext());
+        $this->scope->run(
+            static function () use ($port): void {
+                $ev = Probe::tcp(
+                    '127.0.0.1',
+                    $port,
+                    0.1,
+                    ProbeOutcome::FailBoot,
+                )->evaluate(new AppContext());
 
-        self::assertTrue($ev->isFail(), sprintf('Expected fail but got %s: %s', $ev->status, $ev->message));
-        self::assertNotNull($ev->remediation);
+                self::assertTrue($ev->isFail(), sprintf('Expected fail but got %s: %s', $ev->status, $ev->message));
+                self::assertNotNull($ev->remediation);
+            },
+            'test.boot.probe.tcp-unused-fail',
+        );
     }
 
     #[Test]
     public function tcpProbeWarnsWhenPortUnusedAndFailureModeIsFeatureUnavailable(): void
     {
-        $port = $this->tcpPort;
-        fclose($this->tcpServer);
-        $this->tcpServer = null;
+        $port = self::closedLocalTcpPort();
 
-        $ev = Probe::tcp('127.0.0.1', $port, 0.1, ProbeOutcome::FeatureUnavailable)->evaluate(new AppContext());
+        $this->scope->run(
+            static function () use ($port): void {
+                $ev = Probe::tcp(
+                    '127.0.0.1',
+                    $port,
+                    0.1,
+                    ProbeOutcome::FeatureUnavailable,
+                )->evaluate(new AppContext());
 
-        self::assertTrue($ev->isWarn(), sprintf('Expected warn but got %s: %s', $ev->status, $ev->message));
+                self::assertTrue($ev->isWarn(), sprintf('Expected warn but got %s: %s', $ev->status, $ev->message));
+            },
+            'test.boot.probe.tcp-unused-warn',
+        );
     }
 
     #[Test]
     public function tcpKindIsCorrect(): void
     {
-        $probe = Probe::tcp('127.0.0.1', $this->tcpPort);
+        $probe = Probe::tcp('127.0.0.1', 8000);
 
         self::assertSame(Probe::KIND_TCP, $probe->kind);
     }
@@ -87,7 +87,7 @@ final class ProbeTest extends PhalanxTestCase
     #[Test]
     public function tcpFailureModeIsStoredOnProbe(): void
     {
-        $probe = Probe::tcp('127.0.0.1', $this->tcpPort, 1.0, ProbeOutcome::FeatureUnavailable);
+        $probe = Probe::tcp('127.0.0.1', 8000, 1.0, ProbeOutcome::FeatureUnavailable);
 
         self::assertSame(ProbeOutcome::FeatureUnavailable, $probe->failureMode);
     }
@@ -95,30 +95,71 @@ final class ProbeTest extends PhalanxTestCase
     // ── HTTP probe ───────────────────────────────────────────────────────────
 
     #[Test]
-    public function httpProbeWarnsWhenUrlUnreachableAndFailureModeIsFeatureUnavailable(): void
+    public function httpProbeWarnsWhenStatusIsUnexpectedAndFailureModeIsFeatureUnavailable(): void
     {
-        // Use an address in the TEST-NET reserved range — should always be unreachable.
-        $ev = Probe::http(
-            'http://192.0.2.1/',
-            [200],
-            0.1,
-            ProbeOutcome::FeatureUnavailable,
-        )->evaluate(new AppContext());
+        $this->scope->run(
+            static function (ExecutionScope $scope): void {
+                $ev = self::evaluateHttpProbeAgainstUnexpectedStatus($scope, ProbeOutcome::FeatureUnavailable);
 
-        self::assertTrue($ev->isWarn(), sprintf('Expected warn but got %s: %s', $ev->status, $ev->message));
+                self::assertTrue($ev->isWarn(), sprintf('Expected warn but got %s: %s', $ev->status, $ev->message));
+            },
+            'test.boot.probe.http-unexpected-status-warn',
+        );
     }
 
     #[Test]
-    public function httpProbeFailsWhenUrlUnreachableAndFailureModeIsFailBoot(): void
+    public function httpProbeFailsWhenStatusIsUnexpectedAndFailureModeIsFailBoot(): void
     {
-        $ev = Probe::http(
-            'http://192.0.2.1/',
-            [200],
-            0.1,
-            ProbeOutcome::FailBoot,
-        )->evaluate(new AppContext());
+        $this->scope->run(
+            static function (ExecutionScope $scope): void {
+                $ev = self::evaluateHttpProbeAgainstUnexpectedStatus($scope, ProbeOutcome::FailBoot);
 
-        self::assertTrue($ev->isFail(), sprintf('Expected fail but got %s: %s', $ev->status, $ev->message));
+                self::assertTrue($ev->isFail(), sprintf('Expected fail but got %s: %s', $ev->status, $ev->message));
+            },
+            'test.boot.probe.http-unexpected-status-fail',
+        );
+    }
+
+    #[Test]
+    public function httpProbeWarnsWhenUrlIsUnreachableAndFailureModeIsFeatureUnavailable(): void
+    {
+        $port = self::closedLocalTcpPort();
+
+        $this->scope->run(
+            static function () use ($port): void {
+                $ev = Probe::http(
+                    "http://127.0.0.1:{$port}/",
+                    [200],
+                    0.1,
+                    ProbeOutcome::FeatureUnavailable,
+                )->evaluate(new AppContext());
+
+                self::assertTrue($ev->isWarn(), sprintf('Expected warn but got %s: %s', $ev->status, $ev->message));
+                self::assertNotNull($ev->remediation);
+            },
+            'test.boot.probe.http-unreachable-warn',
+        );
+    }
+
+    #[Test]
+    public function httpProbeFailsWhenUrlIsUnreachableAndFailureModeIsFailBoot(): void
+    {
+        $port = self::closedLocalTcpPort();
+
+        $this->scope->run(
+            static function () use ($port): void {
+                $ev = Probe::http(
+                    "http://127.0.0.1:{$port}/",
+                    [200],
+                    0.1,
+                    ProbeOutcome::FailBoot,
+                )->evaluate(new AppContext());
+
+                self::assertTrue($ev->isFail(), sprintf('Expected fail but got %s: %s', $ev->status, $ev->message));
+                self::assertNotNull($ev->remediation);
+            },
+            'test.boot.probe.http-unreachable-fail',
+        );
     }
 
     #[Test]
@@ -136,7 +177,7 @@ final class ProbeTest extends PhalanxTestCase
     {
         $ctx = new AppContext();
         $ev = Probe::callable(
-            static fn (AppContext $c): bool => true,
+            static fn (AppContext $_c): bool => true,
             'healthy check',
         )->evaluate($ctx);
 
@@ -148,7 +189,7 @@ final class ProbeTest extends PhalanxTestCase
     {
         $ctx = new AppContext();
         $ev = Probe::callable(
-            static fn (AppContext $c): bool => false,
+            static fn (AppContext $_c): bool => false,
             'failing check',
             ProbeOutcome::FailBoot,
         )->evaluate($ctx);
@@ -161,7 +202,7 @@ final class ProbeTest extends PhalanxTestCase
     {
         $ctx = new AppContext();
         $ev = Probe::callable(
-            static fn (AppContext $c): bool => false,
+            static fn (AppContext $_c): bool => false,
             'optional feature check',
             ProbeOutcome::FeatureUnavailable,
         )->evaluate($ctx);
@@ -174,7 +215,7 @@ final class ProbeTest extends PhalanxTestCase
     {
         $ctx = new AppContext();
         $ev = Probe::callable(
-            static fn (AppContext $c): string => 'install the redis extension',
+            static fn (AppContext $_c): string => 'install the redis extension',
             'redis ext',
             ProbeOutcome::FailBoot,
         )->evaluate($ctx);
@@ -188,7 +229,7 @@ final class ProbeTest extends PhalanxTestCase
     {
         $ctx = new AppContext();
         $ev = Probe::callable(
-            static fn (AppContext $c): BootEvaluation => BootEvaluation::warn('custom warn from probe'),
+            static fn (AppContext $_c): BootEvaluation => BootEvaluation::warn('custom warn from probe'),
             'custom',
         )->evaluate($ctx);
 
@@ -199,8 +240,69 @@ final class ProbeTest extends PhalanxTestCase
     #[Test]
     public function callableKindIsCorrect(): void
     {
-        $probe = Probe::callable(static fn (AppContext $c): bool => true, 'desc');
+        $probe = Probe::callable(static fn (AppContext $_c): bool => true, 'desc');
 
         self::assertSame(Probe::KIND_CALLABLE, $probe->kind);
     }
+
+    /** @return array{0: \Swoole\Coroutine\Socket, 1: int} */
+    private static function openTcpListener(): array
+    {
+        $server = new \Swoole\Coroutine\Socket(AF_INET, SOCK_STREAM, SOL_TCP);
+        self::assertTrue($server->bind('127.0.0.1', 0), 'Could not bind TCP listener.');
+        self::assertTrue($server->listen(), 'Could not listen on TCP listener.');
+
+        $name = $server->getsockname();
+        self::assertIsArray($name, 'Could not determine listener address.');
+        self::assertArrayHasKey('port', $name, 'TCP listener address did not include a port.');
+
+        return [$server, (int) $name['port']];
+    }
+
+    private static function closedLocalTcpPort(): int
+    {
+        $server = stream_socket_server('tcp://127.0.0.1:0');
+        self::assertIsResource($server, 'Could not bind temporary TCP listener.');
+
+        $name = stream_socket_get_name($server, false);
+        self::assertIsString($name, 'Could not determine temporary listener address.');
+        self::assertSame(1, preg_match('/:(\d+)$/', $name, $matches), 'Temporary listener address had no port.');
+
+        fclose($server);
+
+        return (int) $matches[1];
+    }
+
+    private static function evaluateHttpProbeAgainstUnexpectedStatus(
+        ExecutionScope $scope,
+        ProbeOutcome $failureMode,
+    ): BootEvaluation {
+        [$server, $port] = self::openTcpListener();
+
+        $scope->go(
+            static function () use ($server): void {
+                $client = $server->accept(1.0);
+                if (!$client instanceof \Swoole\Coroutine\Socket) {
+                    return;
+                }
+
+                $client->recv(1024);
+                $client->send("HTTP/1.1 503 Service Unavailable\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+                $client->close();
+            },
+            'test.boot.probe.http-server',
+        );
+
+        try {
+            return Probe::http(
+                "http://127.0.0.1:{$port}/",
+                [200],
+                1.0,
+                $failureMode,
+            )->evaluate(new AppContext());
+        } finally {
+            $server->close();
+        }
+    }
+
 }

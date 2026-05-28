@@ -20,16 +20,6 @@ use Phalanx\Themis\ValidationResult;
 
 final class ConfigDoctorCommand implements Scopeable, DescribesCommand
 {
-    public static function commandConfig(): CommandConfig
-    {
-        return new CommandConfig(
-            description: 'Validate the current environment against all registered config classes.',
-            options: [
-                Opt::flag(name: 'strict', desc: 'Treat warnings as boot-blockers.'),
-            ],
-        );
-    }
-
     public function __invoke(CommandContext $ctx): int
     {
         $catalog = $ctx->service(ConfigCatalog::class);
@@ -43,6 +33,16 @@ final class ConfigDoctorCommand implements Scopeable, DescribesCommand
         self::renderResult($output, $result);
 
         return $result->blocksBoot ? 1 : 0;
+    }
+
+    public static function commandConfig(): CommandConfig
+    {
+        return new CommandConfig(
+            description: 'Validate the current environment against all registered config classes.',
+            options: [
+                Opt::flag(name: 'strict', desc: 'Treat warnings as boot-blockers.'),
+            ],
+        );
     }
 
     private static function renderResult(StreamOutput $output, ValidationResult $result): void

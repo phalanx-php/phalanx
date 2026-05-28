@@ -2,13 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Engine\Swoole;
+namespace Phalanx\Runtime\Swoole;
 
-use Phalanx\Engine\ChannelHandle;
 use Swoole\Coroutine\Channel;
 
-final class SwooleChannelHandle implements ChannelHandle
+class SwooleChannel
 {
+    public const int CLOSED = -2;
+
     private Channel $inner;
 
     public function __construct(int $capacity = 0)
