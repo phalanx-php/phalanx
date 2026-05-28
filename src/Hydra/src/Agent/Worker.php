@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Hydra\Agent;
 
-use Swoole\Coroutine;
-use Swoole\Coroutine\Channel;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Hydra\Process\ProcessConfig;
 use Phalanx\Hydra\Process\ProcessHandle;
@@ -17,6 +15,8 @@ use Phalanx\Runtime\CoroutineRuntime;
 use Phalanx\Runtime\RuntimePolicy;
 use Phalanx\Scope\TaskExecutor;
 use Phalanx\Scope\TaskScope;
+use Phalanx\Substrate\ChannelHandle;
+use Phalanx\Substrate\Substrate;
 use Phalanx\Supervisor\WaitReason;
 use RuntimeException;
 
@@ -28,7 +28,7 @@ class Worker
 
     private readonly string $id;
 
-    private readonly Channel $lock;
+    private ChannelHandle $lock;
 
     public function __construct(
         ProcessConfig $config,
@@ -36,7 +36,7 @@ class Worker
     ) {
         $this->id = $id ?? uniqid('agent-', true);
         $this->process = new ProcessHandle($config);
-        $this->lock = new Channel(1);
+        $this->lock = Substrate::channels()->create(1);
         $this->lock->push(true);
     }
 
@@ -98,7 +98,7 @@ class Worker
             return;
         }
 
-        if (Coroutine::getCid() < 0) {
+        if (Substrate::coroutine()->getCid() < 0) {
             $self = $this;
             CoroutineRuntime::run(
                 RuntimePolicy::phalanxManaged(),
@@ -154,7 +154,7 @@ class Worker
                 return;
             }
 
-            if ($this->lock->errCode === Channel::CHANNEL_CLOSED) {
+            if ($this->lock->errCode() === ChannelHandle::CLOSED) {
                 throw new RuntimeException("Agent {$this->id} lock closed");
             }
         }
@@ -169,7 +169,7 @@ class Worker
                 return true;
             }
 
-            if ($this->lock->errCode === Channel::CHANNEL_CLOSED) {
+            if ($this->lock->errCode() === ChannelHandle::CLOSED) {
                 return false;
             }
         }
