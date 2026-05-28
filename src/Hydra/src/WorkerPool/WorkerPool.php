@@ -5,18 +5,18 @@ declare(strict_types=1);
 namespace Phalanx\Hydra\WorkerPool;
 
 use Closure;
-use OpenSwoole\Core\Process\Manager;
+use Swoole\Coroutine;
+use Swoole\Process\Pool;
 
 /**
  * Aegis-managed worker pool primitive.
  *
- * Wraps `OpenSwoole\Core\Process\Manager` (which itself composes
- * `Swoole\Process\Pool`) with a typed Phalanx-native facade. The
- * existing `Phalanx\Hydra\Agent\Worker` request/response IPC serves
- * service-call workloads; this WorkerPool targets the simpler "spawn N
- * processes that run a function and stay alive under a supervisor" use
- * case (plx-ops background workers, scheduled job pools, fan-out batch
- * processors).
+ * Composes `Swoole\Process\Pool` directly with a typed Phalanx-native
+ * facade. The existing `Phalanx\Hydra\Agent\Worker` request/response IPC
+ * serves service-call workloads; this WorkerPool targets the simpler
+ * "spawn N processes that run a function and stay alive under a
+ * supervisor" use case (plx-ops background workers, scheduled job pools,
+ * fan-out batch processors).
  *
  * The C-level supervisor restarts crashed workers automatically; the
  * pool propagates SIGTERM/SIGINT to children via Process\Pool's built-in
@@ -32,14 +32,13 @@ final class WorkerPool
 {
     private(set) int $workerCount = 0;
 
-    private readonly Manager $manager;
-
     /** @var list<array{0: Closure, 1: bool}> */
     private array $factories = [];
 
-    public function __construct(int $ipcType = SWOOLE_IPC_NONE, int $msgQueueKey = 0)
-    {
-        $this->manager = new Manager($ipcType, $msgQueueKey);
+    public function __construct(
+        private int $ipcType = SWOOLE_IPC_NONE,
+        private int $msgQueueKey = 0,
+    ) {
     }
 
     /**
@@ -64,8 +63,8 @@ final class WorkerPool
     /**
      * Add a single worker function. The function receives the `Pool` and
      * its assigned worker id at runtime. When `$enableCoroutine` is true,
-     * Swoole wraps the worker body in `Coroutine::run`, so coroutine-
-     * aware code (Aegis scopes, Swoole clients) works inside it.
+     * the worker body runs inside `Coroutine::run`, so coroutine-aware
+     * code (Aegis scopes, managed clients) works inside it.
      *
      * @param Closure(\Swoole\Process\Pool, int): void $func
      */
@@ -73,7 +72,6 @@ final class WorkerPool
     {
         $this->factories[] = [$func, $enableCoroutine];
         $this->workerCount = count($this->factories);
-        $this->manager->add($func, $enableCoroutine);
         return $this;
     }
 
@@ -89,7 +87,6 @@ final class WorkerPool
             $this->factories[] = [$func, $enableCoroutine];
         }
         $this->workerCount = count($this->factories);
-        $this->manager->addBatch($workerNum, $func, $enableCoroutine);
         return $this;
     }
 
@@ -100,6 +97,26 @@ final class WorkerPool
      */
     public function start(): void
     {
-        $this->manager->start();
+        $pool = new Pool(count($this->factories), $this->ipcType, $this->msgQueueKey);
+        $factories = $this->factories;
+
+        $pool->on(self::eventWorkerStart(), static function (Pool $pool, int $workerId) use ($factories): void {
+            if (!isset($factories[$workerId])) {
+                return;
+            }
+
+            [$func, $enableCoroutine] = $factories[$workerId];
+
+            if ($enableCoroutine) {
+                // Direct Coroutine::run — child process has no Substrate boot
+                Coroutine::run(static function () use ($func, $pool, $workerId): void {
+                    $func($pool, $workerId);
+                });
+            } else {
+                $func($pool, $workerId);
+            }
+        });
+
+        $pool->start();
     }
 }

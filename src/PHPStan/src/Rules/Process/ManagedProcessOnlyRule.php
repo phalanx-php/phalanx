@@ -33,7 +33,6 @@ final class ManagedProcessOnlyRule implements Rule
 
     /** @var list<string> */
     private const array FORBIDDEN_PROCESS_CLASSES = [
-        'OpenSwoole\\Core\\Process\\Manager',
         'Swoole\\Process',
         'Swoole\\Process\\Pool',
         'Symfony\\Component\\Process\\Process',
