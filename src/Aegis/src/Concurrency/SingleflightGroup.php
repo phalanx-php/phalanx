@@ -124,6 +124,7 @@ class SingleflightGroup
 
         foreach ($waiters as $waiter) {
             $waiter->push($message, 0.001);
+            $waiter->close();
         }
     }
 }

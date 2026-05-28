@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Phalanx\Substrate\Swoole;
 
 use Phalanx\Substrate\ChannelFactory;
-use Phalanx\Substrate\ChannelWaitGroup;
 use Phalanx\Substrate\CoroutineDriver;
 use Phalanx\Substrate\RuntimeHookDriver;
 use Phalanx\Substrate\SignalDriver;
@@ -55,7 +54,7 @@ final class SwooleEngine implements SubstrateEngine
             return new SwooleWaitGroupHandle();
         }
 
-        return new ChannelWaitGroup();
+        return new SwooleChannelWaitGroup();
     }
 
     public function name(): string

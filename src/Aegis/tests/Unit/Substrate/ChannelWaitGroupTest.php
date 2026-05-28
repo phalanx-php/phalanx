@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Aegis\Tests\Unit\Substrate;
 
-use Phalanx\Substrate\ChannelWaitGroup;
+use Phalanx\Substrate\Swoole\SwooleChannelWaitGroup;
 use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\TestCase;
 use Swoole\Coroutine;
@@ -15,7 +15,7 @@ final class ChannelWaitGroupTest extends TestCase
     public function testWaitReturnsImmediatelyWhenCountIsZero(): void
     {
         Coroutine::run(static function (): void {
-            $wg = new ChannelWaitGroup();
+            $wg = new SwooleChannelWaitGroup();
 
             self::assertTrue($wg->wait());
             self::assertSame(0, $wg->count());
@@ -25,7 +25,7 @@ final class ChannelWaitGroupTest extends TestCase
     public function testAddIncrements(): void
     {
         Coroutine::run(static function (): void {
-            $wg = new ChannelWaitGroup();
+            $wg = new SwooleChannelWaitGroup();
             $wg->add();
 
             self::assertSame(1, $wg->count());
@@ -39,7 +39,7 @@ final class ChannelWaitGroupTest extends TestCase
     public function testDoneDecrementsCount(): void
     {
         Coroutine::run(static function (): void {
-            $wg = new ChannelWaitGroup();
+            $wg = new SwooleChannelWaitGroup();
             $wg->add(2);
             $wg->done();
 
@@ -50,7 +50,7 @@ final class ChannelWaitGroupTest extends TestCase
     public function testWaitSucceedsAfterAllDoneCalls(): void
     {
         Coroutine::run(static function (): void {
-            $wg = new ChannelWaitGroup();
+            $wg = new SwooleChannelWaitGroup();
             $wg->add(2);
 
             Coroutine::create(static function () use ($wg): void {
@@ -66,7 +66,7 @@ final class ChannelWaitGroupTest extends TestCase
     public function testExcessDoneIsNoOp(): void
     {
         Coroutine::run(static function (): void {
-            $wg = new ChannelWaitGroup();
+            $wg = new SwooleChannelWaitGroup();
             $wg->add(1);
             $wg->done();
 
@@ -80,7 +80,7 @@ final class ChannelWaitGroupTest extends TestCase
     public function testDoneWithoutAddIsNoOp(): void
     {
         Coroutine::run(static function (): void {
-            $wg = new ChannelWaitGroup();
+            $wg = new SwooleChannelWaitGroup();
 
             $wg->done();
 
@@ -91,7 +91,7 @@ final class ChannelWaitGroupTest extends TestCase
     public function testWaitWithTimeoutReturnsFalse(): void
     {
         Coroutine::run(static function (): void {
-            $wg = new ChannelWaitGroup();
+            $wg = new SwooleChannelWaitGroup();
             $wg->add(1);
 
             self::assertFalse($wg->wait(0.01));

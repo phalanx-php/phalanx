@@ -7,18 +7,16 @@ namespace Phalanx\Aegis\Tests\Resilience;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Static-source audit. Every `Coroutine::create(...)` call inside
- * src/Scope/ MUST be followed within ~5 source lines by
- * `CoroutineScopeRegistry::install(...)` as the first action of the
- * spawned closure body. Swoole child coroutines do NOT inherit
- * parent context; missing the install call is the canonical foot-gun
- * that produces orphaned tasks invisible to the supervisor.
+ * Static-source audit. Every coroutine spawn in src/Scope/ MUST be
+ * followed within ~16 source lines by `CoroutineScopeRegistry::install(...)`
+ * as the first action of the spawned closure body. Swoole child coroutines
+ * do NOT inherit parent context; missing the install call is the canonical
+ * foot-gun that produces orphaned tasks invisible to the supervisor.
  *
- * This is a regression tripwire — it doesn't run anything async; it
+ * This is a regression tripwire -- it doesn't run anything async; it
  * reads the source. Future contributors who add a new primitive without
  * installing the parent scope will see a failed test pointing at the
  * exact line.
- *
  */
 final class ScopeInheritanceAuditTest extends TestCase
 {
@@ -34,7 +32,7 @@ final class ScopeInheritanceAuditTest extends TestCase
                 continue;
             }
             foreach ($lines as $idx => $line) {
-                if (!str_contains($line, 'Coroutine::create(')) {
+                if (!str_contains($line, 'Substrate::coroutine()->create(')) {
                     continue;
                 }
                 // Look shortly after the spawn for the install call. Long
@@ -55,7 +53,7 @@ final class ScopeInheritanceAuditTest extends TestCase
         self::assertSame(
             [],
             $offenders,
-            "Every Coroutine::create() in src/Scope must be immediately followed by\n"
+            "Every Substrate::coroutine()->create() in src/Scope must be followed by\n"
             . "CoroutineScopeRegistry::install() in the spawned closure. Offenders:\n"
             . implode("\n", $offenders),
         );

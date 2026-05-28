@@ -2,11 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Substrate;
+namespace Phalanx\Substrate\Swoole;
 
+use Phalanx\Substrate\WaitGroupHandle;
 use Swoole\Coroutine\Channel;
 
-final class ChannelWaitGroup implements WaitGroupHandle
+final class SwooleChannelWaitGroup implements WaitGroupHandle
 {
     private int $count = 0;
 

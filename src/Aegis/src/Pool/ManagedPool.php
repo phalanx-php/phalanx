@@ -68,7 +68,7 @@ final class ManagedPool
      * @param class-string $factoryClass class implementing {@see ManagedPoolFactory}
      */
     public function __construct(
-        public readonly string $domain,
+        private(set) string $domain,
         string $factoryClass,
         mixed $config,
         private readonly Trace $trace,

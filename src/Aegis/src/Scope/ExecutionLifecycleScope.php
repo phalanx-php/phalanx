@@ -21,7 +21,6 @@ use Phalanx\Service\CompiledServiceConfig;
 use Phalanx\Service\LazySingleton;
 use Phalanx\Service\ServiceGraph;
 use Phalanx\Service\ServiceLifetime;
-use Phalanx\Substrate\ChannelWaitGroup;
 use Phalanx\Substrate\Substrate;
 use Phalanx\Supervisor\DispatchMode;
 use Phalanx\Supervisor\Supervisor;
@@ -386,7 +385,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             return [];
         }
 
-        $wg = new ChannelWaitGroup();
+        $wg = Substrate::createWaitGroup();
         $wg->add(count($tasks));
         $results = [];
         $errors = [];
@@ -622,7 +621,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
 
         $effectiveLimit = max(1, min($limit, count($itemsArr)));
         $sem = Substrate::channels()->create($effectiveLimit);
-        $wg = new ChannelWaitGroup();
+        $wg = Substrate::createWaitGroup();
         $wg->add(count($itemsArr));
         $results = [];
         $errors = [];
@@ -732,7 +731,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             return new SettlementBag([]);
         }
 
-        $wg = new ChannelWaitGroup();
+        $wg = Substrate::createWaitGroup();
         $wg->add(count($tasks));
         $bag = [];
         $cids = [];
@@ -1088,7 +1087,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             return [];
         }
 
-        $wg = new ChannelWaitGroup();
+        $wg = Substrate::createWaitGroup();
         $results = [];
         $errors = [];
         $firstError = null;
@@ -1185,7 +1184,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             return new SettlementBag([]);
         }
 
-        $wg = new ChannelWaitGroup();
+        $wg = Substrate::createWaitGroup();
         $bag = [];
         $cids = [];
         /** @var list<self> $childScopes */
@@ -1269,7 +1268,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         }
 
         $effectiveLimit = max(1, min($limit, count($entries)));
-        $wg = new ChannelWaitGroup();
+        $wg = Substrate::createWaitGroup();
         $results = [];
         $errors = [];
         $firstError = null;

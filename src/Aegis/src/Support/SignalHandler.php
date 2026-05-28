@@ -6,7 +6,7 @@ namespace Phalanx\Support;
 
 use Phalanx\Substrate\Substrate;
 
-final readonly class SignalHandler
+final class SignalHandler
 {
     public static function register(callable $shutdown): void
     {

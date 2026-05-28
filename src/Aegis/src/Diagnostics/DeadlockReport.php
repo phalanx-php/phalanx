@@ -30,11 +30,8 @@ final readonly class DeadlockReport
     }
 
     /**
-     * Build a report from the live OpenSwoole runtime. Outside a coroutine
-     * context the report is empty; the wrapper does not throw to keep the
-     * Archon `debug:deadlock` command robust against being run pre-server.
+     * @param int<0, max> $depth
      */
-    /** @param int<0, max> $depth */
     public static function collect(int $maxFrames = 32, int $depth = 32): self
     {
         $count = CoroutineStats::capture()->coroutineNum;

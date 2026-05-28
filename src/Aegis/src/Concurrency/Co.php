@@ -24,7 +24,7 @@ final class Co
     public static function sleep(float $seconds): void
     {
         if ($seconds <= 0.0) {
-            self::throwIfCanceled();
+            self::throwIfCancelled();
             return;
         }
         $ok = Substrate::coroutine()->usleep((int) round($seconds * 1_000_000));
@@ -33,7 +33,7 @@ final class Co
         }
     }
 
-    public static function throwIfCanceled(): void
+    public static function throwIfCancelled(): void
     {
         if (Substrate::coroutine()->isCanceled()) {
             throw new Cancelled('coroutine cancelled');

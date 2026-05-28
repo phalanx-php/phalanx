@@ -16,7 +16,7 @@ use Phalanx\Supervisor\Supervisor;
 use Swoole\Coroutine\PostgreSQL;
 use Swoole\Table;
 
-final readonly class EnvironmentDoctor
+final class EnvironmentDoctor
 {
     private const float MEMORY_PRESSURE_RATIO = 0.9;
 
