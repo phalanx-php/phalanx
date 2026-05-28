@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Phalanx\Runtime\Memory;
 
-use Swoole\Coroutine;
-use Swoole\Exception as SwooleException;
 use Phalanx\Runtime\Identity\AegisEventSid;
 use Phalanx\Runtime\Identity\RuntimeAnnotationId;
 use Phalanx\Runtime\Identity\RuntimeEventId;
 use Phalanx\Runtime\Identity\RuntimeResourceId;
 use RuntimeException;
+use Swoole\Coroutine;
+use Swoole\Exception as SwooleException;
 
 final readonly class ManagedResourceRegistry
 {

@@ -33,11 +33,11 @@
         "phalanx-php/grammata": "Required for HomeDir parsers; managed file I/O with FilePool",
         "phalanx-php/archon": "Required for the panoply:agents:scan Archon command",
         "ext-sqlite3": "Required for Codex HomeDir sqlite-backed history",
-        "ext-openswoole": "Required for the Iris transport and Aegis runtime (Swoole extension)",
+        "ext-swoole": "Required for the Iris transport and Aegis runtime",
         "php-collective/toml": "Required for reading Codex config.toml settings; without it Settings operates in no-op mode and asString/asInt/etc. throw"
     },
     "require-dev": {
-        "openswoole/ide-helper": "^26.2",
+        "swoole/ide-helper": "^6.0",
         "phalanx-php/aegis": "^0.6",
         "phalanx-php/iris": "^0.6",
         "phpstan/phpstan": "^2.0",

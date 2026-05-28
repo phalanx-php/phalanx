@@ -1,0 +1,31 @@
+source:
+  php-src:
+    type: ghtar
+    repo: php/php-src
+    path: php-src
+    rev: php-8.4
+  ext-openswoole:
+    type: ghtar
+    repo: openswoole/ext-openswoole
+    path: php-src/ext/openswoole
+    prefer-stable: true
+
+sapi:
+  - embed
+
+extensions:
+  - openswoole
+  - openssl
+  - curl
+  - mbstring
+  - pcntl
+  - sockets
+  - posix
+  - filter
+  - tokenizer
+  - ctype
+  - iconv
+
+php-config:
+  - --with-config-file-path=~/.config/dory
+  - --with-config-file-scan-dir=~/.config/dory/conf.d

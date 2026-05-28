@@ -19,7 +19,7 @@
     ],
     "require": {
         "php": "^8.4",
-        "openswoole/core": "^26.2",
+        "ext-swoole": "^6.0",
         "phalanx-php/aegis": "^0.6",
         "phalanx-php/stoa": "^0.6",
         "phalanx-php/styx": "^0.6"

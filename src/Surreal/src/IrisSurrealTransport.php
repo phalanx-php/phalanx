@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Phalanx\Surreal;
 
 use JsonException;
-use Swoole\Atomic;
 use Phalanx\Iris\HttpClient;
 use Phalanx\Iris\HttpRequest;
 use Phalanx\Iris\HttpResponse;
 use Phalanx\Scope\Scope;
 use Phalanx\Scope\Suspendable;
+use Swoole\Atomic;
 
 final class IrisSurrealTransport implements SurrealTransport
 {

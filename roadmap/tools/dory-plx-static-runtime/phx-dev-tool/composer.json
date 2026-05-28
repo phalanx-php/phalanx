@@ -1,0 +1,41 @@
+{
+    "name": "phalanx-php/phx",
+    "description": "Phalanx developer tool",
+    "type": "project",
+    "require": {
+        "php": "^8.4",
+        "phalanx-php/archon": "@dev",
+        "phalanx-php/skopos": "@dev",
+        "symfony/runtime": "^7.0"
+    },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../../phalanx/packages/phalanx-archon"
+        },
+        {
+            "type": "path",
+            "url": "../../phalanx/packages/phalanx-aegis"
+        },
+        {
+            "type": "path",
+            "url": "../../phalanx/packages/phalanx-skopos"
+        },
+        {
+            "type": "path",
+            "url": "../../phalanx/packages/phalanx-styx"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Phx\\": "src/"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "config": {
+        "allow-plugins": {
+            "symfony/runtime": true
+        }
+    }
+}

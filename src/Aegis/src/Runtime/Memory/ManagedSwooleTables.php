@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Runtime\Memory;
 
-use Swoole\Table;
 use RuntimeException;
+use Swoole\Table;
 
 final class ManagedSwooleTables
 {

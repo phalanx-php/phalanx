@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Stoa\Response;
 
-use Swoole\Http\Server;
 use Phalanx\Stoa\Runtime\Identity\StoaEventSid;
 use Phalanx\Stoa\StoaRequestResource;
+use Swoole\Http\Server;
 
 final class BufferEventDispatcher
 {

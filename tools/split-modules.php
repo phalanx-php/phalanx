@@ -3,11 +3,13 @@
 
 declare(strict_types=1);
 
+require __DIR__ . '/module-manifest.php';
+
 $root = dirname(__DIR__);
 $modules = require $root . '/modules.php';
 $dryRun = in_array('--dry-run', $argv, true);
 $verifyOnly = in_array('--verify-only', $argv, true);
-$moduleFilter = optionValue($argv, '--module');
+$moduleFilter = phalanx_option_value($argv, '--module');
 $owner = getenv('SPLIT_REPOSITORY_OWNER') ?: 'phalanx-php';
 $token = getenv('GH_ACCESS_TOKEN') ?: getenv('GITHUB_TOKEN') ?: '';
 $refName = getenv('GITHUB_REF_TYPE') === 'tag' ? getenv('GITHUB_REF_NAME') : '';
@@ -19,13 +21,22 @@ if ($moduleFilter !== null && !isset($modules[$moduleFilter])) {
     exit(1);
 }
 
+if ($moduleFilter !== null && ! phalanx_module_is_published($modules[$moduleFilter])) {
+    fwrite(STDERR, "Module is not configured for split publishing: {$moduleFilter}\n");
+    exit(1);
+}
+
 foreach ($modules as $module => $meta) {
     if ($moduleFilter !== null && $module !== $moduleFilter) {
         continue;
     }
 
-    $repository = repositoryName($meta['package']);
-    $branch = 'split/' . packageSlug($meta['package']);
+    if (! phalanx_module_is_published($meta)) {
+        continue;
+    }
+
+    $repository = phalanx_repository_name($meta['package']);
+    $branch = 'split/' . phalanx_package_slug($meta['package']);
     $prefix = 'src/' . $module;
 
     deleteBranch($branch, $dryRun);
@@ -48,31 +59,6 @@ foreach ($modules as $module => $meta) {
     if (is_string($refName) && $refName !== '') {
         run(['git', 'push', $target, $branch . ':refs/tags/' . $refName, '--force'], $dryRun, $token);
     }
-}
-
-function optionValue(array $argv, string $name): ?string
-{
-    foreach ($argv as $index => $arg) {
-        if ($arg === $name && isset($argv[$index + 1])) {
-            return $argv[$index + 1];
-        }
-    }
-
-    return null;
-}
-
-function repositoryName(string $package): string
-{
-    $name = packageSlug($package);
-
-    return 'phalanx-' . $name;
-}
-
-function packageSlug(string $package): string
-{
-    [, $name] = explode('/', $package, 2);
-
-    return $name;
 }
 
 function deleteBranch(string $branch, bool $dryRun): void

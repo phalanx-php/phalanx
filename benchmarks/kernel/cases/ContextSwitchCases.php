@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Benchmarks\Kernel\Cases;
 
-use OpenSwoole\Core\Coroutine\WaitGroup;
-use OpenSwoole\Coroutine;
+use Swoole\Coroutine;
+use Swoole\Coroutine\WaitGroup;
 use Phalanx\Benchmarks\Kernel\AbstractBenchmarkCase;
 use Phalanx\Benchmarks\Kernel\BenchmarkContext;
 use Phalanx\Scope\ExecutionScope;

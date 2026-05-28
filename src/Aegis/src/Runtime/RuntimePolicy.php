@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Phalanx\Runtime;
 
 use InvalidArgumentException;
-use Swoole\Runtime;
 use Phalanx\Boot\AppContext;
+use Swoole\Runtime;
 
 final readonly class RuntimePolicy
 {
@@ -44,8 +44,10 @@ final readonly class RuntimePolicy
             $required |= self::flagsFor($capability);
         }
 
-        // Console input owns its coroutine handoff explicitly; global stdio,
-        // sleep, and blocking-function hooks are too coarse for managed pools.
+        /**
+         * Console input owns its coroutine handoff explicitly; global stdio,
+         * sleep, and blocking-function hooks are too coarse for managed pools.
+         */
         return new self(
             name: self::nameFor($capabilities),
             requiredFlags: $required,

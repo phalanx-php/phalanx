@@ -1,0 +1,22 @@
+
+======================================================================
+  Test 7: FD pressure — concurrent processes with vs without a semaphore
+======================================================================
+[t+    0.2ms] Claim: concurrent proc_open without a semaphore can exhaust file descriptors
+[t+    0.6ms]   (each proc_open = 3 pipe pairs = 6 FDs in the parent). A bounded Channel
+[t+    0.6ms]   acts as a sane semaphore.
+[t+    0.7ms]
+[t+   33.0ms] self pid=36252, baseline FD count=64, ulimit -n=1048576
+[t+   33.2ms]
+[t+   33.3ms] --- A: 60 procs, unlimited concurrency — 60 processes, concurrency limit = unlimited
+[t+  533.2ms]   ok=60 errors=0, peak FDs=187, elapsed=500ms
+[t+  533.4ms]
+[t+  533.5ms] --- B: 60 procs, semaphore=8 — 60 processes, concurrency limit = 8
+[t+ 3842.8ms]   ok=60 errors=0, peak FDs=87, elapsed=3309ms
+[t+ 3843.5ms]
+[t+ 3843.9ms] Notes:
+[t+ 3844.2ms]   Each proc_open opens 3 pipes (stdin/stdout/stderr) — 6 FDs in the parent.
+[t+ 3844.3ms]   Symfony Process holds them until proc finishes + read drain.
+[t+ 3844.6ms]   At unlimited concurrency, peak FDs = baseline + 6 * inflight count.
+[t+ 3844.7ms]   At semaphore=N, peak FDs = baseline + 6 * N.
+[t+ 3844.9ms] VERDICT: PROVEN if A peaks notably higher than B.

@@ -6,9 +6,9 @@ namespace Phalanx\Styx;
 
 use Closure;
 use Generator;
-use Phalanx\Pool\BorrowedValue;
 use Phalanx\Engine\ChannelHandle;
 use Phalanx\Engine\Engine;
+use Phalanx\Pool\BorrowedValue;
 use ReflectionFunction;
 use Throwable;
 

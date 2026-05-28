@@ -53,6 +53,7 @@
 
     <!-- PHP 8.4 property hooks: spacing rules misfire on hook syntax -->
     <rule ref="PSR2.Classes.PropertyDeclaration.SpacingAfterType">
+        <exclude-pattern>*/DoryExecutionContext.php</exclude-pattern>
         <exclude-pattern>*/SettlementBag.php</exclude-pattern>
         <exclude-pattern>*/ExecutionContext.php</exclude-pattern>
         <exclude-pattern>*/CommandResult.php</exclude-pattern>

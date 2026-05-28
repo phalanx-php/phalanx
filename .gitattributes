@@ -27,6 +27,8 @@
 /phpstan.neon export-ignore
 /phpunit.xml export-ignore
 /rector.php export-ignore
+/roadmap export-ignore
+/roadmap/** export-ignore
 /src/*/demos export-ignore
 /src/*/demos/** export-ignore
 /src/*/phpunit.xml export-ignore

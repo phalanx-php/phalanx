@@ -7,9 +7,9 @@ namespace Phalanx\Stoa;
 use GuzzleHttp\Psr7\ServerRequest;
 use GuzzleHttp\Psr7\UploadedFile;
 use GuzzleHttp\Psr7\Utils;
-use Swoole\Http\Request;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\UploadedFileInterface;
+use Swoole\Http\Request;
 
 final readonly class StoaRequestFactory
 {

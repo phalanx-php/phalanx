@@ -149,11 +149,52 @@ function phalanx_package_test_script(string $module): string
     return 'php -d memory_limit=512M vendor/bin/phpunit -c ' . $config;
 }
 
+function phalanx_module_is_published(array $meta): bool
+{
+    return ($meta['publish'] ?? true) !== false;
+}
+
+function phalanx_option_value(array $argv, string $name): ?string
+{
+    foreach ($argv as $index => $arg) {
+        if (str_starts_with($arg, $name . '=')) {
+            $value = substr($arg, strlen($name) + 1);
+
+            if ($value === '') {
+                fwrite(STDERR, "Missing value for {$name}\n");
+                exit(1);
+            }
+
+            return $value;
+        }
+
+        if ($arg !== $name) {
+            continue;
+        }
+
+        $value = $argv[$index + 1] ?? null;
+
+        if ($value === null || str_starts_with($value, '--')) {
+            fwrite(STDERR, "Missing value for {$name}\n");
+            exit(1);
+        }
+
+        return $value;
+    }
+
+    return null;
+}
+
 function phalanx_package_slug(string $package): string
 {
     [, $name] = explode('/', $package, 2);
 
     return $name;
+}
+
+function phalanx_repository_name(string $package): string
+{
+    return 'phalanx-' . phalanx_package_slug($package);
 }
 
 function phalanx_normalized_manifest(array $manifest): array

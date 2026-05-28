@@ -55,7 +55,7 @@ use Phalanx\Scope\TaskScope;
 use Phalanx\Task\Task;
 
 // Aegis kernel requires Swoole\Table; guard before boot.
-if (!extension_loaded('swoole') && !extension_loaded('openswoole')) {
+if (!extension_loaded('swoole')) {
     return DemoReport::demo(
         'Athena Third-Party SDK Alongside Athena',
         static function (DemoReport $report): void {

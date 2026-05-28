@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Agent Bridge -- Action Test Page</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 600px; margin: 2rem auto; }
+    .section { margin: 1.5rem 0; padding: 1rem; border: 1px solid #ccc; border-radius: 4px; }
+    label { display: block; margin: 0.5rem 0 0.25rem; }
+    #result { padding: 0.5rem; background: #f0f0f0; min-height: 1.5em; margin-top: 1rem; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <h1>Action Test Page</h1>
+
+  <div class="section">
+    <h2>Click</h2>
+    <button id="clicker" data-testid="click-target" onclick="this.textContent='Clicked!'">Click me</button>
+  </div>
+
+  <div class="section">
+    <h2>Type / Fill</h2>
+    <label for="typer">Input field:</label>
+    <input id="typer" data-testid="type-target" />
+  </div>
+
+  <div class="section">
+    <h2>Select</h2>
+    <label for="picker">Dropdown:</label>
+    <select id="picker" data-testid="select-target">
+      <option value="a">A</option>
+      <option value="b">B</option>
+      <option value="c">C</option>
+    </select>
+  </div>
+
+  <div class="section">
+    <h2>Checkbox</h2>
+    <label><input type="checkbox" id="checker" data-testid="check-target" /> Toggle me</label>
+  </div>
+
+  <div class="section">
+    <h2>Form Submit</h2>
+    <form id="form" data-testid="form-target" onsubmit="event.preventDefault(); document.getElementById('result').textContent='Submitted'">
+      <button type="submit">Submit</button>
+    </form>
+  </div>
+
+  <div class="section">
+    <h2>Dynamic Content</h2>
+    <button onclick="setTimeout(() => { const el = document.createElement('div'); el.id='delayed-element'; el.textContent='I appeared!'; this.parentElement.appendChild(el); }, 1000)">
+      Add element after 1s
+    </button>
+    <button onclick="const el = document.getElementById('delayed-element'); if (el) el.remove();">
+      Remove element
+    </button>
+  </div>
+
+  <div class="section">
+    <h2>Scroll Target</h2>
+    <div id="scroll-container" data-testid="scroll-target" style="height: 100px; overflow-y: scroll; border: 1px solid #999;">
+      <div style="height: 500px; background: linear-gradient(#fff, #000);"></div>
+    </div>
+  </div>
+
+  <div id="result" data-testid="result">Result area</div>
+</body>
+</html>

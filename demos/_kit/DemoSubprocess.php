@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Phalanx\Demos\Kit;
 
 use Closure;
-use OpenSwoole\Coroutine;
-use OpenSwoole\Process;
+use Swoole\Coroutine;
+use Swoole\Process;
 use Phalanx\System\PhpExtensionFlags;
 
 /**

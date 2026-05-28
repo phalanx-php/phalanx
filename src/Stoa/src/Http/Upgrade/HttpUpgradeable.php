@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Phalanx\Stoa\Http\Upgrade;
 
-use Swoole\Http\Response;
 use Phalanx\Runtime\Memory\ManagedResourceHandle;
 use Phalanx\Stoa\StoaRequestResource;
 use Psr\Http\Message\ServerRequestInterface;
+use Swoole\Http\Response;
 
 /**
  * Implemented by packages that consume an HTTP/1.1 Upgrade exchange.

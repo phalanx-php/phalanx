@@ -1,0 +1,25 @@
+{
+    "name": "phalanx-app/test-project",
+    "type": "project",
+    "require": {
+        "php": "^8.4",
+        "phalanx-php/archon": "@dev",
+        "phalanx-php/aegis": "@dev"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "repositories": [{
+        "name": "phalanx-archon",
+        "type": "path",
+        "url": "../../../phalanx/packages/phalanx-archon"
+    },{
+        "name": "phalanx-aegis",
+        "type": "path",
+        "url": "../../../phalanx/packages/phalanx-aegis"
+    }]
+}

@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Phalanx\Cli\Command;
 
 use Phalanx\Cli\Swoole\FlagSet;
-use Phalanx\Cli\Swoole\SwooleFlag;
 use Phalanx\Cli\Swoole\PieRunner;
 use Phalanx\Cli\Swoole\Platform;
 use Phalanx\Cli\Swoole\PlatformDetector;
+use Phalanx\Cli\Swoole\SwooleFlag;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\QuestionHelper;

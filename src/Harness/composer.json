@@ -19,7 +19,7 @@
     ],
     "require": {
         "php": "^8.4",
-        "ext-openswoole": "^26.2",
+        "ext-swoole": "^6.0",
         "ext-pcntl": "*",
         "ext-mbstring": "*",
         "league/commonmark": "^2.7",

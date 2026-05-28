@@ -1,0 +1,40 @@
+{
+    "name": "phalanx-php/agentic",
+    "description": "Agentic UI runtime POC for Phalanx — AgentSession, live typed signals, ConversationSupervisor, Slack-style composer, global oversight on Hermes + Postgres + OpenSwoole",
+    "license": "MIT",
+    "type": "library",
+    "keywords": ["ai", "agent", "athena", "eidolon", "hermes", "supervisor", "composer", "oversight", "async"],
+    "authors": [
+        {
+            "name": "Jonathan Havens",
+            "email": "mail@phalanx-php.com"
+        }
+    ],
+    "require": {
+        "php": "^8.4",
+        "phalanx-php/aegis": "dev-main",
+        "phalanx-php/stoa": "dev-main",
+        "phalanx-php/hermes": "dev-main",
+        "phalanx-php/athena": "dev-main",
+        "phalanx-php/eidolon": "dev-main",
+        "phalanx-php/postgres": "dev-main"
+    },
+    "autoload": {
+        "psr-4": {
+            "Phalanx\\Agentic\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Phalanx\\Tests\\Agentic\\": "tests/"
+        }
+    },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../phalanx"
+        }
+    ],
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

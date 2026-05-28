@@ -311,11 +311,11 @@ final class BenchmarkReport
         printf("%s\n%s\n", $this->title, str_repeat('=', strlen($this->title)));
 
         printf(
-            "commit=%s dirty=%s php=%s openswoole=%s\n",
+            "commit=%s dirty=%s php=%s swoole=%s\n",
             $this->metadata['commit'] ?? 'unknown',
             $this->metadata['dirty'] ?? 'unknown',
             $this->metadata['php'] ?? PHP_VERSION,
-            $this->metadata['openswoole'] ?? 'unknown'
+            $this->metadata['swoole'] ?? 'unknown'
         );
         printf(
             "php_binary=%s xdebug=%s\n\n",

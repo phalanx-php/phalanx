@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Diagnostics;
 
-use Phalanx\Runtime\CoroutineStats;
 use Phalanx\Engine\Engine;
+use Phalanx\Runtime\CoroutineStats;
 
 /**
  * Structured coroutine introspection report for deadlock diagnostics.

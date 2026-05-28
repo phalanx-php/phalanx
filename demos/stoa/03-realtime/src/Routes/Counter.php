@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Acme\StoaDemo\Realtime\Routes;
 
-use OpenSwoole\Coroutine;
+use Swoole\Coroutine;
 use Phalanx\Stoa\RequestContext;
 use Phalanx\Stoa\Sse\SseStream;
 use Phalanx\Stoa\Sse\SseStreamFactory;

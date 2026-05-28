@@ -1,0 +1,15 @@
+{
+    "name": "phalanx/poc-process-claims",
+    "description": "Empirical validation of OpenSwoole/proc_open/Symfony Process claims for the Phalanx 0.2 sidecar architecture decision.",
+    "type": "project",
+    "require": {
+        "php": ">=8.4",
+        "ext-openswoole": "*",
+        "ext-pcntl": "*",
+        "ext-posix": "*",
+        "symfony/process": "^7.2"
+    },
+    "config": {
+        "sort-packages": true
+    }
+}

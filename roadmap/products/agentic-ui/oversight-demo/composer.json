@@ -1,0 +1,29 @@
+{
+    "name": "phalanx-php/agentic-oversight-demo",
+    "description": "Consuming demo for the phalanx-agentic library - global admin oversight dashboard + live Slack-style agent composer",
+    "license": "MIT",
+    "type": "project",
+    "require": {
+        "php": "^8.4",
+        "phalanx-php/agentic": "dev-main",
+        "phalanx-php/stoa": "dev-main",
+        "phalanx-php/hermes": "dev-main",
+        "phalanx-php/athena": "dev-main",
+        "phalanx-php/aegis": "dev-main"
+    },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../phalanx"
+        },
+        {
+            "type": "path",
+            "url": "../phalanx-agentic"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    }
+}

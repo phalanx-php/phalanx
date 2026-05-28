@@ -212,36 +212,43 @@ Productivity is what PHP is good at, and Phalanx is laser-focused on exactly tha
 
 ## Framework Modules
 
-The modules are in one cohesive framework. The names are still useful when reading the code:
+The base framework is one cohesive runtime surface:
 
 | Module | Runtime surface |
 | --- | --- |
 | Aegis | managed execution, scopes, supervision, leases, runtime memory |
-| Stoa | HTTP server, routing, middleware, SSE, request lifecycle |
-| Archon | CLI applications, commands, arguments, interactive input |
-| Theatron | terminal UI screens, stores, bindings, devtools, request inspection |
-| Hydra | worker processes and structured parallelism |
-| Hermes | WebSocket server and client |
-| Athena | supervised AI turns, effects, grants, tools, MCP |
-| Panoply | provider-neutral AI surface and adapters |
-| Agora | durable agent state, event log, replay, session resume |
-| Harness | composable starter agent app (Theatron + Athena + Agora + Surreal) |
-| Dory | native scripting, supervised execution, fluent orchestration |
-| Iris | outbound HTTP |
-| Grammata | filesystem work |
-| Styx | reactive stream primitives (Emitter, ScopedStream, Channel) |
-| Enigma | SSH and tunnels |
-| Surreal | SurrealDB RPC and live queries |
-| Argos | network discovery, probing, device management |
-| Skopos | dev server orchestration |
-| Eidolon | frontend bridge contracts |
 | Themis | typed config hydration, env validation, secrets |
+| Stoa | HTTP server, routing, middleware, SSE, request lifecycle |
+| Iris | outbound HTTP client |
+| Archon | CLI applications, commands, arguments, interactive input |
+| Hydra | worker processes and structured parallelism |
+| Styx | reactive stream primitives (Emitter, ScopedStream, Channel) |
+| Hermes | WebSocket server and client |
+| Theatron | terminal UI screens, stores, bindings, devtools, request inspection |
+| Panoply | provider-neutral AI surface and adapters |
+| Athena | supervised AI turns, provider-neutral runs, tool approvals |
 | Cli | doctor, Swoole installer (PIE), project scaffolding |
 | PHPStan | static safety checks for runtime-sensitive patterns |
 
+These optional first-party modules are useful with Phalanx, but they are not part of the alpha base surface:
+
+| Module | Surface |
+| --- | --- |
+| Grammata | filesystem work |
+| Enigma | SSH and tunnels |
+| Argos | network discovery, probing, device management |
+| Surreal | SurrealDB RPC and live queries |
+| Agora | durable agent state, event log, replay, session resume |
+| Harness | composable starter agent app (Theatron + Athena + Agora + Surreal) |
+| Skopos | dev server orchestration |
+
+Future modules, tools, and product experiments live under [`roadmap/`](roadmap/). That includes PLX/static runtime snapshots, CDP, Postgres, Twilio, RST, Agent Bridge, Sentinel, bg-agents, ThreePath, and old evidence POCs.
+
+Dory, DoryBin, and Eidolon are still present as in-tree incubation modules for framework development. They are intentionally not split-published or advertised as alpha base packages yet.
+
 ## Demos
 
-The repo includes runnable demos for the current surfaces. Development is moving quickly, so keep checking in.
+The repo includes runnable demos for the base framework and a few optional modules. Development is moving quickly, so keep checking in.
 
 | Demo | Covers | Command |
 | --- | --- | --- |
@@ -249,9 +256,8 @@ The repo includes runnable demos for the current surfaces. Development is moving
 | [Stoa HTTP](demos/stoa) | routing, JSON APIs, realtime SSE, runtime lifecycle, diagnostics | `composer demo:stoa` |
 | [Archon CLI](demos/archon) | commands, interactive input, supervised concurrency, lifecycle, diagnostics | `composer demo:archon` |
 | [Hydra workers](demos/hydra) | workers, structured parallelism, cancellation behavior | `composer demo:hydra` |
-| [Athena AI](demos/athena) | streaming providers, SDK coexistence, MCP stdio/SSE, support triage, research agents | `composer demo:athena` |
+| [Athena AI](demos/athena) | streaming providers, SDK coexistence, supervised tool approvals | `composer demo:athena` |
 | [Surreal](demos/surreal) | in-memory RPC and live queries | `composer demo:surreal` |
-| [Skopos](demos/skopos) | basic dev server orchestration | `composer demo:skopos:basic-dev` |
 | [Harness](demos/harness) | non-interactive harness pipeline rendering | `composer demo:harness` |
 
 ## Installation

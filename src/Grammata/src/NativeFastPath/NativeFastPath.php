@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Phalanx\Grammata\NativeFastPath;
 
-use Swoole\Coroutine\System;
 use Phalanx\Scope\Suspendable;
 use Phalanx\Supervisor\WaitReason;
 use RuntimeException;
+use Swoole\Coroutine\System;
 
 /**
  * Coroutine-native filesystem fast-path.

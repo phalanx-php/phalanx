@@ -1,0 +1,37 @@
+
+======================================================================
+  Test 6: Cancellation — orphan grandchildren detection
+======================================================================
+[t+    0.2ms] Claim: shell-wrapped commands that fork a backgrounded child can leave the
+[t+    0.2ms]   child orphaned on SIGTERM because the signal goes to the shell, not the
+[t+    0.2ms]   whole job. Fixes: prefix the command with `exec` so shell IS the child,
+[t+    0.3ms]   use argv form (no shell), or signal the entire process group.
+[t+    0.3ms]
+[t+    0.3ms] Method: spawn each variant, snapshot children of the spawned PID, then
+[t+    0.3ms]   stop(). Recheck the snapshot — anyone still alive is an orphan.
+[t+    0.4ms]
+[t+    1.4ms] --- A: shell with backgrounded child (`sleep 30 &; wait`)
+[t+    1.6ms]   command: sleep 30 & PID=$!; wait $PID
+[t+    3.4ms]   spawned pid=35984
+[t+  288.5ms]   children of 35984: [35985]
+[t+  704.6ms]   after stop(): exit=143, surviving descendants=[35985]
+[t+  704.9ms]   ORPHANS DETECTED — killing them now
+[t+  805.7ms]
+[t+  806.4ms] --- B: shell with `exec` prefix (`exec sleep 30`)
+[t+  806.7ms]   command: exec sleep 30
+[t+  808.6ms]   spawned pid=35990
+[t+ 1085.5ms]   children of 35990: []
+[t+ 1488.9ms]   after stop(): exit=143, surviving descendants=[]
+[t+ 1491.5ms]
+[t+ 1492.4ms] --- C: argv form (no shell) — Symfony default
+[t+ 1493.2ms]   command: 'sleep' '30'
+[t+ 1496.5ms]   spawned pid=35997
+[t+ 1777.9ms]   children of 35997: []
+[t+ 2180.6ms]   after stop(): exit=143, surviving descendants=[]
+[t+ 2181.3ms]
+[t+ 2181.8ms] --- D: shell job started in its own pgid (POSIX setpgid via setsid)
+[t+ 2182.0ms]   command: setsid sleep 30 & PID=$!; wait $PID
+[t+ 2184.3ms]   spawned pid=36000
+[t+ 2471.6ms]   children of 36000: []
+[t+ 2873.1ms]   after stop(): exit=127, surviving descendants=[]
+[t+ 2873.7ms]

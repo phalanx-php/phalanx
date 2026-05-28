@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 require __DIR__ . '/../../../vendor/autoload_runtime.php';
 
-use OpenSwoole\Coroutine;
-use OpenSwoole\Process;
+use Swoole\Coroutine;
+use Swoole\Process;
 use Phalanx\Boot\AppContext;
 use Phalanx\Demos\Kit\DemoReport;
 use Phalanx\Demos\Kit\DemoSubprocess;

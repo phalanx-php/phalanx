@@ -7,7 +7,7 @@ namespace Phalanx\Demos\Stoa\Diagnostics;
 require __DIR__ . '/../../../vendor/autoload_runtime.php';
 
 use GuzzleHttp\Psr7\ServerRequest;
-use OpenSwoole\Coroutine;
+use Swoole\Coroutine;
 use Phalanx\Boot\AppContext;
 use Phalanx\Demos\Kit\DemoReport;
 use Phalanx\Scope\ExecutionScope;

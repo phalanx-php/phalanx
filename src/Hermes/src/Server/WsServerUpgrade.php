@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Hermes\Server;
 
-use Swoole\Http\Response as SwooleHttpResponse;
 use Phalanx\AppHost;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Cancellation\Cancelled;
@@ -30,6 +29,7 @@ use Phalanx\Stoa\StoaRequestDiagnostics;
 use Phalanx\Stoa\StoaRequestResource;
 use Psr\Http\Message\ServerRequestInterface;
 use RuntimeException;
+use Swoole\Http\Response as SwooleHttpResponse;
 use Throwable;
 
 /**

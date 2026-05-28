@@ -10,10 +10,13 @@ $modules = require $root . '/modules.php';
 $rootComposer = json_decode((string) file_get_contents($root . '/composer.json'), true, flags: JSON_THROW_ON_ERROR);
 $errors = [];
 $packages = [];
+$allPackages = array_column($modules, 'package');
+$publishedPackages = array_column(array_filter($modules, phalanx_module_is_published(...)), 'package');
 
 foreach ($modules as $module => $meta) {
     $path = $root . '/src/' . $module;
     $composerPath = $path . '/composer.json';
+    $published = phalanx_module_is_published($meta);
 
     if (! is_dir($path)) {
         $errors[] = "$module: missing src/$module directory";
@@ -33,21 +36,35 @@ foreach ($modules as $module => $meta) {
 
     $composer = json_decode((string) file_get_contents($composerPath), true, flags: JSON_THROW_ON_ERROR);
     $package = $meta['package'];
-    $packages[$package] = $module;
     $testNamespaces = $meta['testNamespaces'] ?? [$meta['testNamespace'] => 'tests/'];
 
-    if (phalanx_normalized_manifest($composer) !== phalanx_normalized_manifest(phalanx_module_manifest($module, $meta))) {
-        $errors[] = "$module: composer.json does not match generated module manifest";
+    if ($published) {
+        $packages[$package] = $module;
+
+        if (phalanx_normalized_manifest($composer) !== phalanx_normalized_manifest(phalanx_module_manifest($module, $meta))) {
+            $errors[] = "$module: composer.json does not match generated module manifest";
+        }
+
+        if (! is_file($path . '/LICENSE')) {
+            $errors[] = "$module: missing LICENSE for split package";
+        }
+
+        expect($errors, $module, 'root replace', 'self.version', $rootComposer['replace'][$package] ?? null);
+    } elseif (isset($rootComposer['replace'][$package])) {
+        $errors[] = "$module: non-published roadmap module must not be listed in root replace";
     }
 
-    if (! is_file($path . '/LICENSE')) {
-        $errors[] = "$module: missing LICENSE for split package";
-    }
-
-    expect($errors, $module, 'root replace', 'self.version', $rootComposer['replace'][$package] ?? null);
     expect($errors, $module, 'root autoload', 'src/' . $module . '/src/', $rootComposer['autoload']['psr-4'][$meta['namespace']] ?? null);
     foreach ($testNamespaces as $namespace => $path) {
         expect($errors, $module, 'root test autoload ' . $namespace, 'src/' . $module . '/' . $path, $rootComposer['autoload-dev']['psr-4'][$namespace] ?? null);
+    }
+
+    if ($published) {
+        foreach (array_keys($meta['requires']) as $dependency) {
+            if (in_array($dependency, $allPackages, true) && ! in_array($dependency, $publishedPackages, true)) {
+                $errors[] = "{$module}: published module requires non-published module {$dependency}";
+            }
+        }
     }
 }
 
@@ -57,7 +74,7 @@ foreach (array_keys($rootComposer['replace'] ?? []) as $package) {
     }
 }
 
-foreach (graphErrors($modules) as $error) {
+foreach (graphErrors(array_filter($modules, phalanx_module_is_published(...))) as $error) {
     $errors[] = $error;
 }
 
@@ -77,7 +94,10 @@ if ($errors !== []) {
     exit(1);
 }
 
-echo sprintf("Module metadata OK: %d modules\n", count($modules));
+$publishedCount = count(array_filter($modules, phalanx_module_is_published(...)));
+$roadmapCount = count($modules) - $publishedCount;
+
+echo sprintf("Module metadata OK: %d published, %d non-published modules\n", $publishedCount, $roadmapCount);
 
 function expect(array &$errors, string $module, string $field, mixed $expected, mixed $actual): void
 {
@@ -115,27 +135,31 @@ function graphErrors(array $modules): array
         }
     }
 
+    $states = [];
+
     foreach ($graph as $module => $_) {
-        visit($module, $graph, [], [], $errors);
+        visit($module, $graph, $states, $errors);
     }
 
     return array_values(array_unique($errors));
 }
 
-function visit(string $module, array $graph, array $visiting, array $visited, array &$errors): void
+function visit(string $module, array $graph, array &$states, array &$errors): void
 {
-    if (isset($visited[$module])) {
+    if (($states[$module] ?? null) === 'done') {
         return;
     }
 
-    if (isset($visiting[$module])) {
+    if (($states[$module] ?? null) === 'visiting') {
         $errors[] = 'dependency cycle reaches ' . $module;
         return;
     }
 
-    $visiting[$module] = true;
+    $states[$module] = 'visiting';
 
     foreach ($graph[$module] ?? [] as $dependency) {
-        visit($dependency, $graph, $visiting, $visited, $errors);
+        visit($dependency, $graph, $states, $errors);
     }
+
+    $states[$module] = 'done';
 }

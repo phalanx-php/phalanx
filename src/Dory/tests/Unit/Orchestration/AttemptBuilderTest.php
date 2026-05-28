@@ -83,7 +83,7 @@ final class AttemptBuilderTest extends TestCase
     #[Test]
     public function catch_handles_exception(): void
     {
-        $scope = $this->createMock(ExecutionScope::class);
+        $scope = $this->createStub(ExecutionScope::class);
         $scope->method('execute')
             ->willThrowException(new RuntimeException('phalanx broken'));
 
@@ -111,7 +111,7 @@ final class AttemptBuilderTest extends TestCase
     #[Test]
     public function finally_runs_on_failure(): void
     {
-        $scope = $this->createMock(ExecutionScope::class);
+        $scope = $this->createStub(ExecutionScope::class);
         $scope->method('execute')
             ->willThrowException(new RuntimeException('fall'));
         $finalized = false;
@@ -131,7 +131,7 @@ final class AttemptBuilderTest extends TestCase
     #[Test]
     public function bare_run_propagates_exception(): void
     {
-        $scope = $this->createMock(ExecutionScope::class);
+        $scope = $this->createStub(ExecutionScope::class);
         $scope->method('execute')
             ->willThrowException(new RuntimeException('sarissa snapped'));
 
@@ -146,7 +146,7 @@ final class AttemptBuilderTest extends TestCase
     #[Test]
     public function retry_timeout_catch_combined(): void
     {
-        $scope = $this->createMock(ExecutionScope::class);
+        $scope = $this->createStub(ExecutionScope::class);
 
         $scope->method('singleflight')
             ->willReturnCallback(static fn(string $key, Closure $task): mixed => $task());
@@ -189,7 +189,7 @@ final class AttemptBuilderTest extends TestCase
     {
         $callOrder = [];
 
-        $scope = $this->createMock(ExecutionScope::class);
+        $scope = $this->createStub(ExecutionScope::class);
 
         $scope->method('singleflight')
             ->willReturnCallback(static function (string $key, Closure $task) use (&$callOrder): mixed {
@@ -226,7 +226,7 @@ final class AttemptBuilderTest extends TestCase
     #[Test]
     public function cancelled_propagates_through_catch_handler(): void
     {
-        $scope = $this->createMock(ExecutionScope::class);
+        $scope = $this->createStub(ExecutionScope::class);
         $scope->method('execute')
             ->willThrowException(new Cancelled('scope ended'));
 
@@ -249,7 +249,7 @@ final class AttemptBuilderTest extends TestCase
 
     private function mockScope(mixed $expectedResult): ExecutionScope
     {
-        $scope = $this->createMock(ExecutionScope::class);
+        $scope = $this->createStub(ExecutionScope::class);
         $scope->method('execute')
             ->willReturn($expectedResult);
 

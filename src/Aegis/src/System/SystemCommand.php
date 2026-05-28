@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\System;
 
-use Swoole\Coroutine\System;
 use Phalanx\Scope\Suspendable;
 use Phalanx\Supervisor\WaitReason;
+use Swoole\Coroutine\System;
 
 /**
  * Aegis-managed external command primitive.

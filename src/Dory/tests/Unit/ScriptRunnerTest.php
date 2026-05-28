@@ -17,7 +17,7 @@ final class ScriptRunnerTest extends TestCase
     #[Test]
     public function executes_script_and_returns_result(): void
     {
-        $scope = $this->createMock(ExecutionScope::class);
+        $scope = $this->createStub(ExecutionScope::class);
         $config = new DoryConfig();
         $dory = new DoryExecutionContext($scope, __DIR__ . '/../Fixtures/return-42.php', $config);
 
@@ -29,7 +29,7 @@ final class ScriptRunnerTest extends TestCase
     #[Test]
     public function script_receives_dory_context(): void
     {
-        $scope = $this->createMock(ExecutionScope::class);
+        $scope = $this->createStub(ExecutionScope::class);
         $config = new DoryConfig();
         $dory = new DoryExecutionContext($scope, __DIR__ . '/../Fixtures/echo-dory.php', $config);
 
@@ -44,7 +44,7 @@ final class ScriptRunnerTest extends TestCase
     #[Test]
     public function script_exception_propagates(): void
     {
-        $scope = $this->createMock(ExecutionScope::class);
+        $scope = $this->createStub(ExecutionScope::class);
         $config = new DoryConfig();
         $dory = new DoryExecutionContext($scope, __DIR__ . '/../Fixtures/throw-error.php', $config);
 
@@ -68,7 +68,7 @@ final class ScriptRunnerTest extends TestCase
     #[Test]
     public function context_is_cleared_after_execution(): void
     {
-        $scope = $this->createMock(ExecutionScope::class);
+        $scope = $this->createStub(ExecutionScope::class);
         $config = new DoryConfig();
         $dory = new DoryExecutionContext($scope, __DIR__ . '/../Fixtures/return-42.php', $config);
 
@@ -81,7 +81,7 @@ final class ScriptRunnerTest extends TestCase
     #[Test]
     public function context_is_cleared_after_exception(): void
     {
-        $scope = $this->createMock(ExecutionScope::class);
+        $scope = $this->createStub(ExecutionScope::class);
         $config = new DoryConfig();
         $dory = new DoryExecutionContext($scope, __DIR__ . '/../Fixtures/throw-error.php', $config);
 

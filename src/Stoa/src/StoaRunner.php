@@ -9,6 +9,7 @@ use GuzzleHttp\Psr7\Utils;
 use Phalanx\AppHost;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Cancellation\Cancelled;
+use Phalanx\Engine\Engine;
 use Phalanx\Registry\RegistryScope;
 use Phalanx\Scope\ExecutionLifecycleScope;
 use Phalanx\Scope\ExecutionScope;
@@ -22,7 +23,6 @@ use Phalanx\Stoa\Response\HtmlErrorResponseRenderer;
 use Phalanx\Stoa\Response\IgnitionErrorResponseRenderer;
 use Phalanx\Stoa\Runtime\Identity\StoaEventSid;
 use Phalanx\Stoa\Sse\SseStream;
-use Phalanx\Engine\Engine;
 use Phalanx\Supervisor\DispatchMode;
 use Phalanx\Support\SignalHandler;
 use Phalanx\Trace\TraceType;
@@ -841,8 +841,11 @@ final class StoaRunner
             }
         }
 
-        // Extremely rare edge case: create a minimal context for the default renderer.
-        // When we must allocate a fresh scope here, dispose it after the render completes.
+        /**
+         * Extremely rare edge case: create a minimal context for the default
+         * renderer. When this path allocates a fresh scope, dispose it after
+         * the render completes.
+         */
         $ownedScope = null;
         if ($scope instanceof ExecutionScope) {
             $inner = $scope;

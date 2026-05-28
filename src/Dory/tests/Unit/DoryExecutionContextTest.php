@@ -18,7 +18,7 @@ final class DoryExecutionContextTest extends TestCase
     #[Test]
     public function script_name_derives_from_path(): void
     {
-        $scope = $this->createMock(ExecutionScope::class);
+        $scope = $this->createStub(ExecutionScope::class);
         $config = new DoryConfig();
 
         $ctx = new DoryExecutionContext($scope, '/home/zeus/scripts/deploy.php', $config);
@@ -29,7 +29,7 @@ final class DoryExecutionContextTest extends TestCase
     #[Test]
     public function script_path_is_accessible(): void
     {
-        $scope = $this->createMock(ExecutionScope::class);
+        $scope = $this->createStub(ExecutionScope::class);
         $config = new DoryConfig();
 
         $ctx = new DoryExecutionContext($scope, '/tmp/test.php', $config);
@@ -40,7 +40,7 @@ final class DoryExecutionContextTest extends TestCase
     #[Test]
     public function config_is_accessible(): void
     {
-        $scope = $this->createMock(ExecutionScope::class);
+        $scope = $this->createStub(ExecutionScope::class);
         $config = new DoryConfig(scriptTimeout: 99.0);
 
         $ctx = new DoryExecutionContext($scope, '/tmp/test.php', $config);
@@ -51,7 +51,7 @@ final class DoryExecutionContextTest extends TestCase
     #[Test]
     public function attempt_returns_builder(): void
     {
-        $scope = $this->createMock(ExecutionScope::class);
+        $scope = $this->createStub(ExecutionScope::class);
         $config = new DoryConfig();
         $ctx = new DoryExecutionContext($scope, '/tmp/test.php', $config);
 
@@ -63,7 +63,7 @@ final class DoryExecutionContextTest extends TestCase
     #[Test]
     public function println_outputs_to_stdout(): void
     {
-        $scope = $this->createMock(ExecutionScope::class);
+        $scope = $this->createStub(ExecutionScope::class);
         $config = new DoryConfig();
         $ctx = new DoryExecutionContext($scope, '/tmp/test.php', $config);
 
@@ -77,7 +77,7 @@ final class DoryExecutionContextTest extends TestCase
     #[Test]
     public function dump_outputs_string_values_directly(): void
     {
-        $scope = $this->createMock(ExecutionScope::class);
+        $scope = $this->createStub(ExecutionScope::class);
         $config = new DoryConfig();
         $ctx = new DoryExecutionContext($scope, '/tmp/test.php', $config);
 
@@ -91,7 +91,7 @@ final class DoryExecutionContextTest extends TestCase
     #[Test]
     public function dump_exports_non_string_values(): void
     {
-        $scope = $this->createMock(ExecutionScope::class);
+        $scope = $this->createStub(ExecutionScope::class);
         $config = new DoryConfig();
         $ctx = new DoryExecutionContext($scope, '/tmp/test.php', $config);
 
@@ -120,7 +120,7 @@ final class DoryExecutionContextTest extends TestCase
     #[Test]
     public function http_property_resolves_via_service(): void
     {
-        $httpClient = $this->createMock(HttpClient::class);
+        $httpClient = $this->createStub(HttpClient::class);
         $scope = $this->createMock(ExecutionScope::class);
         $scope->expects(self::once())
             ->method('service')
@@ -136,7 +136,7 @@ final class DoryExecutionContextTest extends TestCase
     #[Test]
     public function fs_property_resolves_via_service(): void
     {
-        $innerScope = $this->createMock(ExecutionScope::class);
+        $innerScope = $this->createStub(ExecutionScope::class);
         $files = new Files($innerScope);
 
         $scope = $this->createMock(ExecutionScope::class);

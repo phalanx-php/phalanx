@@ -53,7 +53,7 @@ use Phalanx\Scope\TaskScope;
 return static function (array $context): Closure {
     // DemoApp::boot() constructs the Aegis kernel which requires Swoole\Table.
     // Guard before boot so a missing extension produces a clean cannotRun message.
-    if (!extension_loaded('swoole') && !extension_loaded('openswoole')) {
+    if (!extension_loaded('swoole')) {
         $inner = DemoReport::demo(
             'Athena Streaming Providers',
             static function (DemoReport $report): void {

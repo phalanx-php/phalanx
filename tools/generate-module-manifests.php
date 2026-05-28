@@ -9,18 +9,26 @@ $root = dirname(__DIR__);
 $modules = require $root . '/modules.php';
 $check = in_array('--check', $argv, true);
 $write = in_array('--write', $argv, true);
-$moduleFilter = null;
-
-foreach ($argv as $index => $arg) {
-    if ($arg === '--module' && isset($argv[$index + 1])) {
-        $moduleFilter = $argv[$index + 1];
-    }
-}
+$moduleFilter = phalanx_option_value($argv, '--module');
 
 $errors = [];
 
+if ($moduleFilter !== null && ! isset($modules[$moduleFilter])) {
+    fwrite(STDERR, "Unknown module: {$moduleFilter}\n");
+    exit(1);
+}
+
+if ($moduleFilter !== null && ! phalanx_module_is_published($modules[$moduleFilter])) {
+    fwrite(STDERR, "Module is not configured for split publishing: {$moduleFilter}\n");
+    exit(1);
+}
+
 foreach ($modules as $module => $meta) {
     if ($moduleFilter !== null && $module !== $moduleFilter) {
+        continue;
+    }
+
+    if (! phalanx_module_is_published($meta)) {
         continue;
     }
 

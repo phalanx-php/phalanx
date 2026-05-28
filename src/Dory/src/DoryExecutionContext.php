@@ -20,14 +20,15 @@ final class DoryExecutionContext implements ScriptContext
 {
     use ExecutionScopeDelegate;
 
-    public string $scriptName {
-        get => basename($this->scriptPath);
-    }
+    /** Computed from the configured script path for script-local diagnostics. */
+    public string $scriptName { get => basename($this->scriptPath); }
 
+    /** lazy: resolves the scoped HTTP client only when the script asks for it. */
     public HttpClient $http {
         get => $this->httpBacking ??= $this->service(HttpClient::class);
     }
 
+    /** lazy: resolves the scoped filesystem facade only when the script asks for it. */
     public Files $fs {
         get => $this->fsBacking ??= $this->service(Files::class);
     }

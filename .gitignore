@@ -10,6 +10,10 @@
 !.php-cs-fixer.php
 .php-cs-fixer.cache
 !README.md
+!roadmap/**/*.md
+roadmap/**/AGENTS.md
+roadmap/**/CLAUDE.md
+roadmap/**/RTK.md
 
 # Dependencies
 vendor/

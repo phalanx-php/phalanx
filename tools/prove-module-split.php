@@ -3,10 +3,16 @@
 
 declare(strict_types=1);
 
+require __DIR__ . '/module-manifest.php';
+
 $root = dirname(__DIR__);
 $modules = require $root . '/modules.php';
-$moduleFilter = optionValue($argv, '--module');
-$targets = $moduleFilter === null ? array_keys($modules) : [$moduleFilter];
+$moduleFilter = phalanx_option_value($argv, '--module');
+$publishedModules = array_filter(
+    $modules,
+    phalanx_module_is_published(...),
+);
+$targets = $moduleFilter === null ? array_keys($publishedModules) : [$moduleFilter];
 
 foreach ($targets as $module) {
     if (!isset($modules[$module])) {
@@ -14,19 +20,14 @@ foreach ($targets as $module) {
         exit(1);
     }
 
+    if (! phalanx_module_is_published($modules[$module])) {
+        fwrite(STDERR, "Module is not configured for split publishing: {$module}\n");
+        exit(1);
+    }
+
     run([PHP_BINARY, $root . '/tools/split-modules.php', '--verify-only', '--module', $module], $root);
 }
 
-function optionValue(array $argv, string $name): ?string
-{
-    foreach ($argv as $index => $arg) {
-        if ($arg === $name && isset($argv[$index + 1])) {
-            return $argv[$index + 1];
-        }
-    }
-
-    return null;
-}
 function run(array $command, string $cwd): void
 {
     $display = implode(' ', array_map('escapeshellarg', $command));

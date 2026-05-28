@@ -4,16 +4,17 @@ declare(strict_types=1);
 
 namespace Phalanx\Runtime\Memory;
 
-use Swoole\Atomic\Long;
 use Phalanx\Runtime\Identity\RuntimeCounterId;
+use Swoole\Atomic\Long;
 use Symfony\Component\Uid\Ulid;
 
 final class RuntimeIds
 {
     private Long $internal;
 
-    public function __construct(private readonly RuntimeCounters $counters)
-    {
+    public function __construct(
+        private readonly RuntimeCounters $counters,
+    ) {
         $this->internal = new Long();
     }
 

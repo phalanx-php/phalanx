@@ -1,0 +1,48 @@
+[
+  {
+    "delay": 0,
+    "send": {
+      "type": "tab.connect",
+      "tabId": 1,
+      "sessionId": "ext_test_abc123",
+      "url": "https://example.com",
+      "title": "Flow Control Test",
+      "domain": "example.com"
+    }
+  },
+  {
+    "delay": 100,
+    "send": {
+      "type": "dom.snapshot",
+      "tabId": 1,
+      "html": "<body><div id='app'>Initial</div></body>",
+      "selector": "body",
+      "timestamp": 1712250000000
+    }
+  },
+  { "delay": 10, "send": { "type": "dom.mutations", "tabId": 1, "mutations": [{ "type": "childList", "target": "#app", "addedCount": 1, "removedCount": 0 }], "timestamp": 1712250000010 } },
+  { "delay": 10, "send": { "type": "dom.mutations", "tabId": 1, "mutations": [{ "type": "childList", "target": "#app", "addedCount": 1, "removedCount": 0 }], "timestamp": 1712250000020 } },
+  { "delay": 10, "send": { "type": "dom.mutations", "tabId": 1, "mutations": [{ "type": "childList", "target": "#app", "addedCount": 1, "removedCount": 0 }], "timestamp": 1712250000030 } },
+  { "delay": 10, "send": { "type": "dom.mutations", "tabId": 1, "mutations": [{ "type": "childList", "target": "#app", "addedCount": 1, "removedCount": 0 }], "timestamp": 1712250000040 } },
+  { "delay": 10, "send": { "type": "dom.mutations", "tabId": 1, "mutations": [{ "type": "childList", "target": "#app", "addedCount": 1, "removedCount": 0 }], "timestamp": 1712250000050 } },
+  { "delay": 10, "send": { "type": "dom.mutations", "tabId": 1, "mutations": [{ "type": "childList", "target": "#app", "addedCount": 1, "removedCount": 0 }], "timestamp": 1712250000060 } },
+  { "delay": 10, "send": { "type": "dom.mutations", "tabId": 1, "mutations": [{ "type": "childList", "target": "#app", "addedCount": 1, "removedCount": 0 }], "timestamp": 1712250000070 } },
+  { "delay": 10, "send": { "type": "dom.mutations", "tabId": 1, "mutations": [{ "type": "childList", "target": "#app", "addedCount": 1, "removedCount": 0 }], "timestamp": 1712250000080 } },
+  { "delay": 10, "send": { "type": "dom.mutations", "tabId": 1, "mutations": [{ "type": "childList", "target": "#app", "addedCount": 1, "removedCount": 0 }], "timestamp": 1712250000090 } },
+  { "delay": 10, "send": { "type": "dom.mutations", "tabId": 1, "mutations": [{ "type": "childList", "target": "#app", "addedCount": 1, "removedCount": 0 }], "timestamp": 1712250000100 } },
+  {
+    "delay": 10,
+    "send": {
+      "type": "flow.pressure",
+      "tabId": 1,
+      "bufferDepth": 48
+    }
+  },
+  {
+    "delay": 3000,
+    "send": {
+      "type": "tab.disconnect",
+      "tabId": 1
+    }
+  }
+]

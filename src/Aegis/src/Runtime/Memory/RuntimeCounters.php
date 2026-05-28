@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace Phalanx\Runtime\Memory;
 
-use Swoole\Exception as SwooleException;
 use Phalanx\Runtime\Identity\RuntimeCounterId;
+use Swoole\Exception as SwooleException;
 
 final class RuntimeCounters
 {
-    public function __construct(private readonly ManagedSwooleTables $tables)
-    {
+    public function __construct(
+        private readonly ManagedSwooleTables $tables,
+    ) {
     }
 
     public function incr(RuntimeCounterId|string $name, int $by = 1): int

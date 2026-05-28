@@ -1,0 +1,77 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use AgentBridge\BridgeConfig;
+use AgentBridge\BridgeGateway;
+use AgentBridge\BridgeServiceBundle;
+use AgentBridge\Tab\TabManager;
+use Phalanx\Ai\AiServiceBundle;
+use Phalanx\Application;
+use Phalanx\Http\Runner;
+use Phalanx\WebSocket\WsConfig;
+use Phalanx\WebSocket\WsRouteGroup;
+use React\EventLoop\Loop;
+
+require_once __DIR__ . '/../vendor/autoload.php';
+
+$app = Application::starting($_SERVER + $_ENV)
+    ->providers(
+        new BridgeServiceBundle(),
+        new AiServiceBundle(),
+    )
+    ->compile();
+
+$config = $app->scope()->service(BridgeConfig::class);
+$app->scope()->service(TabManager::class)->setApp($app);
+
+// -- Lockfile --
+$lockPath = $config->dataDir . '/daemon.lock';
+
+if (!is_dir($config->dataDir)) {
+    mkdir($config->dataDir, 0755, true);
+}
+
+if (file_exists($lockPath)) {
+    $existing = json_decode(file_get_contents($lockPath), true);
+    $existingPid = is_array($existing) ? ($existing['pid'] ?? null) : null;
+
+    if ($existingPid !== null && posix_kill((int) $existingPid, 0)) {
+        fwrite(STDERR, "Daemon already running (PID {$existingPid}). Kill it or remove {$lockPath}.\n");
+        exit(1);
+    }
+}
+
+file_put_contents($lockPath, json_encode([
+    'port' => $config->port,
+    'pid' => getmypid(),
+    'started' => date('c'),
+], JSON_THROW_ON_ERROR));
+
+// -- Signal handlers --
+$cleanup = static function () use ($lockPath): void {
+    @unlink($lockPath);
+};
+
+register_shutdown_function($cleanup);
+
+Loop::addSignal(SIGTERM, static function () use ($cleanup): void {
+    $cleanup();
+    Loop::stop();
+});
+
+Loop::addSignal(SIGINT, static function () use ($cleanup): void {
+    $cleanup();
+    Loop::stop();
+});
+
+// -- Start server --
+Runner::from($app, requestTimeout: 0.0)
+    ->withWebsockets(WsRouteGroup::of([
+        'WS /bridge' => [BridgeGateway::class, new WsConfig(
+            pingInterval: 15.0,
+            maxMessageSize: 4 * 1024 * 1024,
+        )],
+    ]))
+    ->run("0.0.0.0:{$config->port}");

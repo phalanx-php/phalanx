@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Phalanx\Hydra\Agent;
 
 use Phalanx\Cancellation\CancellationToken;
+use Phalanx\Engine\ChannelHandle;
+use Phalanx\Engine\Engine;
 use Phalanx\Hydra\Process\ProcessConfig;
 use Phalanx\Hydra\Process\ProcessHandle;
 use Phalanx\Hydra\Process\ProcessState;
@@ -15,8 +17,6 @@ use Phalanx\Runtime\CoroutineRuntime;
 use Phalanx\Runtime\RuntimePolicy;
 use Phalanx\Scope\TaskExecutor;
 use Phalanx\Scope\TaskScope;
-use Phalanx\Engine\ChannelHandle;
-use Phalanx\Engine\Engine;
 use Phalanx\Supervisor\WaitReason;
 use RuntimeException;
 

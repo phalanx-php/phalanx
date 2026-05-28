@@ -1,0 +1,48 @@
+{
+    "name": "phalanx-php/agent-bridge",
+    "description": "AI agent bridge daemon for browser automation",
+    "type": "project",
+    "license": "proprietary",
+    "repositories": [
+        { "type": "path", "url": "../../../phalanx/packages/phalanx-aegis",  "options": { "symlink": true } },
+        { "type": "path", "url": "../../../phalanx/packages/phalanx-styx",   "options": { "symlink": true } },
+        { "type": "path", "url": "../../../phalanx/packages/phalanx-stoa",   "options": { "symlink": true } },
+        { "type": "path", "url": "../../../phalanx/packages/phalanx-hermes", "options": { "symlink": true } },
+        { "type": "path", "url": "../../../phalanx/packages/phalanx-athena", "options": { "symlink": true } }
+    ],
+    "require": {
+        "php": "^8.4",
+        "phalanx-php/aegis": "*",
+        "phalanx-php/stoa": "*",
+        "phalanx-php/hermes": "*",
+        "phalanx-php/styx": "*",
+        "phalanx-php/athena": "*",
+        "symfony/runtime": "^7.2",
+        "symfony/dotenv": "^7.2",
+        "react/http": "^1.10",
+        "guzzlehttp/psr7": "^2.7"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "AgentBridge\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "AgentBridge\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "php vendor/bin/phpunit"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "config": {
+        "allow-plugins": {
+            "symfony/runtime": true
+        }
+    }
+}

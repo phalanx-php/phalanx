@@ -45,7 +45,7 @@ final class BenchmarkRunner
                 $report->setRunner($runner);
 
                 try {
-                    \OpenSwoole\Coroutine::run(static function () use ($report, $appContext, $body): void {
+                    \Swoole\Coroutine::run(static function () use ($report, $appContext, $body): void {
                         $body($report, $appContext);
                     });
                 } catch (Throwable $e) {
@@ -86,7 +86,7 @@ final class BenchmarkRunner
             'php_binary' => PHP_BINARY,
             'commit' => self::command('git rev-parse --short HEAD'),
             'dirty' => self::command('git status --short') === '' ? 'no' : 'yes',
-            'openswoole' => phpversion('openswoole') ?: 'unknown',
+            'swoole' => phpversion('swoole') ?: 'unknown',
             'os' => php_uname('s') . ' ' . php_uname('r') . ' ' . php_uname('m'),
             'xdebug' => extension_loaded('xdebug') ? 'yes' : 'no',
         ];

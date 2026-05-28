@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Phalanx\Server;
 
 use Closure;
-use Swoole\Server;
 use Phalanx\Registry\RegistryScope;
+use Swoole\Server;
 
 /**
  * Aegis-managed accessor over Swoole\Server::stats().

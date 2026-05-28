@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Benchmarks\Kernel\Cases;
 
-use OpenSwoole\Coroutine;
+use Swoole\Coroutine;
 use Phalanx\Benchmarks\Kernel\AbstractBenchmarkCase;
 use Phalanx\Benchmarks\Kernel\BenchmarkContext;
 use Phalanx\Scope\ExecutionScope;

@@ -23,7 +23,7 @@
     ],
     "require": {
         "php": "^8.4",
-        "ext-openswoole": "*",
+        "ext-swoole": "*",
         "phalanx-php/aegis": "^0.6",
         "mlocati/ip-lib": "^1.22"
     },

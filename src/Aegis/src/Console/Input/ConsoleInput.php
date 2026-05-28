@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Phalanx\Console\Input;
 
-use Swoole\Coroutine\Socket;
-use Swoole\Coroutine\System;
 use Phalanx\Scope\Suspendable;
 use Phalanx\Supervisor\WaitReason;
 use Phalanx\System\SystemCommand;
 use RuntimeException;
+use Swoole\Coroutine\Socket;
+use Swoole\Coroutine\System;
 
 /**
  * Aegis-managed console input capability.
@@ -67,8 +67,10 @@ final class ConsoleInput
             return;
         }
 
-        // waitEvent receives PHP streams directly; non-blocking mode keeps
-        // fread from blocking the worker after readiness is signaled.
+        /**
+         * waitEvent receives PHP streams directly; non-blocking mode keeps
+         * fread from blocking the worker after readiness is signaled.
+         */
         $this->stream = $source;
         $this->socket = null;
         $this->isInteractive = stream_isatty($source);
@@ -159,7 +161,7 @@ final class ConsoleInput
         }
 
         $savedState = $this->savedSttyState;
-        // @dev-cleanup-ignore — clear state before stty restore to avoid "still raw" zombie on failure
+        /** Clear state before stty restore to avoid "still raw" zombie failures. */
         $this->rawModeActive = false;
         $this->savedSttyState = null;
 

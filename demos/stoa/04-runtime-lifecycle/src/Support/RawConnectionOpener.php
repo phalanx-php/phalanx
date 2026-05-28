@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Acme\StoaDemo\Runtime\Support;
 
-use OpenSwoole\Constant;
-use OpenSwoole\Coroutine\Client;
+use Swoole\Constant;
+use Swoole\Coroutine\Client;
 
 final readonly class RawConnectionOpener
 {

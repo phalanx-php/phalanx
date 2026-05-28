@@ -1,0 +1,82 @@
+{
+    "name": "phalanx-php/theatron",
+    "description": "Async terminal UI framework for Phalanx PHP",
+    "license": "MIT",
+    "type": "project",
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../../phalanx/packages/phalanx-aegis",
+            "options": { "symlink": true }
+        },
+        {
+            "type": "path",
+            "url": "../../phalanx/packages/phalanx-archon",
+            "options": { "symlink": true }
+        },
+        {
+            "type": "path",
+            "url": "../../phalanx/packages/phalanx-athena",
+            "options": { "symlink": true }
+        },
+        {
+            "type": "path",
+            "url": "../../phalanx/packages/phalanx-hydra",
+            "options": { "symlink": true }
+        },
+        {
+            "type": "path",
+            "url": "../../phalanx/packages/phalanx-styx",
+            "options": { "symlink": true }
+        },
+        {
+            "type": "path",
+            "url": "../../phalanx/packages/phalanx-iris",
+            "options": { "symlink": true }
+        }
+    ],
+    "require": {
+        "php": "^8.4",
+        "ext-openswoole": "^26.2",
+        "ext-pcntl": "*",
+        "ext-mbstring": "*",
+        "phalanx-php/aegis": "dev-main as 0.6.0",
+        "phalanx-php/archon": "@dev",
+        "phalanx-php/athena": "dev-main as 0.6.0",
+        "phalanx-php/hydra": "dev-main as 0.6.0",
+        "phalanx-php/styx": "dev-main as 0.6.0",
+        "phalanx-php/iris": "dev-main as 0.6.0",
+        "symfony/runtime": "^7.0",
+        "league/commonmark": "^2.7",
+        "tempest/highlight": "^2.22"
+    },
+    "autoload": {
+        "psr-4": {
+            "Phalanx\\Theatron\\": "src/",
+            "Phalanx\\Theatron\\Demos\\Showcase\\": "demos/Showcase/",
+            "Phalanx\\Theatron\\Demos\\Capstone\\": "demos/Capstone/",
+            "Phalanx\\Theatron\\Demos\\Repl\\": "demos/Repl/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Phalanx\\Theatron\\Tests\\": "tests/"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "config": {
+        "allow-plugins": {
+            "symfony/runtime": true,
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    },
+    "require-dev": {
+        "slevomat/coding-standard": "*",
+        "squizlabs/php_codesniffer": "*",
+        "rector/rector": "^2.4",
+        "rector/swiss-knife": "^2.3",
+        "phpunit/phpunit": "^13.1",
+        "symfony/process": "^7.0"
+    }
+}

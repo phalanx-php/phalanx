@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Runtime\Memory;
 
-use Swoole\Exception as SwooleException;
 use Phalanx\Runtime\Identity\AegisEventSid;
 use Phalanx\Runtime\Identity\RuntimeEventId;
+use Swoole\Exception as SwooleException;
 
 final readonly class ManagedResourceTransitionGate
 {

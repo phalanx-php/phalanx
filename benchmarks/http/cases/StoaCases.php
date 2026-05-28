@@ -6,9 +6,9 @@ namespace Phalanx\Benchmarks\Http\Cases;
 
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\ServerRequest;
-use OpenSwoole\Coroutine;
-use OpenSwoole\Coroutine\Channel;
-use OpenSwoole\Http\Request as OpenSwooleRequest;
+use Swoole\Coroutine;
+use Swoole\Coroutine\Channel;
+use Swoole\Http\Request as SwooleRequest;
 use Phalanx\Application;
 use Phalanx\Benchmarks\Http\AbstractHttpBenchmarkCase;
 use Phalanx\Benchmarks\Http\HttpBenchmarkCase;
@@ -83,7 +83,7 @@ final class StoaRequestFactoryCase extends AbstractHttpBenchmarkCase
 {
     private StoaRequestFactory $factory;
 
-    private OpenSwooleRequest $request;
+    private SwooleRequest $request;
 
     public function __construct()
     {
@@ -92,9 +92,9 @@ final class StoaRequestFactoryCase extends AbstractHttpBenchmarkCase
         $this->request = self::request();
     }
 
-    private static function request(): OpenSwooleRequest
+    private static function request(): SwooleRequest
     {
-        $request = new OpenSwooleRequest();
+        $request = new SwooleRequest();
         $request->server = [
             'request_method' => 'POST',
             'request_uri' => '/submit',

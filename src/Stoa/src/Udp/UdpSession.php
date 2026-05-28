@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Phalanx\Stoa\Udp;
 
-use Swoole\Server;
 use Phalanx\Runtime\Memory\ManagedResourceHandle;
 use Phalanx\Runtime\RuntimeContext;
 use Phalanx\Stoa\Runtime\Identity\StoaResourceSid;
+use Swoole\Server;
 
 /**
  * One peer interaction inside a UDP listener.

@@ -50,7 +50,7 @@ use Phalanx\Panoply\Id;
 use Phalanx\Scope\TaskScope;
 
 return static function (array $context): Closure {
-    if (!extension_loaded('swoole') && !extension_loaded('openswoole')) {
+    if (!extension_loaded('swoole')) {
         $inner = DemoReport::demo(
             'Athena Support Triage Agent',
             static function (DemoReport $report): void {

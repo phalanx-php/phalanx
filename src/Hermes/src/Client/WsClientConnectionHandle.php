@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Hermes\Client;
 
-use Swoole\Coroutine\Http\Client as SwooleHttpClient;
-use Swoole\WebSocket\Frame;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Hermes\Runtime\Identity\HermesEventSid;
 use Phalanx\Hermes\WsCloseCode;
@@ -17,6 +15,8 @@ use Phalanx\Scope\Subscription;
 use Phalanx\Styx\Channel;
 use Phalanx\Supervisor\TaskHandle;
 use Phalanx\Supervisor\WaitReason;
+use Swoole\Coroutine\Http\Client as SwooleHttpClient;
+use Swoole\WebSocket\Frame;
 use Throwable;
 
 /**
@@ -33,6 +33,7 @@ final class WsClientConnectionHandle
 
     private(set) bool $closed = false;
 
+    /** computed: reports whether close has started or completed. */
     public bool $isConnected {
         get => !$this->closing && !$this->closed;
     }

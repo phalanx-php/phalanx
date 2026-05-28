@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Phalanx\System;
 
-use Swoole\Coroutine\Client;
 use Phalanx\Scope\Suspendable;
 use Phalanx\Supervisor\WaitReason;
 use RuntimeException;
+use Swoole\Coroutine\Client;
 
 /**
  * Aegis-managed UDP socket primitive.
@@ -27,14 +27,16 @@ use RuntimeException;
  */
 final class UdpSocket
 {
+    /** computed: proxies the current Swoole UDP socket connection state. */
     public bool $isConnected {
         get => $this->client->isConnected();
     }
 
     private readonly Client $client;
 
-    public function __construct(?Client $client = null)
-    {
+    public function __construct(
+        ?Client $client = null,
+    ) {
         $this->client = $client ?? new Client(SWOOLE_SOCK_UDP);
     }
 

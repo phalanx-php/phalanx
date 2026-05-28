@@ -1,0 +1,47 @@
+{
+  "name": "phalanx/aegis-swoole-poc",
+  "description": "Aegis-100%-equivalent scope/task/cancellation/services on Swoole substrate. POC.",
+  "type": "project",
+  "require": {
+    "php": "^8.4",
+    "ext-openswoole": "^26.2",
+    "openswoole/core": "26.2.0"
+  },
+  "require-dev": {
+    "phpstan/phpstan": "^2.0",
+    "phpunit/phpunit": "^13.1",
+    "rector/rector": "^2.0",
+    "slevomat/coding-standard": "^8.0",
+    "squizlabs/php_codesniffer": "^3.10"
+  },
+  "autoload": {
+    "psr-4": {
+      "AegisSwoole\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "AegisSwoole\\Tests\\": "tests/"
+    }
+  },
+  "config": {
+    "sort-packages": true,
+    "allow-plugins": {
+      "dealerdirect/phpcodesniffer-composer-installer": true
+    }
+  },
+  "scripts": {
+    "analyse": "phpstan analyse --memory-limit=512M",
+    "rector:dry": "rector --dry-run",
+    "cs": "phpcs",
+    "cs:fix": "phpcbf",
+    "test": "/opt/homebrew/bin/php bin/run.php",
+    "check": [
+      "@analyse",
+      "@rector:dry",
+      "@cs",
+      "@test"
+    ]
+  },
+  "minimum-stability": "stable"
+}

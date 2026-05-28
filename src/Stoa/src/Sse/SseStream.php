@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Phalanx\Stoa\Sse;
 
-use Swoole\Http\Response;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Scope\Suspendable;
 use Phalanx\Stoa\Runtime\Identity\StoaEventSid;
 use Phalanx\Stoa\StoaRequestResource;
 use Phalanx\Supervisor\WaitReason;
+use Swoole\Http\Response;
 use Throwable;
 
 /**
@@ -97,7 +97,7 @@ final class SseStream
         } catch (Cancelled $c) {
             throw $c;
         } catch (Throwable) {
-            // best-effort close; the request will mark itself failed elsewhere.
+            /** Best-effort close; the request will mark itself failed elsewhere. */
         }
 
         $this->request->event(StoaEventSid::SseStreamClosed, $reason);

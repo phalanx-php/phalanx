@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Hermes\Client;
 
-use Swoole\Coroutine\Http\Client as SwooleHttpClient;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Hermes\Runtime\Identity\HermesEventSid;
 use Phalanx\Hermes\Runtime\Identity\HermesResourceSid;
@@ -12,6 +11,7 @@ use Phalanx\Runtime\Memory\ManagedResourceHandle;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\ScopeIdentity;
 use Phalanx\Supervisor\WaitReason;
+use Swoole\Coroutine\Http\Client as SwooleHttpClient;
 use Throwable;
 
 /**

@@ -14,11 +14,16 @@ if (!is_file($autoload)) {
 }
 
 require $autoload;
+require __DIR__ . '/module-manifest.php';
 
 $modules = require $root . '/modules.php';
+$publishedModules = array_filter(
+    $modules,
+    phalanx_module_is_published(...),
+);
 $targets = in_array('--all', $argv, true)
-    ? array_keys($modules)
-    : [optionValue($argv, '--module') ?? 'Aegis'];
+    ? array_keys($publishedModules)
+    : [phalanx_option_value($argv, '--module') ?? 'Aegis'];
 $keep = in_array('--keep', $argv, true);
 
 foreach ($targets as $module) {
@@ -29,6 +34,11 @@ function proveModule(string $module, array $modules, string $root, bool $keep): 
 {
     if (!isset($modules[$module])) {
         fwrite(STDERR, "Unknown module: {$module}\n");
+        exit(1);
+    }
+
+    if (! phalanx_module_is_published($modules[$module])) {
+        fwrite(STDERR, "Module is not configured for split publishing: {$module}\n");
         exit(1);
     }
 
@@ -57,7 +67,7 @@ function proveModule(string $module, array $modules, string $root, bool $keep): 
 
         file_put_contents($fixture . '/smoke.php', smokeScript($module, $smokeClass));
 
-        run([composerBinary(), 'install', '--no-interaction', '--no-progress'], $fixture, 300);
+        run([composerBinary(), 'install', '--no-interaction', '--no-progress', '--ignore-platform-req=ext-swoole'], $fixture, 300);
         run([PHP_BINARY, 'smoke.php'], $fixture, 30);
 
         printf("Independent install proof OK: %s from src/%s\n", $package, $module);
@@ -68,17 +78,6 @@ function proveModule(string $module, array $modules, string $root, bool $keep): 
             removeTree($fixture);
         }
     }
-}
-
-function optionValue(array $argv, string $name): ?string
-{
-    foreach ($argv as $index => $arg) {
-        if ($arg === $name && isset($argv[$index + 1])) {
-            return $argv[$index + 1];
-        }
-    }
-
-    return null;
 }
 
 function composerBinary(): string

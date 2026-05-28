@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Hydra\Supervisor;
 
-use Swoole\Atomic;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Hydra\Agent\AgentState;
 use Phalanx\Hydra\Agent\Worker;
@@ -16,6 +15,7 @@ use Phalanx\Hydra\Process\ProcessConfig;
 use Phalanx\Hydra\Protocol\TaskRequest;
 use Phalanx\Scope\TaskExecutor;
 use Phalanx\Scope\TaskScope;
+use Swoole\Atomic;
 
 class WorkerSupervisor
 {

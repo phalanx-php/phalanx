@@ -21,8 +21,7 @@
     ],
     "require": {
         "php": "^8.4",
-        "ext-openswoole": "^26.2",
-        "openswoole/core": "^26.2",
+        "ext-swoole": "^6.0",
         "phalanx-php/themis": "^0.6",
         "symfony/process": "^7.0 || ^8.0",
         "symfony/uid": "^7.0 || ^8.0"
@@ -40,7 +39,7 @@
         "phalanx-php/archon": "^0.6",
         "phalanx-php/stoa": "^0.6",
         "phalanx-php/hydra": "^0.6",
-        "openswoole/ide-helper": "^26.2",
+        "swoole/ide-helper": "^6.0",
         "phpstan/phpstan": "^2.0",
         "phpunit/phpunit": "^13.0",
         "rector/rector": "^2.0",

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Acme\StoaDemo\Runtime\Support;
 
-use OpenSwoole\Coroutine;
+use Swoole\Coroutine;
 
 final readonly class HttpStatusWaiter
 {

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Phalanx\System;
 
-use Swoole\Coroutine\Client;
 use Phalanx\Scope\Suspendable;
 use Phalanx\Supervisor\WaitReason;
 use RuntimeException;
+use Swoole\Coroutine\Client;
 
 /**
  * Aegis-managed TCP client primitive.
@@ -26,6 +26,7 @@ use RuntimeException;
  */
 final class TcpClient implements TcpConnection
 {
+    /** computed: proxies the current Swoole TCP socket connection state. */
     public bool $isConnected {
         get => $this->client->isConnected();
     }
@@ -34,8 +35,11 @@ final class TcpClient implements TcpConnection
 
     private readonly Client $client;
 
-    public function __construct(?Client $client = null, bool $tls = false, ?TlsOptions $tlsOptions = null)
-    {
+    public function __construct(
+        ?Client $client = null,
+        bool $tls = false,
+        ?TlsOptions $tlsOptions = null,
+    ) {
         $this->tls = $tls;
         $this->client = $client ?? new Client($tls ? SWOOLE_SOCK_TCP | SWOOLE_SSL : SWOOLE_SOCK_TCP);
         if ($tls && $tlsOptions !== null) {

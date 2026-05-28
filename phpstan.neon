@@ -33,8 +33,6 @@ parameters:
         - benchmarks
         - demos
     scanDirectories:
-        # TODO(OSR-156): swap to vendor/swoole/ide-helper after openswoole/ide-helper removal
-        - vendor/openswoole/ide-helper
         - vendor/swoole/ide-helper
     phalanxInternalPaths:
         - src/Aegis/src/Concurrency/Co.php

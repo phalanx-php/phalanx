@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Phalanx\Stoa\Udp;
 
-use Swoole\Server;
 use Phalanx\AppHost;
 use Phalanx\Runtime\Memory\ManagedResourceHandle;
 use Phalanx\Stoa\Runtime\Identity\StoaResourceSid;
+use Swoole\Server;
 
 /**
  * Boot a UDP listener bound to a host:port that hands every packet to

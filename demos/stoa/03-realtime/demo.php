@@ -9,7 +9,7 @@ use Acme\StoaDemo\Realtime\Support\RawHttpRequest;
 use Acme\StoaDemo\Realtime\Support\ServerReadiness;
 use Acme\StoaDemo\Realtime\Support\SseFrameMatcher;
 use Acme\StoaDemo\Realtime\Support\SseFrameReader;
-use OpenSwoole\Coroutine;
+use Swoole\Coroutine;
 use Phalanx\Boot\AppContext;
 use Phalanx\Demos\Kit\DemoReport;
 use Phalanx\Demos\Kit\DemoSubprocess;

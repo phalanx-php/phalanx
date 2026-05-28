@@ -13,7 +13,7 @@ use Acme\StoaDemo\Runtime\Support\HttpStatusWaiter;
 use Acme\StoaDemo\Runtime\Support\RawConnectionOpener;
 use Acme\StoaDemo\Runtime\Support\SimpleHttpGet;
 use Acme\StoaDemo\Runtime\Support\TimelinePrinter;
-use OpenSwoole\Coroutine;
+use Swoole\Coroutine;
 use Phalanx\Boot\AppContext;
 use Phalanx\Demos\Kit\DemoReport;
 use Phalanx\Demos\Kit\DemoSubprocess;

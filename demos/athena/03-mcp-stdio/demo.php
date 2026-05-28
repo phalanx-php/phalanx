@@ -40,7 +40,7 @@ return static function (array $_context): Closure {
     // DemoApp::boot() eagerly constructs the Aegis kernel, which requires
     // Swoole\Table. Guard before boot so a missing extension produces a
     // clean cannotRun message rather than a fatal ClassNotFoundError.
-    if (!extension_loaded('swoole') && !extension_loaded('openswoole')) {
+    if (!extension_loaded('swoole')) {
         $inner = DemoReport::demo(
             'Athena MCP stdio client',
             static function (DemoReport $report): void {
