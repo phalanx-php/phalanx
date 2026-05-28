@@ -6,11 +6,6 @@ namespace Phalanx\Stoa;
 
 use GuzzleHttp\Psr7\Response as PsrResponse;
 use GuzzleHttp\Psr7\Utils;
-use Swoole\Constant;
-use Swoole\Http\Request;
-use Swoole\Http\Response;
-use Swoole\Http\Server;
-use Swoole\Timer;
 use Phalanx\AppHost;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Cancellation\Cancelled;
@@ -27,12 +22,17 @@ use Phalanx\Stoa\Response\HtmlErrorResponseRenderer;
 use Phalanx\Stoa\Response\IgnitionErrorResponseRenderer;
 use Phalanx\Stoa\Runtime\Identity\StoaEventSid;
 use Phalanx\Stoa\Sse\SseStream;
+use Phalanx\Substrate\Substrate;
 use Phalanx\Supervisor\DispatchMode;
 use Phalanx\Support\SignalHandler;
 use Phalanx\Trace\TraceType;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use RuntimeException;
+use Swoole\Constant;
+use Swoole\Http\Request;
+use Swoole\Http\Response;
+use Swoole\Http\Server;
 use Throwable;
 
 /**
@@ -689,7 +689,7 @@ final class StoaRunner
 
         $this->draining = false;
         if ($this->drainTimer !== null) {
-            Timer::clear($this->drainTimer);
+            Substrate::timers()->clear($this->drainTimer);
             $this->drainTimer = null;
         }
 
@@ -731,7 +731,7 @@ final class StoaRunner
             return;
         }
 
-        $timerId = Timer::after(
+        $timerId = Substrate::timers()->after(
             max(1, (int) round($this->config->drainTimeout * 1000)),
             $this->onDrainTimeout(...),
         );
