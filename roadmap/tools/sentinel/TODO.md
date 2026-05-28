@@ -14,7 +14,7 @@
 
 ## Immediate: Smart Pipeline
 
-The next major piece. Full ADR: `.aimind/decisions/adr-smart-pipeline-pattern.md`
+The next major piece. Full ADR lives in private project context.
 
 ### Pipeline Primitive in phalanx-athena
 - `Pipeline` class: prepare → concurrent agents → converge
@@ -104,8 +104,7 @@ A fast model (Haiku) as an orchestration layer on both sides of domain agents:
 - `phalanx/packages/phalanx-theatron/TODO.md` — library-specific TODO
 
 ### Architecture Context
-- Continuation doc: `.aimind/context/session-continuation-2026-03-29-0230.md`
-- Full render pipeline, input flow, anti-deadlock patterns documented there
+- Full render pipeline, input flow, and anti-deadlock patterns are captured in private project context
 - STDIN ownership constraint: raw sentinel (cooked mode) and TUI (raw mode) CANNOT share STDIN — separate commands, not a flag
 
 ---

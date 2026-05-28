@@ -81,10 +81,12 @@ final class BoundRequestStateBundle extends ServiceBundle
 
     public function services(Services $services, AppContext $context): void
     {
+        $disposed = &$this->disposed;
+
         $services->scoped(BoundRequestState::class)
             ->factory(static fn(): BoundRequestState => new BoundRequestState('factory'))
-            ->onDispose(function (BoundRequestState $state): void {
-                $this->disposed[] = $state->id;
+            ->onDispose(static function (BoundRequestState $state) use (&$disposed): void {
+                $disposed[] = $state->id;
             });
     }
 }

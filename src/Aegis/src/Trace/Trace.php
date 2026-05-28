@@ -29,7 +29,7 @@ final class Trace
 
     /**
      * Returns clones of the ring slots so that callers hold a stable snapshot
-     * independent of future log() calls that recycle slot identities in place.
+     * independent of future log() calls that replace logical ring slots.
      *
      * @return list<TraceEvent>
      */

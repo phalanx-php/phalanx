@@ -54,7 +54,7 @@ final class DoctorCommandTest extends TestCase
         $tester = new CommandTester(new DoctorCommand());
         $tester->execute([]);
 
-        if (extension_loaded('swoole') || extension_loaded('openswoole')) {
+        if (extension_loaded('swoole')) {
             self::assertSame(Command::SUCCESS, $tester->getStatusCode());
         } else {
             self::assertSame(Command::FAILURE, $tester->getStatusCode());

@@ -23,8 +23,10 @@ final class SearchCorpus implements Tool
     public function __construct(
         #[Param('Search query text')]
         private(set) string $query,
+
         #[Param('Maximum results to return', required: false, default: 10)]
         private(set) int $limit,
+
         #[Param('Filter by document type', required: false)]
         private(set) bool $strict,
     ) {

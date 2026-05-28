@@ -2,10 +2,8 @@
 
 This directory exists to validate (or refute) eleven claims about OpenSwoole 26
 process orchestration, Symfony Process under runtime hooks, channel-based
-backpressure, and Styx redesign — claims surfaced during the 2026-05-05
-external-LLM conversation that the prior Codex session captured to
-`.aimind/context/openswoole/process-sidecar-and-styx-claims-2026-05-05.md`
-before being killed mid-task.
+backpressure, and Styx redesign. The original claim-capture note lives in
+private project context; this directory keeps the runnable public evidence.
 
 The bench lives in `poc/` because it enables `Runtime::enableCoroutine()` for
 testing — Aegis owns hook policy in framework code. These scripts are

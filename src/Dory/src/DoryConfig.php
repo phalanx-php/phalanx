@@ -24,8 +24,10 @@ final class DoryConfig implements Config
     public function __construct(
         #[Env(key: 'DORY_SCRIPT_TIMEOUT', description: 'Maximum script runtime in seconds')]
         private(set) float $scriptTimeout = self::DEFAULT_SCRIPT_TIMEOUT,
+
         #[Env(key: 'DORY_MAX_CONCURRENCY', description: 'Maximum concurrent tasks per script')]
         private(set) int $maxConcurrency = self::DEFAULT_MAX_CONCURRENCY,
+
         #[Env(key: 'DORY_VERBOSE', description: 'Enable verbose script output')]
         private(set) bool $verbose = false,
     ) {

@@ -31,22 +31,31 @@ final class SurrealConfig implements Config
     public function __construct(
         #[Env(key: 'SURREAL_NAMESPACE', description: 'SurrealDB namespace')]
         private(set) string $namespace = self::DEFAULT_NAMESPACE,
+
         #[Env(key: 'SURREAL_DATABASE', description: 'SurrealDB database')]
         private(set) string $database = self::DEFAULT_DATABASE,
+
         #[Env(key: 'SURREAL_ENDPOINT', description: 'SurrealDB HTTP endpoint')]
         private(set) string $endpoint = self::DEFAULT_ENDPOINT,
+
         #[Env(key: 'SURREAL_WS_ENDPOINT', description: 'SurrealDB WebSocket endpoint')]
         private(set) ?string $websocketEndpoint = null,
+
         #[Env(key: 'SURREAL_USERNAME', description: 'SurrealDB username')]
         private(set) ?string $username = null,
+
         #[Env(key: 'SURREAL_PASSWORD', description: 'SurrealDB password', secret: true)]
         private(set) ?string $password = null,
+
         #[Env(key: 'SURREAL_TOKEN', description: 'SurrealDB authentication token', secret: true)]
         private(set) ?string $token = null,
+
         #[Env(key: 'SURREAL_CONNECT_TIMEOUT', description: 'SurrealDB connect timeout in seconds')]
         private(set) float $connectTimeout = self::DEFAULT_CONNECT_TIMEOUT,
+
         #[Env(key: 'SURREAL_READ_TIMEOUT', description: 'SurrealDB read timeout in seconds')]
         private(set) float $readTimeout = self::DEFAULT_READ_TIMEOUT,
+
         #[Env(key: 'SURREAL_MAX_RESPONSE_BYTES', description: 'SurrealDB maximum response bytes')]
         private(set) int $maxResponseBytes = self::DEFAULT_MAX_RESPONSE_BYTES,
     ) {

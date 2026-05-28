@@ -347,7 +347,7 @@ final class ArchonApplicationTest extends PhalanxTestCase
     #[Test]
     public function runCancelsThroughConfiguredSignalTrap(): void
     {
-        if (!defined('SIGUSR1') || (!extension_loaded('swoole') && !extension_loaded('openswoole'))) {
+        if (!defined('SIGUSR1') || !extension_loaded('swoole')) {
             self::markTestSkipped('Signal integration requires SIGUSR1 and Swoole.');
         }
 

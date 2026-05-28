@@ -34,13 +34,12 @@ use AegisSwoole\Tests\Scenarios\WorkerScenarios;
 
 require __DIR__ . "/../vendor/autoload.php";
 
-// Substrate sanity check: ext-openswoole must be the --with-postgres build.
-// Loaded automatically via /opt/homebrew/etc/php/8.4/conf.d/30-openswoole.ini,
-// which points at ~/.openswoole-26-pg/openswoole.so. If this is missing, the
-// install has drifted — fail fast rather than deadlock on the pool later.
+// Substrate sanity check: ext-openswoole must be a PostgreSQL-enabled build.
+// If this is missing, the local extension install has drifted; fail fast
+// rather than deadlock on the pool later.
 if (!class_exists(\OpenSwoole\Coroutine\PostgreSQL::class)) {
     fwrite(STDERR, "ERROR: OpenSwoole\\Coroutine\\PostgreSQL not present in the loaded ext-openswoole.\n");
-    fwrite(STDERR, "       Check /opt/homebrew/etc/php/8.4/conf.d/30-openswoole.ini and the .so it points to.\n");
+    fwrite(STDERR, "       Check the active PHP ini files and the extension binary they load.\n");
     exit(2);
 }
 

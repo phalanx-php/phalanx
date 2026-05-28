@@ -40,7 +40,7 @@ final class ConsoleSignalTrap
     {
         $trap = new self();
 
-        if ($policy->exitCodes() === [] || (!extension_loaded('swoole') && !extension_loaded('openswoole'))) {
+        if ($policy->exitCodes() === [] || !extension_loaded('swoole')) {
             return $trap;
         }
 

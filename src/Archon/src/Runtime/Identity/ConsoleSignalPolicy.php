@@ -20,7 +20,7 @@ final readonly class ConsoleSignalPolicy
 
     public static function default(): self
     {
-        if (!extension_loaded('swoole') && !extension_loaded('openswoole')) {
+        if (!extension_loaded('swoole')) {
             return self::disabled();
         }
 

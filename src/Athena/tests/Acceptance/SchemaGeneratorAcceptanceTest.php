@@ -64,6 +64,7 @@ final class SearchTool implements Tool
     public function __construct(
         #[Param(description: 'Search query string')]
         private(set) string $query,
+
         #[Param(description: 'Maximum results', required: false, default: 10)]
         private(set) int $limit = 10,
     ) {

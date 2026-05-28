@@ -55,14 +55,16 @@ final class WorkingAegisSmokeTest extends PhalanxTestCase
 
                 public function services(Services $services, AppContext $context): void
                 {
+                    $disposed = &$this->disposed;
+
                     // Singleton pool-shaped resource: created once for the app.
                     $services->singleton(SmokePool::class)
                         ->factory(static fn(): SmokePool => new SmokePool());
 
                     $services->scoped(RequestLogger::class)
                         ->factory(static fn(): RequestLogger => new RequestLogger())
-                        ->onDispose(function (RequestLogger $logger): void {
-                            $this->disposed[$logger->id] = true;
+                        ->onDispose(static function (RequestLogger $logger) use (&$disposed): void {
+                            $disposed[$logger->id] = true;
                         });
                 }
             };

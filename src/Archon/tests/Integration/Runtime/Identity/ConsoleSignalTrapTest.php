@@ -18,8 +18,8 @@ final class ConsoleSignalTrapTest extends PhalanxTestCase
     #[Test]
     public function reactorDeliversInstalledSignalToHandlerThenRestoreRemovesIt(): void
     {
-        if (!defined('SIGUSR2')) {
-            self::markTestSkipped('SIGUSR2 not defined on this platform.');
+        if (!extension_loaded('swoole') || !defined('SIGUSR2')) {
+            self::markTestSkipped('Signal integration requires ext-swoole and SIGUSR2.');
         }
 
         $received = null;

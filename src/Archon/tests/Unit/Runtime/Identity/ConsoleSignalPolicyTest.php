@@ -12,11 +12,11 @@ use PHPUnit\Framework\TestCase;
 final class ConsoleSignalPolicyTest extends TestCase
 {
     #[Test]
-    public function defaultPolicyMapsInterruptAndTerminateWhenPcntlIsAvailable(): void
+    public function defaultPolicyMapsInterruptAndTerminateWhenExtSwooleIsAvailable(): void
     {
         $policy = ConsoleSignalPolicy::default();
 
-        if (!function_exists('pcntl_signal')) {
+        if (!extension_loaded('swoole')) {
             self::assertSame([], $policy->exitCodes());
             return;
         }

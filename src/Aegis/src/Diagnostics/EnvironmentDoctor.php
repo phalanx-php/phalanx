@@ -41,13 +41,13 @@ final class EnvironmentDoctor
             ),
             new DoctorCheck(
                 'swoole.extension',
-                extension_loaded('swoole') || extension_loaded('openswoole'),
-                phpversion('swoole') ?: phpversion('openswoole') ?: 'not loaded',
+                extension_loaded('swoole'),
+                phpversion('swoole') ?: 'not loaded',
             ),
             new DoctorCheck(
                 'swoole.coroutine',
-                extension_loaded('swoole') || extension_loaded('openswoole'),
-                extension_loaded('swoole') ? 'Swoole\Coroutine' : (extension_loaded('openswoole') ? 'OpenSwoole\Coroutine' : 'not loaded'),
+                extension_loaded('swoole'),
+                extension_loaded('swoole') ? 'Swoole\Coroutine' : 'not loaded',
             ),
             new DoctorCheck(
                 'swoole.table',

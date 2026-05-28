@@ -23,7 +23,7 @@ final class PieRunner
         $process = new Process([
             PHP_BINARY,
             '-r',
-            "echo (extension_loaded('swoole') || extension_loaded('openswoole')) ? 'yes' : 'no';",
+            "echo extension_loaded('swoole') ? 'yes' : 'no';",
         ]);
         $process->setTimeout(5);
         $process->run();

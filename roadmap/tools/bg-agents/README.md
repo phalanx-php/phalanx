@@ -2,9 +2,8 @@
 
 Phalanx-native CLI for background specialist agents on daemon8.
 
-See the main monorepo: https://github.com/phalanx-php/phalanx
-that talks to [daemon8](../../../Rust/daemon8) over its public HTTP/SSE
-surface.
+See the main monorepo: https://github.com/phalanx-php/phalanx. The tool
+talks to daemon8 over its public HTTP/SSE surface.
 
 Each specialist has identity (system prompt + voice + scope) but no
 conversation history. Every query rebuilds context from scratch:

@@ -8,7 +8,7 @@ final class SwooleCheck
 {
     public function __invoke(): Check
     {
-        if (!extension_loaded('swoole') && !extension_loaded('openswoole')) {
+        if (!extension_loaded('swoole')) {
             return Check::fail(
                 'Swoole',
                 'Not loaded',
@@ -17,7 +17,7 @@ final class SwooleCheck
             );
         }
 
-        $version = phpversion('swoole') ?: phpversion('openswoole');
+        $version = phpversion('swoole');
         $flags = self::detectBuildFlags();
         $detail = $version !== false ? "v{$version}" : 'loaded';
 

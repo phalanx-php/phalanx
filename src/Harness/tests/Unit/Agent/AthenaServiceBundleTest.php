@@ -11,15 +11,15 @@ use Phalanx\Athena\Router\InvocationRouter;
 use Phalanx\Boot\AppContext;
 use Phalanx\Harness\Agent\AgentExecutor;
 use Phalanx\Harness\Agent\AgentExecutorContract;
+use Phalanx\Harness\Agent\ApprovalAuthorizer;
 use Phalanx\Harness\Agent\AthenaServiceBundle;
 use Phalanx\Harness\Agent\LlmRequestRecordingRouter;
 use Phalanx\Harness\Agent\OllamaConfig;
 use Phalanx\Harness\Agent\TemplateAgent;
 use Phalanx\Panoply\Agent;
+use Phalanx\Panoply\Effect\Authorizer;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\ServiceCatalog;
-use Phalanx\Service\ServiceConfig;
-use Phalanx\Service\Services;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -28,7 +28,7 @@ final class AthenaServiceBundleTest extends TestCase
     #[Test]
     public function fromCreatesBundle(): void
     {
-        $athenaBundle = self::makeAthenaBundle();
+        $athenaBundle = $this->makeAthenaBundle();
 
         $bundle = AthenaServiceBundle::from($athenaBundle);
 
@@ -37,32 +37,31 @@ final class AthenaServiceBundleTest extends TestCase
     }
 
     #[Test]
-    public function delegatesToAthenaBundleOnServices(): void
+    public function servicesComposeAthenaBundleWithHarnessOverrides(): void
     {
-        $athenaBundle = self::makeAthenaBundle();
+        $athenaBundle = $this->makeAthenaBundle();
         $bundle = AthenaServiceBundle::from($athenaBundle);
+        $catalog = new ServiceCatalog();
 
-        $serviceConfig = $this->createStub(ServiceConfig::class);
-        $serviceConfig->method('factory')->willReturnSelf();
-        $serviceConfig->method('needs')->willReturnSelf();
+        $bundle->services($catalog, new AppContext([]));
+        $graph = $catalog->compile();
+        $factory = $graph->resolve(AthenaConfig::class)->factoryFn;
+        self::assertNotNull($factory);
 
-        $services = $this->createMock(Services::class);
-        $services->method('singleton')->willReturn($serviceConfig);
-        $services->method('scoped')->willReturn($serviceConfig);
-        $services->method('has')->willReturn(false);
+        $config = $factory();
 
-        $services->expects(self::atLeastOnce())->method('singleton');
-
-        $context = new AppContext([]);
-
-        $bundle->services($services, $context);
+        self::assertInstanceOf(AthenaConfig::class, $config);
+        self::assertInstanceOf(LlmRequestRecordingRouter::class, $config->router);
+        self::assertSame(ApprovalAuthorizer::class, $graph->alias(Authorizer::class));
+        self::assertSame(TemplateAgent::class, $graph->alias(Agent::class));
+        self::assertSame(AgentExecutor::class, $graph->alias(AgentExecutorContract::class));
     }
 
     #[Test]
     public function servicesInstallRequestRecordingRouter(): void
     {
         $catalog = new ServiceCatalog();
-        $bundle = AthenaServiceBundle::from(self::makeAthenaBundle());
+        $bundle = AthenaServiceBundle::from($this->makeAthenaBundle());
 
         $bundle->services($catalog, new AppContext());
 
@@ -144,18 +143,8 @@ final class AthenaServiceBundleTest extends TestCase
         self::assertSame(TemplateAgent::class, $graph->alias(Agent::class));
     }
 
-    private static function makeAthenaBundle(): AthenaBundle
+    private function makeAthenaBundle(): AthenaBundle
     {
-        $router = new class implements InvocationRouter {
-            public function route(
-                \Phalanx\Scope\TaskScope $scope,
-                \Phalanx\Panoply\Agent $agent,
-                \Phalanx\Panoply\Invocation $invocation,
-            ): \Phalanx\Panoply\Provider {
-                throw new \LogicException('Not implemented in test stub.');
-            }
-        };
-
-        return new AthenaBundle($router);
+        return new AthenaBundle($this->createStub(InvocationRouter::class));
     }
 }

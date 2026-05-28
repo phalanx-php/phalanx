@@ -28,7 +28,7 @@ final class ConsoleSignalTrapTest extends TestCase
     {
         $policy = ConsoleSignalPolicy::default();
 
-        if (!extension_loaded('swoole') && !extension_loaded('openswoole')) {
+        if (!extension_loaded('swoole')) {
             self::assertSame([], $policy->exitCodes());
             return;
         }

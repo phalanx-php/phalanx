@@ -42,8 +42,8 @@ final class ErrorRegistryTest extends TestCase
         $reportedErrors = [];
         $handler = $this->createStub(ErrorHandler::class);
         $handler->method('report')
-            ->willReturnCallback(function (Scope $s, \Throwable $e) use ($scope, &$reportedErrors) {
-                $this->assertSame($scope, $s);
+            ->willReturnCallback(static function (Scope $s, \Throwable $e) use ($scope, &$reportedErrors) {
+                self::assertSame($scope, $s);
                 $reportedErrors[] = $e;
             });
 

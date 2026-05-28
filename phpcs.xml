@@ -64,6 +64,15 @@
         <exclude-pattern>*/ScriptContext.php</exclude-pattern>
     </rule>
 
+    <!-- Phalanx style: config object constructor parameters are visually grouped by env attribute. -->
+    <rule ref="Squiz.Functions.MultiLineFunctionDeclaration.EmptyLine">
+        <exclude-pattern>*/NetworkConfig.php</exclude-pattern>
+        <exclude-pattern>*/DoryConfig.php</exclude-pattern>
+        <exclude-pattern>*/SshConfig.php</exclude-pattern>
+        <exclude-pattern>*/HttpClientConfig.php</exclude-pattern>
+        <exclude-pattern>*/SurrealConfig.php</exclude-pattern>
+    </rule>
+
     <!-- PHP 8.4 property hooks: indentation rule misfires on hook bodies -->
     <rule ref="Generic.WhiteSpace.ScopeIndent.IncorrectExact">
         <exclude-pattern>*/ExecutionContext.php</exclude-pattern>

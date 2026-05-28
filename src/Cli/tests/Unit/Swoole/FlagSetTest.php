@@ -44,13 +44,13 @@ final class FlagSetTest extends TestCase
     {
         $flagSet = new FlagSet(
             [SwooleFlag::EnableOpenssl, SwooleFlag::WithOpensslDir],
-            [SwooleFlag::WithOpensslDir->value => '/opt/homebrew/opt/openssl'],
+            [SwooleFlag::WithOpensslDir->value => '/tmp/phalanx-openssl'],
         );
 
         $args = $flagSet->toPieArgs();
 
         self::assertContains('--enable-openssl', $args);
-        self::assertContains('--with-openssl-dir=/opt/homebrew/opt/openssl', $args);
+        self::assertContains('--with-openssl-dir=/tmp/phalanx-openssl', $args);
     }
 
     #[Test]

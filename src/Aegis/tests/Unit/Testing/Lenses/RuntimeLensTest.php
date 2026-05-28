@@ -42,6 +42,10 @@ final class RuntimeLensTest extends TestCase
 
     public function testAssertHealthyPassesInsideScopedRun(): void
     {
+        if (!extension_loaded('swoole')) {
+            self::markTestSkipped('Runtime health requires ext-swoole.');
+        }
+
         $app = TestApp::boot();
 
         try {

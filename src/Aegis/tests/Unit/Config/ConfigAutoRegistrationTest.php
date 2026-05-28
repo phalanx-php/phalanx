@@ -111,6 +111,7 @@ final class HopliteConfig implements Config
     public function __construct(
         #[Env(key: 'HOPLITE_RANK', description: 'Rank of the hoplite')]
         private(set) string $rank = 'hoplite',
+
         #[Env(key: 'HOPLITE_SHIELD_WEIGHT', description: 'Shield weight in kg')]
         private(set) int $shieldWeight = 6,
     ) {

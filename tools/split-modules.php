@@ -26,38 +26,78 @@ if ($moduleFilter !== null && ! phalanx_module_is_published($modules[$moduleFilt
     exit(1);
 }
 
-foreach ($modules as $module => $meta) {
-    if ($moduleFilter !== null && $module !== $moduleFilter) {
-        continue;
-    }
+$askpass = $token !== '' ? configureGitAskPass($token) : null;
 
-    if (! phalanx_module_is_published($meta)) {
-        continue;
-    }
+try {
+    foreach ($modules as $module => $meta) {
+        if ($moduleFilter !== null && $module !== $moduleFilter) {
+            continue;
+        }
 
-    $repository = phalanx_repository_name($meta['package']);
-    $branch = 'split/' . phalanx_package_slug($meta['package']);
-    $prefix = 'src/' . $module;
+        if (! phalanx_module_is_published($meta)) {
+            continue;
+        }
 
-    deleteBranch($branch, $dryRun);
-    run(['git', 'subtree', 'split', '--prefix', $prefix, '-b', $branch], $dryRun);
-    injectAssets($branch, $root, $dryRun);
-    verifySplitArchive($branch, $dryRun);
+        $repository = phalanx_repository_name($meta['package']);
+        $branch = 'split/' . phalanx_package_slug($meta['package']);
+        $prefix = 'src/' . $module;
 
-    if ($verifyOnly) {
         deleteBranch($branch, $dryRun);
-        printf("Module split proof OK: %s\n", $module);
-        continue;
+        run(['git', 'subtree', 'split', '--prefix', $prefix, '-b', $branch], $dryRun);
+        injectAssets($branch, $root, $dryRun);
+        verifySplitArchive($branch, $dryRun);
+
+        if ($verifyOnly) {
+            deleteBranch($branch, $dryRun);
+            printf("Module split proof OK: %s\n", $module);
+            continue;
+        }
+
+        $target = $token === ''
+            ? sprintf('git@github.com:%s/%s.git', $owner, $repository)
+            : sprintf('https://x-access-token@github.com/%s/%s.git', $owner, $repository);
+
+        run(['git', 'push', $target, $branch . ':main', '--force'], $dryRun);
+
+        if (is_string($refName) && $refName !== '') {
+            run(['git', 'push', $target, $branch . ':refs/tags/' . $refName, '--force'], $dryRun);
+        }
+    }
+} finally {
+    cleanupGitAskPass($askpass);
+}
+
+function configureGitAskPass(string $token): string
+{
+    $path = tempnam(sys_get_temp_dir(), 'phalanx-git-askpass-');
+
+    if ($path === false) {
+        throw new RuntimeException('Failed to create temporary Git askpass helper.');
     }
 
-    $target = $token === ''
-        ? sprintf('git@github.com:%s/%s.git', $owner, $repository)
-        : sprintf('https://x-access-token:%s@github.com/%s/%s.git', $token, $owner, $repository);
+    file_put_contents($path, <<<'SH'
+#!/bin/sh
+case "$1" in
+  *Username*) printf '%s\n' 'x-access-token' ;;
+  *) printf '%s\n' "$PHALANX_SPLIT_TOKEN" ;;
+esac
+SH);
+    chmod($path, 0700);
+    putenv('GIT_ASKPASS=' . $path);
+    putenv('GIT_TERMINAL_PROMPT=0');
+    putenv('PHALANX_SPLIT_TOKEN=' . $token);
 
-    run(['git', 'push', $target, $branch . ':main', '--force'], $dryRun, $token);
+    return $path;
+}
 
-    if (is_string($refName) && $refName !== '') {
-        run(['git', 'push', $target, $branch . ':refs/tags/' . $refName, '--force'], $dryRun, $token);
+function cleanupGitAskPass(?string $path): void
+{
+    putenv('GIT_ASKPASS');
+    putenv('GIT_TERMINAL_PROMPT');
+    putenv('PHALANX_SPLIT_TOKEN');
+
+    if ($path !== null && is_file($path)) {
+        unlink($path);
     }
 }
 
@@ -89,7 +129,8 @@ function injectAssets(string $branch, string $root, bool $dryRun): void
     if ($dryRun) {
         echo 'copy assets/ ' . $worktree . '/assets' . PHP_EOL;
         echo 'write split .gitattributes: ' . $worktree . '/.gitattributes' . PHP_EOL;
-        run(['git', '-C', $worktree, 'add', '-f', '.gitattributes', 'assets'], true);
+        echo 'remove forbidden hidden split files' . PHP_EOL;
+        run(['git', '-C', $worktree, 'add', '-A', '-f'], true);
         run([
             'git',
             '-C',
@@ -109,9 +150,10 @@ function injectAssets(string $branch, string $root, bool $dryRun): void
     try {
         copyDirectory($root . '/assets', $worktree . '/assets');
         file_put_contents($worktree . '/.gitattributes', splitGitattributes());
+        removeForbiddenHiddenPaths($worktree);
         verifySplitArtifact($worktree);
 
-        run(['git', '-C', $worktree, 'add', '-f', '.gitattributes', 'assets']);
+        run(['git', '-C', $worktree, 'add', '-A', '-f']);
 
         if (trim(shellOutput(['git', '-C', $worktree, 'status', '--porcelain'])) !== '') {
             run([
@@ -164,6 +206,59 @@ function copyDirectory(string $source, string $target): void
     }
 }
 
+function removeForbiddenHiddenPaths(string $root): void
+{
+    $items = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS),
+        RecursiveIteratorIterator::CHILD_FIRST,
+    );
+
+    foreach ($items as $item) {
+        $name = $item->getFilename();
+
+        if ($name === '.git' || $name === '.gitattributes' || !str_starts_with($name, '.')) {
+            continue;
+        }
+
+        $path = $item->getPathname();
+
+        if ($item->isDir() && !$item->isLink()) {
+            removeDirectory($path);
+            continue;
+        }
+
+        if (!unlink($path)) {
+            throw new RuntimeException("Failed to remove file: {$path}");
+        }
+    }
+}
+
+function removeDirectory(string $path): void
+{
+    $items = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS),
+        RecursiveIteratorIterator::CHILD_FIRST,
+    );
+
+    foreach ($items as $item) {
+        if ($item->isDir() && !$item->isLink()) {
+            if (!rmdir($item->getPathname())) {
+                throw new RuntimeException("Failed to remove directory: {$item->getPathname()}");
+            }
+
+            continue;
+        }
+
+        if (!unlink($item->getPathname())) {
+            throw new RuntimeException("Failed to remove file: {$item->getPathname()}");
+        }
+    }
+
+    if (!rmdir($path)) {
+        throw new RuntimeException("Failed to remove directory: {$path}");
+    }
+}
+
 function splitGitattributes(): string
 {
     return <<<'GITATTRIBUTES'
@@ -174,8 +269,12 @@ function splitGitattributes(): string
 /.daemon8 export-ignore
 /.daemon8/** export-ignore
 /.DS_Store export-ignore
+/.env* export-ignore
+/**/.env* export-ignore
 /.github export-ignore
 /.github/** export-ignore
+/.gitignore export-ignore
+/**/.gitignore export-ignore
 /.idea export-ignore
 /.idea/** export-ignore
 /.php-cs-fixer.cache export-ignore
@@ -215,6 +314,7 @@ function verifySplitArtifact(string $worktree): void
     assertMissing($worktree . '/brand');
     assertMissing($worktree . '/.aimind');
     assertMissing($worktree . '/.claude');
+    assertMissing($worktree . '/.gitignore');
     assertMissing($worktree . '/demos');
     assertMissing($worktree . '/SPEC.md');
 
@@ -271,7 +371,7 @@ function verifySplitArchive(string $branch, bool $dryRun): void
 function isForbiddenSplitArchivePath(string $path): bool
 {
     return preg_match(
-        '~(^|/)(brand|demos|docs|examples|tests|tmp|tools|vendor|\.aimind|\.claude|\.daemon8|\.github|\.idea)(/|$)|(^|/)(phpcs\.xml|phpstan\.neon|phpunit\.xml|phpunit\.xml\.dist|rector\.php|SPEC\.md)$~',
+        '~(^|/)(brand|demos|docs|examples|tests|tmp|tools|vendor|\.aimind|\.claude|\.daemon8|\.github|\.idea)(/|$)|(^|/)(?!\.gitattributes$)\.[^/]+$|(^|/)(phpcs\.xml|phpstan\.neon|phpunit\.xml|phpunit\.xml\.dist|rector\.php|SPEC\.md)$~',
         $path,
     ) === 1;
 }
@@ -302,13 +402,9 @@ function shellOutput(array $command): string
     return implode(PHP_EOL, $output);
 }
 
-function run(array $command, bool $dryRun = false, string $redact = ''): void
+function run(array $command, bool $dryRun = false): void
 {
     $display = implode(' ', array_map('escapeshellarg', $command));
-
-    if ($redact !== '') {
-        $display = str_replace($redact, '***', $display);
-    }
 
     if ($dryRun) {
         echo $display . PHP_EOL;

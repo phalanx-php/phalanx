@@ -40,10 +40,16 @@ final class SwooleInstallCommand extends Command
     {
         $output->writeln('');
 
-        if (extension_loaded('swoole') || extension_loaded('openswoole')) {
-            $version = phpversion('swoole') ?: phpversion('openswoole');
+        if (extension_loaded('swoole')) {
+            $version = phpversion('swoole');
             $output->writeln("<info>Swoole v{$version} is already installed.</info>");
             return Command::SUCCESS;
+        }
+
+        if (extension_loaded('openswoole')) {
+            $output->writeln('<error>OpenSwoole is loaded, but Phalanx requires ext-swoole.</error>');
+            $output->writeln('Disable OpenSwoole in your active php.ini before installing Swoole.');
+            return Command::FAILURE;
         }
 
         $pie = new PieRunner();
@@ -147,9 +153,7 @@ final class SwooleInstallCommand extends Command
         OutputInterface $output,
         QuestionHelper $helper,
     ): ?string {
-        $brewPaths = ['/opt/homebrew/opt/openssl', '/usr/local/opt/openssl'];
-
-        foreach ($brewPaths as $path) {
+        foreach (self::candidateOpensslDirs() as $path) {
             if (is_dir($path)) {
                 $output->writeln('');
                 $output->writeln("<info>Homebrew OpenSSL detected at {$path}</info>");
@@ -168,6 +172,35 @@ final class SwooleInstallCommand extends Command
         }
 
         return null;
+    }
+
+    /** @return list<string> */
+    private static function candidateOpensslDirs(): array
+    {
+        $paths = [];
+
+        foreach (['openssl@3', 'openssl'] as $formula) {
+            $path = self::homebrewPrefix($formula);
+
+            if ($path !== null) {
+                $paths[] = $path;
+            }
+        }
+
+        return array_values(array_unique($paths));
+    }
+
+    private static function homebrewPrefix(string $formula): ?string
+    {
+        exec('brew --prefix ' . escapeshellarg($formula) . ' 2>/dev/null', $output, $exitCode);
+
+        if ($exitCode !== 0 || $output === []) {
+            return null;
+        }
+
+        $path = trim($output[0]);
+
+        return $path !== '' ? $path : null;
     }
 
     private function resolveFlags(InputInterface $input, OutputInterface $output): FlagSet

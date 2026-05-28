@@ -39,7 +39,7 @@ final class EnvironmentDoctorTest extends TestCase
         $report = new EnvironmentDoctor(new InProcessLedger(), $policy)->check();
         $checks = $report->toArray();
 
-        self::assertTrue($report->isHealthy());
+        self::assertSame(self::runtimeChecksAreHealthy($policy), $report->isHealthy());
         self::assertContains('php.version', array_column($checks, 'name'));
         self::assertContains('swoole.extension', array_column($checks, 'name'));
         self::assertContains('swoole.runtime_policy', array_column($checks, 'name'));
@@ -56,7 +56,7 @@ final class EnvironmentDoctorTest extends TestCase
         $report = new EnvironmentDoctor(supervisor: $supervisor)->check();
         $checks = $report->toArray();
 
-        self::assertTrue($report->isHealthy());
+        self::assertSame(self::runtimeChecksAreHealthy(), $report->isHealthy());
         self::assertTrue(self::check($checks, 'supervisor.pool.taskRun')['ok']);
         self::assertTrue(self::check($checks, 'supervisor.pool.token')['ok']);
         self::assertStringContainsString('borrowed=0', self::check($checks, 'supervisor.pool.taskRun')['detail']);
@@ -105,7 +105,7 @@ final class EnvironmentDoctorTest extends TestCase
             $report = new EnvironmentDoctor(memory: $memory)->check();
             $checks = $report->toArray();
 
-            self::assertTrue($report->isHealthy());
+            self::assertSame(self::runtimeChecksAreHealthy(), $report->isHealthy());
             self::assertSame(
                 'live=0, total=0, terminal=0',
                 self::check($checks, 'runtime.resources.live')['detail'],
@@ -277,5 +277,10 @@ final class EnvironmentDoctorTest extends TestCase
         }
 
         return null;
+    }
+
+    private static function runtimeChecksAreHealthy(?RuntimePolicy $policy = null): bool
+    {
+        return extension_loaded('swoole') && RuntimeHooks::inspect($policy ?? RuntimePolicy::phalanxManaged())->isHealthy();
     }
 }

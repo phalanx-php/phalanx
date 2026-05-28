@@ -35,7 +35,7 @@
     "rector:dry": "rector --dry-run",
     "cs": "phpcs",
     "cs:fix": "phpcbf",
-    "test": "/opt/homebrew/bin/php bin/run.php",
+    "test": "php bin/run.php",
     "check": [
       "@analyse",
       "@rector:dry",

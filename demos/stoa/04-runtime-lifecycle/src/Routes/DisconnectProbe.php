@@ -18,8 +18,10 @@ final readonly class DisconnectProbe implements Scopeable
     public function __invoke(RequestContext $ctx): array
     {
         $this->events->record($ctx, 'disconnect.started', ['path' => $ctx->path()]);
-        $ctx->cancellation()->onCancel(function () use ($ctx): void {
-            $this->events->record($ctx, 'disconnect.cancelled', ['path' => $ctx->path()]);
+        $events = $this->events;
+
+        $ctx->cancellation()->onCancel(static function () use ($ctx, $events): void {
+            $events->record($ctx, 'disconnect.cancelled', ['path' => $ctx->path()]);
         });
 
         try {

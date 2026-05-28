@@ -11,7 +11,7 @@ Proving-ground for the substrate redesign. See parent project context.
 ## Run the demo
 
 ```
-/opt/homebrew/bin/php demo/transfer-demo.php
+php demo/transfer-demo.php
 ```
 
 ## What the demo proves
