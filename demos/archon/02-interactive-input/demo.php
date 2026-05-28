@@ -5,8 +5,6 @@ declare(strict_types=1);
 require __DIR__ . '/../../../vendor/autoload_runtime.php';
 
 use Phalanx\Archon\Application\Archon;
-use Phalanx\Archon\Command\Arg;
-use Phalanx\Archon\Command\CommandConfig;
 use Phalanx\Archon\Command\CommandGroup;
 use Phalanx\Archon\Console\Input\RawInput;
 use Phalanx\Archon\Console\Output\StreamOutput;
@@ -24,25 +22,10 @@ return DemoReport::demo(
     'Archon Interactive Input (non-TTY default fallback)',
     static function (DemoReport $report, AppContext $_context): void {
         $commands = CommandGroup::of([
-            'register' => [
-                RegisterCommand::class,
-                new CommandConfig(description: 'Register a demo account through interactive prompts.'),
-            ],
-            'config' => CommandGroup::of([
-                'show' => [
-                    ShowConfigCommand::class,
-                    new CommandConfig(description: 'Display the current demo config.'),
-                ],
-                'set' => [
-                    SetConfigCommand::class,
-                    new CommandConfig(
-                        description: 'Set a config value.',
-                        arguments:   [
-                            Arg::required('key',   'Config key.'),
-                            Arg::required('value', 'New value.'),
-                        ],
-                    ),
-                ],
+            'register' => RegisterCommand::class,
+            'config'   => CommandGroup::of([
+                'show' => ShowConfigCommand::class,
+                'set'  => SetConfigCommand::class,
             ], description: 'Demo configuration commands.'),
         ]);
 

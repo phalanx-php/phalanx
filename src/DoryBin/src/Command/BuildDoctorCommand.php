@@ -4,15 +4,27 @@ declare(strict_types=1);
 
 namespace Phalanx\DoryBin\Command;
 
+use Phalanx\Archon\Command\Arg;
+use Phalanx\Archon\Command\CommandConfig;
 use Phalanx\Archon\Command\CommandContext;
+use Phalanx\Archon\Command\DescribesCommand;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\DoryBin\BuildProfile;
 use Phalanx\DoryBin\DoryBin;
 use Phalanx\DoryBin\VerifyOptions;
 use Phalanx\Task\Scopeable;
 
-final class BuildDoctorCommand implements Scopeable
+final class BuildDoctorCommand implements Scopeable, DescribesCommand
 {
+    public static function commandConfig(): CommandConfig
+    {
+        return new CommandConfig(
+            description: 'Diagnose a built Dory binary',
+            arguments: [
+                Arg::optional('binary', 'Path to the binary', './dory'),
+            ],
+        );
+    }
     public function __invoke(CommandContext $ctx): int
     {
         $output = $ctx->service(StreamOutput::class);

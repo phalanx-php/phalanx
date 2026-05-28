@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Phalanx\Demos\Archon\RuntimeLifecycle;
 
+use Phalanx\Archon\Command\CommandConfig;
 use Phalanx\Archon\Command\CommandContext;
+use Phalanx\Archon\Command\DescribesCommand;
+use Phalanx\Archon\Command\Opt;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Scope\ExecutionScope;
@@ -26,8 +29,19 @@ use RuntimeException;
  *   --duration=SEC     bound the inner loop (default 30s — long enough for
  *                      external cancel signals to arrive)
  */
-final class WatchCommand implements Executable
+final class WatchCommand implements Executable, DescribesCommand
 {
+    public static function commandConfig(): CommandConfig
+    {
+        return new CommandConfig(
+            description: 'Long-running watcher with three supervised ticker workers.',
+            options: [
+                Opt::value('duration', '', 'Seconds before completing normally.'),
+                Opt::value('fail-worker', '', 'Inject failure into ticker N (1-3).'),
+            ],
+        );
+    }
+
     public function __invoke(CommandContext $ctx): int
     {
         $output     = $ctx->service(StreamOutput::class);

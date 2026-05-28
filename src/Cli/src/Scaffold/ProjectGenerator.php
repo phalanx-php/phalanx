@@ -214,18 +214,10 @@ TEMPLATE;
 declare(strict_types=1);
 
 use {{namespace}}\Commands\Hello;
-use Phalanx\Archon\Command\CommandArgument;
-use Phalanx\Archon\Command\CommandConfig;
 use Phalanx\Archon\Command\CommandGroup;
 
 return CommandGroup::of([
-    'hello' => [
-        Hello::class,
-        new CommandConfig(
-            description: 'Greet someone by name',
-            arguments: [new CommandArgument('name', 'Person to greet')],
-        ),
-    ],
+    'hello' => Hello::class,
 ]);
 TEMPLATE;
     }
@@ -239,12 +231,23 @@ declare(strict_types=1);
 
 namespace {{namespace}}\Commands;
 
+use Phalanx\Archon\Command\Arg;
+use Phalanx\Archon\Command\CommandConfig;
 use Phalanx\Archon\Command\CommandContext;
+use Phalanx\Archon\Command\DescribesCommand;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Task\Scopeable;
 
-final class Hello implements Scopeable
+final class Hello implements Scopeable, DescribesCommand
 {
+    public static function commandConfig(): CommandConfig
+    {
+        return new CommandConfig(
+            description: 'Greet someone by name',
+            arguments: [Arg::required('name', 'Person to greet')],
+        );
+    }
+
     public function __invoke(CommandContext $ctx): int
     {
         $name = (string) $ctx->args->required('name');

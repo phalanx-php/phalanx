@@ -4,25 +4,27 @@ declare(strict_types=1);
 
 namespace Phalanx\Archon\Command\Config;
 
+use Phalanx\Archon\Command\CommandConfig;
 use Phalanx\Archon\Command\CommandContext;
+use Phalanx\Archon\Command\DescribesCommand;
+use Phalanx\Archon\Command\Opt;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Task\Scopeable;
 use Phalanx\Themis\ConfigCatalog;
 use Phalanx\Themis\EnvExampleGenerator;
 
-/**
- * Generates or updates a .env.example file from registered config classes.
- *
- * When --dry-run is passed the generated content is printed to stdout instead
- * of written to disk. Existing .env.example values are preserved for keys that
- * the catalog does not produce, so manually added annotations survive updates.
- *
- * Options:
- *   --dry-run   Print to stdout instead of writing .env.example.
- *   --output    Path to write to (default: .env.example in the working directory).
- */
-final class EnvExampleCommand implements Scopeable
+final class EnvExampleCommand implements Scopeable, DescribesCommand
 {
+    public static function commandConfig(): CommandConfig
+    {
+        return new CommandConfig(
+            description: 'Generate or update a .env.example file from registered config classes.',
+            options: [
+                Opt::flag(name: 'dry-run', desc: 'Print to stdout instead of writing to disk.'),
+                Opt::value(name: 'output', desc: 'Output path (default: .env.example).', default: '.env.example'),
+            ],
+        );
+    }
     public function __invoke(CommandContext $ctx): int
     {
         $catalog = $ctx->service(ConfigCatalog::class);

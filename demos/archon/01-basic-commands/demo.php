@@ -5,10 +5,7 @@ declare(strict_types=1);
 require __DIR__ . '/../../../vendor/autoload_runtime.php';
 
 use Phalanx\Archon\Application\Archon;
-use Phalanx\Archon\Command\Arg;
-use Phalanx\Archon\Command\CommandConfig;
 use Phalanx\Archon\Command\CommandGroup;
-use Phalanx\Archon\Command\Opt;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Archon\Console\Output\TerminalEnvironment;
 use Phalanx\Boot\AppContext;
@@ -23,31 +20,10 @@ return DemoReport::demo(
     'Archon Basic Commands',
     static function (DemoReport $report, AppContext $_context): void {
         $commands = CommandGroup::of([
-            'greet' => [
-                GreetCommand::class,
-                new CommandConfig(
-                    description: 'Greet someone by name.',
-                    arguments:   [Arg::required('name', 'Person to greet.')],
-                ),
-            ],
-            'version' => [
-                VersionCommand::class,
-                new CommandConfig(description: 'Print the demo version banner.'),
-            ],
-            'info' => [
-                InfoCommand::class,
-                new CommandConfig(
-                    description: 'Print build info; --shout uppercases the body.',
-                    options:     [Opt::flag('shout', 's', 'Uppercase the body.')],
-                ),
-            ],
-            'debug:deadlock' => [
-                DebugDeadlockCommand::class,
-                new CommandConfig(
-                    description: 'Snapshot every parked coroutine (operator escape hatch).',
-                    options:     [Opt::flag('json', '', 'Emit JSON instead of formatted text.')],
-                ),
-            ],
+            'greet'          => GreetCommand::class,
+            'version'        => VersionCommand::class,
+            'info'           => InfoCommand::class,
+            'debug:deadlock' => DebugDeadlockCommand::class,
         ]);
 
         $runCase = static function (string $label, array $argv, string $expected) use ($commands, $report): void {

@@ -4,14 +4,22 @@ declare(strict_types=1);
 
 namespace Phalanx\Dory\Command;
 
+use Phalanx\Archon\Command\CommandConfig;
 use Phalanx\Archon\Command\CommandContext;
+use Phalanx\Archon\Command\DescribesCommand;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Dory\DoryConfig;
 use Phalanx\Task\Scopeable;
 use Phalanx\Themis\ValidationContext;
 
-final class DoctorCommand implements Scopeable
+final class DoctorCommand implements Scopeable, DescribesCommand
 {
+    public static function commandConfig(): CommandConfig
+    {
+        return new CommandConfig(
+            description: 'Check environment readiness',
+        );
+    }
     private const string PASS = '[pass]';
     private const string FAIL = '[fail]';
 

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Archon\Command\Config;
 
+use Phalanx\Archon\Command\CommandConfig;
 use Phalanx\Archon\Command\CommandContext;
+use Phalanx\Archon\Command\DescribesCommand;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Task\Scopeable;
 use Phalanx\Themis\CatalogNode;
@@ -12,14 +14,14 @@ use Phalanx\Themis\ConfigCatalog;
 use Phalanx\Themis\ConfigEntry;
 use ReflectionClass;
 
-/**
- * Lists all registered config classes and their env keys.
- *
- * Groups entries by the CatalogNode path, shows the env key, PHP type,
- * required/optional marker, default (redacted for secrets), and description.
- */
-final class ConfigListCommand implements Scopeable
+final class ConfigListCommand implements Scopeable, DescribesCommand
 {
+    public static function commandConfig(): CommandConfig
+    {
+        return new CommandConfig(
+            description: 'List all registered config classes and their env keys.',
+        );
+    }
     public function __invoke(CommandContext $ctx): int
     {
         $catalog = $ctx->service(ConfigCatalog::class);

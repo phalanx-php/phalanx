@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Demos\Archon\InteractiveInput;
 
+use Phalanx\Archon\Command\CommandConfig;
 use Phalanx\Archon\Command\CommandContext;
+use Phalanx\Archon\Command\DescribesCommand;
 use Phalanx\Archon\Console\Input\ConfirmInput;
 use Phalanx\Archon\Console\Input\KeyReader;
 use Phalanx\Archon\Console\Input\SelectInput;
@@ -21,8 +23,13 @@ use Phalanx\Task\Scopeable;
  * each prompt short-circuits to its configured default and the command still
  * produces deterministic output that demo.php asserts on.
  */
-final class RegisterCommand implements Scopeable
+final class RegisterCommand implements Scopeable, DescribesCommand
 {
+    public static function commandConfig(): CommandConfig
+    {
+        return new CommandConfig(description: 'Register a demo account through interactive prompts.');
+    }
+
     public function __invoke(CommandContext $ctx): int
     {
         $theme  = $ctx->service(Theme::class);

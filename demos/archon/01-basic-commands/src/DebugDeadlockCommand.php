@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace Phalanx\Demos\Archon\BasicCommands;
 
 use JsonException;
+use Phalanx\Archon\Command\CommandConfig;
 use Phalanx\Archon\Command\CommandContext;
+use Phalanx\Archon\Command\DescribesCommand;
+use Phalanx\Archon\Command\Opt;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Diagnostics\DeadlockReport;
 use Phalanx\Task\Scopeable;
@@ -17,8 +20,16 @@ use Phalanx\Task\Scopeable;
  * coroutines for the dispatch itself); run it from a SIGUSR2 trap in a stuck
  * production process to dump the actual deadlock state.
  */
-final class DebugDeadlockCommand implements Scopeable
+final class DebugDeadlockCommand implements Scopeable, DescribesCommand
 {
+    public static function commandConfig(): CommandConfig
+    {
+        return new CommandConfig(
+            description: 'Snapshot every parked coroutine (operator escape hatch).',
+            options: [Opt::flag('json', '', 'Emit JSON instead of formatted text.')],
+        );
+    }
+
     public function __invoke(CommandContext $ctx): int
     {
         $output = $ctx->service(StreamOutput::class);

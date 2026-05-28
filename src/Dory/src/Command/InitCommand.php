@@ -4,12 +4,24 @@ declare(strict_types=1);
 
 namespace Phalanx\Dory\Command;
 
+use Phalanx\Archon\Command\Arg;
+use Phalanx\Archon\Command\CommandConfig;
 use Phalanx\Archon\Command\CommandContext;
+use Phalanx\Archon\Command\DescribesCommand;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Task\Scopeable;
 
-final class InitCommand implements Scopeable
+final class InitCommand implements Scopeable, DescribesCommand
 {
+    public static function commandConfig(): CommandConfig
+    {
+        return new CommandConfig(
+            description: 'Initialize a new Dory project',
+            arguments: [
+                Arg::optional('directory', 'Target directory', '.'),
+            ],
+        );
+    }
     private const string SAMPLE_SCRIPT = <<<'PHP'
         <?php
 

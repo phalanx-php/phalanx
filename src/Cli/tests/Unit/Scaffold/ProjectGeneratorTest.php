@@ -189,10 +189,11 @@ final class ProjectGeneratorTest extends TestCase
         self::assertStringContainsString('use Phalanx\Archon\Command\CommandGroup;', $commands);
         self::assertStringContainsString('CommandGroup::of(', $commands);
         self::assertStringContainsString('use App\MyTool\Commands\Hello;', $commands);
+        self::assertStringContainsString("'hello' => Hello::class,", $commands);
     }
 
     #[Test]
-    public function consoleHelloImplementsScopeable(): void
+    public function consoleHelloImplementsScopeableAndDescribesCommand(): void
     {
         $output = new BufferedOutput();
 
@@ -200,7 +201,9 @@ final class ProjectGeneratorTest extends TestCase
 
         $hello = file_get_contents($this->tempDir . '/src/Commands/Hello.php');
         self::assertIsString($hello);
-        self::assertStringContainsString('implements Scopeable', $hello);
+        self::assertStringContainsString('implements Scopeable, DescribesCommand', $hello);
+        self::assertStringContainsString('use Phalanx\Archon\Command\DescribesCommand;', $hello);
+        self::assertStringContainsString('public static function commandConfig(): CommandConfig', $hello);
         self::assertStringContainsString('use Phalanx\Archon\Command\CommandContext;', $hello);
         self::assertStringContainsString('$ctx->args->required(', $hello);
         self::assertStringContainsString('$ctx->service(StreamOutput::class)', $hello);

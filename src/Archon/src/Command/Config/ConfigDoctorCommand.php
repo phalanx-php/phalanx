@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Phalanx\Archon\Command\Config;
 
+use Phalanx\Archon\Command\CommandConfig;
 use Phalanx\Archon\Command\CommandContext;
+use Phalanx\Archon\Command\DescribesCommand;
+use Phalanx\Archon\Command\Opt;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Task\Scopeable;
 use Phalanx\Themis\ConfigCatalog;
@@ -15,18 +18,17 @@ use Phalanx\Themis\ValidationContext;
 use Phalanx\Themis\ValidationPurpose;
 use Phalanx\Themis\ValidationResult;
 
-/**
- * Validates all registered config classes against the current environment.
- *
- * Groups issues by severity (Error / Warning / Info) and prints a hint for
- * each issue when one is available. Exits 1 when validation would block boot;
- * exits 0 otherwise.
- *
- * Options:
- *   --strict   Treat warnings as boot-blockers (mirrors ValidationContext::strict).
- */
-final class ConfigDoctorCommand implements Scopeable
+final class ConfigDoctorCommand implements Scopeable, DescribesCommand
 {
+    public static function commandConfig(): CommandConfig
+    {
+        return new CommandConfig(
+            description: 'Validate the current environment against all registered config classes.',
+            options: [
+                Opt::flag(name: 'strict', desc: 'Treat warnings as boot-blockers.'),
+            ],
+        );
+    }
     public function __invoke(CommandContext $ctx): int
     {
         $catalog = $ctx->service(ConfigCatalog::class);

@@ -4,14 +4,26 @@ declare(strict_types=1);
 
 namespace Phalanx\DoryBin\Command;
 
+use Phalanx\Archon\Command\CommandConfig;
 use Phalanx\Archon\Command\CommandContext;
+use Phalanx\Archon\Command\DescribesCommand;
+use Phalanx\Archon\Command\Opt;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\DoryBin\BuildConfig;
 use Phalanx\DoryBin\Filesystem;
 use Phalanx\Task\Scopeable;
 
-final class BuildCleanCommand implements Scopeable
+final class BuildCleanCommand implements Scopeable, DescribesCommand
 {
+    public static function commandConfig(): CommandConfig
+    {
+        return new CommandConfig(
+            description: 'Remove build artifacts',
+            options: [
+                Opt::flag('all', 'a', 'Remove all artifacts including downloads'),
+            ],
+        );
+    }
     public function __invoke(CommandContext $ctx): int
     {
         $output = $ctx->service(StreamOutput::class);

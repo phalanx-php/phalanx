@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Phalanx\DoryBin\Command;
 
+use Phalanx\Archon\Command\CommandConfig;
 use Phalanx\Archon\Command\CommandContext;
+use Phalanx\Archon\Command\DescribesCommand;
+use Phalanx\Archon\Command\Opt;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Boot\AppContext;
 use Phalanx\DoryBin\BuildOptions;
@@ -12,8 +15,22 @@ use Phalanx\DoryBin\BuildProfile;
 use Phalanx\DoryBin\DoryBin;
 use Phalanx\Task\Scopeable;
 
-final class BuildBinaryCommand implements Scopeable
+final class BuildBinaryCommand implements Scopeable, DescribesCommand
 {
+    public static function commandConfig(): CommandConfig
+    {
+        return new CommandConfig(
+            description: 'Build a static Dory binary',
+            options: [
+                Opt::value('profile', 'p', 'Build profile', default: 'full'),
+                Opt::value('output', 'o', 'Output binary path'),
+                Opt::flag('clean', 'c', 'Clean build directory first'),
+                Opt::flag('verbose', 'v', 'Show build subprocess output'),
+                Opt::flag('dry-run', 'd', 'Show planned stages without executing'),
+                Opt::value('spc-path', '', 'Path to spc binary'),
+            ],
+        );
+    }
     public function __invoke(CommandContext $ctx): int
     {
         $output = $ctx->service(StreamOutput::class);

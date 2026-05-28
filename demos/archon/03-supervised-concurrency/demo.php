@@ -5,8 +5,6 @@ declare(strict_types=1);
 require __DIR__ . '/../../../vendor/autoload_runtime.php';
 
 use Phalanx\Archon\Application\Archon;
-use Phalanx\Archon\Command\Arg;
-use Phalanx\Archon\Command\CommandConfig;
 use Phalanx\Archon\Command\CommandGroup;
 use Phalanx\Archon\Console\Output\TerminalEnvironment;
 use Phalanx\Archon\Console\Style\Theme;
@@ -32,13 +30,7 @@ return DemoReport::demo(
         $theme = Theme::default();
 
         $commands = CommandGroup::of([
-            'deploy' => [
-                DeployCommand::class,
-                new CommandConfig(
-                    description: 'Run 4 deploy stages concurrently with a live UI.',
-                    arguments:   [Arg::optional('env', 'Target environment.', 'staging')],
-                ),
-            ],
+            'deploy' => DeployCommand::class,
         ]);
 
         $start = microtime(true);
