@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Phalanx\Scope;
 
-use Swoole\Timer;
+use Phalanx\Substrate\Substrate;
 
 /**
  * Concrete Subscription returned by TaskExecutor::periodic. Owns one
- * OpenSwoole timer id and clears it on cancel(). Cancellation is
- * idempotent and safe to call after the scope has already disposed
- * (Timer::clear on a stale id is a no-op).
+ * timer id and clears it on cancel(). Cancellation is idempotent and
+ * safe to call after the scope has already disposed (clearing a stale
+ * id is a no-op).
  */
 final class PeriodicSubscription implements Subscription
 {
@@ -27,6 +27,6 @@ final class PeriodicSubscription implements Subscription
             return;
         }
         $this->cancelled = true;
-        Timer::clear($this->timerId);
+        Substrate::timers()->clear($this->timerId);
     }
 }

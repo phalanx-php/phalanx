@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Support;
 
-use Swoole\Process;
+use Phalanx\Substrate\Substrate;
 
 final readonly class SignalHandler
 {
@@ -27,7 +27,7 @@ final readonly class SignalHandler
         set_error_handler(static fn(): bool => true);
 
         try {
-            Process::signal($signal, static function () use ($shutdown): void {
+            Substrate::signals()->signal($signal, static function () use ($shutdown): void {
                 $shutdown();
             });
         } finally {

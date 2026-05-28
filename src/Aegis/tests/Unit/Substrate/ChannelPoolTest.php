@@ -6,10 +6,21 @@ namespace Phalanx\Aegis\Tests\Unit\Substrate;
 
 use Phalanx\Substrate\ChannelHandle;
 use Phalanx\Substrate\ChannelPool;
+use Phalanx\Substrate\Substrate;
 use PHPUnit\Framework\TestCase;
 
 final class ChannelPoolTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        Substrate::reset();
+    }
+
+    protected function tearDown(): void
+    {
+        Substrate::reset();
+    }
+
     public function testGetReturnsConnectionFromChannel(): void
     {
         $client = new \stdClass();

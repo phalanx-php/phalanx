@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace Phalanx\Runtime;
 
-use Swoole\Coroutine;
+use Phalanx\Substrate\Substrate;
 
 /**
- * Typed snapshot of OpenSwoole\Coroutine::stats().
- *
- * @see https://openswoole.com/docs/modules/swoole-coroutine-stats
+ * Typed snapshot of coroutine stats.
  */
 final class CoroutineStats
 {
@@ -27,7 +25,7 @@ final class CoroutineStats
 
     public static function capture(): self
     {
-        return self::fromArray(Coroutine::stats());
+        return self::fromArray(Substrate::coroutine()->stats());
     }
 
     /**

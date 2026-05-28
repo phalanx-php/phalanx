@@ -27,4 +27,9 @@ interface CoroutineDriver
 
     /** @param array<string, mixed> $options */
     public function setOptions(array $options): void;
+
+    public function list(): iterable;
+
+    /** @param int<0, max> $limit */
+    public function getBackTrace(int $cid, int $options = DEBUG_BACKTRACE_PROVIDE_OBJECT, int $limit = 0): array|false;
 }

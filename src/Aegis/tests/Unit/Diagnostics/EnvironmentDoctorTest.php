@@ -22,12 +22,24 @@ use Phalanx\Supervisor\InProcessLedger;
 use Phalanx\Supervisor\Supervisor;
 use Phalanx\Task\Task;
 use Phalanx\Trace\Trace;
+use Phalanx\Substrate\Substrate;
+use Phalanx\Substrate\Swoole\SwooleEngine;
+use PHPUnit\Framework\Attributes\After;
+use PHPUnit\Framework\Attributes\Before;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
 final class EnvironmentDoctorTest extends TestCase
 {
+    #[Before]
+    protected function bootSubstrate(): void
+    {
+        if (!Substrate::isBooted()) {
+            Substrate::boot(new SwooleEngine());
+        }
+    }
+
     public function testReportContainsRuntimeAndLedgerChecks(): void
     {
         $policy = RuntimePolicy::phalanxManaged();

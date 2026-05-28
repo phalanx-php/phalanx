@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace Phalanx\Concurrency;
 
 use Closure;
-use Swoole\Coroutine\Channel;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Cancellation\Cancelled;
+use Phalanx\Substrate\ChannelHandle;
+use Phalanx\Substrate\Substrate;
 use Throwable;
 
 /**
@@ -24,12 +25,12 @@ use Throwable;
  *   'in_flight' => bool,
  *   'result'    => mixed,
  *   'error'     => ?Throwable,
- *   'waiters'   => array<int, Channel>,
+ *   'waiters'   => array<int, ChannelHandle>,
  * ]
  */
 class SingleflightGroup
 {
-    /** @var array<string, array{in_flight: bool, result: mixed, error: ?Throwable, waiters: array<int, Channel>}> */
+    /** @var array<string, array{in_flight: bool, result: mixed, error: ?Throwable, waiters: array<int, ChannelHandle>}> */
     private array $state = [];
 
     private int $waiterSeq = 0;
@@ -77,7 +78,7 @@ class SingleflightGroup
         CancellationToken $token,
         ?Closure $onWait,
     ): mixed {
-        $waiter = new Channel(1);
+        $waiter = Substrate::channels()->create(1);
         $waiterId = ++$this->waiterSeq;
         $this->state[$key]['waiters'][$waiterId] = $waiter;
 

@@ -41,7 +41,7 @@ final class SwooleCoroutineDriver implements CoroutineDriver
 
     public function run(\Closure $body): void
     {
-        \Swoole\Coroutine\run($body);
+        Coroutine::run($body);
     }
 
     public function stats(): array
@@ -57,5 +57,15 @@ final class SwooleCoroutineDriver implements CoroutineDriver
     public function setOptions(array $options): void
     {
         Coroutine::set($options);
+    }
+
+    public function list(): iterable
+    {
+        return Coroutine::list();
+    }
+
+    public function getBackTrace(int $cid, int $options = DEBUG_BACKTRACE_PROVIDE_OBJECT, int $limit = 0): array|false
+    {
+        return Coroutine::getBackTrace($cid, $options, $limit);
     }
 }

@@ -17,6 +17,11 @@ use RuntimeException;
 
 final class SubstrateTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        Substrate::reset();
+    }
+
     public function testNotBootedByDefault(): void
     {
         $this->assertFalse(Substrate::isBooted());

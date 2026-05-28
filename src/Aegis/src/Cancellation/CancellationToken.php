@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Cancellation;
 
-use Swoole\Timer;
+use Phalanx\Substrate\Substrate;
 
 /**
  * Cooperative cancellation signal.
@@ -12,7 +12,7 @@ use Swoole\Timer;
  * Factories:
  * - none()       — never cancelled (cancel() is a no-op)
  * - create()     — manually cancellable
- * - timeout(s)   — auto-cancels after s seconds via OpenSwoole\Timer; timer is
+ * - timeout(s)   — auto-cancels after s seconds via substrate timer; timer is
  *                  cleared on early cancel() so a deferred callback never races
  * - composite(...$tokens) — cancels when ANY source cancels; pre-cancels if any
  *                           source is already cancelled at construction
@@ -65,7 +65,7 @@ class CancellationToken
     {
         $token = new self();
         $ms = max(1, (int) round($seconds * 1000));
-        $timerId = Timer::after($ms, static function () use ($token): void {
+        $timerId = Substrate::timers()->after($ms, static function () use ($token): void {
             $token->cancel();
         });
         $token->timerId = is_int($timerId) ? $timerId : null;
@@ -127,7 +127,7 @@ class CancellationToken
         $this->isCancelled = true;
 
         if ($this->timerId !== null) {
-            Timer::clear($this->timerId);
+            Substrate::timers()->clear($this->timerId);
             $this->timerId = null;
         }
 
@@ -149,7 +149,7 @@ class CancellationToken
     public function release(): void
     {
         if ($this->timerId !== null) {
-            Timer::clear($this->timerId);
+            Substrate::timers()->clear($this->timerId);
             $this->timerId = null;
         }
         foreach ($this->unregisters as [$source, $key]) {

@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Diagnostics;
 
-use Swoole\Coroutine;
-use Swoole\Coroutine\PostgreSQL;
-use Swoole\Table;
 use Phalanx\Runtime\Identity\AegisCounterSid;
 use Phalanx\Runtime\Memory\ManagedResource;
 use Phalanx\Runtime\Memory\ManagedResourceState;
@@ -16,6 +13,8 @@ use Phalanx\Runtime\RuntimeHooks;
 use Phalanx\Runtime\RuntimePolicy;
 use Phalanx\Supervisor\LedgerStorage;
 use Phalanx\Supervisor\Supervisor;
+use Swoole\Coroutine\PostgreSQL;
+use Swoole\Table;
 
 final readonly class EnvironmentDoctor
 {
@@ -47,8 +46,8 @@ final readonly class EnvironmentDoctor
             ),
             new DoctorCheck(
                 'swoole.coroutine',
-                class_exists(Coroutine::class),
-                Coroutine::class,
+                extension_loaded('swoole') || extension_loaded('openswoole'),
+                extension_loaded('swoole') ? 'Swoole\Coroutine' : (extension_loaded('openswoole') ? 'OpenSwoole\Coroutine' : 'not loaded'),
             ),
             new DoctorCheck(
                 'swoole.table',

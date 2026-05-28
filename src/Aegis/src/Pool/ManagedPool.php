@@ -5,29 +5,26 @@ declare(strict_types=1);
 namespace Phalanx\Pool;
 
 use Closure;
-use OpenSwoole\Core\Coroutine\Pool\ClientPool;
 use Phalanx\Diagnostics\DiagnosticCode;
 use Phalanx\Runtime\CoroutineRuntime;
 use Phalanx\Runtime\RuntimePolicy;
 use Phalanx\Scope\ExecutionLifecycleScope;
 use Phalanx\Scope\Suspendable;
+use Phalanx\Substrate\ChannelPool;
 use Phalanx\Supervisor\PoolLease;
 use Phalanx\Supervisor\Supervisor;
 use Phalanx\Supervisor\TaskRun;
 use Phalanx\Supervisor\WaitReason;
 use Phalanx\Trace\Trace;
 use Phalanx\Trace\TraceType;
-use ReflectionProperty;
 use RuntimeException;
 use Throwable;
 
 /**
  * Aegis-managed connection pool primitive.
  *
- * Composes `OpenSwoole\Core\Coroutine\Pool\ClientPool` (the OpenSwoole
- * core pool with Channel-backed checkout, optional heartbeats, and
- * reconnection) and adds Phalanx's lease tracking, supervised acquire
- * suspension, and starvation diagnostics.
+ * Composes {@see ChannelPool} (Channel-backed checkout) and adds Phalanx's
+ * lease tracking, supervised acquire suspension, and starvation diagnostics.
  *
  * Construction:
  *
@@ -40,8 +37,7 @@ use Throwable;
  *   );
  *
  * The factory class implements {@see ManagedPoolFactory} (a static
- * `make($config): ManagedPoolClient` contract) and is the same shape OpenSwoole's
- * core ClientPool consumes — no shim or adapter required.
+ * `make($config): ManagedPoolClient` contract).
  *
  * Consumer pattern:
  *
@@ -60,7 +56,8 @@ final class ManagedPool
 {
     private(set) int $size;
 
-    private readonly ClientPool $clientPool;
+    /** @var ChannelPool<ManagedPoolClient> */
+    private readonly ChannelPool $clientPool;
 
     /** @var array<string, array{client: ManagedPoolClient, supervisor: ?Supervisor, run: ?TaskRun}> */
     private array $checkedOut = [];
@@ -75,12 +72,11 @@ final class ManagedPool
         string $factoryClass,
         mixed $config,
         private readonly Trace $trace,
-        int $size = ClientPool::DEFAULT_SIZE,
+        int $size = ChannelPool::DEFAULT_SIZE,
         private readonly float $starvationThresholdMs = 250.0,
-        bool $heartbeat = false,
     ) {
         $this->size = $size;
-        $this->clientPool = new ClientPool($factoryClass, $config, $size, $heartbeat);
+        $this->clientPool = new ChannelPool($factoryClass, $config, $size);
     }
 
     public function acquire(Suspendable $scope, float $timeout = -1.0): PoolLease
@@ -93,18 +89,12 @@ final class ManagedPool
         $domain = $this->domain;
         $pool = $this->clientPool;
 
-        try {
-            $client = $scope->call(
-                static fn(): mixed => $pool->get($timeout),
-                WaitReason::custom("pool.acquire {$domain}"),
-            );
-        } catch (Throwable $e) {
-            $this->compensateFailedCheckout();
-            throw $e;
-        }
+        $client = $scope->call(
+            static fn(): mixed => $pool->get($timeout),
+            WaitReason::custom("pool.acquire {$domain}"),
+        );
 
         if (!$client instanceof ManagedPoolClient) {
-            $this->compensateFailedCheckout();
             throw new RuntimeException(
                 "ManagedPool({$this->domain})::acquire(): pool returned no managed client (timeout or closed)",
             );
@@ -219,15 +209,5 @@ final class ManagedPool
         }
 
         return [$scope->supervisor(), $scope->currentTaskRun()];
-    }
-
-    private function compensateFailedCheckout(): void
-    {
-        $property = new ReflectionProperty(ClientPool::class, 'active');
-        $active = $property->getValue($this->clientPool);
-
-        if (is_int($active) && $active > 0) {
-            $property->setValue($this->clientPool, $active - 1);
-        }
     }
 }

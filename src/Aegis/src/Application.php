@@ -19,6 +19,8 @@ use Phalanx\Scope\Scope;
 use Phalanx\Service\LazySingleton;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\ServiceGraph;
+use Phalanx\Substrate\Substrate;
+use Phalanx\Substrate\Swoole\SwooleEngine;
 use Phalanx\Supervisor\Supervisor;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
@@ -50,6 +52,10 @@ class Application implements AppHost
         private readonly bool $strictRuntimeHooks = true,
     ) {
         $this->runtimePolicy = $runtimePolicy ?? RuntimePolicy::phalanxManaged();
+
+        if (!Substrate::isBooted()) {
+            Substrate::boot(new SwooleEngine());
+        }
     }
 
     /** @param array<string,mixed> $context */

@@ -4,17 +4,13 @@ declare(strict_types=1);
 
 namespace Phalanx\Diagnostics;
 
-use Swoole\Coroutine;
 use Phalanx\Runtime\CoroutineStats;
+use Phalanx\Substrate\Substrate;
 
 /**
- * Typed wrapper around OpenSwoole's coroutine introspection surface.
+ * Structured coroutine introspection report for deadlock diagnostics.
  *
- * `OpenSwoole\Core\Coroutine\deadlock_check()` exists in the OpenSwoole
- * core library but only echoes a textual dump to stdout — fine for crash
- * reporting from a SIGUSR2 trap, useless for programmatic consumers.
- * This wrapper builds a structured report from the same primitives
- * (`Coroutine::list()`, `CoroutineStats::capture()`, `Coroutine::getBackTrace()`)
+ * Builds a programmatic report from coroutine list and backtrace primitives
  * so an Archon `phalanx debug:deadlock` command (or any operator tooling)
  * can format the output however it wants.
  *
@@ -38,10 +34,11 @@ final readonly class DeadlockReport
      * context the report is empty; the wrapper does not throw to keep the
      * Archon `debug:deadlock` command robust against being run pre-server.
      */
+    /** @param int<0, max> $depth */
     public static function collect(int $maxFrames = 32, int $depth = 32): self
     {
         $count = CoroutineStats::capture()->coroutineNum;
-        $cids = Coroutine::list();
+        $cids = Substrate::coroutine()->list();
 
         $frames = [];
         $i = 0;
@@ -50,7 +47,7 @@ final readonly class DeadlockReport
                 break;
             }
             $i++;
-            $trace = Coroutine::getBackTrace((int) $cid, DEBUG_BACKTRACE_IGNORE_ARGS, $depth);
+            $trace = Substrate::coroutine()->getBackTrace((int) $cid, DEBUG_BACKTRACE_IGNORE_ARGS, $depth);
             $frames[] = new DeadlockFrame((int) $cid, self::renderTrace($trace));
         }
 

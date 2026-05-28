@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Runtime;
 
 use Closure;
-use Swoole\Coroutine;
+use Phalanx\Substrate\Substrate;
 use RuntimeException;
 use Throwable;
 
@@ -23,7 +23,7 @@ final class CoroutineRuntime
     ): mixed {
         RuntimeHooks::ensure($policy, $strict);
 
-        if (Coroutine::getCid() >= 0) {
+        if (Substrate::coroutine()->getCid() >= 0) {
             return $body();
         }
 
@@ -31,7 +31,7 @@ final class CoroutineRuntime
         $caught = null;
         $finished = false;
 
-        Coroutine::run(static function () use ($body, &$result, &$caught, &$finished): void {
+        Substrate::coroutine()->run(static function () use ($body, &$result, &$caught, &$finished): void {
             try {
                 $result = $body();
             } catch (Throwable $e) {
@@ -46,7 +46,7 @@ final class CoroutineRuntime
         }
 
         if (!$finished) {
-            throw new RuntimeException('Swoole coroutine runtime did not execute the managed body.');
+            throw new RuntimeException('Coroutine runtime did not execute the managed body.');
         }
 
         return $result;
