@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Substrate\Swoole;
+namespace Phalanx\Engine\Swoole;
 
-use Phalanx\Substrate\ChannelHandle;
+use Phalanx\Engine\ChannelHandle;
 use Swoole\Coroutine\Channel;
 
 final class SwooleChannelHandle implements ChannelHandle

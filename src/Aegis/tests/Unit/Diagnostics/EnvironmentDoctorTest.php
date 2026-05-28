@@ -8,6 +8,8 @@ use Phalanx\Diagnostics\DoctorCheck;
 use Phalanx\Diagnostics\DoctorReport;
 use Phalanx\Diagnostics\EnvironmentDoctor;
 use Phalanx\Diagnostics\Severity;
+use Phalanx\Engine\Engine;
+use Phalanx\Engine\Swoole\SwooleEngine;
 use Phalanx\Runtime\Identity\AegisCounterSid;
 use Phalanx\Runtime\Identity\AegisEventSid;
 use Phalanx\Runtime\Identity\AegisResourceSid;
@@ -22,9 +24,6 @@ use Phalanx\Supervisor\InProcessLedger;
 use Phalanx\Supervisor\Supervisor;
 use Phalanx\Task\Task;
 use Phalanx\Trace\Trace;
-use Phalanx\Substrate\Substrate;
-use Phalanx\Substrate\Swoole\SwooleEngine;
-use PHPUnit\Framework\Attributes\After;
 use PHPUnit\Framework\Attributes\Before;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -32,14 +31,6 @@ use RuntimeException;
 
 final class EnvironmentDoctorTest extends TestCase
 {
-    #[Before]
-    protected function bootSubstrate(): void
-    {
-        if (!Substrate::isBooted()) {
-            Substrate::boot(new SwooleEngine());
-        }
-    }
-
     public function testReportContainsRuntimeAndLedgerChecks(): void
     {
         $policy = RuntimePolicy::phalanxManaged();
@@ -252,6 +243,14 @@ final class EnvironmentDoctorTest extends TestCase
             $requiredProbes,
             'EnvironmentDoctor must emit at least one Required probe; without it, isHealthy() would be vacuously true.',
         );
+    }
+
+    #[Before]
+    protected function bootEngine(): void
+    {
+        if (!Engine::isBooted()) {
+            Engine::boot(new SwooleEngine());
+        }
     }
 
     /**

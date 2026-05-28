@@ -2,21 +2,21 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Substrate;
+namespace Phalanx\Engine;
 
-final class Substrate
+final class Engine
 {
-    private static ?SubstrateEngine $engine = null;
+    private static ?EngineDriver $engine = null;
 
     private function __construct()
     {
     }
 
-    public static function boot(SubstrateEngine $engine): void
+    public static function boot(EngineDriver $engine): void
     {
         if (self::$engine !== null) {
             throw new \RuntimeException(
-                'Substrate already booted. Call Substrate::reset() first in test tearDown if re-booting.',
+                'Engine already booted. Call Engine::reset() first in test tearDown if re-booting.',
             );
         }
 
@@ -69,10 +69,10 @@ final class Substrate
         self::$engine = null;
     }
 
-    private static function engine(): SubstrateEngine
+    private static function engine(): EngineDriver
     {
         return self::$engine ?? throw new \RuntimeException(
-            'Substrate not booted. Call Substrate::boot() before using runtime primitives.',
+            'Engine not booted. Call Engine::boot() before using runtime primitives.',
         );
     }
 }

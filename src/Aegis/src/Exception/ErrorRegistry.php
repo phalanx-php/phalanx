@@ -12,7 +12,7 @@ use Throwable;
 /**
  * A central registry for exception reporters.
  *
- * This service allows Phalanx to unify error reporting across all substrates
+ * This service allows Phalanx to unify error reporting across all runtimes
  * (HTTP, CLI, background tasks) while isolating individual reporter failures.
  */
 final class ErrorRegistry

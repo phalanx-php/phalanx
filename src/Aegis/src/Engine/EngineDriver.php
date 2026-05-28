@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Substrate;
+namespace Phalanx\Engine;
 
-interface SubstrateEngine
+interface EngineDriver
 {
     public function coroutine(): CoroutineDriver;
 

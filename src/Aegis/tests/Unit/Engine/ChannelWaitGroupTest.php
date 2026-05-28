@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Aegis\Tests\Unit\Substrate;
+namespace Phalanx\Aegis\Tests\Unit\Engine;
 
-use Phalanx\Substrate\Swoole\SwooleChannelWaitGroup;
+use Phalanx\Engine\Swoole\SwooleChannelWaitGroup;
 use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\TestCase;
 use Swoole\Coroutine;

@@ -9,7 +9,7 @@ use Throwable;
 /**
  * In-process LedgerStorage backend. PHP array keyed by run id.
  *
- * Coroutine safety: the Swoole 26 substrate is cooperative and
+ * Coroutine safety: the Swoole 26 runtime is cooperative and
  * non-preemptive on a single thread. State mutations between yield
  * points are atomic from any single coroutine's view, so the
  * read-modify-write inside update() needs no locking. This is the same

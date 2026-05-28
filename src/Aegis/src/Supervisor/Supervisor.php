@@ -209,7 +209,7 @@ final class Supervisor
 
     /**
      * Cancel the run. Cancels the run's cancellation token (which
-     * cascades to substrate handles via registered listeners) and marks
+     * cascades to engine handles via registered listeners) and marks
      * the ledger state. Idempotent.
      */
     public function cancel(TaskRun $run): void

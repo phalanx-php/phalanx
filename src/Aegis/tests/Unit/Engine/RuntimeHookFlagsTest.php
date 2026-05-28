@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Aegis\Tests\Unit\Substrate;
+namespace Phalanx\Aegis\Tests\Unit\Engine;
 
-use Phalanx\Substrate\RuntimeHookFlags;
+use Phalanx\Engine\RuntimeHookFlags;
 use PHPUnit\Framework\TestCase;
 
 final class RuntimeHookFlagsTest extends TestCase

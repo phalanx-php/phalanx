@@ -7,8 +7,8 @@ namespace Phalanx\Concurrency;
 use Closure;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Cancellation\Cancelled;
-use Phalanx\Substrate\ChannelHandle;
-use Phalanx\Substrate\Substrate;
+use Phalanx\Engine\ChannelHandle;
+use Phalanx\Engine\Engine;
 use Throwable;
 
 /**
@@ -78,7 +78,7 @@ class SingleflightGroup
         CancellationToken $token,
         ?Closure $onWait,
     ): mixed {
-        $waiter = Substrate::channels()->create(1);
+        $waiter = Engine::channels()->create(1);
         $waiterId = ++$this->waiterSeq;
         $this->state[$key]['waiters'][$waiterId] = $waiter;
 

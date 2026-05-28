@@ -7,8 +7,8 @@ namespace Phalanx\Styx;
 use Closure;
 use Generator;
 use Phalanx\Pool\BorrowedValue;
-use Phalanx\Substrate\ChannelHandle;
-use Phalanx\Substrate\Substrate;
+use Phalanx\Engine\ChannelHandle;
+use Phalanx\Engine\Engine;
 use ReflectionFunction;
 use Throwable;
 
@@ -42,7 +42,7 @@ final class Channel
     public function __construct(
         private readonly int $bufferSize = 32,
     ) {
-        $this->chan = Substrate::channels()->create($bufferSize);
+        $this->chan = Engine::channels()->create($bufferSize);
     }
 
     public function emit(mixed ...$args): void

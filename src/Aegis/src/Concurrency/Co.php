@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Concurrency;
 
 use Phalanx\Cancellation\Cancelled;
-use Phalanx\Substrate\Substrate;
+use Phalanx\Engine\Engine;
 
 /**
  * Coroutine helpers that translate the engine's "cancellation = return-false +
@@ -27,15 +27,15 @@ final class Co
             self::throwIfCancelled();
             return;
         }
-        $ok = Substrate::coroutine()->usleep((int) round($seconds * 1_000_000));
-        if ($ok === false || Substrate::coroutine()->isCanceled()) {
+        $ok = Engine::coroutine()->usleep((int) round($seconds * 1_000_000));
+        if ($ok === false || Engine::coroutine()->isCanceled()) {
             throw new Cancelled('sleep interrupted by cancellation');
         }
     }
 
     public static function throwIfCancelled(): void
     {
-        if (Substrate::coroutine()->isCanceled()) {
+        if (Engine::coroutine()->isCanceled()) {
             throw new Cancelled('coroutine cancelled');
         }
     }

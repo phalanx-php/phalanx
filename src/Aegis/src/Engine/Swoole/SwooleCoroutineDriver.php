@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Substrate\Swoole;
+namespace Phalanx\Engine\Swoole;
 
-use Phalanx\Substrate\CoroutineDriver;
+use Phalanx\Engine\CoroutineDriver;
 use Swoole\Coroutine;
 
 final class SwooleCoroutineDriver implements CoroutineDriver

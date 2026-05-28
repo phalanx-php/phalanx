@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Substrate\Swoole;
+namespace Phalanx\Engine\Swoole;
 
-use Phalanx\Substrate\RuntimeHookDriver;
-use Phalanx\Substrate\RuntimeHookFlags;
+use Phalanx\Engine\RuntimeHookDriver;
+use Phalanx\Engine\RuntimeHookFlags;
 use Swoole\Runtime;
 
 final class SwooleRuntimeHookDriver implements RuntimeHookDriver

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Aegis\Tests\Smoke;
 
-use Phalanx\Boot\AppContext;
 use Phalanx\Application;
+use Phalanx\Boot\AppContext;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Concurrency\RetryPolicy;
 use Phalanx\Middleware\RetryMiddleware;
@@ -24,7 +24,7 @@ use Phalanx\Testing\PhalanxTestCase;
 use RuntimeException;
 
 /**
- * End-to-end smoke proving the 0.2 substrate-switched + supervisor-wired
+ * End-to-end smoke proving the 0.2 engine-switched + supervisor-wired
  * aegis runs realistic workloads:
  *
  *   - Application::starting()->providers(...)->compile() boots

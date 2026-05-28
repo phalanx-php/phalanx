@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Runtime;
 
-use Phalanx\Substrate\Substrate;
+use Phalanx\Engine\Engine;
 
 /**
  * Typed snapshot of coroutine stats.
@@ -25,7 +25,7 @@ final class CoroutineStats
 
     public static function capture(): self
     {
-        return self::fromArray(Substrate::coroutine()->stats());
+        return self::fromArray(Engine::coroutine()->stats());
     }
 
     /**

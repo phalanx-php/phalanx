@@ -8,7 +8,7 @@ use Phalanx\Panoply\Runtime as RuntimeContract;
 use Phalanx\Panoply\Runtime\CancellationException;
 
 /**
- * Synchronous {@see RuntimeContract} for tests and the Fake substrate.
+ * Synchronous {@see RuntimeContract} for tests and the Fake transport.
  * No coroutines, no Aegis dependency. Cancellation is a settable flag;
  * cleanup closures registered via {@see self::onCancel()} run LIFO when
  * {@see self::cancel()} fires.

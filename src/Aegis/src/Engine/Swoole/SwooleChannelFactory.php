@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Substrate\Swoole;
+namespace Phalanx\Engine\Swoole;
 
-use Phalanx\Substrate\ChannelFactory;
-use Phalanx\Substrate\ChannelHandle;
+use Phalanx\Engine\ChannelFactory;
+use Phalanx\Engine\ChannelHandle;
 
 final class SwooleChannelFactory implements ChannelFactory
 {

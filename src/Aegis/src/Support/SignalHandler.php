@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Support;
 
-use Phalanx\Substrate\Substrate;
+use Phalanx\Engine\Engine;
 
 final class SignalHandler
 {
@@ -27,7 +27,7 @@ final class SignalHandler
         set_error_handler(static fn(): bool => true);
 
         try {
-            Substrate::signals()->signal($signal, static function () use ($shutdown): void {
+            Engine::signals()->signal($signal, static function () use ($shutdown): void {
                 $shutdown();
             });
         } finally {

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Substrate\Swoole;
+namespace Phalanx\Engine\Swoole;
 
-use Phalanx\Substrate\SignalDriver;
+use Phalanx\Engine\SignalDriver;
 use Swoole\Process;
 
 final class SwooleSignalDriver implements SignalDriver

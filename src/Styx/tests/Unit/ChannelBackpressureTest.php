@@ -11,7 +11,7 @@ use Phalanx\Testing\PhalanxTestCase;
 /**
  * Mechanism proof for bounded Channel backpressure (research Claim 5).
  * A fast producer should be throttled when a slow consumer is reading from
- * a bounded channel. This is the substrate that lets Styx extend backpressure
+ * a bounded channel. This is the foundation that lets Styx extend backpressure
  * to external sources (including child processes via StreamingProcess).
  */
 final class ChannelBackpressureTest extends PhalanxTestCase

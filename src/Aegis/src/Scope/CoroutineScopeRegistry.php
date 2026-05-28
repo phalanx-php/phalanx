@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Scope;
 
-use Phalanx\Substrate\Substrate;
+use Phalanx\Engine\Engine;
 
 /**
  * Coroutine-local scope storage backed by coroutine context.
@@ -15,7 +15,7 @@ use Phalanx\Substrate\Substrate;
  *
  * Pattern:
  *   $scope = CoroutineScopeRegistry::current();
- *   Substrate::coroutine()->create(static function () use ($scope, $fn): void {
+ *   Engine::coroutine()->create(static function () use ($scope, $fn): void {
  *       CoroutineScopeRegistry::install($scope);
  *       try { $fn(); } finally { CoroutineScopeRegistry::clear(); }
  *   });
@@ -26,7 +26,7 @@ final class CoroutineScopeRegistry
 
     public static function install(Scope $scope): void
     {
-        $context = Substrate::coroutine()->getContext();
+        $context = Engine::coroutine()->getContext();
         if ($context === null) {
             return; // not in a coroutine; nothing to do
         }
@@ -35,7 +35,7 @@ final class CoroutineScopeRegistry
 
     public static function current(): ?Scope
     {
-        $context = Substrate::coroutine()->getContext();
+        $context = Engine::coroutine()->getContext();
         if ($context === null) {
             return null;
         }
@@ -44,7 +44,7 @@ final class CoroutineScopeRegistry
 
     public static function clear(): void
     {
-        $context = Substrate::coroutine()->getContext();
+        $context = Engine::coroutine()->getContext();
         if ($context === null) {
             return;
         }

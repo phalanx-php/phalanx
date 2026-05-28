@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Substrate\Swoole;
+namespace Phalanx\Engine\Swoole;
 
-use Phalanx\Substrate\WaitGroupHandle;
+use Phalanx\Engine\WaitGroupHandle;
 use Swoole\Coroutine\Channel;
 
 final class SwooleChannelWaitGroup implements WaitGroupHandle

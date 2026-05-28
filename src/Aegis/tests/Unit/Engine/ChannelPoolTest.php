@@ -2,25 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Aegis\Tests\Unit\Substrate;
+namespace Phalanx\Aegis\Tests\Unit\Engine;
 
-use Phalanx\Substrate\ChannelHandle;
-use Phalanx\Substrate\ChannelPool;
-use Phalanx\Substrate\Substrate;
+use Phalanx\Engine\ChannelHandle;
+use Phalanx\Engine\ChannelPool;
+use Phalanx\Engine\Engine;
 use PHPUnit\Framework\TestCase;
 
 final class ChannelPoolTest extends TestCase
 {
-    protected function setUp(): void
-    {
-        Substrate::reset();
-    }
-
-    protected function tearDown(): void
-    {
-        Substrate::reset();
-    }
-
     public function testGetReturnsConnectionFromChannel(): void
     {
         $client = new \stdClass();
@@ -174,5 +164,15 @@ final class ChannelPoolTest extends TestCase
         );
 
         $this->assertFalse($pool->get());
+    }
+
+    protected function setUp(): void
+    {
+        Engine::reset();
+    }
+
+    protected function tearDown(): void
+    {
+        Engine::reset();
     }
 }

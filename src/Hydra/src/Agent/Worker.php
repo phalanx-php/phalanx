@@ -15,8 +15,8 @@ use Phalanx\Runtime\CoroutineRuntime;
 use Phalanx\Runtime\RuntimePolicy;
 use Phalanx\Scope\TaskExecutor;
 use Phalanx\Scope\TaskScope;
-use Phalanx\Substrate\ChannelHandle;
-use Phalanx\Substrate\Substrate;
+use Phalanx\Engine\ChannelHandle;
+use Phalanx\Engine\Engine;
 use Phalanx\Supervisor\WaitReason;
 use RuntimeException;
 
@@ -36,7 +36,7 @@ class Worker
     ) {
         $this->id = $id ?? uniqid('agent-', true);
         $this->process = new ProcessHandle($config);
-        $this->lock = Substrate::channels()->create(1);
+        $this->lock = Engine::channels()->create(1);
         $this->lock->push(true);
     }
 
@@ -98,7 +98,7 @@ class Worker
             return;
         }
 
-        if (Substrate::coroutine()->getCid() < 0) {
+        if (Engine::coroutine()->getCid() < 0) {
             $self = $this;
             CoroutineRuntime::run(
                 RuntimePolicy::phalanxManaged(),

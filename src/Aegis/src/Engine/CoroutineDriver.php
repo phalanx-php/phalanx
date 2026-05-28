@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Substrate;
+namespace Phalanx\Engine;
 
 interface CoroutineDriver
 {

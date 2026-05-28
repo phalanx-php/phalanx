@@ -10,7 +10,7 @@ use Phalanx\Runtime\CoroutineRuntime;
 use Phalanx\Runtime\RuntimePolicy;
 use Phalanx\Scope\ExecutionLifecycleScope;
 use Phalanx\Scope\Suspendable;
-use Phalanx\Substrate\ChannelPool;
+use Phalanx\Engine\ChannelPool;
 use Phalanx\Supervisor\PoolLease;
 use Phalanx\Supervisor\Supervisor;
 use Phalanx\Supervisor\TaskRun;

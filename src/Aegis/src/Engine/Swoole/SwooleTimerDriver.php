@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Substrate\Swoole;
+namespace Phalanx\Engine\Swoole;
 
-use Phalanx\Substrate\TimerDriver;
+use Phalanx\Engine\TimerDriver;
 use Swoole\Timer;
 
 final class SwooleTimerDriver implements TimerDriver

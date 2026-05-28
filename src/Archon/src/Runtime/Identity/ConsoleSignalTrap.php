@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace Phalanx\Archon\Runtime\Identity;
 
 use Closure;
-use Phalanx\Substrate\Substrate;
+use Phalanx\Engine\Engine;
 
 /**
  * Installs a policy's signal handlers on the Swoole reactor.
  *
  * Each registered signal forwards to the supplied $onSignal closure with the
  * matching ConsoleSignal value. restore() clears the registrations by passing
- * `null` to Substrate::signals()->signal() — the reactor's documented removal
+ * `null` to Engine::signals()->signal() — the reactor's documented removal
  * contract. We do not snapshot prior handlers because the reactor exposes no
  * read API for them; consumers that need to coexist with foreign handlers
  * must reinstall after restore().
@@ -50,7 +50,7 @@ final class ConsoleSignalTrap
                 continue;
             }
 
-            Substrate::signals()->signal($number, static function () use ($signal, $onSignal): void {
+            Engine::signals()->signal($number, static function () use ($signal, $onSignal): void {
                 $onSignal($signal);
             });
             $trap->registered[] = $number;
@@ -68,7 +68,7 @@ final class ConsoleSignalTrap
         }
 
         foreach ($this->registered as $number) {
-            Substrate::signals()->signal($number, null);
+            Engine::signals()->signal($number, null);
         }
 
         $this->installed = false;

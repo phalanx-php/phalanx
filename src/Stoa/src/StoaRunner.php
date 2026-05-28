@@ -22,7 +22,7 @@ use Phalanx\Stoa\Response\HtmlErrorResponseRenderer;
 use Phalanx\Stoa\Response\IgnitionErrorResponseRenderer;
 use Phalanx\Stoa\Runtime\Identity\StoaEventSid;
 use Phalanx\Stoa\Sse\SseStream;
-use Phalanx\Substrate\Substrate;
+use Phalanx\Engine\Engine;
 use Phalanx\Supervisor\DispatchMode;
 use Phalanx\Support\SignalHandler;
 use Phalanx\Trace\TraceType;
@@ -689,7 +689,7 @@ final class StoaRunner
 
         $this->draining = false;
         if ($this->drainTimer !== null) {
-            Substrate::timers()->clear($this->drainTimer);
+            Engine::timers()->clear($this->drainTimer);
             $this->drainTimer = null;
         }
 
@@ -731,7 +731,7 @@ final class StoaRunner
             return;
         }
 
-        $timerId = Substrate::timers()->after(
+        $timerId = Engine::timers()->after(
             max(1, (int) round($this->config->drainTimeout * 1000)),
             $this->onDrainTimeout(...),
         );

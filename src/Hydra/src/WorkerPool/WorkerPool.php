@@ -108,7 +108,7 @@ final class WorkerPool
             [$func, $enableCoroutine] = $factories[$workerId];
 
             if ($enableCoroutine) {
-                // Direct Coroutine::run — child process has no Substrate boot
+                // Direct Coroutine::run — child process has no Engine boot
                 Coroutine::run(static function () use ($func, $pool, $workerId): void {
                     $func($pool, $workerId);
                 });

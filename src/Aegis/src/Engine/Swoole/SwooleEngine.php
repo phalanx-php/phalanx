@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Substrate\Swoole;
+namespace Phalanx\Engine\Swoole;
 
-use Phalanx\Substrate\ChannelFactory;
-use Phalanx\Substrate\CoroutineDriver;
-use Phalanx\Substrate\RuntimeHookDriver;
-use Phalanx\Substrate\SignalDriver;
-use Phalanx\Substrate\SubstrateEngine;
-use Phalanx\Substrate\TimerDriver;
-use Phalanx\Substrate\WaitGroupHandle;
+use Phalanx\Engine\ChannelFactory;
+use Phalanx\Engine\CoroutineDriver;
+use Phalanx\Engine\EngineDriver;
+use Phalanx\Engine\RuntimeHookDriver;
+use Phalanx\Engine\SignalDriver;
+use Phalanx\Engine\TimerDriver;
+use Phalanx\Engine\WaitGroupHandle;
 
-final class SwooleEngine implements SubstrateEngine
+final class SwooleEngine implements EngineDriver
 {
     private ?SwooleCoroutineDriver $coroutine = null;
     private ?SwooleChannelFactory $channels = null;

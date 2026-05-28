@@ -101,7 +101,7 @@ final readonly class IgnitionErrorResponseRenderer implements ErrorResponseRende
         $favicon = $this->config->faviconPath;
 
         return <<<HTML
-        <!-- Substrate-Native Branding & Favicon -->
+        <!-- Branding & Favicon -->
         <link rel="icon" type="image/x-icon" href="{$favicon}">
         
         <!-- Prism.js for High-Fidelity Syntax Highlighting -->
@@ -235,7 +235,7 @@ HTML;
                                 <div class="phx-footer-wrap">
                                     <div class="phx-footer-logo">{$logo}</div>
                                     <div>
-                                        <p style="font-weight:800; font-size:0.85rem; color:#fafafa; margin:0; letter-spacing:0.05em; text-transform:uppercase">PHALANX SUBSTRATE 0.2</p>
+                                        <p style="font-weight:800; font-size:0.85rem; color:#fafafa; margin:0; letter-spacing:0.05em; text-transform:uppercase">PHALANX ENGINE 0.2</p>
                                         <p style="font-size:0.7rem; color:#71717a; margin:0.25rem 0 0.75rem 0; font-weight:500">{$tagline}</p>
                                         <a href="{$docsUrl}" target="_blank" style="font-size:0.65rem; font-weight:800; color:#ef4444; text-decoration:none; text-transform:uppercase; letter-spacing:0.1em">View Documentation &rarr;</a>
                                     </div>
