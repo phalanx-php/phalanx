@@ -22,6 +22,7 @@ final class ConfigListCommand implements Scopeable, DescribesCommand
             description: 'List all registered config classes and their env keys.',
         );
     }
+
     public function __invoke(CommandContext $ctx): int
     {
         $catalog = $ctx->service(ConfigCatalog::class);

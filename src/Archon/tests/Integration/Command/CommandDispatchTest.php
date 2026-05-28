@@ -26,7 +26,7 @@ final class CommandDispatchTest extends TestCase
 
         $result = $group->dispatch($this->app->createScope(), 'migrate', [], 'archon-command-test');
 
-        $this->assertSame(0, $result);
+        self::assertSame(0, $result);
     }
 
     #[Test]
@@ -55,9 +55,9 @@ final class CommandDispatchTest extends TestCase
 
         $merged = $group1->merge($group2);
 
-        $this->assertCount(2, $merged->keys());
-        $this->assertContains('migrate', $merged->keys());
-        $this->assertContains('seed', $merged->keys());
+        self::assertCount(2, $merged->keys());
+        self::assertContains('migrate', $merged->keys());
+        self::assertContains('seed', $merged->keys());
     }
 
     #[Test]
@@ -69,9 +69,9 @@ final class CommandDispatchTest extends TestCase
 
         $handler = $group->handlers()->get('migrate');
 
-        $this->assertNotNull($handler);
-        $this->assertInstanceOf(CommandConfig::class, $handler->config);
-        $this->assertSame('Run migrations', $handler->config->description);
+        self::assertNotNull($handler);
+        self::assertInstanceOf(CommandConfig::class, $handler->config);
+        self::assertSame('Run migrations', $handler->config->description);
     }
 
     protected function setUp(): void

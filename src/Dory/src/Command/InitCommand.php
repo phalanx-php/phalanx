@@ -13,15 +13,6 @@ use Phalanx\Task\Scopeable;
 
 final class InitCommand implements Scopeable, DescribesCommand
 {
-    public static function commandConfig(): CommandConfig
-    {
-        return new CommandConfig(
-            description: 'Initialize a new Dory project',
-            arguments: [
-                Arg::optional('directory', 'Target directory', '.'),
-            ],
-        );
-    }
     private const string SAMPLE_SCRIPT = <<<'PHP'
         <?php
 
@@ -37,6 +28,16 @@ final class InitCommand implements Scopeable, DescribesCommand
 
         return 0;
         PHP;
+
+    public static function commandConfig(): CommandConfig
+    {
+        return new CommandConfig(
+            description: 'Initialize a new Dory project',
+            arguments: [
+                Arg::optional('directory', 'Target directory', '.'),
+            ],
+        );
+    }
 
     public function __invoke(CommandContext $ctx): int
     {

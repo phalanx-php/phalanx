@@ -10,7 +10,7 @@ PHP has plenty of frameworks. Plenty of async libraries too. Phalanx is for the 
 
 The name is intentional: Phalanx is about disciplined units of work moving in deliberate unison, stronger as one formation than as scattered parts.
 
-Requests. Commands. TUIs. WebSockets. Workers. Networks. Agent turns. One general shape.
+Requests. Commands. TUIs. WebSockets. Workers. Networks. Agent turns. The same general shape threads through them all.
 
 > Look useful? Consider starring the repo
 >
@@ -44,161 +44,92 @@ class CreateProject implements Executable
 }
 ```
 
-The insert, audit write, and cache refresh are separate pieces of work, but they are not scattered side effects. They are named children of the request scope, run in the order the use case requires, with cancellation, timeouts, cleanup, and diagnostics attached to the same parent.
+The insert, audit write, and cache refresh are separate actions, but they are not scattered side effects. They are explicit tasks executed within the scope. This guarantees they share the same timeouts, cancellation signals, and cleanup lifecycle.
 
-That is the phalanx mindset. Individual pieces still matter, but the system gets stronger when participation is explicit: tasks declare what they are, scopes own what they start, and the runtime keeps the formation visible.
+This is the Phalanx mindset: work must be supervised. Scopes own execution. When a scope ends, the runtime knows exactly what to cancel, which resources to dispose, and what services to close. Child (or nested) scopes get cleaned up in first.
 
-That owner is a scope. A scope owns the work it starts. When the scope ends, Phalanx has a place to cancel child work, dispose managed resources, close services, record diagnostics, and show what was waiting on what.
+The public API relies on invokable objects:
+- Constructors capture input arguments.
+- `__invoke(...)` provides the coordination.
+- Interfaces signal runtime behavior (timeouts, retries, cleanup) to the kernel.
+- The scope provides execution boundaries and service resolution.
 
-The public API leans into invokable objects:
+Objects carry intent. Invocations act as explicit computations. The runtime monitors it all. For this reason, you'll find very few _anonymous_ closures. Though, they're still available to use where it makes sense to break convention.
 
-- constructor arguments describe the input to the computation
-- `__invoke(...)` performs the coordination
-- interfaces describe runtime signals like timeouts, tracing, cleanup, or supervision
-- the scope carries the runtime affordances for the thing currently executing
+## Identity Over Anonymity
 
-That gives Phalanx an "OO, but functional enough" shape. Objects carry dependencies and intent. Invocations run like explicit computations. The runtime is intimately aware of each one.
-
-## Args and DI
-
-This will feel a little foreign to most PHP devs.
-Technically, we could've injected the `ImagePipeline` in the constructor but Phalanx emphasizes constructor usage for call site arguments; then the `$scope` being the place for service resolution. In traditional DI, you've likely run into the scenario when you need to pass args, but you also need to resolve dependencies. In Phalanx, there's a clear convention/separation for this.
-
-> [!NOTE]
-> Phalanx's `Theatron` (TUI) library leans into this pattern heavily for the function-based UI syntax it provides.
+Phalanx separates what a computation needs from how it runs. Constructors hold runtime arguments; the scope typically resolves services. DI is available, when it makes sense.
 
 ```php
 <?php
 
-use Phalanx\Scope\ExecutionScope;
-use Phalanx\Task\Executable;
-
-class ResizeAvatar implements Executable
+class ResizeImage implements Executable
 {
     public function __construct(
-        private UserId $userId,
-        private UploadedFile $file,
+        private ImageId $id,
+        private int $width,
     ) {}
 
-    public function __invoke(ExecutionScope $scope): Avatar
+    public function __invoke(ExecutionScope $scope): Image
     {
-        $images = $scope->service(ImagePipeline::class);
+        $pipeline = $scope->service(ImagePipeline::class);
 
-        return $images->resizeAvatar($this->userId, $this->file);
+        return $pipeline->resize($this->id, $this->width);
     }
 }
 ```
 
-The class is still just PHP. The difference is that Phalanx can supervise the work because the work has a visible boundary.
+By using invokable classes instead of anonymous closures, business logic gains identity. It becomes inspectable, serializable, and easy to test in isolation.
 
-## The Footgun It Catches
+## Structured Safety
 
-Async PHP makes some problems look ordinary until they are not. Lock-order inversion is one of those. Each task below is valid code in isolation, but together they can deadlock if a developer misses their circular dependencies:
+Phalanx provides a safety net for relational bugs that often go unnoticed in async development. Take lock-order inversion as an example:
 
 ```php
 <?php
-// Some details omitted for brevity.
 
-class MoveCustomerCredit implements Executable, Retryable, HasTimeout
-{
-    public function __invoke(ExecutionScope $scope): void
-    {
-        $scope->service(BillingLedger::class)->customerThenInvoice($this->customerId, $this->invoiceId);
-    }
-}
-
-class MoveInvoiceCredit implements Executable, Retryable, HasTimeout
-{
-    public function __invoke(ExecutionScope $scope): void
-    {
-        $scope->service(BillingLedger::class)->invoiceThenCustomer($this->invoiceId, $this->customerId);
-    }
-}
-
-class ReconcileBilling implements Executable, Retryable, HasTimeout
+/**
+ * If `ChargeUser` and `LogRefund` attempt to acquire the same resources (e.g., the user account and the transaction log)
+ * but in opposite orders, they can deadlock waiting for each other.
+ */
+class ProcessRefund implements Executable
 {
     public function __invoke(ExecutionScope $scope): void
     {
         $scope->concurrent(
-            new MoveCustomerCredit($this->customerId, $this->invoiceId),
-            new MoveInvoiceCredit($this->invoiceId, $this->customerId),
+            new ChargeUser($this->userId, $this->amount),
+            new LogRefund($this->refundId),
         );
     }
 }
 ```
 
-This is the kind of thing even vigilant async PHP programmers can miss. The code is local. The bug is relational.
+When a concurrency hazard occurs, Phalanx emits structured errors like `[PHX-LOCK-001]`. This is part of a diagnostic system that labels failures with an exact code, making it traceable through logs and TUI devtools.
 
-Phalanx does not pretend PHP can guarantee safety. It gives the runtime enough structure to help. Aegis has supervised leases, wait reasons, and `DiagnosticCode::LockOrderViolation`, so this turns into a runtime-visible `LeaseViolation` with a clear `[PHX-LOCK-001]` out-of-order lock acquire message.
-
-If the business operation is ordered, you can say that with the `series()` method. This keeps the named tasks separate, runs them one at a time, and returns the ordered results.
+If an operation requires strict ordering, use the `series` primitive. It keeps the tasks separate and manageable while ensuring they execute one at a time.
 
 ```php
 <?php
-// ...
 
-class ReconcileBillingInOrder implements Executable, Retryable, HasTimeout
+class ProcessRefundInOrder implements Executable
 {
     public function __invoke(ExecutionScope $scope): void
     {
         $scope->series(
-            move: new MoveCustomerCredit($this->customerId, $this->invoiceId),
-            refund: new MoveInvoiceCredit($this->invoiceId, $this->customerId),
+            charge: new ChargeUser($this->userId, $this->amount),
+            log: new LogRefund($this->refundId),
         );
     }
 }
 ```
 
-If the operations really are concurrent, keep them concurrent, but a little refactoring would be needed:
-
-```php
-<?php
-
-// again, some details removed for brevity
-
-class MoveCustomerCredit implements Executable, Retryable, HasTimeout
-{
-    public function __invoke(ExecutionScope $scope): void
-    {
-        $scope
-            ->service(BillingLedger::class)
-            ->withCreditPair($this->customerId, $this->invoiceId, static function (BillingLedger $ledger): void {
-                $ledger->moveCustomerCredit();
-            });
-    }
-}
-
-class MoveInvoiceCredit implements Executable, Retryable, HasTimeout
-{
-    public function __invoke(ExecutionScope $scope): void
-    {
-        $scope
-            ->service(BillingLedger::class)
-            ->withCreditPair($this->customerId, $this->invoiceId, static function (BillingLedger $ledger): void {
-                $ledger->moveInvoiceCredit();
-            });
-    }
-}
-```
-
-Same work. One resource order. Something the runtime, and the person reading the code, can reason about.
-
-
 ## Scope And Context
 
-Phalanx uses both:
+A **Context** holds data for a specific execution (an HTTP request, CLI arguments, or WebSocket payload). A **Scope** owns the execution machinery (cancellation, services, cleanup, and diagnostics). In Phalanx handlers, you receive a Context and access the runtime via `$ctx->scope`.
 
-A **scope** owns lifetime: services, child work, cancellation, cleanup, runtime memory, diagnostics.
+## Use Cases
 
-A **context** has data attributes which live for the lifetime of a specific scope's execution: an HTTP request, a CLI command, a TUI render pass, Websocket session, etc.
-
-The context's lifetime lives inside the scope and accesses it using `$ctx->scope`.
-
-## Potential Use Cases
-
-The Phalanx objective is to give PHP dev teams superpowers without having to leave the ecosystem. Personally, I've experienced the types of knowledge silos and overly-complicated red tape from using too many languages.
-
-Productivity is what PHP is good at, and Phalanx is laser-focused on exactly that:
+Phalanx is built for long-running PHP. The managed execution model applies the same structural safety to:
 
 - HTTP APIs, SSE streams, request diagnostics, middleware, and route dispatch
 - CLI tools, interactive commands, supervised console flows, and process lifecycles
@@ -210,45 +141,9 @@ Productivity is what PHP is good at, and Phalanx is laser-focused on exactly tha
 - devops scripts that need cancellation, supervision, retries, and runtime visibility
 - AI harnesses that need provider adapters, tool calls, grants, effects, and MCP
 
-## Framework Modules
-
-The base framework is one cohesive runtime surface:
-
-| Module | Runtime surface |
-| --- | --- |
-| Aegis | managed execution, scopes, supervision, leases, runtime memory |
-| Themis | typed config hydration, env validation, secrets |
-| Stoa | HTTP server, routing, middleware, SSE, request lifecycle |
-| Iris | outbound HTTP client |
-| Archon | CLI applications, commands, arguments, interactive input |
-| Hydra | worker processes and structured parallelism |
-| Styx | reactive stream primitives (Emitter, ScopedStream, Channel) |
-| Hermes | WebSocket server and client |
-| Theatron | terminal UI screens, stores, bindings, devtools, request inspection |
-| Panoply | provider-neutral AI surface and adapters |
-| Athena | supervised AI turns, provider-neutral runs, tool approvals |
-| Cli | doctor, Swoole installer (PIE), project scaffolding |
-| PHPStan | static safety checks for runtime-sensitive patterns |
-
-These optional first-party modules are useful with Phalanx, but they are not part of the alpha base surface:
-
-| Module | Surface |
-| --- | --- |
-| Grammata | filesystem work |
-| Enigma | SSH and tunnels |
-| Argos | network discovery, probing, device management |
-| Surreal | SurrealDB RPC and live queries |
-| Agora | durable agent state, event log, replay, session resume |
-| Harness | composable starter agent app (Theatron + Athena + Agora + Surreal) |
-| Skopos | dev server orchestration |
-
-Future modules, tools, and product experiments live under [`roadmap/`](roadmap/). That includes PLX/static runtime snapshots, CDP, Postgres, Twilio, RST, Agent Bridge, Sentinel, bg-agents, ThreePath, and old evidence POCs.
-
-Dory, DoryBin, and Eidolon are still present as in-tree incubation modules for framework development. They are intentionally not split-published or advertised as alpha base packages yet.
-
 ## Demos
 
-The repo includes runnable demos for the base framework and a few optional modules. Development is moving quickly, so keep checking in.
+The repository includes runnable demos for all major framework surfaces.
 
 | Demo | Covers | Command |
 | --- | --- | --- |

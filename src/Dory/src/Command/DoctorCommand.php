@@ -14,16 +14,17 @@ use Phalanx\Themis\ValidationContext;
 
 final class DoctorCommand implements Scopeable, DescribesCommand
 {
+    private const string PASS = '[pass]';
+    private const string FAIL = '[fail]';
+
+    private const array OPTIONAL_EXTENSIONS = ['curl', 'mbstring', 'openssl', 'pcntl', 'posix', 'sockets'];
+
     public static function commandConfig(): CommandConfig
     {
         return new CommandConfig(
             description: 'Check environment readiness',
         );
     }
-    private const string PASS = '[pass]';
-    private const string FAIL = '[fail]';
-
-    private const array OPTIONAL_EXTENSIONS = ['curl', 'mbstring', 'openssl', 'pcntl', 'posix', 'sockets'];
 
     public function __invoke(CommandContext $ctx): int
     {

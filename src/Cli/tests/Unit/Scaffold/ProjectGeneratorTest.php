@@ -202,8 +202,10 @@ final class ProjectGeneratorTest extends TestCase
         $hello = file_get_contents($this->tempDir . '/src/Commands/Hello.php');
         self::assertIsString($hello);
         self::assertStringContainsString('implements Scopeable, DescribesCommand', $hello);
+        self::assertStringContainsString('use Phalanx\Archon\Command\Arg;', $hello);
         self::assertStringContainsString('use Phalanx\Archon\Command\DescribesCommand;', $hello);
         self::assertStringContainsString('public static function commandConfig(): CommandConfig', $hello);
+        self::assertStringContainsString('Arg::required(', $hello);
         self::assertStringContainsString('use Phalanx\Archon\Command\CommandContext;', $hello);
         self::assertStringContainsString('$ctx->args->required(', $hello);
         self::assertStringContainsString('$ctx->service(StreamOutput::class)', $hello);

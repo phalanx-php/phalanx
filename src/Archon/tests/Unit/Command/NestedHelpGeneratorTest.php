@@ -8,11 +8,13 @@ use Phalanx\Archon\Command\CommandConfig;
 use Phalanx\Archon\Command\CommandGroup;
 use Phalanx\Archon\Command\HelpGenerator;
 use Phalanx\Archon\Tests\Fixtures\Commands\NoopCommand;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class NestedHelpGeneratorTest extends TestCase
 {
-    public function test_group_help_lists_commands(): void
+    #[Test]
+    public function group_help_lists_commands(): void
     {
         $group = CommandGroup::of([
             'scan' => [NoopCommand::class, new CommandConfig(description: 'Scan a subnet')],
@@ -21,15 +23,16 @@ final class NestedHelpGeneratorTest extends TestCase
 
         $help = HelpGenerator::forGroup('net', $group);
 
-        $this->assertStringContainsString('Network operations', $help);
-        $this->assertStringContainsString('net <command>', $help);
-        $this->assertStringContainsString('scan', $help);
-        $this->assertStringContainsString('Scan a subnet', $help);
-        $this->assertStringContainsString('probe', $help);
-        $this->assertStringContainsString('Probe a host', $help);
+        self::assertStringContainsString('Network operations', $help);
+        self::assertStringContainsString('net <command>', $help);
+        self::assertStringContainsString('scan', $help);
+        self::assertStringContainsString('Scan a subnet', $help);
+        self::assertStringContainsString('probe', $help);
+        self::assertStringContainsString('Probe a host', $help);
     }
 
-    public function test_top_level_help_separates_groups_and_commands(): void
+    #[Test]
+    public function top_level_help_separates_groups_and_commands(): void
     {
         $root = CommandGroup::of([
             'serve' => [NoopCommand::class, new CommandConfig(description: 'Start server')],
@@ -40,14 +43,15 @@ final class NestedHelpGeneratorTest extends TestCase
 
         $help = HelpGenerator::forTopLevel($root);
 
-        $this->assertStringContainsString('Commands:', $help);
-        $this->assertStringContainsString('serve', $help);
-        $this->assertStringContainsString('Groups:', $help);
-        $this->assertStringContainsString('net', $help);
-        $this->assertStringContainsString('Network operations', $help);
+        self::assertStringContainsString('Commands:', $help);
+        self::assertStringContainsString('serve', $help);
+        self::assertStringContainsString('Groups:', $help);
+        self::assertStringContainsString('net', $help);
+        self::assertStringContainsString('Network operations', $help);
     }
 
-    public function test_group_help_with_nested_subgroups(): void
+    #[Test]
+    public function group_help_with_nested_subgroups(): void
     {
         $group = CommandGroup::of([
             'scan' => [NoopCommand::class, new CommandConfig(description: 'Scan')],
@@ -58,9 +62,9 @@ final class NestedHelpGeneratorTest extends TestCase
 
         $help = HelpGenerator::forGroup('test', $group);
 
-        $this->assertStringContainsString('Commands:', $help);
-        $this->assertStringContainsString('Groups:', $help);
-        $this->assertStringContainsString('deep', $help);
-        $this->assertStringContainsString('Deeper group', $help);
+        self::assertStringContainsString('Commands:', $help);
+        self::assertStringContainsString('Groups:', $help);
+        self::assertStringContainsString('deep', $help);
+        self::assertStringContainsString('Deeper group', $help);
     }
 }

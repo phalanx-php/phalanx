@@ -16,7 +16,7 @@ final class InvalidInputException extends RuntimeException
 {
     public function __construct(
         string $message,
-        public readonly ?CommandConfig $config = null,
+        private(set) ?CommandConfig $config = null,
     ) {
         parent::__construct($message);
     }

@@ -25,6 +25,7 @@ final class EnvExampleCommand implements Scopeable, DescribesCommand
             ],
         );
     }
+
     public function __invoke(CommandContext $ctx): int
     {
         $catalog = $ctx->service(ConfigCatalog::class);

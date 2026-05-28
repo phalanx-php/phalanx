@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace Phalanx\Archon\Tests\Unit\Command;
 
+use Phalanx\Archon\Command\Arg;
 use Phalanx\Archon\Command\CommandConfig;
 use Phalanx\Archon\Command\CommandGroup;
 use Phalanx\Archon\Command\DescribesCommand;
+use Phalanx\Archon\Command\Opt;
 use Phalanx\Archon\Tests\Fixtures\Commands\NoopCommand;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\Scope;
+use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -55,6 +59,40 @@ final class DescribesCommandTest extends TestCase
         self::assertArrayHasKey('march', $commands);
         self::assertSame('Override from Olympus', $commands['march']->config->description);
     }
+
+    #[Test]
+    public function self_described_config_preserves_arguments_and_options(): void
+    {
+        $group = CommandGroup::of([
+            'deploy' => SpartanDeployCommand::class,
+        ]);
+
+        $commands = $group->commands();
+
+        self::assertArrayHasKey('deploy', $commands);
+
+        $config = $commands['deploy']->config;
+        assert($config instanceof CommandConfig);
+
+        self::assertSame('Deploy forces to the front line', $config->description);
+        self::assertCount(1, $config->arguments);
+        self::assertSame('target', $config->arguments[0]->name);
+        self::assertCount(1, $config->options);
+        self::assertSame('force', $config->options[0]->name);
+    }
+
+    #[Test]
+    public function executable_with_describes_command_detected(): void
+    {
+        $group = CommandGroup::of([
+            'siege' => SiegeCommand::class,
+        ]);
+
+        $commands = $group->commands();
+
+        self::assertArrayHasKey('siege', $commands);
+        self::assertSame('Lay siege to enemy fortifications', $commands['siege']->config->description);
+    }
 }
 
 final class HopliteCommand implements Scopeable, DescribesCommand
@@ -65,6 +103,36 @@ final class HopliteCommand implements Scopeable, DescribesCommand
     }
 
     public function __invoke(Scope $scope): int
+    {
+        return 0;
+    }
+}
+
+final class SpartanDeployCommand implements Scopeable, DescribesCommand
+{
+    public static function commandConfig(): CommandConfig
+    {
+        return new CommandConfig(
+            description: 'Deploy forces to the front line',
+            arguments: [Arg::required('target', 'Target location')],
+            options: [Opt::flag('force', 'f', 'Skip confirmation')],
+        );
+    }
+
+    public function __invoke(Scope $scope): int
+    {
+        return 0;
+    }
+}
+
+final class SiegeCommand implements Executable, DescribesCommand
+{
+    public static function commandConfig(): CommandConfig
+    {
+        return new CommandConfig(description: 'Lay siege to enemy fortifications');
+    }
+
+    public function __invoke(ExecutionScope $scope): mixed
     {
         return 0;
     }

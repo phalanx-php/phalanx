@@ -25,6 +25,7 @@ final class BuildDoctorCommand implements Scopeable, DescribesCommand
             ],
         );
     }
+
     public function __invoke(CommandContext $ctx): int
     {
         $output = $ctx->service(StreamOutput::class);

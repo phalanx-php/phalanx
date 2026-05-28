@@ -22,6 +22,7 @@ final class RunCommand implements Scopeable, DescribesCommand
             ],
         );
     }
+
     public function __invoke(CommandContext $ctx): int
     {
         $scriptPath = (string) $ctx->args->required('script');

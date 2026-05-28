@@ -15,9 +15,9 @@ use RuntimeException;
  * Typed collection of CLI commands.
  *
  * Each command entry is either:
- *  - a class-string of a Scopeable/Executable command class
- *  - a tuple [class-string, CommandConfig] when the command needs description,
- *    arguments, options, or validators
+ *  - a class-string of a Scopeable/Executable command class (if the class
+ *    implements DescribesCommand, its static commandConfig() provides metadata)
+ *  - a tuple [class-string, CommandConfig] to override or supply config externally
  *  - another CommandGroup, for nested subcommand groups
  *
  * Command instances are constructed at dispatch time via HandlerResolver,

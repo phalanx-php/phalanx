@@ -10,13 +10,15 @@ use Phalanx\Archon\Testing\ArchonTestableBundle;
 use Phalanx\Archon\Tests\Fixtures\Commands\EchoArgvCommand;
 use Phalanx\Archon\Tests\Fixtures\Commands\FailingExitCommand;
 use Phalanx\Archon\Tests\Fixtures\Commands\NoopCommand;
+use PHPUnit\Framework\Attributes\Test;
 use Phalanx\Testing\PhalanxTestCase;
 use Phalanx\Testing\TestApp;
 use RuntimeException;
 
 final class ConsoleLensTest extends PhalanxTestCase
 {
-    public function testRunDispatchesCommandAndCapturesStdout(): void
+    #[Test]
+    public function runDispatchesCommandAndCapturesStdout(): void
     {
         $app = $this->bootArchonTestApp();
 
@@ -29,7 +31,8 @@ final class ConsoleLensTest extends PhalanxTestCase
             ->assertOutputContains('echoed: hello-from-command');
     }
 
-    public function testRunReportsNonZeroExitCode(): void
+    #[Test]
+    public function runReportsNonZeroExitCode(): void
     {
         $app = $this->bootArchonTestApp();
 
@@ -41,7 +44,8 @@ final class ConsoleLensTest extends PhalanxTestCase
             ->assertExitCode(7);
     }
 
-    public function testRunWithoutCommandsThrows(): void
+    #[Test]
+    public function runWithoutCommandsThrows(): void
     {
         $app = $this->bootArchonTestApp();
 
@@ -55,7 +59,8 @@ final class ConsoleLensTest extends PhalanxTestCase
         }
     }
 
-    public function testResetClearsCommandsBetweenRuns(): void
+    #[Test]
+    public function resetClearsCommandsBetweenRuns(): void
     {
         $app = $this->bootArchonTestApp();
 
@@ -75,7 +80,8 @@ final class ConsoleLensTest extends PhalanxTestCase
         }
     }
 
-    public function testEachRunIsIsolated(): void
+    #[Test]
+    public function eachRunIsIsolated(): void
     {
         $app = $this->bootArchonTestApp();
 
@@ -95,7 +101,8 @@ final class ConsoleLensTest extends PhalanxTestCase
         $second->assertSuccessful()->assertOutputContains('echoed:');
     }
 
-    public function testAssertOutputMatchesAcceptsRegex(): void
+    #[Test]
+    public function assertOutputMatchesAcceptsRegex(): void
     {
         $app = $this->bootArchonTestApp();
 
