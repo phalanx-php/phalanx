@@ -6,7 +6,6 @@
     <file>src/Argos/src</file>
     <file>src/Athena/src</file>
     <file>src/Cli/src</file>
-    <file>src/Dory/src</file>
     <file>src/Eidolon/src</file>
     <file>src/Enigma/src</file>
     <file>src/Grammata/src</file>
@@ -53,7 +52,6 @@
 
     <!-- PHP 8.4 property hooks: spacing rules misfire on hook syntax -->
     <rule ref="PSR2.Classes.PropertyDeclaration.SpacingAfterType">
-        <exclude-pattern>*/DoryExecutionContext.php</exclude-pattern>
         <exclude-pattern>*/SettlementBag.php</exclude-pattern>
         <exclude-pattern>*/ExecutionContext.php</exclude-pattern>
         <exclude-pattern>*/CommandResult.php</exclude-pattern>
@@ -67,7 +65,6 @@
     <!-- Phalanx style: config object constructor parameters are visually grouped by env attribute. -->
     <rule ref="Squiz.Functions.MultiLineFunctionDeclaration.EmptyLine">
         <exclude-pattern>*/NetworkConfig.php</exclude-pattern>
-        <exclude-pattern>*/DoryConfig.php</exclude-pattern>
         <exclude-pattern>*/SshConfig.php</exclude-pattern>
         <exclude-pattern>*/HttpClientConfig.php</exclude-pattern>
         <exclude-pattern>*/SurrealConfig.php</exclude-pattern>

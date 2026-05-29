@@ -1,9 +1,0 @@
-[package]
-name = "dory"
-version = "0.1.0"
-edition = "2021"
-description = "Phalanx Scripting Environment (PLX-SE)"
-
-[dependencies]
-ripht-php-sapi = "0.1.0-rc.7"
-tempfile = "3.27.0"

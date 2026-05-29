@@ -36,8 +36,7 @@
     },
     "autoload": {
         "files": [
-            "src/Theatron/src/Ui/functions.php",
-            "src/Dory/src/functions.php"
+            "src/Theatron/src/Ui/functions.php"
         ],
         "psr-4": {
             "Phalanx\\": "src/Aegis/src/",
@@ -46,8 +45,6 @@
             "Phalanx\\Argos\\": "src/Argos/src/",
             "Phalanx\\Athena\\": "src/Athena/src/",
             "Phalanx\\Cli\\": "src/Cli/src/",
-            "Phalanx\\Dory\\": "src/Dory/src/",
-            "Phalanx\\DoryBin\\": "src/DoryBin/src/",
             "Phalanx\\Eidolon\\": "src/Eidolon/src/",
             "Phalanx\\Enigma\\": "src/Enigma/src/",
             "Phalanx\\Grammata\\": "src/Grammata/src/",
@@ -80,8 +77,6 @@
             "Phalanx\\Argos\\Tests\\": "src/Argos/tests/",
             "Phalanx\\Athena\\Tests\\": "src/Athena/tests/",
             "Phalanx\\Cli\\Tests\\": "src/Cli/tests/",
-            "Phalanx\\Dory\\Tests\\": "src/Dory/tests/",
-            "Phalanx\\DoryBin\\Tests\\": "src/DoryBin/tests/",
             "Phalanx\\Eidolon\\Tests\\": "src/Eidolon/tests/",
             "Phalanx\\Enigma\\Tests\\": "src/Enigma/tests/",
             "Phalanx\\Grammata\\Tests\\": "src/Grammata/tests/",
@@ -268,8 +263,6 @@
         "test:argos": "php -d memory_limit=512M vendor/bin/phpunit -c src/Argos/phpunit.xml",
         "test:athena": "php -d memory_limit=512M vendor/bin/phpunit -c src/Athena/phpunit.xml.dist",
         "test:cli": "php -d memory_limit=512M vendor/bin/phpunit -c src/Cli/phpunit.xml.dist",
-        "test:dory": "php -d memory_limit=512M vendor/bin/phpunit -c src/Dory/phpunit.xml",
-        "test:dorybin": "php -d memory_limit=512M vendor/bin/phpunit -c src/DoryBin/phpunit.xml",
         "test:eidolon": "php -d memory_limit=512M vendor/bin/phpunit -c src/Eidolon/phpunit.xml.dist",
         "test:enigma": "php -d memory_limit=512M vendor/bin/phpunit -c src/Enigma/phpunit.xml.dist",
         "test:grammata": "php -d memory_limit=512M vendor/bin/phpunit -c src/Grammata/phpunit.xml",
