@@ -138,6 +138,11 @@ class Application implements AppHost
         );
     }
 
+    public function runManaged(Closure $body): mixed
+    {
+        return CoroutineRuntime::run($this->runtimePolicy, $body, $this->strictRuntimeHooks);
+    }
+
     public function startup(): static
     {
         if ($this->started) {

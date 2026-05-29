@@ -179,7 +179,7 @@ final class StoaRunner
 
     public function dispatch(ServerRequestInterface $request): ResponseInterface
     {
-        $response = $this->handleRequest($request);
+        $response = $this->app->runManaged(fn (): ?ResponseInterface => $this->handleRequest($request));
 
         if (!$response instanceof ResponseInterface) {
             throw new RuntimeException('Stoa dispatch did not produce a response.');

@@ -31,6 +31,14 @@ interface AppHost
 
     public function scoped(Scopeable|Executable|Closure $task, ?CancellationToken $token = null): mixed;
 
+    /**
+     * Run a closure inside the managed coroutine scheduler without opening a new
+     * scope or touching startup/shutdown. The host must already be started.
+     *
+     * @param Closure(): mixed $body
+     */
+    public function runManaged(Closure $body): mixed;
+
     public function startup(): static;
 
     public function shutdown(): void;
