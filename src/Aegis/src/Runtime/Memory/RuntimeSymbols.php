@@ -36,7 +36,16 @@ final class RuntimeSymbols
         $id = (int) $this->ids->add();
         $stored = self::fit($value, 512);
         try {
-            $ok = $this->tables->symbols->set($key, [
+            /**
+             * The `@` is a deliberate, documented exception to the no-error-suppression rule.
+             * On a full fixed-capacity Swoole\Table, Swoole 6 emits a C-level "unable to allocate
+             * memory" PHP warning before set() returns false. That capacity failure is the
+             * expected, handled outcome here: the catch / `!$ok` branches below convert it to an
+             * explicit RuntimeMemoryCapacityExceeded. Suppressing only the redundant native warning
+             * keeps the handled-failure path quiet; the failure itself is never swallowed. This is
+             * not a memory_limit issue — the table is fixed-row.
+             */
+            $ok = @$this->tables->symbols->set($key, [
                 'id' => $id,
                 'kind' => self::fit($kind, 32),
                 'value' => $stored,

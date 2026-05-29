@@ -36,7 +36,16 @@ final readonly class ManagedResourceTransitionGate
             $now = microtime(true);
             $typeSymbol = $this->symbols->idFor('resource.type', $type);
             try {
-                $ok = $this->tables->resources->set($id, [
+                /**
+                 * The `@` is a deliberate, documented exception to the no-error-suppression rule.
+                 * On a full fixed-capacity Swoole\Table, Swoole 6 emits a C-level "unable to
+                 * allocate memory" PHP warning before set() returns false. That capacity failure
+                 * is the expected, handled outcome here: the `!$ok` / SwooleException branches below
+                 * convert it to an explicit RuntimeMemoryCapacityExceeded. Suppressing only the
+                 * redundant native warning keeps the handled-failure path quiet; the failure itself
+                 * is never swallowed. This is not a memory_limit issue — the table is fixed-row.
+                 */
+                $ok = @$this->tables->resources->set($id, [
                     'type_symbol' => $typeSymbol,
                     'parent_resource_id' => $parentResourceId ?? '',
                     'owner_scope_id' => $ownerScopeId ?? '',
