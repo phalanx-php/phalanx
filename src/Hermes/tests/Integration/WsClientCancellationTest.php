@@ -4,10 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Hermes\Tests\Integration;
 
-use Swoole\Coroutine\Channel;
-use Swoole\Coroutine\Socket;
-use Swoole\WebSocket\Frame;
-use Swoole\WebSocket\Server as WebSocketServer;
 use Phalanx\Application;
 use Phalanx\Hermes\Client\WsClient;
 use Phalanx\Hermes\Hermes;
@@ -17,6 +13,9 @@ use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Task;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Swoole\Coroutine\Channel;
+use Swoole\Coroutine\Socket;
+use Swoole\WebSocket\Frame;
 
 /**
  * Mechanism proofs for the WsClient cancellation surface.
@@ -225,8 +224,8 @@ final class WsClientCancellationTest extends TestCase
 
                 $conn->sendAll(Frame::pack(
                     'hold-open',
-                    WebSocketServer::WEBSOCKET_OPCODE_TEXT,
-                    WebSocketServer::WEBSOCKET_FLAG_FIN,
+                    SWOOLE_WEBSOCKET_OPCODE_TEXT,
+                    SWOOLE_WEBSOCKET_FLAG_FIN,
                 ));
 
                 if ($holdSeconds > 0.0) {

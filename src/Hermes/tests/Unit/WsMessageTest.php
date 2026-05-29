@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace Phalanx\Hermes\Tests\Unit;
 
-use Swoole\WebSocket\Frame;
-use Swoole\WebSocket\Server as WebSocketServer;
 use Phalanx\Hermes\WsCloseCode;
 use Phalanx\Hermes\WsMessage;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Swoole\WebSocket\Frame;
 
 final class WsMessageTest extends TestCase
 {
@@ -19,7 +18,7 @@ final class WsMessageTest extends TestCase
         $msg = WsMessage::text('hello');
 
         $this->assertSame('hello', $msg->payload);
-        $this->assertSame(WebSocketServer::WEBSOCKET_OPCODE_TEXT, $msg->opcode);
+        $this->assertSame(SWOOLE_WEBSOCKET_OPCODE_TEXT, $msg->opcode);
         $this->assertTrue($msg->isText);
         $this->assertFalse($msg->isBinary);
         $this->assertFalse($msg->isClose);
@@ -105,7 +104,7 @@ final class WsMessageTest extends TestCase
         $frame = $msg->toFrame();
 
         $this->assertInstanceOf(Frame::class, $frame);
-        $this->assertSame(WebSocketServer::WEBSOCKET_OPCODE_TEXT, $frame->opcode);
+        $this->assertSame(SWOOLE_WEBSOCKET_OPCODE_TEXT, $frame->opcode);
         $this->assertSame('test', $frame->data);
         $this->assertTrue($frame->finish);
     }
@@ -138,8 +137,8 @@ final class WsMessageTest extends TestCase
     {
         $closeFrame = new Frame();
         $closeFrame->data = pack('n', 1001) . 'going away';
-        $closeFrame->opcode = WebSocketServer::WEBSOCKET_OPCODE_CLOSE;
-        $closeFrame->flags = WebSocketServer::WEBSOCKET_FLAG_FIN;
+        $closeFrame->opcode = SWOOLE_WEBSOCKET_OPCODE_CLOSE;
+        $closeFrame->flags = SWOOLE_WEBSOCKET_FLAG_FIN;
         $closeFrame->finish = true;
 
         $msg = WsMessage::fromFrame($closeFrame);
@@ -154,8 +153,8 @@ final class WsMessageTest extends TestCase
     {
         $closeFrame = new Frame();
         $closeFrame->data = '';
-        $closeFrame->opcode = WebSocketServer::WEBSOCKET_OPCODE_CLOSE;
-        $closeFrame->flags = WebSocketServer::WEBSOCKET_FLAG_FIN;
+        $closeFrame->opcode = SWOOLE_WEBSOCKET_OPCODE_CLOSE;
+        $closeFrame->flags = SWOOLE_WEBSOCKET_FLAG_FIN;
         $closeFrame->finish = true;
 
         $msg = WsMessage::fromFrame($closeFrame);
@@ -170,8 +169,8 @@ final class WsMessageTest extends TestCase
     {
         $closeFrame = new Frame();
         $closeFrame->data = "\x03";
-        $closeFrame->opcode = WebSocketServer::WEBSOCKET_OPCODE_CLOSE;
-        $closeFrame->flags = WebSocketServer::WEBSOCKET_FLAG_FIN;
+        $closeFrame->opcode = SWOOLE_WEBSOCKET_OPCODE_CLOSE;
+        $closeFrame->flags = SWOOLE_WEBSOCKET_FLAG_FIN;
         $closeFrame->finish = true;
 
         $msg = WsMessage::fromFrame($closeFrame);
@@ -186,8 +185,8 @@ final class WsMessageTest extends TestCase
     {
         $closeFrame = new Frame();
         $closeFrame->data = pack('n', 9999) . 'olympus';
-        $closeFrame->opcode = WebSocketServer::WEBSOCKET_OPCODE_CLOSE;
-        $closeFrame->flags = WebSocketServer::WEBSOCKET_FLAG_FIN;
+        $closeFrame->opcode = SWOOLE_WEBSOCKET_OPCODE_CLOSE;
+        $closeFrame->flags = SWOOLE_WEBSOCKET_FLAG_FIN;
         $closeFrame->finish = true;
 
         $msg = WsMessage::fromFrame($closeFrame);

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Hermes\Tests\Unit;
 
-use Swoole\WebSocket\Server as WebSocketServer;
 use Phalanx\Hermes\WsMessage;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -17,7 +16,7 @@ final class WsMessageJsonTest extends TestCase
         $msg = WsMessage::json(['type' => 'chat', 'body' => 'hi']);
 
         $this->assertTrue($msg->isText);
-        $this->assertSame(WebSocketServer::WEBSOCKET_OPCODE_TEXT, $msg->opcode);
+        $this->assertSame(SWOOLE_WEBSOCKET_OPCODE_TEXT, $msg->opcode);
         $this->assertSame('{"type":"chat","body":"hi"}', $msg->payload);
     }
 

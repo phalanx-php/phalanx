@@ -74,7 +74,7 @@ final class WsClientConnectionHandle
                     while (true) {
                         $rs->throwIfCancelled();
                         $frame = $rs->call(
-                            static fn(): Frame|bool => $client->recv($config->recvTimeout),
+                            static fn() => $client->recv($config->recvTimeout),
                             WaitReason::wsFrameRead($host),
                         );
 

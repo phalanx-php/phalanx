@@ -4,10 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Hermes\Tests\Integration;
 
-use Swoole\Coroutine\Channel;
-use Swoole\Coroutine\Socket;
-use Swoole\WebSocket\Frame;
-use Swoole\WebSocket\Server as WebSocketServer;
 use Phalanx\Application;
 use Phalanx\Hermes\Client\WsClient;
 use Phalanx\Hermes\Hermes;
@@ -16,6 +12,9 @@ use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Task;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Swoole\Coroutine\Channel;
+use Swoole\Coroutine\Socket;
+use Swoole\WebSocket\Frame;
 
 /**
  * End-to-end proof for the Swoole-native WebSocket client handshake.
@@ -80,8 +79,8 @@ final class WsClientHandshakeTest extends TestCase
 
                             $conn->sendAll(Frame::pack(
                                 'phalanx-ws',
-                                WebSocketServer::WEBSOCKET_OPCODE_TEXT,
-                                WebSocketServer::WEBSOCKET_FLAG_FIN,
+                                SWOOLE_WEBSOCKET_OPCODE_TEXT,
+                                SWOOLE_WEBSOCKET_FLAG_FIN,
                             ));
 
                             // Drain whatever the client sends until peer EOF.
