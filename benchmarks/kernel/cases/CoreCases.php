@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Benchmarks\Kernel\Cases;
 
-use Swoole\Coroutine;
 use Phalanx\Benchmarks\Kernel\AbstractBenchmarkCase;
 use Phalanx\Benchmarks\Kernel\BenchmarkContext;
 use Phalanx\Scope\ExecutionScope;
@@ -17,6 +16,7 @@ use Phalanx\Supervisor\TransactionLease;
 use Phalanx\Task\Task;
 use Phalanx\Trace\Trace;
 use Phalanx\Trace\TraceType;
+use Swoole\Coroutine;
 
 final class ScopeCreateDisposeCase extends AbstractBenchmarkCase
 {
@@ -341,7 +341,7 @@ final class CancelSleepingChildrenCase extends AbstractBenchmarkCase
         }
 
         Coroutine::create(static function () use ($scope): void {
-            Coroutine::usleep(1_000);
+            Coroutine::sleep(0.001);
             $scope->cancellation()->cancel();
         });
 

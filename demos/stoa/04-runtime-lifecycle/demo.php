@@ -13,7 +13,6 @@ use Acme\StoaDemo\Runtime\Support\HttpStatusWaiter;
 use Acme\StoaDemo\Runtime\Support\RawConnectionOpener;
 use Acme\StoaDemo\Runtime\Support\SimpleHttpGet;
 use Acme\StoaDemo\Runtime\Support\TimelinePrinter;
-use Swoole\Coroutine;
 use Phalanx\Boot\AppContext;
 use Phalanx\Demos\Kit\DemoReport;
 use Phalanx\Demos\Kit\DemoSubprocess;
@@ -48,7 +47,7 @@ return DemoReport::demo(
         $report->note(sprintf('server starting %s', $listen));
 
         try {
-            Coroutine::run(static function () use ($host, $port, $report): void {
+            \Swoole\Coroutine\run(static function () use ($host, $port, $report): void {
                 $waitStatus     = new HttpStatusWaiter();
                 $waitEvent      = new EventWaiter();
                 $timeline       = new TimelinePrinter();
@@ -70,9 +69,9 @@ return DemoReport::demo(
                     ['response', $slowOk ? '200 OK' : 'missing expected response'],
                 ]);
 
-                $report->record('server readiness',         $ready);
+                $report->record('server readiness', $ready);
                 $report->record('GET /runtime/slow -> 200', $slowOk);
-                $report->record('slow request completed',   $slowCompleted);
+                $report->record('slow request completed', $slowCompleted);
 
                 $client = $openRaw($host, $port, '/runtime/disconnect');
                 $started = $waitEvent($host, $port, 'disconnect.started', 2.0);
@@ -95,12 +94,12 @@ return DemoReport::demo(
                     ['server',   $healthyAfterDisconnect ? 'accepted next health check' : 'did not answer next health check'],
                 ]);
 
-                $report->record('disconnect request started',                    $started);
-                $report->record('client disconnect detected',                    $disconnected);
-                $report->record('request resource aborted',                      $aborted);
-                $report->record('request resource released',                     $released);
-                $report->record('disconnect did not complete work',              $didNotComplete);
-                $report->record('server still responds after disconnect',        $healthyAfterDisconnect);
+                $report->record('disconnect request started', $started);
+                $report->record('client disconnect detected', $disconnected);
+                $report->record('request resource aborted', $aborted);
+                $report->record('request resource released', $released);
+                $report->record('disconnect did not complete work', $didNotComplete);
+                $report->record('server still responds after disconnect', $healthyAfterDisconnect);
 
                 $scope = $httpGet($host, $port, '/runtime/admin/scope');
                 $scopeBody = $scope['status'] === 200 ? json_decode($scope['body'], true) : null;
@@ -112,7 +111,7 @@ return DemoReport::demo(
                     ['resources', $resourcesReleased ? 'request resources fully released' : 'request resources still tracked'],
                 ]);
 
-                $report->record('response leases released after dispatch',   $leasesReleased);
+                $report->record('response leases released after dispatch', $leasesReleased);
                 $report->record('request resources released after dispatch', $resourcesReleased);
             });
         } finally {

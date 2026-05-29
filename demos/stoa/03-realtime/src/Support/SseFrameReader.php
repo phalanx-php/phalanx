@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Acme\StoaDemo\Realtime\Support;
 
-use Swoole\Constant;
 use Swoole\Coroutine\Client;
 
 final readonly class SseFrameReader
@@ -14,7 +13,7 @@ final readonly class SseFrameReader
      */
     public function __invoke(string $host, int $port, string $path, int $expectedFrames, float $timeout): array
     {
-        $client = new Client(Constant::SOCK_TCP);
+        $client = new Client(SWOOLE_SOCK_TCP);
         if (!$client->connect($host, $port, 0.5)) {
             return ['status' => 0, 'headers' => '', 'frames' => []];
         }

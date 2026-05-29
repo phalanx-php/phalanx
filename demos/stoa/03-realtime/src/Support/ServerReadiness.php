@@ -18,7 +18,7 @@ final readonly class ServerReadiness
             if ($response['status'] === 200) {
                 return true;
             }
-            Coroutine::usleep(50_000);
+            Coroutine::sleep(0.05);
         } while (microtime(true) < $until);
 
         return false;

@@ -6,12 +6,8 @@ namespace Phalanx\Benchmarks\Http\Cases;
 
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\ServerRequest;
-use Swoole\Coroutine;
-use Swoole\Coroutine\Channel;
-use Swoole\Http\Request as SwooleRequest;
 use Phalanx\Application;
 use Phalanx\Benchmarks\Http\AbstractHttpBenchmarkCase;
-use Phalanx\Benchmarks\Http\HttpBenchmarkCase;
 use Phalanx\Benchmarks\Kit\BenchmarkApp;
 use Phalanx\Stoa\RequestContext;
 use Phalanx\Stoa\RouteGroup;
@@ -21,6 +17,9 @@ use Phalanx\Stoa\StoaServerConfig;
 use Phalanx\Task\Scopeable;
 use Psr\Http\Message\ResponseInterface;
 use RuntimeException;
+use Swoole\Coroutine;
+use Swoole\Coroutine\Channel;
+use Swoole\Http\Request as SwooleRequest;
 
 final class StoaDispatchPlaintextCase extends AbstractHttpBenchmarkCase
 {
@@ -92,6 +91,15 @@ final class StoaRequestFactoryCase extends AbstractHttpBenchmarkCase
         $this->request = self::request();
     }
 
+    public function run(BenchmarkApp $app): void
+    {
+        $request = $this->factory->create($this->request);
+
+        if ($request->getUri()->getPath() !== '/submit') {
+            throw new RuntimeException('Request factory benchmark produced an unexpected path.');
+        }
+    }
+
     private static function request(): SwooleRequest
     {
         $request = new SwooleRequest();
@@ -108,15 +116,6 @@ final class StoaRequestFactoryCase extends AbstractHttpBenchmarkCase
         $request->post = ['name' => 'Ada'];
 
         return $request;
-    }
-
-    public function run(BenchmarkApp $app): void
-    {
-        $request = $this->factory->create($this->request);
-
-        if ($request->getUri()->getPath() !== '/submit') {
-            throw new RuntimeException('Request factory benchmark produced an unexpected path.');
-        }
     }
 }
 
@@ -162,7 +161,7 @@ final class StoaDrainCleanupCase extends AbstractHttpBenchmarkCase
                 $responses->push($runner->dispatch(new ServerRequest('GET', '/drain')));
             });
 
-            Coroutine::usleep(1_000);
+            Coroutine::sleep(0.001);
             $runner->stop();
             $response = $responses->pop(1.0);
 
@@ -222,4 +221,3 @@ final class BenchmarkDrainRoute implements Scopeable
         return 'completed';
     }
 }
-

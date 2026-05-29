@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace Acme\StoaDemo\Runtime\Support;
 
-use Swoole\Constant;
 use Swoole\Coroutine\Client;
 
 final readonly class RawConnectionOpener
 {
     public function __invoke(string $host, int $port, string $path): ?Client
     {
-        $client = new Client(Constant::SOCK_TCP);
+        $client = new Client(SWOOLE_SOCK_TCP);
 
         if (!$client->connect($host, $port, 0.5)) {
             return null;

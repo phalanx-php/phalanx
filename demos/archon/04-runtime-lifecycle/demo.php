@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 require __DIR__ . '/../../../vendor/autoload_runtime.php';
 
-use Swoole\Coroutine;
-use Swoole\Process;
 use Phalanx\Boot\AppContext;
 use Phalanx\Demos\Kit\DemoReport;
 use Phalanx\Demos\Kit\DemoSubprocess;
+use Swoole\Process;
 
 return DemoReport::demo(
     'Archon Runtime Lifecycle',
@@ -31,7 +30,7 @@ return DemoReport::demo(
             }
 
             $captured = '';
-            Coroutine::run(static function () use ($proc, &$captured, $onChunk, $doneMarker, $timeout): void {
+            \Swoole\Coroutine\run(static function () use ($proc, &$captured, $onChunk, $doneMarker, $timeout): void {
                 $captured = $proc->readUntil($doneMarker, $timeout, $onChunk);
             });
 
@@ -55,9 +54,9 @@ return DemoReport::demo(
             },
             doneMarker: '[cleanup:',
         );
-        $report->record('A: child opened resource',           str_contains($captured, '[opened resource #1]'), $captured);
-        $report->record('A: child emitted at least 1 tick',   str_contains($captured, '[tick 1 1]'),           $captured);
-        $report->record('A: scope onDispose cleanup ran',     str_contains($captured, '[cleanup: closed resource #1]'), $captured);
+        $report->record('A: child opened resource', str_contains($captured, '[opened resource #1]'), $captured);
+        $report->record('A: child emitted at least 1 tick', str_contains($captured, '[tick 1 1]'), $captured);
+        $report->record('A: scope onDispose cleanup ran', str_contains($captured, '[cleanup: closed resource #1]'), $captured);
 
         // Scenario B: --fail-worker=2; per-task error boundary catches the throw,
         // other workers continue, body completes normally.
@@ -88,8 +87,8 @@ return DemoReport::demo(
             },
             doneMarker: '[cleanup:',
         );
-        $report->record('C: workers ran before cancel',         str_contains($captured, '[tick 1 1]'), $captured);
-        $report->record('C: cancelled message reached body',    str_contains($captured, '[cancelled:'), $captured);
-        $report->record('C: scope onDispose cleanup ran',       str_contains($captured, '[cleanup: closed resource #'), $captured);
+        $report->record('C: workers ran before cancel', str_contains($captured, '[tick 1 1]'), $captured);
+        $report->record('C: cancelled message reached body', str_contains($captured, '[cancelled:'), $captured);
+        $report->record('C: scope onDispose cleanup ran', str_contains($captured, '[cleanup: closed resource #'), $captured);
     },
 );

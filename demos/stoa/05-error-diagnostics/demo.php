@@ -7,7 +7,6 @@ namespace Phalanx\Demos\Stoa\Diagnostics;
 require __DIR__ . '/../../../vendor/autoload_runtime.php';
 
 use GuzzleHttp\Psr7\ServerRequest;
-use Swoole\Coroutine;
 use Phalanx\Boot\AppContext;
 use Phalanx\Demos\Kit\DemoReport;
 use Phalanx\Scope\ExecutionScope;
@@ -51,8 +50,8 @@ return DemoReport::demo(
 
         $request = new ServerRequest('GET', '/fail', ['Accept' => 'text/html']);
         $response = null;
-        
-        Coroutine::run(static function () use ($app, $request, &$response): void {
+
+        \Swoole\Coroutine\run(static function () use ($app, $request, &$response): void {
             $response = $app->dispatch($request);
         });
 

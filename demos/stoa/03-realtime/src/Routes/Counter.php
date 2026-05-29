@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Acme\StoaDemo\Realtime\Routes;
 
-use Swoole\Coroutine;
 use Phalanx\Stoa\RequestContext;
 use Phalanx\Stoa\Sse\SseStream;
 use Phalanx\Stoa\Sse\SseStreamFactory;
 use Phalanx\Supervisor\WaitReason;
 use Phalanx\Task\Scopeable;
+use Swoole\Coroutine;
 
 final class Counter implements Scopeable
 {
@@ -30,7 +30,7 @@ final class Counter implements Scopeable
             $stream->writeEvent("tick {$i}", event: 'count', id: (string) $i);
             $ctx->call(
                 static function (): bool {
-                    Coroutine::usleep(100_000);
+                    Coroutine::sleep(0.1);
                     return true;
                 },
                 WaitReason::delay(0.1),

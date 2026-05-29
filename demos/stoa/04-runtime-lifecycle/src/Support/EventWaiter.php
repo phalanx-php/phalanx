@@ -17,7 +17,7 @@ final readonly class EventWaiter
             if ($contains($host, $port, $event, $resource)) {
                 return true;
             }
-            Coroutine::usleep(25_000);
+            Coroutine::sleep(0.025);
         } while (microtime(true) < $deadline);
 
         return false;

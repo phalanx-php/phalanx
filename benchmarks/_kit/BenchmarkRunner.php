@@ -45,7 +45,7 @@ final class BenchmarkRunner
                 $report->setRunner($runner);
 
                 try {
-                    \Swoole\Coroutine::run(static function () use ($report, $appContext, $body): void {
+                    \Swoole\Coroutine\run(static function () use ($report, $appContext, $body): void {
                         $body($report, $appContext);
                     });
                 } catch (Throwable $e) {

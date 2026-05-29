@@ -36,11 +36,7 @@ final class IrisSurrealTransport implements SurrealTransport
         string $method,
         array $params = [],
     ): mixed {
-        $next = $this->nextId->add(1);
-        if (!is_int($next)) {
-            throw new SurrealException('Atomic RPC counter overflow.');
-        }
-        $id = $next;
+        $id = $this->nextId->add(1);
         $body = self::encodeJson([
             'id' => $id,
             'method' => $method,

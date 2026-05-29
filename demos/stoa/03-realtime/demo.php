@@ -9,7 +9,6 @@ use Acme\StoaDemo\Realtime\Support\RawHttpRequest;
 use Acme\StoaDemo\Realtime\Support\ServerReadiness;
 use Acme\StoaDemo\Realtime\Support\SseFrameMatcher;
 use Acme\StoaDemo\Realtime\Support\SseFrameReader;
-use Swoole\Coroutine;
 use Phalanx\Boot\AppContext;
 use Phalanx\Demos\Kit\DemoReport;
 use Phalanx\Demos\Kit\DemoSubprocess;
@@ -43,7 +42,7 @@ return DemoReport::demo(
         $report->note(sprintf('server starting %s', $listen));
 
         try {
-            Coroutine::run(static function () use ($host, $port, $report): void {
+            \Swoole\Coroutine\run(static function () use ($host, $port, $report): void {
                 $checkReady          = new ServerReadiness();
                 $httpRaw             = new RawHttpRequest();
                 $readSse             = new SseFrameReader();
@@ -52,12 +51,12 @@ return DemoReport::demo(
                 $report->record('server ready on /realtime/health', $checkReady($host, $port));
 
                 $sse = $readSse($host, $port, '/realtime/counter', 5, 3.0);
-                $report->record('sse status line is 200 OK',           $sse['status'] === 200);
+                $report->record('sse status line is 200 OK', $sse['status'] === 200);
                 $report->record('sse content-type is text/event-stream', str_contains($sse['headers'], 'text/event-stream'));
-                $report->record('sse received 5 frames',                count($sse['frames']) === 5);
-                $report->record('sse first frame data is "tick 1"',     ($sse['frames'][0]['data'] ?? '') === 'tick 1');
-                $report->record('sse last frame id is "5"',             ($sse['frames'][4]['id'] ?? '') === '5');
-                $report->record('sse all frames carry event: count',    $allFramesHaveEvent($sse['frames'], 'count'));
+                $report->record('sse received 5 frames', count($sse['frames']) === 5);
+                $report->record('sse first frame data is "tick 1"', ($sse['frames'][0]['data'] ?? '') === 'tick 1');
+                $report->record('sse last frame id is "5"', ($sse['frames'][4]['id'] ?? '') === '5');
+                $report->record('sse all frames carry event: count', $allFramesHaveEvent($sse['frames'], 'count'));
 
                 $upgrade = $httpRaw($host, $port, 'GET', '/realtime/somewhere', [
                     'Upgrade: websocket',

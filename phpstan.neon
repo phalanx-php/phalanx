@@ -87,6 +87,13 @@ parameters:
     phalanxCoroutineInternalPaths:
         - src/Aegis/src/Scope/ExecutionLifecycleScope.php
         - benchmarks/kernel/cases/ContextSwitchCases.php
+    # swoole/ide-helper's Swoole\Lock::lock() stub omits $operation and $timeout.
+    # stubs/swoole-lock.php documents the correct ext-swoole 6 signature but cannot
+    # override scanDirectories entries in PHPStan 2.x; the ignoreErrors below are
+    # scoped to the two internal call sites that use lock(timeout:).
+    # Verified via reflection: lock(int $operation = 2, float $timeout = -1): bool
+    stubFiles:
+        - stubs/swoole-lock.php
     ignoreErrors:
         -
             identifier: phalanx.testing.useBenchmarkHarness
@@ -96,11 +103,17 @@ parameters:
             identifier: phalanx.testing.useBenchmarkHarness
             path: benchmarks/http/server.php
             reportUnmatched: true
-        # swoole/ide-helper's Swoole\Lock::lock() stub omits the $timeout param
-        # that ext-swoole 6 supports (verified: lock(int $operation = 2, float $timeout = -1)).
+        # Swoole\Lock::lock() ide-helper stub omits the $timeout parameter.
+        # Verified in ext-swoole 6.2.1: lock(int $operation = 2, float $timeout = -1): bool
+        # stubs/swoole-lock.php documents the correct signature.
         -
-            message: '#Unknown parameter \$timeout in call to method Swoole\\Lock::lock\(\)#'
-            reportUnmatched: false
+            identifier: argument.unknown
+            path: src/Aegis/src/Runtime/Memory/ManagedResourceTransitionLocks.php
+            reportUnmatched: true
+        -
+            identifier: argument.unknown
+            path: src/Aegis/src/Runtime/Memory/RuntimeClaims.php
+            reportUnmatched: true
     tmpDir: .phpstan-cache
     treatPhpDocTypesAsCertain: false
     bootstrapFiles:

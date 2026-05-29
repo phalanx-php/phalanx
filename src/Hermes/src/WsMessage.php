@@ -5,28 +5,27 @@ declare(strict_types=1);
 namespace Phalanx\Hermes;
 
 use Swoole\WebSocket\Frame;
-use Swoole\WebSocket\Server as WebSocketServer;
 
 final class WsMessage
 {
     public bool $isText {
-        get => $this->opcode === WebSocketServer::WEBSOCKET_OPCODE_TEXT;
+        get => $this->opcode === SWOOLE_WEBSOCKET_OPCODE_TEXT;
     }
 
     public bool $isBinary {
-        get => $this->opcode === WebSocketServer::WEBSOCKET_OPCODE_BINARY;
+        get => $this->opcode === SWOOLE_WEBSOCKET_OPCODE_BINARY;
     }
 
     public bool $isClose {
-        get => $this->opcode === WebSocketServer::WEBSOCKET_OPCODE_CLOSE;
+        get => $this->opcode === SWOOLE_WEBSOCKET_OPCODE_CLOSE;
     }
 
     public bool $isPing {
-        get => $this->opcode === WebSocketServer::WEBSOCKET_OPCODE_PING;
+        get => $this->opcode === SWOOLE_WEBSOCKET_OPCODE_PING;
     }
 
     public bool $isPong {
-        get => $this->opcode === WebSocketServer::WEBSOCKET_OPCODE_PONG;
+        get => $this->opcode === SWOOLE_WEBSOCKET_OPCODE_PONG;
     }
 
     public function __construct(
@@ -38,12 +37,12 @@ final class WsMessage
 
     public static function text(string $payload): self
     {
-        return new self($payload, WebSocketServer::WEBSOCKET_OPCODE_TEXT);
+        return new self($payload, SWOOLE_WEBSOCKET_OPCODE_TEXT);
     }
 
     public static function binary(string $payload): self
     {
-        return new self($payload, WebSocketServer::WEBSOCKET_OPCODE_BINARY);
+        return new self($payload, SWOOLE_WEBSOCKET_OPCODE_BINARY);
     }
 
     public static function close(
@@ -52,17 +51,17 @@ final class WsMessage
     ): self {
         $payload = pack('n', $code->value) . $reason;
 
-        return new self($payload, WebSocketServer::WEBSOCKET_OPCODE_CLOSE, $code);
+        return new self($payload, SWOOLE_WEBSOCKET_OPCODE_CLOSE, $code);
     }
 
     public static function ping(string $payload = ''): self
     {
-        return new self($payload, WebSocketServer::WEBSOCKET_OPCODE_PING);
+        return new self($payload, SWOOLE_WEBSOCKET_OPCODE_PING);
     }
 
     public static function pong(string $payload = ''): self
     {
-        return new self($payload, WebSocketServer::WEBSOCKET_OPCODE_PONG);
+        return new self($payload, SWOOLE_WEBSOCKET_OPCODE_PONG);
     }
 
     public static function json(mixed $data, int $flags = 0): self
@@ -87,7 +86,7 @@ final class WsMessage
         $frame = new Frame();
         $frame->data = $this->payload;
         $frame->opcode = $this->opcode;
-        $frame->flags = WebSocketServer::WEBSOCKET_FLAG_FIN;
+        $frame->flags = SWOOLE_WEBSOCKET_FLAG_FIN;
         $frame->finish = true;
 
         return $frame;
@@ -97,10 +96,10 @@ final class WsMessage
     private static function parseFrame(Frame $frame): array
     {
         $opcode = $frame->opcode;
-        $payload = $frame->data ?? '';
+        $payload = $frame->data;
         $closeCode = null;
 
-        if ($opcode === WebSocketServer::WEBSOCKET_OPCODE_CLOSE && strlen($payload) >= 2) {
+        if ($opcode === SWOOLE_WEBSOCKET_OPCODE_CLOSE && strlen($payload) >= 2) {
             $unpacked = unpack('n', substr($payload, 0, 2));
             if ($unpacked !== false) {
                 $closeCode = WsCloseCode::tryFrom((int) $unpacked[1]);

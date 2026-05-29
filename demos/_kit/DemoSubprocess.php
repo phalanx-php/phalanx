@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Phalanx\Demos\Kit;
 
 use Closure;
+use Phalanx\System\PhpExtensionFlags;
 use Swoole\Coroutine;
 use Swoole\Process;
-use Phalanx\System\PhpExtensionFlags;
 
 /**
  * Subprocess orchestration for demos. Replaces the Process+SIGTERM/SIGKILL
@@ -113,7 +113,7 @@ final class DemoSubprocess
                 }
             }
 
-            Coroutine::usleep(20_000);
+            Coroutine::sleep(0.02);
         }
 
         return $captured;
@@ -152,7 +152,7 @@ final class DemoSubprocess
             if ($status !== false) {
                 return;
             }
-            Coroutine::usleep(20_000);
+            Coroutine::sleep(0.02);
         } while (microtime(true) < $deadline);
 
         Process::kill($this->pid, SIGKILL);

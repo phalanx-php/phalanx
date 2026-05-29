@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Acme\StoaDemo\Realtime\Support;
 
-use Swoole\Constant;
 use Swoole\Coroutine\Client;
 
 final readonly class RawHttpRequest
@@ -15,7 +14,7 @@ final readonly class RawHttpRequest
      */
     public function __invoke(string $host, int $port, string $method, string $path, array $extraHeaders = []): array
     {
-        $client = new Client(Constant::SOCK_TCP);
+        $client = new Client(SWOOLE_SOCK_TCP);
         if (!$client->connect($host, $port, 0.5)) {
             return ['status' => 0, 'headers' => '', 'body' => ''];
         }
