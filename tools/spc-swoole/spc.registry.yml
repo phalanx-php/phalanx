@@ -1,7 +1,0 @@
-name: phalanx-swoole
-
-package:
-  config:
-    - config/pkg/ext/
-  psr-4:
-    PhalanxSpc\Extension: src/Extension/
