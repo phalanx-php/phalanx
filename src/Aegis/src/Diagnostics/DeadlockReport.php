@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Diagnostics;
 
 use Phalanx\Runtime\CoroutineStats;
-use Phalanx\Runtime\Swoole\SwooleRuntime;
+use Swoole\Coroutine;
 
 /**
  * Structured coroutine introspection report for deadlock diagnostics.
@@ -35,7 +35,7 @@ final readonly class DeadlockReport
     public static function collect(int $maxFrames = 32, int $depth = 32): self
     {
         $count = CoroutineStats::capture()->coroutineNum;
-        $cids = SwooleRuntime::list();
+        $cids = Coroutine::list();
 
         $frames = [];
         $i = 0;
@@ -44,7 +44,7 @@ final readonly class DeadlockReport
                 break;
             }
             $i++;
-            $trace = SwooleRuntime::getBackTrace((int) $cid, DEBUG_BACKTRACE_IGNORE_ARGS, $depth);
+            $trace = Coroutine::getBackTrace((int) $cid, DEBUG_BACKTRACE_IGNORE_ARGS, $depth);
             $frames[] = new DeadlockFrame((int) $cid, self::renderTrace($trace));
         }
 

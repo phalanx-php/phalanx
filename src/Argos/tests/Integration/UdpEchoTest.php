@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Phalanx\Argos\Tests\Integration;
 
-use Swoole\Coroutine;
 use Phalanx\Argos\ProbeResult;
 use Phalanx\Argos\Task\ProbeUdp;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Testing\PhalanxTestCase;
+use Swoole\Coroutine;
 
 final class UdpEchoTest extends PhalanxTestCase
 {
@@ -37,7 +37,7 @@ final class UdpEchoTest extends PhalanxTestCase
                         @stream_socket_sendto($server, "echo:{$payload}", 0, $remote);
                         return;
                     }
-                    Coroutine::usleep(10_000);
+                    Coroutine::sleep(0.01);
                 }
             });
 

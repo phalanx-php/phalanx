@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace Phalanx\Aegis\Tests\Unit\Pool;
 
 use Phalanx\Pool\ChannelPool;
-use Phalanx\Runtime\Swoole\SwooleChannel;
-use Phalanx\Runtime\Swoole\SwooleRuntime;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+use Swoole\Coroutine\Channel as SwooleChannel;
+
+use function Swoole\Coroutine\run as swoole_coroutine_run;
 
 final class ChannelPoolTest extends TestCase
 {
@@ -173,7 +174,7 @@ final class ChannelPoolTest extends TestCase
     #[Test]
     public function constructionWithoutChannelCreatesLazily(): void
     {
-        SwooleRuntime::run(static function (): void {
+        swoole_coroutine_run(static function (): void {
             $pool = new ChannelPool(
                 factoryClass: self::class,
                 config: null,

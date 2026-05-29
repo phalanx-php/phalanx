@@ -5,14 +5,13 @@ declare(strict_types=1);
 namespace Phalanx\Aegis\Tests\Unit\Runtime;
 
 use InvalidArgumentException;
-use Swoole\Runtime;
 use Phalanx\Application;
 use Phalanx\Boot\AppContext;
 use Phalanx\Boot\Exception\MissingContextValue;
 use Phalanx\Runtime\RuntimeCapability;
 use Phalanx\Runtime\RuntimeHookNames;
-use Phalanx\Runtime\RuntimeHookSnapshot;
 use Phalanx\Runtime\RuntimeHooks;
+use Phalanx\Runtime\RuntimeHookSnapshot;
 use Phalanx\Runtime\RuntimePolicy;
 use Phalanx\Scope\ScopeIdentity;
 use PHPUnit\Framework\TestCase;
@@ -24,17 +23,17 @@ final class RuntimePolicyTest extends TestCase
         $policy = RuntimePolicy::phalanxManaged();
 
         self::assertTrue($policy->hasRequiredFlags(
-            Runtime::HOOK_TCP
-            | Runtime::HOOK_UDP
-            | Runtime::HOOK_UNIX
-            | Runtime::HOOK_UDG
-            | Runtime::HOOK_SSL
-            | Runtime::HOOK_TLS
-            | Runtime::HOOK_STREAM_FUNCTION
-            | Runtime::HOOK_FILE
-            | Runtime::HOOK_CURL
-            | Runtime::HOOK_NATIVE_CURL
-            | Runtime::HOOK_SOCKETS,
+            SWOOLE_HOOK_TCP
+            | SWOOLE_HOOK_UDP
+            | SWOOLE_HOOK_UNIX
+            | SWOOLE_HOOK_UDG
+            | SWOOLE_HOOK_SSL
+            | SWOOLE_HOOK_TLS
+            | SWOOLE_HOOK_STREAM_FUNCTION
+            | SWOOLE_HOOK_FILE
+            | SWOOLE_HOOK_CURL
+            | SWOOLE_HOOK_NATIVE_CURL
+            | SWOOLE_HOOK_SOCKETS,
         ));
     }
 
@@ -42,17 +41,18 @@ final class RuntimePolicyTest extends TestCase
     {
         $policy = RuntimePolicy::phalanxManaged();
 
-        self::assertSame(0, $policy->requiredFlags & Runtime::HOOK_SLEEP);
-        self::assertSame(0, $policy->requiredFlags & Runtime::HOOK_STDIO);
-        self::assertSame(0, $policy->requiredFlags & Runtime::HOOK_BLOCKING_FUNCTION);
-        self::assertSame(0, $policy->requiredFlags & Runtime::HOOK_PROC);
+        self::assertSame(0, $policy->requiredFlags & SWOOLE_HOOK_SLEEP);
+        self::assertSame(0, $policy->requiredFlags & SWOOLE_HOOK_STDIO);
+        // OpenSwoole: HOOK_BLOCKING_FUNCTION; Swoole 6: SWOOLE_HOOK_NET_FUNCTION
+        self::assertSame(0, $policy->requiredFlags & SWOOLE_HOOK_NET_FUNCTION);
+        self::assertSame(0, $policy->requiredFlags & SWOOLE_HOOK_PROC);
 
-        self::assertSame(Runtime::HOOK_SLEEP, $policy->sensitiveEnabledFlags(Runtime::HOOK_SLEEP));
-        self::assertSame(Runtime::HOOK_STDIO, $policy->sensitiveEnabledFlags(Runtime::HOOK_STDIO));
-        self::assertSame(Runtime::HOOK_PROC, $policy->sensitiveEnabledFlags(Runtime::HOOK_PROC));
+        self::assertSame(SWOOLE_HOOK_SLEEP, $policy->sensitiveEnabledFlags(SWOOLE_HOOK_SLEEP));
+        self::assertSame(SWOOLE_HOOK_STDIO, $policy->sensitiveEnabledFlags(SWOOLE_HOOK_STDIO));
+        self::assertSame(SWOOLE_HOOK_PROC, $policy->sensitiveEnabledFlags(SWOOLE_HOOK_PROC));
         self::assertSame(
-            Runtime::HOOK_BLOCKING_FUNCTION,
-            $policy->sensitiveEnabledFlags(Runtime::HOOK_BLOCKING_FUNCTION),
+            SWOOLE_HOOK_NET_FUNCTION,
+            $policy->sensitiveEnabledFlags(SWOOLE_HOOK_NET_FUNCTION),
         );
     }
 
@@ -68,9 +68,9 @@ final class RuntimePolicyTest extends TestCase
         ]));
 
         self::assertSame(
-            Runtime::HOOK_TCP | Runtime::HOOK_NATIVE_CURL | Runtime::HOOK_FILE | Runtime::HOOK_STDIO,
+            SWOOLE_HOOK_TCP | SWOOLE_HOOK_NATIVE_CURL | SWOOLE_HOOK_FILE | SWOOLE_HOOK_STDIO,
             $policy->requiredFlags
-                & (Runtime::HOOK_TCP | Runtime::HOOK_NATIVE_CURL | Runtime::HOOK_FILE | Runtime::HOOK_PROC | Runtime::HOOK_STDIO),
+                & (SWOOLE_HOOK_TCP | SWOOLE_HOOK_NATIVE_CURL | SWOOLE_HOOK_FILE | SWOOLE_HOOK_PROC | SWOOLE_HOOK_STDIO),
         );
     }
 
@@ -78,9 +78,9 @@ final class RuntimePolicyTest extends TestCase
     {
         $policy = RuntimePolicy::forCapabilities(RuntimeCapability::Processes);
 
-        self::assertSame(0, $policy->requiredFlags & Runtime::HOOK_PROC);
-        self::assertSame(0, $policy->requiredFlags & Runtime::HOOK_STDIO);
-        self::assertSame(Runtime::HOOK_PROC, $policy->sensitiveEnabledFlags(Runtime::HOOK_PROC));
+        self::assertSame(0, $policy->requiredFlags & SWOOLE_HOOK_PROC);
+        self::assertSame(0, $policy->requiredFlags & SWOOLE_HOOK_STDIO);
+        self::assertSame(SWOOLE_HOOK_PROC, $policy->sensitiveEnabledFlags(SWOOLE_HOOK_PROC));
     }
 
     public function testInvalidCapabilityContextThrowsClearly(): void
@@ -140,7 +140,7 @@ final class RuntimePolicyTest extends TestCase
 
         $snapshot = RuntimeHookSnapshot::fromFlags(
             $policy,
-            Runtime::HOOK_TCP | Runtime::HOOK_SSL | Runtime::HOOK_SLEEP | Runtime::HOOK_STDIO,
+            SWOOLE_HOOK_TCP | SWOOLE_HOOK_SSL | SWOOLE_HOOK_SLEEP | SWOOLE_HOOK_STDIO,
         );
 
         self::assertFalse($snapshot->isHealthy());
@@ -150,10 +150,10 @@ final class RuntimePolicyTest extends TestCase
         self::assertSame(['SLEEP', 'STDIO'], $snapshot->sensitiveEnabledFlagNames());
         self::assertSame([
             'policy' => $policy->name,
-            'current' => Runtime::HOOK_TCP | Runtime::HOOK_SSL | Runtime::HOOK_SLEEP | Runtime::HOOK_STDIO,
+            'current' => SWOOLE_HOOK_TCP | SWOOLE_HOOK_SSL | SWOOLE_HOOK_SLEEP | SWOOLE_HOOK_STDIO,
             'required' => $policy->requiredFlags,
             'missing' => $snapshot->missingFlags,
-            'sensitive_enabled' => Runtime::HOOK_SLEEP | Runtime::HOOK_STDIO,
+            'sensitive_enabled' => SWOOLE_HOOK_SLEEP | SWOOLE_HOOK_STDIO,
             'healthy' => false,
         ], $snapshot->toArray());
     }
@@ -162,10 +162,10 @@ final class RuntimePolicyTest extends TestCase
     {
         self::assertSame(
             ['TCP', 'SSL', 'NATIVE_CURL'],
-            RuntimeHookNames::forMask(Runtime::HOOK_TCP | Runtime::HOOK_SSL | Runtime::HOOK_NATIVE_CURL),
+            RuntimeHookNames::forMask(SWOOLE_HOOK_TCP | SWOOLE_HOOK_SSL | SWOOLE_HOOK_NATIVE_CURL),
         );
 
-        self::assertSame(['PROC'], RuntimeHookNames::forMask(Runtime::HOOK_PROC));
+        self::assertSame(['PROC'], RuntimeHookNames::forMask(SWOOLE_HOOK_PROC));
     }
 
     public function testPhalanxManagedPolicyCanNameEveryRequiredHook(): void

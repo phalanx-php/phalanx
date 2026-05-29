@@ -20,7 +20,9 @@ final class RuntimeClaims
         $now = microtime(true);
         $rowKey = self::key($key);
 
-        if (!$this->lock->trylock()) {
+        // Swoole 6 has no non-blocking trylock(); a near-zero timeout is the
+        // fast-fail-on-contention equivalent (OpenSwoole used Lock::trylock()).
+        if (!$this->lock->lock(timeout: 0.001)) {
             return false;
         }
 
@@ -65,7 +67,8 @@ final class RuntimeClaims
 
     public function destroy(): void
     {
-        $this->lock->destroy();
+        // Swoole 6 Lock auto-frees on __destruct; no explicit destroy() exists.
+        unset($this->lock);
     }
 
     private static function key(string $key): string

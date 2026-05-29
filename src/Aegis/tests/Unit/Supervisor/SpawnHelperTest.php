@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Aegis\Tests\Unit\Supervisor;
 
-use Swoole\Coroutine;
-use Swoole\Coroutine\Channel;
 use Phalanx\Application;
 use Phalanx\Boot\AppContext;
 use Phalanx\Diagnostics\DiagnosticCode;
@@ -16,6 +14,8 @@ use Phalanx\Supervisor\InProcessLedger;
 use Phalanx\Supervisor\TaskHandle;
 use Phalanx\Testing\PhalanxTestCase;
 use RuntimeException;
+use Swoole\Coroutine;
+use Swoole\Coroutine\Channel;
 
 final class SpawnHelperTest extends PhalanxTestCase
 {
@@ -290,7 +290,7 @@ final class SpawnHelperTest extends PhalanxTestCase
                 return;
             }
 
-            Coroutine::usleep(1_000);
+            Coroutine::sleep(0.001);
         }
 
         self::fail($message);

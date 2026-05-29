@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Aegis\Tests\Unit\Supervisor;
 
-use Phalanx\Boot\AppContext;
 use Phalanx\Application;
+use Phalanx\Boot\AppContext;
 use Phalanx\Runtime\RuntimeHooks;
 use Phalanx\Runtime\RuntimePolicy;
 use Phalanx\Scope\ExecutionScope;
@@ -27,12 +27,12 @@ final class WaitReasonRecordingTest extends TestCase
         $observed = null;
 
         self::bootRuntimeHooks();
-        \Swoole\Coroutine::run(static function () use ($app, $ledger, &$observed): void {
+        \Swoole\Coroutine\run(static function () use ($app, $ledger, &$observed): void {
             $scope = $app->createScope();
             $task = Task::of(static function (ExecutionScope $s) use ($ledger, &$observed): void {
                 // Spawn a sibling coroutine that snapshots the tree mid-suspend.
                 \Swoole\Coroutine::create(static function () use ($ledger, &$observed): void {
-                    \Swoole\Coroutine::usleep(10_000);
+                    \Swoole\Coroutine::sleep(0.01);
                     foreach ($ledger->tree() as $snap) {
                         if ($snap->currentWait !== null) {
                             $observed = $snap->currentWait;
@@ -43,7 +43,7 @@ final class WaitReasonRecordingTest extends TestCase
 
                 $s->call(
                     static function (): void {
-                        \Swoole\Coroutine::usleep(50_000);
+                        \Swoole\Coroutine::sleep(0.05);
                     },
                     WaitReason::http('GET', 'https://api.example.test/users/1'),
                 );
@@ -64,11 +64,11 @@ final class WaitReasonRecordingTest extends TestCase
         $observed = null;
 
         self::bootRuntimeHooks();
-        \Swoole\Coroutine::run(static function () use ($app, $ledger, &$observed): void {
+        \Swoole\Coroutine\run(static function () use ($app, $ledger, &$observed): void {
             $scope = $app->createScope();
             $task = Task::of(static function (ExecutionScope $s) use ($ledger, &$observed): void {
                 \Swoole\Coroutine::create(static function () use ($ledger, &$observed): void {
-                    \Swoole\Coroutine::usleep(10_000);
+                    \Swoole\Coroutine::sleep(0.01);
                     foreach ($ledger->tree() as $snap) {
                         if ($snap->currentWait !== null) {
                             $observed = $snap->currentWait;
@@ -94,11 +94,11 @@ final class WaitReasonRecordingTest extends TestCase
         $observedWait = 'sentinel';
 
         self::bootRuntimeHooks();
-        \Swoole\Coroutine::run(static function () use ($app, $ledger, &$observedWait): void {
+        \Swoole\Coroutine\run(static function () use ($app, $ledger, &$observedWait): void {
             $scope = $app->createScope();
             $task = Task::of(static function (ExecutionScope $s) use ($ledger, &$observedWait): void {
                 \Swoole\Coroutine::create(static function () use ($ledger, &$observedWait): void {
-                    \Swoole\Coroutine::usleep(10_000);
+                    \Swoole\Coroutine::sleep(0.01);
                     foreach ($ledger->tree() as $snap) {
                         $observedWait = $snap->currentWait;
                         return;
@@ -106,7 +106,7 @@ final class WaitReasonRecordingTest extends TestCase
                 });
 
                 $s->call(static function (): void {
-                    \Swoole\Coroutine::usleep(50_000);
+                    \Swoole\Coroutine::sleep(0.05);
                 });
             });
             $scope->execute($task);

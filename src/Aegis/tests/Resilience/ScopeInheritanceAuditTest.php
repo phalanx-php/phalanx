@@ -32,7 +32,7 @@ final class ScopeInheritanceAuditTest extends TestCase
                 continue;
             }
             foreach ($lines as $idx => $line) {
-                if (!str_contains($line, 'SwooleRuntime::create(')) {
+                if (!str_contains($line, 'Coroutine::create(')) {
                     continue;
                 }
                 // Look shortly after the spawn for the install call. Long
@@ -53,7 +53,7 @@ final class ScopeInheritanceAuditTest extends TestCase
         self::assertSame(
             [],
             $offenders,
-            "Every SwooleRuntime::create() in src/Scope must be followed by\n"
+            "Every Coroutine::create() in src/Scope must be followed by\n"
             . "CoroutineScopeRegistry::install() in the spawned closure. Offenders:\n"
             . implode("\n", $offenders),
         );

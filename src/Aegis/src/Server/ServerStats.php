@@ -39,8 +39,7 @@ final class ServerStats
     public static function fromServer(Server $server): self
     {
         return new self(static function () use ($server): array {
-            $raw = $server->stats();
-            return is_array($raw) ? $raw : [];
+            return $server->stats();
         });
     }
 

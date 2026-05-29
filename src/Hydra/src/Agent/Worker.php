@@ -13,12 +13,12 @@ use Phalanx\Hydra\Protocol\TaskRequest;
 use Phalanx\Hydra\Runtime\ParentServiceProxy;
 use Phalanx\Runtime\CoroutineRuntime;
 use Phalanx\Runtime\RuntimePolicy;
-use Phalanx\Runtime\Swoole\SwooleChannel;
-use Phalanx\Runtime\Swoole\SwooleRuntime;
 use Phalanx\Scope\TaskExecutor;
 use Phalanx\Scope\TaskScope;
 use Phalanx\Supervisor\WaitReason;
 use RuntimeException;
+use Swoole\Coroutine;
+use Swoole\Coroutine\Channel as SwooleChannel;
 
 class Worker
 {
@@ -28,6 +28,7 @@ class Worker
 
     private readonly string $id;
 
+    /** @var SwooleChannel<true> */
     private SwooleChannel $lock;
 
     public function __construct(
@@ -36,7 +37,7 @@ class Worker
     ) {
         $this->id = $id ?? uniqid('agent-', true);
         $this->process = new ProcessHandle($config);
-        $this->lock = SwooleRuntime::channel(1);
+        $this->lock = new SwooleChannel(1);
         $this->lock->push(true);
     }
 
@@ -98,7 +99,7 @@ class Worker
             return;
         }
 
-        if (SwooleRuntime::getCid() < 0) {
+        if (Coroutine::getCid() < 0) {
             $self = $this;
             CoroutineRuntime::run(
                 RuntimePolicy::phalanxManaged(),
@@ -154,7 +155,7 @@ class Worker
                 return;
             }
 
-            if ($this->lock->errCode() === SwooleChannel::CLOSED) {
+            if ($this->lock->errCode === SWOOLE_CHANNEL_CLOSED) {
                 throw new RuntimeException("Agent {$this->id} lock closed");
             }
         }
@@ -169,7 +170,7 @@ class Worker
                 return true;
             }
 
-            if ($this->lock->errCode() === SwooleChannel::CLOSED) {
+            if ($this->lock->errCode === SWOOLE_CHANNEL_CLOSED) {
                 return false;
             }
         }

@@ -157,7 +157,7 @@ final class WorkingAegisSmokeTest extends PhalanxTestCase
             $token = $appScope->cancellation();
 
             \Swoole\Coroutine::create(static function () use ($token): void {
-                \Swoole\Coroutine::usleep(15_000);
+                \Swoole\Coroutine::sleep(0.015);
                 $token->cancel();
             });
 

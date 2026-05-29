@@ -5,16 +5,16 @@ declare(strict_types=1);
 namespace Phalanx\Archon\Tests\Integration\Application;
 
 use Phalanx\Archon\Application\Archon;
+use Phalanx\Archon\Application\ConsoleConfig;
 use Phalanx\Archon\Command\Arg;
 use Phalanx\Archon\Command\CommandConfig;
-use Phalanx\Archon\Command\CommandGroup;
 use Phalanx\Archon\Command\CommandContext;
-use Phalanx\Archon\Application\ConsoleConfig;
-use Phalanx\Archon\Runtime\Identity\ConsoleSignalPolicy;
-use Phalanx\Archon\Runtime\Identity\ConsoleSignalState;
+use Phalanx\Archon\Command\CommandGroup;
+use Phalanx\Archon\Command\Opt;
 use Phalanx\Archon\Runtime\Identity\ArchonAnnotationSid;
 use Phalanx\Archon\Runtime\Identity\ArchonResourceSid;
-use Phalanx\Archon\Command\Opt;
+use Phalanx\Archon\Runtime\Identity\ConsoleSignalPolicy;
+use Phalanx\Archon\Runtime\Identity\ConsoleSignalState;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Runtime\Identity\AegisResourceSid;
@@ -359,7 +359,7 @@ final class ArchonApplicationTest extends PhalanxTestCase
                 self::assertIsInt($pid);
 
                 \Swoole\Process::kill($pid, SIGUSR1);
-                \Swoole\Coroutine::usleep(50_000);
+                \Swoole\Coroutine::sleep(0.05);
                 $ctx->throwIfCancelled();
 
                 return 0;

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Aegis\Tests\Unit\Supervisor;
 
-use Phalanx\Boot\AppContext;
 use Phalanx\Application;
+use Phalanx\Boot\AppContext;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Concurrency\RetryPolicy;
 use Phalanx\Scope\ExecutionScope;
@@ -134,7 +134,7 @@ final class PrimitiveSupervisionTest extends PhalanxTestCase
                 )),
                 waiter: Task::of(static function (ExecutionScope $s): string {
                     \Swoole\Coroutine::create(static function () use ($s): void {
-                        \Swoole\Coroutine::usleep(10_000);
+                        \Swoole\Coroutine::sleep(0.01);
                         $s->cancellation()->cancel();
                     });
 

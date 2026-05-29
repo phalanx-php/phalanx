@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Aegis\Tests\Unit\Supervisor;
 
-use Phalanx\Boot\AppContext;
 use Phalanx\Application;
+use Phalanx\Boot\AppContext;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Service\ServiceBundle;
@@ -107,7 +107,7 @@ final class SiblingScopeIsolationTest extends PhalanxTestCase
             $inner = $app->createScope();
             $parentToken = $inner->cancellation();
             \Swoole\Coroutine::create(static function () use ($parentToken): void {
-                \Swoole\Coroutine::usleep(20_000);
+                \Swoole\Coroutine::sleep(0.02);
                 $parentToken->cancel();
             });
 

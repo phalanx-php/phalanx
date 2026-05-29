@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Aegis\Tests\Resilience;
 
-use Phalanx\Boot\AppContext;
 use Phalanx\Application;
+use Phalanx\Boot\AppContext;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Service\ServiceBundle;
@@ -30,7 +30,7 @@ final class CancellationPropagationTimingTest extends PhalanxTestCase
 {
     private const float CANCEL_BUDGET_SECONDS = 1.0;
 
-    private const float CANCEL_AFTER_USEC = 15_000;
+    private const float CANCEL_AFTER_USEC = 15_000; // microseconds; divide by 1_000_000 for Coroutine::sleep()
 
     public function testConcurrentCancelsWithinBudget(): void
     {
@@ -106,7 +106,7 @@ final class CancellationPropagationTimingTest extends PhalanxTestCase
     {
         $this->assertCancelTimingOf(static function (ExecutionScope $scope): void {
             $scope->call(static function (): void {
-                \Swoole\Coroutine::usleep(5_000_000);
+                \Swoole\Coroutine::sleep(5.0);
             });
         });
     }
@@ -137,7 +137,7 @@ final class CancellationPropagationTimingTest extends PhalanxTestCase
 
             $cancelAfter = self::CANCEL_AFTER_USEC;
             \Swoole\Coroutine::create(static function () use ($token, $cancelAfter): void {
-                \Swoole\Coroutine::usleep((int) $cancelAfter);
+                \Swoole\Coroutine::sleep($cancelAfter / 1_000_000);
                 $token->cancel();
             });
 

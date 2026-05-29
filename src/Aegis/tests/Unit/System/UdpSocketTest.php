@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Phalanx\Aegis\Tests\Unit\System;
 
-use Swoole\Coroutine;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\System\UdpSocket;
 use Phalanx\Testing\PhalanxTestCase;
+use Swoole\Coroutine;
 
 final class UdpSocketTest extends PhalanxTestCase
 {
@@ -38,7 +38,7 @@ final class UdpSocketTest extends PhalanxTestCase
                         @stream_socket_sendto($server, "pong:{$payload}", 0, $remote);
                         return;
                     }
-                    Coroutine::usleep(10_000);
+                    Coroutine::sleep(0.01);
                 }
             });
 

@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace Phalanx\Hydra\WorkerPool;
 
 use Closure;
-use Swoole\Coroutine;
 use Swoole\Process\Pool;
+
+use function Swoole\Coroutine\run as swoole_coroutine_run;
 
 /**
  * Aegis-managed worker pool primitive.
@@ -108,8 +109,8 @@ final class WorkerPool
             [$func, $enableCoroutine] = $factories[$workerId];
 
             if ($enableCoroutine) {
-                // Direct Coroutine::run — child process has no Engine boot
-                Coroutine::run(static function () use ($func, $pool, $workerId): void {
+                // Direct coroutine run — child process has no Engine boot
+                swoole_coroutine_run(static function () use ($func, $pool, $workerId): void {
                     $func($pool, $workerId);
                 });
             } else {

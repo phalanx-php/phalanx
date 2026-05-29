@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Concurrency;
 
 use Phalanx\Cancellation\Cancelled;
-use Phalanx\Runtime\Swoole\SwooleRuntime;
+use Swoole\Coroutine;
 
 /**
  * Coroutine helpers that translate the engine's "cancellation = return-false +
@@ -27,15 +27,17 @@ final class Co
             self::throwIfCancelled();
             return;
         }
-        $ok = SwooleRuntime::usleep((int) round($seconds * 1_000_000));
-        if ($ok === false || SwooleRuntime::isCanceled()) {
+        // Swoole 6's coroutine timer floor is 1ms; clamp sub-ms waits up so a
+        // positive duration never trips the "Timer must be >= 0.001" warning.
+        $ok = Coroutine::sleep(max($seconds, 0.001));
+        if ($ok === false || Coroutine::isCanceled()) {
             throw new Cancelled('sleep interrupted by cancellation');
         }
     }
 
     public static function throwIfCancelled(): void
     {
-        if (SwooleRuntime::isCanceled()) {
+        if (Coroutine::isCanceled()) {
             throw new Cancelled('coroutine cancelled');
         }
     }

@@ -7,9 +7,8 @@ namespace Phalanx\Styx;
 use Closure;
 use Generator;
 use Phalanx\Pool\BorrowedValue;
-use Phalanx\Runtime\Swoole\SwooleChannel;
-use Phalanx\Runtime\Swoole\SwooleRuntime;
 use ReflectionFunction;
+use Swoole\Coroutine\Channel as SwooleChannel;
 use Throwable;
 
 /**
@@ -30,6 +29,7 @@ final class Channel
 
     private static ?\stdClass $sentinel = null;
 
+    /** @var SwooleChannel<mixed> */
     private SwooleChannel $chan;
 
     private ?Throwable $error = null;
@@ -42,7 +42,7 @@ final class Channel
     public function __construct(
         private readonly int $bufferSize = 32,
     ) {
-        $this->chan = SwooleRuntime::channel($bufferSize);
+        $this->chan = new SwooleChannel($bufferSize);
     }
 
     public function emit(mixed ...$args): void
@@ -111,7 +111,7 @@ final class Channel
         $value = $timeout === null ? $this->chan->pop() : $this->chan->pop($timeout);
 
         if ($value === false) {
-            if ($this->chan->errCode() === SwooleChannel::CLOSED && $this->error !== null) {
+            if ($this->chan->errCode === SWOOLE_CHANNEL_CLOSED && $this->error !== null) {
                 throw $this->error;
             }
 

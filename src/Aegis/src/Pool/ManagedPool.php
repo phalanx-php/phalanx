@@ -64,7 +64,7 @@ final class ManagedPool
     private bool $closed = false;
 
     /**
-     * @param class-string $factoryClass class implementing {@see ManagedPoolFactory}
+     * @param class-string<ManagedPoolFactory<ManagedPoolClient>> $factoryClass class implementing {@see ManagedPoolFactory}
      */
     public function __construct(
         private(set) string $domain,

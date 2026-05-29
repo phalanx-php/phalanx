@@ -10,7 +10,6 @@ use Phalanx\AppHost;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Registry\RegistryScope;
-use Phalanx\Runtime\Swoole\SwooleRuntime;
 use Phalanx\Scope\ExecutionLifecycleScope;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\Scope;
@@ -29,10 +28,10 @@ use Phalanx\Trace\TraceType;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use RuntimeException;
-use Swoole\Constant;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
 use Swoole\Http\Server;
+use Swoole\Timer;
 use Throwable;
 
 /**
@@ -241,7 +240,7 @@ final class StoaRunner
         $options = [
             'worker_num' => 1,
             'enable_coroutine' => true,
-            'log_level' => Constant::LOG_WARNING,
+            'log_level' => SWOOLE_LOG_WARNING,
             'max_wait_time' => max(1, (int) ceil($config->drainTimeout)),
             'http_compression' => $config->httpCompression,
         ];
@@ -689,7 +688,7 @@ final class StoaRunner
 
         $this->draining = false;
         if ($this->drainTimer !== null) {
-            SwooleRuntime::clearTimer($this->drainTimer);
+            Timer::clear($this->drainTimer);
             $this->drainTimer = null;
         }
 
@@ -731,7 +730,7 @@ final class StoaRunner
             return;
         }
 
-        $timerId = SwooleRuntime::after(
+        $timerId = Timer::after(
             max(1, (int) round($this->config->drainTimeout * 1000)),
             $this->onDrainTimeout(...),
         );

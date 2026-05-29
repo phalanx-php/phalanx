@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Phalanx\Archon\Tests\Integration\Runtime\Identity;
 
-use Swoole\Coroutine;
-use Swoole\Process;
 use Phalanx\Archon\Runtime\Identity\ConsoleSignal;
 use Phalanx\Archon\Runtime\Identity\ConsoleSignalPolicy;
 use Phalanx\Archon\Runtime\Identity\ConsoleSignalTrap;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
+use Swoole\Coroutine;
+use Swoole\Process;
 
 final class ConsoleSignalTrapTest extends PhalanxTestCase
 {
@@ -33,7 +33,7 @@ final class ConsoleSignalTrapTest extends PhalanxTestCase
             );
 
             Process::kill(getmypid(), SIGUSR2);
-            Coroutine::usleep(50_000);
+            Coroutine::sleep(0.05);
 
             $trap->restore();
         });

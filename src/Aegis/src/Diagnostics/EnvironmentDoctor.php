@@ -13,7 +13,6 @@ use Phalanx\Runtime\RuntimeHooks;
 use Phalanx\Runtime\RuntimePolicy;
 use Phalanx\Supervisor\LedgerStorage;
 use Phalanx\Supervisor\Supervisor;
-use Swoole\Coroutine\PostgreSQL;
 use Swoole\Table;
 
 final class EnvironmentDoctor
@@ -54,11 +53,12 @@ final class EnvironmentDoctor
                 class_exists(Table::class),
                 Table::class,
             ),
-            // PostgreSQL coroutine support is optional; core Phalanx does not require it.
+            // Swoole\Coroutine\PostgreSQL was removed in Swoole 6.0. PDO with runtime hooks
+            // is the supported path. Report as not-present so users know to migrate.
             new DoctorCheck(
                 'swoole.postgresql',
-                class_exists(PostgreSQL::class),
-                PostgreSQL::class,
+                false,
+                'removed in Swoole 6.0 — use PDO with SWOOLE_HOOK_PDO_PGSQL',
                 Severity::Optional,
             ),
             // Policy name and flag details are diagnostic context — always ok=true, never block health.

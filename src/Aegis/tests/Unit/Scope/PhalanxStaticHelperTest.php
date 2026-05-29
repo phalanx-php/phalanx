@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Aegis\Tests\Unit\Scope;
 
-use Swoole\Coroutine;
-use Phalanx\Boot\AppContext;
 use Phalanx\Application;
+use Phalanx\Boot\AppContext;
 use Phalanx\OutsideScopeException;
 use Phalanx\Phalanx;
 use Phalanx\Runtime\RuntimeHooks;
@@ -17,6 +16,8 @@ use Phalanx\Service\Services;
 use Phalanx\Supervisor\InProcessLedger;
 use Phalanx\Task\Task;
 use Phalanx\Testing\PhalanxTestCase;
+
+use function Swoole\Coroutine\run as swoole_coroutine_run;
 
 final class PhalanxStaticHelperTest extends PhalanxTestCase
 {
@@ -43,7 +44,7 @@ final class PhalanxStaticHelperTest extends PhalanxTestCase
         // Run in a fresh coroutine with NO scope installed.
         RuntimeHooks::ensure(RuntimePolicy::phalanxManaged());
         $caught = null;
-        Coroutine::run(static function () use (&$caught): void {
+        swoole_coroutine_run(static function () use (&$caught): void {
             try {
                 Phalanx::scope();
             } catch (OutsideScopeException $e) {
@@ -60,7 +61,7 @@ final class PhalanxStaticHelperTest extends PhalanxTestCase
     {
         RuntimeHooks::ensure(RuntimePolicy::phalanxManaged());
         $observed = 'sentinel';
-        Coroutine::run(static function () use (&$observed): void {
+        swoole_coroutine_run(static function () use (&$observed): void {
             $observed = Phalanx::tryScope();
         });
         self::assertNull($observed);

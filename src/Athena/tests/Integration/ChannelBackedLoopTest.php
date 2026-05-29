@@ -148,7 +148,7 @@ final class ChannelBackedLoopTest extends PhalanxTestCase
 
             foreach ($result->stream as $cue) {
                 $count++;
-                Co::usleep(1000);
+                Co::sleep(0.001);
                 $current = memory_get_usage();
                 if ($current > $peakMemory) {
                     $peakMemory = $current;

@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Phalanx\Pool;
 
-use Phalanx\Runtime\Swoole\SwooleChannel;
+use Swoole\Coroutine\Channel as SwooleChannel;
 
 /**
  * Channel-backed connection pool for coroutine-local client reuse.
  *
- * @template T of object
+ * @template T of ManagedPoolClient
  */
 final class ChannelPool
 {
@@ -19,12 +19,14 @@ final class ChannelPool
 
     private int $created = 0;
 
+    /** @var SwooleChannel<T>|null */
     private ?SwooleChannel $channel;
 
     private bool $closed = false;
 
     /**
-     * @param class-string $factoryClass must implement a static make(mixed): T method
+     * @param class-string<ManagedPoolFactory<T>> $factoryClass must implement {@see ManagedPoolFactory}
+     * @param SwooleChannel<T>|null $channel
      */
     public function __construct(
         private string $factoryClass,
@@ -61,6 +63,9 @@ final class ChannelPool
         return $result;
     }
 
+    /**
+     * @param T $connection
+     */
     public function put(object $connection): void
     {
         if ($this->closed || $this->channel === null) {
@@ -96,6 +101,7 @@ final class ChannelPool
         $this->active = 0;
     }
 
+    /** @return SwooleChannel<T> */
     private function ensureChannel(): SwooleChannel
     {
         return $this->channel ??= new SwooleChannel($this->size);

@@ -7,8 +7,7 @@ namespace Phalanx\Concurrency;
 use Closure;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Cancellation\Cancelled;
-use Phalanx\Runtime\Swoole\SwooleChannel;
-use Phalanx\Runtime\Swoole\SwooleRuntime;
+use Swoole\Coroutine\Channel as SwooleChannel;
 use Throwable;
 
 /**
@@ -25,12 +24,12 @@ use Throwable;
  *   'in_flight' => bool,
  *   'result'    => mixed,
  *   'error'     => ?Throwable,
- *   'waiters'   => array<int, SwooleChannel>,
+ *   'waiters'   => array<int, SwooleChannel<array{0: 'ok'|'err'|'cancelled', 1: mixed}>>,
  * ]
  */
 class SingleflightGroup
 {
-    /** @var array<string, array{in_flight: bool, result: mixed, error: ?Throwable, waiters: array<int, SwooleChannel>}> */
+    /** @var array<string, array{in_flight: bool, result: mixed, error: ?Throwable, waiters: array<int, SwooleChannel<array{0: 'ok'|'err'|'cancelled', 1: mixed}>>}> */
     private array $state = [];
 
     private int $waiterSeq = 0;
@@ -78,7 +77,8 @@ class SingleflightGroup
         CancellationToken $token,
         ?Closure $onWait,
     ): mixed {
-        $waiter = SwooleRuntime::channel(1);
+        /** @var SwooleChannel<array{0: 'ok'|'err'|'cancelled', 1: mixed}> $waiter */
+        $waiter = new SwooleChannel(1);
         $waiterId = ++$this->waiterSeq;
         $this->state[$key]['waiters'][$waiterId] = $waiter;
 

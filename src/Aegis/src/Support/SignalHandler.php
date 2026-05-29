@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Support;
 
-use Phalanx\Runtime\Swoole\SwooleRuntime;
+use Swoole\Process;
 
 final class SignalHandler
 {
@@ -27,7 +27,7 @@ final class SignalHandler
         set_error_handler(static fn(): bool => true);
 
         try {
-            SwooleRuntime::signal($signal, static function () use ($shutdown): void {
+            Process::signal($signal, static function () use ($shutdown): void {
                 $shutdown();
             });
         } finally {

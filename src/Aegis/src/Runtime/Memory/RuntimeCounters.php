@@ -17,7 +17,7 @@ final class RuntimeCounters
     public function incr(RuntimeCounterId|string $name, int $by = 1): int
     {
         $key = self::key($name);
-        $value = $this->tables->counters->incr($key, 'value', $by);
+        $value = (int) $this->tables->counters->incr($key, 'value', $by);
         $this->tables->counters->set($key, [
             'value' => $value,
             'updated_at' => microtime(true),
@@ -39,7 +39,7 @@ final class RuntimeCounters
     public function decr(RuntimeCounterId|string $name, int $by = 1): int
     {
         $key = self::key($name);
-        $value = $this->tables->counters->decr($key, 'value', $by);
+        $value = (int) $this->tables->counters->decr($key, 'value', $by);
         $this->tables->counters->set($key, [
             'value' => $value,
             'updated_at' => microtime(true),

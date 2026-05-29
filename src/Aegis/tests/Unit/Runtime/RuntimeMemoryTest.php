@@ -48,18 +48,27 @@ final class RuntimeMemoryTest extends TestCase
 
     public function testTransitionLockTimeoutIsExplicit(): void
     {
-        $locks = new ManagedResourceTransitionLocks(stripes: 1, timeout: 1.0);
-        $held = $locks->acquire('resource-1');
+        // ManagedResourceTransitionLocks uses Channel::pop which requires a
+        // coroutine scheduler. The timeout path suspends and resumes via the
+        // scheduler, so this test must run inside Coroutine\run().
+        $caught = null;
 
-        try {
-            $locks->acquire('resource-2');
-            self::fail('Expected managed resource transition lock timeout.');
-        } catch (ManagedResourceLockTimeout $e) {
-            self::assertStringContainsString("managed resource 'resource-2'", $e->getMessage());
-        } finally {
-            $held->release();
-            $locks->destroy();
-        }
+        \Swoole\Coroutine\run(static function () use (&$caught): void {
+            $locks = new ManagedResourceTransitionLocks(stripes: 1, timeout: 1.0);
+            $held = $locks->acquire('resource-1');
+
+            try {
+                $locks->acquire('resource-2');
+            } catch (ManagedResourceLockTimeout $e) {
+                $caught = $e;
+            } finally {
+                $held->release();
+                $locks->destroy();
+            }
+        });
+
+        self::assertInstanceOf(ManagedResourceLockTimeout::class, $caught);
+        self::assertStringContainsString("managed resource 'resource-2'", $caught->getMessage());
     }
 
     public function testTransitionLockGuardIsAutoloadableAndConfigValidated(): void

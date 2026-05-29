@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Scope;
 
-use Phalanx\Runtime\Swoole\SwooleRuntime;
+use Swoole\Timer;
 
 /**
  * Concrete Subscription returned by TaskExecutor::periodic. Owns one
@@ -27,6 +27,6 @@ final class PeriodicSubscription implements Subscription
             return;
         }
         $this->cancelled = true;
-        SwooleRuntime::clearTimer($this->timerId);
+        Timer::clear($this->timerId);
     }
 }

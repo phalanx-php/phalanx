@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Aegis\Tests\Unit\Supervisor;
 
-use Phalanx\Boot\AppContext;
 use Phalanx\Application;
+use Phalanx\Boot\AppContext;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Concurrency\RetryPolicy;
 use Phalanx\Middleware\RetryMiddleware;
@@ -14,10 +14,8 @@ use Phalanx\Runtime\RuntimePolicy;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
-use Phalanx\Supervisor\DispatchMode;
 use Phalanx\Supervisor\InProcessLedger;
 use Phalanx\Supervisor\RunState;
-use Phalanx\Supervisor\TaskRun;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Retryable;
 use Phalanx\Task\Task;
@@ -210,7 +208,7 @@ final class ExecuteWiringTest extends TestCase
         // Retry uses Co::sleep between attempts; needs coroutine context.
         $caught = null;
         RuntimeHooks::ensure(RuntimePolicy::phalanxManaged());
-        \Swoole\Coroutine::run(static function () use ($app, $task, &$caught): void {
+        \Swoole\Coroutine\run(static function () use ($app, $task, &$caught): void {
             try {
                 $scope = $app->createScope();
                 $value = $scope->execute($task);

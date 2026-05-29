@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Aegis\Tests\Resilience;
 
-use Swoole\Coroutine;
-use Swoole\Coroutine\Channel;
 use Phalanx\Runtime\Identity\AegisCounterSid;
 use Phalanx\Runtime\Identity\AegisEventSid;
 use Phalanx\Runtime\Identity\AegisResourceSid;
@@ -19,7 +17,11 @@ use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Task;
 use Phalanx\Testing\PhalanxTestCase;
 use Phalanx\Testing\PhalanxTestExpectations;
+use Swoole\Coroutine;
+use Swoole\Coroutine\Channel;
 use Throwable;
+
+use function Swoole\Coroutine\run as swoole_coroutine_run;
 
 class RuntimeMemoryResilienceTest extends PhalanxTestCase
 {
@@ -92,7 +94,7 @@ class RuntimeMemoryResilienceTest extends PhalanxTestCase
             $results = [];
             $errors = [];
 
-            Coroutine::run(static function () use ($memory, &$results, &$errors): void {
+            swoole_coroutine_run(static function () use ($memory, &$results, &$errors): void {
                 $ready = new Channel(3);
                 $start = new Channel(3);
                 $done = new Channel(3);

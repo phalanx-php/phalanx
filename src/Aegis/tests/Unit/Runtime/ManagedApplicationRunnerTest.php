@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace Phalanx\Aegis\Tests\Unit\Runtime;
 
 use LogicException;
-use Swoole\Coroutine;
-use Phalanx\Boot\AppContext;
 use Phalanx\Application;
+use Phalanx\Boot\AppContext;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Service\ServiceBundle;
@@ -15,6 +14,9 @@ use Phalanx\Service\Services;
 use Phalanx\Supervisor\InProcessLedger;
 use Phalanx\Task\Task;
 use PHPUnit\Framework\TestCase;
+use Swoole\Coroutine;
+
+use function Swoole\Coroutine\run as swoole_coroutine_run;
 
 final class ManagedApplicationRunnerTest extends TestCase
 {
@@ -107,7 +109,7 @@ final class ManagedApplicationRunnerTest extends TestCase
         $caught = null;
         $result = null;
 
-        Coroutine::run(static function () use (&$caught, &$result): void {
+        swoole_coroutine_run(static function () use (&$caught, &$result): void {
             try {
                 $result = Application::starting()->run(Task::named(
                     'runner.existing-coroutine',

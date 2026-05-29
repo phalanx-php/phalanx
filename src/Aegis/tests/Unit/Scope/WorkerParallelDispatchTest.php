@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Aegis\Tests\Unit\Scope;
 
-use Swoole\Coroutine\Channel;
 use Phalanx\Application;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Cancellation\Cancelled;
@@ -16,6 +15,7 @@ use Phalanx\Supervisor\DispatchMode;
 use Phalanx\Testing\PhalanxTestCase;
 use Phalanx\Worker\WorkerDispatch;
 use Phalanx\Worker\WorkerTask;
+use Swoole\Coroutine\Channel;
 
 final class WorkerParallelDispatchTest extends PhalanxTestCase
 {
@@ -203,11 +203,11 @@ final class RecordingParallelDispatch implements WorkerDispatch
 
 final class CoordinatedFailFastDispatch implements WorkerDispatch
 {
+    private(set) bool $blockedTaskWasCancelled = false;
+
     private Channel $blockedStarted;
 
     private Channel $blockedCancelled;
-
-    private(set) bool $blockedTaskWasCancelled = false;
 
     public function __construct()
     {
@@ -247,9 +247,9 @@ final class CoordinatedFailFastDispatch implements WorkerDispatch
 
 final class LimitRecordingDispatch implements WorkerDispatch
 {
-    private int $active = 0;
-
     private(set) int $maxActive = 0;
+
+    private int $active = 0;
 
     public function dispatch(WorkerTask $task, TaskScope&TaskExecutor $scope, CancellationToken $token): mixed
     {
@@ -257,7 +257,8 @@ final class LimitRecordingDispatch implements WorkerDispatch
         $this->maxActive = max($this->maxActive, $this->active);
 
         try {
-            \Swoole\Coroutine::sleep(0);
+            // Yield so concurrent dispatches interleave (Swoole 6 sleep floor is 1ms).
+            \Swoole\Coroutine::sleep(0.001);
 
             if ($task instanceof ValueWorkerTask) {
                 return $task($scope);

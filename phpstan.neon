@@ -49,7 +49,6 @@ parameters:
         - src/Aegis/src/Supervisor/Supervisor.php
         - src/Aegis/src/Supervisor/SwooleTableLedger.php
         - src/Aegis/src/Supervisor/TaskRun.php
-        - src/Aegis/src/Runtime/Swoole/
         - src/Aegis/src/Worker/
         - src/Stoa/src/StoaRunner.php
     phalanxEnforcedPaths:
@@ -80,7 +79,6 @@ parameters:
         - src/Aegis/src/Runtime/RuntimeHookNames.php
         - src/Aegis/src/Runtime/RuntimeHooks.php
         - src/Aegis/src/Runtime/RuntimePolicy.php
-        - src/Aegis/src/Runtime/Swoole/
     phalanxProcessInternalPaths:
         - src/Aegis/src/System/Internal/SymfonyProcessAdapter.php
         - src/Cli/src
@@ -88,7 +86,6 @@ parameters:
         - src/Theatron/src/Terminal/Terminal.php
     phalanxCoroutineInternalPaths:
         - src/Aegis/src/Scope/ExecutionLifecycleScope.php
-        - src/Aegis/src/Runtime/Swoole/
         - benchmarks/kernel/cases/ContextSwitchCases.php
     ignoreErrors:
         -
@@ -99,6 +96,11 @@ parameters:
             identifier: phalanx.testing.useBenchmarkHarness
             path: benchmarks/http/server.php
             reportUnmatched: true
+        # swoole/ide-helper's Swoole\Lock::lock() stub omits the $timeout param
+        # that ext-swoole 6 supports (verified: lock(int $operation = 2, float $timeout = -1)).
+        -
+            message: '#Unknown parameter \$timeout in call to method Swoole\\Lock::lock\(\)#'
+            reportUnmatched: false
     tmpDir: .phpstan-cache
     treatPhpDocTypesAsCertain: false
     bootstrapFiles:

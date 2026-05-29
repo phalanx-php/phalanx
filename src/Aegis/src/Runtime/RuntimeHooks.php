@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Runtime;
 
-use Phalanx\Runtime\Swoole\SwooleRuntime;
+use Swoole\Coroutine;
+use Swoole\Runtime;
 use Throwable;
 
 final class RuntimeHooks
@@ -15,7 +16,7 @@ final class RuntimeHooks
 
     public static function currentFlags(): int
     {
-        return SwooleRuntime::getHookFlags();
+        return Runtime::getHookFlags();
     }
 
     public static function inspect(RuntimePolicy $policy): RuntimeHookSnapshot
@@ -33,7 +34,7 @@ final class RuntimeHooks
         }
 
         try {
-            SwooleRuntime::enableCoroutine($before->currentFlags | $policy->requiredFlags);
+            Runtime::enableCoroutine(flags: $before->currentFlags | $policy->requiredFlags);
         } catch (Throwable $e) {
             if ($strict) {
                 throw RuntimePolicyViolation::enableFailed($policy, $before->missingFlags, $e);
@@ -71,7 +72,7 @@ final class RuntimeHooks
             return;
         }
         try {
-            SwooleRuntime::setOptions($policy->coroutineOptions());
+            Coroutine::set($policy->coroutineOptions());
         } catch (Throwable) {
             // Older Swoole builds may not recognize newer options;
             // ignore and let inspect()/ensure() drive the policy gate.

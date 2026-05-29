@@ -6,7 +6,6 @@ namespace Phalanx\Runtime;
 
 use InvalidArgumentException;
 use Phalanx\Boot\AppContext;
-use Swoole\Runtime;
 
 final readonly class RuntimePolicy
 {
@@ -51,10 +50,11 @@ final readonly class RuntimePolicy
         return new self(
             name: self::nameFor($capabilities),
             requiredFlags: $required,
-            sensitiveFlags: Runtime::HOOK_SLEEP
-                | Runtime::HOOK_STDIO
-                | Runtime::HOOK_BLOCKING_FUNCTION
-                | Runtime::HOOK_PROC,
+            sensitiveFlags: SWOOLE_HOOK_SLEEP
+                | SWOOLE_HOOK_STDIO
+                // OpenSwoole: HOOK_BLOCKING_FUNCTION; Swoole 6: SWOOLE_HOOK_NET_FUNCTION
+                | SWOOLE_HOOK_NET_FUNCTION
+                | SWOOLE_HOOK_PROC,
         );
     }
 
@@ -117,23 +117,24 @@ final readonly class RuntimePolicy
     private static function flagsFor(RuntimeCapability $capability): int
     {
         return match ($capability) {
-            RuntimeCapability::Network => Runtime::HOOK_TCP
-                | Runtime::HOOK_UNIX
-                | Runtime::HOOK_SSL
-                | Runtime::HOOK_TLS,
-            RuntimeCapability::HttpClient => Runtime::HOOK_TCP
-                | Runtime::HOOK_SSL
-                | Runtime::HOOK_TLS
-                | Runtime::HOOK_CURL
-                | Runtime::HOOK_NATIVE_CURL,
-            RuntimeCapability::Streams => Runtime::HOOK_STREAM_FUNCTION,
-            RuntimeCapability::Files => Runtime::HOOK_FILE,
-            RuntimeCapability::Sockets => Runtime::HOOK_SOCKETS,
-            RuntimeCapability::Datagrams => Runtime::HOOK_UDP | Runtime::HOOK_UDG,
+            RuntimeCapability::Network => SWOOLE_HOOK_TCP
+                | SWOOLE_HOOK_UNIX
+                | SWOOLE_HOOK_SSL
+                | SWOOLE_HOOK_TLS,
+            RuntimeCapability::HttpClient => SWOOLE_HOOK_TCP
+                | SWOOLE_HOOK_SSL
+                | SWOOLE_HOOK_TLS
+                | SWOOLE_HOOK_CURL
+                | SWOOLE_HOOK_NATIVE_CURL,
+            RuntimeCapability::Streams => SWOOLE_HOOK_STREAM_FUNCTION,
+            RuntimeCapability::Files => SWOOLE_HOOK_FILE,
+            RuntimeCapability::Sockets => SWOOLE_HOOK_SOCKETS,
+            RuntimeCapability::Datagrams => SWOOLE_HOOK_UDP | SWOOLE_HOOK_UDG,
             RuntimeCapability::Processes => 0,
-            RuntimeCapability::InteractiveStdio => Runtime::HOOK_STDIO,
-            RuntimeCapability::Sleep => Runtime::HOOK_SLEEP,
-            RuntimeCapability::BlockingFunctions => Runtime::HOOK_BLOCKING_FUNCTION,
+            RuntimeCapability::InteractiveStdio => SWOOLE_HOOK_STDIO,
+            RuntimeCapability::Sleep => SWOOLE_HOOK_SLEEP,
+            // OpenSwoole: HOOK_BLOCKING_FUNCTION; Swoole 6: SWOOLE_HOOK_NET_FUNCTION
+            RuntimeCapability::BlockingFunctions => SWOOLE_HOOK_NET_FUNCTION,
         };
     }
 
