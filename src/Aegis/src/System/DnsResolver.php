@@ -11,35 +11,42 @@ use Swoole\Coroutine\System;
 /**
  * Aegis-managed DNS resolver primitive.
  *
- * Wraps Swoole\Coroutine\System::dnsLookup and getaddrinfo under
- * the scope's supervised call() so cancellation flows through scope
- * teardown and the supervisor records the wait reason. Downstream
- * consumers (Argos ResolveHostname, future Hermes outbound, agent
- * runtimes that pre-resolve hosts) share one coroutine-aware DNS path.
+ * Uses getaddrinfo (not dnsLookup) so /etc/hosts entries resolve correctly.
  */
-final readonly class DnsResolver
+final class DnsResolver
 {
     public function __construct(
-        public float $defaultTimeout = 5.0,
+        private(set) float $defaultTimeout = 5.0,
     ) {
+    }
+
+    private static function stripPort(string $hostOrHostPort): string
+    {
+        $lastColon = strrpos($hostOrHostPort, ':');
+
+        if ($lastColon === false) {
+            return $hostOrHostPort;
+        }
+
+        if (str_contains($hostOrHostPort, '[')) {
+            $bracket = strrpos($hostOrHostPort, ']');
+            return ($bracket !== false && $lastColon > $bracket)
+                ? substr($hostOrHostPort, 1, $bracket - 1)
+                : trim($hostOrHostPort, '[]');
+        }
+
+        return substr($hostOrHostPort, 0, $lastColon);
     }
 
     public function resolve(Suspendable $scope, string $hostname, ?float $timeout = null): DnsLookupResult
     {
-        $effectiveTimeout = $timeout ?? $this->defaultTimeout;
-        $startNs = hrtime(true);
-
-        $address = $scope->call(
-            static fn(): string|false => System::dnsLookup($hostname, $effectiveTimeout),
-            WaitReason::custom("dns.resolve {$hostname}"),
-        );
-
-        $duration = (hrtime(true) - $startNs) / 1_000_000;
+        $result = $this->resolveAll($scope, $hostname, timeout: $timeout);
+        $first = $result->first();
 
         return new DnsLookupResult(
-            hostname: $hostname,
-            addresses: $address === false ? [] : [$address],
-            durationMs: $duration,
+            hostname: $result->hostname,
+            durationMs: $result->durationMs,
+            addresses: $first !== null ? [$first] : [],
         );
     }
 
@@ -49,19 +56,20 @@ final readonly class DnsResolver
         int $family = AF_INET,
         ?float $timeout = null,
     ): DnsLookupResult {
+        $host = self::stripPort($hostname);
         $effectiveTimeout = $timeout ?? $this->defaultTimeout;
         $startNs = hrtime(true);
 
         $entries = $scope->call(
             static fn(): array|false => System::getaddrinfo(
-                $hostname,
+                $host,
                 $family,
                 SOCK_STREAM,
                 STREAM_IPPROTO_TCP,
                 '',
                 $effectiveTimeout,
             ),
-            WaitReason::custom("dns.resolveAll {$hostname}"),
+            WaitReason::custom("dns.resolveAll {$host}"),
         );
 
         $duration = (hrtime(true) - $startNs) / 1_000_000;
@@ -70,7 +78,7 @@ final readonly class DnsResolver
             : array_values(array_filter($entries, static fn(mixed $v): bool => is_string($v)));
 
         return new DnsLookupResult(
-            hostname: $hostname,
+            hostname: $host,
             addresses: $addresses,
             family: $family,
             durationMs: $duration,

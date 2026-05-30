@@ -15,12 +15,12 @@ final class DnsResolverTest extends PhalanxTestCase
     {
         $result = $this->scope->run(static function (ExecutionScope $scope): DnsLookupResult {
             $resolver = new DnsResolver(defaultTimeout: 2.0);
-            return $resolver->resolve($scope, 'localhost');
+            return $resolver->resolve($scope, "localhost:3000");
         });
 
         self::assertInstanceOf(DnsLookupResult::class, $result);
         self::assertTrue($result->resolved);
-        self::assertSame('localhost', $result->hostname);
+        self::assertSame("localhost", $result->hostname);
         self::assertNotNull($result->first());
         self::assertGreaterThanOrEqual(0.0, $result->durationMs);
     }
@@ -29,7 +29,7 @@ final class DnsResolverTest extends PhalanxTestCase
     {
         $result = $this->scope->run(static function (ExecutionScope $scope): DnsLookupResult {
             $resolver = new DnsResolver();
-            return $resolver->resolveAll($scope, 'localhost');
+            return $resolver->resolveAll($scope, "localhost");
         });
 
         self::assertInstanceOf(DnsLookupResult::class, $result);
@@ -43,7 +43,7 @@ final class DnsResolverTest extends PhalanxTestCase
     {
         $result = $this->scope->run(static function (ExecutionScope $scope): DnsLookupResult {
             $resolver = new DnsResolver(defaultTimeout: 0.5);
-            return $resolver->resolve($scope, 'this-host-should-not-exist.invalid');
+            return $resolver->resolve($scope, "this-host-should-not-exist.invalid");
         });
 
         self::assertInstanceOf(DnsLookupResult::class, $result);
