@@ -124,7 +124,6 @@ final readonly class RuntimePolicy
             RuntimeCapability::HttpClient => SWOOLE_HOOK_TCP
                 | SWOOLE_HOOK_SSL
                 | SWOOLE_HOOK_TLS
-                | SWOOLE_HOOK_CURL
                 | SWOOLE_HOOK_NATIVE_CURL,
             RuntimeCapability::Streams => SWOOLE_HOOK_STREAM_FUNCTION,
             RuntimeCapability::Files => SWOOLE_HOOK_FILE,

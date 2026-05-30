@@ -11,12 +11,16 @@ final class CommandConfig extends HandlerConfig
     /**
      * @param list<CommandArgument> $arguments
      * @param list<CommandOption> $options
+     * @param list<string> $examples
+     * @param list<string> $aliases
      * @param list<string> $tags
      */
     public function __construct(
         private(set) string $description = '',
         private(set) array $arguments = [],
         private(set) array $options = [],
+        private(set) array $examples = [],
+        private(set) array $aliases = [],
         array $tags = [],
         int $priority = 0,
     ) {

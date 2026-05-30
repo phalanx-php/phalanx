@@ -78,11 +78,25 @@ final class HelpGenerator
                 $padding = str_repeat(' ', $maxLen - strlen($labels[$i]) + 2);
                 $desc = $option->description;
 
-                if ($option->default !== null) {
+                if ($option->default !== null && $option->default !== false && $option->default !== '') {
                     $desc .= " (default: {$option->default})";
                 }
 
                 $lines[] = "{$labels[$i]}$padding$desc";
+            }
+        }
+
+        if ($config->aliases !== []) {
+            $lines[] = '';
+            $lines[] = 'Aliases: ' . implode(', ', $config->aliases);
+        }
+
+        if ($config->examples !== []) {
+            $lines[] = '';
+            $lines[] = 'Examples:';
+
+            foreach ($config->examples as $example) {
+                $lines[] = "  {$example}";
             }
         }
 
@@ -108,13 +122,31 @@ final class HelpGenerator
         if ($commands !== []) {
             $lines[] = 'Commands:';
 
-            $names = array_keys($commands);
-            $maxLen = $names !== [] ? max(array_map(strlen(...), $names)) : 0;
+            // Deduplicate aliased commands (same handler class = alias).
+            $seen = [];
+            $entries = [];
 
             foreach ($commands as $cmdName => $handler) {
+                $class = $handler->task;
+
+                if (isset($seen[$class])) {
+                    $seen[$class][] = $cmdName;
+                    continue;
+                }
+
+                $seen[$class] = [$cmdName];
+                $entries[$cmdName] = $handler;
+            }
+
+            $names = array_keys($entries);
+            $maxLen = $names !== [] ? max(array_map(strlen(...), $names)) : 0;
+
+            foreach ($entries as $cmdName => $handler) {
                 $desc = $handler->config instanceof CommandConfig ? $handler->config->description : '';
+                $aliases = $seen[$handler->task];
+                $aliasStr = count($aliases) > 1 ? ' (' . implode(', ', array_slice($aliases, 1)) . ')' : '';
                 $padding = str_repeat(' ', $maxLen - strlen($cmdName) + 2);
-                $lines[] = "  {$cmdName}{$padding}{$desc}";
+                $lines[] = "  {$cmdName}{$padding}{$desc}{$aliasStr}";
             }
         }
 

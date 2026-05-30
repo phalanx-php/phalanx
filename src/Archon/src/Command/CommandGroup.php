@@ -114,7 +114,7 @@ final class CommandGroup implements Executable
     public function merge(self $other): self
     {
         $newInner = $this->inner->merge($other->inner);
-        $instance = self::fromHandlerGroup($newInner, $this->description);
+        $instance = self::fromHandlerGroup($newInner, $this->description !== '' ? $this->description : $other->description);
         $instance->groups = [...$this->groups, ...$other->groups];
 
         return $instance;
