@@ -394,6 +394,7 @@ class Series implements \IteratorAggregate
         foreach ($this as $item) {
             $acc = $fn($acc, $item);
         }
+
         /** @var R $acc */
         return $acc;
     }

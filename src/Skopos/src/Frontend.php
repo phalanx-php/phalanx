@@ -32,6 +32,7 @@ final class Frontend
         } else {
             $f->entry = 'resources/js/app.jsx';
         }
+
         return $f;
     }
 
@@ -41,6 +42,7 @@ final class Frontend
         if ($entry !== null) {
             $f->entry = $entry;
         }
+
         return $f;
     }
 
@@ -50,6 +52,7 @@ final class Frontend
         if ($entry !== null) {
             $f->entry = $entry;
         }
+
         return $f;
     }
 
@@ -59,6 +62,7 @@ final class Frontend
         if ($entry !== null) {
             $f->entry = $entry;
         }
+
         return $f;
     }
 
@@ -67,6 +71,7 @@ final class Frontend
         $f = new self('custom');
         $f->customCommand = $command;
         $f->reloadPattern = $reloadPattern;
+
         return $f;
     }
 
@@ -74,6 +79,7 @@ final class Frontend
     {
         $clone = clone $this;
         $clone->entry = $entry;
+
         return $clone;
     }
 
@@ -81,6 +87,7 @@ final class Frontend
     {
         $clone = clone $this;
         $clone->outdir = $outdir;
+
         return $clone;
     }
 
@@ -88,6 +95,7 @@ final class Frontend
     {
         $clone = clone $this;
         $clone->publicPath = $publicPath;
+
         return $clone;
     }
 
@@ -95,6 +103,7 @@ final class Frontend
     {
         $clone = clone $this;
         $clone->splitting = $enabled;
+
         return $clone;
     }
 
@@ -102,6 +111,7 @@ final class Frontend
     {
         $clone = clone $this;
         $clone->sourcemap = $enabled;
+
         return $clone;
     }
 
@@ -109,6 +119,7 @@ final class Frontend
     {
         $clone = clone $this;
         $clone->minify = $enabled;
+
         return $clone;
     }
 
@@ -116,6 +127,7 @@ final class Frontend
     {
         $clone = clone $this;
         $clone->css = $css;
+
         return $clone;
     }
 
@@ -124,6 +136,7 @@ final class Frontend
     {
         $clone = clone $this;
         $clone->env = $env;
+
         return $clone;
     }
 

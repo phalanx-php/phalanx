@@ -161,6 +161,7 @@ final class RuntimeLifecycleEvents
         $this->sequence->set(0);
         $this->listenerErrors = [];
         $this->tables->mark('resource_events');
+
         return $cleared;
     }
 

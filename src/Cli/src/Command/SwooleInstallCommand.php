@@ -43,12 +43,14 @@ final class SwooleInstallCommand extends Command
         if (extension_loaded('swoole')) {
             $version = phpversion('swoole');
             $output->writeln("<info>Swoole v{$version} is already installed.</info>");
+
             return Command::SUCCESS;
         }
 
         if (extension_loaded('openswoole')) {
             $output->writeln('<error>OpenSwoole is loaded, but Phalanx requires ext-swoole.</error>');
             $output->writeln('Disable OpenSwoole in your active php.ini before installing Swoole.');
+
             return Command::FAILURE;
         }
 
@@ -60,6 +62,7 @@ final class SwooleInstallCommand extends Command
             $output->writeln('Install PIE first:');
             $output->writeln('  composer global require php/pie');
             $output->writeln('  Or download from: https://github.com/php/pie/releases');
+
             return Command::FAILURE;
         }
 
@@ -78,6 +81,7 @@ final class SwooleInstallCommand extends Command
 
             if (!$helper->ask($input, $output, $confirm)) {
                 $output->writeln('Installation cancelled.');
+
                 return Command::SUCCESS;
             }
         }
@@ -91,6 +95,7 @@ final class SwooleInstallCommand extends Command
         if ($exitCode !== 0) {
             $output->writeln('');
             $output->writeln('<error>PIE installation failed (exit code: ' . $exitCode . ').</error>');
+
             return Command::FAILURE;
         }
 
@@ -99,6 +104,7 @@ final class SwooleInstallCommand extends Command
         if (PieRunner::verifyExtensionLoaded()) {
             $output->writeln('<info>Swoole installed and loaded successfully.</info>');
             $output->writeln('Run `phalanx doctor` to verify your environment.');
+
             return Command::SUCCESS;
         }
 
@@ -211,6 +217,7 @@ final class SwooleInstallCommand extends Command
                 static fn (SwooleFlag $f): string => $f->value,
                 $flagSet->flags,
             )));
+
             return $flagSet;
         }
 

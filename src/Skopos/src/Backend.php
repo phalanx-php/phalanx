@@ -28,6 +28,7 @@ final class Backend
         $b->command = $command;
         $b->readyPattern = '/Development Server|Server running|started/i';
         $b->watchPaths = ['app/', 'routes/', 'config/', 'src/'];
+
         return $b;
     }
 
@@ -37,6 +38,7 @@ final class Backend
         $b->command = $command;
         $b->readyPattern = '/listening on/i';
         $b->watchPaths = ['src/'];
+
         return $b;
     }
 
@@ -45,6 +47,7 @@ final class Backend
         $b = new self('node');
         $b->command = $command;
         $b->readyPattern = '/listening|ready|started/i';
+
         return $b;
     }
 
@@ -53,6 +56,7 @@ final class Backend
         $b = new self('custom');
         $b->command = $command;
         $b->readyPattern = $readyPattern;
+
         return $b;
     }
 
@@ -60,6 +64,7 @@ final class Backend
     {
         $clone = clone $this;
         $clone->readyPattern = $pattern;
+
         return $clone;
     }
 
@@ -72,6 +77,7 @@ final class Backend
         $clone = clone $this;
         $clone->watchPaths = $paths;
         $clone->watchExtensions = array_values($extensions);
+
         return $clone;
     }
 
@@ -80,6 +86,7 @@ final class Backend
     {
         $clone = clone $this;
         $clone->env = $env;
+
         return $clone;
     }
 
@@ -87,6 +94,7 @@ final class Backend
     {
         $clone = clone $this;
         $clone->cwd = $cwd;
+
         return $clone;
     }
 

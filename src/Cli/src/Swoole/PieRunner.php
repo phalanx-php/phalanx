@@ -61,10 +61,12 @@ final class PieRunner
 
         if (preg_match('/(\d+\.\d+\.\d+)/', $output, $m)) {
             $this->cachedVersion = $m[1];
+
             return $this->cachedVersion;
         }
 
         $this->cachedVersion = $output !== '' ? $output : null;
+
         return $this->cachedVersion;
     }
 

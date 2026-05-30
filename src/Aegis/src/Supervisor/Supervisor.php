@@ -178,6 +178,7 @@ final class Supervisor
 
         $ledger = $this->ledger;
         $runId = $run->id;
+
         return static function () use ($ledger, $runId): void {
             $ledger->clearWait($runId);
         };
@@ -482,6 +483,7 @@ final class Supervisor
                 }
             } catch (\Throwable) {
             }
+
             return $fallbackId;
         }
 
@@ -494,6 +496,7 @@ final class Supervisor
                     return $hint;
                 }
             }
+
             return $fallbackId;
         }
 
@@ -535,6 +538,7 @@ final class Supervisor
     {
         if ($this->tokenPool->isEmpty()) {
             $this->tokenPoolMisses++;
+
             return CancellationToken::composite($parent);
         }
 

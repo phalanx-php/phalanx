@@ -63,6 +63,7 @@ final class AthenaBundle extends ServiceBundle
                 foreach ($toolBundles as $bundle) {
                     $registry = $registry->merge($bundle);
                 }
+
                 return $registry;
             });
 

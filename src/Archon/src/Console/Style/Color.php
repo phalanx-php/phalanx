@@ -70,6 +70,7 @@ final class Color
         if ($code === null) {
             return '';
         }
+
         return "\033[{$code}m";
     }
 
@@ -79,6 +80,7 @@ final class Color
         if ($code === null) {
             return '';
         }
+
         // bg codes: 30–37 → 40–47, 90–97 → 100–107 (both ranges shift by +10)
         return "\033[" . ($code + 10) . "m";
     }

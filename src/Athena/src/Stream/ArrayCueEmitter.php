@@ -21,6 +21,7 @@ final class ArrayCueEmitter implements CueEmitter
     {
         $drained = $this->cues;
         $this->cues = [];
+
         return $drained;
     }
 }

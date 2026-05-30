@@ -226,6 +226,7 @@ class InputHydrator
         if (enum_exists($typeName)) {
             if (!is_string($value) && !is_int($value)) {
                 $errors[$field][] = "Invalid value for {$field}";
+
                 return null;
             }
 
@@ -240,6 +241,7 @@ class InputHydrator
                     $cases,
                 ));
                 $errors[$field][] = "Invalid value '{$value}'. Expected: {$allowed}";
+
                 return null;
             }
         }
@@ -248,18 +250,22 @@ class InputHydrator
             'string' => (string) $value,
             'int' => is_numeric($value) ? (int) $value : (static function () use ($field, &$errors) {
                 $errors[$field][] = 'Must be an integer';
+
                 return null;
             })(),
             'float' => is_numeric($value) ? (float) $value : (static function () use ($field, &$errors) {
                 $errors[$field][] = 'Must be a number';
+
                 return null;
             })(),
             'bool' => filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? (static function () use ($field, &$errors) {
                 $errors[$field][] = 'Must be a boolean';
+
                 return null;
             })(),
             'array' => is_array($value) ? $value : (static function () use ($field, &$errors) {
                 $errors[$field][] = 'Must be an array';
+
                 return null;
             })(),
             default => $value,

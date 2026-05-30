@@ -141,6 +141,7 @@ class HttpStream
                 if ($line !== '') {
                     yield $line;
                 }
+
                 return;
             }
             $line .= $chunk;
@@ -181,10 +182,12 @@ class HttpStream
         if (strlen($this->decoded) <= $bytes) {
             $out = $this->decoded;
             $this->decoded = '';
+
             return $out;
         }
         $out = substr($this->decoded, 0, $bytes);
         $this->decoded = (string) substr($this->decoded, $bytes);
+
         return $out;
     }
 
@@ -238,6 +241,7 @@ class HttpStream
         $te = strtolower($this->responseHeaders['transfer-encoding'] ?? '');
         if ($te !== '' && str_contains($te, 'chunked')) {
             $this->chunked = new ChunkedDecoder();
+
             return self::MODE_CHUNKED;
         }
 
@@ -246,6 +250,7 @@ class HttpStream
             $this->contentLengthRemaining = (int) $cl;
             if ($this->contentLengthRemaining === 0) {
                 $this->isEof = true;
+
                 return self::MODE_EOF;
             }
             if ($this->maxResponseBytes !== null && $this->contentLengthRemaining > $this->maxResponseBytes) {
@@ -253,6 +258,7 @@ class HttpStream
                     "Response Content-Length ({$this->contentLengthRemaining}) exceeds maxResponseBytes ({$this->maxResponseBytes}).",
                 );
             }
+
             return self::MODE_LENGTH;
         }
 
@@ -268,11 +274,13 @@ class HttpStream
             $this->ingestBody('');
             $this->isEof = true;
             $this->mode = self::MODE_EOF;
+
             return false;
         }
         $bytes = $this->buffer;
         $this->buffer = '';
         $this->ingestBody($bytes);
+
         return true;
     }
 
@@ -314,6 +322,7 @@ class HttpStream
                 if ($this->maxResponseBytes !== null && strlen($this->decoded) > $this->maxResponseBytes) {
                     $this->isEof = true;
                     $this->mode = self::MODE_EOF;
+
                     throw new HttpClientException(
                         "Response body exceeded maxResponseBytes ({$this->maxResponseBytes}) in unbounded read.",
                     );
@@ -329,6 +338,7 @@ class HttpStream
             return false;
         }
         $this->buffer .= $chunk;
+
         return true;
     }
 

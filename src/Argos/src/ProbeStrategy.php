@@ -47,6 +47,7 @@ final readonly class ProbeStrategy
     {
         /** @var Scopeable $task */
         $task = new ($this->taskClass)($ip, ...$this->baseParams);
+
         return $task;
     }
 

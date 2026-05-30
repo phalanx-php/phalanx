@@ -46,6 +46,7 @@ final class WaitReason
     {
         $normalized = preg_replace('/\s+/', ' ', trim($sql)) ?? $sql;
         $preview = mb_strlen($normalized) > 80 ? mb_substr($normalized, 0, 77) . '...' : $normalized;
+
         return new self(WaitKind::Postgres, $preview, microtime(true));
     }
 
@@ -83,6 +84,7 @@ final class WaitReason
     {
         $head = self::firstArgument($command);
         $body = $detail !== '' ? "{$head} ({$detail})" : $head;
+
         return new self(WaitKind::Process, $body, microtime(true));
     }
 
@@ -91,12 +93,14 @@ final class WaitReason
         $body = $prompt !== '' && $detail !== ''
             ? "{$prompt} ({$detail})"
             : ($prompt !== '' ? $prompt : $detail);
+
         return new self(WaitKind::Input, $body, microtime(true));
     }
 
     public static function streamWrite(string $domain, int $bytes = 0): self
     {
         $body = $bytes > 0 ? "{$domain} ({$bytes}B)" : $domain;
+
         return new self(WaitKind::StreamWrite, $body, microtime(true));
     }
 
@@ -104,6 +108,7 @@ final class WaitReason
     {
         $head = $domain !== '' ? $domain : 'ws.frame';
         $body = $bytes > 0 ? "{$head} ({$bytes}B)" : $head;
+
         return new self(WaitKind::WsFrameWrite, $body, microtime(true));
     }
 
@@ -115,6 +120,7 @@ final class WaitReason
     public static function udpReceive(string $host = '', int $port = 0): self
     {
         $body = $host !== '' && $port > 0 ? "{$host}:{$port}" : $host;
+
         return new self(WaitKind::UdpReceive, $body, microtime(true));
     }
 
@@ -140,6 +146,7 @@ final class WaitReason
             return '';
         }
         $head = strtok($trimmed, " \t\n");
+
         return $head === false ? $trimmed : $head;
     }
 }

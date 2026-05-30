@@ -108,6 +108,7 @@ final class TaskRun implements BorrowedValue
     public function elapsed(): float
     {
         $end = $this->endedAt ?? microtime(true);
+
         return $end - $this->startedAt;
     }
 

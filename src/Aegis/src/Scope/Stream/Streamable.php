@@ -43,6 +43,7 @@ trait Streamable
     public function onStart(Closure $fn): static
     {
         $this->onStartHooks[] = $fn;
+
         return $this;
     }
 
@@ -50,6 +51,7 @@ trait Streamable
     public function onEach(Closure $fn): static
     {
         $this->onEachHooks[] = $fn;
+
         return $this;
     }
 
@@ -57,6 +59,7 @@ trait Streamable
     public function onError(Closure $fn): static
     {
         $this->onErrorHooks[] = $fn;
+
         return $this;
     }
 
@@ -64,6 +67,7 @@ trait Streamable
     public function onComplete(Closure $fn): static
     {
         $this->onCompleteHooks[] = $fn;
+
         return $this;
     }
 
@@ -71,6 +75,7 @@ trait Streamable
     public function onDispose(Closure $fn): static
     {
         $this->onDisposeHooks[] = $fn;
+
         return $this;
     }
 

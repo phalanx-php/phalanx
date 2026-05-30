@@ -19,8 +19,10 @@ final class First
     {
         foreach (($this->source)($scope) as $value) {
             $scope->throwIfCancelled();
+
             return $value;
         }
+
         throw new RuntimeException('Stream completed without emitting any values.');
     }
 }

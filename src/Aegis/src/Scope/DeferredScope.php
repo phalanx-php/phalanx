@@ -50,6 +50,7 @@ class DeferredScope implements Suspendable, Cancellable
                 . 'Call from inside a $scope->execute(...) or $scope->concurrent(...) body.',
             );
         }
+
         return $current;
     }
 }

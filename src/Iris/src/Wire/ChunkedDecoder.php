@@ -65,10 +65,12 @@ final class ChunkedDecoder
         if (strlen($this->decoded) <= $maxBytes) {
             $out = $this->decoded;
             $this->decoded = '';
+
             return $out;
         }
         $out = substr($this->decoded, 0, $maxBytes);
         $this->decoded = (string) substr($this->decoded, $maxBytes);
+
         return $out;
     }
 
@@ -138,11 +140,13 @@ final class ChunkedDecoder
 
         if ($size === 0) {
             $this->state = self::STATE_TRAILER;
+
             return true;
         }
 
         $this->chunkRemaining = $size;
         $this->state = self::STATE_BODY;
+
         return true;
     }
 
@@ -157,8 +161,10 @@ final class ChunkedDecoder
         $this->chunkRemaining -= $take;
         if ($this->chunkRemaining === 0) {
             $this->state = self::STATE_BODY_CRLF;
+
             return true;
         }
+
         return false;
     }
 
@@ -172,6 +178,7 @@ final class ChunkedDecoder
         }
         $this->buffer = (string) substr($this->buffer, 2);
         $this->state = self::STATE_SIZE;
+
         return true;
     }
 
@@ -190,6 +197,7 @@ final class ChunkedDecoder
             if ($crlf === 0) {
                 $this->state = self::STATE_EOF;
                 $this->eof = true;
+
                 return true;
             }
         }

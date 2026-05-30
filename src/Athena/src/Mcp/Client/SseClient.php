@@ -37,6 +37,7 @@ final class SseClient implements McpClient
 
         if ($sseStream->status !== 200) {
             $sseStream->abort('non-200-status');
+
             throw new \RuntimeException(
                 "SSE connection to {$server->endpoint} failed with HTTP {$sseStream->status}",
             );

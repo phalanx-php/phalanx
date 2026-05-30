@@ -110,6 +110,7 @@ final class InProcessLedger implements LedgerStorage
         foreach ($run->leases as $i => $held) {
             if ($held === $lease) {
                 array_splice($run->leases, $i, 1);
+
                 return;
             }
         }
@@ -158,6 +159,7 @@ final class InProcessLedger implements LedgerStorage
     public function snapshot(string $runId): ?TaskRunSnapshot
     {
         $run = $this->runs[$runId] ?? null;
+
         return $run === null ? null : self::project($run);
     }
 
@@ -190,6 +192,7 @@ final class InProcessLedger implements LedgerStorage
                 $live++;
             }
         }
+
         return $live;
     }
 

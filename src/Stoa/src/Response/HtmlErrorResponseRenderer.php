@@ -93,6 +93,7 @@ final readonly class HtmlErrorResponseRenderer implements ErrorResponseRenderer
             $rawTrace[] = sprintf("%d. %s%s%s() at %s:%d", $i + 1, $class, $type, $func, $file, $line);
         }
         $out .= '</ul>';
+
         return sprintf(
             "%s<script>window.rawTrace = %s;</script>",
             $out,
@@ -108,6 +109,7 @@ final readonly class HtmlErrorResponseRenderer implements ErrorResponseRenderer
             if ($svg) {
                 $svg = preg_replace('#<text.*?</text>#s', '', $svg) ?? $svg;
                 $svg = str_replace('viewBox="0 0 520 120"', 'viewBox="0 0 110 120"', $svg);
+
                 return $svg;
             }
         }

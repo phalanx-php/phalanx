@@ -156,6 +156,7 @@ final class Resource
             $result = $fetcher($key);
         } catch (Cancelled $e) {
             $this->handleCancelled($gen);
+
             throw $e;
         } catch (Throwable $e) {
             if ($this->generation === $gen && !$this->disposed) {
@@ -190,6 +191,7 @@ final class Resource
                 $result = $fetcher($key);
             } catch (Cancelled $e) {
                 $weakSelf->get()?->handleCancelled($gen);
+
                 throw $e;
             } catch (Throwable $e) {
                 $self = $weakSelf->get();
@@ -222,6 +224,7 @@ final class Resource
             $this->consumeStream($gen, $fetcher($key));
         } catch (Cancelled $e) {
             $this->handleCancelled($gen);
+
             throw $e;
         } catch (Throwable $e) {
             if ($this->generation === $gen && !$this->disposed) {
@@ -261,6 +264,7 @@ final class Resource
                 $self->consumeStream($gen, $fetcher($key));
             } catch (Cancelled $e) {
                 $weakSelf->get()?->handleCancelled($gen);
+
                 throw $e;
             } catch (Throwable $e) {
                 $self = $weakSelf->get();

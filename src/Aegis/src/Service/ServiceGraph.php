@@ -29,6 +29,7 @@ final class ServiceGraph
         if (!isset($this->configs[$resolved])) {
             throw new ServiceNotFoundException($type);
         }
+
         return $this->configs[$resolved];
     }
 

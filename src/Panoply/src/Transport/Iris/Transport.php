@@ -124,18 +124,22 @@ final class Transport implements TransportContract
                 }
             } catch (CancellationException $e) {
                 $stream->abort('cancelled');
+
                 throw $e;
             } catch (Cancelled $e) {
                 // Re-wrap Aegis coroutine cancellation for runtime symmetry.
                 $stream->abort('cancelled');
+
                 throw new CancellationException($e->getMessage(), 0, $e);
             } catch (HttpClientException $e) {
                 // Wrap iris-specific transport errors so callers never need to
                 // import Phalanx\Iris\* to handle connection or protocol failures.
                 $stream->fail($e->getMessage());
+
                 throw new TransportException("iris transport failed: {$e->getMessage()}", 0, $e);
             } catch (\Throwable $e) {
                 $stream->fail($e->getMessage());
+
                 throw $e;
             } finally {
                 $stream->close();

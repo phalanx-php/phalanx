@@ -57,60 +57,70 @@ final class ArchonBuilder
     public function providers(ServiceBundle ...$providers): self
     {
         $this->app->providers(...$providers);
+
         return $this;
     }
 
     public function serviceMiddleware(ServiceTransformationMiddleware ...$middlewares): self
     {
         $this->app->serviceMiddleware(...$middlewares);
+
         return $this;
     }
 
     public function taskMiddleware(TaskMiddleware ...$middlewares): self
     {
         $this->app->taskMiddleware(...$middlewares);
+
         return $this;
     }
 
     public function withErrorRenderers(\Phalanx\Archon\Console\ConsoleErrorRenderer ...$renderers): self
     {
         $this->errorRenderers = array_values([...$this->errorRenderers, ...$renderers]);
+
         return $this;
     }
 
     public function withErrorHandler(\Phalanx\Exception\ErrorHandler ...$handlers): self
     {
         $this->app->withErrorHandler(...$handlers);
+
         return $this;
     }
 
     public function withTrace(Trace $trace): self
     {
         $this->app->withTrace($trace);
+
         return $this;
     }
 
     public function withWorkerDispatch(WorkerDispatch $dispatch): self
     {
         $this->app->withWorkerDispatch($dispatch);
+
         return $this;
     }
 
     public function withRuntimePolicy(RuntimePolicy $policy): self
     {
         $this->app->withRuntimePolicy($policy);
+
         return $this;
     }
 
     public function withRuntimeHooksStrict(bool $strict): self
     {
         $this->app->withRuntimeHooksStrict($strict);
+
         return $this;
     }
 
     public function withLedger(LedgerStorage $ledger): self
     {
         $this->app->withLedger($ledger);
+
         return $this;
     }
 
@@ -120,6 +130,7 @@ final class ArchonBuilder
     public function commands(CommandGroup|string|array $commands): self
     {
         $this->commandSources[] = $commands;
+
         return $this;
     }
 
@@ -129,18 +140,21 @@ final class ArchonBuilder
         ?CommandConfig $config = null,
     ): self {
         $this->inlineCommands[$name] = InlineCommand::named($name, $handler, $config);
+
         return $this;
     }
 
     public function default(string $command): self
     {
         $this->consoleConfig = $this->resolveConsoleConfig()->withDefaultCommand($command);
+
         return $this;
     }
 
     public function withConsoleConfig(ConsoleConfig $config): self
     {
         $this->consoleConfig = $config;
+
         return $this;
     }
 

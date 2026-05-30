@@ -43,6 +43,7 @@ $expected = (new AccessorTraitWriter())->render($lenses);
 $target = is_dir($frameworkDir)
     ? $frameworkDir . '/Aegis/src/Testing/Generated/TestAppAccessors.php'
     : $moduleDir . '/src/Testing/Generated/TestAppAccessors.php';
+    
 $actual = @file_get_contents($target);
 
 if ($actual === false) {

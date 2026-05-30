@@ -33,6 +33,7 @@ final class Process
     {
         $clone = clone $this;
         $clone->command = $command;
+
         return $clone;
     }
 
@@ -40,6 +41,7 @@ final class Process
     {
         $clone = clone $this;
         $clone->cwd = $cwd;
+
         return $clone;
     }
 
@@ -48,6 +50,7 @@ final class Process
     {
         $clone = clone $this;
         $clone->env = $env;
+
         return $clone;
     }
 
@@ -55,6 +58,7 @@ final class Process
     {
         $clone = clone $this;
         $clone->readinessProbe = ReadinessProbe::outputMatches($pattern);
+
         return $clone;
     }
 
@@ -62,6 +66,7 @@ final class Process
     {
         $clone = clone $this;
         $clone->readinessProbe = $probe;
+
         return $clone;
     }
 
@@ -69,6 +74,7 @@ final class Process
     {
         $clone = clone $this;
         $clone->isServer = true;
+
         return $clone;
     }
 
@@ -81,6 +87,7 @@ final class Process
         $clone = clone $this;
         $clone->watchPaths = $paths;
         $clone->watchExtensions = array_values($extensions);
+
         return $clone;
     }
 }

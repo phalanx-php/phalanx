@@ -59,6 +59,7 @@ final class NumberInput extends TextInput
     protected function finalValue(): int|float
     {
         $raw = $this->value !== '' ? $this->value : $this->default;
+
         return $this->float ? (float) $raw : (int) $raw;
     }
 
@@ -72,6 +73,7 @@ final class NumberInput extends TextInput
     {
         if ($key === 'enter') {
             $this->submit($this->finalValue());
+
             return;
         }
 
@@ -82,6 +84,7 @@ final class NumberInput extends TextInput
             ], true)
         ) {
             parent::handleKey($key);
+
             return;
         }
 

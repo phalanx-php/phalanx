@@ -56,6 +56,7 @@ final class Transport implements TransportContract
                 CURLOPT_NOPROGRESS => false,
                 CURLOPT_WRITEFUNCTION => static function (\CurlHandle $_ch, string $data) use (&$chunks): int {
                     $chunks[] = $data;
+
                     return strlen($data);
                 },
                 CURLOPT_PROGRESSFUNCTION => static fn(
@@ -96,6 +97,7 @@ final class Transport implements TransportContract
 
             if ($statusCode < 200 || $statusCode >= 300) {
                 $body = implode('', $chunks);
+
                 throw new HttpError(
                     statusCode: $statusCode,
                     responseBody: $body,

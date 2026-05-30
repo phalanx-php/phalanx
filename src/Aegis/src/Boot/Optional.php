@@ -25,6 +25,7 @@ final class Optional extends BootRequirement
     public static function env(string $name, ?string $fallback = null, ?string $description = null): self
     {
         $key = ContextKey::optional($name, fallback: $fallback, description: $description);
+
         return new self(
             self::KIND_ENV,
             $key->description,
@@ -41,6 +42,7 @@ final class Optional extends BootRequirement
     public static function service(string $id, ?string $description = null): self
     {
         $message = $description ?? sprintf('Optional service "%s"', $id);
+
         return new self(
             self::KIND_SERVICE,
             $message,

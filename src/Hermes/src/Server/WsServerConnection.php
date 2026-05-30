@@ -87,6 +87,7 @@ final class WsServerConnection
 
                         if (strlen($message->payload) > $config->maxFrameSize) {
                             $self->close(WsCloseCode::MessageTooBig);
+
                             return;
                         }
 
@@ -122,6 +123,7 @@ final class WsServerConnection
 
                         if ($sent !== true) {
                             $self->onWriteFailed();
+
                             return;
                         }
                     }

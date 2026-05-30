@@ -146,6 +146,7 @@ final class SurrealEventLog implements EventReader
             $status = $statement['status'] ?? 'OK';
             if ($status === 'ERR') {
                 $detail = $statement['result'] ?? 'unknown Surreal error';
+
                 throw new SurrealException('Surreal query failed: ' . (is_string($detail) ? $detail : json_encode($detail)));
             }
 

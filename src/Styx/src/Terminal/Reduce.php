@@ -27,6 +27,7 @@ final class Reduce
             $scope->throwIfCancelled();
             $accumulator = ($this->reducer)($accumulator, $value, $key);
         }
+
         return $accumulator;
     }
 }

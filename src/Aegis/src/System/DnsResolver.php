@@ -30,6 +30,7 @@ final class DnsResolver
 
         if (str_contains($hostOrHostPort, '[')) {
             $bracket = strrpos($hostOrHostPort, ']');
+
             return ($bracket !== false && $lastColon > $bracket)
                 ? substr($hostOrHostPort, 1, $bracket - 1)
                 : trim($hostOrHostPort, '[]');

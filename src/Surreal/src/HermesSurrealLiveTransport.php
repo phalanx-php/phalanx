@@ -41,9 +41,11 @@ class HermesSurrealLiveTransport implements SurrealLiveTransport
             $connection->request('use', [$config->namespace, $config->database]);
         } catch (Cancelled $e) {
             $connection->close();
+
             throw $e;
         } catch (Throwable $e) {
             $connection->close();
+
             throw $e;
         }
 

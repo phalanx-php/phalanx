@@ -52,12 +52,14 @@ final class WorkerPool
     {
         $pool = new self(SWOOLE_IPC_NONE, 0);
         $pool->addBatch($workerNum, $func, enableCoroutine: true);
+
         return $pool;
     }
 
     public static function eventWorkerStart(): string
     {
         $constant = 'Swoole\\Constant::EVENT_WORKER_START';
+
         return defined($constant) ? (string) constant($constant) : 'workerStart';
     }
 
@@ -73,6 +75,7 @@ final class WorkerPool
     {
         $this->factories[] = [$func, $enableCoroutine];
         $this->workerCount = count($this->factories);
+
         return $this;
     }
 
@@ -88,6 +91,7 @@ final class WorkerPool
             $this->factories[] = [$func, $enableCoroutine];
         }
         $this->workerCount = count($this->factories);
+
         return $this;
     }
 

@@ -129,6 +129,7 @@ final class ManagedPool
         } catch (Throwable $e) {
             unset($this->checkedOut[$connectionId]);
             $this->clientPool->put($client);
+
             throw $e;
         }
 
@@ -148,6 +149,7 @@ final class ManagedPool
                     'detail' => 'pool release for unknown lease key (double-release?)',
                 ],
             );
+
             return;
         }
         unset($this->checkedOut[$lease->key]);
@@ -171,6 +173,7 @@ final class ManagedPool
         $lease = $this->acquire($scope, $timeout);
         try {
             $client = $this->checkedOut[$lease->key]['client'];
+
             return $work($client);
         } finally {
             $this->release($lease);

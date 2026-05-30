@@ -44,6 +44,7 @@ final class PressureMonitor
     public function start(TaskExecutor $scope): Subscription
     {
         $check = $this->makeCheckClosure();
+
         return $scope->periodic($this->intervalSec, $check);
     }
 
@@ -76,6 +77,7 @@ final class PressureMonitor
     private function makeCheckClosure(): Closure
     {
         $self = $this;
+
         return static function () use ($self): void {
             $self->sample();
         };

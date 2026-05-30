@@ -45,6 +45,7 @@ final class Phalanx
         if ($current === null) {
             throw new OutsideScopeException();
         }
+
         return $current;
     }
 

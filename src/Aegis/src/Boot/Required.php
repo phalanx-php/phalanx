@@ -25,6 +25,7 @@ final class Required extends BootRequirement
     public static function env(string $name, ?string $description = null): self
     {
         $key = ContextKey::required($name, description: $description);
+
         return new self(
             self::KIND_ENV,
             $key->description,
@@ -42,6 +43,7 @@ final class Required extends BootRequirement
     public static function service(string $id, ?string $description = null): self
     {
         $message = $description ?? sprintf('Required service "%s"', $id);
+
         return new self(
             self::KIND_SERVICE,
             $message,

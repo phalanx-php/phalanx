@@ -71,6 +71,7 @@ final class LifecycleCallbacks
         $clone->onReady = [...$this->onReady, ...$other->onReady];
         $clone->onDispose = [...$this->onDispose, ...$other->onDispose];
         $clone->onShutdown = [...$this->onShutdown, ...$other->onShutdown];
+
         return $clone;
     }
 }

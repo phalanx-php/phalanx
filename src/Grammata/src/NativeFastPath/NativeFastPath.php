@@ -37,6 +37,7 @@ final class NativeFastPath
         if ($result === false) {
             throw new RuntimeException("NativeFastPath::read({$path}) failed");
         }
+
         return $result;
     }
 
@@ -49,6 +50,7 @@ final class NativeFastPath
         if ($result === false) {
             throw new RuntimeException("NativeFastPath::write({$path}) failed");
         }
+
         return is_int($result) ? $result : strlen($data);
     }
 }

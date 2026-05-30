@@ -252,6 +252,7 @@ final class StreamingProcessHandle
     private function exitCodeFromSignal(): ?int
     {
         $signal = $this->adapter->getTermSignal();
+
         return $signal === null ? null : 128 + $signal;
     }
 

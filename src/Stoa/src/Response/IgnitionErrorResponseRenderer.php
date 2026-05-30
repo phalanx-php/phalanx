@@ -92,6 +92,7 @@ final readonly class IgnitionErrorResponseRenderer implements ErrorResponseRende
         } catch (Throwable $renderError) {
             // Extreme resilience: fallback to other renderers on any crash
             fwrite(STDERR, "PHALANX DEBUG: Ignition Renderer failed: " . $renderError->getMessage() . "\n");
+
             return null;
         }
     }
@@ -278,9 +279,11 @@ HTML;
             $svg = file_get_contents($path);
             if ($svg) {
                 $svg = preg_replace('#<text.*?</text>#s', '', $svg) ?? $svg;
+
                 return str_replace('viewBox="0 0 520 120"', 'viewBox="0 0 110 120"', $svg);
             }
         }
+
         return '';
     }
 }

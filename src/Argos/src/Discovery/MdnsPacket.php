@@ -103,6 +103,7 @@ final class MdnsPacket
 
             if ($length === 0) {
                 $offset++;
+
                 return implode('.', $labels);
             }
 

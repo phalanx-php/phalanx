@@ -117,6 +117,7 @@ final class Painter
                     : $ctx;
                 self::paint($inner, $childCtx);
             }
+
             return;
         }
 

@@ -56,6 +56,7 @@ class BootHarness
         if ($this->isEmpty()) {
             return $other;
         }
+
         return new self([...$this->requirements, ...$other->requirements]);
     }
 }

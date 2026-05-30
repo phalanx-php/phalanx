@@ -53,6 +53,7 @@ class CancellationToken
     {
         $t = new self();
         $t->immutableNone = true;
+
         return $t;
     }
 
@@ -85,6 +86,7 @@ class CancellationToken
         foreach ($sources as $source) {
             if ($source->isCancelled) {
                 $composite->cancel();
+
                 return $composite;
             }
             $key = $source->onCancel(static function () use ($composite): void {
@@ -103,6 +105,7 @@ class CancellationToken
         foreach ($sources as $source) {
             if ($source->isCancelled) {
                 $this->cancel();
+
                 return;
             }
             $key = $source->onCancel(static function () use ($token): void {
@@ -167,6 +170,7 @@ class CancellationToken
                 $listener();
             } catch (\Throwable) {
             }
+
             return -1;
         }
 

@@ -45,6 +45,7 @@ final class Probe extends BootRequirement
                 );
                 if ($socket !== false) {
                     fclose($socket);
+
                     return BootEvaluation::pass(sprintf('%s reachable', $message));
                 }
                 $remediation = sprintf(
@@ -56,6 +57,7 @@ final class Probe extends BootRequirement
                 if ($failureMode === ProbeOutcome::FailBoot) {
                     return BootEvaluation::fail(sprintf('%s unreachable', $message), $remediation);
                 }
+
                 return BootEvaluation::warn(sprintf('%s unreachable; feature unavailable', $message), $remediation);
             },
         );
@@ -92,6 +94,7 @@ final class Probe extends BootRequirement
                 if ($failureMode === ProbeOutcome::FailBoot) {
                     return BootEvaluation::fail(sprintf('%s unreachable', $msg), $remediation);
                 }
+
                 return BootEvaluation::warn(sprintf('%s unreachable; feature unavailable', $msg), $remediation);
             }
             $raw = $headers[0] ?? '';
@@ -105,8 +108,10 @@ final class Probe extends BootRequirement
             if ($failureMode === ProbeOutcome::FailBoot) {
                 return BootEvaluation::fail(sprintf('%s status %d', $msg, $status), $remediation);
             }
+
             return BootEvaluation::warn(sprintf('%s status %d; feature unavailable', $msg, $status), $remediation);
         };
+
         return new self(self::KIND_HTTP, $msg, $failureMode, $check);
     }
 
@@ -131,6 +136,7 @@ final class Probe extends BootRequirement
                 if ($failureMode === ProbeOutcome::FailBoot) {
                     return BootEvaluation::fail(sprintf('%s failed', $description), $remediation);
                 }
+
                 return BootEvaluation::warn(sprintf('%s failed; feature unavailable', $description), $remediation);
             },
         );

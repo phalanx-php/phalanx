@@ -78,6 +78,7 @@ final class SearchInput extends BasePrompt
 
         if ($this->state === 'searching') {
             $spinLine = '  ' . $this->spinner->frame($this->spinnerTick++, 'Searching…');
+
             return $this->buildFrame("{$queryLine}\n{$spinLine}", $title, $this->label, $width);
         }
 
@@ -86,6 +87,7 @@ final class SearchInput extends BasePrompt
                 ? '  ' . $this->theme->muted->apply('No results')
                 : '';
             $body = $emptyLine !== '' ? "{$queryLine}\n{$emptyLine}" : $queryLine;
+
             return $this->buildFrame($body . $this->hintLine(), $title, $this->label, $width);
         }
 

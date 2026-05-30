@@ -41,6 +41,7 @@ final class FilePool
     {
         if ($this->active < $this->maxOpen) {
             $this->active++;
+
             return;
         }
 
@@ -53,6 +54,7 @@ final class FilePool
             );
         } catch (Throwable $e) {
             $this->removeWaiter($waiter);
+
             throw $e;
         }
         $this->active++;
@@ -87,6 +89,7 @@ final class FilePool
 
             array_splice($this->waiters, $index, 1);
             $waiter->complete();
+
             return;
         }
     }

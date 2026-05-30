@@ -84,9 +84,11 @@ class ProcessHandle
 
         try {
             $this->process->write(Codec::encode($task), timeout: 1.0);
+
             return $this->readTaskResult($task, $scope, $serviceHandler);
         } catch (Cancelled $e) {
             $this->kill();
+
             throw $e;
         } catch (\Throwable $e) {
             if (!$this->isRunning()) {
@@ -107,6 +109,7 @@ class ProcessHandle
 
         if (!$this->process->isRunning()) {
             $this->cleanup();
+
             return;
         }
 
@@ -155,6 +158,7 @@ class ProcessHandle
             if ($line === '') {
                 if (!$this->isRunning()) {
                     $this->state = ProcessState::Crashed;
+
                     throw new RuntimeException('Worker exited before returning a task response');
                 }
                 continue;
@@ -177,6 +181,7 @@ class ProcessHandle
                 }
 
                 $this->state = ProcessState::Idle;
+
                 return $message->unwrap();
             }
         }

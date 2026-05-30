@@ -59,6 +59,7 @@ class HermesSurrealLiveConnection implements SurrealLiveConnection
             $message = $reply->next($this->requestTimeout);
             if ($message === null) {
                 unset($this->pending[$id]);
+
                 throw new SurrealException("Surreal live RPC {$method} timed out.");
             }
 
@@ -111,6 +112,7 @@ class HermesSurrealLiveConnection implements SurrealLiveConnection
             }
         } catch (Cancelled $e) {
             $this->fail($e);
+
             throw $e;
         } catch (Throwable $e) {
             $this->fail($e);
@@ -127,6 +129,7 @@ class HermesSurrealLiveConnection implements SurrealLiveConnection
 
         if (array_key_exists('id', $envelope)) {
             $this->handleReply($envelope);
+
             return;
         }
 
@@ -163,11 +166,13 @@ class HermesSurrealLiveConnection implements SurrealLiveConnection
 
         if (array_key_exists('error', $envelope)) {
             $reply->error(SurrealException::fromErrorEnvelope($envelope['error']));
+
             return;
         }
 
         if (!array_key_exists('result', $envelope)) {
             $reply->error(new SurrealException('Surreal live RPC response was missing result or error.'));
+
             return;
         }
 

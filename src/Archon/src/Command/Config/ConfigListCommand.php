@@ -25,6 +25,7 @@ final class ConfigListCommand implements Scopeable, DescribesCommand
 
         if ($nodes === []) {
             $output->persist('No config classes registered.');
+
             return 0;
         }
 

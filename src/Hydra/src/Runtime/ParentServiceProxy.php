@@ -39,6 +39,7 @@ class ParentServiceProxy
 
         /** @var class-string $class */
         $class = $call->serviceClass;
+
         return $class;
     }
 }

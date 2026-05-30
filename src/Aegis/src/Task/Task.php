@@ -47,6 +47,7 @@ class Task implements Executable
 
         $task = new self($fn);
         $task->sourceLocation = self::deriveLocation($reflection);
+
         return $task;
     }
 
@@ -54,6 +55,7 @@ class Task implements Executable
     {
         $task = self::of($fn);
         $task->sourceLocation = $name;
+
         return $task;
     }
 
@@ -68,6 +70,7 @@ class Task implements Executable
         if ($file === false) {
             return self::class;
         }
+
         return basename($file) . ':' . $reflection->getStartLine();
     }
 }

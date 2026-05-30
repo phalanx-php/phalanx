@@ -78,12 +78,14 @@ final class WsServerUpgrade implements HttpUpgradeable
         if ($match === null) {
             $sessionScope->dispose();
             $resources->recordEvent($requestResource->id, HermesEventSid::ServerUpgradeRejected, 'no_route');
+
             return $resources->fail($requestResource->id, 'no_route');
         }
 
         if (!$match->scope instanceof RequestContext) {
             $sessionScope->dispose();
             $resources->recordEvent($requestResource->id, HermesEventSid::ServerUpgradeRejected, 'invalid_route_scope');
+
             return $resources->fail($requestResource->id, 'invalid_route_scope');
         }
 
@@ -99,16 +101,19 @@ final class WsServerUpgrade implements HttpUpgradeable
             $handshakeOk = $target->upgrade();
         } catch (Cancelled $cancelled) {
             $sessionScope->dispose();
+
             throw $cancelled;
         } catch (Throwable $e) {
             $sessionScope->dispose();
             $resources->recordEvent($requestResource->id, HermesEventSid::HandshakeFailed, $e::class);
+
             return $resources->fail($requestResource->id, 'handshake_error');
         }
 
         if (!$handshakeOk) {
             $sessionScope->dispose();
             $resources->recordEvent($requestResource->id, HermesEventSid::HandshakeFailed, 'upgrade_returned_false');
+
             return $resources->fail($requestResource->id, 'handshake_failed');
         }
 
@@ -148,6 +153,7 @@ final class WsServerUpgrade implements HttpUpgradeable
             $server->close();
             $sessionScope->dispose();
             $resources->recordEvent($wsHandle, HermesEventSid::ConnectionFailed, 'handler_not_callable');
+
             return $resources->fail($wsHandle, 'handler_not_callable');
         }
 
@@ -167,12 +173,14 @@ final class WsServerUpgrade implements HttpUpgradeable
             $server->close();
             $sessionScope->dispose();
             $resources->abort($wsHandle, 'cancelled');
+
             throw $cancelled;
         } catch (Throwable $e) {
             $resources->recordEvent($wsHandle, HermesEventSid::ConnectionFailed, $e::class);
             self::unlink($requestCancellation, $cancelKey);
             $server->close();
             $sessionScope->dispose();
+
             return $resources->fail($wsHandle, $e::class);
         }
 

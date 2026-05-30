@@ -39,6 +39,7 @@ final class CommandDispatcher
     public function withErrorRenderers(ConsoleErrorRenderer ...$renderers): self
     {
         $this->errorRenderers = array_values([...$this->errorRenderers, ...$renderers]);
+
         return $this;
     }
 
@@ -143,6 +144,7 @@ final class CommandDispatcher
 
         if ($commandScope !== null) {
             $renderer->render($commandScope, $e, $this->errorOutput());
+
             return;
         }
 
@@ -180,6 +182,7 @@ final class CommandDispatcher
 
             $lifecycle->activate("archon.group.$name.help");
             $this->output()->persist(HelpGenerator::forGroup($name, $group));
+
             return 0;
         }
 
@@ -189,6 +192,7 @@ final class CommandDispatcher
 
             $lifecycle->activate("archon.command.$name.help");
             $this->writeHelp($commandHelpPath);
+
             return 0;
         }
 
@@ -205,6 +209,7 @@ final class CommandDispatcher
 
         if (!in_array($command, $this->commands->keys(), true)) {
             $lifecycle->activate('archon.unknown');
+
             throw UnknownCommand::named($command);
         }
 
@@ -225,6 +230,7 @@ final class CommandDispatcher
     {
         if ($path === []) {
             $this->output()->persist($this->topLevelHelp());
+
             return;
         }
 
@@ -235,6 +241,7 @@ final class CommandDispatcher
             assert($group !== null);
 
             $this->writeGroupHelpPath([$name], $group, $path);
+
             return;
         }
 
@@ -245,11 +252,13 @@ final class CommandDispatcher
             && $this->isHelpSuffix($path)
         ) {
             $this->output()->persist(HelpGenerator::forCommand($name, $handler->config));
+
             return;
         }
 
         if (isset($this->inlineCommands[$name]) && $this->isHelpSuffix($path)) {
             $this->output()->persist(HelpGenerator::forCommand($name, $this->inlineCommands[$name]->config));
+
             return;
         }
 
@@ -271,6 +280,7 @@ final class CommandDispatcher
 
             if ($next === null || $next === 'help' || $next === '--help') {
                 $this->output()->persist(HelpGenerator::forGroup(implode(' ', $prefix), $group));
+
                 return;
             }
 
@@ -289,6 +299,7 @@ final class CommandDispatcher
                 && $this->isHelpSuffix($path)
             ) {
                 $this->output()->persist(HelpGenerator::forCommand(implode(' ', $prefix), $handler->config));
+
                 return;
             }
 

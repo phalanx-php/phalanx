@@ -186,6 +186,7 @@ final class ManagedProcess
         $handle = $this->handle;
         if ($handle === null) {
             $this->state = ProcessState::Stopped;
+
             return;
         }
 
@@ -209,6 +210,7 @@ final class ManagedProcess
     {
         if ($handle !== $this->handle && $this->handle !== null) {
             $handle->close('skopos.stale-exit');
+
             return;
         }
 

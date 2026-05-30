@@ -28,6 +28,7 @@ class HandlerConfig
     {
         $clone = clone $this;
         $clone->tags = array_values([...$this->tags, ...$tags]);
+
         return $clone;
     }
 
@@ -35,6 +36,7 @@ class HandlerConfig
     {
         $clone = clone $this;
         $clone->priority = $priority;
+
         return $clone;
     }
 
@@ -45,6 +47,7 @@ class HandlerConfig
     {
         $clone = clone $this;
         $clone->middleware = array_values([...$this->middleware, ...$middleware]);
+
         return $clone;
     }
 }

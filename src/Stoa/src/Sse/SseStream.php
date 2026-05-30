@@ -70,14 +70,17 @@ final class SseStream
             );
         } catch (Cancelled $e) {
             $this->markAbandoned('cancelled');
+
             throw $e;
         } catch (Throwable $e) {
             $this->markAbandoned('write_error:' . $e::class);
+
             throw $e;
         }
 
         if ($written === false) {
             $this->markAbandoned('write_returned_false');
+
             throw new SseWriteFailure('SSE chunk write failed.');
         }
     }

@@ -81,48 +81,56 @@ class ApplicationBuilder
     public function providers(ServiceBundle ...$providers): self
     {
         $this->providers = array_values([...$this->providers, ...$providers]);
+
         return $this;
     }
 
     public function serviceMiddleware(ServiceTransformationMiddleware ...$middlewares): self
     {
         $this->serviceMiddlewares = array_values([...$this->serviceMiddlewares, ...$middlewares]);
+
         return $this;
     }
 
     public function taskMiddleware(TaskMiddleware ...$middlewares): self
     {
         $this->taskMiddlewares = array_values([...$this->taskMiddlewares, ...$middlewares]);
+
         return $this;
     }
 
     public function withErrorHandler(\Phalanx\Exception\ErrorHandler ...$handlers): self
     {
         $this->errorHandlers = array_values([...$this->errorHandlers, ...$handlers]);
+
         return $this;
     }
 
     public function withTrace(Trace $trace): self
     {
         $this->trace = $trace;
+
         return $this;
     }
 
     public function withWorkerDispatch(WorkerDispatch $dispatch): self
     {
         $this->workerDispatch = $dispatch;
+
         return $this;
     }
 
     public function withRuntimePolicy(RuntimePolicy $policy): self
     {
         $this->runtimePolicy = $policy;
+
         return $this;
     }
 
     public function withRuntimeHooksStrict(bool $strict): self
     {
         $this->strictRuntimeHooks = $strict;
+
         return $this;
     }
 
@@ -131,6 +139,7 @@ class ApplicationBuilder
         $this->taskRunPoolCapacity = $taskRun;
         $this->scopeFramePoolCapacity = $scopeFrame;
         $this->tokenPoolCapacity = $token;
+
         return $this;
     }
 
@@ -141,6 +150,7 @@ class ApplicationBuilder
     public function withLedger(LedgerStorage $ledger): self
     {
         $this->ledger = $ledger;
+
         return $this;
     }
 

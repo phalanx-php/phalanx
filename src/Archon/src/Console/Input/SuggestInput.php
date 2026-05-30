@@ -131,6 +131,7 @@ final class SuggestInput extends BasePrompt
         }
 
         $trimFrom = max(0, $this->cursor - $maxWidth + 2);
+
         return $this->theme->muted->apply('…') . implode('', array_slice($chars, $trimFrom, $maxWidth - 1));
     }
 

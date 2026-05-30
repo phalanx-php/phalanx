@@ -39,6 +39,7 @@ class AppContext
         if (!array_key_exists($key, $this->values)) {
             throw MissingContextValue::forKey($key);
         }
+
         return $this->values[$key];
     }
 
@@ -51,6 +52,7 @@ class AppContext
         if (!is_string($value) && !is_numeric($value) && !is_bool($value)) {
             throw MissingContextValue::wrongType($key, 'string', get_debug_type($value));
         }
+
         return (string) $value;
     }
 
@@ -66,6 +68,7 @@ class AppContext
         if (is_string($value) && ctype_digit(ltrim($value, '-'))) {
             return (int) $value;
         }
+
         throw MissingContextValue::wrongType($key, 'int', get_debug_type($value));
     }
 
@@ -81,6 +84,7 @@ class AppContext
         if (is_string($value) && is_numeric($value)) {
             return (float) $value;
         }
+
         throw MissingContextValue::wrongType($key, 'float', get_debug_type($value));
     }
 
@@ -90,9 +94,11 @@ class AppContext
             if ($default === null) {
                 throw MissingContextValue::forKey($key);
             }
+
             return $default;
         }
         $value = $this->values[$key];
+
         return match (true) {
             is_bool($value) => $value,
             $value === '1', $value === 'true', $value === 'on', $value === 'yes' => true,

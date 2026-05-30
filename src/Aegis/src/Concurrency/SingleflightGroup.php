@@ -59,10 +59,12 @@ class SingleflightGroup
             $result = $execute();
         } catch (Throwable $e) {
             $this->wakeWaiters($key, ['err', $e]);
+
             throw $e;
         }
 
         $this->wakeWaiters($key, ['ok', $result]);
+
         return $result;
     }
 
@@ -97,6 +99,7 @@ class SingleflightGroup
             if ($msg[0] === 'err' || $msg[0] === 'cancelled') {
                 throw $msg[1];
             }
+
             return $msg[1];
         } finally {
             $token->offCancel($cancelKey);

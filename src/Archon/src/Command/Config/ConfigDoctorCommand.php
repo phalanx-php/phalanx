@@ -49,6 +49,7 @@ final class ConfigDoctorCommand implements Scopeable, DescribesCommand
     {
         if ($result->issues === []) {
             $output->persist('Config validation passed. No issues found.');
+
             return;
         }
 

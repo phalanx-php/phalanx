@@ -51,6 +51,7 @@ final class Runtime implements RuntimeContract
     {
         if ($this->cancelled) {
             $cleanup();
+
             return;
         }
 

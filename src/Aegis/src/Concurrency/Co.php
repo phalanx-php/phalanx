@@ -25,6 +25,7 @@ final class Co
     {
         if ($seconds <= 0.0) {
             self::throwIfCancelled();
+
             return;
         }
         // Swoole 6's coroutine timer floor is 1ms; clamp sub-ms waits up so a

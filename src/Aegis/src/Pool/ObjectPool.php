@@ -98,6 +98,7 @@ final class ObjectPool
 
         if ($this->free->count() >= $this->capacity) {
             $this->overflows++;
+
             return;
         }
 

@@ -144,6 +144,7 @@ final class PoolRing
 
             if (!$this->borrowed[$idx]) {
                 $this->borrowed[$idx] = true;
+
                 return $idx;
             }
         }

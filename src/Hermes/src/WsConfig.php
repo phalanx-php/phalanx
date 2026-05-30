@@ -30,6 +30,7 @@ final class WsConfig extends HandlerConfig
     {
         $clone = clone $this;
         $clone->maxMessageSize = $size;
+
         return $clone;
     }
 
@@ -37,6 +38,7 @@ final class WsConfig extends HandlerConfig
     {
         $clone = clone $this;
         $clone->maxFrameSize = $size;
+
         return $clone;
     }
 
@@ -44,6 +46,7 @@ final class WsConfig extends HandlerConfig
     {
         $clone = clone $this;
         $clone->pingInterval = $seconds;
+
         return $clone;
     }
 
@@ -51,6 +54,7 @@ final class WsConfig extends HandlerConfig
     {
         $clone = clone $this;
         $clone->closeTimeout = $seconds;
+
         return $clone;
     }
 
@@ -58,6 +62,7 @@ final class WsConfig extends HandlerConfig
     {
         $clone = clone $this;
         $clone->subprotocols = array_values($protocols);
+
         return $clone;
     }
 }

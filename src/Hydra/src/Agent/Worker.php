@@ -81,6 +81,7 @@ class Worker
             );
 
             $this->state = AgentState::Idle;
+
             return $result;
         } catch (\Throwable $e) {
             $this->state = $this->process->state() === ProcessState::Crashed
@@ -107,6 +108,7 @@ class Worker
                     $self->drain();
                 },
             );
+
             return;
         }
 

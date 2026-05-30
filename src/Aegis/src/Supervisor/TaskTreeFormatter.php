@@ -61,12 +61,14 @@ final class TaskTreeFormatter
                 $roots[] = $snap;
             }
         }
+
         return $roots;
     }
 
     private static function formatWait(WaitReason $wait): string
     {
         $kind = $wait->kind->value;
+
         return $wait->detail !== ''
             ? "wait: {$kind} {$wait->detail}"
             : "wait: {$kind}";
@@ -81,6 +83,7 @@ final class TaskTreeFormatter
             static fn(array $l): string => "{$l['domain']}#{$l['key']}/{$l['mode']}",
             $leases,
         );
+
         return '[holds: ' . implode(', ', $rendered) . ']';
     }
 
@@ -92,6 +95,7 @@ final class TaskTreeFormatter
         if ($seconds < 60.0) {
             return sprintf('%7.2fs', $seconds);
         }
+
         return sprintf('%5.1fm', $seconds / 60.0);
     }
 

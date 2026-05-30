@@ -64,6 +64,7 @@ final class Table
         }
 
         $totalContent = max(1, array_sum($maxWidths));
+
         return array_map(
             static fn(int $w) => max($minColWidth, (int) floor($w / $totalContent * $available)),
             $maxWidths,
@@ -120,6 +121,7 @@ final class Table
         }
 
         $glue = $this->theme->border->apply(' │ ');
+
         return '  ' . implode($glue, $rendered);
     }
 

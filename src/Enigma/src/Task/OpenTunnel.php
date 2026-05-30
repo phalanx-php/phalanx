@@ -64,9 +64,11 @@ final class OpenTunnel implements Executable
             );
         } catch (Cancelled $e) {
             $process->kill();
+
             throw $e;
         } catch (Throwable $e) {
             $process->kill();
+
             throw $e;
         }
 
@@ -102,6 +104,7 @@ final class OpenTunnel implements Executable
 
             if (!$process->isRunning()) {
                 $process->close('enigma.tunnel.failed');
+
                 throw new SshConnectionException(
                     "Failed to establish SSH tunnel: {$stderr}",
                     stderr: $stderr,
@@ -118,6 +121,7 @@ final class OpenTunnel implements Executable
 
             if (microtime(true) >= $deadline) {
                 $process->kill();
+
                 throw new SshTimeoutException(
                     sprintf('SSH tunnel timed out after %.3f seconds', $timeout),
                     stderr: $stderr,

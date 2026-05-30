@@ -39,6 +39,7 @@ final class CoroutineScopeRegistry
         if ($context === null) {
             return null;
         }
+
         return $context[self::KEY] ?? null;
     }
 

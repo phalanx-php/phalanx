@@ -62,6 +62,7 @@ final class RetryPolicy
         };
         $base = min($base, $this->maxDelayMs);
         $jitter = $base * 0.1 * (mt_rand() / mt_getrandmax());
+
         return $base + $jitter;
     }
 
@@ -73,6 +74,7 @@ final class RetryPolicy
         if ($this->retryOn === []) {
             return true;
         }
+
         return array_any($this->retryOn, fn($type) => $e instanceof $type);
     }
 }

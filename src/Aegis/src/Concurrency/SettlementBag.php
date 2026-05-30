@@ -30,6 +30,7 @@ final class SettlementBag implements ArrayAccess, IteratorAggregate, Countable
                     $out[$k] = $s->value;
                 }
             }
+
             return $out;
         }
     }
@@ -55,6 +56,7 @@ final class SettlementBag implements ArrayAccess, IteratorAggregate, Countable
                     return false;
                 }
             }
+
             return true;
         }
     }
@@ -66,6 +68,7 @@ final class SettlementBag implements ArrayAccess, IteratorAggregate, Countable
                     return true;
                 }
             }
+
             return false;
         }
     }
@@ -96,6 +99,7 @@ final class SettlementBag implements ArrayAccess, IteratorAggregate, Countable
     public function get(string|int $key, mixed $default = null): mixed
     {
         $s = $this->settlements[$key] ?? null;
+
         return $s !== null && $s->isOk ? $s->value : $default;
     }
 
@@ -114,6 +118,7 @@ final class SettlementBag implements ArrayAccess, IteratorAggregate, Countable
     public function isErr(string|int $key): bool
     {
         $s = $this->settlements[$key] ?? null;
+
         return $s !== null && !$s->isOk;
     }
 
@@ -122,8 +127,10 @@ final class SettlementBag implements ArrayAccess, IteratorAggregate, Countable
     {
         if (!$this->allOk) {
             $first = $this->errors[array_key_first($this->errors)];
+
             throw new RuntimeException('SettlementBag::unwrapAll: at least one task failed', 0, $first);
         }
+
         return $this->values;
     }
 
@@ -146,6 +153,7 @@ final class SettlementBag implements ArrayAccess, IteratorAggregate, Countable
                 $out[$k] = $fn($s->value, $k);
             }
         }
+
         return $out;
     }
 

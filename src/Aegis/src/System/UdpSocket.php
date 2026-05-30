@@ -76,6 +76,7 @@ final class UdpSocket
                 "UdpSocket::send failed (errCode={$client->errCode}, errMsg={$client->errMsg})",
             );
         }
+
         return (int) $written;
     }
 
@@ -86,6 +87,7 @@ final class UdpSocket
             static fn(): bool|string => $client->recv($timeout),
             WaitReason::custom('udp.recv'),
         );
+
         return is_string($payload) ? $payload : null;
     }
 

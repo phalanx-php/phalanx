@@ -263,6 +263,7 @@ class OpenApiGenerator
             try {
                 $instance = $ref->newInstance();
                 $prop = $ref->getProperty($name);
+
                 return $prop->getValue($instance);
             } catch (Cancelled $c) {
                 throw $c;

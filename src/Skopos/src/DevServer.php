@@ -77,10 +77,12 @@ final class DevServer implements Executable
             }
         } catch (Cancelled $e) {
             self::shutdownProcesses($managed, $multiplexer, $this->quiet);
+
             throw $e;
         } catch (Throwable $e) {
             $multiplexer->writeLine("\033[31m[skopos] Readiness failed: {$e->getMessage()}\033[0m");
             self::shutdownProcesses($managed, $multiplexer, $this->quiet);
+
             return 1;
         }
 

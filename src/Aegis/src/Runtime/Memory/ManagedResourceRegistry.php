@@ -332,6 +332,7 @@ final readonly class ManagedResourceRegistry
                 valueA: $domain,
                 valueB: $resourceKey,
             );
+
             return;
         }
     }

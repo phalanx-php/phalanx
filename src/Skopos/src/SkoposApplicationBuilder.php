@@ -41,6 +41,7 @@ final class SkoposApplicationBuilder
     public function providers(ServiceBundle ...$providers): self
     {
         $this->app->providers(...$providers);
+
         return $this;
     }
 
@@ -49,6 +50,7 @@ final class SkoposApplicationBuilder
         foreach ($processes as $process) {
             $this->processes[] = $process;
         }
+
         return $this;
     }
 
@@ -57,6 +59,7 @@ final class SkoposApplicationBuilder
         foreach ($backends as $backend) {
             $this->backends[] = $backend;
         }
+
         return $this;
     }
 
@@ -65,6 +68,7 @@ final class SkoposApplicationBuilder
         foreach ($frontends as $frontend) {
             $this->frontends[] = $frontend;
         }
+
         return $this;
     }
 
@@ -87,12 +91,14 @@ final class SkoposApplicationBuilder
         }
 
         $this->processes[] = $process;
+
         return $this;
     }
 
     public function quiet(bool $quiet = true): self
     {
         $this->quiet = $quiet;
+
         return $this;
     }
 
@@ -109,6 +115,7 @@ final class SkoposApplicationBuilder
     private static function deriveNameFromCommand(string $command): string
     {
         $parts = explode(' ', trim($command));
+
         return basename($parts[0]);
     }
 

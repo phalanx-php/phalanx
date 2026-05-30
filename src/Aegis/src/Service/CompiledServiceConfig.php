@@ -56,12 +56,14 @@ final class CompiledServiceConfig implements ServiceConfig
     public function lazy(): self
     {
         $this->lazy = true;
+
         return $this;
     }
 
     public function eager(): self
     {
         $this->lazy = false;
+
         return $this;
     }
 
@@ -78,6 +80,7 @@ final class CompiledServiceConfig implements ServiceConfig
     public function factory(Closure $factory): self
     {
         $this->factoryFn = $factory;
+
         return $this;
     }
 
@@ -94,30 +97,35 @@ final class CompiledServiceConfig implements ServiceConfig
     public function tags(string ...$tags): self
     {
         $this->tagsList = array_values(array_unique([...$this->tagsList, ...$tags]));
+
         return $this;
     }
 
     public function onInit(Closure $hook): self
     {
         $this->onInitHooks[] = $hook;
+
         return $this;
     }
 
     public function onStartup(Closure $hook): self
     {
         $this->onStartupHooks[] = $hook;
+
         return $this;
     }
 
     public function onDispose(Closure $hook): self
     {
         $this->onDisposeHooks[] = $hook;
+
         return $this;
     }
 
     public function onShutdown(Closure $hook): self
     {
         $this->onShutdownHooks[] = $hook;
+
         return $this;
     }
 }

@@ -24,9 +24,11 @@ class TraceMiddleware implements TaskMiddleware
         try {
             $result = $next($scope);
             $scope->trace()->log(TraceType::Execute, $name, ['phase' => 'end']);
+
             return $result;
         } catch (Throwable $e) {
             $scope->trace()->log(TraceType::Execute, $name, ['phase' => 'error', 'error' => $e->getMessage()]);
+
             throw $e;
         }
     }

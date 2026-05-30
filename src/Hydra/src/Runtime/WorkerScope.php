@@ -102,6 +102,7 @@ class WorkerScope implements AegisWorkerScope
                 if ($meta['timed_out']) {
                     throw new RuntimeException("Parent process unresponsive (no response after {$timeoutSeconds}s)");
                 }
+
                 throw new RuntimeException('Worker stdin closed unexpectedly');
             }
 

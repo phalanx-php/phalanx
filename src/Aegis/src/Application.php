@@ -156,6 +156,7 @@ class Application implements AppHost
         } finally {
             $rootScope->dispose();
         }
+
         return $this;
     }
 

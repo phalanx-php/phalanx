@@ -39,6 +39,7 @@ final class EnvExampleCommand implements Scopeable, DescribesCommand
 
         if ($result === false) {
             $output->persist('Error: could not write to ' . $outputPath);
+
             return 1;
         }
 

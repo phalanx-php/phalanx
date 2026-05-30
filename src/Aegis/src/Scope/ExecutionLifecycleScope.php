@@ -248,6 +248,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                 $callback();
             } catch (Throwable) {
             }
+
             return;
         }
         $frame->disposeStack[] = $callback;
@@ -320,6 +321,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             if ($this->isCancelled || Coroutine::isCanceled()) {
                 throw new Cancelled('cancelled during call()');
             }
+
             return $result;
         } catch (Cancelled $e) {
             throw $e;
@@ -327,6 +329,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             if ($this->isCancelled || Coroutine::isCanceled()) {
                 throw new Cancelled('cancelled during call(): ' . $e->getMessage());
             }
+
             throw $e;
         } finally {
             $this->cancellation->offCancel($cancelKey);
@@ -445,6 +448,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                         Coroutine::cancel($cid);
                     }
                 }
+
                 throw reset($errors);
             }
         } finally {
@@ -462,6 +466,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                 $ordered[$key] = $results[$key];
             }
         }
+
         return $ordered;
     }
 
@@ -494,6 +499,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                         $value = $childScope->dispatchSupervised($task, DispatchMode::Concurrent);
                         if (Coroutine::isCanceled()) {
                             $channel->push(['err', $key, new Cancelled("task {$key} cancelled")], 0.001);
+
                             return;
                         }
                         $channel->push(['ok', $key, $value], 0.001);
@@ -529,6 +535,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             if ($kind === 'err') {
                 throw $value;
             }
+
             return $value;
         } finally {
             $this->cancellation->offCancel($cancelKey);
@@ -570,6 +577,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                         $value = $childScope->dispatchSupervised($task, DispatchMode::Concurrent);
                         if (Coroutine::isCanceled()) {
                             $channel->push(['err', $key, new Cancelled("task {$key} cancelled")], 0.001);
+
                             return;
                         }
                         $channel->push(['ok', $key, $value], 0.001);
@@ -599,6 +607,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                             Coroutine::cancel($cid);
                         }
                     }
+
                     return $value;
                 }
                 $errors[$key] = $value;
@@ -702,6 +711,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                 $ordered[$key] = $results[$key];
             }
         }
+
         return $ordered;
     }
 
@@ -713,6 +723,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             $this->throwIfCancelled();
             $results[$key] = $this->dispatchSupervised($task, DispatchMode::Inline);
         }
+
         return $results;
     }
 
@@ -790,6 +801,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                 $ordered[$key] = $bag[$key];
             }
         }
+
         return new SettlementBag($ordered);
     }
 
@@ -818,8 +830,10 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         } catch (Cancelled $e) {
             if ($timeoutToken->isCancelled && !$this->cancellation->isCancelled) {
                 $this->traceLog->log(TraceType::Timeout, 'timeout', ['seconds' => $seconds]);
+
                 throw new Cancelled("timeout after {$seconds}s");
             }
+
             throw $e;
         } finally {
             $timeoutToken->cancel();
@@ -851,6 +865,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                 }
             }
         }
+
         throw $lastError ?? new RuntimeException('retry: no attempts executed');
     }
 
@@ -1052,6 +1067,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
     {
         $this->throwIfCancelled();
         $self = $this;
+
         return $this->singleflightGroup->do(
             $key,
             static fn(): mixed => $self->dispatchSupervised($task, DispatchMode::Inline),
@@ -1172,6 +1188,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                 $ordered[$key] = $results[$key];
             }
         }
+
         return $ordered;
     }
 
@@ -1248,6 +1265,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                 $ordered[$key] = $bag[$key];
             }
         }
+
         return new SettlementBag($ordered);
     }
 
@@ -1374,6 +1392,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                 $ordered[$key] = $results[$key];
             }
         }
+
         return $ordered;
     }
 
@@ -1388,6 +1407,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         }
 
         $txScope = new TransactionLifecycleScope($this, $lease);
+
         return $this->supervisor->withLease(
             $this->currentRun,
             $lease,
@@ -1414,6 +1434,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
     ): mixed {
         $this->throwIfCancelled();
         $self = $this;
+
         return self::runTaskMiddleware(
             $task,
             static fn(ExecutionScope $scope): mixed => $self->runSupervised(
@@ -1429,6 +1450,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
     {
         $this->throwIfCancelled();
         $self = $this;
+
         return self::runTaskMiddleware(
             $task,
             static fn(ExecutionScope $scope): mixed => $self->runWorkerSupervised(
@@ -1462,6 +1484,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
 
         if ($task instanceof Closure) {
             $location = self::closureLocation($task);
+
             return $location ?? Closure::class;
         }
 
@@ -1469,6 +1492,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         if (str_contains($class, '@anonymous')) {
             return preg_replace('/@anonymous.*$/', '@anonymous', $class) ?? 'anonymous';
         }
+
         return $class;
     }
 
@@ -1480,6 +1504,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             if ($file === false) {
                 return null;
             }
+
             return basename($file) . ':' . $reflection->getStartLine();
         } catch (Throwable) {
             return null;
@@ -1528,6 +1553,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         }
 
         self::cancelWorkerBatch($childScopes, $cids);
+
         return $error;
     }
 
@@ -1558,6 +1584,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             $current = $next;
             $next = static fn(): object => $middleware->transform($type, $current, $scope);
         }
+
         return $next();
     }
 
@@ -1580,6 +1607,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             $current = $next;
             $next = static fn(ExecutionScope $s): mixed => $middleware->handle($task, $s, $current);
         }
+
         return $next($scope);
     }
 
@@ -1594,6 +1622,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         foreach ($config->onInitHooks as $hook) {
             $hook($instance);
         }
+
         return $instance;
     }
 
@@ -1643,6 +1672,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
 
         /** @var class-string $serviceType */
         $serviceType = $typeName;
+
         return $scope->service($serviceType);
     }
 
@@ -1728,6 +1758,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             parentScopeId: $this->scopeId,
         );
         $child->currentRun = $inheritParent;
+
         return $child;
     }
 
@@ -1760,12 +1791,15 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             $this->supervisor->markRunning($run);
             $value = self::invokeTask($task, $scope);
             $this->supervisor->complete($run, $value);
+
             return $value;
         } catch (Cancelled $e) {
             $this->supervisor->cancel($run);
+
             throw $e;
         } catch (Throwable $e) {
             $this->supervisor->fail($run, $e);
+
             throw $e;
         } finally {
             $run->cancellation->release();
@@ -1815,12 +1849,15 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
                 throw new Cancelled("worker task {$name} cancelled");
             }
             $this->supervisor->complete($run, $value);
+
             return $value;
         } catch (Cancelled $e) {
             $this->supervisor->cancel($run);
+
             throw $e;
         } catch (Throwable $e) {
             $this->supervisor->fail($run, $e);
+
             throw $e;
         } finally {
             if ($clearWait !== null) {

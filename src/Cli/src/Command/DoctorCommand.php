@@ -57,10 +57,12 @@ final class DoctorCommand extends Command
 
         if ($hasFailures) {
             $output->writeln('<error>Some checks failed. See remediation steps above.</error>');
+
             return Command::FAILURE;
         }
 
         $output->writeln('<info>Environment is ready for Phalanx.</info>');
+
         return Command::SUCCESS;
     }
 }

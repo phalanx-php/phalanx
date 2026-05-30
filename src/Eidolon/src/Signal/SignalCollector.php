@@ -37,18 +37,21 @@ final class SignalCollector
     public function flash(string $message, string $level = 'success'): self
     {
         $this->add(new FlashSignal($message, $level));
+
         return $this;
     }
 
     public function invalidate(string ...$keys): self
     {
         $this->add(new InvalidateSignal(...$keys));
+
         return $this;
     }
 
     public function redirect(string $url, bool $replace = false): self
     {
         $this->add(new RedirectSignal($url, $replace));
+
         return $this;
     }
 
@@ -56,12 +59,14 @@ final class SignalCollector
     public function event(string $name, array $payload = []): self
     {
         $this->add(new EventSignal($name, $payload));
+
         return $this;
     }
 
     public function token(?string $token, ?int $expiresIn = null): self
     {
         $this->add(new TokenSignal($token, $expiresIn));
+
         return $this;
     }
 }

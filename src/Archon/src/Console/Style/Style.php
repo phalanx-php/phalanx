@@ -75,6 +75,7 @@ final class Style
         if ($open === '') {
             return $text;
         }
+
         return $open . $text . Ansi::RESET;
     }
 
@@ -108,6 +109,7 @@ final class Style
         if (in_array($modifier, $this->modifiers, true)) {
             return $this;
         }
+
         return new self($this->fg, $this->bg, [...$this->modifiers, $modifier]);
     }
 }

@@ -24,6 +24,7 @@ final class Collect
             $scope->throwIfCancelled();
             $values[] = $value;
         }
+
         return $values;
     }
 }

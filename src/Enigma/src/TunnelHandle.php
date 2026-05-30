@@ -78,6 +78,7 @@ final class TunnelHandle implements \Stringable
 
         if ($this->process->isRunning()) {
             $this->process->stop();
+
             return;
         }
 

@@ -52,6 +52,7 @@ class TestLens
         if ($this->isEmpty()) {
             return $other;
         }
+
         return new self(array_values(array_unique([...$this->lenses, ...$other->lenses])));
     }
 }

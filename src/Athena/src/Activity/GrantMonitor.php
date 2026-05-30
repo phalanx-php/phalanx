@@ -69,12 +69,14 @@ class GrantMonitor
 
                     if ($grant !== null) {
                         $subscription->kill();
+
                         return $grant;
                     }
                 }
             }
         } catch (\Throwable $e) {
             $subscription->kill();
+
             throw $e;
         }
     }

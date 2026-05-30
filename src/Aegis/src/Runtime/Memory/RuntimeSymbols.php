@@ -30,6 +30,7 @@ final class RuntimeSymbols
         if (is_array($row) && (int) $row['id'] > 0) {
             $id = (int) $row['id'];
             $this->local[$id] = (string) $row['value'];
+
             return $id;
         }
 
@@ -82,6 +83,7 @@ final class RuntimeSymbols
 
             $value = (string) $row['value'];
             $this->local[$id] = $value;
+
             return $value;
         }
 

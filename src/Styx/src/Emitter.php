@@ -45,6 +45,7 @@ final class Emitter implements StreamSource
                     throw $e;
                 } catch (Throwable $e) {
                     $ch->error($e);
+
                     return;
                 }
                 $ch->complete();
@@ -92,6 +93,7 @@ final class Emitter implements StreamSource
             $this->fireOnComplete($scope);
         } catch (Throwable $e) {
             $this->fireOnError($e, $scope);
+
             throw $e;
         } finally {
             if ($cleanup instanceof Closure) {
@@ -267,6 +269,7 @@ final class Emitter implements StreamSource
                     $ch->complete();
                 } catch (Cancelled $e) {
                     $timerRun?->cancel();
+
                     throw $e;
                 } catch (Throwable $e) {
                     $timerRun?->cancel();
@@ -340,6 +343,7 @@ final class Emitter implements StreamSource
                     $ch->complete();
                 } catch (Cancelled $e) {
                     $timerRun?->cancel();
+
                     throw $e;
                 } catch (Throwable $e) {
                     $timerRun?->cancel();
@@ -388,6 +392,7 @@ final class Emitter implements StreamSource
                             $failed = true;
                             $ch->error($e);
                         }
+
                         return;
                     }
 
@@ -506,6 +511,7 @@ final class Emitter implements StreamSource
                     $ch->complete();
                 } catch (Cancelled $e) {
                     $subscription->cancel();
+
                     throw $e;
                 } catch (Throwable $e) {
                     $subscription->cancel();

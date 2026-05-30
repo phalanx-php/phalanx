@@ -123,6 +123,7 @@ final class WsClientConnectionHandle
 
                         if ($sent !== true) {
                             $self->onWriteFailed();
+
                             return;
                         }
                     }
@@ -164,6 +165,7 @@ final class WsClientConnectionHandle
                 throw $cancelled;
             } catch (Throwable) {
             }
+
             throw new WsClientException('Write queue full; dropping message.');
         }
     }

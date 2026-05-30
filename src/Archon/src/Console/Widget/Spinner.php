@@ -42,6 +42,7 @@ final class Spinner
     {
         $char = $this->frames[$tick % count($this->frames)];
         $styled = $this->theme->accent->apply($char);
+
         return $label !== '' ? "{$styled} {$label}" : $styled;
     }
 }

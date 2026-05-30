@@ -70,6 +70,7 @@ class RouteConfig extends HandlerConfig
 
         $clone = clone $this;
         $clone->methods = $methods;
+
         return $clone;
     }
 
@@ -86,6 +87,7 @@ class RouteConfig extends HandlerConfig
     {
         $clone = clone $this;
         $clone->paramValidators = $validators;
+
         return $clone;
     }
 

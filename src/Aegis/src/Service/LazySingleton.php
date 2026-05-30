@@ -42,6 +42,7 @@ class LazySingleton
         }
         /** @var T $cached */
         $cached = $this->instances[$resolved];
+
         return $cached;
     }
 

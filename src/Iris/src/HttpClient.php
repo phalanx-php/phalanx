@@ -80,9 +80,11 @@ class HttpClient
             );
         } catch (Cancelled $e) {
             $stream->abort('cancelled');
+
             throw $e;
         } catch (Throwable $e) {
             $stream->fail($e::class);
+
             throw $e;
         } finally {
             $stream->close();
@@ -116,10 +118,12 @@ class HttpClient
         } catch (Cancelled $e) {
             $client->close();
             $this->abortResource($scope, $resource, 'cancelled');
+
             throw $e;
         } catch (Throwable $e) {
             $client->close();
             $this->failResource($scope, $resource, $e::class);
+
             throw $e;
         }
 

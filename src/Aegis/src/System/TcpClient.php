@@ -65,6 +65,7 @@ final class TcpClient implements TcpConnection
     public function connect(Suspendable $scope, string $host, int $port, float $timeout = 1.0): bool
     {
         $client = $this->client;
+
         return $scope->call(
             static fn(): bool => $client->connect($host, $port, $timeout),
             WaitReason::custom("tcp.connect {$host}:{$port}"),
@@ -83,6 +84,7 @@ final class TcpClient implements TcpConnection
                 "TcpClient::send failed (errCode={$client->errCode}, errMsg={$client->errMsg})",
             );
         }
+
         return (int) $written;
     }
 
@@ -93,6 +95,7 @@ final class TcpClient implements TcpConnection
             static fn(): bool|string => $client->recv($timeout),
             WaitReason::custom('tcp.recv'),
         );
+
         return is_string($payload) ? $payload : null;
     }
 

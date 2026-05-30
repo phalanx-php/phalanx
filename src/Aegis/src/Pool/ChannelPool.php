@@ -116,6 +116,7 @@ final class ChannelPool
             $this->channel?->push($client);
         } catch (\Throwable $e) {
             $this->created--;
+
             throw $e;
         }
     }

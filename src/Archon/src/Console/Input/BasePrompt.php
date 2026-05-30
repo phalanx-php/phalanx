@@ -148,12 +148,14 @@ abstract class BasePrompt
         if ($this->cachedInnerWidth === null) {
             $this->cachedInnerWidth = max(40, min(72, $this->width() - 4));
         }
+
         return $this->cachedInnerWidth;
     }
 
     final protected function hintLine(): string
     {
         $h = $this->hints();
+
         return $h !== '' ? "\n" . $this->theme->muted->apply('  ' . $h) : '';
     }
 
@@ -204,11 +206,13 @@ abstract class BasePrompt
     {
         if ($key === 'ctrl-c') {
             $this->cancel();
+
             return;
         }
 
         if ($key === 'ctrl-u') {
             $this->revert();
+
             return;
         }
 
@@ -262,12 +266,14 @@ abstract class BasePrompt
         if ($message === null) {
             $this->error = '';
             $this->validated = true;
+
             return true;
         }
 
         $this->state = 'error';
         $this->error = $message;
         $this->validated = true;
+
         return false;
     }
 

@@ -32,6 +32,7 @@ final class ProcessAwaiter
 
                 if ($deadline !== null && microtime(true) >= $deadline) {
                     $handle->kill();
+
                     throw new SshTimeoutException(
                         sprintf('Process timed out after %.3f seconds', $timeoutSeconds),
                         stderr: $stderr,
@@ -49,9 +50,11 @@ final class ProcessAwaiter
             $handle->close('enigma.process.completed');
         } catch (Cancelled $e) {
             $handle->kill();
+
             throw $e;
         } catch (Throwable $e) {
             $handle->kill();
+
             throw $e;
         }
 

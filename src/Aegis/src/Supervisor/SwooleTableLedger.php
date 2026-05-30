@@ -209,6 +209,7 @@ final class SwooleTableLedger implements LedgerStorage
     public function snapshot(string $runId): ?TaskRunSnapshot
     {
         $run = $this->find($runId);
+
         return $run === null ? null : self::project($run);
     }
 

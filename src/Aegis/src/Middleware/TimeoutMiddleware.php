@@ -17,6 +17,7 @@ class TimeoutMiddleware implements TaskMiddleware
         if (!$task instanceof HasTimeout) {
             return $next($scope);
         }
+
         return $scope->timeout(
             $task->timeout,
             static fn(ExecutionScope $child): mixed => $next($child),

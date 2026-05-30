@@ -61,6 +61,7 @@ class ServiceCatalog implements Services
         }
         $config = new CompiledServiceConfig($type, $lifetime, $lazy);
         $this->configs[$type] = $config;
+
         return $config;
     }
 }

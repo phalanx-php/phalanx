@@ -38,6 +38,7 @@ final class Runtime implements RuntimeContract
     {
         // Translate panoply's optional label into an Aegis WaitReason.
         $aegisReason = $waitReason !== null ? WaitReason::custom($waitReason) : null;
+
         // @phpstan-ignore-next-line argument.templateType
         return $this->scope->call($work, $aegisReason);
     }

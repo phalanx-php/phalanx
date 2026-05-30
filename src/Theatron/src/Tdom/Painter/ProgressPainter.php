@@ -38,6 +38,7 @@ final class ProgressPainter
 
         if ($barWidth < 3) {
             $ctx->buffer->putString($x, $ctx->area->y, $pctText, $ansi);
+
             return;
         }
 

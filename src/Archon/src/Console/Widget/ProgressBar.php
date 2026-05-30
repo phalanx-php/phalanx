@@ -30,6 +30,7 @@ final class ProgressBar
 
         if ($barWidth < 3) {
             $prefix = $label !== '' ? $this->theme->muted->apply($label) . ' ' : '';
+
             return $prefix . $pctText;
         }
 

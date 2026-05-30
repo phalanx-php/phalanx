@@ -9,6 +9,7 @@ final class ClassNames
     public static function short(string $fqcn): string
     {
         $parts = explode('\\', $fqcn);
+
         return end($parts);
     }
 }

@@ -69,6 +69,7 @@ final class HandlerResolver
                     $args[] = $param->default;
                     continue;
                 }
+
                 throw new HandlerDependencyNotResolvable(
                     $handlerClass,
                     $param->name,

@@ -80,6 +80,7 @@ class WsClient
                 throw $cancelled;
             } catch (Throwable) {
             }
+
             throw $e;
         } catch (Throwable $e) {
             $scope->runtime->memory->resources->recordEvent(
@@ -94,6 +95,7 @@ class WsClient
                 throw $cancelled;
             } catch (Throwable) {
             }
+
             throw $e instanceof WsClientException
                 ? $e
                 : new WsClientException($e->getMessage(), 0, $e);

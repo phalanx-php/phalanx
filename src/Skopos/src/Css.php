@@ -27,6 +27,7 @@ final class Css
         $css->input = $input ?? 'resources/css/app.css';
         $css->output = $output ?? 'public/assets/css/app.css';
         $css->reloadPattern = '/Done in/';
+
         return $css;
     }
 
@@ -36,6 +37,7 @@ final class Css
         $css->input = $input;
         $css->output = $output;
         $css->reloadPattern = '/Compiled/';
+
         return $css;
     }
 
@@ -44,6 +46,7 @@ final class Css
         $css = new self('unocss');
         $css->output = $output ?? 'public/assets/css/uno.css';
         $css->reloadPattern = '/generated/i';
+
         return $css;
     }
 
@@ -53,6 +56,7 @@ final class Css
         $css->input = $input;
         $css->output = $output;
         $css->reloadPattern = '/output written/i';
+
         return $css;
     }
 
@@ -66,6 +70,7 @@ final class Css
         $css = new self('custom');
         $css->customCommand = $command;
         $css->reloadPattern = $reloadPattern;
+
         return $css;
     }
 
@@ -73,6 +78,7 @@ final class Css
     {
         $clone = clone $this;
         $clone->output = $path;
+
         return $clone;
     }
 
@@ -80,6 +86,7 @@ final class Css
     {
         $clone = clone $this;
         $clone->input = $path;
+
         return $clone;
     }
 
@@ -87,6 +94,7 @@ final class Css
     {
         $clone = clone $this;
         $clone->watch = $enabled;
+
         return $clone;
     }
 
@@ -94,6 +102,7 @@ final class Css
     {
         $clone = clone $this;
         $clone->minify = $enabled;
+
         return $clone;
     }
 
@@ -102,6 +111,7 @@ final class Css
     {
         $clone = clone $this;
         $clone->env = $env;
+
         return $clone;
     }
 

@@ -239,6 +239,7 @@ final class TestApp
                 static fn(Throwable $e): string => $e::class . ': ' . $e->getMessage(),
                 $failures,
             );
+
             throw new RuntimeException(
                 'One or more lenses failed to reset: '
                 . implode('; ', $messages),

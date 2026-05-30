@@ -57,54 +57,63 @@ final class StoaApplicationBuilder
     public function providers(ServiceBundle ...$providers): self
     {
         $this->app->providers(...$providers);
+
         return $this;
     }
 
     public function serviceMiddleware(ServiceTransformationMiddleware ...$middlewares): self
     {
         $this->app->serviceMiddleware(...$middlewares);
+
         return $this;
     }
 
     public function taskMiddleware(TaskMiddleware ...$middlewares): self
     {
         $this->app->taskMiddleware(...$middlewares);
+
         return $this;
     }
 
     public function withTrace(Trace $trace): self
     {
         $this->app->withTrace($trace);
+
         return $this;
     }
 
     public function withWorkerDispatch(WorkerDispatch $dispatch): self
     {
         $this->app->withWorkerDispatch($dispatch);
+
         return $this;
     }
 
     public function withRuntimePolicy(RuntimePolicy $policy): self
     {
         $this->app->withRuntimePolicy($policy);
+
         return $this;
     }
 
     public function withRuntimeHooksStrict(bool $strict): self
     {
         $this->app->withRuntimeHooksStrict($strict);
+
         return $this;
     }
 
     public function withErrorRenderers(Response\ErrorResponseRenderer ...$renderers): self
     {
         $this->errorRenderers = array_values([...$this->errorRenderers, ...$renderers]);
+
         return $this;
     }
 
     public function withLedger(LedgerStorage $ledger): self
     {
         $this->app->withLedger($ledger);
+
         return $this;
     }
 
@@ -118,6 +127,7 @@ final class StoaApplicationBuilder
     public function routes(RouteGroup|string|array $routes): self
     {
         $this->routeSources[] = $routes;
+
         return $this;
     }
 
@@ -134,36 +144,42 @@ final class StoaApplicationBuilder
     public function requestTimeout(float $seconds): self
     {
         $this->requestTimeout = $seconds;
+
         return $this;
     }
 
     public function drainTimeout(float $seconds): self
     {
         $this->drainTimeout = $seconds;
+
         return $this;
     }
 
     public function ignition(bool $enabled = true): self
     {
         $this->ignitionEnabled = $enabled;
+
         return $this;
     }
 
     public function quiet(bool $quiet = true): self
     {
         $this->quiet = $quiet;
+
         return $this;
     }
 
     public function withBanner(string $banner): self
     {
         $this->banner = $banner;
+
         return $this;
     }
 
     public function withServerConfig(StoaServerConfig $config): self
     {
         $this->serverConfig = $config;
+
         return $this;
     }
 

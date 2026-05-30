@@ -66,6 +66,7 @@ class WorkerSupervisor
             return $this->dispatcher()->dispatch($task, $scope, $token);
         } catch (\Throwable $e) {
             $this->handleCrashedAgents();
+
             throw $e;
         }
     }

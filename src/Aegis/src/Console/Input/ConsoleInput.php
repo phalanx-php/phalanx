@@ -64,6 +64,7 @@ final class ConsoleInput
         if ($source instanceof Socket) {
             $this->socket = $source;
             $this->isInteractive = false;
+
             return;
         }
 
@@ -91,6 +92,7 @@ final class ConsoleInput
                 static fn(): bool|string => $socket->recv($bytes, $waitTimeout),
                 WaitReason::input(),
             );
+
             return is_string($payload) ? $payload : '';
         }
 
@@ -107,6 +109,7 @@ final class ConsoleInput
         }
 
         $chunk = fread($stream, $bytes);
+
         return $chunk === false ? '' : $chunk;
     }
 

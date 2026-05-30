@@ -19,6 +19,7 @@ final class TextPainter
 
         if ($element->content instanceof Line) {
             $ctx->buffer->putLine($ctx->area->x, $ctx->area->y, $element->content, $ctx->area->width);
+
             return;
         }
 

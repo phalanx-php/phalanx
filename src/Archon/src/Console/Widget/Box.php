@@ -61,6 +61,7 @@ final class Box
             static function (string $line) use ($chars, $innerWidth, $borderStyle): string {
                 $v = $borderStyle ? $borderStyle->apply($chars['v']) : $chars['v'];
                 $padded = mb_str_pad($line, $innerWidth);
+
                 return "{$v} {$padded} {$v}";
             },
             $lines,
@@ -80,6 +81,7 @@ final class Box
         if ($title === '') {
             $h = str_repeat($chars['h'], $innerWidth + 2);
             $raw = $chars['tl'] . $h . $chars['tr'];
+
             return $borderStyle ? $borderStyle->apply($raw) : $raw;
         }
 

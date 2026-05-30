@@ -40,6 +40,7 @@ class ParallelWorkerDispatch implements WorkerDispatch
             $result = $this->supervisor()->dispatch($this->serializeTask($task), $scope, $token);
             $elapsed = (hrtime(true) - $start) / 1e6;
             $scope->trace()->log(TraceType::Worker, "worker:{$name}", ['elapsed' => $elapsed, 'state' => 'done']);
+
             return $result;
         } catch (\Throwable $e) {
             $elapsed = (hrtime(true) - $start) / 1e6;
@@ -48,6 +49,7 @@ class ParallelWorkerDispatch implements WorkerDispatch
                 "worker:{$name}",
                 ['elapsed' => $elapsed, 'error' => $e->getMessage()],
             );
+
             throw $e;
         }
     }
@@ -71,6 +73,7 @@ class ParallelWorkerDispatch implements WorkerDispatch
         $supervisor->start();
 
         $this->supervisor = $supervisor;
+
         return $supervisor;
     }
 

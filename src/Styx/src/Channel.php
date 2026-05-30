@@ -72,6 +72,7 @@ final class Channel
         }
 
         $this->firePauseIfFilling();
+
         return true;
     }
 
@@ -135,6 +136,7 @@ final class Channel
     public function withPressure(Closure $fn): self
     {
         $this->pressureCallback = $fn;
+
         return $this;
     }
 

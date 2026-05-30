@@ -77,6 +77,7 @@ final readonly class ConfigHydrator
         if ($constructor === null) {
             /** @var T $config */
             $config = $reflection->newInstance();
+
             return $config;
         }
 
@@ -116,6 +117,7 @@ final readonly class ConfigHydrator
         if ($env === null && class_exists($typeName) && is_subclass_of($typeName, Config::class)) {
             /** @var class-string<Config> $nested */
             $nested = $typeName;
+
             return $this->build($nested, $issues);
         }
 
@@ -237,6 +239,7 @@ final readonly class ConfigHydrator
         }
 
         $issues[] = new Issue(IssueLevel::Error, 'config.env-int', "{$envKey} must be an integer.", $envKey, $path);
+
         throw new ConfigHydrationException($issues);
     }
 
@@ -249,6 +252,7 @@ final readonly class ConfigHydrator
         }
 
         $issues[] = new Issue(IssueLevel::Error, 'config.env-float', "{$envKey} must be a float.", $envKey, $path);
+
         throw new ConfigHydrationException($issues);
     }
 
@@ -261,6 +265,7 @@ final readonly class ConfigHydrator
         }
 
         $issues[] = new Issue(IssueLevel::Error, 'config.env-bool', "{$envKey} must be a boolean.", $envKey, $path);
+
         throw new ConfigHydrationException($issues);
     }
 }

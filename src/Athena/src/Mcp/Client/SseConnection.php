@@ -84,6 +84,7 @@ final class SseConnection implements McpConnection
 
         if ($response->isError) {
             $message = $response->error['message'] ?? 'MCP error';
+
             return Outcome::failed(
                 Resolution::McpTool,
                 new \RuntimeException($message),

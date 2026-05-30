@@ -221,6 +221,7 @@ final class StoaRunner
     public function withServerStats(ServerStats $serverStats): self
     {
         $this->serverStats = $serverStats;
+
         return $this;
     }
 
@@ -429,6 +430,7 @@ final class StoaRunner
 
             if ($this->draining) {
                 $resource->event(StoaEventSid::ServerDrainingRejected);
+
                 return $this->finish(
                     $this->jsonResponse(503, ['error' => 'Server Shutting Down']),
                     $target,
@@ -447,6 +449,7 @@ final class StoaRunner
                     if ($advertised !== '') {
                         $rejection = $rejection->withHeader('Upgrade', $advertised);
                     }
+
                     return $this->finish($rejection, $target, $resource);
                 }
 
@@ -455,6 +458,7 @@ final class StoaRunner
                 if (!$resource->isTerminal()) {
                     $resource->complete(101);
                 }
+
                 return null;
             }
 
@@ -490,6 +494,7 @@ final class StoaRunner
                             $resource->complete(200);
                         }
                         $supervisor->complete($requestRun, null);
+
                         return null;
                     }
 
@@ -501,10 +506,12 @@ final class StoaRunner
                 } catch (Cancelled $e) {
                     $supervisor->cancel($requestRun);
                     $requestFailureTree = $supervisor->tree();
+
                     throw $e;
                 } catch (Throwable $e) {
                     $supervisor->fail($requestRun, $e);
                     $requestFailureTree = $requestRun->failureTree;
+
                     throw $e;
                 } finally {
                     $supervisor->reap($requestRun);
@@ -562,6 +569,7 @@ final class StoaRunner
 
             if ($target === null) {
                 $request->complete($response->getStatusCode());
+
                 return $response;
             }
 
@@ -683,6 +691,7 @@ final class StoaRunner
             if ($shouldShutdownServer) {
                 $this->shutdownSwooleServer($server);
             }
+
             return;
         }
 

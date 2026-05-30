@@ -75,6 +75,7 @@ final class KeyParser
         if ($endPos === false) {
             $this->pasteBuffer .= $this->buffer;
             $this->buffer = '';
+
             return false;
         }
 
@@ -108,21 +109,25 @@ final class KeyParser
 
         if ($first === 0x0D || $first === 0x0A) {
             $this->buffer = substr($b, 1);
+
             return 'enter';
         }
 
         if ($first === 0x09) {
             $this->buffer = substr($b, 1);
+
             return 'tab';
         }
 
         if ($first === 0x7F || $first === 0x08) {
             $this->buffer = substr($b, 1);
+
             return 'backspace';
         }
 
         if ($first >= 1 && $first <= 26) {
             $this->buffer = substr($b, 1);
+
             return 'ctrl-' . chr($first + 96);
         }
 
@@ -189,6 +194,7 @@ final class KeyParser
                 return false;
             }
             $this->buffer = substr($b, $end + 1);
+
             return null;
         }
 

@@ -97,6 +97,7 @@ final class ScopedStream
     public function onStart(Closure $fn): self
     {
         $this->emitter->onStart($fn);
+
         return $this;
     }
 
@@ -104,6 +105,7 @@ final class ScopedStream
     public function onEach(Closure $fn): self
     {
         $this->emitter->onEach($fn);
+
         return $this;
     }
 
@@ -111,6 +113,7 @@ final class ScopedStream
     public function onError(Closure $fn): self
     {
         $this->emitter->onError($fn);
+
         return $this;
     }
 
@@ -118,6 +121,7 @@ final class ScopedStream
     public function onComplete(Closure $fn): self
     {
         $this->emitter->onComplete($fn);
+
         return $this;
     }
 
@@ -125,6 +129,7 @@ final class ScopedStream
     public function onDispose(Closure $fn): self
     {
         $this->emitter->onDispose($fn);
+
         return $this;
     }
 

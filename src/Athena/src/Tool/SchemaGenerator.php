@@ -51,6 +51,7 @@ final class SchemaGenerator
     {
         if (is_a($toolClass, SelfDescribed::class, true)) {
             $instance = $class->newInstanceWithoutConstructor();
+
             /** @var SelfDescribed $instance */
             return $instance->description;
         }

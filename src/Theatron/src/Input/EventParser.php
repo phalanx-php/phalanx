@@ -84,10 +84,12 @@ final class EventParser
 
         if ($this->buffer === "\x1B") {
             $this->buffer = '';
+
             return [new KeyEvent(Key::Escape)];
         }
 
         $this->buffer = '';
+
         return [];
     }
 
@@ -107,22 +109,26 @@ final class EventParser
 
         if ($first === 0x0D || $first === 0x0A) {
             $this->buffer = substr($b, 1);
+
             return new KeyEvent(Key::Enter);
         }
 
         if ($first === 0x09) {
             $this->buffer = substr($b, 1);
+
             return new KeyEvent(Key::Tab);
         }
 
         if ($first === 0x7F || $first === 0x08) {
             $this->buffer = substr($b, 1);
+
             return new KeyEvent(Key::Backspace);
         }
 
         if ($first >= 1 && $first <= 26) {
             $this->buffer = substr($b, 1);
             $char = chr($first + 96);
+
             return new KeyEvent($char, ctrl: true);
         }
 
@@ -317,6 +323,7 @@ final class EventParser
 
         if ($scroll) {
             $button = $buttonCode === 0 ? MouseButton::ScrollUp : MouseButton::ScrollDown;
+
             return new MouseEvent($button, MouseAction::Press, $x, $y, $ctrl, $alt, $shift);
         }
 

@@ -31,6 +31,7 @@ final readonly class SupervisorConfig
     public static function cpuBound(): self
     {
         $cores = self::detectCores();
+
         return new self(agents: $cores);
     }
 

@@ -44,6 +44,7 @@ final readonly class SystemCommand
         foreach ($args as $arg) {
             $parts[] = escapeshellarg($arg);
         }
+
         return new self(implode(' ', $parts));
     }
 
@@ -78,6 +79,7 @@ final readonly class SystemCommand
     private static function intField(array $raw, string $key, int $default): int
     {
         $value = $raw[$key] ?? $default;
+
         return is_int($value) ? $value : (int) $value;
     }
 
@@ -85,6 +87,7 @@ final readonly class SystemCommand
     private static function stringField(array $raw, string $key): string
     {
         $value = $raw[$key] ?? '';
+
         return is_string($value) ? $value : (string) $value;
     }
 }

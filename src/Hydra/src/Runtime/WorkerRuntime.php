@@ -69,6 +69,7 @@ class WorkerRuntime
 
         $type = $parameter->getType();
         $expected = $type instanceof ReflectionType ? (string) $type : 'unknown';
+
         throw new RuntimeException(
             "Hydra worker task {$taskClass} requires {$expected}; "
             . 'the current worker runtime exposes ' . WorkerScope::class . ' only.',
@@ -141,6 +142,7 @@ class WorkerRuntime
         if ($constructor === null) {
             $instance = $reflection->newInstance();
             assert($instance instanceof WorkerTask);
+
             return $instance;
         }
 
@@ -148,6 +150,7 @@ class WorkerRuntime
             $this->resolveConstructorArgs($constructor->getParameters(), $request->constructorArgs),
         );
         assert($instance instanceof WorkerTask);
+
         return $instance;
     }
 

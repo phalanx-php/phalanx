@@ -35,6 +35,7 @@ final class NewCommand extends Command
                 '<error>Project name must start with a letter, contain only letters,'
                 . ' numbers, and hyphens, and not end with a hyphen.</error>',
             );
+
             return Command::FAILURE;
         }
 
@@ -44,6 +45,7 @@ final class NewCommand extends Command
             $output->writeln(
                 '<error>Invalid project type. Valid types: api, console.</error>',
             );
+
             return Command::FAILURE;
         }
 
@@ -52,6 +54,7 @@ final class NewCommand extends Command
 
         if ($parentDir === false) {
             $output->writeln('<error>Unable to determine current working directory.</error>');
+
             return Command::FAILURE;
         }
 
@@ -60,6 +63,7 @@ final class NewCommand extends Command
         if (is_dir($directory) && (new \FilesystemIterator($directory))->valid()) {
             $escaped = OutputFormatter::escape($directory);
             $output->writeln("<error>Directory {$escaped} already exists and is not empty.</error>");
+
             return Command::FAILURE;
         }
 
@@ -72,6 +76,7 @@ final class NewCommand extends Command
         } catch (\RuntimeException $e) {
             $output->writeln('');
             $output->writeln('<error>' . OutputFormatter::escape($e->getMessage()) . '</error>');
+
             return Command::FAILURE;
         }
 

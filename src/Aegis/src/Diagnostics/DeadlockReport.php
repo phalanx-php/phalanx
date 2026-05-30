@@ -72,6 +72,7 @@ final readonly class DeadlockReport
             $lines[] = '--------------------------------------------------------------------';
             $lines[] = $frame->backtrace;
         }
+
         return implode(PHP_EOL, $lines) . PHP_EOL;
     }
 
@@ -91,6 +92,7 @@ final readonly class DeadlockReport
             $class = isset($frame['class']) ? (string) $frame['class'] . '::' : '';
             $lines[] = "#{$depth} {$class}{$function}() at {$file}:{$line}";
         }
+
         return implode(PHP_EOL, $lines);
     }
 }

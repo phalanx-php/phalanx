@@ -134,6 +134,7 @@ class StreamingProcess
     {
         $clone = clone $this;
         $clone->cwd = $cwd;
+
         return $clone;
     }
 
@@ -142,6 +143,7 @@ class StreamingProcess
     {
         $clone = clone $this;
         $clone->env = self::normalizeEnv($env);
+
         return $clone;
     }
 
@@ -149,6 +151,7 @@ class StreamingProcess
     {
         $clone = clone $this;
         $clone->maxLineBytes = max(1, $bytes);
+
         return $clone;
     }
 

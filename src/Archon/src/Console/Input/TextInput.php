@@ -122,12 +122,14 @@ class TextInput extends BasePrompt
         }
 
         $trimFrom = max(0, $this->cursor - $maxWidth + 2);
+
         return $this->theme->muted->apply('…') . implode('', array_slice($chars, $trimFrom, $maxWidth - 1));
     }
 
     protected function finalValue(): string|int|float
     {
         $val = $this->value !== '' ? $this->value : $this->default;
+
         return $this->transform !== null ? (string) ($this->transform)($val) : $val;
     }
 
