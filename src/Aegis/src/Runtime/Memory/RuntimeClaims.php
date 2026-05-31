@@ -20,8 +20,7 @@ final class RuntimeClaims
         $now = microtime(true);
         $rowKey = self::key($key);
 
-        // Swoole 6 has no non-blocking trylock(); a near-zero timeout is the
-        // fast-fail-on-contention equivalent (OpenSwoole used Lock::trylock()).
+        // Swoole 6 has no non-blocking trylock(); a near-zero timeout gives the claim path a bounded fail-fast lock.
         if (!$this->lock->lock(timeout: 0.001)) {
             return false;
         }

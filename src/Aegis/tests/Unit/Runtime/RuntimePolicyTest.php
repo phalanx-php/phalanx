@@ -43,7 +43,6 @@ final class RuntimePolicyTest extends TestCase
 
         self::assertSame(0, $policy->requiredFlags & SWOOLE_HOOK_SLEEP);
         self::assertSame(0, $policy->requiredFlags & SWOOLE_HOOK_STDIO);
-        // OpenSwoole: HOOK_BLOCKING_FUNCTION; Swoole 6: SWOOLE_HOOK_NET_FUNCTION
         self::assertSame(0, $policy->requiredFlags & SWOOLE_HOOK_NET_FUNCTION);
         self::assertSame(0, $policy->requiredFlags & SWOOLE_HOOK_PROC);
 

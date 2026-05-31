@@ -19,7 +19,6 @@ final class RuntimeHookNames
         SWOOLE_HOOK_SLEEP => 'SLEEP',
         SWOOLE_HOOK_CURL => 'CURL',
         SWOOLE_HOOK_NATIVE_CURL => 'NATIVE_CURL',
-        // OpenSwoole called this HOOK_BLOCKING_FUNCTION; Swoole 6 equivalent is SWOOLE_HOOK_NET_FUNCTION.
         SWOOLE_HOOK_NET_FUNCTION => 'NET_FUNCTION',
         SWOOLE_HOOK_SOCKETS => 'SOCKETS',
         SWOOLE_HOOK_STDIO => 'STDIO',

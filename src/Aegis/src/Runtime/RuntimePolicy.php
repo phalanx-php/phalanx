@@ -52,7 +52,6 @@ final readonly class RuntimePolicy
             requiredFlags: $required,
             sensitiveFlags: SWOOLE_HOOK_SLEEP
                 | SWOOLE_HOOK_STDIO
-                // OpenSwoole: HOOK_BLOCKING_FUNCTION; Swoole 6: SWOOLE_HOOK_NET_FUNCTION
                 | SWOOLE_HOOK_NET_FUNCTION
                 | SWOOLE_HOOK_PROC,
         );
@@ -132,7 +131,6 @@ final readonly class RuntimePolicy
             RuntimeCapability::Processes => 0,
             RuntimeCapability::InteractiveStdio => SWOOLE_HOOK_STDIO,
             RuntimeCapability::Sleep => SWOOLE_HOOK_SLEEP,
-            // OpenSwoole: HOOK_BLOCKING_FUNCTION; Swoole 6: SWOOLE_HOOK_NET_FUNCTION
             RuntimeCapability::BlockingFunctions => SWOOLE_HOOK_NET_FUNCTION,
         };
     }

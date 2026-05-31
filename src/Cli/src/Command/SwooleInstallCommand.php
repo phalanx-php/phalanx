@@ -47,13 +47,6 @@ final class SwooleInstallCommand extends Command
             return Command::SUCCESS;
         }
 
-        if (extension_loaded('openswoole')) {
-            $output->writeln('<error>OpenSwoole is loaded, but Phalanx requires ext-swoole.</error>');
-            $output->writeln('Disable OpenSwoole in your active php.ini before installing Swoole.');
-
-            return Command::FAILURE;
-        }
-
         $pie = new PieRunner();
 
         if (!$pie->isInstalled()) {

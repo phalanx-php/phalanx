@@ -4,12 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\PHPStan\Tests\Audit\Fixtures;
 
-use Amp\Future;
 use Swoole\Coroutine;
 use Swoole\Coroutine\Channel;
 use Swoole\Runtime;
-use React\EventLoop\Loop;
-use Revolt\EventLoop;
 use Symfony\Component\Process\Process;
 
 final class RuntimeRiskFixture
@@ -30,9 +27,5 @@ final class RuntimeRiskFixture
         new \Swoole\Process(static function (): void {
         });
         new \Swoole\Process\Pool(1);
-        Loop::get();
-        Future::complete();
-        EventLoop::queue(static function (): void {
-        });
     }
 }

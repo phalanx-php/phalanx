@@ -21,8 +21,6 @@ enum RuntimeCapability: int
         | SWOOLE_HOOK_CURL
         | SWOOLE_HOOK_NATIVE_CURL;
     case InteractiveStdio = SWOOLE_HOOK_STDIO;
-    // OpenSwoole called this HOOK_BLOCKING_FUNCTION; Swoole 6 exposes the same
-    // functionality (hooking gethostbyname, getaddrinfo, etc.) as SWOOLE_HOOK_NET_FUNCTION.
     case BlockingFunctions = SWOOLE_HOOK_NET_FUNCTION;
 
     public static function fromContextValue(mixed $value): self
