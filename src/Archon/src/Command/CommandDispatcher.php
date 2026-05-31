@@ -92,7 +92,7 @@ final class CommandDispatcher
             $lifecycle->close($code);
 
             return $code;
-        } catch (Halted $e) {
+        } catch (Halted) {
             $lifecycle->close(0);
 
             return 0;

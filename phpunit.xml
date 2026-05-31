@@ -28,9 +28,6 @@
         <testsuite name="Core Resilience">
             <directory>src/Aegis/tests/Resilience</directory>
         </testsuite>
-        <testsuite name="Agora Unit">
-            <directory>src/Agora/tests/Unit</directory>
-        </testsuite>
         <testsuite name="Styx Unit">
             <directory>src/Styx/tests/Unit</directory>
         </testsuite>
@@ -81,9 +78,6 @@
         </testsuite>
         <testsuite name="Surreal Unit">
             <directory>src/Surreal/tests/Unit</directory>
-        </testsuite>
-        <testsuite name="Eidolon Unit">
-            <directory>src/Eidolon/tests/Unit</directory>
         </testsuite>
         <testsuite name="Grammata Unit">
             <directory>src/Grammata/tests/Unit</directory>

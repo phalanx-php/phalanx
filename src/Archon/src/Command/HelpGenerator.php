@@ -122,19 +122,32 @@ final class HelpGenerator
         if ($commands !== []) {
             $lines[] = 'Commands:';
 
-            // Deduplicate aliased commands (same handler class = alias).
             $seen = [];
             $entries = [];
 
             foreach ($commands as $cmdName => $handler) {
-                $class = $handler->task;
+                $aliasOf = null;
 
-                if (isset($seen[$class])) {
-                    $seen[$class][] = $cmdName;
+                foreach ($entries as $entryName => $entryHandler) {
+                    if ($entryHandler->task !== $handler->task) {
+                        continue;
+                    }
+
+                    $entryAliases = $entryHandler->config instanceof CommandConfig ? $entryHandler->config->aliases : [];
+                    $handlerAliases = $handler->config instanceof CommandConfig ? $handler->config->aliases : [];
+
+                    if (in_array($cmdName, $entryAliases, strict: true) || in_array($entryName, $handlerAliases, strict: true)) {
+                        $aliasOf = $entryName;
+                        break;
+                    }
+                }
+
+                if ($aliasOf !== null) {
+                    $seen[$aliasOf][] = $cmdName;
                     continue;
                 }
 
-                $seen[$class] = [$cmdName];
+                $seen[$cmdName] = [$cmdName];
                 $entries[$cmdName] = $handler;
             }
 
@@ -143,7 +156,7 @@ final class HelpGenerator
 
             foreach ($entries as $cmdName => $handler) {
                 $desc = $handler->config instanceof CommandConfig ? $handler->config->description : '';
-                $aliases = $seen[$handler->task];
+                $aliases = $seen[$cmdName];
                 $aliasStr = count($aliases) > 1 ? ' (' . implode(', ', array_slice($aliases, 1)) . ')' : '';
                 $padding = str_repeat(' ', $maxLen - strlen($cmdName) + 2);
                 $lines[] = "  {$cmdName}{$padding}{$desc}{$aliasStr}";

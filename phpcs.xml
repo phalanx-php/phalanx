@@ -1,12 +1,10 @@
 <?xml version="1.0"?>
 <ruleset name="Phalanx">
     <file>src/Aegis/src</file>
-    <file>src/Agora/src</file>
     <file>src/Archon/src</file>
     <file>src/Argos/src</file>
     <file>src/Athena/src</file>
     <file>src/Cli/src</file>
-    <file>src/Eidolon/src</file>
     <file>src/Enigma/src</file>
     <file>src/Grammata/src</file>
     <file>src/Hermes/src</file>

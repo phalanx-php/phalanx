@@ -5,12 +5,10 @@ declare(strict_types=1);
 $finder = PhpCsFixer\Finder::create()
     ->in([
         __DIR__ . '/src/Aegis/src',
-        __DIR__ . '/src/Agora/src',
         __DIR__ . '/src/Archon/src',
         __DIR__ . '/src/Argos/src',
         __DIR__ . '/src/Athena/src',
         __DIR__ . '/src/Cli/src',
-        __DIR__ . '/src/Eidolon/src',
         __DIR__ . '/src/Enigma/src',
         __DIR__ . '/src/Grammata/src',
         __DIR__ . '/src/Hermes/src',
