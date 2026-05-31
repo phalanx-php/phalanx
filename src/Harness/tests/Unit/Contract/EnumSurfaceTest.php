@@ -11,6 +11,8 @@ use Phalanx\Harness\Loop\LoopStage;
 use Phalanx\Harness\Message\MessageKind;
 use Phalanx\Harness\Review\ReviewStatus;
 use Phalanx\Harness\Work\Activity;
+use Phalanx\Harness\Work\WorkItemStatus;
+use Phalanx\Harness\Work\WorkPlanStatus;
 use Phalanx\Harness\Work\WorkResultStatus;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -81,6 +83,20 @@ final class EnumSurfaceTest extends TestCase
             'done',
             'blocked',
             'failed',
+        ]];
+        yield 'work item status' => [WorkItemStatus::class, [
+            'pending',
+            'running',
+            'done',
+            'blocked',
+            'failed',
+            'superseded',
+        ]];
+        yield 'work plan status' => [WorkPlanStatus::class, [
+            'active',
+            'suspended',
+            'complete',
+            'aborted',
         ]];
         yield 'review status' => [ReviewStatus::class, [
             'approved',
