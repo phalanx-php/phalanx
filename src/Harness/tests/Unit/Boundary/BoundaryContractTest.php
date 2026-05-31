@@ -35,6 +35,14 @@ final class BoundaryContractTest extends TestCase
     }
 
     #[Test]
+    public function inletMessageAlwaysCarriesReceivedAtTimestamp(): void
+    {
+        $message = new InletMessage(Envelope::prompt('timestamped'));
+
+        self::assertNotNull($message->receivedAt);
+    }
+
+    #[Test]
     public function outletsCanEarlyReturnForUnwantedEvents(): void
     {
         $outlet = new CompletionOnlyOutlet();

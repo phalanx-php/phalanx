@@ -6,8 +6,9 @@ namespace Phalanx\Harness\Message;
 
 use DateTimeImmutable;
 use Phalanx\Harness\Boundary\Urgency;
-use Phalanx\Panoply\Hash\Canonical;
-use Phalanx\Panoply\Id;
+use Phalanx\Harness\Support\CanonicalHash;
+use Phalanx\Harness\Support\HarnessId;
+use Phalanx\Harness\Support\StringList;
 
 final class Envelope
 {
@@ -36,7 +37,7 @@ final class Envelope
             throw new \InvalidArgumentException('Envelope correlation id cannot be empty.');
         }
 
-        $this->tags = self::dedup($tags);
+        $this->tags = StringList::unique($tags);
     }
 
     /**
@@ -107,7 +108,7 @@ final class Envelope
 
     public function hash(): string
     {
-        return Canonical::of($this->toCanonical());
+        return CanonicalHash::of($this->toCanonical());
     }
 
     /**
@@ -130,27 +131,6 @@ final class Envelope
 
     private static function newId(): string
     {
-        return 'env_' . Id::generate();
-    }
-
-    /**
-     * @param list<string> $values
-     * @return list<string>
-     */
-    private static function dedup(array $values): array
-    {
-        $seen = [];
-        $out = [];
-        foreach ($values as $value) {
-            $value = trim($value);
-            if ($value === '' || isset($seen[$value])) {
-                continue;
-            }
-
-            $seen[$value] = true;
-            $out[] = $value;
-        }
-
-        return $out;
+        return HarnessId::new('env');
     }
 }

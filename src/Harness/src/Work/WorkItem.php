@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace Phalanx\Harness\Work;
 
 use Phalanx\Harness\Message\Address;
-use Phalanx\Panoply\Id;
+use Phalanx\Harness\Support\HarnessId;
+use Phalanx\Harness\Support\StringList;
 
 final class WorkItem
 {
+    private(set) string $id;
+
     /** @var list<string> */
     private(set) array $dependsOn;
 
@@ -27,15 +30,15 @@ final class WorkItem
         private(set) ?Address $preferredParticipant = null,
         private(set) int $priority = 0,
         private(set) bool $critical = false,
-        private(set) ?string $id = null,
+        ?string $id = null,
     ) {
         if (trim($this->prompt) === '') {
             throw new \InvalidArgumentException('Work item prompt cannot be empty.');
         }
 
-        $this->id ??= self::newId();
-        $this->dependsOn = self::dedup($dependsOn);
-        $this->tags = self::dedup($tags);
+        $this->id = $id === null ? self::newId() : self::requireId($id);
+        $this->dependsOn = StringList::unique($dependsOn);
+        $this->tags = StringList::unique($tags);
 
         if (in_array($this->id, $this->dependsOn, true)) {
             throw new \InvalidArgumentException('Work item cannot depend on itself.');
@@ -47,7 +50,16 @@ final class WorkItem
      */
     public function isBlockedBy(array $completedIds): bool
     {
-        return array_diff($this->dependsOn, $completedIds) !== [];
+        return $this->missingDependencies($completedIds) !== [];
+    }
+
+    /**
+     * @param list<string> $completedIds
+     * @return list<string>
+     */
+    public function missingDependencies(array $completedIds): array
+    {
+        return array_values(array_diff($this->dependsOn, $completedIds));
     }
 
     /**
@@ -69,27 +81,16 @@ final class WorkItem
 
     private static function newId(): string
     {
-        return 'work_' . Id::generate();
+        return HarnessId::new('work');
     }
 
-    /**
-     * @param list<string> $values
-     * @return list<string>
-     */
-    private static function dedup(array $values): array
+    private static function requireId(string $id): string
     {
-        $seen = [];
-        $out = [];
-        foreach ($values as $value) {
-            $value = trim($value);
-            if ($value === '' || isset($seen[$value])) {
-                continue;
-            }
-
-            $seen[$value] = true;
-            $out[] = $value;
+        $id = trim($id);
+        if ($id === '') {
+            throw new \InvalidArgumentException('Work item id cannot be empty.');
         }
 
-        return $out;
+        return $id;
     }
 }

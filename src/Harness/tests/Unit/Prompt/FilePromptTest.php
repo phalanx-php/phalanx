@@ -7,11 +7,17 @@ namespace Phalanx\Harness\Tests\Unit\Prompt;
 use Phalanx\Harness\Prompt\FilePrompt;
 use Phalanx\Harness\Prompt\PromptSource;
 use Phalanx\Harness\Tests\Support\RecordingTaskScope;
+use PHPUnit\Framework\Attributes\After;
+use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
+#[RequiresPhpExtension('swoole')]
 final class FilePromptTest extends TestCase
 {
+    /** @var list<string> */
+    private array $promptFiles = [];
+
     #[Test]
     public function filePromptLoadsTextThroughTaskScope(): void
     {
@@ -61,6 +67,18 @@ final class FilePromptTest extends TestCase
         new FilePrompt(sys_get_temp_dir());
     }
 
+    #[After]
+    protected function removePromptFiles(): void
+    {
+        foreach ($this->promptFiles as $path) {
+            if (is_file($path)) {
+                unlink($path);
+            }
+        }
+
+        $this->promptFiles = [];
+    }
+
     private static function insideCoroutine(\Closure $callback): mixed
     {
         $result = null;
@@ -86,6 +104,7 @@ final class FilePromptTest extends TestCase
         $path = tempnam(sys_get_temp_dir(), 'phalanx-prompt-');
         self::assertIsString($path);
         file_put_contents($path, $content);
+        $this->promptFiles[] = $path;
 
         return $path;
     }

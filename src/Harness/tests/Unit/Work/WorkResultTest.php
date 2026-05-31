@@ -41,6 +41,15 @@ final class WorkResultTest extends TestCase
     }
 
     #[Test]
+    public function blockedResultRejectsEmptyReason(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('reason cannot be empty');
+
+        WorkResult::blocked('work_api', '');
+    }
+
+    #[Test]
     public function failedResultCarriesThrowableSummary(): void
     {
         $error = new \RuntimeException('provider unavailable');

@@ -9,11 +9,13 @@ use Phalanx\Harness\Message\Envelope;
 
 final class InletMessage
 {
+    private(set) DateTimeImmutable $receivedAt;
+
     public function __construct(
         private(set) Envelope $envelope,
         private(set) Urgency $urgency = Urgency::Queue,
-        private(set) ?DateTimeImmutable $receivedAt = null,
+        ?DateTimeImmutable $receivedAt = null,
     ) {
-        $this->receivedAt ??= new DateTimeImmutable();
+        $this->receivedAt = $receivedAt ?? new DateTimeImmutable();
     }
 }

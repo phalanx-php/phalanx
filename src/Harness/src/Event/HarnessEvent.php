@@ -7,10 +7,10 @@ namespace Phalanx\Harness\Event;
 use DateTimeImmutable;
 use Phalanx\Harness\Message\Envelope;
 use Phalanx\Harness\Review\ReviewVerdict;
+use Phalanx\Harness\Support\CanonicalHash;
+use Phalanx\Harness\Support\HarnessId;
 use Phalanx\Harness\Work\WorkItem;
 use Phalanx\Harness\Work\WorkResult;
-use Phalanx\Panoply\Hash\Canonical;
-use Phalanx\Panoply\Id;
 
 final class HarnessEvent
 {
@@ -78,7 +78,7 @@ final class HarnessEvent
 
     public function hash(): string
     {
-        return Canonical::of($this->toCanonical());
+        return CanonicalHash::of($this->toCanonical());
     }
 
     /**
@@ -100,6 +100,6 @@ final class HarnessEvent
 
     private static function newId(): string
     {
-        return 'evt_' . Id::generate();
+        return HarnessId::new('evt');
     }
 }

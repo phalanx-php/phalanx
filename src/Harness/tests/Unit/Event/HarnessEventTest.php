@@ -50,6 +50,16 @@ final class HarnessEventTest extends TestCase
             id: 'evt_test',
         );
 
+        self::assertSame([
+            'id' => 'evt_test',
+            'kind' => EventKind::WorkCompleted,
+            'occurred_at' => '2026-05-31T12:00:00+00:00',
+            'envelope' => null,
+            'work_item' => null,
+            'work_result' => null,
+            'review_verdict' => null,
+            'context' => ['summary' => 'done'],
+        ], $first->toCanonical());
         self::assertSame($first->toCanonical(), $second->toCanonical());
         self::assertSame($first->hash(), $second->hash());
     }

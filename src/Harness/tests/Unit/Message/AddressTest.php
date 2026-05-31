@@ -21,6 +21,15 @@ final class AddressTest extends TestCase
     }
 
     #[Test]
+    public function addressNormalizesIdentityAndRoleWhitespace(): void
+    {
+        $address = Address::named('  participant:reviewer  ', ' reviewer ');
+
+        self::assertSame('participant:reviewer', $address->identity);
+        self::assertSame('reviewer', $address->role);
+    }
+
+    #[Test]
     public function addressCanonicalFormIsStable(): void
     {
         self::assertSame(

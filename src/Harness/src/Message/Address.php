@@ -6,17 +6,27 @@ namespace Phalanx\Harness\Message;
 
 final class Address
 {
+    private(set) string $identity;
+
+    private(set) ?string $role;
+
     private function __construct(
-        private(set) string $identity,
-        private(set) ?string $role = null,
+        string $identity,
+        ?string $role = null,
     ) {
-        if (trim($this->identity) === '') {
+        $identity = trim($identity);
+        $role = $role === null ? null : trim($role);
+
+        if ($identity === '') {
             throw new \InvalidArgumentException('Address identity cannot be empty.');
         }
 
-        if ($this->role !== null && trim($this->role) === '') {
+        if ($role === '') {
             throw new \InvalidArgumentException('Address role cannot be empty.');
         }
+
+        $this->identity = $identity;
+        $this->role = $role;
     }
 
     public static function user(?string $id = null): self

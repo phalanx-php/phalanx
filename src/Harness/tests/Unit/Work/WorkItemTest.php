@@ -44,7 +44,21 @@ final class WorkItemTest extends TestCase
         );
 
         self::assertTrue($item->isBlockedBy([]));
+        self::assertSame(['work_edit'], $item->missingDependencies([]));
         self::assertFalse($item->isBlockedBy(['work_edit']));
+        self::assertSame([], $item->missingDependencies(['work_edit']));
+    }
+
+    #[Test]
+    public function generatedWorkItemIdIsStableAfterConstruction(): void
+    {
+        $item = new WorkItem(
+            activity: Activity::Thinking,
+            prompt: 'Plan next step',
+        );
+
+        self::assertStringStartsWith('work_', $item->id);
+        self::assertSame($item->id, $item->toCanonical()['id']);
     }
 
     #[Test]
@@ -58,6 +72,19 @@ final class WorkItemTest extends TestCase
             prompt: 'Run itself',
             dependsOn: ['work_self'],
             id: 'work_self',
+        );
+    }
+
+    #[Test]
+    public function workItemRejectsEmptyExplicitId(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('id cannot be empty');
+
+        new WorkItem(
+            activity: Activity::Testing,
+            prompt: 'Run harness tests',
+            id: '   ',
         );
     }
 }

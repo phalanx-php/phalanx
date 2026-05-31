@@ -38,6 +38,35 @@ final class EnvelopeTest extends TestCase
     }
 
     #[Test]
+    public function delegateFactoryBuildsTaskEnvelopeWithCorrelation(): void
+    {
+        $envelope = Envelope::delegate(
+            from: Address::agent('primary'),
+            to: Address::agent('explorer'),
+            payload: ['work_item' => 'work_1'],
+            correlationId: 'corr_1',
+        );
+
+        self::assertSame(MessageKind::Task, $envelope->kind);
+        self::assertSame('corr_1', $envelope->correlationId);
+        self::assertSame(['work_item' => 'work_1'], $envelope->payload);
+    }
+
+    #[Test]
+    public function envelopeRejectsEmptyCorrelationId(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('correlation id');
+
+        Envelope::make(
+            from: Address::user(),
+            to: Address::agent('assistant'),
+            kind: MessageKind::Prompt,
+            correlationId: '',
+        );
+    }
+
+    #[Test]
     public function envelopeCanonicalFormAndHashAreStable(): void
     {
         $first = Envelope::make(
@@ -63,6 +92,17 @@ final class EnvelopeTest extends TestCase
             id: 'env_test',
         );
 
+        self::assertSame([
+            'id' => 'env_test',
+            'from' => ['identity' => 'operator', 'role' => 'user'],
+            'to' => ['identity' => 'agent:assistant', 'role' => 'agent'],
+            'kind' => MessageKind::Prompt,
+            'payload' => ['text' => 'hello'],
+            'at' => '2026-05-31T12:00:00+00:00',
+            'correlation_id' => 'corr_1',
+            'priority' => 10,
+            'tags' => ['alpha', 'beta'],
+        ], $first->toCanonical());
         self::assertSame($first->hash(), $second->hash());
     }
 }
