@@ -1,0 +1,113 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Phalanx\Harness\Tests\Unit\Contract;
+
+use Phalanx\Harness\Boundary\Urgency;
+use Phalanx\Harness\Effect\EffectStatus;
+use Phalanx\Harness\Event\EventKind;
+use Phalanx\Harness\Loop\LoopStage;
+use Phalanx\Harness\Message\MessageKind;
+use Phalanx\Harness\Review\ReviewStatus;
+use Phalanx\Harness\Work\Activity;
+use Phalanx\Harness\Work\WorkResultStatus;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+
+final class EnumSurfaceTest extends TestCase
+{
+    /**
+     * @return iterable<string, array{class-string, list<string>}>
+     */
+    public static function enumValues(): iterable
+    {
+        yield 'message kind' => [MessageKind::class, [
+            'prompt',
+            'response',
+            'tool_request',
+            'tool_result',
+            'task',
+            'task_result',
+            'order',
+            'feedback',
+            'observation',
+            'alert',
+            'approval',
+            'denial',
+            'plan_update',
+            'status_update',
+        ]];
+        yield 'event kind' => [EventKind::class, [
+            'work_received',
+            'work_prepared',
+            'work_distributed',
+            'work_item_started',
+            'effect_requested',
+            'effect_approved',
+            'effect_denied',
+            'work_item_completed',
+            'work_interrupted',
+            'work_reviewed',
+            'work_completed',
+        ]];
+        yield 'loop stage' => [LoopStage::class, [
+            'receive',
+            'prepare',
+            'distribute',
+            'collaborate',
+            'react',
+            'review',
+            'complete',
+        ]];
+        yield 'activity' => [Activity::class, [
+            'thinking',
+            'exploring',
+            'researching',
+            'editing',
+            'testing',
+            'reviewing',
+        ]];
+        yield 'effect status' => [EffectStatus::class, [
+            'requested',
+            'approved',
+            'denied',
+            'executing',
+            'resolved',
+            'failed',
+        ]];
+        yield 'work result status' => [WorkResultStatus::class, [
+            'done',
+            'blocked',
+            'failed',
+        ]];
+        yield 'review status' => [ReviewStatus::class, [
+            'approved',
+            'rejected',
+            'needs_revision',
+        ]];
+    }
+
+    /**
+     * @param class-string $enum
+     * @param list<string> $values
+     */
+    #[Test]
+    #[DataProvider('enumValues')]
+    public function enumValuesLockTheProtocolSurface(string $enum, array $values): void
+    {
+        self::assertSame(
+            $values,
+            array_map(static fn (\BackedEnum $case): string => (string) $case->value, $enum::cases()),
+        );
+    }
+
+    #[Test]
+    public function urgencyPrioritiesLockInboundSchedulingSemantics(): void
+    {
+        self::assertSame(0, Urgency::Queue->priority());
+        self::assertSame(50, Urgency::Prioritize->priority());
+        self::assertSame(100, Urgency::Interrupt->priority());
+    }
+}
