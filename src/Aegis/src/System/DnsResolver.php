@@ -20,25 +20,6 @@ final class DnsResolver
     ) {
     }
 
-    private static function stripPort(string $hostOrHostPort): string
-    {
-        $lastColon = strrpos($hostOrHostPort, ':');
-
-        if ($lastColon === false) {
-            return $hostOrHostPort;
-        }
-
-        if (str_contains($hostOrHostPort, '[')) {
-            $bracket = strrpos($hostOrHostPort, ']');
-
-            return ($bracket !== false && $lastColon > $bracket)
-                ? substr($hostOrHostPort, 1, $bracket - 1)
-                : trim($hostOrHostPort, '[]');
-        }
-
-        return substr($hostOrHostPort, 0, $lastColon);
-    }
-
     public function resolve(Suspendable $scope, string $hostname, ?float $timeout = null): DnsLookupResult
     {
         $result = $this->resolveAll($scope, $hostname, timeout: $timeout);
@@ -84,5 +65,24 @@ final class DnsResolver
             family: $family,
             durationMs: $duration,
         );
+    }
+
+    private static function stripPort(string $hostOrHostPort): string
+    {
+        $lastColon = strrpos($hostOrHostPort, ':');
+
+        if ($lastColon === false) {
+            return $hostOrHostPort;
+        }
+
+        if (str_contains($hostOrHostPort, '[')) {
+            $bracket = strrpos($hostOrHostPort, ']');
+
+            return ($bracket !== false && $lastColon > $bracket)
+                ? substr($hostOrHostPort, 1, $bracket - 1)
+                : trim($hostOrHostPort, '[]');
+        }
+
+        return substr($hostOrHostPort, 0, $lastColon);
     }
 }

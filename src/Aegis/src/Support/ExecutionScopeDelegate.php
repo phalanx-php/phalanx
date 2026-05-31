@@ -22,8 +22,6 @@ use Phalanx\Worker\WorkerTask;
 
 trait ExecutionScopeDelegate
 {
-    abstract protected function innerScope(): ExecutionScope;
-    
     public bool $isCancelled {
         get => $this->innerScope()->isCancelled;
     }
@@ -189,4 +187,6 @@ trait ExecutionScopeDelegate
     {
         return $this->innerScope()->transaction($lease, $body);
     }
+
+    abstract protected function innerScope(): ExecutionScope;
 }

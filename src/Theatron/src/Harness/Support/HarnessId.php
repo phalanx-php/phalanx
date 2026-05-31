@@ -13,6 +13,6 @@ final class HarnessId
             throw new \InvalidArgumentException('Harness id prefix cannot be empty.');
         }
 
-        return $prefix . '_' . bin2hex(random_bytes(16));
+        return str_replace('.', '', uniqid($prefix . '_', true));
     }
 }

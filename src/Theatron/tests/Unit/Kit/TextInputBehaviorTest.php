@@ -6,7 +6,9 @@ namespace Phalanx\Theatron\Tests\Unit\Kit;
 
 use Phalanx\Theatron\Input\Key;
 use Phalanx\Theatron\Input\KeyEvent;
+use Phalanx\Theatron\Kit\InputComposer;
 use Phalanx\Theatron\Reactive\Signal;
+use Phalanx\Theatron\Tdom\Element\InputElement;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -215,5 +217,23 @@ final class TextInputBehaviorTest extends TestCase
         self::assertSame('alpha ', $fixture->signal()->get());
         self::assertSame(6, $fixture->cursor()->get());
         self::assertSame('beta', $fixture->killRing()->get());
+    }
+
+    #[Test]
+    public function inputComposerRendersEditableInputState(): void
+    {
+        $composer = InputComposer::empty();
+
+        self::assertTrue($composer->handleInput(new KeyEvent('h')));
+        self::assertTrue($composer->handleInput(new KeyEvent('i')));
+        self::assertTrue($composer->handleInput(new KeyEvent(Key::Left, shift: true)));
+
+        $renderable = $composer(new NullRenderContext());
+
+        self::assertInstanceOf(InputElement::class, $renderable);
+        self::assertSame('hi', $renderable->value);
+        self::assertSame(1, $renderable->cursor);
+        self::assertSame(1, $renderable->selectionStart);
+        self::assertSame(2, $renderable->selectionEnd);
     }
 }
