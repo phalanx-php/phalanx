@@ -298,48 +298,6 @@ return [
             'phalanx-php/hydra' => 'Use for application-owned slow-storage offload when filesystem work should run in workers',
         ],
     ],
-    'Harness' => [
-        'package' => 'phalanx-php/harness',
-        'description' => 'Starter agent harness app for Phalanx, composing Theatron UI, Athena execution, Panoply cues, Agora replay, and Surreal persistence',
-        'type' => 'library',
-        'namespace' => 'Phalanx\\Harness\\',
-        'smokeClass' => 'Phalanx\\Harness\\Harness',
-        'testNamespace' => 'Phalanx\\Harness\\Tests\\',
-        'requires' => [
-            'php' => '^8.4',
-            'ext-swoole' => '^6.0',
-            'ext-pcntl' => '*',
-            'ext-mbstring' => '*',
-            'league/commonmark' => '^2.7',
-            'phalanx-php/aegis' => '^0.6',
-            'phalanx-php/agora' => '^0.6',
-            'phalanx-php/athena' => '^0.6',
-            'phalanx-php/iris' => '^0.6',
-            'phalanx-php/panoply' => '^0.6',
-            'phalanx-php/surreal' => '^0.6',
-            'phalanx-php/theatron' => '^0.6',
-            'phalanx-php/themis' => '^0.6',
-            'symfony/runtime' => '^7.0 || ^8.0',
-        ],
-        'devRequires' => [
-            'phpunit/phpunit' => '^13.0',
-        ],
-        'bins' => [
-            'bin/harness',
-        ],
-        'branchAlias' => '0.6.x-dev',
-        'keywords' => [
-            'agent-harness',
-            'theatron',
-            'agora',
-            'athena',
-            'surrealdb',
-        ],
-        'suggests' => [],
-        'allowPlugins' => [
-            'symfony/runtime' => true,
-        ],
-    ],
     'Hermes' => [
         'package' => 'phalanx-php/hermes',
         'description' => 'Native WebSocket server and client for Phalanx',
@@ -644,7 +602,7 @@ return [
     ],
     'Theatron' => [
         'package' => 'phalanx-php/theatron',
-        'description' => 'Async terminal UI framework for Phalanx PHP',
+        'description' => 'Terminal UI and agent harness framework for Phalanx PHP',
         'type' => 'library',
         'namespace' => 'Phalanx\\Theatron\\',
         'smokeClass' => 'Phalanx\\Theatron\\Theatron',
@@ -655,6 +613,7 @@ return [
             'ext-pcntl' => '*',
             'ext-mbstring' => '*',
             'phalanx-php/aegis' => '^0.6',
+            'phalanx-php/grammata' => '^0.6',
         ],
         'devRequires' => [
             'slevomat/coding-standard' => '*',
@@ -669,7 +628,11 @@ return [
         'autoloadFiles' => [
             'src/Ui/functions.php',
         ],
-        'keywords' => [],
+        'keywords' => [
+            'agent-harness',
+            'terminal-ui',
+            'theatron',
+        ],
         'suggests' => [],
         'allowPlugins' => [
             'dealerdirect/phpcodesniffer-composer-installer' => true,

@@ -153,7 +153,6 @@ The repository includes runnable demos for all major framework surfaces.
 | [Hydra workers](demos/hydra) | workers, structured parallelism, cancellation behavior | `composer demo:hydra` |
 | [Athena AI](demos/athena) | streaming providers, SDK coexistence, supervised tool approvals | `composer demo:athena` |
 | [Surreal](demos/surreal) | in-memory RPC and live queries | `composer demo:surreal` |
-| [Harness](demos/harness) | non-interactive harness pipeline rendering | `composer demo:harness` |
 
 ## Installation
 

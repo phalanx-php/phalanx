@@ -4,7 +4,8 @@
 
 # Theatron
 
-Async terminal UI framework for PHP 8.4+, built on the Phalanx runtime.
+Terminal UI and agent harness framework for PHP 8.4+, built on the Phalanx
+runtime.
 
 Theatron apps are invokable screens and components that return TDOM trees. The
 runtime owns the terminal stage, input dispatch, navigation, dirty tracking, and
@@ -51,8 +52,9 @@ return Theatron::app($context)
 ```
 
 `Theatron::app(...)` owns terminal stage configuration, screen registration,
-input dispatch, and the Aegis startup path. The agent harness app shell lives in
-`phalanx-php/harness`.
+input dispatch, and the Aegis startup path. The Theatron harness layer owns the
+agent collaboration loop contracts, messages, work state, prompts, reviews, and
+UI-facing state projections.
 
 ## Components
 

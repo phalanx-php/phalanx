@@ -1,6 +1,6 @@
 {
     "name": "phalanx-php/theatron",
-    "description": "Async terminal UI framework for Phalanx PHP",
+    "description": "Terminal UI and agent harness framework for Phalanx PHP",
     "license": "MIT",
     "type": "library",
     "homepage": "https://github.com/phalanx-php/phalanx-theatron",
@@ -15,7 +15,8 @@
         "ext-swoole": "^6.0",
         "ext-pcntl": "*",
         "ext-mbstring": "*",
-        "phalanx-php/aegis": "^0.6"
+        "phalanx-php/aegis": "^0.6",
+        "phalanx-php/grammata": "^0.6"
     },
     "require-dev": {
         "slevomat/coding-standard": "*",
