@@ -9,110 +9,101 @@ use Phalanx\Harness\Message\Envelope;
 
 final class WorkPlanItem
 {
-    private(set) WorkItemStatus $status = WorkItemStatus::Pending;
-
-    private(set) ?WorkResult $result = null;
-
-    private(set) ?string $blockedReason = null;
-
-    private(set) ?string $supersededBy = null;
-
-    private(set) ?string $supersededReason = null;
-
-    private(set) Envelope|HarnessEvent|null $resolvedBy = null;
-
     private function __construct(
         private(set) WorkItem $workItem,
+        private(set) WorkItemStatus $status,
+        private(set) ?WorkResult $result = null,
+        private(set) ?string $blockedReason = null,
+        private(set) ?string $supersededBy = null,
+        private(set) ?string $supersededReason = null,
+        private(set) Envelope|HarnessEvent|null $resolvedBy = null,
     ) {
     }
 
     public static function pending(WorkItem $workItem): self
     {
-        return new self($workItem);
+        return new self(
+            workItem: $workItem,
+            status: WorkItemStatus::Pending,
+        );
     }
 
-    public function start(): self
+    public static function running(self $item): self
     {
-        $this->assertStatus(WorkItemStatus::Pending, 'Only pending work can start.');
+        $item->assertStatus(WorkItemStatus::Pending, 'Only pending work can start.');
 
-        $item = clone $this;
-        $item->status = WorkItemStatus::Running;
-        $item->clearResolutionState();
-
-        return $item;
+        return new self(
+            workItem: $item->workItem,
+            status: WorkItemStatus::Running,
+        );
     }
 
-    public function done(WorkResult $result): self
+    public static function done(self $item, WorkResult $result): self
     {
-        $this->assertStatus(WorkItemStatus::Running, 'Only running work can complete.');
+        $item->assertStatus(WorkItemStatus::Running, 'Only running work can complete.');
+        $item->assertResultOwnership($result);
         if (!$result->isDone()) {
             throw new \InvalidArgumentException('Done work requires a done result.');
         }
 
-        $item = clone $this;
-        $item->status = WorkItemStatus::Done;
-        $item->result = $result;
-        $item->clearResolutionState();
-
-        return $item;
+        return new self(
+            workItem: $item->workItem,
+            status: WorkItemStatus::Done,
+            result: $result,
+        );
     }
 
-    public function block(string $reason): self
+    public static function blocked(self $item, string $reason): self
     {
-        if (!in_array($this->status, [WorkItemStatus::Pending, WorkItemStatus::Running], true)) {
+        if (!in_array($item->status, [WorkItemStatus::Pending, WorkItemStatus::Running], true)) {
             throw new \LogicException('Only pending or running work can be blocked.');
         }
 
-        $item = clone $this;
-        $item->status = WorkItemStatus::Blocked;
-        $item->result = null;
-        $item->blockedReason = self::requireReason($reason, 'Blocked work reason cannot be empty.');
-        $item->resolvedBy = null;
-
-        return $item;
+        return new self(
+            workItem: $item->workItem,
+            status: WorkItemStatus::Blocked,
+            blockedReason: self::requireReason($reason, 'Blocked work reason cannot be empty.'),
+        );
     }
 
-    public function unblock(Envelope|HarnessEvent|null $resolvedBy = null): self
+    public static function unblocked(self $item, Envelope|HarnessEvent|null $resolvedBy = null): self
     {
-        $this->assertStatus(WorkItemStatus::Blocked, 'Only blocked work can be unblocked.');
+        $item->assertStatus(WorkItemStatus::Blocked, 'Only blocked work can be unblocked.');
 
-        $item = clone $this;
-        $item->status = WorkItemStatus::Pending;
-        $item->blockedReason = null;
-        $item->resolvedBy = $resolvedBy;
-
-        return $item;
+        return new self(
+            workItem: $item->workItem,
+            status: WorkItemStatus::Pending,
+            resolvedBy: $resolvedBy,
+        );
     }
 
-    public function fail(WorkResult $result): self
+    public static function failed(self $item, WorkResult $result): self
     {
-        $this->assertStatus(WorkItemStatus::Running, 'Only running work can fail.');
+        $item->assertStatus(WorkItemStatus::Running, 'Only running work can fail.');
+        $item->assertResultOwnership($result);
         if (!$result->isFailed()) {
             throw new \InvalidArgumentException('Failed work requires a failed result.');
         }
 
-        $item = clone $this;
-        $item->status = WorkItemStatus::Failed;
-        $item->result = $result;
-        $item->clearResolutionState();
-
-        return $item;
+        return new self(
+            workItem: $item->workItem,
+            status: WorkItemStatus::Failed,
+            result: $result,
+        );
     }
 
-    public function supersede(string $replacementId, string $reason): self
+    public static function superseded(self $item, string $replacementId, string $reason): self
     {
-        if (in_array($this->status, [WorkItemStatus::Done, WorkItemStatus::Running, WorkItemStatus::Superseded], true)) {
+        if (in_array($item->status, [WorkItemStatus::Done, WorkItemStatus::Running, WorkItemStatus::Superseded], true)) {
             throw new \LogicException('Done, running, or already-superseded work cannot be superseded.');
         }
 
-        $item = clone $this;
-        $item->status = WorkItemStatus::Superseded;
-        $item->supersededBy = self::requireReason($replacementId, 'Superseded work replacement id cannot be empty.');
-        $item->supersededReason = self::requireReason($reason, 'Superseded work reason cannot be empty.');
-        $item->blockedReason = null;
-        $item->resolvedBy = null;
-
-        return $item;
+        return new self(
+            workItem: $item->workItem,
+            status: WorkItemStatus::Superseded,
+            supersededBy: self::requireReason($replacementId, 'Superseded work replacement id cannot be empty.'),
+            supersededReason: self::requireReason($reason, 'Superseded work reason cannot be empty.'),
+        );
     }
 
     /**
@@ -148,11 +139,10 @@ final class WorkPlanItem
         }
     }
 
-    private function clearResolutionState(): void
+    private function assertResultOwnership(WorkResult $result): void
     {
-        $this->blockedReason = null;
-        $this->supersededBy = null;
-        $this->supersededReason = null;
-        $this->resolvedBy = null;
+        if ($result->itemId !== $this->workItem->id) {
+            throw new \InvalidArgumentException('Work result item id must match the plan item.');
+        }
     }
 }

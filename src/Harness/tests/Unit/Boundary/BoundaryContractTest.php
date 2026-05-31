@@ -37,9 +37,10 @@ final class BoundaryContractTest extends TestCase
     #[Test]
     public function inletMessageAlwaysCarriesReceivedAtTimestamp(): void
     {
-        $message = new InletMessage(Envelope::prompt('timestamped'));
+        $receivedAt = new \DateTimeImmutable('@123');
+        $message = new InletMessage(Envelope::prompt('timestamped'), receivedAt: $receivedAt);
 
-        self::assertNotNull($message->receivedAt);
+        self::assertSame($receivedAt, $message->receivedAt);
     }
 
     #[Test]
@@ -58,7 +59,7 @@ final class BoundaryContractTest extends TestCase
 final class RecordingInletChannel implements InletChannel
 {
     /** @var list<InletMessage> */
-    public array $messages = [];
+    private(set) array $messages = [];
 
     public function emit(InletMessage $message): void
     {
@@ -81,7 +82,7 @@ final class PromptInlet implements Inlet
 final class CompletionOnlyOutlet implements Outlet
 {
     /** @var list<string> */
-    public array $summaries = [];
+    private(set) array $summaries = [];
 
     public function __invoke(RoutableEvent $event, TaskScope $scope): void
     {

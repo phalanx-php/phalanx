@@ -24,9 +24,15 @@ final class WorkResultTest extends TestCase
         );
 
         self::assertSame(WorkResultStatus::Done, $result->status);
+        self::assertSame('work_1', $result->itemId);
+        self::assertSame(['files' => ['src/Harness']], $result->payload);
+        self::assertSame('found files', $result->summary);
+        self::assertNull($result->error);
         self::assertTrue($result->isDone());
         self::assertFalse($result->isBlocked());
         self::assertSame([$envelope], $result->envelopes);
+        self::assertSame('found files', $result->toCanonical()['summary']);
+        self::assertSame(['files' => ['src/Harness']], $result->toCanonical()['payload']);
     }
 
     #[Test]
@@ -38,6 +44,14 @@ final class WorkResultTest extends TestCase
         self::assertSame('missing token', $result->summary);
         self::assertNull($result->error);
         self::assertTrue($result->isBlocked());
+        self::assertSame([
+            'item_id' => 'work_api',
+            'status' => WorkResultStatus::Blocked,
+            'payload' => null,
+            'summary' => 'missing token',
+            'error' => null,
+            'envelopes' => [],
+        ], $result->toCanonical());
     }
 
     #[Test]
@@ -59,5 +73,9 @@ final class WorkResultTest extends TestCase
         self::assertSame($error, $result->error);
         self::assertSame('provider unavailable', $result->summary);
         self::assertTrue($result->isFailed());
+        self::assertSame([
+            'class' => \RuntimeException::class,
+            'message' => 'provider unavailable',
+        ], $result->toCanonical()['error']);
     }
 }

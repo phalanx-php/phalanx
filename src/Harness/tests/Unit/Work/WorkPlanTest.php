@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Harness\Tests\Unit\Work;
 
+use Phalanx\Harness\Message\Envelope;
 use Phalanx\Harness\Work\Activity;
 use Phalanx\Harness\Work\WorkItem;
 use Phalanx\Harness\Work\WorkItemStatus;
@@ -101,9 +102,20 @@ final class WorkPlanTest extends TestCase
         $plan = WorkPlan::start(self::item('work_a'));
 
         $this->expectException(\LogicException::class);
-        $this->expectExceptionMessage('Only running work can complete.');
+        $this->expectExceptionMessage('Only running work can be fulfilled.');
 
         $plan->fulfill(WorkResult::done('work_a'));
+    }
+
+    #[Test]
+    public function blockedFulfillmentAlsoRequiresRunningWork(): void
+    {
+        $plan = WorkPlan::start(self::item('work_api'));
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('Only running work can be fulfilled.');
+
+        $plan->fulfill(WorkResult::blocked('work_api', 'missing token'));
     }
 
     #[Test]
@@ -138,15 +150,16 @@ final class WorkPlanTest extends TestCase
     }
 
     #[Test]
-    public function exposedPlanItemsAreDetachedStateSnapshots(): void
+    public function planItemsAreDetachedStateSnapshots(): void
     {
         $plan = WorkPlan::start(self::item('work_api'));
         $snapshot = $plan->item('work_api');
 
-        $snapshot->block('missing token');
+        $plan->block('work_api', 'missing token');
 
-        self::assertSame(WorkItemStatus::Pending, $plan->item('work_api')->status);
-        self::assertSame(WorkPlanStatus::Active, $plan->status);
+        self::assertSame(WorkItemStatus::Pending, $snapshot->status);
+        self::assertSame(WorkItemStatus::Blocked, $plan->item('work_api')->status);
+        self::assertSame(WorkPlanStatus::Suspended, $plan->status);
     }
 
     #[Test]
@@ -163,6 +176,25 @@ final class WorkPlanTest extends TestCase
 
         self::assertSame(WorkPlanStatus::Active, $plan->status);
         self::assertSame(['work_c'], self::readyIds($plan));
+    }
+
+    #[Test]
+    public function nonCriticalFailureSuspendsWhenOnlyDependentWorkRemains(): void
+    {
+        $plan = WorkPlan::start(
+            self::item('work_a'),
+            self::item('work_b', dependsOn: ['work_a']),
+            self::item('work_c'),
+        );
+
+        $plan->startItem('work_a');
+        $plan->fulfill(WorkResult::failed('work_a', new \RuntimeException('provider unavailable')));
+        $plan->startItem('work_c');
+        $plan->fulfill(WorkResult::done('work_c'));
+
+        self::assertSame(WorkPlanStatus::Suspended, $plan->status);
+        self::assertNotContains('work_b', self::readyIds($plan));
+        self::assertSame('No runnable work remains while the plan is incomplete.', $plan->statusReason);
     }
 
     #[Test]
@@ -234,6 +266,32 @@ final class WorkPlanTest extends TestCase
         $plan->fulfill(WorkResult::done('work_c'));
 
         self::assertSame(['work_dependent'], self::readyIds($plan));
+
+        $plan->startItem('work_dependent');
+        $plan->fulfill(WorkResult::done('work_dependent'));
+
+        self::assertSame(WorkPlanStatus::Complete, $plan->status);
+        self::assertSame('work_b', $plan->item('work_a')->supersededBy);
+        self::assertSame('work_c', $plan->item('work_b')->supersededBy);
+    }
+
+    #[Test]
+    public function replacementWorkInheritsSupersededDependencies(): void
+    {
+        $plan = WorkPlan::start(
+            self::item('work_a'),
+            self::item('work_b', dependsOn: ['work_a']),
+        );
+
+        $plan->supersede('work_b', self::item('work_c'), 'replace dependent work');
+
+        self::assertSame(['work_a'], self::readyIds($plan));
+        self::assertNotContains('work_c', self::readyIds($plan));
+
+        $plan->startItem('work_a');
+        $plan->fulfill(WorkResult::done('work_a'));
+
+        self::assertSame(['work_c'], self::readyIds($plan));
     }
 
     #[Test]
@@ -285,7 +343,7 @@ final class WorkPlanTest extends TestCase
         self::assertSame([], $plan->readyItems());
 
         $this->expectException(\LogicException::class);
-        $this->expectExceptionMessage('Aborted work plans cannot be changed');
+        $this->expectExceptionMessage('Complete or aborted work plans cannot be changed');
 
         $plan->append(self::item('work_b'));
     }
@@ -310,9 +368,22 @@ final class WorkPlanTest extends TestCase
                 $mutation();
                 self::fail('Expected aborted plan mutation to fail.');
             } catch (\LogicException $error) {
-                self::assertSame('Aborted work plans cannot be changed.', $error->getMessage());
+                self::assertSame('Complete or aborted work plans cannot be changed.', $error->getMessage());
             }
         }
+    }
+
+    #[Test]
+    public function completedPlanIsTerminal(): void
+    {
+        $plan = WorkPlan::start(self::item('work_a'));
+        $plan->startItem('work_a');
+        $plan->fulfill(WorkResult::done('work_a'));
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('Complete or aborted work plans cannot be changed');
+
+        $plan->append(self::item('work_b'));
     }
 
     #[Test]
@@ -328,6 +399,30 @@ final class WorkPlanTest extends TestCase
         self::assertSame('work_b', $canonical['items'][0]['superseded_by']);
         self::assertSame('review requested a smaller patch', $canonical['items'][0]['superseded_reason']);
         self::assertArrayNotHasKey('ready', $canonical);
+        self::assertArrayNotHasKey('ready', $canonical['items'][0]);
+    }
+
+    #[Test]
+    public function canonicalPlanIncludesBlockingAndResolutionState(): void
+    {
+        $plan = WorkPlan::start(self::item('work_api'));
+        $resolvedBy = Envelope::prompt('token ready');
+
+        $plan->block('work_api', 'missing token');
+        $blocked = $plan->toCanonical();
+
+        self::assertSame(WorkPlanStatus::Suspended, $blocked['status']);
+        self::assertSame('missing token', $blocked['items'][0]['blocked_reason']);
+        self::assertNull($blocked['items'][0]['resolved_by']);
+
+        $plan->unblock('work_api', $resolvedBy);
+        $unblocked = $plan->toCanonical();
+
+        self::assertSame(WorkPlanStatus::Active, $unblocked['status']);
+        self::assertSame(WorkItemStatus::Pending, $unblocked['items'][0]['status']);
+        self::assertNull($unblocked['items'][0]['blocked_reason']);
+        self::assertSame('token ready', $unblocked['items'][0]['resolved_by']['payload']);
+        self::assertSame('work_api', $unblocked['items'][0]['work_item']['id']);
     }
 
     /**

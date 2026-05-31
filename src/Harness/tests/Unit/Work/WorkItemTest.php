@@ -31,6 +31,19 @@ final class WorkItemTest extends TestCase
         self::assertSame(['codebase', 'harness'], $item->tags);
         self::assertTrue($item->critical);
         self::assertSame('agent:explorer', $item->preferredParticipant?->identity);
+        self::assertSame([
+            'id' => 'work_c',
+            'activity' => Activity::Exploring,
+            'prompt' => 'Find the harness contracts',
+            'depends_on' => ['work_a', 'work_b'],
+            'tags' => ['codebase', 'harness'],
+            'preferred_participant' => [
+                'identity' => 'agent:explorer',
+                'role' => 'agent',
+            ],
+            'priority' => 25,
+            'critical' => true,
+        ], $item->toCanonical());
     }
 
     #[Test]
@@ -85,6 +98,18 @@ final class WorkItemTest extends TestCase
             activity: Activity::Testing,
             prompt: 'Run harness tests',
             id: '   ',
+        );
+    }
+
+    #[Test]
+    public function workItemRejectsEmptyPrompt(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('prompt cannot be empty');
+
+        new WorkItem(
+            activity: Activity::Testing,
+            prompt: '   ',
         );
     }
 }

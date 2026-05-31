@@ -22,8 +22,9 @@ final class WorkPlan
     /** @var list<string> */
     private array $order = [];
 
-    private function __construct(?string $id = null)
-    {
+    private function __construct(
+        ?string $id = null,
+    ) {
         $this->id = $id === null ? HarnessId::new('plan') : self::requireId($id, 'Work plan id cannot be empty.');
     }
 
@@ -45,7 +46,7 @@ final class WorkPlan
 
     public function append(WorkItem ...$items): void
     {
-        $this->assertNotAborted();
+        $this->assertMutable();
         $items = array_values($items);
         $this->validateAppend($items);
 
@@ -84,27 +85,30 @@ final class WorkPlan
 
     public function startItem(string $itemId): void
     {
-        $this->assertNotAborted();
+        $this->assertMutable();
         $item = $this->item($itemId);
         if (!in_array($item, $this->readyItems(), true)) {
             throw new \LogicException('Only ready work can start.');
         }
 
-        $this->items[$item->workItem->id] = $item->start();
+        $this->items[$item->workItem->id] = WorkPlanItem::running($item);
         $this->refreshStatus();
     }
 
     public function fulfill(WorkResult $result): void
     {
-        $this->assertNotAborted();
+        $this->assertMutable();
         $item = $this->item($result->itemId);
+        if ($item->status !== WorkItemStatus::Running) {
+            throw new \LogicException('Only running work can be fulfilled.');
+        }
 
         if ($result->isDone()) {
-            $item = $item->done($result);
+            $item = WorkPlanItem::done($item, $result);
         } elseif ($result->isBlocked()) {
-            $item = $item->block($result->summary ?? '');
+            $item = WorkPlanItem::blocked($item, $result->summary ?? '');
         } elseif ($result->isFailed()) {
-            $item = $item->fail($result);
+            $item = WorkPlanItem::failed($item, $result);
         }
 
         $this->items[$result->itemId] = $item;
@@ -113,21 +117,26 @@ final class WorkPlan
 
     public function block(string $itemId, string $reason): void
     {
-        $this->assertNotAborted();
-        $this->items[$this->requireKnownItem($itemId)] = $this->item($itemId)->block($reason);
+        $this->assertMutable();
+        $item = $this->item($itemId);
+        if (!in_array($item->status, [WorkItemStatus::Pending, WorkItemStatus::Running], true)) {
+            throw new \LogicException('Only pending or running work can be blocked.');
+        }
+
+        $this->items[$item->workItem->id] = WorkPlanItem::blocked($item, $reason);
         $this->refreshStatus();
     }
 
     public function unblock(string $itemId, Envelope|HarnessEvent|null $resolvedBy = null): void
     {
-        $this->assertNotAborted();
-        $this->items[$this->requireKnownItem($itemId)] = $this->item($itemId)->unblock($resolvedBy);
+        $this->assertMutable();
+        $this->items[$this->requireKnownItem($itemId)] = WorkPlanItem::unblocked($this->item($itemId), $resolvedBy);
         $this->refreshStatus();
     }
 
     public function supersede(string $itemId, WorkItem $replacement, string $reason): void
     {
-        $this->assertNotAborted();
+        $this->assertMutable();
         $item = $this->item($itemId);
         if (in_array($itemId, $replacement->dependsOn, true)) {
             throw new \InvalidArgumentException('Replacement work cannot depend on the work it supersedes.');
@@ -136,7 +145,7 @@ final class WorkPlan
         $this->assertReplacementChainIsOpen($itemId);
         $this->validateAppend([$replacement]);
         $this->assertEffectiveAcyclic([$itemId => $replacement->id], [$replacement]);
-        $this->items[$itemId] = $item->supersede($replacement->id, $reason);
+        $this->items[$itemId] = WorkPlanItem::superseded($item, $replacement->id, $reason);
         $this->items[$replacement->id] = WorkPlanItem::pending($replacement);
         $this->order[] = $replacement->id;
         $this->refreshStatus();
@@ -144,7 +153,7 @@ final class WorkPlan
 
     public function abort(string $reason): void
     {
-        $this->assertNotAborted();
+        $this->assertMutable();
         $this->status = WorkPlanStatus::Aborted;
         $this->statusReason = self::requireId($reason, 'Aborted work plan reason cannot be empty.');
     }
@@ -282,7 +291,7 @@ final class WorkPlan
         $items = array_filter(
             $this->items(),
             fn (WorkPlanItem $item): bool => $item->status === WorkItemStatus::Pending
-                && $this->dependenciesAreSatisfied($item->workItem),
+                && $this->dependenciesAreSatisfied($item),
         );
 
         usort(
@@ -294,15 +303,30 @@ final class WorkPlan
         return $items;
     }
 
-    private function dependenciesAreSatisfied(WorkItem $item): bool
+    private function dependenciesAreSatisfied(WorkPlanItem $item): bool
     {
-        foreach ($item->dependsOn as $dependencyId) {
+        foreach ($this->effectiveDependencyIds($item) as $dependencyId) {
             if (!$this->dependencyIsSatisfied($dependencyId)) {
                 return false;
             }
         }
 
         return true;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function effectiveDependencyIds(WorkPlanItem $item): array
+    {
+        $dependencies = $item->workItem->dependsOn;
+        foreach ($this->items() as $candidate) {
+            if ($candidate->supersededBy === $item->workItem->id) {
+                array_push($dependencies, ...$this->effectiveDependencyIds($candidate));
+            }
+        }
+
+        return array_values(array_unique($dependencies));
     }
 
     private function dependencyIsSatisfied(string $itemId): bool
@@ -418,10 +442,10 @@ final class WorkPlan
         return $itemId;
     }
 
-    private function assertNotAborted(): void
+    private function assertMutable(): void
     {
-        if ($this->status === WorkPlanStatus::Aborted) {
-            throw new \LogicException('Aborted work plans cannot be changed.');
+        if (in_array($this->status, [WorkPlanStatus::Complete, WorkPlanStatus::Aborted], true)) {
+            throw new \LogicException('Complete or aborted work plans cannot be changed.');
         }
     }
 }

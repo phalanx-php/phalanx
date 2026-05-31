@@ -23,7 +23,7 @@ final class EnumSurfaceTest extends TestCase
     /**
      * @return iterable<string, array{class-string, list<string>}>
      */
-    public static function enumValues(): iterable
+    public static function unorderedEnumValues(): iterable
     {
         yield 'message kind' => [MessageKind::class, [
             'prompt',
@@ -53,15 +53,6 @@ final class EnumSurfaceTest extends TestCase
             'work_interrupted',
             'work_reviewed',
             'work_completed',
-        ]];
-        yield 'loop stage' => [LoopStage::class, [
-            'receive',
-            'prepare',
-            'distribute',
-            'collaborate',
-            'react',
-            'review',
-            'complete',
         ]];
         yield 'activity' => [Activity::class, [
             'thinking',
@@ -110,12 +101,30 @@ final class EnumSurfaceTest extends TestCase
      * @param list<string> $values
      */
     #[Test]
-    #[DataProvider('enumValues')]
-    public function enumValuesLockTheProtocolSurface(string $enum, array $values): void
+    #[DataProvider('unorderedEnumValues')]
+    public function enumValuesLockTheProtocolSurfaceWithoutOverspecifyingOrder(string $enum, array $values): void
+    {
+        $actual = array_map(static fn (\BackedEnum $case): string => (string) $case->value, $enum::cases());
+        sort($actual);
+        sort($values);
+
+        self::assertSame($values, $actual);
+    }
+
+    #[Test]
+    public function loopStageOrderLocksTheExecutionFlow(): void
     {
         self::assertSame(
-            $values,
-            array_map(static fn (\BackedEnum $case): string => (string) $case->value, $enum::cases()),
+            [
+                'receive',
+                'prepare',
+                'distribute',
+                'collaborate',
+                'react',
+                'review',
+                'complete',
+            ],
+            array_map(static fn (LoopStage $case): string => $case->value, LoopStage::cases()),
         );
     }
 

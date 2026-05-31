@@ -67,6 +67,17 @@ final class FilePromptTest extends TestCase
         new FilePrompt(sys_get_temp_dir());
     }
 
+    protected function setUp(): void
+    {
+        if (
+            extension_loaded('openswoole')
+            || !extension_loaded('swoole')
+            || version_compare((string) phpversion('swoole'), '6.0.0', '<')
+        ) {
+            self::markTestSkipped('FilePrompt coroutine tests require the swoole 6.x extension.');
+        }
+    }
+
     #[After]
     protected function removePromptFiles(): void
     {
