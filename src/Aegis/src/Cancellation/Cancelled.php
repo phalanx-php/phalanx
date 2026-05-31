@@ -6,7 +6,7 @@ namespace Phalanx\Cancellation;
 
 use RuntimeException;
 
-final class Cancelled extends RuntimeException
+class Cancelled extends RuntimeException
 {
     public function __construct(string $reason = 'scope cancelled')
     {

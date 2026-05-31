@@ -12,6 +12,7 @@ use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Archon\Runtime\Identity\ConsoleSignal;
 use Phalanx\Archon\Runtime\Identity\ConsoleSignalState;
 use Phalanx\Cancellation\Cancelled;
+use Phalanx\Cancellation\Halted;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\ScopeIdentity;
 use RuntimeException;
@@ -91,6 +92,10 @@ final class CommandDispatcher
             $lifecycle->close($code);
 
             return $code;
+        } catch (Halted $e) {
+            $lifecycle->close(0);
+
+            return 0;
         } catch (Cancelled $e) {
             $signal = $signals === null ? null : $signals->current();
             $reason = $signal instanceof ConsoleSignal ? $signal->reason : $e->getMessage();
