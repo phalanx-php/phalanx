@@ -355,7 +355,7 @@ final class WorkPlanTest extends TestCase
         self::assertSame([], $plan->readyItems());
 
         $this->expectException(\LogicException::class);
-        $this->expectExceptionMessage('Complete or aborted work plans cannot be changed');
+        $this->expectExceptionMessage('Aborted work plans cannot be changed');
 
         $plan->append(self::item('work_b'));
     }
@@ -368,25 +368,39 @@ final class WorkPlanTest extends TestCase
 
         foreach (
             [
-            static fn () => $plan->startItem('work_a'),
-            static fn () => $plan->fulfill(WorkResult::done('work_a')),
-            static fn () => $plan->block('work_a', 'waiting'),
-            static fn () => $plan->unblock('work_a'),
-            static fn () => $plan->supersede('work_a', self::item('work_b'), 'revision'),
-            static fn () => $plan->abort('again'),
+            [static fn () => $plan->startItem('work_a'), 'Complete or aborted work plans cannot be changed.'],
+            [static fn () => $plan->fulfill(WorkResult::done('work_a')), 'Complete or aborted work plans cannot be changed.'],
+            [static fn () => $plan->block('work_a', 'waiting'), 'Complete or aborted work plans cannot be changed.'],
+            [static fn () => $plan->unblock('work_a'), 'Complete or aborted work plans cannot be changed.'],
+            [static fn () => $plan->supersede('work_a', self::item('work_b'), 'revision'), 'Complete or aborted work plans cannot be changed.'],
+            [static fn () => $plan->abort('again'), 'Aborted work plans cannot be changed.'],
+            [static fn () => $plan->append(self::item('work_b')), 'Aborted work plans cannot be changed.'],
             ] as $mutation
         ) {
             try {
-                $mutation();
+                $mutation[0]();
                 self::fail('Expected aborted plan mutation to fail.');
             } catch (\LogicException $error) {
-                self::assertSame('Complete or aborted work plans cannot be changed.', $error->getMessage());
+                self::assertSame($mutation[1], $error->getMessage());
             }
         }
     }
 
     #[Test]
-    public function completedPlanIsTerminal(): void
+    public function completedPlanAcceptsReviewerRevisionWork(): void
+    {
+        $plan = WorkPlan::start(self::item('work_a'));
+        $plan->startItem('work_a');
+        $plan->fulfill(WorkResult::done('work_a'));
+
+        $plan->append(self::item('work_b'));
+
+        self::assertSame(WorkPlanStatus::Active, $plan->status);
+        self::assertSame(['work_b'], self::readyIds($plan));
+    }
+
+    #[Test]
+    public function completedPlanStillRejectsItemStateMutations(): void
     {
         $plan = WorkPlan::start(self::item('work_a'));
         $plan->startItem('work_a');
@@ -395,7 +409,7 @@ final class WorkPlanTest extends TestCase
         $this->expectException(\LogicException::class);
         $this->expectExceptionMessage('Complete or aborted work plans cannot be changed');
 
-        $plan->append(self::item('work_b'));
+        $plan->startItem('work_a');
     }
 
     #[Test]

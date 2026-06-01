@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Theatron\Collab\State;
 
+use Phalanx\Theatron\Collab\Plans\WorkItem;
 use Phalanx\Theatron\Collab\Plans\WorkPlan;
 use Phalanx\Theatron\Collab\Plans\WorkResult;
 
@@ -28,6 +29,30 @@ final class WorkPlanSlice
     {
         $plan = $this->plan;
         $plan->fulfill($result);
+
+        return new self($plan);
+    }
+
+    public function append(WorkItem ...$items): self
+    {
+        $plan = $this->plan;
+        $plan->append(...$items);
+
+        return new self($plan);
+    }
+
+    public function start(string $itemId): self
+    {
+        $plan = $this->plan;
+        $plan->startItem($itemId);
+
+        return new self($plan);
+    }
+
+    public function abort(string $reason): self
+    {
+        $plan = $this->plan;
+        $plan->abort($reason);
 
         return new self($plan);
     }

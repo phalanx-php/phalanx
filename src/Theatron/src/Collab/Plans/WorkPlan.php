@@ -43,7 +43,7 @@ final class WorkPlan
 
     public function append(WorkItem ...$items): void
     {
-        $this->assertMutable();
+        $this->assertAppendable();
         $items = array_values($items);
         $this->validateAppend($items);
 
@@ -150,7 +150,7 @@ final class WorkPlan
 
     public function abort(string $reason): void
     {
-        $this->assertMutable();
+        $this->assertAbortable();
         $this->status = WorkPlanStatus::Aborted;
         $this->statusReason = self::requireId($reason, 'Aborted work plan reason cannot be empty.');
     }
@@ -443,6 +443,20 @@ final class WorkPlan
     {
         if (in_array($this->status, [WorkPlanStatus::Complete, WorkPlanStatus::Aborted], true)) {
             throw new \LogicException('Complete or aborted work plans cannot be changed.');
+        }
+    }
+
+    private function assertAppendable(): void
+    {
+        if ($this->status === WorkPlanStatus::Aborted) {
+            throw new \LogicException('Aborted work plans cannot be changed.');
+        }
+    }
+
+    private function assertAbortable(): void
+    {
+        if ($this->status === WorkPlanStatus::Aborted) {
+            throw new \LogicException('Aborted work plans cannot be changed.');
         }
     }
 }

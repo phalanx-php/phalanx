@@ -10,27 +10,23 @@ use PHPUnit\Framework\TestCase;
 final class ScreenBoundaryTest extends TestCase
 {
     #[Test]
-    public function sourceDoesNotDependOnOldAgentRuntimeOrDurableState(): void
+    public function tuiScreensDoNotExecuteAgentRuntimeDirectly(): void
     {
-        foreach (self::sourceFiles() as $file) {
+        foreach (self::sourceFiles(dirname(__DIR__, 4) . '/src/Tui') as $file) {
             $source = file_get_contents($file);
             self::assertIsString($source);
 
-            self::assertStringNotContainsString('Phalanx\\Agora\\', $source, $file);
-            self::assertStringNotContainsString('Phalanx\\Athena\\', $source, $file);
             self::assertStringNotContainsString('Phalanx\\' . 'Harness\\', $source, $file);
-            self::assertStringNotContainsString('Phalanx\\Panoply\\', $source, $file);
-            self::assertStringNotContainsString('Phalanx\\Surreal\\', $source, $file);
             self::assertStringNotContainsString('Harness' . '\\Replay', $source, $file);
+            self::assertStringNotContainsString('Athena::run(', $source, $file);
         }
     }
 
     /**
      * @return list<string>
      */
-    private static function sourceFiles(): array
+    private static function sourceFiles(string $directory): array
     {
-        $directory = dirname(__DIR__, 4) . '/src';
         $files = [];
 
         foreach (new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($directory)) as $file) {

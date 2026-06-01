@@ -12,6 +12,7 @@ use Phalanx\Theatron\Collab\Plans\WorkItem;
 use Phalanx\Theatron\Collab\Plans\WorkItemStatus;
 use Phalanx\Theatron\Collab\Plans\WorkPlan;
 use Phalanx\Theatron\Collab\Plans\WorkResult;
+use Phalanx\Theatron\Collab\Reviews\ReviewVerdict;
 use Phalanx\Theatron\Collab\State\CollabStore;
 use Phalanx\Theatron\Collab\State\WorkPlanSlice;
 use Phalanx\Theatron\Collab\WorkContext;
@@ -63,6 +64,46 @@ final class WorkContextTest extends TestCase
         self::assertSame(WorkItemStatus::Done, $slice->plan->item('tc-4a')->status);
         self::assertSame(WorkItemStatus::Done, $ctx->plan->item('tc-4a')->status);
         self::assertSame([$envelope], $store->messages->envelopes);
+    }
+
+    #[Test]
+    public function appendAndStartMutateWorkPlanThroughTheStore(): void
+    {
+        $store = new CollabStore();
+        $ctx = new WorkContext($this->createStub(TaskScope::class), $store);
+
+        $ctx->append(new WorkItem(Activity::Testing, 'Run focused tests', id: 'tc-5a'));
+        $slice = $ctx->start('tc-5a');
+
+        self::assertSame(WorkItemStatus::Running, $slice->plan->item('tc-5a')->status);
+        self::assertSame(WorkItemStatus::Running, $store->workPlan->plan->item('tc-5a')->status);
+    }
+
+    #[Test]
+    public function reviewRecordsVerdictsThroughTheStore(): void
+    {
+        $store = new CollabStore();
+        $ctx = new WorkContext($this->createStub(TaskScope::class), $store);
+        $verdict = ReviewVerdict::approve();
+
+        $slice = $ctx->review($verdict);
+
+        self::assertSame([$verdict], $slice->verdicts);
+        self::assertSame([$verdict], $store->reviews->verdicts);
+    }
+
+    #[Test]
+    public function abortMovesPlanToAbortedThroughTheStore(): void
+    {
+        $store = new CollabStore();
+        $plan = WorkPlan::start(new WorkItem(Activity::Testing, 'Run focused tests', id: 'tc-5a'));
+        $store->workPlan = new WorkPlanSlice($plan);
+        $ctx = new WorkContext($this->createStub(TaskScope::class), $store);
+
+        $slice = $ctx->abort('review rejected the result');
+
+        self::assertSame('review rejected the result', $slice->plan->statusReason);
+        self::assertSame('review rejected the result', $store->workPlan->plan->statusReason);
     }
 
     #[Test]

@@ -55,7 +55,7 @@ final class TheatronCollabBoundaryTest extends TestCase
     }
 
     #[Test]
-    public function collabDoesNotPullInOldApplicationLayerDependencies(): void
+    public function collabKeepsPersistenceOutOfTheCoreLoop(): void
     {
         $root = dirname(__DIR__, 2);
         $offenders = [];
@@ -63,7 +63,39 @@ final class TheatronCollabBoundaryTest extends TestCase
         foreach (self::sourceFiles($root . '/src/Theatron/src/Collab') as $file) {
             $source = self::read($file);
 
-            foreach (['Phalanx\\Athena\\', 'Phalanx\\Panoply\\', 'Phalanx\\Surreal\\'] as $token) {
+            if (str_contains($source, 'Phalanx\\Surreal\\')) {
+                $offenders[] = self::relative($root, $file) . ' contains Phalanx\\Surreal\\';
+            }
+        }
+
+        self::assertSame(
+            [],
+            $offenders,
+            "Collab should not pull durable persistence into the core loop:\n" . implode("\n", $offenders),
+        );
+    }
+
+    #[Test]
+    public function collabOwnsTheAthenaPanoplyAdapterInternally(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $adapter = $root . '/src/Theatron/src/Collab/Adapters/Athena/AthenaCollaborator.php';
+        $offenders = [];
+
+        self::assertFileExists($adapter);
+
+        $source = self::read($adapter);
+
+        self::assertStringContainsString('Phalanx\\Athena\\', $source);
+        self::assertStringContainsString('Phalanx\\Panoply\\', $source);
+
+        foreach (self::sourceFiles($root . '/src/Theatron/src/Collab') as $file) {
+            if (str_contains(self::relative($root, $file), 'src/Theatron/src/Collab/Adapters/')) {
+                continue;
+            }
+
+            $source = self::read($file);
+            foreach (['Phalanx\\Athena\\', 'Phalanx\\Panoply\\'] as $token) {
                 if (str_contains($source, $token)) {
                     $offenders[] = self::relative($root, $file) . " contains {$token}";
                 }
@@ -73,7 +105,30 @@ final class TheatronCollabBoundaryTest extends TestCase
         self::assertSame(
             [],
             $offenders,
-            "Collab contracts must stay below agent execution, cue, replay, and persistence wiring:\n" . implode("\n", $offenders),
+            "Athena/Panoply imports belong in Collab adapters, not the core loop/contracts:\n" . implode("\n", $offenders),
+        );
+    }
+
+    #[Test]
+    public function starterScaffoldDoesNotExposeAgentRuntimeDependencies(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $offenders = [];
+
+        foreach (self::sourceFiles($root . '/src/Cli/src/Scaffold') as $file) {
+            $source = self::read($file);
+
+            foreach (['Phalanx\\Athena\\', 'Phalanx\\Panoply\\'] as $token) {
+                if (str_contains($source, $token)) {
+                    $offenders[] = self::relative($root, $file) . " contains {$token}";
+                }
+            }
+        }
+
+        self::assertSame(
+            [],
+            $offenders,
+            "Generated userland must not import agent runtime internals directly:\n" . implode("\n", $offenders),
         );
     }
 
@@ -99,7 +154,7 @@ final class TheatronCollabBoundaryTest extends TestCase
         sort($methods);
         sort($properties);
 
-        self::assertSame(['advance', 'fulfill', 'record'], $methods);
+        self::assertSame(['abort', 'advance', 'append', 'fulfill', 'record', 'review', 'start'], $methods);
         self::assertSame(['plan', 'scope', 'stage'], $properties);
     }
 

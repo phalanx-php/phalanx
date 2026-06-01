@@ -551,7 +551,9 @@ return [
             'ext-pcntl' => '*',
             'ext-mbstring' => '*',
             'phalanx-php/aegis' => '^0.6',
+            'phalanx-php/athena' => '^0.6',
             'phalanx-php/grammata' => '^0.6',
+            'phalanx-php/panoply' => '^0.6',
         ],
         'devRequires' => [
             'slevomat/coding-standard' => '*',

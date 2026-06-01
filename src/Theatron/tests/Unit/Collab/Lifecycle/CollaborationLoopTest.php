@@ -1,0 +1,301 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Phalanx\Theatron\Tests\Unit\Collab\Lifecycle;
+
+use Phalanx\Scope\TaskScope;
+use Phalanx\Theatron\Collab\Events\CollabEvent;
+use Phalanx\Theatron\Collab\Events\EventKind;
+use Phalanx\Theatron\Collab\Lifecycle\CollaborationLoop;
+use Phalanx\Theatron\Collab\Lifecycle\LoopStage;
+use Phalanx\Theatron\Collab\Participants\Collaborator;
+use Phalanx\Theatron\Collab\Participants\Preparer;
+use Phalanx\Theatron\Collab\Participants\Reactor;
+use Phalanx\Theatron\Collab\Participants\Reviewer;
+use Phalanx\Theatron\Collab\Plans\Activity;
+use Phalanx\Theatron\Collab\Plans\WorkItem;
+use Phalanx\Theatron\Collab\Plans\WorkPlan;
+use Phalanx\Theatron\Collab\Plans\WorkPlanItem;
+use Phalanx\Theatron\Collab\Plans\WorkPlanStatus;
+use Phalanx\Theatron\Collab\Plans\WorkResult;
+use Phalanx\Theatron\Collab\Reviews\ReviewVerdict;
+use Phalanx\Theatron\Collab\State\CollabStore;
+use Phalanx\Theatron\Collab\State\WorkPlanSlice;
+use Phalanx\Theatron\Collab\WorkContext;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+
+final class CollaborationLoopTest extends TestCase
+{
+    #[Test]
+    public function preparerPrimaryCollaboratorAndDefaultReviewCompleteTheLoop(): void
+    {
+        $calls = new \ArrayObject();
+        $events = new \ArrayObject();
+        $reactStages = new \ArrayObject();
+        $ctx = $this->ctx();
+        $loop = new CollaborationLoop(
+            primary: self::doneCollaborator('primary', $calls),
+            preparers: [self::preparer(new WorkItem(Activity::Testing, 'Run tests', id: 'work_a'))],
+            reactors: [self::reactor($events, $reactStages)],
+        );
+
+        $status = $loop($ctx);
+
+        self::assertSame(WorkPlanStatus::Complete, $status);
+        self::assertSame(LoopStage::Complete, $ctx->stage);
+        self::assertSame(['primary:work_a'], $calls->getArrayCopy());
+        self::assertSame(
+            [
+                EventKind::WorkReceived,
+                EventKind::WorkPrepared,
+                EventKind::WorkDistributed,
+                EventKind::WorkItemStarted,
+                EventKind::WorkItemCompleted,
+                EventKind::WorkReviewed,
+                EventKind::WorkCompleted,
+            ],
+            $events->getArrayCopy(),
+        );
+        self::assertSame(
+            [LoopStage::React->value],
+            array_values(array_unique(array_map(
+                static fn(LoopStage $stage): string => $stage->value,
+                $reactStages->getArrayCopy(),
+            ))),
+        );
+    }
+
+    #[Test]
+    public function firstSupportingCollaboratorRunsBeforePrimaryFallback(): void
+    {
+        $calls = new \ArrayObject();
+        $ctx = $this->ctx(WorkPlan::start(new WorkItem(Activity::Editing, 'Patch code', tags: ['php'], id: 'work_patch')));
+        $loop = new CollaborationLoop(
+            primary: self::doneCollaborator('primary', $calls),
+            collaborators: [
+                self::tagCollaborator('php-specialist', 'php', $calls),
+            ],
+        );
+
+        $status = $loop($ctx);
+
+        self::assertSame(WorkPlanStatus::Complete, $status);
+        self::assertSame(['php-specialist:work_patch'], $calls->getArrayCopy());
+    }
+
+    #[Test]
+    public function reviewerRevisionAppendsFollowUpWorkAndRunsAnotherPass(): void
+    {
+        $calls = new \ArrayObject();
+        $ctx = $this->ctx(WorkPlan::start(new WorkItem(Activity::Editing, 'Patch code', id: 'work_patch')));
+        $loop = new CollaborationLoop(
+            primary: self::doneCollaborator('primary', $calls),
+            reviewers: [
+                new class implements Reviewer {
+                    private int $calls = 0;
+
+                    public function __invoke(WorkContext $ctx): ReviewVerdict
+                    {
+                        $this->calls++;
+                        if ($this->calls === 1) {
+                            return ReviewVerdict::revise(
+                                'Need tests.',
+                                [new WorkItem(Activity::Testing, 'Add focused tests', id: 'work_tests')],
+                            );
+                        }
+
+                        return ReviewVerdict::approve();
+                    }
+                },
+            ],
+        );
+
+        $status = $loop($ctx);
+
+        self::assertSame(WorkPlanStatus::Complete, $status);
+        self::assertSame(['primary:work_patch', 'primary:work_tests'], $calls->getArrayCopy());
+        self::assertSame('work_tests', $ctx->plan->item('work_tests')->workItem->id);
+    }
+
+    #[Test]
+    public function reviewerRejectionAbortsCompletedWork(): void
+    {
+        $ctx = $this->ctx(WorkPlan::start(new WorkItem(Activity::Editing, 'Patch code', id: 'work_patch')));
+        $loop = new CollaborationLoop(
+            primary: self::doneCollaborator('primary', new \ArrayObject()),
+            reviewers: [
+                new class implements Reviewer {
+                    public function __invoke(WorkContext $ctx): ReviewVerdict
+                    {
+                        return ReviewVerdict::reject('Unsafe change.');
+                    }
+                },
+            ],
+        );
+
+        $status = $loop($ctx);
+
+        self::assertSame(WorkPlanStatus::Aborted, $status);
+        self::assertSame('Unsafe change.', $ctx->plan->statusReason);
+    }
+
+    #[Test]
+    public function primaryFallbackMustSupportPreferredParticipant(): void
+    {
+        $ctx = $this->ctx(WorkPlan::start(new WorkItem(
+            Activity::Editing,
+            'Patch code',
+            preferredParticipant: \Phalanx\Theatron\Collab\Messages\Address::agent('other'),
+            id: 'work_patch',
+        )));
+        $loop = new CollaborationLoop(
+            primary: self::preferredCollaborator('primary', 'primary', new \ArrayObject()),
+        );
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('No collaborator supports work item "work_patch".');
+
+        $loop($ctx);
+    }
+
+    #[Test]
+    public function blockedCollaboratorSuspendsThePlan(): void
+    {
+        $ctx = $this->ctx(WorkPlan::start(new WorkItem(Activity::Researching, 'Wait for token', id: 'work_wait')));
+        $loop = new CollaborationLoop(
+            primary: new class implements Collaborator {
+                public function supports(WorkPlanItem $item, WorkContext $ctx): bool
+                {
+                    return true;
+                }
+
+                public function __invoke(WorkPlanItem $item, WorkContext $ctx): WorkResult
+                {
+                    return WorkResult::blocked($item->workItem->id, 'missing token');
+                }
+            },
+        );
+
+        $status = $loop($ctx);
+
+        self::assertSame(WorkPlanStatus::Suspended, $status);
+        self::assertSame('missing token', $ctx->plan->item('work_wait')->blockedReason);
+    }
+
+    private function ctx(?WorkPlan $plan = null): WorkContext
+    {
+        $store = new CollabStore();
+        if ($plan !== null) {
+            $store->workPlan = new WorkPlanSlice($plan);
+        }
+
+        return new WorkContext($this->createStub(TaskScope::class), $store);
+    }
+
+    private static function preparer(WorkItem $item): Preparer
+    {
+        return new class ($item) implements Preparer {
+            public function __construct(private WorkItem $item)
+            {
+            }
+
+            public function __invoke(WorkContext $ctx): void
+            {
+                $ctx->append($this->item);
+            }
+        };
+    }
+
+    private static function doneCollaborator(string $name, \ArrayObject $calls): Collaborator
+    {
+        return new class ($name, $calls) implements Collaborator {
+            public function __construct(
+                private string $name,
+                private \ArrayObject $calls,
+            ) {
+            }
+
+            public function supports(WorkPlanItem $item, WorkContext $ctx): bool
+            {
+                return true;
+            }
+
+            public function __invoke(WorkPlanItem $item, WorkContext $ctx): WorkResult
+            {
+                $this->calls[] = $this->name . ':' . $item->workItem->id;
+
+                return WorkResult::done($item->workItem->id, summary: 'done');
+            }
+        };
+    }
+
+    private static function tagCollaborator(string $name, string $tag, \ArrayObject $calls): Collaborator
+    {
+        return new class ($name, $tag, $calls) implements Collaborator {
+            public function __construct(
+                private string $name,
+                private string $tag,
+                private \ArrayObject $calls,
+            ) {
+            }
+
+            public function supports(WorkPlanItem $item, WorkContext $ctx): bool
+            {
+                return in_array($this->tag, $item->workItem->tags, true);
+            }
+
+            public function __invoke(WorkPlanItem $item, WorkContext $ctx): WorkResult
+            {
+                $this->calls[] = $this->name . ':' . $item->workItem->id;
+
+                return WorkResult::done($item->workItem->id, summary: 'done');
+            }
+        };
+    }
+
+    private static function preferredCollaborator(string $name, string $agentId, \ArrayObject $calls): Collaborator
+    {
+        return new class ($name, $agentId, $calls) implements Collaborator {
+            public function __construct(
+                private string $name,
+                private string $agentId,
+                private \ArrayObject $calls,
+            ) {
+            }
+
+            public function __invoke(WorkPlanItem $item, WorkContext $ctx): WorkResult
+            {
+                $this->calls[] = $this->name . ':' . $item->workItem->id;
+
+                return WorkResult::done($item->workItem->id, summary: 'done');
+            }
+
+            public function supports(WorkPlanItem $item, WorkContext $ctx): bool
+            {
+                $preferred = $item->workItem->preferredParticipant;
+
+                return $preferred === null || $preferred->equals(\Phalanx\Theatron\Collab\Messages\Address::agent($this->agentId));
+            }
+        };
+    }
+
+    private static function reactor(\ArrayObject $events, \ArrayObject $stages): Reactor
+    {
+        return new class ($events, $stages) implements Reactor {
+            public function __construct(
+                private \ArrayObject $events,
+                private \ArrayObject $stages,
+            )
+            {
+            }
+
+            public function __invoke(CollabEvent $event, WorkContext $ctx): void
+            {
+                $this->events[] = $event->kind;
+                $this->stages[] = $ctx->stage;
+            }
+        };
+    }
+}

@@ -7,11 +7,14 @@ namespace Phalanx\Theatron\Collab;
 use Phalanx\Scope\TaskScope;
 use Phalanx\Theatron\Collab\Lifecycle\LoopStage;
 use Phalanx\Theatron\Collab\Messages\Envelope;
+use Phalanx\Theatron\Collab\Plans\WorkItem;
 use Phalanx\Theatron\Collab\Plans\WorkPlan;
 use Phalanx\Theatron\Collab\Plans\WorkResult;
+use Phalanx\Theatron\Collab\Reviews\ReviewVerdict;
 use Phalanx\Theatron\Collab\State\CollabStore;
 use Phalanx\Theatron\Collab\State\LoopSlice;
 use Phalanx\Theatron\Collab\State\MessageTimelineSlice;
+use Phalanx\Theatron\Collab\State\ReviewSlice;
 use Phalanx\Theatron\Collab\State\WorkPlanSlice;
 
 final class WorkContext
@@ -46,6 +49,22 @@ final class WorkContext
         );
     }
 
+    public function append(WorkItem ...$items): WorkPlanSlice
+    {
+        return $this->store->mutate(
+            WorkPlanSlice::class,
+            static fn(WorkPlanSlice $slice): WorkPlanSlice => $slice->append(...$items),
+        );
+    }
+
+    public function start(string $itemId): WorkPlanSlice
+    {
+        return $this->store->mutate(
+            WorkPlanSlice::class,
+            static fn(WorkPlanSlice $slice): WorkPlanSlice => $slice->start($itemId),
+        );
+    }
+
     public function fulfill(string $itemId, WorkResult $result): WorkPlanSlice
     {
         if ($itemId !== $result->itemId) {
@@ -62,5 +81,21 @@ final class WorkContext
         }
 
         return $slice;
+    }
+
+    public function abort(string $reason): WorkPlanSlice
+    {
+        return $this->store->mutate(
+            WorkPlanSlice::class,
+            static fn(WorkPlanSlice $slice): WorkPlanSlice => $slice->abort($reason),
+        );
+    }
+
+    public function review(ReviewVerdict $verdict): ReviewSlice
+    {
+        return $this->store->mutate(
+            ReviewSlice::class,
+            static fn(ReviewSlice $slice): ReviewSlice => $slice->record($verdict),
+        );
     }
 }

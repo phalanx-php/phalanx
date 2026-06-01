@@ -18,4 +18,9 @@ final class ReviewSlice
     {
         $this->verdicts = array_values($verdicts);
     }
+
+    public function record(ReviewVerdict $verdict): self
+    {
+        return new self([...$this->verdicts, $verdict]);
+    }
 }
