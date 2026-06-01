@@ -78,6 +78,23 @@ final class TheatronCollabBoundaryTest extends TestCase
     }
 
     #[Test]
+    public function workContextKeepsTheCurrentMutationSurfaceSmall(): void
+    {
+        $methods = [];
+        $class = new \ReflectionClass(\Phalanx\Theatron\Collab\WorkContext::class);
+
+        foreach ($class->getMethods(\ReflectionMethod::IS_PUBLIC) as $method) {
+            if ($method->class === \Phalanx\Theatron\Collab\WorkContext::class && $method->name !== '__construct') {
+                $methods[] = $method->name;
+            }
+        }
+
+        sort($methods);
+
+        self::assertSame(['advance', 'fulfill', 'record'], $methods);
+    }
+
+    #[Test]
     public function theatronSourceDoesNotKeepStaleHarnessOrGenericReactorSurfaces(): void
     {
         $root = dirname(__DIR__, 2);
