@@ -4,7 +4,7 @@
 
 # Theatron
 
-Terminal UI and agent harness framework for PHP 8.4+, built on the Phalanx
+Terminal UI and agent collaboration framework for PHP 8.4+, built on the Phalanx
 runtime.
 
 Theatron apps are invokable screens and components that return TDOM trees. The
@@ -32,9 +32,9 @@ store, screens, bindings, and service bundles.
 ```php
 <?php
 
-use Phalanx\Theatron\Binding\Binding;
-use Phalanx\Theatron\Contract\Screen;
-use Phalanx\Theatron\State\Store;
+use Phalanx\Theatron\Tui\Inputs\Binding;
+use Phalanx\Theatron\Tui\Core\Screen;
+use Phalanx\Theatron\Tui\Reactive\Store;
 use Phalanx\Theatron\Theatron;
 
 /** @var list<class-string<Screen>> $screens */
@@ -52,9 +52,9 @@ return Theatron::app($context)
 ```
 
 `Theatron::app(...)` owns terminal stage configuration, screen registration,
-input dispatch, and the Aegis startup path. The Theatron harness layer owns the
-agent collaboration loop contracts, messages, work state, prompts, reviews, and
-UI-facing state projections.
+input dispatch, and the Aegis startup path. The Collab layer owns agent loop
+contracts, messages, work state, prompts, reviews, and UI-facing state
+projections.
 
 ## Components
 
@@ -64,11 +64,11 @@ A component implements `Component`. It receives a `RenderContext` and returns a
 ```php
 <?php
 
-use Phalanx\Theatron\Context\RenderContext;
-use Phalanx\Theatron\Contract\Component;
-use Phalanx\Theatron\Tdom\Renderable;
+use Phalanx\Theatron\Tui\Core\RenderContext;
+use Phalanx\Theatron\Tui\Core\Component;
+use Phalanx\Theatron\Tui\Tdom\Renderable;
 
-use function Phalanx\Theatron\Ui\text;
+use function Phalanx\Theatron\Tui\Kit\text;
 
 class Greeting implements Component
 {
@@ -89,8 +89,8 @@ Mount children with the free `mount()` helper. Runtime params are named props.
 ```php
 <?php
 
-use function Phalanx\Theatron\Ui\mount;
-use function Phalanx\Theatron\Ui\panel;
+use function Phalanx\Theatron\Tui\Kit\mount;
+use function Phalanx\Theatron\Tui\Kit\panel;
 
 public function __invoke(RenderContext $ctx): Renderable
 {
@@ -111,12 +111,12 @@ Signals use method syntax. Read with `get()`, write with `set()`.
 ```php
 <?php
 
-use Phalanx\Theatron\Context\RenderContext;
-use Phalanx\Theatron\Contract\Component;
-use Phalanx\Theatron\Reactive\Signal;
-use Phalanx\Theatron\Tdom\Renderable;
+use Phalanx\Theatron\Tui\Core\RenderContext;
+use Phalanx\Theatron\Tui\Core\Component;
+use Phalanx\Theatron\Tui\Reactive\Signal;
+use Phalanx\Theatron\Tui\Tdom\Renderable;
 
-use function Phalanx\Theatron\Ui\text;
+use function Phalanx\Theatron\Tui\Kit\text;
 
 class Counter implements Component
 {
@@ -151,12 +151,12 @@ screen scope, theme, navigator, and mount system.
 ```php
 <?php
 
-use Phalanx\Theatron\Context\ScreenContext;
-use Phalanx\Theatron\Contract\Screen;
-use Phalanx\Theatron\Tdom\Renderable;
+use Phalanx\Theatron\Tui\Core\ScreenContext;
+use Phalanx\Theatron\Tui\Core\Screen;
+use Phalanx\Theatron\Tui\Tdom\Renderable;
 
-use function Phalanx\Theatron\Ui\column;
-use function Phalanx\Theatron\Ui\text;
+use function Phalanx\Theatron\Tui\Kit\column;
+use function Phalanx\Theatron\Tui\Kit\text;
 
 class DashboardScreen implements Screen
 {
@@ -180,17 +180,17 @@ Screens can declare their own focus targets, status bar, and key bindings.
 ```php
 <?php
 
-use Phalanx\Theatron\Binding\Binding;
-use Phalanx\Theatron\Contract\DeclaresBindings;
-use Phalanx\Theatron\Contract\Focusable;
-use Phalanx\Theatron\Contract\HasFocusables;
-use Phalanx\Theatron\Contract\HasStatusBar;
-use Phalanx\Theatron\Contract\Screen;
-use Phalanx\Theatron\Context\ScreenContext;
-use Phalanx\Theatron\Input\Key;
-use Phalanx\Theatron\Tdom\Renderable;
+use Phalanx\Theatron\Tui\Inputs\Binding;
+use Phalanx\Theatron\Tui\Core\DeclaresBindings;
+use Phalanx\Theatron\Tui\Core\Focusable;
+use Phalanx\Theatron\Tui\Core\HasFocusables;
+use Phalanx\Theatron\Tui\Core\HasStatusBar;
+use Phalanx\Theatron\Tui\Core\Screen;
+use Phalanx\Theatron\Tui\Core\ScreenContext;
+use Phalanx\Theatron\Tui\Inputs\Key;
+use Phalanx\Theatron\Tui\Tdom\Renderable;
 
-use function Phalanx\Theatron\Ui\text;
+use function Phalanx\Theatron\Tui\Kit\text;
 
 class SettingsScreen implements Screen, HasStatusBar, HasFocusables, Focusable, DeclaresBindings
 {
@@ -234,7 +234,7 @@ new immutable value.
 ```php
 <?php
 
-use Phalanx\Theatron\State\Store;
+use Phalanx\Theatron\Tui\Reactive\Store;
 
 class StatusSlice
 {
@@ -284,7 +284,7 @@ $store->mutate(
 
 ## Rendering with TDOM
 
-Build terminal UI with free functions from `Phalanx\Theatron\Ui`.
+Build terminal UI with free functions from `Phalanx\Theatron\Tui\Kit`.
 
 | Function | Element | Purpose |
 |---|---|---|
@@ -305,19 +305,19 @@ Example:
 ```php
 <?php
 
-use Phalanx\Theatron\Layout\Border;
-use Phalanx\Theatron\Layout\Size;
-use Phalanx\Theatron\Style\Color;
-use Phalanx\Theatron\Style\Style as TextStyle;
-use Phalanx\Theatron\Tdom\Style;
-use Phalanx\Theatron\Text\Line;
-use Phalanx\Theatron\Text\Span;
+use Phalanx\Theatron\Tui\Styles\Border;
+use Phalanx\Theatron\Tui\Styles\Size;
+use Phalanx\Theatron\Tui\Styles\Color;
+use Phalanx\Theatron\Tui\Styles\Style as TextStyle;
+use Phalanx\Theatron\Tui\Tdom\Style;
+use Phalanx\Theatron\Tui\Styles\Line;
+use Phalanx\Theatron\Tui\Styles\Span;
 
-use function Phalanx\Theatron\Ui\column;
-use function Phalanx\Theatron\Ui\divider;
-use function Phalanx\Theatron\Ui\panel;
-use function Phalanx\Theatron\Ui\progress;
-use function Phalanx\Theatron\Ui\text;
+use function Phalanx\Theatron\Tui\Kit\column;
+use function Phalanx\Theatron\Tui\Kit\divider;
+use function Phalanx\Theatron\Tui\Kit\panel;
+use function Phalanx\Theatron\Tui\Kit\progress;
+use function Phalanx\Theatron\Tui\Kit\text;
 
 public function __invoke(RenderContext $ctx): Renderable
 {
@@ -352,8 +352,8 @@ implements `DeclaresBindings`.
 ```php
 <?php
 
-use Phalanx\Theatron\Binding\Binding;
-use Phalanx\Theatron\Input\Key;
+use Phalanx\Theatron\Tui\Inputs\Binding;
+use Phalanx\Theatron\Tui\Inputs\Key;
 
 [
     Binding::ctrl('c')->quit()->label('quit'),

@@ -139,7 +139,7 @@ Phalanx is built for long-running PHP. The managed execution model applies the s
 - UDP and network tooling
 - reverse proxies, load balancers, and operational sidecars
 - devops scripts that need cancellation, supervision, retries, and runtime visibility
-- AI harnesses that need provider adapters, tool calls, grants, effects, and MCP
+- AI applications that need provider adapters, tool calls, grants, effects, and MCP
 
 ## Demos
 

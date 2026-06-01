@@ -540,7 +540,7 @@ return [
     ],
     'Theatron' => [
         'package' => 'phalanx-php/theatron',
-        'description' => 'Terminal UI and agent harness framework for Phalanx PHP',
+        'description' => 'Terminal UI and agent collaboration framework for Phalanx PHP',
         'type' => 'library',
         'namespace' => 'Phalanx\\Theatron\\',
         'smokeClass' => 'Phalanx\\Theatron\\Theatron',
@@ -564,10 +564,10 @@ return [
         'bins' => [],
         'branchAlias' => '0.6.x-dev',
         'autoloadFiles' => [
-            'src/Ui/functions.php',
+            'src/Tui/Kit/functions.php',
         ],
         'keywords' => [
-            'agent-harness',
+            'agent-collab',
             'terminal-ui',
             'theatron',
         ],
