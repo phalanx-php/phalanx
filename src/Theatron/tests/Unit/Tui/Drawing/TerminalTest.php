@@ -33,32 +33,4 @@ final class TerminalTest extends TestCase
         self::assertSame(80, $terminal->width);
         self::assertSame(24, $terminal->height);
     }
-
-    #[Test]
-    public function sizeReadsEnvironmentDimensions(): void
-    {
-        $oldColumns = getenv('COLUMNS');
-        $oldLines = getenv('LINES');
-
-        try {
-            putenv('COLUMNS=120');
-            putenv('LINES=40');
-
-            self::assertSame([120, 40], Terminal::size());
-        } finally {
-            self::restoreEnvironment('COLUMNS', $oldColumns);
-            self::restoreEnvironment('LINES', $oldLines);
-        }
-    }
-
-    private static function restoreEnvironment(string $key, string|false $value): void
-    {
-        if ($value === false) {
-            putenv($key);
-
-            return;
-        }
-
-        putenv($key . '=' . $value);
-    }
 }

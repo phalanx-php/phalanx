@@ -25,32 +25,12 @@ final class Terminal
         return new TerminalConfig($width, $height, $colorMode, $isTty);
     }
 
-    /** @return array{int, int} [width, height], falling back to 80x24 */
-    public static function size(): array
-    {
-        return [
-            self::resolveEnvironmentSize('COLUMNS', 80),
-            self::resolveEnvironmentSize('LINES', 24),
-        ];
-    }
-
     /** @param array<string, string|false> $env */
     private static function resolveSize(array $env, string $key, int $fallback): int
     {
         $value = $env[$key] ?? null;
 
         if ($value !== null && is_numeric($value)) {
-            return (int) $value;
-        }
-
-        return $fallback;
-    }
-
-    private static function resolveEnvironmentSize(string $key, int $fallback): int
-    {
-        $value = getenv($key);
-
-        if ($value !== false && is_numeric($value)) {
             return (int) $value;
         }
 
