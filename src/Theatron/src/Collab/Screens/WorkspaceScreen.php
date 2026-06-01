@@ -4,32 +4,45 @@ declare(strict_types=1);
 
 namespace Phalanx\Theatron\Collab\Screens;
 
+use Phalanx\Theatron\Collab\Boundaries\InputPromptSubmitter;
 use Phalanx\Theatron\Collab\Plans\WorkPlanItem;
 use Phalanx\Theatron\Collab\Reviews\ReviewVerdict;
 use Phalanx\Theatron\Collab\State\CollabStore;
 use Phalanx\Theatron\Collab\State\TimelineEntry;
+use Phalanx\Theatron\Tui\Core\Focusable;
+use Phalanx\Theatron\Tui\Core\HasFocusables;
 use Phalanx\Theatron\Tui\Core\Screen;
 use Phalanx\Theatron\Tui\Core\ScreenContext;
+use Phalanx\Theatron\Tui\Kit\InputComposer;
 use Phalanx\Theatron\Tui\Styles\Size;
 use Phalanx\Theatron\Tui\Tdom\Renderable;
 
 use function Phalanx\Theatron\Tui\Kit\column;
 use function Phalanx\Theatron\Tui\Kit\grid;
+use function Phalanx\Theatron\Tui\Kit\input;
 use function Phalanx\Theatron\Tui\Kit\panel;
 use function Phalanx\Theatron\Tui\Kit\scrollable;
 use function Phalanx\Theatron\Tui\Kit\statusLine;
 use function Phalanx\Theatron\Tui\Kit\text;
 
-class WorkspaceScreen implements Screen
+class WorkspaceScreen implements Screen, HasFocusables
 {
+    private InputComposer $composer;
+
     public function __construct(
         private CollabStore $store,
+        ?InputPromptSubmitter $submitter = null,
     ) {
+        $this->composer = InputComposer::empty(
+            prompt: 'You > ',
+            onSubmit: $submitter,
+        );
     }
 
     public function __invoke(ScreenContext $ctx): Renderable
     {
-        $mainLines = max(4, $ctx->height - 12);
+        $mainLines = max(4, $ctx->height - 16);
+        $draft = (string) $this->composer->text->get();
 
         return column(
             grid(
@@ -42,12 +55,27 @@ class WorkspaceScreen implements Screen
                 panel('Runtime', scrollable($this->runtimeText(), maxLines: 6)),
                 panel('DevTools', scrollable($this->devToolsText(), maxLines: 6)),
             ),
+            panel(
+                'Input',
+                input(
+                    value: $draft,
+                    prompt: $this->composer->prompt,
+                    cursor: mb_strlen($draft),
+                    style: $this->composer->style,
+                ),
+            ),
             statusLine(
                 text(sprintf('stage: %s', $this->store->loop->stage->value)),
                 text(sprintf('plan: %s', $this->store->workPlan->plan->status->value)),
                 text(sprintf('pane: %s', $this->store->workspaceView->activePane)),
             ),
         );
+    }
+
+    /** @return list<array{string, Focusable}> */
+    public function focusables(): array
+    {
+        return [['input', $this->composer]];
     }
 
     private static function singleLine(string $text): string

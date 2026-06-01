@@ -14,6 +14,11 @@ final class InletQueue implements InletChannel
         $this->messages[] = $message;
     }
 
+    public function hasPending(): bool
+    {
+        return $this->messages !== [];
+    }
+
     /**
      * @return list<InletMessage>
      */

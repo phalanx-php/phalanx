@@ -6,6 +6,8 @@ namespace Phalanx\Theatron\Tests\Unit\Collab\Screens;
 
 use DateTimeImmutable;
 use Phalanx\Scope\TaskScope;
+use Phalanx\Theatron\Collab\Boundaries\InletQueue;
+use Phalanx\Theatron\Collab\Boundaries\InputPromptSubmitter;
 use Phalanx\Theatron\Collab\Events\CollabEvent;
 use Phalanx\Theatron\Collab\Events\EventKind;
 use Phalanx\Theatron\Collab\Messages\Address;
@@ -19,12 +21,16 @@ use Phalanx\Theatron\Collab\Reviews\ReviewVerdict;
 use Phalanx\Theatron\Collab\Screens\WorkspaceScreen;
 use Phalanx\Theatron\Collab\State\CollabStore;
 use Phalanx\Theatron\Collab\State\DevToolsSlice;
+use Phalanx\Theatron\Tui\Core\AcceptsInput;
 use Phalanx\Theatron\Tui\Core\MountSystem;
 use Phalanx\Theatron\Tui\Core\ScreenContext;
+use Phalanx\Theatron\Tui\Inputs\Key;
+use Phalanx\Theatron\Tui\Inputs\KeyEvent;
 use Phalanx\Theatron\Tui\Navigation\Navigator;
 use Phalanx\Theatron\Tui\Styles\Theme;
 use Phalanx\Theatron\Tui\Tdom\Element\ColumnElement;
 use Phalanx\Theatron\Tui\Tdom\Element\GridElement;
+use Phalanx\Theatron\Tui\Tdom\Element\InputElement;
 use Phalanx\Theatron\Tui\Tdom\Element\PanelElement;
 use Phalanx\Theatron\Tui\Tdom\Element\ScrollElement;
 use PHPUnit\Framework\Attributes\Test;
@@ -47,11 +53,14 @@ final class WorkspaceScreenTest extends TestCase
         $plan = $rendered->children[0]->children[1];
         $runtime = $rendered->children[1]->children[0];
         $devTools = $rendered->children[1]->children[1];
+        $input = $rendered->children[2];
 
         self::assertInstanceOf(PanelElement::class, $chat);
         self::assertInstanceOf(PanelElement::class, $plan);
         self::assertInstanceOf(PanelElement::class, $runtime);
         self::assertInstanceOf(PanelElement::class, $devTools);
+        self::assertInstanceOf(PanelElement::class, $input);
+        self::assertInstanceOf(InputElement::class, $input->child);
 
         self::assertStringContainsString('prompt Review projection', self::scrollContent($chat));
         self::assertStringContainsString('done work_projection - Review projection', self::scrollContent($plan));
@@ -72,15 +81,43 @@ final class WorkspaceScreenTest extends TestCase
         $plan = $rendered->children[0]->children[1];
         $runtime = $rendered->children[1]->children[0];
         $devTools = $rendered->children[1]->children[1];
+        $input = $rendered->children[2];
 
         self::assertInstanceOf(PanelElement::class, $chat);
         self::assertInstanceOf(PanelElement::class, $plan);
         self::assertInstanceOf(PanelElement::class, $runtime);
         self::assertInstanceOf(PanelElement::class, $devTools);
+        self::assertInstanceOf(PanelElement::class, $input);
+        self::assertInstanceOf(InputElement::class, $input->child);
         self::assertStringContainsString('No timeline entries.', self::scrollContent($chat));
         self::assertStringContainsString('No work planned.', self::scrollContent($plan));
         self::assertStringContainsString('session: none', self::scrollContent($runtime));
         self::assertStringContainsString('event: none', self::scrollContent($devTools));
+    }
+
+    #[Test]
+    public function inputFocusableSubmitsThroughTheReceivePath(): void
+    {
+        $queue = new InletQueue();
+        $screen = new WorkspaceScreen(new CollabStore(), new InputPromptSubmitter($queue));
+        $focusables = $screen->focusables();
+
+        self::assertCount(1, $focusables);
+        self::assertSame('input', $focusables[0][0]);
+
+        $input = $focusables[0][1];
+        self::assertInstanceOf(AcceptsInput::class, $input);
+
+        $input->handleInput(new KeyEvent('s'));
+        $input->handleInput(new KeyEvent('h'));
+        $input->handleInput(new KeyEvent('i'));
+        $input->handleInput(new KeyEvent('p'));
+        $input->handleInput(new KeyEvent(Key::Enter));
+
+        $messages = $queue->drain();
+
+        self::assertCount(1, $messages);
+        self::assertSame('ship', $messages[0]->envelope->payload);
     }
 
     private static function store(): CollabStore
