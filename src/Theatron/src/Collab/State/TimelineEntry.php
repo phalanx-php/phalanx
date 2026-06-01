@@ -90,9 +90,11 @@ final class TimelineEntry
 
     private static function kindForEnvelope(Envelope $envelope): TimelineEntryKind
     {
-        return $envelope->kind === MessageKind::Prompt
-            ? TimelineEntryKind::Prompt
-            : TimelineEntryKind::Message;
+        return match ($envelope->kind) {
+            MessageKind::Prompt => TimelineEntryKind::Prompt,
+            MessageKind::Response => TimelineEntryKind::Response,
+            default => TimelineEntryKind::Message,
+        };
     }
 
     private static function summaryForEnvelope(Envelope $envelope): string

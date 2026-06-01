@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Theatron\Collab\Boundaries;
 
+use Phalanx\Theatron\Collab\Events\CollabEvent;
+use Phalanx\Theatron\Collab\Events\EventKind;
 use Phalanx\Theatron\Collab\Lifecycle\CollaborationLoop;
 use Phalanx\Theatron\Collab\Plans\WorkPlanStatus;
 use Phalanx\Theatron\Collab\WorkContext;
@@ -31,9 +33,11 @@ final class BoundaryRunner
 
         foreach ($this->incoming->drain() as $message) {
             $item = ($this->mapper)($message);
-
-            $ctx->record($message->envelope);
-            $ctx->append($item);
+            $ctx->project(CollabEvent::record(
+                EventKind::WorkReceived,
+                envelope: $message->envelope,
+                workItem: $item,
+            ));
         }
 
         return ($this->loop)($ctx);

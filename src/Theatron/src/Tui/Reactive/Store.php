@@ -13,6 +13,10 @@ abstract class Store
 {
     private int $nextSubscriberId = 0;
 
+    private int $transactionDepth = 0;
+
+    private bool $transactionDirty = false;
+
     /** @var array<int, Closure(): void> */
     private array $subscribers = [];
 
@@ -34,6 +38,39 @@ abstract class Store
         $this->write($class, $next);
 
         return $next;
+    }
+
+    /**
+     * @template T
+     * @param Closure(): T $work
+     * @return T
+     */
+    public function transaction(Closure $work): mixed
+    {
+        $snapshot = $this->slices;
+        $outer = $this->transactionDepth === 0;
+        $this->transactionDepth++;
+
+        try {
+            $result = $work();
+        } catch (\Throwable $error) {
+            $this->transactionDepth--;
+            $this->slices = $snapshot;
+
+            if ($outer) {
+                $this->transactionDirty = false;
+            }
+
+            throw $error;
+        }
+
+        $this->transactionDepth--;
+        if ($outer && $this->transactionDirty) {
+            $this->transactionDirty = false;
+            $this->notify();
+        }
+
+        return $result;
     }
 
     public function subscribe(Closure $subscriber): StoreSubscription
@@ -104,6 +141,12 @@ abstract class Store
         }
 
         $this->slices[$class] = $value;
+        if ($this->transactionDepth > 0) {
+            $this->transactionDirty = true;
+
+            return;
+        }
+
         $this->notify();
     }
 

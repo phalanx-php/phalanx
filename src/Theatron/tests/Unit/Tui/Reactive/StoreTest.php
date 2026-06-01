@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Theatron\Tests\Unit\Tui\Reactive;
 
-use Phalanx\Theatron\Tui\Reactive\Tracker;
 use Phalanx\Theatron\Tui\Reactive\Store;
 use Phalanx\Theatron\Tui\Reactive\StoreSubscription;
+use Phalanx\Theatron\Tui\Reactive\Tracker;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -84,6 +84,52 @@ final class StoreTest extends TestCase
 
         self::assertInstanceOf(HeroSlice::class, $result);
         self::assertSame(['Pericles'], $result->names);
+    }
+
+    #[Test]
+    public function transactionCommitsMultipleWritesWithOneNotification(): void
+    {
+        $store = new PantheonStore();
+        $calls = 0;
+
+        $store->subscribe(static function () use (&$calls): void {
+            $calls++;
+        });
+
+        $store->transaction(static function () use ($store): void {
+            $store->heroes = new HeroSlice(['Athena']);
+            $store->deity = new DeitySlice('Hera');
+        });
+
+        self::assertSame(1, $calls);
+        self::assertSame(['Athena'], $store->heroes->names);
+        self::assertSame('Hera', $store->deity->name);
+    }
+
+    #[Test]
+    public function transactionRollsBackWritesWhenWorkFails(): void
+    {
+        $store = new OlympusStore();
+        $calls = 0;
+        $error = new RuntimeException('stop');
+
+        $store->subscribe(static function () use (&$calls): void {
+            $calls++;
+        });
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('stop');
+
+        try {
+            $store->transaction(static function () use ($store, $error): void {
+                $store->heroes = new HeroSlice(['Ajax']);
+
+                throw $error;
+            });
+        } finally {
+            self::assertSame(0, $calls);
+            self::assertSame([], $store->heroes->names);
+        }
     }
 
     #[Test]

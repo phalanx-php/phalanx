@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Phalanx\Theatron\Collab\Projection;
 
 use Phalanx\Theatron\Collab\Events\CollabEvent;
+use Phalanx\Theatron\Collab\Plans\WorkPlan;
 use Phalanx\Theatron\Collab\State\CollabStore;
+use Phalanx\Theatron\Collab\State\WorkPlanSlice;
 
 final class CollabReplay
 {
@@ -27,11 +29,19 @@ final class CollabReplay
      */
     public function replay(iterable $events, ?CollabStore $store = null): CollabStore
     {
-        $store ??= new CollabStore();
+        $store ??= self::store();
 
         foreach ($events as $event) {
             $this->projector->project($event, $store);
         }
+
+        return $store;
+    }
+
+    private static function store(): CollabStore
+    {
+        $store = new CollabStore();
+        $store->workPlan = new WorkPlanSlice(WorkPlan::empty('replay'));
 
         return $store;
     }

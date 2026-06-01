@@ -83,12 +83,9 @@ final class TheatronCollabBoundaryTest extends TestCase
         $adapterImportsAthena = false;
         $adapterImportsPanoply = false;
 
-        self::assertTrue(class_exists(\Phalanx\Theatron\Collab\Adapters\Athena\AthenaCollaborator::class));
-        self::assertTrue(is_a(
-            \Phalanx\Theatron\Collab\Adapters\Athena\AthenaCollaborator::class,
-            \Phalanx\Theatron\Collab\Participants\Collaborator::class,
-            true,
-        ));
+        $adapter = new \ReflectionClass(\Phalanx\Theatron\Collab\Adapters\Athena\AthenaCollaborator::class);
+
+        self::assertTrue($adapter->implementsInterface(\Phalanx\Theatron\Collab\Participants\Collaborator::class));
 
         foreach (self::sourceFiles($root . '/src/Theatron/src/Collab/Adapters') as $file) {
             $source = self::read($file);
@@ -164,7 +161,17 @@ final class TheatronCollabBoundaryTest extends TestCase
         sort($methods);
         sort($properties);
 
-        self::assertSame(['abort', 'advance', 'append', 'fulfill', 'record', 'review', 'start'], $methods);
+        self::assertSame([
+            'abort',
+            'advance',
+            'append',
+            'drainProjectedEvents',
+            'fulfill',
+            'project',
+            'record',
+            'review',
+            'start',
+        ], $methods);
         self::assertSame(['plan', 'scope', 'stage'], $properties);
     }
 

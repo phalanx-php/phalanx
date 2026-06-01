@@ -29,24 +29,26 @@ final class CollabProjector
     {
         $this->validate($event);
 
-        match ($event->kind) {
-            EventKind::WorkReceived => $this->projectReceived($event, $store),
-            EventKind::WorkPrepared,
-            EventKind::WorkDistributed,
-            EventKind::WorkCompleted => null,
-            EventKind::WorkItemStarted => $this->projectStarted($event, $store),
-            EventKind::WorkItemCompleted,
-            EventKind::WorkInterrupted => $this->projectResult($event, $store),
-            EventKind::WorkReviewed => $this->projectReview($event, $store),
-            EventKind::EffectRequested,
-            EventKind::EffectApproved,
-            EventKind::EffectDenied => throw new \InvalidArgumentException(sprintf(
-                'Collab event "%s" is not supported by the alpha projector.',
-                $event->kind->value,
-            )),
-        };
+        $store->transaction(function () use ($event, $store): void {
+            match ($event->kind) {
+                EventKind::WorkReceived => $this->projectReceived($event, $store),
+                EventKind::WorkPrepared,
+                EventKind::WorkDistributed,
+                EventKind::WorkCompleted => null,
+                EventKind::WorkItemStarted => $this->projectStarted($event, $store),
+                EventKind::WorkItemCompleted,
+                EventKind::WorkInterrupted => $this->projectResult($event, $store),
+                EventKind::WorkReviewed => $this->projectReview($event, $store),
+                EventKind::EffectRequested,
+                EventKind::EffectApproved,
+                EventKind::EffectDenied => throw new \InvalidArgumentException(sprintf(
+                    'Collab event "%s" is not supported by the alpha projector.',
+                    $event->kind->value,
+                )),
+            };
 
-        $this->projectStage($event, $store);
+            $this->projectStage($event, $store);
+        });
 
         return $store;
     }
@@ -90,6 +92,10 @@ final class CollabProjector
 
     private function projectReceived(CollabEvent $event, CollabStore $store): void
     {
+        if ($event->envelope === null && $event->workItem === null) {
+            return;
+        }
+
         $workItem = $this->requireWorkItem($event);
 
         $store->mutate(
@@ -144,6 +150,15 @@ final class CollabProjector
             );
         }
 
+        if ($verdict->isRejected()) {
+            $store->mutate(
+                WorkPlanSlice::class,
+                static fn (WorkPlanSlice $slice): WorkPlanSlice => $slice->abort(
+                    $verdict->reason ?? 'Review rejected the completed work.',
+                ),
+            );
+        }
+
         $store->mutate(
             ReviewSlice::class,
             static fn (ReviewSlice $slice): ReviewSlice => $slice->record($verdict),
@@ -165,6 +180,10 @@ final class CollabProjector
 
     private function validateReceived(CollabEvent $event): void
     {
+        if ($event->envelope === null && $event->workItem === null) {
+            return;
+        }
+
         $this->requireEnvelope($event);
         $this->requireWorkItem($event);
     }
@@ -173,8 +192,17 @@ final class CollabProjector
     {
         $workItem = $this->requireWorkItem($event);
         $workResult = $this->requireWorkResult($event);
+
         if ($workItem->id !== $workResult->itemId) {
             throw new \InvalidArgumentException('Projected work result item id must match the event work item.');
+        }
+
+        if ($event->kind === EventKind::WorkItemCompleted && !$workResult->isDone()) {
+            throw new \InvalidArgumentException('Completed work projection requires a done result.');
+        }
+
+        if ($event->kind === EventKind::WorkInterrupted && $workResult->isDone()) {
+            throw new \InvalidArgumentException('Interrupted work projection requires a blocked or failed result.');
         }
     }
 

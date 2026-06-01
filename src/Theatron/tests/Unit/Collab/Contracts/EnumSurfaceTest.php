@@ -9,11 +9,12 @@ use Phalanx\Theatron\Collab\Effects\EffectStatus;
 use Phalanx\Theatron\Collab\Events\EventKind;
 use Phalanx\Theatron\Collab\Lifecycle\LoopStage;
 use Phalanx\Theatron\Collab\Messages\MessageKind;
-use Phalanx\Theatron\Collab\Reviews\ReviewStatus;
 use Phalanx\Theatron\Collab\Plans\Activity;
 use Phalanx\Theatron\Collab\Plans\WorkItemStatus;
 use Phalanx\Theatron\Collab\Plans\WorkPlanStatus;
 use Phalanx\Theatron\Collab\Plans\WorkResultStatus;
+use Phalanx\Theatron\Collab\Reviews\ReviewStatus;
+use Phalanx\Theatron\Collab\State\TimelineEntryKind;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -93,6 +94,15 @@ final class EnumSurfaceTest extends TestCase
             'approved',
             'rejected',
             'needs_revision',
+        ]];
+        yield 'timeline entry kind' => [TimelineEntryKind::class, [
+            'prompt',
+            'response',
+            'message',
+            'work_started',
+            'work_completed',
+            'work_interrupted',
+            'review',
         ]];
     }
 

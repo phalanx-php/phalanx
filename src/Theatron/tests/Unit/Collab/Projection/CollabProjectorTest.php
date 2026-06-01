@@ -109,6 +109,7 @@ final class CollabProjectorTest extends TestCase
             static fn (Envelope $envelope): string => $envelope->id,
             $store->messages->envelopes,
         ));
+        self::assertSame(TimelineEntryKind::Response, $store->messages->entries[2]->kind);
         self::assertSame(TimelineEntryKind::WorkCompleted, $store->messages->entries[3]->kind);
     }
 
@@ -178,9 +179,17 @@ final class CollabProjectorTest extends TestCase
         $projector = new CollabProjector();
 
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('requires an envelope');
+        $this->expectExceptionMessage('requires a work item');
 
-        $projector->project(CollabEvent::record(EventKind::WorkReceived), new CollabStore());
+        $projector->project(CollabEvent::record(
+            EventKind::WorkReceived,
+            envelope: Envelope::make(
+                from: Address::user(),
+                to: Address::agent('primary'),
+                kind: MessageKind::Prompt,
+                payload: 'Draft TC-8A',
+            ),
+        ), new CollabStore());
     }
 
     #[Test]
@@ -254,6 +263,126 @@ final class CollabProjectorTest extends TestCase
         } finally {
             self::assertSame(LoopStage::Collaborate, $store->loop->stage);
             self::assertSame([], $store->reviews->verdicts);
+            self::assertCount($entryCount, $store->messages->entries);
+        }
+    }
+
+    #[Test]
+    public function rejectedReviewProjectionAbortsThePlan(): void
+    {
+        $store = new CollabStore();
+        $projector = new CollabProjector();
+        $workItem = new WorkItem(Activity::Editing, 'Patch code', id: 'work_patch');
+
+        $projector->project(self::received($workItem), $store);
+        $projector->project(CollabEvent::record(
+            EventKind::WorkItemStarted,
+            workItem: $workItem,
+            id: 'evt_patch_started',
+        ), $store);
+        $projector->project(CollabEvent::record(
+            EventKind::WorkItemCompleted,
+            workItem: $workItem,
+            workResult: WorkResult::done('work_patch', summary: 'Patch done.'),
+            id: 'evt_patch_done',
+        ), $store);
+        $projector->project(CollabEvent::record(
+            EventKind::WorkReviewed,
+            reviewVerdict: ReviewVerdict::reject('Unsafe change.'),
+            id: 'evt_rejected',
+        ), $store);
+
+        self::assertSame(WorkPlanStatus::Aborted, $store->workPlan->plan->status);
+        self::assertSame('Unsafe change.', $store->workPlan->plan->statusReason);
+        self::assertSame(TimelineEntryKind::Review, $store->messages->entries[3]->kind);
+        self::assertSame('Unsafe change.', $store->reviews->verdicts[0]->reason);
+    }
+
+    #[Test]
+    public function completedProjectionUsesFallbackTimelineSummaryForBlankResultSummary(): void
+    {
+        $store = new CollabStore();
+        $projector = new CollabProjector();
+        $workItem = new WorkItem(Activity::Testing, 'Run checks', id: 'work_checks');
+
+        $projector->project(self::received($workItem), $store);
+        $projector->project(CollabEvent::record(
+            EventKind::WorkItemStarted,
+            workItem: $workItem,
+            id: 'evt_started',
+        ), $store);
+        $projector->project(CollabEvent::record(
+            EventKind::WorkItemCompleted,
+            workItem: $workItem,
+            workResult: WorkResult::done('work_checks', summary: ''),
+            id: 'evt_done',
+        ), $store);
+
+        self::assertSame('Completed work_checks.', $store->messages->entries[2]->summary);
+    }
+
+    #[Test]
+    public function completedProjectionRequiresDoneResultAndDoesNotMutateStore(): void
+    {
+        $store = new CollabStore();
+        $projector = new CollabProjector();
+        $workItem = new WorkItem(Activity::Testing, 'Run checks', id: 'work_checks');
+
+        $projector->project(self::received($workItem), $store);
+        $projector->project(CollabEvent::record(
+            EventKind::WorkItemStarted,
+            workItem: $workItem,
+            id: 'evt_started',
+        ), $store);
+
+        $entryCount = count($store->messages->entries);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('requires a done result');
+
+        try {
+            $projector->project(CollabEvent::record(
+                EventKind::WorkItemCompleted,
+                workItem: $workItem,
+                workResult: WorkResult::blocked('work_checks', 'waiting on user'),
+                id: 'evt_bad_completed',
+            ), $store);
+        } finally {
+            self::assertSame(LoopStage::Collaborate, $store->loop->stage);
+            self::assertSame(WorkItemStatus::Running, $store->workPlan->plan->item('work_checks')->status);
+            self::assertCount($entryCount, $store->messages->entries);
+        }
+    }
+
+    #[Test]
+    public function interruptedProjectionRejectsDoneResultAndDoesNotMutateStore(): void
+    {
+        $store = new CollabStore();
+        $projector = new CollabProjector();
+        $workItem = new WorkItem(Activity::Researching, 'Wait for token', id: 'work_wait');
+
+        $projector->project(self::received($workItem), $store);
+        $projector->project(CollabEvent::record(
+            EventKind::WorkItemStarted,
+            workItem: $workItem,
+            id: 'evt_wait_started',
+        ), $store);
+
+        $entryCount = count($store->messages->entries);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('requires a blocked or failed result');
+
+        try {
+            $projector->project(CollabEvent::record(
+                EventKind::WorkInterrupted,
+                workItem: $workItem,
+                workResult: WorkResult::done('work_wait'),
+                id: 'evt_bad_interrupted',
+            ), $store);
+        } finally {
+            self::assertSame(LoopStage::Collaborate, $store->loop->stage);
+            self::assertSame(WorkItemStatus::Running, $store->workPlan->plan->item('work_wait')->status);
             self::assertCount($entryCount, $store->messages->entries);
         }
     }

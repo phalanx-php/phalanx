@@ -196,6 +196,15 @@ final class BoundaryRuntimeTest extends TestCase
         self::assertContains(EventKind::WorkReceived, $outlet->events);
         self::assertContains(EventKind::WorkCompleted, $outlet->events);
         self::assertSame($scope, $outlet->scope);
+
+        $received = array_find(
+            $outlet->routableEvents,
+            static fn (RoutableEvent $event): bool => $event->kind === EventKind::WorkReceived,
+        );
+
+        self::assertInstanceOf(RoutableEvent::class, $received);
+        self::assertSame('Route events', $received->envelope?->payload);
+        self::assertSame('Route events', $received->workItem?->prompt);
     }
 }
 
@@ -255,11 +264,15 @@ final class RecordingOutlet implements Outlet
     /** @var list<EventKind> */
     private(set) array $events = [];
 
+    /** @var list<RoutableEvent> */
+    private(set) array $routableEvents = [];
+
     private(set) ?TaskScope $scope = null;
 
     public function __invoke(RoutableEvent $event, TaskScope $scope): void
     {
         $this->events[] = $event->kind;
+        $this->routableEvents[] = $event;
         $this->scope = $scope;
     }
 }

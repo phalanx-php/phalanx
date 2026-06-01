@@ -17,6 +17,8 @@ use Phalanx\Theatron\Collab\Plans\WorkPlanStatus;
 use Phalanx\Theatron\Collab\Plans\WorkResult;
 use Phalanx\Theatron\Collab\Projection\CollabReplay;
 use Phalanx\Theatron\Collab\State\CollabStore;
+use Phalanx\Theatron\Collab\State\TimelineEntry;
+use Phalanx\Theatron\Collab\State\TimelineEntryKind;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -25,14 +27,33 @@ final class CollabReplayTest extends TestCase
     #[Test]
     public function replaysFixtureIntoDeterministicStore(): void
     {
-        $store = new CollabReplay()(self::happyPathEvents());
+        $replay = new CollabReplay();
+        $store = $replay(self::happyPathEvents());
 
         self::assertSame(WorkPlanStatus::Complete, $store->workPlan->plan->status);
         self::assertSame(WorkItemStatus::Done, $store->workPlan->plan->item('work_projection')->status);
         self::assertSame(
-            ['evt_received:env_prompt', 'evt_started:work_started:work_projection', 'evt_done:env_response', 'evt_done:work_completed:work_projection'],
-            array_map(static fn ($entry): string => $entry->id, $store->messages->entries),
+            [
+                'evt_received:env_prompt',
+                'evt_started:work_started:work_projection',
+                'evt_done:env_response',
+                'evt_done:work_completed:work_projection',
+            ],
+            array_map(static fn (TimelineEntry $entry): string => $entry->id, $store->messages->entries),
         );
+        self::assertSame(TimelineEntryKind::Response, $store->messages->entries[2]->kind);
+    }
+
+    #[Test]
+    public function freshReplayProducesDeterministicCanonicalPlanState(): void
+    {
+        $replay = new CollabReplay();
+
+        $first = $replay(self::happyPathEvents())->workPlan->plan->toCanonical();
+        $second = $replay(self::happyPathEvents())->workPlan->plan->toCanonical();
+
+        self::assertSame($first, $second);
+        self::assertSame('replay', $first['id']);
     }
 
     #[Test]

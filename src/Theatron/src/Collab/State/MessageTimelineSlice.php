@@ -106,7 +106,9 @@ final class MessageTimelineSlice
             ));
         }
 
-        return $event->workResult->summary;
+        $summary = trim((string) $event->workResult->summary);
+
+        return $summary === '' ? null : $summary;
     }
 
     private static function workItemId(CollabEvent $event): string

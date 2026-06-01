@@ -163,7 +163,17 @@ final class CollaborationLoop
     private function receive(WorkContext $ctx): void
     {
         $ctx->advance(LoopStage::Receive);
-        $this->emit($ctx, CollabEvent::record(EventKind::WorkReceived));
+
+        $received = $ctx->drainProjectedEvents(EventKind::WorkReceived);
+        if ($received === []) {
+            $this->emit($ctx, CollabEvent::record(EventKind::WorkReceived));
+
+            return;
+        }
+
+        foreach ($received as $event) {
+            $this->emit($ctx, $event);
+        }
     }
 
     private function prepare(WorkContext $ctx): void
