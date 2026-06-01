@@ -56,6 +56,30 @@ input dispatch, and the Aegis startup path. The Collab layer owns agent loop
 contracts, messages, work state, prompts, reviews, and UI-facing state
 projections.
 
+## Collab App Shape
+
+Use `Theatron::collab()` when the app is an agent collaboration workspace. The
+builder owns the default Collab store, workspace screen, receive queue, input
+submitter, boundary runner, and runtime tick loop.
+
+```php
+<?php
+
+use Phalanx\Theatron\Collab\Participants\Collaborator;
+use Phalanx\Theatron\Theatron;
+
+/** @var Collaborator $assistant */
+$assistant = new Assistant();
+
+return Theatron::collab($context)
+    ->primary($assistant)
+    ->run();
+```
+
+The default workspace renders projections from `CollabStore`. User text enters
+through `InputComposer`, becomes an `InputPromptSubmitter` prompt envelope, then
+flows through the same receive path as other inlets.
+
 ## Components
 
 A component implements `Component`. It receives a `RenderContext` and returns a
@@ -364,20 +388,11 @@ use Phalanx\Theatron\Tui\Inputs\Key;
 Resolution is layered: overlay stack, active screen, global bindings. The active
 binding list can be rendered with `$ctx->hints()` in component render contexts.
 
-## Template Screens
+## Collab Workspace
 
-The bundled template app is the current REPL-style reference:
-
-- `ChatScreen` -- conversation history, active exchange, shell-style input
-  composer, queue undo chords, thinking status, and bottom controls.
-- `ConversationBlockDetailScreen` -- focused conversation block show page.
-- `DevToolsScreen` -- Metrics, Requests, Signals, Tree, and Store tabs for runtime
-  inspection.
-- `LlmRequestDetailScreen` -- request/response body preview with JSON highlighting.
-- `SettingsScreen` -- tabbed General/Tools/MCP/Model/Display settings backed by
-  `SettingsSlice`.
-
-DevTools and settings are workspace screens, not overlays.
+`WorkspaceScreen` is the current Collab reference screen. It renders chat,
+plan, runtime, DevTools, status, and input panels from store projections. Screens
+do not call collaborators directly.
 
 ## Verification
 

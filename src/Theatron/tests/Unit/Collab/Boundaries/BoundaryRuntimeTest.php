@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Theatron\Tests\Unit\Collab\Boundaries;
 
 use Phalanx\Scope\TaskScope;
+use Phalanx\Theatron\Collab\Apps\CollabRuntime;
 use Phalanx\Theatron\Collab\Boundaries\BoundaryRunner;
 use Phalanx\Theatron\Collab\Boundaries\Inlet;
 use Phalanx\Theatron\Collab\Boundaries\InletChannel;
@@ -129,6 +130,44 @@ final class BoundaryRuntimeTest extends TestCase
     }
 
     #[Test]
+    public function silentInletsDoNotProjectPlaceholderLoopEvents(): void
+    {
+        $store = new CollabStore();
+        $ctx = new WorkContext(new RecordingTaskScope(), $store);
+        $calls = new \ArrayObject();
+        $runner = new BoundaryRunner(
+            loop: new CollaborationLoop(primary: new DoneCollaborator($calls)),
+            inlets: [new SilentInlet()],
+        );
+
+        $status = $runner($ctx);
+
+        self::assertSame(WorkPlanStatus::Active, $status);
+        self::assertSame([], $calls->getArrayCopy());
+        self::assertSame([], $store->messages->entries);
+    }
+
+    #[Test]
+    public function collabRuntimeUsesTheCurrentTaskScopeOnEachTick(): void
+    {
+        $inlet = new ScopeRecordingInlet();
+        $runtime = new CollabRuntime(
+            runner: new BoundaryRunner(
+                loop: new CollaborationLoop(primary: new DoneCollaborator(new \ArrayObject())),
+                inlets: [$inlet],
+            ),
+            store: new CollabStore(),
+        );
+        $first = new RecordingTaskScope();
+        $second = new RecordingTaskScope();
+
+        $runtime->tick($first);
+        $runtime->tick($second);
+
+        self::assertSame([$first, $second], $inlet->scopes);
+    }
+
+    #[Test]
     public function boundaryRunnerMapsBeforeRecordingUnsupportedMessages(): void
     {
         $store = new CollabStore();
@@ -235,6 +274,32 @@ final class UnsupportedInlet implements Inlet
     public function __invoke(TaskScope $scope, InletChannel $incoming): void
     {
         $incoming->emit(new InletMessage(Envelope::observation('daemon8', 'build finished')));
+    }
+}
+
+final class SilentInlet implements Inlet
+{
+    public string $name {
+        get => 'silent';
+    }
+
+    public function __invoke(TaskScope $scope, InletChannel $incoming): void
+    {
+    }
+}
+
+final class ScopeRecordingInlet implements Inlet
+{
+    public string $name {
+        get => 'scope-recorder';
+    }
+
+    /** @var list<TaskScope> */
+    private(set) array $scopes = [];
+
+    public function __invoke(TaskScope $scope, InletChannel $incoming): void
+    {
+        $this->scopes[] = $scope;
     }
 }
 

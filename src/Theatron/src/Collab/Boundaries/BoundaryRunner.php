@@ -31,13 +31,19 @@ final class BoundaryRunner
             $inlet($ctx->scope, $this->incoming);
         }
 
+        $received = false;
         foreach ($this->incoming->drain() as $message) {
+            $received = true;
             $item = ($this->mapper)($message);
             $ctx->project(CollabEvent::record(
                 EventKind::WorkReceived,
                 envelope: $message->envelope,
                 workItem: $item,
             ));
+        }
+
+        if (!$received && $ctx->plan->readyItems() === []) {
+            return $ctx->plan->status;
         }
 
         return ($this->loop)($ctx);

@@ -12,8 +12,6 @@ use Phalanx\Theatron\Collab\WorkContext;
 
 final class CollabRuntime
 {
-    private ?WorkContext $context = null;
-
     private bool $running = false;
 
     public function __construct(
@@ -31,7 +29,7 @@ final class CollabRuntime
         $this->running = true;
 
         try {
-            return ($this->runner)($this->context ??= new WorkContext($scope, $this->store));
+            return ($this->runner)(new WorkContext($scope, $this->store));
         } finally {
             $this->running = false;
         }

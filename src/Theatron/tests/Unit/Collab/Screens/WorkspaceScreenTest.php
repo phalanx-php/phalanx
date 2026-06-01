@@ -120,6 +120,29 @@ final class WorkspaceScreenTest extends TestCase
         self::assertSame('ship', $messages[0]->envelope->payload);
     }
 
+    #[Test]
+    public function inputPanelRendersComposerCursorState(): void
+    {
+        $screen = new WorkspaceScreen(new CollabStore(), new InputPromptSubmitter(new InletQueue()));
+        $focusables = $screen->focusables();
+        $input = $focusables[0][1];
+        self::assertInstanceOf(AcceptsInput::class, $input);
+
+        $input->handleInput(new KeyEvent('a'));
+        $input->handleInput(new KeyEvent('b'));
+        $input->handleInput(new KeyEvent(Key::Left));
+
+        $rendered = $screen($this->screenContext());
+        self::assertInstanceOf(ColumnElement::class, $rendered);
+
+        $panel = $rendered->children[2];
+
+        self::assertInstanceOf(PanelElement::class, $panel);
+        self::assertInstanceOf(InputElement::class, $panel->child);
+        self::assertSame('ab', $panel->child->value);
+        self::assertSame(1, $panel->child->cursor);
+    }
+
     private static function store(): CollabStore
     {
         $store = new CollabStore();

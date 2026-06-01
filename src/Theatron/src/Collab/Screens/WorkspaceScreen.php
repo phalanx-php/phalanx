@@ -11,6 +11,7 @@ use Phalanx\Theatron\Collab\State\CollabStore;
 use Phalanx\Theatron\Collab\State\TimelineEntry;
 use Phalanx\Theatron\Tui\Core\Focusable;
 use Phalanx\Theatron\Tui\Core\HasFocusables;
+use Phalanx\Theatron\Tui\Core\RenderContext;
 use Phalanx\Theatron\Tui\Core\Screen;
 use Phalanx\Theatron\Tui\Core\ScreenContext;
 use Phalanx\Theatron\Tui\Kit\InputComposer;
@@ -19,7 +20,6 @@ use Phalanx\Theatron\Tui\Tdom\Renderable;
 
 use function Phalanx\Theatron\Tui\Kit\column;
 use function Phalanx\Theatron\Tui\Kit\grid;
-use function Phalanx\Theatron\Tui\Kit\input;
 use function Phalanx\Theatron\Tui\Kit\panel;
 use function Phalanx\Theatron\Tui\Kit\scrollable;
 use function Phalanx\Theatron\Tui\Kit\statusLine;
@@ -42,7 +42,12 @@ class WorkspaceScreen implements Screen, HasFocusables
     public function __invoke(ScreenContext $ctx): Renderable
     {
         $mainLines = max(4, $ctx->height - 16);
-        $draft = (string) $this->composer->text->get();
+        $input = ($this->composer)(new RenderContext(
+            scope: $ctx->scope,
+            theme: $ctx->theme,
+            mountSystem: $ctx->mountSystem,
+            renderDiagnostics: $ctx->renderDiagnostics,
+        ));
 
         return column(
             grid(
@@ -57,12 +62,7 @@ class WorkspaceScreen implements Screen, HasFocusables
             ),
             panel(
                 'Input',
-                input(
-                    value: $draft,
-                    prompt: $this->composer->prompt,
-                    cursor: mb_strlen($draft),
-                    style: $this->composer->style,
-                ),
+                $input,
             ),
             statusLine(
                 text(sprintf('stage: %s', $this->store->loop->stage->value)),
