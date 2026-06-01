@@ -236,4 +236,25 @@ final class TextInputBehaviorTest extends TestCase
         self::assertSame(1, $renderable->selectionStart);
         self::assertSame(2, $renderable->selectionEnd);
     }
+
+    #[Test]
+    public function inputComposerSubmitsNonEmptyDraftsAndClearsText(): void
+    {
+        $submitted = [];
+        $composer = InputComposer::empty(onSubmit: static function (string $draft) use (&$submitted): void {
+            $submitted[] = $draft;
+        });
+
+        self::assertTrue($composer->handleInput(new KeyEvent('h')));
+        self::assertTrue($composer->handleInput(new KeyEvent('i')));
+        self::assertTrue($composer->handleInput(new KeyEvent(Key::Enter)));
+        self::assertTrue($composer->handleInput(new KeyEvent(Key::Enter)));
+
+        $renderable = $composer(new NullRenderContext());
+
+        self::assertSame(['hi'], $submitted);
+        self::assertInstanceOf(InputElement::class, $renderable);
+        self::assertSame('', $renderable->value);
+        self::assertSame(0, $renderable->cursor);
+    }
 }

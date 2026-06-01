@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Phalanx\Theatron\Tui\Kit;
 
+use Closure;
 use Phalanx\Theatron\Tui\Core\AcceptsInput;
 use Phalanx\Theatron\Tui\Core\Component;
 use Phalanx\Theatron\Tui\Core\Focusable;
 use Phalanx\Theatron\Tui\Core\RenderContext;
+use Phalanx\Theatron\Tui\Inputs\Key;
 use Phalanx\Theatron\Tui\Inputs\KeyEvent;
 use Phalanx\Theatron\Tui\Reactive\Signal;
 use Phalanx\Theatron\Tui\Styles\Line;
@@ -30,15 +32,16 @@ final class InputComposer implements Component, Focusable, AcceptsInput
         private(set) Signal $text,
         private(set) string|Line $prompt = '> ',
         private(set) ?Style $style = null,
+        private ?Closure $onSubmit = null,
     ) {
         $this->cursor = new Signal(mb_strlen((string) $this->text->get()));
         $this->killRing = new Signal('');
         $this->selectionAnchor = new Signal(null);
     }
 
-    public static function empty(string|Line $prompt = '> ', ?Style $style = null): self
+    public static function empty(string|Line $prompt = '> ', ?Style $style = null, ?Closure $onSubmit = null): self
     {
-        return new self(new Signal(''), $prompt, $style);
+        return new self(new Signal(''), $prompt, $style, $onSubmit);
     }
 
     public function __invoke(RenderContext $ctx): Renderable
@@ -59,6 +62,10 @@ final class InputComposer implements Component, Focusable, AcceptsInput
 
     public function handleInput(KeyEvent $event): bool
     {
+        if (!$event->ctrl && !$event->alt && !$event->shift && $event->is(Key::Enter)) {
+            return $this->submit();
+        }
+
         return $this->handleTextInput($event);
     }
 
@@ -85,6 +92,23 @@ final class InputComposer implements Component, Focusable, AcceptsInput
     private static function clamp(int $cursor, string $text): int
     {
         return max(0, min($cursor, mb_strlen($text)));
+    }
+
+    private function submit(): bool
+    {
+        $text = (string) $this->text->get();
+
+        if (trim($text) === '' || $this->onSubmit === null) {
+            return true;
+        }
+
+        ($this->onSubmit)($text);
+
+        $this->text->set('');
+        $this->cursor->set(0);
+        $this->selectionAnchor->set(null);
+
+        return true;
     }
 
     /**
