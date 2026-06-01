@@ -30,8 +30,10 @@ final class BoundaryRunner
         }
 
         foreach ($this->incoming->drain() as $message) {
+            $item = ($this->mapper)($message);
+
             $ctx->record($message->envelope);
-            $ctx->append(($this->mapper)($message));
+            $ctx->append($item);
         }
 
         return ($this->loop)($ctx);

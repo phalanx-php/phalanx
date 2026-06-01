@@ -17,6 +17,10 @@ final class InputPromptSubmitter
 
     public function __invoke(string $prompt): void
     {
+        if (trim($prompt) === '') {
+            return;
+        }
+
         $this->incoming->emit(new InletMessage(Envelope::prompt($prompt, $this->to)));
     }
 }

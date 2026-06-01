@@ -28,6 +28,9 @@ use Phalanx\Theatron\Collab\Plans\WorkResult;
 use Phalanx\Theatron\Collab\State\CollabStore;
 use Phalanx\Theatron\Collab\WorkContext;
 use Phalanx\Theatron\Tests\Support\RecordingTaskScope;
+use Phalanx\Theatron\Tui\Inputs\Key;
+use Phalanx\Theatron\Tui\Inputs\KeyEvent;
+use Phalanx\Theatron\Tui\Kit\InputComposer;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -95,6 +98,17 @@ final class BoundaryRuntimeTest extends TestCase
     }
 
     #[Test]
+    public function inputPromptSubmitterIgnoresBlankPrompts(): void
+    {
+        $queue = new InletQueue();
+        $submit = new InputPromptSubmitter($queue);
+
+        $submit('   ');
+
+        self::assertSame([], $queue->drain());
+    }
+
+    #[Test]
     public function boundaryRunnerInvokesInletsRecordsMessagesAndRunsTheLoop(): void
     {
         $store = new CollabStore();
@@ -112,6 +126,54 @@ final class BoundaryRuntimeTest extends TestCase
         self::assertCount(1, $store->messages->envelopes);
         self::assertSame('Plan the next slice', $store->messages->envelopes[0]->payload);
         self::assertSame(Urgency::Prioritize->priority(), $ctx->plan->items()[0]->workItem->priority);
+    }
+
+    #[Test]
+    public function boundaryRunnerMapsBeforeRecordingUnsupportedMessages(): void
+    {
+        $store = new CollabStore();
+        $ctx = new WorkContext(new RecordingTaskScope(), $store);
+        $runner = new BoundaryRunner(
+            loop: new CollaborationLoop(primary: new DoneCollaborator(new \ArrayObject())),
+            inlets: [new UnsupportedInlet()],
+        );
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('Only prompt messages');
+
+        try {
+            $runner($ctx);
+        } finally {
+            self::assertSame([], $store->messages->envelopes);
+            self::assertSame([], $ctx->plan->items());
+        }
+    }
+
+    #[Test]
+    public function inputComposerSubmissionRunsThroughTheBoundaryRunner(): void
+    {
+        $queue = new InletQueue();
+        $calls = new \ArrayObject();
+        $store = new CollabStore();
+        $ctx = new WorkContext(new RecordingTaskScope(), $store);
+        $submit = new InputPromptSubmitter($queue);
+        $composer = InputComposer::empty(onSubmit: $submit);
+        $runner = new BoundaryRunner(
+            loop: new CollaborationLoop(primary: new DoneCollaborator($calls)),
+            incoming: $queue,
+        );
+
+        $composer->handleInput(new KeyEvent('s'));
+        $composer->handleInput(new KeyEvent('h'));
+        $composer->handleInput(new KeyEvent('i'));
+        $composer->handleInput(new KeyEvent('p'));
+        $composer->handleInput(new KeyEvent(Key::Enter));
+
+        $status = $runner($ctx);
+
+        self::assertSame(WorkPlanStatus::Complete, $status);
+        self::assertSame(['ship'], $calls->getArrayCopy());
+        self::assertSame('ship', $store->messages->envelopes[0]->payload);
     }
 
     #[Test]
@@ -152,6 +214,18 @@ final class RuntimePromptInlet implements Inlet
     public function __invoke(TaskScope $scope, InletChannel $incoming): void
     {
         $incoming->emit(new InletMessage(Envelope::prompt($this->prompt), $this->urgency));
+    }
+}
+
+final class UnsupportedInlet implements Inlet
+{
+    public string $name {
+        get => 'unsupported';
+    }
+
+    public function __invoke(TaskScope $scope, InletChannel $incoming): void
+    {
+        $incoming->emit(new InletMessage(Envelope::observation('daemon8', 'build finished')));
     }
 }
 

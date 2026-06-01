@@ -28,18 +28,24 @@ final class InputComposer implements Component, Focusable, AcceptsInput
 
     private Signal $selectionAnchor;
 
+    /** @var ?Closure(string): void */
+    private ?Closure $onSubmit;
+
+    /** @param (callable(string): void)|null $onSubmit */
     public function __construct(
         private(set) Signal $text,
         private(set) string|Line $prompt = '> ',
         private(set) ?Style $style = null,
-        private ?Closure $onSubmit = null,
+        ?callable $onSubmit = null,
     ) {
+        $this->onSubmit = $onSubmit === null ? null : Closure::fromCallable($onSubmit);
         $this->cursor = new Signal(mb_strlen((string) $this->text->get()));
         $this->killRing = new Signal('');
         $this->selectionAnchor = new Signal(null);
     }
 
-    public static function empty(string|Line $prompt = '> ', ?Style $style = null, ?Closure $onSubmit = null): self
+    /** @param (callable(string): void)|null $onSubmit */
+    public static function empty(string|Line $prompt = '> ', ?Style $style = null, ?callable $onSubmit = null): self
     {
         return new self(new Signal(''), $prompt, $style, $onSubmit);
     }
