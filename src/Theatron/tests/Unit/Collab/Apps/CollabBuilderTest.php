@@ -13,14 +13,21 @@ use Phalanx\Testing\PhalanxTestCase;
 use Phalanx\Theatron\Collab\Apps\CollabBuilder;
 use Phalanx\Theatron\Collab\Apps\CollabRuntime;
 use Phalanx\Theatron\Collab\Apps\CollabServiceBundle;
+use Phalanx\Theatron\Collab\Boundaries\BoundaryRunner;
 use Phalanx\Theatron\Collab\Boundaries\InputPromptSubmitter;
+use Phalanx\Theatron\Collab\Lifecycle\CollaborationLoop;
 use Phalanx\Theatron\Collab\Participants\Collaborator;
+use Phalanx\Theatron\Collab\Plans\Activity;
+use Phalanx\Theatron\Collab\Plans\WorkItem;
+use Phalanx\Theatron\Collab\Plans\WorkPlan;
 use Phalanx\Theatron\Collab\Plans\WorkPlanItem;
 use Phalanx\Theatron\Collab\Plans\WorkPlanStatus;
 use Phalanx\Theatron\Collab\Plans\WorkResult;
 use Phalanx\Theatron\Collab\Screens\WorkspaceScreen;
 use Phalanx\Theatron\Collab\State\CollabStore;
+use Phalanx\Theatron\Collab\State\WorkPlanSlice;
 use Phalanx\Theatron\Collab\WorkContext;
+use Phalanx\Theatron\Tests\Support\RecordingTaskScope;
 use Phalanx\Theatron\Theatron;
 use Phalanx\Theatron\Tui\Apps\TheatronApp;
 use Phalanx\Theatron\Tui\Apps\TheatronServiceBundle;
@@ -100,6 +107,28 @@ final class CollabBuilderTest extends PhalanxTestCase
             self::assertSame(['Lock the public builder'], $calls->getArrayCopy());
             self::assertSame('Lock the public builder', $store->messages->envelopes[0]->payload);
         });
+    }
+
+    #[Test]
+    public function runtimeRunsPreseededReadyWorkWithoutInlets(): void
+    {
+        $calls = new \ArrayObject();
+        $store = new CollabStore();
+        $store->workPlan = new WorkPlanSlice(WorkPlan::start(new WorkItem(
+            Activity::Testing,
+            'Run preseeded work',
+            id: 'work_preseeded',
+        )));
+        $runtime = new CollabRuntime(
+            runner: new BoundaryRunner(new CollaborationLoop(primary: new BuilderDoneCollaborator($calls))),
+            store: $store,
+        );
+
+        $status = $runtime->tick(new RecordingTaskScope());
+
+        self::assertSame(WorkPlanStatus::Complete, $status);
+        self::assertSame(['Run preseeded work'], $calls->getArrayCopy());
+        self::assertSame(WorkPlanStatus::Complete, $store->workPlan->plan->status);
     }
 
     private static function stageConfig(): StageConfig

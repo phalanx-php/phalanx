@@ -22,7 +22,7 @@ final class CollabRuntime
 
     public function tick(TaskScope $scope): WorkPlanStatus
     {
-        if ($this->running || !$this->runner->shouldRun()) {
+        if ($this->running) {
             return $this->store->workPlan->plan->status;
         }
 
