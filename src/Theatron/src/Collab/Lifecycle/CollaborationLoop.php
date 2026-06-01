@@ -204,12 +204,13 @@ final class CollaborationLoop
             return;
         }
 
+        $collaborator = $this->selectCollaborator($item, $ctx);
+
         $ctx->advance(LoopStage::Collaborate);
         $ctx->start($item->workItem->id);
         $this->emit($ctx, CollabEvent::record(EventKind::WorkItemStarted, workItem: $item->workItem));
 
         $running = $ctx->plan->item($item->workItem->id);
-        $collaborator = $this->selectCollaborator($running, $ctx);
         try {
             $result = $collaborator($running, $ctx);
         } catch (\Phalanx\Cancellation\Cancelled $cancelled) {
@@ -267,10 +268,12 @@ final class CollaborationLoop
         $previous = $ctx->stage;
         $ctx->advance(LoopStage::React);
 
-        foreach ($this->reactors as $reactor) {
-            $reactor($event, $ctx);
+        try {
+            foreach ($this->reactors as $reactor) {
+                $reactor($event, $ctx);
+            }
+        } finally {
+            $ctx->advance($previous);
         }
-
-        $ctx->advance($previous);
     }
 }

@@ -79,15 +79,25 @@ final class TheatronCollabBoundaryTest extends TestCase
     public function collabOwnsTheAthenaPanoplyAdapterInternally(): void
     {
         $root = dirname(__DIR__, 2);
-        $adapter = $root . '/src/Theatron/src/Collab/Adapters/Athena/AthenaCollaborator.php';
         $offenders = [];
+        $adapterImportsAthena = false;
+        $adapterImportsPanoply = false;
 
-        self::assertFileExists($adapter);
+        self::assertTrue(class_exists(\Phalanx\Theatron\Collab\Adapters\Athena\AthenaCollaborator::class));
+        self::assertTrue(is_a(
+            \Phalanx\Theatron\Collab\Adapters\Athena\AthenaCollaborator::class,
+            \Phalanx\Theatron\Collab\Participants\Collaborator::class,
+            true,
+        ));
 
-        $source = self::read($adapter);
+        foreach (self::sourceFiles($root . '/src/Theatron/src/Collab/Adapters') as $file) {
+            $source = self::read($file);
+            $adapterImportsAthena = $adapterImportsAthena || str_contains($source, 'Phalanx\\Athena\\');
+            $adapterImportsPanoply = $adapterImportsPanoply || str_contains($source, 'Phalanx\\Panoply\\');
+        }
 
-        self::assertStringContainsString('Phalanx\\Athena\\', $source);
-        self::assertStringContainsString('Phalanx\\Panoply\\', $source);
+        self::assertTrue($adapterImportsAthena, 'A Collab adapter should own Athena integration.');
+        self::assertTrue($adapterImportsPanoply, 'A Collab adapter should own Panoply integration.');
 
         foreach (self::sourceFiles($root . '/src/Theatron/src/Collab') as $file) {
             if (str_contains(self::relative($root, $file), 'src/Theatron/src/Collab/Adapters/')) {

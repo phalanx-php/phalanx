@@ -7,6 +7,7 @@ namespace Phalanx\Theatron\Tests\Unit\Collab\Adapters\Athena;
 use Phalanx\Athena\Activity\Config;
 use Phalanx\Athena\Activity\Result;
 use Phalanx\Athena\Activity\State;
+use Phalanx\Athena\Hook\StepHook;
 use Phalanx\Athena\Turn\Outcome;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Panoply\Agent;
@@ -52,6 +53,53 @@ final class AthenaCollaboratorTest extends TestCase
         self::assertSame('Patch the failing test.', self::firstUserMessage($runner->log));
         self::assertSame('cue.output.token_delta', $result->payload['cues'][0]['type']);
     }
+
+    #[Test]
+    public function collaboratorPassesAthenaConfigScopeAndAgentThroughTheRunner(): void
+    {
+        $runner = new CapturingAthenaRunner(self::activityResult());
+        $scope = $this->createStub(TaskScope::class);
+        $agent = self::agent('agent-a');
+        $context = Context::new()->front(self::class);
+        $hook = $this->createStub(StepHook::class);
+        $collaborator = new AthenaCollaborator(
+            agent: $agent,
+            context: $context,
+            maxInvocations: 5,
+            timeoutSeconds: 2.5,
+            hooks: [$hook],
+            runner: $runner,
+        );
+
+        $collaborator(
+            WorkPlanItem::pending(new WorkItem(Activity::Editing, 'Patch code', id: 'work_patch')),
+            new WorkContext($scope),
+        );
+
+        self::assertSame($scope, $runner->scope);
+        self::assertSame($agent, $runner->agent);
+        self::assertSame('work_patch', $runner->config?->id);
+        self::assertSame($context, $runner->config?->context);
+        self::assertSame(5, $runner->config?->maxInvocations);
+        self::assertSame(2.5, $runner->config?->timeoutSeconds);
+        self::assertSame([$hook], $runner->config?->hooks);
+    }
+
+    #[Test]
+    public function collaboratorUsesAgentContextByDefault(): void
+    {
+        $runner = new CapturingAthenaRunner(self::activityResult());
+        $agent = self::agent('agent-a');
+        $collaborator = new AthenaCollaborator($agent, runner: $runner);
+
+        $collaborator(
+            WorkPlanItem::pending(new WorkItem(Activity::Editing, 'Patch code', id: 'work_patch')),
+            new WorkContext($this->createStub(TaskScope::class)),
+        );
+
+        self::assertSame($agent->context->toCanonical(), $runner->config?->context->toCanonical());
+    }
+
 
     #[Test]
     public function suspendedAthenaResultBecomesBlockedWork(): void
@@ -178,6 +226,10 @@ final class AthenaCollaboratorTest extends TestCase
 
 final class CapturingAthenaRunner implements AthenaRunner
 {
+    public ?TaskScope $scope = null;
+
+    public ?Agent $agent = null;
+
     public ?Config $config = null;
 
     public ?Log $log = null;
@@ -188,6 +240,8 @@ final class CapturingAthenaRunner implements AthenaRunner
 
     public function __invoke(TaskScope $scope, Agent $agent, Config $config, ?Log $log = null): Result
     {
+        $this->scope = $scope;
+        $this->agent = $agent;
         $this->config = $config;
         $this->log = $log;
 

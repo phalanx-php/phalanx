@@ -15,6 +15,7 @@ use Phalanx\Theatron\Collab\Participants\Reactor;
 use Phalanx\Theatron\Collab\Participants\Reviewer;
 use Phalanx\Theatron\Collab\Plans\Activity;
 use Phalanx\Theatron\Collab\Plans\WorkItem;
+use Phalanx\Theatron\Collab\Plans\WorkItemStatus;
 use Phalanx\Theatron\Collab\Plans\WorkPlan;
 use Phalanx\Theatron\Collab\Plans\WorkPlanItem;
 use Phalanx\Theatron\Collab\Plans\WorkPlanStatus;
@@ -157,7 +158,59 @@ final class CollaborationLoopTest extends TestCase
         $this->expectException(\LogicException::class);
         $this->expectExceptionMessage('No collaborator supports work item "work_patch".');
 
-        $loop($ctx);
+        try {
+            $loop($ctx);
+        } finally {
+            self::assertSame(WorkItemStatus::Pending, $ctx->plan->item('work_patch')->status);
+        }
+    }
+
+    #[Test]
+    public function collaboratorFailureBecomesInterruptedFailedWork(): void
+    {
+        $events = new \ArrayObject();
+        $ctx = $this->ctx(WorkPlan::start(new WorkItem(Activity::Editing, 'Patch code', id: 'work_patch')));
+        $error = new \RuntimeException('tool failed');
+        $loop = new CollaborationLoop(
+            primary: self::throwingCollaborator($error),
+            reactors: [self::resultReactor($events)],
+        );
+
+        $status = $loop($ctx);
+
+        self::assertSame(WorkPlanStatus::Suspended, $status);
+        self::assertSame($error, $ctx->plan->item('work_patch')->result?->error);
+        self::assertSame([EventKind::WorkInterrupted], $events->getArrayCopy());
+    }
+
+    #[Test]
+    public function reactorFailureRestoresPreviousLoopStage(): void
+    {
+        $ctx = $this->ctx(WorkPlan::start(new WorkItem(Activity::Editing, 'Patch code', id: 'work_patch')));
+        $error = new \RuntimeException('reactor failed');
+        $loop = new CollaborationLoop(
+            primary: self::doneCollaborator('primary', new \ArrayObject()),
+            reactors: [
+                new class ($error) implements Reactor {
+                    public function __construct(private \RuntimeException $error)
+                    {
+                    }
+
+                    public function __invoke(CollabEvent $event, WorkContext $ctx): void
+                    {
+                        throw $this->error;
+                    }
+                },
+            ],
+        );
+
+        try {
+            $loop($ctx);
+            self::fail('Expected reactor failure to bubble.');
+        } catch (\RuntimeException $caught) {
+            self::assertSame($error, $caught);
+            self::assertSame(LoopStage::Receive, $ctx->stage);
+        }
     }
 
     #[Test]
@@ -281,6 +334,25 @@ final class CollaborationLoopTest extends TestCase
         };
     }
 
+    private static function throwingCollaborator(\Throwable $error): Collaborator
+    {
+        return new class ($error) implements Collaborator {
+            public function __construct(private \Throwable $error)
+            {
+            }
+
+            public function __invoke(WorkPlanItem $item, WorkContext $ctx): WorkResult
+            {
+                throw $this->error;
+            }
+
+            public function supports(WorkPlanItem $item, WorkContext $ctx): bool
+            {
+                return true;
+            }
+        };
+    }
+
     private static function reactor(\ArrayObject $events, \ArrayObject $stages): Reactor
     {
         return new class ($events, $stages) implements Reactor {
@@ -295,6 +367,22 @@ final class CollaborationLoopTest extends TestCase
             {
                 $this->events[] = $event->kind;
                 $this->stages[] = $ctx->stage;
+            }
+        };
+    }
+
+    private static function resultReactor(\ArrayObject $events): Reactor
+    {
+        return new class ($events) implements Reactor {
+            public function __construct(private \ArrayObject $events)
+            {
+            }
+
+            public function __invoke(CollabEvent $event, WorkContext $ctx): void
+            {
+                if ($event->workResult !== null) {
+                    $this->events[] = $event->kind;
+                }
             }
         };
     }
