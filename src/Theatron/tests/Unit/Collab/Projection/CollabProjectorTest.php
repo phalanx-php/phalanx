@@ -72,6 +72,49 @@ final class CollabProjectorTest extends TestCase
     }
 
     #[Test]
+    public function projectsPreparedWorkIntoThePlan(): void
+    {
+        $store = new CollabStore();
+        $projector = new CollabProjector();
+
+        $projector->project(CollabEvent::record(
+            EventKind::WorkPrepared,
+            workItem: new WorkItem(Activity::Testing, 'Add focused tests', id: 'work_tests'),
+            id: 'evt_prepared',
+        ), $store);
+
+        self::assertSame(LoopStage::Prepare, $store->loop->stage);
+        self::assertSame('work_tests', $store->workPlan->plan->item('work_tests')->workItem->id);
+    }
+
+    #[Test]
+    public function projectsRuntimeContextAndParticipantMetadata(): void
+    {
+        $store = new CollabStore();
+        $projector = new CollabProjector();
+
+        $projector->project(CollabEvent::record(
+            EventKind::WorkReceived,
+            context: [
+                'runtime_session_id' => 'session_a',
+                'runtime_replaying' => true,
+                'runtime_health' => 'ready',
+                'context_pressure' => 42,
+                'context_active_focus' => 'work_tests',
+                'participants' => ['primary', 'reviewer'],
+            ],
+            id: 'evt_received',
+        ), $store);
+
+        self::assertSame('session_a', $store->runtime->sessionId);
+        self::assertTrue($store->runtime->replaying);
+        self::assertSame('ready', $store->runtime->health);
+        self::assertSame(42, $store->context->pressure);
+        self::assertSame('work_tests', $store->context->activeFocus);
+        self::assertSame(['primary', 'reviewer'], $store->participants->participants);
+    }
+
+    #[Test]
     public function projectsStartedAndCompletedWorkIntoPlan(): void
     {
         $store = new CollabStore();
@@ -179,16 +222,11 @@ final class CollabProjectorTest extends TestCase
         $projector = new CollabProjector();
 
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('requires a work item');
+        $this->expectExceptionMessage('requires an envelope');
 
         $projector->project(CollabEvent::record(
             EventKind::WorkReceived,
-            envelope: Envelope::make(
-                from: Address::user(),
-                to: Address::agent('primary'),
-                kind: MessageKind::Prompt,
-                payload: 'Draft TC-8A',
-            ),
+            workItem: new WorkItem(Activity::Thinking, 'Draft TC-8B', id: 'work_prompt'),
         ), new CollabStore());
     }
 

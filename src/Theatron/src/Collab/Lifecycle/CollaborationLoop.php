@@ -69,8 +69,6 @@ final class CollaborationLoop
 
             $verdict = $this->review($ctx);
             if ($verdict->isRejected()) {
-                $ctx->abort($verdict->reason ?? 'Review rejected the completed work.');
-
                 return $ctx->plan->status;
             }
 
@@ -80,13 +78,10 @@ final class CollaborationLoop
                     throw new \LogicException('Collaboration loop exceeded the maximum review passes.');
                 }
 
-                $ctx->append(...$verdict->requiredWork);
-
                 continue;
             }
 
-            $ctx->advance(LoopStage::Complete);
-            $this->emit($ctx, CollabEvent::record(EventKind::WorkCompleted));
+            $this->projectAndEmit($ctx, CollabEvent::record(EventKind::WorkCompleted));
 
             return $ctx->plan->status;
         }
@@ -162,11 +157,9 @@ final class CollaborationLoop
 
     private function receive(WorkContext $ctx): void
     {
-        $ctx->advance(LoopStage::Receive);
-
         $received = $ctx->drainProjectedEvents(EventKind::WorkReceived);
         if ($received === []) {
-            $this->emit($ctx, CollabEvent::record(EventKind::WorkReceived));
+            $this->projectAndEmit($ctx, CollabEvent::record(EventKind::WorkReceived));
 
             return;
         }
@@ -183,7 +176,16 @@ final class CollaborationLoop
             $preparer($ctx);
         }
 
-        $this->emit($ctx, CollabEvent::record(EventKind::WorkPrepared));
+        $prepared = $ctx->drainProjectedEvents(EventKind::WorkPrepared);
+        if ($prepared === []) {
+            $this->projectAndEmit($ctx, CollabEvent::record(EventKind::WorkPrepared));
+
+            return;
+        }
+
+        foreach ($prepared as $event) {
+            $this->emit($ctx, $event);
+        }
     }
 
     private function collaborate(WorkContext $ctx): WorkPlanStatus
@@ -194,8 +196,7 @@ final class CollaborationLoop
                 return $ctx->plan->status;
             }
 
-            $ctx->advance(LoopStage::Distribute);
-            $this->emit($ctx, CollabEvent::record(EventKind::WorkDistributed));
+            $this->projectAndEmit($ctx, CollabEvent::record(EventKind::WorkDistributed));
 
             foreach ($ready as $item) {
                 $this->collaborateOn($ctx, $item);
@@ -216,9 +217,7 @@ final class CollaborationLoop
 
         $collaborator = $this->selectCollaborator($item, $ctx);
 
-        $ctx->advance(LoopStage::Collaborate);
-        $ctx->start($item->workItem->id);
-        $this->emit($ctx, CollabEvent::record(EventKind::WorkItemStarted, workItem: $item->workItem));
+        $this->projectAndEmit($ctx, CollabEvent::record(EventKind::WorkItemStarted, workItem: $item->workItem));
 
         $running = $ctx->plan->item($item->workItem->id);
         try {
@@ -229,9 +228,8 @@ final class CollaborationLoop
             $result = WorkResult::failed($item->workItem->id, $error);
         }
 
-        $ctx->fulfill($item->workItem->id, $result);
         $kind = $result->isDone() ? EventKind::WorkItemCompleted : EventKind::WorkInterrupted;
-        $this->emit($ctx, CollabEvent::record($kind, workItem: $item->workItem, workResult: $result));
+        $this->projectAndEmit($ctx, CollabEvent::record($kind, workItem: $item->workItem, workResult: $result));
     }
 
     private function selectCollaborator(WorkPlanItem $item, WorkContext $ctx): Collaborator
@@ -254,16 +252,14 @@ final class CollaborationLoop
         $ctx->advance(LoopStage::Review);
         if ($this->reviewers === []) {
             $verdict = ReviewVerdict::approve();
-            $ctx->review($verdict);
-            $this->emit($ctx, CollabEvent::record(EventKind::WorkReviewed, reviewVerdict: $verdict));
+            $this->projectAndEmit($ctx, CollabEvent::record(EventKind::WorkReviewed, reviewVerdict: $verdict));
 
             return $verdict;
         }
 
         foreach ($this->reviewers as $reviewer) {
             $verdict = $reviewer($ctx);
-            $ctx->review($verdict);
-            $this->emit($ctx, CollabEvent::record(EventKind::WorkReviewed, reviewVerdict: $verdict));
+            $this->projectAndEmit($ctx, CollabEvent::record(EventKind::WorkReviewed, reviewVerdict: $verdict));
 
             if (!$verdict->isApproved()) {
                 return $verdict;
@@ -271,6 +267,13 @@ final class CollaborationLoop
         }
 
         return ReviewVerdict::approve();
+    }
+
+    private function projectAndEmit(WorkContext $ctx, CollabEvent $event): void
+    {
+        $ctx->project($event);
+        $ctx->drainProjectedEvents($event->kind);
+        $this->emit($ctx, $event);
     }
 
     private function emit(WorkContext $ctx, CollabEvent $event): void

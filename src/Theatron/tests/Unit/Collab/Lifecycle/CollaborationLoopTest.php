@@ -20,8 +20,10 @@ use Phalanx\Theatron\Collab\Plans\WorkPlan;
 use Phalanx\Theatron\Collab\Plans\WorkPlanItem;
 use Phalanx\Theatron\Collab\Plans\WorkPlanStatus;
 use Phalanx\Theatron\Collab\Plans\WorkResult;
+use Phalanx\Theatron\Collab\Projection\CollabReplay;
 use Phalanx\Theatron\Collab\Reviews\ReviewVerdict;
 use Phalanx\Theatron\Collab\State\CollabStore;
+use Phalanx\Theatron\Collab\State\TimelineEntry;
 use Phalanx\Theatron\Collab\State\WorkPlanSlice;
 use Phalanx\Theatron\Collab\WorkContext;
 use PHPUnit\Framework\Attributes\Test;
@@ -84,6 +86,47 @@ final class CollaborationLoopTest extends TestCase
 
         self::assertSame(WorkPlanStatus::Complete, $status);
         self::assertSame(['php-specialist:work_patch'], $calls->getArrayCopy());
+    }
+
+    #[Test]
+    public function fullLoopEventStreamReplaysToEquivalentStore(): void
+    {
+        $events = new LoopEventLog();
+        $liveStore = new CollabStore();
+        $ctx = new WorkContext($this->createStub(TaskScope::class), $liveStore);
+        $loop = new CollaborationLoop(
+            primary: self::doneCollaborator('primary', new \ArrayObject()),
+            preparers: [self::preparer(new WorkItem(Activity::Testing, 'Run tests', id: 'work_a'))],
+            reactors: [self::eventCapture($events)],
+        );
+
+        $status = $loop($ctx);
+        $replayed = new CollabReplay()->replay($events->events);
+
+        self::assertSame(WorkPlanStatus::Complete, $status);
+        self::assertSame(self::planRows($liveStore), self::planRows($replayed));
+        self::assertSame(self::timelineRows($liveStore), self::timelineRows($replayed));
+        self::assertSame(
+            array_map(static fn (ReviewVerdict $verdict): string => $verdict->status->value, $liveStore->reviews->verdicts),
+            array_map(static fn (ReviewVerdict $verdict): string => $verdict->status->value, $replayed->reviews->verdicts),
+        );
+    }
+
+    #[Test]
+    public function preparerAddedWorkIsReplayable(): void
+    {
+        $events = new LoopEventLog();
+        $ctx = $this->ctx();
+        $loop = new CollaborationLoop(
+            primary: self::doneCollaborator('primary', new \ArrayObject()),
+            preparers: [self::preparer(new WorkItem(Activity::Testing, 'Run tests', id: 'work_a'))],
+            reactors: [self::eventCapture($events)],
+        );
+
+        $loop($ctx);
+        $replayed = new CollabReplay()->replay($events->events);
+
+        self::assertSame(WorkItemStatus::Done, $replayed->workPlan->plan->item('work_a')->status);
     }
 
     #[Test]
@@ -219,14 +262,14 @@ final class CollaborationLoopTest extends TestCase
         $ctx = $this->ctx(WorkPlan::start(new WorkItem(Activity::Researching, 'Wait for token', id: 'work_wait')));
         $loop = new CollaborationLoop(
             primary: new class implements Collaborator {
-                public function supports(WorkPlanItem $item, WorkContext $ctx): bool
-                {
-                    return true;
-                }
-
                 public function __invoke(WorkPlanItem $item, WorkContext $ctx): WorkResult
                 {
                     return WorkResult::blocked($item->workItem->id, 'missing token');
+                }
+
+                public function supports(WorkPlanItem $item, WorkContext $ctx): bool
+                {
+                    return true;
                 }
             },
         );
@@ -237,14 +280,34 @@ final class CollaborationLoopTest extends TestCase
         self::assertSame('missing token', $ctx->plan->item('work_wait')->blockedReason);
     }
 
-    private function ctx(?WorkPlan $plan = null): WorkContext
+    /**
+     * @return list<array{id: string, status: string}>
+     */
+    private static function planRows(CollabStore $store): array
     {
-        $store = new CollabStore();
-        if ($plan !== null) {
-            $store->workPlan = new WorkPlanSlice($plan);
-        }
+        return array_map(
+            static fn (WorkPlanItem $item): array => [
+                'id' => $item->workItem->id,
+                'status' => $item->status->value,
+            ],
+            $store->workPlan->plan->items(),
+        );
+    }
 
-        return new WorkContext($this->createStub(TaskScope::class), $store);
+    /**
+     * @return list<array{kind: string, summary: string, work: ?string, status: ?string}>
+     */
+    private static function timelineRows(CollabStore $store): array
+    {
+        return array_map(
+            static fn (TimelineEntry $entry): array => [
+                'kind' => $entry->kind->value,
+                'summary' => $entry->summary,
+                'work' => $entry->workItemId,
+                'status' => $entry->status,
+            ],
+            $store->messages->entries,
+        );
     }
 
     private static function preparer(WorkItem $item): Preparer
@@ -261,18 +324,15 @@ final class CollaborationLoopTest extends TestCase
         };
     }
 
+    /** @param \ArrayObject<int, string> $calls */
     private static function doneCollaborator(string $name, \ArrayObject $calls): Collaborator
     {
         return new class ($name, $calls) implements Collaborator {
+            /** @param \ArrayObject<int, string> $calls */
             public function __construct(
                 private string $name,
                 private \ArrayObject $calls,
             ) {
-            }
-
-            public function supports(WorkPlanItem $item, WorkContext $ctx): bool
-            {
-                return true;
             }
 
             public function __invoke(WorkPlanItem $item, WorkContext $ctx): WorkResult
@@ -281,12 +341,19 @@ final class CollaborationLoopTest extends TestCase
 
                 return WorkResult::done($item->workItem->id, summary: 'done');
             }
+
+            public function supports(WorkPlanItem $item, WorkContext $ctx): bool
+            {
+                return true;
+            }
         };
     }
 
+    /** @param \ArrayObject<int, string> $calls */
     private static function tagCollaborator(string $name, string $tag, \ArrayObject $calls): Collaborator
     {
         return new class ($name, $tag, $calls) implements Collaborator {
+            /** @param \ArrayObject<int, string> $calls */
             public function __construct(
                 private string $name,
                 private string $tag,
@@ -294,23 +361,25 @@ final class CollaborationLoopTest extends TestCase
             ) {
             }
 
-            public function supports(WorkPlanItem $item, WorkContext $ctx): bool
-            {
-                return in_array($this->tag, $item->workItem->tags, true);
-            }
-
             public function __invoke(WorkPlanItem $item, WorkContext $ctx): WorkResult
             {
                 $this->calls[] = $this->name . ':' . $item->workItem->id;
 
                 return WorkResult::done($item->workItem->id, summary: 'done');
             }
+
+            public function supports(WorkPlanItem $item, WorkContext $ctx): bool
+            {
+                return in_array($this->tag, $item->workItem->tags, true);
+            }
         };
     }
 
+    /** @param \ArrayObject<int, string> $calls */
     private static function preferredCollaborator(string $name, string $agentId, \ArrayObject $calls): Collaborator
     {
         return new class ($name, $agentId, $calls) implements Collaborator {
+            /** @param \ArrayObject<int, string> $calls */
             public function __construct(
                 private string $name,
                 private string $agentId,
@@ -353,14 +422,21 @@ final class CollaborationLoopTest extends TestCase
         };
     }
 
+    /**
+     * @param \ArrayObject<int, EventKind> $events
+     * @param \ArrayObject<int, LoopStage> $stages
+     */
     private static function reactor(\ArrayObject $events, \ArrayObject $stages): Reactor
     {
         return new class ($events, $stages) implements Reactor {
+            /**
+             * @param \ArrayObject<int, EventKind> $events
+             * @param \ArrayObject<int, LoopStage> $stages
+             */
             public function __construct(
                 private \ArrayObject $events,
                 private \ArrayObject $stages,
-            )
-            {
+            ) {
             }
 
             public function __invoke(CollabEvent $event, WorkContext $ctx): void
@@ -371,9 +447,25 @@ final class CollaborationLoopTest extends TestCase
         };
     }
 
+    private static function eventCapture(LoopEventLog $events): Reactor
+    {
+        return new class ($events) implements Reactor {
+            public function __construct(private LoopEventLog $events)
+            {
+            }
+
+            public function __invoke(CollabEvent $event, WorkContext $ctx): void
+            {
+                $this->events->record($event);
+            }
+        };
+    }
+
+    /** @param \ArrayObject<int, EventKind> $events */
     private static function resultReactor(\ArrayObject $events): Reactor
     {
         return new class ($events) implements Reactor {
+            /** @param \ArrayObject<int, EventKind> $events */
             public function __construct(private \ArrayObject $events)
             {
             }
@@ -385,5 +477,26 @@ final class CollaborationLoopTest extends TestCase
                 }
             }
         };
+    }
+
+    private function ctx(?WorkPlan $plan = null): WorkContext
+    {
+        $store = new CollabStore();
+        if ($plan !== null) {
+            $store->workPlan = new WorkPlanSlice($plan);
+        }
+
+        return new WorkContext($this->createStub(TaskScope::class), $store);
+    }
+}
+
+class LoopEventLog
+{
+    /** @var list<CollabEvent> */
+    private(set) array $events = [];
+
+    public function record(CollabEvent $event): void
+    {
+        $this->events[] = $event;
     }
 }

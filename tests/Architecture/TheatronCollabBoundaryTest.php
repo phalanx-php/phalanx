@@ -186,6 +186,36 @@ final class TheatronCollabBoundaryTest extends TestCase
     }
 
     #[Test]
+    public function collaborationLoopDoesNotBypassProjectedDomainState(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $source = self::read($root . '/src/Theatron/src/Collab/Lifecycle/CollaborationLoop.php');
+
+        foreach (['$ctx->append(', '$ctx->start(', '$ctx->fulfill(', '$ctx->abort(', '$ctx->review('] as $token) {
+            self::assertStringNotContainsString($token, $source);
+        }
+    }
+
+    #[Test]
+    public function genericTuiDoesNotImportCollabState(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $offenders = [];
+
+        foreach (self::sourceFiles($root . '/src/Theatron/src/Tui') as $file) {
+            if (str_contains(self::read($file), 'Phalanx\\Theatron\\Collab\\')) {
+                $offenders[] = self::relative($root, $file);
+            }
+        }
+
+        self::assertSame(
+            [],
+            $offenders,
+            "Generic Tui must stay Collab-agnostic; Collab screens can import Tui, not the reverse:\n" . implode("\n", $offenders),
+        );
+    }
+
+    #[Test]
     public function theatronSourceDoesNotKeepStaleHarnessOrGenericReactorSurfaces(): void
     {
         $root = dirname(__DIR__, 2);

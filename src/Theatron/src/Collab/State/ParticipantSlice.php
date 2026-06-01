@@ -16,4 +16,22 @@ final class ParticipantSlice
     {
         $this->participants = array_values($participants);
     }
+
+    public function register(string ...$participants): self
+    {
+        $next = $this->participants;
+
+        foreach ($participants as $participant) {
+            $participant = trim($participant);
+            if ($participant === '') {
+                throw new \InvalidArgumentException('Participant id cannot be empty.');
+            }
+
+            if (!in_array($participant, $next, true)) {
+                $next[] = $participant;
+            }
+        }
+
+        return new self($next);
+    }
 }

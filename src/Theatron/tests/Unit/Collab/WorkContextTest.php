@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Theatron\Tests\Unit\Collab;
 
 use Phalanx\Scope\TaskScope;
+use Phalanx\Theatron\Collab\Events\EventKind;
 use Phalanx\Theatron\Collab\Lifecycle\LoopStage;
 use Phalanx\Theatron\Collab\Messages\Envelope;
 use Phalanx\Theatron\Collab\Plans\Activity;
@@ -35,7 +36,7 @@ final class WorkContextTest extends TestCase
     }
 
     #[Test]
-    public function recordAppendsAnEnvelopeToTheMessageTimeline(): void
+    public function recordProjectsAnEnvelopeToTheMessageTimeline(): void
     {
         $store = new CollabStore();
         $ctx = new WorkContext($this->createStub(TaskScope::class), $store);
@@ -45,10 +46,11 @@ final class WorkContextTest extends TestCase
 
         self::assertSame([$envelope], $slice->envelopes);
         self::assertSame([$envelope], $store->messages->envelopes);
+        self::assertSame(EventKind::WorkReceived, $ctx->drainProjectedEvents()[0]->kind);
     }
 
     #[Test]
-    public function fulfillCompletesRunningWorkAndRecordsResultEnvelopes(): void
+    public function fulfillProjectsRunningWorkAndResultEnvelopes(): void
     {
         $store = new CollabStore();
         $plan = WorkPlan::start(new WorkItem(Activity::Testing, 'Run focused tests', id: 'tc-4a'));
@@ -64,10 +66,11 @@ final class WorkContextTest extends TestCase
         self::assertSame(WorkItemStatus::Done, $slice->plan->item('tc-4a')->status);
         self::assertSame(WorkItemStatus::Done, $ctx->plan->item('tc-4a')->status);
         self::assertSame([$envelope], $store->messages->envelopes);
+        self::assertSame(EventKind::WorkItemCompleted, $ctx->drainProjectedEvents()[0]->kind);
     }
 
     #[Test]
-    public function appendAndStartMutateWorkPlanThroughTheStore(): void
+    public function appendAndStartProjectWorkPlanChanges(): void
     {
         $store = new CollabStore();
         $ctx = new WorkContext($this->createStub(TaskScope::class), $store);
@@ -77,10 +80,17 @@ final class WorkContextTest extends TestCase
 
         self::assertSame(WorkItemStatus::Running, $slice->plan->item('tc-5a')->status);
         self::assertSame(WorkItemStatus::Running, $store->workPlan->plan->item('tc-5a')->status);
+        self::assertSame(
+            [EventKind::WorkPrepared, EventKind::WorkItemStarted],
+            array_map(
+                static fn ($event): EventKind => $event->kind,
+                $ctx->drainProjectedEvents(),
+            ),
+        );
     }
 
     #[Test]
-    public function reviewRecordsVerdictsThroughTheStore(): void
+    public function reviewProjectsVerdictsThroughTheStore(): void
     {
         $store = new CollabStore();
         $ctx = new WorkContext($this->createStub(TaskScope::class), $store);
@@ -90,10 +100,11 @@ final class WorkContextTest extends TestCase
 
         self::assertSame([$verdict], $slice->verdicts);
         self::assertSame([$verdict], $store->reviews->verdicts);
+        self::assertSame(EventKind::WorkReviewed, $ctx->drainProjectedEvents()[0]->kind);
     }
 
     #[Test]
-    public function abortMovesPlanToAbortedThroughTheStore(): void
+    public function abortProjectsARejectedReviewVerdict(): void
     {
         $store = new CollabStore();
         $plan = WorkPlan::start(new WorkItem(Activity::Testing, 'Run focused tests', id: 'tc-5a'));
@@ -104,6 +115,26 @@ final class WorkContextTest extends TestCase
 
         self::assertSame('review rejected the result', $slice->plan->statusReason);
         self::assertSame('review rejected the result', $store->workPlan->plan->statusReason);
+        self::assertSame(EventKind::WorkReviewed, $ctx->drainProjectedEvents()[0]->kind);
+    }
+
+    #[Test]
+    public function failedProjectionLeavesStoreUntouched(): void
+    {
+        $store = new CollabStore();
+        $ctx = new WorkContext($this->createStub(TaskScope::class), $store);
+
+        $ctx->append(new WorkItem(Activity::Testing, 'Run focused tests', id: 'tc-5a'));
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('already exists in this plan');
+
+        try {
+            $ctx->append(new WorkItem(Activity::Testing, 'Duplicate tests', id: 'tc-5a'));
+        } finally {
+            self::assertCount(1, $store->workPlan->plan->items());
+            self::assertSame('Run focused tests', $store->workPlan->plan->item('tc-5a')->workItem->prompt);
+        }
     }
 
     #[Test]

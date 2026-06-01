@@ -11,9 +11,12 @@ use Phalanx\Theatron\Collab\Plans\WorkItem;
 use Phalanx\Theatron\Collab\Plans\WorkResult;
 use Phalanx\Theatron\Collab\Reviews\ReviewVerdict;
 use Phalanx\Theatron\Collab\State\CollabStore;
+use Phalanx\Theatron\Collab\State\ContextSlice;
 use Phalanx\Theatron\Collab\State\LoopSlice;
 use Phalanx\Theatron\Collab\State\MessageTimelineSlice;
+use Phalanx\Theatron\Collab\State\ParticipantSlice;
 use Phalanx\Theatron\Collab\State\ReviewSlice;
+use Phalanx\Theatron\Collab\State\RuntimeSlice;
 use Phalanx\Theatron\Collab\State\WorkPlanSlice;
 
 final class CollabProjector
@@ -32,7 +35,7 @@ final class CollabProjector
         $store->transaction(function () use ($event, $store): void {
             match ($event->kind) {
                 EventKind::WorkReceived => $this->projectReceived($event, $store),
-                EventKind::WorkPrepared,
+                EventKind::WorkPrepared => $this->projectPrepared($event, $store),
                 EventKind::WorkDistributed,
                 EventKind::WorkCompleted => null,
                 EventKind::WorkItemStarted => $this->projectStarted($event, $store),
@@ -48,6 +51,7 @@ final class CollabProjector
             };
 
             $this->projectStage($event, $store);
+            $this->projectMetadata($event, $store);
         });
 
         return $store;
@@ -96,16 +100,34 @@ final class CollabProjector
             return;
         }
 
+        if ($event->workItem !== null) {
+            $workItem = $this->requireWorkItem($event);
+
+            $store->mutate(
+                WorkPlanSlice::class,
+                static fn (WorkPlanSlice $slice): WorkPlanSlice => $slice->append($workItem),
+            );
+        }
+
+        if ($event->envelope !== null) {
+            $store->mutate(
+                MessageTimelineSlice::class,
+                static fn (MessageTimelineSlice $slice): MessageTimelineSlice => $slice->project($event),
+            );
+        }
+    }
+
+    private function projectPrepared(CollabEvent $event, CollabStore $store): void
+    {
+        if ($event->workItem === null) {
+            return;
+        }
+
         $workItem = $this->requireWorkItem($event);
 
         $store->mutate(
             WorkPlanSlice::class,
             static fn (WorkPlanSlice $slice): WorkPlanSlice => $slice->append($workItem),
-        );
-
-        $store->mutate(
-            MessageTimelineSlice::class,
-            static fn (MessageTimelineSlice $slice): MessageTimelineSlice => $slice->project($event),
         );
     }
 
@@ -178,14 +200,102 @@ final class CollabProjector
         );
     }
 
+    private function projectMetadata(CollabEvent $event, CollabStore $store): void
+    {
+        $this->projectRuntimeMetadata($event->context, $store);
+        $this->projectContextMetadata($event->context, $store);
+        $this->projectParticipantMetadata($event->context, $store);
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    private function projectRuntimeMetadata(array $context, CollabStore $store): void
+    {
+        if (
+            !array_key_exists('runtime_session_id', $context)
+            && !array_key_exists('runtime_replaying', $context)
+            && !array_key_exists('runtime_health', $context)
+        ) {
+            return;
+        }
+
+        $sessionId = $this->optionalString($context, 'runtime_session_id');
+        $replaying = $this->optionalBool($context, 'runtime_replaying');
+        $health = $this->optionalString($context, 'runtime_health');
+
+        $store->mutate(
+            RuntimeSlice::class,
+            static fn (RuntimeSlice $slice): RuntimeSlice => $slice->update(
+                sessionId: $sessionId,
+                replaying: $replaying,
+                health: $health,
+            ),
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    private function projectContextMetadata(array $context, CollabStore $store): void
+    {
+        if (
+            !array_key_exists('context_pressure', $context)
+            && !array_key_exists('context_active_focus', $context)
+        ) {
+            return;
+        }
+
+        $pressure = $this->optionalInt($context, 'context_pressure');
+        $activeFocus = $this->optionalString($context, 'context_active_focus');
+
+        $store->mutate(
+            ContextSlice::class,
+            static fn (ContextSlice $slice): ContextSlice => $slice->update(
+                pressure: $pressure,
+                activeFocus: $activeFocus,
+            ),
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    private function projectParticipantMetadata(array $context, CollabStore $store): void
+    {
+        if (!array_key_exists('participants', $context)) {
+            return;
+        }
+
+        $participants = $context['participants'];
+        if (!is_array($participants)) {
+            throw new \InvalidArgumentException('Projected participants context must be a list of strings.');
+        }
+
+        $ids = [];
+        foreach ($participants as $participant) {
+            if (!is_string($participant)) {
+                throw new \InvalidArgumentException('Projected participants context must be a list of strings.');
+            }
+
+            $ids[] = $participant;
+        }
+
+        $store->mutate(
+            ParticipantSlice::class,
+            static fn (ParticipantSlice $slice): ParticipantSlice => $slice->register(...$ids),
+        );
+    }
+
     private function validateReceived(CollabEvent $event): void
     {
         if ($event->envelope === null && $event->workItem === null) {
             return;
         }
 
-        $this->requireEnvelope($event);
-        $this->requireWorkItem($event);
+        if ($event->workItem !== null) {
+            $this->requireEnvelope($event);
+        }
     }
 
     private function validateResult(CollabEvent $event): void
@@ -242,5 +352,53 @@ final class CollabProjector
         return $event->reviewVerdict ?? throw new \InvalidArgumentException(
             'Collab event "work_reviewed" requires a review verdict for projection.',
         );
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    private function optionalString(array $context, string $key): ?string
+    {
+        if (!array_key_exists($key, $context)) {
+            return null;
+        }
+
+        if (!is_string($context[$key])) {
+            throw new \InvalidArgumentException(sprintf('Projected "%s" context must be a string.', $key));
+        }
+
+        return $context[$key];
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    private function optionalBool(array $context, string $key): ?bool
+    {
+        if (!array_key_exists($key, $context)) {
+            return null;
+        }
+
+        if (!is_bool($context[$key])) {
+            throw new \InvalidArgumentException(sprintf('Projected "%s" context must be a bool.', $key));
+        }
+
+        return $context[$key];
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    private function optionalInt(array $context, string $key): ?int
+    {
+        if (!array_key_exists($key, $context)) {
+            return null;
+        }
+
+        if (!is_int($context[$key])) {
+            throw new \InvalidArgumentException(sprintf('Projected "%s" context must be an int.', $key));
+        }
+
+        return $context[$key];
     }
 }

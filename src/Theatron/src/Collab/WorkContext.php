@@ -80,26 +80,26 @@ final class WorkContext
 
     public function record(Envelope $envelope): MessageTimelineSlice
     {
-        return $this->store->mutate(
-            MessageTimelineSlice::class,
-            static fn(MessageTimelineSlice $slice): MessageTimelineSlice => $slice->record($envelope),
-        );
+        $this->project(CollabEvent::record(EventKind::WorkReceived, envelope: $envelope));
+
+        return $this->store->messages;
     }
 
     public function append(WorkItem ...$items): WorkPlanSlice
     {
-        return $this->store->mutate(
-            WorkPlanSlice::class,
-            static fn(WorkPlanSlice $slice): WorkPlanSlice => $slice->append(...$items),
-        );
+        foreach ($items as $item) {
+            $this->project(CollabEvent::record(EventKind::WorkPrepared, workItem: $item));
+        }
+
+        return $this->store->workPlan;
     }
 
     public function start(string $itemId): WorkPlanSlice
     {
-        return $this->store->mutate(
-            WorkPlanSlice::class,
-            static fn(WorkPlanSlice $slice): WorkPlanSlice => $slice->start($itemId),
-        );
+        $item = $this->store->workPlan->plan->item($itemId);
+        $this->project(CollabEvent::record(EventKind::WorkItemStarted, workItem: $item->workItem));
+
+        return $this->store->workPlan;
     }
 
     public function fulfill(string $itemId, WorkResult $result): WorkPlanSlice
@@ -108,31 +108,33 @@ final class WorkContext
             throw new \InvalidArgumentException('Work result item id must match the fulfilled item.');
         }
 
-        $slice = $this->store->mutate(
-            WorkPlanSlice::class,
-            static fn(WorkPlanSlice $slice): WorkPlanSlice => $slice->fulfill($result),
-        );
+        $item = $this->store->workPlan->plan->item($itemId);
+        $this->project(CollabEvent::record(
+            $result->isDone() ? EventKind::WorkItemCompleted : EventKind::WorkInterrupted,
+            workItem: $item->workItem,
+            workResult: $result,
+        ));
 
-        foreach ($result->envelopes as $envelope) {
-            $this->record($envelope);
-        }
-
-        return $slice;
+        return $this->store->workPlan;
     }
 
     public function abort(string $reason): WorkPlanSlice
     {
-        return $this->store->mutate(
-            WorkPlanSlice::class,
-            static fn(WorkPlanSlice $slice): WorkPlanSlice => $slice->abort($reason),
-        );
+        $this->project(CollabEvent::record(
+            EventKind::WorkReviewed,
+            reviewVerdict: ReviewVerdict::reject($reason),
+        ));
+
+        return $this->store->workPlan;
     }
 
     public function review(ReviewVerdict $verdict): ReviewSlice
     {
-        return $this->store->mutate(
-            ReviewSlice::class,
-            static fn(ReviewSlice $slice): ReviewSlice => $slice->record($verdict),
-        );
+        $this->project(CollabEvent::record(
+            EventKind::WorkReviewed,
+            reviewVerdict: $verdict,
+        ));
+
+        return $this->store->reviews;
     }
 }
