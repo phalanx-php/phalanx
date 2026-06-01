@@ -9,11 +9,14 @@ use Phalanx\Theatron\Collab\Plans\WorkResult;
 
 final class WorkPlanSlice
 {
-    private(set) WorkPlan $plan;
+    /** clone-backed: WorkPlan is mutable, so readers cannot mutate store state out of band. */
+    private(set) WorkPlan $plan {
+        get => clone $this->plan;
+    }
 
     public function __construct(?WorkPlan $plan = null)
     {
-        $this->plan = $plan ?? WorkPlan::empty();
+        $this->plan = $plan === null ? WorkPlan::empty() : clone $plan;
     }
 
     public static function empty(): self
@@ -23,7 +26,7 @@ final class WorkPlanSlice
 
     public function fulfill(WorkResult $result): self
     {
-        $plan = clone $this->plan;
+        $plan = $this->plan;
         $plan->fulfill($result);
 
         return new self($plan);

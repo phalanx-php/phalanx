@@ -81,6 +81,7 @@ final class TheatronCollabBoundaryTest extends TestCase
     public function workContextKeepsTheCurrentMutationSurfaceSmall(): void
     {
         $methods = [];
+        $properties = [];
         $class = new \ReflectionClass(\Phalanx\Theatron\Collab\WorkContext::class);
 
         foreach ($class->getMethods(\ReflectionMethod::IS_PUBLIC) as $method) {
@@ -89,9 +90,27 @@ final class TheatronCollabBoundaryTest extends TestCase
             }
         }
 
+        foreach ($class->getProperties(\ReflectionProperty::IS_PUBLIC) as $property) {
+            if ($property->class === \Phalanx\Theatron\Collab\WorkContext::class) {
+                $properties[] = $property->name;
+            }
+        }
+
         sort($methods);
+        sort($properties);
 
         self::assertSame(['advance', 'fulfill', 'record'], $methods);
+        self::assertSame(['plan', 'scope', 'stage'], $properties);
+    }
+
+    #[Test]
+    public function workContextUsesNarrowTaskScope(): void
+    {
+        $constructor = new \ReflectionMethod(\Phalanx\Theatron\Collab\WorkContext::class, '__construct');
+        $scope = $constructor->getParameters()[0]->getType();
+
+        self::assertInstanceOf(\ReflectionNamedType::class, $scope);
+        self::assertSame(\Phalanx\Scope\TaskScope::class, $scope->getName());
     }
 
     #[Test]

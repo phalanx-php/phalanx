@@ -6,6 +6,9 @@ namespace Phalanx\Theatron\Tests\Unit\Collab\State;
 
 use Phalanx\Theatron\Collab\Lifecycle\LoopStage;
 use Phalanx\Theatron\Collab\Messages\Envelope;
+use Phalanx\Theatron\Collab\Plans\Activity;
+use Phalanx\Theatron\Collab\Plans\WorkItem;
+use Phalanx\Theatron\Collab\Plans\WorkPlan;
 use Phalanx\Theatron\Collab\State\CollabStore;
 use Phalanx\Theatron\Collab\State\ContextSlice;
 use Phalanx\Theatron\Collab\State\DevToolsSlice;
@@ -75,6 +78,20 @@ final class CollabStoreTest extends TestCase
 
         self::assertSame([], $original->envelopes);
         self::assertSame([$envelope], $next->envelopes);
+    }
+
+    #[Test]
+    public function workPlanSliceIsolatesMutablePlanInstances(): void
+    {
+        $plan = WorkPlan::start(new WorkItem(Activity::Testing, 'Run focused tests', id: 'tc-4a'));
+        $slice = new WorkPlanSlice($plan);
+
+        $plan->append(new WorkItem(Activity::Reviewing, 'Review follow-up', id: 'follow-up'));
+        $visible = $slice->plan;
+        $visible->append(new WorkItem(Activity::Exploring, 'Explore follow-up', id: 'explore'));
+
+        self::assertCount(1, $slice->plan->items());
+        self::assertSame('tc-4a', $slice->plan->items()[0]->workItem->id);
     }
 
     #[Test]

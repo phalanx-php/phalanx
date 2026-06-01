@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Theatron\Tests\Unit\Collab;
 
-use Phalanx\Scope\ExecutionScope;
+use Phalanx\Scope\TaskScope;
 use Phalanx\Theatron\Collab\Lifecycle\LoopStage;
 use Phalanx\Theatron\Collab\Messages\Envelope;
 use Phalanx\Theatron\Collab\Plans\Activity;
@@ -24,7 +24,7 @@ final class WorkContextTest extends TestCase
     public function advanceMovesTheLoopStageThroughTheStore(): void
     {
         $store = new CollabStore();
-        $ctx = new WorkContext($this->createStub(ExecutionScope::class), $store);
+        $ctx = new WorkContext($this->createStub(TaskScope::class), $store);
 
         $slice = $ctx->advance(LoopStage::Collaborate);
 
@@ -37,7 +37,7 @@ final class WorkContextTest extends TestCase
     public function recordAppendsAnEnvelopeToTheMessageTimeline(): void
     {
         $store = new CollabStore();
-        $ctx = new WorkContext($this->createStub(ExecutionScope::class), $store);
+        $ctx = new WorkContext($this->createStub(TaskScope::class), $store);
         $envelope = Envelope::prompt('Review the patch');
 
         $slice = $ctx->record($envelope);
@@ -54,7 +54,7 @@ final class WorkContextTest extends TestCase
         $plan->startItem('tc-4a');
         $store->workPlan = new WorkPlanSlice($plan);
 
-        $ctx = new WorkContext($this->createStub(ExecutionScope::class), $store);
+        $ctx = new WorkContext($this->createStub(TaskScope::class), $store);
         $envelope = Envelope::prompt('Tests passed');
         $result = WorkResult::done('tc-4a', envelopes: [$envelope]);
 
@@ -66,9 +66,24 @@ final class WorkContextTest extends TestCase
     }
 
     #[Test]
+    public function visiblePlanCannotMutateStoreStateDirectly(): void
+    {
+        $store = new CollabStore();
+        $plan = WorkPlan::start(new WorkItem(Activity::Testing, 'Run focused tests', id: 'tc-4a'));
+        $store->workPlan = new WorkPlanSlice($plan);
+
+        $ctx = new WorkContext($this->createStub(TaskScope::class), $store);
+        $visible = $ctx->plan;
+        $visible->append(new WorkItem(Activity::Reviewing, 'Review follow-up', id: 'follow-up'));
+
+        self::assertCount(1, $ctx->plan->items());
+        self::assertSame('tc-4a', $ctx->plan->items()[0]->workItem->id);
+    }
+
+    #[Test]
     public function fulfillRejectsMismatchedResultIds(): void
     {
-        $ctx = new WorkContext($this->createStub(ExecutionScope::class));
+        $ctx = new WorkContext($this->createStub(TaskScope::class));
 
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('must match');

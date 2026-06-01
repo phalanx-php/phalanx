@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Theatron\Collab;
 
-use Phalanx\Scope\ExecutionScope;
+use Phalanx\Scope\TaskScope;
 use Phalanx\Theatron\Collab\Lifecycle\LoopStage;
 use Phalanx\Theatron\Collab\Messages\Envelope;
 use Phalanx\Theatron\Collab\Plans\WorkPlan;
@@ -25,8 +25,8 @@ final class WorkContext
     }
 
     public function __construct(
-        private(set) ExecutionScope $scope,
-        private(set) CollabStore $store = new CollabStore(),
+        private(set) TaskScope $scope,
+        private CollabStore $store = new CollabStore(),
     ) {
     }
 
