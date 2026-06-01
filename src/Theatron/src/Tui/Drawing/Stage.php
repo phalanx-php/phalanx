@@ -32,23 +32,24 @@ final class Stage
     private TerminalConfig $terminal;
     private ?Subscription $tickSubscription = null;
 
+    private int $frameCount = 0;
+
+    private bool $running = false;
     private bool $ticking = false;
     private bool $fullRedraw = true;
     private bool $frameRequested = true;
-    private bool $running = false;
-    private int $frameCount = 0;
-
-    /** @var list<Closure(int, int): void> */
-    private array $resizeListeners = [];
-
-    /** @var list<Closure(InputEvent): void> */
-    private array $inputListeners = [];
 
     /** @var list<Closure(self): void> */
     private array $drawListeners = [];
 
     /** @var list<Closure(): void> */
     private array $frameListeners = [];
+
+    /** @var list<Closure(InputEvent): void> */
+    private array $inputListeners = [];
+
+    /** @var list<Closure(int, int): void> */
+    private array $resizeListeners = [];
 
     private function __construct(
         private(set) StageConfig $config,

@@ -9,11 +9,11 @@ use Phalanx\Theatron\Tui\Drawing\Rect;
 
 final class Region
 {
-    private(set) bool $isDirty = true;
-
     public int $zIndex {
         get => $this->config->zIndex;
     }
+
+    private(set) bool $isDirty = true;
 
     private Buffer $buffer;
     private float $lastRenderTime = -1.0;

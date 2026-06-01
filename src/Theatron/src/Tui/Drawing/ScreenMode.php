@@ -6,7 +6,7 @@ namespace Phalanx\Theatron\Tui\Drawing;
 
 enum ScreenMode
 {
-    case Alternate;
     case Inline;
     case Detect;
+    case Alternate;
 }

@@ -55,7 +55,7 @@ abstract class ServiceBundle
     /**
      * Wire the bundle's services into the supplied container using values
      * from $context. Implementations must be idempotent for a single
-     * Services instance (each container builds bundles once at compile
+     * Services instance (the container builds bundles once at compile
      * time) and must read every config value through AppContext typed
      * accessors -- never via process-environment globals or the
      * superglobal env arrays. Stateful clients, pools, and connections

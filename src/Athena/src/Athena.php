@@ -63,10 +63,10 @@ final class Athena
 
     private static function buildLoop(TaskScope $scope, Agent $agent, ActivityConfig $config): Loop
     {
-        $athenaConfig = $scope->service(AthenaConfig::class);
         $builder = $scope->service(Builder::class);
-        $runtimeFactory = $scope->service(RuntimeFactory::class);
         $dispatcher = $scope->service(Dispatcher::class);
+        $athenaConfig = $scope->service(AthenaConfig::class);
+        $runtimeFactory = $scope->service(RuntimeFactory::class);
 
         $routingInvocation = Invocation::of(
             id: 'route_' . Id::generate(),
