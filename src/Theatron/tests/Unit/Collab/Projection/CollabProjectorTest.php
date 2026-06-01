@@ -61,6 +61,13 @@ final class CollabProjectorTest extends TestCase
         $store = new CollabStore();
         $projector = new CollabProjector();
 
+        $projector->project(CollabEvent::record(
+            EventKind::LoopAdvanced,
+            context: ['loop_stage' => LoopStage::React->value],
+            id: 'evt_loop_react',
+        ), $store);
+        self::assertSame(LoopStage::React, $store->loop->stage);
+
         $projector->project(CollabEvent::record(EventKind::WorkPrepared, id: 'evt_prepared'), $store);
         self::assertSame(LoopStage::Prepare, $store->loop->stage);
 
@@ -69,6 +76,26 @@ final class CollabProjectorTest extends TestCase
 
         $projector->project(CollabEvent::record(EventKind::WorkCompleted, id: 'evt_completed'), $store);
         self::assertSame(LoopStage::Complete, $store->loop->stage);
+    }
+
+    #[Test]
+    public function loopStageProjectionRejectsUnknownStagesWithoutMutation(): void
+    {
+        $store = new CollabStore();
+        $projector = new CollabProjector();
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('unknown loop stage');
+
+        try {
+            $projector->project(CollabEvent::record(
+                EventKind::LoopAdvanced,
+                context: ['loop_stage' => 'missing'],
+                id: 'evt_bad_loop_stage',
+            ), $store);
+        } finally {
+            self::assertSame(LoopStage::Receive, $store->loop->stage);
+        }
     }
 
     #[Test]
@@ -112,6 +139,33 @@ final class CollabProjectorTest extends TestCase
         self::assertSame(42, $store->context->pressure);
         self::assertSame('work_tests', $store->context->activeFocus);
         self::assertSame(['primary', 'reviewer'], $store->participants->participants);
+    }
+
+    #[Test]
+    public function rejectsNonListParticipantMetadataWithoutPartialProjection(): void
+    {
+        $store = new CollabStore();
+        $projector = new CollabProjector();
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('participants context must be a list');
+
+        try {
+            $projector->project(CollabEvent::record(
+                EventKind::WorkPrepared,
+                context: [
+                    'runtime_session_id' => 'session_a',
+                    'context_pressure' => 42,
+                    'participants' => ['primary' => 'reviewer'],
+                ],
+                id: 'evt_bad_participants',
+            ), $store);
+        } finally {
+            self::assertSame(LoopStage::Receive, $store->loop->stage);
+            self::assertNull($store->runtime->sessionId);
+            self::assertSame(0, $store->context->pressure);
+            self::assertSame([], $store->participants->participants);
+        }
     }
 
     #[Test]

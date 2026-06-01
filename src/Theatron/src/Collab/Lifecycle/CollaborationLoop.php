@@ -31,6 +31,9 @@ final class CollaborationLoop
     /** @var list<Reviewer> */
     private array $reviewers;
 
+    /** @var array<string, true> */
+    private array $emittedWorkItemIds = [];
+
     /**
      * @param iterable<Preparer> $preparers
      * @param iterable<Collaborator> $collaborators
@@ -57,6 +60,8 @@ final class CollaborationLoop
 
     public function __invoke(WorkContext $ctx): WorkPlanStatus
     {
+        $this->emittedWorkItemIds = [];
+
         $this->receive($ctx);
         $this->prepare($ctx);
 
@@ -165,6 +170,7 @@ final class CollaborationLoop
         }
 
         foreach ($received as $event) {
+            $this->rememberWorkItem($event);
             $this->emit($ctx, $event);
         }
     }
@@ -177,6 +183,15 @@ final class CollaborationLoop
         }
 
         $prepared = $ctx->drainProjectedEvents(EventKind::WorkPrepared);
+        foreach ($prepared as $event) {
+            $this->rememberWorkItem($event);
+        }
+
+        $prepared = [
+            ...$prepared,
+            ...$this->preseededWorkEvents($ctx),
+        ];
+
         if ($prepared === []) {
             $this->projectAndEmit($ctx, CollabEvent::record(EventKind::WorkPrepared));
 
@@ -184,6 +199,7 @@ final class CollaborationLoop
         }
 
         foreach ($prepared as $event) {
+            $this->rememberWorkItem($event);
             $this->emit($ctx, $event);
         }
     }
@@ -271,9 +287,33 @@ final class CollaborationLoop
 
     private function projectAndEmit(WorkContext $ctx, CollabEvent $event): void
     {
-        $ctx->project($event);
-        $ctx->drainProjectedEvents($event->kind);
+        $ctx->project($event, queue: false);
+        $this->rememberWorkItem($event);
         $this->emit($ctx, $event);
+    }
+
+    /**
+     * @return list<CollabEvent>
+     */
+    private function preseededWorkEvents(WorkContext $ctx): array
+    {
+        $events = [];
+        foreach ($ctx->plan->items() as $item) {
+            if (isset($this->emittedWorkItemIds[$item->workItem->id])) {
+                continue;
+            }
+
+            $events[] = CollabEvent::record(EventKind::WorkPrepared, workItem: $item->workItem);
+        }
+
+        return $events;
+    }
+
+    private function rememberWorkItem(CollabEvent $event): void
+    {
+        if ($event->workItem !== null) {
+            $this->emittedWorkItemIds[$event->workItem->id] = true;
+        }
     }
 
     private function emit(WorkContext $ctx, CollabEvent $event): void

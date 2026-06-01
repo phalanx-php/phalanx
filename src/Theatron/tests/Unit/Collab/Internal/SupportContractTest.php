@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Theatron\Tests\Unit\Collab\Internal;
 
-use Phalanx\Theatron\Collab\Messages\MessageKind;
 use Phalanx\Theatron\Collab\Internal\CanonicalHash;
 use Phalanx\Theatron\Collab\Internal\Id;
+use Phalanx\Theatron\Collab\Messages\MessageKind;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 

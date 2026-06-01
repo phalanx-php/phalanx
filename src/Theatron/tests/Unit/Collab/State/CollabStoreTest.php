@@ -98,7 +98,7 @@ final class CollabStoreTest extends TestCase
     public function tuiSignalScannerCanSubscribeToCollabStoreReads(): void
     {
         $store = new CollabStore();
-        $component = new class($store) implements Component {
+        $component = new class ($store) implements Component {
             public function __construct(
                 private(set) CollabStore $store,
             ) {

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Theatron\Tests\Unit\Collab;
 
 use Phalanx\Scope\TaskScope;
+use Phalanx\Theatron\Collab\Events\CollabEvent;
 use Phalanx\Theatron\Collab\Events\EventKind;
 use Phalanx\Theatron\Collab\Lifecycle\LoopStage;
 use Phalanx\Theatron\Collab\Messages\Envelope;
@@ -23,7 +24,7 @@ use PHPUnit\Framework\TestCase;
 final class WorkContextTest extends TestCase
 {
     #[Test]
-    public function advanceMovesTheLoopStageThroughTheStore(): void
+    public function advanceProjectsTheLoopStageWithoutQueueingDomainEvents(): void
     {
         $store = new CollabStore();
         $ctx = new WorkContext($this->createStub(TaskScope::class), $store);
@@ -33,6 +34,7 @@ final class WorkContextTest extends TestCase
         self::assertSame(LoopStage::Collaborate, $slice->stage);
         self::assertSame(LoopStage::Collaborate, $ctx->stage);
         self::assertSame(LoopStage::Collaborate, $store->loop->stage);
+        self::assertSame([], $ctx->drainProjectedEvents());
     }
 
     #[Test]
@@ -83,7 +85,7 @@ final class WorkContextTest extends TestCase
         self::assertSame(
             [EventKind::WorkPrepared, EventKind::WorkItemStarted],
             array_map(
-                static fn ($event): EventKind => $event->kind,
+                static fn (CollabEvent $event): EventKind => $event->kind,
                 $ctx->drainProjectedEvents(),
             ),
         );

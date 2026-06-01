@@ -78,11 +78,12 @@ final class AthenaCollaboratorTest extends TestCase
 
         self::assertSame($scope, $runner->scope);
         self::assertSame($agent, $runner->agent);
-        self::assertSame('work_patch', $runner->config?->id);
-        self::assertSame($context, $runner->config?->context);
-        self::assertSame(5, $runner->config?->maxInvocations);
-        self::assertSame(2.5, $runner->config?->timeoutSeconds);
-        self::assertSame([$hook], $runner->config?->hooks);
+        self::assertInstanceOf(Config::class, $runner->config);
+        self::assertSame('work_patch', $runner->config->id);
+        self::assertSame($context, $runner->config->context);
+        self::assertSame(5, $runner->config->maxInvocations);
+        self::assertSame(2.5, $runner->config->timeoutSeconds);
+        self::assertSame([$hook], $runner->config->hooks);
     }
 
     #[Test]
@@ -173,6 +174,10 @@ final class AthenaCollaboratorTest extends TestCase
         return new class ($id) implements Agent {
             public string $name { get => 'Test Agent'; }
 
+            public string $id {
+                get => $this->agentId;
+            }
+
             public Output $output { get => Output::text(); }
 
             public string $purpose { get => 'Handle the assigned work item.'; }
@@ -187,12 +192,11 @@ final class AthenaCollaboratorTest extends TestCase
 
             public TransportNeeds $transport { get => TransportNeeds::new(); }
 
-            public function __construct(private string $agentId)
-            {
-            }
+            private string $agentId;
 
-            public string $id {
-                get => $this->agentId;
+            public function __construct(string $agentId)
+            {
+                $this->agentId = $agentId;
             }
         };
     }

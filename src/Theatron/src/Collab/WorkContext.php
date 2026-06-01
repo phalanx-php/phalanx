@@ -41,16 +41,20 @@ final class WorkContext
 
     public function advance(LoopStage $stage): LoopSlice
     {
-        return $this->store->mutate(
-            LoopSlice::class,
-            static fn(LoopSlice $slice): LoopSlice => $slice->advance($stage),
-        );
+        $this->project(CollabEvent::record(
+            EventKind::LoopAdvanced,
+            context: ['loop_stage' => $stage->value],
+        ), queue: false);
+
+        return $this->store->loop;
     }
 
-    public function project(CollabEvent $event): CollabStore
+    public function project(CollabEvent $event, bool $queue = true): CollabStore
     {
         (new CollabProjector())->project($event, $this->store);
-        $this->projectedEvents[] = $event;
+        if ($queue) {
+            $this->projectedEvents[] = $event;
+        }
 
         return $this->store;
     }

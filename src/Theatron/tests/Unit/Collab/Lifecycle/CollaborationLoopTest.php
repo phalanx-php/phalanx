@@ -113,6 +113,30 @@ final class CollaborationLoopTest extends TestCase
     }
 
     #[Test]
+    public function preseededPlanEventStreamReplaysToEquivalentStore(): void
+    {
+        $events = new LoopEventLog();
+        $liveStore = new CollabStore();
+        $liveStore->workPlan = new WorkPlanSlice(WorkPlan::start(new WorkItem(
+            Activity::Editing,
+            'Patch code',
+            id: 'work_patch',
+        )));
+        $ctx = new WorkContext($this->createStub(TaskScope::class), $liveStore);
+        $loop = new CollaborationLoop(
+            primary: self::doneCollaborator('primary', new \ArrayObject()),
+            reactors: [self::eventCapture($events)],
+        );
+
+        $status = $loop($ctx);
+        $replayed = new CollabReplay()->replay($events->events);
+
+        self::assertSame(WorkPlanStatus::Complete, $status);
+        self::assertSame(self::planRows($liveStore), self::planRows($replayed));
+        self::assertSame(self::timelineRows($liveStore), self::timelineRows($replayed));
+    }
+
+    #[Test]
     public function preparerAddedWorkIsReplayable(): void
     {
         $events = new LoopEventLog();
@@ -127,6 +151,26 @@ final class CollaborationLoopTest extends TestCase
         $replayed = new CollabReplay()->replay($events->events);
 
         self::assertSame(WorkItemStatus::Done, $replayed->workPlan->plan->item('work_a')->status);
+    }
+
+    #[Test]
+    public function loopOwnedProjectionDoesNotDrainPendingUserlandEvents(): void
+    {
+        $ctx = $this->ctx(WorkPlan::start(new WorkItem(Activity::Testing, 'Run tests', id: 'work_a')));
+        $ctx->project(CollabEvent::record(EventKind::WorkDistributed, id: 'evt_prequeued_distribution'));
+        $loop = new CollaborationLoop(
+            primary: self::doneCollaborator('primary', new \ArrayObject()),
+        );
+
+        $loop($ctx);
+
+        self::assertSame(
+            ['evt_prequeued_distribution'],
+            array_map(
+                static fn (CollabEvent $event): string => $event->id,
+                $ctx->drainProjectedEvents(EventKind::WorkDistributed),
+            ),
+        );
     }
 
     #[Test]

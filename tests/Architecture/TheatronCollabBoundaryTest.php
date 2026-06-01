@@ -197,6 +197,15 @@ final class TheatronCollabBoundaryTest extends TestCase
     }
 
     #[Test]
+    public function workContextDoesNotBypassTheProjectorForStoreMutation(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $source = self::read($root . '/src/Theatron/src/Collab/WorkContext.php');
+
+        self::assertStringNotContainsString('->mutate(', $source);
+    }
+
+    #[Test]
     public function genericTuiDoesNotImportCollabState(): void
     {
         $root = dirname(__DIR__, 2);

@@ -34,6 +34,7 @@ final class CollabProjector
 
         $store->transaction(function () use ($event, $store): void {
             match ($event->kind) {
+                EventKind::LoopAdvanced => null,
                 EventKind::WorkReceived => $this->projectReceived($event, $store),
                 EventKind::WorkPrepared => $this->projectPrepared($event, $store),
                 EventKind::WorkDistributed,
@@ -60,6 +61,7 @@ final class CollabProjector
     private static function stageFor(EventKind $kind): LoopStage
     {
         return match ($kind) {
+            EventKind::LoopAdvanced => throw new \LogicException('Loop advanced events resolve stage from context.'),
             EventKind::WorkReceived => LoopStage::Receive,
             EventKind::WorkPrepared => LoopStage::Prepare,
             EventKind::WorkDistributed => LoopStage::Distribute,
@@ -77,6 +79,7 @@ final class CollabProjector
     private function validate(CollabEvent $event): void
     {
         match ($event->kind) {
+            EventKind::LoopAdvanced => $this->requireLoopStage($event),
             EventKind::WorkReceived => $this->validateReceived($event),
             EventKind::WorkPrepared,
             EventKind::WorkDistributed,
@@ -194,10 +197,21 @@ final class CollabProjector
 
     private function projectStage(CollabEvent $event, CollabStore $store): void
     {
+        $stage = $this->loopStage($event);
+
         $store->mutate(
             LoopSlice::class,
-            static fn (LoopSlice $slice): LoopSlice => $slice->advance(self::stageFor($event->kind)),
+            static fn (LoopSlice $slice): LoopSlice => $slice->advance($stage),
         );
+    }
+
+    private function loopStage(CollabEvent $event): LoopStage
+    {
+        if ($event->kind === EventKind::LoopAdvanced) {
+            return $this->requireLoopStage($event);
+        }
+
+        return self::stageFor($event->kind);
     }
 
     private function projectMetadata(CollabEvent $event, CollabStore $store): void
@@ -268,7 +282,7 @@ final class CollabProjector
         }
 
         $participants = $context['participants'];
-        if (!is_array($participants)) {
+        if (!is_array($participants) || !array_is_list($participants)) {
             throw new \InvalidArgumentException('Projected participants context must be a list of strings.');
         }
 
@@ -352,6 +366,19 @@ final class CollabProjector
         return $event->reviewVerdict ?? throw new \InvalidArgumentException(
             'Collab event "work_reviewed" requires a review verdict for projection.',
         );
+    }
+
+    private function requireLoopStage(CollabEvent $event): LoopStage
+    {
+        $stage = $event->context['loop_stage'] ?? null;
+        if (!is_string($stage)) {
+            throw new \InvalidArgumentException('Collab event "loop_advanced" requires a loop_stage context string.');
+        }
+
+        return LoopStage::tryFrom($stage) ?? throw new \InvalidArgumentException(sprintf(
+            'Collab event "loop_advanced" has unknown loop stage "%s".',
+            $stage,
+        ));
     }
 
     /**

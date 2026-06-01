@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Phalanx\Theatron\Tests\Unit\Collab\Reviews;
 
-use Phalanx\Theatron\Collab\Reviews\ReviewStatus;
-use Phalanx\Theatron\Collab\Reviews\ReviewVerdict;
 use Phalanx\Theatron\Collab\Plans\Activity;
 use Phalanx\Theatron\Collab\Plans\WorkItem;
+use Phalanx\Theatron\Collab\Reviews\ReviewStatus;
+use Phalanx\Theatron\Collab\Reviews\ReviewVerdict;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 

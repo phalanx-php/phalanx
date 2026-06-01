@@ -6,6 +6,7 @@ namespace Phalanx\Theatron\Collab\Events;
 
 enum EventKind: string
 {
+    case LoopAdvanced = 'loop_advanced';
     case WorkReceived = 'work_received';
     case WorkPrepared = 'work_prepared';
     case WorkDistributed = 'work_distributed';

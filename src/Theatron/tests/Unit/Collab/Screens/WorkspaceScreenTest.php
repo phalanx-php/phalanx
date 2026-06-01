@@ -59,6 +59,30 @@ final class WorkspaceScreenTest extends TestCase
         self::assertStringContainsString('event: evt_done', self::scrollContent($devTools));
     }
 
+    #[Test]
+    public function rendersEmptyWorkspaceFallbacks(): void
+    {
+        $rendered = (new WorkspaceScreen(new CollabStore()))($this->screenContext());
+
+        self::assertInstanceOf(ColumnElement::class, $rendered);
+        self::assertInstanceOf(GridElement::class, $rendered->children[0]);
+        self::assertInstanceOf(GridElement::class, $rendered->children[1]);
+
+        $chat = $rendered->children[0]->children[0];
+        $plan = $rendered->children[0]->children[1];
+        $runtime = $rendered->children[1]->children[0];
+        $devTools = $rendered->children[1]->children[1];
+
+        self::assertInstanceOf(PanelElement::class, $chat);
+        self::assertInstanceOf(PanelElement::class, $plan);
+        self::assertInstanceOf(PanelElement::class, $runtime);
+        self::assertInstanceOf(PanelElement::class, $devTools);
+        self::assertStringContainsString('No timeline entries.', self::scrollContent($chat));
+        self::assertStringContainsString('No work planned.', self::scrollContent($plan));
+        self::assertStringContainsString('session: none', self::scrollContent($runtime));
+        self::assertStringContainsString('event: none', self::scrollContent($devTools));
+    }
+
     private static function store(): CollabStore
     {
         $store = new CollabStore();

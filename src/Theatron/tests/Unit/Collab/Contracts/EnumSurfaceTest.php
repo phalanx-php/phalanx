@@ -43,6 +43,7 @@ final class EnumSurfaceTest extends TestCase
             'status_update',
         ]];
         yield 'event kind' => [EventKind::class, [
+            'loop_advanced',
             'work_received',
             'work_prepared',
             'work_distributed',

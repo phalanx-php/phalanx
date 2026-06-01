@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Phalanx\Theatron\Tests\Unit\Collab\Events;
 
 use DateTimeImmutable;
-use Phalanx\Theatron\Collab\Events\EventKind;
 use Phalanx\Theatron\Collab\Events\CollabEvent;
+use Phalanx\Theatron\Collab\Events\EventKind;
 use Phalanx\Theatron\Collab\Messages\Envelope;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -14,7 +14,7 @@ use PHPUnit\Framework\TestCase;
 final class CollabEventTest extends TestCase
 {
     #[Test]
-    public function CollabEventCarriesLifecycleDataAndRoutableView(): void
+    public function collabEventCarriesLifecycleDataAndRoutableView(): void
     {
         $envelope = Envelope::prompt('review this');
         $event = CollabEvent::record(
@@ -35,7 +35,7 @@ final class CollabEventTest extends TestCase
     }
 
     #[Test]
-    public function CollabEventCanonicalFormAndHashAreStable(): void
+    public function collabEventCanonicalFormAndHashAreStable(): void
     {
         $first = CollabEvent::record(
             kind: EventKind::WorkCompleted,
