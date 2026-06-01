@@ -33,6 +33,17 @@ final class WorkPlanTest extends TestCase
     }
 
     #[Test]
+    public function emptyPlanAcceptsInitialWorkBeforeItCompletes(): void
+    {
+        $plan = WorkPlan::empty('plan_draft');
+
+        $plan->append(self::item('work_first'));
+
+        self::assertSame(WorkPlanStatus::Active, $plan->status);
+        self::assertSame(['work_first'], self::readyIds($plan));
+    }
+
+    #[Test]
     public function planRejectsDuplicateUnknownAndCyclicDependencies(): void
     {
         $this->expectException(\InvalidArgumentException::class);

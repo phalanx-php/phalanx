@@ -77,6 +77,36 @@ final class TheatronCollabBoundaryTest extends TestCase
         );
     }
 
+    #[Test]
+    public function theatronSourceDoesNotKeepStaleHarnessOrGenericReactorSurfaces(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $offenders = [];
+
+        self::assertFileDoesNotExist($root . '/src/Theatron/src/Tui/Core/Reactor.php');
+        self::assertFileDoesNotExist($root . '/src/Theatron/src/Tui/Core/ReactorContext.php');
+
+        foreach (self::sourceFiles($root . '/src/Theatron/src') as $file) {
+            $relative = self::relative($root, $file);
+
+            if (str_contains($relative, '/Harness/')) {
+                $offenders[] = "{$relative} remains under a stale Harness path";
+            }
+
+            foreach (self::staleTheatronHarnessTokens() as $token) {
+                if (str_contains(self::read($file), $token)) {
+                    $offenders[] = "{$relative} contains {$token}";
+                }
+            }
+        }
+
+        self::assertSame(
+            [],
+            $offenders,
+            "Theatron source must keep the current Tui/Collab vocabulary:\n" . implode("\n", $offenders),
+        );
+    }
+
     /**
      * @return list<string>
      */
@@ -95,6 +125,23 @@ final class TheatronCollabBoundaryTest extends TestCase
             'test:' . $lower,
             'prove:' . $lower . '-install',
             $module . '::app',
+            'Theatron::' . strtolower($module),
+        ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function staleTheatronHarnessTokens(): array
+    {
+        $module = self::legacyModuleName();
+
+        return [
+            'Phalanx\\Theatron\\' . $module . '\\',
+            $module . 'Event',
+            $module . 'Id',
+            $module . 'Store',
+            'Theatron::' . strtolower($module),
         ];
     }
 

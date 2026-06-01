@@ -30,10 +30,7 @@ final class WorkPlan
 
     public static function empty(?string $id = null): self
     {
-        $plan = new self($id);
-        $plan->refreshStatus();
-
-        return $plan;
+        return new self($id);
     }
 
     public static function start(WorkItem ...$items): self
