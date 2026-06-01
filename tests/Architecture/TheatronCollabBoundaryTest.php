@@ -117,6 +117,21 @@ final class TheatronCollabBoundaryTest extends TestCase
     }
 
     #[Test]
+    public function theatronPackageIntentionallyRequiresAgentRuntimePackagesForAlpha(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $modules = require $root . '/modules.php';
+        $composer = json_decode(self::read($root . '/src/Theatron/composer.json'), true, flags: JSON_THROW_ON_ERROR);
+
+        self::assertSame('phalanx-php/theatron', $modules['Theatron']['package']);
+        self::assertArrayHasKey('phalanx-php/athena', $modules['Theatron']['requires']);
+        self::assertArrayHasKey('phalanx-php/panoply', $modules['Theatron']['requires']);
+        self::assertArrayHasKey('phalanx-php/athena', $composer['require']);
+        self::assertArrayHasKey('phalanx-php/panoply', $composer['require']);
+        self::assertSame('<0.6.3', $composer['conflict']['phalanx-php/grammata']);
+    }
+
+    #[Test]
     public function starterScaffoldDoesNotExposeAgentRuntimeDependencies(): void
     {
         $root = dirname(__DIR__, 2);
@@ -137,6 +152,25 @@ final class TheatronCollabBoundaryTest extends TestCase
             $offenders,
             "Generated userland must not import agent runtime internals directly:\n" . implode("\n", $offenders),
         );
+    }
+
+    #[Test]
+    public function starterComposerRequireSurfaceNamesOnlyTheatronFromPhalanxPackages(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $starterComposer = dirname($root) . '/starter-kits/agent-collab/composer.json';
+
+        if (!is_file($starterComposer)) {
+            self::markTestSkipped('Agent Collab starter kit is not present next to the framework repository.');
+        }
+
+        $composer = json_decode(self::read($starterComposer), true, flags: JSON_THROW_ON_ERROR);
+        $packages = array_values(array_filter(
+            array_keys($composer['require']),
+            static fn (string $package): bool => str_starts_with($package, 'phalanx-php/'),
+        ));
+
+        self::assertSame(['phalanx-php/theatron'], $packages);
     }
 
     #[Test]

@@ -3,6 +3,11 @@
     "description": "Terminal UI and agent collaboration framework for Phalanx PHP",
     "license": "MIT",
     "type": "library",
+    "keywords": [
+        "agent-collab",
+        "terminal-ui",
+        "theatron"
+    ],
     "homepage": "https://github.com/phalanx-php/phalanx-theatron",
     "authors": [
         {
@@ -19,6 +24,9 @@
         "phalanx-php/athena": "^0.6",
         "phalanx-php/grammata": "^0.6",
         "phalanx-php/panoply": "^0.6"
+    },
+    "conflict": {
+        "phalanx-php/grammata": "<0.6.3"
     },
     "require-dev": {
         "slevomat/coding-standard": "*",

@@ -157,7 +157,7 @@ return [
         'suggests' => [
             'phalanx-php/archon' => 'CLI agent commands via Archon command lifecycle',
             'phalanx-php/hermes' => 'Real-time agent sessions over WebSocket',
-            'phalanx-php/theatron' => 'TUI rendering of agent work via CompositeStream',
+            'phalanx-php/theatron' => 'Theatron Collab workspace rendering for agent work and review state',
         ],
     ],
     'Cli' => [
@@ -387,7 +387,7 @@ return [
         ],
         'suggests' => [
             'phalanx-php/aegis' => 'Required for the Aegis Runtime adapter; enables scope-bound cancellation and cleanup',
-            'phalanx-php/athena' => 'Required for the Athena Provider adapter; bridges Athena\'s AgentEvent stream to panoply Cues',
+            'phalanx-php/athena' => 'Required for the Athena Provider adapter; bridges Athena activity output to Panoply cues',
             'phalanx-php/iris' => 'Required for the Iris Transport adapter; Swoole-native streaming HTTP',
             'phalanx-php/grammata' => 'Required for HomeDir parsers; managed file I/O with FilePool',
             'phalanx-php/archon' => 'Required for the panoply:agents:scan Archon command',
@@ -554,6 +554,9 @@ return [
             'phalanx-php/athena' => '^0.6',
             'phalanx-php/grammata' => '^0.6',
             'phalanx-php/panoply' => '^0.6',
+        ],
+        'conflicts' => [
+            'phalanx-php/grammata' => '<0.6.3',
         ],
         'devRequires' => [
             'slevomat/coding-standard' => '*',

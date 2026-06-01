@@ -23,10 +23,14 @@ use Phalanx\Theatron\Collab\Messages\Address;
 use Phalanx\Theatron\Collab\Messages\Envelope;
 use Phalanx\Theatron\Collab\Messages\MessageKind;
 use Phalanx\Theatron\Collab\Participants\Collaborator;
+use Phalanx\Theatron\Collab\Plans\Activity;
+use Phalanx\Theatron\Collab\Plans\WorkItem;
+use Phalanx\Theatron\Collab\Plans\WorkPlan;
 use Phalanx\Theatron\Collab\Plans\WorkPlanItem;
 use Phalanx\Theatron\Collab\Plans\WorkPlanStatus;
 use Phalanx\Theatron\Collab\Plans\WorkResult;
 use Phalanx\Theatron\Collab\State\CollabStore;
+use Phalanx\Theatron\Collab\State\WorkPlanSlice;
 use Phalanx\Theatron\Collab\WorkContext;
 use Phalanx\Theatron\Tests\Support\RecordingTaskScope;
 use Phalanx\Theatron\Tui\Inputs\Key;
@@ -244,6 +248,42 @@ final class BoundaryRuntimeTest extends TestCase
         self::assertInstanceOf(RoutableEvent::class, $received);
         self::assertSame('Route events', $received->envelope?->payload);
         self::assertSame('Route events', $received->workItem?->prompt);
+    }
+
+    #[Test]
+    public function preseededReadyWorkStillRunsAndRoutesOutletEventsWithoutInput(): void
+    {
+        $scope = new RecordingTaskScope();
+        $store = new CollabStore();
+        $store->workPlan = new WorkPlanSlice(WorkPlan::start(new WorkItem(
+            Activity::Testing,
+            'Route preseeded work',
+            id: 'work_preseeded_outlet',
+        )));
+        $outlet = new RecordingOutlet();
+        $runner = new BoundaryRunner(
+            loop: new CollaborationLoop(
+                primary: new DoneCollaborator(new \ArrayObject()),
+                reactors: [new OutletReactor([$outlet])],
+            ),
+        );
+
+        $status = $runner(new WorkContext($scope, $store));
+
+        self::assertSame(WorkPlanStatus::Complete, $status);
+        self::assertSame(WorkPlanStatus::Complete, $store->workPlan->plan->status);
+        self::assertContains(EventKind::WorkItemStarted, $outlet->events);
+        self::assertContains(EventKind::WorkItemCompleted, $outlet->events);
+        self::assertSame($scope, $outlet->scope);
+
+        $received = array_find(
+            $outlet->routableEvents,
+            static fn (RoutableEvent $event): bool => $event->kind === EventKind::WorkReceived,
+        );
+
+        self::assertInstanceOf(RoutableEvent::class, $received);
+        self::assertNull($received->envelope);
+        self::assertNull($received->workItem);
     }
 }
 

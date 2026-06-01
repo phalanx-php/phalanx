@@ -54,11 +54,6 @@ final class BoundaryRunner
         return $this->incoming;
     }
 
-    public function shouldRun(): bool
-    {
-        return $this->inlets !== [] || $this->incoming->hasPending();
-    }
-
     /**
      * @param iterable<Inlet> $inlets
      * @return list<Inlet>
