@@ -21,7 +21,7 @@ final readonly class StoaServerConfig
         public bool $httpCompression = true,
         public string $logoPath = '/logo.svg',
         public string $faviconPath = '/favicon.ico',
-        public string $tagline = 'Expression-based async coordination for PHP 8.4+',
+        public string $tagline = 'Supervised execution framework for modern PHP',
         public string $docsUrl = 'https://github.com/phalanx-php/phalanx',
         public string $githubUrl = 'https://github.com/phalanx-php/phalanx',
         public string $swooleDocsUrl = 'https://wiki.swoole.com',

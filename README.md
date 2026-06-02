@@ -4,7 +4,7 @@
 
 # Phalanx
 
-Phalanx is a supervised execution framework for PHP 8.4+ applications built on Swoole.
+Phalanx is a supervised execution framework for modern PHP.
 
 PHP has plenty of frameworks. Plenty of async libraries too. Phalanx is for the part they tend to leave implicit: the footguns that appear when correct-looking async PHP is composed, retried, deferred, streamed, pooled, or left running long enough to matter.
 
