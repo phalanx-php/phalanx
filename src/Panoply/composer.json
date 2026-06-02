@@ -21,6 +21,9 @@
             "email": "mail@phalanx-php.com"
         }
     ],
+    "support": {
+        "source": "https://github.com/phalanx-php/phalanx-panoply"
+    },
     "require": {
         "php": "^8.4",
         "symfony/uid": "^7.0 || ^8.0",

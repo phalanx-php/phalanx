@@ -16,6 +16,9 @@
             "email": "mail@phalanx-php.com"
         }
     ],
+    "support": {
+        "source": "https://github.com/phalanx-php/phalanx-themis"
+    },
     "require": {
         "php": "^8.4"
     },

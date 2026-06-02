@@ -15,12 +15,17 @@ function phalanx_module_manifest(string $module, array $meta): array
         $manifest['keywords'] = $meta['keywords'];
     }
 
-    $manifest['homepage'] = 'https://github.com/phalanx-php/phalanx-' . phalanx_package_slug($meta['package']);
+    $source = 'https://github.com/phalanx-php/phalanx-' . phalanx_package_slug($meta['package']);
+
+    $manifest['homepage'] = $source;
     $manifest['authors'] = [
         [
             'name' => 'Jonathan Havens',
             'email' => 'mail@phalanx-php.com',
         ],
+    ];
+    $manifest['support'] = [
+        'source' => $source,
     ];
     $manifest['require'] = $meta['requires'];
 

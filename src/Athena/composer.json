@@ -22,6 +22,9 @@
             "email": "mail@phalanx-php.com"
         }
     ],
+    "support": {
+        "source": "https://github.com/phalanx-php/phalanx-athena"
+    },
     "require": {
         "php": "^8.4",
         "phalanx-php/aegis": "^0.6",

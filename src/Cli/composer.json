@@ -17,6 +17,9 @@
             "email": "mail@phalanx-php.com"
         }
     ],
+    "support": {
+        "source": "https://github.com/phalanx-php/phalanx-cli"
+    },
     "require": {
         "php": "^8.4",
         "symfony/console": "^7.4 || ^8.0",

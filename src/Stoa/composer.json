@@ -18,6 +18,9 @@
             "email": "mail@phalanx-php.com"
         }
     ],
+    "support": {
+        "source": "https://github.com/phalanx-php/phalanx-stoa"
+    },
     "require": {
         "php": "^8.4",
         "guzzlehttp/psr7": "^2.0",

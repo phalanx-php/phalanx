@@ -15,6 +15,9 @@
             "email": "mail@phalanx-php.com"
         }
     ],
+    "support": {
+        "source": "https://github.com/phalanx-php/phalanx-theatron"
+    },
     "require": {
         "php": "^8.4",
         "ext-swoole": "^6.0",

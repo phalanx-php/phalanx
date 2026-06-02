@@ -17,6 +17,9 @@
             "email": "mail@phalanx-php.com"
         }
     ],
+    "support": {
+        "source": "https://github.com/phalanx-php/phalanx-phpstan"
+    },
     "require": {
         "php": "^8.4",
         "phpstan/phpstan": "^2.0"

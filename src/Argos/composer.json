@@ -21,6 +21,9 @@
             "email": "mail@phalanx-php.com"
         }
     ],
+    "support": {
+        "source": "https://github.com/phalanx-php/phalanx-argos"
+    },
     "require": {
         "php": "^8.4",
         "ext-swoole": "*",
