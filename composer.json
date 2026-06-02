@@ -36,28 +36,27 @@
     },
     "autoload": {
         "files": [
-            "src/Theatron/src/AgentHarness/aliases.php",
-            "src/Theatron/src/Tui/Kit/functions.php"
+            "src/Theatron/Tui/Kit/functions.php"
         ],
         "psr-4": {
-            "Phalanx\\": "src/Aegis/src/",
-            "Phalanx\\Archon\\": "src/Archon/src/",
-            "Phalanx\\Argos\\": "src/Argos/src/",
-            "Phalanx\\Athena\\": "src/Athena/src/",
-            "Phalanx\\Cli\\": "src/Cli/src/",
-            "Phalanx\\Enigma\\": "src/Enigma/src/",
-            "Phalanx\\Grammata\\": "src/Grammata/src/",
-            "Phalanx\\Hermes\\": "src/Hermes/src/",
-            "Phalanx\\Hydra\\": "src/Hydra/src/",
-            "Phalanx\\Iris\\": "src/Iris/src/",
-            "Phalanx\\PHPStan\\": "src/PHPStan/src/",
-            "Phalanx\\Panoply\\": "src/Panoply/src/",
-            "Phalanx\\Skopos\\": "src/Skopos/src/",
-            "Phalanx\\Stoa\\": "src/Stoa/src/",
-            "Phalanx\\Styx\\": "src/Styx/src/",
-            "Phalanx\\Surreal\\": "src/Surreal/src/",
-            "Phalanx\\Theatron\\": "src/Theatron/src/",
-            "Phalanx\\Themis\\": "src/Themis/src/"
+            "Phalanx\\": "src/Aegis/",
+            "Phalanx\\Archon\\": "src/Archon/",
+            "Phalanx\\Argos\\": "src/Argos/",
+            "Phalanx\\Athena\\": "src/Athena/",
+            "Phalanx\\Cli\\": "src/Cli/",
+            "Phalanx\\Enigma\\": "src/Enigma/",
+            "Phalanx\\Grammata\\": "src/Grammata/",
+            "Phalanx\\Hermes\\": "src/Hermes/",
+            "Phalanx\\Hydra\\": "src/Hydra/",
+            "Phalanx\\Iris\\": "src/Iris/",
+            "Phalanx\\PHPStan\\": "src/PHPStan/",
+            "Phalanx\\Panoply\\": "src/Panoply/",
+            "Phalanx\\Skopos\\": "src/Skopos/",
+            "Phalanx\\Stoa\\": "src/Stoa/",
+            "Phalanx\\Styx\\": "src/Styx/",
+            "Phalanx\\Surreal\\": "src/Surreal/",
+            "Phalanx\\Theatron\\": "src/Theatron/",
+            "Phalanx\\Themis\\": "src/Themis/"
         }
     },
     "autoload-dev": {
@@ -275,26 +274,6 @@
             "symfony/runtime": true,
             "dealerdirect/phpcodesniffer-composer-installer": true
         }
-    },
-    "replace": {
-        "phalanx-php/aegis": "self.version",
-        "phalanx-php/archon": "self.version",
-        "phalanx-php/argos": "self.version",
-        "phalanx-php/athena": "self.version",
-        "phalanx-php/cli": "self.version",
-        "phalanx-php/enigma": "self.version",
-        "phalanx-php/grammata": "self.version",
-        "phalanx-php/hermes": "self.version",
-        "phalanx-php/hydra": "self.version",
-        "phalanx-php/iris": "self.version",
-        "phalanx-php/phpstan": "self.version",
-        "phalanx-php/panoply": "self.version",
-        "phalanx-php/skopos": "self.version",
-        "phalanx-php/stoa": "self.version",
-        "phalanx-php/styx": "self.version",
-        "phalanx-php/surreal": "self.version",
-        "phalanx-php/theatron": "self.version",
-        "phalanx-php/themis": "self.version"
     },
     "minimum-stability": "dev",
     "prefer-stable": true
