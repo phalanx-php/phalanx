@@ -72,7 +72,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Phalanx\\Enigma\\": "src/"
+            "Phalanx\\Enigma\\": ""
         }
     },
     "autoload-dev": {

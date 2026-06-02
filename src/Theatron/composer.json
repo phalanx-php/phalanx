@@ -94,7 +94,7 @@
             "src/Tui/Kit/functions.php"
         ],
         "psr-4": {
-            "Phalanx\\Theatron\\": "src/"
+            "Phalanx\\Theatron\\": ""
         }
     },
     "autoload-dev": {

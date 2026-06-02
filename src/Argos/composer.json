@@ -84,7 +84,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Phalanx\\Argos\\": "src/"
+            "Phalanx\\Argos\\": ""
         }
     },
     "autoload-dev": {

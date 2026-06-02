@@ -81,7 +81,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Phalanx\\Styx\\": "src/"
+            "Phalanx\\Styx\\": ""
         }
     },
     "autoload-dev": {

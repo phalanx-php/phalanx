@@ -75,7 +75,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Phalanx\\Skopos\\": "src/"
+            "Phalanx\\Skopos\\": ""
         }
     },
     "autoload-dev": {

@@ -81,7 +81,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Phalanx\\Hydra\\": "src/"
+            "Phalanx\\Hydra\\": ""
         }
     },
     "autoload-dev": {

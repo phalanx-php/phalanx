@@ -87,7 +87,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Phalanx\\Stoa\\": "src/"
+            "Phalanx\\Stoa\\": ""
         }
     },
     "autoload-dev": {

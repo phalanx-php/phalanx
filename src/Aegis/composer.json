@@ -104,7 +104,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Phalanx\\": "src/"
+            "Phalanx\\": ""
         }
     },
     "autoload-dev": {

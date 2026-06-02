@@ -81,7 +81,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Phalanx\\Hermes\\": "src/"
+            "Phalanx\\Hermes\\": ""
         }
     },
     "autoload-dev": {

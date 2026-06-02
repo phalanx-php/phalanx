@@ -76,7 +76,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Phalanx\\Themis\\": "src/"
+            "Phalanx\\Themis\\": ""
         }
     },
     "autoload-dev": {

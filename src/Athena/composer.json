@@ -93,7 +93,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Phalanx\\Athena\\": "src/"
+            "Phalanx\\Athena\\": ""
         }
     },
     "autoload-dev": {

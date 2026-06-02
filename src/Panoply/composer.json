@@ -101,7 +101,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Phalanx\\Panoply\\": "src/"
+            "Phalanx\\Panoply\\": ""
         }
     },
     "autoload-dev": {

@@ -82,7 +82,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Phalanx\\Surreal\\": "src/"
+            "Phalanx\\Surreal\\": ""
         }
     },
     "autoload-dev": {
