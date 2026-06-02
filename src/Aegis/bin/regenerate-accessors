@@ -39,8 +39,8 @@ $frameworkDir = $rootDir . '/src';
 $bundles = collectBundles($rootDir, $moduleDir, $frameworkDir);
 $lenses = (new LensDiscovery())->discover($bundles);
 $target = is_dir($frameworkDir)
-    ? $frameworkDir . '/Aegis/Testing/Generated/TestAppAccessors.php'
-    : $moduleDir . '/Testing/Generated/TestAppAccessors.php';
+    ? $frameworkDir . '/Aegis/src/Testing/Generated/TestAppAccessors.php'
+    : $moduleDir . '/src/Testing/Generated/TestAppAccessors.php';
 
 (new AccessorTraitWriter())->write($lenses, $target);
 

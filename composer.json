@@ -39,7 +39,7 @@
             "src/Theatron/Tui/Kit/functions.php"
         ],
         "psr-4": {
-            "Phalanx\\": "src/Aegis/",
+            "Phalanx\\": ["src/Aegis/", "src/Aegis/src/"],
             "Phalanx\\Archon\\": "src/Archon/",
             "Phalanx\\Argos\\": "src/Argos/",
             "Phalanx\\Athena\\": "src/Athena/",
