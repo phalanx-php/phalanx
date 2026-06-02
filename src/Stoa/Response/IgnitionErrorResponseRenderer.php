@@ -70,7 +70,7 @@ final readonly class IgnitionErrorResponseRenderer implements ErrorResponseRende
             );
 
             $renderer = new Renderer();
-            $viewPath = dirname(__DIR__, 2) . '/resources/ignition/views/errorPage.php';
+            $viewPath = dirname(__DIR__) . '/resources/ignition/views/errorPage.php';
 
             if (!is_file($viewPath)) {
                 return null;

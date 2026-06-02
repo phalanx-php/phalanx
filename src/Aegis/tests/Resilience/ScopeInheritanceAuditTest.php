@@ -20,7 +20,7 @@ use PHPUnit\Framework\TestCase;
  */
 final class ScopeInheritanceAuditTest extends TestCase
 {
-    private const string SCOPE_SRC_DIR = __DIR__ . '/../../src/Scope';
+    private const string SCOPE_SRC_DIR = __DIR__ . '/../../Scope';
 
     public function testEverySpawnInScopeDirInstallsTheCapturedScope(): void
     {

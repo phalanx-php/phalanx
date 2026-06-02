@@ -80,6 +80,6 @@ final class BundledYamlsLoadTest extends TestCase
 
     private static function yamlPath(string $file): string
     {
-        return dirname(__DIR__, 4) . '/src/Provider/HuggingFace/' . $file;
+        return dirname(__DIR__, 4) . '/Provider/HuggingFace/' . $file;
     }
 }

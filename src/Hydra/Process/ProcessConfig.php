@@ -47,9 +47,9 @@ final readonly class ProcessConfig
     private static function findWorkerScript(): string
     {
         $candidates = [
-            dirname(__DIR__, 2) . '/bin/phalanx-worker',
+            dirname(__DIR__) . '/bin/phalanx-worker',
+            dirname(__DIR__, 3) . '/bin/phalanx-worker',
             dirname(__DIR__, 4) . '/bin/phalanx-worker',
-            dirname(__DIR__, 5) . '/bin/phalanx-worker',
         ];
 
         return array_find($candidates, static fn(string $path): bool => file_exists($path)) ?? $candidates[0];
@@ -58,10 +58,10 @@ final readonly class ProcessConfig
     private static function findAutoloadPath(): string
     {
         $candidates = [
+            dirname(__DIR__, 2) . '/vendor/autoload.php',
             dirname(__DIR__, 3) . '/vendor/autoload.php',
             dirname(__DIR__, 4) . '/vendor/autoload.php',
-            dirname(__DIR__, 5) . '/vendor/autoload.php',
-            dirname(__DIR__, 7) . '/vendor/autoload.php',
+            dirname(__DIR__, 6) . '/vendor/autoload.php',
         ];
 
         return array_find($candidates, static fn(string $path): bool => file_exists($path))

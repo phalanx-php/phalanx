@@ -50,7 +50,7 @@ final class Registry
     {
         $registry = self::empty();
 
-        $bundledDir ??= dirname(__DIR__, 2) . '/src/HomeDir';
+        $bundledDir ??= __DIR__;
 
         $iter = new \GlobIterator($bundledDir . '/*/*.panoply.yaml');
 

@@ -7,87 +7,87 @@ parameters:
     # Legacy and parallel-lane packages are classified in vault context and
     # reintroduced package-by-package as their 0.2 ports land.
     paths:
-        - src/Aegis/src
-        - src/Archon/src
-        - src/Argos/src
-        - src/Athena/src
-        - src/Cli/src
-        - src/Enigma/src
-        - src/Grammata/src
-        - src/Hermes/src
-        - src/Hydra/src
-        - src/Iris/src
-        - src/Panoply/src
-        - src/PHPStan/src
-        - src/Skopos/src
-        - src/Stoa/src
-        - src/Surreal/src
-        - src/Theatron/src
-        - src/Styx/src
-        - src/Themis/src
+        - src/Aegis
+        - src/Archon
+        - src/Argos
+        - src/Athena
+        - src/Cli
+        - src/Enigma
+        - src/Grammata
+        - src/Hermes
+        - src/Hydra
+        - src/Iris
+        - src/Panoply
+        - src/PHPStan
+        - src/Skopos
+        - src/Stoa
+        - src/Surreal
+        - src/Theatron
+        - src/Styx
+        - src/Themis
         - benchmarks
         - demos
     scanDirectories:
         - vendor/swoole/ide-helper
     phalanxInternalPaths:
-        - src/Aegis/src/Concurrency/Co.php
-        - src/Aegis/src/Cancellation/CancellationToken.php
-        - src/Aegis/src/Pool/ObjectPool.php
-        - src/Aegis/src/Pool/PoolRing.php
-        - src/Aegis/src/Runtime/CoroutineRuntime.php
-        - src/Aegis/src/Runtime/RuntimeHooks.php
-        - src/Aegis/src/Scope/BorrowedScopeFrame.php
-        - src/Aegis/src/Scope/ExecutionLifecycleScope.php
-        - src/Aegis/src/Scope/TransactionLifecycleScope.php
-        - src/Aegis/src/Service/LazySingleton.php
-        - src/Aegis/src/Support/ExecutionScopeDelegate.php
-        - src/Aegis/src/Supervisor/InProcessLedger.php
-        - src/Aegis/src/Supervisor/LedgerStorage.php
-        - src/Aegis/src/Supervisor/Supervisor.php
-        - src/Aegis/src/Supervisor/SwooleTableLedger.php
-        - src/Aegis/src/Supervisor/TaskRun.php
-        - src/Aegis/src/Worker/
-        - src/Stoa/src/StoaRunner.php
+        - src/Aegis/Concurrency/Co.php
+        - src/Aegis/Cancellation/CancellationToken.php
+        - src/Aegis/Pool/ObjectPool.php
+        - src/Aegis/Pool/PoolRing.php
+        - src/Aegis/Runtime/CoroutineRuntime.php
+        - src/Aegis/Runtime/RuntimeHooks.php
+        - src/Aegis/Scope/BorrowedScopeFrame.php
+        - src/Aegis/Scope/ExecutionLifecycleScope.php
+        - src/Aegis/Scope/TransactionLifecycleScope.php
+        - src/Aegis/Service/LazySingleton.php
+        - src/Aegis/Support/ExecutionScopeDelegate.php
+        - src/Aegis/Supervisor/InProcessLedger.php
+        - src/Aegis/Supervisor/LedgerStorage.php
+        - src/Aegis/Supervisor/Supervisor.php
+        - src/Aegis/Supervisor/SwooleTableLedger.php
+        - src/Aegis/Supervisor/TaskRun.php
+        - src/Aegis/Worker/
+        - src/Stoa/StoaRunner.php
     phalanxEnforcedPaths:
-        - src/Aegis/src
-        - src/Archon/src
-        - src/Argos/src
-        - src/Athena/src
-        - src/Cli/src
-        - src/Enigma/src
-        - src/Grammata/src
-        - src/Hermes/src
-        - src/Hydra/src
-        - src/Iris/src
-        - src/Panoply/src
-        - src/PHPStan/src
-        - src/Skopos/src
-        - src/Stoa/src
-        - src/Surreal/src
-        - src/Theatron/src
-        - src/Styx/src
-        - src/Themis/src
+        - src/Aegis
+        - src/Archon
+        - src/Argos
+        - src/Athena
+        - src/Cli
+        - src/Enigma
+        - src/Grammata
+        - src/Hermes
+        - src/Hydra
+        - src/Iris
+        - src/Panoply
+        - src/PHPStan
+        - src/Skopos
+        - src/Stoa
+        - src/Surreal
+        - src/Theatron
+        - src/Styx
+        - src/Themis
     phalanxAuditPaths: []
     phalanxRuntimeHookInternalPaths:
-        - src/Aegis/src/Runtime/RuntimeCapability.php
-        - src/Aegis/src/Runtime/RuntimeHookNames.php
-        - src/Aegis/src/Runtime/RuntimeHooks.php
-        - src/Aegis/src/Runtime/RuntimePolicy.php
+        - src/Aegis/Runtime/RuntimeCapability.php
+        - src/Aegis/Runtime/RuntimeHookNames.php
+        - src/Aegis/Runtime/RuntimeHooks.php
+        - src/Aegis/Runtime/RuntimePolicy.php
     phalanxProcessInternalPaths:
-        - src/Aegis/src/System/Internal/SymfonyProcessAdapter.php
-        - src/Cli/src
-        - src/Hydra/src/WorkerPool/WorkerPool.php
-        - src/Theatron/src/Terminal/Terminal.php
+        - src/Aegis/System/Internal/SymfonyProcessAdapter.php
+        - src/Cli
+        - src/Hydra/WorkerPool/WorkerPool.php
+        - src/Theatron/Terminal/Terminal.php
     phalanxCoroutineInternalPaths:
-        - src/Aegis/src/Scope/ExecutionLifecycleScope.php
+        - src/Aegis/Scope/ExecutionLifecycleScope.php
         - benchmarks/kernel/cases/ContextSwitchCases.php
     # swoole/ide-helper's Swoole\Lock::lock() stub omits $operation and $timeout.
     # stubs/swoole-lock.php documents the correct ext-swoole 6 signature but cannot
     # override scanDirectories entries in PHPStan 2.x; the ignoreErrors below are
     # scoped to the two internal call sites that use lock(timeout:).
     # Verified via reflection: lock(int $operation = 2, float $timeout = -1): bool
-    stubFiles:
-        - stubs/swoole-lock.php
+    # stubFiles:
+    #     - stubs/swoole-lock.php
     ignoreErrors:
         -
             identifier: phalanx.testing.useBenchmarkHarness
@@ -102,11 +102,11 @@ parameters:
         # stubs/swoole-lock.php documents the correct signature.
         -
             identifier: argument.unknown
-            path: src/Aegis/src/Runtime/Memory/ManagedResourceTransitionLocks.php
+            path: src/Aegis/Runtime/Memory/ManagedResourceTransitionLocks.php
             reportUnmatched: true
         -
             identifier: argument.unknown
-            path: src/Aegis/src/Runtime/Memory/RuntimeClaims.php
+            path: src/Aegis/Runtime/Memory/RuntimeClaims.php
             reportUnmatched: true
     tmpDir: .phpstan-cache
     treatPhpDocTypesAsCertain: false
