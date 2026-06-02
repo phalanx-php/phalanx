@@ -63,7 +63,8 @@ final class CollabServiceBundle extends ServiceBundle
             ->needs(InletQueue::class)
             ->factory(static fn(InletQueue $incoming): InputPromptSubmitter => new InputPromptSubmitter($incoming));
 
-        $services->singleton(CollaborationLoop::class)
+        $services
+            ->singleton(CollaborationLoop::class)
             ->factory(static function () use (
                 $primary,
                 $outlets,

@@ -135,36 +135,32 @@ final class CommandDispatcher
 
     private function renderError(\Phalanx\Scope\Scope $scope, Throwable $e): void
     {
-        $commandScope = $scope instanceof CommandContext ? $scope : null;
+        $commandScope = $scope instanceof CommandContext
+            ? $scope
+            : $this->dummyContext($scope);
 
-        if ($commandScope !== null) {
-            foreach ($this->errorRenderers as $renderer) {
-                if ($renderer->render($commandScope, $e, $this->errorOutput())) {
-                    return;
-                }
+        foreach ($this->errorRenderers as $renderer) {
+            if ($renderer->render($commandScope, $e, $this->errorOutput())) {
+                return;
             }
         }
 
         $renderer = new DefaultConsoleErrorRenderer(debug: true);
+        $renderer->render($commandScope, $e, $this->errorOutput());
+    }
 
-        if ($commandScope !== null) {
-            $renderer->render($commandScope, $e, $this->errorOutput());
-
-            return;
-        }
-
-        // Fallback: Create a dummy context for the default renderer
+    private function dummyContext(\Phalanx\Scope\Scope $scope): CommandContext
+    {
         $inner = $scope instanceof ExecutionScope ? $scope : $this->host->createScope();
-        $dummy = new ExecutionContext(
+
+        return new ExecutionContext(
             $inner,
             'unknown',
             new CommandArgs([]),
             new CommandOptions([]),
             new CommandConfig(),
-            'unknown-id'
+            'unknown-id',
         );
-
-        $renderer->render($dummy, $e, $this->errorOutput());
     }
 
     /** @param list<string> $args */
