@@ -30,12 +30,6 @@ final class AgentHarnessServiceBundle extends ServiceBundle
             ->factory(static fn(): InletQueue => new InletQueue());
 
         $services->alias(InletChannel::class, InletQueue::class);
-        $services->alias(\Phalanx\Theatron\AgentHarness\Apps\AgentHarnessRuntime::class, AgentHarnessRuntime::class);
-        $services->alias(\Phalanx\Theatron\AgentHarness\Boundaries\InletChannel::class, InletQueue::class);
-        $services->alias(\Phalanx\Theatron\AgentHarness\Boundaries\InletQueue::class, InletQueue::class);
-        $services->alias(\Phalanx\Theatron\AgentHarness\Boundaries\InputPromptSubmitter::class, InputPromptSubmitter::class);
-        $services->alias(\Phalanx\Theatron\AgentHarness\Lifecycle\AgentHarnessLoop::class, AgentHarnessLoop::class);
-        $services->alias(\Phalanx\Theatron\AgentHarness\State\AgentHarnessStore::class, AgentHarnessStore::class);
 
         $services->singleton(InputPromptSubmitter::class)
             ->needs(InletQueue::class)

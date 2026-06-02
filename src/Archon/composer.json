@@ -21,7 +21,8 @@
     },
     "require": {
         "php": "^8.4",
-        "phalanx-php/aegis": "^0.6"
+        "phalanx-php/aegis": "^0.6",
+        "phalanx-php/themis": "^0.6"
     },
     "suggest": {
         "symfony/runtime": "For Symfony Runtime integration via Archon::starting()",

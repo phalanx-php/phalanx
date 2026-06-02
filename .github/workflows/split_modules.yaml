@@ -13,24 +13,24 @@ jobs:
       fail-fast: false
       matrix:
         package:
-          - { local_path: 'src/Aegis', split_repository: 'phalanx-php/aegis' }
-          - { local_path: 'src/Archon', split_repository: 'phalanx-php/archon' }
-          - { local_path: 'src/Argos', split_repository: 'phalanx-php/argos' }
-          - { local_path: 'src/Athena', split_repository: 'phalanx-php/athena' }
-          - { local_path: 'src/Cli', split_repository: 'phalanx-php/cli' }
-          - { local_path: 'src/Enigma', split_repository: 'phalanx-php/enigma' }
-          - { local_path: 'src/Grammata', split_repository: 'phalanx-php/grammata' }
-          - { local_path: 'src/Hermes', split_repository: 'phalanx-php/hermes' }
-          - { local_path: 'src/Hydra', split_repository: 'phalanx-php/hydra' }
-          - { local_path: 'src/Iris', split_repository: 'phalanx-php/iris' }
-          - { local_path: 'src/PHPStan', split_repository: 'phalanx-php/phpstan' }
-          - { local_path: 'src/Panoply', split_repository: 'phalanx-php/panoply' }
-          - { local_path: 'src/Skopos', split_repository: 'phalanx-php/skopos' }
-          - { local_path: 'src/Stoa', split_repository: 'phalanx-php/stoa' }
-          - { local_path: 'src/Styx', split_repository: 'phalanx-php/styx' }
-          - { local_path: 'src/Surreal', split_repository: 'phalanx-php/surreal' }
-          - { local_path: 'src/Theatron', split_repository: 'phalanx-php/theatron' }
-          - { local_path: 'src/Themis', split_repository: 'phalanx-php/themis' }
+          - { local_path: 'src/Aegis', split_repository: 'phalanx-aegis' }
+          - { local_path: 'src/Archon', split_repository: 'phalanx-archon' }
+          - { local_path: 'src/Argos', split_repository: 'phalanx-argos' }
+          - { local_path: 'src/Athena', split_repository: 'phalanx-athena' }
+          - { local_path: 'src/Cli', split_repository: 'phalanx-cli' }
+          - { local_path: 'src/Enigma', split_repository: 'phalanx-enigma' }
+          - { local_path: 'src/Grammata', split_repository: 'phalanx-grammata' }
+          - { local_path: 'src/Hermes', split_repository: 'phalanx-hermes' }
+          - { local_path: 'src/Hydra', split_repository: 'phalanx-hydra' }
+          - { local_path: 'src/Iris', split_repository: 'phalanx-iris' }
+          - { local_path: 'src/PHPStan', split_repository: 'phalanx-phpstan' }
+          - { local_path: 'src/Panoply', split_repository: 'phalanx-panoply' }
+          - { local_path: 'src/Skopos', split_repository: 'phalanx-skopos' }
+          - { local_path: 'src/Stoa', split_repository: 'phalanx-stoa' }
+          - { local_path: 'src/Styx', split_repository: 'phalanx-styx' }
+          - { local_path: 'src/Surreal', split_repository: 'phalanx-surreal' }
+          - { local_path: 'src/Theatron', split_repository: 'phalanx-theatron' }
+          - { local_path: 'src/Themis', split_repository: 'phalanx-themis' }
 
     steps:
       - uses: actions/checkout@v4

@@ -26,6 +26,7 @@
         "phalanx-php/aegis": "^0.6",
         "phalanx-php/hermes": "^0.6",
         "phalanx-php/iris": "^0.6",
+        "phalanx-php/styx": "^0.6",
         "phalanx-php/themis": "^0.6"
     },
     "require-dev": {

@@ -26,8 +26,9 @@
     },
     "require": {
         "php": "^8.4",
-        "ext-swoole": "*",
+        "ext-swoole": "^6.0",
         "phalanx-php/aegis": "^0.6",
+        "phalanx-php/themis": "^0.6",
         "mlocati/ip-lib": "^1.22"
     },
     "require-dev": {

@@ -90,7 +90,6 @@
     },
     "autoload": {
         "files": [
-            "src/AgentHarness/aliases.php",
             "src/Tui/Kit/functions.php"
         ],
         "psr-4": {
