@@ -4,7 +4,7 @@
 
 # Theatron
 
-Terminal UI and agent collaboration framework for PHP 8.4+, built on the Phalanx
+Terminal UI and agent-harness framework for PHP 8.4+, built on the Phalanx
 runtime.
 
 Theatron apps are invokable screens and components that return TDOM trees. The
@@ -52,31 +52,29 @@ return Theatron::app($context)
 ```
 
 `Theatron::app(...)` owns terminal stage configuration, screen registration,
-input dispatch, and the Aegis startup path. The Collab layer owns agent loop
+input dispatch, and the Aegis startup path. The AgentHarness layer owns agent loop
 contracts, messages, work state, prompts, reviews, and UI-facing state
 projections.
 
-## Collab App Shape
+## AgentHarness App Shape
 
-Use `Theatron::collab()` when the app is an agent collaboration workspace. The
-builder owns the default Collab store, workspace screen, receive queue, input
+Use `Theatron::agentHarness()` when the app is an agent-harness workspace. The
+builder owns the default AgentHarness store, workspace screen, receive queue, input
 submitter, boundary runner, and runtime tick loop.
 
 ```php
 <?php
 
-use Phalanx\Theatron\Collab\Participants\Collaborator;
 use Phalanx\Theatron\Theatron;
 
-/** @var Collaborator $assistant */
 $assistant = new Assistant();
 
-return Theatron::collab($context)
+return Theatron::agentHarness($context)
     ->primary($assistant)
     ->run();
 ```
 
-The default workspace renders projections from `CollabStore`. User text enters
+The default workspace renders projections from `AgentHarnessStore`. User text enters
 through `InputComposer`, becomes an `InputPromptSubmitter` prompt envelope, then
 flows through the same receive path as other inlets.
 
@@ -388,11 +386,11 @@ use Phalanx\Theatron\Tui\Inputs\Key;
 Resolution is layered: overlay stack, active screen, global bindings. The active
 binding list can be rendered with `$ctx->hints()` in component render contexts.
 
-## Collab Workspace
+## AgentHarness Workspace
 
-`WorkspaceScreen` is the current Collab reference screen. It renders chat,
+`WorkspaceScreen` is the current AgentHarness reference screen. It renders chat,
 plan, runtime, DevTools, status, and input panels from store projections. Screens
-do not call collaborators directly.
+do not call participants directly.
 
 ## Verification
 

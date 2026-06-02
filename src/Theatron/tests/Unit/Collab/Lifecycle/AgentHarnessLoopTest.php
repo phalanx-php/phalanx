@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Phalanx\Theatron\Tests\Unit\Collab\Lifecycle;
 
 use Phalanx\Scope\TaskScope;
-use Phalanx\Theatron\Collab\Events\CollabEvent;
+use Phalanx\Theatron\Collab\Events\AgentHarnessEvent;
 use Phalanx\Theatron\Collab\Events\EventKind;
-use Phalanx\Theatron\Collab\Lifecycle\CollaborationLoop;
+use Phalanx\Theatron\Collab\Lifecycle\AgentHarnessLoop;
 use Phalanx\Theatron\Collab\Lifecycle\LoopStage;
-use Phalanx\Theatron\Collab\Participants\Collaborator;
+use Phalanx\Theatron\Collab\Participants\AgentParticipant;
 use Phalanx\Theatron\Collab\Participants\Preparer;
 use Phalanx\Theatron\Collab\Participants\Reactor;
 use Phalanx\Theatron\Collab\Participants\Reviewer;
@@ -20,26 +20,26 @@ use Phalanx\Theatron\Collab\Plans\WorkPlan;
 use Phalanx\Theatron\Collab\Plans\WorkPlanItem;
 use Phalanx\Theatron\Collab\Plans\WorkPlanStatus;
 use Phalanx\Theatron\Collab\Plans\WorkResult;
-use Phalanx\Theatron\Collab\Projection\CollabReplay;
+use Phalanx\Theatron\Collab\Projection\AgentHarnessReplay;
 use Phalanx\Theatron\Collab\Reviews\ReviewVerdict;
-use Phalanx\Theatron\Collab\State\CollabStore;
+use Phalanx\Theatron\Collab\State\AgentHarnessStore;
 use Phalanx\Theatron\Collab\State\TimelineEntry;
 use Phalanx\Theatron\Collab\State\WorkPlanSlice;
 use Phalanx\Theatron\Collab\WorkContext;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-final class CollaborationLoopTest extends TestCase
+final class AgentHarnessLoopTest extends TestCase
 {
     #[Test]
-    public function preparerPrimaryCollaboratorAndDefaultReviewCompleteTheLoop(): void
+    public function preparerPrimaryAgentParticipantAndDefaultReviewCompleteTheLoop(): void
     {
         $calls = new \ArrayObject();
         $events = new \ArrayObject();
         $reactStages = new \ArrayObject();
         $ctx = $this->ctx();
-        $loop = new CollaborationLoop(
-            primary: self::doneCollaborator('primary', $calls),
+        $loop = new AgentHarnessLoop(
+            primary: self::doneAgentParticipant('primary', $calls),
             preparers: [self::preparer(new WorkItem(Activity::Testing, 'Run tests', id: 'work_a'))],
             reactors: [self::reactor($events, $reactStages)],
         );
@@ -71,14 +71,14 @@ final class CollaborationLoopTest extends TestCase
     }
 
     #[Test]
-    public function firstSupportingCollaboratorRunsBeforePrimaryFallback(): void
+    public function firstSupportingAgentParticipantRunsBeforePrimaryFallback(): void
     {
         $calls = new \ArrayObject();
         $ctx = $this->ctx(WorkPlan::start(new WorkItem(Activity::Editing, 'Patch code', tags: ['php'], id: 'work_patch')));
-        $loop = new CollaborationLoop(
-            primary: self::doneCollaborator('primary', $calls),
-            collaborators: [
-                self::tagCollaborator('php-specialist', 'php', $calls),
+        $loop = new AgentHarnessLoop(
+            primary: self::doneAgentParticipant('primary', $calls),
+            participants: [
+                self::tagAgentParticipant('php-specialist', 'php', $calls),
             ],
         );
 
@@ -92,16 +92,16 @@ final class CollaborationLoopTest extends TestCase
     public function fullLoopEventStreamReplaysToEquivalentStore(): void
     {
         $events = new LoopEventLog();
-        $liveStore = new CollabStore();
+        $liveStore = new AgentHarnessStore();
         $ctx = new WorkContext($this->createStub(TaskScope::class), $liveStore);
-        $loop = new CollaborationLoop(
-            primary: self::doneCollaborator('primary', new \ArrayObject()),
+        $loop = new AgentHarnessLoop(
+            primary: self::doneAgentParticipant('primary', new \ArrayObject()),
             preparers: [self::preparer(new WorkItem(Activity::Testing, 'Run tests', id: 'work_a'))],
             reactors: [self::eventCapture($events)],
         );
 
         $status = $loop($ctx);
-        $replayed = new CollabReplay()->replay($events->events);
+        $replayed = new AgentHarnessReplay()->replay($events->events);
 
         self::assertSame(WorkPlanStatus::Complete, $status);
         self::assertSame(self::planRows($liveStore), self::planRows($replayed));
@@ -116,20 +116,20 @@ final class CollaborationLoopTest extends TestCase
     public function preseededPlanEventStreamReplaysToEquivalentStore(): void
     {
         $events = new LoopEventLog();
-        $liveStore = new CollabStore();
+        $liveStore = new AgentHarnessStore();
         $liveStore->workPlan = new WorkPlanSlice(WorkPlan::start(new WorkItem(
             Activity::Editing,
             'Patch code',
             id: 'work_patch',
         )));
         $ctx = new WorkContext($this->createStub(TaskScope::class), $liveStore);
-        $loop = new CollaborationLoop(
-            primary: self::doneCollaborator('primary', new \ArrayObject()),
+        $loop = new AgentHarnessLoop(
+            primary: self::doneAgentParticipant('primary', new \ArrayObject()),
             reactors: [self::eventCapture($events)],
         );
 
         $status = $loop($ctx);
-        $replayed = new CollabReplay()->replay($events->events);
+        $replayed = new AgentHarnessReplay()->replay($events->events);
 
         self::assertSame(WorkPlanStatus::Complete, $status);
         self::assertSame(self::planRows($liveStore), self::planRows($replayed));
@@ -141,14 +141,14 @@ final class CollaborationLoopTest extends TestCase
     {
         $events = new LoopEventLog();
         $ctx = $this->ctx();
-        $loop = new CollaborationLoop(
-            primary: self::doneCollaborator('primary', new \ArrayObject()),
+        $loop = new AgentHarnessLoop(
+            primary: self::doneAgentParticipant('primary', new \ArrayObject()),
             preparers: [self::preparer(new WorkItem(Activity::Testing, 'Run tests', id: 'work_a'))],
             reactors: [self::eventCapture($events)],
         );
 
         $loop($ctx);
-        $replayed = new CollabReplay()->replay($events->events);
+        $replayed = new AgentHarnessReplay()->replay($events->events);
 
         self::assertSame(WorkItemStatus::Done, $replayed->workPlan->plan->item('work_a')->status);
     }
@@ -157,9 +157,9 @@ final class CollaborationLoopTest extends TestCase
     public function loopOwnedProjectionDoesNotDrainPendingUserlandEvents(): void
     {
         $ctx = $this->ctx(WorkPlan::start(new WorkItem(Activity::Testing, 'Run tests', id: 'work_a')));
-        $ctx->project(CollabEvent::record(EventKind::WorkDistributed, id: 'evt_prequeued_distribution'));
-        $loop = new CollaborationLoop(
-            primary: self::doneCollaborator('primary', new \ArrayObject()),
+        $ctx->project(AgentHarnessEvent::record(EventKind::WorkDistributed, id: 'evt_prequeued_distribution'));
+        $loop = new AgentHarnessLoop(
+            primary: self::doneAgentParticipant('primary', new \ArrayObject()),
         );
 
         $loop($ctx);
@@ -167,7 +167,7 @@ final class CollaborationLoopTest extends TestCase
         self::assertSame(
             ['evt_prequeued_distribution'],
             array_map(
-                static fn (CollabEvent $event): string => $event->id,
+                static fn (AgentHarnessEvent $event): string => $event->id,
                 $ctx->drainProjectedEvents(EventKind::WorkDistributed),
             ),
         );
@@ -178,8 +178,8 @@ final class CollaborationLoopTest extends TestCase
     {
         $calls = new \ArrayObject();
         $ctx = $this->ctx(WorkPlan::start(new WorkItem(Activity::Editing, 'Patch code', id: 'work_patch')));
-        $loop = new CollaborationLoop(
-            primary: self::doneCollaborator('primary', $calls),
+        $loop = new AgentHarnessLoop(
+            primary: self::doneAgentParticipant('primary', $calls),
             reviewers: [
                 new class implements Reviewer {
                     private int $calls = 0;
@@ -211,8 +211,8 @@ final class CollaborationLoopTest extends TestCase
     public function reviewerRejectionAbortsCompletedWork(): void
     {
         $ctx = $this->ctx(WorkPlan::start(new WorkItem(Activity::Editing, 'Patch code', id: 'work_patch')));
-        $loop = new CollaborationLoop(
-            primary: self::doneCollaborator('primary', new \ArrayObject()),
+        $loop = new AgentHarnessLoop(
+            primary: self::doneAgentParticipant('primary', new \ArrayObject()),
             reviewers: [
                 new class implements Reviewer {
                     public function __invoke(WorkContext $ctx): ReviewVerdict
@@ -238,12 +238,12 @@ final class CollaborationLoopTest extends TestCase
             preferredParticipant: \Phalanx\Theatron\Collab\Messages\Address::agent('other'),
             id: 'work_patch',
         )));
-        $loop = new CollaborationLoop(
-            primary: self::preferredCollaborator('primary', 'primary', new \ArrayObject()),
+        $loop = new AgentHarnessLoop(
+            primary: self::preferredAgentParticipant('primary', 'primary', new \ArrayObject()),
         );
 
         $this->expectException(\LogicException::class);
-        $this->expectExceptionMessage('No collaborator supports work item "work_patch".');
+        $this->expectExceptionMessage('No participant supports work item "work_patch".');
 
         try {
             $loop($ctx);
@@ -253,13 +253,13 @@ final class CollaborationLoopTest extends TestCase
     }
 
     #[Test]
-    public function collaboratorFailureBecomesInterruptedFailedWork(): void
+    public function participantFailureBecomesInterruptedFailedWork(): void
     {
         $events = new \ArrayObject();
         $ctx = $this->ctx(WorkPlan::start(new WorkItem(Activity::Editing, 'Patch code', id: 'work_patch')));
         $error = new \RuntimeException('tool failed');
-        $loop = new CollaborationLoop(
-            primary: self::throwingCollaborator($error),
+        $loop = new AgentHarnessLoop(
+            primary: self::throwingAgentParticipant($error),
             reactors: [self::resultReactor($events)],
         );
 
@@ -275,15 +275,15 @@ final class CollaborationLoopTest extends TestCase
     {
         $ctx = $this->ctx(WorkPlan::start(new WorkItem(Activity::Editing, 'Patch code', id: 'work_patch')));
         $error = new \RuntimeException('reactor failed');
-        $loop = new CollaborationLoop(
-            primary: self::doneCollaborator('primary', new \ArrayObject()),
+        $loop = new AgentHarnessLoop(
+            primary: self::doneAgentParticipant('primary', new \ArrayObject()),
             reactors: [
                 new class ($error) implements Reactor {
                     public function __construct(private \RuntimeException $error)
                     {
                     }
 
-                    public function __invoke(CollabEvent $event, WorkContext $ctx): void
+                    public function __invoke(AgentHarnessEvent $event, WorkContext $ctx): void
                     {
                         throw $this->error;
                     }
@@ -301,11 +301,11 @@ final class CollaborationLoopTest extends TestCase
     }
 
     #[Test]
-    public function blockedCollaboratorSuspendsThePlan(): void
+    public function blockedAgentParticipantSuspendsThePlan(): void
     {
         $ctx = $this->ctx(WorkPlan::start(new WorkItem(Activity::Researching, 'Wait for token', id: 'work_wait')));
-        $loop = new CollaborationLoop(
-            primary: new class implements Collaborator {
+        $loop = new AgentHarnessLoop(
+            primary: new class implements AgentParticipant {
                 public function __invoke(WorkPlanItem $item, WorkContext $ctx): WorkResult
                 {
                     return WorkResult::blocked($item->workItem->id, 'missing token');
@@ -327,7 +327,7 @@ final class CollaborationLoopTest extends TestCase
     /**
      * @return list<array{id: string, status: string}>
      */
-    private static function planRows(CollabStore $store): array
+    private static function planRows(AgentHarnessStore $store): array
     {
         return array_map(
             static fn (WorkPlanItem $item): array => [
@@ -341,7 +341,7 @@ final class CollaborationLoopTest extends TestCase
     /**
      * @return list<array{kind: string, summary: string, work: ?string, status: ?string}>
      */
-    private static function timelineRows(CollabStore $store): array
+    private static function timelineRows(AgentHarnessStore $store): array
     {
         return array_map(
             static fn (TimelineEntry $entry): array => [
@@ -369,9 +369,9 @@ final class CollaborationLoopTest extends TestCase
     }
 
     /** @param \ArrayObject<int, string> $calls */
-    private static function doneCollaborator(string $name, \ArrayObject $calls): Collaborator
+    private static function doneAgentParticipant(string $name, \ArrayObject $calls): AgentParticipant
     {
-        return new class ($name, $calls) implements Collaborator {
+        return new class ($name, $calls) implements AgentParticipant {
             /** @param \ArrayObject<int, string> $calls */
             public function __construct(
                 private string $name,
@@ -394,9 +394,9 @@ final class CollaborationLoopTest extends TestCase
     }
 
     /** @param \ArrayObject<int, string> $calls */
-    private static function tagCollaborator(string $name, string $tag, \ArrayObject $calls): Collaborator
+    private static function tagAgentParticipant(string $name, string $tag, \ArrayObject $calls): AgentParticipant
     {
-        return new class ($name, $tag, $calls) implements Collaborator {
+        return new class ($name, $tag, $calls) implements AgentParticipant {
             /** @param \ArrayObject<int, string> $calls */
             public function __construct(
                 private string $name,
@@ -420,9 +420,9 @@ final class CollaborationLoopTest extends TestCase
     }
 
     /** @param \ArrayObject<int, string> $calls */
-    private static function preferredCollaborator(string $name, string $agentId, \ArrayObject $calls): Collaborator
+    private static function preferredAgentParticipant(string $name, string $agentId, \ArrayObject $calls): AgentParticipant
     {
-        return new class ($name, $agentId, $calls) implements Collaborator {
+        return new class ($name, $agentId, $calls) implements AgentParticipant {
             /** @param \ArrayObject<int, string> $calls */
             public function __construct(
                 private string $name,
@@ -447,9 +447,9 @@ final class CollaborationLoopTest extends TestCase
         };
     }
 
-    private static function throwingCollaborator(\Throwable $error): Collaborator
+    private static function throwingAgentParticipant(\Throwable $error): AgentParticipant
     {
-        return new class ($error) implements Collaborator {
+        return new class ($error) implements AgentParticipant {
             public function __construct(private \Throwable $error)
             {
             }
@@ -483,7 +483,7 @@ final class CollaborationLoopTest extends TestCase
             ) {
             }
 
-            public function __invoke(CollabEvent $event, WorkContext $ctx): void
+            public function __invoke(AgentHarnessEvent $event, WorkContext $ctx): void
             {
                 $this->events[] = $event->kind;
                 $this->stages[] = $ctx->stage;
@@ -498,7 +498,7 @@ final class CollaborationLoopTest extends TestCase
             {
             }
 
-            public function __invoke(CollabEvent $event, WorkContext $ctx): void
+            public function __invoke(AgentHarnessEvent $event, WorkContext $ctx): void
             {
                 $this->events->record($event);
             }
@@ -514,7 +514,7 @@ final class CollaborationLoopTest extends TestCase
             {
             }
 
-            public function __invoke(CollabEvent $event, WorkContext $ctx): void
+            public function __invoke(AgentHarnessEvent $event, WorkContext $ctx): void
             {
                 if ($event->workResult !== null) {
                     $this->events[] = $event->kind;
@@ -525,7 +525,7 @@ final class CollaborationLoopTest extends TestCase
 
     private function ctx(?WorkPlan $plan = null): WorkContext
     {
-        $store = new CollabStore();
+        $store = new AgentHarnessStore();
         if ($plan !== null) {
             $store->workPlan = new WorkPlanSlice($plan);
         }
@@ -536,10 +536,10 @@ final class CollaborationLoopTest extends TestCase
 
 class LoopEventLog
 {
-    /** @var list<CollabEvent> */
+    /** @var list<AgentHarnessEvent> */
     private(set) array $events = [];
 
-    public function record(CollabEvent $event): void
+    public function record(AgentHarnessEvent $event): void
     {
         $this->events[] = $event;
     }

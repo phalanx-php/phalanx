@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Theatron\Collab\State;
 
-use Phalanx\Theatron\Collab\Events\CollabEvent;
+use Phalanx\Theatron\Collab\Events\AgentHarnessEvent;
 use Phalanx\Theatron\Collab\Events\EventKind;
 use Phalanx\Theatron\Collab\Messages\Envelope;
 
@@ -28,7 +28,7 @@ final class MessageTimelineSlice
         $this->entries = $entries === []
             ? array_map(
                 static fn (Envelope $envelope): TimelineEntry => TimelineEntry::fromEnvelope(
-                    CollabEvent::record(EventKind::WorkReceived, envelope: $envelope),
+                    AgentHarnessEvent::record(EventKind::WorkReceived, envelope: $envelope),
                     $envelope,
                 ),
                 $this->envelopes,
@@ -38,7 +38,7 @@ final class MessageTimelineSlice
 
     public function record(Envelope $envelope): self
     {
-        $event = CollabEvent::record(EventKind::WorkReceived, envelope: $envelope);
+        $event = AgentHarnessEvent::record(EventKind::WorkReceived, envelope: $envelope);
 
         return new self(
             envelopes: [...$this->envelopes, $envelope],
@@ -46,7 +46,7 @@ final class MessageTimelineSlice
         );
     }
 
-    public function project(CollabEvent $event): self
+    public function project(AgentHarnessEvent $event): self
     {
         $envelopes = $this->envelopes;
         $entries = $this->entries;
@@ -75,7 +75,7 @@ final class MessageTimelineSlice
         return new self($envelopes, $entries);
     }
 
-    private static function workEntry(CollabEvent $event): ?TimelineEntry
+    private static function workEntry(AgentHarnessEvent $event): ?TimelineEntry
     {
         return match ($event->kind) {
             EventKind::WorkItemStarted => TimelineEntry::work(
@@ -97,11 +97,11 @@ final class MessageTimelineSlice
         };
     }
 
-    private static function workResultSummary(CollabEvent $event): ?string
+    private static function workResultSummary(AgentHarnessEvent $event): ?string
     {
         if ($event->workResult === null) {
             throw new \InvalidArgumentException(sprintf(
-                'Collab event "%s" requires a work result for timeline projection.',
+                'AgentHarness event "%s" requires a work result for timeline projection.',
                 $event->kind->value,
             ));
         }
@@ -111,11 +111,11 @@ final class MessageTimelineSlice
         return $summary === '' ? null : $summary;
     }
 
-    private static function workItemId(CollabEvent $event): string
+    private static function workItemId(AgentHarnessEvent $event): string
     {
         if ($event->workItem === null) {
             throw new \InvalidArgumentException(sprintf(
-                'Collab event "%s" requires a work item for timeline projection.',
+                'AgentHarness event "%s" requires a work item for timeline projection.',
                 $event->kind->value,
             ));
         }

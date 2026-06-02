@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Theatron\Tests\Unit\Collab\Projection;
 
 use DateTimeImmutable;
-use Phalanx\Theatron\Collab\Events\CollabEvent;
+use Phalanx\Theatron\Collab\Events\AgentHarnessEvent;
 use Phalanx\Theatron\Collab\Events\EventKind;
 use Phalanx\Theatron\Collab\Messages\Address;
 use Phalanx\Theatron\Collab\Messages\Envelope;
@@ -15,19 +15,19 @@ use Phalanx\Theatron\Collab\Plans\WorkItem;
 use Phalanx\Theatron\Collab\Plans\WorkItemStatus;
 use Phalanx\Theatron\Collab\Plans\WorkPlanStatus;
 use Phalanx\Theatron\Collab\Plans\WorkResult;
-use Phalanx\Theatron\Collab\Projection\CollabReplay;
-use Phalanx\Theatron\Collab\State\CollabStore;
+use Phalanx\Theatron\Collab\Projection\AgentHarnessReplay;
+use Phalanx\Theatron\Collab\State\AgentHarnessStore;
 use Phalanx\Theatron\Collab\State\TimelineEntry;
 use Phalanx\Theatron\Collab\State\TimelineEntryKind;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-final class CollabReplayTest extends TestCase
+final class AgentHarnessReplayTest extends TestCase
 {
     #[Test]
     public function replaysFixtureIntoDeterministicStore(): void
     {
-        $replay = new CollabReplay();
+        $replay = new AgentHarnessReplay();
         $store = $replay(self::happyPathEvents());
 
         self::assertSame(WorkPlanStatus::Complete, $store->workPlan->plan->status);
@@ -47,7 +47,7 @@ final class CollabReplayTest extends TestCase
     #[Test]
     public function freshReplayProducesDeterministicCanonicalPlanState(): void
     {
-        $replay = new CollabReplay();
+        $replay = new AgentHarnessReplay();
 
         $first = $replay(self::happyPathEvents())->workPlan->plan->toCanonical();
         $second = $replay(self::happyPathEvents())->workPlan->plan->toCanonical();
@@ -59,15 +59,15 @@ final class CollabReplayTest extends TestCase
     #[Test]
     public function canReplayIntoProvidedStore(): void
     {
-        $store = new CollabStore();
-        $returned = new CollabReplay()->replay(self::happyPathEvents(), $store);
+        $store = new AgentHarnessStore();
+        $returned = new AgentHarnessReplay()->replay(self::happyPathEvents(), $store);
 
         self::assertSame($store, $returned);
         self::assertSame(WorkPlanStatus::Complete, $store->workPlan->plan->status);
     }
 
     /**
-     * @return list<CollabEvent>
+     * @return list<AgentHarnessEvent>
      */
     private static function happyPathEvents(): array
     {
@@ -75,7 +75,7 @@ final class CollabReplayTest extends TestCase
         $workItem = new WorkItem(Activity::Thinking, 'Project the store', id: 'work_projection');
 
         return [
-            CollabEvent::record(
+            AgentHarnessEvent::record(
                 EventKind::WorkReceived,
                 envelope: Envelope::make(
                     from: Address::user(),
@@ -88,13 +88,13 @@ final class CollabReplayTest extends TestCase
                 occurredAt: $time,
                 id: 'evt_received',
             ),
-            CollabEvent::record(
+            AgentHarnessEvent::record(
                 EventKind::WorkItemStarted,
                 workItem: $workItem,
                 occurredAt: $time,
                 id: 'evt_started',
             ),
-            CollabEvent::record(
+            AgentHarnessEvent::record(
                 EventKind::WorkItemCompleted,
                 workItem: $workItem,
                 workResult: WorkResult::done(

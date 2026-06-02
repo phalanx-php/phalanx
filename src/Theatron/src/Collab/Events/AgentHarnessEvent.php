@@ -12,7 +12,7 @@ use Phalanx\Theatron\Collab\Plans\WorkItem;
 use Phalanx\Theatron\Collab\Plans\WorkResult;
 use Phalanx\Theatron\Collab\Reviews\ReviewVerdict;
 
-final class CollabEvent
+final class AgentHarnessEvent
 {
     /** @var array<string, mixed> */
     private(set) array $context;
@@ -31,7 +31,7 @@ final class CollabEvent
         array $context = [],
     ) {
         if (trim($this->id) === '') {
-            throw new \InvalidArgumentException('Collab event id cannot be empty.');
+            throw new \InvalidArgumentException('AgentHarness event id cannot be empty.');
         }
 
         $this->context = $context;

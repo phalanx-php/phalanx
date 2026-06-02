@@ -8,7 +8,7 @@ use DateTimeImmutable;
 use Phalanx\Scope\TaskScope;
 use Phalanx\Theatron\Collab\Boundaries\InletQueue;
 use Phalanx\Theatron\Collab\Boundaries\InputPromptSubmitter;
-use Phalanx\Theatron\Collab\Events\CollabEvent;
+use Phalanx\Theatron\Collab\Events\AgentHarnessEvent;
 use Phalanx\Theatron\Collab\Events\EventKind;
 use Phalanx\Theatron\Collab\Messages\Address;
 use Phalanx\Theatron\Collab\Messages\Envelope;
@@ -16,10 +16,10 @@ use Phalanx\Theatron\Collab\Messages\MessageKind;
 use Phalanx\Theatron\Collab\Plans\Activity;
 use Phalanx\Theatron\Collab\Plans\WorkItem;
 use Phalanx\Theatron\Collab\Plans\WorkResult;
-use Phalanx\Theatron\Collab\Projection\CollabProjector;
+use Phalanx\Theatron\Collab\Projection\AgentHarnessProjector;
 use Phalanx\Theatron\Collab\Reviews\ReviewVerdict;
 use Phalanx\Theatron\Collab\Screens\WorkspaceScreen;
-use Phalanx\Theatron\Collab\State\CollabStore;
+use Phalanx\Theatron\Collab\State\AgentHarnessStore;
 use Phalanx\Theatron\Collab\State\DevToolsSlice;
 use Phalanx\Theatron\Tui\Core\AcceptsInput;
 use Phalanx\Theatron\Tui\Core\MountSystem;
@@ -71,7 +71,7 @@ final class WorkspaceScreenTest extends TestCase
     #[Test]
     public function rendersEmptyWorkspaceFallbacks(): void
     {
-        $rendered = (new WorkspaceScreen(new CollabStore()))($this->screenContext());
+        $rendered = (new WorkspaceScreen(new AgentHarnessStore()))($this->screenContext());
 
         self::assertInstanceOf(ColumnElement::class, $rendered);
         self::assertInstanceOf(GridElement::class, $rendered->children[0]);
@@ -99,7 +99,7 @@ final class WorkspaceScreenTest extends TestCase
     public function inputFocusableSubmitsThroughTheReceivePath(): void
     {
         $queue = new InletQueue();
-        $screen = new WorkspaceScreen(new CollabStore(), new InputPromptSubmitter($queue));
+        $screen = new WorkspaceScreen(new AgentHarnessStore(), new InputPromptSubmitter($queue));
         $focusables = $screen->focusables();
 
         self::assertCount(1, $focusables);
@@ -123,7 +123,7 @@ final class WorkspaceScreenTest extends TestCase
     #[Test]
     public function inputPanelRendersComposerCursorState(): void
     {
-        $screen = new WorkspaceScreen(new CollabStore(), new InputPromptSubmitter(new InletQueue()));
+        $screen = new WorkspaceScreen(new AgentHarnessStore(), new InputPromptSubmitter(new InletQueue()));
         $focusables = $screen->focusables();
         $input = $focusables[0][1];
         self::assertInstanceOf(AcceptsInput::class, $input);
@@ -143,14 +143,14 @@ final class WorkspaceScreenTest extends TestCase
         self::assertSame(1, $panel->child->cursor);
     }
 
-    private static function store(): CollabStore
+    private static function store(): AgentHarnessStore
     {
-        $store = new CollabStore();
-        $projector = new CollabProjector();
+        $store = new AgentHarnessStore();
+        $projector = new AgentHarnessProjector();
         $time = new DateTimeImmutable('2026-06-01T00:00:00+00:00');
         $workItem = new WorkItem(Activity::Testing, 'Review projection', id: 'work_projection');
 
-        $projector->project(CollabEvent::record(
+        $projector->project(AgentHarnessEvent::record(
             EventKind::WorkReceived,
             envelope: Envelope::make(
                 from: Address::user(),
@@ -170,20 +170,20 @@ final class WorkspaceScreenTest extends TestCase
             occurredAt: $time,
             id: 'evt_received',
         ), $store);
-        $projector->project(CollabEvent::record(
+        $projector->project(AgentHarnessEvent::record(
             EventKind::WorkItemStarted,
             workItem: $workItem,
             occurredAt: $time,
             id: 'evt_started',
         ), $store);
-        $projector->project(CollabEvent::record(
+        $projector->project(AgentHarnessEvent::record(
             EventKind::WorkItemCompleted,
             workItem: $workItem,
             workResult: WorkResult::done('work_projection', summary: 'Projection reviewed.'),
             occurredAt: $time,
             id: 'evt_done',
         ), $store);
-        $projector->project(CollabEvent::record(
+        $projector->project(AgentHarnessEvent::record(
             EventKind::WorkReviewed,
             reviewVerdict: ReviewVerdict::approve(),
             occurredAt: $time,

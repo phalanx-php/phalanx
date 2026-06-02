@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Theatron\Collab\Plans;
 
-use Phalanx\Theatron\Collab\Events\CollabEvent;
+use Phalanx\Theatron\Collab\Events\AgentHarnessEvent;
 use Phalanx\Theatron\Collab\Messages\Envelope;
 
 final class WorkPlanItem
@@ -16,7 +16,7 @@ final class WorkPlanItem
         private(set) ?string $blockedReason = null,
         private(set) ?string $supersededBy = null,
         private(set) ?string $supersededReason = null,
-        private(set) Envelope|CollabEvent|null $resolvedBy = null,
+        private(set) Envelope|AgentHarnessEvent|null $resolvedBy = null,
     ) {
     }
 
@@ -66,7 +66,7 @@ final class WorkPlanItem
         );
     }
 
-    public static function unblocked(self $item, Envelope|CollabEvent|null $resolvedBy = null): self
+    public static function unblocked(self $item, Envelope|AgentHarnessEvent|null $resolvedBy = null): self
     {
         $item->assertStatus(WorkItemStatus::Blocked, 'Only blocked work can be unblocked.');
 

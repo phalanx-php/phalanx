@@ -7,16 +7,16 @@ namespace Phalanx\Theatron\Collab\Apps;
 use Phalanx\Scope\TaskScope;
 use Phalanx\Theatron\Collab\Boundaries\BoundaryRunner;
 use Phalanx\Theatron\Collab\Plans\WorkPlanStatus;
-use Phalanx\Theatron\Collab\State\CollabStore;
+use Phalanx\Theatron\Collab\State\AgentHarnessStore;
 use Phalanx\Theatron\Collab\WorkContext;
 
-final class CollabRuntime
+final class AgentHarnessRuntime
 {
     private bool $running = false;
 
     public function __construct(
         private BoundaryRunner $runner,
-        private CollabStore $store,
+        private AgentHarnessStore $store,
     ) {
     }
 

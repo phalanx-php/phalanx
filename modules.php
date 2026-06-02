@@ -157,7 +157,7 @@ return [
         'suggests' => [
             'phalanx-php/archon' => 'CLI agent commands via Archon command lifecycle',
             'phalanx-php/hermes' => 'Real-time agent sessions over WebSocket',
-            'phalanx-php/theatron' => 'Theatron Collab workspace rendering for agent work and review state',
+            'phalanx-php/theatron' => 'Theatron AgentHarness workspace rendering for agent work and review state',
         ],
     ],
     'Cli' => [
@@ -540,7 +540,7 @@ return [
     ],
     'Theatron' => [
         'package' => 'phalanx-php/theatron',
-        'description' => 'Terminal UI and agent collaboration framework for Phalanx PHP',
+        'description' => 'Terminal UI and agent-harness framework for Phalanx PHP',
         'type' => 'library',
         'namespace' => 'Phalanx\\Theatron\\',
         'smokeClass' => 'Phalanx\\Theatron\\Theatron',
@@ -572,7 +572,7 @@ return [
             'src/Tui/Kit/functions.php',
         ],
         'keywords' => [
-            'agent-collab',
+            'agent-harness',
             'terminal-ui',
             'theatron',
         ],

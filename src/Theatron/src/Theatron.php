@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Theatron;
 
 use Phalanx\Boot\AppContext;
-use Phalanx\Theatron\Collab\Apps\CollabBuilder;
+use Phalanx\Theatron\Collab\Apps\AgentHarnessBuilder;
 use Phalanx\Theatron\Tui\Apps\TheatronBuilder;
 
 final class Theatron
@@ -17,8 +17,8 @@ final class Theatron
     }
 
     /** @param array<string,mixed> $context */
-    public static function collab(array $context = []): CollabBuilder
+    public static function agentHarness(array $context = []): AgentHarnessBuilder
     {
-        return new CollabBuilder(new AppContext($context));
+        return new AgentHarnessBuilder(new AppContext($context));
     }
 }

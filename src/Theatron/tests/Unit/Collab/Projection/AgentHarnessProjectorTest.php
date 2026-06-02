@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Theatron\Tests\Unit\Collab\Projection;
 
 use DateTimeImmutable;
-use Phalanx\Theatron\Collab\Events\CollabEvent;
+use Phalanx\Theatron\Collab\Events\AgentHarnessEvent;
 use Phalanx\Theatron\Collab\Events\EventKind;
 use Phalanx\Theatron\Collab\Lifecycle\LoopStage;
 use Phalanx\Theatron\Collab\Messages\Address;
@@ -16,20 +16,20 @@ use Phalanx\Theatron\Collab\Plans\WorkItem;
 use Phalanx\Theatron\Collab\Plans\WorkItemStatus;
 use Phalanx\Theatron\Collab\Plans\WorkPlanStatus;
 use Phalanx\Theatron\Collab\Plans\WorkResult;
-use Phalanx\Theatron\Collab\Projection\CollabProjector;
+use Phalanx\Theatron\Collab\Projection\AgentHarnessProjector;
 use Phalanx\Theatron\Collab\Reviews\ReviewVerdict;
-use Phalanx\Theatron\Collab\State\CollabStore;
+use Phalanx\Theatron\Collab\State\AgentHarnessStore;
 use Phalanx\Theatron\Collab\State\TimelineEntryKind;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-final class CollabProjectorTest extends TestCase
+final class AgentHarnessProjectorTest extends TestCase
 {
     #[Test]
     public function projectsReceivedPromptIntoTimelineAndWorkPlan(): void
     {
-        $store = new CollabStore();
-        $projector = new CollabProjector();
+        $store = new AgentHarnessStore();
+        $projector = new AgentHarnessProjector();
         $envelope = Envelope::make(
             from: Address::user('admin'),
             to: Address::agent('primary'),
@@ -39,7 +39,7 @@ final class CollabProjectorTest extends TestCase
         );
         $workItem = new WorkItem(Activity::Thinking, 'Draft TC-8A', id: 'work_prompt');
 
-        $projector->project(CollabEvent::record(
+        $projector->project(AgentHarnessEvent::record(
             EventKind::WorkReceived,
             envelope: $envelope,
             workItem: $workItem,
@@ -58,37 +58,37 @@ final class CollabProjectorTest extends TestCase
     #[Test]
     public function projectsLoopStageEventsIntoLoopSlice(): void
     {
-        $store = new CollabStore();
-        $projector = new CollabProjector();
+        $store = new AgentHarnessStore();
+        $projector = new AgentHarnessProjector();
 
-        $projector->project(CollabEvent::record(
+        $projector->project(AgentHarnessEvent::record(
             EventKind::LoopAdvanced,
             context: ['loop_stage' => LoopStage::React->value],
             id: 'evt_loop_react',
         ), $store);
         self::assertSame(LoopStage::React, $store->loop->stage);
 
-        $projector->project(CollabEvent::record(EventKind::WorkPrepared, id: 'evt_prepared'), $store);
+        $projector->project(AgentHarnessEvent::record(EventKind::WorkPrepared, id: 'evt_prepared'), $store);
         self::assertSame(LoopStage::Prepare, $store->loop->stage);
 
-        $projector->project(CollabEvent::record(EventKind::WorkDistributed, id: 'evt_distributed'), $store);
+        $projector->project(AgentHarnessEvent::record(EventKind::WorkDistributed, id: 'evt_distributed'), $store);
         self::assertSame(LoopStage::Distribute, $store->loop->stage);
 
-        $projector->project(CollabEvent::record(EventKind::WorkCompleted, id: 'evt_completed'), $store);
+        $projector->project(AgentHarnessEvent::record(EventKind::WorkCompleted, id: 'evt_completed'), $store);
         self::assertSame(LoopStage::Complete, $store->loop->stage);
     }
 
     #[Test]
     public function loopStageProjectionRejectsUnknownStagesWithoutMutation(): void
     {
-        $store = new CollabStore();
-        $projector = new CollabProjector();
+        $store = new AgentHarnessStore();
+        $projector = new AgentHarnessProjector();
 
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('unknown loop stage');
 
         try {
-            $projector->project(CollabEvent::record(
+            $projector->project(AgentHarnessEvent::record(
                 EventKind::LoopAdvanced,
                 context: ['loop_stage' => 'missing'],
                 id: 'evt_bad_loop_stage',
@@ -101,10 +101,10 @@ final class CollabProjectorTest extends TestCase
     #[Test]
     public function projectsPreparedWorkIntoThePlan(): void
     {
-        $store = new CollabStore();
-        $projector = new CollabProjector();
+        $store = new AgentHarnessStore();
+        $projector = new AgentHarnessProjector();
 
-        $projector->project(CollabEvent::record(
+        $projector->project(AgentHarnessEvent::record(
             EventKind::WorkPrepared,
             workItem: new WorkItem(Activity::Testing, 'Add focused tests', id: 'work_tests'),
             id: 'evt_prepared',
@@ -117,10 +117,10 @@ final class CollabProjectorTest extends TestCase
     #[Test]
     public function projectsRuntimeContextAndParticipantMetadata(): void
     {
-        $store = new CollabStore();
-        $projector = new CollabProjector();
+        $store = new AgentHarnessStore();
+        $projector = new AgentHarnessProjector();
 
-        $projector->project(CollabEvent::record(
+        $projector->project(AgentHarnessEvent::record(
             EventKind::WorkReceived,
             context: [
                 'runtime_session_id' => 'session_a',
@@ -144,14 +144,14 @@ final class CollabProjectorTest extends TestCase
     #[Test]
     public function rejectsNonListParticipantMetadataWithoutPartialProjection(): void
     {
-        $store = new CollabStore();
-        $projector = new CollabProjector();
+        $store = new AgentHarnessStore();
+        $projector = new AgentHarnessProjector();
 
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('participants context must be a list');
 
         try {
-            $projector->project(CollabEvent::record(
+            $projector->project(AgentHarnessEvent::record(
                 EventKind::WorkPrepared,
                 context: [
                     'runtime_session_id' => 'session_a',
@@ -171,8 +171,8 @@ final class CollabProjectorTest extends TestCase
     #[Test]
     public function projectsStartedAndCompletedWorkIntoPlan(): void
     {
-        $store = new CollabStore();
-        $projector = new CollabProjector();
+        $store = new AgentHarnessStore();
+        $projector = new AgentHarnessProjector();
         $workItem = new WorkItem(Activity::Testing, 'Run checks', id: 'work_checks');
         $response = Envelope::make(
             from: Address::agent('primary'),
@@ -183,7 +183,7 @@ final class CollabProjectorTest extends TestCase
         );
 
         $projector->project(self::received($workItem), $store);
-        $projector->project(CollabEvent::record(
+        $projector->project(AgentHarnessEvent::record(
             EventKind::WorkItemStarted,
             workItem: $workItem,
             id: 'evt_started',
@@ -191,7 +191,7 @@ final class CollabProjectorTest extends TestCase
 
         self::assertSame(WorkItemStatus::Running, $store->workPlan->plan->item('work_checks')->status);
 
-        $projector->project(CollabEvent::record(
+        $projector->project(AgentHarnessEvent::record(
             EventKind::WorkItemCompleted,
             workItem: $workItem,
             workResult: WorkResult::done('work_checks', summary: 'Checks passed.', envelopes: [$response]),
@@ -213,17 +213,17 @@ final class CollabProjectorTest extends TestCase
     #[Test]
     public function projectsInterruptedWorkIntoSuspendedPlan(): void
     {
-        $store = new CollabStore();
-        $projector = new CollabProjector();
+        $store = new AgentHarnessStore();
+        $projector = new AgentHarnessProjector();
         $workItem = new WorkItem(Activity::Researching, 'Wait for token', id: 'work_wait');
 
         $projector->project(self::received($workItem), $store);
-        $projector->project(CollabEvent::record(
+        $projector->project(AgentHarnessEvent::record(
             EventKind::WorkItemStarted,
             workItem: $workItem,
             id: 'evt_wait_started',
         ), $store);
-        $projector->project(CollabEvent::record(
+        $projector->project(AgentHarnessEvent::record(
             EventKind::WorkInterrupted,
             workItem: $workItem,
             workResult: WorkResult::blocked('work_wait', 'missing token'),
@@ -241,23 +241,23 @@ final class CollabProjectorTest extends TestCase
     #[Test]
     public function projectsReviewVerdictsAndRevisionWork(): void
     {
-        $store = new CollabStore();
-        $projector = new CollabProjector();
+        $store = new AgentHarnessStore();
+        $projector = new AgentHarnessProjector();
         $workItem = new WorkItem(Activity::Editing, 'Patch code', id: 'work_patch');
 
         $projector->project(self::received($workItem), $store);
-        $projector->project(CollabEvent::record(
+        $projector->project(AgentHarnessEvent::record(
             EventKind::WorkItemStarted,
             workItem: $workItem,
             id: 'evt_patch_started',
         ), $store);
-        $projector->project(CollabEvent::record(
+        $projector->project(AgentHarnessEvent::record(
             EventKind::WorkItemCompleted,
             workItem: $workItem,
             workResult: WorkResult::done('work_patch', summary: 'Patch done.'),
             id: 'evt_patch_done',
         ), $store);
-        $projector->project(CollabEvent::record(
+        $projector->project(AgentHarnessEvent::record(
             EventKind::WorkReviewed,
             reviewVerdict: ReviewVerdict::revise('Need tests.', [
                 new WorkItem(Activity::Testing, 'Add focused tests', id: 'work_tests'),
@@ -273,28 +273,28 @@ final class CollabProjectorTest extends TestCase
     #[Test]
     public function rejectsIncompleteProjectionPayloads(): void
     {
-        $projector = new CollabProjector();
+        $projector = new AgentHarnessProjector();
 
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('requires an envelope');
 
-        $projector->project(CollabEvent::record(
+        $projector->project(AgentHarnessEvent::record(
             EventKind::WorkReceived,
             workItem: new WorkItem(Activity::Thinking, 'Draft TC-8B', id: 'work_prompt'),
-        ), new CollabStore());
+        ), new AgentHarnessStore());
     }
 
     #[Test]
     public function failedProjectionDoesNotMutateTheStore(): void
     {
-        $store = new CollabStore();
-        $projector = new CollabProjector();
+        $store = new AgentHarnessStore();
+        $projector = new AgentHarnessProjector();
 
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('requires a work item');
 
         try {
-            $projector->project(CollabEvent::record(EventKind::WorkItemStarted), $store);
+            $projector->project(AgentHarnessEvent::record(EventKind::WorkItemStarted), $store);
         } finally {
             self::assertSame(LoopStage::Receive, $store->loop->stage);
             self::assertSame([], $store->messages->entries);
@@ -305,14 +305,14 @@ final class CollabProjectorTest extends TestCase
     #[Test]
     public function unsupportedProjectionDoesNotMutateTheStore(): void
     {
-        $store = new CollabStore();
-        $projector = new CollabProjector();
+        $store = new AgentHarnessStore();
+        $projector = new AgentHarnessProjector();
 
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('not supported by the alpha projector');
 
         try {
-            $projector->project(CollabEvent::record(EventKind::EffectRequested), $store);
+            $projector->project(AgentHarnessEvent::record(EventKind::EffectRequested), $store);
         } finally {
             self::assertSame(LoopStage::Receive, $store->loop->stage);
             self::assertSame([], $store->messages->entries);
@@ -322,17 +322,17 @@ final class CollabProjectorTest extends TestCase
     #[Test]
     public function failedRevisionProjectionDoesNotRecordPartialReviewState(): void
     {
-        $store = new CollabStore();
-        $projector = new CollabProjector();
+        $store = new AgentHarnessStore();
+        $projector = new AgentHarnessProjector();
         $workItem = new WorkItem(Activity::Editing, 'Patch code', id: 'work_patch');
 
         $projector->project(self::received($workItem), $store);
-        $projector->project(CollabEvent::record(
+        $projector->project(AgentHarnessEvent::record(
             EventKind::WorkItemStarted,
             workItem: $workItem,
             id: 'evt_patch_started',
         ), $store);
-        $projector->project(CollabEvent::record(
+        $projector->project(AgentHarnessEvent::record(
             EventKind::WorkItemCompleted,
             workItem: $workItem,
             workResult: WorkResult::done('work_patch'),
@@ -345,7 +345,7 @@ final class CollabProjectorTest extends TestCase
         $this->expectExceptionMessage('already exists in this plan');
 
         try {
-            $projector->project(CollabEvent::record(
+            $projector->project(AgentHarnessEvent::record(
                 EventKind::WorkReviewed,
                 reviewVerdict: ReviewVerdict::revise('Need tests.', [
                     new WorkItem(Activity::Testing, 'Add focused tests', id: 'work_patch'),
@@ -353,7 +353,7 @@ final class CollabProjectorTest extends TestCase
                 id: 'evt_bad_review',
             ), $store);
         } finally {
-            self::assertSame(LoopStage::Collaborate, $store->loop->stage);
+            self::assertSame(LoopStage::Execute, $store->loop->stage);
             self::assertSame([], $store->reviews->verdicts);
             self::assertCount($entryCount, $store->messages->entries);
         }
@@ -362,23 +362,23 @@ final class CollabProjectorTest extends TestCase
     #[Test]
     public function rejectedReviewProjectionAbortsThePlan(): void
     {
-        $store = new CollabStore();
-        $projector = new CollabProjector();
+        $store = new AgentHarnessStore();
+        $projector = new AgentHarnessProjector();
         $workItem = new WorkItem(Activity::Editing, 'Patch code', id: 'work_patch');
 
         $projector->project(self::received($workItem), $store);
-        $projector->project(CollabEvent::record(
+        $projector->project(AgentHarnessEvent::record(
             EventKind::WorkItemStarted,
             workItem: $workItem,
             id: 'evt_patch_started',
         ), $store);
-        $projector->project(CollabEvent::record(
+        $projector->project(AgentHarnessEvent::record(
             EventKind::WorkItemCompleted,
             workItem: $workItem,
             workResult: WorkResult::done('work_patch', summary: 'Patch done.'),
             id: 'evt_patch_done',
         ), $store);
-        $projector->project(CollabEvent::record(
+        $projector->project(AgentHarnessEvent::record(
             EventKind::WorkReviewed,
             reviewVerdict: ReviewVerdict::reject('Unsafe change.'),
             id: 'evt_rejected',
@@ -393,17 +393,17 @@ final class CollabProjectorTest extends TestCase
     #[Test]
     public function completedProjectionUsesFallbackTimelineSummaryForBlankResultSummary(): void
     {
-        $store = new CollabStore();
-        $projector = new CollabProjector();
+        $store = new AgentHarnessStore();
+        $projector = new AgentHarnessProjector();
         $workItem = new WorkItem(Activity::Testing, 'Run checks', id: 'work_checks');
 
         $projector->project(self::received($workItem), $store);
-        $projector->project(CollabEvent::record(
+        $projector->project(AgentHarnessEvent::record(
             EventKind::WorkItemStarted,
             workItem: $workItem,
             id: 'evt_started',
         ), $store);
-        $projector->project(CollabEvent::record(
+        $projector->project(AgentHarnessEvent::record(
             EventKind::WorkItemCompleted,
             workItem: $workItem,
             workResult: WorkResult::done('work_checks', summary: ''),
@@ -416,12 +416,12 @@ final class CollabProjectorTest extends TestCase
     #[Test]
     public function completedProjectionRequiresDoneResultAndDoesNotMutateStore(): void
     {
-        $store = new CollabStore();
-        $projector = new CollabProjector();
+        $store = new AgentHarnessStore();
+        $projector = new AgentHarnessProjector();
         $workItem = new WorkItem(Activity::Testing, 'Run checks', id: 'work_checks');
 
         $projector->project(self::received($workItem), $store);
-        $projector->project(CollabEvent::record(
+        $projector->project(AgentHarnessEvent::record(
             EventKind::WorkItemStarted,
             workItem: $workItem,
             id: 'evt_started',
@@ -433,14 +433,14 @@ final class CollabProjectorTest extends TestCase
         $this->expectExceptionMessage('requires a done result');
 
         try {
-            $projector->project(CollabEvent::record(
+            $projector->project(AgentHarnessEvent::record(
                 EventKind::WorkItemCompleted,
                 workItem: $workItem,
                 workResult: WorkResult::blocked('work_checks', 'waiting on user'),
                 id: 'evt_bad_completed',
             ), $store);
         } finally {
-            self::assertSame(LoopStage::Collaborate, $store->loop->stage);
+            self::assertSame(LoopStage::Execute, $store->loop->stage);
             self::assertSame(WorkItemStatus::Running, $store->workPlan->plan->item('work_checks')->status);
             self::assertCount($entryCount, $store->messages->entries);
         }
@@ -449,12 +449,12 @@ final class CollabProjectorTest extends TestCase
     #[Test]
     public function interruptedProjectionRejectsDoneResultAndDoesNotMutateStore(): void
     {
-        $store = new CollabStore();
-        $projector = new CollabProjector();
+        $store = new AgentHarnessStore();
+        $projector = new AgentHarnessProjector();
         $workItem = new WorkItem(Activity::Researching, 'Wait for token', id: 'work_wait');
 
         $projector->project(self::received($workItem), $store);
-        $projector->project(CollabEvent::record(
+        $projector->project(AgentHarnessEvent::record(
             EventKind::WorkItemStarted,
             workItem: $workItem,
             id: 'evt_wait_started',
@@ -466,22 +466,22 @@ final class CollabProjectorTest extends TestCase
         $this->expectExceptionMessage('requires a blocked or failed result');
 
         try {
-            $projector->project(CollabEvent::record(
+            $projector->project(AgentHarnessEvent::record(
                 EventKind::WorkInterrupted,
                 workItem: $workItem,
                 workResult: WorkResult::done('work_wait'),
                 id: 'evt_bad_interrupted',
             ), $store);
         } finally {
-            self::assertSame(LoopStage::Collaborate, $store->loop->stage);
+            self::assertSame(LoopStage::Execute, $store->loop->stage);
             self::assertSame(WorkItemStatus::Running, $store->workPlan->plan->item('work_wait')->status);
             self::assertCount($entryCount, $store->messages->entries);
         }
     }
 
-    private static function received(WorkItem $workItem): CollabEvent
+    private static function received(WorkItem $workItem): AgentHarnessEvent
     {
-        return CollabEvent::record(
+        return AgentHarnessEvent::record(
             EventKind::WorkReceived,
             envelope: Envelope::make(
                 from: Address::user(),

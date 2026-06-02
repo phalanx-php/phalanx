@@ -8,7 +8,7 @@ use Phalanx\Theatron\Collab\Plans\WorkPlanItem;
 use Phalanx\Theatron\Collab\Plans\WorkResult;
 use Phalanx\Theatron\Collab\WorkContext;
 
-interface Collaborator
+interface AgentParticipant
 {
     public function __invoke(WorkPlanItem $item, WorkContext $ctx): WorkResult;
 

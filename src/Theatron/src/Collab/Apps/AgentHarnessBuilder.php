@@ -12,12 +12,12 @@ use Phalanx\Scope\ExecutionScope;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Theatron\Collab\Boundaries\Inlet;
 use Phalanx\Theatron\Collab\Boundaries\Outlet;
-use Phalanx\Theatron\Collab\Participants\Collaborator;
+use Phalanx\Theatron\Collab\Participants\AgentParticipant;
 use Phalanx\Theatron\Collab\Participants\Preparer;
 use Phalanx\Theatron\Collab\Participants\Reactor;
 use Phalanx\Theatron\Collab\Participants\Reviewer;
 use Phalanx\Theatron\Collab\Screens\WorkspaceScreen;
-use Phalanx\Theatron\Collab\State\CollabStore;
+use Phalanx\Theatron\Collab\State\AgentHarnessStore;
 use Phalanx\Theatron\Tui\Apps\TheatronApp;
 use Phalanx\Theatron\Tui\Apps\TheatronBuilder;
 use Phalanx\Theatron\Tui\Apps\TheatronServiceBundle;
@@ -26,13 +26,13 @@ use Phalanx\Theatron\Tui\Drawing\StageConfig;
 use Phalanx\Theatron\Tui\Inputs\Binding;
 use Phalanx\Theatron\Tui\Styles\Theme;
 
-final class CollabBuilder
+final class AgentHarnessBuilder
 {
     /** @var list<Preparer> */
     private array $preparers = [];
 
-    /** @var list<Collaborator> */
-    private array $collaborators = [];
+    /** @var list<AgentParticipant> */
+    private array $participants = [];
 
     /** @var list<Reactor> */
     private array $reactors = [];
@@ -49,7 +49,7 @@ final class CollabBuilder
     /** @var list<ServiceBundle|Closure(TheatronApp): ServiceBundle> */
     private array $providers = [];
 
-    private ?Collaborator $primary = null;
+    private ?AgentParticipant $primary = null;
 
     private int $maxReviewPasses = 8;
 
@@ -60,11 +60,11 @@ final class CollabBuilder
     public function __construct(private(set) AppContext $context)
     {
         $this->tui = (new TheatronBuilder($this->context))
-            ->store(CollabStore::class)
+            ->store(AgentHarnessStore::class)
             ->screens([WorkspaceScreen::class]);
     }
 
-    public function primary(Collaborator $primary): self
+    public function primary(AgentParticipant $primary): self
     {
         $this->primary = $primary;
 
@@ -78,9 +78,9 @@ final class CollabBuilder
         return $this;
     }
 
-    public function collaborators(Collaborator ...$collaborators): self
+    public function participants(AgentParticipant ...$participants): self
     {
-        $this->collaborators = array_values([...$this->collaborators, ...$collaborators]);
+        $this->participants = array_values([...$this->participants, ...$participants]);
 
         return $this;
     }
@@ -116,7 +116,7 @@ final class CollabBuilder
     public function maxReviewPasses(int $maxReviewPasses): self
     {
         if ($maxReviewPasses < 1) {
-            throw new InvalidArgumentException('Collab max review passes must be >= 1.');
+            throw new InvalidArgumentException('AgentHarness max review passes must be >= 1.');
         }
 
         $this->maxReviewPasses = $maxReviewPasses;
@@ -127,7 +127,7 @@ final class CollabBuilder
     public function tickInterval(float $seconds): self
     {
         if ($seconds <= 0.0) {
-            throw new InvalidArgumentException('Collab tick interval must be greater than zero.');
+            throw new InvalidArgumentException('AgentHarness tick interval must be greater than zero.');
         }
 
         $this->tickIntervalSeconds = $seconds;
@@ -195,9 +195,9 @@ final class CollabBuilder
         Application::starting($this->context->values)
             ->providers(...$this->resolvedProviders($app))
             ->run(static function (ExecutionScope $scope) use ($app, $interval): void {
-                $runtime = $scope->service(CollabRuntime::class);
-                if (!$runtime instanceof CollabRuntime) {
-                    throw new \RuntimeException('Collab runtime service did not resolve.');
+                $runtime = $scope->service(AgentHarnessRuntime::class);
+                if (!$runtime instanceof AgentHarnessRuntime) {
+                    throw new \RuntimeException('AgentHarness runtime service did not resolve.');
                 }
 
                 $scope->periodic($interval, static function () use ($runtime, $scope): void {
@@ -235,10 +235,10 @@ final class CollabBuilder
 
         return [
             new TheatronServiceBundle($app),
-            new CollabServiceBundle(
+            new AgentHarnessServiceBundle(
                 primary: $primary,
                 preparers: $this->preparers,
-                collaborators: $this->collaborators,
+                participants: $this->participants,
                 reactors: $this->reactors,
                 reviewers: $this->reviewers,
                 inlets: $this->inlets,
@@ -254,8 +254,8 @@ final class CollabBuilder
         ];
     }
 
-    private function requirePrimary(): Collaborator
+    private function requirePrimary(): AgentParticipant
     {
-        return $this->primary ?? throw new InvalidArgumentException('A primary Collab collaborator is required.');
+        return $this->primary ?? throw new InvalidArgumentException('A primary AgentHarness participant is required.');
     }
 }

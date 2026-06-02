@@ -6,7 +6,7 @@ namespace Phalanx\Theatron\Collab\State;
 
 use Phalanx\Theatron\Tui\Reactive\Store;
 
-final class CollabStore extends Store
+final class AgentHarnessStore extends Store
 {
     public MessageTimelineSlice $messages {
         get => $this->read(MessageTimelineSlice::class);

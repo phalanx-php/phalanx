@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Theatron\Tests\Unit\Collab\Boundaries;
 
 use Phalanx\Scope\TaskScope;
-use Phalanx\Theatron\Collab\Apps\CollabRuntime;
+use Phalanx\Theatron\Collab\Apps\AgentHarnessRuntime;
 use Phalanx\Theatron\Collab\Boundaries\BoundaryRunner;
 use Phalanx\Theatron\Collab\Boundaries\Inlet;
 use Phalanx\Theatron\Collab\Boundaries\InletChannel;
@@ -18,18 +18,18 @@ use Phalanx\Theatron\Collab\Boundaries\PromptInletMapper;
 use Phalanx\Theatron\Collab\Boundaries\Urgency;
 use Phalanx\Theatron\Collab\Events\EventKind;
 use Phalanx\Theatron\Collab\Events\RoutableEvent;
-use Phalanx\Theatron\Collab\Lifecycle\CollaborationLoop;
+use Phalanx\Theatron\Collab\Lifecycle\AgentHarnessLoop;
 use Phalanx\Theatron\Collab\Messages\Address;
 use Phalanx\Theatron\Collab\Messages\Envelope;
 use Phalanx\Theatron\Collab\Messages\MessageKind;
-use Phalanx\Theatron\Collab\Participants\Collaborator;
+use Phalanx\Theatron\Collab\Participants\AgentParticipant;
 use Phalanx\Theatron\Collab\Plans\Activity;
 use Phalanx\Theatron\Collab\Plans\WorkItem;
 use Phalanx\Theatron\Collab\Plans\WorkPlan;
 use Phalanx\Theatron\Collab\Plans\WorkPlanItem;
 use Phalanx\Theatron\Collab\Plans\WorkPlanStatus;
 use Phalanx\Theatron\Collab\Plans\WorkResult;
-use Phalanx\Theatron\Collab\State\CollabStore;
+use Phalanx\Theatron\Collab\State\AgentHarnessStore;
 use Phalanx\Theatron\Collab\State\WorkPlanSlice;
 use Phalanx\Theatron\Collab\WorkContext;
 use Phalanx\Theatron\Tests\Support\RecordingTaskScope;
@@ -116,11 +116,11 @@ final class BoundaryRuntimeTest extends TestCase
     #[Test]
     public function boundaryRunnerInvokesInletsRecordsMessagesAndRunsTheLoop(): void
     {
-        $store = new CollabStore();
+        $store = new AgentHarnessStore();
         $ctx = new WorkContext(new RecordingTaskScope(), $store);
         $calls = new \ArrayObject();
         $runner = new BoundaryRunner(
-            loop: new CollaborationLoop(primary: new DoneCollaborator($calls)),
+            loop: new AgentHarnessLoop(primary: new DoneAgentParticipant($calls)),
             inlets: [new RuntimePromptInlet('Plan the next slice', Urgency::Prioritize)],
         );
 
@@ -136,11 +136,11 @@ final class BoundaryRuntimeTest extends TestCase
     #[Test]
     public function silentInletsDoNotProjectPlaceholderLoopEvents(): void
     {
-        $store = new CollabStore();
+        $store = new AgentHarnessStore();
         $ctx = new WorkContext(new RecordingTaskScope(), $store);
         $calls = new \ArrayObject();
         $runner = new BoundaryRunner(
-            loop: new CollaborationLoop(primary: new DoneCollaborator($calls)),
+            loop: new AgentHarnessLoop(primary: new DoneAgentParticipant($calls)),
             inlets: [new SilentInlet()],
         );
 
@@ -152,15 +152,15 @@ final class BoundaryRuntimeTest extends TestCase
     }
 
     #[Test]
-    public function collabRuntimeUsesTheCurrentTaskScopeOnEachTick(): void
+    public function agentHarnessRuntimeUsesTheCurrentTaskScopeOnEachTick(): void
     {
         $inlet = new ScopeRecordingInlet();
-        $runtime = new CollabRuntime(
+        $runtime = new AgentHarnessRuntime(
             runner: new BoundaryRunner(
-                loop: new CollaborationLoop(primary: new DoneCollaborator(new \ArrayObject())),
+                loop: new AgentHarnessLoop(primary: new DoneAgentParticipant(new \ArrayObject())),
                 inlets: [$inlet],
             ),
-            store: new CollabStore(),
+            store: new AgentHarnessStore(),
         );
         $first = new RecordingTaskScope();
         $second = new RecordingTaskScope();
@@ -174,10 +174,10 @@ final class BoundaryRuntimeTest extends TestCase
     #[Test]
     public function boundaryRunnerMapsBeforeRecordingUnsupportedMessages(): void
     {
-        $store = new CollabStore();
+        $store = new AgentHarnessStore();
         $ctx = new WorkContext(new RecordingTaskScope(), $store);
         $runner = new BoundaryRunner(
-            loop: new CollaborationLoop(primary: new DoneCollaborator(new \ArrayObject())),
+            loop: new AgentHarnessLoop(primary: new DoneAgentParticipant(new \ArrayObject())),
             inlets: [new UnsupportedInlet()],
         );
 
@@ -197,12 +197,12 @@ final class BoundaryRuntimeTest extends TestCase
     {
         $queue = new InletQueue();
         $calls = new \ArrayObject();
-        $store = new CollabStore();
+        $store = new AgentHarnessStore();
         $ctx = new WorkContext(new RecordingTaskScope(), $store);
         $submit = new InputPromptSubmitter($queue);
         $composer = InputComposer::empty(onSubmit: $submit);
         $runner = new BoundaryRunner(
-            loop: new CollaborationLoop(primary: new DoneCollaborator($calls)),
+            loop: new AgentHarnessLoop(primary: new DoneAgentParticipant($calls)),
             incoming: $queue,
         );
 
@@ -223,12 +223,12 @@ final class BoundaryRuntimeTest extends TestCase
     public function outletReactorRoutesLoopEventsToOutletsThroughTaskScope(): void
     {
         $scope = new RecordingTaskScope();
-        $store = new CollabStore();
+        $store = new AgentHarnessStore();
         $ctx = new WorkContext($scope, $store);
         $outlet = new RecordingOutlet();
         $runner = new BoundaryRunner(
-            loop: new CollaborationLoop(
-                primary: new DoneCollaborator(new \ArrayObject()),
+            loop: new AgentHarnessLoop(
+                primary: new DoneAgentParticipant(new \ArrayObject()),
                 reactors: [new OutletReactor([$outlet])],
             ),
             inlets: [new RuntimePromptInlet('Route events')],
@@ -254,7 +254,7 @@ final class BoundaryRuntimeTest extends TestCase
     public function preseededReadyWorkStillRunsAndRoutesOutletEventsWithoutInput(): void
     {
         $scope = new RecordingTaskScope();
-        $store = new CollabStore();
+        $store = new AgentHarnessStore();
         $store->workPlan = new WorkPlanSlice(WorkPlan::start(new WorkItem(
             Activity::Testing,
             'Route preseeded work',
@@ -262,8 +262,8 @@ final class BoundaryRuntimeTest extends TestCase
         )));
         $outlet = new RecordingOutlet();
         $runner = new BoundaryRunner(
-            loop: new CollaborationLoop(
-                primary: new DoneCollaborator(new \ArrayObject()),
+            loop: new AgentHarnessLoop(
+                primary: new DoneAgentParticipant(new \ArrayObject()),
                 reactors: [new OutletReactor([$outlet])],
             ),
         );
@@ -343,7 +343,7 @@ final class ScopeRecordingInlet implements Inlet
     }
 }
 
-final class DoneCollaborator implements Collaborator
+final class DoneAgentParticipant implements AgentParticipant
 {
     public function __construct(
         /** @var \ArrayObject<int, string> */

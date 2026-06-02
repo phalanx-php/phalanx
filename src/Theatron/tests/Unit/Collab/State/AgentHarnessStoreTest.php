@@ -9,7 +9,7 @@ use Phalanx\Theatron\Collab\Messages\Envelope;
 use Phalanx\Theatron\Collab\Plans\Activity;
 use Phalanx\Theatron\Collab\Plans\WorkItem;
 use Phalanx\Theatron\Collab\Plans\WorkPlan;
-use Phalanx\Theatron\Collab\State\CollabStore;
+use Phalanx\Theatron\Collab\State\AgentHarnessStore;
 use Phalanx\Theatron\Collab\State\ContextSlice;
 use Phalanx\Theatron\Collab\State\DevToolsSlice;
 use Phalanx\Theatron\Collab\State\EffectSlice;
@@ -31,12 +31,12 @@ use Phalanx\Theatron\Tui\Tdom\Renderable;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-final class CollabStoreTest extends TestCase
+final class AgentHarnessStoreTest extends TestCase
 {
     #[Test]
     public function registersEveryCollabSlice(): void
     {
-        $store = new CollabStore();
+        $store = new AgentHarnessStore();
 
         self::assertInstanceOf(MessageTimelineSlice::class, $store->messages);
         self::assertInstanceOf(WorkPlanSlice::class, $store->workPlan);
@@ -55,7 +55,7 @@ final class CollabStoreTest extends TestCase
     #[Test]
     public function propertyWritesNotifySubscribers(): void
     {
-        $store = new CollabStore();
+        $store = new AgentHarnessStore();
         $calls = 0;
 
         $store->subscribe(static function () use (&$calls): void {
@@ -95,12 +95,12 @@ final class CollabStoreTest extends TestCase
     }
 
     #[Test]
-    public function tuiSignalScannerCanSubscribeToCollabStoreReads(): void
+    public function tuiSignalScannerCanSubscribeToAgentHarnessStoreReads(): void
     {
-        $store = new CollabStore();
+        $store = new AgentHarnessStore();
         $component = new class ($store) implements Component {
             public function __construct(
-                private(set) CollabStore $store,
+                private(set) AgentHarnessStore $store,
             ) {
             }
 

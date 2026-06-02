@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Theatron\Collab\State;
 
 use DateTimeImmutable;
-use Phalanx\Theatron\Collab\Events\CollabEvent;
+use Phalanx\Theatron\Collab\Events\AgentHarnessEvent;
 use Phalanx\Theatron\Collab\Messages\Envelope;
 use Phalanx\Theatron\Collab\Messages\MessageKind;
 
@@ -46,7 +46,7 @@ final class TimelineEntry
         }
     }
 
-    public static function fromEnvelope(CollabEvent $event, Envelope $envelope): self
+    public static function fromEnvelope(AgentHarnessEvent $event, Envelope $envelope): self
     {
         return new self(
             id: "{$event->id}:{$envelope->id}",
@@ -59,7 +59,7 @@ final class TimelineEntry
         );
     }
 
-    public static function work(CollabEvent $event, TimelineEntryKind $kind, string $summary): self
+    public static function work(AgentHarnessEvent $event, TimelineEntryKind $kind, string $summary): self
     {
         $workItem = $event->workItem ?? self::missing('work item', $event);
 
@@ -74,7 +74,7 @@ final class TimelineEntry
         );
     }
 
-    public static function review(CollabEvent $event): self
+    public static function review(AgentHarnessEvent $event): self
     {
         $verdict = $event->reviewVerdict ?? self::missing('review verdict', $event);
 
@@ -106,10 +106,10 @@ final class TimelineEntry
         return $envelope->kind->value;
     }
 
-    private static function missing(string $field, CollabEvent $event): never
+    private static function missing(string $field, AgentHarnessEvent $event): never
     {
         throw new \InvalidArgumentException(sprintf(
-            'Collab event "%s" requires a %s for timeline projection.',
+            'AgentHarness event "%s" requires a %s for timeline projection.',
             $event->kind->value,
             $field,
         ));

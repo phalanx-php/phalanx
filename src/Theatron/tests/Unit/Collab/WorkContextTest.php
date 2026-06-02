@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Theatron\Tests\Unit\Collab;
 
 use Phalanx\Scope\TaskScope;
-use Phalanx\Theatron\Collab\Events\CollabEvent;
+use Phalanx\Theatron\Collab\Events\AgentHarnessEvent;
 use Phalanx\Theatron\Collab\Events\EventKind;
 use Phalanx\Theatron\Collab\Lifecycle\LoopStage;
 use Phalanx\Theatron\Collab\Messages\Envelope;
@@ -15,7 +15,7 @@ use Phalanx\Theatron\Collab\Plans\WorkItemStatus;
 use Phalanx\Theatron\Collab\Plans\WorkPlan;
 use Phalanx\Theatron\Collab\Plans\WorkResult;
 use Phalanx\Theatron\Collab\Reviews\ReviewVerdict;
-use Phalanx\Theatron\Collab\State\CollabStore;
+use Phalanx\Theatron\Collab\State\AgentHarnessStore;
 use Phalanx\Theatron\Collab\State\WorkPlanSlice;
 use Phalanx\Theatron\Collab\WorkContext;
 use PHPUnit\Framework\Attributes\Test;
@@ -26,21 +26,21 @@ final class WorkContextTest extends TestCase
     #[Test]
     public function advanceProjectsTheLoopStageWithoutQueueingDomainEvents(): void
     {
-        $store = new CollabStore();
+        $store = new AgentHarnessStore();
         $ctx = new WorkContext($this->createStub(TaskScope::class), $store);
 
-        $slice = $ctx->advance(LoopStage::Collaborate);
+        $slice = $ctx->advance(LoopStage::Execute);
 
-        self::assertSame(LoopStage::Collaborate, $slice->stage);
-        self::assertSame(LoopStage::Collaborate, $ctx->stage);
-        self::assertSame(LoopStage::Collaborate, $store->loop->stage);
+        self::assertSame(LoopStage::Execute, $slice->stage);
+        self::assertSame(LoopStage::Execute, $ctx->stage);
+        self::assertSame(LoopStage::Execute, $store->loop->stage);
         self::assertSame([], $ctx->drainProjectedEvents());
     }
 
     #[Test]
     public function recordProjectsAnEnvelopeToTheMessageTimeline(): void
     {
-        $store = new CollabStore();
+        $store = new AgentHarnessStore();
         $ctx = new WorkContext($this->createStub(TaskScope::class), $store);
         $envelope = Envelope::prompt('Review the patch');
 
@@ -54,7 +54,7 @@ final class WorkContextTest extends TestCase
     #[Test]
     public function fulfillProjectsRunningWorkAndResultEnvelopes(): void
     {
-        $store = new CollabStore();
+        $store = new AgentHarnessStore();
         $plan = WorkPlan::start(new WorkItem(Activity::Testing, 'Run focused tests', id: 'tc-4a'));
         $plan->startItem('tc-4a');
         $store->workPlan = new WorkPlanSlice($plan);
@@ -74,7 +74,7 @@ final class WorkContextTest extends TestCase
     #[Test]
     public function appendAndStartProjectWorkPlanChanges(): void
     {
-        $store = new CollabStore();
+        $store = new AgentHarnessStore();
         $ctx = new WorkContext($this->createStub(TaskScope::class), $store);
 
         $ctx->append(new WorkItem(Activity::Testing, 'Run focused tests', id: 'tc-5a'));
@@ -85,7 +85,7 @@ final class WorkContextTest extends TestCase
         self::assertSame(
             [EventKind::WorkPrepared, EventKind::WorkItemStarted],
             array_map(
-                static fn (CollabEvent $event): EventKind => $event->kind,
+                static fn (AgentHarnessEvent $event): EventKind => $event->kind,
                 $ctx->drainProjectedEvents(),
             ),
         );
@@ -94,7 +94,7 @@ final class WorkContextTest extends TestCase
     #[Test]
     public function reviewProjectsVerdictsThroughTheStore(): void
     {
-        $store = new CollabStore();
+        $store = new AgentHarnessStore();
         $ctx = new WorkContext($this->createStub(TaskScope::class), $store);
         $verdict = ReviewVerdict::approve();
 
@@ -108,7 +108,7 @@ final class WorkContextTest extends TestCase
     #[Test]
     public function abortProjectsARejectedReviewVerdict(): void
     {
-        $store = new CollabStore();
+        $store = new AgentHarnessStore();
         $plan = WorkPlan::start(new WorkItem(Activity::Testing, 'Run focused tests', id: 'tc-5a'));
         $store->workPlan = new WorkPlanSlice($plan);
         $ctx = new WorkContext($this->createStub(TaskScope::class), $store);
@@ -123,7 +123,7 @@ final class WorkContextTest extends TestCase
     #[Test]
     public function failedProjectionLeavesStoreUntouched(): void
     {
-        $store = new CollabStore();
+        $store = new AgentHarnessStore();
         $ctx = new WorkContext($this->createStub(TaskScope::class), $store);
 
         $ctx->append(new WorkItem(Activity::Testing, 'Run focused tests', id: 'tc-5a'));
@@ -142,7 +142,7 @@ final class WorkContextTest extends TestCase
     #[Test]
     public function visiblePlanCannotMutateStoreStateDirectly(): void
     {
-        $store = new CollabStore();
+        $store = new AgentHarnessStore();
         $plan = WorkPlan::start(new WorkItem(Activity::Testing, 'Run focused tests', id: 'tc-4a'));
         $store->workPlan = new WorkPlanSlice($plan);
 

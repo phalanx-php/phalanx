@@ -15,7 +15,7 @@ if (!is_file($autoload)) {
 
 require $autoload;
 
-$starterKit = dirname($root) . '/starter-kits/agent-collab';
+$starterKit = dirname($root) . '/starter-kits/agent-harness';
 $modules = require $root . '/modules.php';
 $keep = in_array('--keep', $argv, true);
 
@@ -24,7 +24,7 @@ if (!is_dir($starterKit)) {
     exit(1);
 }
 
-$fixture = sys_get_temp_dir() . '/' . uniqid('phalanx-collab-install-proof-', true);
+$fixture = sys_get_temp_dir() . '/' . uniqid('phalanx-agent-harness-install-proof-', true);
 
 if (!mkdir($fixture, 0777, true) && !is_dir($fixture)) {
     fwrite(STDERR, "Failed to create proof fixture: {$fixture}\n");
@@ -47,7 +47,7 @@ try {
     run([composerBinary(), 'install', '--no-interaction', '--no-progress'], $fixture, 300);
     run([PHP_BINARY, 'vendor/bin/phpunit', '--no-coverage'], $fixture, 60);
 
-    echo "Collab install proof OK\n";
+    echo "AgentHarness install proof OK\n";
 } finally {
     if ($keep) {
         printf("Kept proof fixture: %s\n", $fixture);
@@ -59,7 +59,7 @@ try {
 function fixtureComposer(array $modules, string $root): array
 {
     return [
-        'name' => 'phalanx-php/collab-install-proof',
+        'name' => 'phalanx-php/agent-harness-install-proof',
         'type' => 'project',
         'require' => [
             'php' => '^8.4',
@@ -74,12 +74,12 @@ function fixtureComposer(array $modules, string $root): array
         ],
         'autoload' => [
             'psr-4' => [
-                'App\\AgentCollab\\' => 'app/',
+                'App\\AgentHarness\\' => 'app/',
             ],
         ],
         'autoload-dev' => [
             'psr-4' => [
-                'App\\AgentCollab\\Tests\\' => 'tests/',
+                'App\\AgentHarness\\Tests\\' => 'tests/',
             ],
         ],
         'repositories' => pathRepositories($modules, $root),
@@ -124,7 +124,7 @@ function rewriteBootstrap(string $fixture): void
         require __DIR__ . '/../vendor/autoload.php';
 
         spl_autoload_register(static function (string $class): void {
-            $prefix = 'App\\AgentCollab\\';
+            $prefix = 'App\\AgentHarness\\';
             if (!str_starts_with($class, $prefix)) {
                 return;
             }
@@ -179,7 +179,7 @@ function composerBinary(): string
 
 function run(array $command, string $cwd, float $timeout): void
 {
-    $display = implode(' ', array_map('escapeshellarg', $command));
+    $display = implode(' ', array_map(escapeshellarg(...), $command));
     $process = new Process(
         command: $command,
         cwd: $cwd,

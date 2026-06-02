@@ -5,19 +5,19 @@ declare(strict_types=1);
 namespace Phalanx\Theatron\Tests\Unit\Collab\Events;
 
 use DateTimeImmutable;
-use Phalanx\Theatron\Collab\Events\CollabEvent;
+use Phalanx\Theatron\Collab\Events\AgentHarnessEvent;
 use Phalanx\Theatron\Collab\Events\EventKind;
 use Phalanx\Theatron\Collab\Messages\Envelope;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-final class CollabEventTest extends TestCase
+final class AgentHarnessEventTest extends TestCase
 {
     #[Test]
-    public function collabEventCarriesLifecycleDataAndRoutableView(): void
+    public function agentHarnessEventCarriesLifecycleDataAndRoutableView(): void
     {
         $envelope = Envelope::prompt('review this');
-        $event = CollabEvent::record(
+        $event = AgentHarnessEvent::record(
             kind: EventKind::WorkReceived,
             envelope: $envelope,
             context: ['round' => 'round_1'],
@@ -35,15 +35,15 @@ final class CollabEventTest extends TestCase
     }
 
     #[Test]
-    public function collabEventCanonicalFormAndHashAreStable(): void
+    public function agentHarnessEventCanonicalFormAndHashAreStable(): void
     {
-        $first = CollabEvent::record(
+        $first = AgentHarnessEvent::record(
             kind: EventKind::WorkCompleted,
             context: ['summary' => 'done'],
             occurredAt: new DateTimeImmutable('2026-05-31T12:00:00+00:00'),
             id: 'evt_test',
         );
-        $second = CollabEvent::record(
+        $second = AgentHarnessEvent::record(
             kind: EventKind::WorkCompleted,
             context: ['summary' => 'done'],
             occurredAt: new DateTimeImmutable('2026-05-31T12:00:00+00:00'),

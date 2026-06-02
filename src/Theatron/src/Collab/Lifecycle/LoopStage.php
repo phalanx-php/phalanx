@@ -9,7 +9,7 @@ enum LoopStage: string
     case Receive = 'receive';
     case Prepare = 'prepare';
     case Distribute = 'distribute';
-    case Collaborate = 'collaborate';
+    case Execute = 'execute';
     case React = 'react';
     case Review = 'review';
     case Complete = 'complete';

@@ -7,7 +7,7 @@ namespace Phalanx\Theatron\Collab\Screens;
 use Phalanx\Theatron\Collab\Boundaries\InputPromptSubmitter;
 use Phalanx\Theatron\Collab\Plans\WorkPlanItem;
 use Phalanx\Theatron\Collab\Reviews\ReviewVerdict;
-use Phalanx\Theatron\Collab\State\CollabStore;
+use Phalanx\Theatron\Collab\State\AgentHarnessStore;
 use Phalanx\Theatron\Collab\State\TimelineEntry;
 use Phalanx\Theatron\Tui\Core\Focusable;
 use Phalanx\Theatron\Tui\Core\HasFocusables;
@@ -30,7 +30,7 @@ class WorkspaceScreen implements Screen, HasFocusables
     private InputComposer $composer;
 
     public function __construct(
-        private CollabStore $store,
+        private AgentHarnessStore $store,
         ?InputPromptSubmitter $submitter = null,
     ) {
         $this->composer = InputComposer::empty(

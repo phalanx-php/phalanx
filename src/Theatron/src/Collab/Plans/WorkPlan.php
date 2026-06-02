@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Theatron\Collab\Plans;
 
-use Phalanx\Theatron\Collab\Events\CollabEvent;
+use Phalanx\Theatron\Collab\Events\AgentHarnessEvent;
 use Phalanx\Theatron\Collab\Internal\Id;
 use Phalanx\Theatron\Collab\Messages\Envelope;
 
@@ -124,7 +124,7 @@ final class WorkPlan
         $this->refreshStatus();
     }
 
-    public function unblock(string $itemId, Envelope|CollabEvent|null $resolvedBy = null): void
+    public function unblock(string $itemId, Envelope|AgentHarnessEvent|null $resolvedBy = null): void
     {
         $this->assertMutable();
         $this->items[$this->requireKnownItem($itemId)] = WorkPlanItem::unblocked($this->item($itemId), $resolvedBy);

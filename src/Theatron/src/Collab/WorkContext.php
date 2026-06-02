@@ -5,16 +5,16 @@ declare(strict_types=1);
 namespace Phalanx\Theatron\Collab;
 
 use Phalanx\Scope\TaskScope;
-use Phalanx\Theatron\Collab\Events\CollabEvent;
+use Phalanx\Theatron\Collab\Events\AgentHarnessEvent;
 use Phalanx\Theatron\Collab\Events\EventKind;
 use Phalanx\Theatron\Collab\Lifecycle\LoopStage;
 use Phalanx\Theatron\Collab\Messages\Envelope;
 use Phalanx\Theatron\Collab\Plans\WorkItem;
 use Phalanx\Theatron\Collab\Plans\WorkPlan;
 use Phalanx\Theatron\Collab\Plans\WorkResult;
-use Phalanx\Theatron\Collab\Projection\CollabProjector;
+use Phalanx\Theatron\Collab\Projection\AgentHarnessProjector;
 use Phalanx\Theatron\Collab\Reviews\ReviewVerdict;
-use Phalanx\Theatron\Collab\State\CollabStore;
+use Phalanx\Theatron\Collab\State\AgentHarnessStore;
 use Phalanx\Theatron\Collab\State\LoopSlice;
 use Phalanx\Theatron\Collab\State\MessageTimelineSlice;
 use Phalanx\Theatron\Collab\State\ReviewSlice;
@@ -30,18 +30,18 @@ final class WorkContext
         get => $this->store->workPlan->plan;
     }
 
-    /** @var list<CollabEvent> */
+    /** @var list<AgentHarnessEvent> */
     private array $projectedEvents = [];
 
     public function __construct(
         private(set) TaskScope $scope,
-        private CollabStore $store = new CollabStore(),
+        private AgentHarnessStore $store = new AgentHarnessStore(),
     ) {
     }
 
     public function advance(LoopStage $stage): LoopSlice
     {
-        $this->project(CollabEvent::record(
+        $this->project(AgentHarnessEvent::record(
             EventKind::LoopAdvanced,
             context: ['loop_stage' => $stage->value],
         ), queue: false);
@@ -49,9 +49,9 @@ final class WorkContext
         return $this->store->loop;
     }
 
-    public function project(CollabEvent $event, bool $queue = true): CollabStore
+    public function project(AgentHarnessEvent $event, bool $queue = true): AgentHarnessStore
     {
-        (new CollabProjector())->project($event, $this->store);
+        (new AgentHarnessProjector())->project($event, $this->store);
         if ($queue) {
             $this->projectedEvents[] = $event;
         }
@@ -60,7 +60,7 @@ final class WorkContext
     }
 
     /**
-     * @return list<CollabEvent>
+     * @return list<AgentHarnessEvent>
      */
     public function drainProjectedEvents(?EventKind $kind = null): array
     {
@@ -84,7 +84,7 @@ final class WorkContext
 
     public function record(Envelope $envelope): MessageTimelineSlice
     {
-        $this->project(CollabEvent::record(EventKind::WorkReceived, envelope: $envelope));
+        $this->project(AgentHarnessEvent::record(EventKind::WorkReceived, envelope: $envelope));
 
         return $this->store->messages;
     }
@@ -92,7 +92,7 @@ final class WorkContext
     public function append(WorkItem ...$items): WorkPlanSlice
     {
         foreach ($items as $item) {
-            $this->project(CollabEvent::record(EventKind::WorkPrepared, workItem: $item));
+            $this->project(AgentHarnessEvent::record(EventKind::WorkPrepared, workItem: $item));
         }
 
         return $this->store->workPlan;
@@ -101,7 +101,7 @@ final class WorkContext
     public function start(string $itemId): WorkPlanSlice
     {
         $item = $this->store->workPlan->plan->item($itemId);
-        $this->project(CollabEvent::record(EventKind::WorkItemStarted, workItem: $item->workItem));
+        $this->project(AgentHarnessEvent::record(EventKind::WorkItemStarted, workItem: $item->workItem));
 
         return $this->store->workPlan;
     }
@@ -113,7 +113,7 @@ final class WorkContext
         }
 
         $item = $this->store->workPlan->plan->item($itemId);
-        $this->project(CollabEvent::record(
+        $this->project(AgentHarnessEvent::record(
             $result->isDone() ? EventKind::WorkItemCompleted : EventKind::WorkInterrupted,
             workItem: $item->workItem,
             workResult: $result,
@@ -124,7 +124,7 @@ final class WorkContext
 
     public function abort(string $reason): WorkPlanSlice
     {
-        $this->project(CollabEvent::record(
+        $this->project(AgentHarnessEvent::record(
             EventKind::WorkReviewed,
             reviewVerdict: ReviewVerdict::reject($reason),
         ));
@@ -134,7 +134,7 @@ final class WorkContext
 
     public function review(ReviewVerdict $verdict): ReviewSlice
     {
-        $this->project(CollabEvent::record(
+        $this->project(AgentHarnessEvent::record(
             EventKind::WorkReviewed,
             reviewVerdict: $verdict,
         ));

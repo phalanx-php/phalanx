@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Theatron\Collab\Boundaries;
 
-use Phalanx\Theatron\Collab\Events\CollabEvent;
+use Phalanx\Theatron\Collab\Events\AgentHarnessEvent;
 use Phalanx\Theatron\Collab\Events\EventKind;
-use Phalanx\Theatron\Collab\Lifecycle\CollaborationLoop;
+use Phalanx\Theatron\Collab\Lifecycle\AgentHarnessLoop;
 use Phalanx\Theatron\Collab\Plans\WorkPlanStatus;
 use Phalanx\Theatron\Collab\WorkContext;
 
@@ -17,7 +17,7 @@ final class BoundaryRunner
 
     /** @param iterable<Inlet> $inlets */
     public function __construct(
-        private CollaborationLoop $loop,
+        private AgentHarnessLoop $loop,
         iterable $inlets = [],
         private InletQueue $incoming = new InletQueue(),
         private PromptInletMapper $mapper = new PromptInletMapper(),
@@ -35,7 +35,7 @@ final class BoundaryRunner
         foreach ($this->incoming->drain() as $message) {
             $received = true;
             $item = ($this->mapper)($message);
-            $ctx->project(CollabEvent::record(
+            $ctx->project(AgentHarnessEvent::record(
                 EventKind::WorkReceived,
                 envelope: $message->envelope,
                 workItem: $item,

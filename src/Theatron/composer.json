@@ -1,10 +1,10 @@
 {
     "name": "phalanx-php/theatron",
-    "description": "Terminal UI and agent collaboration framework for Phalanx PHP",
+    "description": "Terminal UI and agent-harness framework for Phalanx PHP",
     "license": "MIT",
     "type": "library",
     "keywords": [
-        "agent-collab",
+        "agent-harness",
         "terminal-ui",
         "theatron"
     ],

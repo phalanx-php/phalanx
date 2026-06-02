@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Theatron\Collab\Boundaries;
 
-use Phalanx\Theatron\Collab\Events\CollabEvent;
+use Phalanx\Theatron\Collab\Events\AgentHarnessEvent;
 use Phalanx\Theatron\Collab\Participants\Reactor;
 use Phalanx\Theatron\Collab\WorkContext;
 
@@ -19,7 +19,7 @@ final class OutletReactor implements Reactor
         $this->outlets = self::outlets($outlets);
     }
 
-    public function __invoke(CollabEvent $event, WorkContext $ctx): void
+    public function __invoke(AgentHarnessEvent $event, WorkContext $ctx): void
     {
         $routable = $event->routable();
 

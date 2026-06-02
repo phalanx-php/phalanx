@@ -25,7 +25,7 @@ use Phalanx\Panoply\Provider\Needs as ProviderNeeds;
 use Phalanx\Panoply\Stream;
 use Phalanx\Panoply\Transport\Needs as TransportNeeds;
 use Phalanx\Scope\TaskScope;
-use Phalanx\Theatron\Collab\Adapters\Athena\AthenaCollaborator;
+use Phalanx\Theatron\Collab\Adapters\Athena\AthenaAgentParticipant;
 use Phalanx\Theatron\Collab\Adapters\Athena\AthenaRunner;
 use Phalanx\Theatron\Collab\Messages\Address;
 use Phalanx\Theatron\Collab\Plans\Activity;
@@ -36,16 +36,16 @@ use Phalanx\Theatron\Collab\WorkContext;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-final class AthenaCollaboratorTest extends TestCase
+final class AthenaAgentParticipantTest extends TestCase
 {
     #[Test]
     public function workItemPromptBecomesTheInitialAthenaUserMessage(): void
     {
         $runner = new CapturingAthenaRunner(self::activityResult(State::Completed, Outcome::Complete, 'Patch is done.'));
-        $collaborator = new AthenaCollaborator(self::agent('agent-a'), runner: $runner);
+        $participant = new AthenaAgentParticipant(self::agent('agent-a'), runner: $runner);
         $item = WorkPlanItem::pending(new WorkItem(Activity::Editing, 'Patch the failing test.', id: 'work_patch'));
 
-        $result = $collaborator($item, new WorkContext($this->createStub(TaskScope::class)));
+        $result = $participant($item, new WorkContext($this->createStub(TaskScope::class)));
 
         self::assertSame(WorkResultStatus::Done, $result->status);
         self::assertSame('Patch is done.', $result->summary);
@@ -55,14 +55,14 @@ final class AthenaCollaboratorTest extends TestCase
     }
 
     #[Test]
-    public function collaboratorPassesAthenaConfigScopeAndAgentThroughTheRunner(): void
+    public function participantPassesAthenaConfigScopeAndAgentThroughTheRunner(): void
     {
         $runner = new CapturingAthenaRunner(self::activityResult());
         $scope = $this->createStub(TaskScope::class);
         $agent = self::agent('agent-a');
         $context = Context::new()->front(self::class);
         $hook = $this->createStub(StepHook::class);
-        $collaborator = new AthenaCollaborator(
+        $participant = new AthenaAgentParticipant(
             agent: $agent,
             context: $context,
             maxInvocations: 5,
@@ -71,7 +71,7 @@ final class AthenaCollaboratorTest extends TestCase
             runner: $runner,
         );
 
-        $collaborator(
+        $participant(
             WorkPlanItem::pending(new WorkItem(Activity::Editing, 'Patch code', id: 'work_patch')),
             new WorkContext($scope),
         );
@@ -87,13 +87,13 @@ final class AthenaCollaboratorTest extends TestCase
     }
 
     #[Test]
-    public function collaboratorUsesAgentContextByDefault(): void
+    public function participantUsesAgentContextByDefault(): void
     {
         $runner = new CapturingAthenaRunner(self::activityResult());
         $agent = self::agent('agent-a');
-        $collaborator = new AthenaCollaborator($agent, runner: $runner);
+        $participant = new AthenaAgentParticipant($agent, runner: $runner);
 
-        $collaborator(
+        $participant(
             WorkPlanItem::pending(new WorkItem(Activity::Editing, 'Patch code', id: 'work_patch')),
             new WorkContext($this->createStub(TaskScope::class)),
         );
@@ -106,10 +106,10 @@ final class AthenaCollaboratorTest extends TestCase
     public function suspendedAthenaResultBecomesBlockedWork(): void
     {
         $runner = new CapturingAthenaRunner(self::activityResult(State::Suspended, Outcome::WaitingForApproval));
-        $collaborator = new AthenaCollaborator(self::agent('agent-a'), runner: $runner);
+        $participant = new AthenaAgentParticipant(self::agent('agent-a'), runner: $runner);
         $item = WorkPlanItem::pending(new WorkItem(Activity::Editing, 'Patch code', id: 'work_patch'));
 
-        $result = $collaborator($item, new WorkContext($this->createStub(TaskScope::class)));
+        $result = $participant($item, new WorkContext($this->createStub(TaskScope::class)));
 
         self::assertSame(WorkResultStatus::Blocked, $result->status);
         self::assertSame('Athena activity is waiting for approval.', $result->summary);
@@ -120,10 +120,10 @@ final class AthenaCollaboratorTest extends TestCase
     {
         $error = new \RuntimeException('provider unavailable');
         $runner = new CapturingAthenaRunner(self::activityResult(State::Failed, Outcome::Failed, error: $error));
-        $collaborator = new AthenaCollaborator(self::agent('agent-a'), runner: $runner);
+        $participant = new AthenaAgentParticipant(self::agent('agent-a'), runner: $runner);
         $item = WorkPlanItem::pending(new WorkItem(Activity::Editing, 'Patch code', id: 'work_patch'));
 
-        $result = $collaborator($item, new WorkContext($this->createStub(TaskScope::class)));
+        $result = $participant($item, new WorkContext($this->createStub(TaskScope::class)));
 
         self::assertSame(WorkResultStatus::Failed, $result->status);
         self::assertSame($error, $result->error);
@@ -133,24 +133,24 @@ final class AthenaCollaboratorTest extends TestCase
     public function cancelledAthenaResultPropagatesCancellation(): void
     {
         $runner = new CapturingAthenaRunner(self::activityResult(State::Cancelled, Outcome::Cancelled));
-        $collaborator = new AthenaCollaborator(self::agent('agent-a'), runner: $runner);
+        $participant = new AthenaAgentParticipant(self::agent('agent-a'), runner: $runner);
         $item = WorkPlanItem::pending(new WorkItem(Activity::Editing, 'Patch code', id: 'work_patch'));
 
         $this->expectException(Cancelled::class);
 
-        $collaborator($item, new WorkContext($this->createStub(TaskScope::class)));
+        $participant($item, new WorkContext($this->createStub(TaskScope::class)));
     }
 
     #[Test]
     public function preferredParticipantMustMatchTheAgentIdentity(): void
     {
-        $collaborator = new AthenaCollaborator(self::agent('agent-a'), runner: new CapturingAthenaRunner(self::activityResult()));
+        $participant = new AthenaAgentParticipant(self::agent('agent-a'), runner: new CapturingAthenaRunner(self::activityResult()));
 
-        self::assertTrue($collaborator->supports(
+        self::assertTrue($participant->supports(
             WorkPlanItem::pending(new WorkItem(Activity::Editing, 'Patch code', preferredParticipant: Address::agent('agent-a'))),
             new WorkContext($this->createStub(TaskScope::class)),
         ));
-        self::assertFalse($collaborator->supports(
+        self::assertFalse($participant->supports(
             WorkPlanItem::pending(new WorkItem(Activity::Editing, 'Patch code', preferredParticipant: Address::agent('agent-b'))),
             new WorkContext($this->createStub(TaskScope::class)),
         ));

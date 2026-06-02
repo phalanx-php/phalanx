@@ -130,7 +130,7 @@ final class EnumSurfaceTest extends TestCase
                 'receive',
                 'prepare',
                 'distribute',
-                'collaborate',
+                'execute',
                 'react',
                 'review',
                 'complete',

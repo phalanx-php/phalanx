@@ -10,7 +10,7 @@ use Phalanx\Theatron\Collab\Boundaries\InletChannel;
 use Phalanx\Theatron\Collab\Boundaries\InletMessage;
 use Phalanx\Theatron\Collab\Boundaries\Outlet;
 use Phalanx\Theatron\Collab\Boundaries\Urgency;
-use Phalanx\Theatron\Collab\Events\CollabEvent;
+use Phalanx\Theatron\Collab\Events\AgentHarnessEvent;
 use Phalanx\Theatron\Collab\Events\EventKind;
 use Phalanx\Theatron\Collab\Events\RoutableEvent;
 use Phalanx\Theatron\Collab\Messages\Envelope;
@@ -49,8 +49,8 @@ final class BoundaryContractTest extends TestCase
         $outlet = new CompletionOnlyOutlet();
         $scope = new RecordingTaskScope();
 
-        $outlet(CollabEvent::record(EventKind::WorkReceived)->routable(), $scope);
-        $outlet(CollabEvent::record(EventKind::WorkCompleted)->routable('done'), $scope);
+        $outlet(AgentHarnessEvent::record(EventKind::WorkReceived)->routable(), $scope);
+        $outlet(AgentHarnessEvent::record(EventKind::WorkCompleted)->routable('done'), $scope);
 
         self::assertSame(['done'], $outlet->summaries);
     }

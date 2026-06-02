@@ -14,12 +14,12 @@ use Phalanx\Panoply\Conversation\Record\Message;
 use Phalanx\Panoply\Cue;
 use Phalanx\Panoply\Id;
 use Phalanx\Theatron\Collab\Messages\Address;
-use Phalanx\Theatron\Collab\Participants\Collaborator;
+use Phalanx\Theatron\Collab\Participants\AgentParticipant;
 use Phalanx\Theatron\Collab\Plans\WorkPlanItem;
 use Phalanx\Theatron\Collab\Plans\WorkResult;
 use Phalanx\Theatron\Collab\WorkContext;
 
-final class AthenaCollaborator implements Collaborator
+final class AthenaAgentParticipant implements AgentParticipant
 {
     /** @var list<\Phalanx\Athena\Hook\StepHook> */
     private array $hooks;
@@ -37,7 +37,7 @@ final class AthenaCollaborator implements Collaborator
     ) {
         foreach ($hooks as $hook) {
             if (!$hook instanceof \Phalanx\Athena\Hook\StepHook) {
-                throw new \InvalidArgumentException('Athena collaborator hooks must be StepHook instances.');
+                throw new \InvalidArgumentException('Athena participant hooks must be StepHook instances.');
             }
         }
 

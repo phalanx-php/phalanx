@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Theatron\Collab\Lifecycle;
 
-use Phalanx\Theatron\Collab\Events\CollabEvent;
+use Phalanx\Theatron\Collab\Events\AgentHarnessEvent;
 use Phalanx\Theatron\Collab\Events\EventKind;
-use Phalanx\Theatron\Collab\Participants\Collaborator;
+use Phalanx\Theatron\Collab\Participants\AgentParticipant;
 use Phalanx\Theatron\Collab\Participants\Preparer;
 use Phalanx\Theatron\Collab\Participants\Reactor;
 use Phalanx\Theatron\Collab\Participants\Reviewer;
@@ -17,13 +17,13 @@ use Phalanx\Theatron\Collab\Plans\WorkResult;
 use Phalanx\Theatron\Collab\Reviews\ReviewVerdict;
 use Phalanx\Theatron\Collab\WorkContext;
 
-final class CollaborationLoop
+final class AgentHarnessLoop
 {
     /** @var list<Preparer> */
     private array $preparers;
 
-    /** @var list<Collaborator> */
-    private array $collaborators;
+    /** @var list<AgentParticipant> */
+    private array $participants;
 
     /** @var list<Reactor> */
     private array $reactors;
@@ -36,24 +36,24 @@ final class CollaborationLoop
 
     /**
      * @param iterable<Preparer> $preparers
-     * @param iterable<Collaborator> $collaborators
+     * @param iterable<AgentParticipant> $participants
      * @param iterable<Reactor> $reactors
      * @param iterable<Reviewer> $reviewers
      */
     public function __construct(
-        private Collaborator $primary,
+        private AgentParticipant $primary,
         iterable $preparers = [],
-        iterable $collaborators = [],
+        iterable $participants = [],
         iterable $reactors = [],
         iterable $reviewers = [],
         private int $maxReviewPasses = 8,
     ) {
         if ($this->maxReviewPasses < 1) {
-            throw new \InvalidArgumentException('Collaboration loop max review passes must be >= 1.');
+            throw new \InvalidArgumentException('AgentHarness loop max review passes must be >= 1.');
         }
 
         $this->preparers = self::preparers($preparers);
-        $this->collaborators = self::collaborators($collaborators);
+        $this->participants = self::participants($participants);
         $this->reactors = self::reactors($reactors);
         $this->reviewers = self::reviewers($reviewers);
     }
@@ -67,7 +67,7 @@ final class CollaborationLoop
 
         $reviewPasses = 0;
         while (true) {
-            $status = $this->collaborate($ctx);
+            $status = $this->execute($ctx);
             if ($status !== WorkPlanStatus::Complete) {
                 return $status;
             }
@@ -80,13 +80,13 @@ final class CollaborationLoop
             if ($verdict->needsRevision()) {
                 $reviewPasses++;
                 if ($reviewPasses > $this->maxReviewPasses) {
-                    throw new \LogicException('Collaboration loop exceeded the maximum review passes.');
+                    throw new \LogicException('AgentHarness loop exceeded the maximum review passes.');
                 }
 
                 continue;
             }
 
-            $this->projectAndEmit($ctx, CollabEvent::record(EventKind::WorkCompleted));
+            $this->projectAndEmit($ctx, AgentHarnessEvent::record(EventKind::WorkCompleted));
 
             return $ctx->plan->status;
         }
@@ -114,12 +114,12 @@ final class CollaborationLoop
     }
 
     /**
-     * @param iterable<Collaborator> $collaborators
-     * @return list<Collaborator>
+     * @param iterable<AgentParticipant> $participants
+     * @return list<AgentParticipant>
      */
-    private static function collaborators(iterable $collaborators): array
+    private static function participants(iterable $participants): array
     {
-        return self::instances($collaborators, Collaborator::class);
+        return self::instances($participants, AgentParticipant::class);
     }
 
     /**
@@ -164,7 +164,7 @@ final class CollaborationLoop
     {
         $received = $ctx->drainProjectedEvents(EventKind::WorkReceived);
         if ($received === []) {
-            $this->projectAndEmit($ctx, CollabEvent::record(EventKind::WorkReceived));
+            $this->projectAndEmit($ctx, AgentHarnessEvent::record(EventKind::WorkReceived));
 
             return;
         }
@@ -193,7 +193,7 @@ final class CollaborationLoop
         ];
 
         if ($prepared === []) {
-            $this->projectAndEmit($ctx, CollabEvent::record(EventKind::WorkPrepared));
+            $this->projectAndEmit($ctx, AgentHarnessEvent::record(EventKind::WorkPrepared));
 
             return;
         }
@@ -204,7 +204,7 @@ final class CollaborationLoop
         }
     }
 
-    private function collaborate(WorkContext $ctx): WorkPlanStatus
+    private function execute(WorkContext $ctx): WorkPlanStatus
     {
         while ($ctx->plan->status === WorkPlanStatus::Active) {
             $ready = $ctx->plan->readyItems();
@@ -212,10 +212,10 @@ final class CollaborationLoop
                 return $ctx->plan->status;
             }
 
-            $this->projectAndEmit($ctx, CollabEvent::record(EventKind::WorkDistributed));
+            $this->projectAndEmit($ctx, AgentHarnessEvent::record(EventKind::WorkDistributed));
 
             foreach ($ready as $item) {
-                $this->collaborateOn($ctx, $item);
+                $this->executeOn($ctx, $item);
                 if ($ctx->plan->status !== WorkPlanStatus::Active) {
                     break;
                 }
@@ -225,19 +225,19 @@ final class CollaborationLoop
         return $ctx->plan->status;
     }
 
-    private function collaborateOn(WorkContext $ctx, WorkPlanItem $item): void
+    private function executeOn(WorkContext $ctx, WorkPlanItem $item): void
     {
         if (!self::isStillReady($ctx, $item)) {
             return;
         }
 
-        $collaborator = $this->selectCollaborator($item, $ctx);
+        $participant = $this->selectAgentParticipant($item, $ctx);
 
-        $this->projectAndEmit($ctx, CollabEvent::record(EventKind::WorkItemStarted, workItem: $item->workItem));
+        $this->projectAndEmit($ctx, AgentHarnessEvent::record(EventKind::WorkItemStarted, workItem: $item->workItem));
 
         $running = $ctx->plan->item($item->workItem->id);
         try {
-            $result = $collaborator($running, $ctx);
+            $result = $participant($running, $ctx);
         } catch (\Phalanx\Cancellation\Cancelled $cancelled) {
             throw $cancelled;
         } catch (\Throwable $error) {
@@ -245,19 +245,19 @@ final class CollaborationLoop
         }
 
         $kind = $result->isDone() ? EventKind::WorkItemCompleted : EventKind::WorkInterrupted;
-        $this->projectAndEmit($ctx, CollabEvent::record($kind, workItem: $item->workItem, workResult: $result));
+        $this->projectAndEmit($ctx, AgentHarnessEvent::record($kind, workItem: $item->workItem, workResult: $result));
     }
 
-    private function selectCollaborator(WorkPlanItem $item, WorkContext $ctx): Collaborator
+    private function selectAgentParticipant(WorkPlanItem $item, WorkContext $ctx): AgentParticipant
     {
-        foreach ($this->collaborators as $collaborator) {
-            if ($collaborator->supports($item, $ctx)) {
-                return $collaborator;
+        foreach ($this->participants as $participant) {
+            if ($participant->supports($item, $ctx)) {
+                return $participant;
             }
         }
 
         if (!$this->primary->supports($item, $ctx)) {
-            throw new \LogicException(sprintf('No collaborator supports work item "%s".', $item->workItem->id));
+            throw new \LogicException(sprintf('No participant supports work item "%s".', $item->workItem->id));
         }
 
         return $this->primary;
@@ -268,14 +268,14 @@ final class CollaborationLoop
         $ctx->advance(LoopStage::Review);
         if ($this->reviewers === []) {
             $verdict = ReviewVerdict::approve();
-            $this->projectAndEmit($ctx, CollabEvent::record(EventKind::WorkReviewed, reviewVerdict: $verdict));
+            $this->projectAndEmit($ctx, AgentHarnessEvent::record(EventKind::WorkReviewed, reviewVerdict: $verdict));
 
             return $verdict;
         }
 
         foreach ($this->reviewers as $reviewer) {
             $verdict = $reviewer($ctx);
-            $this->projectAndEmit($ctx, CollabEvent::record(EventKind::WorkReviewed, reviewVerdict: $verdict));
+            $this->projectAndEmit($ctx, AgentHarnessEvent::record(EventKind::WorkReviewed, reviewVerdict: $verdict));
 
             if (!$verdict->isApproved()) {
                 return $verdict;
@@ -285,7 +285,7 @@ final class CollaborationLoop
         return ReviewVerdict::approve();
     }
 
-    private function projectAndEmit(WorkContext $ctx, CollabEvent $event): void
+    private function projectAndEmit(WorkContext $ctx, AgentHarnessEvent $event): void
     {
         $ctx->project($event, queue: false);
         $this->rememberWorkItem($event);
@@ -293,7 +293,7 @@ final class CollaborationLoop
     }
 
     /**
-     * @return list<CollabEvent>
+     * @return list<AgentHarnessEvent>
      */
     private function preseededWorkEvents(WorkContext $ctx): array
     {
@@ -303,20 +303,20 @@ final class CollaborationLoop
                 continue;
             }
 
-            $events[] = CollabEvent::record(EventKind::WorkPrepared, workItem: $item->workItem);
+            $events[] = AgentHarnessEvent::record(EventKind::WorkPrepared, workItem: $item->workItem);
         }
 
         return $events;
     }
 
-    private function rememberWorkItem(CollabEvent $event): void
+    private function rememberWorkItem(AgentHarnessEvent $event): void
     {
         if ($event->workItem !== null) {
             $this->emittedWorkItemIds[$event->workItem->id] = true;
         }
     }
 
-    private function emit(WorkContext $ctx, CollabEvent $event): void
+    private function emit(WorkContext $ctx, AgentHarnessEvent $event): void
     {
         $previous = $ctx->stage;
         $ctx->advance(LoopStage::React);

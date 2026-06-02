@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Phalanx\Theatron\Collab\Projection;
 
-use Phalanx\Theatron\Collab\Events\CollabEvent;
+use Phalanx\Theatron\Collab\Events\AgentHarnessEvent;
 use Phalanx\Theatron\Collab\Events\EventKind;
 use Phalanx\Theatron\Collab\Lifecycle\LoopStage;
 use Phalanx\Theatron\Collab\Plans\WorkItem;
 use Phalanx\Theatron\Collab\Plans\WorkResult;
 use Phalanx\Theatron\Collab\Reviews\ReviewVerdict;
-use Phalanx\Theatron\Collab\State\CollabStore;
+use Phalanx\Theatron\Collab\State\AgentHarnessStore;
 use Phalanx\Theatron\Collab\State\ContextSlice;
 use Phalanx\Theatron\Collab\State\LoopSlice;
 use Phalanx\Theatron\Collab\State\MessageTimelineSlice;
@@ -19,16 +19,16 @@ use Phalanx\Theatron\Collab\State\ReviewSlice;
 use Phalanx\Theatron\Collab\State\RuntimeSlice;
 use Phalanx\Theatron\Collab\State\WorkPlanSlice;
 
-final class CollabProjector
+final class AgentHarnessProjector
 {
-    public function __invoke(CollabEvent $event, CollabStore $store): CollabStore
+    public function __invoke(AgentHarnessEvent $event, AgentHarnessStore $store): AgentHarnessStore
     {
         $this->project($event, $store);
 
         return $store;
     }
 
-    public function project(CollabEvent $event, CollabStore $store): CollabStore
+    public function project(AgentHarnessEvent $event, AgentHarnessStore $store): AgentHarnessStore
     {
         $this->validate($event);
 
@@ -46,7 +46,7 @@ final class CollabProjector
                 EventKind::EffectRequested,
                 EventKind::EffectApproved,
                 EventKind::EffectDenied => throw new \InvalidArgumentException(sprintf(
-                    'Collab event "%s" is not supported by the alpha projector.',
+                    'AgentHarness event "%s" is not supported by the alpha projector.',
                     $event->kind->value,
                 )),
             };
@@ -67,7 +67,7 @@ final class CollabProjector
             EventKind::WorkDistributed => LoopStage::Distribute,
             EventKind::WorkItemStarted,
             EventKind::WorkItemCompleted,
-            EventKind::WorkInterrupted => LoopStage::Collaborate,
+            EventKind::WorkInterrupted => LoopStage::Execute,
             EventKind::EffectRequested,
             EventKind::EffectApproved,
             EventKind::EffectDenied => LoopStage::React,
@@ -76,7 +76,7 @@ final class CollabProjector
         };
     }
 
-    private function validate(CollabEvent $event): void
+    private function validate(AgentHarnessEvent $event): void
     {
         match ($event->kind) {
             EventKind::LoopAdvanced => $this->requireLoopStage($event),
@@ -91,13 +91,13 @@ final class CollabProjector
             EventKind::EffectRequested,
             EventKind::EffectApproved,
             EventKind::EffectDenied => throw new \InvalidArgumentException(sprintf(
-                'Collab event "%s" is not supported by the alpha projector.',
+                'AgentHarness event "%s" is not supported by the alpha projector.',
                 $event->kind->value,
             )),
         };
     }
 
-    private function projectReceived(CollabEvent $event, CollabStore $store): void
+    private function projectReceived(AgentHarnessEvent $event, AgentHarnessStore $store): void
     {
         if ($event->envelope === null && $event->workItem === null) {
             return;
@@ -120,7 +120,7 @@ final class CollabProjector
         }
     }
 
-    private function projectPrepared(CollabEvent $event, CollabStore $store): void
+    private function projectPrepared(AgentHarnessEvent $event, AgentHarnessStore $store): void
     {
         if ($event->workItem === null) {
             return;
@@ -134,7 +134,7 @@ final class CollabProjector
         );
     }
 
-    private function projectStarted(CollabEvent $event, CollabStore $store): void
+    private function projectStarted(AgentHarnessEvent $event, AgentHarnessStore $store): void
     {
         $workItem = $this->requireWorkItem($event);
 
@@ -149,7 +149,7 @@ final class CollabProjector
         );
     }
 
-    private function projectResult(CollabEvent $event, CollabStore $store): void
+    private function projectResult(AgentHarnessEvent $event, AgentHarnessStore $store): void
     {
         $workResult = $this->requireWorkResult($event);
 
@@ -164,7 +164,7 @@ final class CollabProjector
         );
     }
 
-    private function projectReview(CollabEvent $event, CollabStore $store): void
+    private function projectReview(AgentHarnessEvent $event, AgentHarnessStore $store): void
     {
         $verdict = $this->requireReviewVerdict($event);
 
@@ -195,7 +195,7 @@ final class CollabProjector
         );
     }
 
-    private function projectStage(CollabEvent $event, CollabStore $store): void
+    private function projectStage(AgentHarnessEvent $event, AgentHarnessStore $store): void
     {
         $stage = $this->loopStage($event);
 
@@ -205,7 +205,7 @@ final class CollabProjector
         );
     }
 
-    private function loopStage(CollabEvent $event): LoopStage
+    private function loopStage(AgentHarnessEvent $event): LoopStage
     {
         if ($event->kind === EventKind::LoopAdvanced) {
             return $this->requireLoopStage($event);
@@ -214,7 +214,7 @@ final class CollabProjector
         return self::stageFor($event->kind);
     }
 
-    private function projectMetadata(CollabEvent $event, CollabStore $store): void
+    private function projectMetadata(AgentHarnessEvent $event, AgentHarnessStore $store): void
     {
         $this->projectRuntimeMetadata($event->context, $store);
         $this->projectContextMetadata($event->context, $store);
@@ -224,7 +224,7 @@ final class CollabProjector
     /**
      * @param array<string, mixed> $context
      */
-    private function projectRuntimeMetadata(array $context, CollabStore $store): void
+    private function projectRuntimeMetadata(array $context, AgentHarnessStore $store): void
     {
         if (
             !array_key_exists('runtime_session_id', $context)
@@ -251,7 +251,7 @@ final class CollabProjector
     /**
      * @param array<string, mixed> $context
      */
-    private function projectContextMetadata(array $context, CollabStore $store): void
+    private function projectContextMetadata(array $context, AgentHarnessStore $store): void
     {
         if (
             !array_key_exists('context_pressure', $context)
@@ -275,7 +275,7 @@ final class CollabProjector
     /**
      * @param array<string, mixed> $context
      */
-    private function projectParticipantMetadata(array $context, CollabStore $store): void
+    private function projectParticipantMetadata(array $context, AgentHarnessStore $store): void
     {
         if (!array_key_exists('participants', $context)) {
             return;
@@ -301,7 +301,7 @@ final class CollabProjector
         );
     }
 
-    private function validateReceived(CollabEvent $event): void
+    private function validateReceived(AgentHarnessEvent $event): void
     {
         if ($event->envelope === null && $event->workItem === null) {
             return;
@@ -312,7 +312,7 @@ final class CollabProjector
         }
     }
 
-    private function validateResult(CollabEvent $event): void
+    private function validateResult(AgentHarnessEvent $event): void
     {
         $workItem = $this->requireWorkItem($event);
         $workResult = $this->requireWorkResult($event);
@@ -330,53 +330,53 @@ final class CollabProjector
         }
     }
 
-    private function validateReview(CollabEvent $event): void
+    private function validateReview(AgentHarnessEvent $event): void
     {
         $this->requireReviewVerdict($event);
     }
 
-    private function requireEnvelope(CollabEvent $event): void
+    private function requireEnvelope(AgentHarnessEvent $event): void
     {
         if ($event->envelope === null) {
             throw new \InvalidArgumentException(sprintf(
-                'Collab event "%s" requires an envelope for projection.',
+                'AgentHarness event "%s" requires an envelope for projection.',
                 $event->kind->value,
             ));
         }
     }
 
-    private function requireWorkItem(CollabEvent $event): WorkItem
+    private function requireWorkItem(AgentHarnessEvent $event): WorkItem
     {
         return $event->workItem ?? throw new \InvalidArgumentException(sprintf(
-            'Collab event "%s" requires a work item for projection.',
+            'AgentHarness event "%s" requires a work item for projection.',
             $event->kind->value,
         ));
     }
 
-    private function requireWorkResult(CollabEvent $event): WorkResult
+    private function requireWorkResult(AgentHarnessEvent $event): WorkResult
     {
         return $event->workResult ?? throw new \InvalidArgumentException(sprintf(
-            'Collab event "%s" requires a work result for projection.',
+            'AgentHarness event "%s" requires a work result for projection.',
             $event->kind->value,
         ));
     }
 
-    private function requireReviewVerdict(CollabEvent $event): ReviewVerdict
+    private function requireReviewVerdict(AgentHarnessEvent $event): ReviewVerdict
     {
         return $event->reviewVerdict ?? throw new \InvalidArgumentException(
-            'Collab event "work_reviewed" requires a review verdict for projection.',
+            'AgentHarness event "work_reviewed" requires a review verdict for projection.',
         );
     }
 
-    private function requireLoopStage(CollabEvent $event): LoopStage
+    private function requireLoopStage(AgentHarnessEvent $event): LoopStage
     {
         $stage = $event->context['loop_stage'] ?? null;
         if (!is_string($stage)) {
-            throw new \InvalidArgumentException('Collab event "loop_advanced" requires a loop_stage context string.');
+            throw new \InvalidArgumentException('AgentHarness event "loop_advanced" requires a loop_stage context string.');
         }
 
         return LoopStage::tryFrom($stage) ?? throw new \InvalidArgumentException(sprintf(
-            'Collab event "loop_advanced" has unknown loop stage "%s".',
+            'AgentHarness event "loop_advanced" has unknown loop stage "%s".',
             $stage,
         ));
     }

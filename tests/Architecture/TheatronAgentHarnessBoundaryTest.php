@@ -9,7 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 #[Group('architecture')]
-final class TheatronCollabBoundaryTest extends TestCase
+final class TheatronAgentHarnessBoundaryTest extends TestCase
 {
     #[Test]
     public function standaloneLegacyModuleIsRemoved(): void
@@ -55,7 +55,7 @@ final class TheatronCollabBoundaryTest extends TestCase
     }
 
     #[Test]
-    public function collabKeepsPersistenceOutOfTheCoreLoop(): void
+    public function agentHarnessKeepsPersistenceOutOfTheCoreLoop(): void
     {
         $root = dirname(__DIR__, 2);
         $offenders = [];
@@ -71,21 +71,21 @@ final class TheatronCollabBoundaryTest extends TestCase
         self::assertSame(
             [],
             $offenders,
-            "Collab should not pull durable persistence into the core loop:\n" . implode("\n", $offenders),
+            "AgentHarness should not pull durable persistence into the core loop:\n" . implode("\n", $offenders),
         );
     }
 
     #[Test]
-    public function collabOwnsTheAthenaPanoplyAdapterInternally(): void
+    public function agentHarnessOwnsTheAthenaPanoplyAdapterInternally(): void
     {
         $root = dirname(__DIR__, 2);
         $offenders = [];
         $adapterImportsAthena = false;
         $adapterImportsPanoply = false;
 
-        $adapter = new \ReflectionClass(\Phalanx\Theatron\Collab\Adapters\Athena\AthenaCollaborator::class);
+        $adapter = new \ReflectionClass(\Phalanx\Theatron\Collab\Adapters\Athena\AthenaAgentParticipant::class);
 
-        self::assertTrue($adapter->implementsInterface(\Phalanx\Theatron\Collab\Participants\Collaborator::class));
+        self::assertTrue($adapter->implementsInterface(\Phalanx\Theatron\Collab\Participants\AgentParticipant::class));
 
         foreach (self::sourceFiles($root . '/src/Theatron/src/Collab/Adapters') as $file) {
             $source = self::read($file);
@@ -93,8 +93,8 @@ final class TheatronCollabBoundaryTest extends TestCase
             $adapterImportsPanoply = $adapterImportsPanoply || str_contains($source, 'Phalanx\\Panoply\\');
         }
 
-        self::assertTrue($adapterImportsAthena, 'A Collab adapter should own Athena integration.');
-        self::assertTrue($adapterImportsPanoply, 'A Collab adapter should own Panoply integration.');
+        self::assertTrue($adapterImportsAthena, 'An AgentHarness adapter should own Athena integration.');
+        self::assertTrue($adapterImportsPanoply, 'An AgentHarness adapter should own Panoply integration.');
 
         foreach (self::sourceFiles($root . '/src/Theatron/src/Collab') as $file) {
             if (str_contains(self::relative($root, $file), 'src/Theatron/src/Collab/Adapters/')) {
@@ -112,7 +112,7 @@ final class TheatronCollabBoundaryTest extends TestCase
         self::assertSame(
             [],
             $offenders,
-            "Athena/Panoply imports belong in Collab adapters, not the core loop/contracts:\n" . implode("\n", $offenders),
+            "Athena/Panoply imports belong in AgentHarness adapters, not the core loop/contracts:\n" . implode("\n", $offenders),
         );
     }
 
@@ -158,17 +158,19 @@ final class TheatronCollabBoundaryTest extends TestCase
     public function starterComposerRequireSurfaceNamesOnlyTheatronFromPhalanxPackages(): void
     {
         $root = dirname(__DIR__, 2);
-        $starterComposer = dirname($root) . '/starter-kits/agent-collab/composer.json';
+        $starterComposer = dirname($root) . '/starter-kits/agent-harness/composer.json';
 
         if (!is_file($starterComposer)) {
-            self::markTestSkipped('Agent Collab starter kit is not present next to the framework repository.');
+            self::markTestSkipped('AgentHarness starter kit is not present next to the framework repository.');
         }
 
         $composer = json_decode(self::read($starterComposer), true, flags: JSON_THROW_ON_ERROR);
-        $packages = array_values(array_filter(
-            array_keys($composer['require']),
-            static fn (string $package): bool => str_starts_with($package, 'phalanx-php/'),
-        ));
+        $packages = [];
+        foreach (array_keys($composer['require']) as $package) {
+            if (is_string($package) && str_starts_with($package, 'phalanx-php/')) {
+                $packages[] = $package;
+            }
+        }
 
         self::assertSame(['phalanx-php/theatron'], $packages);
     }
@@ -220,10 +222,10 @@ final class TheatronCollabBoundaryTest extends TestCase
     }
 
     #[Test]
-    public function collaborationLoopDoesNotBypassProjectedDomainState(): void
+    public function agentHarnessLoopDoesNotBypassProjectedDomainState(): void
     {
         $root = dirname(__DIR__, 2);
-        $source = self::read($root . '/src/Theatron/src/Collab/Lifecycle/CollaborationLoop.php');
+        $source = self::read($root . '/src/Theatron/src/Collab/Lifecycle/AgentHarnessLoop.php');
 
         foreach (['$ctx->append(', '$ctx->start(', '$ctx->fulfill(', '$ctx->abort(', '$ctx->review('] as $token) {
             self::assertStringNotContainsString($token, $source);
@@ -254,7 +256,29 @@ final class TheatronCollabBoundaryTest extends TestCase
         self::assertSame(
             [],
             $offenders,
-            "Generic Tui must stay Collab-agnostic; Collab screens can import Tui, not the reverse:\n" . implode("\n", $offenders),
+            "Generic Tui must stay AgentHarness-agnostic; internal Collab screens can import Tui, not the reverse:\n" . implode("\n", $offenders),
+        );
+    }
+
+    #[Test]
+    public function publicSurfacesDoNotExposeDeprecatedCollabProductNames(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $offenders = [];
+
+        foreach (self::publicAgentHarnessSurfaceFiles($root) as $file) {
+            $source = self::read($file);
+            foreach (self::deprecatedPublicCollabTokens() as $token) {
+                if (str_contains($source, $token)) {
+                    $offenders[] = self::relative($root, $file) . " contains {$token}";
+                }
+            }
+        }
+
+        self::assertSame(
+            [],
+            $offenders,
+            "Public Theatron agent-harness surfaces must not advertise deprecated Collab product names:\n" . implode("\n", $offenders),
         );
     }
 
@@ -284,8 +308,61 @@ final class TheatronCollabBoundaryTest extends TestCase
         self::assertSame(
             [],
             $offenders,
-            "Theatron source must keep the current Tui/Collab vocabulary:\n" . implode("\n", $offenders),
+            "Theatron source must keep the current Tui/AgentHarness public vocabulary:\n" . implode("\n", $offenders),
         );
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function deprecatedPublicCollabTokens(): array
+    {
+        return [
+            'AgentCollab',
+            'agent-collab',
+            'agent collaboration',
+            'Theatron Collab',
+            'Theatron::collab',
+            'CollabBuilder',
+            'Collab tick',
+            'CollabRuntime',
+            'CollabStore',
+            'CollabEvent',
+            'CollabProjector',
+            'CollabReplay',
+            'CollaborationLoop',
+            'Collaboration loop',
+            'Collaborator',
+            "#[Group('collab')]",
+            'bin/collab',
+            'prove-collab-install',
+        ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function publicAgentHarnessSurfaceFiles(string $root): array
+    {
+        $files = [
+            $root . '/modules.php',
+            $root . '/src/Theatron/README.md',
+            $root . '/src/Theatron/composer.json',
+            $root . '/src/Theatron/src/Theatron.php',
+            $root . '/src/Theatron/src/Collab/Apps/AgentHarnessBuilder.php',
+            $root . '/src/Theatron/src/Collab/Apps/AgentHarnessRuntime.php',
+            $root . '/src/Theatron/src/Collab/Apps/AgentHarnessServiceBundle.php',
+            $root . '/src/Theatron/src/Collab/Lifecycle/AgentHarnessLoop.php',
+            $root . '/tools/prove-agent-harness-install.php',
+            dirname($root) . '/starter-kits/agent-harness/README.md',
+            dirname($root) . '/starter-kits/agent-harness/composer.json',
+            dirname($root) . '/starter-kits/agent-harness/bin/agent-harness',
+            dirname($root) . '/starter-kits/agent-harness/app/AgentHarness.php',
+            dirname($root) . '/starter-kits/agent-harness/app/Agents/Assistant/Agent.php',
+            dirname($root) . '/starter-kits/agent-harness/tests/StarterSmokeTest.php',
+        ];
+
+        return array_values(array_filter($files, is_file(...)));
     }
 
     /**
@@ -319,9 +396,7 @@ final class TheatronCollabBoundaryTest extends TestCase
 
         return [
             'Phalanx\\Theatron\\' . $module . '\\',
-            $module . 'Event',
-            $module . 'Id',
-            $module . 'Store',
+            'namespace Phalanx\\Theatron\\' . $module,
             'Theatron::' . strtolower($module),
         ];
     }
