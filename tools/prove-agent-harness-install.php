@@ -42,10 +42,9 @@ try {
         ) . PHP_EOL,
     );
 
-    rewriteBootstrap($fixture);
-
     run([composerBinary(), 'install', '--no-interaction', '--no-progress'], $fixture, 300);
     run([PHP_BINARY, 'vendor/bin/phpunit', '--no-coverage'], $fixture, 60);
+    run([composerBinary(), 'analyse'], $fixture, 60);
 
     echo "AgentHarness install proof OK\n";
 } finally {
@@ -70,6 +69,7 @@ function fixtureComposer(array $modules, string $root): array
             'symfony/runtime' => '^7.0 || ^8.0',
         ],
         'require-dev' => [
+            'phpstan/phpstan' => '^2.0',
             'phpunit/phpunit' => '^13.0',
         ],
         'autoload' => [
@@ -83,6 +83,9 @@ function fixtureComposer(array $modules, string $root): array
             ],
         ],
         'repositories' => pathRepositories($modules, $root),
+        'scripts' => [
+            'analyse' => 'php vendor/bin/phpstan analyse --memory-limit=512M',
+        ],
         'minimum-stability' => 'dev',
         'prefer-stable' => true,
         'config' => [
@@ -112,31 +115,6 @@ function pathRepositories(array $modules, string $root): array
     return $repositories;
 }
 
-function rewriteBootstrap(string $fixture): void
-{
-    $bootstrap = $fixture . '/tests/bootstrap.php';
-
-    file_put_contents($bootstrap, <<<'PHP'
-        <?php
-
-        declare(strict_types=1);
-
-        require __DIR__ . '/../vendor/autoload.php';
-
-        spl_autoload_register(static function (string $class): void {
-            $prefix = 'App\\AgentHarness\\';
-            if (!str_starts_with($class, $prefix)) {
-                return;
-            }
-
-            $path = dirname(__DIR__) . '/app/' . str_replace('\\', '/', substr($class, strlen($prefix))) . '.php';
-            if (is_file($path)) {
-                require $path;
-            }
-        });
-        PHP);
-}
-
 function copyTree(string $source, string $destination): void
 {
     $items = new RecursiveIteratorIterator(
@@ -147,7 +125,7 @@ function copyTree(string $source, string $destination): void
     foreach ($items as $item) {
         $relative = substr($item->getPathname(), strlen($source) + 1);
 
-        if (str_starts_with($relative, '.git/') || str_starts_with($relative, 'vendor/')) {
+        if ($relative === 'composer.lock' || str_starts_with($relative, '.git/') || str_starts_with($relative, 'vendor/')) {
             continue;
         }
 

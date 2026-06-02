@@ -27,7 +27,7 @@ final class ReviewVerdict
             throw new \InvalidArgumentException('Revision verdict requires follow-up work.');
         }
 
-        $this->requiredWork = $requiredWork;
+        $this->requiredWork = array_values($requiredWork);
     }
 
     public static function approve(): self

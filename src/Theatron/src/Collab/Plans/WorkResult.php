@@ -26,7 +26,7 @@ final class WorkResult
             throw new \InvalidArgumentException('Work result item id cannot be empty.');
         }
 
-        $this->envelopes = $envelopes;
+        $this->envelopes = array_values($envelopes);
     }
 
     /**

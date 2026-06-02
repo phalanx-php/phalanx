@@ -36,6 +36,7 @@
     },
     "autoload": {
         "files": [
+            "src/Theatron/src/AgentHarness/aliases.php",
             "src/Theatron/src/Tui/Kit/functions.php"
         ],
         "psr-4": {

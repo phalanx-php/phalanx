@@ -57,8 +57,9 @@ final class AgentHarnessBuilder
 
     private TheatronBuilder $tui;
 
-    public function __construct(private(set) AppContext $context)
-    {
+    public function __construct(
+        private(set) AppContext $context,
+    ) {
         $this->tui = (new TheatronBuilder($this->context))
             ->store(AgentHarnessStore::class)
             ->screens([WorkspaceScreen::class]);
@@ -235,16 +236,7 @@ final class AgentHarnessBuilder
 
         return [
             new TheatronServiceBundle($app),
-            new AgentHarnessServiceBundle(
-                primary: $primary,
-                preparers: $this->preparers,
-                participants: $this->participants,
-                reactors: $this->reactors,
-                reviewers: $this->reviewers,
-                inlets: $this->inlets,
-                outlets: $this->outlets,
-                maxReviewPasses: $this->maxReviewPasses,
-            ),
+            new AgentHarnessServiceBundle($this->definition($primary)),
             ...array_map(
                 static fn(ServiceBundle|Closure $provider): ServiceBundle => $provider instanceof Closure
                     ? $provider($app)
@@ -257,5 +249,19 @@ final class AgentHarnessBuilder
     private function requirePrimary(): AgentParticipant
     {
         return $this->primary ?? throw new InvalidArgumentException('A primary AgentHarness participant is required.');
+    }
+
+    private function definition(AgentParticipant $primary): AgentHarnessDefinition
+    {
+        return new AgentHarnessDefinition(
+            primary: $primary,
+            preparers: $this->preparers,
+            participants: $this->participants,
+            reactors: $this->reactors,
+            reviewers: $this->reviewers,
+            inlets: $this->inlets,
+            outlets: $this->outlets,
+            maxReviewPasses: $this->maxReviewPasses,
+        );
     }
 }

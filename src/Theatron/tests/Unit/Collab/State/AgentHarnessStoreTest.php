@@ -34,7 +34,7 @@ use PHPUnit\Framework\TestCase;
 final class AgentHarnessStoreTest extends TestCase
 {
     #[Test]
-    public function registersEveryCollabSlice(): void
+    public function registersEveryAgentHarnessSlice(): void
     {
         $store = new AgentHarnessStore();
 

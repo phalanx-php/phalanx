@@ -68,7 +68,7 @@ final class AgentHarnessBuilderTest extends PhalanxTestCase
     }
 
     #[Test]
-    public function resolvedProvidersIncludeTuiAndCollabBundlesBeforeUserProviders(): void
+    public function resolvedProvidersIncludeTuiAndAgentHarnessBundlesBeforeUserProviders(): void
     {
         $builder = Theatron::agentHarness()
             ->primary(new BuilderDoneAgentParticipant(new \ArrayObject()))

@@ -569,6 +569,7 @@ return [
         'bins' => [],
         'branchAlias' => '0.6.x-dev',
         'autoloadFiles' => [
+            'src/AgentHarness/aliases.php',
             'src/Tui/Kit/functions.php',
         ],
         'keywords' => [

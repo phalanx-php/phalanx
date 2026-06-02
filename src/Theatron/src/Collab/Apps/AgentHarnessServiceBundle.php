@@ -8,56 +8,34 @@ use Phalanx\Boot\AppContext;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 use Phalanx\Theatron\Collab\Boundaries\BoundaryRunner;
-use Phalanx\Theatron\Collab\Boundaries\Inlet;
 use Phalanx\Theatron\Collab\Boundaries\InletChannel;
 use Phalanx\Theatron\Collab\Boundaries\InletQueue;
 use Phalanx\Theatron\Collab\Boundaries\InputPromptSubmitter;
-use Phalanx\Theatron\Collab\Boundaries\Outlet;
 use Phalanx\Theatron\Collab\Boundaries\OutletReactor;
 use Phalanx\Theatron\Collab\Lifecycle\AgentHarnessLoop;
-use Phalanx\Theatron\Collab\Participants\AgentParticipant;
-use Phalanx\Theatron\Collab\Participants\Preparer;
-use Phalanx\Theatron\Collab\Participants\Reactor;
-use Phalanx\Theatron\Collab\Participants\Reviewer;
 use Phalanx\Theatron\Collab\State\AgentHarnessStore;
 
 final class AgentHarnessServiceBundle extends ServiceBundle
 {
-    /**
-     * @param list<Preparer> $preparers
-     * @param list<AgentParticipant> $participants
-     * @param list<Reactor> $reactors
-     * @param list<Reviewer> $reviewers
-     * @param list<Inlet> $inlets
-     * @param list<Outlet> $outlets
-     */
     public function __construct(
-        private AgentParticipant $primary,
-        private array $preparers = [],
-        private array $participants = [],
-        private array $reactors = [],
-        private array $reviewers = [],
-        private array $inlets = [],
-        private array $outlets = [],
-        private int $maxReviewPasses = 8,
+        private AgentHarnessDefinition $definition,
     ) {
     }
 
     public function services(Services $services, AppContext $context): void
     {
-        $primary = $this->primary;
-        $inlets = $this->inlets;
-        $outlets = $this->outlets;
-        $reactors = $this->reactors;
-        $reviewers = $this->reviewers;
-        $preparers = $this->preparers;
-        $participants = $this->participants;
-        $maxReviewPasses = $this->maxReviewPasses;
+        $definition = $this->definition;
 
         $services->singleton(InletQueue::class)
             ->factory(static fn(): InletQueue => new InletQueue());
 
         $services->alias(InletChannel::class, InletQueue::class);
+        $services->alias(\Phalanx\Theatron\AgentHarness\Apps\AgentHarnessRuntime::class, AgentHarnessRuntime::class);
+        $services->alias(\Phalanx\Theatron\AgentHarness\Boundaries\InletChannel::class, InletQueue::class);
+        $services->alias(\Phalanx\Theatron\AgentHarness\Boundaries\InletQueue::class, InletQueue::class);
+        $services->alias(\Phalanx\Theatron\AgentHarness\Boundaries\InputPromptSubmitter::class, InputPromptSubmitter::class);
+        $services->alias(\Phalanx\Theatron\AgentHarness\Lifecycle\AgentHarnessLoop::class, AgentHarnessLoop::class);
+        $services->alias(\Phalanx\Theatron\AgentHarness\State\AgentHarnessStore::class, AgentHarnessStore::class);
 
         $services->singleton(InputPromptSubmitter::class)
             ->needs(InletQueue::class)
@@ -65,26 +43,19 @@ final class AgentHarnessServiceBundle extends ServiceBundle
 
         $services
             ->singleton(AgentHarnessLoop::class)
-            ->factory(static function () use (
-                $primary,
-                $outlets,
-                $reactors,
-                $reviewers,
-                $preparers,
-                $participants,
-                $maxReviewPasses,
-            ): AgentHarnessLoop {
-                if ($outlets !== []) {
-                    $reactors = [...$reactors, new OutletReactor($outlets)];
+            ->factory(static function () use ($definition): AgentHarnessLoop {
+                $reactors = $definition->reactors;
+                if ($definition->outlets !== []) {
+                    $reactors = [...$reactors, new OutletReactor($definition->outlets)];
                 }
 
                 return new AgentHarnessLoop(
-                    primary: $primary,
-                    preparers: $preparers,
-                    participants: $participants,
+                    primary: $definition->primary,
+                    preparers: $definition->preparers,
+                    participants: $definition->participants,
                     reactors: $reactors,
-                    reviewers: $reviewers,
-                    maxReviewPasses: $maxReviewPasses,
+                    reviewers: $definition->reviewers,
+                    maxReviewPasses: $definition->maxReviewPasses,
                 );
             });
 
@@ -92,7 +63,7 @@ final class AgentHarnessServiceBundle extends ServiceBundle
             ->needs(AgentHarnessLoop::class, InletQueue::class)
             ->factory(static fn(AgentHarnessLoop $loop, InletQueue $incoming): BoundaryRunner => new BoundaryRunner(
                 loop: $loop,
-                inlets: $inlets,
+                inlets: $definition->inlets,
                 incoming: $incoming,
             ));
 

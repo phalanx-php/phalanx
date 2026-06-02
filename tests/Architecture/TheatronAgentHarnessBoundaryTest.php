@@ -283,6 +283,27 @@ final class TheatronAgentHarnessBoundaryTest extends TestCase
     }
 
     #[Test]
+    public function starterSurfacesUseAgentHarnessPublicNamespace(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $offenders = [];
+
+        foreach (self::starterSurfaceFiles($root) as $file) {
+            $source = self::read($file);
+
+            if (str_contains($source, 'Phalanx\\Theatron\\Collab\\')) {
+                $offenders[] = self::relative(dirname($root), $file) . ' imports Phalanx\\Theatron\\Collab\\';
+            }
+        }
+
+        self::assertSame(
+            [],
+            $offenders,
+            "Starter userland must use the AgentHarness public namespace, not internal Collab imports:\n" . implode("\n", $offenders),
+        );
+    }
+
+    #[Test]
     public function theatronSourceDoesNotKeepStaleHarnessOrGenericReactorSurfaces(): void
     {
         $root = dirname(__DIR__, 2);
@@ -363,6 +384,24 @@ final class TheatronAgentHarnessBoundaryTest extends TestCase
         ];
 
         return array_values(array_filter($files, is_file(...)));
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function starterSurfaceFiles(string $root): array
+    {
+        $starter = dirname($root) . '/starter-kits/agent-harness';
+
+        return array_values(array_filter([
+            $starter . '/README.md',
+            $starter . '/composer.json',
+            $starter . '/bin/agent-harness',
+            $starter . '/app/AgentHarness.php',
+            $starter . '/app/Agents/Assistant/Agent.php',
+            $starter . '/tests/StarterSmokeTest.php',
+            $starter . '/tests/bootstrap.php',
+        ], is_file(...)));
     }
 
     /**
