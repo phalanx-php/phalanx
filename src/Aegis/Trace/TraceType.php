@@ -17,4 +17,7 @@ enum TraceType: string
     case LifecycleStartup = 'lifecycle.startup';
     case LifecycleShutdown = 'lifecycle.shutdown';
     case Worker = 'worker';
+    case Recovery = 'recovery';
+    case CircuitTrip = 'circuit.trip';
+    case CircuitReset = 'circuit.reset';
 }

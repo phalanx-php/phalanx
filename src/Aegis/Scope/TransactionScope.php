@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Scope;
 
+use Phalanx\Mark\Mark;
 use Phalanx\Supervisor\TransactionLease;
 
 /**
@@ -15,7 +16,7 @@ use Phalanx\Supervisor\TransactionLease;
  */
 interface TransactionScope extends Scope, Suspendable, Cancellable, Disposable
 {
-    public function delay(float $seconds): void;
+    public function delay(Mark $duration): void;
 
     public function transactionLease(): TransactionLease;
 }

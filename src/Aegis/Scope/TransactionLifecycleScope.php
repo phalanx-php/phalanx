@@ -6,6 +6,7 @@ namespace Phalanx\Scope;
 
 use Closure;
 use Phalanx\Cancellation\CancellationToken;
+use Phalanx\Mark\Mark;
 use Phalanx\Runtime\RuntimeContext;
 use Phalanx\Supervisor\TransactionLease;
 use Phalanx\Supervisor\WaitReason;
@@ -68,9 +69,9 @@ final class TransactionLifecycleScope implements TransactionScope
         // Disposing it must not dispose the parent request/task scope.
     }
 
-    public function delay(float $seconds): void
+    public function delay(Mark $duration): void
     {
-        $this->scope->delay($seconds);
+        $this->scope->delay($duration);
     }
 
     public function transactionLease(): TransactionLease

@@ -16,4 +16,6 @@ enum DiagnosticCode: string
     case SpawnError = 'PHX-SPAWN-001';
     case SpawnForceCancelled = 'PHX-SPAWN-002';
     case PressureEventLoopLag = 'PHX-PRESSURE-001';
+    case RecoveryExhausted = 'PHX-RECOVERY-001';
+    case CircuitOpen = 'PHX-CIRCUIT-001';
 }

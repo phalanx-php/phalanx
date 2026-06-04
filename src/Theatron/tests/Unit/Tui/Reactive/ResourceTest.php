@@ -7,7 +7,9 @@ namespace Phalanx\Theatron\Tests\Unit\Tui\Reactive;
 use Closure;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Concurrency\SettlementBag;
+use Phalanx\Mark\Mark;
 use Phalanx\Recovery\RecoveryPlan;
+use Phalanx\Scheduling\ScheduleBuilder;
 use Phalanx\Scope\Subscription;
 use Phalanx\Scope\TaskExecutor;
 use Phalanx\Supervisor\TaskHandle;
@@ -669,7 +671,7 @@ final class QueuedResourceTaskExecutor implements TaskExecutor
         throw new RuntimeException('settle is not implemented by the queued resource test executor.');
     }
 
-    public function timeout(float $seconds, Scopeable|Executable|Closure $task): mixed
+    public function timeout(Mark $duration, Scopeable|Executable|Closure $task): mixed
     {
         throw new RuntimeException('timeout is not implemented by the queued resource test executor.');
     }
@@ -679,14 +681,19 @@ final class QueuedResourceTaskExecutor implements TaskExecutor
         throw new RuntimeException('retry is not implemented by the queued resource test executor.');
     }
 
-    public function delay(float $seconds): void
+    public function delay(Mark $duration): void
     {
         throw new RuntimeException('delay is not implemented by the queued resource test executor.');
     }
 
-    public function periodic(float $interval, Closure $tick): Subscription
+    public function periodic(Mark $interval, Closure $tick): Subscription
     {
         throw new RuntimeException('periodic is not implemented by the queued resource test executor.');
+    }
+
+    public function schedule(): ScheduleBuilder
+    {
+        throw new RuntimeException('schedule is not implemented by the queued resource test executor.');
     }
 
     public function defer(Scopeable|Executable|Closure $task): void
