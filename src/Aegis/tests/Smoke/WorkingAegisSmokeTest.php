@@ -9,8 +9,7 @@ use Phalanx\Boot\AppContext;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Concurrency\RetryPolicy;
 use Phalanx\Mark\Mark;
-use Phalanx\Middleware\RetryMiddleware;
-use Phalanx\Middleware\TimeoutMiddleware;
+use Phalanx\Middleware\RecoveryMiddleware;
 use Phalanx\Middleware\TraceMiddleware;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Service\ServiceBundle;
@@ -73,7 +72,7 @@ final class WorkingAegisSmokeTest extends PhalanxTestCase
             $app = Application::starting()
                 ->providers($bundle)
                 ->withLedger($ledger)
-                ->taskMiddleware(new RetryMiddleware(), new TimeoutMiddleware(), new TraceMiddleware())
+                ->taskMiddleware(new RecoveryMiddleware(), new TraceMiddleware())
                 ->compile();
 
             $appScope = $app->createScope();
@@ -119,7 +118,7 @@ final class WorkingAegisSmokeTest extends PhalanxTestCase
             $app = Application::starting()
                 ->providers($bundle)
                 ->withLedger($ledger)
-                ->taskMiddleware(new RetryMiddleware(), new TimeoutMiddleware(), new TraceMiddleware())
+                ->taskMiddleware(new RecoveryMiddleware(), new TraceMiddleware())
                 ->compile();
 
             $appScope = $app->createScope();

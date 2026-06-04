@@ -7,6 +7,7 @@ namespace Phalanx\Scheduling;
 use Closure;
 use Phalanx\Recovery\RecoveryPlan;
 use Phalanx\Recovery\RecoveryPreset;
+use Phalanx\Recovery\RecoveryRunner;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
@@ -139,6 +140,12 @@ final class ScheduleBuilder
     public function result(): mixed
     {
         $plan = $this->freeze();
+
+        if ($plan->recovery !== null && !$plan->recovery->isNone() && $plan->mode === 'task') {
+            $runner = new RecoveryRunner();
+
+            return $runner->run($plan->recovery, $plan->tasks[0], $this->scope);
+        }
 
         return match ($plan->mode) {
             'task' => $this->scope->execute($plan->tasks[0]),

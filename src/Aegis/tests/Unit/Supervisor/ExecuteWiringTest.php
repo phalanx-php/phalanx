@@ -8,7 +8,7 @@ use Phalanx\Application;
 use Phalanx\Boot\AppContext;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Concurrency\RetryPolicy;
-use Phalanx\Middleware\RetryMiddleware;
+use Phalanx\Middleware\RecoveryMiddleware;
 use Phalanx\Runtime\RuntimeHooks;
 use Phalanx\Runtime\RuntimePolicy;
 use Phalanx\Scope\ExecutionScope;
@@ -250,7 +250,7 @@ final class ExecuteWiringTest extends TestCase
         return Application::starting()
             ->providers($bundle)
             ->withLedger($ledger)
-            ->taskMiddleware(new RetryMiddleware())
+            ->taskMiddleware(new RecoveryMiddleware())
             ->compile();
     }
 }
