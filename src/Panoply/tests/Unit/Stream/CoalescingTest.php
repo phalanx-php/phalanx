@@ -9,7 +9,7 @@ use Phalanx\Panoply\Cue\Effect;
 use Phalanx\Panoply\Cue\Invocation;
 use Phalanx\Panoply\Cue\Output\Channel;
 use Phalanx\Panoply\Cue\Output\TokenDelta;
-use Phalanx\Panoply\Duration;
+use Phalanx\Mark\Mark;
 use Phalanx\Panoply\Effect\Kind as EffectKind;
 use Phalanx\Panoply\Stream;
 use PHPUnit\Framework\Attributes\Test;
@@ -32,7 +32,7 @@ final class CoalescingTest extends TestCase
             self::delta('d1', 1, 'Pericles', Channel::Message, $at),
             self::delta('d2', 2, ' leads', Channel::Message, $at),
             self::delta('d3', 3, ' the agora.', Channel::Message, $at),
-        ])->coalescing(Duration::ms(200), $clock);
+        ])->coalescing(Mark::ms(200), $clock);
 
         $cues = $stream->toArray();
 
@@ -53,7 +53,7 @@ final class CoalescingTest extends TestCase
         $stream = Stream::from([
             self::delta('t1', 1, 'Themistocles', Channel::Message, $at),
             self::delta('t2', 2, ' thinks.', Channel::Thinking, $at),
-        ])->coalescing(Duration::ms(200), $clock);
+        ])->coalescing(Mark::ms(200), $clock);
 
         $cues = $stream->toArray();
 
@@ -73,11 +73,11 @@ final class CoalescingTest extends TestCase
         $stream = new Stream(static function () use ($clock, $at): \Generator {
             yield self::delta('a1', 1, 'Achilles', Channel::Message, $at);
             // Advance past the 50 ms window before the second delta
-            $clock->advance(Duration::ms(100));
+            $clock->advance(Mark::ms(100));
             yield self::delta('a2', 2, ' charges.', Channel::Message, $at);
         });
 
-        $cues = $stream->coalescing(Duration::ms(50), $clock)->toArray();
+        $cues = $stream->coalescing(Mark::ms(50), $clock)->toArray();
 
         self::assertCount(2, $cues);
         self::assertInstanceOf(TokenDelta::class, $cues[0]);
@@ -105,7 +105,7 @@ final class CoalescingTest extends TestCase
                 kind: EffectKind::FileRead,
                 summary: 'Read formation data',
             ),
-        ])->coalescing(Duration::ms(200), $clock);
+        ])->coalescing(Mark::ms(200), $clock);
 
         $cues = $stream->toArray();
 
@@ -124,7 +124,7 @@ final class CoalescingTest extends TestCase
         $stream = Stream::from([
             self::delta('d1', 1, 'At Thermopylae', Channel::Message, $at),
             new Invocation\Started('i1', 2, 'act.sparta', 'inv.01', 'agent.leonidas', $at),
-        ])->coalescing(Duration::ms(200), $clock);
+        ])->coalescing(Mark::ms(200), $clock);
 
         $cues = $stream->toArray();
 
@@ -141,7 +141,7 @@ final class CoalescingTest extends TestCase
 
         $stream = Stream::from([
             self::delta('d1', 1, 'Olympus stands.', Channel::Message, $at),
-        ])->coalescing(Duration::ms(200), $clock);
+        ])->coalescing(Mark::ms(200), $clock);
 
         $cues = $stream->toArray();
 
@@ -155,7 +155,7 @@ final class CoalescingTest extends TestCase
     {
         $clock = new FrozenClock(0);
 
-        $cues = Stream::from([])->coalescing(Duration::ms(200), $clock)->toArray();
+        $cues = Stream::from([])->coalescing(Mark::ms(200), $clock)->toArray();
 
         self::assertSame([], $cues);
     }
@@ -179,7 +179,7 @@ final class CoalescingTest extends TestCase
                 summary: 'Consult scrolls',
             ),
             new Invocation\Started('s1', 2, 'act.agora', 'inv.01', 'agent.pericles', $at),
-        ])->coalescing(Duration::ms(200), $clock);
+        ])->coalescing(Mark::ms(200), $clock);
 
         $cues = $stream->toArray();
 
@@ -199,11 +199,11 @@ final class CoalescingTest extends TestCase
         $stream = new Stream(static function () use ($clock, $at): \Generator {
             yield self::delta('d1', 1, 'Phalanx', Channel::Message, $at);
             yield self::delta('d2', 2, 'thinks.', Channel::Thinking, $at);
-            $clock->advance(Duration::ms(199));
+            $clock->advance(Mark::ms(199));
             yield self::delta('d3', 3, ' More thoughts.', Channel::Thinking, $at);
         });
 
-        $cues = $stream->coalescing(Duration::ms(200), $clock)->toArray();
+        $cues = $stream->coalescing(Mark::ms(200), $clock)->toArray();
 
         // d1 flushed by channel transition, d2+d3 merged in same window
         self::assertCount(2, $cues);
@@ -225,11 +225,11 @@ final class CoalescingTest extends TestCase
 
         $stream = new Stream(static function () use ($clock, $at): \Generator {
             yield self::delta('e1', 1, 'Achilles', Channel::Message, $at);
-            $clock->advance(Duration::ms(50));
+            $clock->advance(Mark::ms(50));
             yield self::delta('e2', 2, ' runs.', Channel::Message, $at);
         });
 
-        $cues = $stream->coalescing(Duration::ms(50), $clock)->toArray();
+        $cues = $stream->coalescing(Mark::ms(50), $clock)->toArray();
 
         // elapsed == window (50 µs × 1000 = 50 000 µs), condition is `< window`
         // so the second delta falls outside and flushes the buffer.
@@ -254,7 +254,7 @@ final class CoalescingTest extends TestCase
             self::delta('f2', 2, 'ponders.', Channel::Thinking, $at),
             self::delta('f3', 3, 'Commands.', Channel::Message, $at),
             self::delta('f4', 4, 'Deeper.', Channel::Reasoning, $at),
-        ])->coalescing(Duration::ms(200), $clock);
+        ])->coalescing(Mark::ms(200), $clock);
 
         $cues = $stream->toArray();
 
@@ -283,7 +283,7 @@ final class CoalescingTest extends TestCase
             new Invocation\Started('s1', 3, 'act.sparta', 'inv.01', 'agent.leonidas', $at),
             self::delta('b3', 4, ' pass', Channel::Message, $at),
             self::delta('b4', 5, ' now.', Channel::Message, $at),
-        ])->coalescing(Duration::ms(200), $clock);
+        ])->coalescing(Mark::ms(200), $clock);
 
         $cues = $stream->toArray();
 
@@ -306,7 +306,7 @@ final class CoalescingTest extends TestCase
             self::delta('g1', 1, 'Message text.', Channel::Message, $at),
             self::delta('g2', 2, 'Thinking text.', Channel::Thinking, $at),
             self::delta('g3', 3, 'Reasoning text.', Channel::Reasoning, $at),
-        ])->coalescing(Duration::ms(200), $clock);
+        ])->coalescing(Mark::ms(200), $clock);
 
         $cues = $stream->toArray();
 
@@ -322,7 +322,7 @@ final class CoalescingTest extends TestCase
     #[Test]
     public function coalesceWithZeroWindowFlushesEveryDelta(): void
     {
-        // Duration::ms(0) means every delta is already beyond the window the
+        // Mark::ms(0) means every delta is already beyond the window the
         // moment it arrives. Each delta must be emitted individually — no merging.
         $clock = new FrozenClock(0);
         $at = new \DateTimeImmutable('2026-05-18T00:00:00Z');
@@ -331,7 +331,7 @@ final class CoalescingTest extends TestCase
             self::delta('z1', 1, 'First.', Channel::Message, $at),
             self::delta('z2', 2, ' Second.', Channel::Message, $at),
             self::delta('z3', 3, ' Third.', Channel::Message, $at),
-        ])->coalescing(Duration::ms(0), $clock);
+        ])->coalescing(Mark::ms(0), $clock);
 
         $cues = $stream->toArray();
 

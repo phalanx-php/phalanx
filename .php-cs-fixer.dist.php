@@ -14,6 +14,7 @@ $finder = PhpCsFixer\Finder::create()
         __DIR__ . '/src/Hermes/src',
         __DIR__ . '/src/Hydra/src',
         __DIR__ . '/src/Iris/src',
+        __DIR__ . '/src/Mark',
         __DIR__ . '/src/Panoply/src',
         __DIR__ . '/src/Skopos/src',
         __DIR__ . '/src/Stoa/src',

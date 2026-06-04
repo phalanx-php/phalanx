@@ -26,6 +26,7 @@
     },
     "require": {
         "php": "^8.4",
+        "phalanx-php/mark": "^0.6",
         "symfony/uid": "^7.0 || ^8.0",
         "symfony/yaml": "^7.0 || ^8.0"
     },

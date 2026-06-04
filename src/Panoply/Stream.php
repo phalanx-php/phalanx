@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Panoply;
 
+use Phalanx\Mark\Mark;
 use Phalanx\Panoply\Clock;
 use Phalanx\Panoply\Clock\SystemClock;
 use Phalanx\Panoply\Cue\Activity;
@@ -122,7 +123,7 @@ class Stream extends Series
      * each other. Non-TokenDelta cues also flush the buffer first, preserving
      * the relative ordering of lifecycle and effect cues.
      */
-    public function coalescing(Duration $window, ?Clock $clock = null): static
+    public function coalescing(Mark $window, ?Clock $clock = null): static
     {
         $clock ??= new SystemClock();
         $source = $this->source;

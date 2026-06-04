@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Panoply\Clock;
 
 use Phalanx\Panoply\Clock;
-use Phalanx\Panoply\Duration;
+use Phalanx\Mark\Mark;
 
 /**
  * Test seam only. Holds a fixed microsecond counter that advances only when
@@ -45,7 +45,7 @@ final class FrozenClock implements Clock
     /**
      * Move the clock forward by the given duration.
      */
-    public function advance(Duration $by): void
+    public function advance(Mark $by): void
     {
         $this->microseconds += $by->toMicroseconds();
     }

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Panoply\Tests\Unit\Clock;
 
 use Phalanx\Panoply\Clock\FrozenClock;
-use Phalanx\Panoply\Duration;
+use Phalanx\Mark\Mark;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -24,7 +24,7 @@ final class FrozenClockTest extends TestCase
     {
         $clock = new FrozenClock(0);
 
-        $clock->advance(Duration::ms(100));
+        $clock->advance(Mark::ms(100));
 
         self::assertSame(100_000, $clock->nowMicroseconds());
     }
@@ -34,8 +34,8 @@ final class FrozenClockTest extends TestCase
     {
         $clock = new FrozenClock(0);
 
-        $clock->advance(Duration::ms(50));
-        $clock->advance(Duration::ms(50));
+        $clock->advance(Mark::ms(50));
+        $clock->advance(Mark::ms(50));
 
         self::assertSame(100_000, $clock->nowMicroseconds());
     }
@@ -64,7 +64,7 @@ final class FrozenClockTest extends TestCase
         $clock = new FrozenClock(0);
 
         $t1 = $clock->now()->getTimestamp();
-        $clock->advance(Duration::seconds(10));
+        $clock->advance(Mark::s(10));
         $t2 = $clock->now()->getTimestamp();
 
         self::assertSame(10, $t2 - $t1);

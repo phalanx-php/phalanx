@@ -17,6 +17,7 @@ parameters:
         - src/Hermes
         - src/Hydra
         - src/Iris
+        - src/Mark
         - src/Panoply
         - src/PHPStan
         - src/Skopos
@@ -59,6 +60,7 @@ parameters:
         - src/Hermes
         - src/Hydra
         - src/Iris
+        - src/Mark
         - src/Panoply
         - src/PHPStan
         - src/Skopos

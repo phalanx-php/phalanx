@@ -7,7 +7,7 @@ namespace Phalanx\Panoply\Tests\Unit\Stream;
 use Phalanx\Panoply\Clock\FrozenClock;
 use Phalanx\Panoply\Cue\Output\Channel;
 use Phalanx\Panoply\Cue\Output\TokenDelta;
-use Phalanx\Panoply\Duration;
+use Phalanx\Mark\Mark;
 use Phalanx\Panoply\Stream;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -54,7 +54,7 @@ final class CoalescingHighVolumeTest extends TestCase
         // Clock never advances — all 10k deltas fall within the 50 ms window.
         $before = memory_get_peak_usage(true);
         $result = Stream::from($cues)
-            ->coalescing(Duration::ms(50), $clock)
+            ->coalescing(Mark::ms(50), $clock)
             ->toArray();
         $afterMb = (memory_get_peak_usage(true) - $before) / (1024 * 1024);
 
@@ -105,7 +105,7 @@ final class CoalescingHighVolumeTest extends TestCase
         // but adjacent deltas are on different channels so none can merge.
         $before = memory_get_peak_usage(true);
         $result = Stream::from($cues)
-            ->coalescing(Duration::ms(50), $clock)
+            ->coalescing(Mark::ms(50), $clock)
             ->toArray();
         $afterMb = (memory_get_peak_usage(true) - $before) / (1024 * 1024);
 

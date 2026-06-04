@@ -1,0 +1,96 @@
+{
+    "name": "phalanx-php/mark",
+    "description": "Nanosecond-backed time instants and durations for Phalanx",
+    "license": "MIT",
+    "type": "library",
+    "keywords": [
+        "time",
+        "monotonic",
+        "hrtime",
+        "benchmark",
+        "duration",
+        "nanoseconds"
+    ],
+    "homepage": "https://github.com/phalanx-php/phalanx-mark",
+    "authors": [
+        {
+            "name": "Jonathan Havens",
+            "email": "mail@phalanx-php.com"
+        }
+    ],
+    "support": {
+        "source": "https://github.com/phalanx-php/phalanx-mark"
+    },
+    "require": {
+        "php": "^8.4"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^13.0"
+    },
+    "archive": {
+        "exclude": [
+            "/.aimind",
+            "/.aimind/**",
+            "/.claude",
+            "/.claude/**",
+            "/.daemon8",
+            "/.daemon8/**",
+            "/.DS_Store",
+            "/.env*",
+            "/**/.env*",
+            "/.gitattributes",
+            "/.github",
+            "/.github/**",
+            "/.gitignore",
+            "/**/.gitignore",
+            "/.idea",
+            "/.idea/**",
+            "/.php-cs-fixer.cache",
+            "/.phpstan-cache",
+            "/.phpstan-cache/**",
+            "/.phpunit.result.cache",
+            "/brand",
+            "/brand/**",
+            "/demos",
+            "/demos/**",
+            "/docs",
+            "/docs/**",
+            "/examples",
+            "/examples/**",
+            "/phpcs.xml",
+            "/phpstan.neon",
+            "/phpunit.xml",
+            "/phpunit.xml.dist",
+            "/rector.php",
+            "/SPEC.md",
+            "/tests",
+            "/tests/**",
+            "/tmp",
+            "/tmp/**",
+            "/tools",
+            "/tools/**",
+            "/vendor",
+            "/vendor/**"
+        ]
+    },
+    "scripts": {
+        "test": "php -d memory_limit=512M vendor/bin/phpunit -c phpunit.xml"
+    },
+    "autoload": {
+        "psr-4": {
+            "Phalanx\\Mark\\": ""
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Phalanx\\Mark\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "0.6.x-dev"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

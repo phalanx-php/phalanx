@@ -46,6 +46,9 @@
         <testsuite name="Iris Unit">
             <directory>src/Iris/tests/Unit</directory>
         </testsuite>
+        <testsuite name="Mark Unit">
+            <directory>src/Mark/tests/Unit</directory>
+        </testsuite>
         <testsuite name="Iris Integration">
             <directory>src/Iris/tests/Integration</directory>
         </testsuite>
