@@ -6,14 +6,16 @@ namespace Phalanx\Argos\Task;
 
 use Phalanx\Argos\Host;
 use Phalanx\Argos\ProbeResult;
+use Phalanx\Mark\Mark;
+use Phalanx\Recovery\Recoverable;
+use Phalanx\Recovery\RecoveryPlan;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
-use Phalanx\Task\HasTimeout;
 
-final class IdentifyDevice implements Executable, HasTimeout
+final class IdentifyDevice implements Executable, Recoverable
 {
-    public float $timeout {
-        get => 15.0;
+    public RecoveryPlan $recovery {
+        get => RecoveryPlan::failFast(deadline: Mark::s(15.0));
     }
 
     /** @param list<int> $tcpPorts */

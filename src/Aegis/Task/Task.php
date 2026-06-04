@@ -19,7 +19,7 @@ use RuntimeException;
  * accept non-static closures.
  *
  * Use Task::of(static fn(...) => ...) for trivial wrapped logic. For tasks
- * with behavioral declarations (Retryable, HasTimeout, Traceable, ...), write
+ * with behavioral declarations (Recoverable, Traceable, ...), write
  * a named class that implements the appropriate interfaces directly.
  *
  * Identity for diagnostics:

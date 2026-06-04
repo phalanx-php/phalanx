@@ -12,14 +12,18 @@ use Phalanx\Enigma\Support\ProcessAwaiter;
 use Phalanx\Enigma\TransferResult;
 use Phalanx\Grammata\Exception\FilesystemException;
 use Phalanx\Grammata\Task\StatFile;
+use Phalanx\Mark\Mark;
+use Phalanx\Recovery\Recoverable;
+use Phalanx\Recovery\RecoveryPlan;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
-use Phalanx\Task\HasTimeout;
 
-final class SftpDownload implements Executable, HasTimeout
+final class SftpDownload implements Executable, Recoverable
 {
-    public float $timeout {
-        get => $this->timeoutSeconds ?? 0.0;
+    public RecoveryPlan $recovery {
+        get => $this->timeoutSeconds !== null
+            ? RecoveryPlan::failFast(deadline: Mark::s($this->timeoutSeconds))
+            : RecoveryPlan::none();
     }
 
     public function __construct(

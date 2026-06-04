@@ -7,8 +7,11 @@ namespace Phalanx\Aegis\Tests\Unit\Supervisor;
 use Phalanx\Application;
 use Phalanx\Boot\AppContext;
 use Phalanx\Cancellation\Cancelled;
-use Phalanx\Concurrency\RetryPolicy;
+use Phalanx\Mark\Mark;
 use Phalanx\Middleware\RecoveryMiddleware;
+use Phalanx\Recovery\Backoff;
+use Phalanx\Recovery\Recoverable;
+use Phalanx\Recovery\RecoveryPlan;
 use Phalanx\Runtime\RuntimeHooks;
 use Phalanx\Runtime\RuntimePolicy;
 use Phalanx\Scope\ExecutionScope;
@@ -17,7 +20,6 @@ use Phalanx\Service\Services;
 use Phalanx\Supervisor\InProcessLedger;
 use Phalanx\Supervisor\RunState;
 use Phalanx\Task\Executable;
-use Phalanx\Task\Retryable;
 use Phalanx\Task\Task;
 use Phalanx\Task\Traceable;
 use PHPUnit\Framework\TestCase;
@@ -183,14 +185,17 @@ final class ExecuteWiringTest extends TestCase
         self::assertStringContainsString('ExecuteWiringTest.php:', $observedName);
     }
 
-    public function testRetryMiddlewareProducesDistinctRunsPerAttempt(): void
+    public function testRecoveryMiddlewareProducesDistinctRunsPerAttempt(): void
     {
         $ledger = new InProcessLedger();
         $app = $this->buildAppWithRetry($ledger);
 
-        $task = new class implements Executable, Retryable {
-            public RetryPolicy $retryPolicy {
-                get => RetryPolicy::fixed(3, 1);
+        $task = new class implements Executable, Recoverable {
+            public RecoveryPlan $recovery {
+                get => RecoveryPlan::defaultRetry(
+                    attempts: 3,
+                    backoff: Backoff::fixed(Mark::ms(1)),
+                );
             }
 
             public int $attempts = 0;

@@ -6,23 +6,22 @@ namespace Phalanx\Argos\Task;
 
 use Phalanx\Argos\NetworkConfig;
 use Phalanx\Argos\ProbeResult;
-use Phalanx\Concurrency\RetryPolicy;
+use Phalanx\Mark\Mark;
+use Phalanx\Recovery\Backoff;
+use Phalanx\Recovery\Recoverable;
+use Phalanx\Recovery\RecoveryPlan;
 use Phalanx\Scope\TaskScope;
 use Phalanx\System\SystemCommand;
-use Phalanx\Task\HasTimeout;
-use Phalanx\Task\Retryable;
 use Phalanx\Task\Scopeable;
 
-final class PingHost implements Scopeable, HasTimeout, Retryable
+final class PingHost implements Scopeable, Recoverable
 {
-    public float $timeout {
-        get => $this->timeoutSeconds + 1.0;
-    }
-
-    public RetryPolicy $retryPolicy {
-        get => $this->retries > 0
-            ? RetryPolicy::fixed($this->retries, 500.0)
-            : RetryPolicy::fixed(1, 0);
+    public RecoveryPlan $recovery {
+        get => RecoveryPlan::defaultRetry(
+            attempts: $this->retries > 0 ? $this->retries : 1,
+            attemptTimeout: Mark::s($this->timeoutSeconds + 1.0),
+            backoff: Backoff::fixed(Mark::ms(500)),
+        );
     }
 
     public function __construct(

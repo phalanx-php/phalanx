@@ -345,9 +345,9 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
      * Run a task to completion, supervised end-to-end.
      *
      * Slice 2 wiring: middleware chain runs OUTSIDE Supervisor::start().
-     * RetryMiddleware that calls $next() multiple times produces a
+     * RecoveryMiddleware that calls $next() multiple times produces a
      * distinct TaskRun per attempt — visible in the ledger as siblings
-     * sharing the same name. TimeoutMiddleware creates a child scope with
+     * sharing the same name. RecoveryMiddleware creates a child scope with
      * a tighter cancellation; that child's execute() opens a nested
      * TaskRun parented to the outer.
      *
@@ -1612,7 +1612,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
     /**
      * Wrap task execution in the registered TaskMiddleware chain. First-registered
      * runs outermost. Each middleware decides whether to honor a behavioral
-     * interface on $task (Retryable, HasTimeout, Traceable, ...) and wrap the
+     * interface on $task (Recoverable, Traceable, ...) and wrap the
      * inner closure or just delegate.
      *
      * @param Closure(ExecutionScope): mixed $invoke

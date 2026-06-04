@@ -7,14 +7,18 @@ namespace Phalanx\Enigma\Task;
 use Phalanx\Enigma\CommandResult;
 use Phalanx\Enigma\SshCredential;
 use Phalanx\Enigma\TransferDirection;
+use Phalanx\Mark\Mark;
+use Phalanx\Recovery\Recoverable;
+use Phalanx\Recovery\RecoveryPlan;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
-use Phalanx\Task\HasTimeout;
 
-final class Deploy implements Executable, HasTimeout
+final class Deploy implements Executable, Recoverable
 {
-    public float $timeout {
-        get => $this->timeoutSeconds ?? 0.0;
+    public RecoveryPlan $recovery {
+        get => $this->timeoutSeconds !== null
+            ? RecoveryPlan::longRunning(deadline: Mark::s($this->timeoutSeconds))
+            : RecoveryPlan::none();
     }
 
     private int $keep {

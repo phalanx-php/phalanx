@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Phalanx\Argos\Discovery;
 
 use Phalanx\Argos\DiscoveryResult;
+use Phalanx\Mark\Mark;
+use Phalanx\Recovery\Recoverable;
+use Phalanx\Recovery\RecoveryPlan;
 use Phalanx\Scope\TaskScope;
 use Phalanx\System\UdpSocket;
-use Phalanx\Task\HasTimeout;
 use Phalanx\Task\Scopeable;
 
 /**
@@ -16,13 +18,13 @@ use Phalanx\Task\Scopeable;
  * Discovers UPnP/SSDP devices on the local network using UDP multicast
  * (239.255.255.250:1900) via the managed Aegis UdpSocket primitive.
  */
-final class DiscoverSsdp implements Scopeable, HasTimeout
+final class DiscoverSsdp implements Scopeable, Recoverable
 {
     private const string MULTICAST_ADDRESS = '239.255.255.250';
     private const int MULTICAST_PORT = 1900;
 
-    public float $timeout {
-        get => $this->listenSeconds + 1.0;
+    public RecoveryPlan $recovery {
+        get => RecoveryPlan::failFast(deadline: Mark::s($this->listenSeconds + 1.0));
     }
 
     public function __construct(

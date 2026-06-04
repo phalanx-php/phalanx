@@ -10,14 +10,15 @@ use Phalanx\Enigma\Exception\SshException;
 use Phalanx\Enigma\SshConfig;
 use Phalanx\Enigma\SshCredential;
 use Phalanx\Enigma\Support\ProcessAwaiter;
+use Phalanx\Recovery\Recoverable;
+use Phalanx\Recovery\RecoveryPlan;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
-use Phalanx\Task\HasTimeout;
 
-final class RunCommand implements Executable, HasTimeout
+final class RunCommand implements Executable, Recoverable
 {
-    public float $timeout {
-        get => $this->timeoutSeconds ?? 0.0;
+    public RecoveryPlan $recovery {
+        get => RecoveryPlan::none();
     }
 
     public function __construct(

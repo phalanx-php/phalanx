@@ -6,9 +6,11 @@ namespace Phalanx\Argos\Discovery;
 
 use Phalanx\Argos\DiscoveryResult;
 use Phalanx\Cancellation\Cancelled;
+use Phalanx\Mark\Mark;
+use Phalanx\Recovery\Recoverable;
+use Phalanx\Recovery\RecoveryPlan;
 use Phalanx\Scope\TaskScope;
 use Phalanx\System\UdpSocket;
-use Phalanx\Task\HasTimeout;
 use Phalanx\Task\Scopeable;
 use Throwable;
 
@@ -18,13 +20,13 @@ use Throwable;
  * Discovers services on the local network using UDP multicast (224.0.0.251:5353)
  * via the managed Aegis UdpSocket primitive.
  */
-final class DiscoverMdns implements Scopeable, HasTimeout
+final class DiscoverMdns implements Scopeable, Recoverable
 {
     private const string MULTICAST_ADDRESS = '224.0.0.251';
     private const int MULTICAST_PORT = 5353;
 
-    public float $timeout {
-        get => $this->listenSeconds + 1.0;
+    public RecoveryPlan $recovery {
+        get => RecoveryPlan::failFast(deadline: Mark::s($this->listenSeconds + 1.0));
     }
 
     public function __construct(

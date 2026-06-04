@@ -17,6 +17,7 @@
         "php": "^8.4",
         "phalanx-php/aegis": "^0.6",
         "phalanx-php/grammata": "^0.6",
+        "phalanx-php/mark": "^0.6",
         "phalanx-php/themis": "^0.6"
     },
     "require-dev": {

@@ -9,22 +9,26 @@ use Phalanx\Athena\Effect\Outcome as EffectOutcome;
 use Phalanx\Athena\Effect\Resolution;
 use Phalanx\Athena\Tool\Param;
 use Phalanx\Athena\Tool\Tool;
+use Phalanx\Mark\Mark;
+use Phalanx\Recovery\Recoverable;
+use Phalanx\Recovery\RecoveryPlan;
 use Phalanx\Scope\TaskScope;
 use Phalanx\SelfDescribed;
-use Phalanx\Task\HasTimeout;
 
 /**
  * Extracts and summarizes content from an uploaded document, focusing
  * on a caller-specified topic. Returns scripted key points so the parent
  * ResearchAgent can reason over document content without a live provider.
  */
-final class ExtractDocumentContent implements Tool, HasTimeout, SelfDescribed
+final class ExtractDocumentContent implements Tool, Recoverable, SelfDescribed
 {
     public string $description {
         get => 'Extract and summarize content from an uploaded document, focusing on a specified topic or question.';
     }
 
-    public float $timeout { get => 15.0; }
+    public RecoveryPlan $recovery {
+        get => RecoveryPlan::failFast(deadline: Mark::s(15.0));
+    }
 
     public function __construct(
         #[Param('Path to the uploaded document')]

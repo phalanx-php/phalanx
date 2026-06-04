@@ -7,17 +7,17 @@ namespace Phalanx\Aegis\Tests\Smoke;
 use Phalanx\Application;
 use Phalanx\Boot\AppContext;
 use Phalanx\Cancellation\Cancelled;
-use Phalanx\Concurrency\RetryPolicy;
 use Phalanx\Mark\Mark;
 use Phalanx\Middleware\RecoveryMiddleware;
 use Phalanx\Middleware\TraceMiddleware;
+use Phalanx\Recovery\Backoff;
+use Phalanx\Recovery\Recoverable;
+use Phalanx\Recovery\RecoveryPlan;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 use Phalanx\Supervisor\InProcessLedger;
 use Phalanx\Task\Executable;
-use Phalanx\Task\HasTimeout;
-use Phalanx\Task\Retryable;
 use Phalanx\Task\Task;
 use Phalanx\Task\Traceable;
 use Phalanx\Testing\PhalanxTestCase;
@@ -32,7 +32,7 @@ use RuntimeException;
  *     coexist correctly
  *   - $scope->concurrent(...) gives sibling isolation: scoped instances
  *     are per-child, singleton is shared
- *   - $scope->execute(...) with Retryable + HasTimeout + Traceable
+ *   - $scope->execute(...) with Recoverable + Traceable
  *     applies the full task contract through the supervisor
  *   - The ledger sees every TaskRun with correct parent linkage
  *   - Cancellation propagates cleanly without leaks
@@ -218,14 +218,14 @@ final class AuditWrite implements Executable
     }
 }
 
-final class FlakyJob implements Executable, Retryable, HasTimeout, Traceable
+final class FlakyJob implements Executable, Recoverable, Traceable
 {
-    public RetryPolicy $retryPolicy {
-        get => RetryPolicy::fixed(3, 1);
-    }
-
-    public float $timeout {
-        get => 5.0;
+    public RecoveryPlan $recovery {
+        get => RecoveryPlan::defaultRetry(
+            attempts: 3,
+            attemptTimeout: Mark::s(5),
+            backoff: Backoff::fixed(Mark::ms(1)),
+        );
     }
 
     public string $traceName {

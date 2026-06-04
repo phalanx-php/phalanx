@@ -17,8 +17,9 @@ use Phalanx\Archon\Command\DescribesCommand;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Archon\Console\Style\Theme;
 use Phalanx\Archon\Console\Widget\ConcurrentTaskList;
-use Phalanx\Concurrency\RetryPolicy;
 use Phalanx\Mark\Mark;
+use Phalanx\Recovery\Backoff;
+use Phalanx\Recovery\RecoveryPlan;
 use Phalanx\Task\Executable;
 
 /**
@@ -52,7 +53,7 @@ final class DeployCommand implements Executable, DescribesCommand
 
         (new ConcurrentTaskList($ctx, $output, $theme))
             ->add('build',   'Build',   new BuildStage())
-            ->add('test',    'Test',    new RetryStage(new TestStage(), RetryPolicy::exponential(3, 30.0, 100.0)))
+            ->add('test',    'Test',    new RetryStage(new TestStage(), RecoveryPlan::defaultRetry(attempts: 3, backoff: Backoff::exponential(Mark::ms(30), Mark::ms(100)))))
             ->add('package', 'Package', new PackageStage())
             ->add('ship',    'Ship',    new TimeoutStage(new ShipStage(), Mark::s(2)))
             ->run();

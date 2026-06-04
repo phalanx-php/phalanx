@@ -6,8 +6,8 @@ namespace Phalanx\Theatron\Tests\Unit\Tui\Reactive;
 
 use Closure;
 use Phalanx\Cancellation\Cancelled;
-use Phalanx\Concurrency\RetryPolicy;
 use Phalanx\Concurrency\SettlementBag;
+use Phalanx\Recovery\RecoveryPlan;
 use Phalanx\Scope\Subscription;
 use Phalanx\Scope\TaskExecutor;
 use Phalanx\Supervisor\TaskHandle;
@@ -674,7 +674,7 @@ final class QueuedResourceTaskExecutor implements TaskExecutor
         throw new RuntimeException('timeout is not implemented by the queued resource test executor.');
     }
 
-    public function retry(Scopeable|Executable|Closure $task, RetryPolicy $policy): mixed
+    public function retry(Scopeable|Executable|Closure $task, RecoveryPlan $plan): mixed
     {
         throw new RuntimeException('retry is not implemented by the queued resource test executor.');
     }

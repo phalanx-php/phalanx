@@ -17,7 +17,7 @@ interface TaskMiddleware
      * $next($scope) and return its result.
      *
      * `$next` MUST be invoked with an ExecutionScope. Middleware that creates a
-     * child scope (TimeoutMiddleware via $scope->timeout) is responsible for
+     * child scope (RecoveryMiddleware via $scope->timeout) is responsible for
      * passing that child scope to $next so the task body honors the new
      * cancellation token. Pass-through middleware (Trace) forwards the same
      * scope it received.

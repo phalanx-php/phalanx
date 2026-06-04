@@ -6,15 +6,17 @@ namespace Phalanx\Argos\Task;
 
 use Phalanx\Argos\ProbeResult;
 use Phalanx\Cancellation\Cancelled;
+use Phalanx\Mark\Mark;
+use Phalanx\Recovery\Recoverable;
+use Phalanx\Recovery\RecoveryPlan;
 use Phalanx\Scope\TaskScope;
 use Phalanx\System\UdpSocket;
-use Phalanx\Task\HasTimeout;
 use Phalanx\Task\Scopeable;
 
-final class ProbeUdp implements Scopeable, HasTimeout
+final class ProbeUdp implements Scopeable, Recoverable
 {
-    public float $timeout {
-        get => $this->timeoutSeconds + 0.5;
+    public RecoveryPlan $recovery {
+        get => RecoveryPlan::failFast(deadline: Mark::s($this->timeoutSeconds + 0.5));
     }
 
     public function __construct(

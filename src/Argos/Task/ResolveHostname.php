@@ -4,15 +4,17 @@ declare(strict_types=1);
 
 namespace Phalanx\Argos\Task;
 
+use Phalanx\Mark\Mark;
+use Phalanx\Recovery\Recoverable;
+use Phalanx\Recovery\RecoveryPlan;
 use Phalanx\Scope\TaskScope;
 use Phalanx\System\DnsResolver;
-use Phalanx\Task\HasTimeout;
 use Phalanx\Task\Scopeable;
 
-final class ResolveHostname implements Scopeable, HasTimeout
+final class ResolveHostname implements Scopeable, Recoverable
 {
-    public float $timeout {
-        get => $this->timeoutSeconds;
+    public RecoveryPlan $recovery {
+        get => RecoveryPlan::failFast(deadline: Mark::s($this->timeoutSeconds));
     }
 
     public function __construct(

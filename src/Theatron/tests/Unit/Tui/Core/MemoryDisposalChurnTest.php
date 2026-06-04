@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Phalanx\Theatron\Tests\Unit\Tui\Core;
 
 use Closure;
-use Phalanx\Concurrency\RetryPolicy;
 use Phalanx\Concurrency\SettlementBag;
+use Phalanx\Recovery\RecoveryPlan;
 use Phalanx\Runtime\Identity\AegisResourceSid;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\Scope;
@@ -497,7 +497,7 @@ final class QueuedStreamExecutor implements TaskExecutor
         throw new RuntimeException('timeout is not implemented by the queued stream executor.');
     }
 
-    public function retry(Scopeable|Executable|Closure $task, RetryPolicy $policy): mixed
+    public function retry(Scopeable|Executable|Closure $task, RecoveryPlan $plan): mixed
     {
         throw new RuntimeException('retry is not implemented by the queued stream executor.');
     }

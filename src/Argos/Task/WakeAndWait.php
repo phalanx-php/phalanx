@@ -8,15 +8,19 @@ use Phalanx\Argos\Exception\HostUnreachableException;
 use Phalanx\Argos\Host;
 use Phalanx\Argos\ProbeResult;
 use Phalanx\Argos\ProbeStrategy;
-use Phalanx\Concurrency\RetryPolicy;
+use Phalanx\Mark\Mark;
+use Phalanx\Recovery\Recoverable;
+use Phalanx\Recovery\RecoveryPlan;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
-use Phalanx\Task\HasTimeout;
 
-final class WakeAndWait implements Executable, HasTimeout
+final class WakeAndWait implements Executable, Recoverable
 {
-    public float $timeout {
-        get => $this->maxRetries * $this->retryIntervalSeconds + 10.0;
+    public RecoveryPlan $recovery {
+        get => RecoveryPlan::polling(
+            interval: Mark::s($this->retryIntervalSeconds),
+            deadline: Mark::s($this->maxRetries * $this->retryIntervalSeconds + 10.0),
+        );
     }
 
     public function __construct(
@@ -33,12 +37,7 @@ final class WakeAndWait implements Executable, HasTimeout
         $scope->execute(new WakeHost($this->mac));
 
         $probe = $this->readyCheck->forHost($this->ip);
-        $policy = RetryPolicy::fixed(
-            $this->maxRetries,
-            $this->retryIntervalSeconds * 1000,
-        );
-
-        $result = $scope->retry($probe, $policy);
+        $result = $scope->execute($probe);
 
         if ($result instanceof ProbeResult && !$result->reachable) {
             throw new HostUnreachableException($this->ip, $result->method ?? 'unknown');
