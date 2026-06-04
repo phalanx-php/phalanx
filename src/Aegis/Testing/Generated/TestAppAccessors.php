@@ -11,10 +11,14 @@ use Phalanx\Testing\Lenses\RuntimeLens;
 use Phalanx\Testing\Lenses\ScopeLens;
 
 /**
- * Generated typed-property accessors for TestApp.
+ * @generated
  *
- * Emitted by phalanx-aegis via composer gen:test-accessors.
- * Edits are overwritten on the next dump.
+ * Generator:   AccessorTraitWriter
+ * Package:     phalanx-aegis
+ * Regenerate:  composer dump-autoload
+ *
+ * This file is auto-generated. Do not edit — changes are
+ * overwritten on the next generation pass.
  */
 trait TestAppAccessors
 {
