@@ -6,7 +6,7 @@
 
 Phalanx is a supervised execution framework for modern PHP.
 
-PHP has plenty of frameworks. Plenty of async libraries too. Phalanx is for the part they tend to leave implicit: the footguns that appear when correct-looking async PHP is composed, retried, deferred, streamed, pooled, or left running long enough to matter.
+PHP has plenty of frameworks. Plenty of async libraries too. Phalanx is for the part they tend to leave implicit: the footguns that appear when correct-looking async PHP is left running long enough to matter.
 
 The name is intentional: Phalanx is about disciplined units of work moving in deliberate unison, stronger as one formation than as scattered parts.
 
@@ -14,7 +14,7 @@ Requests. Commands. TUIs. WebSockets. Workers. Networks. Agent turns. The same g
 
 > Look useful? Consider starring the repo
 >
-> Stay in the loop on X: [![Follow @j_havenz on X](https://img.shields.io/badge/Follow%20%40j_havenz-000000?logo=x&logoColor=white)](https://x.com/j_havenz)
+> Reach out on X: [![Follow @j_havenz on X](https://img.shields.io/badge/Follow%20%40j_havenz-000000?logo=x&logoColor=white)](https://x.com/j_havenz)
 
 ## The Mental Model
 
@@ -33,10 +33,12 @@ class CreateProject implements Executable
 
     public function __invoke(RequestContext $ctx): Project
     {
+        $input = $ctx->input->valid(ProjectRequest::class);
+        
         [$project] = $ctx->scope->series(
-            create: new InsertProject($this->input),
-            audit: new WriteAuditEntry('project.created'),
-            cache: new RefreshProjectList($this->input->ownerId),
+            create: new InsertProject($input),
+            audit: new WriteAuditEntry("project.created.{$input->id}"),
+            cache: new RefreshProjectList($input->ownerId),
         );
 
         return $project;
@@ -44,7 +46,7 @@ class CreateProject implements Executable
 }
 ```
 
-The insert, audit write, and cache refresh are separate actions, but they are not scattered side effects. They are explicit tasks executed within the scope. This guarantees they share the same timeouts, cancellation signals, and cleanup lifecycle.
+The insert, audit entry, and cache refresh are explicit tasks executed within the scope. This guarantees they share the same timeouts, cancellation signals, and cleanup lifecycle - all handled for you by the underlying task scheduler.
 
 This is the Phalanx mindset: work must be supervised. Scopes own execution. When a scope ends, the runtime knows exactly what to cancel, which resources to dispose, and what services to close. Child (or nested) scopes get cleaned up in first.
 

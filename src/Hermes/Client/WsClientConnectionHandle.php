@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Hermes\Client;
 
 use Phalanx\Cancellation\Cancelled;
+use Phalanx\Mark\Mark;
 use Phalanx\Hermes\Runtime\Identity\HermesEventSid;
 use Phalanx\Hermes\WsCloseCode;
 use Phalanx\Hermes\WsMessage;
@@ -136,7 +137,7 @@ final class WsClientConnectionHandle
         );
 
         $this->pingSubscription = $scope->periodic(
-            $config->pingInterval,
+            Mark::s($config->pingInterval),
             static function () use ($writes): void {
                 $writes->tryEmit(WsMessage::ping());
             },

@@ -7,6 +7,7 @@ namespace Phalanx\Hydra\Tests\Integration;
 use Phalanx\Application;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Hydra\Hydra;
+use Phalanx\Mark\Mark;
 use Phalanx\Hydra\ParallelConfig;
 use Phalanx\Hydra\Tests\Fixtures\GreetThroughWorkerService;
 use Phalanx\Hydra\Tests\Fixtures\NeedsExecutionScope;
@@ -142,12 +143,12 @@ final class InWorkerTest extends PhalanxTestCase
                 try {
                     try {
                         $scope->timeout(
-                            0.05,
+                            Mark::ms(50),
                             Task::of(static fn(ExecutionScope $s): mixed => $s->inWorker(new SlowWorkerTask(250_000))),
                         );
                         self::fail('Expected worker timeout to cancel the in-flight dispatch.');
                     } catch (Cancelled $e) {
-                        self::assertSame('timeout after 0.05s', $e->getMessage());
+                        self::assertSame('timeout after 50ms', $e->getMessage());
                     }
                 } finally {
                     $scope->dispose();
@@ -184,7 +185,7 @@ final class InWorkerTest extends PhalanxTestCase
                         ),
                         waiter: Task::of(
                             static fn(ExecutionScope $s): mixed => $s->timeout(
-                                0.05,
+                                Mark::ms(50),
                                 Task::of(
                                     static fn(ExecutionScope $t): mixed => $t->inWorker(new AddNumbers(2, 3)),
                                 ),
@@ -197,7 +198,7 @@ final class InWorkerTest extends PhalanxTestCase
                     self::assertSame('slow-done', $settled->get('busy'));
                     self::assertInstanceOf(Cancelled::class, $waiterError);
                     self::assertStringContainsString(
-                        'timeout after 0.05s',
+                        'timeout after 50ms',
                         $waiterError->getMessage(),
                     );
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\System;
 
+use Phalanx\Mark\Mark;
 use Phalanx\Runtime\Identity\AegisEventSid;
 use Phalanx\Runtime\Memory\RuntimeMemory;
 use Phalanx\Scope\TaskExecutor;
@@ -264,7 +265,7 @@ final class StreamingProcessHandle
         }
 
         if ($delay > 0.0) {
-            $this->scope->delay($delay);
+            $this->scope->delay(Mark::s($delay));
         }
     }
 
