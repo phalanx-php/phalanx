@@ -25,6 +25,7 @@
     "require": {
         "php": "^8.4",
         "ext-swoole": "^6.0",
+        "phalanx-php/mark": "^0.6",
         "phalanx-php/themis": "^0.6",
         "symfony/process": "^7.0 || ^8.0",
         "symfony/uid": "^7.0 || ^8.0"
