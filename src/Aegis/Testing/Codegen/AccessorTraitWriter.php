@@ -14,33 +14,32 @@ final class AccessorTraitWriter
     /** @param list<LensMetadata> $lenses */
     public function render(array $lenses): string
     {
-        $useStatements = self::collectUseStatements($lenses);
-        $accessors = self::renderAccessors($lenses);
+        $useBlock = self::collectUseStatements($lenses);
+        $accessorBlock = self::renderAccessors($lenses);
+        $namespace = self::TARGET_NAMESPACE;
+        $trait = self::TARGET_TRAIT;
 
-        $body = "<?php\n\n";
-        $body .= "declare(strict_types=1);\n\n";
-        $body .= 'namespace ' . self::TARGET_NAMESPACE . ";\n";
+        $uses = $useBlock !== '' ? "\n{$useBlock}" : '';
+        $body = $accessorBlock !== '' ? $accessorBlock : '';
 
-        if ($useStatements !== '') {
-            $body .= "\n" . $useStatements;
-        }
+        return <<<PHP
+            <?php
 
-        $body .= "\n/**\n";
-        $body .= " * Generated typed-property accessors for TestApp.\n";
-        $body .= " *\n";
-        $body .= " * Emitted by phalanx-aegis via composer gen:test-accessors.\n";
-        $body .= " * Edits are overwritten on the next dump.\n";
-        $body .= " */\n";
-        $body .= 'trait ' . self::TARGET_TRAIT . "\n";
-        $body .= "{\n";
+            declare(strict_types=1);
 
-        if ($accessors !== '') {
-            $body .= $accessors;
-        }
+            namespace {$namespace};
+            {$uses}
+            /**
+             * Generated typed-property accessors for TestApp.
+             *
+             * Emitted by phalanx-aegis via composer gen:test-accessors.
+             * Edits are overwritten on the next dump.
+             */
+            trait {$trait}
+            {
+            {$body}}
 
-        $body .= "}\n";
-
-        return $body;
+            PHP;
     }
 
     /** @param list<LensMetadata> $lenses */

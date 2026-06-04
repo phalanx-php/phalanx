@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 $finder = PhpCsFixer\Finder::create()
     ->in([
-        __DIR__ . '/src/Aegis/src',
+        __DIR__ . '/src/Aegis',
         __DIR__ . '/src/Archon',
         __DIR__ . '/src/Argos',
         __DIR__ . '/src/Athena',
