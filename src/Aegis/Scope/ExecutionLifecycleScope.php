@@ -12,6 +12,7 @@ use Phalanx\Concurrency\Co;
 use Phalanx\Concurrency\Settlement;
 use Phalanx\Mark\Mark;
 use Phalanx\Recovery\RecoveryPlan;
+use Phalanx\Recovery\RecoveryRunner;
 use Phalanx\Scheduling\ScheduleBuilder;
 use Phalanx\Concurrency\SettlementBag;
 use Phalanx\Concurrency\SingleflightGroup;
@@ -847,37 +848,9 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
 
     public function retry(Scopeable|Executable|Closure $task, RecoveryPlan $plan): mixed
     {
-        $attempts = $plan->attempts ?? 1;
-        $backoff = $plan->effectiveBackoff();
-        $lastError = null;
+        $runner = new RecoveryRunner();
 
-        for ($attempt = 0; $attempt < $attempts; $attempt++) {
-            $this->throwIfCancelled();
-
-            try {
-                return $this->dispatchSupervised($task, DispatchMode::Inline);
-            } catch (Cancelled $e) {
-                throw $e;
-            } catch (Throwable $e) {
-                $lastError = $e;
-
-                if (!$plan->shouldRetry($e)) {
-                    throw $e;
-                }
-
-                if ($attempt < $attempts - 1 && $backoff !== null) {
-                    $delay = $backoff->delayFor($attempt);
-                    $this->traceLog->log(
-                        TraceType::Retry,
-                        'retry',
-                        ['attempt' => $attempt + 1, 'error' => $e->getMessage()],
-                    );
-                    $this->delay($delay);
-                }
-            }
-        }
-
-        throw $lastError ?? new RuntimeException('retry: no attempts executed');
+        return $runner->run($plan, $task, $this);
     }
 
     public function delay(Mark $duration): void

@@ -6,6 +6,7 @@ namespace Phalanx\Aegis\Tests\Unit\Recovery;
 
 use Phalanx\Mark\Mark;
 use Phalanx\Recovery\Backoff;
+use Phalanx\Recovery\BackoffStrategy;
 use Phalanx\Recovery\Jitter;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -72,13 +73,39 @@ final class BackoffTest extends TestCase
     }
 
     #[Test]
-    public function jitterIsAppliedInDelayFor(): void
+    public function jitterAppliedViaWithJitter(): void
     {
-        $backoff = Backoff::fixed(
-            Mark::ms(100),
-            Jitter::percent(10, static fn(): float => 1.0),
-        );
+        $backoff = Backoff::fixed(Mark::ms(100))
+            ->withJitter(Jitter::percent(10, static fn(): float => 1.0));
 
         self::assertSame(110, $backoff->delayFor(0)->toMilliseconds());
+    }
+
+    #[Test]
+    public function exponentialOverflowClampsToMax(): void
+    {
+        $backoff = Backoff::exponential(Mark::ms(100), Mark::s(30));
+
+        $delay = $backoff->delayFor(60);
+
+        self::assertSame(30000, $delay->toMilliseconds());
+    }
+
+    #[Test]
+    public function exponentialOverflowWithoutMaxClampsToIntMax(): void
+    {
+        $backoff = Backoff::exponential(Mark::ms(100));
+
+        $delay = $backoff->delayFor(60);
+
+        self::assertTrue($delay->isPositive());
+    }
+
+    #[Test]
+    public function strategyExposedAsEnum(): void
+    {
+        self::assertSame(BackoffStrategy::Fixed, Backoff::fixed(Mark::ms(1))->strategy);
+        self::assertSame(BackoffStrategy::Linear, Backoff::linear(Mark::ms(1))->strategy);
+        self::assertSame(BackoffStrategy::Exponential, Backoff::exponential(Mark::ms(1))->strategy);
     }
 }

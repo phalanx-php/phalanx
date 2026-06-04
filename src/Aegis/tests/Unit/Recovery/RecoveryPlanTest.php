@@ -209,4 +209,32 @@ final class RecoveryPlanTest extends TestCase
 
         self::assertSame(250, $preset->pollInterval->toMilliseconds());
     }
+
+    #[Test]
+    public function presetLongRunningMatchesFactory(): void
+    {
+        $preset = RecoveryPreset::LongRunning->toPlan();
+
+        self::assertSame(1, $preset->attempts);
+        self::assertNull($preset->attemptTimeout);
+        self::assertNull($preset->deadline);
+    }
+
+    #[Test]
+    public function noneIsNone(): void
+    {
+        self::assertTrue(RecoveryPlan::none()->isNone());
+    }
+
+    #[Test]
+    public function failFastIsNotNone(): void
+    {
+        self::assertFalse(RecoveryPlan::failFast()->isNone());
+    }
+
+    #[Test]
+    public function defaultRetryIsNotNone(): void
+    {
+        self::assertFalse(RecoveryPlan::defaultRetry()->isNone());
+    }
 }

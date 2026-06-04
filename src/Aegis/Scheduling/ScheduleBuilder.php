@@ -139,6 +139,10 @@ final class ScheduleBuilder
 
     public function result(): mixed
     {
+        if ($this->tasks === []) {
+            throw new \LogicException('ScheduleBuilder requires at least one task');
+        }
+
         $plan = $this->freeze();
 
         if ($plan->recovery !== null && !$plan->recovery->isNone() && $plan->mode === 'task') {

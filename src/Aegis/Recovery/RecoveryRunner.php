@@ -5,13 +5,12 @@ declare(strict_types=1);
 namespace Phalanx\Recovery;
 
 use Closure;
-use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Mark\Mark;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
-use Phalanx\Trace\TraceType;
+use RuntimeException;
 use Throwable;
 
 final class RecoveryRunner
@@ -29,16 +28,15 @@ final class RecoveryRunner
         $attempts = $plan->attempts ?? PHP_INT_MAX;
         $backoff = $plan->effectiveBackoff();
         $lastError = null;
+        $taskName = self::resolveTaskName($task);
 
         for ($attempt = 0; $attempt < $attempts; $attempt++) {
             $scope->throwIfCancelled();
 
             try {
-                if ($plan->attemptTimeout !== null) {
-                    return $scope->timeout($plan->attemptTimeout, $task);
-                }
-
-                return $scope->execute($task);
+                return $plan->attemptTimeout !== null
+                    ? $scope->timeout($plan->attemptTimeout, $task)
+                    : $scope->execute($task);
             } catch (Cancelled $e) {
                 throw $e;
             } catch (Throwable $e) {
@@ -54,56 +52,69 @@ final class RecoveryRunner
                     throw $e;
                 }
 
-                $callback = $plan->eventCallback();
+                $delay = $this->resolveDelay($plan, $scope, $attempt, $elapsed, $e, $taskName, $backoff);
 
-                if ($callback !== null) {
-                    $remainingDeadline = $plan->deadline?->minus($elapsed);
-                    $event = new RecoveryEvent(
-                        kind: RecoveryEventKind::AttemptFailed,
-                        attempt: $attempt + 1,
-                        elapsed: $elapsed,
-                        remainingDeadline: $remainingDeadline,
-                        error: $e,
-                        taskName: $this->resolveTaskName($task),
-                        plan: $plan,
-                    );
-
-                    $ctx = new RecoveryContext(
-                        attempt: $attempt + 1,
-                        elapsed: $elapsed,
-                        remainingDeadline: $remainingDeadline,
-                        error: $e,
-                        taskName: $this->resolveTaskName($task),
-                        plan: $plan,
-                    );
-
-                    $decision = $callback($event, $ctx);
-
-                    if ($decision->action === RecoveryAction::Fail || $decision->action === RecoveryAction::Cancel) {
-                        throw $decision->error ?? $e;
-                    }
-
-                    if ($decision->delay !== null) {
-                        $scope->delay($decision->delay);
-
-                        continue;
-                    }
-                }
-
-                if ($attempt < $attempts - 1) {
-                    $delay = $plan->pollInterval ?? $backoff?->delayFor($attempt) ?? Mark::zero();
-
-                    if ($delay->isPositive()) {
-                        $scope->delay($delay);
-                    }
+                if ($delay !== null && $delay->isPositive() && $attempt < $attempts - 1) {
+                    $scope->delay($delay);
                 }
             }
         }
 
-        throw $lastError ?? new \RuntimeException('recovery: no attempts executed');
+        throw $lastError ?? new RuntimeException('recovery: no attempts executed');
     }
 
-    private function resolveTaskName(Scopeable|Executable|Closure $task): string
+    private function resolveDelay(
+        RecoveryPlan $plan,
+        ExecutionScope $scope,
+        int $attempt,
+        Mark $elapsed,
+        Throwable $error,
+        string $taskName,
+        ?Backoff $backoff,
+    ): ?Mark {
+        $callback = $plan->eventCallback();
+
+        if ($callback === null) {
+            return $plan->pollInterval ?? $backoff?->delayFor($attempt);
+        }
+
+        $remainingDeadline = $plan->deadline?->minus($elapsed);
+
+        $event = new RecoveryEvent(
+            kind: RecoveryEventKind::AttemptFailed,
+            attempt: $attempt + 1,
+            elapsed: $elapsed,
+            remainingDeadline: $remainingDeadline,
+            error: $error,
+            taskName: $taskName,
+            plan: $plan,
+        );
+
+        $ctx = new RecoveryContext(
+            attempt: $attempt + 1,
+            elapsed: $elapsed,
+            remainingDeadline: $remainingDeadline,
+            error: $error,
+            taskName: $taskName,
+            plan: $plan,
+        );
+
+        /** @var RecoveryDecision $decision */
+        $decision = $callback($event, $ctx);
+
+        if ($decision->action === RecoveryAction::Fail || $decision->action === RecoveryAction::Cancel) {
+            throw $decision->error ?? $error;
+        }
+
+        return match ($decision->action) {
+            RecoveryAction::Delay => $decision->delay,
+            RecoveryAction::Poll => $decision->delay ?? $plan->pollInterval,
+            RecoveryAction::Retry => $decision->delay ?? $backoff?->delayFor($attempt),
+            RecoveryAction::Continue => null,
+        };
+    }
+
+    private static function resolveTaskName(Scopeable|Executable|Closure $task): string
     {
         if ($task instanceof Scopeable || $task instanceof Executable) {
             return $task::class;
