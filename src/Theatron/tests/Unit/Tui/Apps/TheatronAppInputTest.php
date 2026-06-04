@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Theatron\Tests\Unit\Tui\Apps;
 
+use Phalanx\Mark\Mark;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Testing\PhalanxTestCase;
 use Phalanx\Theatron\Tui\Inputs\Binding;
@@ -71,12 +72,12 @@ final class TheatronAppInputTest extends PhalanxTestCase
             $scope->go(static function () use ($app, $scope): void {
                 $app->start($scope);
             }, 'theatron-app');
-            $scope->delay(0.01);
+            $scope->delay(Mark::ms(10));
 
             self::setFrameRequested($stage, false);
             self::dispatchInput($stage, new KeyEvent(key: 'x'));
             self::assertTrue(self::frameRequested($stage));
-            $scope->delay(0.02);
+            $scope->delay(Mark::ms(20));
 
             $scope->cancellation()->cancel();
         });
@@ -127,7 +128,7 @@ final class TheatronAppInputTest extends PhalanxTestCase
             $scope->go(static function () use ($app, $scope): void {
                 $app->start($scope);
             }, 'theatron-app');
-            $scope->delay(0.01);
+            $scope->delay(Mark::ms(10));
 
             self::dispatchInput($stage, new KeyEvent(key: 'o'));
             self::dispatchInput($stage, new KeyEvent(key: 'a'));
@@ -174,7 +175,7 @@ final class TheatronAppInputTest extends PhalanxTestCase
             $scope->go(static function () use ($app, $scope): void {
                 $app->start($scope);
             }, 'theatron-app');
-            $scope->delay(0.01);
+            $scope->delay(Mark::ms(10));
 
             self::dispatchInput($app->stage, new KeyEvent('o'));
             self::dispatchInput($app->stage, new KeyEvent('x', ctrl: true));
@@ -222,7 +223,7 @@ final class TheatronAppInputTest extends PhalanxTestCase
             $scope->go(static function () use ($app, $scope): void {
                 $app->start($scope);
             }, 'theatron-app');
-            $scope->delay(0.01);
+            $scope->delay(Mark::ms(10));
 
             self::dispatchInput($stage, new KeyEvent(key: 'o'));
             self::dispatchInput($stage, new KeyEvent(key: 'x'));
@@ -267,10 +268,10 @@ final class TheatronAppInputTest extends PhalanxTestCase
             $scope->go(static function () use ($app, $scope): void {
                 $app->start($scope);
             }, 'theatron-app');
-            $scope->delay(0.01);
+            $scope->delay(Mark::ms(10));
 
             self::dispatchInput($stage, new KeyEvent(key: 'o'));
-            $scope->delay(0.02);
+            $scope->delay(Mark::ms(20));
 
             $scope->cancellation()->cancel();
             rewind($stream);

@@ -7,6 +7,7 @@ namespace Phalanx\Theatron\Collab\Apps;
 use Closure;
 use InvalidArgumentException;
 use Phalanx\Application;
+use Phalanx\Mark\Mark;
 use Phalanx\Boot\AppContext;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Service\ServiceBundle;
@@ -201,7 +202,7 @@ final class AgentHarnessBuilder
                     throw new \RuntimeException('AgentHarness runtime service did not resolve.');
                 }
 
-                $scope->periodic($interval, static function () use ($runtime, $scope): void {
+                $scope->periodic(Mark::s($interval), static function () use ($runtime, $scope): void {
                     $runtime->tick($scope);
                 });
 

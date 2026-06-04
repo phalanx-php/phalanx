@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Aegis\Tests\Unit\System;
 
+use Phalanx\Mark\Mark;
 use Phalanx\Runtime\Identity\AegisResourceSid;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\System\StreamingProcess;
@@ -133,7 +134,7 @@ final class StreamingProcessTest extends PhalanxTestCase
             $schedulerAdvanced = false;
 
             $scope->go(static function (ExecutionScope $childScope) use (&$schedulerAdvanced): void {
-                $childScope->delay(0.005);
+                $childScope->delay(Mark::ms(5));
                 $schedulerAdvanced = true;
             }, 'streaming-process-timeout-probe');
 
@@ -155,7 +156,7 @@ final class StreamingProcessTest extends PhalanxTestCase
             $schedulerAdvanced = false;
 
             $scope->go(static function (ExecutionScope $childScope) use (&$schedulerAdvanced): void {
-                $childScope->delay(0.005);
+                $childScope->delay(Mark::ms(5));
                 $schedulerAdvanced = true;
             }, 'streaming-process-wait-probe');
 

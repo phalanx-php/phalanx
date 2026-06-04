@@ -14,6 +14,7 @@ use Phalanx\Archon\Console\Widget\ConcurrentTaskList;
 use Phalanx\Archon\Tests\Support\RecordingLiveRegionWriter;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\Scope;
+use Phalanx\Mark\Mark;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 use Phalanx\Testing\PhalanxTestCase;
@@ -110,7 +111,7 @@ final class ConcurrentTaskListTest extends PhalanxTestCase
             $task = new class implements Executable {
                 public function __invoke(ExecutionScope $scope): string
                 {
-                    $scope->delay(0.04);
+                    $scope->delay(Mark::ms(40));
 
                     return 'ok';
                 }

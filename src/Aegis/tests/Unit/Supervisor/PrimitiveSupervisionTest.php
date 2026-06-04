@@ -7,7 +7,9 @@ namespace Phalanx\Aegis\Tests\Unit\Supervisor;
 use Phalanx\Application;
 use Phalanx\Boot\AppContext;
 use Phalanx\Cancellation\Cancelled;
-use Phalanx\Concurrency\RetryPolicy;
+use Phalanx\Mark\Mark;
+use Phalanx\Recovery\Backoff;
+use Phalanx\Recovery\RecoveryPlan;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
@@ -81,7 +83,7 @@ final class PrimitiveSupervisionTest extends PhalanxTestCase
 
                         return 'done';
                     }),
-                    RetryPolicy::fixed(2, 1),
+                    RecoveryPlan::defaultRetry(attempts: 2, backoff: Backoff::fixed(Mark::ms(1))),
                 ),
             ));
 
@@ -128,7 +130,7 @@ final class PrimitiveSupervisionTest extends PhalanxTestCase
                 owner: Task::of(static fn(ExecutionScope $s): mixed => $s->singleflight(
                     'shared',
                     Task::of(static function (ExecutionScope $owner): string {
-                        $owner->delay(0.05);
+                        $owner->delay(Mark::ms(50));
                         return 'owner-result';
                     }),
                 )),

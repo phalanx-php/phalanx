@@ -6,6 +6,7 @@ namespace Phalanx\Theatron\Tui\Apps;
 
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Exception\ServiceNotFoundException;
+use Phalanx\Mark\Mark;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Theatron\Tui\Core\DeclaresBindings;
 use Phalanx\Theatron\Tui\Core\HandlesKeySequences;
@@ -355,7 +356,7 @@ final class TheatronApp
 
         try {
             while (!$scope->isCancelled) {
-                $scope->delay(0.1);
+                $scope->delay(Mark::ms(100));
             }
         } catch (Cancelled $e) {
             if (!$scope->isCancelled) {

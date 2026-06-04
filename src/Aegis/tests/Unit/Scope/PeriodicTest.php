@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Aegis\Tests\Unit\Scope;
 
 use Phalanx\Concurrency\Co;
+use Phalanx\Mark\Mark;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\PeriodicSubscription;
 use Phalanx\Scope\Subscription;
@@ -20,7 +21,7 @@ final class PeriodicTest extends PhalanxTestCase
                 return $count;
             };
 
-            $sub = $scope->periodic(0.02, static function () use (&$count): void {
+            $sub = $scope->periodic(Mark::ms(20), static function () use (&$count): void {
                 $count++;
             });
 
@@ -40,7 +41,7 @@ final class PeriodicTest extends PhalanxTestCase
         $this->scope->run(static function (ExecutionScope $scope): void {
             $count = 0;
 
-            $sub = $scope->periodic(0.02, static function () use (&$count): void {
+            $sub = $scope->periodic(Mark::ms(20), static function () use (&$count): void {
                 $count++;
             });
 
@@ -57,7 +58,7 @@ final class PeriodicTest extends PhalanxTestCase
     public function testCancelIsIdempotent(): void
     {
         $this->scope->run(static function (ExecutionScope $scope): void {
-            $sub = $scope->periodic(0.05, static function (): void {
+            $sub = $scope->periodic(Mark::ms(50), static function (): void {
             });
 
             $sub->cancel();
@@ -75,7 +76,7 @@ final class PeriodicTest extends PhalanxTestCase
 
             $sub = null;
             $scopeBody = static function (ExecutionScope $inner) use (&$count, &$sub): void {
-                $sub = $inner->periodic(0.02, static function () use (&$count): void {
+                $sub = $inner->periodic(Mark::ms(20), static function () use (&$count): void {
                     $count++;
                 });
                 Co::sleep(0.05);
@@ -99,7 +100,7 @@ final class PeriodicTest extends PhalanxTestCase
         $this->scope->run(static function (ExecutionScope $scope): void {
             $count = 0;
 
-            $sub = $scope->periodic(0.02, static function () use (&$count): void {
+            $sub = $scope->periodic(Mark::ms(20), static function () use (&$count): void {
                 $count++;
                 if ($count === 1) {
                     throw new \RuntimeException('first tick fails');

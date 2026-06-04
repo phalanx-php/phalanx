@@ -7,6 +7,7 @@ namespace Phalanx\Aegis\Tests\Unit\Supervisor;
 use Phalanx\Application;
 use Phalanx\Boot\AppContext;
 use Phalanx\Cancellation\Cancelled;
+use Phalanx\Mark\Mark;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
@@ -99,7 +100,7 @@ final class SiblingScopeIsolationTest extends PhalanxTestCase
             $reachedAfterDelay = false;
             $task = Task::of(static function (ExecutionScope $s) use (&$reachedAfterDelay): never {
                 // Block long enough that natural completion is impossible.
-                $s->delay(5.0);
+                $s->delay(Mark::s(5));
                 $reachedAfterDelay = true;
                 throw new RuntimeException('should not reach');
             });
@@ -137,14 +138,14 @@ final class SiblingScopeIsolationTest extends PhalanxTestCase
 
             $loserCancelled = false;
             $winner = Task::of(static function (ExecutionScope $s): string {
-                $s->delay(0.020);
+                $s->delay(Mark::ms(20));
                 return 'winner';
             });
             $loser = Task::of(static function (ExecutionScope $s) use (&$loserCancelled): never {
                 $s->cancellation()->onCancel(static function () use (&$loserCancelled): void {
                     $loserCancelled = true;
                 });
-                $s->delay(2.0);
+                $s->delay(Mark::s(2));
                 throw new RuntimeException('should not reach');
             });
 

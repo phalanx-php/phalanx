@@ -6,6 +6,7 @@ namespace Phalanx\Skopos;
 
 use Closure;
 use Phalanx\Cancellation\Cancelled;
+use Phalanx\Mark\Mark;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Skopos\Output\Multiplexer;
 use Phalanx\Support\SignalHandler;
@@ -97,7 +98,7 @@ final class DevServer implements Executable
 
         try {
             while (!$scope->isCancelled) {
-                $scope->delay(0.5);
+                $scope->delay(Mark::ms(500));
             }
         } catch (Cancelled) {
         }

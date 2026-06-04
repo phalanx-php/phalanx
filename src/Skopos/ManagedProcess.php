@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Skopos;
 
 use Closure;
+use Phalanx\Mark\Mark;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Skopos\Output\Multiplexer;
 use Phalanx\System\StreamingProcess;
@@ -111,7 +112,7 @@ final class ManagedProcess
                     $scanReadiness($stderrChunk);
                 }
 
-                $scope->delay(0.02);
+                $scope->delay(Mark::ms(20));
             }
 
             $stdoutChunk = $handle->getIncrementalOutput();
@@ -148,7 +149,7 @@ final class ManagedProcess
                 );
             }
 
-            $scope->delay(0.02);
+            $scope->delay(Mark::ms(20));
         }
 
         if ($this->state === ProcessState::Crashed || $this->state === ProcessState::Stopped) {
@@ -171,7 +172,7 @@ final class ManagedProcess
                 );
             }
 
-            $scope->delay(0.02);
+            $scope->delay(Mark::ms(20));
         }
     }
 

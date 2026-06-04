@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Acme\StoaDemo\Runtime\Routes;
 
 use Acme\StoaDemo\Runtime\Support\RuntimeEvents;
+use Phalanx\Mark\Mark;
 use Phalanx\Stoa\RequestContext;
 use Phalanx\Task\Scopeable;
 
@@ -26,7 +27,7 @@ final readonly class DisconnectProbe implements Scopeable
 
         try {
             for ($tick = 0; $tick < 100; $tick++) {
-                $ctx->delay(0.05);
+                $ctx->delay(Mark::ms(50));
             }
 
             $this->events->record($ctx, 'disconnect.completed');

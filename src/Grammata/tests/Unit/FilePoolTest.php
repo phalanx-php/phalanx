@@ -6,6 +6,7 @@ namespace Phalanx\Grammata\Tests\Unit;
 
 use Phalanx\Application;
 use Phalanx\Cancellation\Cancelled;
+use Phalanx\Mark\Mark;
 use Phalanx\Grammata\Exception\FilesystemException;
 use Phalanx\Grammata\FilePool;
 use Phalanx\Grammata\Grammata;
@@ -130,7 +131,7 @@ final class FilePoolTest extends PhalanxTestCase
                 $thrown = null;
                 try {
                     $scope->timeout(
-                        0.01,
+                        Mark::ms(10),
                         Task::of(static fn(ExecutionScope $child): mixed => $pool->acquire($child)),
                     );
                 } catch (Cancelled $e) {

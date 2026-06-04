@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Styx\Tests\Unit;
 
 use Phalanx\Cancellation\Cancelled;
+use Phalanx\Mark\Mark;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Styx\Channel;
 use Phalanx\Styx\Emitter;
@@ -249,7 +250,7 @@ final class EmitterTest extends PhalanxTestCase
                 try {
                     while (true) {
                         $ch->emit('tick');
-                        $producerScope->delay(0.01);
+                        $producerScope->delay(Mark::ms(10));
                     }
                 } catch (Cancelled $e) {
                     $cancelled = true;
@@ -259,7 +260,7 @@ final class EmitterTest extends PhalanxTestCase
 
             self::assertSame('TICK', $emitter->first()($scope));
 
-            $scope->delay(0.02);
+            $scope->delay(Mark::ms(20));
 
             self::assertTrue($cancelled);
         });

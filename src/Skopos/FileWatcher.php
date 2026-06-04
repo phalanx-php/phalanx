@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Skopos;
 
 use Closure;
+use Phalanx\Mark\Mark;
 use Phalanx\Scope\Subscription;
 use Phalanx\Scope\TaskExecutor;
 
@@ -57,7 +58,7 @@ final class FileWatcher
 
         $self = $this;
         $this->subscription = $scope->periodic(
-            $this->interval,
+            Mark::s($this->interval),
             static function () use ($self, $scope, $generation): void {
                 if (!$self->isActive($generation)) {
                     return;

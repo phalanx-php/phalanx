@@ -18,6 +18,7 @@ use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Archon\Console\Style\Theme;
 use Phalanx\Archon\Console\Widget\ConcurrentTaskList;
 use Phalanx\Concurrency\RetryPolicy;
+use Phalanx\Mark\Mark;
 use Phalanx\Task\Executable;
 
 /**
@@ -53,7 +54,7 @@ final class DeployCommand implements Executable, DescribesCommand
             ->add('build',   'Build',   new BuildStage())
             ->add('test',    'Test',    new RetryStage(new TestStage(), RetryPolicy::exponential(3, 30.0, 100.0)))
             ->add('package', 'Package', new PackageStage())
-            ->add('ship',    'Ship',    new TimeoutStage(new ShipStage(), 2.0))
+            ->add('ship',    'Ship',    new TimeoutStage(new ShipStage(), Mark::s(2)))
             ->run();
 
         $output->persist("deploy: 4 stages settled (test attempts: " . TestStage::$attempts . ")");

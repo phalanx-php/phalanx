@@ -10,6 +10,7 @@ use Phalanx\Archon\Command\DescribesCommand;
 use Phalanx\Archon\Command\Opt;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Cancellation\Cancelled;
+use Phalanx\Mark\Mark;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
 use RuntimeException;
@@ -66,7 +67,7 @@ final class WatchCommand implements Executable, DescribesCommand
                     if ($shouldFail && $n === 2) {
                         throw new RuntimeException("worker {$id} crashed");
                     }
-                    $workerScope->delay(0.05);
+                    $workerScope->delay(Mark::ms(50));
                 }
             }, name: "tick-{$id}");
         }
@@ -76,7 +77,7 @@ final class WatchCommand implements Executable, DescribesCommand
 
         try {
             while (microtime(true) < $deadline) {
-                $ctx->delay(0.05);
+                $ctx->delay(Mark::ms(50));
                 $ctx->throwIfCancelled();
             }
             $output->persist('[completed normally]');

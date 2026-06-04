@@ -7,6 +7,7 @@ namespace Phalanx\Aegis\Tests\Unit\Supervisor;
 use Phalanx\Application;
 use Phalanx\Boot\AppContext;
 use Phalanx\Diagnostics\DiagnosticCode;
+use Phalanx\Mark\Mark;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
@@ -83,7 +84,7 @@ final class SpawnHelperTest extends PhalanxTestCase
 
             $handle = $inner->go(static function (ExecutionScope $s) use ($started): void {
                 $started->push(true);
-                $s->delay(5.0);
+                $s->delay(Mark::s(5));
             }, name: 'long-spawn');
 
             self::assertTrue($started->pop(1.0));
@@ -110,7 +111,7 @@ final class SpawnHelperTest extends PhalanxTestCase
             $inner->go(static function (ExecutionScope $s) use ($started, &$unwound): void {
                 try {
                     $started->push(true);
-                    $s->delay(5.0);
+                    $s->delay(Mark::s(5));
                 } finally {
                     $unwound = true;
                 }
@@ -138,7 +139,7 @@ final class SpawnHelperTest extends PhalanxTestCase
             $handle = $inner->go(static function (ExecutionScope $s) use ($started, $unwound, &$reachedAfterDelay): void {
                 try {
                     $started->push(true);
-                    $s->delay(5.0);
+                    $s->delay(Mark::s(5));
                     $reachedAfterDelay = true;
                 } finally {
                     $unwound->push(true);
@@ -169,7 +170,7 @@ final class SpawnHelperTest extends PhalanxTestCase
             $handle = $inner->go(static function (ExecutionScope $s) use ($started, $unwound): void {
                 try {
                     $started->push(true);
-                    $s->delay(5.0);
+                    $s->delay(Mark::s(5));
                 } finally {
                     $unwound->push(true);
                 }
@@ -214,7 +215,7 @@ final class SpawnHelperTest extends PhalanxTestCase
             $parked = $inner->go(static function (ExecutionScope $s) use ($started, $parkedUnwound): void {
                 try {
                     $started->push(true);
-                    $s->delay(5.0);
+                    $s->delay(Mark::s(5));
                 } finally {
                     $parkedUnwound->push(true);
                 }

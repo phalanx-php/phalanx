@@ -8,6 +8,7 @@ use Phalanx\Archon\Application\Archon;
 use Phalanx\Archon\Command\CommandContext;
 use Phalanx\Boot\AppContext;
 use Phalanx\Demos\Kit\DemoReport;
+use Phalanx\Mark\Mark;
 use Phalanx\Scope\ExecutionScope;
 
 /**
@@ -34,30 +35,30 @@ return DemoReport::demo(
                         
                         // Sibling at Level 3
                         $scope->go(static function (ExecutionScope $scope) {
-                             $scope->delay(10.0);
+                             $scope->delay(Mark::s(10));
                         }, 'ledger.level_3_active');
 
                         $scope->go(static function (ExecutionScope $scope) {
-                             $scope->delay(10.0);
+                             $scope->delay(Mark::s(10));
                         }, 'ledger.level_3_sibling');
 
-                        $scope->delay(10.0);
+                        $scope->delay(Mark::s(10));
                     }, 'ledger.level_2_active');
 
                     $scope->go(static function (ExecutionScope $scope) {
-                         $scope->delay(10.0);
+                         $scope->delay(Mark::s(10));
                     }, 'ledger.level_2_sibling');
 
-                    $scope->delay(10.0);
+                    $scope->delay(Mark::s(10));
                 }, 'ledger.level_1_active');
 
                 // Sibling at Level 1
                 $ctx->go(static function (ExecutionScope $scope) {
-                    $scope->delay(10.0);
+                    $scope->delay(Mark::s(10));
                 }, 'ledger.level_1_sibling');
 
                 // Small delay to ensure all fibers are registered
-                $ctx->delay(0.1);
+                $ctx->delay(Mark::ms(100));
 
                 throw new \RuntimeException(
                     "Critical failure in POC logic: Database connection lost!\n" .

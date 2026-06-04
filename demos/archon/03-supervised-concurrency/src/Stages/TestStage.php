@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Demos\Archon\SupervisedConcurrency\Stages;
 
+use Phalanx\Mark\Mark;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
 use RuntimeException;
@@ -19,7 +20,7 @@ final class TestStage implements Executable
 
     public function __invoke(ExecutionScope $scope): string
     {
-        $scope->delay(0.35);
+        $scope->delay(Mark::ms(350));
 
         self::$attempts++;
         if (self::$attempts < 3) {

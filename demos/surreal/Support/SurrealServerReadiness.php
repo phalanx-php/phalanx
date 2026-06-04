@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Demos\Surreal\Support;
 
 use Phalanx\Cancellation\Cancelled;
+use Phalanx\Mark\Mark;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Surreal\Surreal;
 use Phalanx\System\StreamingProcessHandle;
@@ -37,7 +38,7 @@ final class SurrealServerReadiness
             } catch (\Throwable) {
             }
 
-            $scope->delay(0.05);
+            $scope->delay(Mark::ms(50));
         }
 
         return false;

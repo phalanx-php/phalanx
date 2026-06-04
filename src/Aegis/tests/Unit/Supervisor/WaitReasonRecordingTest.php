@@ -6,6 +6,7 @@ namespace Phalanx\Aegis\Tests\Unit\Supervisor;
 
 use Phalanx\Application;
 use Phalanx\Boot\AppContext;
+use Phalanx\Mark\Mark;
 use Phalanx\Runtime\RuntimeHooks;
 use Phalanx\Runtime\RuntimePolicy;
 use Phalanx\Scope\ExecutionScope;
@@ -77,7 +78,7 @@ final class WaitReasonRecordingTest extends TestCase
                     }
                 });
 
-                $s->delay(0.05);
+                $s->delay(Mark::ms(50));
             });
             $scope->execute($task);
         });

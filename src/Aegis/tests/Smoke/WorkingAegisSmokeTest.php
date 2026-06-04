@@ -8,6 +8,7 @@ use Phalanx\Application;
 use Phalanx\Boot\AppContext;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Concurrency\RetryPolicy;
+use Phalanx\Mark\Mark;
 use Phalanx\Middleware\RetryMiddleware;
 use Phalanx\Middleware\TimeoutMiddleware;
 use Phalanx\Middleware\TraceMiddleware;
@@ -166,11 +167,11 @@ final class WorkingAegisSmokeTest extends PhalanxTestCase
             try {
                 $appScope->concurrent(
                     a: Task::of(static function (ExecutionScope $s): never {
-                        $s->delay(5.0);
+                        $s->delay(Mark::s(5));
                         throw new RuntimeException('should not reach');
                     }),
                     b: Task::of(static function (ExecutionScope $s): never {
-                        $s->delay(5.0);
+                        $s->delay(Mark::s(5));
                         throw new RuntimeException('should not reach');
                     }),
                 );

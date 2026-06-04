@@ -7,6 +7,7 @@ namespace Phalanx\Aegis\Tests\Unit\Scope;
 use Phalanx\Application;
 use Phalanx\Boot\AppContext;
 use Phalanx\Diagnostics\DiagnosticCode;
+use Phalanx\Mark\Mark;
 use Phalanx\Scope\ExecutionLifecycleScope;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\TransactionScope;
@@ -115,7 +116,7 @@ final class TransactionScopeTest extends PhalanxTestCase
                 static fn(ExecutionScope $s): mixed => $s->transaction(
                     TransactionLease::open('postgres/main', 'tx#4'),
                     static function (TransactionScope $tx): string {
-                        $tx->delay(0.001);
+                        $tx->delay(Mark::ms(1));
 
                         return $tx->service(TransactionState::class)->tenant;
                     },

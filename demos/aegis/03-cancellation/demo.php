@@ -7,6 +7,7 @@ require __DIR__ . '/../../../vendor/autoload_runtime.php';
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Demos\Kit\DemoApp;
 use Phalanx\Demos\Kit\DemoReport;
+use Phalanx\Mark\Mark;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Task;
 
@@ -17,10 +18,10 @@ return DemoApp::boot(
             'demo.cancellation.root',
             static function (ExecutionScope $root) use ($report): void {
                 try {
-                    $root->timeout(0.01, Task::named(
+                    $root->timeout(Mark::ms(10), Task::named(
                         'demo.cancellation.sleeper',
                         static function (ExecutionScope $child): void {
-                            $child->delay(1.0);
+                            $child->delay(Mark::s(1));
                         },
                     ));
                     $message = 'not cancelled';

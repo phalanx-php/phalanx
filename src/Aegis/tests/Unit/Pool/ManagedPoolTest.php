@@ -6,6 +6,7 @@ namespace Phalanx\Aegis\Tests\Unit\Pool;
 
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Diagnostics\DiagnosticCode;
+use Phalanx\Mark\Mark;
 use Phalanx\Pool\ManagedPool;
 use Phalanx\Pool\ManagedPoolClient;
 use Phalanx\Pool\ManagedPoolFactory;
@@ -210,7 +211,7 @@ final class ManagedPoolTest extends PhalanxTestCase
                 $thrown = null;
                 try {
                     $scope->timeout(
-                        0.01,
+                        Mark::ms(10),
                         Task::of(static fn(ExecutionScope $child): mixed => $pool->acquire($child)),
                     );
                 } catch (Cancelled $e) {

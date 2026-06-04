@@ -7,6 +7,7 @@ namespace Phalanx\Aegis\Tests\Resilience;
 use Phalanx\Application;
 use Phalanx\Boot\AppContext;
 use Phalanx\Cancellation\Cancelled;
+use Phalanx\Mark\Mark;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
@@ -36,9 +37,9 @@ final class CancellationPropagationTimingTest extends PhalanxTestCase
     {
         $this->assertCancelTimingOf(static function (ExecutionScope $scope): void {
             $scope->concurrent(
-                a: Task::of(static fn(ExecutionScope $s) => $s->delay(5.0)),
-                b: Task::of(static fn(ExecutionScope $s) => $s->delay(5.0)),
-                c: Task::of(static fn(ExecutionScope $s) => $s->delay(5.0)),
+                a: Task::of(static fn(ExecutionScope $s) => $s->delay(Mark::s(5))),
+                b: Task::of(static fn(ExecutionScope $s) => $s->delay(Mark::s(5))),
+                c: Task::of(static fn(ExecutionScope $s) => $s->delay(Mark::s(5))),
             );
         });
     }
@@ -47,8 +48,8 @@ final class CancellationPropagationTimingTest extends PhalanxTestCase
     {
         $this->assertCancelTimingOf(static function (ExecutionScope $scope): void {
             $scope->race(...[
-                Task::of(static fn(ExecutionScope $s) => $s->delay(5.0)),
-                Task::of(static fn(ExecutionScope $s) => $s->delay(5.0)),
+                Task::of(static fn(ExecutionScope $s) => $s->delay(Mark::s(5))),
+                Task::of(static fn(ExecutionScope $s) => $s->delay(Mark::s(5))),
             ]);
         });
     }
@@ -57,8 +58,8 @@ final class CancellationPropagationTimingTest extends PhalanxTestCase
     {
         $this->assertCancelTimingOf(static function (ExecutionScope $scope): void {
             $scope->any(...[
-                Task::of(static fn(ExecutionScope $s) => $s->delay(5.0)),
-                Task::of(static fn(ExecutionScope $s) => $s->delay(5.0)),
+                Task::of(static fn(ExecutionScope $s) => $s->delay(Mark::s(5))),
+                Task::of(static fn(ExecutionScope $s) => $s->delay(Mark::s(5))),
             ]);
         });
     }
@@ -68,7 +69,7 @@ final class CancellationPropagationTimingTest extends PhalanxTestCase
         $this->assertCancelTimingOf(static function (ExecutionScope $scope): void {
             $scope->map(
                 [1, 2, 3, 4, 5],
-                static fn(int $n) => Task::of(static fn(ExecutionScope $s) => $s->delay(5.0)),
+                static fn(int $n) => Task::of(static fn(ExecutionScope $s) => $s->delay(Mark::s(5))),
                 limit: 3,
             );
         });
@@ -78,8 +79,8 @@ final class CancellationPropagationTimingTest extends PhalanxTestCase
     {
         $this->assertCancelTimingOf(static function (ExecutionScope $scope): void {
             $scope->series(...[
-                Task::of(static fn(ExecutionScope $s) => $s->delay(5.0)),
-                Task::of(static fn(ExecutionScope $s) => $s->delay(5.0)),
+                Task::of(static fn(ExecutionScope $s) => $s->delay(Mark::s(5))),
+                Task::of(static fn(ExecutionScope $s) => $s->delay(Mark::s(5))),
             ]);
         });
     }
@@ -89,8 +90,8 @@ final class CancellationPropagationTimingTest extends PhalanxTestCase
         $this->assertCancelTimingOf(static function (ExecutionScope $scope): void {
             // settle returns Result objects but should still observe cancel.
             $scope->settle(...[
-                Task::of(static fn(ExecutionScope $s) => $s->delay(5.0)),
-                Task::of(static fn(ExecutionScope $s) => $s->delay(5.0)),
+                Task::of(static fn(ExecutionScope $s) => $s->delay(Mark::s(5))),
+                Task::of(static fn(ExecutionScope $s) => $s->delay(Mark::s(5))),
             ]);
         });
     }
@@ -98,7 +99,7 @@ final class CancellationPropagationTimingTest extends PhalanxTestCase
     public function testDelayCancelsWithinBudget(): void
     {
         $this->assertCancelTimingOf(static function (ExecutionScope $scope): void {
-            $scope->delay(5.0);
+            $scope->delay(Mark::s(5));
         });
     }
 

@@ -20,6 +20,7 @@ use Phalanx\Cancellation\Cancelled;
 use Phalanx\Runtime\Identity\AegisResourceSid;
 use Phalanx\Runtime\Memory\ManagedResourceState;
 use Phalanx\Scope\ExecutionScope;
+use Phalanx\Mark\Mark;
 use Phalanx\Task\Scopeable;
 use Phalanx\Task\Task;
 use Phalanx\Testing\Assert as PhalanxAssert;
@@ -424,7 +425,7 @@ final class CoroutineRuntimeProbeCommand implements Scopeable
 
     public function __invoke(CommandContext $ctx): int
     {
-        $ctx->delay(0.001);
+        $ctx->delay(Mark::ms(1));
         self::$ran = true;
 
         return 0;

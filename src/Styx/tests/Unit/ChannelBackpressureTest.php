@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Styx\Tests\Unit;
 
+use Phalanx\Mark\Mark;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Styx\Channel;
 use Phalanx\Testing\PhalanxTestCase;
@@ -39,7 +40,7 @@ final class ChannelBackpressureTest extends PhalanxTestCase
             });
 
             self::assertTrue(self::readOne($producerReady));
-            $scope->delay(0.01);
+            $scope->delay(Mark::ms(10));
 
             self::assertFalse($producerReachedBlockedEmit);
 

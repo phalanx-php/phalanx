@@ -9,8 +9,10 @@ use Phalanx\Cancellation\AggregateException;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Concurrency\Co;
-use Phalanx\Concurrency\RetryPolicy;
 use Phalanx\Concurrency\Settlement;
+use Phalanx\Mark\Mark;
+use Phalanx\Recovery\RecoveryPlan;
+use Phalanx\Scheduling\ScheduleBuilder;
 use Phalanx\Concurrency\SettlementBag;
 use Phalanx\Concurrency\SingleflightGroup;
 use Phalanx\Diagnostics\DiagnosticCode;
@@ -805,9 +807,10 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         return new SettlementBag($ordered);
     }
 
-    public function timeout(float $seconds, Scopeable|Executable|Closure $task): mixed
+    public function timeout(Mark $duration, Scopeable|Executable|Closure $task): mixed
     {
         $this->throwIfCancelled();
+        $seconds = $duration->toSeconds();
         $timeoutToken = CancellationToken::timeout($seconds);
         $composite = CancellationToken::composite($this->cancellation, $timeoutToken);
 
@@ -829,9 +832,10 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             return $child->execute($task);
         } catch (Cancelled $e) {
             if ($timeoutToken->isCancelled && !$this->cancellation->isCancelled) {
-                $this->traceLog->log(TraceType::Timeout, 'timeout', ['seconds' => $seconds]);
+                $ms = $duration->toMilliseconds();
+                $this->traceLog->log(TraceType::Timeout, 'timeout', ['ms' => $ms]);
 
-                throw new Cancelled("timeout after {$seconds}s");
+                throw new Cancelled("timeout after {$ms}ms");
             }
 
             throw $e;
@@ -841,27 +845,34 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         }
     }
 
-    public function retry(Scopeable|Executable|Closure $task, RetryPolicy $policy): mixed
+    public function retry(Scopeable|Executable|Closure $task, RecoveryPlan $plan): mixed
     {
+        $attempts = $plan->attempts ?? 1;
+        $backoff = $plan->effectiveBackoff();
         $lastError = null;
-        for ($attempt = 0; $attempt < $policy->attempts; $attempt++) {
+
+        for ($attempt = 0; $attempt < $attempts; $attempt++) {
             $this->throwIfCancelled();
+
             try {
                 return $this->dispatchSupervised($task, DispatchMode::Inline);
             } catch (Cancelled $e) {
                 throw $e;
             } catch (Throwable $e) {
                 $lastError = $e;
-                if (!$policy->shouldRetry($e)) {
+
+                if (!$plan->shouldRetry($e)) {
                     throw $e;
                 }
-                if ($attempt < $policy->attempts - 1) {
+
+                if ($attempt < $attempts - 1 && $backoff !== null) {
+                    $delay = $backoff->delayFor($attempt);
                     $this->traceLog->log(
                         TraceType::Retry,
                         'retry',
                         ['attempt' => $attempt + 1, 'error' => $e->getMessage()],
                     );
-                    $this->delay($policy->calculateDelay($attempt) / 1000);
+                    $this->delay($delay);
                 }
             }
         }
@@ -869,9 +880,10 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         throw $lastError ?? new RuntimeException('retry: no attempts executed');
     }
 
-    public function delay(float $seconds): void
+    public function delay(Mark $duration): void
     {
         $this->throwIfCancelled();
+        $seconds = $duration->toSeconds();
         $cid = Coroutine::getCid();
         $cancelKey = $this->cancellation->onCancel(static function () use ($cid): void {
             if ($cid > 0 && Coroutine::exists($cid)) {
@@ -881,30 +893,34 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         $clearWait = ($this->currentRun !== null)
             ? $this->supervisor->beginWait($this->currentRun, WaitReason::delay($seconds))
             : null;
+
         try {
             Co::sleep($seconds);
         } finally {
             $this->cancellation->offCancel($cancelKey);
+
             if ($clearWait !== null) {
                 $clearWait();
             }
         }
     }
 
-    public function periodic(float $interval, Closure $tick): Subscription
+    public function periodic(Mark $interval, Closure $tick): Subscription
     {
         if ($this->isDisposed()) {
             throw new RuntimeException('periodic(): cannot schedule on a disposed scope');
         }
 
-        $ms = max(1, (int) round($interval * 1000));
+        $ms = $interval->toSwooleMs();
         $self = $this;
 
         $timerId = Timer::tick($ms, static function () use ($self, $tick): void {
             if ($self->isDisposed()) {
                 return;
             }
+
             CoroutineScopeRegistry::install($self);
+
             try {
                 $tick();
             } catch (Throwable $e) {
@@ -924,6 +940,11 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         });
 
         return $subscription;
+    }
+
+    public function schedule(): ScheduleBuilder
+    {
+        return new ScheduleBuilder($this);
     }
 
     public function defer(Scopeable|Executable|Closure $task): void

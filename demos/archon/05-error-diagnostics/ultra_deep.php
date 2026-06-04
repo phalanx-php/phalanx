@@ -8,6 +8,7 @@ use Phalanx\Archon\Application\Archon;
 use Phalanx\Archon\Command\CommandContext;
 use Phalanx\Boot\AppContext;
 use Phalanx\Demos\Kit\DemoReport;
+use Phalanx\Mark\Mark;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Task;
 
@@ -33,8 +34,8 @@ return DemoReport::demo(
 
                     // Sibling demonstration at level 3
                     if ($depth === 3) {
-                        $scope->go(static fn(ExecutionScope $s) => $s->delay(10.0), 'background.worker_a');
-                        $scope->go(static fn(ExecutionScope $s) => $s->delay(10.0), 'background.worker_b');
+                        $scope->go(static fn(ExecutionScope $s) => $s->delay(Mark::s(10)), 'background.worker_a');
+                        $scope->go(static fn(ExecutionScope $s) => $s->delay(Mark::s(10)), 'background.worker_b');
                     }
 
                     // Use execute for strict vertical nesting

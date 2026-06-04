@@ -11,7 +11,7 @@ use Phalanx\Archon\Console\Style\Theme;
  *
  * Caller pattern (scope-owned periodic):
  *   $tick = 0;
- *   $sub = $scope->periodic(0.08, static function () use ($spinner, $output, &$tick): void {
+ *   $sub = $scope->periodic(Mark::ms(80), static function () use ($spinner, $output, &$tick): void {
  *       $output->update($spinner->frame($tick++, 'Working...'));
  *   });
  *   // ... async work ...

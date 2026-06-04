@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Stoa\Tests\Fixtures;
 
+use Phalanx\Mark\Mark;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
 
@@ -14,7 +15,7 @@ final class EventTrackingSlowHandler implements Executable
 
     public function __invoke(ExecutionScope $scope): string
     {
-        $scope->delay(0.3);
+        $scope->delay(Mark::ms(300));
         self::$events[] = 'handler:complete';
 
         return 'done';

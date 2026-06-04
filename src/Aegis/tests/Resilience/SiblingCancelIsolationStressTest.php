@@ -7,6 +7,7 @@ namespace Phalanx\Aegis\Tests\Resilience;
 use Phalanx\Application;
 use Phalanx\Boot\AppContext;
 use Phalanx\Cancellation\Cancelled;
+use Phalanx\Mark\Mark;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
@@ -41,7 +42,7 @@ final class SiblingCancelIsolationStressTest extends PhalanxTestCase
             $siblingCount = 50;
             for ($i = 0; $i < $siblingCount; $i++) {
                 $tasks["sib-{$i}"] = Task::of(static function (ExecutionScope $s): void {
-                    $s->delay(5.0);
+                    $s->delay(Mark::s(5));
                 });
             }
 
@@ -74,15 +75,15 @@ final class SiblingCancelIsolationStressTest extends PhalanxTestCase
             $tasks = [
                 'fast' => Task::of(static fn(ExecutionScope $s): int => 1),
                 'slow-a' => Task::of(static function (ExecutionScope $s): int {
-                    $s->delay(0.05);
+                    $s->delay(Mark::ms(50));
                     return 2;
                 }),
                 'slow-b' => Task::of(static function (ExecutionScope $s): int {
-                    $s->delay(0.05);
+                    $s->delay(Mark::ms(50));
                     return 3;
                 }),
                 'slow-c' => Task::of(static function (ExecutionScope $s): int {
-                    $s->delay(0.05);
+                    $s->delay(Mark::ms(50));
                     return 4;
                 }),
             ];
@@ -107,11 +108,11 @@ final class SiblingCancelIsolationStressTest extends PhalanxTestCase
             $value = $appScope->race(...[
                 Task::of(static fn(ExecutionScope $s): int => 1),  // wins
                 Task::of(static function (ExecutionScope $s): never {
-                    $s->delay(5.0);
+                    $s->delay(Mark::s(5));
                     throw new \RuntimeException('should be cancelled');
                 }),
                 Task::of(static function (ExecutionScope $s): never {
-                    $s->delay(5.0);
+                    $s->delay(Mark::s(5));
                     throw new \RuntimeException('should be cancelled');
                 }),
             ]);

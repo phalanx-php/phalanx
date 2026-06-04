@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Phalanx\Scope;
 
 use Closure;
-use Phalanx\Concurrency\RetryPolicy;
 use Phalanx\Concurrency\SettlementBag;
+use Phalanx\Mark\Mark;
+use Phalanx\Recovery\RecoveryPlan;
+use Phalanx\Scheduling\ScheduleBuilder;
 use Phalanx\Supervisor\TaskHandle;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
@@ -47,24 +49,18 @@ interface TaskExecutor
     /** @param Scopeable|Executable|Closure ...$tasks */
     public function settle(Scopeable|Executable|Closure ...$tasks): SettlementBag;
 
-    public function timeout(float $seconds, Scopeable|Executable|Closure $task): mixed;
+    public function timeout(Mark $duration, Scopeable|Executable|Closure $task): mixed;
 
-    public function retry(Scopeable|Executable|Closure $task, RetryPolicy $policy): mixed;
+    public function retry(Scopeable|Executable|Closure $task, RecoveryPlan $plan): mixed;
 
-    public function delay(float $seconds): void;
+    public function delay(Mark $duration): void;
 
     /**
-     * Run $tick every $interval seconds on a supervised coroutine bound
-     * to the current scope. The returned Subscription stops the timer when
-     * cancel() is called; the timer is also cleared automatically when the
-     * scope is disposed.
-     *
-     * The tick closure must be static — non-static closures capture $this
-     * and create reference cycles in long-running processes.
-     *
      * @param Closure(): void $tick
      */
-    public function periodic(float $interval, Closure $tick): Subscription;
+    public function periodic(Mark $interval, Closure $tick): Subscription;
+
+    public function schedule(): ScheduleBuilder;
 
     public function defer(Scopeable|Executable|Closure $task): void;
 
@@ -91,26 +87,7 @@ interface TaskExecutor
     public function mapParallel(iterable $items, Closure $fn, int $limit = 10, ?Closure $onEach = null): array;
 
     /**
-     * Spawn a supervisor-tracked background task and return immediately.
-     * Use for fire-and-forget work whose result the caller does not await.
-     *
-     * Unlike defer(), the spawned task is registered in the supervisor's
-     * ledger as a concurrent child of the current run — visible in the task
-     * tree, cancellable via the returned handle, and bounded by the parent
-     * scope's lifetime.
-     *
-     * Errors raised inside the body are caught and emitted as
-     * DiagnosticCode::SpawnError trace events; they do NOT propagate to the
-     * parent coroutine. This is intentional — go() is an error boundary so
-     * a crashing background task can never tear down the worker process or
-     * surprise unrelated code paths.
-     *
-     * If the parent scope is disposed while a go() task is still running,
-     * DiagnosticCode::SpawnForceCancelled is emitted and the task is force-cancelled.
-     *
-     * Cancel an in-flight spawn via:
-     *   $handle = $scope->go(static fn() => ...);
-     *   $handle->cancel();
+     * @param Closure(): void $fn
      */
     public function go(Closure $fn, ?string $name = null): TaskHandle;
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Demos\Archon\SupervisedConcurrency\Stages;
 
+use Phalanx\Mark\Mark;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
 
@@ -15,7 +16,7 @@ final class BuildStage implements Executable
 {
     public function __invoke(ExecutionScope $scope): string
     {
-        $scope->delay(1.20);
+        $scope->delay(Mark::ms(1200));
 
         return 'build: artifact-1.0.tar.gz';
     }

@@ -12,6 +12,7 @@ use Phalanx\Enigma\SshCredential;
 use Phalanx\Enigma\Support\ProcessAwaiter;
 use Phalanx\Enigma\TunnelDirection;
 use Phalanx\Enigma\TunnelHandle;
+use Phalanx\Mark\Mark;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\TaskExecutor;
 use Phalanx\Scope\TaskScope;
@@ -128,7 +129,7 @@ final class OpenTunnel implements Executable
                 );
             }
 
-            $scope->delay(0.01);
+            $scope->delay(Mark::ms(10));
         }
     }
 

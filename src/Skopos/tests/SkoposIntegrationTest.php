@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Skopos\Tests;
 
+use Phalanx\Mark\Mark;
 use Phalanx\Runtime\Identity\AegisResourceSid;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Skopos\FileWatcher;
@@ -69,7 +70,7 @@ final class SkoposIntegrationTest extends PhalanxTestCase
             $output = self::nullMultiplexer();
             $mp = new ManagedProcess($config);
             $mp->start($scope, $output);
-            $scope->delay(0.05);
+            $scope->delay(Mark::ms(50));
             $observed = $mp->state;
             $mp->stop(0.5, 1.0);
             $mp->waitUntilStopped($scope);
@@ -121,10 +122,10 @@ final class SkoposIntegrationTest extends PhalanxTestCase
                 interval: 0.1,
             );
             $watcher->start($scope);
-            $scope->delay(0.2);
+            $scope->delay(Mark::ms(200));
 
             touch($file, time() + 5);
-            $scope->delay(0.3);
+            $scope->delay(Mark::ms(300));
             $watcher->stop();
 
             return $captured;
@@ -272,7 +273,7 @@ final class SkoposIntegrationTest extends PhalanxTestCase
             $watcher->stop();
 
             touch($file, time() + 5);
-            $scope->delay(0.15);
+            $scope->delay(Mark::ms(150));
 
             return $captured;
         });

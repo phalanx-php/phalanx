@@ -12,6 +12,7 @@ use Phalanx\Demos\Kit\DemoApp;
 use Phalanx\Demos\Kit\DemoReport;
 use Phalanx\Hydra\Hydra;
 use Phalanx\Hydra\ParallelConfig;
+use Phalanx\Mark\Mark;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Task;
 
@@ -29,7 +30,7 @@ return DemoApp::boot(
                 $started = microtime(true);
                 try {
                     $scope->timeout(
-                        0.05,
+                        Mark::ms(50),
                         Task::of(static fn(ExecutionScope $child): mixed => $child->inWorker(
                             new SlowWorkerTask(500_000),
                         )),

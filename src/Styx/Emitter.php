@@ -7,6 +7,7 @@ namespace Phalanx\Styx;
 use Closure;
 use Generator;
 use Phalanx\Cancellation\Cancelled;
+use Phalanx\Mark\Mark;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\Stream\Streamable;
 use Phalanx\Scope\Stream\StreamSource;
@@ -61,7 +62,7 @@ final class Emitter implements StreamSource
     {
         return new self(static function (Channel $ch, ExecutionScope $scope) use ($seconds): Closure {
             $tick = 0;
-            $subscription = $scope->periodic($seconds, static function () use ($ch, &$tick): void {
+            $subscription = $scope->periodic(Mark::s($seconds), static function () use ($ch, &$tick): void {
                 $ch->emit(++$tick);
             });
 
@@ -254,7 +255,7 @@ final class Emitter implements StreamSource
                             &$hasLatest,
                             &$version,
                         ): void {
-                            $timerScope->delay($delaySeconds);
+                            $timerScope->delay(Mark::s($delaySeconds));
                             if ($hasLatest && $version === $currentVersion) {
                                 $ch->emit($latest);
                                 $hasLatest = false;
@@ -327,7 +328,7 @@ final class Emitter implements StreamSource
                                 $currentVersion,
                                 &$version,
                             ): void {
-                                $timerScope->delay($delaySeconds);
+                                $timerScope->delay(Mark::s($delaySeconds));
                                 if ($version === $currentVersion) {
                                     $flush();
                                 }
@@ -488,7 +489,7 @@ final class Emitter implements StreamSource
                 public bool $hasLatest = false;
             };
 
-            $subscription = $scope->periodic($seconds, static function () use ($ch, $state): void {
+            $subscription = $scope->periodic(Mark::s($seconds), static function () use ($ch, $state): void {
                 if ($state->hasLatest) {
                     $ch->emit($state->latest);
                     $state->hasLatest = false;

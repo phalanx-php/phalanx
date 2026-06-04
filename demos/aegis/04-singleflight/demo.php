@@ -6,6 +6,7 @@ require __DIR__ . '/../../../vendor/autoload_runtime.php';
 
 use Phalanx\Demos\Kit\DemoApp;
 use Phalanx\Demos\Kit\DemoReport;
+use Phalanx\Mark\Mark;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Task;
 
@@ -13,7 +14,7 @@ return DemoApp::boot(
     'Aegis Singleflight',
     static function (DemoApp $app, DemoReport $report): void {
         $owner = Task::named('demo.singleflight.owner', static function (ExecutionScope $owner): object {
-            $owner->delay(0.02);
+            $owner->delay(Mark::ms(20));
 
             return new \stdClass();
         });

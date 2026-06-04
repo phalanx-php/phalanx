@@ -8,6 +8,7 @@ use GuzzleHttp\Psr7\ServerRequest;
 use Phalanx\Application;
 use Phalanx\Boot\AppContext;
 use Phalanx\Cancellation\Cancelled;
+use Phalanx\Mark\Mark;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
@@ -219,7 +220,7 @@ final class DrainCompletingHandler implements Scopeable
     public function __invoke(RequestContext $ctx): string
     {
         self::$entered->emit(true);
-        $ctx->delay(0.3);
+        $ctx->delay(Mark::ms(300));
 
         return 'completed';
     }
@@ -235,7 +236,7 @@ final class DrainEventTrackingHandler implements Scopeable
     public function __invoke(RequestContext $ctx): string
     {
         self::$entered->emit(true);
-        $ctx->delay(0.3);
+        $ctx->delay(Mark::ms(300));
         self::$events[] = 'handler:complete';
 
         return 'done';
@@ -254,7 +255,7 @@ final class DrainStuckHandler implements Scopeable
         self::$entered->emit(true);
 
         try {
-            $ctx->delay(1.5);
+            $ctx->delay(Mark::ms(1500));
         } catch (Cancelled $e) {
             self::$cancelled = true;
             throw $e;

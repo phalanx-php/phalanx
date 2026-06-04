@@ -6,6 +6,7 @@ require __DIR__ . '/../../../vendor/autoload_runtime.php';
 
 use Phalanx\Demos\Kit\DemoApp;
 use Phalanx\Demos\Kit\DemoReport;
+use Phalanx\Mark\Mark;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Task;
 
@@ -19,14 +20,14 @@ return DemoApp::boot(
                     sleeper: Task::named(
                         'demo.supervision.sleeper',
                         static function (ExecutionScope $child): int {
-                            $child->delay(0.02);
+                            $child->delay(Mark::ms(20));
                             return 1;
                         },
                     ),
                     snapshot: Task::named(
                         'demo.supervision.snapshot',
                         static function (ExecutionScope $child) use ($app): array {
-                            $child->delay(0.001);
+                            $child->delay(Mark::ms(1));
                             return [
                                 'value' => 2,
                                 'tree'  => $app->ledger()->tree(),

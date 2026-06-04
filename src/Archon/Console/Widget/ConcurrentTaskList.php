@@ -6,6 +6,7 @@ namespace Phalanx\Archon\Console\Widget;
 
 use InvalidArgumentException;
 use Phalanx\Archon\Console\Output\LiveRegionRenderer;
+use Phalanx\Mark\Mark;
 use Phalanx\Archon\Console\Output\StreamOutput;
 use Phalanx\Archon\Console\Style\Theme;
 use Phalanx\Archon\Console\Widget\TaskList;
@@ -75,7 +76,7 @@ final class ConcurrentTaskList
         $renderer->update($taskList->render(0));
 
         $subscription = $this->scope->periodic(
-            1.0 / $this->spinnerFps,
+            Mark::s(1.0 / $this->spinnerFps),
             static function () use ($taskList, &$spinnerTick, $renderer): void {
                 $spinnerTick++;
                 $renderer->update($taskList->render($spinnerTick));

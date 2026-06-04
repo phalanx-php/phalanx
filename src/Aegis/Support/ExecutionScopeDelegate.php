@@ -6,8 +6,10 @@ namespace Phalanx\Support;
 
 use Closure;
 use Phalanx\Cancellation\CancellationToken;
-use Phalanx\Concurrency\RetryPolicy;
 use Phalanx\Concurrency\SettlementBag;
+use Phalanx\Mark\Mark;
+use Phalanx\Recovery\RecoveryPlan;
+use Phalanx\Scheduling\ScheduleBuilder;
 use Phalanx\Runtime\RuntimeContext;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\Subscription;
@@ -102,24 +104,29 @@ trait ExecutionScopeDelegate
         return $this->innerScope()->settle(...$tasks);
     }
 
-    public function timeout(float $seconds, Scopeable|Executable|Closure $task): mixed
+    public function timeout(Mark $duration, Scopeable|Executable|Closure $task): mixed
     {
-        return $this->innerScope()->timeout($seconds, $task);
+        return $this->innerScope()->timeout($duration, $task);
     }
 
-    public function retry(Scopeable|Executable|Closure $task, RetryPolicy $policy): mixed
+    public function retry(Scopeable|Executable|Closure $task, RecoveryPlan $plan): mixed
     {
-        return $this->innerScope()->retry($task, $policy);
+        return $this->innerScope()->retry($task, $plan);
     }
 
-    public function delay(float $seconds): void
+    public function delay(Mark $duration): void
     {
-        $this->innerScope()->delay($seconds);
+        $this->innerScope()->delay($duration);
     }
 
-    public function periodic(float $interval, Closure $tick): Subscription
+    public function periodic(Mark $interval, Closure $tick): Subscription
     {
         return $this->innerScope()->periodic($interval, $tick);
+    }
+
+    public function schedule(): ScheduleBuilder
+    {
+        return $this->innerScope()->schedule();
     }
 
     public function defer(Scopeable|Executable|Closure $task): void

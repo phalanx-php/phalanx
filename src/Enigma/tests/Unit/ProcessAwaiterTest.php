@@ -7,6 +7,7 @@ namespace Phalanx\Enigma\Tests\Unit;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Enigma\Exception\SshTimeoutException;
 use Phalanx\Enigma\Support\ProcessAwaiter;
+use Phalanx\Mark\Mark;
 use Phalanx\Runtime\Identity\AegisResourceSid;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Testing\PhalanxTestCase;
@@ -65,7 +66,7 @@ final class ProcessAwaiterTest extends PhalanxTestCase
             $this->scope->run(static function (ExecutionScope $scope) use ($marker): void {
                 $token = $scope->cancellation();
                 $scope->go(static function (ExecutionScope $childScope) use ($token): void {
-                    $childScope->delay(0.01);
+                    $childScope->delay(Mark::ms(10));
                     $token->cancel();
                 }, 'enigma-process-cancellation-probe');
 

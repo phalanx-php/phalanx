@@ -9,6 +9,7 @@ require __DIR__ . '/../../../vendor/autoload_runtime.php';
 use GuzzleHttp\Psr7\ServerRequest;
 use Phalanx\Boot\AppContext;
 use Phalanx\Demos\Kit\DemoReport;
+use Phalanx\Mark\Mark;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Stoa\RequestContext;
 use Phalanx\Stoa\RouteGroup;
@@ -22,9 +23,9 @@ final class FailingDemoHandler implements Scopeable
     {
         return $ctx->execute(Task::named('business_logic.process', static function (ExecutionScope $scope) {
             return $scope->execute(Task::named('gateway.external_api', static function (ExecutionScope $scope) {
-                $scope->go(static fn(ExecutionScope $s) => $s->delay(10.0), 'stats.collector');
+                $scope->go(static fn(ExecutionScope $s) => $s->delay(Mark::s(10)), 'stats.collector');
 
-                $scope->delay(0.1);
+                $scope->delay(Mark::ms(100));
                 throw new \RuntimeException("External API Timeout: Service 'auth-provider' unavailable.");
             }));
         }));

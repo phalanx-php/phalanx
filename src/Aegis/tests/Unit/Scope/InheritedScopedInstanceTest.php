@@ -6,6 +6,7 @@ namespace Phalanx\Aegis\Tests\Unit\Scope;
 
 use Swoole\Coroutine\Channel;
 use Phalanx\Exception\ServiceNotFoundException;
+use Phalanx\Mark\Mark;
 use Phalanx\Scope\ExecutionLifecycleScope;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\TransactionScope;
@@ -64,7 +65,7 @@ final class InheritedScopedInstanceTest extends PhalanxTestCase
             $observed = $scope->transaction(
                 TransactionLease::open('postgres/main', 'tx#ctx'),
                 static function (TransactionScope $tx): string {
-                    $tx->delay(0.001);
+                    $tx->delay(Mark::ms(1));
 
                     return $tx->service(InheritedScopeState::class)->value;
                 },

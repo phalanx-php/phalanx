@@ -7,6 +7,7 @@ namespace Phalanx\Theatron\Tui\Drawing;
 use Closure;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Console\Input\ConsoleInput;
+use Phalanx\Mark\Mark;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\Subscription;
 use Phalanx\Theatron\Tui\Drawing\AnsiWriter;
@@ -153,7 +154,7 @@ final class Stage
 
         try {
             while (!$scope->isCancelled) {
-                $scope->delay(0.1);
+                $scope->delay(Mark::ms(100));
             }
         } catch (Cancelled $e) {
             if (!$scope->isCancelled) {
@@ -257,7 +258,7 @@ final class Stage
         $intervalSec = $this->config->activeIntervalUs / 1_000_000;
 
         $stage = $this;
-        $this->tickSubscription = $scope->periodic($intervalSec, static function () use ($stage): void {
+        $this->tickSubscription = $scope->periodic(Mark::s($intervalSec), static function () use ($stage): void {
             $stage->tick();
         });
     }
