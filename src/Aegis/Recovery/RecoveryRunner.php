@@ -10,6 +10,7 @@ use Phalanx\Mark\Mark;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
+use Phalanx\Trace\TraceType;
 use RuntimeException;
 use Throwable;
 
@@ -52,9 +53,15 @@ final class RecoveryRunner
                     throw $e;
                 }
 
-                $delay = $this->resolveDelay($plan, $scope, $attempt, $elapsed, $e, $taskName, $backoff);
+                $delay = $this->resolveDelay($plan, $attempt, $elapsed, $e, $taskName, $backoff);
 
                 if ($delay !== null && $delay->isPositive() && $attempt < $attempts - 1) {
+                    $scope->trace()->log(
+                        TraceType::Retry,
+                        $taskName,
+                        ['attempt' => $attempt + 1, 'delay_ms' => $delay->toMilliseconds(), 'error' => $e->getMessage()],
+                    );
+
                     $scope->delay($delay);
                 }
             }
@@ -65,7 +72,6 @@ final class RecoveryRunner
 
     private function resolveDelay(
         RecoveryPlan $plan,
-        ExecutionScope $scope,
         int $attempt,
         Mark $elapsed,
         Throwable $error,

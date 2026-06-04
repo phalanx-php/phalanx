@@ -41,21 +41,36 @@ final class Backoff
 
     public function delayFor(int $attempt): Mark
     {
+        $maxNs = $this->max?->nanoseconds;
+
         $baseNs = match ($this->strategy) {
-            BackoffStrategy::Exponential => $this->base->nanoseconds * (2 ** $attempt),
+            BackoffStrategy::Exponential => $this->exponentialDelay($attempt, $maxNs),
             BackoffStrategy::Linear => $this->base->nanoseconds * ($attempt + 1),
             BackoffStrategy::Fixed => $this->base->nanoseconds,
         };
 
-        if ($this->max !== null) {
-            $baseNs = min($baseNs, $this->max->nanoseconds);
+        if ($maxNs !== null && $baseNs > $maxNs) {
+            $baseNs = $maxNs;
         }
 
-        // PHP promotes int overflow to float; clamp to max or PHP_INT_MAX
-        if (is_float($baseNs) || $baseNs < 0) {
-            $baseNs = $this->max !== null ? $this->max->nanoseconds : PHP_INT_MAX;
+        return $this->jitter->apply(Mark::ns($baseNs));
+    }
+
+    private function exponentialDelay(int $attempt, ?int $maxNs): int
+    {
+        $cap = $maxNs ?? PHP_INT_MAX;
+
+        if ($this->base->nanoseconds === 0) {
+            return 0;
         }
 
-        return $this->jitter->apply(Mark::ns((int) $baseNs));
+        $maxMultiplier = intdiv($cap, $this->base->nanoseconds);
+        $multiplier = 2 ** min($attempt, 62);
+
+        if (is_float($multiplier) || $multiplier > $maxMultiplier) {
+            return $cap;
+        }
+
+        return $this->base->nanoseconds * $multiplier;
     }
 }
