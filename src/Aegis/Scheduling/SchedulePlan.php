@@ -6,7 +6,6 @@ namespace Phalanx\Scheduling;
 
 use Closure;
 use Phalanx\Recovery\RecoveryPlan;
-use Phalanx\Recovery\RecoveryPreset;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 

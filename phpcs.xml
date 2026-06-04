@@ -62,6 +62,7 @@
         <exclude-pattern>*/Component/MountedComponent.php</exclude-pattern>
         <exclude-pattern>*/Focus/FocusManager.php</exclude-pattern>
         <exclude-pattern>*/ScriptContext.php</exclude-pattern>
+        <exclude-pattern>*/SchedulerConfig.php</exclude-pattern>
     </rule>
 
     <!-- Phalanx style: config object constructor parameters are visually grouped by env attribute. -->

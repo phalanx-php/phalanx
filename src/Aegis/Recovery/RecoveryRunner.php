@@ -70,6 +70,15 @@ final class RecoveryRunner
         throw $lastError ?? new RuntimeException('recovery: no attempts executed');
     }
 
+    private static function resolveTaskName(Scopeable|Executable|Closure $task): string
+    {
+        if ($task instanceof Scopeable || $task instanceof Executable) {
+            return $task::class;
+        }
+
+        return 'closure';
+    }
+
     private function resolveDelay(
         RecoveryPlan $plan,
         int $attempt,
@@ -118,14 +127,5 @@ final class RecoveryRunner
             RecoveryAction::Retry => $decision->delay ?? $backoff?->delayFor($attempt),
             RecoveryAction::Continue => null,
         };
-    }
-
-    private static function resolveTaskName(Scopeable|Executable|Closure $task): string
-    {
-        if ($task instanceof Scopeable || $task instanceof Executable) {
-            return $task::class;
-        }
-
-        return 'closure';
     }
 }

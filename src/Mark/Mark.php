@@ -105,6 +105,14 @@ final class Mark
         return new self(0);
     }
 
+    public static function measure(Closure $work): MeasureResult
+    {
+        $start = self::now();
+        $value = $work();
+
+        return new MeasureResult($value, $start->elapsed());
+    }
+
     public function plus(self $other): self
     {
         if ($other->nanoseconds > PHP_INT_MAX - $this->nanoseconds) {
@@ -142,14 +150,6 @@ final class Mark
     public function until(self $later): self
     {
         return $later->minus($this);
-    }
-
-    public static function measure(Closure $work): MeasureResult
-    {
-        $start = self::now();
-        $value = $work();
-
-        return new MeasureResult($value, $start->elapsed());
     }
 
     public function toSeconds(): float

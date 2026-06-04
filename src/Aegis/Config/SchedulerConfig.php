@@ -16,6 +16,18 @@ final class SchedulerConfig implements Config
         get => true;
     }
 
+    public TaskPriority $defaultPriority {
+        get => TaskPriority::tryFrom($this->defaultPriorityValue) ?? TaskPriority::Normal;
+    }
+
+    public BackoffStrategy $backoffStrategy {
+        get => match ($this->defaultRetryBackoff) {
+            'fixed' => BackoffStrategy::Fixed,
+            'linear' => BackoffStrategy::Linear,
+            default => BackoffStrategy::Exponential,
+        };
+    }
+
     public function __construct(
         private(set) int $maxConcurrency = 64,
         private(set) int $defaultPriorityValue = 0,
@@ -30,18 +42,6 @@ final class SchedulerConfig implements Config
         private(set) ?int $pollingDeadlineMs = null,
         private(set) string $circuitStore = 'in-process',
     ) {
-    }
-
-    public TaskPriority $defaultPriority {
-        get => TaskPriority::tryFrom($this->defaultPriorityValue) ?? TaskPriority::Normal;
-    }
-
-    public BackoffStrategy $backoffStrategy {
-        get => match ($this->defaultRetryBackoff) {
-            'fixed' => BackoffStrategy::Fixed,
-            'linear' => BackoffStrategy::Linear,
-            default => BackoffStrategy::Exponential,
-        };
     }
 
     public function validate(ValidationContext $context): array

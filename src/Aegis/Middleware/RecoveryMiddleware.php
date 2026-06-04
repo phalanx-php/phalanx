@@ -6,7 +6,6 @@ namespace Phalanx\Middleware;
 
 use Closure;
 use Phalanx\Recovery\Recoverable;
-use Phalanx\Recovery\RecoveryPlan;
 use Phalanx\Recovery\RecoveryRunner;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
