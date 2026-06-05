@@ -147,7 +147,7 @@ final class Css
 
     private function buildTailwindCommand(): string
     {
-        $bin = BinaryResolver::tailwindcss();
+        $bin = BinaryResolver::resolve(Binary::Tailwindcss, $this->env);
         $parts = [
             $bin,
             '-i',
@@ -172,7 +172,7 @@ final class Css
         $input = $this->input ?? throw new \RuntimeException('Sass requires an input file');
         $output = $this->output ?? throw new \RuntimeException('Sass requires an output file');
 
-        $bin = BinaryResolver::sass();
+        $bin = BinaryResolver::resolve(Binary::Sass, $this->env);
         $parts = [$bin];
 
         if ($this->watch) {
@@ -190,7 +190,7 @@ final class Css
 
     private function buildUnocssCommand(): string
     {
-        $bin = BinaryResolver::bun($this->env);
+        $bin = BinaryResolver::resolve(Binary::Bun, $this->env);
         $parts = [$bin, 'x', 'unocss'];
 
         if ($this->watch) {
@@ -207,7 +207,7 @@ final class Css
 
     private function buildPostcssCommand(): string
     {
-        $bin = BinaryResolver::bun($this->env);
+        $bin = BinaryResolver::resolve(Binary::Bun, $this->env);
         $parts = [
             $bin,
             'x',

@@ -15,6 +15,6 @@ final class DevServer
     /** @param array<string,mixed> $context */
     public static function starting(array $context = []): DevServerApplicationBuilder
     {
-        return new DevServerApplicationBuilder(new AppContext($context));
+        return new DevServerApplicationBuilder(AppContext::fromProject($context));
     }
 }

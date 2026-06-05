@@ -9,47 +9,49 @@ use RuntimeException;
 final class BinaryResolver
 {
     /** @param array<string, string> $env */
-    public static function bun(array $env = []): string
+    public static function resolve(Binary $binary, array $env = []): string
     {
-        $home = $env['HOME'] ?? $env['USERPROFILE'] ?? '';
-        $fallbacks = $home !== '' ? [$home . '/.bun/bin/bun'] : [];
+        $path = self::find($binary->value, $binary->fallbacks($env), $env);
 
-        return self::resolve('bun', $fallbacks, 'Install bun: curl -fsSL https://bun.sh/install | bash');
+        if ($path !== null) {
+            return $path;
+        }
+
+        throw new RuntimeException(
+            sprintf("Binary '%s' not found. %s", $binary->value, $binary->installHint()),
+        );
     }
 
-    public static function tailwindcss(): string
+    /**
+     * @param list<string> $fallbackPaths
+     * @param array<string, string> $env
+     */
+    private static function find(string $name, array $fallbackPaths, array $env): ?string
     {
-        return self::resolve('tailwindcss', [
-            './node_modules/.bin/tailwindcss',
-        ], 'Install Tailwind CSS standalone: https://tailwindcss.com/blog/standalone-cli');
-    }
+        $pathStr = $env['PATH'] ?? $env['Path'] ?? '';
+        $dirs = $pathStr !== '' ? explode(\PATH_SEPARATOR, $pathStr) : [];
 
-    public static function sass(): string
-    {
-        return self::resolve('sass', [
-            './node_modules/.bin/sass',
-        ], 'Install Dart Sass: https://sass-lang.com/install/');
-    }
+        $suffixes = [];
+        if (\DIRECTORY_SEPARATOR === '\\') {
+            $pathExt = $env['PATHEXT'] ?? '';
+            $suffixes = $pathExt !== '' ? explode(\PATH_SEPARATOR, $pathExt) : ['.exe', '.bat', '.cmd', '.com'];
+        }
 
-    public static function node(): string
-    {
-        return self::resolve('node', [], 'Install Node.js: https://nodejs.org/');
-    }
+        $suffixes = pathinfo($name, \PATHINFO_EXTENSION) !== ''
+            ? ['', ...$suffixes]
+            : [...$suffixes, ''];
 
-    public static function php(): string
-    {
-        return self::resolve('php', [
-            PHP_BINARY,
-        ], 'PHP binary not found in PATH');
-    }
+        foreach ($suffixes as $suffix) {
+            foreach ($dirs as $dir) {
+                if ($dir === '') {
+                    $dir = '.';
+                }
 
-    /** @param list<string> $fallbackPaths */
-    private static function resolve(string $binary, array $fallbackPaths, string $installHint): string
-    {
-        $which = self::which($binary);
-
-        if ($which !== null) {
-            return $which;
+                $file = $dir . \DIRECTORY_SEPARATOR . $name . $suffix;
+                if (@is_file($file) && (\DIRECTORY_SEPARATOR === '\\' || @is_executable($file))) {
+                    return $file;
+                }
+            }
         }
 
         foreach ($fallbackPaths as $path) {
@@ -58,22 +60,6 @@ final class BinaryResolver
             }
         }
 
-        throw new RuntimeException(
-            "Binary '{$binary}' not found. {$installHint}"
-        );
-    }
-
-    private static function which(string $binary): ?string
-    {
-        // @dev-cleanup-ignore — escapeshellarg guards against future call sites passing user-derived input
-        $result = shell_exec('command -v ' . escapeshellarg($binary) . ' 2>/dev/null');
-
-        if ($result === null || $result === '' || $result === false) {
-            return null;
-        }
-
-        $path = trim($result);
-
-        return $path !== '' ? $path : null;
+        return null;
     }
 }
