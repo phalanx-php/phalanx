@@ -12,9 +12,6 @@ use Phalanx\AiProviders\Hazard;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\TaskScope;
 use Phalanx\Stream\Channel;
-use Phalanx\SurrealDb\SurrealDbLiveAction;
-use Phalanx\SurrealDb\SurrealDbLiveConnection;
-use Phalanx\SurrealDb\SurrealDbLiveNotification;
 use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
 
@@ -27,8 +24,8 @@ final class GrantMonitorTest extends PhalanxTestCase
         $result = $this->scope->run(static function (ExecutionScope $scope) use ($grant): Grant {
             $grantStore = new StubGrantStore($grant);
             $connection = new PreloadedConnection(static function (Channel $channel): void {
-                $channel->emit(new SurrealDbLiveNotification(
-                    SurrealDbLiveAction::Create,
+                $channel->emit(new \Phalanx\SurrealDb\Live\Notification(
+                    \Phalanx\SurrealDb\Live\Action::Create,
                     'live-q-1',
                     ['id' => 'agent_grant:g1'],
                 ));
@@ -48,8 +45,8 @@ final class GrantMonitorTest extends PhalanxTestCase
         $result = $this->scope->run(static function (ExecutionScope $scope) use ($grant): Grant {
             $grantStore = new StubGrantStore($grant);
             $connection = new PreloadedConnection(static function (Channel $channel): void {
-                $channel->emit(new SurrealDbLiveNotification(
-                    SurrealDbLiveAction::Update,
+                $channel->emit(new \Phalanx\SurrealDb\Live\Notification(
+                    \Phalanx\SurrealDb\Live\Action::Update,
                     'live-q-1',
                     ['id' => 'agent_grant:g1'],
                 ));
@@ -69,13 +66,13 @@ final class GrantMonitorTest extends PhalanxTestCase
         $result = $this->scope->run(static function (ExecutionScope $scope) use ($grant): Grant {
             $grantStore = new CountingGrantStore($grant);
             $connection = new PreloadedConnection(static function (Channel $channel): void {
-                $channel->emit(new SurrealDbLiveNotification(
-                    SurrealDbLiveAction::Delete,
+                $channel->emit(new \Phalanx\SurrealDb\Live\Notification(
+                    \Phalanx\SurrealDb\Live\Action::Delete,
                     'live-q-1',
                     null,
                 ));
-                $channel->emit(new SurrealDbLiveNotification(
-                    SurrealDbLiveAction::Create,
+                $channel->emit(new \Phalanx\SurrealDb\Live\Notification(
+                    \Phalanx\SurrealDb\Live\Action::Create,
                     'live-q-1',
                     ['id' => 'agent_grant:g1'],
                 ));
@@ -97,8 +94,8 @@ final class GrantMonitorTest extends PhalanxTestCase
         $this->scope->run(static function (ExecutionScope $scope): Grant {
             $grantStore = new StubGrantStore(null);
             $connection = new PreloadedConnection(static function (Channel $channel): void {
-                $channel->emit(new SurrealDbLiveNotification(
-                    SurrealDbLiveAction::Close,
+                $channel->emit(new \Phalanx\SurrealDb\Live\Notification(
+                    \Phalanx\SurrealDb\Live\Action::Close,
                     'live-q-1',
                     null,
                 ));
@@ -115,8 +112,8 @@ final class GrantMonitorTest extends PhalanxTestCase
     {
         $grant = self::grant(Kind::FileWrite);
         $connection = new PreloadedConnection(static function (Channel $channel): void {
-            $channel->emit(new SurrealDbLiveNotification(
-                SurrealDbLiveAction::Create,
+            $channel->emit(new \Phalanx\SurrealDb\Live\Notification(
+                \Phalanx\SurrealDb\Live\Action::Create,
                 'live-q-1',
                 ['id' => 'agent_grant:g1'],
             ));
@@ -143,7 +140,7 @@ final class GrantMonitorTest extends PhalanxTestCase
     }
 }
 
-final class PreloadedConnection implements SurrealDbLiveConnection
+final class PreloadedConnection implements \Phalanx\SurrealDb\Live\Connection
 {
     public bool $isOpen { get => true; }
     public bool $killed = false;

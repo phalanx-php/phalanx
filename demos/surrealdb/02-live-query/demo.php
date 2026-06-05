@@ -7,23 +7,12 @@ require __DIR__ . '/../../../vendor/autoload_runtime.php';
 use Phalanx\Boot\AppContext;
 use Phalanx\Demos\Kit\DemoApp;
 use Phalanx\Demos\Kit\DemoReport;
-use Phalanx\Demos\SurrealDb\Support\SurrealDbBinaryLocator;
-use Phalanx\Demos\SurrealDb\Support\SurrealDbFreePort;
-use Phalanx\Demos\SurrealDb\Support\SurrealDbLiveNotificationChecker;
-use Phalanx\Demos\SurrealDb\Support\SurrealDbNamespaceInitializer;
-use Phalanx\Demos\SurrealDb\Support\SurrealDbServerErrorPrinter;
-use Phalanx\Demos\SurrealDb\Support\SurrealDbServerReadiness;
-use Phalanx\Demos\SurrealDb\Support\SurrealDbValueChecker;
 use Phalanx\Scope\ExecutionScope;
-use Phalanx\SurrealDb\SurrealDb;
-use Phalanx\SurrealDb\SurrealDbBundle;
-use Phalanx\SurrealDb\SurrealDbLiveAction;
-use Phalanx\SurrealDb\SurrealDbLiveNotification;
 use Phalanx\System\StreamingProcess;
 use Phalanx\Task\Task;
 
 return static function (array $context): \Closure {
-    $binary = (new SurrealDbBinaryLocator())(new AppContext($context));
+    $binary = (new \Phalanx\Demos\SurrealDb\Support\BinaryLocator())(new AppContext($context));
     if ($binary === null) {
         $report = new DemoReport('SurrealDb In-Memory Live Query');
 
@@ -33,7 +22,7 @@ return static function (array $context): \Closure {
         );
     }
 
-    $port = (new SurrealDbFreePort())();
+    $port = (new \Phalanx\Demos\SurrealDb\Support\FreePort())();
     $endpoint = "http://127.0.0.1:{$port}";
     $context['surrealdb_namespace'] = 'olympus';
     $context['surrealdb_database']  = 'pantheon';
@@ -61,15 +50,15 @@ return static function (array $context): \Closure {
                     ])->start($scope);
 
                     try {
-                        $surrealdb = $scope->service(SurrealDb::class);
+                        $surrealdb = $scope->service(\Phalanx\SurrealDb\Client::class);
 
-                        if (!(new SurrealDbServerReadiness())($scope, $surrealdb, $server)) {
+                        if (!(new \Phalanx\Demos\SurrealDb\Support\ServerReadiness())($scope, $surrealdb, $server)) {
                             $report->record('server became ready', false);
-                            (new SurrealDbServerErrorPrinter())($server);
+                            (new \Phalanx\Demos\SurrealDb\Support\ServerErrorPrinter())($server);
 
                             return;
                         }
-                        if (!(new SurrealDbNamespaceInitializer())($scope, "http://127.0.0.1:{$port}")) {
+                        if (!(new \Phalanx\Demos\SurrealDb\Support\NamespaceInitializer())($scope, "http://127.0.0.1:{$port}")) {
                             $report->record('namespace initialized', false);
 
                             return;
@@ -94,20 +83,20 @@ return static function (array $context): \Closure {
                         $events->kill();
                         $surrealdb->close();
 
-                        $checkNotification = new SurrealDbLiveNotificationChecker(new SurrealDbValueChecker());
+                        $checkNotification = new \Phalanx\Demos\SurrealDb\Support\LiveNotificationChecker(new \Phalanx\Demos\SurrealDb\Support\ValueChecker());
 
                         $report->record('opened Zeus live query', $events->id() !== '');
                         $report->record(
                             'observed Zeus CREATE',
-                            $checkNotification($created, SurrealDbLiveAction::Create, 'storm-rising'),
+                            $checkNotification($created, \Phalanx\SurrealDb\Live\Action::Create, 'storm-rising'),
                         );
                         $report->record(
                             'observed Zeus UPDATE',
-                            $checkNotification($updated, SurrealDbLiveAction::Update, 'sky-cleared'),
+                            $checkNotification($updated, \Phalanx\SurrealDb\Live\Action::Update, 'sky-cleared'),
                         );
                         $report->record(
                             'observed Zeus DELETE',
-                            $deleted instanceof SurrealDbLiveNotification && $deleted->action === SurrealDbLiveAction::Delete,
+                            $deleted instanceof \Phalanx\SurrealDb\Live\Notification && $deleted->action === \Phalanx\SurrealDb\Live\Action::Delete,
                         );
                         $report->record('killed live query cleanly', !$events->isOpen);
                     } finally {
@@ -116,6 +105,6 @@ return static function (array $context): \Closure {
                 },
             ));
         },
-        [new SurrealDbBundle()],
+        [new \Phalanx\SurrealDb\Bundle()],
     ))($context);
 };

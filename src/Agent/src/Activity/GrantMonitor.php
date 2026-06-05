@@ -10,14 +10,11 @@ use Phalanx\AiProviders\Grant;
 use Phalanx\Scope\TaskScope;
 use Phalanx\Stream\Channel;
 use Phalanx\Supervisor\WaitReason;
-use Phalanx\SurrealDb\SurrealDbLiveAction;
-use Phalanx\SurrealDb\SurrealDbLiveConnection;
-use Phalanx\SurrealDb\SurrealDbLiveSubscription;
 
 class GrantMonitor
 {
     public function __construct(
-        private SurrealDbLiveConnection $connection,
+        private \Phalanx\SurrealDb\Live\Connection $connection,
         private GrantStore $grantStore,
     ) {
     }
@@ -38,7 +35,7 @@ class GrantMonitor
 
         $channel = new Channel(bufferSize: 8);
         $queryId = (string) $this->connection->request('live', ['agent_grant']);
-        $subscription = new SurrealDbLiveSubscription($queryId, $this->connection, $channel);
+        $subscription = new \Phalanx\SurrealDb\Live\Subscription($queryId, $this->connection, $channel);
 
         $this->connection->subscribe($queryId, $channel);
 
@@ -57,13 +54,13 @@ class GrantMonitor
                     throw new \RuntimeException('Live grant subscription closed unexpectedly.');
                 }
 
-                if ($notification->action === SurrealDbLiveAction::Close) {
+                if ($notification->action === \Phalanx\SurrealDb\Live\Action::Close) {
                     throw new \RuntimeException('Live grant subscription received CLOSE notification.');
                 }
 
                 if (
-                    $notification->action === SurrealDbLiveAction::Create
-                    || $notification->action === SurrealDbLiveAction::Update
+                    $notification->action === \Phalanx\SurrealDb\Live\Action::Create
+                    || $notification->action === \Phalanx\SurrealDb\Live\Action::Update
                 ) {
                     $grant = $this->grantStore->find($scope, $subject, $kind, $arguments);
 

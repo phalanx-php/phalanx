@@ -9,7 +9,6 @@ use Phalanx\AiProviders\Effect\Kind;
 use Phalanx\AiProviders\Grant;
 use Phalanx\AiProviders\Hazard;
 use Phalanx\Scope\TaskScope;
-use Phalanx\SurrealDb\SurrealDb;
 
 final class SurrealDbGrantStore implements Store
 {
@@ -17,7 +16,7 @@ final class SurrealDbGrantStore implements Store
     private array $sessionGrants = [];
 
     public function __construct(
-        private SurrealDb $surrealdb,
+        private \Phalanx\SurrealDb\Client $surrealdb,
     ) {
     }
 

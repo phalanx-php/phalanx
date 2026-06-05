@@ -1,0 +1,193 @@
+{
+  "work": "OSR-176",
+  "policy": {
+    "break_cleanly": true,
+    "namespace_carries_context": true,
+    "preserve_protocol_wire_values": true,
+    "preserve_sid_enum_values": true
+  },
+  "entries": [
+    {
+      "slice": "surrealdb",
+      "action": "rename",
+      "risk": "public-api",
+      "guarded_zone": false,
+      "old_fqcn": "Phalanx\\SurrealDb\\SurrealDb",
+      "new_fqcn": "Phalanx\\SurrealDb\\Client",
+      "old_file": "src/SurrealDb/src/SurrealDb.php",
+      "new_file": "src/SurrealDb/src/Client.php",
+      "verification": ["composer test:surrealdb"]
+    },
+    {
+      "slice": "surrealdb",
+      "action": "rename",
+      "risk": "public-api",
+      "guarded_zone": false,
+      "old_fqcn": "Phalanx\\SurrealDb\\SurrealDbBundle",
+      "new_fqcn": "Phalanx\\SurrealDb\\Bundle",
+      "old_file": "src/SurrealDb/src/SurrealDbBundle.php",
+      "new_file": "src/SurrealDb/src/Bundle.php",
+      "verification": ["composer dump-autoload", "composer gen:test-accessors:check"]
+    },
+    {
+      "slice": "surrealdb",
+      "action": "rename",
+      "risk": "public-api",
+      "guarded_zone": false,
+      "old_fqcn": "Phalanx\\SurrealDb\\SurrealDbConfig",
+      "new_fqcn": "Phalanx\\SurrealDb\\Config",
+      "old_file": "src/SurrealDb/src/SurrealDbConfig.php",
+      "new_file": "src/SurrealDb/src/Config.php",
+      "verification": ["composer test:surrealdb"]
+    },
+    {
+      "slice": "surrealdb",
+      "action": "rename",
+      "risk": "public-api",
+      "guarded_zone": false,
+      "old_fqcn": "Phalanx\\SurrealDb\\SurrealDbException",
+      "new_fqcn": "Phalanx\\SurrealDb\\Exception",
+      "old_file": "src/SurrealDb/src/SurrealDbException.php",
+      "new_file": "src/SurrealDb/src/Exception.php",
+      "verification": ["composer test:surrealdb"]
+    },
+    {
+      "slice": "surrealdb",
+      "action": "rename",
+      "risk": "internal",
+      "guarded_zone": false,
+      "old_fqcn": "Phalanx\\SurrealDb\\SurrealDbScopeGuard",
+      "new_fqcn": "Phalanx\\SurrealDb\\ScopeGuard",
+      "old_file": "src/SurrealDb/src/SurrealDbScopeGuard.php",
+      "new_file": "src/SurrealDb/src/ScopeGuard.php",
+      "verification": ["composer test:surrealdb"]
+    },
+    {
+      "slice": "surrealdb",
+      "action": "rename",
+      "risk": "public-api",
+      "guarded_zone": false,
+      "old_fqcn": "Phalanx\\SurrealDb\\SurrealDbTransport",
+      "new_fqcn": "Phalanx\\SurrealDb\\Transport",
+      "old_file": "src/SurrealDb/src/SurrealDbTransport.php",
+      "new_file": "src/SurrealDb/src/Transport.php",
+      "verification": ["composer test:surrealdb"]
+    },
+    {
+      "slice": "surrealdb",
+      "action": "rename",
+      "risk": "public-api",
+      "guarded_zone": false,
+      "old_fqcn": "Phalanx\\SurrealDb\\SurrealDbLiveAction",
+      "new_fqcn": "Phalanx\\SurrealDb\\Live\\Action",
+      "old_file": "src/SurrealDb/src/SurrealDbLiveAction.php",
+      "new_file": "src/SurrealDb/src/Live/Action.php",
+      "verification": ["composer test:surrealdb"]
+    },
+    {
+      "slice": "surrealdb",
+      "action": "rename",
+      "risk": "public-api",
+      "guarded_zone": false,
+      "old_fqcn": "Phalanx\\SurrealDb\\SurrealDbLiveConnection",
+      "new_fqcn": "Phalanx\\SurrealDb\\Live\\Connection",
+      "old_file": "src/SurrealDb/src/SurrealDbLiveConnection.php",
+      "new_file": "src/SurrealDb/src/Live/Connection.php",
+      "verification": ["composer test:surrealdb"]
+    },
+    {
+      "slice": "surrealdb",
+      "action": "rename",
+      "risk": "public-api",
+      "guarded_zone": false,
+      "old_fqcn": "Phalanx\\SurrealDb\\SurrealDbLiveNotification",
+      "new_fqcn": "Phalanx\\SurrealDb\\Live\\Notification",
+      "old_file": "src/SurrealDb/src/SurrealDbLiveNotification.php",
+      "new_file": "src/SurrealDb/src/Live/Notification.php",
+      "verification": ["composer test:surrealdb"]
+    },
+    {
+      "slice": "surrealdb",
+      "action": "rename",
+      "risk": "public-api",
+      "guarded_zone": false,
+      "old_fqcn": "Phalanx\\SurrealDb\\SurrealDbLiveSubscription",
+      "new_fqcn": "Phalanx\\SurrealDb\\Live\\Subscription",
+      "old_file": "src/SurrealDb/src/SurrealDbLiveSubscription.php",
+      "new_file": "src/SurrealDb/src/Live/Subscription.php",
+      "verification": ["composer test:surrealdb"]
+    },
+    {
+      "slice": "surrealdb",
+      "action": "rename",
+      "risk": "public-api",
+      "guarded_zone": false,
+      "old_fqcn": "Phalanx\\SurrealDb\\SurrealDbLiveTransport",
+      "new_fqcn": "Phalanx\\SurrealDb\\Live\\Transport",
+      "old_file": "src/SurrealDb/src/SurrealDbLiveTransport.php",
+      "new_file": "src/SurrealDb/src/Live/Transport.php",
+      "verification": ["composer test:surrealdb"]
+    },
+    {
+      "slice": "surrealdb",
+      "action": "rename",
+      "risk": "internal",
+      "guarded_zone": false,
+      "old_fqcn": "Phalanx\\SurrealDb\\SurrealDbLiveSocket",
+      "new_fqcn": "Phalanx\\SurrealDb\\Live\\Socket",
+      "old_file": "src/SurrealDb/src/SurrealDbLiveSocket.php",
+      "new_file": "src/SurrealDb/src/Live/Socket.php",
+      "verification": ["composer test:surrealdb"]
+    },
+    {
+      "slice": "surrealdb",
+      "action": "rename",
+      "risk": "internal",
+      "guarded_zone": false,
+      "old_fqcn": "Phalanx\\SurrealDb\\HttpClientSurrealDbTransport",
+      "new_fqcn": "Phalanx\\SurrealDb\\Transport\\HttpClient\\Transport",
+      "old_file": "src/SurrealDb/src/HttpClientSurrealDbTransport.php",
+      "new_file": "src/SurrealDb/src/Transport/HttpClient/Transport.php",
+      "verification": ["composer test:surrealdb", "composer test:http-client"]
+    },
+    {
+      "slice": "surrealdb",
+      "action": "rename",
+      "risk": "internal",
+      "guarded_zone": false,
+      "old_fqcn": "Phalanx\\SurrealDb\\WebSocketSurrealDbLiveConnection",
+      "new_fqcn": "Phalanx\\SurrealDb\\Live\\WebSocket\\Connection",
+      "old_file": "src/SurrealDb/src/WebSocketSurrealDbLiveConnection.php",
+      "new_file": "src/SurrealDb/src/Live/WebSocket/Connection.php",
+      "verification": ["composer test:surrealdb", "composer test:websocket"]
+    },
+    {
+      "slice": "surrealdb",
+      "action": "rename",
+      "risk": "internal",
+      "guarded_zone": false,
+      "old_fqcn": "Phalanx\\SurrealDb\\WebSocketSurrealDbLiveSocket",
+      "new_fqcn": "Phalanx\\SurrealDb\\Live\\WebSocket\\Socket",
+      "old_file": "src/SurrealDb/src/WebSocketSurrealDbLiveSocket.php",
+      "new_file": "src/SurrealDb/src/Live/WebSocket/Socket.php",
+      "verification": ["composer test:surrealdb", "composer test:websocket"]
+    },
+    {
+      "slice": "surrealdb",
+      "action": "rename",
+      "risk": "internal",
+      "guarded_zone": false,
+      "old_fqcn": "Phalanx\\SurrealDb\\WebSocketSurrealDbLiveTransport",
+      "new_fqcn": "Phalanx\\SurrealDb\\Live\\WebSocket\\Transport",
+      "old_file": "src/SurrealDb/src/WebSocketSurrealDbLiveTransport.php",
+      "new_file": "src/SurrealDb/src/Live/WebSocket/Transport.php",
+      "verification": ["composer test:surrealdb", "composer test:websocket"]
+    }
+  ],
+  "deferred": [
+    {
+      "slice": "guarded",
+      "reason": "Runtime root types, Worker protocol DTOs, Sid enum string values, and diagnostic strings require separate explicit approval before semantic rename work."
+    }
+  ]
+}

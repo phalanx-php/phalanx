@@ -30,8 +30,6 @@ use Phalanx\AiProviders\Hazard\Scorer\Rules\Scorer as RulesScorer;
 use Phalanx\Boot\AppContext;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
-use Phalanx\SurrealDb\SurrealDb;
-use Phalanx\SurrealDb\SurrealDbLiveConnection;
 
 final class AgentBundle extends ServiceBundle
 {
@@ -89,24 +87,24 @@ final class AgentBundle extends ServiceBundle
 
         // --- Scoped (per-activity lifetime) ----------------------------------
 
-        if ($services->has(SurrealDb::class)) {
+        if ($services->has(\Phalanx\SurrealDb\Client::class)) {
             $services->scoped(SurrealDbGrantStore::class)
-                ->needs(SurrealDb::class)
-                ->factory(static fn(SurrealDb $surrealdb): SurrealDbGrantStore => new SurrealDbGrantStore($surrealdb));
+                ->needs(\Phalanx\SurrealDb\Client::class)
+                ->factory(static fn(\Phalanx\SurrealDb\Client $surrealdb): SurrealDbGrantStore => new SurrealDbGrantStore($surrealdb));
             $services->alias(GrantStore::class, SurrealDbGrantStore::class);
 
             $services->scoped(SurrealDbExecutionStore::class)
-                ->needs(SurrealDb::class)
-                ->factory(static fn(SurrealDb $surrealdb): SurrealDbExecutionStore => new SurrealDbExecutionStore($surrealdb));
+                ->needs(\Phalanx\SurrealDb\Client::class)
+                ->factory(static fn(\Phalanx\SurrealDb\Client $surrealdb): SurrealDbExecutionStore => new SurrealDbExecutionStore($surrealdb));
             $services->alias(ExecutionStore::class, SurrealDbExecutionStore::class);
 
-            if ($services->has(SurrealDbLiveConnection::class)) {
+            if ($services->has(\Phalanx\SurrealDb\Live\Connection::class)) {
                 $services->scoped(Suspender::class)
-                    ->needs(SurrealDbExecutionStore::class, SurrealDbGrantStore::class, SurrealDbLiveConnection::class)
+                    ->needs(SurrealDbExecutionStore::class, SurrealDbGrantStore::class, \Phalanx\SurrealDb\Live\Connection::class)
                     ->factory(static fn(
                         SurrealDbExecutionStore $store,
                         SurrealDbGrantStore $grants,
-                        SurrealDbLiveConnection $live,
+                        \Phalanx\SurrealDb\Live\Connection $live,
                     ): Suspender => new Suspender($store, new GrantMonitor($live, $grants)));
             }
         } else {

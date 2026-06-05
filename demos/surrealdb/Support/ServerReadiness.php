@@ -1,0 +1,45 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Phalanx\Demos\SurrealDb\Support;
+
+use Phalanx\Cancellation\Cancelled;
+use Phalanx\Mark\Mark;
+use Phalanx\Scope\ExecutionScope;
+use Phalanx\System\StreamingProcessHandle;
+
+/**
+ * Polls the SurrealDB health endpoint until the server reports ready or
+ * the process handle signals that the server has exited.
+ *
+ * Returns true when the server becomes healthy; false when it exits before
+ * becoming ready. Re-throws Cancelled so callers can propagate cancellation.
+ */
+final class ServerReadiness
+{
+    public function __invoke(
+        ExecutionScope $scope,
+        \Phalanx\SurrealDb\Client $surrealdb,
+        StreamingProcessHandle $server,
+    ): bool {
+        for ($attempt = 0; $attempt < 100; $attempt++) {
+            if (!$server->isRunning()) {
+                return false;
+            }
+
+            try {
+                if (in_array($surrealdb->health(), [200, 204], true)) {
+                    return true;
+                }
+            } catch (Cancelled $e) {
+                throw $e;
+            } catch (\Throwable) {
+            }
+
+            $scope->delay(Mark::ms(50));
+        }
+
+        return false;
+    }
+}

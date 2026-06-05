@@ -42,7 +42,6 @@ use Phalanx\AiProviders\Provider\Fake\Provider;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\TaskScope;
 use Phalanx\Stream\Channel;
-use Phalanx\SurrealDb\SurrealDbLiveConnection;
 use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
 
@@ -279,7 +278,7 @@ final class FlowImmediateMonitor extends GrantMonitor
     }
 }
 
-final class FlowNullConnection implements SurrealDbLiveConnection
+final class FlowNullConnection implements \Phalanx\SurrealDb\Live\Connection
 {
     public bool $isOpen { get => false; }
 

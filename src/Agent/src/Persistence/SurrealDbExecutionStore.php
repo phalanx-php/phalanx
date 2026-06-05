@@ -13,12 +13,11 @@ use Phalanx\AiProviders\Conversation\RecordType;
 use Phalanx\AiProviders\Cue\Effect\Requested;
 use Phalanx\AiProviders\Effect\Kind;
 use Phalanx\Scope\TaskScope;
-use Phalanx\SurrealDb\SurrealDb;
 
 final class SurrealDbExecutionStore implements ExecutionStore
 {
     public function __construct(
-        private SurrealDb $surrealdb,
+        private \Phalanx\SurrealDb\Client $surrealdb,
     ) {
     }
 

@@ -304,7 +304,7 @@ final class SpyGrantMonitor extends GrantMonitor
     }
 }
 
-final class SuspenderNullConnection implements \Phalanx\SurrealDb\SurrealDbLiveConnection
+final class SuspenderNullConnection implements \Phalanx\SurrealDb\Live\Connection
 {
     public bool $isOpen { get => false; }
 
