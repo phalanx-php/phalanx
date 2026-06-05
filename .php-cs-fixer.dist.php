@@ -7,7 +7,7 @@ $finder = PhpCsFixer\Finder::create()
         __DIR__ . '/src/Runtime',
         __DIR__ . '/src/Console',
         __DIR__ . '/src/Network',
-        __DIR__ . '/src/Agent',
+        __DIR__ . '/src/Agents',
         __DIR__ . '/src/Cli',
         __DIR__ . '/src/Ssh',
         __DIR__ . '/src/Filesystem',

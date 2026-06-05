@@ -282,7 +282,7 @@
       "new_fqcn": "Phalanx\\Stream\\Facade",
       "old_file": "src/Stream/src/Stream.php",
       "new_file": "src/Stream/src/Facade.php",
-      "verification": ["composer test:stream", "composer test:agent", "composer test:websocket"]
+      "verification": ["composer test:stream", "composer test:agents", "composer test:websocket"]
     },
     {
       "slice": "stream",

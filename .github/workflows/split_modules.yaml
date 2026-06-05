@@ -16,7 +16,7 @@ jobs:
           - { local_path: 'src/Runtime', split_repository: 'phalanx-runtime' }
           - { local_path: 'src/Console', split_repository: 'phalanx-console' }
           - { local_path: 'src/Network', split_repository: 'phalanx-network' }
-          - { local_path: 'src/Agent', split_repository: 'phalanx-agent' }
+          - { local_path: 'src/Agents', split_repository: 'phalanx-agents' }
           - { local_path: 'src/Cli', split_repository: 'phalanx-cli' }
           - { local_path: 'src/Ssh', split_repository: 'phalanx-ssh' }
           - { local_path: 'src/Filesystem', split_repository: 'phalanx-filesystem' }

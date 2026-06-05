@@ -10,7 +10,7 @@ parameters:
         - src/Runtime
         - src/Console
         - src/Network
-        - src/Agent
+        - src/Agents
         - src/Cli
         - src/Ssh
         - src/Filesystem
@@ -58,7 +58,7 @@ parameters:
         - src/Runtime
         - src/Console
         - src/Network
-        - src/Agent
+        - src/Agents
         - src/Cli
         - src/Ssh
         - src/Filesystem
@@ -136,7 +136,7 @@ parameters:
         # Test harnesses use Coroutine::sleep() for timing isolation
         -
             identifier: phalanx.cancellation.rawSleep
-            path: src/Agent/tests/Integration/ChannelBackedLoopTest.php
+            path: src/Agents/tests/Integration/ChannelBackedLoopTest.php
             reportUnmatched: true
         -
             identifier: phalanx.cancellation.rawSleep

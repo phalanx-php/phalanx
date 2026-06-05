@@ -3,7 +3,7 @@
     <file>src/Runtime</file>
     <file>src/Console</file>
     <file>src/Network</file>
-    <file>src/Agent</file>
+    <file>src/Agents</file>
     <file>src/Cli</file>
     <file>src/Ssh</file>
     <file>src/Filesystem</file>

@@ -24,7 +24,7 @@
         "ext-pcntl": "*",
         "ext-mbstring": "*",
         "phalanx-php/runtime": "^0.7",
-        "phalanx-php/agent": "^0.7",
+        "phalanx-php/agents": "^0.7",
         "phalanx-php/filesystem": "^0.7",
         "phalanx-php/ai-providers": "^0.7"
     },

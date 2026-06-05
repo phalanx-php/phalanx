@@ -32,7 +32,7 @@
     },
     "suggest": {
         "phalanx-php/runtime": "Required for the Runtime Runtime adapter; enables scope-bound cancellation and cleanup",
-        "phalanx-php/agent": "Required for the Agent Provider adapter; bridges Agent activity output to AiProviders cues",
+        "phalanx-php/agents": "Required for the Agent Provider adapter; bridges Agent activity output to AiProviders cues",
         "phalanx-php/http-client": "Required for the HttpClient Transport adapter; Swoole-native streaming HTTP",
         "phalanx-php/filesystem": "Required for HomeDir parsers; managed file I/O with FilePool",
         "phalanx-php/console": "Required for the ai-providers:agents:scan Console command",

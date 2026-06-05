@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Phalanx\Tui\Tests\Unit\Collab\Adapters\Agent;
 
-use Phalanx\Agent\Activity\Config;
-use Phalanx\Agent\Activity\Result;
-use Phalanx\Agent\Activity\State;
-use Phalanx\Agent\Hook\StepHook;
-use Phalanx\Agent\Turn\Outcome;
+use Phalanx\Agents\Activity\Config;
+use Phalanx\Agents\Activity\Result;
+use Phalanx\Agents\Activity\State;
+use Phalanx\Agents\Hook\StepHook;
+use Phalanx\Agents\Turn\Outcome;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\AiProviders\Agent as AiAgent;
 use Phalanx\AiProviders\Capabilities;
@@ -55,7 +55,7 @@ final class AiAgentParticipantTest extends TestCase
     }
 
     #[Test]
-    public function participantPassesAgentConfigScopeAndAgentThroughTheRunner(): void
+    public function participantPassesAgentsConfigScopeAndAgentThroughTheRunner(): void
     {
         $runner = new CapturingAgentRunner(self::activityResult());
         $scope = $this->createStub(TaskScope::class);

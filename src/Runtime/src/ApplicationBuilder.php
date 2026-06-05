@@ -39,7 +39,7 @@ use Phalanx\Worker\WorkerDispatch;
  * Low-level Runtime host builder.
  *
  * Package and example bootstraps should prefer their package facade builders:
- * `Phalanx\Agent\Agent::starting()`,
+ * `Phalanx\Agents\Agents::starting()`,
  * `Phalanx\Console\Facade::starting()`, or
  * `Phalanx\Http\Server::starting()`.
  */

@@ -18,7 +18,13 @@ final class ScreenBoundaryTest extends TestCase
 
             self::assertStringNotContainsString('Phalanx\\' . 'Harness\\', $source, $file);
             self::assertStringNotContainsString('Harness' . '\\Replay', $source, $file);
-            self::assertStringNotContainsString('Agent::run(', $source, $file);
+        }
+
+        foreach (self::sourceFiles(dirname(__DIR__, 3) . '/src/Collab/Screens') as $file) {
+            $source = file_get_contents($file);
+            self::assertIsString($source);
+
+            self::assertStringNotContainsString('Agents::run(', $source, $file);
         }
     }
 

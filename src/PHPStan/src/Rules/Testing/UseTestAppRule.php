@@ -27,7 +27,7 @@ final class UseTestAppRule implements Rule
         'Phalanx\\Application' => ['starting'],
         'Phalanx\\Http\\Server' => ['starting'],
         'Phalanx\\Console\\Facade' => ['starting', 'command'],
-        'Phalanx\\Agent\\Agent' => ['starting'],
+        'Phalanx\\Agents\\Agents' => ['starting'],
     ];
 
     private const array TEST_DIRECTORIES = [

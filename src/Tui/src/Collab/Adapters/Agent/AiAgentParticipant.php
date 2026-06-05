@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Tui\Collab\Adapters\Agent;
 
-use Phalanx\Agent\Activity\Config;
-use Phalanx\Agent\Activity\State;
+use Phalanx\Agents\Activity\Config;
+use Phalanx\Agents\Activity\State;
 use Phalanx\AiProviders\Agent as AiAgent;
 use Phalanx\AiProviders\Context;
 use Phalanx\AiProviders\Conversation\Log;
@@ -21,11 +21,11 @@ use Phalanx\Tui\Collab\WorkContext;
 
 final class AiAgentParticipant implements AgentParticipant
 {
-    /** @var list<\Phalanx\Agent\Hook\StepHook> */
+    /** @var list<\Phalanx\Agents\Hook\StepHook> */
     private array $hooks;
 
     /**
-     * @param list<\Phalanx\Agent\Hook\StepHook> $hooks
+     * @param list<\Phalanx\Agents\Hook\StepHook> $hooks
      */
     public function __construct(
         private AiAgent $agent,
@@ -36,7 +36,7 @@ final class AiAgentParticipant implements AgentParticipant
         private AgentRunner $runner = new StaticAgentRunner(),
     ) {
         foreach ($hooks as $hook) {
-            if (!$hook instanceof \Phalanx\Agent\Hook\StepHook) {
+            if (!$hook instanceof \Phalanx\Agents\Hook\StepHook) {
                 throw new \InvalidArgumentException('Agent participant hooks must be StepHook instances.');
             }
         }
@@ -105,7 +105,7 @@ final class AiAgentParticipant implements AgentParticipant
      * @param list<Cue> $cues
      * @return array<string, mixed>
      */
-    private static function payload(\Phalanx\Agent\Activity\Result $result, array $cues): array
+    private static function payload(\Phalanx\Agents\Activity\Result $result, array $cues): array
     {
         return [
             'activity_id' => $result->activityId,
@@ -116,7 +116,7 @@ final class AiAgentParticipant implements AgentParticipant
         ];
     }
 
-    private static function summary(\Phalanx\Agent\Activity\Result $result): string
+    private static function summary(\Phalanx\Agents\Activity\Result $result): string
     {
         $records = array_reverse($result->log->toArray());
         foreach ($records as $record) {

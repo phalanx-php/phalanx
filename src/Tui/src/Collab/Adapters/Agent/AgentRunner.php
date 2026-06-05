@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Tui\Collab\Adapters\Agent;
 
-use Phalanx\Agent\Activity\Config;
-use Phalanx\Agent\Activity\Result;
+use Phalanx\Agents\Activity\Config;
+use Phalanx\Agents\Activity\Result;
 use Phalanx\AiProviders\Agent as AiAgent;
 use Phalanx\AiProviders\Conversation\Log;
 use Phalanx\Scope\TaskScope;

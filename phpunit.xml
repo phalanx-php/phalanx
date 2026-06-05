@@ -68,13 +68,13 @@
             <directory>src/WebSocket/tests/Client/Unit</directory>
         </testsuite>
         <testsuite name="Agent Unit">
-            <directory>src/Agent/tests/Unit</directory>
+            <directory>src/Agents/tests/Unit</directory>
         </testsuite>
         <testsuite name="Agent Integration">
-            <directory>src/Agent/tests/Integration</directory>
+            <directory>src/Agents/tests/Integration</directory>
         </testsuite>
         <testsuite name="Agent Acceptance">
-            <directory>src/Agent/tests/Acceptance</directory>
+            <directory>src/Agents/tests/Acceptance</directory>
         </testsuite>
         <testsuite name="Ssh Unit">
             <directory>src/Ssh/tests/Unit</directory>

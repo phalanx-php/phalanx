@@ -153,7 +153,7 @@ The repository includes runnable demos for all major framework surfaces.
 | [Http HTTP](demos/http) | routing, JSON APIs, realtime SSE, runtime lifecycle, diagnostics | `composer demo:http` |
 | [Console CLI](demos/console) | commands, interactive input, supervised concurrency, lifecycle, diagnostics | `composer demo:console` |
 | [Worker workers](demos/worker) | workers, structured parallelism, cancellation behavior | `composer demo:worker` |
-| [Agent AI](demos/agent) | streaming providers, SDK coexistence, supervised tool approvals | `composer demo:agent` |
+| [Agents AI](demos/agents) | streaming providers, SDK coexistence, supervised tool approvals | `composer demo:agents` |
 | [SurrealDb](demos/surrealdb) | in-memory RPC and live queries | `composer demo:surrealdb` |
 
 ## Installation
