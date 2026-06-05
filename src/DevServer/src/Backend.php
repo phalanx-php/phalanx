@@ -7,15 +7,18 @@ namespace Phalanx\DevServer;
 final class Backend
 {
     private string $type;
+    private ?string $cwd = null;
     private ?string $command = null;
     private ?string $readyPattern = null;
+
     /** @var list<string> */
     private array $watchPaths = [];
+
     /** @var list<string> */
     private array $watchExtensions = ['php'];
+
     /** @var array<string, string> */
     private array $env = [];
-    private ?string $cwd = null;
 
     private function __construct(string $type)
     {
