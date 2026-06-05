@@ -272,6 +272,39 @@
       "guarded_zone": true,
       "old_fqcn": "Phalanx\\Worker\\WorkerDispatch",
       "reason": "Cross-package dispatch contract stays explicit where Runtime accepts a worker dispatcher."
+    },
+    {
+      "slice": "stream",
+      "action": "rename",
+      "risk": "public-api",
+      "guarded_zone": false,
+      "old_fqcn": "Phalanx\\Stream\\Stream",
+      "new_fqcn": "Phalanx\\Stream\\Facade",
+      "old_file": "src/Stream/src/Stream.php",
+      "new_file": "src/Stream/src/Facade.php",
+      "verification": ["composer test:stream", "composer test:agent", "composer test:websocket"]
+    },
+    {
+      "slice": "stream",
+      "action": "rename",
+      "risk": "public-api",
+      "guarded_zone": false,
+      "old_fqcn": "Phalanx\\Stream\\ScopedStream",
+      "new_fqcn": "Phalanx\\Stream\\Scoped",
+      "old_file": "src/Stream/src/ScopedStream.php",
+      "new_file": "src/Stream/src/Scoped.php",
+      "verification": ["composer test:stream", "composer test:websocket"]
+    },
+    {
+      "slice": "stream",
+      "action": "rename",
+      "risk": "public-api",
+      "guarded_zone": false,
+      "old_fqcn": "Phalanx\\Stream\\StreamEvent",
+      "new_fqcn": "Phalanx\\Stream\\Event",
+      "old_file": "src/Stream/src/StreamEvent.php",
+      "new_file": "src/Stream/src/Event.php",
+      "verification": ["composer test:stream"]
     }
   ],
   "deferred": [

@@ -10,7 +10,7 @@ use Phalanx\Stream\Emitter;
 use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
 
-final class ExecutionScopeStreamTest extends PhalanxTestCase
+final class ExecutionScopeTest extends PhalanxTestCase
 {
     #[Test]
     public function executionScopeIsTheStreamContract(): void

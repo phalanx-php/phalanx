@@ -12,7 +12,7 @@ use Phalanx\Stream\Terminal\Drain;
 use Phalanx\Stream\Terminal\First;
 use Phalanx\Stream\Terminal\Reduce;
 
-final class ScopedStream
+final class Scoped
 {
     private readonly Emitter $emitter;
 

@@ -31,7 +31,7 @@
         "symfony/uid": "^7.0 || ^8.0"
     },
     "suggest": {
-        "phalanx-php/stream": "Reactive stream primitives (Emitter, ScopedStream, Channel)",
+        "phalanx-php/stream": "Reactive stream primitives (Emitter, Scoped, Channel)",
         "phalanx-php/console": "CLI application framework",
         "phalanx-php/http": "HTTP server framework",
         "phalanx-php/worker": "Worker process parallelism",

@@ -7,7 +7,7 @@ namespace Phalanx\Stream;
 use Closure;
 use Phalanx\Scope\ExecutionScope;
 
-class Stream
+final class Facade
 {
     private function __construct()
     {
@@ -29,8 +29,8 @@ class Stream
         return Emitter::interval($seconds);
     }
 
-    public static function from(ExecutionScope $scope, Emitter $emitter): ScopedStream
+    public static function from(ExecutionScope $scope, Emitter $emitter): Scoped
     {
-        return ScopedStream::from($scope, $emitter);
+        return Scoped::from($scope, $emitter);
     }
 }

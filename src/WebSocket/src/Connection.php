@@ -7,7 +7,7 @@ namespace Phalanx\WebSocket;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Stream\Channel;
 use Phalanx\Stream\Emitter;
-use Phalanx\Stream\ScopedStream;
+use Phalanx\Stream\Scoped;
 
 final class Connection
 {
@@ -63,7 +63,7 @@ final class Connection
         $this->inbound->complete();
     }
 
-    public function stream(ExecutionScope $scope): ScopedStream
+    public function stream(ExecutionScope $scope): Scoped
     {
         if ($this->inboundEmitter === null) {
             $inbound = $this->inbound;
@@ -80,6 +80,6 @@ final class Connection
             });
         }
 
-        return ScopedStream::from($scope, $this->inboundEmitter);
+        return Scoped::from($scope, $this->inboundEmitter);
     }
 }

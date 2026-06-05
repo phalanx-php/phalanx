@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Stream;
 
-enum StreamEvent: string
+enum Event: string
 {
     case End = 'end';
     case Data = 'data';
