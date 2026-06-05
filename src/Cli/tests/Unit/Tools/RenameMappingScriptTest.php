@@ -4,16 +4,37 @@ declare(strict_types=1);
 
 namespace Phalanx\Cli\Tests\Unit\Tools;
 
+use Phalanx\Cli\Tests\Support\RemovesDirectories;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
+use function Phalanx\Tools\RenameMapping\main;
 use function Phalanx\Tools\RenameMapping\renameBase;
 use function Phalanx\Tools\RenameMapping\replaceContent;
 
-require_once dirname(__DIR__, 5) . '/tools/apply-rename-mapping.php';
-
 final class RenameMappingScriptTest extends TestCase
 {
+    use RemovesDirectories;
+
+    private string $tempDir;
+
+    public static function setUpBeforeClass(): void
+    {
+        require_once dirname(__DIR__, 5) . '/tools/apply-rename-mapping.php';
+    }
+
+    protected function setUp(): void
+    {
+        $this->tempDir = sys_get_temp_dir() . '/' . uniqid('phalanx-rename-tool-', true);
+    }
+
+    protected function tearDown(): void
+    {
+        if (is_dir($this->tempDir)) {
+            self::removeDir($this->tempDir);
+        }
+    }
+
     #[Test]
     public function replacesHydraModuleTokensWithoutCorruptingHydrationVocabulary(): void
     {
@@ -50,6 +71,44 @@ TEXT;
         self::assertSame('HydratedConfig.php', renameBase('HydratedConfig.php', $pairs));
     }
 
+    #[Test]
+    public function dryRunReportsChangesWithoutMutatingTree(): void
+    {
+        $this->writeFixtureTree();
+
+        ob_start();
+        $exitCode = main($this->tempDir, ['apply-rename-mapping.php', '--dry-run']);
+        ob_end_clean();
+
+        self::assertSame(0, $exitCode);
+
+        self::assertStringContainsString(
+            'use Phalanx\Hydra\WorkerPool;',
+            (string) file_get_contents($this->tempDir . '/sample.php'),
+        );
+        self::assertFileExists($this->tempDir . '/HydraDemoServiceBundle.php');
+        self::assertFileDoesNotExist($this->tempDir . '/WorkerDemoServiceBundle.php');
+    }
+
+    #[Test]
+    public function applyModeRewritesTextAndRenamesPaths(): void
+    {
+        $this->writeFixtureTree();
+
+        ob_start();
+        $exitCode = main($this->tempDir, ['apply-rename-mapping.php', '--apply']);
+        ob_end_clean();
+
+        self::assertSame(0, $exitCode);
+
+        self::assertStringContainsString(
+            'use Phalanx\Worker\WorkerPool;',
+            (string) file_get_contents($this->tempDir . '/sample.php'),
+        );
+        self::assertFileDoesNotExist($this->tempDir . '/HydraDemoServiceBundle.php');
+        self::assertFileExists($this->tempDir . '/WorkerDemoServiceBundle.php');
+    }
+
     /** @return list<array<string, mixed>> */
     private static function mapping(): array
     {
@@ -70,5 +129,16 @@ TEXT;
                 'newSplitRepo' => 'phalanx-worker',
             ],
         ];
+    }
+
+    private function writeFixtureTree(): void
+    {
+        mkdir($this->tempDir . '/tools', 0755, true);
+        file_put_contents(
+            $this->tempDir . '/tools/rename-mapping.json',
+            json_encode(self::mapping(), JSON_THROW_ON_ERROR),
+        );
+        file_put_contents($this->tempDir . '/sample.php', 'use Phalanx\Hydra\WorkerPool;');
+        file_put_contents($this->tempDir . '/HydraDemoServiceBundle.php', '<?php');
     }
 }

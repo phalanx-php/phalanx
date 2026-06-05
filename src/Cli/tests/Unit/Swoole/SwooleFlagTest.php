@@ -85,6 +85,7 @@ final class SwooleFlagTest extends TestCase
     {
         if (\PHP_OS_FAMILY !== 'Darwin') {
             self::assertContains(SwooleFlag::EnableIoUring, SwooleFlag::interactiveChoices());
+
             return;
         }
 

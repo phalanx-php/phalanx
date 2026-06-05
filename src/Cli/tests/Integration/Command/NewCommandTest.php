@@ -19,7 +19,7 @@ final class NewCommandTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->tempDir = sys_get_temp_dir() . '/phalanx-cmd-test-' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/' . uniqid('phalanx-cmd-test-', true);
         mkdir($this->tempDir, 0755, true);
     }
 

@@ -11,16 +11,16 @@ use SplFileInfo;
 
 use function array_filter;
 use function array_is_list;
+use function array_shift;
 use function array_values;
 use function basename;
-use function count;
 use function dirname;
 use function explode;
-use function fclose;
 use function file_exists;
 use function file_get_contents;
 use function file_put_contents;
 use function fwrite;
+use function in_array;
 use function is_array;
 use function is_dir;
 use function json_decode;
@@ -37,6 +37,7 @@ use function strtolower;
 
 use const JSON_THROW_ON_ERROR;
 use const STDERR;
+use const STDOUT;
 
 /** @return list<array<string, mixed>>|null */
 function loadMappingEntries(string $mappingFile): ?array
@@ -261,8 +262,42 @@ function renameBase(string $base, array $pairs): string
     return $base;
 }
 
-function main(?string $root = null): int
+function usage(): string
 {
+    return <<<'TEXT'
+Usage:
+  php tools/apply-rename-mapping.php --dry-run
+  php tools/apply-rename-mapping.php --apply
+
+Options:
+  --dry-run  Report how many files and paths would change without mutating the tree.
+  --apply    Rewrite matching text files and rename matching paths.
+  --help     Show this help.
+
+TEXT;
+}
+
+/** @param list<string>|null $argv */
+function main(?string $root = null, ?array $argv = null): int
+{
+    $arguments = $argv ?? ($_SERVER['argv'] ?? []);
+    array_shift($arguments);
+
+    if (in_array('--help', $arguments, true) || in_array('-h', $arguments, true)) {
+        fwrite(STDOUT, usage());
+
+        return 0;
+    }
+
+    $apply = in_array('--apply', $arguments, true);
+    $dryRun = in_array('--dry-run', $arguments, true);
+
+    if ($apply === $dryRun) {
+        fwrite(STDERR, usage());
+
+        return 1;
+    }
+
     $root ??= dirname(__DIR__);
     $mappingFile = $root . '/tools/rename-mapping.json';
     $entries = loadMappingEntries($mappingFile);
@@ -280,6 +315,15 @@ function main(?string $root = null): int
         $newDir = $root . '/' . $entry['newDir'];
 
         if (!is_dir($oldDir) && is_dir($newDir)) {
+            if (!$apply) {
+                fwrite(
+                    STDOUT,
+                    "Rename mapping appears to be applied already; {$entry['oldDir']} is gone and {$entry['newDir']} exists.\n",
+                );
+
+                continue;
+            }
+
             fwrite(
                 STDERR,
                 "Rename mapping appears to be applied already; {$entry['oldDir']} is gone and {$entry['newDir']} exists.\n",
@@ -333,7 +377,10 @@ function main(?string $root = null): int
         $updated = replaceContent($content, $entries);
 
         if ($updated !== $content) {
-            file_put_contents($path, $updated);
+            if ($apply) {
+                file_put_contents($path, $updated);
+            }
+
             $updatedFiles++;
         }
     }
@@ -378,11 +425,20 @@ function main(?string $root = null): int
             return 1;
         }
 
-        rename($path, $target);
+        if ($apply) {
+            rename($path, $target);
+        }
+
         $renamedPaths++;
     }
 
-    printf("Updated %d files and renamed %d paths.\n", $updatedFiles, $renamedPaths);
+    printf(
+        "%s %d files and %s %d paths.\n",
+        $apply ? 'Updated' : 'Would update',
+        $updatedFiles,
+        $apply ? 'renamed' : 'would rename',
+        $renamedPaths,
+    );
 
     return 0;
 }
@@ -390,5 +446,5 @@ function main(?string $root = null): int
 $script = $_SERVER['SCRIPT_FILENAME'] ?? null;
 
 if ($script !== null && realpath($script) === __FILE__) {
-    exit(main());
+    exit(main(argv: $_SERVER['argv'] ?? []));
 }

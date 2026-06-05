@@ -20,7 +20,7 @@ final class ProjectGeneratorTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->tempDir = sys_get_temp_dir() . '/phalanx-test-' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/' . uniqid('phalanx-test-', true);
     }
 
     protected function tearDown(): void

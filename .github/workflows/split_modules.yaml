@@ -43,12 +43,47 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
         run: |
           REPO_NAME=$(basename ${{ matrix.package.split_repository }})
-          if gh repo view "phalanx-php/$REPO_NAME" >/dev/null 2>&1; then
-            echo "Repository phalanx-php/$REPO_NAME already exists."
-            exit 0
+          REPO_FULL_NAME="phalanx-php/$REPO_NAME"
+          CREATE_OUTPUT=$(mktemp)
+          trap 'rm -f "$CREATE_OUTPUT"' EXIT
+
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "GH_ACCESS_TOKEN secret is required to create or verify split repositories." >&2
+            exit 1
           fi
 
-          gh repo create "phalanx-php/$REPO_NAME" --public --description "Read-only split of phalanx-php/phalanx"
+          set +e
+          gh repo create "$REPO_FULL_NAME" --public --description "Read-only split of phalanx-php/phalanx" >"$CREATE_OUTPUT" 2>&1
+          CREATE_STATUS=$?
+          set -e
+
+          if [ "$CREATE_STATUS" -eq 0 ]; then
+            cat "$CREATE_OUTPUT"
+          elif grep -Eiq 'already exists|name already exists' "$CREATE_OUTPUT"; then
+            echo "Repository $REPO_FULL_NAME already exists."
+          else
+            cat "$CREATE_OUTPUT" >&2
+            exit "$CREATE_STATUS"
+          fi
+
+          REPO_INFO=$(gh repo view "$REPO_FULL_NAME" --json nameWithOwner,viewerPermission --jq '.nameWithOwner + " " + .viewerPermission')
+          VIEWED_REPO=$(printf '%s\n' "$REPO_INFO" | awk '{print $1}')
+          VIEWER_PERMISSION=$(printf '%s\n' "$REPO_INFO" | awk '{print $2}')
+
+          if [ "$VIEWED_REPO" != "$REPO_FULL_NAME" ]; then
+            echo "Expected $REPO_FULL_NAME but GitHub returned $VIEWED_REPO." >&2
+            exit 1
+          fi
+
+          case "$VIEWER_PERMISSION" in
+            ADMIN|MAINTAIN|WRITE)
+              echo "Verified $VIEWER_PERMISSION permission for $REPO_FULL_NAME."
+              ;;
+            *)
+              echo "GH_ACCESS_TOKEN has $VIEWER_PERMISSION permission for $REPO_FULL_NAME; WRITE, MAINTAIN, or ADMIN is required." >&2
+              exit 1
+              ;;
+          esac
 
       - name: Split module
         uses: driesvints/monorepo-split-github-action@v2
