@@ -79,7 +79,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Phalanx\\HttpClient\\": ""
+            "Phalanx\\HttpClient\\": "src/"
         }
     },
     "autoload-dev": {

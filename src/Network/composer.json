@@ -86,7 +86,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Phalanx\\Network\\": ""
+            "Phalanx\\Network\\": "src/"
         }
     },
     "autoload-dev": {

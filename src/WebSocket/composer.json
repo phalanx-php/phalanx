@@ -81,7 +81,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Phalanx\\WebSocket\\": ""
+            "Phalanx\\WebSocket\\": "src/"
         }
     },
     "autoload-dev": {

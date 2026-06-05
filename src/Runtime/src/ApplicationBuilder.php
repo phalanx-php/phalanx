@@ -315,7 +315,8 @@ class ApplicationBuilder
         foreach (
             [
                 dirname(__DIR__, 3) . '/vendor',
-                dirname(__DIR__, 5) . '/vendor',
+                dirname(__DIR__, 4) . '/vendor',
+                dirname(__DIR__, 6) . '/vendor',
             ] as $candidate
         ) {
             if (is_dir($candidate)) {

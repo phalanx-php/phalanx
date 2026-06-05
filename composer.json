@@ -56,28 +56,28 @@
     },
     "autoload": {
         "files": [
-            "src/Tui/Tui/Kit/functions.php"
+            "src/Tui/src/Tui/Kit/functions.php"
         ],
         "psr-4": {
-            "Phalanx\\": "src/Runtime/",
-            "Phalanx\\Console\\": "src/Console/",
-            "Phalanx\\Network\\": "src/Network/",
-            "Phalanx\\Agent\\": "src/Agent/",
-            "Phalanx\\Cli\\": "src/Cli/",
-            "Phalanx\\Ssh\\": "src/Ssh/",
-            "Phalanx\\Filesystem\\": "src/Filesystem/",
-            "Phalanx\\WebSocket\\": "src/WebSocket/",
-            "Phalanx\\Worker\\": "src/Worker/",
-            "Phalanx\\HttpClient\\": "src/HttpClient/",
-            "Phalanx\\Mark\\": "src/Mark/",
-            "Phalanx\\PHPStan\\": "src/PHPStan/",
-            "Phalanx\\AiProviders\\": "src/AiProviders/",
-            "Phalanx\\DevServer\\": "src/DevServer/",
-            "Phalanx\\Http\\": "src/Http/",
-            "Phalanx\\Stream\\": "src/Stream/",
-            "Phalanx\\SurrealDb\\": "src/SurrealDb/",
-            "Phalanx\\Tui\\": "src/Tui/",
-            "Phalanx\\Config\\": "src/Config/"
+            "Phalanx\\": "src/Runtime/src/",
+            "Phalanx\\Console\\": "src/Console/src/",
+            "Phalanx\\Network\\": "src/Network/src/",
+            "Phalanx\\Agent\\": "src/Agent/src/",
+            "Phalanx\\Cli\\": "src/Cli/src/",
+            "Phalanx\\Ssh\\": "src/Ssh/src/",
+            "Phalanx\\Filesystem\\": "src/Filesystem/src/",
+            "Phalanx\\WebSocket\\": "src/WebSocket/src/",
+            "Phalanx\\Worker\\": "src/Worker/src/",
+            "Phalanx\\HttpClient\\": "src/HttpClient/src/",
+            "Phalanx\\Mark\\": "src/Mark/src/",
+            "Phalanx\\PHPStan\\": "src/PHPStan/src/",
+            "Phalanx\\AiProviders\\": "src/AiProviders/src/",
+            "Phalanx\\DevServer\\": "src/DevServer/src/",
+            "Phalanx\\Http\\": "src/Http/src/",
+            "Phalanx\\Stream\\": "src/Stream/src/",
+            "Phalanx\\SurrealDb\\": "src/SurrealDb/src/",
+            "Phalanx\\Tui\\": "src/Tui/src/",
+            "Phalanx\\Config\\": "src/Config/src/"
         }
     },
     "autoload-dev": {

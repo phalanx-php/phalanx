@@ -90,10 +90,10 @@
     },
     "autoload": {
         "files": [
-            "Tui/Kit/functions.php"
+            "src/Tui/Kit/functions.php"
         ],
         "psr-4": {
-            "Phalanx\\Tui\\": ""
+            "Phalanx\\Tui\\": "src/"
         }
     },
     "autoload-dev": {

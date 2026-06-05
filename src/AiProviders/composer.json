@@ -102,7 +102,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Phalanx\\AiProviders\\": ""
+            "Phalanx\\AiProviders\\": "src/"
         }
     },
     "autoload-dev": {

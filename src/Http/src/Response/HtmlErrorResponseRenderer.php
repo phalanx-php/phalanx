@@ -103,7 +103,7 @@ final readonly class HtmlErrorResponseRenderer implements ErrorResponseRenderer
 
     private function getLogo(): string
     {
-        $path = dirname(__DIR__, 4) . '/logo.svg';
+        $path = dirname(__DIR__, 5) . '/logo.svg';
         if (is_file($path)) {
             $svg = file_get_contents($path);
             if ($svg) {

@@ -82,7 +82,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Phalanx\\Filesystem\\": ""
+            "Phalanx\\Filesystem\\": "src/"
         }
     },
     "autoload-dev": {

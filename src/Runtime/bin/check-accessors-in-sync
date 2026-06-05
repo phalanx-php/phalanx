@@ -41,8 +41,8 @@ $lenses = (new LensDiscovery())->discover($bundles);
 $expected = (new AccessorTraitWriter())->render($lenses);
 
 $target = is_dir($frameworkDir)
-    ? $frameworkDir . '/Runtime/Testing/Generated/TestAppAccessors.php'
-    : $moduleDir . '/Testing/Generated/TestAppAccessors.php';
+    ? $frameworkDir . '/Runtime/src/Testing/Generated/TestAppAccessors.php'
+    : $moduleDir . '/src/Testing/Generated/TestAppAccessors.php';
 
 $actual = @file_get_contents($target);
 

@@ -70,7 +70,7 @@ final readonly class IgnitionErrorResponseRenderer implements ErrorResponseRende
             );
 
             $renderer = new Renderer();
-            $viewPath = dirname(__DIR__) . '/resources/ignition/views/errorPage.php';
+            $viewPath = dirname(__DIR__, 2) . '/resources/ignition/views/errorPage.php';
 
             if (!is_file($viewPath)) {
                 return null;
@@ -274,7 +274,7 @@ HTML;
 
     private function getLogo(): string
     {
-        $path = dirname(__DIR__, 5) . $this->config->logoPath;
+        $path = dirname(__DIR__, 6) . $this->config->logoPath;
         if (is_file($path)) {
             $svg = file_get_contents($path);
             if ($svg) {

@@ -93,7 +93,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Phalanx\\Agent\\": ""
+            "Phalanx\\Agent\\": "src/"
         }
     },
     "autoload-dev": {

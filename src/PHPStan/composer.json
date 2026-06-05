@@ -78,7 +78,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Phalanx\\PHPStan\\": ""
+            "Phalanx\\PHPStan\\": "src/"
         }
     },
     "autoload-dev": {

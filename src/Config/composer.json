@@ -79,7 +79,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Phalanx\\Config\\": ""
+            "Phalanx\\Config\\": "src/"
         }
     },
     "autoload-dev": {

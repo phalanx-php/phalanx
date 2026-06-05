@@ -277,7 +277,7 @@ YAML;
     #[Test]
     public function fakeYamlRoundTrip(): void
     {
-        $path = dirname(__DIR__, 3) . '/Provider/Fake/fake.ai-providers.yaml';
+        $path = dirname(__DIR__, 3) . '/src/Provider/Fake/fake.ai-providers.yaml';
         $config = Loader::fromFile($path);
 
         self::assertSame('fake', $config->id);

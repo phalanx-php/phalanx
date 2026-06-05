@@ -12,7 +12,7 @@ final class ScreenBoundaryTest extends TestCase
     #[Test]
     public function tuiScreensDoNotExecuteAgentRuntimeDirectly(): void
     {
-        foreach (self::sourceFiles(dirname(__DIR__, 4) . '/Tui') as $file) {
+        foreach (self::sourceFiles(dirname(__DIR__, 4) . '/src/Tui') as $file) {
             $source = file_get_contents($file);
             self::assertIsString($source);
 

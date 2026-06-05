@@ -36,24 +36,24 @@ parameters:
             - src/PHPStan/tests/Integration/Fixtures
             - src/PHPStan/tests/Rules/Fixtures
     phalanxInternalPaths:
-        - src/Runtime/Concurrency/Co.php
-        - src/Runtime/Cancellation/CancellationToken.php
-        - src/Runtime/Pool/ObjectPool.php
-        - src/Runtime/Pool/PoolRing.php
-        - src/Runtime/Runtime/CoroutineRuntime.php
-        - src/Runtime/Runtime/RuntimeHooks.php
-        - src/Runtime/Scope/BorrowedScopeFrame.php
-        - src/Runtime/Scope/ExecutionLifecycleScope.php
-        - src/Runtime/Scope/TransactionLifecycleScope.php
-        - src/Runtime/Service/LazySingleton.php
-        - src/Runtime/Support/ExecutionScopeDelegate.php
-        - src/Runtime/Supervisor/InProcessLedger.php
-        - src/Runtime/Supervisor/LedgerStorage.php
-        - src/Runtime/Supervisor/Supervisor.php
-        - src/Runtime/Supervisor/SwooleTableLedger.php
-        - src/Runtime/Supervisor/TaskRun.php
-        - src/Runtime/Worker/
-        - src/Http/HttpRunner.php
+        - src/Runtime/src/Concurrency/Co.php
+        - src/Runtime/src/Cancellation/CancellationToken.php
+        - src/Runtime/src/Pool/ObjectPool.php
+        - src/Runtime/src/Pool/PoolRing.php
+        - src/Runtime/src/Runtime/CoroutineRuntime.php
+        - src/Runtime/src/Runtime/RuntimeHooks.php
+        - src/Runtime/src/Scope/BorrowedScopeFrame.php
+        - src/Runtime/src/Scope/ExecutionLifecycleScope.php
+        - src/Runtime/src/Scope/TransactionLifecycleScope.php
+        - src/Runtime/src/Service/LazySingleton.php
+        - src/Runtime/src/Support/ExecutionScopeDelegate.php
+        - src/Runtime/src/Supervisor/InProcessLedger.php
+        - src/Runtime/src/Supervisor/LedgerStorage.php
+        - src/Runtime/src/Supervisor/Supervisor.php
+        - src/Runtime/src/Supervisor/SwooleTableLedger.php
+        - src/Runtime/src/Supervisor/TaskRun.php
+        - src/Runtime/src/Worker/
+        - src/Http/src/HttpRunner.php
     phalanxEnforcedPaths:
         - src/Runtime
         - src/Console
@@ -76,17 +76,17 @@ parameters:
         - src/Config
     phalanxAuditPaths: []
     phalanxRuntimeHookInternalPaths:
-        - src/Runtime/Runtime/RuntimeCapability.php
-        - src/Runtime/Runtime/RuntimeHookNames.php
-        - src/Runtime/Runtime/RuntimeHooks.php
-        - src/Runtime/Runtime/RuntimePolicy.php
+        - src/Runtime/src/Runtime/RuntimeCapability.php
+        - src/Runtime/src/Runtime/RuntimeHookNames.php
+        - src/Runtime/src/Runtime/RuntimeHooks.php
+        - src/Runtime/src/Runtime/RuntimePolicy.php
     phalanxProcessInternalPaths:
-        - src/Runtime/System/Internal/SymfonyProcessAdapter.php
+        - src/Runtime/src/System/Internal/SymfonyProcessAdapter.php
         - src/Cli
-        - src/Worker/WorkerPool/WorkerPool.php
-        - src/Tui/Terminal/Terminal.php
+        - src/Worker/src/WorkerPool/WorkerPool.php
+        - src/Tui/src/Tui/Drawing/Terminal.php
     phalanxCoroutineInternalPaths:
-        - src/Runtime/Scope/ExecutionLifecycleScope.php
+        - src/Runtime/src/Scope/ExecutionLifecycleScope.php
         - benchmarks/kernel/cases/ContextSwitchCases.php
     # swoole/ide-helper's Swoole\Lock::lock() stub omits $operation and $timeout.
     # stubs/swoole-lock.php documents the correct ext-swoole 6 signature but cannot
@@ -109,11 +109,11 @@ parameters:
         # stubs/swoole-lock.php documents the correct signature.
         -
             identifier: argument.unknown
-            path: src/Runtime/Runtime/Memory/ManagedResourceTransitionLocks.php
+            path: src/Runtime/src/Runtime/Memory/ManagedResourceTransitionLocks.php
             reportUnmatched: true
         -
             identifier: argument.unknown
-            path: src/Runtime/Runtime/Memory/RuntimeClaims.php
+            path: src/Runtime/src/Runtime/Memory/RuntimeClaims.php
             reportUnmatched: true
         # RuntimePolicyTest tests the hook mapping system itself; must reference raw SWOOLE_HOOK_* constants
         -
