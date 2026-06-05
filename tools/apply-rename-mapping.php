@@ -14,6 +14,7 @@ use function array_is_list;
 use function array_shift;
 use function array_values;
 use function basename;
+use function count;
 use function dirname;
 use function explode;
 use function file_exists;
@@ -30,10 +31,15 @@ use function preg_replace_callback;
 use function printf;
 use function realpath;
 use function rename;
+use function sprintf;
 use function str_ends_with;
 use function str_replace;
+use function str_split;
 use function str_starts_with;
+use function strlen;
 use function strtolower;
+use function strtoupper;
+use function substr;
 
 use const JSON_THROW_ON_ERROR;
 use const STDERR;
@@ -100,7 +106,13 @@ function shouldSkipPath(
         return true;
     }
 
-    foreach (explode('/', $relative) as $part) {
+    $parts = explode('/', $relative);
+
+    foreach ($parts as $index => $part) {
+        if ($index < count($parts) - 1 && str_starts_with($part, '.') && $part !== '.github') {
+            return true;
+        }
+
         if (isset($skipDirs[$part])) {
             return true;
         }
@@ -179,7 +191,7 @@ function replacementRules(array $entry): array
 function exactRule(string $old, string $new): array
 {
     return [
-        'pattern' => '~' . preg_quote($old, '~') . '~',
+        'pattern' => literalPattern($old, $new),
         'replacement' => $new,
     ];
 }
@@ -197,9 +209,50 @@ function slugRule(string $old, string $new): array
 function classPrefixRule(string $old, string $new): array
 {
     return [
-        'pattern' => '~(?<![A-Za-z0-9_])' . preg_quote($old, '~') . '(?=[A-Z_]|$)~',
+        'pattern' => sprintf(
+            '~(?<![A-Za-z0-9_])%s%s(?=[A-Z_]|$)~',
+            preg_quote($old, '~'),
+            idempotenceGuard($old, $new),
+        ),
         'replacement' => $new,
     ];
+}
+
+function literalPattern(string $old, string $new): string
+{
+    return sprintf(
+        '~%s%s~',
+        preg_quote($old, '~'),
+        idempotenceGuard($old, $new),
+    );
+}
+
+function idempotenceGuard(string $old, string $new): string
+{
+    if (!str_starts_with($new, $old) || $old === $new) {
+        return '';
+    }
+
+    return '(?!' . caseVariantPattern(substr($new, strlen($old))) . ')';
+}
+
+function caseVariantPattern(string $suffix): string
+{
+    $pattern = '';
+
+    foreach (str_split($suffix) as $char) {
+        $lower = strtolower($char);
+        $upper = strtoupper($char);
+
+        if ($lower !== $upper) {
+            $pattern .= '[' . preg_quote($lower, '~') . preg_quote($upper, '~') . ']';
+            continue;
+        }
+
+        $pattern .= preg_quote($char, '~');
+    }
+
+    return $pattern;
 }
 
 /**
@@ -341,6 +394,7 @@ function main(?string $root = null, ?array $argv = null): int
 
     $skipFiles = [
         'composer.lock' => true,
+        'src/Cli/tests/Unit/Tools/RenameMappingScriptTest.php' => true,
         'tools/rename-mapping.json' => true,
         'tools/apply-rename-mapping.php' => true,
     ];

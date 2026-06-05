@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\PHPStan\Tests\Rules\Fixtures\Integration;
 
 use Phalanx\Application;
+use Phalanx\Console\Application\Console;
 use Phalanx\Http\Http;
 
 /**
@@ -21,5 +22,10 @@ final class UseTestAppViolation
     public function httpFacade(): void
     {
         $http = Http::starting()->build();
+    }
+
+    public function consoleCommand(): void
+    {
+        $console = Console::command('demo', static fn(): int => 0)->build();
     }
 }

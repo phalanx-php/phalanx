@@ -72,6 +72,49 @@ TEXT;
     }
 
     #[Test]
+    public function renameRulesAreIdempotentWhenNewNameExtendsOldName(): void
+    {
+        $content = <<<'TEXT'
+use Phalanx\SurrealDb\SurrealDbClient;
+use Phalanx\\SurrealDb\\SurrealDbClient;
+final class SurrealDbConfig {}
+$package = 'phalanx-php/surrealdb';
+$repo = 'phalanx-surrealdb';
+TEXT;
+
+        $updated = replaceContent($content, self::surrealMapping());
+
+        self::assertSame($content, $updated);
+
+        $pairs = [
+            'Surreal' => 'SurrealDb',
+            'surreal' => 'surrealdb',
+            'surrealdb' => 'surrealdb',
+        ];
+
+        self::assertSame('SurrealDbConfig.php', renameBase('SurrealDbConfig.php', $pairs));
+        self::assertSame('surrealdb.yaml', renameBase('surrealdb.yaml', $pairs));
+    }
+
+    #[Test]
+    public function applyModeSkipsHiddenPrivateStateDirectories(): void
+    {
+        $this->writeFixtureTree();
+        mkdir($this->tempDir . '/.daemon8/snapshots', 0755, true);
+        file_put_contents($this->tempDir . '/.daemon8/snapshots/foo.md', 'use Phalanx\Hydra\WorkerPool;');
+
+        ob_start();
+        $exitCode = main($this->tempDir, ['apply-rename-mapping.php', '--apply']);
+        ob_end_clean();
+
+        self::assertSame(0, $exitCode);
+        self::assertSame(
+            'use Phalanx\Hydra\WorkerPool;',
+            (string) file_get_contents($this->tempDir . '/.daemon8/snapshots/foo.md'),
+        );
+    }
+
+    #[Test]
     public function dryRunReportsChangesWithoutMutatingTree(): void
     {
         $this->writeFixtureTree();
@@ -127,6 +170,28 @@ TEXT;
                 'newPackage' => 'phalanx-php/worker',
                 'oldSplitRepo' => 'phalanx-hydra',
                 'newSplitRepo' => 'phalanx-worker',
+            ],
+        ];
+    }
+
+    /** @return list<array<string, mixed>> */
+    private static function surrealMapping(): array
+    {
+        return [
+            [
+                'action' => 'rename',
+                'old' => 'Surreal',
+                'new' => 'SurrealDb',
+                'oldDir' => 'src/Surreal',
+                'newDir' => 'src/SurrealDb',
+                'oldNamespace' => 'Phalanx\\Surreal',
+                'newNamespace' => 'Phalanx\\SurrealDb',
+                'oldTestNamespace' => 'Phalanx\\Surreal\\Tests',
+                'newTestNamespace' => 'Phalanx\\SurrealDb\\Tests',
+                'oldPackage' => 'phalanx-php/surreal',
+                'newPackage' => 'phalanx-php/surrealdb',
+                'oldSplitRepo' => 'phalanx-surreal',
+                'newSplitRepo' => 'phalanx-surrealdb',
             ],
         ];
     }

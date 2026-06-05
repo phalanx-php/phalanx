@@ -12,10 +12,10 @@ use PHPStan\Rules\IdentifierRuleError;
 use PHPStan\Rules\Rule;
 
 /**
- * Flags direct calls to ::starting() facades inside integration/feature
- * test files where TestApp boot is the canonical entry. Encourages users
- * to consume PhalanxTestCase::testApp() so cleanup, fakes, and lens
- * activation are handled uniformly.
+ * Flags direct facade boot/build calls inside integration/feature test files
+ * where TestApp boot is the canonical entry. Encourages users to consume
+ * PhalanxTestCase::testApp() so cleanup, fakes, and lens activation are
+ * handled uniformly.
  *
  * @implements Rule<StaticCall>
  */
@@ -23,11 +23,11 @@ final class UseTestAppRule implements Rule
 {
     private const string IDENTIFIER = 'phalanx.testing.useTestApp';
 
-    private const array TARGET_CLASSES = [
-        'Phalanx\\Application',
-        'Phalanx\\Http\\Http',
-        'Phalanx\\Console\\Application\\Console',
-        'Phalanx\\Agent\\Agent',
+    private const array TARGET_METHODS_BY_CLASS = [
+        'Phalanx\\Application' => ['starting'],
+        'Phalanx\\Http\\Http' => ['starting'],
+        'Phalanx\\Console\\Application\\Console' => ['starting', 'command'],
+        'Phalanx\\Agent\\Agent' => ['starting'],
     ];
 
     private const array TEST_DIRECTORIES = [
@@ -50,19 +50,20 @@ final class UseTestAppRule implements Rule
         $class = NodeNames::calledClassName($node, $scope);
         $method = NodeNames::calledMethodName($node);
 
-        if ($method !== 'starting') {
+        if ($class === null || $method === null) {
             return [];
         }
 
-        if (!in_array($class, self::TARGET_CLASSES, true)) {
+        if (!in_array($method, self::TARGET_METHODS_BY_CLASS[$class] ?? [], true)) {
             return [];
         }
 
         return RuleErrors::build(
             sprintf(
-                'Integration tests should boot through PhalanxTestCase::testApp() instead of %s::starting(). '
+                'Integration tests should boot through PhalanxTestCase::testApp() instead of %s::%s(). '
                 . 'Bypassing TestApp skips lens activation, fake registry resets, and ledger teardown assertions.',
                 $class,
+                $method,
             ),
             self::IDENTIFIER,
             $node->getStartLine(),

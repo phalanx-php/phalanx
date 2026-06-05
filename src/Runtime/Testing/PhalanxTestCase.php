@@ -28,13 +28,7 @@ abstract class PhalanxTestCase extends TestCase
     /** @var list<TestApp> */
     private array $testApps = [];
 
-    /**
-     * Boot a fresh TestApp for the current test. One TestApp is booted per
-     * call; each gets its own Application and is torn down in #[After]. Use
-     * separate calls to model multi-app scenarios.
-     *
-     * @param array<string, mixed> $context
-     */
+    /** @param array<string, mixed> $context */
     protected function testApp(array $context = [], ServiceBundle ...$bundles): TestApp
     {
         $app = TestApp::boot($context, ...$bundles);

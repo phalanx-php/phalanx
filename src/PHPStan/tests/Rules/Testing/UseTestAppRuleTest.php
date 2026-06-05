@@ -19,14 +19,22 @@ final class UseTestAppRuleTest extends RuleTestCase
             [__DIR__ . '/../../Integration/Fixtures/UseTestAppViolation.php'],
             [
                 [
-                    'Integration tests should boot through PhalanxTestCase::testApp() instead of Phalanx\\Application::starting(). '
+                    'Integration tests should boot through PhalanxTestCase::testApp() instead of '
+                    . 'Phalanx\\Application::starting(). '
                     . 'Bypassing TestApp skips lens activation, fake registry resets, and ledger teardown assertions.',
-                    18,
+                    19,
                 ],
                 [
-                    'Integration tests should boot through PhalanxTestCase::testApp() instead of Phalanx\\Http\\Http::starting(). '
+                    'Integration tests should boot through PhalanxTestCase::testApp() instead of '
+                    . 'Phalanx\\Http\\Http::starting(). '
                     . 'Bypassing TestApp skips lens activation, fake registry resets, and ledger teardown assertions.',
-                    23,
+                    24,
+                ],
+                [
+                    'Integration tests should boot through PhalanxTestCase::testApp() instead of '
+                    . 'Phalanx\\Console\\Application\\Console::command(). '
+                    . 'Bypassing TestApp skips lens activation, fake registry resets, and ledger teardown assertions.',
+                    29,
                 ],
             ],
         );
