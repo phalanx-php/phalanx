@@ -25,7 +25,7 @@
         "phalanx-php/config": "^0.7"
     },
     "suggest": {
-        "symfony/runtime": "For Symfony Runtime integration via Console::starting()",
+        "symfony/runtime": "For Symfony Runtime integration via Facade::starting()",
         "phalanx-php/stream": "For streaming data through console commands",
         "phalanx-php/worker": "For worker process parallelism in CLI tasks"
     },
@@ -97,7 +97,7 @@
         },
         "phalanx": {
             "bundles": [
-                "Phalanx\\Console\\Testing\\ConsoleTestableBundle"
+                "Phalanx\\Console\\Testing\\TestableBundle"
             ]
         }
     },

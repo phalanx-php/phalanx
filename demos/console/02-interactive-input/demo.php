@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 require __DIR__ . '/../../../vendor/autoload_runtime.php';
 
-use Phalanx\Console\Application\Console;
+use Phalanx\Console\Facade;
 use Phalanx\Console\Command\CommandGroup;
-use Phalanx\Console\Console\Input\RawInput;
-use Phalanx\Console\Console\Output\StreamOutput;
-use Phalanx\Console\Console\Output\TerminalEnvironment;
-use Phalanx\Console\Console\Style\Theme;
+use Phalanx\Console\Input\RawInput;
+use Phalanx\Console\Output\StreamOutput;
+use Phalanx\Console\Output\TerminalEnvironment;
+use Phalanx\Console\Style\Theme;
 use Phalanx\Boot\AppContext;
 use Phalanx\Console\Input\ConsoleInput;
 use Phalanx\Demos\Console\InteractiveInput\InputBundle;
@@ -47,7 +47,7 @@ return DemoReport::demo(
             }
             $reader = new RawInput(new ConsoleInput($nullStream));
 
-            $app = Console::starting(['argv' => array_merge(['demo'], $argv)])
+            $app = Facade::starting(['argv' => array_merge(['demo'], $argv)])
                 ->providers(new InputBundle($capture, $theme, $reader))
                 ->commands($commands)
                 ->build();

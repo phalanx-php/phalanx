@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Phalanx\Demos\Console\InteractiveInput;
 
-use Phalanx\Console\Console\Input\KeyReader;
-use Phalanx\Console\Console\Input\RawInput;
-use Phalanx\Console\Console\Output\StreamOutput;
-use Phalanx\Console\Console\Style\Theme;
+use Phalanx\Console\Input\KeyReader;
+use Phalanx\Console\Input\RawInput;
+use Phalanx\Console\Output\StreamOutput;
+use Phalanx\Console\Style\Theme;
 use Phalanx\Boot\AppContext;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;

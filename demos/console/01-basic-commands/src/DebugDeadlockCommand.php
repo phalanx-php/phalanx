@@ -9,7 +9,7 @@ use Phalanx\Console\Command\CommandConfig;
 use Phalanx\Console\Command\CommandContext;
 use Phalanx\Console\Command\DescribesCommand;
 use Phalanx\Console\Command\Opt;
-use Phalanx\Console\Console\Output\StreamOutput;
+use Phalanx\Console\Output\StreamOutput;
 use Phalanx\Diagnostics\DeadlockReport;
 use Phalanx\Task\Scopeable;
 

@@ -10,7 +10,7 @@ use Phalanx\Config\ConfigEntry;
 use Phalanx\Console\Command\CommandConfig;
 use Phalanx\Console\Command\CommandContext;
 use Phalanx\Console\Command\DescribesCommand;
-use Phalanx\Console\Console\Output\StreamOutput;
+use Phalanx\Console\Output\StreamOutput;
 use Phalanx\Task\Scopeable;
 use ReflectionClass;
 

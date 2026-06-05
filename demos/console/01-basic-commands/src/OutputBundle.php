@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Demos\Console\BasicCommands;
 
-use Phalanx\Console\Console\Output\StreamOutput;
+use Phalanx\Console\Output\StreamOutput;
 use Phalanx\Boot\AppContext;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;

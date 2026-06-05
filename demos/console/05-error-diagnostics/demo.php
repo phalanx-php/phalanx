@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/../../../vendor/autoload_runtime.php';
 
-use Phalanx\Console\Application\Console;
+use Phalanx\Console\Facade;
 use Phalanx\Console\Command\CommandContext;
 use Phalanx\Boot\AppContext;
 use Phalanx\Demos\Kit\DemoReport;
@@ -24,7 +24,7 @@ return DemoReport::demo(
     static function (DemoReport $report, AppContext $context): void {
         $report->note('This demo triggers an expected RuntimeException to showcase rich error rendering.');
         
-        $app = Console::starting($context->values)
+        $app = Facade::starting($context->values)
             ->command('demo:deep-error', static function (CommandContext $ctx) {
 
                 // Spawn a complex background tree

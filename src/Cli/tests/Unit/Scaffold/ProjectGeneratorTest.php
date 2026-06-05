@@ -224,7 +224,7 @@ final class ProjectGeneratorTest extends TestCase
         self::assertIsString($bin);
         self::assertStringContainsString('#!/usr/bin/env php', $bin);
         self::assertStringContainsString('autoload_runtime.php', $bin);
-        self::assertStringContainsString('Console::starting($context)', $bin);
+        self::assertStringContainsString('Facade::starting($context)', $bin);
     }
 
     #[Test]

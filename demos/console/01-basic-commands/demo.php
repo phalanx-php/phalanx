@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 require __DIR__ . '/../../../vendor/autoload_runtime.php';
 
-use Phalanx\Console\Application\Console;
+use Phalanx\Console\Facade;
 use Phalanx\Console\Command\CommandGroup;
-use Phalanx\Console\Console\Output\StreamOutput;
-use Phalanx\Console\Console\Output\TerminalEnvironment;
+use Phalanx\Console\Output\StreamOutput;
+use Phalanx\Console\Output\TerminalEnvironment;
 use Phalanx\Boot\AppContext;
 use Phalanx\Demos\Console\BasicCommands\DebugDeadlockCommand;
 use Phalanx\Demos\Console\BasicCommands\GreetCommand;
@@ -33,7 +33,7 @@ return DemoReport::demo(
             }
             $capture = new StreamOutput($stream, new TerminalEnvironment(columns: 80, lines: 24));
 
-            $app = Console::starting(['argv' => array_merge(['demo'], $argv)])
+            $app = Facade::starting(['argv' => array_merge(['demo'], $argv)])
                 ->providers(new OutputBundle($capture))
                 ->commands($commands)
                 ->build();

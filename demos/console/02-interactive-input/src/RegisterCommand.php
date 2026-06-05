@@ -7,14 +7,14 @@ namespace Phalanx\Demos\Console\InteractiveInput;
 use Phalanx\Console\Command\CommandConfig;
 use Phalanx\Console\Command\CommandContext;
 use Phalanx\Console\Command\DescribesCommand;
-use Phalanx\Console\Console\Input\ConfirmInput;
-use Phalanx\Console\Console\Input\KeyReader;
-use Phalanx\Console\Console\Input\SelectInput;
-use Phalanx\Console\Console\Input\TextInput;
-use Phalanx\Console\Console\Output\StreamOutput;
-use Phalanx\Console\Console\Style\Theme;
-use Phalanx\Console\Console\Widget\Form;
-use Phalanx\Console\Console\Widget\FormRevertedException;
+use Phalanx\Console\Input\ConfirmInput;
+use Phalanx\Console\Input\KeyReader;
+use Phalanx\Console\Input\SelectInput;
+use Phalanx\Console\Input\TextInput;
+use Phalanx\Console\Output\StreamOutput;
+use Phalanx\Console\Style\Theme;
+use Phalanx\Console\Widget\Form;
+use Phalanx\Console\Widget\FormRevertedException;
 use Phalanx\Task\Scopeable;
 
 /**

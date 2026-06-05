@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Console\Tests\Integration\Application;
 
-use Phalanx\Console\Console\Output\StreamOutput;
-use Phalanx\Console\Console\Output\TerminalEnvironment;
+use Phalanx\Console\Output\StreamOutput;
+use Phalanx\Console\Output\TerminalEnvironment;
 use PHPUnit\Framework\Assert;
 
 /**

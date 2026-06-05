@@ -7,12 +7,12 @@ namespace Phalanx\Console\Tests\Integration\Command;
 use Phalanx\Application;
 use Phalanx\Console\Command\CommandConfig;
 use Phalanx\Console\Command\CommandGroup;
-use Phalanx\Console\Tests\Support\ConsoleTestCase;
+use Phalanx\Console\Tests\Support\TestCase;
 use Phalanx\Console\Tests\Fixtures\Commands\FailingCommand;
 use Phalanx\Console\Tests\Fixtures\Commands\NoopCommand;
 use PHPUnit\Framework\Attributes\Test;
 
-final class CommandDispatchTest extends ConsoleTestCase
+final class CommandDispatchTest extends TestCase
 {
     private Application $app;
 

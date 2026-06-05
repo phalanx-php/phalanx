@@ -7,12 +7,12 @@ namespace Phalanx\Console\Command;
 use Phalanx\AppHost;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Cancellation\Halted;
-use Phalanx\Console\Application\ConsoleConfig;
-use Phalanx\Console\Console\ConsoleErrorRenderer;
-use Phalanx\Console\Console\DefaultConsoleErrorRenderer;
-use Phalanx\Console\Console\Output\StreamOutput;
-use Phalanx\Console\Runtime\Identity\ConsoleSignal;
-use Phalanx\Console\Runtime\Identity\ConsoleSignalState;
+use Phalanx\Console\Application\Config;
+use Phalanx\Console\DefaultErrorRenderer;
+use Phalanx\Console\ErrorRenderer;
+use Phalanx\Console\Output\StreamOutput;
+use Phalanx\Console\Runtime\Identity\Signal;
+use Phalanx\Console\Runtime\Identity\SignalState;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\ScopeIdentity;
 use RuntimeException;
@@ -25,19 +25,19 @@ final class CommandDispatcher
 
     private ?StreamOutput $errorOutput = null;
 
-    /** @var list<ConsoleErrorRenderer> */
+    /** @var list<ErrorRenderer> */
     private array $errorRenderers = [];
 
     /** @param array<string, InlineCommand> $inlineCommands */
     public function __construct(
         private AppHost $host,
         private CommandGroup $commands,
-        private ConsoleConfig $config,
+        private Config $config,
         private array $inlineCommands = [],
     ) {
     }
 
-    public function withErrorRenderers(ConsoleErrorRenderer ...$renderers): self
+    public function withErrorRenderers(ErrorRenderer ...$renderers): self
     {
         $this->errorRenderers = array_values([...$this->errorRenderers, ...$renderers]);
 
@@ -61,13 +61,13 @@ final class CommandDispatcher
      * @internal
      * @param list<string> $argv
      */
-    public function dispatchScoped(array $argv, ExecutionScope $rootScope, ?ConsoleSignalState $signals = null): int
+    public function dispatchScoped(array $argv, ExecutionScope $rootScope, ?SignalState $signals = null): int
     {
         return $this->dispatchInScope(array_values($argv), $rootScope, $signals);
     }
 
     /** @param list<string> $argv */
-    private function dispatchInScope(array $argv, ExecutionScope $rootScope, ?ConsoleSignalState $signals = null): int
+    private function dispatchInScope(array $argv, ExecutionScope $rootScope, ?SignalState $signals = null): int
     {
         $isOption = isset($argv[0]) && str_starts_with($argv[0], '-');
         $defaultCommand = $argv === [] || $isOption;
@@ -98,8 +98,8 @@ final class CommandDispatcher
             return 0;
         } catch (Cancelled $e) {
             $signal = $signals === null ? null : $signals->current();
-            $reason = $signal instanceof ConsoleSignal ? $signal->reason : $e->getMessage();
-            $exitCode = $signal instanceof ConsoleSignal ? $signal->exitCode : 130;
+            $reason = $signal instanceof Signal ? $signal->reason : $e->getMessage();
+            $exitCode = $signal instanceof Signal ? $signal->exitCode : 130;
 
             $lifecycle->abort($reason, $exitCode);
             $this->errorOutput()->persist("Cancelled: $reason");
@@ -145,7 +145,7 @@ final class CommandDispatcher
             }
         }
 
-        $renderer = new DefaultConsoleErrorRenderer(debug: true);
+        $renderer = new DefaultErrorRenderer(debug: true);
         $renderer->render($commandScope, $e, $this->errorOutput());
     }
 

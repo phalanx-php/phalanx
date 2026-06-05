@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 require __DIR__ . '/../../../vendor/autoload_runtime.php';
 
-use Phalanx\Console\Application\Console;
+use Phalanx\Console\Facade;
 use Phalanx\Console\Command\CommandGroup;
-use Phalanx\Console\Console\Output\TerminalEnvironment;
-use Phalanx\Console\Console\Style\Theme;
+use Phalanx\Console\Output\TerminalEnvironment;
+use Phalanx\Console\Style\Theme;
 use Phalanx\Boot\AppContext;
 use Phalanx\Demos\Console\SupervisedConcurrency\DeployBundle;
 use Phalanx\Demos\Console\SupervisedConcurrency\DeployCommand;
@@ -34,7 +34,7 @@ return DemoReport::demo(
         ]);
 
         $start = microtime(true);
-        $app = Console::starting(['argv' => ['demo', 'deploy', 'staging']])
+        $app = Facade::starting(['argv' => ['demo', 'deploy', 'staging']])
             ->providers(new DeployBundle($stream, $terminal, $theme))
             ->commands($commands)
             ->build();

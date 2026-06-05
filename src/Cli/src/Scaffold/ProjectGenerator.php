@@ -200,12 +200,12 @@ declare(strict_types=1);
 
 require __DIR__ . '/../vendor/autoload_runtime.php';
 
-use Phalanx\Console\Application\Console;
-use Phalanx\Console\Console\Style\ConsoleServiceBundle;
+use Phalanx\Console\Facade;
+use Phalanx\Console\Style\Bundle;
 
 return static function (array $context): int {
-    return Console::starting($context)
-        ->providers(new ConsoleServiceBundle())
+    return Facade::starting($context)
+        ->providers(new Bundle())
         ->commands(__DIR__ . '/../commands.php')
         ->run();
 };
@@ -241,7 +241,7 @@ use Phalanx\Console\Command\Arg;
 use Phalanx\Console\Command\CommandConfig;
 use Phalanx\Console\Command\CommandContext;
 use Phalanx\Console\Command\DescribesCommand;
-use Phalanx\Console\Console\Output\StreamOutput;
+use Phalanx\Console\Output\StreamOutput;
 use Phalanx\Task\Scopeable;
 
 final class Hello implements Scopeable, DescribesCommand

@@ -136,11 +136,11 @@ parameters:
             reportUnmatched: true
         -
             identifier: phalanx.cancellation.rawSleep
-            path: src/Console/tests/Integration/Application/ConsoleApplicationTest.php
+            path: src/Console/tests/Integration/Application/ApplicationTest.php
             reportUnmatched: true
         -
             identifier: phalanx.cancellation.rawSleep
-            path: src/Console/tests/Integration/Runtime/Identity/ConsoleSignalTrapTest.php
+            path: src/Console/tests/Integration/Runtime/Identity/SignalTrapTest.php
             reportUnmatched: true
         -
             identifier: phalanx.cancellation.rawSleep
@@ -230,7 +230,7 @@ parameters:
             reportUnmatched: true
         -
             identifier: phalanx.process.managedOnly
-            path: src/Console/tests/Integration/Console/PromptIntegrationTest.php
+            path: src/Console/tests/Integration/PromptIntegrationTest.php
             reportUnmatched: true
         -
             identifier: phalanx.process.managedOnly

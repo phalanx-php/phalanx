@@ -1,0 +1,29 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Phalanx\Console;
+
+use Closure;
+use Phalanx\Boot\AppContext;
+use Phalanx\Console\Application\Builder;
+use Phalanx\Console\Command\CommandConfig;
+use Phalanx\Task\Executable;
+use Phalanx\Task\Scopeable;
+
+final class Facade
+{
+    /** @param array<string,mixed> $context */
+    public static function starting(array $context = []): Builder
+    {
+        return new Builder(new AppContext($context));
+    }
+
+    public static function command(
+        string $name,
+        Closure|Scopeable|Executable $handler,
+        ?CommandConfig $config = null,
+    ): Builder {
+        return self::starting()->command($name, $handler, $config);
+    }
+}

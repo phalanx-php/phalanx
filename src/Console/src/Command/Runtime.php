@@ -5,32 +5,32 @@ declare(strict_types=1);
 namespace Phalanx\Console\Command;
 
 use Phalanx\AppHost;
-use Phalanx\Console\Application\ConsoleApplication;
-use Phalanx\Console\Application\ConsoleRuntimeRunner;
+use Phalanx\Console\Application\Application;
+use Phalanx\Console\Application\RuntimeRunner;
 use RuntimeException;
 use Symfony\Component\Runtime\GenericRuntime;
 use Symfony\Component\Runtime\RunnerInterface;
 
 /**
- * Symfony Runtime that returns ConsoleRuntimeRunner when the application
- * closure resolves an ConsoleApplication. Bare AppHost instances are
- * rejected — Console entry points must build through Console::starting()
+ * Symfony Runtime that returns RuntimeRunner when the application
+ * closure resolves an Application. Bare AppHost instances are
+ * rejected — Console entry points must build through Facade::starting()
  * so console-specific bootstrap (argv, signal policy, output streams)
- * lands in a proper ConsoleConfig before run().
+ * lands in a proper Config before run().
  */
 final class Runtime extends GenericRuntime
 {
     #[\Override]
     public function getRunner(?object $application): RunnerInterface
     {
-        if ($application instanceof ConsoleApplication) {
-            return new ConsoleRuntimeRunner($application);
+        if ($application instanceof Application) {
+            return new RuntimeRunner($application);
         }
 
         if ($application instanceof AppHost) {
             throw new RuntimeException(
-                'Console runtime expects an ConsoleApplication. '
-                . 'Build one with Phalanx\\Console\\Application\\Console::starting($context).',
+                'Console runtime expects an Application. '
+                . 'Build one with Phalanx\\Console\\Application\\Facade::starting($context).',
             );
         }
 

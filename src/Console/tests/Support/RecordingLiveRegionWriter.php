@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Console\Tests\Support;
 
-use Phalanx\Console\Console\Output\LiveRegionWriter;
+use Phalanx\Console\Output\LiveRegionWriter;
 
 final class RecordingLiveRegionWriter implements LiveRegionWriter
 {

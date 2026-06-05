@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Demos\Console\SupervisedConcurrency;
 
-use Phalanx\Console\Console\Output\StreamOutput;
-use Phalanx\Console\Console\Output\TerminalEnvironment;
-use Phalanx\Console\Console\Style\Theme;
+use Phalanx\Console\Output\StreamOutput;
+use Phalanx\Console\Output\TerminalEnvironment;
+use Phalanx\Console\Style\Theme;
 use Phalanx\Boot\AppContext;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;

@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Phalanx\Console\Tests\Fixtures\Commands;
 
-use Phalanx\Console\Console\Output\StreamOutput;
+use Phalanx\Console\Output\StreamOutput;
 use Phalanx\Scope\Scope;
 use Phalanx\Task\Scopeable;
 
 /**
  * Test command that echoes its name to the captured StreamOutput so
- * ConsoleLens tests can assert on captured stdout.
+ * Lens tests can assert on captured stdout.
  */
 final class EchoArgvCommand implements Scopeable
 {

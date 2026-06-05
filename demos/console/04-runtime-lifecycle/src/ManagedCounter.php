@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Demos\Console\RuntimeLifecycle;
 
-use Phalanx\Console\Console\Output\StreamOutput;
+use Phalanx\Console\Output\StreamOutput;
 
 /**
  * Mock managed resource. open() prints a banner; close() prints a cleanup
