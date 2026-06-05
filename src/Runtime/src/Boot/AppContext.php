@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Boot;
 
 use Phalanx\Boot\Exception\MissingContextValue;
+use Phalanx\Config\TomlConfigSource;
 
 /**
  * Typed wrapper around the application context map consumed by every
@@ -19,9 +20,22 @@ use Phalanx\Boot\Exception\MissingContextValue;
  */
 class AppContext
 {
+    public const string CONFIG_FILE = 'PHALANX_CONFIG_FILE';
+
     /** @param array<string,mixed> $values */
     public function __construct(private(set) array $values = [])
     {
+    }
+
+    /** @param array<string,mixed> $values */
+    public static function fromProject(array $values = []): self
+    {
+        $configFile = self::projectConfigFile($values);
+        if ($configFile === null) {
+            return new self($values);
+        }
+
+        return new self([...TomlConfigSource::fromFile($configFile), ...$values]);
     }
 
     public function has(string $key): bool
@@ -110,5 +124,22 @@ class AppContext
     public function with(string $key, mixed $value): self
     {
         return new self([...$this->values, $key => $value]);
+    }
+
+    /** @param array<string,mixed> $values */
+    private static function projectConfigFile(array $values): ?string
+    {
+        if (array_key_exists(self::CONFIG_FILE, $values)) {
+            $configured = $values[self::CONFIG_FILE];
+
+            return $configured === null || $configured === '' ? null : (string) $configured;
+        }
+
+        $cwd = getcwd();
+        if ($cwd === false) {
+            return null;
+        }
+
+        return $cwd . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'phalanx.toml';
     }
 }

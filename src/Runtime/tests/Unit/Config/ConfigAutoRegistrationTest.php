@@ -79,6 +79,26 @@ final class ConfigAutoRegistrationTest extends TestCase
     }
 
     #[Test]
+    public function autoRegisteredConfigReceivesValuesFromProjectToml(): void
+    {
+        $path = $this->temporaryToml(<<<'TOML'
+[env]
+HOPLITE_RANK = "lochagos"
+HOPLITE_SHIELD_WEIGHT = 10
+TOML);
+
+        $result = Application::starting([AppContext::CONFIG_FILE => $path])
+            ->providers(new HopliteBundle())
+            ->run(Task::named(
+                'test.config.auto-project-toml',
+                static fn(ExecutionScope $scope): HopliteConfig => $scope->service(HopliteConfig::class),
+            ));
+
+        self::assertSame('lochagos', $result->rank);
+        self::assertSame(10, $result->shieldWeight);
+    }
+
+    #[Test]
     public function multiplebundlesWithConfigsAllResolveCorrectly(): void
     {
         $result = Application::starting([
@@ -99,6 +119,15 @@ final class ConfigAutoRegistrationTest extends TestCase
 
         self::assertSame('taxiarch', $result['hoplite']->rank);
         self::assertSame(16, $result['formation']->depth);
+    }
+
+    private function temporaryToml(string $contents): string
+    {
+        $path = tempnam(sys_get_temp_dir(), 'phalanx-config-auto-');
+        self::assertIsString($path);
+        file_put_contents($path, $contents);
+
+        return $path;
     }
 }
 

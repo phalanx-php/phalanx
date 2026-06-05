@@ -15,6 +15,6 @@ final readonly class Server
     /** @param array<string,mixed> $context */
     public static function starting(array $context = []): \Phalanx\Http\ApplicationBuilder
     {
-        return new \Phalanx\Http\ApplicationBuilder(new AppContext($context));
+        return new \Phalanx\Http\ApplicationBuilder(AppContext::fromProject($context));
     }
 }

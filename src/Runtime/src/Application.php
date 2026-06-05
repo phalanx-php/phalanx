@@ -55,7 +55,7 @@ class Application implements AppHost
     /** @param array<string,mixed> $context */
     public static function starting(array $context = []): ApplicationBuilder
     {
-        return new ApplicationBuilder(new AppContext($context));
+        return new ApplicationBuilder(AppContext::fromProject($context));
     }
 
     public function providers(): array

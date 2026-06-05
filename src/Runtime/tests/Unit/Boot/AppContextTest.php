@@ -196,4 +196,43 @@ final class AppContextTest extends TestCase
 
         new AppContext(['port' => 'abc'])->int('port');
     }
+
+    #[Test]
+    public function fromProjectMergesConfiguredTomlBeforeExplicitValues(): void
+    {
+        $path = $this->temporaryToml(<<<'TOML'
+[app]
+name = "toml-app"
+
+[env]
+HOPLITE_RANK = "strategos"
+HOPLITE_SHIELD_WEIGHT = 8
+TOML);
+
+        $ctx = AppContext::fromProject([
+            AppContext::CONFIG_FILE => $path,
+            'HOPLITE_RANK' => 'lochos',
+        ]);
+
+        self::assertSame('toml-app', $ctx->string('APP_NAME'));
+        self::assertSame('lochos', $ctx->string('HOPLITE_RANK'));
+        self::assertSame(8, $ctx->int('HOPLITE_SHIELD_WEIGHT'));
+    }
+
+    #[Test]
+    public function fromProjectCanDisableTomlLoading(): void
+    {
+        $ctx = AppContext::fromProject([AppContext::CONFIG_FILE => null]);
+
+        self::assertSame([AppContext::CONFIG_FILE => null], $ctx->values);
+    }
+
+    private function temporaryToml(string $contents): string
+    {
+        $path = tempnam(sys_get_temp_dir(), 'phalanx-app-context-');
+        self::assertIsString($path);
+        file_put_contents($path, $contents);
+
+        return $path;
+    }
 }
