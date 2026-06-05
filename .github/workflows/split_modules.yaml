@@ -43,7 +43,12 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
         run: |
           REPO_NAME=$(basename ${{ matrix.package.split_repository }})
-          gh repo create "phalanx-php/$REPO_NAME" --public --description "Read-only split of phalanx-php/phalanx" 2>/dev/null || true
+          if gh repo view "phalanx-php/$REPO_NAME" >/dev/null 2>&1; then
+            echo "Repository phalanx-php/$REPO_NAME already exists."
+            exit 0
+          fi
+
+          gh repo create "phalanx-php/$REPO_NAME" --public --description "Read-only split of phalanx-php/phalanx"
 
       - name: Split module
         uses: driesvints/monorepo-split-github-action@v2
