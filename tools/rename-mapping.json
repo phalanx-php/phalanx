@@ -242,10 +242,10 @@
         "newTestNamespace": "Phalanx\\Mark\\Tests",
         "oldPackage": "phalanx-php/mark",
         "newPackage": "phalanx-php/mark",
-        "oldSplitRepo": null,
-        "newSplitRepo": null,
+        "oldSplitRepo": "phalanx-mark",
+        "newSplitRepo": "phalanx-mark",
         "notes": [
-            "Mark has package metadata but is not currently in the split_modules workflow."
+            "Mark keeps its package name and split repository."
         ]
     },
     {

@@ -21,12 +21,13 @@ final class ProjectGenerator
             'namespace_escaped' => str_replace('\\', '\\\\', $namespace),
         ];
 
-        $write = static fn (string $path, string $template) => self::writeFile(
+        $write = static fn (string $path, string $template, ?int $mode = null) => self::writeFile(
             $directory . '/' . $path,
             $template,
             $variables,
             $output,
             $directory,
+            $mode,
         );
 
         $write('composer.json', self::composerTemplate($type));
@@ -38,7 +39,7 @@ final class ProjectGenerator
         };
     }
 
-    /** @param \Closure(string, string): void $write */
+    /** @param \Closure(string, string, ?int=): void $write */
     private static function writeApiFiles(\Closure $write): void
     {
         $write('public/index.php', self::apiIndexTemplate());
@@ -46,10 +47,10 @@ final class ProjectGenerator
         $write('src/Routes/Home.php', self::apiHomeTemplate());
     }
 
-    /** @param \Closure(string, string): void $write */
+    /** @param \Closure(string, string, ?int=): void $write */
     private static function writeConsoleFiles(\Closure $write): void
     {
-        $write('bin/app', self::consoleBinTemplate());
+        $write('bin/app', self::consoleBinTemplate(), 0755);
         $write('commands.php', self::consoleCommandsTemplate());
         $write('src/Commands/Hello.php', self::consoleHelloTemplate());
     }
@@ -69,6 +70,7 @@ final class ProjectGenerator
         array $variables,
         OutputInterface $output,
         string $projectDir,
+        ?int $mode = null,
     ): void {
         $dir = dirname($path);
 
@@ -80,6 +82,10 @@ final class ProjectGenerator
 
         if (file_put_contents($path, $content) === false) {
             throw new \RuntimeException("Failed to write file: {$path}");
+        }
+
+        if ($mode !== null && !@chmod($path, $mode)) {
+            throw new \RuntimeException("Failed to chmod file: {$path}");
         }
 
         $relative = ltrim(substr($path, strlen($projectDir)), '/');

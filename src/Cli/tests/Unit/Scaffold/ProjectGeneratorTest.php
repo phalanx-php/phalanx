@@ -8,6 +8,7 @@ use Phalanx\Cli\Scaffold\ProjectGenerator;
 use Phalanx\Cli\Scaffold\ProjectType;
 use Phalanx\Cli\Tests\Support\RemovesDirectories;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Output\BufferedOutput;
 
@@ -238,5 +239,71 @@ final class ProjectGeneratorTest extends TestCase
         self::assertStringContainsString('"phalanx-php/http"', $content);
         self::assertStringNotContainsString('"phalanx-php/console"', $content);
         self::assertStringNotContainsString('"bin":', $content);
+    }
+
+    #[Test]
+    public function consoleBinAppIsExecutable(): void
+    {
+        $output = new BufferedOutput();
+
+        (new ProjectGenerator())('my-tool', $this->tempDir, $output, ProjectType::Console);
+
+        self::assertTrue(is_executable($this->tempDir . '/bin/app'));
+    }
+
+    #[Test]
+    #[DataProvider('projectTypes')]
+    public function composerJsonIsValid(ProjectType $type): void
+    {
+        $output = new BufferedOutput();
+
+        (new ProjectGenerator())('my-app', $this->tempDir, $output, $type);
+
+        $content = file_get_contents($this->tempDir . '/composer.json');
+        self::assertIsString($content);
+        self::assertIsArray(json_decode($content, associative: true, flags: JSON_THROW_ON_ERROR));
+    }
+
+    #[Test]
+    #[DataProvider('projectTypes')]
+    public function generatedPhpFilesPassSyntaxLint(ProjectType $type): void
+    {
+        $output = new BufferedOutput();
+
+        (new ProjectGenerator())('my-app', $this->tempDir, $output, $type);
+
+        foreach (self::phpFiles($this->tempDir) as $file) {
+            $lines = [];
+            exec(PHP_BINARY . ' -l ' . escapeshellarg($file), $lines, $status);
+
+            self::assertSame(0, $status, implode("\n", $lines));
+        }
+    }
+
+    /** @return iterable<string, array{ProjectType}> */
+    public static function projectTypes(): iterable
+    {
+        yield 'api' => [ProjectType::Api];
+        yield 'console' => [ProjectType::Console];
+    }
+
+    /** @return list<string> */
+    private static function phpFiles(string $directory): array
+    {
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($directory, \FilesystemIterator::SKIP_DOTS),
+        );
+
+        $files = [];
+
+        foreach ($iterator as $file) {
+            if ($file->isFile() && $file->getExtension() === 'php') {
+                $files[] = $file->getPathname();
+            }
+        }
+
+        sort($files);
+
+        return $files;
     }
 }
