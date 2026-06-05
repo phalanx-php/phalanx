@@ -6,8 +6,6 @@ namespace Phalanx\Http\Response;
 
 use GuzzleHttp\Psr7\Response as PsrResponse;
 use Phalanx\Cancellation\Cancelled;
-use Phalanx\Http\HttpRequestResource;
-use Phalanx\Http\HttpServerConfig;
 use Phalanx\Http\RequestContext;
 use Phalanx\Supervisor\Supervisor;
 use Phalanx\Supervisor\TaskTreeFormatter;
@@ -24,7 +22,7 @@ use Throwable;
  */
 final readonly class HtmlErrorResponseRenderer implements ErrorResponseRenderer
 {
-    public function __construct(private HttpServerConfig $config = new HttpServerConfig())
+    public function __construct(private \Phalanx\Http\ServerConfig $config = new \Phalanx\Http\ServerConfig())
     {
     }
 
@@ -34,13 +32,13 @@ final readonly class HtmlErrorResponseRenderer implements ErrorResponseRenderer
             return null;
         }
 
-        $resource = $ctx->service(HttpRequestResource::class);
+        $resource = $ctx->service(\Phalanx\Http\RequestResource::class);
         $file = $e->getFile();
         $line = $e->getLine();
 
         $ledger = '';
         try {
-            $ledger = (new TaskTreeFormatter())->format(
+            $ledger = new TaskTreeFormatter()->format(
                 $ctx->service(Supervisor::class)->tree(),
             );
         } catch (Cancelled $c) {

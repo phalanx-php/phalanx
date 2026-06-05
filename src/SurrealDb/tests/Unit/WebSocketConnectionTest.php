@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\SurrealDb\Tests\Unit;
 
 use Generator;
-use Phalanx\WebSocket\WsMessage;
+use Phalanx\WebSocket\Message;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Stream\Channel;
 use Phalanx\Testing\PhalanxTestCase;
@@ -151,7 +151,7 @@ final class FakeLiveSocket implements \Phalanx\SurrealDb\Live\Socket
     /** @var list<array<string, mixed>> */
     public array $sent = [];
 
-    private Channel $messages;
+    private readonly Channel $messages;
 
     /** @param list<callable(array<string, mixed>): array<string, mixed>> $responses */
     public function __construct(
@@ -178,7 +178,7 @@ final class FakeLiveSocket implements \Phalanx\SurrealDb\Live\Socket
     /** @param array<string, mixed> $payload */
     public function push(array $payload): void
     {
-        $this->messages->emit(WsMessage::json($payload));
+        $this->messages->emit(\Phalanx\WebSocket\Message::json($payload));
     }
 
     public function close(): void

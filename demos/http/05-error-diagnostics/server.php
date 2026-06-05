@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 require __DIR__ . '/../../../vendor/autoload_runtime.php';
 
-use Phalanx\Http\Http;
-use Phalanx\Http\HttpServerConfig;
+use Phalanx\Http\Server;
+use Phalanx\Http\ServerConfig;
 use Phalanx\Task\Task;
 
 if (!class_exists('IgnitionDemoHandler')) {
@@ -36,9 +36,9 @@ if (!class_exists('IgnitionDemoHandler')) {
 }
 
 return static fn(array $context): \Closure => static function () use ($context): int {
-    return Http::starting($context)
+    return Server::starting($context)
         ->routes(['GET /fail' => IgnitionDemoHandler::class])
-        ->withServerConfig(new HttpServerConfig(
+        ->withServerConfig(new ServerConfig(
             ignitionEnabled: true,
             logoPath: '/logo.svg',
             faviconPath: 'https://raw.githubusercontent.com/phalanx-php/phalanx/refs/heads/main/mark.png',

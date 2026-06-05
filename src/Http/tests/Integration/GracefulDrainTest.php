@@ -14,8 +14,8 @@ use Phalanx\Service\Services;
 use Phalanx\Http\RequestContext;
 use Phalanx\Http\RouteGroup;
 use Phalanx\Http\Runtime\Identity\HttpEventSid;
-use Phalanx\Http\HttpRunner;
-use Phalanx\Http\HttpServerConfig;
+use Phalanx\Http\Runner;
+use Phalanx\Http\ServerConfig;
 use Phalanx\Stream\Channel;
 use Phalanx\Task\Scopeable;
 use Phalanx\Testing\PhalanxTestCase;
@@ -32,7 +32,7 @@ final class GracefulDrainTest extends PhalanxTestCase
 
         $this->scope->run(static function (ExecutionScope $scope) use ($application): void {
             DrainCompletingHandler::$entered = new Channel();
-            $runner = HttpRunner::from($application, new HttpServerConfig(requestTimeout: 5.0, drainTimeout: 2.0))
+            $runner = \Phalanx\Http\Runner::from($application, new \Phalanx\Http\ServerConfig(requestTimeout: 5.0, drainTimeout: 2.0))
                 ->withRoutes(RouteGroup::of([
                     'GET /slow' => DrainCompletingHandler::class,
                 ]));
@@ -69,7 +69,7 @@ final class GracefulDrainTest extends PhalanxTestCase
             $application->runtime()->memory->events->listen(static function ($event) use (&$events): void {
                 $events[] = $event;
             });
-            $runner = HttpRunner::from($application, new HttpServerConfig(requestTimeout: 10.0, drainTimeout: 0.05))
+            $runner = \Phalanx\Http\Runner::from($application, new \Phalanx\Http\ServerConfig(requestTimeout: 10.0, drainTimeout: 0.05))
                 ->withRoutes(RouteGroup::of([
                     'GET /stuck' => DrainStuckHandler::class,
                 ]));
@@ -119,7 +119,7 @@ final class GracefulDrainTest extends PhalanxTestCase
 
         $this->scope->run(static function (ExecutionScope $scope) use ($application): void {
             DrainCompletingHandler::$entered = new Channel();
-            $runner = HttpRunner::from($application, new HttpServerConfig(requestTimeout: 5.0, drainTimeout: 2.0))
+            $runner = \Phalanx\Http\Runner::from($application, new \Phalanx\Http\ServerConfig(requestTimeout: 5.0, drainTimeout: 2.0))
                 ->withRoutes(RouteGroup::of([
                     'GET /slow' => DrainCompletingHandler::class,
                     'GET /health' => StatusOk::class,
@@ -170,7 +170,7 @@ final class GracefulDrainTest extends PhalanxTestCase
         DrainEventTrackingHandler::$events = [];
 
         $this->scope->run(static function (ExecutionScope $scope) use ($application): void {
-            $runner = HttpRunner::from($application, new HttpServerConfig(requestTimeout: 5.0, drainTimeout: 2.0))
+            $runner = \Phalanx\Http\Runner::from($application, new \Phalanx\Http\ServerConfig(requestTimeout: 5.0, drainTimeout: 2.0))
                 ->withRoutes(RouteGroup::of([
                     'GET /slow' => DrainEventTrackingHandler::class,
                 ]));

@@ -13,7 +13,7 @@ use Throwable;
  *
  * This allows developers to catch specific domain exceptions and return
  * custom responses (e.g., Problem Details JSON, custom HTML pages) without
- * modifying the core HttpRunner.
+ * modifying the core Runner.
  */
 interface ErrorResponseRenderer
 {

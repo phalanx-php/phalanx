@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Phalanx\AiProviders\Tests\Unit\Transport\HttpClient;
 
 use Phalanx\Application;
-use Phalanx\HttpClient\HttpClient;
-use Phalanx\HttpClient\HttpClientConfig;
+use Phalanx\HttpClient\Client;
+use Phalanx\HttpClient\Config;
 use Phalanx\AiProviders\Runtime\CancellationException;
 use Phalanx\AiProviders\Runtime\Sync\Runtime as SyncRuntime;
 use Phalanx\AiProviders\Transport\HttpClient\Transport;
@@ -178,7 +178,7 @@ final class TransportTest extends TestCase
 
         self::bootApp()->scoped(
             static function (ExecutionScope $runtimeScope) use ($connection, &$chunkSeen): void {
-                $client = new HttpClient(
+                $client = new \Phalanx\HttpClient\Client(
                     tcpFactory: static fn(
                         string $_scheme,
                         string $_host,
@@ -204,13 +204,13 @@ final class TransportTest extends TestCase
     private static function bootApp(): Application
     {
         return Application::starting()
-            ->providers(HttpClient::services())
+            ->providers(\Phalanx\HttpClient\Client::services())
             ->compile();
     }
 
-    private static function stubClient(): HttpClient
+    private static function stubClient(): \Phalanx\HttpClient\Client
     {
-        return new HttpClient(new HttpClientConfig());
+        return new \Phalanx\HttpClient\Client(new \Phalanx\HttpClient\Config());
     }
 
     private static function stubScope(): Scope&Suspendable
@@ -262,7 +262,7 @@ final class TransportTest extends TestCase
 
         self::bootApp()->scoped(
             static function (ExecutionScope $runtimeScope) use ($connection, $beforeRead, $request, &$body): void {
-                $client = new HttpClient(
+                $client = new \Phalanx\HttpClient\Client(
                     tcpFactory: static fn(
                         string $_scheme,
                         string $_host,

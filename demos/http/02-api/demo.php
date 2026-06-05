@@ -16,7 +16,7 @@ return DemoReport::demo(
     'Http API',
     static function (DemoReport $report, AppContext $context): void {
         $routes = require __DIR__ . '/routes.php';
-        $app = Http::starting($context->values)
+        $app = \Phalanx\Http\Server::starting($context->values)
             ->providers(new ApiServiceBundle())
             ->routes($routes)
             ->build();
@@ -40,22 +40,22 @@ return DemoReport::demo(
                     200,
                 ],
                 'POST /api/v1/tasks (validated input + auth)' => [
-                    (new ServerRequest('POST', '/api/v1/tasks', [
+                    new ServerRequest('POST', '/api/v1/tasks', [
                         'Authorization'   => 'Bearer demo-token',
                         'Idempotency-Key' => 'task-001',
                         'Content-Type'    => 'application/json',
-                    ]))->withBody(Utils::streamFor(json_encode([
+                    ])->withBody(Utils::streamFor(json_encode([
                         'title'    => 'Review managed runtime claims',
                         'priority' => 2,
                     ], JSON_THROW_ON_ERROR))),
                     201,
                 ],
                 'POST /api/v1/tasks (invalid body 422)' => [
-                    (new ServerRequest('POST', '/api/v1/tasks', [
+                    new ServerRequest('POST', '/api/v1/tasks', [
                         'Authorization'   => 'Bearer demo-token',
                         'Idempotency-Key' => 'task-002',
                         'Content-Type'    => 'application/json',
-                    ]))->withBody(Utils::streamFor(json_encode([
+                    ])->withBody(Utils::streamFor(json_encode([
                         'title'    => 'no',
                         'priority' => 9,
                     ], JSON_THROW_ON_ERROR))),
@@ -68,7 +68,7 @@ return DemoReport::demo(
                 $report->record(sprintf('[%d] %s', $status, $label), $status === $expected);
             }
 
-            $spec = (new OpenApiGenerator(title: 'Http Demo API', version: '1.0.0'))->generate($routes);
+            $spec = new OpenApiGenerator(title: 'Http Demo API', version: '1.0.0')->generate($routes);
             $paths = array_keys($spec['paths']);
             sort($paths);
             $report->note('OpenAPI generated paths: ' . implode(', ', $paths));

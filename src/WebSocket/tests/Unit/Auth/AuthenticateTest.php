@@ -10,10 +10,10 @@ use Phalanx\Auth\AuthenticationException;
 use Phalanx\Auth\Guard;
 use Phalanx\Auth\Identity;
 use Phalanx\WebSocket\Auth\Authenticate;
-use Phalanx\WebSocket\AuthWsContext;
+use Phalanx\WebSocket\AuthenticatedContext;
 use Phalanx\WebSocket\ExecutionContext;
-use Phalanx\WebSocket\WsConfig;
-use Phalanx\WebSocket\WsConnection;
+use Phalanx\WebSocket\Config;
+use Phalanx\WebSocket\Connection;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Http\RouteParams;
 use PHPUnit\Framework\Attributes\Test;
@@ -29,21 +29,21 @@ final class AuthenticateTest extends TestCase
         $middleware = new Authenticate(new TestWsGuard(AuthContext::authenticated($identity, 'tok_ws')));
         $scope = new ExecutionContext(
             $this->createStub(ExecutionScope::class),
-            new WsConnection('ws-1'),
-            new WsConfig(),
+            new \Phalanx\WebSocket\Connection('ws-1'),
+            new \Phalanx\WebSocket\Config(),
             new ServerRequest('GET', '/socket/42'),
             new RouteParams(['id' => '42']),
         );
 
         $seen = null;
-        $result = $middleware($scope, static function (AuthWsContext $ctx) use (&$seen): string {
+        $result = $middleware($scope, static function (\Phalanx\WebSocket\AuthenticatedContext $ctx) use (&$seen): string {
             $seen = $ctx;
 
             return $ctx->auth->token() . ':' . $ctx->params->required('id');
         });
 
         self::assertSame('tok_ws:42', $result);
-        self::assertInstanceOf(AuthWsContext::class, $seen);
+        self::assertInstanceOf(\Phalanx\WebSocket\AuthenticatedContext::class, $seen);
         self::assertNotNull($seen->auth->identity);
         self::assertSame(42, $seen->auth->identity->id);
     }
@@ -54,8 +54,8 @@ final class AuthenticateTest extends TestCase
         $middleware = new Authenticate(new TestWsGuard(null));
         $scope = new ExecutionContext(
             $this->createStub(ExecutionScope::class),
-            new WsConnection('ws-1'),
-            new WsConfig(),
+            new \Phalanx\WebSocket\Connection('ws-1'),
+            new \Phalanx\WebSocket\Config(),
             new ServerRequest('GET', '/socket'),
             new RouteParams(),
         );

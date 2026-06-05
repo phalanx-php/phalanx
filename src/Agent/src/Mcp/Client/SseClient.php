@@ -8,17 +8,14 @@ use Phalanx\Agent\Mcp\McpClient;
 use Phalanx\Agent\Mcp\McpConnection;
 use Phalanx\Agent\Mcp\McpServer;
 use Phalanx\Agent\Mcp\Transport;
-use Phalanx\HttpClient\HttpClient;
-use Phalanx\HttpClient\HttpRequest;
-use Phalanx\HttpClient\HttpStream;
 use Phalanx\Scope\Scope;
 use Phalanx\Scope\Suspendable;
 use Phalanx\Scope\TaskScope;
 
-final class SseClient implements McpClient
+final readonly class SseClient implements McpClient
 {
     public function __construct(
-        private HttpClient $httpClient,
+        private \Phalanx\HttpClient\Client $httpClient,
     ) {
     }
 
@@ -32,7 +29,7 @@ final class SseClient implements McpClient
 
         $sseStream = $this->httpClient->stream(
             $scope,
-            HttpRequest::get($server->endpoint, ['Accept' => ['text/event-stream']]),
+            \Phalanx\HttpClient\Request::get($server->endpoint, ['Accept' => ['text/event-stream']]),
         );
 
         if ($sseStream->status !== 200) {
@@ -98,12 +95,12 @@ final class SseClient implements McpClient
 
     /**
      * Yields lines from the SSE stream, preserving empty strings so the
-     * SSE parser can detect event boundaries. HttpStream::lines() strips
+     * SSE parser can detect event boundaries. Stream::lines() strips
      * empty lines, so we drive read() directly.
      *
      * @return \Generator<int, string>
      */
-    private static function streamLines(Scope&Suspendable $scope, HttpStream $sseStream): \Generator
+    private static function streamLines(Scope&Suspendable $scope, \Phalanx\HttpClient\Stream $sseStream): \Generator
     {
         $buffer = '';
 

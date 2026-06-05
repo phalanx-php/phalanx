@@ -7,9 +7,6 @@ namespace Phalanx\SurrealDb\Tests\Unit;
 use Closure;
 use Phalanx\Application;
 use Phalanx\Boot\AppContext;
-use Phalanx\WebSocket\Client\WsClient;
-use Phalanx\WebSocket\Client\WsClientConfig;
-use Phalanx\HttpClient\HttpClient;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\Scope;
 use Phalanx\Scope\Suspendable;
@@ -25,14 +22,14 @@ final class BundleTest extends PhalanxTestCase
     {
         $result = $this->scope->run(
             static function (ExecutionScope $scope): array {
-                self::assertInstanceOf(HttpClient::class, $scope->service(HttpClient::class));
-                self::assertInstanceOf(WsClient::class, $scope->service(WsClient::class));
+                self::assertInstanceOf(\Phalanx\HttpClient\Client::class, $scope->service(\Phalanx\HttpClient\Client::class));
+                self::assertInstanceOf(\Phalanx\WebSocket\Client::class, $scope->service(\Phalanx\WebSocket\Client::class));
                 self::assertInstanceOf(\Phalanx\SurrealDb\Transport::class, $scope->service(\Phalanx\SurrealDb\Transport::class));
                 self::assertInstanceOf(\Phalanx\SurrealDb\Live\Transport::class, $scope->service(\Phalanx\SurrealDb\Live\Transport::class));
                 self::assertInstanceOf(\Phalanx\SurrealDb\Client::class, $scope->service(\Phalanx\SurrealDb\Client::class));
 
                 $config = $scope->service(\Phalanx\SurrealDb\Config::class);
-                $wsConfig = $scope->service(WsClientConfig::class);
+                $wsConfig = $scope->service(\Phalanx\WebSocket\Client\Config::class);
 
                 return [
                     'namespace' => $config->namespace,
@@ -140,7 +137,7 @@ final class BundleTest extends PhalanxTestCase
             Task::named(
                 'test.surrealdb.shared-infrastructure.first',
                 static fn(ExecutionScope $scope): array => [
-                    spl_object_id($scope->service(HttpClient::class)),
+                    spl_object_id($scope->service(\Phalanx\HttpClient\Client::class)),
                     spl_object_id($scope->service(\Phalanx\SurrealDb\Transport::class)),
                 ],
             ),
@@ -149,7 +146,7 @@ final class BundleTest extends PhalanxTestCase
             Task::named(
                 'test.surrealdb.shared-infrastructure.second',
                 static fn(ExecutionScope $scope): array => [
-                    spl_object_id($scope->service(HttpClient::class)),
+                    spl_object_id($scope->service(\Phalanx\HttpClient\Client::class)),
                     spl_object_id($scope->service(\Phalanx\SurrealDb\Transport::class)),
                 ],
             ),

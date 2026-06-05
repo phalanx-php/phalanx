@@ -10,7 +10,6 @@ use Phalanx\AiProviders\Provider;
 use Phalanx\AiProviders\Provider\Factory;
 use Phalanx\AiProviders\Provider\Registry;
 use Phalanx\AiProviders\Transport\HttpClient\Transport;
-use Phalanx\HttpClient\HttpClient;
 use Phalanx\Scope\TaskScope;
 use RuntimeException;
 
@@ -34,7 +33,7 @@ final class RegistryRouter implements InvocationRouter
             throw new RuntimeException("No provider registered for model alias '{$this->defaultModel}'");
         }
 
-        $transport = new Transport($scope->service(HttpClient::class), $scope);
+        $transport = new Transport($scope->service(\Phalanx\HttpClient\Client::class), $scope);
         $apiKey = $this->credentials[$resolution->config->id] ?? null;
 
         return Factory::create($resolution, $transport, $apiKey);

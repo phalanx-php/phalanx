@@ -21,7 +21,7 @@ final class UseTestAppViolation
 
     public function httpFacade(): void
     {
-        $http = Http::starting()->build();
+        $http = \Phalanx\Http\Server::starting()->build();
     }
 
     public function consoleCommand(): void

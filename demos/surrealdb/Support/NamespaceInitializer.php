@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Phalanx\Demos\SurrealDb\Support;
 
 use Phalanx\Cancellation\Cancelled;
-use Phalanx\HttpClient\HttpClient;
-use Phalanx\HttpClient\HttpRequest;
+use Phalanx\HttpClient\Client;
+use Phalanx\HttpClient\Request;
 use Phalanx\Scope\ExecutionScope;
 
 /**
@@ -21,14 +21,14 @@ final class NamespaceInitializer
     public function __invoke(ExecutionScope $scope, string $endpoint): bool
     {
         try {
-            $http = $scope->service(HttpClient::class);
+            $http = $scope->service(\Phalanx\HttpClient\Client::class);
             $body = json_encode([
                 'id' => 1,
                 'method' => 'query',
                 'params' => ['DEFINE NAMESPACE olympus; USE NAMESPACE olympus; DEFINE DATABASE pantheon;'],
             ], JSON_THROW_ON_ERROR);
 
-            $response = $http->request($scope, new HttpRequest(
+            $response = $http->request($scope, new \Phalanx\HttpClient\Request(
                 method: 'POST',
                 url: $endpoint . '/rpc',
                 headers: [

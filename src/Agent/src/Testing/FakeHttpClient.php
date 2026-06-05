@@ -4,10 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Agent\Testing;
 
-use Phalanx\HttpClient\HttpClient;
-use Phalanx\HttpClient\HttpRequest;
-use Phalanx\HttpClient\HttpResponse;
-use Phalanx\HttpClient\HttpStream;
 use Phalanx\Scope\Scope;
 use Phalanx\Scope\Suspendable;
 
@@ -25,29 +21,29 @@ use Phalanx\Scope\Suspendable;
  * Constructed without any live Runtime runtime or Swoole dependencies — safe
  * to use in unit tests, acceptance tests, and demo scripts alike.
  */
-final class FakeHttpClient extends HttpClient
+final class FakeHttpClient extends \Phalanx\HttpClient\Client
 {
-    /** @var list<HttpResponse> */
+    /** @var list<\Phalanx\HttpClient\Response> */
     private array $postQueue = [];
 
     /** @var list<array{string, string, string, array<string, list<string>>}> */
     private array $postedRequests = [];
 
     public function __construct(
-        private HttpStream $sseStream,
+        private readonly \Phalanx\HttpClient\Stream $sseStream,
     ) {
         parent::__construct();
     }
 
     #[\Override]
-    public function stream(Scope&Suspendable $scope, HttpRequest $request): HttpStream
+    public function stream(Scope&Suspendable $scope, \Phalanx\HttpClient\Request $request): \Phalanx\HttpClient\Stream
     {
         return $this->sseStream;
     }
 
     /** @param array<string, list<string>> $headers */
     #[\Override]
-    public function post(Scope&Suspendable $scope, string $url, string $body, array $headers = []): HttpResponse
+    public function post(Scope&Suspendable $scope, string $url, string $body, array $headers = []): \Phalanx\HttpClient\Response
     {
         $this->postedRequests[] = ['POST', $url, $body, $headers];
 
@@ -55,10 +51,10 @@ final class FakeHttpClient extends HttpClient
             return array_shift($this->postQueue);
         }
 
-        return new HttpResponse(202, 'Accepted', [], '');
+        return new \Phalanx\HttpClient\Response(202, 'Accepted', [], '');
     }
 
-    public function queuePostResponse(HttpResponse $response): void
+    public function queuePostResponse(\Phalanx\HttpClient\Response $response): void
     {
         $this->postQueue[] = $response;
     }

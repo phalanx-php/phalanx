@@ -9,7 +9,7 @@ use Phalanx\Http\Http;
 return static fn(array $context): \Closure => static function () use ($context): int {
     $listen = $context['argv'][1] ?? '127.0.0.1:8188';
 
-    return Http::starting($context)
+    return \Phalanx\Http\Server::starting($context)
         ->routes(__DIR__ . '/routes.php')
         ->listen($listen)
         ->withBanner(<<<'BANNER'

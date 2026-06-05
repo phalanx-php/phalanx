@@ -7,7 +7,7 @@ namespace Phalanx\Agent\Tests\Unit\Router;
 use RuntimeException;
 
 use Phalanx\Agent\Router\RegistryRouter;
-use Phalanx\HttpClient\HttpClient;
+use Phalanx\HttpClient\Client;
 use Phalanx\AiProviders\Agent;
 use Phalanx\AiProviders\Capabilities;
 use Phalanx\AiProviders\Capability;
@@ -66,7 +66,7 @@ final class RegistryRouterTest extends TestCase
 
     private function scopeWithHttpClient(): TaskScope
     {
-        $httpClient = $this->createStub(HttpClient::class);
+        $httpClient = $this->createStub(\Phalanx\HttpClient\Client::class);
         $scope = $this->createStub(TaskScope::class);
         $scope->method('service')->willReturn($httpClient);
 

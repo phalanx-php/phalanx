@@ -44,7 +44,7 @@ return DemoReport::demo(
             'GET /fail' => FailingDemoHandler::class,
         ]);
 
-        $app = Http::starting($context->values)
+        $app = \Phalanx\Http\Server::starting($context->values)
             ->routes($routes)
             ->ignition()
             ->build();

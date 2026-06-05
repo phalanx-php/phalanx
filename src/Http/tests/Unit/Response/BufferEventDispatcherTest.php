@@ -10,7 +10,7 @@ use Phalanx\Runtime\Memory\RuntimeMemory;
 use Phalanx\Runtime\Memory\RuntimeMemoryConfig;
 use Phalanx\Runtime\RuntimeContext;
 use Phalanx\Http\Response\BufferEventDispatcher;
-use Phalanx\Http\HttpRequestResource;
+use Phalanx\Http\RequestResource;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -49,12 +49,12 @@ final class BufferEventDispatcherTest extends TestCase
         self::assertTrue($dispatcher->tracksFd(2));
     }
 
-    private static function makeRequest(int $fd): HttpRequestResource
+    private static function makeRequest(int $fd): \Phalanx\Http\RequestResource
     {
         $memory = new RuntimeMemory(new RuntimeMemoryConfig());
         $context = new RuntimeContext($memory);
 
-        return HttpRequestResource::open(
+        return \Phalanx\Http\RequestResource::open(
             runtime: $context,
             request: new ServerRequest('GET', '/test'),
             token: CancellationToken::none(),

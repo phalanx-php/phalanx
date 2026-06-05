@@ -8,9 +8,9 @@ use GuzzleHttp\Psr7\ServerRequest;
 use Phalanx\Application;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Http\ExecutionContext;
-use Phalanx\Http\HttpRequestDiagnostics;
-use Phalanx\Http\HttpRequestResource;
-use Phalanx\Http\HttpServerConfig;
+use Phalanx\Http\RequestDiagnostics;
+use Phalanx\Http\RequestResource;
+use Phalanx\Http\ServerConfig;
 use Phalanx\Http\QueryParams;
 use Phalanx\Http\Response\HtmlErrorResponseRenderer;
 use Phalanx\Http\RouteConfig;
@@ -25,7 +25,7 @@ final class HtmlErrorResponseRendererTest extends TestCase
     #[Test]
     public function renderReturnsNullWhenDebugIsOff(): void
     {
-        $renderer = new HtmlErrorResponseRenderer(new HttpServerConfig(ignitionEnabled: false));
+        $renderer = new HtmlErrorResponseRenderer(new \Phalanx\Http\ServerConfig(ignitionEnabled: false));
         [$scope, $cleanup] = $this->createExecutionContextWithRequestResource();
 
         try {
@@ -40,7 +40,7 @@ final class HtmlErrorResponseRendererTest extends TestCase
     #[Test]
     public function renderReturnsDebugHtmlWhenDebugIsOn(): void
     {
-        $renderer = new HtmlErrorResponseRenderer(new HttpServerConfig(ignitionEnabled: true));
+        $renderer = new HtmlErrorResponseRenderer(new \Phalanx\Http\ServerConfig(ignitionEnabled: true));
         [$scope, $cleanup] = $this->createExecutionContextWithRequestResource();
 
         try {
@@ -68,9 +68,9 @@ final class HtmlErrorResponseRendererTest extends TestCase
 
         $request = new ServerRequest('GET', '/fail', ['Accept' => 'text/html']);
         $token = CancellationToken::create();
-        $resource = HttpRequestResource::open($app->runtime(), $request, $token, ownerScopeId: $inner->scopeId);
-        $inner->bindScopedInstance(HttpRequestResource::class, $resource);
-        $inner->bindScopedInstance(HttpRequestDiagnostics::class, new HttpRequestDiagnostics());
+        $resource = \Phalanx\Http\RequestResource::open($app->runtime(), $request, $token, ownerScopeId: $inner->scopeId);
+        $inner->bindScopedInstance(\Phalanx\Http\RequestResource::class, $resource);
+        $inner->bindScopedInstance(\Phalanx\Http\RequestDiagnostics::class, new \Phalanx\Http\RequestDiagnostics());
 
         $scope = new ExecutionContext(
             $inner,

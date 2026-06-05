@@ -6,7 +6,6 @@ namespace Phalanx\Http\Response;
 
 use GuzzleHttp\Psr7\Response as PsrResponse;
 use Phalanx\Cancellation\Cancelled;
-use Phalanx\Http\HttpRequestResource;
 use Phalanx\Http\RequestContext;
 use Phalanx\Supervisor\Supervisor;
 use Phalanx\Supervisor\TaskTreeFormatter;
@@ -16,7 +15,7 @@ use Throwable;
 /**
  * Standard Http error response implementation.
  *
- * Extracted from the legacy hardcoded logic in HttpRunner. Returns a 500 JSON
+ * Extracted from the legacy hardcoded logic in Runner. Returns a 500 JSON
  * response with optional debug information (trace, task tree) when enabled.
  */
 final readonly class DefaultErrorResponseRenderer implements ErrorResponseRenderer
@@ -32,7 +31,7 @@ final readonly class DefaultErrorResponseRenderer implements ErrorResponseRender
         ];
 
         if ($this->debug) {
-            $resource = $ctx->service(HttpRequestResource::class);
+            $resource = $ctx->service(\Phalanx\Http\RequestResource::class);
             $body['message'] = $e->getMessage();
             $body['request'] = [
                 'id' => $resource->id,
@@ -45,7 +44,7 @@ final readonly class DefaultErrorResponseRenderer implements ErrorResponseRender
             $body['tasks'] = '';
 
             try {
-                $body['tasks'] = (new TaskTreeFormatter())->format(
+                $body['tasks'] = new TaskTreeFormatter()->format(
                     $ctx->service(Supervisor::class)->tree(),
                 );
             } catch (Cancelled $c) {

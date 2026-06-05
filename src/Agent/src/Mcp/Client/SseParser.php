@@ -8,7 +8,7 @@ use Generator;
 
 /**
  * Parses SSE event-stream format from a raw line generator (including empty
- * lines — do NOT use HttpStream::lines() which strips them).
+ * lines — do NOT use Stream::lines() which strips them).
  *
  * Yields arrays with keys: event (string), data (string), id (?string).
  * Blank line flushes the accumulated fields as one event; incomplete

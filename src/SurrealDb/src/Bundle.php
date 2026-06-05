@@ -7,20 +7,16 @@ namespace Phalanx\SurrealDb;
 use Phalanx\Boot\AppContext;
 use Phalanx\Boot\BootHarness;
 use Phalanx\Config\Config;
-use Phalanx\HttpClient\HttpClient;
-use Phalanx\HttpClient\HttpClientConfig;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
-use Phalanx\WebSocket\Client\WsClient;
-use Phalanx\WebSocket\Client\WsClientConfig;
 
 class Bundle extends ServiceBundle
 {
     public function __construct(
-        private ?\Phalanx\SurrealDb\Config $config = null,
-        private ?\Phalanx\SurrealDb\Transport $transport = null,
-        private ?\Phalanx\SurrealDb\Live\Transport $liveTransport = null,
+        private readonly ?\Phalanx\SurrealDb\Config $config = null,
+        private readonly ?\Phalanx\SurrealDb\Transport $transport = null,
+        private readonly ?\Phalanx\SurrealDb\Live\Transport $liveTransport = null,
     ) {
     }
 
@@ -46,9 +42,9 @@ class Bundle extends ServiceBundle
         $services->singleton(\Phalanx\SurrealDb\Config::class)
             ->factory(static fn(): \Phalanx\SurrealDb\Config => $config ?? \Phalanx\SurrealDb\Config::fromContext($context));
 
-        $services->singleton(HttpClient::class)
+        $services->singleton(\Phalanx\HttpClient\Client::class)
             ->needs(\Phalanx\SurrealDb\Config::class)
-            ->factory(static fn(\Phalanx\SurrealDb\Config $config): HttpClient => new HttpClient(new HttpClientConfig(
+            ->factory(static fn(\Phalanx\SurrealDb\Config $config): \Phalanx\HttpClient\Client => new \Phalanx\HttpClient\Client(new \Phalanx\HttpClient\Config(
                 connectTimeout: $config->connectTimeout,
                 readTimeout: $config->readTimeout,
                 maxResponseBytes: $config->maxResponseBytes,
@@ -56,23 +52,23 @@ class Bundle extends ServiceBundle
             )));
 
         $services->singleton(\Phalanx\SurrealDb\Transport::class)
-            ->needs(HttpClient::class)
-            ->factory(static fn(HttpClient $http): \Phalanx\SurrealDb\Transport => $transport ?? new \Phalanx\SurrealDb\Transport\HttpClient\Transport($http));
+            ->needs(\Phalanx\HttpClient\Client::class)
+            ->factory(static fn(\Phalanx\HttpClient\Client $http): \Phalanx\SurrealDb\Transport => $transport ?? new \Phalanx\SurrealDb\Transport\HttpClient\Transport($http));
 
-        $services->singleton(WsClientConfig::class)
+        $services->singleton(\Phalanx\WebSocket\Client\Config::class)
             ->needs(\Phalanx\SurrealDb\Config::class)
-            ->factory(static fn(\Phalanx\SurrealDb\Config $config): WsClientConfig => new WsClientConfig(
+            ->factory(static fn(\Phalanx\SurrealDb\Config $config): \Phalanx\WebSocket\Client\Config => new \Phalanx\WebSocket\Client\Config(
                 connectTimeout: $config->connectTimeout,
                 recvTimeout: $config->readTimeout,
             ));
 
-        $services->singleton(WsClient::class)
-            ->needs(WsClientConfig::class)
-            ->factory(static fn(WsClientConfig $config): WsClient => new WsClient($config));
+        $services->singleton(\Phalanx\WebSocket\Client::class)
+            ->needs(\Phalanx\WebSocket\Client\Config::class)
+            ->factory(static fn(\Phalanx\WebSocket\Client\Config $config): \Phalanx\WebSocket\Client => new \Phalanx\WebSocket\Client($config));
 
         $services->singleton(\Phalanx\SurrealDb\Live\Transport::class)
-            ->needs(WsClient::class)
-            ->factory(static fn(WsClient $client): \Phalanx\SurrealDb\Live\Transport => $liveTransport ?? new \Phalanx\SurrealDb\Live\WebSocket\Transport($client));
+            ->needs(\Phalanx\WebSocket\Client::class)
+            ->factory(static fn(\Phalanx\WebSocket\Client $client): \Phalanx\SurrealDb\Live\Transport => $liveTransport ?? new \Phalanx\SurrealDb\Live\WebSocket\Transport($client));
 
         $services->scoped(\Phalanx\SurrealDb\Client::class)
             ->factory(static fn(

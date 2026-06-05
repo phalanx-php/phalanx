@@ -21,7 +21,7 @@ final class BenchmarkHarnessViolation
 
     public function httpFacade(): void
     {
-        Http::starting()->build();
+        \Phalanx\Http\Server::starting()->build();
     }
 
     public function consoleFacade(): void

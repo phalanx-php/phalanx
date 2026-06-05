@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\SurrealDb\Tests\Unit;
 
-use Phalanx\HttpClient\HttpClient;
-use Phalanx\HttpClient\HttpRequest;
-use Phalanx\HttpClient\HttpResponse;
+use Phalanx\HttpClient\Client;
+use Phalanx\HttpClient\Request;
+use Phalanx\HttpClient\Response;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\Scope;
 use Phalanx\Scope\Suspendable;
@@ -211,7 +211,7 @@ final class HttpClientTransportTest extends PhalanxTestCase
     #[Test]
     public function nonSuccessfulHttpResponseThrowsException(): void
     {
-        $transport = new \Phalanx\SurrealDb\Transport\HttpClient\Transport(new RecordingHttpClient([new HttpResponse(
+        $transport = new \Phalanx\SurrealDb\Transport\HttpClient\Transport(new RecordingHttpClient([new \Phalanx\HttpClient\Response(
             status: 500,
             reasonPhrase: 'Internal Server Error',
             headers: [],
@@ -231,7 +231,7 @@ final class HttpClientTransportTest extends PhalanxTestCase
     #[Test]
     public function invalidJsonResponseThrowsException(): void
     {
-        $transport = new \Phalanx\SurrealDb\Transport\HttpClient\Transport(new RecordingHttpClient([new HttpResponse(
+        $transport = new \Phalanx\SurrealDb\Transport\HttpClient\Transport(new RecordingHttpClient([new \Phalanx\HttpClient\Response(
             status: 200,
             reasonPhrase: 'OK',
             headers: ['content-type' => ['application/json']],
@@ -251,7 +251,7 @@ final class HttpClientTransportTest extends PhalanxTestCase
     #[Test]
     public function emptySuccessfulResponseReturnsNull(): void
     {
-        $transport = new \Phalanx\SurrealDb\Transport\HttpClient\Transport(new RecordingHttpClient([new HttpResponse(
+        $transport = new \Phalanx\SurrealDb\Transport\HttpClient\Transport(new RecordingHttpClient([new \Phalanx\HttpClient\Response(
             status: 204,
             reasonPhrase: 'No Content',
             headers: [],
@@ -299,8 +299,8 @@ final class HttpClientTransportTest extends PhalanxTestCase
     public function statusAndHealthUseGetEndpoints(): void
     {
         $http = new RecordingHttpClient([
-            new HttpResponse(status: 204, reasonPhrase: 'No Content', headers: [], body: ''),
-            new HttpResponse(status: 200, reasonPhrase: 'OK', headers: [], body: ''),
+            new \Phalanx\HttpClient\Response(status: 204, reasonPhrase: 'No Content', headers: [], body: ''),
+            new \Phalanx\HttpClient\Response(status: 200, reasonPhrase: 'OK', headers: [], body: ''),
         ]);
         $transport = new \Phalanx\SurrealDb\Transport\HttpClient\Transport($http);
         $config = new \Phalanx\SurrealDb\Config(
@@ -325,9 +325,9 @@ final class HttpClientTransportTest extends PhalanxTestCase
         self::assertSame(['Bearer jwt-token'], $http->requests[1]->headers['authorization']);
     }
 
-    private static function jsonResponse(string $body): HttpResponse
+    private static function jsonResponse(string $body): \Phalanx\HttpClient\Response
     {
-        return new HttpResponse(
+        return new \Phalanx\HttpClient\Response(
             status: 200,
             reasonPhrase: 'OK',
             headers: ['content-type' => ['application/json']],
@@ -336,12 +336,12 @@ final class HttpClientTransportTest extends PhalanxTestCase
     }
 }
 
-final class RecordingHttpClient extends HttpClient
+final class RecordingHttpClient extends \Phalanx\HttpClient\Client
 {
-    /** @var list<HttpRequest> */
+    /** @var list<\Phalanx\HttpClient\Request> */
     public array $requests = [];
 
-    /** @param list<HttpResponse> $responses */
+    /** @param list<\Phalanx\HttpClient\Response> $responses */
     public function __construct(
         private array $responses,
     ) {
@@ -349,11 +349,11 @@ final class RecordingHttpClient extends HttpClient
     }
 
     #[\Override]
-    public function request(Scope&Suspendable $scope, HttpRequest $request): HttpResponse
+    public function request(Scope&Suspendable $scope, \Phalanx\HttpClient\Request $request): \Phalanx\HttpClient\Response
     {
         $this->requests[] = $request;
 
-        return array_shift($this->responses) ?? new HttpResponse(
+        return array_shift($this->responses) ?? new \Phalanx\HttpClient\Response(
             status: 500,
             reasonPhrase: 'Missing Test Response',
             headers: [],

@@ -25,7 +25,7 @@ use PHPStan\Type\ObjectType;
 /**
  * Flags TestApp lens accessor reads that have no corresponding ServiceBundle
  * registered via testApp(...). Each accessor (e.g. $app->http) requires a
- * bundle whose static::lens() declares the backing lens class (e.g. HttpLens).
+ * bundle whose static::lens() declares the backing lens class (e.g. Lens).
  *
  * Runtime-native lenses (LedgerLens, ScopeLens, RuntimeLens) are always
  * available and are never flagged regardless of the bundles passed.
@@ -351,8 +351,8 @@ final class LensRequiresBundleRule implements Rule
      * Build the propertyName -> lensFqcn map once by parsing the generated
      * TestAppAccessors trait. Property hooks in PHP 8.4 emit as:
      *
-     *   public HttpLens $http {
-     *       get => $this->lens(HttpLens::class);
+     *   public Lens $http {
+     *       get => $this->lens(Lens::class);
      *   }
      *
      * PhpParser's NameResolver resolves the short class name to its FQCN via

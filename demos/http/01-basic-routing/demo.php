@@ -12,7 +12,7 @@ use Phalanx\Http\Http;
 return DemoReport::demo(
     'Http Basic Routing',
     static function (DemoReport $report, AppContext $context): void {
-        $app = Http::starting($context->values)
+        $app = \Phalanx\Http\Server::starting($context->values)
             ->routes(__DIR__ . '/routes.php')
             ->build();
 

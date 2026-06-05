@@ -11,7 +11,7 @@ enum HttpResourceSid: string implements RuntimeResourceId
     case HttpRequest = 'http.http_request';
     case HttpServer = 'http.http_server';
     case SseStream = 'http.sse_stream';
-    case WsConnection = 'http.ws_connection';
+    case Connection = 'http.ws_connection';
     case UdpListener = 'http.udp_listener';
     case UdpSession = 'http.udp_session';
 

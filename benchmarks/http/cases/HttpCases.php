@@ -12,9 +12,9 @@ use Phalanx\Benchmarks\Kit\BenchmarkApp;
 use Phalanx\Http\RequestContext;
 use Phalanx\Mark\Mark;
 use Phalanx\Http\RouteGroup;
-use Phalanx\Http\HttpRequestFactory;
-use Phalanx\Http\HttpRunner;
-use Phalanx\Http\HttpServerConfig;
+use Phalanx\Http\RequestFactory;
+use Phalanx\Http\Runner;
+use Phalanx\Http\ServerConfig;
 use Phalanx\Task\Scopeable;
 use Psr\Http\Message\ResponseInterface;
 use RuntimeException;
@@ -81,14 +81,14 @@ final class HttpDispatchRouteParamCase extends AbstractHttpBenchmarkCase
 
 final class HttpRequestFactoryCase extends AbstractHttpBenchmarkCase
 {
-    private HttpRequestFactory $factory;
+    private readonly \Phalanx\Http\RequestFactory $factory;
 
-    private SwooleRequest $request;
+    private readonly SwooleRequest $request;
 
     public function __construct()
     {
         parent::__construct('http_request_factory', 10_000, 100);
-        $this->factory = new HttpRequestFactory();
+        $this->factory = new \Phalanx\Http\RequestFactory();
         $this->request = self::request();
     }
 
@@ -151,7 +151,7 @@ final class HttpDrainCleanupCase extends AbstractHttpBenchmarkCase
     public function run(BenchmarkApp $app): void
     {
         $internalApp = Application::starting()->compile()->startup();
-        $runner = HttpRunner::from($internalApp, new HttpServerConfig(requestTimeout: 1.0, drainTimeout: 0.01))
+        $runner = \Phalanx\Http\Runner::from($internalApp, new \Phalanx\Http\ServerConfig(requestTimeout: 1.0, drainTimeout: 0.01))
             ->withRoutes(RouteGroup::of([
                 'GET /drain' => BenchmarkDrainRoute::class,
             ]));

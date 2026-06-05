@@ -4,17 +4,16 @@ declare(strict_types=1);
 
 namespace Phalanx\Agent\Testing;
 
-use Phalanx\HttpClient\HttpStream;
 use Phalanx\Scope\Suspendable;
 
 /**
- * Minimal HttpStream stand-in for tests and demos. Replays a fixed byte string
+ * Minimal Stream stand-in for tests and demos. Replays a fixed byte string
  * through read() in fixed-size chunks and tracks close() calls.
  *
  * Constructed without any Runtime runtime dependencies so it is safe to use
  * in unit tests, acceptance tests, and demo scripts alike.
  */
-final class FakeHttpStream extends HttpStream
+final class FakeHttpStream extends \Phalanx\HttpClient\Stream
 {
     public int $status { get => $this->fakeStatus; }
 
@@ -35,9 +34,9 @@ final class FakeHttpStream extends HttpStream
     private int $pos = 0;
 
     public function __construct(
-        private string $body,
-        private int $fakeStatus = 200,
-        private int $chunkSize = 128,
+        private readonly string $body,
+        private readonly int $fakeStatus = 200,
+        private readonly int $chunkSize = 128,
     ) {
     }
 

@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace Phalanx\Http\Response;
 
-use Phalanx\Http\HttpRequestResource;
 use Phalanx\Http\Runtime\Identity\HttpEventSid;
 use Swoole\Http\Server;
 
 final class BufferEventDispatcher
 {
-    /** @var array<int, HttpRequestResource> */
+    /** @var array<int, \Phalanx\Http\RequestResource> */
     private array $tracked = [];
 
     public function attach(Server $server): void
@@ -19,7 +18,7 @@ final class BufferEventDispatcher
         $server->on('BufferEmpty', $this->onBufferEmpty(...));
     }
 
-    public function track(int $fd, HttpRequestResource $request): void
+    public function track(int $fd, \Phalanx\Http\RequestResource $request): void
     {
         $this->tracked[$fd] = $request;
     }

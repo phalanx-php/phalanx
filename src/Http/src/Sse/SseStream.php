@@ -6,7 +6,6 @@ namespace Phalanx\Http\Sse;
 
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Cancellation\Cancelled;
-use Phalanx\Http\HttpRequestResource;
 use Phalanx\Http\Runtime\Identity\HttpEventSid;
 use Phalanx\Scope\Suspendable;
 use Phalanx\Supervisor\WaitReason;
@@ -33,7 +32,7 @@ final class SseStream
     public function __construct(
         private readonly Suspendable $scope,
         private readonly Response $response,
-        private readonly HttpRequestResource $request,
+        private readonly \Phalanx\Http\RequestResource $request,
         private readonly CancellationToken $cancellation,
     ) {
     }

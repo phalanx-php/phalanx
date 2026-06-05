@@ -4,17 +4,14 @@ declare(strict_types=1);
 
 namespace Phalanx\SurrealDb\Live\WebSocket;
 
-use Phalanx\WebSocket\Client\WsClientConnectionHandle;
-use Phalanx\WebSocket\WsMessage;
-
 class Socket implements \Phalanx\SurrealDb\Live\Socket
 {
     public function __construct(
-        private readonly WsClientConnectionHandle $handle,
+        private readonly \Phalanx\WebSocket\Client\ConnectionHandle $handle,
     ) {
     }
 
-    /** @return iterable<WsMessage> */
+    /** @return iterable<\Phalanx\WebSocket\Message> */
     public function messages(): iterable
     {
         yield from $this->handle->messages();

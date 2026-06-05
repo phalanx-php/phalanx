@@ -8,7 +8,7 @@ namespace Phalanx\AiProviders\Transport;
  * Raised when a transport adapter encounters a non-HTTP error: connection
  * failure, protocol violation, or other adapter-specific issue. Callers
  * that handle transport errors must not depend on
- * {@see \Phalanx\HttpClient\HttpClientException} or any other adapter-specific
+ * {@see \Phalanx\HttpClient\Exception} or any other adapter-specific
  * exception type — catch this type instead to stay transport-agnostic.
  *
  * HTTP-level errors (non-2xx responses) are reported separately via

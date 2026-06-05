@@ -30,7 +30,7 @@ final class RouteMatcher implements HandlerMatcher
         $params = new RouteParams($result['params']);
 
         assert($handler->config instanceof RouteConfig);
-        $resource = HttpRequestResource::fromScope($scope);
+        $resource = \Phalanx\Http\RequestResource::fromScope($scope);
         if ($resource !== null) {
             $resource->routeMatched($handler->config->path);
         }

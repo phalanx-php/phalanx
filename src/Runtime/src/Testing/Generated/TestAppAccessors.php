@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Testing\Generated;
 
 use Phalanx\Console\Testing\ConsoleLens;
-use Phalanx\Http\Testing\HttpLens;
+use Phalanx\Http\Testing\Lens;
 use Phalanx\Testing\Lenses\LedgerLens;
 use Phalanx\Testing\Lenses\RuntimeLens;
 use Phalanx\Testing\Lenses\ScopeLens;
@@ -26,8 +26,8 @@ trait TestAppAccessors
         get => $this->lens(ConsoleLens::class);
     }
 
-    public HttpLens $http {
-        get => $this->lens(HttpLens::class);
+    public Lens $http {
+        get => $this->lens(Lens::class);
     }
 
     public LedgerLens $ledger {

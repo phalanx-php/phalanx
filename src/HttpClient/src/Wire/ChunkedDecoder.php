@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\HttpClient\Wire;
 
-use Phalanx\HttpClient\HttpClientException;
-
 /**
  * Streaming decoder for HTTP/1.1 Transfer-Encoding: chunked bodies.
  *
@@ -131,11 +129,11 @@ final class ChunkedDecoder
         $hex = $semi === false ? $line : substr($line, 0, $semi);
         $hex = trim($hex);
         if ($hex === '' || !ctype_xdigit($hex)) {
-            throw new HttpClientException("ChunkedDecoder: invalid chunk size line '{$line}'");
+            throw new \Phalanx\HttpClient\Exception("ChunkedDecoder: invalid chunk size line '{$line}'");
         }
         $size = hexdec($hex);
         if (!is_int($size) || $size < 0) {
-            throw new HttpClientException("ChunkedDecoder: invalid chunk size '{$hex}'");
+            throw new \Phalanx\HttpClient\Exception("ChunkedDecoder: invalid chunk size '{$hex}'");
         }
 
         if ($size === 0) {
@@ -174,7 +172,7 @@ final class ChunkedDecoder
             return false;
         }
         if (!str_starts_with($this->buffer, "\r\n")) {
-            throw new HttpClientException('ChunkedDecoder: missing CRLF after chunk body');
+            throw new \Phalanx\HttpClient\Exception('ChunkedDecoder: missing CRLF after chunk body');
         }
         $this->buffer = (string) substr($this->buffer, 2);
         $this->state = self::STATE_SIZE;

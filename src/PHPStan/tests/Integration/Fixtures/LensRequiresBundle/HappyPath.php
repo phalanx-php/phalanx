@@ -5,24 +5,24 @@ declare(strict_types=1);
 namespace Phalanx\PHPStan\Tests\Rules\Fixtures\Integration\LensRequiresBundle;
 
 use Phalanx\Boot\AppContext;
-use Phalanx\Http\Testing\HttpTestableBundle;
+use Phalanx\Http\Testing\TestableBundle;
 use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
 
 /**
  * Fixture sitting at a path containing /Integration/ — the
  * LensRequiresBundleRule is active here. Accessing $app->http after
- * registering HttpTestableBundle must NOT trigger the rule because
- * HttpTestableBundle::lens() declares HttpLens.
+ * registering TestableBundle must NOT trigger the rule because
+ * TestableBundle::lens() declares Lens.
  */
 final class HappyPath extends PhalanxTestCase
 {
     #[Test]
     public function httpLensAvailableWhenHttpBundleRegistered(): void
     {
-        $app = $this->testApp(new AppContext(), new HttpTestableBundle());
+        $app = $this->testApp(new AppContext(), new \Phalanx\Http\Testing\TestableBundle());
 
-        // $app->http is backed by HttpLens which HttpTestableBundle::lens() declares.
+        // $app->http is backed by Lens which TestableBundle::lens() declares.
         // No rule violation expected on this line.
         $lens = $app->http;
     }

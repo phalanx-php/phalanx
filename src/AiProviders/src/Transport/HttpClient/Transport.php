@@ -11,9 +11,6 @@ use Phalanx\AiProviders\Transport\Request;
 use Phalanx\AiProviders\Transport\Sync\HttpError;
 use Phalanx\AiProviders\Transport\TransportException;
 use Phalanx\Cancellation\Cancelled;
-use Phalanx\HttpClient\HttpClient;
-use Phalanx\HttpClient\HttpClientException;
-use Phalanx\HttpClient\HttpRequest;
 use Phalanx\Scope\Scope;
 use Phalanx\Scope\Suspendable;
 
@@ -32,8 +29,8 @@ use Phalanx\Scope\Suspendable;
  *   - {@see \Phalanx\AiProviders\Runtime\Runtime\Runtime} (imports Phalanx\Scope\TaskScope)
  *   - {@see \Phalanx\AiProviders\Console\AiProvidersAgentsScanCommand} (imports Phalanx\Scope\Scope, Phalanx\Task\Scopeable)
  *
- * Imports in this file: {@see \Phalanx\HttpClient\HttpClient},
- * {@see \Phalanx\HttpClient\HttpClientException}, {@see \Phalanx\Scope\Scope},
+ * Imports in this file: {@see \Phalanx\HttpClient\Client},
+ * {@see \Phalanx\HttpClient\Exception}, {@see \Phalanx\Scope\Scope},
  * {@see \Phalanx\Scope\Suspendable}, {@see \Phalanx\Cancellation\Cancelled}.
  *
  * The Transport adapter family (Sync / HttpClient / Fake) is a coherent group of
@@ -54,7 +51,7 @@ use Phalanx\Scope\Suspendable;
 final class Transport implements TransportContract
 {
     public function __construct(
-        private(set) HttpClient $client,
+        private(set) \Phalanx\HttpClient\Client $client,
         private(set) Scope&Suspendable $scope,
     ) {
     }
@@ -64,11 +61,11 @@ final class Transport implements TransportContract
      *
      * Yields raw byte chunks as they arrive from the HTTP response body.
      * Cancellation is detected via {@see Runtime::isCancelled()} between
-     * read calls. On cancellation the underlying {@see \Phalanx\HttpClient\HttpStream}
+     * read calls. On cancellation the underlying {@see \Phalanx\HttpClient\Stream}
      * is aborted and a {@see CancellationException} is re-thrown. Any other
-     * Throwable closes the stream via {@see \Phalanx\HttpClient\HttpStream::fail()}
+     * Throwable closes the stream via {@see \Phalanx\HttpClient\Stream::fail()}
      * before propagating. The `finally` block guarantees
-     * {@see \Phalanx\HttpClient\HttpStream::close()} runs regardless of exit path.
+     * {@see \Phalanx\HttpClient\Stream::close()} runs regardless of exit path.
      *
      * Non-2xx responses throw {@see HttpError} after the stream headers are
      * read but before any body bytes are yielded.
@@ -83,7 +80,7 @@ final class Transport implements TransportContract
         $client = $this->client;
 
         return (static function () use ($scope, $client, $request, $runtime): \Generator {
-            $httpClientRequest = new HttpRequest(
+            $httpClientRequest = new \Phalanx\HttpClient\Request(
                 method: $request->method,
                 url: $request->url,
                 headers: self::wrapHeaders($request->headers),
@@ -131,7 +128,7 @@ final class Transport implements TransportContract
                 $stream->abort('cancelled');
 
                 throw new CancellationException($e->getMessage(), 0, $e);
-            } catch (HttpClientException $e) {
+            } catch (\Phalanx\HttpClient\Exception $e) {
                 // Wrap http-client-specific transport errors so callers never need to
                 // import Phalanx\HttpClient\* to handle connection or protocol failures.
                 $stream->fail($e->getMessage());

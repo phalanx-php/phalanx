@@ -28,7 +28,7 @@ return DemoReport::demo(
 
         $contextValues = $context->values;
         $server = DemoSubprocess::spawn(static function () use ($listen, $contextValues): void {
-            Http::starting($contextValues)
+            \Phalanx\Http\Server::starting($contextValues)
                 ->providers(new RuntimeLifecycleBundle())
                 ->routes(__DIR__ . '/routes.php')
                 ->listen($listen)

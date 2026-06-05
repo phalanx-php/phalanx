@@ -9,17 +9,16 @@ use Phalanx\Auth\AuthenticationException;
 use Phalanx\Auth\Guard;
 use Phalanx\Task\Executable;
 use Phalanx\WebSocket\AuthExecutionContext;
-use Phalanx\WebSocket\WsContext;
 
-final class Authenticate implements Executable
+final readonly class Authenticate implements Executable
 {
     public function __construct(
-        private readonly Guard $guard,
+        private Guard $guard,
     ) {
     }
 
-    /** @param Closure(WsContext): mixed $next */
-    public function __invoke(WsContext $ctx, Closure $next): mixed
+    /** @param Closure(\Phalanx\WebSocket\Context):mixed $next */
+    public function __invoke(\Phalanx\WebSocket\Context $ctx, Closure $next): mixed
     {
         $auth = $this->guard->authenticate($ctx->request);
 

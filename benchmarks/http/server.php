@@ -31,7 +31,7 @@ final class PlaintextHandler implements Scopeable
 return static fn(array $context): \Closure => static function () use ($context): int {
     $listen = $context['argv'][1] ?? '0.0.0.0:8080';
 
-    return Http::starting($context)
+    return \Phalanx\Http\Server::starting($context)
         ->routes(RouteGroup::of([
             'GET /json'      => JsonHandler::class,
             'GET /plaintext' => PlaintextHandler::class,

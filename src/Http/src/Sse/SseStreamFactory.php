@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Http\Sse;
 
-use Phalanx\Http\HttpRequestResource;
 use Phalanx\Http\RequestContext;
 use Phalanx\Http\ResponseSink;
 use Phalanx\Http\Runtime\Identity\HttpEventSid;
@@ -23,7 +22,7 @@ final class SseStreamFactory
     public function open(RequestContext $ctx): SseStream
     {
         $response = $ctx->service(ResponseSink::class)->response;
-        $request = $ctx->service(HttpRequestResource::class);
+        $request = $ctx->service(\Phalanx\Http\RequestResource::class);
 
         if ($request->fd !== null) {
             $request->acquireDeliveryLease($request->fd);

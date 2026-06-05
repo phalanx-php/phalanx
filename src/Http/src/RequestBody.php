@@ -41,7 +41,7 @@ final class RequestBody
     /**
      * Decode the raw body as JSON with caller-controlled flags.
      *
-     * Follows the WsMessage::json() pattern -- throws on invalid JSON.
+     * Follows the Message::json() pattern -- throws on invalid JSON.
      */
     public function json(bool $assoc = true, int $flags = 0): mixed
     {

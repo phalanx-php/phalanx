@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\SurrealDb\Live;
 
-use Phalanx\WebSocket\WsMessage;
-
 interface Socket
 {
-    /** @return iterable<WsMessage> */
+    /** @return iterable<\Phalanx\WebSocket\Message> */
     public function messages(): iterable;
 
     /** @param array<string, mixed> $payload */

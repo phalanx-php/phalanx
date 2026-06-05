@@ -4,15 +4,13 @@ declare(strict_types=1);
 
 namespace Phalanx\SurrealDb\Live\WebSocket;
 
-use Phalanx\Cancellation\Cancelled;
 use Phalanx\Scope\ExecutionScope;
-use Phalanx\WebSocket\Client\WsClient;
 use Throwable;
 
 class Transport implements \Phalanx\SurrealDb\Live\Transport
 {
     public function __construct(
-        private readonly WsClient $client,
+        private readonly \Phalanx\WebSocket\Client $client,
     ) {
     }
 
@@ -39,10 +37,6 @@ class Transport implements \Phalanx\SurrealDb\Live\Transport
             }
 
             $connection->request('use', [$config->namespace, $config->database]);
-        } catch (Cancelled $e) {
-            $connection->close();
-
-            throw $e;
         } catch (Throwable $e) {
             $connection->close();
 

@@ -10,15 +10,15 @@ use Phalanx\Scope\ExecutionScope as BaseExecutionScope;
 use Phalanx\Support\ExecutionScopeDelegate;
 use Psr\Http\Message\ServerRequestInterface;
 
-class AuthExecutionContext implements AuthWsContext
+class AuthExecutionContext implements \Phalanx\WebSocket\AuthenticatedContext
 {
     use ExecutionScopeDelegate;
 
-    public WsConnection $connection {
+    public \Phalanx\WebSocket\Connection $connection {
         get => $this->wsContext->connection;
     }
 
-    public WsConfig $config {
+    public \Phalanx\WebSocket\Config $config {
         get => $this->wsContext->config;
     }
 
@@ -31,7 +31,7 @@ class AuthExecutionContext implements AuthWsContext
     }
 
     public function __construct(
-        private(set) WsContext $wsContext,
+        private(set) \Phalanx\WebSocket\Context $wsContext,
         private(set) AuthContext $auth,
     ) {
     }

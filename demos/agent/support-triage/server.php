@@ -36,7 +36,7 @@ return static fn(array $context): \Closure => static function () use ($context):
         ? DemoProvider::ollamaOrFake($fakeScript, $model, $baseUrl)
         : DemoProvider::fakeOnly($fakeScript);
 
-    $toolBundle = (new ToolBundle())
+    $toolBundle = new ToolBundle()
         ->add('lookup_customer', LookupCustomer::class)
         ->add('search_knowledge_base', SearchKnowledgeBase::class)
         ->add('get_recent_tickets', GetRecentTickets::class)
@@ -47,7 +47,7 @@ return static fn(array $context): \Closure => static function () use ($context):
         toolBundles: [$toolBundle],
     );
 
-    return Http::starting($effective->values)
+    return \Phalanx\Http\Server::starting($effective->values)
         ->providers($bundle)
         ->routes(['POST /triage' => TriageHandler::class])
         ->listen($listen)

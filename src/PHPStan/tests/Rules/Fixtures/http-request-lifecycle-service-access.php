@@ -6,15 +6,15 @@ namespace Phalanx\PHPStan\Tests\Rules\Fixtures;
 
 use Phalanx\Scope\Scope;
 use Phalanx\Http\ResponseSink;
-use Phalanx\Http\HttpRequestDiagnostics;
-use Phalanx\Http\HttpRequestResource;
+use Phalanx\Http\RequestDiagnostics;
+use Phalanx\Http\RequestResource;
 
 final class HttpRequestLifecycleServiceAccessFixture
 {
     public function invalid(Scope $scope): void
     {
-        $scope->service(HttpRequestResource::class);
-        $scope->service(HttpRequestDiagnostics::class);
+        $scope->service(\Phalanx\Http\RequestResource::class);
+        $scope->service(\Phalanx\Http\RequestDiagnostics::class);
         $scope->service(ResponseSink::class);
     }
 }

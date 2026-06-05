@@ -5,9 +5,6 @@ declare(strict_types=1);
 namespace Phalanx\Http\Response;
 
 use Phalanx\Cancellation\Cancelled;
-use Phalanx\Http\HttpRequestDiagnostics;
-use Phalanx\Http\HttpRequestResource;
-use Phalanx\Http\HttpServerConfig;
 use Phalanx\Http\RequestContext;
 use Phalanx\Http\Response\Ignition\PhalanxErrorPageViewModel;
 use Phalanx\Supervisor\TaskTreeFormatter;
@@ -21,7 +18,7 @@ use Throwable;
 
 final readonly class IgnitionErrorResponseRenderer implements ErrorResponseRenderer
 {
-    public function __construct(private HttpServerConfig $config = new HttpServerConfig())
+    public function __construct(private \Phalanx\Http\ServerConfig $config = new \Phalanx\Http\ServerConfig())
     {
     }
 
@@ -32,13 +29,13 @@ final readonly class IgnitionErrorResponseRenderer implements ErrorResponseRende
         }
 
         try {
-            $requestId = $ctx->service(HttpRequestResource::class)->id;
+            $requestId = $ctx->service(\Phalanx\Http\RequestResource::class)->id;
 
-            $snapshots = $ctx->service(HttpRequestDiagnostics::class)->failureTree();
+            $snapshots = $ctx->service(\Phalanx\Http\RequestDiagnostics::class)->failureTree();
             $ledger = '(no active tasks captured)';
             if ($snapshots !== []) {
                 try {
-                    $ledger = (new TaskTreeFormatter())->format($snapshots);
+                    $ledger = new TaskTreeFormatter()->format($snapshots);
                 } catch (Cancelled $c) {
                     throw $c;
                 } catch (Throwable) {

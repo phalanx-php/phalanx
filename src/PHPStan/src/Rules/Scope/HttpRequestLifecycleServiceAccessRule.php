@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\PHPStan\Rules\Scope;
 
-use Phalanx\Http\HttpRequestDiagnostics;
-use Phalanx\Http\HttpRequestResource;
 use Phalanx\Http\ResponseSink;
 use Phalanx\PHPStan\Support\NodeNames;
 use Phalanx\PHPStan\Support\PathPolicy;
@@ -22,7 +20,7 @@ use PHPStan\Type\ObjectType;
 /**
  * @implements Rule<MethodCall>
  */
-final class HttpRequestLifecycleServiceAccessRule implements Rule
+final readonly class HttpRequestLifecycleServiceAccessRule implements Rule
 {
     public const string MESSAGE =
         'Http request lifecycle services are framework-only; use RequestContext accessors instead.';
@@ -32,11 +30,11 @@ final class HttpRequestLifecycleServiceAccessRule implements Rule
     /** @var array<class-string, true> */
     private const array LIFECYCLE_SERVICES = [
         ResponseSink::class => true,
-        HttpRequestDiagnostics::class => true,
-        HttpRequestResource::class => true,
+        \Phalanx\Http\RequestDiagnostics::class => true,
+        \Phalanx\Http\RequestResource::class => true,
     ];
 
-    public function __construct(private readonly PathPolicy $paths)
+    public function __construct(private PathPolicy $paths)
     {
     }
 
@@ -66,7 +64,7 @@ final class HttpRequestLifecycleServiceAccessRule implements Rule
             return [];
         }
 
-        if (!(new ObjectType(PhalanxScope::class))->isSuperTypeOf($scope->getType($node->var))->yes()) {
+        if (!new ObjectType(PhalanxScope::class)->isSuperTypeOf($scope->getType($node->var))->yes()) {
             return [];
         }
 

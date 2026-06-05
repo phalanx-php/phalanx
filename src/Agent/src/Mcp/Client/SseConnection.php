@@ -13,8 +13,6 @@ use Phalanx\Agent\Mcp\JsonRpc\Response;
 use Phalanx\Agent\Mcp\McpConnection;
 use Phalanx\Agent\Mcp\McpTool;
 use Phalanx\AiProviders\Effect\Outcome as AiProvidersOutcome;
-use Phalanx\HttpClient\HttpClient;
-use Phalanx\HttpClient\HttpStream;
 use Phalanx\Scope\Scope;
 use Phalanx\Scope\Suspendable;
 use Phalanx\Scope\TaskScope;
@@ -25,9 +23,9 @@ final class SseConnection implements McpConnection
 
     /** @param Generator<int, array{event: string, data: string, id: ?string}> $events */
     public function __construct(
-        private HttpClient $httpClient,
-        private HttpStream $sseStream,
-        private Generator $events,
+        private readonly \Phalanx\HttpClient\Client $httpClient,
+        private readonly \Phalanx\HttpClient\Stream $sseStream,
+        private readonly Generator $events,
         private(set) string $postUrl,
         private(set) string $serverName,
     ) {

@@ -10,7 +10,7 @@ use Phalanx\Http\Http;
 return static fn(array $context): \Closure => static function () use ($context): int {
     $listen = $context['argv'][1] ?? '127.0.0.1:8082';
 
-    return Http::starting($context)
+    return \Phalanx\Http\Server::starting($context)
         ->providers(new ApiServiceBundle())
         ->routes(__DIR__ . '/routes.php')
         ->listen($listen)

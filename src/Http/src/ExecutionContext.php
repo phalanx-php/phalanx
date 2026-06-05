@@ -90,12 +90,12 @@ class ExecutionContext implements RequestContext
         return $this->inner;
     }
 
-    private function requestResource(): HttpRequestResource
+    private function requestResource(): \Phalanx\Http\RequestResource
     {
         try {
-            return $this->service(HttpRequestResource::class);
+            return $this->service(\Phalanx\Http\RequestResource::class);
         } catch (ServiceNotFoundException) {
-            throw MissingRequestResource::forScopeKey(HttpRequestResource::class);
+            throw MissingRequestResource::forScopeKey(\Phalanx\Http\RequestResource::class);
         }
     }
 }

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Http\Tests\Integration;
 
 use GuzzleHttp\Psr7\Response;
-use Phalanx\Http\HttpRunner;
+use Phalanx\Http\Runner;
 use Phalanx\Http\ToResponse;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -17,7 +17,7 @@ final class ToResponseTest extends TestCase
     public function to_response_returns_response_interface_unchanged(): void
     {
         $response = new Response(200, [], 'ok');
-        $result = HttpRunner::toResponse($response);
+        $result = \Phalanx\Http\Runner::toResponse($response);
 
         $this->assertSame($response, $result);
     }
@@ -40,7 +40,7 @@ final class ToResponseTest extends TestCase
             }
         };
 
-        $result = HttpRunner::toResponse($obj);
+        $result = \Phalanx\Http\Runner::toResponse($obj);
 
         $this->assertSame($inner, $result);
         $this->assertSame(201, $result->getStatusCode());
@@ -50,7 +50,7 @@ final class ToResponseTest extends TestCase
     #[Test]
     public function to_response_converts_array_to_json(): void
     {
-        $result = HttpRunner::toResponse(['key' => 'value']);
+        $result = \Phalanx\Http\Runner::toResponse(['key' => 'value']);
 
         $this->assertSame(200, $result->getStatusCode());
         $this->assertStringContainsString('application/json', $result->getHeaderLine('Content-Type'));
@@ -59,7 +59,7 @@ final class ToResponseTest extends TestCase
     #[Test]
     public function to_response_converts_string_to_plain_text(): void
     {
-        $result = HttpRunner::toResponse('hello world');
+        $result = \Phalanx\Http\Runner::toResponse('hello world');
 
         $this->assertSame(200, $result->getStatusCode());
         $this->assertSame('text/plain', $result->getHeaderLine('Content-Type'));

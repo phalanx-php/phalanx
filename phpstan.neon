@@ -53,7 +53,7 @@ parameters:
         - src/Runtime/src/Supervisor/SwooleTableLedger.php
         - src/Runtime/src/Supervisor/TaskRun.php
         - src/Runtime/src/Worker/
-        - src/Http/src/HttpRunner.php
+        - src/Http/src/Runner.php
     phalanxEnforcedPaths:
         - src/Runtime
         - src/Console
@@ -99,10 +99,6 @@ parameters:
         -
             identifier: phalanx.testing.useBenchmarkHarness
             path: benchmarks/http/cases/HttpCases.php
-            reportUnmatched: true
-        -
-            identifier: phalanx.testing.useBenchmarkHarness
-            path: benchmarks/http/server.php
             reportUnmatched: true
         # Swoole\Lock::lock() ide-helper stub omits the $timeout parameter.
         # Verified in ext-swoole 6.2.1: lock(int $operation = 2, float $timeout = -1): bool
@@ -316,10 +312,10 @@ parameters:
             identifier: argument.type
             path: src/WebSocket/tests/Unit/Auth/AuthenticateTest.php
             reportUnmatched: true
-        # HttpLensTest is specifically testing lens behavior without a bundle; the error IS the test
+        # LensTest is specifically testing lens behavior without a bundle; the error IS the test
         -
             identifier: phalanx.testing.lensRequiresBundle
-            path: src/Http/tests/Integration/Testing/HttpLensTest.php
+            path: src/Http/tests/Integration/Testing/LensTest.php
             reportUnmatched: true
         # InWorkerDispatchTest exposes borrowed values to test dispatch serialization boundaries
         -

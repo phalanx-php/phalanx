@@ -29,7 +29,7 @@ use Phalanx\Agent\Testing\FakeHttpStream;
 use Phalanx\Agent\Testing\ScopeStub;
 use Phalanx\Boot\AppContext;
 use Phalanx\Demos\Kit\DemoReport;
-use Phalanx\HttpClient\HttpResponse;
+use Phalanx\HttpClient\Response;
 
 return DemoReport::demo(
     'Agent MCP SSE client',
@@ -91,11 +91,11 @@ return DemoReport::demo(
 
         // POST responses from the server are 202 Accepted (the response body
         // arrives via the SSE stream, not the POST response body).
-        $httpClient->queuePostResponse(new HttpResponse(202, 'Accepted', [], ''));
-        $httpClient->queuePostResponse(new HttpResponse(202, 'Accepted', [], ''));
-        $httpClient->queuePostResponse(new HttpResponse(202, 'Accepted', [], ''));
-        $httpClient->queuePostResponse(new HttpResponse(202, 'Accepted', [], ''));
-        $httpClient->queuePostResponse(new HttpResponse(202, 'Accepted', [], ''));
+        $httpClient->queuePostResponse(new \Phalanx\HttpClient\Response(202, 'Accepted', [], ''));
+        $httpClient->queuePostResponse(new \Phalanx\HttpClient\Response(202, 'Accepted', [], ''));
+        $httpClient->queuePostResponse(new \Phalanx\HttpClient\Response(202, 'Accepted', [], ''));
+        $httpClient->queuePostResponse(new \Phalanx\HttpClient\Response(202, 'Accepted', [], ''));
+        $httpClient->queuePostResponse(new \Phalanx\HttpClient\Response(202, 'Accepted', [], ''));
 
         $client = new SseClient($httpClient);
         $server = McpServer::sse('sse-echo-server', 'http://localhost/sse');

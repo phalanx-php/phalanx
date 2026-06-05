@@ -18,7 +18,7 @@ final class HttpResourceSidTest extends TestCase
             'HttpRequest' => 'http.http_request',
             'HttpServer' => 'http.http_server',
             'SseStream' => 'http.sse_stream',
-            'WsConnection' => 'http.ws_connection',
+            'Connection' => 'http.ws_connection',
             'UdpListener' => 'http.udp_listener',
             'UdpSession' => 'http.udp_session',
         ];

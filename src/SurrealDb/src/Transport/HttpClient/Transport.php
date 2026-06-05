@@ -5,16 +5,13 @@ declare(strict_types=1);
 namespace Phalanx\SurrealDb\Transport\HttpClient;
 
 use JsonException;
-use Phalanx\HttpClient\HttpClient;
-use Phalanx\HttpClient\HttpRequest;
-use Phalanx\HttpClient\HttpResponse;
 use Phalanx\Scope\Scope;
 use Phalanx\Scope\Suspendable;
 use Swoole\Atomic;
 
 final class Transport implements \Phalanx\SurrealDb\Transport
 {
-    private Atomic $nextId;
+    private readonly Atomic $nextId;
 
     /** @var array<string, list<string>>|null */
     private ?array $cachedHeaders = null;
@@ -24,7 +21,7 @@ final class Transport implements \Phalanx\SurrealDb\Transport
     private ?string $cachedConfigKey = null;
 
     public function __construct(
-        private HttpClient $http,
+        private readonly \Phalanx\HttpClient\Client $http,
     ) {
         $this->nextId = new Atomic(0);
     }
@@ -44,7 +41,7 @@ final class Transport implements \Phalanx\SurrealDb\Transport
         ]);
 
         $http = $this->http;
-        $request = new HttpRequest(
+        $request = new \Phalanx\HttpClient\Request(
             method: 'POST',
             url: $config->endpoint . '/rpc',
             headers: $this->headers($config, $token),
@@ -116,7 +113,7 @@ final class Transport implements \Phalanx\SurrealDb\Transport
 
     private function head(Scope&Suspendable $scope, \Phalanx\SurrealDb\Config $config, ?string $token, string $path): int
     {
-        $request = new HttpRequest(
+        $request = new \Phalanx\HttpClient\Request(
             method: 'GET',
             url: $config->endpoint . $path,
             headers: $this->headers($config, $token),
@@ -129,7 +126,7 @@ final class Transport implements \Phalanx\SurrealDb\Transport
         return $response->status;
     }
 
-    private function decodeResponse(HttpResponse $response, int $expectedId): mixed
+    private function decodeResponse(\Phalanx\HttpClient\Response $response, int $expectedId): mixed
     {
         if (!$response->successful) {
             throw new \Phalanx\SurrealDb\Exception("SurrealDb HTTP request failed with status {$response->status}.");
