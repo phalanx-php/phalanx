@@ -7,13 +7,13 @@ namespace Phalanx\Worker\Process;
 use Phalanx\Support\PackagePaths;
 use Phalanx\System\PhpExtensionFlags;
 
-final readonly class ProcessConfig
+final class ProcessConfig
 {
     public function __construct(
-        public string $workerScript,
-        public string $autoloadPath,
-        public float $gracefulTimeout = 5.0,
-        public float $forceTimeout = 10.0,
+        private(set) string $workerScript,
+        private(set) string $autoloadPath,
+        private(set) float $gracefulTimeout = 5.0,
+        private(set) float $forceTimeout = 10.0,
     ) {
     }
 

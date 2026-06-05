@@ -33,23 +33,28 @@ final class LeaseLedgerConcurrencyTest extends PhalanxTestCase
         $this->scope->run(static function (ExecutionScope $_scope): void {
             $ledger = new InProcessLedger();
             $app = self::buildApp($ledger);
-            $appScope = $app->createScope();
 
-            $tasks = [];
-            for ($i = 0; $i < 100; $i++) {
-                $tasks["worker-{$i}"] = new LeaseHolder("pool-{$i}");
+            try {
+                $appScope = $app->createScope();
+
+                $tasks = [];
+                for ($i = 0; $i < 100; $i++) {
+                    $tasks["worker-{$i}"] = new LeaseHolder("pool-{$i}");
+                }
+
+                $results = $appScope->concurrent(...$tasks);
+
+                // Every worker reports its own pool domain back, proving leases
+                // are scoped to the right TaskRun.
+                for ($i = 0; $i < 100; $i++) {
+                    self::assertSame("pool-{$i}", $results["worker-{$i}"]);
+                }
+
+                $appScope->dispose();
+                self::assertSame(0, $ledger->liveCount());
+            } finally {
+                $app->shutdown();
             }
-
-            $results = $appScope->concurrent(...$tasks);
-
-            // Every worker reports its own pool domain back, proving leases
-            // are scoped to the right TaskRun.
-            for ($i = 0; $i < 100; $i++) {
-                self::assertSame("pool-{$i}", $results["worker-{$i}"]);
-            }
-
-            $appScope->dispose();
-            self::assertSame(0, $ledger->liveCount());
         });
     }
 
@@ -59,17 +64,21 @@ final class LeaseLedgerConcurrencyTest extends PhalanxTestCase
             $ledger = new InProcessLedger();
             $app = self::buildApp($ledger);
 
-            // 500 cycles of acquire+release on a single domain. Tests that
-            // the ledger doesn't accumulate stale lease references across
-            // back-to-back operations.
-            for ($i = 0; $i < 500; $i++) {
-                $appScope = $app->createScope();
-                $value = $appScope->execute(new LeaseHolder('postgres/main'));
-                self::assertSame('postgres/main', $value);
-                $appScope->dispose();
-            }
+            try {
+                // 500 cycles of acquire+release on a single domain. Tests that
+                // the ledger doesn't accumulate stale lease references across
+                // back-to-back operations.
+                for ($i = 0; $i < 500; $i++) {
+                    $appScope = $app->createScope();
+                    $value = $appScope->execute(new LeaseHolder('postgres/main'));
+                    self::assertSame('postgres/main', $value);
+                    $appScope->dispose();
+                }
 
-            self::assertSame(0, $ledger->liveCount());
+                self::assertSame(0, $ledger->liveCount());
+            } finally {
+                $app->shutdown();
+            }
         });
     }
 
@@ -89,7 +98,7 @@ final class LeaseLedgerConcurrencyTest extends PhalanxTestCase
 
 final class LeaseHolder implements \Phalanx\Task\Executable
 {
-    public function __construct(public readonly string $domain)
+    public function __construct(private(set) string $domain)
     {
     }
 

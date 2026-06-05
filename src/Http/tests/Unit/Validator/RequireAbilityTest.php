@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Phalanx\Http\Tests\Unit\Validator;
 
 use GuzzleHttp\Psr7\ServerRequest;
-use Phalanx\Application;
 use Phalanx\Auth\AuthContext;
 use Phalanx\Auth\AuthorizationException;
 use Phalanx\Auth\Identity;
@@ -15,13 +14,11 @@ use Phalanx\Http\QueryParams;
 use Phalanx\Http\RouteConfig;
 use Phalanx\Http\RouteParams;
 use Phalanx\Http\Validator\RequireAbility;
+use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 
-final class RequireAbilityTest extends TestCase
+final class RequireAbilityTest extends PhalanxTestCase
 {
-    private Application $app;
-
     #[Test]
     public function returns_empty_when_user_has_ability(): void
     {
@@ -56,19 +53,9 @@ final class RequireAbilityTest extends TestCase
         $v->validate(null, $scope);
     }
 
-    protected function setUp(): void
-    {
-        $this->app = Application::starting()->compile();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->app->shutdown();
-    }
-
     private function createRequestContext(): ExecutionContext
     {
-        $inner = $this->app->createScope();
+        $inner = $this->application()->createScope();
         $request = new ServerRequest('GET', '/test');
 
         return new ExecutionContext(

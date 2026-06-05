@@ -28,7 +28,7 @@ class PhalanxTestRuntime
     private bool $shutdown = false;
 
     public function __construct(
-        public readonly Application $app,
+        private(set) Application $app,
     ) {
     }
 

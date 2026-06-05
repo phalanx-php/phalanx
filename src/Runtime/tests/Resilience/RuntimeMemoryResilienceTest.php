@@ -23,7 +23,7 @@ use Throwable;
 
 use function Swoole\Coroutine\run as swoole_coroutine_run;
 
-class RuntimeMemoryResilienceTest extends PhalanxTestCase
+final class RuntimeMemoryResilienceTest extends PhalanxTestCase
 {
     public function testAtomicIdsRemainUniqueUnderCoroutineContention(): void
     {

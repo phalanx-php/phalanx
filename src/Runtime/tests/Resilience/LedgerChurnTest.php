@@ -34,34 +34,38 @@ final class LedgerChurnTest extends PhalanxTestCase
             $ledger = new InProcessLedger();
             $app = self::buildApp($ledger);
 
-            $iterations = 10_000;
-            $batchSize = 1_000;
+            try {
+                $iterations = 10_000;
+                $batchSize = 1_000;
 
-            $beforeMem = memory_get_usage();
+                $beforeMem = memory_get_usage();
 
-            for ($batch = 0; $batch < $iterations / $batchSize; $batch++) {
-                for ($i = 0; $i < $batchSize; $i++) {
-                    $appScope = $app->createScope();
-                    $value = $appScope->execute(Task::of(static fn(): int => 42));
-                    self::assertSame(42, $value);
-                    $appScope->dispose();
+                for ($batch = 0; $batch < $iterations / $batchSize; $batch++) {
+                    for ($i = 0; $i < $batchSize; $i++) {
+                        $appScope = $app->createScope();
+                        $value = $appScope->execute(Task::of(static fn(): int => 42));
+                        self::assertSame(42, $value);
+                        $appScope->dispose();
+                    }
+                    self::assertSame(0, $ledger->liveCount(), "ledger empty after batch {$batch}");
                 }
-                self::assertSame(0, $ledger->liveCount(), "ledger empty after batch {$batch}");
+
+                self::assertSame(0, $ledger->liveCount());
+
+                // Memory budget. 10k cycles routinely fit in well under 4MB on
+                // dev hardware; pad to 16MB so test isn't flaky on first
+                // PHPUnit warmup / Swoole timer churn.
+                $afterMem = memory_get_usage();
+                $delta = $afterMem - $beforeMem;
+                self::assertLessThan(16 * 1024 * 1024, $delta, sprintf(
+                    'memory grew by %d bytes (%.2f MB) over %d cycles — likely a leak',
+                    $delta,
+                    $delta / 1024 / 1024,
+                    $iterations,
+                ));
+            } finally {
+                $app->shutdown();
             }
-
-            self::assertSame(0, $ledger->liveCount());
-
-            // Memory budget. 10k cycles routinely fit in well under 4MB on
-            // dev hardware; pad to 16MB so test isn't flaky on first
-            // PHPUnit warmup / Swoole timer churn.
-            $afterMem = memory_get_usage();
-            $delta = $afterMem - $beforeMem;
-            self::assertLessThan(16 * 1024 * 1024, $delta, sprintf(
-                'memory grew by %d bytes (%.2f MB) over %d cycles — likely a leak',
-                $delta,
-                $delta / 1024 / 1024,
-                $iterations,
-            ));
         });
     }
 
@@ -71,18 +75,22 @@ final class LedgerChurnTest extends PhalanxTestCase
             $ledger = new InProcessLedger();
             $app = self::buildApp($ledger);
 
-            $iterations = 200;
+            try {
+                $iterations = 200;
 
-            for ($i = 0; $i < $iterations; $i++) {
-                $appScope = $app->createScope();
-                $results = $appScope->concurrent(
-                    a: Task::of(static fn(ExecutionScope $_s): int => 1),
-                    b: Task::of(static fn(ExecutionScope $_s): int => 2),
-                    c: Task::of(static fn(ExecutionScope $_s): int => 3),
-                );
-                self::assertSame(['a' => 1, 'b' => 2, 'c' => 3], $results);
-                $appScope->dispose();
-                self::assertSame(0, $ledger->liveCount(), "iteration {$i}");
+                for ($i = 0; $i < $iterations; $i++) {
+                    $appScope = $app->createScope();
+                    $results = $appScope->concurrent(
+                        a: Task::of(static fn(ExecutionScope $_s): int => 1),
+                        b: Task::of(static fn(ExecutionScope $_s): int => 2),
+                        c: Task::of(static fn(ExecutionScope $_s): int => 3),
+                    );
+                    self::assertSame(['a' => 1, 'b' => 2, 'c' => 3], $results);
+                    $appScope->dispose();
+                    self::assertSame(0, $ledger->liveCount(), "iteration {$i}");
+                }
+            } finally {
+                $app->shutdown();
             }
         });
     }

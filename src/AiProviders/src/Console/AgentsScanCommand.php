@@ -6,7 +6,6 @@ namespace Phalanx\AiProviders\Console;
 
 use Phalanx\AiProviders\Agent\Loader\Attribute as AttributeLoader;
 use Phalanx\AiProviders\Agent\Loader\Support\Mtime;
-// This first-party Console adapter is limited to Scope and Task imports.
 use Phalanx\Scope\Scope;
 use Phalanx\Task\Scopeable;
 
@@ -142,7 +141,6 @@ final class AgentsScanCommand implements Scopeable
             return false;
         }
 
-        // Cache is fresh when its recorded source_mtime is >= the current source mtime.
         return $payload['source_mtime'] >= $sourceMtime;
     }
 }

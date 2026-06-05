@@ -179,20 +179,6 @@ final class V0AcceptanceGateTest extends TestCase
      *   (c) propagates CancellationException when the runtime is cancelled
      *       before the first byte is read.
      *
-     * Spec gate 9 reads "concurrent invocations cancellable". This v0 gate
-     * exercises sequential streaming + cancellation + error mapping. True
-     * concurrent invocation coverage is deferred to a follow-up slice because
-     * the fixture server and scope teardown mechanics are simpler to verify
-     * sequentially, and the critical correctness properties (stream fidelity,
-     * error mapping, cancellation propagation) are fully exercised here.
-     *
-     * Leak-ledger coverage for the HttpClient transport is NOT included in this gate.
-     * Gate 10 is the precedent for the leak-ledger assertion pattern (TestApp +
-     * $app->ledger->assertNoOrphans()). HttpClient-path leak-ledger coverage is
-     * deferred to a follow-up slice that wires TestApp::boot() with the HttpClient
-     * bundle. The current gate uses Application::starting() directly because
-     * the HttpClient ServiceBundle registration path is not yet available via TestApp.
-     *
      * Requires Swoole: phalanx-http-client uses coroutine-backed TCP I/O via
      * Runtime-managed ManagedResourceHandle. The Runtime Application boots the
      * runtime policy and wraps all work inside CoroutineRuntime::run().
@@ -222,68 +208,70 @@ final class V0AcceptanceGateTest extends TestCase
                 ->providers(\Phalanx\HttpClient\Client::services())
                 ->compile();
 
-            $happyBody = '';
-            $app->scoped(static function (\Phalanx\Scope\ExecutionScope $scope) use ($successPort, &$happyBody): void {
-                $transport = new \Phalanx\AiProviders\Transport\HttpClient\Transport(
-                    \Phalanx\HttpClient\Client::client($scope),
-                    $scope,
-                );
-                $runtime = new SyncRuntime();
-                foreach ($transport->stream(Request::of('GET', "http://127.0.0.1:{$successPort}/"), $runtime) as $c) {
-                    $happyBody .= $c;
-                }
-            });
-
-            self::assertSame(
-                "pericles won at marathon\n",
-                $happyBody,
-                '(a) body must arrive intact and match the fixture exactly',
-            );
-
-            $httpError = null;
-            $app->scoped(static function (\Phalanx\Scope\ExecutionScope $scope) use ($errorPort, &$httpError): void {
-                $transport = new \Phalanx\AiProviders\Transport\HttpClient\Transport(
-                    \Phalanx\HttpClient\Client::client($scope),
-                    $scope,
-                );
-                $runtime = new SyncRuntime();
-
-                try {
-                    foreach ($transport->stream(Request::of('GET', "http://127.0.0.1:{$errorPort}/"), $runtime) as $_) {
+            try {
+                $happyBody = '';
+                $app->scoped(static function (\Phalanx\Scope\ExecutionScope $scope) use ($successPort, &$happyBody): void {
+                    $transport = new \Phalanx\AiProviders\Transport\HttpClient\Transport(
+                        \Phalanx\HttpClient\Client::client($scope),
+                        $scope,
+                    );
+                    $runtime = new SyncRuntime();
+                    foreach ($transport->stream(Request::of('GET', "http://127.0.0.1:{$successPort}/"), $runtime) as $c) {
+                        $happyBody .= $c;
                     }
-                } catch (HttpError $e) {
-                    $httpError = $e;
-                }
-            });
+                });
 
-            self::assertNotNull($httpError, '(b) HttpError must be thrown for non-2xx responses');
-            self::assertSame(503, $httpError->statusCode);
-            self::assertStringContainsString(
-                'service unavailable',
-                $httpError->responseBody,
-                '(b) HttpError must carry the response body',
-            );
-
-            $cancelledEx = null;
-            $app->scoped(static function (\Phalanx\Scope\ExecutionScope $scope) use ($slowPort, &$cancelledEx): void {
-                $transport = new \Phalanx\AiProviders\Transport\HttpClient\Transport(
-                    \Phalanx\HttpClient\Client::client($scope),
-                    $scope,
+                self::assertSame(
+                    "pericles won at marathon\n",
+                    $happyBody,
+                    '(a) body must arrive intact and match the fixture exactly',
                 );
-                $runtime = new SyncRuntime();
-                $runtime->cancel();
 
-                try {
-                    foreach ($transport->stream(Request::of('GET', "http://127.0.0.1:{$slowPort}/"), $runtime) as $_) {
+                $httpError = null;
+                $app->scoped(static function (\Phalanx\Scope\ExecutionScope $scope) use ($errorPort, &$httpError): void {
+                    $transport = new \Phalanx\AiProviders\Transport\HttpClient\Transport(
+                        \Phalanx\HttpClient\Client::client($scope),
+                        $scope,
+                    );
+                    $runtime = new SyncRuntime();
+
+                    try {
+                        foreach ($transport->stream(Request::of('GET', "http://127.0.0.1:{$errorPort}/"), $runtime) as $_) {
+                        }
+                    } catch (HttpError $e) {
+                        $httpError = $e;
                     }
-                } catch (CancellationException $e) {
-                    $cancelledEx = $e;
-                }
-            });
+                });
 
-            self::assertNotNull($cancelledEx, '(c) CancellationException must propagate when runtime is pre-cancelled');
+                self::assertNotNull($httpError, '(b) HttpError must be thrown for non-2xx responses');
+                self::assertSame(503, $httpError->statusCode);
+                self::assertStringContainsString(
+                    'service unavailable',
+                    $httpError->responseBody,
+                    '(b) HttpError must carry the response body',
+                );
 
-            $app->shutdown();
+                $cancelledEx = null;
+                $app->scoped(static function (\Phalanx\Scope\ExecutionScope $scope) use ($slowPort, &$cancelledEx): void {
+                    $transport = new \Phalanx\AiProviders\Transport\HttpClient\Transport(
+                        \Phalanx\HttpClient\Client::client($scope),
+                        $scope,
+                    );
+                    $runtime = new SyncRuntime();
+                    $runtime->cancel();
+
+                    try {
+                        foreach ($transport->stream(Request::of('GET', "http://127.0.0.1:{$slowPort}/"), $runtime) as $_) {
+                        }
+                    } catch (CancellationException $e) {
+                        $cancelledEx = $e;
+                    }
+                });
+
+                self::assertNotNull($cancelledEx, '(c) CancellationException must propagate when runtime is pre-cancelled');
+            } finally {
+                $app->shutdown();
+            }
         } finally {
             $servers = [
                 [$successProc, $successPipes, $successScript],

@@ -29,37 +29,42 @@ final class SiblingCancelIsolationStressTest extends PhalanxTestCase
         $this->scope->run(static function (ExecutionScope $_scope): void {
             $ledger = new InProcessLedger();
             $app = self::buildApp($ledger);
-            $appScope = $app->createScope();
-            $token = $appScope->cancellation();
 
-            // Schedule cancellation after siblings are running.
-            \Swoole\Coroutine::create(static function () use ($token): void {
-                \Swoole\Coroutine::sleep(0.02);
-                $token->cancel();
-            });
-
-            $tasks = [];
-            $siblingCount = 50;
-            for ($i = 0; $i < $siblingCount; $i++) {
-                $tasks["sib-{$i}"] = Task::of(static function (ExecutionScope $s): void {
-                    $s->delay(Mark::s(5));
-                });
-            }
-
-            $start = microtime(true);
-            $caught = null;
             try {
-                $appScope->concurrent(...$tasks);
-            } catch (Cancelled $e) {
-                $caught = $e;
+                $appScope = $app->createScope();
+                $token = $appScope->cancellation();
+
+                // Schedule cancellation after siblings are running.
+                \Swoole\Coroutine::create(static function () use ($token): void {
+                    \Swoole\Coroutine::sleep(0.02);
+                    $token->cancel();
+                });
+
+                $tasks = [];
+                $siblingCount = 50;
+                for ($i = 0; $i < $siblingCount; $i++) {
+                    $tasks["sib-{$i}"] = Task::of(static function (ExecutionScope $s): void {
+                        $s->delay(Mark::s(5));
+                    });
+                }
+
+                $start = microtime(true);
+                $caught = null;
+                try {
+                    $appScope->concurrent(...$tasks);
+                } catch (Cancelled $e) {
+                    $caught = $e;
+                }
+                $elapsed = microtime(true) - $start;
+
+                self::assertNotNull($caught, 'parent cancel should propagate to children and surface');
+                self::assertLessThan(1.0, $elapsed, sprintf('took %.3fs', $elapsed));
+
+                $appScope->dispose();
+                self::assertSame(0, $ledger->liveCount());
+            } finally {
+                $app->shutdown();
             }
-            $elapsed = microtime(true) - $start;
-
-            self::assertNotNull($caught, 'parent cancel should propagate to children and surface');
-            self::assertLessThan(1.0, $elapsed, sprintf('took %.3fs', $elapsed));
-
-            $appScope->dispose();
-            self::assertSame(0, $ledger->liveCount());
         });
     }
 
@@ -68,32 +73,37 @@ final class SiblingCancelIsolationStressTest extends PhalanxTestCase
         $this->scope->run(static function (ExecutionScope $_scope): void {
             $ledger = new InProcessLedger();
             $app = self::buildApp($ledger);
-            $appScope = $app->createScope();
 
-            // One sibling completes fast, the others a bit slower. All must
-            // complete; the fast one must not signal cancellation to peers.
-            $tasks = [
-                'fast' => Task::of(static fn(ExecutionScope $_s): int => 1),
-                'slow-a' => Task::of(static function (ExecutionScope $s): int {
-                    $s->delay(Mark::ms(50));
-                    return 2;
-                }),
-                'slow-b' => Task::of(static function (ExecutionScope $s): int {
-                    $s->delay(Mark::ms(50));
-                    return 3;
-                }),
-                'slow-c' => Task::of(static function (ExecutionScope $s): int {
-                    $s->delay(Mark::ms(50));
-                    return 4;
-                }),
-            ];
+            try {
+                $appScope = $app->createScope();
 
-            $results = $appScope->concurrent(...$tasks);
+                // One sibling completes fast, the others a bit slower. All must
+                // complete; the fast one must not signal cancellation to peers.
+                $tasks = [
+                    'fast' => Task::of(static fn(ExecutionScope $_s): int => 1),
+                    'slow-a' => Task::of(static function (ExecutionScope $s): int {
+                        $s->delay(Mark::ms(50));
+                        return 2;
+                    }),
+                    'slow-b' => Task::of(static function (ExecutionScope $s): int {
+                        $s->delay(Mark::ms(50));
+                        return 3;
+                    }),
+                    'slow-c' => Task::of(static function (ExecutionScope $s): int {
+                        $s->delay(Mark::ms(50));
+                        return 4;
+                    }),
+                ];
 
-            self::assertSame(['fast' => 1, 'slow-a' => 2, 'slow-b' => 3, 'slow-c' => 4], $results);
+                $results = $appScope->concurrent(...$tasks);
 
-            $appScope->dispose();
-            self::assertSame(0, $ledger->liveCount());
+                self::assertSame(['fast' => 1, 'slow-a' => 2, 'slow-b' => 3, 'slow-c' => 4], $results);
+
+                $appScope->dispose();
+                self::assertSame(0, $ledger->liveCount());
+            } finally {
+                $app->shutdown();
+            }
         });
     }
 
@@ -102,27 +112,32 @@ final class SiblingCancelIsolationStressTest extends PhalanxTestCase
         $this->scope->run(static function (ExecutionScope $_scope): void {
             $ledger = new InProcessLedger();
             $app = self::buildApp($ledger);
-            $appScope = $app->createScope();
 
-            $start = microtime(true);
-            $value = $appScope->race(...[
-                Task::of(static fn(ExecutionScope $_s): int => 1),  // wins
-                Task::of(static function (ExecutionScope $s): never {
-                    $s->delay(Mark::s(5));
-                    throw new \RuntimeException('should be cancelled');
-                }),
-                Task::of(static function (ExecutionScope $s): never {
-                    $s->delay(Mark::s(5));
-                    throw new \RuntimeException('should be cancelled');
-                }),
-            ]);
-            $elapsed = microtime(true) - $start;
+            try {
+                $appScope = $app->createScope();
 
-            self::assertSame(1, $value);
-            self::assertLessThan(1.0, $elapsed, 'losers cancelled fast');
+                $start = microtime(true);
+                $value = $appScope->race(...[
+                    Task::of(static fn(ExecutionScope $_s): int => 1),  // wins
+                    Task::of(static function (ExecutionScope $s): never {
+                        $s->delay(Mark::s(5));
+                        throw new \RuntimeException('should be cancelled');
+                    }),
+                    Task::of(static function (ExecutionScope $s): never {
+                        $s->delay(Mark::s(5));
+                        throw new \RuntimeException('should be cancelled');
+                    }),
+                ]);
+                $elapsed = microtime(true) - $start;
 
-            $appScope->dispose();
-            self::assertSame(0, $ledger->liveCount());
+                self::assertSame(1, $value);
+                self::assertLessThan(1.0, $elapsed, 'losers cancelled fast');
+
+                $appScope->dispose();
+                self::assertSame(0, $ledger->liveCount());
+            } finally {
+                $app->shutdown();
+            }
         });
     }
 

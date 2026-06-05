@@ -71,20 +71,21 @@ final class PeriodicTest extends PhalanxTestCase
 
     public function testScopeDisposalCancelsThePeriodic(): void
     {
-        $this->scope->run(static function (ExecutionScope $_scope): void {
-            $count = 0;
+        $innerApp = $this->startedApplication();
 
+        $this->scope->run(static function (ExecutionScope $_scope) use ($innerApp): void {
+            $count = 0;
             $sub = null;
-            $scopeBody = static function (ExecutionScope $inner) use (&$count, &$sub): void {
+
+            $inner = $innerApp->createScope();
+            try {
                 $sub = $inner->periodic(Mark::ms(20), static function () use (&$count): void {
                     $count++;
                 });
                 Co::sleep(0.05);
-            };
-
-            \Phalanx\Testing\TestScope::compile()
-                ->shutdownAfterRun()
-                ->run($scopeBody);
+            } finally {
+                $inner->dispose();
+            }
 
             $afterDispose = $count;
             Co::sleep(0.1);

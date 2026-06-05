@@ -5,14 +5,13 @@ declare(strict_types=1);
 namespace Phalanx\HttpClient\Tests\Unit;
 
 use Phalanx\Application;
-use Phalanx\HttpClient\Client;
-use Phalanx\HttpClient\Config;
-use Phalanx\Testing\TestScope;
+use Phalanx\Scope\ExecutionScope;
+use Phalanx\Task\Task;
+use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
-final class HttpClientFacadeTest extends TestCase
+final class HttpClientFacadeTest extends PhalanxTestCase
 {
     #[Test]
     public function servicesRegistersConfiguredHttpClient(): void
@@ -20,22 +19,23 @@ final class HttpClientFacadeTest extends TestCase
         $config = new \Phalanx\HttpClient\Config(connectTimeout: 1.25, userAgent: 'HttpClientFacadeTest');
         $bundle = \Phalanx\HttpClient\Client::services($config);
 
-        $result = [];
+        $result = $this->testApp(bundles: $bundle)->application->scoped(
+            Task::named(
+                'test.httpclient.service-bundle',
+                static function (ExecutionScope $scope): array {
+                    $resolvedConfig = $scope->service(\Phalanx\HttpClient\Config::class);
+                    $client = \Phalanx\HttpClient\Client::client($scope);
 
-        TestScope::compile(services: static function ($services, $context) use ($bundle): void { $bundle->services($services, $context); })
-            ->shutdownAfterRun()
-            ->run(static function ($scope) use (&$result): void {
-                $resolvedConfig = $scope->service(\Phalanx\HttpClient\Config::class);
-                $client = \Phalanx\HttpClient\Client::client($scope);
+                    self::assertInstanceOf(\Phalanx\HttpClient\Config::class, $resolvedConfig);
+                    self::assertInstanceOf(\Phalanx\HttpClient\Client::class, $client);
 
-                self::assertInstanceOf(\Phalanx\HttpClient\Config::class, $resolvedConfig);
-                self::assertInstanceOf(\Phalanx\HttpClient\Client::class, $client);
-
-                $result = [
-                    'connectTimeout' => $resolvedConfig->connectTimeout,
-                    'userAgent' => $resolvedConfig->userAgent,
-                ];
-            });
+                    return [
+                        'connectTimeout' => $resolvedConfig->connectTimeout,
+                        'userAgent' => $resolvedConfig->userAgent,
+                    ];
+                },
+            ),
+        );
 
         self::assertSame([
             'connectTimeout' => 1.25,

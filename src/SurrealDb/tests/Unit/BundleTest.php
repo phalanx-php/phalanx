@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Phalanx\SurrealDb\Tests\Unit;
 
 use Closure;
-use Phalanx\Application;
 use Phalanx\Boot\AppContext;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\Scope;
@@ -54,33 +53,31 @@ final class BundleTest extends PhalanxTestCase
     #[Test]
     public function constructorConfigIsCanonicalForRegisteredConfig(): void
     {
-        $result = Application::starting([
-            'SURREAL_NAMESPACE' => 'context',
-            'SURREAL_DATABASE' => 'context',
-        ])
-            ->providers(new \Phalanx\SurrealDb\Bundle(new \Phalanx\SurrealDb\Config(
+        $result = $this->testApp(
+            ['SURREAL_NAMESPACE' => 'context', 'SURREAL_DATABASE' => 'context'],
+            new \Phalanx\SurrealDb\Bundle(new \Phalanx\SurrealDb\Config(
                 namespace: 'olympus',
                 database: 'pantheon',
                 endpoint: 'http://surrealdb.test:9000',
                 connectTimeout: 1.5,
                 readTimeout: 7.5,
                 maxResponseBytes: 4096,
-            )))
-            ->run(Task::named(
-                'test.surrealdb.bundle-explicit-config',
-                static function (ExecutionScope $scope): array {
-                    $config = $scope->service(\Phalanx\SurrealDb\Config::class);
+            )),
+        )->application->scoped(Task::named(
+            'test.surrealdb.bundle-explicit-config',
+            static function (ExecutionScope $scope): array {
+                $config = $scope->service(\Phalanx\SurrealDb\Config::class);
 
-                    return [
-                        'namespace' => $config->namespace,
-                        'database' => $config->database,
-                        'endpoint' => $config->endpoint,
-                        'connectTimeout' => $config->connectTimeout,
-                        'readTimeout' => $config->readTimeout,
-                        'maxResponseBytes' => $config->maxResponseBytes,
-                    ];
-                },
-            ));
+                return [
+                    'namespace' => $config->namespace,
+                    'database' => $config->database,
+                    'endpoint' => $config->endpoint,
+                    'connectTimeout' => $config->connectTimeout,
+                    'readTimeout' => $config->readTimeout,
+                    'maxResponseBytes' => $config->maxResponseBytes,
+                ];
+            },
+        ));
 
         self::assertSame([
             'namespace' => 'olympus',

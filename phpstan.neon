@@ -84,7 +84,7 @@ parameters:
         - src/Runtime/src/System/Internal/SymfonyProcessAdapter.php
         - src/Cli
         - src/Worker/src/Pool/Pool.php
-        - src/Tui/src/Tui/Drawing/Terminal.php
+        - src/Tui/src/Drawing/Terminal.php
     phalanxCoroutineInternalPaths:
         - src/Runtime/src/Scope/ExecutionLifecycleScope.php
         - benchmarks/kernel/cases/ContextSwitchCases.php

@@ -6,37 +6,8 @@ declare(strict_types=1);
 use Phalanx\Testing\Codegen\AccessorTraitWriter;
 use Phalanx\Testing\Codegen\LensDiscovery;
 
-$autoloadCandidates = [
-    $_composer_autoload_path ?? null,
-    __DIR__ . '/../vendor/autoload.php',
-    __DIR__ . '/../../../vendor/autoload.php',
-];
+require __DIR__ . '/accessor-common.php';
 
-foreach ($autoloadCandidates as $candidate) {
-    if (is_string($candidate) && is_file($candidate)) {
-        require $candidate;
-        break;
-    }
-}
-
-if (!class_exists(LensDiscovery::class)) {
-    fwrite(STDERR, "Composer autoloader not found. Run `composer install` from the framework root.\n");
-    exit(1);
-}
-
-$rootDir = realpath(__DIR__ . '/../../..') ?: realpath(__DIR__ . '/..');
-if ($rootDir === false) {
-    fwrite(STDERR, "Cannot resolve project root.\n");
-    exit(1);
-}
-
-$moduleDir = realpath(__DIR__ . '/..');
-if ($moduleDir === false) {
-    fwrite(STDERR, "Cannot resolve Runtime module root.\n");
-    exit(1);
-}
-
-$frameworkDir = $rootDir . '/src';
 $bundles = collectBundles($rootDir, $moduleDir, $frameworkDir);
 $lenses = (new LensDiscovery())->discover($bundles);
 $expected = (new AccessorTraitWriter())->render($lenses);
@@ -60,47 +31,6 @@ if ($actual === $expected) {
 fwrite(STDERR, "TestAppAccessors trait is out of sync. Run `composer gen:test-accessors` and commit the result.\n\n");
 fwrite(STDERR, renderDiff($actual, $expected));
 exit(1);
-
-/** @return list<class-string<\Phalanx\Testing\TestableBundle>> */
-function collectBundles(string $rootDir, string $moduleDir, string $frameworkDir): array
-{
-    $sources = is_dir($frameworkDir)
-        ? [$rootDir . '/composer.json']
-        : [$moduleDir . '/composer.json'];
-
-    if (is_dir($frameworkDir)) {
-        foreach (glob($frameworkDir . '/*/composer.json') ?: [] as $moduleJson) {
-            $sources[] = $moduleJson;
-        }
-    }
-
-    $bundles = [];
-
-    foreach ($sources as $source) {
-        $contents = @file_get_contents($source);
-        if ($contents === false) {
-            continue;
-        }
-
-        $data = json_decode($contents, true);
-        if (!is_array($data)) {
-            continue;
-        }
-
-        $declared = $data['extra']['phalanx']['bundles'] ?? null;
-        if (!is_array($declared)) {
-            continue;
-        }
-
-        foreach ($declared as $bundleClass) {
-            if (is_string($bundleClass)) {
-                $bundles[] = $bundleClass;
-            }
-        }
-    }
-
-    return array_values(array_unique($bundles));
-}
 
 function renderDiff(string $actual, string $expected): string
 {

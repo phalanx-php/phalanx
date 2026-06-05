@@ -4,15 +4,14 @@ declare(strict_types=1);
 
 namespace Phalanx\Filesystem\Tests\Unit;
 
-use Phalanx\Application;
 use Phalanx\Filesystem\Exception\FilesystemException;
 use Phalanx\Filesystem\Task\ReadFile;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Task;
+use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 
-final class ReadFileTest extends TestCase
+final class ReadFileTest extends PhalanxTestCase
 {
     #[Test]
     public function readsExistingFile(): void
@@ -21,8 +20,8 @@ final class ReadFileTest extends TestCase
         file_put_contents($tmpFile, 'hello world');
 
         try {
-            $result = Application::starting()
-                ->run(Task::named(
+            $result = $this->startedApplication()
+                ->scoped(Task::named(
                     'test.filesystem.read-file',
                     static fn(ExecutionScope $scope): string => $scope->execute(new ReadFile($tmpFile)),
                 ));
@@ -38,8 +37,8 @@ final class ReadFileTest extends TestCase
     {
         $this->expectException(FilesystemException::class);
 
-        Application::starting()
-            ->run(Task::named(
+        $this->startedApplication()
+            ->scoped(Task::named(
                 'test.filesystem.read-file.missing',
                 static fn(ExecutionScope $scope): string => $scope->execute(new ReadFile('/nonexistent/path/file.txt')),
             ));

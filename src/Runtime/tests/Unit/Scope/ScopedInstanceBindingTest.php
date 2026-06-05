@@ -65,9 +65,9 @@ final class ScopedInstanceBindingTest extends TestCase
     }
 }
 
-final readonly class BoundRequestState
+final class BoundRequestState
 {
-    public function __construct(public string $id)
+    public function __construct(private(set) string $id)
     {
     }
 }

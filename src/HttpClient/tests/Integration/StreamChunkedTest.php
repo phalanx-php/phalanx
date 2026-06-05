@@ -10,9 +10,8 @@ use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\Suspendable;
 use Phalanx\System\TcpConnection;
 use Phalanx\System\TlsOptions;
-use Phalanx\Testing\TestScope;
+use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 
 /**
  * End-to-end proof for the HTTP/1.1 + chunked transport.
@@ -25,7 +24,7 @@ use PHPUnit\Framework\TestCase;
  * known wire so future regressions show up immediately without
  * standing up a real Swoole HTTP server.
  */
-final class StreamChunkedTest extends TestCase
+final class StreamChunkedTest extends PhalanxTestCase
 {
     private const string HOST = '127.0.0.1';
 
@@ -44,45 +43,43 @@ final class StreamChunkedTest extends TestCase
             "0\r\n\r\n",
         ]);
 
-        TestScope::compile()
-            ->shutdownAfterRun()
-            ->run(static function (ExecutionScope $scope) use ($connection): void {
-                $client = new \Phalanx\HttpClient\Client(
-                    tcpFactory: static fn(
-                        string $_scheme,
-                        string $_host,
-                        ?TlsOptions $_tlsOptions,
-                    ): TcpConnection => $connection,
-                );
-                $stream = $client->stream($scope, new \Phalanx\HttpClient\Request(
-                    'GET',
-                    'http://' . self::HOST . ':8123/',
-                    ['accept' => ['text/event-stream']],
-                ));
+        $this->scope->run(static function (ExecutionScope $scope) use ($connection): void {
+            $client = new \Phalanx\HttpClient\Client(
+                tcpFactory: static fn(
+                    string $_scheme,
+                    string $_host,
+                    ?TlsOptions $_tlsOptions,
+                ): TcpConnection => $connection,
+            );
+            $stream = $client->stream($scope, new \Phalanx\HttpClient\Request(
+                'GET',
+                'http://' . StreamChunkedTest::HOST . ':8123/',
+                ['accept' => ['text/event-stream']],
+            ));
 
-                $events = [];
-                $accumulated = '';
-                while (!$stream->eof) {
-                    $chunk = $stream->read($scope);
-                    if ($chunk === '') {
-                        break;
-                    }
-                    $accumulated .= $chunk;
-                    while (($delim = strpos($accumulated, "\n\n")) !== false) {
-                        $events[] = substr($accumulated, 0, $delim);
-                        $accumulated = (string) substr($accumulated, $delim + 2);
-                    }
+            $events = [];
+            $accumulated = '';
+            while (!$stream->eof) {
+                $chunk = $stream->read($scope);
+                if ($chunk === '') {
+                    break;
                 }
-                $stream->close();
+                $accumulated .= $chunk;
+                while (($delim = strpos($accumulated, "\n\n")) !== false) {
+                    $events[] = substr($accumulated, 0, $delim);
+                    $accumulated = (string) substr($accumulated, $delim + 2);
+                }
+            }
+            $stream->close();
 
-                self::assertSame(200, $stream->status, 'status line decoded');
-                self::assertSame('text/event-stream', $stream->headers['content-type'] ?? '');
-                self::assertCount(4, $events, 'three ticks plus [DONE]');
-                self::assertStringContainsString('"n":1', $events[0]);
-                self::assertStringContainsString('"n":2', $events[1]);
-                self::assertStringContainsString('"n":3', $events[2]);
-                self::assertStringContainsString('[DONE]', $events[3]);
-            });
+            self::assertSame(200, $stream->status, 'status line decoded');
+            self::assertSame('text/event-stream', $stream->headers['content-type'] ?? '');
+            self::assertCount(4, $events, 'three ticks plus [DONE]');
+            self::assertStringContainsString('"n":1', $events[0]);
+            self::assertStringContainsString('"n":2', $events[1]);
+            self::assertStringContainsString('"n":3', $events[2]);
+            self::assertStringContainsString('[DONE]', $events[3]);
+        });
 
         self::assertTrue($connection->closed);
         self::assertStringContainsString("GET / HTTP/1.1\r\n", $connection->sent);

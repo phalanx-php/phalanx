@@ -113,7 +113,7 @@ final class Pool
             [$func, $enableCoroutine] = $factories[$workerId];
 
             if ($enableCoroutine) {
-                // Direct coroutine run — child process has no Engine boot
+                // Direct coroutine run — child process has no Runtime boot
                 swoole_coroutine_run(static function () use ($func, $pool, $workerId): void {
                     $func($pool, $workerId);
                 });

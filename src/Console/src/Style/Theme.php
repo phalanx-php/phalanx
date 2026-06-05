@@ -11,15 +11,15 @@ namespace Phalanx\Console\Style;
 final class Theme
 {
     public function __construct(
-        public readonly Style $success,
-        public readonly Style $warning,
-        public readonly Style $error,
-        public readonly Style $muted,
-        public readonly Style $accent,
-        public readonly Style $label,
-        public readonly Style $hint,
-        public readonly Style $border,
-        public readonly Style $active,
+        private(set) Style $success,
+        private(set) Style $warning,
+        private(set) Style $error,
+        private(set) Style $muted,
+        private(set) Style $accent,
+        private(set) Style $label,
+        private(set) Style $hint,
+        private(set) Style $border,
+        private(set) Style $active,
     ) {
     }
 

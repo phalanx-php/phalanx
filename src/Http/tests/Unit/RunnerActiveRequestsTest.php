@@ -4,66 +4,49 @@ declare(strict_types=1);
 
 namespace Phalanx\Http\Tests\Unit;
 
-use Phalanx\Application;
+use Phalanx\Http\RouteGroup;
 use Phalanx\Registry\RegistryScope;
 use Phalanx\Server\ServerStats;
-use Phalanx\Http\RouteGroup;
-use Phalanx\Http\Runner;
+use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 
-final class HttpRunnerActiveRequestsTest extends TestCase
+final class HttpRunnerActiveRequestsTest extends PhalanxTestCase
 {
     #[Test]
     public function workerScopeReturnsLocalRegistrySize(): void
     {
-        $app = Application::starting()->compile()->startup();
+        $app = $this->startedApplication();
+        $runner = \Phalanx\Http\Runner::from($app)->withRoutes(RouteGroup::of([]));
 
-        try {
-            $runner = \Phalanx\Http\Runner::from($app)->withRoutes(RouteGroup::of([]));
-
-            self::assertSame(0, $runner->activeRequests());
-            self::assertSame(0, $runner->activeRequests(RegistryScope::Worker));
-            self::assertSame([], $runner->activeRequestsByState());
-            self::assertSame([], $runner->activeRequestsByState(RegistryScope::Worker));
-        } finally {
-            $app->shutdown();
-        }
+        self::assertSame(0, $runner->activeRequests());
+        self::assertSame(0, $runner->activeRequests(RegistryScope::Worker));
+        self::assertSame([], $runner->activeRequestsByState());
+        self::assertSame([], $runner->activeRequestsByState(RegistryScope::Worker));
     }
 
     #[Test]
     public function serverScopeQueriesInjectedServerStats(): void
     {
-        $app = Application::starting()->compile()->startup();
+        $app = $this->startedApplication();
+        $runner = \Phalanx\Http\Runner::from($app)
+            ->withRoutes(RouteGroup::of([]))
+            ->withServerStats(ServerStats::fromArray([
+                'connection_num' => 17,
+                'accept_count' => 100,
+                'close_count' => 83,
+            ]));
 
-        try {
-            $runner = \Phalanx\Http\Runner::from($app)
-                ->withRoutes(RouteGroup::of([]))
-                ->withServerStats(ServerStats::fromArray([
-                    'connection_num' => 17,
-                    'accept_count' => 100,
-                    'close_count' => 83,
-                ]));
-
-            self::assertSame(17, $runner->activeRequests(RegistryScope::Server));
-            self::assertSame(0, $runner->activeRequests(RegistryScope::Worker));
-            self::assertSame([], $runner->activeRequestsByState(RegistryScope::Server));
-        } finally {
-            $app->shutdown();
-        }
+        self::assertSame(17, $runner->activeRequests(RegistryScope::Server));
+        self::assertSame(0, $runner->activeRequests(RegistryScope::Worker));
+        self::assertSame([], $runner->activeRequestsByState(RegistryScope::Server));
     }
 
     #[Test]
     public function serverScopeFallsBackToWorkerCountWhenStatsAbsent(): void
     {
-        $app = Application::starting()->compile()->startup();
+        $app = $this->startedApplication();
+        $runner = \Phalanx\Http\Runner::from($app)->withRoutes(RouteGroup::of([]));
 
-        try {
-            $runner = \Phalanx\Http\Runner::from($app)->withRoutes(RouteGroup::of([]));
-
-            self::assertSame(0, $runner->activeRequests(RegistryScope::Server));
-        } finally {
-            $app->shutdown();
-        }
+        self::assertSame(0, $runner->activeRequests(RegistryScope::Server));
     }
 }

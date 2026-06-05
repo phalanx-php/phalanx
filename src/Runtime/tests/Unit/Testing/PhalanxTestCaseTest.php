@@ -15,7 +15,7 @@ use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\AssertionFailedError;
 use RuntimeException;
 
-class PhalanxTestCaseTest extends PhalanxTestCase
+final class PhalanxTestCaseTest extends PhalanxTestCase
 {
     public function testScopeRunCreatesFreshManagedScopeForEachRun(): void
     {

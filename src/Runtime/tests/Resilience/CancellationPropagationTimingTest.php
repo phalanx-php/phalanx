@@ -133,40 +133,45 @@ final class CancellationPropagationTimingTest extends PhalanxTestCase
         $this->scope->run(static function (ExecutionScope $_scope) use ($body): void {
             $ledger = new InProcessLedger();
             $app = self::buildApp($ledger);
-            $appScope = $app->createScope();
-            $token = $appScope->cancellation();
 
-            $cancelAfter = self::CANCEL_AFTER_USEC;
-            \Swoole\Coroutine::create(static function () use ($token, $cancelAfter): void {
-                \Swoole\Coroutine::sleep($cancelAfter / 1_000_000);
-                $token->cancel();
-            });
-
-            $start = microtime(true);
-            $cancelled = false;
             try {
-                $body($appScope);
-            } catch (Cancelled) {
-                $cancelled = true;
-            } catch (\Throwable) {
-                // Some primitives (settle) wrap, some throw; either way we care
-                // that elapsed is under budget and ledger drains.
-                $cancelled = true;
+                $appScope = $app->createScope();
+                $token = $appScope->cancellation();
+
+                $cancelAfter = self::CANCEL_AFTER_USEC;
+                \Swoole\Coroutine::create(static function () use ($token, $cancelAfter): void {
+                    \Swoole\Coroutine::sleep($cancelAfter / 1_000_000);
+                    $token->cancel();
+                });
+
+                $start = microtime(true);
+                $cancelled = false;
+                try {
+                    $body($appScope);
+                } catch (Cancelled) {
+                    $cancelled = true;
+                } catch (\Throwable) {
+                    // Some primitives (settle) wrap, some throw; either way we care
+                    // that elapsed is under budget and ledger drains.
+                    $cancelled = true;
+                }
+                $elapsed = microtime(true) - $start;
+
+                $appScope->dispose();
+
+                self::assertTrue(
+                    $cancelled || $elapsed < self::CANCEL_BUDGET_SECONDS,
+                    'expected either Cancelled to surface or fast return',
+                );
+                self::assertLessThan(
+                    self::CANCEL_BUDGET_SECONDS,
+                    $elapsed,
+                    sprintf('cancellation took %.3fs (budget %.3fs)', $elapsed, self::CANCEL_BUDGET_SECONDS),
+                );
+                self::assertSame(0, $ledger->liveCount(), 'ledger not drained after cancel');
+            } finally {
+                $app->shutdown();
             }
-            $elapsed = microtime(true) - $start;
-
-            $appScope->dispose();
-
-            self::assertTrue(
-                $cancelled || $elapsed < self::CANCEL_BUDGET_SECONDS,
-                'expected either Cancelled to surface or fast return',
-            );
-            self::assertLessThan(
-                self::CANCEL_BUDGET_SECONDS,
-                $elapsed,
-                sprintf('cancellation took %.3fs (budget %.3fs)', $elapsed, self::CANCEL_BUDGET_SECONDS),
-            );
-            self::assertSame(0, $ledger->liveCount(), 'ledger not drained after cancel');
         });
     }
 }

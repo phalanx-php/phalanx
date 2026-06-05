@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Filesystem\Tests\Unit;
 
-use Phalanx\Application;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Mark\Mark;
 use Phalanx\Filesystem\Exception\FilesystemException;
@@ -157,9 +156,8 @@ final class FilePoolTest extends PhalanxTestCase
         file_put_contents($tmpFile, 'streamed');
 
         try {
-            $result = Application::starting()
-                ->providers(Filesystem::services(maxOpen: 1))
-                ->run(Task::named(
+            $result = $this->startedApplication(bundles: Filesystem::services(maxOpen: 1))
+                ->scoped(Task::named(
                     'test.filesystem.stream.read-release',
                     static function (ExecutionScope $scope) use ($tmpFile): array {
                         $pool = $scope->service(FilePool::class);
@@ -186,9 +184,8 @@ final class FilePoolTest extends PhalanxTestCase
     #[Test]
     public function readStreamReleasesSlotAfterOpenFailure(): void
     {
-        $result = Application::starting()
-            ->providers(Filesystem::services(maxOpen: 1))
-            ->run(Task::named(
+        $result = $this->startedApplication(bundles: Filesystem::services(maxOpen: 1))
+            ->scoped(Task::named(
                 'test.filesystem.stream.read-open-failure',
                 static function (ExecutionScope $scope): array {
                     $pool = $scope->service(FilePool::class);

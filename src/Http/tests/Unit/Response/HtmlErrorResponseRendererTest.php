@@ -5,27 +5,26 @@ declare(strict_types=1);
 namespace Phalanx\Http\Tests\Unit\Response;
 
 use GuzzleHttp\Psr7\ServerRequest;
-use Phalanx\Application;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Http\ExecutionContext;
+use Phalanx\Http\QueryParams;
 use Phalanx\Http\RequestDiagnostics;
 use Phalanx\Http\RequestResource;
-use Phalanx\Http\ServerConfig;
-use Phalanx\Http\QueryParams;
 use Phalanx\Http\Response\HtmlErrorResponseRenderer;
 use Phalanx\Http\RouteConfig;
 use Phalanx\Http\RouteParams;
+use Phalanx\Http\ServerConfig;
 use Phalanx\Scope\ExecutionLifecycleScope;
+use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
-final class HtmlErrorResponseRendererTest extends TestCase
+final class HtmlErrorResponseRendererTest extends PhalanxTestCase
 {
     #[Test]
     public function renderReturnsNullWhenDebugIsOff(): void
     {
-        $renderer = new HtmlErrorResponseRenderer(new \Phalanx\Http\ServerConfig(ignitionEnabled: false));
+        $renderer = new HtmlErrorResponseRenderer(new ServerConfig(ignitionEnabled: false));
         [$scope, $cleanup] = $this->createExecutionContextWithRequestResource();
 
         try {
@@ -40,7 +39,7 @@ final class HtmlErrorResponseRendererTest extends TestCase
     #[Test]
     public function renderReturnsDebugHtmlWhenDebugIsOn(): void
     {
-        $renderer = new HtmlErrorResponseRenderer(new \Phalanx\Http\ServerConfig(ignitionEnabled: true));
+        $renderer = new HtmlErrorResponseRenderer(new ServerConfig(ignitionEnabled: true));
         [$scope, $cleanup] = $this->createExecutionContextWithRequestResource();
 
         try {
@@ -62,15 +61,15 @@ final class HtmlErrorResponseRendererTest extends TestCase
      */
     private function createExecutionContextWithRequestResource(): array
     {
-        $app = Application::starting()->compile()->startup();
+        $app = $this->startedApplication();
         $inner = $app->createScope();
         self::assertInstanceOf(ExecutionLifecycleScope::class, $inner);
 
         $request = new ServerRequest('GET', '/fail', ['Accept' => 'text/html']);
         $token = CancellationToken::create();
-        $resource = \Phalanx\Http\RequestResource::open($app->runtime(), $request, $token, ownerScopeId: $inner->scopeId);
-        $inner->bindScopedInstance(\Phalanx\Http\RequestResource::class, $resource);
-        $inner->bindScopedInstance(\Phalanx\Http\RequestDiagnostics::class, new \Phalanx\Http\RequestDiagnostics());
+        $resource = RequestResource::open($app->runtime(), $request, $token, ownerScopeId: $inner->scopeId);
+        $inner->bindScopedInstance(RequestResource::class, $resource);
+        $inner->bindScopedInstance(RequestDiagnostics::class, new RequestDiagnostics());
 
         $scope = new ExecutionContext(
             $inner,
@@ -82,11 +81,10 @@ final class HtmlErrorResponseRendererTest extends TestCase
 
         return [
             $scope,
-            static function () use ($resource, $inner, $token, $app): void {
+            static function () use ($resource, $inner, $token): void {
                 $resource->release();
                 $inner->dispose();
                 $token->cancel();
-                $app->shutdown();
             },
         ];
     }

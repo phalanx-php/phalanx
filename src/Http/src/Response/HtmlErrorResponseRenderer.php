@@ -9,7 +9,6 @@ use Phalanx\Cancellation\Cancelled;
 use Phalanx\Http\RequestContext;
 use Phalanx\Supervisor\Supervisor;
 use Phalanx\Supervisor\TaskTreeFormatter;
-use Phalanx\Support\PackagePaths;
 use Psr\Http\Message\ResponseInterface;
 use Throwable;
 
@@ -103,20 +102,7 @@ final readonly class HtmlErrorResponseRenderer implements ErrorResponseRenderer
 
     private function getLogo(): string
     {
-        $path = PackagePaths::firstExistingFile(
-            PackagePaths::ancestorCandidates(__DIR__, ltrim($this->config->logoPath, '/')),
-        );
-        if ($path !== null) {
-            $svg = file_get_contents($path);
-            if ($svg) {
-                $svg = preg_replace('#<text.*?</text>#s', '', $svg) ?? $svg;
-                $svg = str_replace('viewBox="0 0 520 120"', 'viewBox="0 0 110 120"', $svg);
-
-                return $svg;
-            }
-        }
-
-        return '';
+        return LogoResolver::resolve($this->config->logoPath);
     }
 
     private function template(
@@ -298,7 +284,7 @@ final readonly class HtmlErrorResponseRenderer implements ErrorResponseRenderer
     <div class="container">
         <div class="nav-header">
             <div class="logo-wrap">{$logo}</div>
-            <div class="runtime-badge">PHALANX 0.2 / OPEN SWOOLE 26</div>
+            <div class="runtime-badge">PHALANX 0.2 / SWOOLE 6</div>
         </div>
 
         <div class="error-card">
@@ -382,7 +368,6 @@ final readonly class HtmlErrorResponseRenderer implements ErrorResponseRenderer
         lucide.createIcons();
 
         function switchTab(tabId, btn) {
-            console.log('Switching to tab: ' + tabId);
             document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             
@@ -390,7 +375,6 @@ final readonly class HtmlErrorResponseRenderer implements ErrorResponseRenderer
             btn.classList.add('active');
             
             if (tabId === 'source' && typeof Prism !== 'undefined') {
-                console.log('Triggering Prism highlight');
                 Prism.highlightAll();
             }
         }
@@ -417,15 +401,12 @@ final readonly class HtmlErrorResponseRenderer implements ErrorResponseRenderer
                     btn.style.color = '';
                     lucide.createIcons();
                 }, 2000);
-            } catch (err) {
-                console.error('Failed to copy: ', err);
+            } catch (_) {
             }
         }
         
         window.addEventListener('load', () => {
-            console.log('Page loaded');
             if (typeof Prism !== 'undefined') {
-                console.log('Prism found, highlighting...');
                 Prism.highlightAll();
             }
             setTimeout(() => {

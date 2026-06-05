@@ -14,7 +14,7 @@ final class ScopedTestApp
     private bool $shutdownAfterRun = false;
 
     public function __construct(
-        public readonly Application $app,
+        private(set) Application $app,
     ) {
     }
 

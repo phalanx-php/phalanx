@@ -5,19 +5,16 @@ declare(strict_types=1);
 namespace Phalanx\Http\Tests\Unit\Validator;
 
 use GuzzleHttp\Psr7\ServerRequest;
-use Phalanx\Application;
 use Phalanx\Http\ExecutionContext;
 use Phalanx\Http\QueryParams;
 use Phalanx\Http\RouteConfig;
 use Phalanx\Http\RouteParams;
 use Phalanx\Http\Validator\RequireQueryParam;
+use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 
-final class RequireQueryParamTest extends TestCase
+final class RequireQueryParamTest extends PhalanxTestCase
 {
-    private Application $app;
-
     #[Test]
     public function returns_empty_when_param_present(): void
     {
@@ -50,20 +47,10 @@ final class RequireQueryParamTest extends TestCase
         $this->assertArrayHasKey('page', $errors);
     }
 
-    protected function setUp(): void
-    {
-        $this->app = Application::starting()->compile();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->app->shutdown();
-    }
-
     /** @param array<string, string> $query */
     private function createScope(array $query): ExecutionContext
     {
-        $inner = $this->app->createScope();
+        $inner = $this->application()->createScope();
         $request = (new ServerRequest('GET', '/test'))->withQueryParams($query);
 
         return new ExecutionContext(
