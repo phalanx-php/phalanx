@@ -30,6 +30,11 @@ parameters:
         - demos
     scanDirectories:
         - vendor/swoole/ide-helper
+    excludePaths:
+        analyse:
+            - src/PHPStan/tests/Audit/Fixtures
+            - src/PHPStan/tests/Integration/Fixtures
+            - src/PHPStan/tests/Rules/Fixtures
     phalanxInternalPaths:
         - src/Runtime/Concurrency/Co.php
         - src/Runtime/Cancellation/CancellationToken.php

@@ -87,7 +87,7 @@ interface TaskExecutor
     public function mapParallel(iterable $items, Closure $fn, int $limit = 10, ?Closure $onEach = null): array;
 
     /**
-     * @param Closure(): void $fn
+     * @param Closure(ExecutionScope): mixed $fn
      */
     public function go(Closure $fn, ?string $name = null): TaskHandle;
 }
