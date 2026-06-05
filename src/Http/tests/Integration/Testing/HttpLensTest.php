@@ -84,7 +84,7 @@ final class HttpLensTest extends PhalanxTestCase
             $this->expectException(LensNotAvailable::class);
             $this->expectExceptionMessage(HttpLens::class);
 
-            $app->http;
+            $_ = $app->http;
         } finally {
             $app->shutdown();
         }

@@ -13,6 +13,12 @@ final class ReadonlyStub implements BorrowedValue
     public readonly int $code;
     public string $label = '';
     public float $score = 0.0;
+
+    public function __construct(string $id = '', int $code = 0)
+    {
+        $this->id = $id;
+        $this->code = $code;
+    }
 }
 
 final class AsymmetricStub implements BorrowedValue

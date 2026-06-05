@@ -18,7 +18,7 @@ final class RequestValidatorTest extends TestCase
     public function passing_validator_returns_value(): void
     {
         $body = $this->createBody('{"age":25}');
-        $alwaysPass = $this->validator(static fn(mixed $v): bool => true);
+        $alwaysPass = $this->validator(static fn(mixed $_v): bool => true);
 
         $this->assertSame(25, $body->int('age', validate: $alwaysPass));
     }
@@ -56,7 +56,7 @@ final class RequestValidatorTest extends TestCase
         $body = $this->createBody('{"count":5}');
         $calls = 0;
 
-        $counter = $this->validator(static function (mixed $v) use (&$calls): bool {
+        $counter = $this->validator(static function (mixed $_v) use (&$calls): bool {
             $calls++;
             return true;
         });
@@ -75,12 +75,12 @@ final class RequestValidatorTest extends TestCase
         $callsA = 0;
         $callsB = 0;
 
-        $validatorA = $this->validator(static function (mixed $v) use (&$callsA): bool {
+        $validatorA = $this->validator(static function (mixed $_v) use (&$callsA): bool {
             $callsA++;
             return true;
         });
 
-        $validatorB = $this->validator(static function (mixed $v) use (&$callsB): bool {
+        $validatorB = $this->validator(static function (mixed $_v) use (&$callsB): bool {
             $callsB++;
             return true;
         });
@@ -98,7 +98,7 @@ final class RequestValidatorTest extends TestCase
         $body = $this->createBody('{}');
         $calls = 0;
 
-        $validator = $this->validator(static function (mixed $v) use (&$calls): bool {
+        $validator = $this->validator(static function (mixed $_v) use (&$calls): bool {
             $calls++;
             return true;
         });

@@ -7,6 +7,7 @@ namespace Phalanx\Runtime\Tests\Integration\Boot;
 use Phalanx\Application;
 use Phalanx\Boot\AppContext;
 use Phalanx\Boot\BootHarness;
+use Phalanx\Boot\BootHarnessReport;
 use Phalanx\Boot\Exception\CannotBootException;
 use Phalanx\Boot\Required;
 use Phalanx\Service\ServiceBundle;
@@ -119,7 +120,7 @@ final class CannotBootRenderingTest extends PhalanxTestCase
         $app = $builder->compile();
         $report = $builder->lastBootReport();
 
-        self::assertNotNull($report);
+        self::assertInstanceOf(BootHarnessReport::class, $report);
         self::assertTrue($report->isClean());
 
         $app->shutdown();

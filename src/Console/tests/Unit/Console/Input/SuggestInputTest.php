@@ -25,7 +25,7 @@ final class SuggestInputTest extends PromptTestCase
     #[Test]
     public function enterSubmitsTypedValueWithoutAcceptingSuggestion(): void
     {
-        $closure = static fn(string $q): array => ['suggested'];
+        $closure = static fn(string $_q): array => ['suggested'];
 
         $reader = $this->reader(['t', 'y', 'p', 'e', 'd', self::ENTER]);
 

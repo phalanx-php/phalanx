@@ -71,7 +71,7 @@ final class PeriodicTest extends PhalanxTestCase
 
     public function testScopeDisposalCancelsThePeriodic(): void
     {
-        $this->scope->run(static function (ExecutionScope $scope): void {
+        $this->scope->run(static function (ExecutionScope $_scope): void {
             $count = 0;
 
             $sub = null;

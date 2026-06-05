@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\WebSocket\Server;
 
 use Phalanx\Cancellation\Cancelled;
+use Phalanx\Mark\Mark;
 use Phalanx\Runtime\Memory\ManagedResourceHandle;
 use Phalanx\Runtime\Memory\ManagedResourceRegistry;
 use Phalanx\Scope\ExecutionScope;
@@ -136,7 +137,7 @@ final class WsServerConnection
         );
 
         $this->pingSubscription = $scope->periodic(
-            $config->pingInterval > 0.0 ? $config->pingInterval : 30.0,
+            Mark::s($config->pingInterval > 0.0 ? $config->pingInterval : 30.0),
             static function () use ($bridge): void {
                 if ($bridge->isOpen) {
                     $bridge->ping();

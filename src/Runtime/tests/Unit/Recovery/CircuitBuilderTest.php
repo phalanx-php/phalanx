@@ -28,6 +28,7 @@ final class CircuitBuilderTest extends TestCase
 
         self::assertSame(5, $original->failureThreshold);
         self::assertSame(10, $modified->failureThreshold);
+        self::assertNotNull($modified->failureWindow);
         self::assertSame(60000, $modified->failureWindow->toMilliseconds());
     }
 
@@ -38,6 +39,7 @@ final class CircuitBuilderTest extends TestCase
         $modified = $original->cooldown(Mark::s(30));
 
         self::assertNull($original->cooldown);
+        self::assertNotNull($modified->cooldown);
         self::assertSame(30000, $modified->cooldown->toMilliseconds());
     }
 
@@ -61,7 +63,9 @@ final class CircuitBuilderTest extends TestCase
 
         self::assertSame('payments', $circuit->key->value);
         self::assertSame(5, $circuit->failureThreshold);
+        self::assertNotNull($circuit->failureWindow);
         self::assertSame(60000, $circuit->failureWindow->toMilliseconds());
+        self::assertNotNull($circuit->cooldown);
         self::assertSame(30000, $circuit->cooldown->toMilliseconds());
         self::assertSame(3, $circuit->maxProbes);
     }

@@ -8,11 +8,13 @@ use Phalanx\Application;
 use Phalanx\Boot\AppContext;
 use Phalanx\Diagnostics\DiagnosticCode;
 use Phalanx\Mark\Mark;
+use Phalanx\Scope\ExecutionLifecycleScope;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 use Phalanx\Supervisor\InProcessLedger;
 use Phalanx\Supervisor\TaskHandle;
+use Phalanx\Trace\TraceEvent;
 use Phalanx\Testing\PhalanxTestCase;
 use RuntimeException;
 use Swoole\Coroutine;
@@ -200,6 +202,7 @@ final class SpawnHelperTest extends PhalanxTestCase
             $ledger = new InProcessLedger();
             $app = self::buildApp($ledger);
             $inner = $app->createScope();
+            self::assertInstanceOf(ExecutionLifecycleScope::class, $inner);
             $started = new Channel(1);
             $completedDone = new Channel(1);
             $parkedUnwound = new Channel(1);
@@ -273,7 +276,7 @@ final class SpawnHelperTest extends PhalanxTestCase
             ->compile();
     }
 
-    /** @return list<object> */
+    /** @return list<TraceEvent> */
     private static function traceEvents(ExecutionScope $scope, string $name): array
     {
         return array_values(array_filter(

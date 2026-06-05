@@ -47,6 +47,7 @@ final class AuthenticateTest extends TestCase
         self::assertInstanceOf(AuthExecutionContext::class, $capturedScope);
         self::assertInstanceOf(AuthRequestContext::class, $capturedScope);
         self::assertTrue($capturedScope->auth->isAuthenticated);
+        self::assertNotNull($capturedScope->auth->identity);
         self::assertSame(42, $capturedScope->auth->identity->id);
         self::assertSame('tok_abc', $capturedScope->auth->token());
     }
@@ -79,6 +80,7 @@ final class AuthenticateTest extends TestCase
             },
         );
 
+        self::assertNotNull($capturedScope);
         self::assertSame('GET', $capturedScope->method());
         self::assertSame('/test', $capturedScope->path());
         self::assertSame('lobby', $capturedScope->params->get('room'));

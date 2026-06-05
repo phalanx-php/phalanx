@@ -244,16 +244,17 @@ final class EmitterTest extends PhalanxTestCase
     public function firstTerminalCancelsUpstreamProducer(): void
     {
         $this->scope->run(static function (ExecutionScope $scope): void {
-            $cancelled = false;
+            $cancelledCh = new Channel(bufferSize: 1);
 
-            $emitter = Emitter::produce(static function (Channel $ch, ExecutionScope $producerScope) use (&$cancelled): void {
+            $emitter = Emitter::produce(static function (Channel $ch, ExecutionScope $producerScope) use ($cancelledCh): void {
                 try {
+                    // @phpstan-ignore while.alwaysTrue
                     while (true) {
                         $ch->emit('tick');
                         $producerScope->delay(Mark::ms(10));
                     }
                 } catch (Cancelled $e) {
-                    $cancelled = true;
+                    $cancelledCh->emit(true);
                     throw $e;
                 }
             })->map(static fn(string $value): string => strtoupper($value));
@@ -262,7 +263,10 @@ final class EmitterTest extends PhalanxTestCase
 
             $scope->delay(Mark::ms(20));
 
-            self::assertTrue($cancelled);
+            foreach ($cancelledCh->consume() as $wasCancelled) {
+                self::assertTrue($wasCancelled);
+                break;
+            }
         });
     }
 

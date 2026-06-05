@@ -115,6 +115,246 @@ parameters:
             identifier: argument.unknown
             path: src/Runtime/Runtime/Memory/RuntimeClaims.php
             reportUnmatched: true
+        # RuntimePolicyTest tests the hook mapping system itself; must reference raw SWOOLE_HOOK_* constants
+        -
+            identifier: phalanx.runtime.hookOwnership
+            path: src/Runtime/tests/Unit/Runtime/RuntimePolicyTest.php
+            reportUnmatched: true
+        # Ghost-initializer closures are Closure::bind()-ed to class scope at runtime; PHPStan sees test scope
+        -
+            identifier: assign.propertyPrivateSet
+            path: src/Runtime/tests/Unit/Supervisor/TaskRunPoolTest.php
+            reportUnmatched: true
+        -
+            identifier: assign.propertyPrivateSet
+            path: src/Runtime/tests/Unit/Pool/ReadonlyGhostVerificationTest.php
+            reportUnmatched: true
+        -
+            identifier: assign.propertyProtectedSet
+            path: src/Runtime/tests/Unit/Pool/ReadonlyGhostVerificationTest.php
+            reportUnmatched: true
+        # Test harnesses use Coroutine::sleep() for timing isolation
+        -
+            identifier: phalanx.cancellation.rawSleep
+            path: src/Agent/tests/Integration/ChannelBackedLoopTest.php
+            reportUnmatched: true
+        -
+            identifier: phalanx.cancellation.rawSleep
+            path: src/Console/tests/Integration/Application/ConsoleApplicationTest.php
+            reportUnmatched: true
+        -
+            identifier: phalanx.cancellation.rawSleep
+            path: src/Console/tests/Integration/Runtime/Identity/ConsoleSignalTrapTest.php
+            reportUnmatched: true
+        -
+            identifier: phalanx.cancellation.rawSleep
+            path: src/Network/tests/Integration/UdpEchoTest.php
+            reportUnmatched: true
+        -
+            identifier: phalanx.cancellation.rawSleep
+            path: src/Runtime/tests/Resilience/CancellationPropagationTimingTest.php
+            reportUnmatched: true
+        -
+            identifier: phalanx.cancellation.rawSleep
+            path: src/Runtime/tests/Resilience/SiblingCancelIsolationStressTest.php
+            reportUnmatched: true
+        -
+            identifier: phalanx.cancellation.rawSleep
+            path: src/Runtime/tests/Smoke/WorkingRuntimeSmokeTest.php
+            reportUnmatched: true
+        -
+            identifier: phalanx.cancellation.rawSleep
+            path: src/Runtime/tests/Unit/Scope/WorkerParallelDispatchTest.php
+            reportUnmatched: true
+        -
+            identifier: phalanx.cancellation.rawSleep
+            path: src/Runtime/tests/Unit/Supervisor/PrimitiveSupervisionTest.php
+            reportUnmatched: true
+        -
+            identifier: phalanx.cancellation.rawSleep
+            path: src/Runtime/tests/Unit/Supervisor/SiblingScopeIsolationTest.php
+            reportUnmatched: true
+        -
+            identifier: phalanx.cancellation.rawSleep
+            path: src/Runtime/tests/Unit/Supervisor/SpawnHelperTest.php
+            reportUnmatched: true
+        -
+            identifier: phalanx.cancellation.rawSleep
+            path: src/Runtime/tests/Unit/Supervisor/WaitReasonRecordingTest.php
+            reportUnmatched: true
+        -
+            identifier: phalanx.cancellation.rawSleep
+            path: src/Runtime/tests/Unit/System/UdpSocketTest.php
+            reportUnmatched: true
+        # Supervision tests deliberately spawn raw coroutines to verify supervisor handles them
+        -
+            identifier: phalanx.concurrency.rawSpawn
+            path: src/Network/tests/Integration/UdpEchoTest.php
+            reportUnmatched: true
+        -
+            identifier: phalanx.concurrency.rawSpawn
+            path: src/Runtime/tests/Resilience/CancellationPropagationTimingTest.php
+            reportUnmatched: true
+        -
+            identifier: phalanx.concurrency.rawSpawn
+            path: src/Runtime/tests/Resilience/RuntimeMemoryResilienceTest.php
+            reportUnmatched: true
+        -
+            identifier: phalanx.concurrency.rawSpawn
+            path: src/Runtime/tests/Resilience/SiblingCancelIsolationStressTest.php
+            reportUnmatched: true
+        -
+            identifier: phalanx.concurrency.rawSpawn
+            path: src/Runtime/tests/Smoke/WorkingRuntimeSmokeTest.php
+            reportUnmatched: true
+        -
+            identifier: phalanx.concurrency.rawSpawn
+            path: src/Runtime/tests/Unit/Supervisor/PrimitiveSupervisionTest.php
+            reportUnmatched: true
+        -
+            identifier: phalanx.concurrency.rawSpawn
+            path: src/Runtime/tests/Unit/Supervisor/SiblingScopeIsolationTest.php
+            reportUnmatched: true
+        -
+            identifier: phalanx.concurrency.rawSpawn
+            path: src/Runtime/tests/Unit/Supervisor/WaitReasonRecordingTest.php
+            reportUnmatched: true
+        -
+            identifier: phalanx.concurrency.rawSpawn
+            path: src/Runtime/tests/Unit/System/UdpSocketTest.php
+            reportUnmatched: true
+        # Test fixtures use Symfony Process directly for integration testing
+        -
+            identifier: phalanx.process.managedOnly
+            path: src/AiProviders/tests/Acceptance/V0AcceptanceGateTest.php
+            reportUnmatched: true
+        -
+            identifier: phalanx.process.managedOnly
+            path: src/AiProviders/tests/Unit/Transport/Sync/TransportTest.php
+            reportUnmatched: true
+        -
+            identifier: phalanx.process.managedOnly
+            path: src/Console/tests/Integration/Console/PromptIntegrationTest.php
+            reportUnmatched: true
+        -
+            identifier: phalanx.process.managedOnly
+            path: src/Runtime/tests/Unit/Console/Input/ConsoleInputTest.php
+            reportUnmatched: true
+        # Pool tests deliberately test boundary behavior the rule prevents in production
+        -
+            identifier: phalanx.pool.borrowedBoundary
+            path: src/Runtime/tests/Unit/Supervisor/LeaseTrackingTest.php
+            reportUnmatched: true
+        -
+            identifier: phalanx.pool.borrowedBoundary
+            path: src/Runtime/tests/Unit/Supervisor/TaskRunPoolTest.php
+            reportUnmatched: true
+        -
+            identifier: phalanx.pool.borrowedBoundary
+            path: src/Runtime/tests/Unit/Supervisor/TaskTreeFormatterTest.php
+            reportUnmatched: true
+        -
+            identifier: phalanx.pool.borrowedBoundary
+            path: src/Stream/tests/Unit/ChannelTest.php
+            reportUnmatched: true
+        # Tests verify cancellation behavior directly
+        -
+            identifier: phalanx.cancellation.noCancelledShortcut
+            path: src/AiProviders/tests/Integration/Provider/AnthropicLiveTest.php
+            reportUnmatched: true
+        -
+            identifier: phalanx.cancellation.noCancelledShortcut
+            path: src/Runtime/tests/Resilience/RuntimeMemoryResilienceTest.php
+            reportUnmatched: true
+        -
+            identifier: phalanx.cancellation.noCancelledShortcut
+            path: src/Runtime/tests/Unit/Runtime/ManagedApplicationRunnerTest.php
+            reportUnmatched: true
+        -
+            identifier: phalanx.cancellation.noCancelledShortcut
+            path: src/Runtime/tests/Unit/Supervisor/ExecuteWiringTest.php
+            reportUnmatched: true
+        -
+            identifier: phalanx.cancellation.noCancelledShortcut
+            path: src/Tui/tests/Unit/Collab/Prompts/FilePromptTest.php
+            reportUnmatched: true
+        # Pool tests pass non-conforming class-strings to exercise runtime type-checking and generic boundaries
+        -
+            identifier: argument.type
+            path: src/Runtime/tests/Unit/Pool/ChannelPoolTest.php
+            reportUnmatched: true
+        -
+            identifier: argument.type
+            path: src/Runtime/tests/Unit/Pool/ManagedPoolTest.php
+            reportUnmatched: true
+        -
+            identifier: argument.type
+            path: src/Runtime/tests/Unit/Pool/ObjectPoolTest.php
+            reportUnmatched: true
+        -
+            identifier: argument.type
+            path: src/Runtime/tests/Unit/Pool/PoolRingTest.php
+            reportUnmatched: true
+        -
+            identifier: argument.type
+            path: src/Runtime/tests/Unit/Supervisor/TaskRunPoolTest.php
+            reportUnmatched: true
+        -
+            identifier: assign.propertyType
+            path: src/Runtime/tests/Unit/Supervisor/TaskRunPoolTest.php
+            reportUnmatched: true
+        -
+            identifier: return.type
+            path: src/Runtime/tests/Unit/Supervisor/TaskRunPoolTest.php
+            reportUnmatched: true
+        -
+            identifier: missingType.generics
+            path: src/Runtime/tests/Unit/Supervisor/TaskRunPoolTest.php
+            reportUnmatched: true
+        # Auth middleware tests exercise closure parameter narrowing at the type boundary
+        -
+            identifier: argument.type
+            path: src/WebSocket/tests/Unit/Auth/AuthenticateTest.php
+            reportUnmatched: true
+        # HttpLensTest is specifically testing lens behavior without a bundle; the error IS the test
+        -
+            identifier: phalanx.testing.lensRequiresBundle
+            path: src/Http/tests/Integration/Testing/HttpLensTest.php
+            reportUnmatched: true
+        # InWorkerDispatchTest exposes borrowed values to test dispatch serialization boundaries
+        -
+            identifier: phalanx.pool.borrowedPublicSurface
+            path: src/Runtime/tests/Unit/Scope/InWorkerDispatchTest.php
+            reportUnmatched: true
+        # Test fixture deliberately uses ExecutionScope to verify runtime rejection
+        -
+            identifier: phalanx.worker.scopeContract
+            path: src/Worker/tests/Fixtures/NeedsExecutionScope.php
+            reportUnmatched: true
+        # Test fixture intentionally has an untyped parameter to test ConfigHydrator's error handling
+        -
+            identifier: missingType.parameter
+            path: src/Config/tests/Unit/ConfigHydratorTest.php
+            reportUnmatched: true
+        # Factory parameter is intentionally untyped and its name appears in the runtime error message
+        -
+            identifier: phalanx.scope.unusedClosureParameter
+            path: src/Runtime/tests/Unit/Service/FactoryDependencyResolutionTest.php
+            reportUnmatched: true
+        # Worker serialization tests deliberately test non-serializable state to verify runtime rejection
+        -
+            identifier: phalanx.worker.serializableTaskState
+            path: src/Worker/tests/Unit/ParallelWorkerDispatchSerializationTest.php
+            reportUnmatched: true
+        -
+            identifier: property.onlyWritten
+            path: src/Worker/tests/Unit/ParallelWorkerDispatchSerializationTest.php
+            reportUnmatched: true
+        # PHPStan cannot track by-reference mutations across onCancel callback boundaries
+        -
+            identifier: staticMethod.impossibleType
+            path: src/Runtime/tests/Unit/Cancellation/CancellationTokenReleaseTest.php
+            reportUnmatched: true
     tmpDir: .phpstan-cache
     treatPhpDocTypesAsCertain: false
     bootstrapFiles:

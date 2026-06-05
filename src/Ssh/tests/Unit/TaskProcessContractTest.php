@@ -110,7 +110,7 @@ PHP);
         self::assertSame(0, $this->scope->memory->resources->liveCount(RuntimeResourceSid::StreamingProcess));
     }
 
-    protected function phalanxServices(): ?Closure
+    protected function phalanxServices(): Closure
     {
         return static function (Services $services, AppContext $context): void {
             $config = new SshConfig(

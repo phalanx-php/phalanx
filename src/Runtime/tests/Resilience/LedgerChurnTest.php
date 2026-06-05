@@ -76,9 +76,9 @@ final class LedgerChurnTest extends PhalanxTestCase
             for ($i = 0; $i < $iterations; $i++) {
                 $appScope = $app->createScope();
                 $results = $appScope->concurrent(
-                    a: Task::of(static fn(ExecutionScope $s): int => 1),
-                    b: Task::of(static fn(ExecutionScope $s): int => 2),
-                    c: Task::of(static fn(ExecutionScope $s): int => 3),
+                    a: Task::of(static fn(ExecutionScope $_s): int => 1),
+                    b: Task::of(static fn(ExecutionScope $_s): int => 2),
+                    c: Task::of(static fn(ExecutionScope $_s): int => 3),
                 );
                 self::assertSame(['a' => 1, 'b' => 2, 'c' => 3], $results);
                 $appScope->dispose();

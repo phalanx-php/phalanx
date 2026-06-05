@@ -142,7 +142,6 @@ final class ConsoleInputTest extends PhalanxTestCase
             $pipes,
         );
         self::assertIsResource($proc);
-        self::assertIsResource($pipes[1]);
 
         return [$proc, $pipes];
     }

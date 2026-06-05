@@ -46,7 +46,7 @@ final class LedgerLensTest extends TestCase
         try {
             $app->application->scoped(Task::named(
                 'demo.ledger.completed',
-                static fn(ExecutionScope $scope): int => 1,
+                static fn(ExecutionScope $_scope): int => 1,
             ));
 
             $app->ledger->assertNoOrphans();

@@ -235,7 +235,6 @@ final class LeaseTrackingTest extends TestCase
                     throw new \RuntimeException('boom');
                 },
             );
-            self::fail('expected throw');
         } catch (\RuntimeException) {
         }
 

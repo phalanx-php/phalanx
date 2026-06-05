@@ -44,6 +44,7 @@ final class AuthenticateTest extends TestCase
 
         self::assertSame('tok_ws:42', $result);
         self::assertInstanceOf(AuthWsContext::class, $seen);
+        self::assertNotNull($seen->auth->identity);
         self::assertSame(42, $seen->auth->identity->id);
     }
 

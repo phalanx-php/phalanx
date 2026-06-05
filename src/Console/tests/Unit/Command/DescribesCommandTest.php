@@ -29,6 +29,7 @@ final class DescribesCommandTest extends TestCase
         $commands = $group->commands();
 
         self::assertArrayHasKey('march', $commands);
+        self::assertInstanceOf(CommandConfig::class, $commands['march']->config);
         self::assertSame('Form the phalanx and advance', $commands['march']->config->description);
     }
 
@@ -42,6 +43,7 @@ final class DescribesCommandTest extends TestCase
         $commands = $group->commands();
 
         self::assertArrayHasKey('noop', $commands);
+        self::assertInstanceOf(CommandConfig::class, $commands['noop']->config);
         self::assertSame('', $commands['noop']->config->description);
     }
 
@@ -57,6 +59,7 @@ final class DescribesCommandTest extends TestCase
         $commands = $group->commands();
 
         self::assertArrayHasKey('march', $commands);
+        self::assertInstanceOf(CommandConfig::class, $commands['march']->config);
         self::assertSame('Override from Olympus', $commands['march']->config->description);
     }
 
@@ -91,6 +94,7 @@ final class DescribesCommandTest extends TestCase
         $commands = $group->commands();
 
         self::assertArrayHasKey('siege', $commands);
+        self::assertInstanceOf(CommandConfig::class, $commands['siege']->config);
         self::assertSame('Lay siege to enemy fortifications', $commands['siege']->config->description);
     }
 }

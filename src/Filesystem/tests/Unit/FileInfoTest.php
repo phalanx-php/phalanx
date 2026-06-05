@@ -12,6 +12,7 @@ final class FileInfoTest extends TestCase
     public function test_from_stat_creates_file_info(): void
     {
         $stat = stat(__FILE__);
+        $this->assertIsArray($stat);
         $info = FileInfo::fromStat(__FILE__, $stat);
 
         $this->assertSame(__FILE__, $info->path);
@@ -25,6 +26,7 @@ final class FileInfoTest extends TestCase
     public function test_from_stat_directory(): void
     {
         $stat = stat(__DIR__);
+        $this->assertIsArray($stat);
         $info = FileInfo::fromStat(__DIR__, $stat);
 
         $this->assertTrue($info->isDirectory);

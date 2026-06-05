@@ -93,7 +93,7 @@ PHP);
         }
     }
 
-    protected function phalanxServices(): ?Closure
+    protected function phalanxServices(): Closure
     {
         return static function (Services $services, AppContext $context): void {
             $config = new SshConfig(
@@ -138,7 +138,9 @@ PHP);
         fclose($server);
 
         self::assertIsString($name);
-        $port = (int) substr(strrchr($name, ':'), 1);
+        $colon = strrchr($name, ':');
+        self::assertIsString($colon);
+        $port = (int) substr($colon, 1);
         self::assertGreaterThan(0, $port);
 
         return $port;

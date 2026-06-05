@@ -34,6 +34,7 @@ final class RecoveryPlanTest extends TestCase
         $plan = RecoveryPlan::failFast(deadline: Mark::s(5));
 
         self::assertSame(1, $plan->attempts);
+        self::assertNotNull($plan->deadline);
         self::assertSame(5000, $plan->deadline->toMilliseconds());
     }
 
@@ -61,7 +62,9 @@ final class RecoveryPlanTest extends TestCase
         );
 
         self::assertSame(5, $plan->attempts);
+        self::assertNotNull($plan->attemptTimeout);
         self::assertSame(2000, $plan->attemptTimeout->toMilliseconds());
+        self::assertNotNull($plan->deadline);
         self::assertSame(30000, $plan->deadline->toMilliseconds());
     }
 
@@ -73,7 +76,9 @@ final class RecoveryPlanTest extends TestCase
             deadline: Mark::s(30),
         );
 
+        self::assertNotNull($plan->pollInterval);
         self::assertSame(250, $plan->pollInterval->toMilliseconds());
+        self::assertNotNull($plan->deadline);
         self::assertSame(30000, $plan->deadline->toMilliseconds());
         self::assertNull($plan->attempts);
     }
@@ -85,6 +90,7 @@ final class RecoveryPlanTest extends TestCase
 
         self::assertSame(1, $plan->attempts);
         self::assertNull($plan->attemptTimeout);
+        self::assertNotNull($plan->deadline);
         self::assertSame(600000, $plan->deadline->toMilliseconds());
     }
 
@@ -95,6 +101,7 @@ final class RecoveryPlanTest extends TestCase
         $modified = $original->withDeadline(Mark::s(10));
 
         self::assertNull($original->deadline);
+        self::assertNotNull($modified->deadline);
         self::assertSame(10000, $modified->deadline->toMilliseconds());
     }
 
@@ -105,6 +112,7 @@ final class RecoveryPlanTest extends TestCase
         $modified = $original->withAttemptTimeout(Mark::s(2));
 
         self::assertNull($original->attemptTimeout);
+        self::assertNotNull($modified->attemptTimeout);
         self::assertSame(2000, $modified->attemptTimeout->toMilliseconds());
     }
 
@@ -182,6 +190,7 @@ final class RecoveryPlanTest extends TestCase
 
         $effective = $plan->effectiveBackoff();
 
+        self::assertNotNull($effective);
         self::assertSame(110, $effective->delayFor(0)->toMilliseconds());
     }
 
@@ -207,6 +216,7 @@ final class RecoveryPlanTest extends TestCase
     {
         $preset = RecoveryPreset::Polling->toPlan();
 
+        self::assertNotNull($preset->pollInterval);
         self::assertSame(250, $preset->pollInterval->toMilliseconds());
     }
 

@@ -22,7 +22,6 @@ final class UuidV7Test extends TestCase
     {
         $v = new UuidV7();
         $pattern = $v->toPattern();
-        $this->assertNotNull($pattern);
 
         // Verify the pattern matches a valid UUID v7 (version nibble is 7)
         $valid = '018f4891-e29b-7d4a-a716-446655440000';
@@ -34,7 +33,6 @@ final class UuidV7Test extends TestCase
     {
         $v = new UuidV7();
         $pattern = $v->toPattern();
-        $this->assertNotNull($pattern);
 
         // UUID v4 has version nibble '4'
         $v4 = '550e8400-e29b-41d4-a716-446655440000';

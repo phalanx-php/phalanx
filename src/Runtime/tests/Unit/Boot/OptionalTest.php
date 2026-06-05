@@ -96,7 +96,7 @@ final class OptionalTest extends PhalanxTestCase
     public function callablePassesWhenFnReturnsTrue(): void
     {
         $ctx = new AppContext([]);
-        $ev = Optional::callable(static fn (AppContext $c): bool => true, 'optional check')->evaluate($ctx);
+        $ev = Optional::callable(static fn (AppContext $_c): bool => true, 'optional check')->evaluate($ctx);
 
         self::assertTrue($ev->isPass());
     }
@@ -105,7 +105,7 @@ final class OptionalTest extends PhalanxTestCase
     public function callableWarnsWhenFnReturnsFalse(): void
     {
         $ctx = new AppContext([]);
-        $ev = Optional::callable(static fn (AppContext $c): bool => false, 'optional check')->evaluate($ctx);
+        $ev = Optional::callable(static fn (AppContext $_c): bool => false, 'optional check')->evaluate($ctx);
 
         self::assertTrue($ev->isWarn());
         self::assertFalse($ev->isFail());
@@ -116,7 +116,7 @@ final class OptionalTest extends PhalanxTestCase
     {
         $ctx = new AppContext([]);
         $ev = Optional::callable(
-            static fn (AppContext $c): string => 'install optional extension',
+            static fn (AppContext $_c): string => 'install optional extension',
             'ext check',
         )->evaluate($ctx);
 
@@ -129,7 +129,7 @@ final class OptionalTest extends PhalanxTestCase
     {
         $ctx = new AppContext([]);
         $ev = Optional::callable(
-            static fn (AppContext $c): BootEvaluation => BootEvaluation::fail('hard fail from optional'),
+            static fn (AppContext $_c): BootEvaluation => BootEvaluation::fail('hard fail from optional'),
             'passthrough check',
         )->evaluate($ctx);
 
@@ -140,7 +140,7 @@ final class OptionalTest extends PhalanxTestCase
     #[Test]
     public function callableKindIsCorrect(): void
     {
-        $opt = Optional::callable(static fn (AppContext $c): bool => true, 'desc');
+        $opt = Optional::callable(static fn (AppContext $_c): bool => true, 'desc');
 
         self::assertSame(Optional::KIND_CALLABLE, $opt->kind);
     }

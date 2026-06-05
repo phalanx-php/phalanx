@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Diagnostics;
 
 use Closure;
+use Phalanx\Mark\Mark;
 use Phalanx\Scope\Subscription;
 use Phalanx\Scope\TaskExecutor;
 use Phalanx\Server\ServerStats;
@@ -14,7 +15,7 @@ use Phalanx\Trace\TraceType;
 /**
  * Periodic event-loop-lag watchdog.
  *
- * Swoole 26 exposes `event_loop_lag` (microseconds since the reactor
+ * Swoole 6 exposes `event_loop_lag` (microseconds since the reactor
  * last drained the ready queue) on `$server->stats()`. Sustained lag is
  * the canonical signal that some PHP code is blocking the reactor —
  * unhooked I/O, tight CPU loops, or something stuck in a non-yielding
@@ -45,7 +46,7 @@ final class PressureMonitor
     {
         $check = $this->makeCheckClosure();
 
-        return $scope->periodic($this->intervalSec, $check);
+        return $scope->periodic(Mark::s($this->intervalSec), $check);
     }
 
     /**

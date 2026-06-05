@@ -127,7 +127,9 @@ final class RuntimeMemoryTest extends TestCase
         $memory->resources->annotate($active, RuntimeMemoryAnnotationSid::Route, 'users.show');
         $closed = $memory->resources->close($active, 'status:200');
 
-        self::assertSame(ManagedResourceState::Closed, $memory->resources->get('request-1')->state);
+        $resource = $memory->resources->get('request-1');
+        self::assertNotNull($resource);
+        self::assertSame(ManagedResourceState::Closed, $resource->state);
         self::assertSame('users.show', $memory->resources->annotation('request-1', RuntimeMemoryAnnotationSid::Route));
 
         $late = $memory->resources->abort('request-1', 'client_disconnected');
@@ -138,7 +140,7 @@ final class RuntimeMemoryTest extends TestCase
             $memory->resources->fail($active, 'late_error');
             self::fail('Expected stale terminal handle rejection.');
         } catch (StaleManagedResourceHandle) {
-            self::assertSame(ManagedResourceState::Closed, $memory->resources->get('request-1')?->state);
+            self::assertSame(ManagedResourceState::Closed, $memory->resources->get('request-1')->state);
         }
 
         $memory->shutdown();

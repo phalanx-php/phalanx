@@ -63,14 +63,16 @@ final class TransactionScopeTest extends PhalanxTestCase
             $inner = self::buildScope(new InProcessLedger());
 
             $inner->execute(Task::of(
-                static fn(ExecutionScope $s): mixed => $s->transaction(
-                    TransactionLease::open('postgres/main', 'tx#2'),
-                    static function (TransactionScope $tx): void {
-                        self::assertFalse(method_exists($tx, 'concurrent'));
-                        self::assertFalse(method_exists($tx, 'go'));
-                        self::assertFalse(method_exists($tx, 'inWorker'));
-                    },
-                ),
+                static function (ExecutionScope $s): void {
+                    $s->transaction(
+                        TransactionLease::open('postgres/main', 'tx#2'),
+                        static function (TransactionScope $tx): void {
+                            self::assertFalse(method_exists($tx, 'concurrent'));
+                            self::assertFalse(method_exists($tx, 'go'));
+                            self::assertFalse(method_exists($tx, 'inWorker'));
+                        },
+                    );
+                },
             ));
 
             $inner->dispose();

@@ -69,7 +69,7 @@ PHP;
 
     protected function tearDown(): void
     {
-        $files = glob($this->fixtureDir . '/*');
+        $files = glob($this->fixtureDir . '/*') ?: [];
         foreach ($files as $file) {
             unlink($file);
         }

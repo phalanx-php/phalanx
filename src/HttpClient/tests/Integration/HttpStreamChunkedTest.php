@@ -125,7 +125,7 @@ final class ScriptedTcpConnection implements TcpConnection
 
     public function recv(Suspendable $_scope, float $_timeout = 1.0): ?string
     {
-        return array_shift($this->responseChunks) ?? '';
+        return array_shift($this->responseChunks);
     }
 
     public function close(): void

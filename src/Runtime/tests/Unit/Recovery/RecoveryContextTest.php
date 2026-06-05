@@ -44,6 +44,7 @@ final class RecoveryContextTest extends TestCase
         $decision = $ctx->retry(Mark::s(5));
 
         self::assertSame(RecoveryAction::Retry, $decision->action);
+        self::assertNotNull($decision->delay);
         self::assertSame(5000, $decision->delay->toMilliseconds());
     }
 
@@ -55,6 +56,7 @@ final class RecoveryContextTest extends TestCase
         $decision = $ctx->delay(Mark::s(30));
 
         self::assertSame(RecoveryAction::Delay, $decision->action);
+        self::assertNotNull($decision->delay);
         self::assertSame(30000, $decision->delay->toMilliseconds());
     }
 
@@ -66,6 +68,7 @@ final class RecoveryContextTest extends TestCase
         $decision = $ctx->poll(Mark::ms(250));
 
         self::assertSame(RecoveryAction::Poll, $decision->action);
+        self::assertNotNull($decision->delay);
         self::assertSame(250, $decision->delay->toMilliseconds());
     }
 
@@ -121,6 +124,7 @@ final class RecoveryContextTest extends TestCase
 
         self::assertSame(2, $ctx->attempt);
         self::assertTrue($ctx->elapsed->eq($elapsed));
+        self::assertNotNull($ctx->remainingDeadline);
         self::assertTrue($ctx->remainingDeadline->eq($remaining));
         self::assertSame($error, $ctx->error);
         self::assertSame('fetch-profile', $ctx->taskName);

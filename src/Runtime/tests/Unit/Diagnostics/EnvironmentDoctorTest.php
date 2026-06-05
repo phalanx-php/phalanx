@@ -64,7 +64,7 @@ final class EnvironmentDoctorTest extends TestCase
     {
         $supervisor = new Supervisor(new InProcessLedger(), new Trace());
         $scope = $this->createStub(ExecutionScope::class);
-        $task = Task::named('doctor.borrowed', static fn(ExecutionScope $scope): null => null);
+        $task = Task::named('doctor.borrowed', static fn(ExecutionScope $_scope): null => null);
         $run = $supervisor->start($task, $scope, DispatchMode::Inline);
 
         try {

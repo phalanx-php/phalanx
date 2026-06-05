@@ -132,7 +132,7 @@ final class FilePoolTest extends PhalanxTestCase
                 try {
                     $scope->timeout(
                         Mark::ms(10),
-                        Task::of(static fn(ExecutionScope $child): mixed => $pool->acquire($child)),
+                        Task::of(static function (ExecutionScope $child) use ($pool): void { $pool->acquire($child); }),
                     );
                 } catch (Cancelled $e) {
                     $thrown = $e;

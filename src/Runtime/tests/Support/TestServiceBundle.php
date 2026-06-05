@@ -15,7 +15,7 @@ final class TestServiceBundle extends ServiceBundle
     /** @var list<Closure(ServiceCatalog, AppContext): void> */
     private array $registrations = [];
 
-    /** @var array<string, string> */
+    /** @var array<class-string, class-string> */
     private array $aliases = [];
 
     public static function create(): self
@@ -23,9 +23,10 @@ final class TestServiceBundle extends ServiceBundle
         return new self();
     }
 
+    /** @param class-string $type */
     public function singleton(string $type, ?Closure $factory = null): self
     {
-        $this->registrations[] = function (ServiceCatalog $catalog) use ($type, $factory): void {
+        $this->registrations[] = static function (ServiceCatalog $catalog) use ($type, $factory): void {
             $config = $catalog->singleton($type);
             if ($factory !== null) {
                 $config->factory($factory);
@@ -35,9 +36,10 @@ final class TestServiceBundle extends ServiceBundle
         return $this;
     }
 
+    /** @param class-string $type */
     public function scoped(string $type, ?Closure $factory = null): self
     {
-        $this->registrations[] = function (ServiceCatalog $catalog) use ($type, $factory): void {
+        $this->registrations[] = static function (ServiceCatalog $catalog) use ($type, $factory): void {
             $config = $catalog->scoped($type);
             if ($factory !== null) {
                 $config->factory($factory);
@@ -47,9 +49,10 @@ final class TestServiceBundle extends ServiceBundle
         return $this;
     }
 
+    /** @param class-string $type */
     public function eager(string $type, ?Closure $factory = null): self
     {
-        $this->registrations[] = function (ServiceCatalog $catalog) use ($type, $factory): void {
+        $this->registrations[] = static function (ServiceCatalog $catalog) use ($type, $factory): void {
             $config = $catalog->eager($type);
             if ($factory !== null) {
                 $config->factory($factory);
@@ -59,57 +62,13 @@ final class TestServiceBundle extends ServiceBundle
         return $this;
     }
 
+    /**
+     * @param class-string $interface
+     * @param class-string $concrete
+     */
     public function alias(string $interface, string $concrete): self
     {
         $this->aliases[$interface] = $concrete;
-        return $this;
-    }
-
-    public function withDependencies(string $type, string ...$deps): self
-    {
-        $this->registrations[] = function (ServiceCatalog $catalog) use ($type, $deps): void {
-            $def = $catalog->getDefinition($type);
-            if ($def !== null) {
-                $catalog->updateDefinition($type, $def->withDependencies(...$deps));
-            }
-        };
-
-        return $this;
-    }
-
-    public function withLifecycle(string $type, string $phase, Closure $hook): self
-    {
-        $this->registrations[] = function (ServiceCatalog $catalog) use ($type, $phase, $hook): void {
-            $def = $catalog->getDefinition($type);
-            if ($def !== null) {
-                $catalog->updateDefinition($type, $def->withLifecycleHook($phase, $hook));
-            }
-        };
-
-        return $this;
-    }
-
-    public function asLazy(string $type): self
-    {
-        $this->registrations[] = function (ServiceCatalog $catalog) use ($type): void {
-            $def = $catalog->getDefinition($type);
-            if ($def !== null) {
-                $catalog->updateDefinition($type, $def->asLazy());
-            }
-        };
-
-        return $this;
-    }
-
-    public function asEager(string $type): self
-    {
-        $this->registrations[] = function (ServiceCatalog $catalog) use ($type): void {
-            $def = $catalog->getDefinition($type);
-            if ($def !== null) {
-                $catalog->updateDefinition($type, $def->asEager());
-            }
-        };
-
         return $this;
     }
 

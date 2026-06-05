@@ -180,7 +180,7 @@ final class WsClientCancellationTest extends TestCase
     }
 
     /**
-     * @return array{0: Socket, 1: int, 2: Channel}
+     * @return array{0: Socket, 1: int, 2: Channel<true>}
      */
     private static function bootListener(ExecutionScope $scope, float $holdSeconds): array
     {

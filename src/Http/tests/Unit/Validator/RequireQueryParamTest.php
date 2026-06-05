@@ -64,7 +64,7 @@ final class RequireQueryParamTest extends TestCase
     private function createScope(array $query): ExecutionContext
     {
         $inner = $this->app->createScope();
-        $request = new ServerRequest('GET', '/test', [], null, '1.1', [], [], $query);
+        $request = (new ServerRequest('GET', '/test'))->withQueryParams($query);
 
         return new ExecutionContext(
             $inner,

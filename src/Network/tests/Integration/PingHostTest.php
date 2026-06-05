@@ -43,7 +43,7 @@ final class PingHostTest extends PhalanxTestCase
         self::assertSame('icmp', $result->method);
     }
 
-    protected function phalanxServices(): ?Closure
+    protected function phalanxServices(): Closure
     {
         return static function (Services $services, AppContext $context): void {
             $config = new NetworkConfig(

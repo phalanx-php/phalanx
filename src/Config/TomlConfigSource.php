@@ -19,7 +19,7 @@ final class TomlConfigSource
             );
         }
 
-        $parsed = \PhpCollective\Toml\Toml::parseFile($path);
+        $parsed = \PhpCollective\Toml\Toml::decodeFile($path);
 
         return self::flatten($parsed);
     }

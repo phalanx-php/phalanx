@@ -96,7 +96,7 @@ final class CancellationTokenReleaseTest extends TestCase
         $parentB = CancellationToken::create();
         $composite = CancellationToken::composite($parentA, $parentB);
 
-        $compositeFired = false;
+        $compositeFired = $composite->isCancelled;
         $composite->onCancel(static function () use (&$compositeFired): void {
             $compositeFired = true;
         });

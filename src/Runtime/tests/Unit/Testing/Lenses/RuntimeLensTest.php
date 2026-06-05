@@ -100,7 +100,7 @@ final class RuntimeLensTest extends TestCase
         try {
             $scope = $app->application->createScope();
             $supervisor = $app->application->supervisor();
-            $task = Task::named('runtime.lens.borrowed', static fn(ExecutionScope $scope): null => null);
+            $task = Task::named('runtime.lens.borrowed', static fn(ExecutionScope $_scope): null => null);
             $run = $supervisor->start($task, $scope, DispatchMode::Inline);
 
             try {

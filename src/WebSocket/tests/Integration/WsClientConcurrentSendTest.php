@@ -38,7 +38,9 @@ final class WsClientConcurrentSendTest extends TestCase
                     $listener = new Socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
                     self::assertTrue($listener->bind(self::HOST, 0), "bind: {$listener->errMsg}");
                     self::assertTrue($listener->listen(), "listen: {$listener->errMsg}");
-                    $port = (int) $listener->getsockname()['port'];
+                    $name = $listener->getsockname();
+                    self::assertIsArray($name);
+                    $port = (int) $name['port'];
                     $url = 'ws://' . self::HOST . ':' . $port . '/echo';
 
                     $framesChannel = new Channel(4);
@@ -171,13 +173,17 @@ final class WsClientConcurrentSendTest extends TestCase
             if (strlen($buffer) < $offset + 2) {
                 return null;
             }
-            $len = unpack('n', substr($buffer, $offset, 2))[1];
+            $unpacked = unpack('n', substr($buffer, $offset, 2));
+            self::assertIsArray($unpacked);
+            $len = $unpacked[1];
             $offset += 2;
         } elseif ($len === 127) {
             if (strlen($buffer) < $offset + 8) {
                 return null;
             }
-            $len = unpack('J', substr($buffer, $offset, 8))[1];
+            $unpacked = unpack('J', substr($buffer, $offset, 8));
+            self::assertIsArray($unpacked);
+            $len = $unpacked[1];
             $offset += 8;
         }
 

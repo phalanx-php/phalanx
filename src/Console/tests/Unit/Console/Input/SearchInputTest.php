@@ -45,7 +45,7 @@ final class SearchInputTest extends PromptTestCase
     #[Test]
     public function noResultsPathStillAllowsQuerySubmit(): void
     {
-        $closure = static fn(string $q): array => [];
+        $closure = static fn(string $_q): array => [];
 
         $reader = $this->reader(['z', self::ENTER]);
 
@@ -57,7 +57,7 @@ final class SearchInputTest extends PromptTestCase
     #[Test]
     public function nonInteractiveReturnsNull(): void
     {
-        $closure = static fn(string $q): array => ['never'];
+        $closure = static fn(string $_q): array => ['never'];
 
         $reader = $this->reader([], interactive: false);
 
@@ -69,7 +69,7 @@ final class SearchInputTest extends PromptTestCase
     #[Test]
     public function asyncClosureCancellationPropagatesOutOfPrompt(): void
     {
-        $closure = static fn(string $q): Closure
+        $closure = static fn(string $_q): Closure
             => static fn(): array => throw new Cancelled('search aborted');
 
         $reader = $this->reader(['q']);

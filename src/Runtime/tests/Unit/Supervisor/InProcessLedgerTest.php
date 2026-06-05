@@ -181,7 +181,9 @@ final class InProcessLedgerTest extends TestCase
         $ledger->register($run);
         $ledger->addLease('run-008', $lease);
 
-        self::assertCount(1, $ledger->snapshot('run-008')?->leases);
+        $snapshot = $ledger->snapshot('run-008');
+        self::assertNotNull($snapshot);
+        self::assertCount(1, $snapshot->leases);
 
         $ledger->releaseLease('run-008', $lease);
 

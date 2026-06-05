@@ -69,7 +69,7 @@ final class CancellationPropagationTimingTest extends PhalanxTestCase
         $this->assertCancelTimingOf(static function (ExecutionScope $scope): void {
             $scope->map(
                 [1, 2, 3, 4, 5],
-                static fn(int $n) => Task::of(static fn(ExecutionScope $s) => $s->delay(Mark::s(5))),
+                static fn(int $_n) => Task::of(static fn(ExecutionScope $s) => $s->delay(Mark::s(5))),
                 limit: 3,
             );
         });

@@ -10,6 +10,7 @@ use Phalanx\Application;
 use Phalanx\Benchmarks\Http\AbstractHttpBenchmarkCase;
 use Phalanx\Benchmarks\Kit\BenchmarkApp;
 use Phalanx\Http\RequestContext;
+use Phalanx\Mark\Mark;
 use Phalanx\Http\RouteGroup;
 use Phalanx\Http\HttpRequestFactory;
 use Phalanx\Http\HttpRunner;
@@ -216,7 +217,7 @@ final class BenchmarkDrainRoute implements Scopeable
 {
     public function __invoke(RequestContext $ctx): string
     {
-        $ctx->delay(0.2);
+        $ctx->delay(Mark::s(0.2));
 
         return 'completed';
     }

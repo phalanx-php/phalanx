@@ -69,7 +69,7 @@ final class PhalanxStaticHelperTest extends PhalanxTestCase
 
     public function testEachCoroutineSeesItsOwnInstalledScope(): void
     {
-        $this->scope->run(static function (ExecutionScope $scope): void {
+        $this->scope->run(static function (ExecutionScope $_scope): void {
             $app = self::buildApp();
             $scopeA = $app->createScope();
             $scopeB = $app->createScope();

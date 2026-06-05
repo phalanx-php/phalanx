@@ -32,7 +32,9 @@ final class ConsoleSignalTrapTest extends PhalanxTestCase
                 },
             );
 
-            Process::kill(getmypid(), SIGUSR2);
+            $pid = getmypid();
+            self::assertIsInt($pid);
+            Process::kill($pid, SIGUSR2);
             Coroutine::sleep(0.05);
 
             $trap->restore();

@@ -27,6 +27,7 @@ final class RecoveryDecisionTest extends TestCase
     {
         $decision = new RecoveryDecision(RecoveryAction::Delay, delay: Mark::s(5));
 
+        self::assertNotNull($decision->delay);
         self::assertSame(5000, $decision->delay->toMilliseconds());
     }
 

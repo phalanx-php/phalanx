@@ -205,8 +205,10 @@ final class CoordinatedFailFastDispatch implements WorkerDispatch
 {
     private(set) bool $blockedTaskWasCancelled = false;
 
+    /** @var Channel<true> */
     private Channel $blockedStarted;
 
+    /** @var Channel<true> */
     private Channel $blockedCancelled;
 
     public function __construct()

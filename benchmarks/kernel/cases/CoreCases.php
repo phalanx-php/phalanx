@@ -6,6 +6,7 @@ namespace Phalanx\Benchmarks\Kernel\Cases;
 
 use Phalanx\Benchmarks\Kernel\AbstractBenchmarkCase;
 use Phalanx\Benchmarks\Kernel\BenchmarkContext;
+use Phalanx\Mark\Mark;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\TransactionScope;
 use Phalanx\Supervisor\DispatchMode;
@@ -255,7 +256,7 @@ final class ConcurrentDelayCase extends AbstractBenchmarkCase
                 $this->tasks[] = Task::named(
                     "bench.concurrent.delay.{$i}",
                     static function (ExecutionScope $scope): int {
-                        $scope->delay(0.001);
+                        $scope->delay(Mark::ms(1));
                         return 1;
                     },
                 );
@@ -292,7 +293,7 @@ final class SingleflightWaitersCase extends AbstractBenchmarkCase
                 static fn(ExecutionScope $_scope): mixed => $_scope->singleflight(
                     'bench-key',
                     Task::named('bench.singleflight.work', static function (ExecutionScope $owner): string {
-                        $owner->delay(0.001);
+                        $owner->delay(Mark::ms(1));
                         return 'ok';
                     }),
                 ),
@@ -335,7 +336,7 @@ final class CancelSleepingChildrenCase extends AbstractBenchmarkCase
             $tasks[] = Task::named(
                 "bench.cancel.sleep.{$i}",
                 static function (ExecutionScope $child): void {
-                    $child->delay(1.0);
+                    $child->delay(Mark::s(1.0));
                 },
             );
         }

@@ -73,7 +73,7 @@ final class SiblingCancelIsolationStressTest extends PhalanxTestCase
             // One sibling completes fast, the others a bit slower. All must
             // complete; the fast one must not signal cancellation to peers.
             $tasks = [
-                'fast' => Task::of(static fn(ExecutionScope $s): int => 1),
+                'fast' => Task::of(static fn(ExecutionScope $_s): int => 1),
                 'slow-a' => Task::of(static function (ExecutionScope $s): int {
                     $s->delay(Mark::ms(50));
                     return 2;
@@ -106,7 +106,7 @@ final class SiblingCancelIsolationStressTest extends PhalanxTestCase
 
             $start = microtime(true);
             $value = $appScope->race(...[
-                Task::of(static fn(ExecutionScope $s): int => 1),  // wins
+                Task::of(static fn(ExecutionScope $_s): int => 1),  // wins
                 Task::of(static function (ExecutionScope $s): never {
                     $s->delay(Mark::s(5));
                     throw new \RuntimeException('should be cancelled');

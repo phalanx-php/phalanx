@@ -23,6 +23,8 @@ final class ArrayCueEmitterTest extends TestCase
         $drained = $emitter->drain();
 
         self::assertCount(2, $drained);
+        self::assertInstanceOf(TokenDelta::class, $drained[0]);
+        self::assertInstanceOf(TokenDelta::class, $drained[1]);
         self::assertSame('alpha', $drained[0]->text);
         self::assertSame('beta', $drained[1]->text);
 

@@ -81,7 +81,7 @@ final class WorkingRuntimeSmokeTest extends PhalanxTestCase
             $results = $appScope->concurrent(
                 fetch: new FetchUserSummary(7),
                 audit: new AuditWrite('login', 'user-7'),
-                compute: Task::of(static fn(ExecutionScope $s): int => 21 * 2),
+                compute: Task::of(static fn(ExecutionScope $_s): int => 21 * 2),
             );
 
             self::assertSame('user-7 summary', $results['fetch']);

@@ -28,7 +28,7 @@ final class WebSocketFacadeTest extends TestCase
 
         $result = [];
 
-        TestScope::compile(services: static fn($services, $context): mixed => $bundle->services($services, $context))
+        TestScope::compile(services: static function ($services, $context) use ($bundle): void { $bundle->services($services, $context); })
             ->shutdownAfterRun()
             ->run(static function ($scope) use (&$result): void {
                 $resolvedConfig = $scope->service(WsClientConfig::class);

@@ -35,6 +35,7 @@ final class RecoveryEventTest extends TestCase
         self::assertSame(RecoveryEventKind::AttemptFailed, $event->kind);
         self::assertSame(2, $event->attempt);
         self::assertTrue($event->elapsed->eq($elapsed));
+        self::assertNotNull($event->remainingDeadline);
         self::assertTrue($event->remainingDeadline->eq($remaining));
         self::assertSame($error, $event->error);
         self::assertSame('fetch-profile', $event->taskName);

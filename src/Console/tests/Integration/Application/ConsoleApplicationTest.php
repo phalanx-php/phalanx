@@ -164,7 +164,7 @@ final class ConsoleApplicationTest extends PhalanxTestCase
     public function unknownCommandReturnsNonZeroWithAvailableCommands(): void
     {
         $stream = StreamOutputHelper::open();
-        $app = Console::command('known', static fn(CommandContext $ctx): int => 0)
+        $app = Console::command('known', static fn(CommandContext $_ctx): int => 0)
             ->withConsoleConfig(new ConsoleConfig(errorOutput: StreamOutputHelper::output($stream)))
             ->build();
 
@@ -189,7 +189,7 @@ final class ConsoleApplicationTest extends PhalanxTestCase
     public function helpForMissingCommandReturnsNonZero(): void
     {
         $stream = StreamOutputHelper::open();
-        $app = Console::command('known', static fn(CommandContext $ctx): int => 0)
+        $app = Console::command('known', static fn(CommandContext $_ctx): int => 0)
             ->withConsoleConfig(new ConsoleConfig(errorOutput: StreamOutputHelper::output($stream)))
             ->build();
 
@@ -214,7 +214,7 @@ final class ConsoleApplicationTest extends PhalanxTestCase
     {
         $stream = StreamOutputHelper::open();
         $missing = str_repeat('x', 400);
-        $app = Console::command('known', static fn(CommandContext $ctx): int => 0)
+        $app = Console::command('known', static fn(CommandContext $_ctx): int => 0)
             ->withConsoleConfig(new ConsoleConfig(errorOutput: StreamOutputHelper::output($stream)))
             ->build();
 
@@ -237,7 +237,7 @@ final class ConsoleApplicationTest extends PhalanxTestCase
         $stream = StreamOutputHelper::open();
         $app = Console::command(
             'cancel',
-            static function (CommandContext $ctx): int {
+            static function (CommandContext $_ctx): int {
                 throw new Cancelled('signal:int');
             },
         )
@@ -383,7 +383,7 @@ final class ConsoleApplicationTest extends PhalanxTestCase
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('inline commands require static closures');
 
-        Console::command('leaky', fn(CommandContext $ctx): int => 0);
+        Console::command('leaky', fn(CommandContext $_ctx): int => 0);
     }
 
     protected function setUp(): void

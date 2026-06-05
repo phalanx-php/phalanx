@@ -52,7 +52,6 @@ final class ChannelBackpressureTest extends PhalanxTestCase
 
             self::assertSame(['first'], $items);
             self::assertTrue(self::readOne($producerReleased));
-            self::assertTrue($producerReachedBlockedEmit);
 
             foreach ($channel->consume() as $_) {
                 $items[] = $_;

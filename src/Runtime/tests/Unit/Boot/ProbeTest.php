@@ -270,6 +270,10 @@ final class ProbeTest extends PhalanxTestCase
 
         fclose($server);
 
+        if (!isset($matches[1])) {
+            self::fail('Match group 1 not found.');
+        }
+
         return (int) $matches[1];
     }
 
