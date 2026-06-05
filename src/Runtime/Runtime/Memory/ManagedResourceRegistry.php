@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Runtime\Memory;
 
-use Phalanx\Runtime\Identity\RuntimeEventSid;
 use Phalanx\Runtime\Identity\RuntimeAnnotationId;
 use Phalanx\Runtime\Identity\RuntimeEventId;
+use Phalanx\Runtime\Identity\RuntimeEventSid;
 use Phalanx\Runtime\Identity\RuntimeResourceId;
 use RuntimeException;
 use Swoole\Coroutine;

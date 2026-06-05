@@ -4,12 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Console\Command\Config;
 
-use Phalanx\Console\Command\CommandConfig;
-use Phalanx\Console\Command\CommandContext;
-use Phalanx\Console\Command\DescribesCommand;
-use Phalanx\Console\Command\Opt;
-use Phalanx\Console\Console\Output\StreamOutput;
-use Phalanx\Task\Scopeable;
 use Phalanx\Config\ConfigCatalog;
 use Phalanx\Config\ConfigValidator;
 use Phalanx\Config\Issue;
@@ -17,6 +11,12 @@ use Phalanx\Config\IssueLevel;
 use Phalanx\Config\ValidationContext;
 use Phalanx\Config\ValidationPurpose;
 use Phalanx\Config\ValidationResult;
+use Phalanx\Console\Command\CommandConfig;
+use Phalanx\Console\Command\CommandContext;
+use Phalanx\Console\Command\DescribesCommand;
+use Phalanx\Console\Command\Opt;
+use Phalanx\Console\Console\Output\StreamOutput;
+use Phalanx\Task\Scopeable;
 
 final class ConfigDoctorCommand implements Scopeable, DescribesCommand
 {

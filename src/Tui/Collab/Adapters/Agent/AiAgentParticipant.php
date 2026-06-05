@@ -6,13 +6,13 @@ namespace Phalanx\Tui\Collab\Adapters\Agent;
 
 use Phalanx\Agent\Activity\Config;
 use Phalanx\Agent\Activity\State;
-use Phalanx\Cancellation\Cancelled;
 use Phalanx\AiProviders\Agent as AiAgent;
 use Phalanx\AiProviders\Context;
 use Phalanx\AiProviders\Conversation\Log;
 use Phalanx\AiProviders\Conversation\Record\Message;
 use Phalanx\AiProviders\Cue;
 use Phalanx\AiProviders\Id;
+use Phalanx\Cancellation\Cancelled;
 use Phalanx\Tui\Collab\Messages\Address;
 use Phalanx\Tui\Collab\Participants\AgentParticipant;
 use Phalanx\Tui\Collab\Plans\WorkPlanItem;

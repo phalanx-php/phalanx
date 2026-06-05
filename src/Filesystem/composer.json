@@ -22,8 +22,8 @@
     },
     "require": {
         "php": "^8.4",
-        "phalanx-php/runtime": "^0.6",
-        "phalanx-php/stream": "^0.6"
+        "phalanx-php/runtime": "^0.7",
+        "phalanx-php/stream": "^0.7"
     },
     "suggest": {
         "phalanx-php/worker": "Use for application-owned slow-storage offload when filesystem work should run in workers"
@@ -92,7 +92,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-main": "0.6.x-dev"
+            "dev-main": "0.7.x-dev"
         }
     },
     "minimum-stability": "dev",

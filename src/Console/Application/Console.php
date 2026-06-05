@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Phalanx\Console\Application;
 
 use Closure;
-use Phalanx\Console\Command\CommandConfig;
 use Phalanx\Boot\AppContext;
+use Phalanx\Console\Command\CommandConfig;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 

@@ -11,7 +11,6 @@ use Phalanx\Agent\Mcp\McpRegistry;
 use Phalanx\Agent\Stream\CueEmitter;
 use Phalanx\Agent\Tool\ToolExecutor;
 use Phalanx\Agent\Tool\ToolRegistry;
-use Phalanx\Cancellation\Cancelled;
 use Phalanx\AiProviders\Cue\Effect\Authorized;
 use Phalanx\AiProviders\Cue\Effect\Denied;
 use Phalanx\AiProviders\Cue\Effect\Executed;
@@ -25,6 +24,7 @@ use Phalanx\AiProviders\Effect\Outcome as AiProvidersOutcome;
 use Phalanx\AiProviders\Grant;
 use Phalanx\AiProviders\Hazard\Scorer;
 use Phalanx\AiProviders\Id;
+use Phalanx\Cancellation\Cancelled;
 use Phalanx\Scope\TaskScope;
 
 final class Dispatcher

@@ -27,11 +27,11 @@
     },
     "require": {
         "php": "^8.4",
-        "phalanx-php/runtime": "^0.6",
-        "phalanx-php/http-client": "^0.6",
-        "phalanx-php/ai-providers": "^0.6",
-        "phalanx-php/stream": "^0.6",
-        "phalanx-php/surrealdb": "^0.6",
+        "phalanx-php/runtime": "^0.7",
+        "phalanx-php/http-client": "^0.7",
+        "phalanx-php/ai-providers": "^0.7",
+        "phalanx-php/stream": "^0.7",
+        "phalanx-php/surrealdb": "^0.7",
         "symfony/uid": "^7.0 || ^8.0"
     },
     "suggest": {
@@ -103,7 +103,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-main": "0.6.x-dev"
+            "dev-main": "0.7.x-dev"
         }
     },
     "minimum-stability": "dev",

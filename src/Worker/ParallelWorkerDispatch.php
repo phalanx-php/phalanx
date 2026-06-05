@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Phalanx\Worker;
 
 use Phalanx\Cancellation\CancellationToken;
-use Phalanx\Worker\Process\ProcessConfig;
-use Phalanx\Worker\Protocol\TaskRequest;
-use Phalanx\Worker\Supervisor\WorkerSupervisor;
 use Phalanx\Scope\TaskExecutor;
 use Phalanx\Scope\TaskScope;
 use Phalanx\Trace\TraceType;
+use Phalanx\Worker\Process\ProcessConfig;
+use Phalanx\Worker\Protocol\TaskRequest;
+use Phalanx\Worker\Supervisor\WorkerSupervisor;
 use Phalanx\Worker\WorkerDispatch;
 use Phalanx\Worker\WorkerTask;
 use ReflectionClass;

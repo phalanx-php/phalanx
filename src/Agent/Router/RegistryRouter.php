@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Phalanx\Agent\Router;
 
-use Phalanx\HttpClient\HttpClient;
 use Phalanx\AiProviders\Agent;
 use Phalanx\AiProviders\Invocation;
 use Phalanx\AiProviders\Provider;
 use Phalanx\AiProviders\Provider\Factory;
 use Phalanx\AiProviders\Provider\Registry;
 use Phalanx\AiProviders\Transport\HttpClient\Transport;
+use Phalanx\HttpClient\HttpClient;
 use Phalanx\Scope\TaskScope;
 use RuntimeException;
 

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\AiProviders;
 
-use Phalanx\Mark\Mark;
 use Phalanx\AiProviders\Clock;
 use Phalanx\AiProviders\Clock\SystemClock;
 use Phalanx\AiProviders\Cue\Activity;
@@ -13,6 +12,7 @@ use Phalanx\AiProviders\Cue\Effect;
 use Phalanx\AiProviders\Cue\Invocation;
 use Phalanx\AiProviders\Cue\Output;
 use Phalanx\AiProviders\Cue\Output\TokenDelta;
+use Phalanx\Mark\Mark;
 
 /**
  * The canonical cue stream. Consumers (Tui, Delphi, host apps)

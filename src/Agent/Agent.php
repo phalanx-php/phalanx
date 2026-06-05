@@ -17,11 +17,11 @@ use Phalanx\Agent\Tool\ToolBundle;
 use Phalanx\Agent\Turn\Builder;
 use Phalanx\Agent\Turn\Loop;
 use Phalanx\Agent\Turn\RuntimeFactory;
-use Phalanx\Exception\ServiceNotFoundException;
 use Phalanx\AiProviders\Agent as ProviderAgent;
 use Phalanx\AiProviders\Conversation\Log;
 use Phalanx\AiProviders\Id;
 use Phalanx\AiProviders\Invocation;
+use Phalanx\Exception\ServiceNotFoundException;
 use Phalanx\Scope\Scope;
 use Phalanx\Scope\TaskScope;
 

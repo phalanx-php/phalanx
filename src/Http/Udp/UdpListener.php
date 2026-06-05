@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Phalanx\Http\Udp;
 
 use Phalanx\AppHost;
-use Phalanx\Runtime\Memory\ManagedResourceHandle;
 use Phalanx\Http\Runtime\Identity\HttpResourceSid;
+use Phalanx\Runtime\Memory\ManagedResourceHandle;
 use Swoole\Server;
 
 /**

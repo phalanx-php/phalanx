@@ -23,13 +23,13 @@
         "ext-swoole": "^6.0",
         "ext-pcntl": "*",
         "ext-mbstring": "*",
-        "phalanx-php/runtime": "^0.6",
-        "phalanx-php/agent": "^0.6",
-        "phalanx-php/filesystem": "^0.6",
-        "phalanx-php/ai-providers": "^0.6"
+        "phalanx-php/runtime": "^0.7",
+        "phalanx-php/agent": "^0.7",
+        "phalanx-php/filesystem": "^0.7",
+        "phalanx-php/ai-providers": "^0.7"
     },
     "conflict": {
-        "phalanx-php/filesystem": "<0.6.3"
+        "phalanx-php/filesystem": "<0.7.0"
     },
     "require-dev": {
         "slevomat/coding-standard": "*",
@@ -103,7 +103,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-main": "0.6.x-dev"
+            "dev-main": "0.7.x-dev"
         }
     },
     "config": {

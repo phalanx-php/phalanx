@@ -14,7 +14,9 @@ use Phalanx\Task\Scopeable;
 final class ResolveHostname implements Scopeable, Recoverable
 {
     public RecoveryPlan $recovery {
-        get => RecoveryPlan::failFast(deadline: Mark::s($this->timeoutSeconds));
+        get {
+            return $this->recoveryPlan();
+        }
     }
 
     public function __construct(
@@ -30,5 +32,10 @@ final class ResolveHostname implements Scopeable, Recoverable
         $result = $resolver->resolveAll($scope, $this->hostname);
 
         return $result->addresses;
+    }
+
+    private function recoveryPlan(): RecoveryPlan
+    {
+        return RecoveryPlan::failFast(deadline: Mark::s($this->timeoutSeconds));
     }
 }

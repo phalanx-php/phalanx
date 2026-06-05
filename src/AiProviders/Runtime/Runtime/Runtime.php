@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\AiProviders\Runtime\Runtime;
 
-use Phalanx\Cancellation\Cancelled;
 use Phalanx\AiProviders\Runtime as RuntimeContract;
 use Phalanx\AiProviders\Runtime\CancellationException;
+use Phalanx\Cancellation\Cancelled;
 // Importing Phalanx\Scope and Phalanx\Supervisor here is the documented
 // exception to the Phalanx-independence boundary — this file IS the bridge.
 use Phalanx\Scope\TaskScope;

@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Phalanx\Agent\Activity;
 
 use Phalanx\Agent\Turn\Outcome;
-use Phalanx\Cancellation\Cancelled as ScopeCancelled;
 use Phalanx\AiProviders\Agent;
 use Phalanx\AiProviders\Conversation\Log;
 use Phalanx\AiProviders\Cue;
 use Phalanx\AiProviders\Cue\Activity as ActivityCue;
 use Phalanx\AiProviders\Id;
 use Phalanx\AiProviders\Stream;
+use Phalanx\Cancellation\Cancelled as ScopeCancelled;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\TaskScope;
 use Phalanx\Task\Task;

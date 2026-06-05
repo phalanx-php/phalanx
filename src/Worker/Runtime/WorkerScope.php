@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Phalanx\Worker\Runtime;
 
+use Phalanx\Runtime\RuntimeContext;
+use Phalanx\Trace\Trace;
 use Phalanx\Worker\Protocol\Codec;
 use Phalanx\Worker\Protocol\Response;
 use Phalanx\Worker\Protocol\ServiceCall;
 use Phalanx\Worker\Protocol\StreamEmit;
-use Phalanx\Runtime\RuntimeContext;
-use Phalanx\Trace\Trace;
 use Phalanx\Worker\WorkerScope as RuntimeWorkerScope;
 use RuntimeException;
 

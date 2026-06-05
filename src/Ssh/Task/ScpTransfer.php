@@ -4,18 +4,18 @@ declare(strict_types=1);
 
 namespace Phalanx\Ssh\Task;
 
-use Phalanx\Ssh\Exception\SshException;
-use Phalanx\Ssh\SshConfig;
-use Phalanx\Ssh\SshCredential;
-use Phalanx\Ssh\Support\ProcessAwaiter;
-use Phalanx\Ssh\TransferDirection;
-use Phalanx\Ssh\TransferResult;
 use Phalanx\Filesystem\Exception\FilesystemException;
 use Phalanx\Filesystem\Task\StatFile;
 use Phalanx\Mark\Mark;
 use Phalanx\Recovery\Recoverable;
 use Phalanx\Recovery\RecoveryPlan;
 use Phalanx\Scope\ExecutionScope;
+use Phalanx\Ssh\Exception\SshException;
+use Phalanx\Ssh\SshConfig;
+use Phalanx\Ssh\SshCredential;
+use Phalanx\Ssh\Support\ProcessAwaiter;
+use Phalanx\Ssh\TransferDirection;
+use Phalanx\Ssh\TransferResult;
 use Phalanx\Task\Executable;
 
 final class ScpTransfer implements Executable, Recoverable

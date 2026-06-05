@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Phalanx\Console\Application;
 
+use Phalanx\Boot\AppContext;
 use Phalanx\Console\Console\Output\StreamOutput;
 use Phalanx\Console\Console\Output\TerminalEnvironment;
 use Phalanx\Console\Runtime\Identity\ConsoleSignalPolicy;
-use Phalanx\Boot\AppContext;
 
 final readonly class ConsoleConfig
 {

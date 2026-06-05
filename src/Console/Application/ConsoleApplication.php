@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Phalanx\Console\Application;
 
 use Phalanx\AppHost;
-use Phalanx\Console\Command\ConsoleDispatchTask;
 use Phalanx\Console\Command\CommandDispatcher;
 use Phalanx\Console\Command\CommandGroup;
+use Phalanx\Console\Command\ConsoleDispatchTask;
 use Phalanx\Console\Command\InlineCommand;
 use Phalanx\Console\Runtime\Identity\ConsoleSignalState;
 use Phalanx\Scope\ExecutionScope;

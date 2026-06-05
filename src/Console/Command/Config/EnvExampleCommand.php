@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Phalanx\Console\Command\Config;
 
+use Phalanx\Config\ConfigCatalog;
+use Phalanx\Config\EnvExampleGenerator;
 use Phalanx\Console\Command\CommandConfig;
 use Phalanx\Console\Command\CommandContext;
 use Phalanx\Console\Command\DescribesCommand;
 use Phalanx\Console\Command\Opt;
 use Phalanx\Console\Console\Output\StreamOutput;
 use Phalanx\Task\Scopeable;
-use Phalanx\Config\ConfigCatalog;
-use Phalanx\Config\EnvExampleGenerator;
 
 final class EnvExampleCommand implements Scopeable, DescribesCommand
 {

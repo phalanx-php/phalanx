@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Phalanx\Http\Response;
 
 use Phalanx\Cancellation\Cancelled;
-use Phalanx\Http\RequestContext;
-use Phalanx\Http\Response\Ignition\PhalanxErrorPageViewModel;
 use Phalanx\Http\HttpRequestDiagnostics;
 use Phalanx\Http\HttpRequestResource;
 use Phalanx\Http\HttpServerConfig;
+use Phalanx\Http\RequestContext;
+use Phalanx\Http\Response\Ignition\PhalanxErrorPageViewModel;
 use Phalanx\Supervisor\TaskTreeFormatter;
 use Psr\Http\Message\ResponseInterface;
 use Spatie\Ignition\Config\IgnitionConfig;

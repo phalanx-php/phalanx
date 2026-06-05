@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Phalanx\WebSocket\Client;
 
 use Phalanx\Cancellation\Cancelled;
-use Phalanx\WebSocket\Runtime\Identity\WebSocketEventSid;
-use Phalanx\WebSocket\Runtime\Identity\WebSocketResourceSid;
 use Phalanx\Runtime\Memory\ManagedResourceHandle;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\ScopeIdentity;
 use Phalanx\Supervisor\WaitReason;
+use Phalanx\WebSocket\Runtime\Identity\WebSocketEventSid;
+use Phalanx\WebSocket\Runtime\Identity\WebSocketResourceSid;
 use Swoole\Coroutine\Http\Client as SwooleHttpClient;
 use Throwable;
 

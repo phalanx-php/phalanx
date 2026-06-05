@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Phalanx\Ssh\Task;
 
-use Phalanx\Ssh\CommandResult;
-use Phalanx\Ssh\SshCredential;
-use Phalanx\Ssh\TransferDirection;
 use Phalanx\Mark\Mark;
 use Phalanx\Recovery\Recoverable;
 use Phalanx\Recovery\RecoveryPlan;
 use Phalanx\Scope\ExecutionScope;
+use Phalanx\Ssh\CommandResult;
+use Phalanx\Ssh\SshCredential;
+use Phalanx\Ssh\TransferDirection;
 use Phalanx\Task\Executable;
 
 final class Deploy implements Executable, Recoverable

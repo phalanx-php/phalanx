@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Phalanx\HttpClient;
 
-use Phalanx\System\TlsOptions;
 use Phalanx\Config\Config;
 use Phalanx\Config\Env;
 use Phalanx\Config\Issue;
 use Phalanx\Config\ValidationContext;
+use Phalanx\System\TlsOptions;
 
 final class HttpClientConfig implements Config
 {

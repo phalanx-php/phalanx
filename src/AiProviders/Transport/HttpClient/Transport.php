@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Phalanx\AiProviders\Transport\HttpClient;
 
-use Phalanx\Cancellation\Cancelled;
-use Phalanx\HttpClient\HttpClient;
-use Phalanx\HttpClient\HttpClientException;
-use Phalanx\HttpClient\HttpRequest;
 use Phalanx\AiProviders\Runtime;
 use Phalanx\AiProviders\Runtime\CancellationException;
 use Phalanx\AiProviders\Transport as TransportContract;
 use Phalanx\AiProviders\Transport\Request;
 use Phalanx\AiProviders\Transport\Sync\HttpError;
 use Phalanx\AiProviders\Transport\TransportException;
+use Phalanx\Cancellation\Cancelled;
+use Phalanx\HttpClient\HttpClient;
+use Phalanx\HttpClient\HttpClientException;
+use Phalanx\HttpClient\HttpRequest;
 use Phalanx\Scope\Scope;
 use Phalanx\Scope\Suspendable;
 

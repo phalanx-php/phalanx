@@ -6,14 +6,14 @@ namespace Phalanx\SurrealDb;
 
 use Phalanx\Boot\AppContext;
 use Phalanx\Boot\BootHarness;
-use Phalanx\WebSocket\Client\WsClient;
-use Phalanx\WebSocket\Client\WsClientConfig;
+use Phalanx\Config\Config;
 use Phalanx\HttpClient\HttpClient;
 use Phalanx\HttpClient\HttpClientConfig;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
-use Phalanx\Config\Config;
+use Phalanx\WebSocket\Client\WsClient;
+use Phalanx\WebSocket\Client\WsClientConfig;
 
 class SurrealDbBundle extends ServiceBundle
 {

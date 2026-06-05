@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Phalanx\Http\Sse;
 
+use Phalanx\Http\HttpRequestResource;
 use Phalanx\Http\RequestContext;
 use Phalanx\Http\ResponseSink;
 use Phalanx\Http\Runtime\Identity\HttpEventSid;
-use Phalanx\Http\HttpRequestResource;
 
 /**
  * Promotes an in-flight HTTP request into a long-lived SSE stream.

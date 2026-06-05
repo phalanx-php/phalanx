@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Agent\Effect;
 
-use Phalanx\Cancellation\Cancelled;
 use Phalanx\AiProviders\Cue\Effect\Requested;
 use Phalanx\AiProviders\Effect\Outcome as AiProvidersOutcome;
+use Phalanx\Cancellation\Cancelled;
 use Phalanx\Scope\TaskScope;
 
 final class SubAgentExecutor implements Executor

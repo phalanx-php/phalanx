@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Phalanx\Console\Testing;
 
+use Phalanx\Boot\AppContext;
 use Phalanx\Console\Application\Console;
 use Phalanx\Console\Application\ConsoleApplication;
 use Phalanx\Console\Application\ConsoleConfig;
 use Phalanx\Console\Command\CommandGroup;
 use Phalanx\Console\Console\Output\StreamOutput;
 use Phalanx\Console\Console\Output\TerminalEnvironment;
-use Phalanx\Boot\AppContext;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Testing\Attribute\Lens;
 use Phalanx\Testing\Lens as LensContract;

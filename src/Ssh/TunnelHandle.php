@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Ssh;
 
+use Phalanx\Scope\TaskScope;
 use Phalanx\Ssh\Exception\SshConnectionException;
 use Phalanx\Ssh\Task\RunCommand;
-use Phalanx\Scope\TaskScope;
 use Phalanx\System\StreamingProcessHandle;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;

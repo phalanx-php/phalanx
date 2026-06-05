@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Phalanx\SurrealDb;
 
 use Phalanx\Cancellation\Cancelled;
-use Phalanx\WebSocket\Client\WsClient;
 use Phalanx\Scope\ExecutionScope;
+use Phalanx\WebSocket\Client\WsClient;
 use Throwable;
 
 class WebSocketSurrealDbLiveTransport implements SurrealDbLiveTransport

@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Phalanx\Worker\Runtime;
 
 use Phalanx\Cancellation\Cancelled;
+use Phalanx\Trace\Trace;
 use Phalanx\Worker\Protocol\Codec;
 use Phalanx\Worker\Protocol\MessageType;
 use Phalanx\Worker\Protocol\Response;
 use Phalanx\Worker\Protocol\TaskRequest;
-use Phalanx\Trace\Trace;
 use Phalanx\Worker\WorkerTask;
 use ReflectionClass;
 use ReflectionNamedType;

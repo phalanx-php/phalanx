@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\WebSocket;
 
-use Phalanx\Scope\ExecutionScope as BaseExecutionScope;
 use Phalanx\Http\RouteParams;
+use Phalanx\Scope\ExecutionScope as BaseExecutionScope;
 use Phalanx\Support\ExecutionScopeDelegate;
 use Psr\Http\Message\ServerRequestInterface;
 

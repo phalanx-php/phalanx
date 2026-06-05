@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Network\Discovery;
 
-use Phalanx\Network\DiscoveryResult;
 use Phalanx\Mark\Mark;
+use Phalanx\Network\DiscoveryResult;
 use Phalanx\Recovery\Recoverable;
 use Phalanx\Recovery\RecoveryPlan;
 use Phalanx\Scope\TaskScope;
@@ -24,7 +24,9 @@ final class DiscoverSsdp implements Scopeable, Recoverable
     private const int MULTICAST_PORT = 1900;
 
     public RecoveryPlan $recovery {
-        get => RecoveryPlan::failFast(deadline: Mark::s($this->listenSeconds + 1.0));
+        get {
+            return $this->recoveryPlan();
+        }
     }
 
     public function __construct(
@@ -97,5 +99,10 @@ final class DiscoverSsdp implements Scopeable, Recoverable
         }
 
         return $headers;
+    }
+
+    private function recoveryPlan(): RecoveryPlan
+    {
+        return RecoveryPlan::failFast(deadline: Mark::s($this->listenSeconds + 1.0));
     }
 }

@@ -7,10 +7,10 @@ namespace Phalanx\WebSocket;
 use Phalanx\Boot\AppContext;
 use Phalanx\Boot\BootHarness;
 use Phalanx\Boot\Optional;
-use Phalanx\WebSocket\Client\WsClient;
-use Phalanx\WebSocket\Client\WsClientConfig;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
+use Phalanx\WebSocket\Client\WsClient;
+use Phalanx\WebSocket\Client\WsClientConfig;
 
 final class WsServiceBundle extends ServiceBundle
 {

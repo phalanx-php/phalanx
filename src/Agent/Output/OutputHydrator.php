@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Phalanx\Agent\Output;
 
 use Phalanx\Agent\Exception\OutputHydrationError;
-use Phalanx\Cancellation\Cancelled;
 use Phalanx\AiProviders\Agent;
 use Phalanx\AiProviders\Output\Mode;
+use Phalanx\Cancellation\Cancelled;
 use Phalanx\Scope\TaskScope;
 
 final class OutputHydrator

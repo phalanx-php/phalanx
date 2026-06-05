@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Network\Task;
 
-use Phalanx\Network\ProbeResult;
 use Phalanx\Mark\Mark;
+use Phalanx\Network\ProbeResult;
 use Phalanx\Recovery\Recoverable;
 use Phalanx\Recovery\RecoveryPlan;
 use Phalanx\Scope\TaskScope;
@@ -15,7 +15,9 @@ use Phalanx\Task\Scopeable;
 final class ProbePort implements Scopeable, Recoverable
 {
     public RecoveryPlan $recovery {
-        get => RecoveryPlan::failFast(deadline: Mark::s($this->timeoutSeconds + 0.5));
+        get {
+            return $this->recoveryPlan();
+        }
     }
 
     public function __construct(
@@ -41,5 +43,10 @@ final class ProbePort implements Scopeable, Recoverable
             method: 'tcp',
             port: $this->port,
         );
+    }
+
+    private function recoveryPlan(): RecoveryPlan
+    {
+        return RecoveryPlan::failFast(deadline: Mark::s($this->timeoutSeconds + 0.5));
     }
 }

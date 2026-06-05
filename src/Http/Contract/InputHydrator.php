@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Http\Contract;
 
-use Phalanx\Scope\Scope;
 use Phalanx\Http\RequestContext;
 use Phalanx\Http\ValidationException;
+use Phalanx\Scope\Scope;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 use ReflectionClass;

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Ssh\Task;
 
-use Phalanx\Ssh\SshCredential;
 use Phalanx\Scope\ExecutionScope;
+use Phalanx\Ssh\SshCredential;
 use Phalanx\Task\Executable;
 
 final class MultiDeploy implements Executable

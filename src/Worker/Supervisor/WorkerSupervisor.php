@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Phalanx\Worker\Supervisor;
 
 use Phalanx\Cancellation\CancellationToken;
+use Phalanx\Scope\TaskExecutor;
+use Phalanx\Scope\TaskScope;
 use Phalanx\Worker\Agent\AgentState;
 use Phalanx\Worker\Agent\Worker;
 use Phalanx\Worker\Dispatch\Dispatcher;
@@ -13,8 +15,6 @@ use Phalanx\Worker\Dispatch\LeastMailboxDispatcher;
 use Phalanx\Worker\Dispatch\RoundRobinDispatcher;
 use Phalanx\Worker\Process\ProcessConfig;
 use Phalanx\Worker\Protocol\TaskRequest;
-use Phalanx\Scope\TaskExecutor;
-use Phalanx\Scope\TaskScope;
 use Swoole\Atomic;
 
 class WorkerSupervisor

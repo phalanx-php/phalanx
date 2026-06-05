@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Phalanx\Ssh\Support;
 
 use Phalanx\Cancellation\Cancelled;
-use Phalanx\Ssh\Exception\SshTimeoutException;
 use Phalanx\Scope\TaskExecutor;
 use Phalanx\Scope\TaskScope;
+use Phalanx\Ssh\Exception\SshTimeoutException;
 use Phalanx\System\StreamingProcess;
 use Throwable;
 

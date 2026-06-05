@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Phalanx\Network;
 
 use Phalanx\Boot\AppContext;
+use Phalanx\Config\Config;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
-use Phalanx\Config\Config;
 
 /**
  * Network service registration.

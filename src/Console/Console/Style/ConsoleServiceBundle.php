@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Phalanx\Console\Console\Style;
 
+use Phalanx\Boot\AppContext;
 use Phalanx\Console\Console\Input\KeyReader;
 use Phalanx\Console\Console\Input\RawInput;
 use Phalanx\Console\Console\Output\StreamOutput;
 use Phalanx\Console\Console\Output\TerminalEnvironment;
-use Phalanx\Boot\AppContext;
 use Phalanx\Console\Input\ConsoleInput;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;

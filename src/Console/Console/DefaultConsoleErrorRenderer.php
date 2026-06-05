@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Phalanx\Console\Console;
 
+use Phalanx\Cancellation\Cancelled;
 use Phalanx\Console\Command\CommandContext;
 use Phalanx\Console\Console\Output\StreamOutput;
 use Phalanx\Console\Console\Style\Style;
 use Phalanx\Console\Console\Style\Theme;
 use Phalanx\Console\Console\Widget\SourcePreview;
-use Phalanx\Cancellation\Cancelled;
 use Phalanx\Supervisor\Supervisor;
 use Phalanx\Supervisor\TaskTreeFormatter;
 use Throwable;

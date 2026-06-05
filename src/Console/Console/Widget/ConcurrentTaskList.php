@@ -6,11 +6,11 @@ namespace Phalanx\Console\Console\Widget;
 
 use InvalidArgumentException;
 use Phalanx\Console\Console\Output\LiveRegionRenderer;
-use Phalanx\Mark\Mark;
 use Phalanx\Console\Console\Output\StreamOutput;
 use Phalanx\Console\Console\Style\Theme;
 use Phalanx\Console\Console\Widget\TaskList;
 use Phalanx\Console\Console\Widget\TaskState;
+use Phalanx\Mark\Mark;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;

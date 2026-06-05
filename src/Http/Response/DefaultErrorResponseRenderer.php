@@ -6,8 +6,8 @@ namespace Phalanx\Http\Response;
 
 use GuzzleHttp\Psr7\Response as PsrResponse;
 use Phalanx\Cancellation\Cancelled;
-use Phalanx\Http\RequestContext;
 use Phalanx\Http\HttpRequestResource;
+use Phalanx\Http\RequestContext;
 use Phalanx\Supervisor\Supervisor;
 use Phalanx\Supervisor\TaskTreeFormatter;
 use Psr\Http\Message\ResponseInterface;

@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Phalanx\PHPStan\Rules\Scope;
 
+use Phalanx\Http\HttpRequestDiagnostics;
+use Phalanx\Http\HttpRequestResource;
+use Phalanx\Http\ResponseSink;
 use Phalanx\PHPStan\Support\NodeNames;
 use Phalanx\PHPStan\Support\PathPolicy;
 use Phalanx\PHPStan\Support\RuleErrors;
 use Phalanx\Scope\Scope as PhalanxScope;
-use Phalanx\Http\ResponseSink;
-use Phalanx\Http\HttpRequestDiagnostics;
-use Phalanx\Http\HttpRequestResource;
 use PhpParser\Node;
 use PhpParser\Node\Expr\ClassConstFetch;
 use PhpParser\Node\Expr\MethodCall;

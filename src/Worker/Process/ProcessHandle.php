@@ -5,12 +5,6 @@ declare(strict_types=1);
 namespace Phalanx\Worker\Process;
 
 use Phalanx\Cancellation\Cancelled;
-use Phalanx\Worker\Protocol\Codec;
-use Phalanx\Worker\Protocol\MessageType;
-use Phalanx\Worker\Protocol\Response;
-use Phalanx\Worker\Protocol\ServiceCall;
-use Phalanx\Worker\Protocol\StreamEmit;
-use Phalanx\Worker\Protocol\TaskRequest;
 use Phalanx\Scope\TaskExecutor;
 use Phalanx\Scope\TaskScope;
 use Phalanx\System\StreamingProcess;
@@ -18,6 +12,12 @@ use Phalanx\System\StreamingProcessException;
 use Phalanx\System\StreamingProcessHandle;
 use Phalanx\Trace\Trace;
 use Phalanx\Trace\TraceType;
+use Phalanx\Worker\Protocol\Codec;
+use Phalanx\Worker\Protocol\MessageType;
+use Phalanx\Worker\Protocol\Response;
+use Phalanx\Worker\Protocol\ServiceCall;
+use Phalanx\Worker\Protocol\StreamEmit;
+use Phalanx\Worker\Protocol\TaskRequest;
 use RuntimeException;
 
 class ProcessHandle

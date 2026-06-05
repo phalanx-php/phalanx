@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Network\Task;
 
+use Phalanx\Mark\Mark;
 use Phalanx\Network\NetworkConfig;
 use Phalanx\Network\ProbeResult;
-use Phalanx\Mark\Mark;
 use Phalanx\Recovery\Backoff;
 use Phalanx\Recovery\Recoverable;
 use Phalanx\Recovery\RecoveryPlan;
@@ -17,11 +17,9 @@ use Phalanx\Task\Scopeable;
 final class PingHost implements Scopeable, Recoverable
 {
     public RecoveryPlan $recovery {
-        get => RecoveryPlan::defaultRetry(
-            attempts: $this->retries > 0 ? $this->retries : 1,
-            attemptTimeout: Mark::s($this->timeoutSeconds + 1.0),
-            backoff: Backoff::fixed(Mark::ms(500)),
-        );
+        get {
+            return $this->recoveryPlan();
+        }
     }
 
     public function __construct(
@@ -54,6 +52,15 @@ final class PingHost implements Scopeable, Recoverable
             reachable: $result->successful,
             latencyMs: $result->successful ? $elapsed : null,
             method: 'icmp',
+        );
+    }
+
+    private function recoveryPlan(): RecoveryPlan
+    {
+        return RecoveryPlan::defaultRetry(
+            attempts: $this->retries > 0 ? $this->retries : 1,
+            attemptTimeout: Mark::s($this->timeoutSeconds + 1.0),
+            backoff: Backoff::fixed(Mark::ms(500)),
         );
     }
 }

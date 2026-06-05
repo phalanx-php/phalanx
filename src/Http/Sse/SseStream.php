@@ -6,9 +6,9 @@ namespace Phalanx\Http\Sse;
 
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Cancellation\Cancelled;
-use Phalanx\Scope\Suspendable;
-use Phalanx\Http\Runtime\Identity\HttpEventSid;
 use Phalanx\Http\HttpRequestResource;
+use Phalanx\Http\Runtime\Identity\HttpEventSid;
+use Phalanx\Scope\Suspendable;
 use Phalanx\Supervisor\WaitReason;
 use Swoole\Http\Response;
 use Throwable;

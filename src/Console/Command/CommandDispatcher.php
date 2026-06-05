@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace Phalanx\Console\Command;
 
 use Phalanx\AppHost;
+use Phalanx\Cancellation\Cancelled;
+use Phalanx\Cancellation\Halted;
 use Phalanx\Console\Application\ConsoleConfig;
 use Phalanx\Console\Console\ConsoleErrorRenderer;
 use Phalanx\Console\Console\DefaultConsoleErrorRenderer;
 use Phalanx\Console\Console\Output\StreamOutput;
 use Phalanx\Console\Runtime\Identity\ConsoleSignal;
 use Phalanx\Console\Runtime\Identity\ConsoleSignalState;
-use Phalanx\Cancellation\Cancelled;
-use Phalanx\Cancellation\Halted;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\ScopeIdentity;
 use RuntimeException;

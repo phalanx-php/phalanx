@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Phalanx\WebSocket;
 
 use Phalanx\AppHost;
+use Phalanx\Http\HttpRunner;
+use Phalanx\Scope\Scope;
+use Phalanx\Service\ServiceBundle;
 use Phalanx\WebSocket\Client\WsClient;
 use Phalanx\WebSocket\Client\WsClientConfig;
 use Phalanx\WebSocket\Server\WsServerUpgrade;
-use Phalanx\Scope\Scope;
-use Phalanx\Service\ServiceBundle;
-use Phalanx\Http\HttpRunner;
 
 final class WebSocket
 {

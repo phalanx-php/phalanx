@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Phalanx\Network\Task;
 
+use Phalanx\Mark\Mark;
 use Phalanx\Network\Exception\HostUnreachableException;
 use Phalanx\Network\Host;
 use Phalanx\Network\ProbeResult;
 use Phalanx\Network\ProbeStrategy;
-use Phalanx\Mark\Mark;
 use Phalanx\Recovery\Recoverable;
 use Phalanx\Recovery\RecoveryPlan;
 use Phalanx\Scope\ExecutionScope;
@@ -17,10 +17,9 @@ use Phalanx\Task\Executable;
 final class WakeAndWait implements Executable, Recoverable
 {
     public RecoveryPlan $recovery {
-        get => RecoveryPlan::polling(
-            interval: Mark::s($this->retryIntervalSeconds),
-            deadline: Mark::s($this->maxRetries * $this->retryIntervalSeconds + 10.0),
-        );
+        get {
+            return $this->recoveryPlan();
+        }
     }
 
     public function __construct(
@@ -44,5 +43,13 @@ final class WakeAndWait implements Executable, Recoverable
         }
 
         return new Host(ip: $this->ip, mac: $this->mac);
+    }
+
+    private function recoveryPlan(): RecoveryPlan
+    {
+        return RecoveryPlan::polling(
+            interval: Mark::s($this->retryIntervalSeconds),
+            deadline: Mark::s($this->maxRetries * $this->retryIntervalSeconds + 10.0),
+        );
     }
 }

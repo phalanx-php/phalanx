@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Ssh\Task;
 
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Ssh\SshCredential;
 use Phalanx\Ssh\TunnelDirection;
-use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 

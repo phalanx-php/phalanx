@@ -7,9 +7,9 @@ namespace Phalanx\WebSocket\Auth;
 use Closure;
 use Phalanx\Auth\AuthenticationException;
 use Phalanx\Auth\Guard;
+use Phalanx\Task\Executable;
 use Phalanx\WebSocket\AuthExecutionContext;
 use Phalanx\WebSocket\WsContext;
-use Phalanx\Task\Executable;
 
 final class Authenticate implements Executable
 {

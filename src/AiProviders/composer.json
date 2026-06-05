@@ -26,7 +26,7 @@
     },
     "require": {
         "php": "^8.4",
-        "phalanx-php/mark": "^0.6",
+        "phalanx-php/mark": "^0.7",
         "symfony/uid": "^7.0 || ^8.0",
         "symfony/yaml": "^7.0 || ^8.0"
     },
@@ -42,8 +42,8 @@
     },
     "require-dev": {
         "swoole/ide-helper": "^6.0",
-        "phalanx-php/runtime": "^0.6",
-        "phalanx-php/http-client": "^0.6",
+        "phalanx-php/runtime": "^0.7",
+        "phalanx-php/http-client": "^0.7",
         "phpstan/phpstan": "^2.0",
         "phpunit/phpunit": "^13.0",
         "rector/rector": "^2.0",
@@ -112,7 +112,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-main": "0.6.x-dev"
+            "dev-main": "0.7.x-dev"
         }
     },
     "config": {

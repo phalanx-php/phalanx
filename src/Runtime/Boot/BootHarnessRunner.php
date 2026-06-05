@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Phalanx\Boot;
 
 use Phalanx\Boot\Exception\CannotBootException;
-use Phalanx\Service\ServiceBundle;
 use Phalanx\Config\Config;
 use Phalanx\Config\ConfigFactory;
 use Phalanx\Config\ConfigReflection;
 use Phalanx\Config\Issue;
 use Phalanx\Config\IssueLevel;
 use Phalanx\Config\ValidationContext;
+use Phalanx\Service\ServiceBundle;
 
 /**
  * Aggregates BootRequirement declarations from registered bundles plus

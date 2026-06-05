@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Network\Task;
 
+use Phalanx\Mark\Mark;
 use Phalanx\Network\Host;
 use Phalanx\Network\ProbeResult;
-use Phalanx\Mark\Mark;
 use Phalanx\Recovery\Recoverable;
 use Phalanx\Recovery\RecoveryPlan;
 use Phalanx\Scope\ExecutionScope;

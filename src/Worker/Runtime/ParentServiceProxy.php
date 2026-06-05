@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Worker\Runtime;
 
-use Phalanx\Worker\Protocol\ServiceCall;
 use Phalanx\Scope\Scope;
+use Phalanx\Worker\Protocol\ServiceCall;
 use RuntimeException;
 
 class ParentServiceProxy

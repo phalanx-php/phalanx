@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Phalanx\Worker;
 
 use Phalanx\Boot\AppContext;
-use Phalanx\Worker\Dispatch\LeastMailboxDispatcher;
-use Phalanx\Worker\Dispatch\RoundRobinDispatcher;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
+use Phalanx\Worker\Dispatch\LeastMailboxDispatcher;
+use Phalanx\Worker\Dispatch\RoundRobinDispatcher;
 use Phalanx\Worker\WorkerDispatch;
 use Symfony\Component\Process\Pipes\AbstractPipes;
 use Symfony\Component\Process\Pipes\UnixPipes;

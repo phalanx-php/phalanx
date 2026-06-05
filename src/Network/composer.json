@@ -27,9 +27,9 @@
     "require": {
         "php": "^8.4",
         "ext-swoole": "^6.0",
-        "phalanx-php/runtime": "^0.6",
-        "phalanx-php/mark": "^0.6",
-        "phalanx-php/config": "^0.6",
+        "phalanx-php/runtime": "^0.7",
+        "phalanx-php/mark": "^0.7",
+        "phalanx-php/config": "^0.7",
         "mlocati/ip-lib": "^1.22"
     },
     "require-dev": {
@@ -96,7 +96,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-main": "0.6.x-dev"
+            "dev-main": "0.7.x-dev"
         }
     },
     "minimum-stability": "dev",

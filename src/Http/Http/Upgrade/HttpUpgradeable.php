@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Http\Http\Upgrade;
 
-use Phalanx\Runtime\Memory\ManagedResourceHandle;
 use Phalanx\Http\HttpRequestResource;
+use Phalanx\Runtime\Memory\ManagedResourceHandle;
 use Psr\Http\Message\ServerRequestInterface;
 use Swoole\Http\Response;
 

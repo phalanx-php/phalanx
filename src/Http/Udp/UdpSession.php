@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Http\Udp;
 
+use Phalanx\Http\Runtime\Identity\HttpResourceSid;
 use Phalanx\Runtime\Memory\ManagedResourceHandle;
 use Phalanx\Runtime\RuntimeContext;
-use Phalanx\Http\Runtime\Identity\HttpResourceSid;
 use Swoole\Server;
 
 /**

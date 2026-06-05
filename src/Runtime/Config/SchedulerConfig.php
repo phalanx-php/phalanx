@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Phalanx\Config;
 
-use Phalanx\Recovery\BackoffStrategy;
-use Phalanx\Scheduling\TaskPriority;
 use Phalanx\Config\Config;
 use Phalanx\Config\Issue;
 use Phalanx\Config\ValidationContext;
+use Phalanx\Recovery\BackoffStrategy;
+use Phalanx\Scheduling\TaskPriority;
 
 final class SchedulerConfig implements Config
 {

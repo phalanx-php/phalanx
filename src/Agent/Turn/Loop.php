@@ -17,7 +17,6 @@ use Phalanx\Agent\Hook\StepHookChain;
 use Phalanx\Agent\Stream\ArrayCueEmitter;
 use Phalanx\Agent\Stream\ChannelCueEmitter;
 use Phalanx\Agent\Stream\CueEmitter;
-use Phalanx\Cancellation\Cancelled;
 use Phalanx\AiProviders\Agent;
 use Phalanx\AiProviders\Conversation\Log;
 use Phalanx\AiProviders\Conversation\Record\Message;
@@ -32,6 +31,7 @@ use Phalanx\AiProviders\Id;
 use Phalanx\AiProviders\Invocation;
 use Phalanx\AiProviders\Provider;
 use Phalanx\AiProviders\Stream;
+use Phalanx\Cancellation\Cancelled;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\TaskScope;
 

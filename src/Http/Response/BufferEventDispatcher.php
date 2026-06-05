@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Http\Response;
 
-use Phalanx\Http\Runtime\Identity\HttpEventSid;
 use Phalanx\Http\HttpRequestResource;
+use Phalanx\Http\Runtime\Identity\HttpEventSid;
 use Swoole\Http\Server;
 
 final class BufferEventDispatcher

@@ -89,8 +89,8 @@ final class ProjectGenerator
     private static function composerTemplate(ProjectType $type): string
     {
         $framework = match ($type) {
-            ProjectType::Api => '"phalanx-php/http": "^0.6"',
-            ProjectType::Console => '"phalanx-php/console": "^0.6"',
+            ProjectType::Api => '"phalanx-php/http": "^0.7"',
+            ProjectType::Console => '"phalanx-php/console": "^0.7"',
         };
 
         $bin = match ($type) {
@@ -107,7 +107,7 @@ final class ProjectGenerator
     "require": {
         "php": "^8.4",
         "ext-swoole": "^6.0",
-        "phalanx-php/runtime": "^0.6",
+        "phalanx-php/runtime": "^0.7",
         {$framework},
         "symfony/runtime": "^7.0"
     },

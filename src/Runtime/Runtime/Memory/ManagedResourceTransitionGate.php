@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Runtime\Memory;
 
-use Phalanx\Runtime\Identity\RuntimeEventSid;
 use Phalanx\Runtime\Identity\RuntimeEventId;
+use Phalanx\Runtime\Identity\RuntimeEventSid;
 use Swoole\Exception as SwooleException;
 
 final readonly class ManagedResourceTransitionGate

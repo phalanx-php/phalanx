@@ -25,8 +25,8 @@
     "require": {
         "php": "^8.4",
         "ext-swoole": "^6.0",
-        "phalanx-php/mark": "^0.6",
-        "phalanx-php/config": "^0.6",
+        "phalanx-php/mark": "^0.7",
+        "phalanx-php/config": "^0.7",
         "symfony/process": "^7.0 || ^8.0",
         "symfony/uid": "^7.0 || ^8.0"
     },
@@ -40,9 +40,9 @@
         "symfony/dotenv": "For .env file support"
     },
     "require-dev": {
-        "phalanx-php/console": "^0.6",
-        "phalanx-php/http": "^0.6",
-        "phalanx-php/worker": "^0.6",
+        "phalanx-php/console": "^0.7",
+        "phalanx-php/http": "^0.7",
+        "phalanx-php/worker": "^0.7",
         "swoole/ide-helper": "^6.0",
         "phpstan/phpstan": "^2.0",
         "phpunit/phpunit": "^13.0",
@@ -118,7 +118,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-main": "0.6.x-dev"
+            "dev-main": "0.7.x-dev"
         }
     },
     "config": {

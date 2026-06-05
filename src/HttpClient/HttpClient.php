@@ -40,14 +40,14 @@ class HttpClient
     ) {
     }
 
-    public static function services(?HttpClientConfig $config = null): ServiceBundle
-    {
-        return new HttpServiceBundle($config);
-    }
-
     public static function client(Scope $scope): self
     {
         return $scope->service(self::class);
+    }
+
+    public static function services(?HttpClientConfig $config = null): ServiceBundle
+    {
+        return new HttpServiceBundle($config);
     }
 
     /** @param array<string, list<string>> $headers */

@@ -15,10 +15,10 @@
     },
     "require": {
         "php": "^8.4",
-        "phalanx-php/runtime": "^0.6",
-        "phalanx-php/filesystem": "^0.6",
-        "phalanx-php/mark": "^0.6",
-        "phalanx-php/config": "^0.6"
+        "phalanx-php/runtime": "^0.7",
+        "phalanx-php/filesystem": "^0.7",
+        "phalanx-php/mark": "^0.7",
+        "phalanx-php/config": "^0.7"
     },
     "require-dev": {
         "phpunit/phpunit": "^13.0"
@@ -84,7 +84,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-main": "0.6.x-dev"
+            "dev-main": "0.7.x-dev"
         }
     },
     "minimum-stability": "dev",

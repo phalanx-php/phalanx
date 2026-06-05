@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Phalanx\DevServer;
 
 use Closure;
+use Phalanx\DevServer\Output\Multiplexer;
 use Phalanx\Mark\Mark;
 use Phalanx\Scope\ExecutionScope;
-use Phalanx\DevServer\Output\Multiplexer;
 use Phalanx\System\StreamingProcess;
 use Phalanx\System\StreamingProcessHandle;
 
