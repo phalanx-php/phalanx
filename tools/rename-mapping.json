@@ -1,0 +1,396 @@
+[
+    {
+        "kind": "module",
+        "action": "rename",
+        "old": "Aegis",
+        "new": "Runtime",
+        "oldDir": "src/Aegis",
+        "newDir": "src/Runtime",
+        "oldNamespace": "Phalanx\\",
+        "newNamespace": "Phalanx\\",
+        "oldTestNamespace": "Phalanx\\Aegis\\Tests",
+        "newTestNamespace": "Phalanx\\Runtime\\Tests",
+        "oldPackage": "phalanx-php/aegis",
+        "newPackage": "phalanx-php/runtime",
+        "oldSplitRepo": "phalanx-aegis",
+        "newSplitRepo": "phalanx-runtime",
+        "classPrefix": {
+            "old": "Aegis",
+            "new": "Runtime",
+            "strategy": "targeted"
+        },
+        "notes": [
+            "Production namespace remains the root Phalanx\\ namespace.",
+            "Do not run the generic namespace replacement against Aegis production code."
+        ]
+    },
+    {
+        "kind": "module",
+        "action": "rename",
+        "old": "Stoa",
+        "new": "Http",
+        "oldDir": "src/Stoa",
+        "newDir": "src/Http",
+        "oldNamespace": "Phalanx\\Stoa",
+        "newNamespace": "Phalanx\\Http",
+        "oldTestNamespace": "Phalanx\\Stoa\\Tests",
+        "newTestNamespace": "Phalanx\\Http\\Tests",
+        "oldPackage": "phalanx-php/stoa",
+        "newPackage": "phalanx-php/http",
+        "oldSplitRepo": "phalanx-stoa",
+        "newSplitRepo": "phalanx-http",
+        "classPrefix": {
+            "old": "Stoa",
+            "new": "Http",
+            "strategy": "rename"
+        }
+    },
+    {
+        "kind": "module",
+        "action": "rename",
+        "old": "Archon",
+        "new": "Console",
+        "oldDir": "src/Archon",
+        "newDir": "src/Console",
+        "oldNamespace": "Phalanx\\Archon",
+        "newNamespace": "Phalanx\\Console",
+        "oldTestNamespace": "Phalanx\\Archon\\Tests",
+        "newTestNamespace": "Phalanx\\Console\\Tests",
+        "oldPackage": "phalanx-php/archon",
+        "newPackage": "phalanx-php/console",
+        "oldSplitRepo": "phalanx-archon",
+        "newSplitRepo": "phalanx-console",
+        "classPrefix": {
+            "old": "Archon",
+            "new": "Console",
+            "strategy": "rename"
+        }
+    },
+    {
+        "kind": "module",
+        "action": "rename",
+        "old": "Argos",
+        "new": "Network",
+        "oldDir": "src/Argos",
+        "newDir": "src/Network",
+        "oldNamespace": "Phalanx\\Argos",
+        "newNamespace": "Phalanx\\Network",
+        "oldTestNamespace": "Phalanx\\Argos\\Tests",
+        "newTestNamespace": "Phalanx\\Network\\Tests",
+        "oldPackage": "phalanx-php/argos",
+        "newPackage": "phalanx-php/network",
+        "oldSplitRepo": "phalanx-argos",
+        "newSplitRepo": "phalanx-network",
+        "classPrefix": {
+            "old": "Argos",
+            "new": "Network",
+            "strategy": "rename"
+        }
+    },
+    {
+        "kind": "module",
+        "action": "rename",
+        "old": "Athena",
+        "new": "Agent",
+        "oldDir": "src/Athena",
+        "newDir": "src/Agent",
+        "oldNamespace": "Phalanx\\Athena",
+        "newNamespace": "Phalanx\\Agent",
+        "oldTestNamespace": "Phalanx\\Athena\\Tests",
+        "newTestNamespace": "Phalanx\\Agent\\Tests",
+        "oldPackage": "phalanx-php/athena",
+        "newPackage": "phalanx-php/agent",
+        "oldSplitRepo": "phalanx-athena",
+        "newSplitRepo": "phalanx-agent",
+        "classPrefix": {
+            "old": "Athena",
+            "new": "Agent",
+            "strategy": "rename"
+        }
+    },
+    {
+        "kind": "module",
+        "action": "unchanged",
+        "old": "Cli",
+        "new": "Cli",
+        "oldDir": "src/Cli",
+        "newDir": "src/Cli",
+        "oldNamespace": "Phalanx\\Cli",
+        "newNamespace": "Phalanx\\Cli",
+        "oldTestNamespace": "Phalanx\\Cli\\Tests",
+        "newTestNamespace": "Phalanx\\Cli\\Tests",
+        "oldPackage": "phalanx-php/cli",
+        "newPackage": "phalanx-php/cli",
+        "oldSplitRepo": "phalanx-cli",
+        "newSplitRepo": "phalanx-cli"
+    },
+    {
+        "kind": "module",
+        "action": "rename",
+        "old": "Enigma",
+        "new": "Ssh",
+        "oldDir": "src/Enigma",
+        "newDir": "src/Ssh",
+        "oldNamespace": "Phalanx\\Enigma",
+        "newNamespace": "Phalanx\\Ssh",
+        "oldTestNamespace": "Phalanx\\Enigma\\Tests",
+        "newTestNamespace": "Phalanx\\Ssh\\Tests",
+        "oldPackage": "phalanx-php/enigma",
+        "newPackage": "phalanx-php/ssh",
+        "oldSplitRepo": "phalanx-enigma",
+        "newSplitRepo": "phalanx-ssh",
+        "classPrefix": {
+            "old": "Enigma",
+            "new": "Ssh",
+            "strategy": "rename"
+        }
+    },
+    {
+        "kind": "module",
+        "action": "rename",
+        "old": "Grammata",
+        "new": "Filesystem",
+        "oldDir": "src/Grammata",
+        "newDir": "src/Filesystem",
+        "oldNamespace": "Phalanx\\Grammata",
+        "newNamespace": "Phalanx\\Filesystem",
+        "oldTestNamespace": "Phalanx\\Grammata\\Tests",
+        "newTestNamespace": "Phalanx\\Filesystem\\Tests",
+        "oldPackage": "phalanx-php/grammata",
+        "newPackage": "phalanx-php/filesystem",
+        "oldSplitRepo": "phalanx-grammata",
+        "newSplitRepo": "phalanx-filesystem",
+        "classPrefix": {
+            "old": "Grammata",
+            "new": "Filesystem",
+            "strategy": "rename"
+        }
+    },
+    {
+        "kind": "module",
+        "action": "rename",
+        "old": "Hermes",
+        "new": "WebSocket",
+        "oldDir": "src/Hermes",
+        "newDir": "src/WebSocket",
+        "oldNamespace": "Phalanx\\Hermes",
+        "newNamespace": "Phalanx\\WebSocket",
+        "oldTestNamespace": "Phalanx\\Hermes\\Tests",
+        "newTestNamespace": "Phalanx\\WebSocket\\Tests",
+        "oldPackage": "phalanx-php/hermes",
+        "newPackage": "phalanx-php/websocket",
+        "oldSplitRepo": "phalanx-hermes",
+        "newSplitRepo": "phalanx-websocket",
+        "classPrefix": {
+            "old": "Hermes",
+            "new": "WebSocket",
+            "strategy": "rename"
+        }
+    },
+    {
+        "kind": "module",
+        "action": "rename",
+        "old": "Hydra",
+        "new": "Worker",
+        "oldDir": "src/Hydra",
+        "newDir": "src/Worker",
+        "oldNamespace": "Phalanx\\Hydra",
+        "newNamespace": "Phalanx\\Worker",
+        "oldTestNamespace": "Phalanx\\Hydra\\Tests",
+        "newTestNamespace": "Phalanx\\Worker\\Tests",
+        "oldPackage": "phalanx-php/hydra",
+        "newPackage": "phalanx-php/worker",
+        "oldSplitRepo": "phalanx-hydra",
+        "newSplitRepo": "phalanx-worker",
+        "classPrefix": {
+            "old": "Hydra",
+            "new": "Worker",
+            "strategy": "rename"
+        }
+    },
+    {
+        "kind": "module",
+        "action": "rename",
+        "old": "Iris",
+        "new": "HttpClient",
+        "oldDir": "src/Iris",
+        "newDir": "src/HttpClient",
+        "oldNamespace": "Phalanx\\Iris",
+        "newNamespace": "Phalanx\\HttpClient",
+        "oldTestNamespace": "Phalanx\\Iris\\Tests",
+        "newTestNamespace": "Phalanx\\HttpClient\\Tests",
+        "oldPackage": "phalanx-php/iris",
+        "newPackage": "phalanx-php/http-client",
+        "oldSplitRepo": "phalanx-iris",
+        "newSplitRepo": "phalanx-http-client",
+        "classPrefix": {
+            "old": "Iris",
+            "new": "HttpClient",
+            "strategy": "rename"
+        }
+    },
+    {
+        "kind": "module",
+        "action": "unchanged",
+        "old": "Mark",
+        "new": "Mark",
+        "oldDir": "src/Mark",
+        "newDir": "src/Mark",
+        "oldNamespace": "Phalanx\\Mark",
+        "newNamespace": "Phalanx\\Mark",
+        "oldTestNamespace": "Phalanx\\Mark\\Tests",
+        "newTestNamespace": "Phalanx\\Mark\\Tests",
+        "oldPackage": "phalanx-php/mark",
+        "newPackage": "phalanx-php/mark",
+        "oldSplitRepo": null,
+        "newSplitRepo": null,
+        "notes": [
+            "Mark has package metadata but is not currently in the split_modules workflow."
+        ]
+    },
+    {
+        "kind": "module",
+        "action": "unchanged",
+        "old": "PHPStan",
+        "new": "PHPStan",
+        "oldDir": "src/PHPStan",
+        "newDir": "src/PHPStan",
+        "oldNamespace": "Phalanx\\PHPStan",
+        "newNamespace": "Phalanx\\PHPStan",
+        "oldTestNamespace": "Phalanx\\PHPStan\\Tests",
+        "newTestNamespace": "Phalanx\\PHPStan\\Tests",
+        "oldPackage": "phalanx-php/phpstan",
+        "newPackage": "phalanx-php/phpstan",
+        "oldSplitRepo": "phalanx-phpstan",
+        "newSplitRepo": "phalanx-phpstan"
+    },
+    {
+        "kind": "module",
+        "action": "rename",
+        "old": "Panoply",
+        "new": "AiProviders",
+        "oldDir": "src/Panoply",
+        "newDir": "src/AiProviders",
+        "oldNamespace": "Phalanx\\Panoply",
+        "newNamespace": "Phalanx\\AiProviders",
+        "oldTestNamespace": "Phalanx\\Panoply\\Tests",
+        "newTestNamespace": "Phalanx\\AiProviders\\Tests",
+        "oldPackage": "phalanx-php/panoply",
+        "newPackage": "phalanx-php/ai-providers",
+        "oldSplitRepo": "phalanx-panoply",
+        "newSplitRepo": "phalanx-ai-providers",
+        "classPrefix": {
+            "old": "Panoply",
+            "new": "AiProviders",
+            "strategy": "rename"
+        }
+    },
+    {
+        "kind": "module",
+        "action": "rename",
+        "old": "Skopos",
+        "new": "DevServer",
+        "oldDir": "src/Skopos",
+        "newDir": "src/DevServer",
+        "oldNamespace": "Phalanx\\Skopos",
+        "newNamespace": "Phalanx\\DevServer",
+        "oldTestNamespace": "Phalanx\\Skopos\\Tests",
+        "newTestNamespace": "Phalanx\\DevServer\\Tests",
+        "oldPackage": "phalanx-php/skopos",
+        "newPackage": "phalanx-php/dev-server",
+        "oldSplitRepo": "phalanx-skopos",
+        "newSplitRepo": "phalanx-dev-server",
+        "classPrefix": {
+            "old": "Skopos",
+            "new": "DevServer",
+            "strategy": "targeted"
+        },
+        "notes": [
+            "The current module already contains a DevServer class; facade/class renames need a collision-aware pass."
+        ]
+    },
+    {
+        "kind": "module",
+        "action": "rename",
+        "old": "Styx",
+        "new": "Stream",
+        "oldDir": "src/Styx",
+        "newDir": "src/Stream",
+        "oldNamespace": "Phalanx\\Styx",
+        "newNamespace": "Phalanx\\Stream",
+        "oldTestNamespace": "Phalanx\\Styx\\Tests",
+        "newTestNamespace": "Phalanx\\Stream\\Tests",
+        "oldPackage": "phalanx-php/styx",
+        "newPackage": "phalanx-php/stream",
+        "oldSplitRepo": "phalanx-styx",
+        "newSplitRepo": "phalanx-stream",
+        "classPrefix": {
+            "old": "Styx",
+            "new": "Stream",
+            "strategy": "rename"
+        }
+    },
+    {
+        "kind": "module",
+        "action": "rename",
+        "old": "Surreal",
+        "new": "SurrealDb",
+        "oldDir": "src/Surreal",
+        "newDir": "src/SurrealDb",
+        "oldNamespace": "Phalanx\\Surreal",
+        "newNamespace": "Phalanx\\SurrealDb",
+        "oldTestNamespace": "Phalanx\\Surreal\\Tests",
+        "newTestNamespace": "Phalanx\\SurrealDb\\Tests",
+        "oldPackage": "phalanx-php/surreal",
+        "newPackage": "phalanx-php/surrealdb",
+        "oldSplitRepo": "phalanx-surreal",
+        "newSplitRepo": "phalanx-surrealdb",
+        "classPrefix": {
+            "old": "Surreal",
+            "new": "SurrealDb",
+            "strategy": "rename"
+        }
+    },
+    {
+        "kind": "module",
+        "action": "rename",
+        "old": "Theatron",
+        "new": "Tui",
+        "oldDir": "src/Theatron",
+        "newDir": "src/Tui",
+        "oldNamespace": "Phalanx\\Theatron",
+        "newNamespace": "Phalanx\\Tui",
+        "oldTestNamespace": "Phalanx\\Theatron\\Tests",
+        "newTestNamespace": "Phalanx\\Tui\\Tests",
+        "oldPackage": "phalanx-php/theatron",
+        "newPackage": "phalanx-php/tui",
+        "oldSplitRepo": "phalanx-theatron",
+        "newSplitRepo": "phalanx-tui",
+        "classPrefix": {
+            "old": "Theatron",
+            "new": "Tui",
+            "strategy": "rename"
+        }
+    },
+    {
+        "kind": "module",
+        "action": "rename",
+        "old": "Themis",
+        "new": "Config",
+        "oldDir": "src/Themis",
+        "newDir": "src/Config",
+        "oldNamespace": "Phalanx\\Themis",
+        "newNamespace": "Phalanx\\Config",
+        "oldTestNamespace": "Phalanx\\Themis\\Tests",
+        "newTestNamespace": "Phalanx\\Config\\Tests",
+        "oldPackage": "phalanx-php/themis",
+        "newPackage": "phalanx-php/config",
+        "oldSplitRepo": "phalanx-themis",
+        "newSplitRepo": "phalanx-config",
+        "classPrefix": {
+            "old": "Themis",
+            "new": "Config",
+            "strategy": "rename"
+        }
+    }
+]

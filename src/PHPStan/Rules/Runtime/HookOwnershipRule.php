@@ -130,7 +130,7 @@ final class HookOwnershipRule implements Rule
     {
         return RuleErrors::build(
             sprintf(
-                'Aegis owns Swoole %s; use RuntimePolicy, RuntimeHooks, or RuntimeCapability instead of configuring hooks in package code.',
+                'Runtime owns Swoole %s; use RuntimePolicy, RuntimeHooks, or RuntimeCapability instead of configuring hooks in package code.',
                 $shape,
             ),
             self::IDENTIFIER,

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\PHPStan\Tests\Rules\Fixtures\Integration;
 
 use Phalanx\Application;
-use Phalanx\Stoa\Stoa;
+use Phalanx\Http\Http;
 
 /**
  * Fixture sitting at a path containing /Integration/ — the UseTestAppRule
@@ -18,8 +18,8 @@ final class UseTestAppViolation
         $app = Application::starting()->compile();
     }
 
-    public function stoaFacade(): void
+    public function httpFacade(): void
     {
-        $stoa = Stoa::starting()->build();
+        $http = Http::starting()->build();
     }
 }

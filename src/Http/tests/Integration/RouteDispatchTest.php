@@ -1,0 +1,277 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Phalanx\Http\Tests\Integration;
+
+use Phalanx\Application;
+use Phalanx\Http\MethodNotAllowedException;
+use Phalanx\Http\RouteConfig;
+use Phalanx\Http\RouteGroup;
+use Phalanx\Http\RouteNotFoundException;
+use Phalanx\Runtime\Tests\Fixtures\Handlers\PrefixingMiddleware;
+use Phalanx\Http\Tests\Fixtures\Routes\ListPosts;
+use Phalanx\Http\Tests\Fixtures\Routes\ListUsers;
+use Phalanx\Http\Tests\Fixtures\Routes\ShowRouteId;
+use Phalanx\Http\Tests\Fixtures\Routes\ShowUserById;
+use Phalanx\Http\Tests\Fixtures\Routes\StatusList;
+use Phalanx\Http\Tests\Fixtures\Routes\StatusOk;
+use Phalanx\Http\Tests\Fixtures\Routes\StatusPosts;
+use Phalanx\Http\Tests\Fixtures\Routes\StatusShow;
+use Phalanx\Http\Tests\Fixtures\Routes\StatusUsers;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\UriInterface;
+
+final class RouteDispatchTest extends TestCase
+{
+    private Application $app;
+
+    #[Test]
+    public function dispatches_route_by_request_attribute(): void
+    {
+        $group = RouteGroup::of([
+            'GET /users' => ListUsers::class,
+            'GET /posts' => ListPosts::class,
+        ]);
+
+        $request = $this->createRequest('GET', '/users');
+
+        $result = $this->dispatch($group, $request);
+
+        $this->assertSame(['users' => []], $result);
+    }
+
+    #[Test]
+    public function extracts_route_params_to_attributes(): void
+    {
+        $group = RouteGroup::of([
+            'GET /users/{id}' => ShowUserById::class,
+        ]);
+
+        $request = $this->createRequest('GET', '/users/42');
+
+        $result = $this->dispatch($group, $request);
+
+        $this->assertSame('42', $result['id']);
+        $this->assertSame(['id' => '42'], $result['params']);
+    }
+
+    #[Test]
+    public function fast_route_aliases_constrain_route_params(): void
+    {
+        $group = RouteGroup::of([
+            'GET /users/{id:int}' => ShowRouteId::class,
+        ]);
+
+        self::assertSame('42', $this->dispatch($group, $this->createRequest('GET', '/users/42')));
+
+        $this->expectException(RouteNotFoundException::class);
+
+        $this->dispatch($group, $this->createRequest('GET', '/users/int'));
+    }
+
+    #[Test]
+    public function fast_route_aliases_use_default_pattern_set(): void
+    {
+        $group = RouteGroup::of([
+            'GET /posts/{id:slug}' => ShowRouteId::class,
+        ]);
+
+        self::assertSame('hello-world', $this->dispatch($group, $this->createRequest('GET', '/posts/hello-world')));
+
+        $this->expectException(RouteNotFoundException::class);
+
+        $this->dispatch($group, $this->createRequest('GET', '/posts/HelloWorld'));
+    }
+
+    #[Test]
+    public function with_patterns_recompiles_existing_fast_route_paths(): void
+    {
+        $group = RouteGroup::of([
+            'GET /codes/{id:code}' => ShowRouteId::class,
+        ])->withPatterns(['code' => '[A-Z]+']);
+
+        self::assertSame('ABC', $this->dispatch($group, $this->createRequest('GET', '/codes/ABC')));
+
+        $this->expectException(RouteNotFoundException::class);
+
+        $this->dispatch($group, $this->createRequest('GET', '/codes/abc'));
+    }
+
+    #[Test]
+    public function throws_when_no_route_matches(): void
+    {
+        $group = RouteGroup::of([
+            'GET /users' => ListUsers::class,
+        ]);
+
+        $request = $this->createRequest('GET', '/posts');
+
+        $this->expectException(\Phalanx\Http\RouteNotFoundException::class);
+        $this->expectExceptionMessage('No route matches GET /posts');
+
+        $this->dispatch($group, $request);
+    }
+
+    #[Test]
+    public function throws_method_not_allowed_with_fast_route_allowed_methods(): void
+    {
+        $group = RouteGroup::of([
+            'GET,POST /resource' => StatusOk::class,
+        ]);
+
+        try {
+            $this->dispatch($group, $this->createRequest('DELETE', '/resource'));
+            $this->fail('Expected MethodNotAllowedException');
+        } catch (MethodNotAllowedException $e) {
+            self::assertSame(['GET', 'POST'], $e->allowedMethods);
+        }
+    }
+
+    #[Test]
+    public function applies_group_middleware(): void
+    {
+        $group = RouteGroup::of([
+            'GET /test' => StatusOk::class,
+        ])->wrap(PrefixingMiddleware::class);
+
+        $request = $this->createRequest('GET', '/test');
+
+        $result = $this->dispatch($group, $request);
+
+        $this->assertSame('before:ok:after', $result);
+    }
+
+    #[Test]
+    public function matches_multiple_methods(): void
+    {
+        $group = RouteGroup::of([
+            'GET,POST /resource' => StatusOk::class,
+        ]);
+
+        foreach (['GET', 'POST'] as $method) {
+            $request = $this->createRequest($method, '/resource');
+
+            $result = $this->dispatch($group, $request);
+
+            $this->assertSame('ok', $result);
+        }
+    }
+
+    #[Test]
+    public function mount_prefixes_routes(): void
+    {
+        $group = RouteGroup::of([
+            'GET /users' => StatusList::class,
+            'GET /users/{id}' => ShowRouteId::class,
+        ]);
+
+        $mounted = RouteGroup::of([])->mount('/api/v1', $group);
+
+        $this->assertContains('GET /api/v1/users', $mounted->keys());
+        $this->assertContains('GET /api/v1/users/{id}', $mounted->keys());
+
+        $request = $this->createRequest('GET', '/api/v1/users/42');
+
+        $result = $this->dispatch($mounted, $request);
+
+        $this->assertSame('42', $result);
+    }
+
+    #[Test]
+    public function mount_preserves_wrapped_group_middleware_without_leaking_to_siblings(): void
+    {
+        $public = RouteGroup::of([
+            'GET /public' => StatusOk::class,
+        ]);
+        $admin = RouteGroup::of([
+            'GET /admin' => StatusOk::class,
+        ])->wrap(PrefixingMiddleware::class);
+
+        $mounted = RouteGroup::of([])
+            ->mount('/api', $public)
+            ->mount('/api', $admin);
+
+        self::assertSame('ok', $this->dispatch($mounted, $this->createRequest('GET', '/api/public')));
+        self::assertSame('before:ok:after', $this->dispatch($mounted, $this->createRequest('GET', '/api/admin')));
+    }
+
+    #[Test]
+    public function mount_preserves_fast_route_alias_constraints(): void
+    {
+        $group = RouteGroup::of([
+            'GET /users/{id:int}' => ShowRouteId::class,
+        ]);
+
+        $mounted = RouteGroup::of([])->mount('/api/v1', $group);
+
+        self::assertSame('42', $this->dispatch($mounted, $this->createRequest('GET', '/api/v1/users/42')));
+
+        $this->expectException(RouteNotFoundException::class);
+
+        $this->dispatch($mounted, $this->createRequest('GET', '/api/v1/users/int'));
+    }
+
+    #[Test]
+    public function route_group_keys_and_merge(): void
+    {
+        $group1 = RouteGroup::of([
+            'GET /users' => StatusUsers::class,
+        ]);
+
+        $group2 = RouteGroup::of([
+            'GET /posts' => StatusPosts::class,
+        ]);
+
+        $merged = $group1->merge($group2);
+
+        $this->assertCount(2, $merged->keys());
+        $this->assertContains('GET /users', $merged->keys());
+        $this->assertContains('GET /posts', $merged->keys());
+    }
+
+    #[Test]
+    public function compiles_route_pattern_from_key(): void
+    {
+        $group = RouteGroup::of([
+            'GET /users/{id}' => StatusShow::class,
+        ]);
+
+        $handler = $group->handlers()->get('GET /users/{id}');
+
+        $this->assertNotNull($handler);
+        $this->assertInstanceOf(RouteConfig::class, $handler->config);
+        $this->assertSame(['id'], $handler->config->paramNames);
+        $this->assertSame('/users/{id}', $handler->config->fastRoutePath);
+    }
+
+    protected function setUp(): void
+    {
+        $this->app = Application::starting()->compile();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->app->shutdown();
+    }
+
+    private function createRequest(string $method, string $path): ServerRequestInterface
+    {
+        $uri = $this->createStub(UriInterface::class);
+        $uri->method('getPath')->willReturn($path);
+
+        $request = $this->createStub(ServerRequestInterface::class);
+        $request->method('getMethod')->willReturn($method);
+        $request->method('getUri')->willReturn($uri);
+        $request->method('getQueryParams')->willReturn([]);
+
+        return $request;
+    }
+
+    private function dispatch(RouteGroup $group, ServerRequestInterface $request): mixed
+    {
+        return $group->dispatch($request, $this->app->createScope());
+    }
+}

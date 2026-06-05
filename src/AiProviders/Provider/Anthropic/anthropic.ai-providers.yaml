@@ -1,0 +1,36 @@
+id: anthropic
+display_name: "Anthropic"
+models:
+  - name: claude-opus-4-7
+    model_id: claude-opus-4-7
+    aliases: ["opus", "opus-4", "opus-latest"]
+    capabilities:
+      closed: ["reasoning", "tool-use", "vision", "structured-output", "extended-thinking"]
+      custom: []
+    input_pricing: 0.015
+    output_pricing: 0.075
+  - name: claude-sonnet-4-6
+    model_id: claude-sonnet-4-6
+    aliases: ["sonnet", "sonnet-4", "sonnet-latest"]
+    capabilities:
+      closed: ["reasoning", "tool-use", "vision", "structured-output"]
+      custom: []
+    input_pricing: 0.003
+    output_pricing: 0.015
+  - name: claude-haiku-3-5
+    model_id: claude-haiku-3-5
+    aliases: ["haiku", "haiku-3", "haiku-latest"]
+    capabilities:
+      closed: ["reasoning", "tool-use", "vision", "structured-output"]
+      custom: []
+    input_pricing: 0.00025
+    output_pricing: 0.00125
+capabilities:
+  closed: ["reasoning", "tool-use", "vision", "structured-output", "extended-thinking", "prompt-caching"]
+  custom: []
+transport:
+  streaming: true
+  cancellable: true
+  backpressure: true
+  partial_json: true
+wire_translator: "Phalanx\\AiProviders\\Provider\\Anthropic\\Provider"

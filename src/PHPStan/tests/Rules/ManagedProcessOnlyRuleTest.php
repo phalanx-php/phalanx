@@ -19,16 +19,16 @@ final class ManagedProcessOnlyRuleTest extends RuleTestCase
         $this->analyse(
             [__DIR__ . '/Fixtures/managed-process-only.php'],
             [
-                ['Subprocesses must be Aegis-managed resources; use Phalanx\System\StreamingProcess instead of proc_open() in package code.', 16],
-                ['Subprocesses must be Aegis-managed resources; use Phalanx\System\StreamingProcess instead of proc_get_status() in package code.', 17],
-                ['Subprocesses must be Aegis-managed resources; use Phalanx\System\StreamingProcess instead of proc_terminate() in package code.', 18],
-                ['Subprocesses must be Aegis-managed resources; use Phalanx\System\StreamingProcess instead of proc_close() in package code.', 19],
-                ['Subprocesses must be Aegis-managed resources; use Phalanx\System\StreamingProcess instead of Symfony\Component\Process\Process construction in package code.', 21],
-                ['Subprocesses must be Aegis-managed resources; use Phalanx\System\StreamingProcess instead of Symfony\Component\Process\Process::fromShellCommandline() in package code.', 22],
-                ['Subprocesses must be Aegis-managed resources; use Phalanx\System\StreamingProcess instead of Swoole\Process construction in package code.', 23],
-                ['Subprocesses must be Aegis-managed resources; use Phalanx\System\StreamingProcess instead of Swoole\Process\Pool construction in package code.', 25],
-                ['Subprocesses must be Aegis-managed resources; use Phalanx\System\StreamingProcess instead of Swoole\Process construction in package code.', 26],
-                ['Subprocesses must be Aegis-managed resources; use Phalanx\System\StreamingProcess instead of Swoole\Process\Pool construction in package code.', 28],
+                ['Subprocesses must be Runtime-managed resources; use Phalanx\System\StreamingProcess instead of proc_open() in package code.', 16],
+                ['Subprocesses must be Runtime-managed resources; use Phalanx\System\StreamingProcess instead of proc_get_status() in package code.', 17],
+                ['Subprocesses must be Runtime-managed resources; use Phalanx\System\StreamingProcess instead of proc_terminate() in package code.', 18],
+                ['Subprocesses must be Runtime-managed resources; use Phalanx\System\StreamingProcess instead of proc_close() in package code.', 19],
+                ['Subprocesses must be Runtime-managed resources; use Phalanx\System\StreamingProcess instead of Symfony\Component\Process\Process construction in package code.', 21],
+                ['Subprocesses must be Runtime-managed resources; use Phalanx\System\StreamingProcess instead of Symfony\Component\Process\Process::fromShellCommandline() in package code.', 22],
+                ['Subprocesses must be Runtime-managed resources; use Phalanx\System\StreamingProcess instead of Swoole\Process construction in package code.', 23],
+                ['Subprocesses must be Runtime-managed resources; use Phalanx\System\StreamingProcess instead of Swoole\Process\Pool construction in package code.', 25],
+                ['Subprocesses must be Runtime-managed resources; use Phalanx\System\StreamingProcess instead of Swoole\Process construction in package code.', 26],
+                ['Subprocesses must be Runtime-managed resources; use Phalanx\System\StreamingProcess instead of Swoole\Process\Pool construction in package code.', 28],
             ],
         );
     }

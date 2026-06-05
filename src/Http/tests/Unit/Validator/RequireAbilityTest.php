@@ -1,0 +1,93 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Phalanx\Http\Tests\Unit\Validator;
+
+use GuzzleHttp\Psr7\ServerRequest;
+use Phalanx\Application;
+use Phalanx\Auth\AuthContext;
+use Phalanx\Auth\AuthorizationException;
+use Phalanx\Auth\Identity;
+use Phalanx\Http\AuthExecutionContext;
+use Phalanx\Http\ExecutionContext;
+use Phalanx\Http\QueryParams;
+use Phalanx\Http\RouteConfig;
+use Phalanx\Http\RouteParams;
+use Phalanx\Http\Validator\RequireAbility;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+
+final class RequireAbilityTest extends TestCase
+{
+    private Application $app;
+
+    #[Test]
+    public function returns_empty_when_user_has_ability(): void
+    {
+        $auth = AuthContext::authenticated(new TestAbilityIdentity(1), null, ['admin', 'write']);
+        $scope = new AuthExecutionContext($this->createRequestContext(), $auth);
+
+        $v = new RequireAbility('admin');
+
+        self::assertSame([], $v->validate(null, $scope));
+    }
+
+    #[Test]
+    public function throws_when_user_lacks_ability(): void
+    {
+        $auth = AuthContext::authenticated(new TestAbilityIdentity(1), null, ['read']);
+        $scope = new AuthExecutionContext($this->createRequestContext(), $auth);
+
+        $v = new RequireAbility('admin');
+
+        $this->expectException(AuthorizationException::class);
+        $v->validate(null, $scope);
+    }
+
+    #[Test]
+    public function throws_when_scope_is_not_authenticated(): void
+    {
+        $scope = $this->createRequestContext();
+
+        $v = new RequireAbility('admin');
+
+        $this->expectException(AuthorizationException::class);
+        $v->validate(null, $scope);
+    }
+
+    protected function setUp(): void
+    {
+        $this->app = Application::starting()->compile();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->app->shutdown();
+    }
+
+    private function createRequestContext(): ExecutionContext
+    {
+        $inner = $this->app->createScope();
+        $request = new ServerRequest('GET', '/test');
+
+        return new ExecutionContext(
+            $inner,
+            $request,
+            new RouteParams([]),
+            new QueryParams([]),
+            new RouteConfig(),
+        );
+    }
+}
+
+final class TestAbilityIdentity implements Identity
+{
+    public string|int $id {
+        get => $this->identityId;
+    }
+
+    public function __construct(private readonly string|int $identityId)
+    {
+    }
+}

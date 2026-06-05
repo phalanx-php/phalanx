@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Demos\Kit;
 
-use Phalanx\Panoply\Provider;
+use Phalanx\AiProviders\Provider;
 
 /**
  * Resolved provider choice from {@see DemoProvider::ollamaOrFake()}.

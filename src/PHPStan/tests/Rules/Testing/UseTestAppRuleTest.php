@@ -24,7 +24,7 @@ final class UseTestAppRuleTest extends RuleTestCase
                     18,
                 ],
                 [
-                    'Integration tests should boot through PhalanxTestCase::testApp() instead of Phalanx\\Stoa\\Stoa::starting(). '
+                    'Integration tests should boot through PhalanxTestCase::testApp() instead of Phalanx\\Http\\Http::starting(). '
                     . 'Bypassing TestApp skips lens activation, fake registry resets, and ledger teardown assertions.',
                     23,
                 ],

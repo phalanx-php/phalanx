@@ -13,24 +13,24 @@ jobs:
       fail-fast: false
       matrix:
         package:
-          - { local_path: 'src/Aegis', split_repository: 'phalanx-aegis' }
-          - { local_path: 'src/Archon', split_repository: 'phalanx-archon' }
-          - { local_path: 'src/Argos', split_repository: 'phalanx-argos' }
-          - { local_path: 'src/Athena', split_repository: 'phalanx-athena' }
+          - { local_path: 'src/Runtime', split_repository: 'phalanx-runtime' }
+          - { local_path: 'src/Console', split_repository: 'phalanx-console' }
+          - { local_path: 'src/Network', split_repository: 'phalanx-network' }
+          - { local_path: 'src/Agent', split_repository: 'phalanx-agent' }
           - { local_path: 'src/Cli', split_repository: 'phalanx-cli' }
-          - { local_path: 'src/Enigma', split_repository: 'phalanx-enigma' }
-          - { local_path: 'src/Grammata', split_repository: 'phalanx-grammata' }
-          - { local_path: 'src/Hermes', split_repository: 'phalanx-hermes' }
-          - { local_path: 'src/Hydra', split_repository: 'phalanx-hydra' }
-          - { local_path: 'src/Iris', split_repository: 'phalanx-iris' }
+          - { local_path: 'src/Ssh', split_repository: 'phalanx-ssh' }
+          - { local_path: 'src/Filesystem', split_repository: 'phalanx-filesystem' }
+          - { local_path: 'src/WebSocket', split_repository: 'phalanx-websocket' }
+          - { local_path: 'src/Worker', split_repository: 'phalanx-worker' }
+          - { local_path: 'src/HttpClient', split_repository: 'phalanx-http-client' }
           - { local_path: 'src/PHPStan', split_repository: 'phalanx-phpstan' }
-          - { local_path: 'src/Panoply', split_repository: 'phalanx-panoply' }
-          - { local_path: 'src/Skopos', split_repository: 'phalanx-skopos' }
-          - { local_path: 'src/Stoa', split_repository: 'phalanx-stoa' }
-          - { local_path: 'src/Styx', split_repository: 'phalanx-styx' }
-          - { local_path: 'src/Surreal', split_repository: 'phalanx-surreal' }
-          - { local_path: 'src/Theatron', split_repository: 'phalanx-theatron' }
-          - { local_path: 'src/Themis', split_repository: 'phalanx-themis' }
+          - { local_path: 'src/AiProviders', split_repository: 'phalanx-ai-providers' }
+          - { local_path: 'src/DevServer', split_repository: 'phalanx-dev-server' }
+          - { local_path: 'src/Http', split_repository: 'phalanx-http' }
+          - { local_path: 'src/Stream', split_repository: 'phalanx-stream' }
+          - { local_path: 'src/SurrealDb', split_repository: 'phalanx-surrealdb' }
+          - { local_path: 'src/Tui', split_repository: 'phalanx-tui' }
+          - { local_path: 'src/Config', split_repository: 'phalanx-config' }
 
     steps:
       - uses: actions/checkout@v4

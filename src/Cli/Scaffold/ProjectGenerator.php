@@ -89,8 +89,8 @@ final class ProjectGenerator
     private static function composerTemplate(ProjectType $type): string
     {
         $framework = match ($type) {
-            ProjectType::Api => '"phalanx-php/stoa": "^0.6"',
-            ProjectType::Console => '"phalanx-php/archon": "^0.6"',
+            ProjectType::Api => '"phalanx-php/http": "^0.6"',
+            ProjectType::Console => '"phalanx-php/console": "^0.6"',
         };
 
         $bin = match ($type) {
@@ -107,7 +107,7 @@ final class ProjectGenerator
     "require": {
         "php": "^8.4",
         "ext-swoole": "^6.0",
-        "phalanx-php/aegis": "^0.6",
+        "phalanx-php/runtime": "^0.6",
         {$framework},
         "symfony/runtime": "^7.0"
     },
@@ -131,10 +131,10 @@ declare(strict_types=1);
 
 require __DIR__ . '/../vendor/autoload_runtime.php';
 
-use Phalanx\Stoa\Stoa;
+use Phalanx\Http\Http;
 
 return static function (array $context): void {
-    Stoa::starting($context)
+    Http::starting($context)
         ->routes(__DIR__ . '/../routes.php')
         ->listen('127.0.0.1:8080')
         ->run();
@@ -150,7 +150,7 @@ TEMPLATE;
 declare(strict_types=1);
 
 use {{namespace}}\Routes\Home;
-use Phalanx\Stoa\RouteGroup;
+use Phalanx\Http\RouteGroup;
 
 return RouteGroup::of([
     'GET /' => Home::class,
@@ -167,7 +167,7 @@ declare(strict_types=1);
 
 namespace {{namespace}}\Routes;
 
-use Phalanx\Stoa\RequestContext;
+use Phalanx\Http\RequestContext;
 use Phalanx\Task\Scopeable;
 
 final class Home implements Scopeable
@@ -194,11 +194,11 @@ declare(strict_types=1);
 
 require __DIR__ . '/../vendor/autoload_runtime.php';
 
-use Phalanx\Archon\Application\Archon;
-use Phalanx\Archon\Console\Style\ConsoleServiceBundle;
+use Phalanx\Console\Application\Console;
+use Phalanx\Console\Console\Style\ConsoleServiceBundle;
 
 return static function (array $context): int {
-    return Archon::starting($context)
+    return Console::starting($context)
         ->providers(new ConsoleServiceBundle())
         ->commands(__DIR__ . '/../commands.php')
         ->run();
@@ -214,7 +214,7 @@ TEMPLATE;
 declare(strict_types=1);
 
 use {{namespace}}\Commands\Hello;
-use Phalanx\Archon\Command\CommandGroup;
+use Phalanx\Console\Command\CommandGroup;
 
 return CommandGroup::of([
     'hello' => Hello::class,
@@ -231,11 +231,11 @@ declare(strict_types=1);
 
 namespace {{namespace}}\Commands;
 
-use Phalanx\Archon\Command\Arg;
-use Phalanx\Archon\Command\CommandConfig;
-use Phalanx\Archon\Command\CommandContext;
-use Phalanx\Archon\Command\DescribesCommand;
-use Phalanx\Archon\Console\Output\StreamOutput;
+use Phalanx\Console\Command\Arg;
+use Phalanx\Console\Command\CommandConfig;
+use Phalanx\Console\Command\CommandContext;
+use Phalanx\Console\Command\DescribesCommand;
+use Phalanx\Console\Console\Output\StreamOutput;
 use Phalanx\Task\Scopeable;
 
 final class Hello implements Scopeable, DescribesCommand

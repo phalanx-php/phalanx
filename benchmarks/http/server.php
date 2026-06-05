@@ -6,9 +6,9 @@ declare(strict_types=1);
 require __DIR__ . '/../../vendor/autoload_runtime.php';
 
 use GuzzleHttp\Psr7\Response;
-use Phalanx\Stoa\RequestContext;
-use Phalanx\Stoa\RouteGroup;
-use Phalanx\Stoa\Stoa;
+use Phalanx\Http\RequestContext;
+use Phalanx\Http\RouteGroup;
+use Phalanx\Http\Http;
 use Phalanx\Task\Scopeable;
 
 final class JsonHandler implements Scopeable
@@ -31,7 +31,7 @@ final class PlaintextHandler implements Scopeable
 return static fn(array $context): \Closure => static function () use ($context): int {
     $listen = $context['argv'][1] ?? '0.0.0.0:8080';
 
-    return Stoa::starting($context)
+    return Http::starting($context)
         ->routes(RouteGroup::of([
             'GET /json'      => JsonHandler::class,
             'GET /plaintext' => PlaintextHandler::class,

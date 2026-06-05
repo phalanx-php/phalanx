@@ -1,0 +1,59 @@
+<?php
+
+declare(strict_types=1);
+
+require __DIR__ . '/../../../vendor/autoload_runtime.php';
+
+use Phalanx\Console\Application\Console;
+use Phalanx\Console\Command\CommandGroup;
+use Phalanx\Console\Console\Output\StreamOutput;
+use Phalanx\Console\Console\Output\TerminalEnvironment;
+use Phalanx\Boot\AppContext;
+use Phalanx\Demos\Console\BasicCommands\DebugDeadlockCommand;
+use Phalanx\Demos\Console\BasicCommands\GreetCommand;
+use Phalanx\Demos\Console\BasicCommands\InfoCommand;
+use Phalanx\Demos\Console\BasicCommands\OutputBundle;
+use Phalanx\Demos\Console\BasicCommands\VersionCommand;
+use Phalanx\Demos\Kit\DemoReport;
+
+return DemoReport::demo(
+    'Console Basic Commands',
+    static function (DemoReport $report, AppContext $_context): void {
+        $commands = CommandGroup::of([
+            'greet'          => GreetCommand::class,
+            'version'        => VersionCommand::class,
+            'info'           => InfoCommand::class,
+            'debug:deadlock' => DebugDeadlockCommand::class,
+        ]);
+
+        $runCase = static function (string $label, array $argv, string $expected) use ($commands, $report): void {
+            $stream = fopen('php://temp', 'w+');
+            if ($stream === false) {
+                throw new \RuntimeException('php://temp unavailable');
+            }
+            $capture = new StreamOutput($stream, new TerminalEnvironment(columns: 80, lines: 24));
+
+            $app = Console::starting(['argv' => array_merge(['demo'], $argv)])
+                ->providers(new OutputBundle($capture))
+                ->commands($commands)
+                ->build();
+
+            $code = $app->run();
+            $app->shutdown();
+
+            rewind($stream);
+            $captured = (string) stream_get_contents($stream);
+            fclose($stream);
+
+            $ok = $code === 0 && str_contains($captured, $expected);
+            $detail = sprintf("expected substring: %s\nexit code: %d\noutput:\n%s", $expected, $code, $captured);
+            $report->record($label, $ok, $ok ? '' : $detail);
+        };
+
+        $runCase('greet Ada',             ['greet', 'Ada'],             'Hello, Ada.');
+        $runCase('version',               ['version'],                  'console-demo 0.2.0-alpha');
+        $runCase('info --shout',          ['info', '--shout'],          'PHALANX ARCHON');
+        $runCase('debug:deadlock',        ['debug:deadlock'],           '[DEADLOCK REPORT]');
+        $runCase('debug:deadlock --json', ['debug:deadlock', '--json'], '"coroutineCount":');
+    },
+);

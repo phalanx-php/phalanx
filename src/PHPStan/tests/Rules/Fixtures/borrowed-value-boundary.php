@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\PHPStan\Tests\Rules\Fixtures;
 
 use Phalanx\Pool\BorrowedValue;
-use Phalanx\Styx\Channel;
+use Phalanx\Stream\Channel;
 
 final class BorrowedAgentEvent implements BorrowedValue
 {

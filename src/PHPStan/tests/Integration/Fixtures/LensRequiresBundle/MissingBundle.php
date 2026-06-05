@@ -11,15 +11,15 @@ use PHPUnit\Framework\Attributes\Test;
 /**
  * Fixture sitting at a path containing /Integration/ — the
  * LensRequiresBundleRule is active here. Accessing $app->http without
- * registering StoaTestableBundle MUST trigger the rule because no
+ * registering HttpTestableBundle MUST trigger the rule because no
  * bundle in the testApp() call declares HttpLens.
  */
 final class MissingBundle extends PhalanxTestCase
 {
     #[Test]
-    public function httpLensWithoutStoaBundle(): void
+    public function httpLensWithoutHttpBundle(): void
     {
-        // No StoaTestableBundle passed — HttpLens is not in any bundle's lens() declaration.
+        // No HttpTestableBundle passed — HttpLens is not in any bundle's lens() declaration.
         $app = $this->testApp(new AppContext());
 
         $lens = $app->http;

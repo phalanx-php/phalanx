@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\PHPStan\Tests\Rules\Testing;
 
 use Phalanx\PHPStan\Rules\Testing\LensRequiresBundleRule;
-use Phalanx\Stoa\Testing\HttpLens;
+use Phalanx\Http\Testing\HttpLens;
 use PHPStan\Rules\Rule;
 use PHPStan\Testing\RuleTestCase;
 

@@ -1,0 +1,37 @@
+id: gemini
+display_name: "Google Gemini"
+base_url: "https://generativelanguage.googleapis.com"
+models:
+  - name: gemini-2.5-pro
+    model_id: gemini-2.5-pro
+    aliases: ["pro", "gemini-pro", "gemini-2.5-pro-latest"]
+    capabilities:
+      closed: ["reasoning", "tool-use", "vision", "structured-output", "extended-thinking"]
+      custom: []
+    input_pricing: 0.00125
+    output_pricing: 0.005
+  - name: gemini-2.5-flash
+    model_id: gemini-2.5-flash
+    aliases: ["flash", "gemini-flash"]
+    capabilities:
+      closed: ["reasoning", "tool-use", "vision", "structured-output"]
+      custom: []
+    input_pricing: 0.00015
+    output_pricing: 0.0006
+  - name: gemini-2.0-flash
+    model_id: gemini-2.0-flash
+    aliases: ["flash-2", "gemini-2-flash"]
+    capabilities:
+      closed: ["tool-use", "vision"]
+      custom: []
+    input_pricing: 0.0001
+    output_pricing: 0.0004
+capabilities:
+  closed: ["reasoning", "tool-use", "vision", "structured-output", "extended-thinking"]
+  custom: []
+transport:
+  streaming: true
+  cancellable: true
+  backpressure: true
+  partial_json: false
+wire_translator: "Phalanx\\AiProviders\\Provider\\Gemini\\Provider"

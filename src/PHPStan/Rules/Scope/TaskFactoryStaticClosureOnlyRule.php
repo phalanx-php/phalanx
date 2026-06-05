@@ -43,7 +43,7 @@ final class TaskFactoryStaticClosureOnlyRule implements Rule
         $method = NodeNames::calledMethodName($node);
 
         $isTask = $class === 'Phalanx\\Task\\Task' && in_array($method, ['named', 'of'], true);
-        $isEmitter = $class === 'Phalanx\\Styx\\Emitter' && $method === 'produce';
+        $isEmitter = $class === 'Phalanx\\Stream\\Emitter' && $method === 'produce';
 
         if (!$isTask && !$isEmitter) {
             return [];

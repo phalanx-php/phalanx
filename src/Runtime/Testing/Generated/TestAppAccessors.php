@@ -1,0 +1,44 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Phalanx\Testing\Generated;
+
+use Phalanx\Console\Testing\ConsoleLens;
+use Phalanx\Http\Testing\HttpLens;
+use Phalanx\Testing\Lenses\LedgerLens;
+use Phalanx\Testing\Lenses\RuntimeLens;
+use Phalanx\Testing\Lenses\ScopeLens;
+
+/**
+ * @generated
+ *
+ * Generator:   AccessorTraitWriter
+ * Package:     phalanx-runtime
+ * Regenerate:  composer dump-autoload
+ *
+ * This file is auto-generated. Do not edit — changes are
+ * overwritten on the next generation pass.
+ */
+trait TestAppAccessors
+{
+    public ConsoleLens $console {
+        get => $this->lens(ConsoleLens::class);
+    }
+
+    public HttpLens $http {
+        get => $this->lens(HttpLens::class);
+    }
+
+    public LedgerLens $ledger {
+        get => $this->lens(LedgerLens::class);
+    }
+
+    public RuntimeLens $runtime {
+        get => $this->lens(RuntimeLens::class);
+    }
+
+    public ScopeLens $scope {
+        get => $this->lens(ScopeLens::class);
+    }
+}

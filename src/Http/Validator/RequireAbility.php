@@ -1,0 +1,40 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Phalanx\Http\Validator;
+
+use Phalanx\Auth\AuthorizationException;
+use Phalanx\Http\AuthRequestContext;
+use Phalanx\Http\Contract\RouteValidator;
+use Phalanx\Http\RequestContext;
+
+/**
+ * Route validator that requires the authenticated user to hold a specific ability.
+ *
+ * Throws AuthorizationException (403) rather than returning field errors --
+ * authorization failures are a structural rejection, not a field-level
+ * validation problem. The runner's ToResponse handling converts this to
+ * the appropriate HTTP response.
+ *
+ * Requires the context to be an AuthRequestContext. If the context is not
+ * authenticated, throws AuthorizationException. Apply Authenticate middleware
+ * before routes that use this validator.
+ */
+final class RequireAbility implements RouteValidator
+{
+    public function __construct(private readonly string $ability)
+    {
+    }
+
+    public function validate(object|null $input, RequestContext $ctx): array
+    {
+        if (!$ctx instanceof AuthRequestContext || !$ctx->auth->can($this->ability)) {
+            throw new AuthorizationException(
+                "Requires ability: {$this->ability}",
+            );
+        }
+
+        return [];
+    }
+}

@@ -1,0 +1,59 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Phalanx\Console\Tests\Unit\Runtime\Identity;
+
+use Phalanx\Console\Runtime\Identity\ConsoleSignalPolicy;
+use Phalanx\Console\Runtime\Identity\ConsoleSignalTrap;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+
+final class ConsoleSignalTrapTest extends TestCase
+{
+    #[Test]
+    public function disabledTrapIsANoop(): void
+    {
+        $trap = ConsoleSignalTrap::install(ConsoleSignalPolicy::disabled(), static function (): void {
+            self::fail('Disabled signal trap should not register callbacks.');
+        });
+
+        $trap->restore();
+
+        self::assertInstanceOf(ConsoleSignalTrap::class, $trap);
+    }
+
+    #[Test]
+    public function defaultPolicyReflectsSwooleAvailability(): void
+    {
+        $policy = ConsoleSignalPolicy::default();
+
+        if (!extension_loaded('swoole')) {
+            self::assertSame([], $policy->exitCodes());
+            return;
+        }
+
+        self::assertNotSame([], $policy->exitCodes());
+    }
+
+    #[Test]
+    public function installWithEmptyPolicyIsANoop(): void
+    {
+        $trap = ConsoleSignalTrap::install(ConsoleSignalPolicy::disabled(), static function (): void {
+            self::fail('No callback should fire for an empty policy.');
+        });
+        $trap->restore();
+
+        self::assertInstanceOf(ConsoleSignalTrap::class, $trap);
+    }
+
+    #[Test]
+    public function restoreOnUninstalledTrapIsIdempotent(): void
+    {
+        $trap = ConsoleSignalTrap::install(ConsoleSignalPolicy::disabled(), static fn() => null);
+        $trap->restore();
+        $trap->restore();
+
+        self::assertInstanceOf(ConsoleSignalTrap::class, $trap);
+    }
+}

@@ -1,25 +1,25 @@
 # Phalanx Benchmarks
 
-Benchmarks start with the Aegis kernel, then rolling outward as more of the framework surface becomes real.
+Benchmarks start with the Runtime kernel, then rolling outward as more of the framework surface becomes real.
 
 ## Kernel benchmarks
 
 ```bash
-composer bench:aegis
-composer bench:aegis -- --case=scope_create_dispose
-composer bench:aegis -- --format=json
-composer bench:aegis -- --baseline=baseline.json
+composer bench:runtime
+composer bench:runtime -- --case=scope_create_dispose
+composer bench:runtime -- --format=json
+composer bench:runtime -- --baseline=baseline.json
 ```
 
 ## HTTP dispatch benchmarks
 
 ```bash
-composer bench:stoa
+composer bench:http
 ```
 
 ## HTTP server (wrk)
 
-Standalone Stoa server for external load testing with wrk, siege, or ab.
+Standalone Http server for external load testing with wrk, siege, or ab.
 
 ```bash
 composer bench:wrk

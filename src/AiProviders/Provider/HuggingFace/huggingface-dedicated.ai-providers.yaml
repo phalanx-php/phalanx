@@ -1,0 +1,21 @@
+id: huggingface_dedicated
+display_name: "Hugging Face Inference Endpoints"
+base_url: "https://your-endpoint.endpoints.huggingface.cloud"
+models:
+  - name: local-dedicated
+    model_id: tgi
+    aliases: ["dedicated", "endpoint"]
+    capabilities:
+      closed: []
+      custom: []
+    input_pricing: 0
+    output_pricing: 0
+capabilities:
+  closed: []
+  custom: []
+transport:
+  streaming: true
+  cancellable: true
+  backpressure: true
+  partial_json: true
+wire_translator: "Phalanx\\AiProviders\\Provider\\OpenAI\\ChatProvider"

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Phalanx\Demos\Kit;
 
-use Phalanx\Panoply\Cue\Output\Channel;
-use Phalanx\Panoply\Cue\Output\TokenDelta;
-use Phalanx\Panoply\Cue\Output\TokenStop;
-use Phalanx\Panoply\Cue\StopReason;
+use Phalanx\AiProviders\Cue\Output\Channel;
+use Phalanx\AiProviders\Cue\Output\TokenDelta;
+use Phalanx\AiProviders\Cue\Output\TokenStop;
+use Phalanx\AiProviders\Cue\StopReason;
 
 /**
  * Convenience factory for scripted Cue sequences used with
@@ -30,7 +30,7 @@ final class FakeCueScript
      * Fake\Provider ignores them — only the Cue types matter for the
      * demo's streaming assertions.
      *
-     * @return list<\Phalanx\Panoply\Cue>
+     * @return list<\Phalanx\AiProviders\Cue>
      */
     public static function tokens(
         string $text,

@@ -1,22 +1,22 @@
 <?xml version="1.0"?>
 <ruleset name="Phalanx">
-    <file>src/Aegis</file>
-    <file>src/Archon</file>
-    <file>src/Argos</file>
-    <file>src/Athena</file>
+    <file>src/Runtime</file>
+    <file>src/Console</file>
+    <file>src/Network</file>
+    <file>src/Agent</file>
     <file>src/Cli</file>
-    <file>src/Enigma</file>
-    <file>src/Grammata</file>
-    <file>src/Hermes</file>
-    <file>src/Hydra</file>
-    <file>src/Iris</file>
+    <file>src/Ssh</file>
+    <file>src/Filesystem</file>
+    <file>src/WebSocket</file>
+    <file>src/Worker</file>
+    <file>src/HttpClient</file>
     <file>src/PHPStan</file>
-    <file>src/Panoply</file>
-    <file>src/Skopos</file>
-    <file>src/Stoa</file>
-    <file>src/Styx</file>
-    <file>src/Surreal</file>
-    <file>src/Theatron</file>
+    <file>src/AiProviders</file>
+    <file>src/DevServer</file>
+    <file>src/Http</file>
+    <file>src/Stream</file>
+    <file>src/SurrealDb</file>
+    <file>src/Tui</file>
     <arg name="colors"/>
     <arg name="warning-severity" value="0"/>
     <arg value="sp"/>
@@ -70,7 +70,7 @@
         <exclude-pattern>*/NetworkConfig.php</exclude-pattern>
         <exclude-pattern>*/SshConfig.php</exclude-pattern>
         <exclude-pattern>*/HttpClientConfig.php</exclude-pattern>
-        <exclude-pattern>*/SurrealConfig.php</exclude-pattern>
+        <exclude-pattern>*/SurrealDbConfig.php</exclude-pattern>
     </rule>
 
     <!-- PHP 8.4 property hooks: indentation rule misfires on hook bodies -->

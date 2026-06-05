@@ -7,7 +7,7 @@ namespace Phalanx\Benchmarks\Kit;
 use Phalanx\Application;
 use Phalanx\Boot\AppContext;
 use Phalanx\Scope\ExecutionScope;
-use Phalanx\Stoa\Runtime\Identity\StoaResourceSid;
+use Phalanx\Http\Runtime\Identity\HttpResourceSid;
 use Phalanx\Supervisor\TaskTreeFormatter;
 use RuntimeException;
 
@@ -61,12 +61,12 @@ class BenchmarkHarness
     public function assertClean(string $case): void
     {
         foreach ($this->applications as $application) {
-            // 1. Check live resources (specifically Stoa requests if available)
-            if (class_exists(StoaResourceSid::class)) {
-                $liveRequests = $application->runtime()->memory->resources->liveCount(StoaResourceSid::HttpRequest);
+            // 1. Check live resources (specifically Http requests if available)
+            if (class_exists(HttpResourceSid::class)) {
+                $liveRequests = $application->runtime()->memory->resources->liveCount(HttpResourceSid::HttpRequest);
                 if ($liveRequests !== 0) {
                     throw new RuntimeException(
-                        "Benchmark case '{$case}' left {$liveRequests} live Stoa request resources.",
+                        "Benchmark case '{$case}' left {$liveRequests} live Http request resources.",
                     );
                 }
             }

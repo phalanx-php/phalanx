@@ -45,7 +45,7 @@ final class RuntimeRiskScannerTest extends TestCase
 
 declare(strict_types=1);
 
-namespace Phalanx\Styx;
+namespace Phalanx\Stream;
 
 final class LocalChannelFixture
 {

@@ -1,0 +1,6 @@
+id: claude_code
+display_name: "Claude Code"
+roots:
+  - "~/.claude"
+  - "~/.claude.json"
+adapter: "Phalanx\\AiProviders\\HomeDir\\ClaudeCode\\HomeDir"

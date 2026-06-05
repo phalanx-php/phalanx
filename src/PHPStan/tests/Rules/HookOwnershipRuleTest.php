@@ -19,11 +19,11 @@ final class HookOwnershipRuleTest extends RuleTestCase
         $this->analyse(
             [__DIR__ . '/Fixtures/runtime-hook-ownership.php'],
             [
-                ['Aegis owns Swoole runtime hook activation; use RuntimePolicy, RuntimeHooks, or RuntimeCapability instead of configuring hooks in package code.', 14],
-                ['Aegis owns Swoole global runtime hook flag; use RuntimePolicy, RuntimeHooks, or RuntimeCapability instead of configuring hooks in package code.', 14],
-                ['Aegis owns Swoole coroutine hook options; use RuntimePolicy, RuntimeHooks, or RuntimeCapability instead of configuring hooks in package code.', 15],
-                ['Aegis owns Swoole global runtime hook flag; use RuntimePolicy, RuntimeHooks, or RuntimeCapability instead of configuring hooks in package code.', 15],
-                ['Aegis owns Swoole global runtime hook flag; use RuntimePolicy, RuntimeHooks, or RuntimeCapability instead of configuring hooks in package code.', 17],
+                ['Runtime owns Swoole runtime hook activation; use RuntimePolicy, RuntimeHooks, or RuntimeCapability instead of configuring hooks in package code.', 14],
+                ['Runtime owns Swoole global runtime hook flag; use RuntimePolicy, RuntimeHooks, or RuntimeCapability instead of configuring hooks in package code.', 14],
+                ['Runtime owns Swoole coroutine hook options; use RuntimePolicy, RuntimeHooks, or RuntimeCapability instead of configuring hooks in package code.', 15],
+                ['Runtime owns Swoole global runtime hook flag; use RuntimePolicy, RuntimeHooks, or RuntimeCapability instead of configuring hooks in package code.', 15],
+                ['Runtime owns Swoole global runtime hook flag; use RuntimePolicy, RuntimeHooks, or RuntimeCapability instead of configuring hooks in package code.', 17],
             ],
         );
     }

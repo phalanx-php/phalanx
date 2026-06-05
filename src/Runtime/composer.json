@@ -1,0 +1,132 @@
+{
+    "name": "phalanx-php/runtime",
+    "description": "Managed async for PHP 8.4+ on Swoole",
+    "license": "MIT",
+    "type": "library",
+    "keywords": [
+        "async",
+        "concurrency",
+        "coroutines",
+        "swoole",
+        "supervisor",
+        "parallel",
+        "structured-concurrency"
+    ],
+    "homepage": "https://github.com/phalanx-php/phalanx-runtime",
+    "authors": [
+        {
+            "name": "Jonathan Havens",
+            "email": "mail@phalanx-php.com"
+        }
+    ],
+    "support": {
+        "source": "https://github.com/phalanx-php/phalanx-runtime"
+    },
+    "require": {
+        "php": "^8.4",
+        "ext-swoole": "^6.0",
+        "phalanx-php/mark": "^0.6",
+        "phalanx-php/config": "^0.6",
+        "symfony/process": "^7.0 || ^8.0",
+        "symfony/uid": "^7.0 || ^8.0"
+    },
+    "suggest": {
+        "phalanx-php/stream": "Reactive stream primitives (Emitter, ScopedStream, Channel)",
+        "phalanx-php/console": "CLI application framework",
+        "phalanx-php/http": "HTTP server framework",
+        "phalanx-php/worker": "Worker process parallelism",
+        "spatie/backtrace": "Enhanced stack traces",
+        "symfony/runtime": "For symfony/runtime integration",
+        "symfony/dotenv": "For .env file support"
+    },
+    "require-dev": {
+        "phalanx-php/console": "^0.6",
+        "phalanx-php/http": "^0.6",
+        "phalanx-php/worker": "^0.6",
+        "swoole/ide-helper": "^6.0",
+        "phpstan/phpstan": "^2.0",
+        "phpunit/phpunit": "^13.0",
+        "rector/rector": "^2.0",
+        "slevomat/coding-standard": "^8.15",
+        "squizlabs/php_codesniffer": "^3.10 || ^4.0"
+    },
+    "bin": [
+        "bin/regenerate-accessors",
+        "bin/check-accessors-in-sync"
+    ],
+    "archive": {
+        "exclude": [
+            "/.aimind",
+            "/.aimind/**",
+            "/.claude",
+            "/.claude/**",
+            "/.daemon8",
+            "/.daemon8/**",
+            "/.DS_Store",
+            "/.env*",
+            "/**/.env*",
+            "/.gitattributes",
+            "/.github",
+            "/.github/**",
+            "/.gitignore",
+            "/**/.gitignore",
+            "/.idea",
+            "/.idea/**",
+            "/.php-cs-fixer.cache",
+            "/.phpstan-cache",
+            "/.phpstan-cache/**",
+            "/.phpunit.result.cache",
+            "/brand",
+            "/brand/**",
+            "/demos",
+            "/demos/**",
+            "/docs",
+            "/docs/**",
+            "/examples",
+            "/examples/**",
+            "/phpcs.xml",
+            "/phpstan.neon",
+            "/phpunit.xml",
+            "/phpunit.xml.dist",
+            "/rector.php",
+            "/SPEC.md",
+            "/tests",
+            "/tests/**",
+            "/tmp",
+            "/tmp/**",
+            "/tools",
+            "/tools/**",
+            "/vendor",
+            "/vendor/**"
+        ]
+    },
+    "scripts": {
+        "test": "php -d memory_limit=512M vendor/bin/phpunit -c phpunit.xml.dist"
+    },
+    "autoload": {
+        "psr-4": {
+            "Phalanx\\": ["", "src/"]
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Phalanx\\Runtime\\Tests\\": "tests/"
+        },
+        "classmap": [
+            "tests/Support/Fixtures/"
+        ]
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "0.6.x-dev"
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

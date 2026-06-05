@@ -294,7 +294,7 @@ final class BenchmarkReport
             return (float) ($this->options['fanout-threshold'] ?? 0.20);
         }
 
-        if ($case === 'stoa_drain_cleanup') {
+        if ($case === 'http_drain_cleanup') {
             return (float) ($this->options['drain-threshold'] ?? 0.20);
         }
 

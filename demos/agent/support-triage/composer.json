@@ -1,0 +1,16 @@
+{
+    "name": "phalanx-php/example-support-triage",
+    "description": "Phalanx AI example: single-agent support ticket triage with streaming SSE",
+    "type": "project",
+    "require": {
+        "php": "^8.4",
+        "phalanx-php/agent": "dev-main"
+    },
+    "autoload": {
+        "psr-4": {
+            "Acme\\": "src/"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

@@ -11,8 +11,8 @@ use Swoole\Process;
 
 /**
  * Subprocess orchestration for demos. Replaces the Process+SIGTERM/SIGKILL
- * escalation block previously duplicated in stoa-realtime, stoa-runtime,
- * and archon-runtime-lifecycle.
+ * escalation block previously duplicated in http-realtime, http-runtime,
+ * and console-runtime-lifecycle.
  *
  * Two factory shapes:
  *   spawn() — child runs a long-lived service (HTTP server etc.); parent
@@ -25,8 +25,8 @@ use Swoole\Process;
  * (used by capture() flows that complete on their own).
  *
  * Why Swoole\Process and not Phalanx\System\StreamingProcess: demos
- * that spawn an inline-defined server via closure (stoa-03/04 wrap a
- * Stoa::starting()->...->run() body in a child without needing a
+ * that spawn an inline-defined server via closure (http-03/04 wrap a
+ * Http::starting()->...->run() body in a child without needing a
  * separate server.php file) can only use Swoole\Process(Closure).
  * StreamingProcess is binary-exec only and requires a scope to register
  * the process as a managed resource — neither fits the demo-driver

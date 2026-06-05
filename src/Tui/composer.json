@@ -1,0 +1,116 @@
+{
+    "name": "phalanx-php/tui",
+    "description": "Terminal UI and agent-harness framework for Phalanx PHP",
+    "license": "MIT",
+    "type": "library",
+    "keywords": [
+        "agent-harness",
+        "terminal-ui",
+        "tui"
+    ],
+    "homepage": "https://github.com/phalanx-php/phalanx-tui",
+    "authors": [
+        {
+            "name": "Jonathan Havens",
+            "email": "mail@phalanx-php.com"
+        }
+    ],
+    "support": {
+        "source": "https://github.com/phalanx-php/phalanx-tui"
+    },
+    "require": {
+        "php": "^8.4",
+        "ext-swoole": "^6.0",
+        "ext-pcntl": "*",
+        "ext-mbstring": "*",
+        "phalanx-php/runtime": "^0.6",
+        "phalanx-php/agent": "^0.6",
+        "phalanx-php/filesystem": "^0.6",
+        "phalanx-php/ai-providers": "^0.6"
+    },
+    "conflict": {
+        "phalanx-php/filesystem": "<0.6.3"
+    },
+    "require-dev": {
+        "slevomat/coding-standard": "*",
+        "squizlabs/php_codesniffer": "*",
+        "rector/rector": "^2.4",
+        "rector/swiss-knife": "^2.3",
+        "phpunit/phpunit": "^13.1",
+        "phpstan/phpstan": "^2.0"
+    },
+    "archive": {
+        "exclude": [
+            "/.aimind",
+            "/.aimind/**",
+            "/.claude",
+            "/.claude/**",
+            "/.daemon8",
+            "/.daemon8/**",
+            "/.DS_Store",
+            "/.env*",
+            "/**/.env*",
+            "/.gitattributes",
+            "/.github",
+            "/.github/**",
+            "/.gitignore",
+            "/**/.gitignore",
+            "/.idea",
+            "/.idea/**",
+            "/.php-cs-fixer.cache",
+            "/.phpstan-cache",
+            "/.phpstan-cache/**",
+            "/.phpunit.result.cache",
+            "/brand",
+            "/brand/**",
+            "/demos",
+            "/demos/**",
+            "/docs",
+            "/docs/**",
+            "/examples",
+            "/examples/**",
+            "/phpcs.xml",
+            "/phpstan.neon",
+            "/phpunit.xml",
+            "/phpunit.xml.dist",
+            "/rector.php",
+            "/SPEC.md",
+            "/tests",
+            "/tests/**",
+            "/tmp",
+            "/tmp/**",
+            "/tools",
+            "/tools/**",
+            "/vendor",
+            "/vendor/**"
+        ]
+    },
+    "scripts": {
+        "test": "php -d memory_limit=512M vendor/bin/phpunit -c phpunit.xml"
+    },
+    "autoload": {
+        "files": [
+            "src/Tui/Kit/functions.php"
+        ],
+        "psr-4": {
+            "Phalanx\\Tui\\": ""
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Phalanx\\Tui\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "0.6.x-dev"
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

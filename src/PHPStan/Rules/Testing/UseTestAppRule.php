@@ -25,9 +25,9 @@ final class UseTestAppRule implements Rule
 
     private const array TARGET_CLASSES = [
         'Phalanx\\Application',
-        'Phalanx\\Stoa\\Stoa',
-        'Phalanx\\Archon\\Application\\Archon',
-        'Phalanx\\Athena\\Athena',
+        'Phalanx\\Http\\Http',
+        'Phalanx\\Console\\Application\\Console',
+        'Phalanx\\Agent\\Agent',
     ];
 
     private const array TEST_DIRECTORIES = [

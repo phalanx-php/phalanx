@@ -38,7 +38,7 @@ require __DIR__ . '/cases/CoreCases.php';
 require __DIR__ . '/cases/ContextSwitchCases.php';
 require __DIR__ . '/cases/PoolCases.php';
 
-return BenchmarkRunner::boot('Aegis Kernel Benchmarks', static function (BenchmarkReport $report, AppContext $_context): void {
+return BenchmarkRunner::boot('Runtime Kernel Benchmarks', static function (BenchmarkReport $report, AppContext $_context): void {
     $report->group([
         new ScopeCreateDisposeCase(),
         new ExecuteNoopTaskCase(),

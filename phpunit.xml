@@ -17,82 +17,82 @@
     </groups>
     <testsuites>
         <testsuite name="Core Unit">
-            <directory>src/Aegis/tests/Unit</directory>
+            <directory>src/Runtime/tests/Unit</directory>
         </testsuite>
         <testsuite name="Core Integration">
-            <directory>src/Aegis/tests/Integration</directory>
+            <directory>src/Runtime/tests/Integration</directory>
         </testsuite>
         <testsuite name="Core Smoke">
-            <directory>src/Aegis/tests/Smoke</directory>
+            <directory>src/Runtime/tests/Smoke</directory>
         </testsuite>
         <testsuite name="Core Resilience">
-            <directory>src/Aegis/tests/Resilience</directory>
+            <directory>src/Runtime/tests/Resilience</directory>
         </testsuite>
-        <testsuite name="Styx Unit">
-            <directory>src/Styx/tests/Unit</directory>
+        <testsuite name="Stream Unit">
+            <directory>src/Stream/tests/Unit</directory>
         </testsuite>
-        <testsuite name="Styx Integration">
-            <directory>src/Styx/tests/Integration</directory>
+        <testsuite name="Stream Integration">
+            <directory>src/Stream/tests/Integration</directory>
         </testsuite>
-        <testsuite name="Archon Unit">
-            <directory>src/Archon/tests/Unit</directory>
+        <testsuite name="Console Unit">
+            <directory>src/Console/tests/Unit</directory>
         </testsuite>
-        <testsuite name="Archon Integration">
-            <directory>src/Archon/tests/Integration</directory>
+        <testsuite name="Console Integration">
+            <directory>src/Console/tests/Integration</directory>
         </testsuite>
-        <testsuite name="Stoa Unit">
-            <directory>src/Stoa/tests/Unit</directory>
+        <testsuite name="Http Unit">
+            <directory>src/Http/tests/Unit</directory>
         </testsuite>
-        <testsuite name="Iris Unit">
-            <directory>src/Iris/tests/Unit</directory>
+        <testsuite name="HttpClient Unit">
+            <directory>src/HttpClient/tests/Unit</directory>
         </testsuite>
         <testsuite name="Mark Unit">
             <directory>src/Mark/tests/Unit</directory>
         </testsuite>
-        <testsuite name="Iris Integration">
-            <directory>src/Iris/tests/Integration</directory>
+        <testsuite name="HttpClient Integration">
+            <directory>src/HttpClient/tests/Integration</directory>
         </testsuite>
-        <testsuite name="Hydra Unit">
-            <directory>src/Hydra/tests/Unit</directory>
+        <testsuite name="Worker Unit">
+            <directory>src/Worker/tests/Unit</directory>
         </testsuite>
-        <testsuite name="Hydra Integration">
-            <directory>src/Hydra/tests/Integration</directory>
+        <testsuite name="Worker Integration">
+            <directory>src/Worker/tests/Integration</directory>
         </testsuite>
-        <testsuite name="Hermes Unit">
-            <directory>src/Hermes/tests/Unit</directory>
+        <testsuite name="WebSocket Unit">
+            <directory>src/WebSocket/tests/Unit</directory>
         </testsuite>
-        <testsuite name="Hermes Integration">
-            <directory>src/Hermes/tests/Integration</directory>
+        <testsuite name="WebSocket Integration">
+            <directory>src/WebSocket/tests/Integration</directory>
         </testsuite>
-        <testsuite name="Hermes Client Unit">
-            <directory>src/Hermes/tests/Client/Unit</directory>
+        <testsuite name="WebSocket Client Unit">
+            <directory>src/WebSocket/tests/Client/Unit</directory>
         </testsuite>
-        <testsuite name="Athena Unit">
-            <directory>src/Athena/tests/Unit</directory>
+        <testsuite name="Agent Unit">
+            <directory>src/Agent/tests/Unit</directory>
         </testsuite>
-        <testsuite name="Athena Integration">
-            <directory>src/Athena/tests/Integration</directory>
+        <testsuite name="Agent Integration">
+            <directory>src/Agent/tests/Integration</directory>
         </testsuite>
-        <testsuite name="Athena Acceptance">
-            <directory>src/Athena/tests/Acceptance</directory>
+        <testsuite name="Agent Acceptance">
+            <directory>src/Agent/tests/Acceptance</directory>
         </testsuite>
-        <testsuite name="Enigma Unit">
-            <directory>src/Enigma/tests/Unit</directory>
+        <testsuite name="Ssh Unit">
+            <directory>src/Ssh/tests/Unit</directory>
         </testsuite>
-        <testsuite name="Surreal Unit">
-            <directory>src/Surreal/tests/Unit</directory>
+        <testsuite name="SurrealDb Unit">
+            <directory>src/SurrealDb/tests/Unit</directory>
         </testsuite>
-        <testsuite name="Grammata Unit">
-            <directory>src/Grammata/tests/Unit</directory>
+        <testsuite name="Filesystem Unit">
+            <directory>src/Filesystem/tests/Unit</directory>
         </testsuite>
-        <testsuite name="Argos Unit">
-            <directory>src/Argos/tests/Unit</directory>
+        <testsuite name="Network Unit">
+            <directory>src/Network/tests/Unit</directory>
         </testsuite>
-        <testsuite name="Argos Integration">
-            <directory>src/Argos/tests/Integration</directory>
+        <testsuite name="Network Integration">
+            <directory>src/Network/tests/Integration</directory>
         </testsuite>
-        <testsuite name="Skopos">
-            <directory>src/Skopos/tests</directory>
+        <testsuite name="DevServer">
+            <directory>src/DevServer/tests</directory>
         </testsuite>
         <testsuite name="CLI Unit">
             <directory>src/Cli/tests/Unit</directory>
@@ -106,25 +106,25 @@
         <testsuite name="PHPStan Extension">
             <directory>src/PHPStan/tests</directory>
         </testsuite>
-        <testsuite name="Panoply Unit">
-            <directory>src/Panoply/tests/Unit</directory>
+        <testsuite name="AiProviders Unit">
+            <directory>src/AiProviders/tests/Unit</directory>
         </testsuite>
-        <testsuite name="Panoply Integration">
-            <directory>src/Panoply/tests/Integration</directory>
+        <testsuite name="AiProviders Integration">
+            <directory>src/AiProviders/tests/Integration</directory>
         </testsuite>
-        <testsuite name="Panoply Acceptance">
-            <directory>src/Panoply/tests/Acceptance</directory>
+        <testsuite name="AiProviders Acceptance">
+            <directory>src/AiProviders/tests/Acceptance</directory>
         </testsuite>
-        <testsuite name="Theatron">
-            <directory>src/Theatron/tests</directory>
+        <testsuite name="Tui">
+            <directory>src/Tui/tests</directory>
         </testsuite>
-        <testsuite name="Themis Unit">
-            <directory>src/Themis/tests/Unit</directory>
+        <testsuite name="Config Unit">
+            <directory>src/Config/tests/Unit</directory>
         </testsuite>
-        <!-- Keep Stoa's HTTP-lens integration last. Swoole does not fully
+        <!-- Keep Http's HTTP-lens integration last. Swoole does not fully
              reset its event-loop state inside one PHPUnit process. -->
-        <testsuite name="Stoa Integration">
-            <directory>src/Stoa/tests/Integration</directory>
+        <testsuite name="Http Integration">
+            <directory>src/Http/tests/Integration</directory>
         </testsuite>
     </testsuites>
 </phpunit>

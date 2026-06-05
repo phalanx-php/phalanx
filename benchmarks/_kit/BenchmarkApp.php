@@ -4,30 +4,30 @@ declare(strict_types=1);
 
 namespace Phalanx\Benchmarks\Kit;
 
-use Phalanx\Stoa\RouteGroup;
-use Phalanx\Stoa\StoaRunner;
+use Phalanx\Http\RouteGroup;
+use Phalanx\Http\HttpRunner;
 
 /**
- * Specialized harness for HTTP benchmarks that provides Stoa-specific helpers.
+ * Specialized harness for HTTP benchmarks that provides Http-specific helpers.
  */
 final class BenchmarkApp extends BenchmarkHarness
 {
-    /** @var array<string, StoaRunner> */
-    private array $stoaRunners = [];
+    /** @var array<string, HttpRunner> */
+    private array $httpRunners = [];
 
-    public function stoaRunner(string $name, RouteGroup $routes): StoaRunner
+    public function httpRunner(string $name, RouteGroup $routes): HttpRunner
     {
-        return $this->stoaRunners[$name] ??= StoaRunner::from($this->application())
+        return $this->httpRunners[$name] ??= HttpRunner::from($this->application())
             ->withRoutes($routes);
     }
 
     public function shutdown(): void
     {
-        foreach ($this->stoaRunners as $runner) {
+        foreach ($this->httpRunners as $runner) {
             $runner->stop();
         }
 
-        $this->stoaRunners = [];
+        $this->httpRunners = [];
         parent::shutdown();
     }
 }

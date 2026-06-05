@@ -43,7 +43,7 @@ services:
             - phpstan.rules.rule
 
     -
-        class: Phalanx\PHPStan\Rules\Scope\StoaRequestLifecycleServiceAccessRule
+        class: Phalanx\PHPStan\Rules\Scope\HttpRequestLifecycleServiceAccessRule
         tags:
             - phpstan.rules.rule
 

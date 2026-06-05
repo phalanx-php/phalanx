@@ -1,0 +1,20 @@
+id: fake
+display_name: "Olympus Test Provider"
+models:
+  - name: oracle-of-delphi
+    model_id: fake-001
+    aliases: ["delphi", "oracle"]
+    capabilities:
+      closed: ["reasoning", "tool-use"]
+      custom: []
+    input_pricing: 0.0
+    output_pricing: 0.0
+capabilities:
+  closed: ["reasoning", "tool-use", "structured-output"]
+  custom: []
+transport:
+  streaming: true
+  cancellable: true
+  backpressure: false
+  partial_json: false
+wire_translator: "Phalanx\\AiProviders\\Provider\\Fake\\Provider"

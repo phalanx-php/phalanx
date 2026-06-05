@@ -124,7 +124,7 @@ final class ManagedProcessOnlyRule implements Rule
     {
         return RuleErrors::build(
             sprintf(
-                'Subprocesses must be Aegis-managed resources; use Phalanx\System\StreamingProcess instead of %s in package code.',
+                'Subprocesses must be Runtime-managed resources; use Phalanx\System\StreamingProcess instead of %s in package code.',
                 $shape,
             ),
             self::IDENTIFIER,

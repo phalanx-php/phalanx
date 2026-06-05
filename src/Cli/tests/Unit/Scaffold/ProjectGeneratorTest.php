@@ -104,7 +104,7 @@ final class ProjectGeneratorTest extends TestCase
 
         $routes = file_get_contents($this->tempDir . '/routes.php');
         self::assertIsString($routes);
-        self::assertStringContainsString('use Phalanx\Stoa\RouteGroup;', $routes);
+        self::assertStringContainsString('use Phalanx\Http\RouteGroup;', $routes);
         self::assertStringNotContainsString('Routing\RouteGroup', $routes);
     }
 
@@ -122,7 +122,7 @@ final class ProjectGeneratorTest extends TestCase
     }
 
     #[Test]
-    public function indexTemplateBootsStoa(): void
+    public function indexTemplateBootsHttp(): void
     {
         $output = new BufferedOutput();
 
@@ -131,7 +131,7 @@ final class ProjectGeneratorTest extends TestCase
         $index = file_get_contents($this->tempDir . '/public/index.php');
         self::assertIsString($index);
         self::assertStringContainsString('autoload_runtime.php', $index);
-        self::assertStringContainsString('Stoa::starting($context)', $index);
+        self::assertStringContainsString('Http::starting($context)', $index);
         self::assertStringContainsString("->listen('127.0.0.1:8080')", $index);
     }
 
@@ -164,7 +164,7 @@ final class ProjectGeneratorTest extends TestCase
     }
 
     #[Test]
-    public function consoleComposerJsonRequiresArchon(): void
+    public function consoleComposerJsonRequiresConsole(): void
     {
         $output = new BufferedOutput();
 
@@ -172,8 +172,8 @@ final class ProjectGeneratorTest extends TestCase
 
         $content = file_get_contents($this->tempDir . '/composer.json');
         self::assertIsString($content);
-        self::assertStringContainsString('"phalanx-php/archon"', $content);
-        self::assertStringNotContainsString('"phalanx-php/stoa"', $content);
+        self::assertStringContainsString('"phalanx-php/console"', $content);
+        self::assertStringNotContainsString('"phalanx-php/http"', $content);
         self::assertStringContainsString('"bin/app"', $content);
     }
 
@@ -186,7 +186,7 @@ final class ProjectGeneratorTest extends TestCase
 
         $commands = file_get_contents($this->tempDir . '/commands.php');
         self::assertIsString($commands);
-        self::assertStringContainsString('use Phalanx\Archon\Command\CommandGroup;', $commands);
+        self::assertStringContainsString('use Phalanx\Console\Command\CommandGroup;', $commands);
         self::assertStringContainsString('CommandGroup::of(', $commands);
         self::assertStringContainsString('use App\MyTool\Commands\Hello;', $commands);
         self::assertStringContainsString("'hello' => Hello::class,", $commands);
@@ -202,14 +202,14 @@ final class ProjectGeneratorTest extends TestCase
         $hello = file_get_contents($this->tempDir . '/src/Commands/Hello.php');
         self::assertIsString($hello);
         self::assertStringContainsString('implements Scopeable, DescribesCommand', $hello);
-        self::assertStringContainsString('use Phalanx\Archon\Command\Arg;', $hello);
-        self::assertStringContainsString('use Phalanx\Archon\Command\DescribesCommand;', $hello);
+        self::assertStringContainsString('use Phalanx\Console\Command\Arg;', $hello);
+        self::assertStringContainsString('use Phalanx\Console\Command\DescribesCommand;', $hello);
         self::assertStringContainsString('public static function commandConfig(): CommandConfig', $hello);
         self::assertStringContainsString('Arg::required(', $hello);
-        self::assertStringContainsString('use Phalanx\Archon\Command\CommandContext;', $hello);
+        self::assertStringContainsString('use Phalanx\Console\Command\CommandContext;', $hello);
         self::assertStringContainsString('$ctx->args->required(', $hello);
         self::assertStringContainsString('$ctx->service(StreamOutput::class)', $hello);
-        self::assertStringNotContainsString('Phalanx\Stoa', $hello);
+        self::assertStringNotContainsString('Phalanx\Http', $hello);
     }
 
     #[Test]
@@ -223,11 +223,11 @@ final class ProjectGeneratorTest extends TestCase
         self::assertIsString($bin);
         self::assertStringContainsString('#!/usr/bin/env php', $bin);
         self::assertStringContainsString('autoload_runtime.php', $bin);
-        self::assertStringContainsString('Archon::starting($context)', $bin);
+        self::assertStringContainsString('Console::starting($context)', $bin);
     }
 
     #[Test]
-    public function apiComposerJsonRequiresStoa(): void
+    public function apiComposerJsonRequiresHttp(): void
     {
         $output = new BufferedOutput();
 
@@ -235,8 +235,8 @@ final class ProjectGeneratorTest extends TestCase
 
         $content = file_get_contents($this->tempDir . '/composer.json');
         self::assertIsString($content);
-        self::assertStringContainsString('"phalanx-php/stoa"', $content);
-        self::assertStringNotContainsString('"phalanx-php/archon"', $content);
+        self::assertStringContainsString('"phalanx-php/http"', $content);
+        self::assertStringNotContainsString('"phalanx-php/console"', $content);
         self::assertStringNotContainsString('"bin":', $content);
     }
 }

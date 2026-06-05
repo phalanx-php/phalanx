@@ -1,0 +1,3 @@
+agents:
+  - class: Phalanx\AiProviders\Tests\Fixtures\Agent\Discovered\HoplitesAgent
+  - class: Phalanx\AiProviders\Tests\Fixtures\Agent\Discovered\PhalanxAgent

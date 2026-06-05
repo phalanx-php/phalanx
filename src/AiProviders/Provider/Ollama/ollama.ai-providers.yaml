@@ -1,0 +1,29 @@
+id: ollama
+display_name: "Ollama"
+base_url: "http://localhost:11434"
+models:
+  - name: llama3.1
+    model_id: llama3.1
+    aliases: ["llama", "llama3"]
+    capabilities:
+      closed: ["tool-use"]
+      custom: []
+    input_pricing: 0
+    output_pricing: 0
+  - name: qwen2.5
+    model_id: qwen2.5
+    aliases: ["qwen"]
+    capabilities:
+      closed: ["tool-use"]
+      custom: []
+    input_pricing: 0
+    output_pricing: 0
+capabilities:
+  closed: ["tool-use"]
+  custom: []
+transport:
+  streaming: true
+  cancellable: true
+  backpressure: true
+  partial_json: false
+wire_translator: "Phalanx\\AiProviders\\Provider\\Ollama\\ChatProvider"

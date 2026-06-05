@@ -1,3 +1,0 @@
-agents:
-  - class: Phalanx\Panoply\Tests\Fixtures\Agent\Discovered\HoplitesAgent
-  - class: Phalanx\Panoply\Tests\Fixtures\Agent\Discovered\PhalanxAgent

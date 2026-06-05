@@ -8,15 +8,15 @@ use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\ServerRequest;
 use Phalanx\Benchmarks\Http\AbstractHttpBenchmarkCase;
 use Phalanx\Benchmarks\Kit\BenchmarkApp;
-use Phalanx\Stoa\RequestContext;
-use Phalanx\Stoa\RouteGroup;
+use Phalanx\Http\RequestContext;
+use Phalanx\Http\RouteGroup;
 use Phalanx\Task\Scopeable;
 
-final class StoaDispatchDtoUnusedCase extends AbstractHttpBenchmarkCase
+final class HttpDispatchDtoUnusedCase extends AbstractHttpBenchmarkCase
 {
     public function __construct()
     {
-        parent::__construct('stoa_dispatch_dto_unused', 5_000, 100);
+        parent::__construct('http_dispatch_dto_unused', 5_000, 100);
     }
 
     public function run(BenchmarkApp $app): void
@@ -27,7 +27,7 @@ final class StoaDispatchDtoUnusedCase extends AbstractHttpBenchmarkCase
             'meta' => array_fill(0, 50, ['key' => 'value', 'data' => str_repeat('x', 20)]),
         ];
 
-        $response = $app->stoaRunner('dto-unused', RouteGroup::of([
+        $response = $app->httpRunner('dto-unused', RouteGroup::of([
             'POST /dto-unused' => BenchmarkDtoUnusedRoute::class,
         ]))->dispatch(new ServerRequest(
             'POST',
@@ -42,11 +42,11 @@ final class StoaDispatchDtoUnusedCase extends AbstractHttpBenchmarkCase
     }
 }
 
-final class StoaDispatchDtoUsedCase extends AbstractHttpBenchmarkCase
+final class HttpDispatchDtoUsedCase extends AbstractHttpBenchmarkCase
 {
     public function __construct()
     {
-        parent::__construct('stoa_dispatch_dto_used', 5_000, 100);
+        parent::__construct('http_dispatch_dto_used', 5_000, 100);
     }
 
     public function run(BenchmarkApp $app): void
@@ -57,7 +57,7 @@ final class StoaDispatchDtoUsedCase extends AbstractHttpBenchmarkCase
             'meta' => array_fill(0, 50, ['key' => 'value', 'data' => str_repeat('x', 20)]),
         ];
 
-        $response = $app->stoaRunner('dto-used', RouteGroup::of([
+        $response = $app->httpRunner('dto-used', RouteGroup::of([
             'POST /dto-used' => BenchmarkDtoUsedRoute::class,
         ]))->dispatch(new ServerRequest(
             'POST',

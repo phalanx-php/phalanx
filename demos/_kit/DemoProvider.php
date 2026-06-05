@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Phalanx\Demos\Kit;
 
-use Phalanx\Panoply\Capabilities;
-use Phalanx\Panoply\Capability;
-use Phalanx\Panoply\Provider;
-use Phalanx\Panoply\Provider\Config\Model;
-use Phalanx\Panoply\Provider\Fake\Provider as FakeProvider;
-use Phalanx\Panoply\Provider\Ollama\ChatOptions;
-use Phalanx\Panoply\Provider\Ollama\ChatProvider as OllamaChatProvider;
-use Phalanx\Panoply\Transport\Sync\Transport as SyncTransport;
+use Phalanx\AiProviders\Capabilities;
+use Phalanx\AiProviders\Capability;
+use Phalanx\AiProviders\Provider;
+use Phalanx\AiProviders\Provider\Config\Model;
+use Phalanx\AiProviders\Provider\Fake\Provider as FakeProvider;
+use Phalanx\AiProviders\Provider\Ollama\ChatOptions;
+use Phalanx\AiProviders\Provider\Ollama\ChatProvider as OllamaChatProvider;
+use Phalanx\AiProviders\Transport\Sync\Transport as SyncTransport;
 
 /**
  * Demo-side helper that resolves a {@see Provider} appropriate for the
@@ -49,7 +49,7 @@ final class DemoProvider
      * to the FakeProvider with a descriptive message — the demo never runs
      * with a substitute model that produces garbage output.
      *
-     * @param list<\Phalanx\Panoply\Cue> $fakeScript Cue sequence to replay when Ollama is down.
+     * @param list<\Phalanx\AiProviders\Cue> $fakeScript Cue sequence to replay when Ollama is down.
      */
     public static function ollamaOrFake(
         array $fakeScript,
@@ -91,7 +91,7 @@ final class DemoProvider
      * any Ollama probe. Useful when the caller has already determined that
      * live provider access should be bypassed (e.g. OLLAMA_ENABLED=0).
      *
-     * @param list<\Phalanx\Panoply\Cue> $fakeScript
+     * @param list<\Phalanx\AiProviders\Cue> $fakeScript
      */
     public static function fakeOnly(array $fakeScript): ProviderChoice
     {
@@ -169,7 +169,7 @@ final class DemoProvider
     }
 
     /**
-     * @param list<\Phalanx\Panoply\Cue> $script
+     * @param list<\Phalanx\AiProviders\Cue> $script
      */
     private static function makeFake(array $script): Provider
     {

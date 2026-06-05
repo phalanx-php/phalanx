@@ -149,12 +149,12 @@ The repository includes runnable demos for all major framework surfaces.
 
 | Demo | Covers | Command |
 | --- | --- | --- |
-| [Aegis kernel](demos/aegis) | runtime policy, scope supervision, cancellation, singleflight, runtime memory | `composer demo:aegis` |
-| [Stoa HTTP](demos/stoa) | routing, JSON APIs, realtime SSE, runtime lifecycle, diagnostics | `composer demo:stoa` |
-| [Archon CLI](demos/archon) | commands, interactive input, supervised concurrency, lifecycle, diagnostics | `composer demo:archon` |
-| [Hydra workers](demos/hydra) | workers, structured parallelism, cancellation behavior | `composer demo:hydra` |
-| [Athena AI](demos/athena) | streaming providers, SDK coexistence, supervised tool approvals | `composer demo:athena` |
-| [Surreal](demos/surreal) | in-memory RPC and live queries | `composer demo:surreal` |
+| [Runtime kernel](demos/runtime) | runtime policy, scope supervision, cancellation, singleflight, runtime memory | `composer demo:runtime` |
+| [Http HTTP](demos/http) | routing, JSON APIs, realtime SSE, runtime lifecycle, diagnostics | `composer demo:http` |
+| [Console CLI](demos/console) | commands, interactive input, supervised concurrency, lifecycle, diagnostics | `composer demo:console` |
+| [Worker workers](demos/worker) | workers, structured parallelism, cancellation behavior | `composer demo:worker` |
+| [Agent AI](demos/agent) | streaming providers, SDK coexistence, supervised tool approvals | `composer demo:agent` |
+| [SurrealDb](demos/surrealdb) | in-memory RPC and live queries | `composer demo:surrealdb` |
 
 ## Installation
 
@@ -174,10 +174,10 @@ vendor/bin/phalanx swoole:install
 
 ## Benchmarks
 
-The managed runtime tax is about 4%. Every unit of work flows through the full Aegis kernel: scope creation, supervisor registration, cancellation propagation, disposal, and ledger updates. The current numbers keep that cost close to raw Swoole.
+The managed runtime tax is about 4%. Every unit of work flows through the full Runtime kernel: scope creation, supervisor registration, cancellation propagation, disposal, and ledger updates. The current numbers keep that cost close to raw Swoole.
 
 > PHP 8.4.16, Swoole, Apple M-series.
-> Run `composer bench:aegis` and `composer bench:stoa` to reproduce.
+> Run `composer bench:runtime` and `composer bench:http` to reproduce.
 
 <details>
 <summary><strong>Context switching</strong> - 1M managed switches vs raw Swoole vs raw Fibers</summary>
@@ -193,9 +193,9 @@ The managed runtime tax is about 4%. Every unit of work flows through the full A
 </details>
 
 <details>
-<summary><strong>Aegis kernel</strong> - scope, task, supervision, cancellation primitives</summary>
+<summary><strong>Runtime kernel</strong> - scope, task, supervision, cancellation primitives</summary>
 
-Isolates the cost of individual Aegis operations. `ObjectPool` and `resetAsLazyGhost()` recycle TaskRun and scope frame objects to avoid ZMM fragmentation from alloc/free churn.
+Isolates the cost of individual Runtime operations. `ObjectPool` and `resetAsLazyGhost()` recycle TaskRun and scope frame objects to avoid ZMM fragmentation from alloc/free churn.
 
 | Case | Mean (us) | P95 (us) | Ops/sec | GC roots |
 |------|-----------|----------|---------|----------|
@@ -218,19 +218,19 @@ Isolates the cost of individual Aegis operations. `ObjectPool` and `resetAsLazyG
 </details>
 
 <details>
-<summary><strong>Stoa HTTP dispatch</strong> - internal per-request overhead (no network)</summary>
+<summary><strong>Http HTTP dispatch</strong> - internal per-request overhead (no network)</summary>
 
-Measures Stoa's request lifecycle in isolation: request factory, routing, handler dispatch, scope cleanup. No TCP/TLS involved.
+Measures Http's request lifecycle in isolation: request factory, routing, handler dispatch, scope cleanup. No TCP/TLS involved.
 
 | Case | Mean (us) | P95 (us) | Ops/sec |
 |------|-----------|----------|---------|
-| stoa_dispatch_plaintext | 434 | 475 | 2,306 |
-| stoa_dispatch_json | 424 | 469 | 2,360 |
-| stoa_dispatch_route_param | 428 | 474 | 2,337 |
-| stoa_request_factory | 5.10 | 6.29 | 195,977 |
-| stoa_request_resource_lifecycle | 421 | 466 | 2,373 |
-| stoa_drain_cleanup | 17,319 | 17,721 | 58 |
-| stoa_dispatch_dto_unused | 458 | 508 | 2,184 |
-| stoa_dispatch_dto_used | 459 | 516 | 2,176 |
+| http_dispatch_plaintext | 434 | 475 | 2,306 |
+| http_dispatch_json | 424 | 469 | 2,360 |
+| http_dispatch_route_param | 428 | 474 | 2,337 |
+| http_request_factory | 5.10 | 6.29 | 195,977 |
+| http_request_resource_lifecycle | 421 | 466 | 2,373 |
+| http_drain_cleanup | 17,319 | 17,721 | 58 |
+| http_dispatch_dto_unused | 458 | 508 | 2,184 |
+| http_dispatch_dto_used | 459 | 516 | 2,176 |
 
 </details>

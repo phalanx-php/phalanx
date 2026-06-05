@@ -27,9 +27,9 @@ final class DemoReport
     }
 
     /**
-     * Report-only demo entry, for demos that don't need to boot an Aegis
-     * kernel (Athena, Stoa, Archon all build their own facades that
-     * compose Aegis internally — booting a parallel kernel just for lens
+     * Report-only demo entry, for demos that don't need to boot an Runtime
+     * kernel (Agent, Http, Console all build their own facades that
+     * compose Runtime internally — booting a parallel kernel just for lens
      * access would be wasted work).
      *
      * Returns the Symfony Runtime-shape outer closure: receives context,

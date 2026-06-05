@@ -1,0 +1,189 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Phalanx\Console\Testing;
+
+use Phalanx\Console\Application\Console;
+use Phalanx\Console\Application\ConsoleApplication;
+use Phalanx\Console\Application\ConsoleConfig;
+use Phalanx\Console\Command\CommandGroup;
+use Phalanx\Console\Console\Output\StreamOutput;
+use Phalanx\Console\Console\Output\TerminalEnvironment;
+use Phalanx\Boot\AppContext;
+use Phalanx\Service\ServiceBundle;
+use Phalanx\Testing\Attribute\Lens;
+use Phalanx\Testing\Lens as LensContract;
+use RuntimeException;
+
+/**
+ * Console test lens for an Console application.
+ *
+ * Each run() builds a fresh ConsoleApplication wired against captured stdout
+ * and a /dev/null-backed key reader, dispatches the supplied argv, and
+ * returns a ConsoleResult.
+ *
+ * Per-run isolation is intentional: command dispatch carries side effects
+ * (signal handlers, process lifecycle, scoped key buffers) that don't
+ * compose well across multiple invocations of the same Console host. The
+ * cost of rebuilding is bounded; each test typically runs one command.
+ *
+ * Usage:
+ *
+ *     $app = $this->testApp($context, new ConsoleTestableBundle());
+ *     $app->console
+ *         ->commands(CommandGroup::of(['greet' => [GreetCommand::class, ...]]))
+ *         ->run(['greet', 'Ada'])
+ *         ->assertSuccessful()
+ *         ->assertOutputContains('Hello, Ada');
+ */
+#[Lens(
+    accessor: 'console',
+    returns: self::class,
+    factory: ConsoleLensFactory::class,
+    requires: [],
+)]
+final class ConsoleLens implements LensContract
+{
+    private AppContext $context;
+
+    private ?CommandGroup $commands = null;
+
+    /** @var list<ServiceBundle> */
+    private array $providers = [];
+
+    private ?ConsoleConfig $consoleConfig = null;
+
+    public function __construct()
+    {
+        $this->context = new AppContext();
+    }
+
+    /** @param array<string, mixed> $context */
+    public function withContext(array $context): self
+    {
+        $this->context = new AppContext($context);
+
+        return $this;
+    }
+
+    public function commands(CommandGroup $commands): self
+    {
+        $this->commands = $commands;
+
+        return $this;
+    }
+
+    public function withProviders(ServiceBundle ...$providers): self
+    {
+        $this->providers = array_values([...$this->providers, ...$providers]);
+
+        return $this;
+    }
+
+    public function withConsoleConfig(ConsoleConfig $config): self
+    {
+        $this->consoleConfig = $config;
+
+        return $this;
+    }
+
+    /** @param list<string> $argv */
+    public function run(array $argv): ConsoleResult
+    {
+        if ($this->commands === null) {
+            throw new RuntimeException(
+                'ConsoleLens::run() requires commands(CommandGroup) to be set first.',
+            );
+        }
+
+        $stdout = self::openCaptureStream();
+        $stderr = self::openCaptureStream();
+        $capturedOutput = new StreamOutput(
+            stream: $stdout,
+            terminal: new TerminalEnvironment(columns: 80, lines: 24, isTty: false),
+        );
+        $nullInput = self::openNullInput();
+
+        $console = $this->buildConsole($capturedOutput, $nullInput);
+
+        try {
+            $exitCode = $console->dispatch($argv);
+
+            return new ConsoleResult(
+                exitCode: $exitCode,
+                stdout: self::drain($stdout),
+                stderr: self::drain($stderr),
+            );
+        } finally {
+            $console->shutdown();
+            self::close($stdout);
+            self::close($stderr);
+            self::close($nullInput);
+        }
+    }
+
+    public function reset(): void
+    {
+        $this->context = new AppContext();
+        $this->commands = null;
+        $this->providers = [];
+        $this->consoleConfig = null;
+    }
+
+    /** @return resource */
+    private static function openCaptureStream(): mixed
+    {
+        $stream = fopen('php://temp', 'w+');
+
+        if ($stream === false) {
+            throw new RuntimeException('Unable to open capture stream for ConsoleLens.');
+        }
+
+        return $stream;
+    }
+
+    /** @return resource */
+    private static function openNullInput(): mixed
+    {
+        $stream = fopen('/dev/null', 'r');
+
+        if ($stream === false) {
+            throw new RuntimeException('Unable to open /dev/null for ConsoleLens key input.');
+        }
+
+        return $stream;
+    }
+
+    /** @param resource $stream */
+    private static function drain(mixed $stream): string
+    {
+        rewind($stream);
+
+        return (string) stream_get_contents($stream);
+    }
+
+    /** @param resource $stream */
+    private static function close(mixed $stream): void
+    {
+        if (is_resource($stream)) {
+            fclose($stream);
+        }
+    }
+
+    /** @param resource $nullInput */
+    private function buildConsole(StreamOutput $capturedOutput, mixed $nullInput): ConsoleApplication
+    {
+        $captureBundle = new ConsoleCaptureBundle($capturedOutput, $nullInput);
+
+        $builder = Console::starting($this->context->values)
+            ->providers($captureBundle, ...$this->providers)
+            ->commands($this->commands ?? CommandGroup::of([]));
+
+        if ($this->consoleConfig !== null) {
+            $builder = $builder->withConsoleConfig($this->consoleConfig);
+        }
+
+        return $builder->build();
+    }
+}

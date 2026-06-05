@@ -7,7 +7,7 @@ namespace Phalanx\PHPStan\Rules\Pool;
 use Phalanx\PHPStan\Support\NodeNames;
 use Phalanx\PHPStan\Support\PathPolicy;
 use Phalanx\Pool\BorrowedValue;
-use Phalanx\Styx\Channel;
+use Phalanx\Stream\Channel;
 use PhpParser\Node;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\Array_;
@@ -37,7 +37,7 @@ use PHPStan\Type\ObjectType;
 final class BorrowedValueBoundaryRule implements Rule
 {
     public const string CHANNEL_MESSAGE =
-        'Borrowed values must not be emitted through Styx channels; copy to an owned value before emit().';
+        'Borrowed values must not be emitted through Stream channels; copy to an owned value before emit().';
 
     public const string ARROW_RETURN_MESSAGE =
         'Borrowed values must not be returned from arrow functions; '

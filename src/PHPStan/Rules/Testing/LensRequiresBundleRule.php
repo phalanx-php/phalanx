@@ -27,7 +27,7 @@ use PHPStan\Type\ObjectType;
  * registered via testApp(...). Each accessor (e.g. $app->http) requires a
  * bundle whose static::lens() declares the backing lens class (e.g. HttpLens).
  *
- * Aegis-native lenses (LedgerLens, ScopeLens, RuntimeLens) are always
+ * Runtime-native lenses (LedgerLens, ScopeLens, RuntimeLens) are always
  * available and are never flagged regardless of the bundles passed.
  *
  * The rule is path-gated to integration/feature test directories, matching
@@ -99,7 +99,7 @@ final class LensRequiresBundleRule implements Rule
 
         $lensFqcn = $map[$property];
 
-        // Aegis-native lenses need no bundle — skip immediately.
+        // Runtime-native lenses need no bundle — skip immediately.
         if (in_array($lensFqcn, self::AEGIS_NATIVE_LENSES, true)) {
             return [];
         }

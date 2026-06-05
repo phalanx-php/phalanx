@@ -16,7 +16,7 @@ use Phalanx\Testing\Lenses\ScopeLens;
 use Phalanx\Testing\TestApp;
 
 /**
- * Demo-side counterpart to TestApp. Composes Aegis through the same lens
+ * Demo-side counterpart to TestApp. Composes Runtime through the same lens
  * machinery, but without PhalanxTestCase's reset/shutdown lifecycle.
  *
  * Demos own their lifecycle explicitly: boot(), zero or more run() calls,
