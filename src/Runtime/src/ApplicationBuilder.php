@@ -40,8 +40,8 @@ use Phalanx\Worker\WorkerDispatch;
  *
  * Package and example bootstraps should prefer their package facade builders:
  * `Phalanx\Agent\Agent::starting()`,
- * `Phalanx\Console\Application\Console::starting()`, or
- * `Phalanx\Http\Http::starting()`.
+ * `Phalanx\Console\Facade::starting()`, or
+ * `Phalanx\Http\Server::starting()`.
  */
 class ApplicationBuilder
 {

@@ -137,10 +137,10 @@ declare(strict_types=1);
 
 require __DIR__ . '/../vendor/autoload_runtime.php';
 
-use Phalanx\Http\Http;
+use Phalanx\Http\Server;
 
 return static function (array $context): void {
-    Http::starting($context)
+    Server::starting($context)
         ->routes(__DIR__ . '/../routes.php')
         ->listen('127.0.0.1:8080')
         ->run();

@@ -12,7 +12,7 @@ use Acme\HttpDemo\Realtime\Support\SseFrameReader;
 use Phalanx\Boot\AppContext;
 use Phalanx\Demos\Kit\DemoReport;
 use Phalanx\Demos\Kit\DemoSubprocess;
-use Phalanx\Http\Http;
+use Phalanx\Http\Server;
 
 return DemoReport::demo(
     'Http Realtime',
@@ -23,7 +23,7 @@ return DemoReport::demo(
 
         $contextValues = $context->values;
         $server = DemoSubprocess::spawn(static function () use ($listen, $contextValues): void {
-            \Phalanx\Http\Server::starting($contextValues)
+            Server::starting($contextValues)
                 ->providers(new RealtimeBundle())
                 ->routes(__DIR__ . '/routes.php')
                 ->listen($listen)

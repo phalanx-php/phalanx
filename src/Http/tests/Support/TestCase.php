@@ -14,6 +14,6 @@ abstract class TestCase extends PhalanxTestCase
     /** @param array<string, mixed> $context */
     protected static function http(array $context = []): \Phalanx\Http\ApplicationBuilder
     {
-        return \Phalanx\Http\Server::starting($context)->withLedger(new InProcessLedger());
+        return Server::starting($context)->withLedger(new InProcessLedger());
     }
 }
