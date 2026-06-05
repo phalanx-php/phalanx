@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace Phalanx\Console;
 
-use Phalanx\Cancellation\Cancelled;
 use Phalanx\Console\Command\CommandContext;
 use Phalanx\Console\Output\StreamOutput;
 use Phalanx\Console\Style\Style;
 use Phalanx\Console\Style\Theme;
 use Phalanx\Console\Widget\SourcePreview;
-use Phalanx\Supervisor\Supervisor;
+use Phalanx\Supervisor\TaskRunSnapshot;
 use Phalanx\Supervisor\TaskTreeFormatter;
 use Throwable;
 
@@ -24,8 +23,11 @@ final readonly class DefaultErrorRenderer implements ErrorRenderer
 {
     private const string MARGIN = '  ';
 
-    public function __construct(private bool $debug = false)
-    {
+    /** @param list<TaskRunSnapshot> $diagnosticTree */
+    public function __construct(
+        private bool $debug = false,
+        private array $diagnosticTree = [],
+    ) {
     }
 
     public function render(CommandContext $ctx, Throwable $e, StreamOutput $output): bool
@@ -46,17 +48,11 @@ final readonly class DefaultErrorRenderer implements ErrorRenderer
 
         if ($this->debug) {
             $output->persist(self::MARGIN . $muted->apply("Active Ledger Snapshot:"));
-            try {
-                $tree = (new TaskTreeFormatter())->format($ctx->service(Supervisor::class)->tree());
-                foreach (explode("\n", rtrim($tree)) as $treeLine) {
-                    $output->persist(self::MARGIN . $treeLine);
-                }
-                $output->persist("");
-            } catch (Cancelled $c) {
-                throw $c;
-            } catch (Throwable) {
-                $output->persist(self::MARGIN . $muted->apply("(Task tree unavailable)") . "\n");
+            $tree = (new TaskTreeFormatter())->format($this->diagnosticTree);
+            foreach (explode("\n", rtrim($tree)) as $treeLine) {
+                $output->persist(self::MARGIN . $treeLine);
             }
+            $output->persist("");
 
             $output->persist(self::MARGIN . $muted->apply("Stack Trace:"));
             $this->renderTrace($output, $theme, $e);

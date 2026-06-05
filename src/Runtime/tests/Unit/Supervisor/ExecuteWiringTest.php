@@ -78,6 +78,44 @@ final class ExecuteWiringTest extends TestCase
         self::assertSame(0, $ledger->liveCount());
     }
 
+    public function testThrowableFailureTreePreservesFirstFailureSnapshotAfterReap(): void
+    {
+        $ledger = new InProcessLedger();
+        $app = $this->buildApp($ledger);
+        $scope = $app->createScope();
+        $inner = Task::named(
+            'inner.failure',
+            static function (): never {
+                throw new RuntimeException('deep boom');
+            },
+        );
+        $outer = Task::named(
+            'outer.wrapper',
+            static fn(ExecutionScope $s): mixed => $s->execute($inner),
+        );
+        $thrown = null;
+
+        try {
+            $scope->execute($outer);
+        } catch (RuntimeException $e) {
+            $thrown = $e;
+        }
+
+        self::assertNotNull($thrown);
+        self::assertSame(0, $ledger->liveCount());
+
+        $tree = $app->supervisor()->failureTreeFor($thrown);
+        self::assertNotNull($tree);
+
+        $byName = [];
+        foreach ($tree as $run) {
+            $byName[$run->name] = $run;
+        }
+
+        self::assertSame(RunState::Running, $byName['outer.wrapper']->state ?? null);
+        self::assertSame(RunState::Failed, $byName['inner.failure']->state ?? null);
+    }
+
     public function testCancelledThrowableTransitionsToCancelled(): void
     {
         $ledger = new InProcessLedger();

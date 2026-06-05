@@ -19,6 +19,7 @@ use Phalanx\Trace\TraceType;
 use ReflectionFunction;
 use SplStack;
 use Throwable;
+use WeakMap;
 
 /**
  * Coordinator for every dispatchable task in a Phalanx application.
@@ -53,6 +54,9 @@ final class Supervisor
     /** @var SplStack<CancellationToken> */
     private SplStack $tokenPool;
 
+    /** @var WeakMap<Throwable, list<TaskRunSnapshot>> */
+    private WeakMap $failureTrees;
+
     private int $tokenPoolCapacity;
 
     private int $tokenPoolHits = 0;
@@ -69,6 +73,7 @@ final class Supervisor
         $this->taskRunPool = new ObjectPool(TaskRun::class, $taskRunPoolCapacity);
         $this->scopeFramePool = new ObjectPool(BorrowedScopeFrame::class, $scopeFramePoolCapacity);
         $this->tokenPool = new SplStack();
+        $this->failureTrees = new WeakMap();
         $this->tokenPoolCapacity = $tokenPoolCapacity;
     }
 
@@ -204,8 +209,19 @@ final class Supervisor
         $run->state = RunState::Failed;
         $run->error = $error;
         $run->endedAt = microtime(true);
-        $run->failureTree = $this->tree();
         $this->ledger->fail($run->id, $error);
+
+        if (!isset($this->failureTrees[$error])) {
+            $this->failureTrees[$error] = $this->tree();
+        }
+
+        $run->failureTree = $this->failureTrees[$error];
+    }
+
+    /** @return list<TaskRunSnapshot>|null */
+    public function failureTreeFor(Throwable $error): ?array
+    {
+        return $this->failureTrees[$error] ?? null;
     }
 
     /**

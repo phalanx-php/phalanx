@@ -160,6 +160,42 @@ final class ApplicationTest extends TestCase
     }
 
     #[Test]
+    public function throwingOneOffCommandRendersFailureTreeSnapshot(): void
+    {
+        $stream = StreamOutputHelper::open();
+        $app = self::consoleCommand(
+            'fail',
+            static function (CommandContext $ctx): int {
+                $ctx->go(
+                    static function (ExecutionScope $scope): void {
+                        $scope->delay(Mark::s(10));
+                    },
+                    'ledger.child.active',
+                );
+                $ctx->delay(Mark::ms(10));
+
+                throw new \RuntimeException('expected ledger failure');
+            },
+        )
+            ->withConfig(new Config(errorOutput: StreamOutputHelper::output($stream)))
+            ->build();
+
+        $this->scope->run(static function (ExecutionScope $_scope) use ($app, $stream): void {
+            self::assertSame(1, $app->dispatch(['fail']));
+
+            $output = StreamOutputHelper::contents($stream);
+            self::assertStringContainsString('Active Ledger Snapshot:', $output);
+            self::assertStringContainsString('console.command.fail', $output);
+            self::assertStringContainsString('ledger.child.active', $output);
+            self::assertStringContainsString('failed', $output);
+            self::assertStringNotContainsString('Task tree unavailable', $output);
+        });
+
+        PhalanxAssert::assertNoLiveTasks($app->host()->supervisor());
+        $app->shutdown();
+    }
+
+    #[Test]
     public function unknownCommandReturnsNonZeroWithAvailableCommands(): void
     {
         $stream = StreamOutputHelper::open();
