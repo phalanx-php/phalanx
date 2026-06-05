@@ -24,6 +24,6 @@ final class RetryStage implements Executable, Recoverable
 
     public function __invoke(ExecutionScope $scope): mixed
     {
-        return $scope->execute($this->inner);
+        return $scope->retry($this->inner, $this->recovery);
     }
 }

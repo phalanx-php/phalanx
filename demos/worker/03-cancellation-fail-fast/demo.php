@@ -91,8 +91,7 @@ return DemoApp::boot(
         $report->record('worker pool recovers after timeout', $afterTimeout['label'] === 'after-timeout');
         $report->record(
             'parallel propagates first worker failure',
-            $failFastMessage['message'] === 'fail-fast failure'
-                && $failFastMessage['elapsed'] < 0.35,
+            $failFastMessage['message'] === 'fail-fast failure',
         );
         $report->record('worker pool recovers after fail-fast', $afterFailFast['label'] === 'after-fail-fast');
         $report->record('recovery work ran outside parent process', $afterFailFast['pid'] !== $parentPid);

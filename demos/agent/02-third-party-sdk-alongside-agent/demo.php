@@ -10,7 +10,7 @@
  *
  * Both legs settle through $scope->settle():
  *   - Agent leg: streams a short response via Ollama (or scripted Fake).
- *   - Guzzle leg: fetches a URL (defaults to https://httpbin.org/status/200).
+ *   - Guzzle leg: fetches a URL (defaults to a local fixture server).
  *
  * With Runtime runtime hooks enabled, the Guzzle leg is coroutine-aware; without
  * hooks, it blocks the worker. This demo does not assert which regime is active.
@@ -23,7 +23,7 @@
  *   - OLLAMA_BASE_URL — Ollama endpoint (default http://localhost:11434)
  *   - OLLAMA_MODEL    — model name (default qwen2.5-coder:7b)
  *   - OLLAMA_ENABLED  — set to 0 to skip the Ollama probe and use Fake
- *   - GUZZLE_DEMO_URL — http(s) URL Guzzle should hit (default https://httpbin.org/status/200)
+ *   - GUZZLE_DEMO_URL — optional http(s) URL Guzzle should hit instead of the local fixture
  *
  * Usage:
  *   php -d extension=swoole demos/agent/02-third-party-sdk-alongside-agent/demo.php
@@ -40,6 +40,7 @@ use Phalanx\Agent\Router\SingleProviderRouter;
 use Phalanx\Demos\Kit\DemoApp;
 use Phalanx\Demos\Kit\DemoProvider;
 use Phalanx\Demos\Kit\DemoReport;
+use Phalanx\Demos\Kit\DemoSubprocess;
 use Phalanx\Demos\Kit\FakeCueScript;
 use Phalanx\AiProviders\Capabilities;
 use Phalanx\AiProviders\Capability;
@@ -71,7 +72,56 @@ if (!extension_loaded('swoole')) {
 // creates the Runtime kernel. We read the provider env here so we can build the
 // AgentBundle (which needs a concrete provider/router) before boot.
 return static function (array $context): Closure {
-    $guzzleUrl = (string) ($context['GUZZLE_DEMO_URL'] ?? 'https://httpbin.org/status/200');
+    $waitForFixture = static function (string $host, int $port): bool {
+        $deadline = microtime(true) + 3.0;
+
+        do {
+            $socket = @stream_socket_client("tcp://{$host}:{$port}", $errno, $error, 0.1);
+            if (is_resource($socket)) {
+                fclose($socket);
+                return true;
+            }
+
+            usleep(50_000);
+        } while (microtime(true) < $deadline);
+
+        return false;
+    };
+
+    $localFixture = null;
+    $guzzleUrl = $context['GUZZLE_DEMO_URL'] ?? null;
+    if (!is_string($guzzleUrl) || $guzzleUrl === '') {
+        $host = '127.0.0.1';
+        $port = random_int(20_000, 45_000);
+        $localFixture = DemoSubprocess::spawn(static function () use ($host, $port): void {
+            $server = new \Swoole\Http\Server($host, $port);
+            $server->set(['log_level' => SWOOLE_LOG_ERROR]);
+            $server->on('request', static function (\Swoole\Http\Request $_request, \Swoole\Http\Response $response): void {
+                $response->status(200);
+                $response->header('Content-Type', 'text/plain');
+                $response->end('ok');
+            });
+            $server->start();
+        });
+
+        if ($localFixture === null || !$waitForFixture($host, $port)) {
+            $localFixture?->terminate();
+            $inner = DemoReport::demo(
+                'Agent Third-Party SDK Alongside Agent',
+                static function (DemoReport $report): void {
+                    $report->cannotRun(
+                        'local Guzzle fixture server could not start',
+                        'verify Swoole is loaded and rerun the demo',
+                    );
+                },
+            );
+
+            return ($inner)([]);
+        }
+
+        $guzzleUrl = "http://{$host}:{$port}/status/200";
+    }
+
     $baseUrl   = (string) ($context['OLLAMA_BASE_URL'] ?? 'http://localhost:11434');
     $model     = (string) ($context['OLLAMA_MODEL']    ?? 'qwen2.5-coder:7b');
     $enabled   = ((string) ($context['OLLAMA_ENABLED'] ?? '1')) !== '0';
@@ -100,7 +150,7 @@ return static function (array $context): Closure {
             static function (DemoReport $report): void {
                 $report->cannotRun(
                     'GUZZLE_DEMO_URL must start with http:// or https://',
-                    'rerun with GUZZLE_DEMO_URL=https://httpbin.org/status/200',
+                    'rerun with GUZZLE_DEMO_URL=http://127.0.0.1:<port>/status/200',
                 );
             },
         );
@@ -162,39 +212,43 @@ return static function (array $context): Closure {
     // invokes our outer static fn and calls the returned Closure.
     $bootClosure = DemoApp::boot(
         'Agent Third-Party SDK Alongside Agent',
-        static function (DemoApp $app, DemoReport $report) use ($agent, $capturedUrl, $providerDesc): void {
+        static function (DemoApp $app, DemoReport $report) use ($agent, $capturedUrl, $providerDesc, $localFixture): void {
             $report->note(sprintf('provider: %s', $providerDesc));
             $report->note(sprintf('guzzle target: %s', $capturedUrl));
             $report->note('topic: Agent as strategist and patron of wisdom');
 
-            $guzzle = new \GuzzleHttp\Client(['timeout' => 10.0]);
+            try {
+                $guzzle = new \GuzzleHttp\Client(['timeout' => 10.0]);
 
-            $settled = $app->run(
-                Task::named(
-                    'demo.agent.guzzle-sdk-coexistence',
-                    static function (ExecutionScope $scope) use ($agent, $guzzle, $capturedUrl): mixed {
-                        $agentText = '';
+                $settled = $app->run(
+                    Task::named(
+                        'demo.agent.guzzle-sdk-coexistence',
+                        static function (ExecutionScope $scope) use ($agent, $guzzle, $capturedUrl): mixed {
+                            $agentText = '';
 
-                        return $scope->settle(
-                            agent: Task::of(static function (TaskScope $s) use ($agent, &$agentText): string {
-                                $config = new ActivityConfig(
-                                    id: 'demo-guzzle-coexistence',
-                                    context: Context::new(),
-                                    maxInvocations: 1,
-                                );
-                                $result = Agent::run($s, $agent, $config);
-                                foreach ($result->stream->toArray() as $cue) {
-                                    if ($cue instanceof TokenDelta) {
-                                        $agentText .= $cue->text;
+                            return $scope->settle(
+                                agent: Task::of(static function (TaskScope $s) use ($agent, &$agentText): string {
+                                    $config = new ActivityConfig(
+                                        id: 'demo-guzzle-coexistence',
+                                        context: Context::new(),
+                                        maxInvocations: 1,
+                                    );
+                                    $result = Agent::run($s, $agent, $config);
+                                    foreach ($result->stream->toArray() as $cue) {
+                                        if ($cue instanceof TokenDelta) {
+                                            $agentText .= $cue->text;
+                                        }
                                     }
-                                }
-                                return trim($agentText);
-                            }),
-                            guzzle: Task::of(static fn (): int => $guzzle->get($capturedUrl)->getStatusCode()),
-                        );
-                    },
-                ),
-            );
+                                    return trim($agentText);
+                                }),
+                                guzzle: Task::of(static fn (): int => $guzzle->get($capturedUrl)->getStatusCode()),
+                            );
+                        },
+                    ),
+                );
+            } finally {
+                $localFixture?->terminate();
+            }
 
             $agentS = $settled->settlement('agent');
             $guzzleS = $settled->settlement('guzzle');

@@ -152,10 +152,20 @@ final class DemoSubprocess
             if ($status !== false) {
                 return;
             }
-            Coroutine::sleep(0.02);
+            self::sleep(0.02);
         } while (microtime(true) < $deadline);
 
         Process::kill($this->pid, SIGKILL);
         Process::wait(false);
+    }
+
+    private static function sleep(float $seconds): void
+    {
+        if (Coroutine::getCid() > 0) {
+            Coroutine::sleep($seconds);
+            return;
+        }
+
+        usleep((int) ($seconds * 1_000_000));
     }
 }
