@@ -26,13 +26,13 @@ final class UseTestAppRuleTest extends RuleTestCase
                 ],
                 [
                     'Integration tests should boot through PhalanxTestCase::testApp() instead of '
-                    . 'Phalanx\\Http\\Http::starting(). '
+                    . 'Phalanx\\Http\\Server::starting(). '
                     . 'Bypassing TestApp skips lens activation, fake registry resets, and ledger teardown assertions.',
                     24,
                 ],
                 [
                     'Integration tests should boot through PhalanxTestCase::testApp() instead of '
-                    . 'Phalanx\\Console\\Application\\Console::command(). '
+                    . 'Phalanx\\Console\\Facade::command(). '
                     . 'Bypassing TestApp skips lens activation, fake registry resets, and ledger teardown assertions.',
                     29,
                 ],

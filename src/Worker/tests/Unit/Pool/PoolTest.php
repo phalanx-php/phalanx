@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Worker\Tests\Unit\WorkerPool;
+namespace Phalanx\Worker\Tests\Unit\Pool;
 
-use Phalanx\Worker\WorkerPool\WorkerPool;
+use Phalanx\Worker\Pool\Pool;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -16,11 +16,11 @@ use PHPUnit\Framework\TestCase;
  * factories accumulate, that the convenience `ofSize()` factory composes
  * the right shape, and that the count reflects what was registered.
  */
-final class WorkerPoolTest extends TestCase
+final class PoolTest extends TestCase
 {
     public function testAddAccumulatesWorkerCount(): void
     {
-        $pool = new WorkerPool();
+        $pool = new Pool();
         $pool->add(static function (): void {
         });
         $pool->add(static function (): void {
@@ -31,7 +31,7 @@ final class WorkerPoolTest extends TestCase
 
     public function testAddBatchRegistersWorkers(): void
     {
-        $pool = new WorkerPool();
+        $pool = new Pool();
         $pool->addBatch(4, static function (): void {
         });
 
@@ -40,7 +40,7 @@ final class WorkerPoolTest extends TestCase
 
     public function testOfSizeBuildsBatchPool(): void
     {
-        $pool = WorkerPool::ofSize(3, static function (): void {
+        $pool = Pool::ofSize(3, static function (): void {
         });
 
         self::assertSame(3, $pool->workerCount);
@@ -48,6 +48,6 @@ final class WorkerPoolTest extends TestCase
 
     public function testEventWorkerStartReturnsConstant(): void
     {
-        self::assertNotEmpty(WorkerPool::eventWorkerStart());
+        self::assertNotEmpty(Pool::eventWorkerStart());
     }
 }

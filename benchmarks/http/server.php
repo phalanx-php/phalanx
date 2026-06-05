@@ -6,10 +6,9 @@ declare(strict_types=1);
 require __DIR__ . '/../../vendor/autoload_runtime.php';
 
 use GuzzleHttp\Psr7\Response;
+use Phalanx\Task\Scopeable;
 use Phalanx\Http\RequestContext;
 use Phalanx\Http\RouteGroup;
-use Phalanx\Http\Http;
-use Phalanx\Task\Scopeable;
 
 final class JsonHandler implements Scopeable
 {

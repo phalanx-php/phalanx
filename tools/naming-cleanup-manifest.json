@@ -182,6 +182,96 @@
       "old_file": "src/SurrealDb/src/WebSocketSurrealDbLiveTransport.php",
       "new_file": "src/SurrealDb/src/Live/WebSocket/Transport.php",
       "verification": ["composer test:surrealdb", "composer test:websocket"]
+    },
+    {
+      "slice": "worker",
+      "action": "rename",
+      "risk": "public-api",
+      "guarded_zone": false,
+      "old_fqcn": "Phalanx\\Worker\\Worker",
+      "new_fqcn": "Phalanx\\Worker\\Facade",
+      "old_file": "src/Worker/src/Worker.php",
+      "new_file": "src/Worker/src/Facade.php",
+      "verification": ["composer test:worker", "composer examples:lint"]
+    },
+    {
+      "slice": "worker",
+      "action": "rename",
+      "risk": "public-api",
+      "guarded_zone": false,
+      "old_fqcn": "Phalanx\\Worker\\WorkerServiceBundle",
+      "new_fqcn": "Phalanx\\Worker\\Bundle",
+      "old_file": "src/Worker/src/WorkerServiceBundle.php",
+      "new_file": "src/Worker/src/Bundle.php",
+      "verification": ["composer test:worker", "composer test:runtime"]
+    },
+    {
+      "slice": "worker",
+      "action": "rename",
+      "risk": "public-api",
+      "guarded_zone": false,
+      "old_fqcn": "Phalanx\\Worker\\ParallelWorkerDispatch",
+      "new_fqcn": "Phalanx\\Worker\\ParallelDispatch",
+      "old_file": "src/Worker/src/ParallelWorkerDispatch.php",
+      "new_file": "src/Worker/src/ParallelDispatch.php",
+      "verification": ["composer test:worker", "composer test:runtime"]
+    },
+    {
+      "slice": "worker",
+      "action": "rename",
+      "risk": "internal",
+      "guarded_zone": false,
+      "old_fqcn": "Phalanx\\Worker\\Supervisor\\WorkerSupervisor",
+      "new_fqcn": "Phalanx\\Worker\\Supervisor\\Supervisor",
+      "old_file": "src/Worker/src/Supervisor/WorkerSupervisor.php",
+      "new_file": "src/Worker/src/Supervisor/Supervisor.php",
+      "verification": ["composer test:worker"]
+    },
+    {
+      "slice": "worker",
+      "action": "rename",
+      "risk": "internal",
+      "guarded_zone": false,
+      "old_fqcn": "Phalanx\\Worker\\Runtime\\WorkerRuntime",
+      "new_fqcn": "Phalanx\\Worker\\Runtime\\Runtime",
+      "old_file": "src/Worker/src/Runtime/WorkerRuntime.php",
+      "new_file": "src/Worker/src/Runtime/Runtime.php",
+      "verification": ["composer test:worker"]
+    },
+    {
+      "slice": "worker",
+      "action": "rename",
+      "risk": "public-api",
+      "guarded_zone": false,
+      "old_fqcn": "Phalanx\\Worker\\WorkerPool\\WorkerPool",
+      "new_fqcn": "Phalanx\\Worker\\Pool\\Pool",
+      "old_file": "src/Worker/src/WorkerPool/WorkerPool.php",
+      "new_file": "src/Worker/src/Pool/Pool.php",
+      "verification": ["composer test:worker"]
+    },
+    {
+      "slice": "worker",
+      "action": "keep",
+      "risk": "public-api",
+      "guarded_zone": true,
+      "old_fqcn": "Phalanx\\Worker\\WorkerTask",
+      "reason": "Cross-package contract stays explicit at Runtime and PHPStan call sites."
+    },
+    {
+      "slice": "worker",
+      "action": "keep",
+      "risk": "public-api",
+      "guarded_zone": true,
+      "old_fqcn": "Phalanx\\Worker\\WorkerScope",
+      "reason": "Cross-package scope type stays explicit at task implementation call sites."
+    },
+    {
+      "slice": "worker",
+      "action": "keep",
+      "risk": "public-api",
+      "guarded_zone": true,
+      "old_fqcn": "Phalanx\\Worker\\WorkerDispatch",
+      "reason": "Cross-package dispatch contract stays explicit where Runtime accepts a worker dispatcher."
     }
   ],
   "deferred": [

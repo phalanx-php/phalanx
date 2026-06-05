@@ -6,11 +6,11 @@ require __DIR__ . '/../../../vendor/autoload_runtime.php';
 
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Demos\Worker\CancellationFailFast\FailingWorkerTask;
-use Phalanx\Demos\Worker\CancellationFailFast\SlowWorkerTask;
+use Phalanx\Demos\Worker\CancellationFailFast\SlowTask;
 use Phalanx\Demos\Worker\CancellationFailFast\WorkerHealthTask;
 use Phalanx\Demos\Kit\DemoApp;
 use Phalanx\Demos\Kit\DemoReport;
-use Phalanx\Worker\Worker;
+use Phalanx\Worker\Facade;
 use Phalanx\Worker\ParallelConfig;
 use Phalanx\Mark\Mark;
 use Phalanx\Scope\ExecutionScope;
@@ -32,7 +32,7 @@ return DemoApp::boot(
                     $scope->timeout(
                         Mark::ms(50),
                         Task::of(static fn(ExecutionScope $child): mixed => $child->inWorker(
-                            new SlowWorkerTask(500_000),
+                            new SlowTask(500_000),
                         )),
                     );
                 } catch (Cancelled $e) {
@@ -63,7 +63,7 @@ return DemoApp::boot(
                 $failFastMessage = null;
                 try {
                     $scope->parallel(
-                        slow: new SlowWorkerTask(500_000),
+                        slow: new SlowTask(500_000),
                         fail: new FailingWorkerTask('fail-fast failure'),
                     );
                 } catch (\RuntimeException $e) {
@@ -97,5 +97,5 @@ return DemoApp::boot(
         $report->record('recovery work ran outside parent process', $afterFailFast['pid'] !== $parentPid);
         $report->record('task tree cleaned', $app->ledger()->liveTaskCount() === 0);
     },
-    [Worker::services(new ParallelConfig(agents: 2))],
+    [Facade::services(new ParallelConfig(agents: 2))],
 );

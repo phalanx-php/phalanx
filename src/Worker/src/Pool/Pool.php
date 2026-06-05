@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Worker\WorkerPool;
+namespace Phalanx\Worker\Pool;
 
 use Closure;
-use Swoole\Process\Pool;
+use Swoole\Process\Pool as ProcessPool;
 
 use function Swoole\Coroutine\run as swoole_coroutine_run;
 
@@ -14,7 +14,7 @@ use function Swoole\Coroutine\run as swoole_coroutine_run;
  *
  * Composes `Swoole\Process\Pool` directly with a typed Phalanx-native
  * facade. The existing `Phalanx\Worker\Agent\Worker` request/response IPC
- * serves service-call workloads; this WorkerPool targets the simpler
+ * serves service-call workloads; this Pool targets the simpler
  * "spawn N processes that run a function and stay alive under a
  * supervisor" use case (plx-ops background workers, scheduled job pools,
  * fan-out batch processors).
@@ -26,10 +26,10 @@ use function Swoole\Coroutine\run as swoole_coroutine_run;
  * Lifecycle: construct, add() one or more worker functions, then start().
  * `start()` blocks the calling process — workers run until the master
  * receives a termination signal. For embedding inside an Runtime bundle
- * with onShutdown registration, build the WorkerPool from a service
+ * with onShutdown registration, build the Pool from a service
  * factory and call start() from the application entry point.
  */
-final class WorkerPool
+final class Pool
 {
     private(set) int $workerCount = 0;
 
@@ -46,7 +46,7 @@ final class WorkerPool
      * Convenience helper for the most common configuration: one function,
      * N coroutine-enabled workers, no IPC.
      *
-     * @param Closure(\Swoole\Process\Pool, int): void $func
+     * @param Closure(ProcessPool, int): void $func
      */
     public static function ofSize(int $workerNum, Closure $func): self
     {
@@ -69,7 +69,7 @@ final class WorkerPool
      * the worker body runs inside `Coroutine::run`, so coroutine-aware
      * code (Runtime scopes, managed clients) works inside it.
      *
-     * @param Closure(\Swoole\Process\Pool, int): void $func
+     * @param Closure(ProcessPool, int): void $func
      */
     public function add(Closure $func, bool $enableCoroutine = true): self
     {
@@ -83,7 +83,7 @@ final class WorkerPool
      * Add `$workerNum` workers running the same function. Equivalent to
      * calling `add()` `$workerNum` times.
      *
-     * @param Closure(\Swoole\Process\Pool, int): void $func
+     * @param Closure(ProcessPool, int): void $func
      */
     public function addBatch(int $workerNum, Closure $func, bool $enableCoroutine = true): self
     {
@@ -102,10 +102,10 @@ final class WorkerPool
      */
     public function start(): void
     {
-        $pool = new Pool(count($this->factories), $this->ipcType, $this->msgQueueKey);
+        $pool = new ProcessPool(count($this->factories), $this->ipcType, $this->msgQueueKey);
         $factories = $this->factories;
 
-        $pool->on(self::eventWorkerStart(), static function (Pool $pool, int $workerId) use ($factories): void {
+        $pool->on(self::eventWorkerStart(), static function (ProcessPool $pool, int $workerId) use ($factories): void {
             if (!isset($factories[$workerId])) {
                 return;
             }

@@ -12,8 +12,8 @@ class WorkerDemoServiceBundle extends ServiceBundle
 {
     public function services(Services $services, AppContext $context): void
     {
-        $services->singleton(WorkerGreetingServiceImpl::class)
-            ->factory(static fn(): WorkerGreetingServiceImpl => new WorkerGreetingServiceImpl());
-        $services->alias(WorkerGreetingService::class, WorkerGreetingServiceImpl::class);
+        $services->singleton(GreetingServiceImpl::class)
+            ->factory(static fn(): GreetingServiceImpl => new GreetingServiceImpl());
+        $services->alias(GreetingService::class, GreetingServiceImpl::class);
     }
 }

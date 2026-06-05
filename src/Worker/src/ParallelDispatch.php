@@ -10,16 +10,16 @@ use Phalanx\Scope\TaskScope;
 use Phalanx\Trace\TraceType;
 use Phalanx\Worker\Process\ProcessConfig;
 use Phalanx\Worker\Protocol\TaskRequest;
-use Phalanx\Worker\Supervisor\WorkerSupervisor;
+use Phalanx\Worker\Supervisor\Supervisor;
 use Phalanx\Worker\WorkerDispatch;
 use Phalanx\Worker\WorkerTask;
 use ReflectionClass;
 use RuntimeException;
 use UnitEnum;
 
-class ParallelWorkerDispatch implements WorkerDispatch
+class ParallelDispatch implements WorkerDispatch
 {
-    private ?WorkerSupervisor $supervisor = null;
+    private ?Supervisor $supervisor = null;
 
     public function __construct(
         private readonly ParallelConfig $config,
@@ -60,13 +60,13 @@ class ParallelWorkerDispatch implements WorkerDispatch
         $this->supervisor = null;
     }
 
-    private function supervisor(): WorkerSupervisor
+    private function supervisor(): Supervisor
     {
         if ($this->supervisor !== null) {
             return $this->supervisor;
         }
 
-        $supervisor = new WorkerSupervisor(
+        $supervisor = new Supervisor(
             config: $this->config->toSupervisorConfig(),
             processConfig: ProcessConfig::detect($this->config->workerScript, $this->config->autoloadPath),
         );

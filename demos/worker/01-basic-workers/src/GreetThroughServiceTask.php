@@ -20,6 +20,6 @@ class GreetThroughServiceTask implements WorkerTask
 
     public function __invoke(WorkerScope $scope): string
     {
-        return $scope->service(WorkerGreetingService::class)->greet($this->name);
+        return $scope->service(GreetingService::class)->greet($this->name);
     }
 }

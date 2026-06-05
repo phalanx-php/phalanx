@@ -27,7 +27,7 @@ if ($autoloadPath === null || !file_exists($autoloadPath)) {
 
 require $autoloadPath;
 
-use Phalanx\Worker\Runtime\WorkerRuntime;
+use Phalanx\Worker\Runtime\Runtime;
 
-$runtime = new WorkerRuntime(STDIN, STDOUT, STDERR);
+$runtime = new Runtime(STDIN, STDOUT, STDERR);
 $runtime->run();

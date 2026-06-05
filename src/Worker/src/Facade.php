@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace Phalanx\Worker;
 
 use Phalanx\Service\ServiceBundle;
-use Phalanx\Worker\WorkerDispatch;
 
-class Worker
+final class Facade
 {
     private function __construct()
     {
@@ -20,6 +19,6 @@ class Worker
 
     public static function services(?ParallelConfig $config = null): ServiceBundle
     {
-        return new WorkerServiceBundle($config);
+        return new Bundle($config);
     }
 }

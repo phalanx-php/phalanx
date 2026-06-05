@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Phalanx\PHPStan\Tests\Rules\Fixtures\Benchmarks;
 
 use Phalanx\Application;
-use Phalanx\Console\Application\Console;
-use Phalanx\Http\Http;
+use Phalanx\Console\Facade;
+use Phalanx\Http\Server;
 
 /**
  * Fixture path contains /benchmarks/, so direct facade booting should be
@@ -21,11 +21,11 @@ final class BenchmarkHarnessViolation
 
     public function httpFacade(): void
     {
-        \Phalanx\Http\Server::starting()->build();
+        Server::starting()->build();
     }
 
     public function consoleFacade(): void
     {
-        Console::starting()->build();
+        Facade::starting()->build();
     }
 }

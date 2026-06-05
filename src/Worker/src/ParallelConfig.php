@@ -68,7 +68,7 @@ final readonly class ParallelConfig
 
     public function workerDispatch(): WorkerDispatch
     {
-        return new ParallelWorkerDispatch($this);
+        return new ParallelDispatch($this);
     }
 
     public function toSupervisorConfig(): SupervisorConfig

@@ -20,8 +20,8 @@ final class UseBenchmarkHarnessRule implements Rule
 
     private const array TARGET_CLASSES = [
         'Phalanx\\Application',
-        'Phalanx\\Http\\Http',
-        'Phalanx\\Console\\Application\\Console',
+        'Phalanx\\Http\\Server',
+        'Phalanx\\Console\\Facade',
     ];
 
     public function getNodeType(): string

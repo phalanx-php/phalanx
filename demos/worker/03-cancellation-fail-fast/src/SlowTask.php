@@ -2,25 +2,26 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Worker\Tests\Fixtures;
+namespace Phalanx\Demos\Worker\CancellationFailFast;
 
-use Phalanx\Scope\Scope;
+use Phalanx\Worker\WorkerScope;
 use Phalanx\Worker\WorkerTask;
 
-final class SlowWorkerTask implements WorkerTask
+class SlowTask implements WorkerTask
 {
     public string $traceName {
         get => self::class;
     }
 
     public function __construct(
-        public int $microseconds,
+        private readonly int $microseconds,
     ) {
     }
 
-    public function __invoke(Scope $scope): string
+    public function __invoke(WorkerScope $scope): string
     {
         usleep($this->microseconds);
+
         return 'slow-done';
     }
 }

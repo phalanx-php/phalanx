@@ -15,7 +15,7 @@ use Symfony\Component\Process\Pipes\UnixPipes;
 use Symfony\Component\Process\Pipes\WindowsPipes;
 use Symfony\Component\Process\Process;
 
-final class WorkerServiceBundle extends ServiceBundle
+final class Bundle extends ServiceBundle
 {
     public function __construct(
         private ?ParallelConfig $config = null,
@@ -32,7 +32,7 @@ final class WorkerServiceBundle extends ServiceBundle
 
         $services->singleton(WorkerDispatch::class)
             ->needs(ParallelConfig::class)
-            ->factory(static fn(ParallelConfig $config): WorkerDispatch => new ParallelWorkerDispatch($config))
+            ->factory(static fn(ParallelConfig $config): WorkerDispatch => new ParallelDispatch($config))
             ->onShutdown(static function (WorkerDispatch $dispatch): void {
                 $dispatch->shutdown();
             });
@@ -55,7 +55,7 @@ final class WorkerServiceBundle extends ServiceBundle
      * Two class families are pre-warmed:
      *   - Symfony Process hierarchy used by worker subprocess pipes.
      *   - Worker dispatcher implementations (cold-path arm of the match in
-     *     WorkerSupervisor::createDispatcher() fails to resolve at lazy
+     *     Supervisor::createDispatcher() fails to resolve at lazy
      *     reference time even though both classes are autoloadable).
      */
     private static function prewarmHookSafeClasses(): void

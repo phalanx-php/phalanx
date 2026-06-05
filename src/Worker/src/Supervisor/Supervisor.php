@@ -17,7 +17,7 @@ use Phalanx\Worker\Process\ProcessConfig;
 use Phalanx\Worker\Protocol\TaskRequest;
 use Swoole\Atomic;
 
-class WorkerSupervisor
+class Supervisor
 {
     private Atomic $started;
 

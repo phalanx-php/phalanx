@@ -83,7 +83,7 @@ parameters:
     phalanxProcessInternalPaths:
         - src/Runtime/src/System/Internal/SymfonyProcessAdapter.php
         - src/Cli
-        - src/Worker/src/WorkerPool/WorkerPool.php
+        - src/Worker/src/Pool/Pool.php
         - src/Tui/src/Tui/Drawing/Terminal.php
     phalanxCoroutineInternalPaths:
         - src/Runtime/src/Scope/ExecutionLifecycleScope.php
@@ -99,6 +99,10 @@ parameters:
         -
             identifier: phalanx.testing.useBenchmarkHarness
             path: benchmarks/http/cases/HttpCases.php
+            reportUnmatched: true
+        -
+            identifier: phalanx.testing.useBenchmarkHarness
+            path: benchmarks/http/server.php
             reportUnmatched: true
         # Swoole\Lock::lock() ide-helper stub omits the $timeout parameter.
         # Verified in ext-swoole 6.2.1: lock(int $operation = 2, float $timeout = -1): bool
@@ -340,11 +344,11 @@ parameters:
         # Worker serialization tests deliberately test non-serializable state to verify runtime rejection
         -
             identifier: phalanx.worker.serializableTaskState
-            path: src/Worker/tests/Unit/ParallelWorkerDispatchSerializationTest.php
+            path: src/Worker/tests/Unit/ParallelDispatchSerializationTest.php
             reportUnmatched: true
         -
             identifier: property.onlyWritten
-            path: src/Worker/tests/Unit/ParallelWorkerDispatchSerializationTest.php
+            path: src/Worker/tests/Unit/ParallelDispatchSerializationTest.php
             reportUnmatched: true
     tmpDir: .phpstan-cache
     treatPhpDocTypesAsCertain: false

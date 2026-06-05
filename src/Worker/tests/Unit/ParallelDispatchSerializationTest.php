@@ -6,7 +6,7 @@ namespace Phalanx\Worker\Tests\Unit;
 
 use Closure;
 use Phalanx\Worker\ParallelConfig;
-use Phalanx\Worker\ParallelWorkerDispatch;
+use Phalanx\Worker\ParallelDispatch;
 use Phalanx\Scope\Scope;
 use Phalanx\Worker\WorkerTask;
 use PHPUnit\Framework\Attributes\Test;
@@ -14,16 +14,16 @@ use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
 use RuntimeException;
 
-final class ParallelWorkerDispatchSerializationTest extends TestCase
+final class ParallelDispatchSerializationTest extends TestCase
 {
     #[Test]
     public function extractsSerializableConstructorState(): void
     {
-        $args = $this->extract(new SerializableWorkerTask(42, ['a' => 1], WorkerTaskKind::Fast));
+        $args = $this->extract(new SerializableTask(42, ['a' => 1], TaskKind::Fast));
 
         self::assertSame(42, $args['id']);
         self::assertSame(['a' => 1], $args['payload']);
-        self::assertSame(WorkerTaskKind::Fast, $args['kind']);
+        self::assertSame(TaskKind::Fast, $args['kind']);
     }
 
     #[Test]
@@ -32,7 +32,7 @@ final class ParallelWorkerDispatchSerializationTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage("property 'callback' is not serializable");
 
-        $this->extract(new ClosureWorkerTask(static fn(): null => null));
+        $this->extract(new ClosureTask(static fn(): null => null));
     }
 
     #[Test]
@@ -41,24 +41,24 @@ final class ParallelWorkerDispatchSerializationTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage("property 'payload' is not serializable");
 
-        $this->extract(new ObjectWorkerTask(new WorkerPayload()));
+        $this->extract(new ObjectTask(new Payload()));
     }
 
     /** @return array<string, mixed> */
     private function extract(WorkerTask $task): array
     {
-        $method = new ReflectionMethod(ParallelWorkerDispatch::class, 'extractConstructorArgs');
+        $method = new ReflectionMethod(ParallelDispatch::class, 'extractConstructorArgs');
 
-        return $method->invoke(new ParallelWorkerDispatch(ParallelConfig::singleWorker()), $task);
+        return $method->invoke(new ParallelDispatch(ParallelConfig::singleWorker()), $task);
     }
 }
 
-enum WorkerTaskKind: string
+enum TaskKind: string
 {
     case Fast = 'fast';
 }
 
-final class SerializableWorkerTask implements WorkerTask
+final class SerializableTask implements WorkerTask
 {
     public string $traceName {
         get => self::class;
@@ -68,7 +68,7 @@ final class SerializableWorkerTask implements WorkerTask
     public function __construct(
         private readonly int $id,
         private readonly array $payload,
-        private readonly WorkerTaskKind $kind,
+        private readonly TaskKind $kind,
     ) {
     }
 
@@ -78,7 +78,7 @@ final class SerializableWorkerTask implements WorkerTask
     }
 }
 
-final class ClosureWorkerTask implements WorkerTask
+final class ClosureTask implements WorkerTask
 {
     public string $traceName {
         get => self::class;
@@ -95,23 +95,23 @@ final class ClosureWorkerTask implements WorkerTask
     }
 }
 
-final class ObjectWorkerTask implements WorkerTask
+final class ObjectTask implements WorkerTask
 {
     public string $traceName {
         get => self::class;
     }
 
     public function __construct(
-        private readonly WorkerPayload $payload,
+        private readonly Payload $payload,
     ) {
     }
 
-    public function __invoke(Scope $scope): WorkerPayload
+    public function __invoke(Scope $scope): Payload
     {
         return $this->payload;
     }
 }
 
-final class WorkerPayload
+final class Payload
 {
 }

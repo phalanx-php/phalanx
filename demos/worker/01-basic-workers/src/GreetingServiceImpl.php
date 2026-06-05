@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Worker\Tests\Fixtures;
+namespace Phalanx\Demos\Worker\BasicWorkers;
 
-final class WorkerGreetingServiceImpl implements WorkerGreetingService
+class GreetingServiceImpl implements GreetingService
 {
     public function greet(string $name): string
     {

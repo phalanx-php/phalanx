@@ -18,7 +18,7 @@ use ReflectionType;
 use ReflectionUnionType;
 use RuntimeException;
 
-class WorkerRuntime
+class Runtime
 {
     /**
      * @param resource $stdin

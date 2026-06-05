@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Worker\Tests\Fixtures;
 
-interface WorkerGreetingService
+interface GreetingService
 {
     public function greet(string $name): string;
 }

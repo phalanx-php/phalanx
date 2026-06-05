@@ -6,16 +6,16 @@ namespace Phalanx\Worker\Tests\Integration;
 
 use Phalanx\Application;
 use Phalanx\Cancellation\Cancelled;
-use Phalanx\Worker\Worker;
+use Phalanx\Worker\Facade;
 use Phalanx\Mark\Mark;
 use Phalanx\Worker\ParallelConfig;
-use Phalanx\Worker\Tests\Fixtures\GreetThroughWorkerService;
+use Phalanx\Worker\Tests\Fixtures\GreetThroughServiceTask;
 use Phalanx\Worker\Tests\Fixtures\NeedsExecutionScope;
-use Phalanx\Worker\Tests\Fixtures\SlowWorkerTask;
+use Phalanx\Worker\Tests\Fixtures\SlowTask;
 use Phalanx\Worker\Tests\Fixtures\StatefulCounterTask;
-use Phalanx\Worker\Tests\Fixtures\WorkerGreetingService;
-use Phalanx\Worker\Tests\Fixtures\WorkerGreetingServiceImpl;
-use Phalanx\Worker\Tests\Fixtures\WorkerStderrTask;
+use Phalanx\Worker\Tests\Fixtures\GreetingService;
+use Phalanx\Worker\Tests\Fixtures\GreetingServiceImpl;
+use Phalanx\Worker\Tests\Fixtures\StderrTask;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Task;
 use Phalanx\Testing\PhalanxTestCase;
@@ -93,7 +93,7 @@ final class InWorkerTest extends PhalanxTestCase
             $scope = $app->createScope();
 
             try {
-                $result = $scope->inWorker(new GreetThroughWorkerService('worker'));
+                $result = $scope->inWorker(new GreetThroughServiceTask('worker'));
 
                 self::assertSame('hello worker', $result);
             } finally {
@@ -112,7 +112,7 @@ final class InWorkerTest extends PhalanxTestCase
                 $scope = $app->createScope();
 
                 try {
-                    self::assertSame('stderr-drained', $scope->inWorker(new WorkerStderrTask('agent-warning')));
+                    self::assertSame('stderr-drained', $scope->inWorker(new StderrTask('agent-warning')));
                     self::assertSame(5, $scope->inWorker(new AddNumbers(2, 3)));
                 } finally {
                     $scope->dispose();
@@ -144,7 +144,7 @@ final class InWorkerTest extends PhalanxTestCase
                     try {
                         $scope->timeout(
                             Mark::ms(50),
-                            Task::of(static fn(ExecutionScope $s): mixed => $s->inWorker(new SlowWorkerTask(250_000))),
+                            Task::of(static fn(ExecutionScope $s): mixed => $s->inWorker(new SlowTask(250_000))),
                         );
                         self::fail('Expected worker timeout to cancel the in-flight dispatch.');
                     } catch (Cancelled $e) {
@@ -181,7 +181,7 @@ final class InWorkerTest extends PhalanxTestCase
                 try {
                     $settled = $scope->settle(
                         busy: Task::of(
-                            static fn(ExecutionScope $s): mixed => $s->inWorker(new SlowWorkerTask(250_000)),
+                            static fn(ExecutionScope $s): mixed => $s->inWorker(new SlowTask(250_000)),
                         ),
                         waiter: Task::of(
                             static fn(ExecutionScope $s): mixed => $s->timeout(
@@ -269,11 +269,11 @@ final class InWorkerTest extends PhalanxTestCase
     {
         $bundle = TestServiceBundle::create()
             ->singleton(
-                WorkerGreetingService::class,
-                static fn(): WorkerGreetingService => new WorkerGreetingServiceImpl(),
+                GreetingService::class,
+                static fn(): GreetingService => new GreetingServiceImpl(),
             );
 
-        $testApp = $this->testApp([], $bundle, Worker::services(new ParallelConfig(agents: 1)));
+        $testApp = $this->testApp([], $bundle, Facade::services(new ParallelConfig(agents: 1)));
         $app = $testApp->application->startup();
 
         $this->scope->run(static function (ExecutionScope $_scope) use ($app): void {
@@ -339,11 +339,11 @@ final class InWorkerTest extends PhalanxTestCase
     {
         $bundle = TestServiceBundle::create()
             ->singleton(
-                WorkerGreetingService::class,
-                static fn(): WorkerGreetingService => new WorkerGreetingServiceImpl(),
+                GreetingService::class,
+                static fn(): GreetingService => new GreetingServiceImpl(),
             );
 
-        $app = $this->testApp([], $bundle, Worker::services($config))->application;
+        $app = $this->testApp([], $bundle, Facade::services($config))->application;
         $app->startup();
 
         return $app;

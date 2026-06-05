@@ -8,7 +8,7 @@ use Phalanx\Demos\Worker\StructuredParallel\FailingWorkerTask;
 use Phalanx\Demos\Worker\StructuredParallel\SumRangeTask;
 use Phalanx\Demos\Kit\DemoApp;
 use Phalanx\Demos\Kit\DemoReport;
-use Phalanx\Worker\Worker;
+use Phalanx\Worker\Facade;
 use Phalanx\Worker\ParallelConfig;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Task;
@@ -106,5 +106,5 @@ return DemoApp::boot(
         $report->record('mapParallel onEach saw every result', $seenKeys === ['a', 'b', 'c', 'd']);
         $report->record('task tree cleaned', $app->ledger()->liveTaskCount() === 0);
     },
-    [Worker::services(new ParallelConfig(agents: 2))],
+    [Facade::services(new ParallelConfig(agents: 2))],
 );
