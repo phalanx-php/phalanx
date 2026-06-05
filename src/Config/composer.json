@@ -20,10 +20,8 @@
         "source": "https://github.com/phalanx-php/phalanx-config"
     },
     "require": {
-        "php": "^8.4"
-    },
-    "suggest": {
-        "php-collective/toml": "Required for reading phalanx.toml configuration files"
+        "php": "^8.4",
+        "php-collective/toml": "^0.1.3"
     },
     "require-dev": {
         "phpunit/phpunit": "^13.0"
