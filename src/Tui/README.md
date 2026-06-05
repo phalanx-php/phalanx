@@ -4,7 +4,7 @@
 
 # Tui
 
-Terminal UI and agent-harness framework for PHP 8.4+, built on the Phalanx
+Terminal UI and collab framework for PHP 8.4+, built on the Phalanx
 runtime.
 
 Tui apps are invokable screens and components that return TDOM trees. The
@@ -52,14 +52,14 @@ return Facade::app($context)
 ```
 
 `Facade::app(...)` owns terminal stage configuration, screen registration,
-input dispatch, and the Runtime startup path. The AgentHarness layer owns agent loop
+input dispatch, and the Runtime startup path. The Collab layer owns agent loop
 contracts, messages, work state, prompts, reviews, and UI-facing state
 projections.
 
-## AgentHarness App Shape
+## Collab App Shape
 
-Use `Facade::agentHarness()` when the app is an agent-harness workspace. The
-builder owns the default AgentHarness store, workspace screen, receive queue, input
+Use `Facade::collab()` when the app is an collab workspace. The
+builder owns the default Collab store, workspace screen, receive queue, input
 submitter, boundary runner, and runtime tick loop.
 
 ```php
@@ -69,7 +69,7 @@ use Phalanx\Tui\Facade;
 
 $assistant = new Assistant();
 
-return Facade::agentHarness($context)
+return Facade::collab($context)
     ->primary($assistant)
     ->run();
 ```
@@ -386,9 +386,9 @@ use Phalanx\Tui\Inputs\Key;
 Resolution is layered: overlay stack, active screen, global bindings. The active
 binding list can be rendered with `$ctx->hints()` in component render contexts.
 
-## AgentHarness Workspace
+## Collab Workspace
 
-`WorkspaceScreen` is the current AgentHarness reference screen. It renders chat,
+`WorkspaceScreen` is the current Collab reference screen. It renders chat,
 plan, runtime, DevTools, status, and input panels from store projections. Screens
 do not call participants directly.
 

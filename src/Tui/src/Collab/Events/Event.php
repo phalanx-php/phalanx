@@ -31,7 +31,7 @@ final class Event
         array $context = [],
     ) {
         if (trim($this->id) === '') {
-            throw new \InvalidArgumentException('AgentHarness event id cannot be empty.');
+            throw new \InvalidArgumentException('Collab event id cannot be empty.');
         }
 
         $this->context = $context;

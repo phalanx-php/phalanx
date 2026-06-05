@@ -101,7 +101,7 @@ final class MessageTimelineSlice
     {
         if ($event->workResult === null) {
             throw new \InvalidArgumentException(sprintf(
-                'AgentHarness event "%s" requires a work result for timeline projection.',
+                'Collab event "%s" requires a work result for timeline projection.',
                 $event->kind->value,
             ));
         }
@@ -115,7 +115,7 @@ final class MessageTimelineSlice
     {
         if ($event->workItem === null) {
             throw new \InvalidArgumentException(sprintf(
-                'AgentHarness event "%s" requires a work item for timeline projection.',
+                'Collab event "%s" requires a work item for timeline projection.',
                 $event->kind->value,
             ));
         }

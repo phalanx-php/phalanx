@@ -22,7 +22,7 @@ final class SupportContractTest extends TestCase
     }
 
     #[Test]
-    public function agentHarnessIdsRejectBlankPrefixes(): void
+    public function collabIdsRejectBlankPrefixes(): void
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('prefix cannot be empty');

@@ -14,7 +14,7 @@ use PHPUnit\Framework\TestCase;
 final class EventTest extends TestCase
 {
     #[Test]
-    public function agentHarnessEventCarriesLifecycleDataAndRoutableView(): void
+    public function collabEventCarriesLifecycleDataAndRoutableView(): void
     {
         $envelope = Envelope::prompt('review this');
         $event = Event::record(
@@ -35,7 +35,7 @@ final class EventTest extends TestCase
     }
 
     #[Test]
-    public function agentHarnessEventCanonicalFormAndHashAreStable(): void
+    public function collabEventCanonicalFormAndHashAreStable(): void
     {
         $first = Event::record(
             kind: EventKind::WorkCompleted,

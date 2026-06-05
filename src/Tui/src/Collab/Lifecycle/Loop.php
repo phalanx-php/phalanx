@@ -49,13 +49,13 @@ final class Loop
         private int $maxReviewPasses = 8,
     ) {
         if ($this->maxReviewPasses < 1) {
-            throw new \InvalidArgumentException('AgentHarness loop max review passes must be >= 1.');
+            throw new \InvalidArgumentException('Collab loop max review passes must be >= 1.');
         }
 
-        $this->preparers = self::preparers($preparers);
-        $this->participants = self::participants($participants);
-        $this->reactors = self::reactors($reactors);
-        $this->reviewers = self::reviewers($reviewers);
+        $this->preparers = self::instances($preparers, Preparer::class);
+        $this->participants = self::instances($participants, AgentParticipant::class);
+        $this->reactors = self::instances($reactors, Reactor::class);
+        $this->reviewers = self::instances($reviewers, Reviewer::class);
     }
 
     public function __invoke(WorkContext $ctx): WorkPlanStatus
@@ -80,7 +80,7 @@ final class Loop
             if ($verdict->needsRevision()) {
                 $reviewPasses++;
                 if ($reviewPasses > $this->maxReviewPasses) {
-                    throw new \LogicException('AgentHarness loop exceeded the maximum review passes.');
+                    throw new \LogicException('Collab loop exceeded the maximum review passes.');
                 }
 
                 continue;
@@ -102,42 +102,6 @@ final class Loop
         $readyIds = array_map(static fn(WorkPlanItem $ready): string => $ready->workItem->id, $ctx->plan->readyItems());
 
         return in_array($item->workItem->id, $readyIds, true);
-    }
-
-    /**
-     * @param iterable<Preparer> $preparers
-     * @return list<Preparer>
-     */
-    private static function preparers(iterable $preparers): array
-    {
-        return self::instances($preparers, Preparer::class);
-    }
-
-    /**
-     * @param iterable<AgentParticipant> $participants
-     * @return list<AgentParticipant>
-     */
-    private static function participants(iterable $participants): array
-    {
-        return self::instances($participants, AgentParticipant::class);
-    }
-
-    /**
-     * @param iterable<Reactor> $reactors
-     * @return list<Reactor>
-     */
-    private static function reactors(iterable $reactors): array
-    {
-        return self::instances($reactors, Reactor::class);
-    }
-
-    /**
-     * @param iterable<Reviewer> $reviewers
-     * @return list<Reviewer>
-     */
-    private static function reviewers(iterable $reviewers): array
-    {
-        return self::instances($reviewers, Reviewer::class);
     }
 
     /**

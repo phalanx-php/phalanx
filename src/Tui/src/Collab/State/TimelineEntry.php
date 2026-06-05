@@ -109,7 +109,7 @@ final class TimelineEntry
     private static function missing(string $field, Event $event): never
     {
         throw new \InvalidArgumentException(sprintf(
-            'AgentHarness event "%s" requires a %s for timeline projection.',
+            'Collab event "%s" requires a %s for timeline projection.',
             $event->kind->value,
             $field,
         ));

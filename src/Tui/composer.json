@@ -1,10 +1,10 @@
 {
     "name": "phalanx-php/tui",
-    "description": "Terminal UI and agent-harness framework for Phalanx PHP",
+    "description": "Terminal UI and collab framework for Phalanx PHP",
     "license": "MIT",
     "type": "library",
     "keywords": [
-        "agent-harness",
+        "collab",
         "terminal-ui",
         "tui"
     ],

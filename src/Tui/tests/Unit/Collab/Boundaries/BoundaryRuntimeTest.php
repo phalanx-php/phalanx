@@ -152,7 +152,7 @@ final class BoundaryRuntimeTest extends TestCase
     }
 
     #[Test]
-    public function agentHarnessRuntimeUsesTheCurrentTaskScopeOnEachTick(): void
+    public function collabRuntimeUsesTheCurrentTaskScopeOnEachTick(): void
     {
         $inlet = new ScopeRecordingInlet();
         $runtime = new Runtime(

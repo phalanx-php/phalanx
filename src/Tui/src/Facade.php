@@ -17,7 +17,7 @@ final class Facade
     }
 
     /** @param array<string,mixed> $context */
-    public static function agentHarness(array $context = []): CollabBuilder
+    public static function collab(array $context = []): CollabBuilder
     {
         return new CollabBuilder(new AppContext($context));
     }

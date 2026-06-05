@@ -118,7 +118,7 @@ final class Builder
     public function maxReviewPasses(int $maxReviewPasses): self
     {
         if ($maxReviewPasses < 1) {
-            throw new InvalidArgumentException('AgentHarness max review passes must be >= 1.');
+            throw new InvalidArgumentException('Collab max review passes must be >= 1.');
         }
 
         $this->maxReviewPasses = $maxReviewPasses;
@@ -129,7 +129,7 @@ final class Builder
     public function tickInterval(float $seconds): self
     {
         if ($seconds <= 0.0) {
-            throw new InvalidArgumentException('AgentHarness tick interval must be greater than zero.');
+            throw new InvalidArgumentException('Collab tick interval must be greater than zero.');
         }
 
         $this->tickIntervalSeconds = $seconds;
@@ -199,7 +199,7 @@ final class Builder
             ->run(static function (ExecutionScope $scope) use ($app, $interval): void {
                 $runtime = $scope->service(Runtime::class);
                 if (!$runtime instanceof Runtime) {
-                    throw new \RuntimeException('AgentHarness runtime service did not resolve.');
+                    throw new \RuntimeException('Collab runtime service did not resolve.');
                 }
 
                 $scope->periodic(Mark::s($interval), static function () use ($runtime, $scope): void {
@@ -249,7 +249,7 @@ final class Builder
 
     private function requirePrimary(): AgentParticipant
     {
-        return $this->primary ?? throw new InvalidArgumentException('A primary AgentHarness participant is required.');
+        return $this->primary ?? throw new InvalidArgumentException('A primary Collab participant is required.');
     }
 
     private function definition(AgentParticipant $primary): Definition

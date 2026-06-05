@@ -10,7 +10,7 @@ final class Id
     {
         $prefix = trim($prefix);
         if ($prefix === '') {
-            throw new \InvalidArgumentException('AgentHarness id prefix cannot be empty.');
+            throw new \InvalidArgumentException('Collab id prefix cannot be empty.');
         }
 
         return str_replace('.', '', uniqid($prefix . '_', true));

@@ -40,7 +40,7 @@ final class BuilderTest extends PhalanxTestCase
     #[Test]
     public function facadeReturnsCollabBuilder(): void
     {
-        $builder = Facade::agentHarness(['APP_ENV' => 'test']);
+        $builder = Facade::collab(['APP_ENV' => 'test']);
 
         self::assertInstanceOf(Builder::class, $builder);
         self::assertInstanceOf(AppContext::class, $builder->context);
@@ -53,13 +53,13 @@ final class BuilderTest extends PhalanxTestCase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('primary');
 
-        Facade::agentHarness()->build();
+        Facade::collab()->build();
     }
 
     #[Test]
     public function builderDefaultsToCollabStoreAndWorkspaceScreen(): void
     {
-        $builder = Facade::agentHarness()
+        $builder = Facade::collab()
             ->primary(new BuilderDoneAgentParticipant(new \ArrayObject()));
 
         self::assertSame(Store::class, $builder->registeredStore());
@@ -70,7 +70,7 @@ final class BuilderTest extends PhalanxTestCase
     #[Test]
     public function resolvedProvidersIncludeTuiAndCollabBundlesBeforeUserProviders(): void
     {
-        $builder = Facade::agentHarness()
+        $builder = Facade::collab()
             ->primary(new BuilderDoneAgentParticipant(new \ArrayObject()))
             ->providers(new BuilderExtraBundle());
 
@@ -85,7 +85,7 @@ final class BuilderTest extends PhalanxTestCase
     public function inputSubmissionRunsThroughBuilderRegisteredRuntime(): void
     {
         $calls = new \ArrayObject();
-        $builder = Facade::agentHarness()
+        $builder = Facade::collab()
             ->primary(new BuilderDoneAgentParticipant($calls))
             ->stageConfig(self::stageConfig());
         $app = $builder->build();

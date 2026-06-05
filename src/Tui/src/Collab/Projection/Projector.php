@@ -21,38 +21,32 @@ use Phalanx\Tui\Collab\State\WorkPlanSlice;
 
 final class Projector
 {
-    public function __invoke(Event $event, Store $store): Store
-    {
-        $this->project($event, $store);
-
-        return $store;
-    }
-
     public function project(Event $event, Store $store): Store
     {
         $this->validate($event);
 
-        $store->transaction(function () use ($event, $store): void {
+        $projector = $this;
+        $store->transaction(static function () use ($projector, $event, $store): void {
             match ($event->kind) {
                 EventKind::LoopAdvanced => null,
-                EventKind::WorkReceived => $this->projectReceived($event, $store),
-                EventKind::WorkPrepared => $this->projectPrepared($event, $store),
+                EventKind::WorkReceived => $projector->projectReceived($event, $store),
+                EventKind::WorkPrepared => $projector->projectPrepared($event, $store),
                 EventKind::WorkDistributed,
                 EventKind::WorkCompleted => null,
-                EventKind::WorkItemStarted => $this->projectStarted($event, $store),
+                EventKind::WorkItemStarted => $projector->projectStarted($event, $store),
                 EventKind::WorkItemCompleted,
-                EventKind::WorkInterrupted => $this->projectResult($event, $store),
-                EventKind::WorkReviewed => $this->projectReview($event, $store),
+                EventKind::WorkInterrupted => $projector->projectResult($event, $store),
+                EventKind::WorkReviewed => $projector->projectReview($event, $store),
                 EventKind::EffectRequested,
                 EventKind::EffectApproved,
                 EventKind::EffectDenied => throw new \InvalidArgumentException(sprintf(
-                    'AgentHarness event "%s" is not supported by the alpha projector.',
+                    'Collab event "%s" is not supported by the alpha projector.',
                     $event->kind->value,
                 )),
             };
 
-            $this->projectStage($event, $store);
-            $this->projectMetadata($event, $store);
+            $projector->projectStage($event, $store);
+            $projector->projectMetadata($event, $store);
         });
 
         return $store;
@@ -91,7 +85,7 @@ final class Projector
             EventKind::EffectRequested,
             EventKind::EffectApproved,
             EventKind::EffectDenied => throw new \InvalidArgumentException(sprintf(
-                'AgentHarness event "%s" is not supported by the alpha projector.',
+                'Collab event "%s" is not supported by the alpha projector.',
                 $event->kind->value,
             )),
         };
@@ -339,7 +333,7 @@ final class Projector
     {
         if ($event->envelope === null) {
             throw new \InvalidArgumentException(sprintf(
-                'AgentHarness event "%s" requires an envelope for projection.',
+                'Collab event "%s" requires an envelope for projection.',
                 $event->kind->value,
             ));
         }
@@ -348,7 +342,7 @@ final class Projector
     private function requireWorkItem(Event $event): WorkItem
     {
         return $event->workItem ?? throw new \InvalidArgumentException(sprintf(
-            'AgentHarness event "%s" requires a work item for projection.',
+            'Collab event "%s" requires a work item for projection.',
             $event->kind->value,
         ));
     }
@@ -356,7 +350,7 @@ final class Projector
     private function requireWorkResult(Event $event): WorkResult
     {
         return $event->workResult ?? throw new \InvalidArgumentException(sprintf(
-            'AgentHarness event "%s" requires a work result for projection.',
+            'Collab event "%s" requires a work result for projection.',
             $event->kind->value,
         ));
     }
@@ -364,7 +358,7 @@ final class Projector
     private function requireReviewVerdict(Event $event): ReviewVerdict
     {
         return $event->reviewVerdict ?? throw new \InvalidArgumentException(
-            'AgentHarness event "work_reviewed" requires a review verdict for projection.',
+            'Collab event "work_reviewed" requires a review verdict for projection.',
         );
     }
 
@@ -372,11 +366,11 @@ final class Projector
     {
         $stage = $event->context['loop_stage'] ?? null;
         if (!is_string($stage)) {
-            throw new \InvalidArgumentException('AgentHarness event "loop_advanced" requires a loop_stage context string.');
+            throw new \InvalidArgumentException('Collab event "loop_advanced" requires a loop_stage context string.');
         }
 
         return LoopStage::tryFrom($stage) ?? throw new \InvalidArgumentException(sprintf(
-            'AgentHarness event "loop_advanced" has unknown loop stage "%s".',
+            'Collab event "loop_advanced" has unknown loop stage "%s".',
             $stage,
         ));
     }

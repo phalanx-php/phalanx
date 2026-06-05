@@ -37,7 +37,7 @@
     "suggest": {
         "phalanx-php/console": "CLI agent commands via Console command lifecycle",
         "phalanx-php/websocket": "Real-time agent sessions over WebSocket",
-        "phalanx-php/tui": "Tui AgentHarness workspace rendering for agent work and review state"
+        "phalanx-php/tui": "Tui Collab workspace rendering for agent work and review state"
     },
     "require-dev": {
         "phpunit/phpunit": "^13.0"

@@ -17,9 +17,9 @@ final class WorkItemTest extends TestCase
     {
         $item = new WorkItem(
             activity: Activity::Exploring,
-            prompt: 'Find the AgentHarness contracts',
+            prompt: 'Find the Collab contracts',
             dependsOn: ['work_a', 'work_a', 'work_b'],
-            tags: ['codebase', 'codebase', 'agent-harness'],
+            tags: ['codebase', 'codebase', 'collab'],
             preferredParticipant: Address::agent('explorer'),
             priority: 25,
             critical: true,
@@ -28,15 +28,15 @@ final class WorkItemTest extends TestCase
 
         self::assertSame('work_c', $item->id);
         self::assertSame(['work_a', 'work_b'], $item->dependsOn);
-        self::assertSame(['codebase', 'agent-harness'], $item->tags);
+        self::assertSame(['codebase', 'collab'], $item->tags);
         self::assertTrue($item->critical);
         self::assertSame('agent:explorer', $item->preferredParticipant?->identity);
         self::assertSame([
             'id' => 'work_c',
             'activity' => Activity::Exploring,
-            'prompt' => 'Find the AgentHarness contracts',
+            'prompt' => 'Find the Collab contracts',
             'depends_on' => ['work_a', 'work_b'],
-            'tags' => ['codebase', 'agent-harness'],
+            'tags' => ['codebase', 'collab'],
             'preferred_participant' => [
                 'identity' => 'agent:explorer',
                 'role' => 'agent',
@@ -51,7 +51,7 @@ final class WorkItemTest extends TestCase
     {
         $item = new WorkItem(
             activity: Activity::Testing,
-            prompt: 'Run AgentHarness tests',
+            prompt: 'Run Collab tests',
             dependsOn: ['work_edit'],
             id: 'work_test',
         );
@@ -96,7 +96,7 @@ final class WorkItemTest extends TestCase
 
         new WorkItem(
             activity: Activity::Testing,
-            prompt: 'Run AgentHarness tests',
+            prompt: 'Run Collab tests',
             id: '   ',
         );
     }

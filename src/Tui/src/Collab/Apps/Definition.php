@@ -50,7 +50,7 @@ final class Definition
         private(set) int $maxReviewPasses = 8,
     ) {
         if ($this->maxReviewPasses < 1) {
-            throw new \InvalidArgumentException('AgentHarness max review passes must be >= 1.');
+            throw new \InvalidArgumentException('Collab max review passes must be >= 1.');
         }
 
         $this->inlets = array_values($inlets);
