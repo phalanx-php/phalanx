@@ -1,3 +1,6 @@
+.*
+*.md
+
 *
 !.gitignore
 !ignition.css

@@ -77,6 +77,17 @@ final class ProcessConfigTest extends TestCase
         }
     }
 
+    #[Test]
+    public function detectFindsWorkerScriptAndAutoloadFromCurrentPackageLayout(): void
+    {
+        $config = ProcessConfig::detect();
+
+        self::assertStringEndsWith('/src/Worker/bin/phalanx-worker', $config->workerScript);
+        self::assertStringEndsWith('/vendor/autoload.php', $config->autoloadPath);
+        self::assertFileExists($config->workerScript);
+        self::assertFileExists($config->autoloadPath);
+    }
+
     private static function extensionInIniFiles(string $extension): bool
     {
         $files = [];

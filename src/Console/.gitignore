@@ -1,3 +1,9 @@
+.*
+*.md
+
+!.gitignore
+!README.md
+
 /vendor/
 /composer.lock
 /node_modules/

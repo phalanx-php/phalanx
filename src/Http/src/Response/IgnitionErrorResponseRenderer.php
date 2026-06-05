@@ -11,6 +11,7 @@ use Phalanx\Http\HttpServerConfig;
 use Phalanx\Http\RequestContext;
 use Phalanx\Http\Response\Ignition\PhalanxErrorPageViewModel;
 use Phalanx\Supervisor\TaskTreeFormatter;
+use Phalanx\Support\PackagePaths;
 use Psr\Http\Message\ResponseInterface;
 use Spatie\Ignition\Config\IgnitionConfig;
 use Spatie\Ignition\ErrorPage\Renderer;
@@ -70,9 +71,11 @@ final readonly class IgnitionErrorResponseRenderer implements ErrorResponseRende
             );
 
             $renderer = new Renderer();
-            $viewPath = dirname(__DIR__, 2) . '/resources/ignition/views/errorPage.php';
+            $viewPath = PackagePaths::firstExistingFile(
+                PackagePaths::ancestorCandidates(__DIR__, 'resources/ignition/views/errorPage.php'),
+            );
 
-            if (!is_file($viewPath)) {
+            if ($viewPath === null) {
                 return null;
             }
 
@@ -274,8 +277,10 @@ HTML;
 
     private function getLogo(): string
     {
-        $path = dirname(__DIR__, 6) . $this->config->logoPath;
-        if (is_file($path)) {
+        $path = PackagePaths::firstExistingFile(
+            PackagePaths::ancestorCandidates(__DIR__, ltrim($this->config->logoPath, '/')),
+        );
+        if ($path !== null) {
             $svg = file_get_contents($path);
             if ($svg) {
                 $svg = preg_replace('#<text.*?</text>#s', '', $svg) ?? $svg;

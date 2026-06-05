@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Worker\Process;
 
+use Phalanx\Support\PackagePaths;
 use Phalanx\System\PhpExtensionFlags;
 
 final readonly class ProcessConfig
@@ -46,25 +47,16 @@ final readonly class ProcessConfig
 
     private static function findWorkerScript(): string
     {
-        $candidates = [
-            dirname(__DIR__, 2) . '/bin/phalanx-worker',
-            dirname(__DIR__, 4) . '/bin/phalanx-worker',
-            dirname(__DIR__, 5) . '/bin/phalanx-worker',
-        ];
+        $candidates = PackagePaths::ancestorCandidates(__DIR__, 'bin/phalanx-worker');
 
-        return array_find($candidates, static fn(string $path): bool => file_exists($path)) ?? $candidates[0];
+        return PackagePaths::firstExistingFile($candidates) ?? $candidates[0];
     }
 
     private static function findAutoloadPath(): string
     {
-        $candidates = [
-            dirname(__DIR__, 3) . '/vendor/autoload.php',
-            dirname(__DIR__, 4) . '/vendor/autoload.php',
-            dirname(__DIR__, 5) . '/vendor/autoload.php',
-            dirname(__DIR__, 7) . '/vendor/autoload.php',
-        ];
+        $candidates = PackagePaths::ancestorCandidates(__DIR__, 'vendor/autoload.php');
 
-        return array_find($candidates, static fn(string $path): bool => file_exists($path))
+        return PackagePaths::firstExistingFile($candidates)
             ?? throw new \RuntimeException('Cannot find autoload.php for worker process');
     }
 }

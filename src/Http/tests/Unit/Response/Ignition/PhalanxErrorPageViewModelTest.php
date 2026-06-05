@@ -53,6 +53,22 @@ final class PhalanxErrorPageViewModelTest extends TestCase
         $this->assertCount(1, $solutions);
         $this->assertSame('Phalanx Solution', reset($solutions)['title']);
     }
+
+    public function test_it_reports_checked_paths_when_asset_is_missing(): void
+    {
+        $viewModel = new PhalanxErrorPageViewModel(
+            new RuntimeException('test'),
+            new IgnitionConfig(),
+            new Report(),
+            [],
+            SolutionTransformer::class
+        );
+
+        $message = $viewModel->getAssetContents('missing.css');
+
+        $this->assertStringContainsString('Asset missing.css not found. Checked:', $message);
+        $this->assertStringContainsString('resources/ignition/compiled/missing.css', $message);
+    }
 }
 
 /** Dummies for test_it_scrubs_laravel_solutions */

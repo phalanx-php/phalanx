@@ -7,12 +7,13 @@ use Phalanx\Testing\Codegen\AccessorTraitWriter;
 use Phalanx\Testing\Codegen\LensDiscovery;
 
 $autoloadCandidates = [
-    __DIR__ . '/../../../vendor/autoload.php',
+    $_composer_autoload_path ?? null,
     __DIR__ . '/../vendor/autoload.php',
+    __DIR__ . '/../../../vendor/autoload.php',
 ];
 
 foreach ($autoloadCandidates as $candidate) {
-    if (is_file($candidate)) {
+    if (is_string($candidate) && is_file($candidate)) {
         require $candidate;
         break;
     }

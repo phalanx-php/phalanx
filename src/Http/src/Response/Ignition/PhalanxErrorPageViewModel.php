@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Http\Response\Ignition;
 
+use Phalanx\Support\PackagePaths;
 use Spatie\Ignition\ErrorPage\ErrorPageViewModel;
 
 /**
@@ -14,10 +15,11 @@ final class PhalanxErrorPageViewModel extends ErrorPageViewModel
     #[\Override]
     public function getAssetContents(string $asset): string
     {
-        $assetPath = dirname(__DIR__, 3) . "/resources/ignition/compiled/{$asset}";
+        $candidates = PackagePaths::ancestorCandidates(__DIR__, "resources/ignition/compiled/{$asset}");
+        $assetPath = PackagePaths::firstExistingFile($candidates);
 
-        if (!is_file($assetPath)) {
-            return "/* Asset {$asset} not found at {$assetPath} */";
+        if ($assetPath === null) {
+            return "/* Asset {$asset} not found. Checked: " . implode(', ', $candidates) . ' */';
         }
 
         return (string) file_get_contents($assetPath);

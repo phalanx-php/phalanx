@@ -28,6 +28,7 @@ use Phalanx\Service\ServiceLifetime;
 use Phalanx\Supervisor\LedgerStorage;
 use Phalanx\Supervisor\Supervisor;
 use Phalanx\Supervisor\SwooleTableLedger;
+use Phalanx\Support\PackagePaths;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 use Phalanx\Trace\Trace;
@@ -310,20 +311,8 @@ class ApplicationBuilder
 
     private function vendorDir(): ?string
     {
-        // resolve from the composer autoloader registration point so the path
-        // is stable regardless of the process working directory.
-        foreach (
-            [
-                dirname(__DIR__, 3) . '/vendor',
-                dirname(__DIR__, 4) . '/vendor',
-                dirname(__DIR__, 6) . '/vendor',
-            ] as $candidate
-        ) {
-            if (is_dir($candidate)) {
-                return $candidate;
-            }
-        }
-
-        return null;
+        return PackagePaths::firstExistingDirectory(
+            PackagePaths::ancestorCandidates(__DIR__, 'vendor'),
+        );
     }
 }

@@ -1,6 +1,7 @@
-# Default deny: all hidden files/dirs and markdown
 .*
 *.md
+
+# Default deny: all hidden files/dirs and markdown
 
 # Explicit includes
 !.gitignore
@@ -19,6 +20,7 @@ roadmap/**/RTK.md
 # Dependencies
 vendor/
 node_modules/
+/src/*/composer.lock
 
 # Build artifacts
 /build/

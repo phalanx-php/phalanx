@@ -837,7 +837,7 @@ final class HttpRunner
             $renderers = array_values([
                 ...$this->errorRenderers,
                 new IgnitionErrorResponseRenderer($this->config),
-                new HtmlErrorResponseRenderer($this->config->ignitionEnabled),
+                new HtmlErrorResponseRenderer($this->config),
                 $defaultRenderer,
             ]);
 

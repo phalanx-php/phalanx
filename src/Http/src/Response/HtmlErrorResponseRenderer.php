@@ -7,9 +7,11 @@ namespace Phalanx\Http\Response;
 use GuzzleHttp\Psr7\Response as PsrResponse;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Http\HttpRequestResource;
+use Phalanx\Http\HttpServerConfig;
 use Phalanx\Http\RequestContext;
 use Phalanx\Supervisor\Supervisor;
 use Phalanx\Supervisor\TaskTreeFormatter;
+use Phalanx\Support\PackagePaths;
 use Psr\Http\Message\ResponseInterface;
 use Throwable;
 
@@ -22,13 +24,13 @@ use Throwable;
  */
 final readonly class HtmlErrorResponseRenderer implements ErrorResponseRenderer
 {
-    public function __construct(private bool $debug = false)
+    public function __construct(private HttpServerConfig $config = new HttpServerConfig())
     {
     }
 
     public function render(RequestContext $ctx, Throwable $e): ?ResponseInterface
     {
-        if (!$this->debug || !$ctx->acceptsHtml()) {
+        if (!$this->config->ignitionEnabled || !$ctx->acceptsHtml()) {
             return null;
         }
 
@@ -103,8 +105,10 @@ final readonly class HtmlErrorResponseRenderer implements ErrorResponseRenderer
 
     private function getLogo(): string
     {
-        $path = dirname(__DIR__, 5) . '/logo.svg';
-        if (is_file($path)) {
+        $path = PackagePaths::firstExistingFile(
+            PackagePaths::ancestorCandidates(__DIR__, ltrim($this->config->logoPath, '/')),
+        );
+        if ($path !== null) {
             $svg = file_get_contents($path);
             if ($svg) {
                 $svg = preg_replace('#<text.*?</text>#s', '', $svg) ?? $svg;

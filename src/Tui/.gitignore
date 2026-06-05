@@ -6,4 +6,5 @@
 !README.md
 
 /vendor/
+/composer.lock
 /.phpunit.cache/
