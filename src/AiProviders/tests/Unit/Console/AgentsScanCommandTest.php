@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\AiProviders\Tests\Unit\Console;
 
-use Phalanx\AiProviders\Console\AiProvidersAgentsScanCommand;
+use Phalanx\AiProviders\Console\AgentsScanCommand;
 use Phalanx\Runtime\RuntimeContext;
 use Phalanx\Scope\Scope;
 use Phalanx\Trace\Trace;
@@ -12,7 +12,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Unit tests for {@see AiProvidersAgentsScanCommand}.
+ * Unit tests for {@see AgentsScanCommand}.
  *
  * Uses a minimal {@see Scope} stub — the command performs no scope
  * interactions; the stub just satisfies the type constraint so we can invoke
@@ -21,7 +21,7 @@ use PHPUnit\Framework\TestCase;
  * Tests operate against the fixture discovered/ directory to exercise the
  * full scan → cache-write pipeline.
  */
-final class AiProvidersAgentsScanCommandTest extends TestCase
+final class AgentsScanCommandTest extends TestCase
 {
     private string $cacheFile;
 
@@ -30,7 +30,7 @@ final class AiProvidersAgentsScanCommandTest extends TestCase
     #[Test]
     public function commandWritesCacheFile(): void
     {
-        $command = new AiProvidersAgentsScanCommand(
+        $command = new AgentsScanCommand(
             self::discoveredDir(),
             self::discoveredPrefix(),
             $this->cacheFile,
@@ -45,7 +45,7 @@ final class AiProvidersAgentsScanCommandTest extends TestCase
     #[Test]
     public function cacheJsonContainsExpectedAgentFqcns(): void
     {
-        $command = new AiProvidersAgentsScanCommand(
+        $command = new AgentsScanCommand(
             self::discoveredDir(),
             self::discoveredPrefix(),
             $this->cacheFile,
@@ -69,7 +69,7 @@ final class AiProvidersAgentsScanCommandTest extends TestCase
     #[Test]
     public function cacheJsonContainsSourceMtime(): void
     {
-        $command = new AiProvidersAgentsScanCommand(
+        $command = new AgentsScanCommand(
             self::discoveredDir(),
             self::discoveredPrefix(),
             $this->cacheFile,
@@ -87,7 +87,7 @@ final class AiProvidersAgentsScanCommandTest extends TestCase
     #[Test]
     public function cacheJsonContainsGeneratedAt(): void
     {
-        $command = new AiProvidersAgentsScanCommand(
+        $command = new AgentsScanCommand(
             self::discoveredDir(),
             self::discoveredPrefix(),
             $this->cacheFile,
@@ -105,7 +105,7 @@ final class AiProvidersAgentsScanCommandTest extends TestCase
     #[Test]
     public function commandReturnsZero(): void
     {
-        $command = new AiProvidersAgentsScanCommand(
+        $command = new AgentsScanCommand(
             self::discoveredDir(),
             self::discoveredPrefix(),
             $this->cacheFile,
@@ -117,7 +117,7 @@ final class AiProvidersAgentsScanCommandTest extends TestCase
     #[Test]
     public function secondRunWithUnchangedSourceIsIdempotent(): void
     {
-        $command = new AiProvidersAgentsScanCommand(
+        $command = new AgentsScanCommand(
             self::discoveredDir(),
             self::discoveredPrefix(),
             $this->cacheFile,
@@ -139,7 +139,7 @@ final class AiProvidersAgentsScanCommandTest extends TestCase
         $nestedPath = sys_get_temp_dir() . '/ai-providers_scan_nested_' . uniqid() . '/cache.json';
 
         try {
-            $command = new AiProvidersAgentsScanCommand(
+            $command = new AgentsScanCommand(
                 self::discoveredDir(),
                 self::discoveredPrefix(),
                 $nestedPath,
@@ -164,7 +164,7 @@ final class AiProvidersAgentsScanCommandTest extends TestCase
         mkdir($emptyDir, 0755);
 
         try {
-            $command = new AiProvidersAgentsScanCommand(
+            $command = new AgentsScanCommand(
                 $emptyDir,
                 'App\\Agents',
                 $this->cacheFile,
@@ -203,7 +203,7 @@ final class AiProvidersAgentsScanCommandTest extends TestCase
         touch($tempFile, $knownEpoch);
 
         try {
-            $command = new AiProvidersAgentsScanCommand(
+            $command = new AgentsScanCommand(
                 $tempDir,
                 'App\\Agents',
                 $this->cacheFile,
@@ -230,7 +230,7 @@ final class AiProvidersAgentsScanCommandTest extends TestCase
         // device, so mkdir(/dev/null/sub) and file_put_contents will both fail.
         $invalidPath = '/dev/null/ai-providers_test_' . uniqid() . '/cache.json';
 
-        $command = new AiProvidersAgentsScanCommand(
+        $command = new AgentsScanCommand(
             self::discoveredDir(),
             self::discoveredPrefix(),
             $invalidPath,

@@ -27,7 +27,7 @@ use Phalanx\Scope\Suspendable;
  * conventions followed in:
  *
  *   - {@see \Phalanx\AiProviders\Runtime\Runtime\Runtime} (imports Phalanx\Scope\TaskScope)
- *   - {@see \Phalanx\AiProviders\Console\AiProvidersAgentsScanCommand} (imports Phalanx\Scope\Scope, Phalanx\Task\Scopeable)
+ *   - {@see \Phalanx\AiProviders\Console\AgentsScanCommand} (imports Phalanx\Scope\Scope, Phalanx\Task\Scopeable)
  *
  * Imports in this file: {@see \Phalanx\HttpClient\Client},
  * {@see \Phalanx\HttpClient\Exception}, {@see \Phalanx\Scope\Scope},

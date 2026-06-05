@@ -23,7 +23,7 @@ use Phalanx\Task\Scopeable;
  *
  * Register with Console via:
  * ```php
- * $console->command('ai-providers:agents:scan', AiProvidersAgentsScanCommand::class, $config);
+ * $console->command('ai-providers:agents:scan', AgentsScanCommand::class, $config);
  * ```
  * AiProviders does NOT auto-wire this command. The host application is responsible
  * for instantiating and registering it.
@@ -44,7 +44,7 @@ use Phalanx\Task\Scopeable;
  *
  * Final — sealed command contract.
  */
-final class AiProvidersAgentsScanCommand implements Scopeable
+final class AgentsScanCommand implements Scopeable
 {
     public function __construct(
         private(set) string $sourceDirectory,

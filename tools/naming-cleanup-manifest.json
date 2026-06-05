@@ -305,6 +305,17 @@
       "old_file": "src/Stream/src/StreamEvent.php",
       "new_file": "src/Stream/src/Event.php",
       "verification": ["composer test:stream"]
+    },
+    {
+      "slice": "ai-providers",
+      "action": "rename",
+      "risk": "public-api",
+      "guarded_zone": false,
+      "old_fqcn": "Phalanx\\AiProviders\\Console\\AiProvidersAgentsScanCommand",
+      "new_fqcn": "Phalanx\\AiProviders\\Console\\AgentsScanCommand",
+      "old_file": "src/AiProviders/src/Console/AiProvidersAgentsScanCommand.php",
+      "new_file": "src/AiProviders/src/Console/AgentsScanCommand.php",
+      "verification": ["composer test:ai-providers"]
     }
   ],
   "deferred": [

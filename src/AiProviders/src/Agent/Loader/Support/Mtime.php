@@ -7,7 +7,7 @@ namespace Phalanx\AiProviders\Agent\Loader\Support;
 /**
  * Shared filesystem helper for computing the maximum PHP file mtime across a
  * directory tree. Used by {@see \Phalanx\AiProviders\Agent\Loader\Cached} and
- * {@see \Phalanx\AiProviders\Console\AiProvidersAgentsScanCommand} to check whether a
+ * {@see \Phalanx\AiProviders\Console\AgentsScanCommand} to check whether a
  * cache is stale relative to its source directory.
  *
  * Not instantiable — static utility only.
