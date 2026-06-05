@@ -50,7 +50,7 @@ final class TestApp
      *
      * @var list<class-string<Lens>>
      */
-    private const array AEGIS_NATIVE_LENSES = [
+    private const array RUNTIME_NATIVE_LENSES = [
         Lenses\LedgerLens::class,
         Lenses\ScopeLens::class,
         Lenses\RuntimeLens::class,
@@ -312,7 +312,7 @@ final class TestApp
      */
     private function registerRuntimeNativeLenses(): void
     {
-        foreach (self::AEGIS_NATIVE_LENSES as $lensClass) {
+        foreach (self::RUNTIME_NATIVE_LENSES as $lensClass) {
             $this->factories[$lensClass] = self::readLensAttribute($lensClass)->factory;
             $this->providers[$lensClass] = [];
         }

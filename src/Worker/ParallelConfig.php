@@ -12,12 +12,12 @@ use Phalanx\Worker\WorkerDispatch;
 
 final readonly class ParallelConfig
 {
-    public const string CONTEXT_AGENTS = 'HYDRA_AGENTS';
-    public const string CONTEXT_MAILBOX_LIMIT = 'HYDRA_MAILBOX_LIMIT';
-    public const string CONTEXT_DISPATCHER = 'HYDRA_DISPATCHER';
-    public const string CONTEXT_SUPERVISION = 'HYDRA_SUPERVISION';
-    public const string CONTEXT_WORKER_SCRIPT = 'HYDRA_WORKER_SCRIPT';
-    public const string CONTEXT_AUTOLOAD_PATH = 'HYDRA_AUTOLOAD_PATH';
+    public const string CONTEXT_AGENTS = 'WORKER_AGENTS';
+    public const string CONTEXT_MAILBOX_LIMIT = 'WORKER_MAILBOX_LIMIT';
+    public const string CONTEXT_DISPATCHER = 'WORKER_DISPATCHER';
+    public const string CONTEXT_SUPERVISION = 'WORKER_SUPERVISION';
+    public const string CONTEXT_WORKER_SCRIPT = 'WORKER_SCRIPT';
+    public const string CONTEXT_AUTOLOAD_PATH = 'WORKER_AUTOLOAD_PATH';
 
     public function __construct(
         public int $agents = 4,

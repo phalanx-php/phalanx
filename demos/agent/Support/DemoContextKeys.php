@@ -10,7 +10,7 @@ use Phalanx\Boot\AppContext;
  * Canonical context-key constants and the live/non-live key split
  * for Agent examples.
  *
- * Live keys require ATHENA_DEMO_LIVE=1; they are silently omitted
+ * Live keys require AGENT_DEMO_LIVE=1; they are silently omitted
  * from the context when live mode is off so demos run safely without
  * real API keys present.
  */
@@ -32,10 +32,10 @@ final class DemoContextKeys
     public const string GUZZLE_DEMO_URL = 'GUZZLE_DEMO_URL';
 
     // Feature flag
-    public const string ATHENA_DEMO_LIVE = 'ATHENA_DEMO_LIVE';
+    public const string AGENT_DEMO_LIVE = 'AGENT_DEMO_LIVE';
 
     /**
-     * Keys that require ATHENA_DEMO_LIVE=1.
+     * Keys that require AGENT_DEMO_LIVE=1.
      * Filtered out of the effective context when live mode is off.
      *
      * @return list<string>
@@ -66,7 +66,7 @@ final class DemoContextKeys
             self::OLLAMA_ENABLED,
             self::ANTHROPIC_API_KEY,
             self::GUZZLE_DEMO_URL,
-            self::ATHENA_DEMO_LIVE,
+            self::AGENT_DEMO_LIVE,
         ];
 
         foreach ($keys as $key) {

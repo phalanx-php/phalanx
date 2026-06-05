@@ -50,4 +50,15 @@ final class WorkerFacadeTest extends TestCase
         self::assertSame('worker.php', $config->workerScript);
         self::assertSame('vendor/autoload.php', $config->autoloadPath);
     }
+
+    #[Test]
+    public function parallelConfigContextKeysUseWorkerVocabulary(): void
+    {
+        self::assertSame('WORKER_AGENTS', ParallelConfig::CONTEXT_AGENTS);
+        self::assertSame('WORKER_MAILBOX_LIMIT', ParallelConfig::CONTEXT_MAILBOX_LIMIT);
+        self::assertSame('WORKER_DISPATCHER', ParallelConfig::CONTEXT_DISPATCHER);
+        self::assertSame('WORKER_SUPERVISION', ParallelConfig::CONTEXT_SUPERVISION);
+        self::assertSame('WORKER_SCRIPT', ParallelConfig::CONTEXT_WORKER_SCRIPT);
+        self::assertSame('WORKER_AUTOLOAD_PATH', ParallelConfig::CONTEXT_AUTOLOAD_PATH);
+    }
 }

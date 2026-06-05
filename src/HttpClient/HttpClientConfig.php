@@ -18,16 +18,16 @@ final class HttpClientConfig implements Config
     }
 
     public function __construct(
-        #[Env(key: 'IRIS_CONNECT_TIMEOUT', description: 'HTTP client connect timeout in seconds')]
+        #[Env(key: 'HTTP_CLIENT_CONNECT_TIMEOUT', description: 'HTTP client connect timeout in seconds')]
         private(set) float $connectTimeout = 5.0,
 
-        #[Env(key: 'IRIS_READ_TIMEOUT', description: 'HTTP client read timeout in seconds')]
+        #[Env(key: 'HTTP_CLIENT_READ_TIMEOUT', description: 'HTTP client read timeout in seconds')]
         private(set) float $readTimeout = 30.0,
 
-        #[Env(key: 'IRIS_MAX_RESPONSE_BYTES', description: 'Maximum HTTP response body size in bytes')]
+        #[Env(key: 'HTTP_CLIENT_MAX_RESPONSE_BYTES', description: 'Maximum HTTP response body size in bytes')]
         private(set) int $maxResponseBytes = 16 * 1024 * 1024,
 
-        #[Env(key: 'IRIS_USER_AGENT', description: 'HTTP client User-Agent header value')]
+        #[Env(key: 'HTTP_CLIENT_USER_AGENT', description: 'HTTP client User-Agent header value')]
         private(set) ?string $userAgent = 'Phalanx-HttpClient/0.6',
 
         private(set) ?TlsOptions $tlsOptions = null,

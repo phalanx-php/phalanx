@@ -7,7 +7,7 @@ namespace Phalanx\Demos\Agent\Support;
 use Phalanx\Boot\AppContext;
 
 /**
- * Reads the ATHENA_DEMO_LIVE flag from an AppContext.
+ * Reads the AGENT_DEMO_LIVE flag from an AppContext.
  *
  * Live mode enables provider keys that require real API credentials.
  * When live mode is off, those keys are treated as absent regardless
@@ -21,7 +21,7 @@ final class LiveModeFlag
 
     public function isEnabled(): bool
     {
-        return $this->context->bool(DemoContextKeys::ATHENA_DEMO_LIVE, false);
+        return $this->context->bool(DemoContextKeys::AGENT_DEMO_LIVE, false);
     }
 
     /**

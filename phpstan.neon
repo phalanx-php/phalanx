@@ -119,3 +119,4 @@ parameters:
     treatPhpDocTypesAsCertain: false
     bootstrapFiles:
         - src/Runtime/phpstan-bootstrap.php
+        - tools/apply-rename-mapping.php

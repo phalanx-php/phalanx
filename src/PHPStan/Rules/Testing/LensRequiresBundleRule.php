@@ -53,7 +53,7 @@ final class LensRequiresBundleRule implements Rule
      *
      * @var list<class-string>
      */
-    private const array AEGIS_NATIVE_LENSES = [
+    private const array RUNTIME_NATIVE_LENSES = [
         'Phalanx\\Testing\\Lenses\\LedgerLens',
         'Phalanx\\Testing\\Lenses\\ScopeLens',
         'Phalanx\\Testing\\Lenses\\RuntimeLens',
@@ -100,7 +100,7 @@ final class LensRequiresBundleRule implements Rule
         $lensFqcn = $map[$property];
 
         // Runtime-native lenses need no bundle — skip immediately.
-        if (in_array($lensFqcn, self::AEGIS_NATIVE_LENSES, true)) {
+        if (in_array($lensFqcn, self::RUNTIME_NATIVE_LENSES, true)) {
             return [];
         }
 

@@ -13,7 +13,7 @@ use RuntimeException;
 
 final class LensDiscovery
 {
-    private const string AEGIS_LENSES_CONSTANT = 'AEGIS_NATIVE_LENSES';
+    private const string RUNTIME_LENSES_CONSTANT = 'RUNTIME_NATIVE_LENSES';
 
     /**
      * @param list<class-string<ServiceBundle>> $declaredBundles
@@ -52,11 +52,11 @@ final class LensDiscovery
     {
         $reflection = new ReflectionClass(TestApp::class);
 
-        if (!$reflection->hasConstant(self::AEGIS_LENSES_CONSTANT)) {
+        if (!$reflection->hasConstant(self::RUNTIME_LENSES_CONSTANT)) {
             return [];
         }
 
-        $value = $reflection->getConstant(self::AEGIS_LENSES_CONSTANT);
+        $value = $reflection->getConstant(self::RUNTIME_LENSES_CONSTANT);
 
         if (!is_array($value)) {
             return [];
