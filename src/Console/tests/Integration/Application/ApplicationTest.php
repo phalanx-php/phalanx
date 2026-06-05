@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Console\Tests\Integration\Application;
 
+use Phalanx\Boot\AppContext;
 use Phalanx\Console\Tests\Support\TestCase;
 use Phalanx\Console\Application\Config;
 use Phalanx\Console\Command\Arg;
@@ -21,6 +22,8 @@ use Phalanx\Runtime\Identity\RuntimeResourceSid;
 use Phalanx\Runtime\Memory\ManagedResourceState;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Mark\Mark;
+use Phalanx\Service\ServiceBundle;
+use Phalanx\Service\Services;
 use Phalanx\Task\Scopeable;
 use Phalanx\Task\Task;
 use Phalanx\Testing\Assert as PhalanxAssert;
@@ -68,6 +71,38 @@ final class ApplicationTest extends TestCase
         });
 
         self::assertSame('probe', ApplicationProbeCommand::$commandName);
+    }
+
+    #[Test]
+    public function facadeStartingLoadsProjectConfigBeforeExplicitContext(): void
+    {
+        $configFile = self::tomlConfig(<<<'TOML'
+[app]
+name = "console-file-app"
+
+[env]
+argv = ["bin/phalanx", "configured"]
+APP_ENV = "from-file"
+TOML);
+        $app = self::console([
+            AppContext::CONFIG_FILE => $configFile,
+            'argv' => ['bin/phalanx', 'explicit'],
+            'APP_ENV' => 'from-context',
+        ])
+            ->commands(CommandGroup::of([
+                'explicit' => ApplicationProbeCommand::class,
+            ]))
+            ->providers(new ConsoleContextProbeBundle())
+            ->build();
+
+        $this->scope->run(static function (ExecutionScope $_scope) use ($app): void {
+            self::assertSame(0, $app->run());
+        });
+
+        self::assertSame('explicit', ApplicationProbeCommand::$commandName);
+        self::assertSame('console-file-app', ConsoleContextProbeBundle::$appName);
+        self::assertSame('from-context', ConsoleContextProbeBundle::$appEnv);
+        $app->shutdown();
     }
 
     #[Test]
@@ -429,6 +464,17 @@ final class ApplicationTest extends TestCase
         ApplicationProbeCommand::$commandResourceId = null;
         ApplicationProbeCommand::$taskResult = null;
         CoroutineRuntimeProbeCommand::$ran = false;
+        ConsoleContextProbeBundle::$appName = null;
+        ConsoleContextProbeBundle::$appEnv = null;
+    }
+
+    private static function tomlConfig(string $contents): string
+    {
+        $path = tempnam(sys_get_temp_dir(), 'phalanx-console-config-');
+        self::assertIsString($path);
+        file_put_contents($path, $contents);
+
+        return $path;
     }
 }
 
@@ -464,5 +510,18 @@ final class CoroutineRuntimeProbeCommand implements Scopeable
         self::$ran = true;
 
         return 0;
+    }
+}
+
+final class ConsoleContextProbeBundle extends ServiceBundle
+{
+    public static ?string $appName = null;
+
+    public static ?string $appEnv = null;
+
+    public function services(Services $_services, AppContext $context): void
+    {
+        self::$appName = $context->string('APP_NAME');
+        self::$appEnv = $context->string('APP_ENV');
     }
 }

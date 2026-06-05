@@ -48,6 +48,24 @@ final class BuilderTest extends PhalanxTestCase
     }
 
     #[Test]
+    public function facadeCollabLoadsProjectConfigBeforeExplicitContext(): void
+    {
+        $builder = Facade::collab([
+            AppContext::CONFIG_FILE => self::tomlConfig(<<<'TOML'
+[app]
+name = "collab-file-app"
+
+[env]
+APP_ENV = "from-file"
+TOML),
+            'APP_ENV' => 'from-context',
+        ]);
+
+        self::assertSame('collab-file-app', $builder->context->get('APP_NAME'));
+        self::assertSame('from-context', $builder->context->get('APP_ENV'));
+    }
+
+    #[Test]
     public function buildRequiresPrimaryAgentParticipant(): void
     {
         $this->expectException(InvalidArgumentException::class);
@@ -145,6 +163,15 @@ final class BuilderTest extends PhalanxTestCase
                 'LINES' => '12',
             ],
         );
+    }
+
+    private static function tomlConfig(string $contents): string
+    {
+        $path = tempnam(sys_get_temp_dir(), 'phalanx-collab-config-');
+        self::assertIsString($path);
+        file_put_contents($path, $contents);
+
+        return $path;
     }
 }
 

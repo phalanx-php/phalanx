@@ -13,12 +13,12 @@ final class Facade
     /** @param array<string,mixed> $context */
     public static function app(array $context = []): TuiBuilder
     {
-        return new TuiBuilder(new AppContext($context));
+        return new TuiBuilder(AppContext::fromProject($context));
     }
 
     /** @param array<string,mixed> $context */
     public static function collab(array $context = []): CollabBuilder
     {
-        return new CollabBuilder(new AppContext($context));
+        return new CollabBuilder(AppContext::fromProject($context));
     }
 }

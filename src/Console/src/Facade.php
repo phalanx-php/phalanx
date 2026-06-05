@@ -16,7 +16,7 @@ final class Facade
     /** @param array<string,mixed> $context */
     public static function starting(array $context = []): Builder
     {
-        return new Builder(new AppContext($context));
+        return new Builder(AppContext::fromProject($context));
     }
 
     public static function command(

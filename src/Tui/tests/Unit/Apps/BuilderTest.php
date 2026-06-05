@@ -74,6 +74,24 @@ final class BuilderTest extends TestCase
     }
 
     #[Test]
+    public function facadeAppLoadsProjectConfigBeforeExplicitContext(): void
+    {
+        $builder = Facade::app([
+            AppContext::CONFIG_FILE => self::tomlConfig(<<<'TOML'
+[app]
+name = "tui-file-app"
+
+[env]
+APP_ENV = "from-file"
+TOML),
+            'APP_ENV' => 'from-context',
+        ]);
+
+        self::assertSame('tui-file-app', $builder->context->get('APP_NAME'));
+        self::assertSame('from-context', $builder->context->get('APP_ENV'));
+    }
+
+    #[Test]
     public function buildRequiresAtLeastOneScreen(): void
     {
         $this->expectException(InvalidArgumentException::class);
@@ -339,5 +357,14 @@ final class BuilderTest extends TestCase
             ->build();
 
         self::assertCount(2, $app->globalBindings());
+    }
+
+    private static function tomlConfig(string $contents): string
+    {
+        $path = tempnam(sys_get_temp_dir(), 'phalanx-tui-config-');
+        self::assertIsString($path);
+        file_put_contents($path, $contents);
+
+        return $path;
     }
 }
