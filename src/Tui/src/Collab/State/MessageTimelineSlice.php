@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Tui\Collab\State;
 
-use Phalanx\Tui\Collab\Events\AgentHarnessEvent;
+use Phalanx\Tui\Collab\Events\Event;
 use Phalanx\Tui\Collab\Events\EventKind;
 use Phalanx\Tui\Collab\Messages\Envelope;
 
@@ -28,7 +28,7 @@ final class MessageTimelineSlice
         $this->entries = $entries === []
             ? array_map(
                 static fn (Envelope $envelope): TimelineEntry => TimelineEntry::fromEnvelope(
-                    AgentHarnessEvent::record(EventKind::WorkReceived, envelope: $envelope),
+                    Event::record(EventKind::WorkReceived, envelope: $envelope),
                     $envelope,
                 ),
                 $this->envelopes,
@@ -38,7 +38,7 @@ final class MessageTimelineSlice
 
     public function record(Envelope $envelope): self
     {
-        $event = AgentHarnessEvent::record(EventKind::WorkReceived, envelope: $envelope);
+        $event = Event::record(EventKind::WorkReceived, envelope: $envelope);
 
         return new self(
             envelopes: [...$this->envelopes, $envelope],
@@ -46,7 +46,7 @@ final class MessageTimelineSlice
         );
     }
 
-    public function project(AgentHarnessEvent $event): self
+    public function project(Event $event): self
     {
         $envelopes = $this->envelopes;
         $entries = $this->entries;
@@ -75,7 +75,7 @@ final class MessageTimelineSlice
         return new self($envelopes, $entries);
     }
 
-    private static function workEntry(AgentHarnessEvent $event): ?TimelineEntry
+    private static function workEntry(Event $event): ?TimelineEntry
     {
         return match ($event->kind) {
             EventKind::WorkItemStarted => TimelineEntry::work(
@@ -97,7 +97,7 @@ final class MessageTimelineSlice
         };
     }
 
-    private static function workResultSummary(AgentHarnessEvent $event): ?string
+    private static function workResultSummary(Event $event): ?string
     {
         if ($event->workResult === null) {
             throw new \InvalidArgumentException(sprintf(
@@ -111,7 +111,7 @@ final class MessageTimelineSlice
         return $summary === '' ? null : $summary;
     }
 
-    private static function workItemId(AgentHarnessEvent $event): string
+    private static function workItemId(Event $event): string
     {
         if ($event->workItem === null) {
             throw new \InvalidArgumentException(sprintf(

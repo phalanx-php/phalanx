@@ -8,7 +8,7 @@ use DateTimeImmutable;
 use Phalanx\Scope\TaskScope;
 use Phalanx\Tui\Collab\Boundaries\InletQueue;
 use Phalanx\Tui\Collab\Boundaries\InputPromptSubmitter;
-use Phalanx\Tui\Collab\Events\AgentHarnessEvent;
+use Phalanx\Tui\Collab\Events\Event;
 use Phalanx\Tui\Collab\Events\EventKind;
 use Phalanx\Tui\Collab\Messages\Address;
 use Phalanx\Tui\Collab\Messages\Envelope;
@@ -16,23 +16,23 @@ use Phalanx\Tui\Collab\Messages\MessageKind;
 use Phalanx\Tui\Collab\Plans\Activity;
 use Phalanx\Tui\Collab\Plans\WorkItem;
 use Phalanx\Tui\Collab\Plans\WorkResult;
-use Phalanx\Tui\Collab\Projection\AgentHarnessProjector;
+use Phalanx\Tui\Collab\Projection\Projector;
 use Phalanx\Tui\Collab\Reviews\ReviewVerdict;
 use Phalanx\Tui\Collab\Screens\WorkspaceScreen;
-use Phalanx\Tui\Collab\State\AgentHarnessStore;
+use Phalanx\Tui\Collab\State\Store;
 use Phalanx\Tui\Collab\State\DevToolsSlice;
-use Phalanx\Tui\Tui\Core\AcceptsInput;
-use Phalanx\Tui\Tui\Core\MountSystem;
-use Phalanx\Tui\Tui\Core\ScreenContext;
-use Phalanx\Tui\Tui\Inputs\Key;
-use Phalanx\Tui\Tui\Inputs\KeyEvent;
-use Phalanx\Tui\Tui\Navigation\Navigator;
-use Phalanx\Tui\Tui\Styles\Theme;
-use Phalanx\Tui\Tui\Tdom\Element\ColumnElement;
-use Phalanx\Tui\Tui\Tdom\Element\GridElement;
-use Phalanx\Tui\Tui\Tdom\Element\InputElement;
-use Phalanx\Tui\Tui\Tdom\Element\PanelElement;
-use Phalanx\Tui\Tui\Tdom\Element\ScrollElement;
+use Phalanx\Tui\Core\AcceptsInput;
+use Phalanx\Tui\Core\MountSystem;
+use Phalanx\Tui\Core\ScreenContext;
+use Phalanx\Tui\Inputs\Key;
+use Phalanx\Tui\Inputs\KeyEvent;
+use Phalanx\Tui\Navigation\Navigator;
+use Phalanx\Tui\Styles\Theme;
+use Phalanx\Tui\Tdom\Element\ColumnElement;
+use Phalanx\Tui\Tdom\Element\GridElement;
+use Phalanx\Tui\Tdom\Element\InputElement;
+use Phalanx\Tui\Tdom\Element\PanelElement;
+use Phalanx\Tui\Tdom\Element\ScrollElement;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -71,7 +71,7 @@ final class WorkspaceScreenTest extends TestCase
     #[Test]
     public function rendersEmptyWorkspaceFallbacks(): void
     {
-        $rendered = (new WorkspaceScreen(new AgentHarnessStore()))($this->screenContext());
+        $rendered = (new WorkspaceScreen(new Store()))($this->screenContext());
 
         self::assertInstanceOf(ColumnElement::class, $rendered);
         self::assertInstanceOf(GridElement::class, $rendered->children[0]);
@@ -99,7 +99,7 @@ final class WorkspaceScreenTest extends TestCase
     public function inputFocusableSubmitsThroughTheReceivePath(): void
     {
         $queue = new InletQueue();
-        $screen = new WorkspaceScreen(new AgentHarnessStore(), new InputPromptSubmitter($queue));
+        $screen = new WorkspaceScreen(new Store(), new InputPromptSubmitter($queue));
         $focusables = $screen->focusables();
 
         self::assertCount(1, $focusables);
@@ -123,7 +123,7 @@ final class WorkspaceScreenTest extends TestCase
     #[Test]
     public function inputPanelRendersComposerCursorState(): void
     {
-        $screen = new WorkspaceScreen(new AgentHarnessStore(), new InputPromptSubmitter(new InletQueue()));
+        $screen = new WorkspaceScreen(new Store(), new InputPromptSubmitter(new InletQueue()));
         $focusables = $screen->focusables();
         $input = $focusables[0][1];
         self::assertInstanceOf(AcceptsInput::class, $input);
@@ -143,14 +143,14 @@ final class WorkspaceScreenTest extends TestCase
         self::assertSame(1, $panel->child->cursor);
     }
 
-    private static function store(): AgentHarnessStore
+    private static function store(): Store
     {
-        $store = new AgentHarnessStore();
-        $projector = new AgentHarnessProjector();
+        $store = new Store();
+        $projector = new Projector();
         $time = new DateTimeImmutable('2026-06-01T00:00:00+00:00');
         $workItem = new WorkItem(Activity::Testing, 'Review projection', id: 'work_projection');
 
-        $projector->project(AgentHarnessEvent::record(
+        $projector->project(Event::record(
             EventKind::WorkReceived,
             envelope: Envelope::make(
                 from: Address::user(),
@@ -170,20 +170,20 @@ final class WorkspaceScreenTest extends TestCase
             occurredAt: $time,
             id: 'evt_received',
         ), $store);
-        $projector->project(AgentHarnessEvent::record(
+        $projector->project(Event::record(
             EventKind::WorkItemStarted,
             workItem: $workItem,
             occurredAt: $time,
             id: 'evt_started',
         ), $store);
-        $projector->project(AgentHarnessEvent::record(
+        $projector->project(Event::record(
             EventKind::WorkItemCompleted,
             workItem: $workItem,
             workResult: WorkResult::done('work_projection', summary: 'Projection reviewed.'),
             occurredAt: $time,
             id: 'evt_done',
         ), $store);
-        $projector->project(AgentHarnessEvent::record(
+        $projector->project(Event::record(
             EventKind::WorkReviewed,
             reviewVerdict: ReviewVerdict::approve(),
             occurredAt: $time,

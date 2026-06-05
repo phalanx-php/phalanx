@@ -26,23 +26,23 @@ composer install
 
 ## App Shape
 
-Configure and start a terminal UI with `Tui::app()`. Apps provide their own
+Configure and start a terminal UI with `Facade::app()`. Apps provide their own
 store, screens, bindings, and service bundles.
 
 ```php
 <?php
 
-use Phalanx\Tui\Tui\Inputs\Binding;
-use Phalanx\Tui\Tui\Core\Screen;
-use Phalanx\Tui\Tui\Reactive\Store;
-use Phalanx\Tui\Tui;
+use Phalanx\Tui\Inputs\Binding;
+use Phalanx\Tui\Core\Screen;
+use Phalanx\Tui\Reactive\Store;
+use Phalanx\Tui\Facade;
 
 /** @var list<class-string<Screen>> $screens */
 $screens = [StatusScreen::class];
 /** @var class-string<Store> $store */
 $store = AppStore::class;
 
-return Tui::app($context)
+return Facade::app($context)
     ->store($store)
     ->screens($screens)
     ->globalBindings([
@@ -51,30 +51,30 @@ return Tui::app($context)
     ->run();
 ```
 
-`Tui::app(...)` owns terminal stage configuration, screen registration,
+`Facade::app(...)` owns terminal stage configuration, screen registration,
 input dispatch, and the Runtime startup path. The AgentHarness layer owns agent loop
 contracts, messages, work state, prompts, reviews, and UI-facing state
 projections.
 
 ## AgentHarness App Shape
 
-Use `Tui::agentHarness()` when the app is an agent-harness workspace. The
+Use `Facade::agentHarness()` when the app is an agent-harness workspace. The
 builder owns the default AgentHarness store, workspace screen, receive queue, input
 submitter, boundary runner, and runtime tick loop.
 
 ```php
 <?php
 
-use Phalanx\Tui\Tui;
+use Phalanx\Tui\Facade;
 
 $assistant = new Assistant();
 
-return Tui::agentHarness($context)
+return Facade::agentHarness($context)
     ->primary($assistant)
     ->run();
 ```
 
-The default workspace renders projections from `AgentHarnessStore`. User text enters
+The default workspace renders projections from `Store`. User text enters
 through `InputComposer`, becomes an `InputPromptSubmitter` prompt envelope, then
 flows through the same receive path as other inlets.
 
@@ -86,11 +86,11 @@ A component implements `Component`. It receives a `RenderContext` and returns a
 ```php
 <?php
 
-use Phalanx\Tui\Tui\Core\RenderContext;
-use Phalanx\Tui\Tui\Core\Component;
-use Phalanx\Tui\Tui\Tdom\Renderable;
+use Phalanx\Tui\Core\RenderContext;
+use Phalanx\Tui\Core\Component;
+use Phalanx\Tui\Tdom\Renderable;
 
-use function Phalanx\Tui\Tui\Kit\text;
+use function Phalanx\Tui\Kit\text;
 
 class Greeting implements Component
 {
@@ -111,8 +111,8 @@ Mount children with the free `mount()` helper. Runtime params are named props.
 ```php
 <?php
 
-use function Phalanx\Tui\Tui\Kit\mount;
-use function Phalanx\Tui\Tui\Kit\panel;
+use function Phalanx\Tui\Kit\mount;
+use function Phalanx\Tui\Kit\panel;
 
 public function __invoke(RenderContext $ctx): Renderable
 {
@@ -133,12 +133,12 @@ Signals use method syntax. Read with `get()`, write with `set()`.
 ```php
 <?php
 
-use Phalanx\Tui\Tui\Core\RenderContext;
-use Phalanx\Tui\Tui\Core\Component;
-use Phalanx\Tui\Tui\Reactive\Signal;
-use Phalanx\Tui\Tui\Tdom\Renderable;
+use Phalanx\Tui\Core\RenderContext;
+use Phalanx\Tui\Core\Component;
+use Phalanx\Tui\Reactive\Signal;
+use Phalanx\Tui\Tdom\Renderable;
 
-use function Phalanx\Tui\Tui\Kit\text;
+use function Phalanx\Tui\Kit\text;
 
 class Counter implements Component
 {
@@ -173,12 +173,12 @@ screen scope, theme, navigator, and mount system.
 ```php
 <?php
 
-use Phalanx\Tui\Tui\Core\ScreenContext;
-use Phalanx\Tui\Tui\Core\Screen;
-use Phalanx\Tui\Tui\Tdom\Renderable;
+use Phalanx\Tui\Core\ScreenContext;
+use Phalanx\Tui\Core\Screen;
+use Phalanx\Tui\Tdom\Renderable;
 
-use function Phalanx\Tui\Tui\Kit\column;
-use function Phalanx\Tui\Tui\Kit\text;
+use function Phalanx\Tui\Kit\column;
+use function Phalanx\Tui\Kit\text;
 
 class DashboardScreen implements Screen
 {
@@ -202,17 +202,17 @@ Screens can declare their own focus targets, status bar, and key bindings.
 ```php
 <?php
 
-use Phalanx\Tui\Tui\Inputs\Binding;
-use Phalanx\Tui\Tui\Core\DeclaresBindings;
-use Phalanx\Tui\Tui\Core\Focusable;
-use Phalanx\Tui\Tui\Core\HasFocusables;
-use Phalanx\Tui\Tui\Core\HasStatusBar;
-use Phalanx\Tui\Tui\Core\Screen;
-use Phalanx\Tui\Tui\Core\ScreenContext;
-use Phalanx\Tui\Tui\Inputs\Key;
-use Phalanx\Tui\Tui\Tdom\Renderable;
+use Phalanx\Tui\Inputs\Binding;
+use Phalanx\Tui\Core\DeclaresBindings;
+use Phalanx\Tui\Core\Focusable;
+use Phalanx\Tui\Core\HasFocusables;
+use Phalanx\Tui\Core\HasStatusBar;
+use Phalanx\Tui\Core\Screen;
+use Phalanx\Tui\Core\ScreenContext;
+use Phalanx\Tui\Inputs\Key;
+use Phalanx\Tui\Tdom\Renderable;
 
-use function Phalanx\Tui\Tui\Kit\text;
+use function Phalanx\Tui\Kit\text;
 
 class SettingsScreen implements Screen, HasStatusBar, HasFocusables, Focusable, DeclaresBindings
 {
@@ -256,7 +256,7 @@ new immutable value.
 ```php
 <?php
 
-use Phalanx\Tui\Tui\Reactive\Store;
+use Phalanx\Tui\Reactive\Store;
 
 class StatusSlice
 {
@@ -306,7 +306,7 @@ $store->mutate(
 
 ## Rendering with TDOM
 
-Build terminal UI with free functions from `Phalanx\Tui\Tui\Kit`.
+Build terminal UI with free functions from `Phalanx\Tui\Kit`.
 
 | Function | Element | Purpose |
 |---|---|---|
@@ -327,19 +327,19 @@ Example:
 ```php
 <?php
 
-use Phalanx\Tui\Tui\Styles\Border;
-use Phalanx\Tui\Tui\Styles\Size;
-use Phalanx\Tui\Tui\Styles\Color;
-use Phalanx\Tui\Tui\Styles\Style as TextStyle;
-use Phalanx\Tui\Tui\Tdom\Style;
-use Phalanx\Tui\Tui\Styles\Line;
-use Phalanx\Tui\Tui\Styles\Span;
+use Phalanx\Tui\Styles\Border;
+use Phalanx\Tui\Styles\Size;
+use Phalanx\Tui\Styles\Color;
+use Phalanx\Tui\Styles\Style as TextStyle;
+use Phalanx\Tui\Tdom\Style;
+use Phalanx\Tui\Styles\Line;
+use Phalanx\Tui\Styles\Span;
 
-use function Phalanx\Tui\Tui\Kit\column;
-use function Phalanx\Tui\Tui\Kit\divider;
-use function Phalanx\Tui\Tui\Kit\panel;
-use function Phalanx\Tui\Tui\Kit\progress;
-use function Phalanx\Tui\Tui\Kit\text;
+use function Phalanx\Tui\Kit\column;
+use function Phalanx\Tui\Kit\divider;
+use function Phalanx\Tui\Kit\panel;
+use function Phalanx\Tui\Kit\progress;
+use function Phalanx\Tui\Kit\text;
 
 public function __invoke(RenderContext $ctx): Renderable
 {
@@ -374,8 +374,8 @@ implements `DeclaresBindings`.
 ```php
 <?php
 
-use Phalanx\Tui\Tui\Inputs\Binding;
-use Phalanx\Tui\Tui\Inputs\Key;
+use Phalanx\Tui\Inputs\Binding;
+use Phalanx\Tui\Inputs\Key;
 
 [
     Binding::ctrl('c')->quit()->label('quit'),

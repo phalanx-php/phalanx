@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Tui\Collab\State;
 
 use DateTimeImmutable;
-use Phalanx\Tui\Collab\Events\AgentHarnessEvent;
+use Phalanx\Tui\Collab\Events\Event;
 use Phalanx\Tui\Collab\Messages\Envelope;
 use Phalanx\Tui\Collab\Messages\MessageKind;
 
@@ -46,7 +46,7 @@ final class TimelineEntry
         }
     }
 
-    public static function fromEnvelope(AgentHarnessEvent $event, Envelope $envelope): self
+    public static function fromEnvelope(Event $event, Envelope $envelope): self
     {
         return new self(
             id: "{$event->id}:{$envelope->id}",
@@ -59,7 +59,7 @@ final class TimelineEntry
         );
     }
 
-    public static function work(AgentHarnessEvent $event, TimelineEntryKind $kind, string $summary): self
+    public static function work(Event $event, TimelineEntryKind $kind, string $summary): self
     {
         $workItem = $event->workItem ?? self::missing('work item', $event);
 
@@ -74,7 +74,7 @@ final class TimelineEntry
         );
     }
 
-    public static function review(AgentHarnessEvent $event): self
+    public static function review(Event $event): self
     {
         $verdict = $event->reviewVerdict ?? self::missing('review verdict', $event);
 
@@ -106,7 +106,7 @@ final class TimelineEntry
         return $envelope->kind->value;
     }
 
-    private static function missing(string $field, AgentHarnessEvent $event): never
+    private static function missing(string $field, Event $event): never
     {
         throw new \InvalidArgumentException(sprintf(
             'AgentHarness event "%s" requires a %s for timeline projection.',

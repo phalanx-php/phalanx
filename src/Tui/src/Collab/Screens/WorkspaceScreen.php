@@ -7,30 +7,30 @@ namespace Phalanx\Tui\Collab\Screens;
 use Phalanx\Tui\Collab\Boundaries\InputPromptSubmitter;
 use Phalanx\Tui\Collab\Plans\WorkPlanItem;
 use Phalanx\Tui\Collab\Reviews\ReviewVerdict;
-use Phalanx\Tui\Collab\State\AgentHarnessStore;
+use Phalanx\Tui\Collab\State\Store;
 use Phalanx\Tui\Collab\State\TimelineEntry;
-use Phalanx\Tui\Tui\Core\Focusable;
-use Phalanx\Tui\Tui\Core\HasFocusables;
-use Phalanx\Tui\Tui\Core\RenderContext;
-use Phalanx\Tui\Tui\Core\Screen;
-use Phalanx\Tui\Tui\Core\ScreenContext;
-use Phalanx\Tui\Tui\Kit\InputComposer;
-use Phalanx\Tui\Tui\Styles\Size;
-use Phalanx\Tui\Tui\Tdom\Renderable;
+use Phalanx\Tui\Core\Focusable;
+use Phalanx\Tui\Core\HasFocusables;
+use Phalanx\Tui\Core\RenderContext;
+use Phalanx\Tui\Core\Screen;
+use Phalanx\Tui\Core\ScreenContext;
+use Phalanx\Tui\Kit\InputComposer;
+use Phalanx\Tui\Styles\Size;
+use Phalanx\Tui\Tdom\Renderable;
 
-use function Phalanx\Tui\Tui\Kit\column;
-use function Phalanx\Tui\Tui\Kit\grid;
-use function Phalanx\Tui\Tui\Kit\panel;
-use function Phalanx\Tui\Tui\Kit\scrollable;
-use function Phalanx\Tui\Tui\Kit\statusLine;
-use function Phalanx\Tui\Tui\Kit\text;
+use function Phalanx\Tui\Kit\column;
+use function Phalanx\Tui\Kit\grid;
+use function Phalanx\Tui\Kit\panel;
+use function Phalanx\Tui\Kit\scrollable;
+use function Phalanx\Tui\Kit\statusLine;
+use function Phalanx\Tui\Kit\text;
 
 class WorkspaceScreen implements Screen, HasFocusables
 {
     private InputComposer $composer;
 
     public function __construct(
-        private AgentHarnessStore $store,
+        private Store $store,
         ?InputPromptSubmitter $submitter = null,
     ) {
         $this->composer = InputComposer::empty(

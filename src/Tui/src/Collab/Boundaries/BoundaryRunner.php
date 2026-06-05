@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Tui\Collab\Boundaries;
 
-use Phalanx\Tui\Collab\Events\AgentHarnessEvent;
+use Phalanx\Tui\Collab\Events\Event;
 use Phalanx\Tui\Collab\Events\EventKind;
-use Phalanx\Tui\Collab\Lifecycle\AgentHarnessLoop;
+use Phalanx\Tui\Collab\Lifecycle\Loop;
 use Phalanx\Tui\Collab\Plans\WorkPlanStatus;
 use Phalanx\Tui\Collab\WorkContext;
 
@@ -17,7 +17,7 @@ final class BoundaryRunner
 
     /** @param iterable<Inlet> $inlets */
     public function __construct(
-        private AgentHarnessLoop $loop,
+        private Loop $loop,
         iterable $inlets = [],
         private InletQueue $incoming = new InletQueue(),
         private PromptInletMapper $mapper = new PromptInletMapper(),
@@ -35,7 +35,7 @@ final class BoundaryRunner
         foreach ($this->incoming->drain() as $message) {
             $received = true;
             $item = ($this->mapper)($message);
-            $ctx->project(AgentHarnessEvent::record(
+            $ctx->project(Event::record(
                 EventKind::WorkReceived,
                 envelope: $message->envelope,
                 workItem: $item,

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Tui\Tests\Unit\Collab\Boundaries;
 
 use Phalanx\Scope\TaskScope;
-use Phalanx\Tui\Collab\Apps\AgentHarnessRuntime;
+use Phalanx\Tui\Collab\Apps\Runtime;
 use Phalanx\Tui\Collab\Boundaries\BoundaryRunner;
 use Phalanx\Tui\Collab\Boundaries\Inlet;
 use Phalanx\Tui\Collab\Boundaries\InletChannel;
@@ -18,7 +18,7 @@ use Phalanx\Tui\Collab\Boundaries\PromptInletMapper;
 use Phalanx\Tui\Collab\Boundaries\Urgency;
 use Phalanx\Tui\Collab\Events\EventKind;
 use Phalanx\Tui\Collab\Events\RoutableEvent;
-use Phalanx\Tui\Collab\Lifecycle\AgentHarnessLoop;
+use Phalanx\Tui\Collab\Lifecycle\Loop;
 use Phalanx\Tui\Collab\Messages\Address;
 use Phalanx\Tui\Collab\Messages\Envelope;
 use Phalanx\Tui\Collab\Messages\MessageKind;
@@ -29,13 +29,13 @@ use Phalanx\Tui\Collab\Plans\WorkPlan;
 use Phalanx\Tui\Collab\Plans\WorkPlanItem;
 use Phalanx\Tui\Collab\Plans\WorkPlanStatus;
 use Phalanx\Tui\Collab\Plans\WorkResult;
-use Phalanx\Tui\Collab\State\AgentHarnessStore;
+use Phalanx\Tui\Collab\State\Store;
 use Phalanx\Tui\Collab\State\WorkPlanSlice;
 use Phalanx\Tui\Collab\WorkContext;
 use Phalanx\Tui\Tests\Support\RecordingTaskScope;
-use Phalanx\Tui\Tui\Inputs\Key;
-use Phalanx\Tui\Tui\Inputs\KeyEvent;
-use Phalanx\Tui\Tui\Kit\InputComposer;
+use Phalanx\Tui\Inputs\Key;
+use Phalanx\Tui\Inputs\KeyEvent;
+use Phalanx\Tui\Kit\InputComposer;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -116,11 +116,11 @@ final class BoundaryRuntimeTest extends TestCase
     #[Test]
     public function boundaryRunnerInvokesInletsRecordsMessagesAndRunsTheLoop(): void
     {
-        $store = new AgentHarnessStore();
+        $store = new Store();
         $ctx = new WorkContext(new RecordingTaskScope(), $store);
         $calls = new \ArrayObject();
         $runner = new BoundaryRunner(
-            loop: new AgentHarnessLoop(primary: new DoneAgentParticipant($calls)),
+            loop: new Loop(primary: new DoneAgentParticipant($calls)),
             inlets: [new RuntimePromptInlet('Plan the next slice', Urgency::Prioritize)],
         );
 
@@ -136,11 +136,11 @@ final class BoundaryRuntimeTest extends TestCase
     #[Test]
     public function silentInletsDoNotProjectPlaceholderLoopEvents(): void
     {
-        $store = new AgentHarnessStore();
+        $store = new Store();
         $ctx = new WorkContext(new RecordingTaskScope(), $store);
         $calls = new \ArrayObject();
         $runner = new BoundaryRunner(
-            loop: new AgentHarnessLoop(primary: new DoneAgentParticipant($calls)),
+            loop: new Loop(primary: new DoneAgentParticipant($calls)),
             inlets: [new SilentInlet()],
         );
 
@@ -155,12 +155,12 @@ final class BoundaryRuntimeTest extends TestCase
     public function agentHarnessRuntimeUsesTheCurrentTaskScopeOnEachTick(): void
     {
         $inlet = new ScopeRecordingInlet();
-        $runtime = new AgentHarnessRuntime(
+        $runtime = new Runtime(
             runner: new BoundaryRunner(
-                loop: new AgentHarnessLoop(primary: new DoneAgentParticipant(new \ArrayObject())),
+                loop: new Loop(primary: new DoneAgentParticipant(new \ArrayObject())),
                 inlets: [$inlet],
             ),
-            store: new AgentHarnessStore(),
+            store: new Store(),
         );
         $first = new RecordingTaskScope();
         $second = new RecordingTaskScope();
@@ -174,10 +174,10 @@ final class BoundaryRuntimeTest extends TestCase
     #[Test]
     public function boundaryRunnerMapsBeforeRecordingUnsupportedMessages(): void
     {
-        $store = new AgentHarnessStore();
+        $store = new Store();
         $ctx = new WorkContext(new RecordingTaskScope(), $store);
         $runner = new BoundaryRunner(
-            loop: new AgentHarnessLoop(primary: new DoneAgentParticipant(new \ArrayObject())),
+            loop: new Loop(primary: new DoneAgentParticipant(new \ArrayObject())),
             inlets: [new UnsupportedInlet()],
         );
 
@@ -197,12 +197,12 @@ final class BoundaryRuntimeTest extends TestCase
     {
         $queue = new InletQueue();
         $calls = new \ArrayObject();
-        $store = new AgentHarnessStore();
+        $store = new Store();
         $ctx = new WorkContext(new RecordingTaskScope(), $store);
         $submit = new InputPromptSubmitter($queue);
         $composer = InputComposer::empty(onSubmit: $submit);
         $runner = new BoundaryRunner(
-            loop: new AgentHarnessLoop(primary: new DoneAgentParticipant($calls)),
+            loop: new Loop(primary: new DoneAgentParticipant($calls)),
             incoming: $queue,
         );
 
@@ -223,11 +223,11 @@ final class BoundaryRuntimeTest extends TestCase
     public function outletReactorRoutesLoopEventsToOutletsThroughTaskScope(): void
     {
         $scope = new RecordingTaskScope();
-        $store = new AgentHarnessStore();
+        $store = new Store();
         $ctx = new WorkContext($scope, $store);
         $outlet = new RecordingOutlet();
         $runner = new BoundaryRunner(
-            loop: new AgentHarnessLoop(
+            loop: new Loop(
                 primary: new DoneAgentParticipant(new \ArrayObject()),
                 reactors: [new OutletReactor([$outlet])],
             ),
@@ -254,7 +254,7 @@ final class BoundaryRuntimeTest extends TestCase
     public function preseededReadyWorkStillRunsAndRoutesOutletEventsWithoutInput(): void
     {
         $scope = new RecordingTaskScope();
-        $store = new AgentHarnessStore();
+        $store = new Store();
         $store->workPlan = new WorkPlanSlice(WorkPlan::start(new WorkItem(
             Activity::Testing,
             'Route preseeded work',
@@ -262,7 +262,7 @@ final class BoundaryRuntimeTest extends TestCase
         )));
         $outlet = new RecordingOutlet();
         $runner = new BoundaryRunner(
-            loop: new AgentHarnessLoop(
+            loop: new Loop(
                 primary: new DoneAgentParticipant(new \ArrayObject()),
                 reactors: [new OutletReactor([$outlet])],
             ),

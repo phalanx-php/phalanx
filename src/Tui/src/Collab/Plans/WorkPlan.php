@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Tui\Collab\Plans;
 
-use Phalanx\Tui\Collab\Events\AgentHarnessEvent;
+use Phalanx\Tui\Collab\Events\Event;
 use Phalanx\Tui\Collab\Internal\Id;
 use Phalanx\Tui\Collab\Messages\Envelope;
 
@@ -124,7 +124,7 @@ final class WorkPlan
         $this->refreshStatus();
     }
 
-    public function unblock(string $itemId, Envelope|AgentHarnessEvent|null $resolvedBy = null): void
+    public function unblock(string $itemId, Envelope|Event|null $resolvedBy = null): void
     {
         $this->assertMutable();
         $this->items[$this->requireKnownItem($itemId)] = WorkPlanItem::unblocked($this->item($itemId), $resolvedBy);

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Tui\Collab\Boundaries;
 
-use Phalanx\Tui\Collab\Events\AgentHarnessEvent;
+use Phalanx\Tui\Collab\Events\Event;
 use Phalanx\Tui\Collab\Participants\Reactor;
 use Phalanx\Tui\Collab\WorkContext;
 
@@ -19,7 +19,7 @@ final class OutletReactor implements Reactor
         $this->outlets = self::outlets($outlets);
     }
 
-    public function __invoke(AgentHarnessEvent $event, WorkContext $ctx): void
+    public function __invoke(Event $event, WorkContext $ctx): void
     {
         $routable = $event->routable();
 

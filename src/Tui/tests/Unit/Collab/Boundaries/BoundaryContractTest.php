@@ -10,7 +10,7 @@ use Phalanx\Tui\Collab\Boundaries\InletChannel;
 use Phalanx\Tui\Collab\Boundaries\InletMessage;
 use Phalanx\Tui\Collab\Boundaries\Outlet;
 use Phalanx\Tui\Collab\Boundaries\Urgency;
-use Phalanx\Tui\Collab\Events\AgentHarnessEvent;
+use Phalanx\Tui\Collab\Events\Event;
 use Phalanx\Tui\Collab\Events\EventKind;
 use Phalanx\Tui\Collab\Events\RoutableEvent;
 use Phalanx\Tui\Collab\Messages\Envelope;
@@ -49,8 +49,8 @@ final class BoundaryContractTest extends TestCase
         $outlet = new CompletionOnlyOutlet();
         $scope = new RecordingTaskScope();
 
-        $outlet(AgentHarnessEvent::record(EventKind::WorkReceived)->routable(), $scope);
-        $outlet(AgentHarnessEvent::record(EventKind::WorkCompleted)->routable('done'), $scope);
+        $outlet(Event::record(EventKind::WorkReceived)->routable(), $scope);
+        $outlet(Event::record(EventKind::WorkCompleted)->routable('done'), $scope);
 
         self::assertSame(['done'], $outlet->summaries);
     }

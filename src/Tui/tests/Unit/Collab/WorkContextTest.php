@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Tui\Tests\Unit\Collab;
 
 use Phalanx\Scope\TaskScope;
-use Phalanx\Tui\Collab\Events\AgentHarnessEvent;
+use Phalanx\Tui\Collab\Events\Event;
 use Phalanx\Tui\Collab\Events\EventKind;
 use Phalanx\Tui\Collab\Lifecycle\LoopStage;
 use Phalanx\Tui\Collab\Messages\Envelope;
@@ -15,7 +15,7 @@ use Phalanx\Tui\Collab\Plans\WorkItemStatus;
 use Phalanx\Tui\Collab\Plans\WorkPlan;
 use Phalanx\Tui\Collab\Plans\WorkResult;
 use Phalanx\Tui\Collab\Reviews\ReviewVerdict;
-use Phalanx\Tui\Collab\State\AgentHarnessStore;
+use Phalanx\Tui\Collab\State\Store;
 use Phalanx\Tui\Collab\State\WorkPlanSlice;
 use Phalanx\Tui\Collab\WorkContext;
 use PHPUnit\Framework\Attributes\Test;
@@ -26,7 +26,7 @@ final class WorkContextTest extends TestCase
     #[Test]
     public function advanceProjectsTheLoopStageWithoutQueueingDomainEvents(): void
     {
-        $store = new AgentHarnessStore();
+        $store = new Store();
         $ctx = new WorkContext($this->createStub(TaskScope::class), $store);
 
         $slice = $ctx->advance(LoopStage::Execute);
@@ -40,7 +40,7 @@ final class WorkContextTest extends TestCase
     #[Test]
     public function recordProjectsAnEnvelopeToTheMessageTimeline(): void
     {
-        $store = new AgentHarnessStore();
+        $store = new Store();
         $ctx = new WorkContext($this->createStub(TaskScope::class), $store);
         $envelope = Envelope::prompt('Review the patch');
 
@@ -54,7 +54,7 @@ final class WorkContextTest extends TestCase
     #[Test]
     public function fulfillProjectsRunningWorkAndResultEnvelopes(): void
     {
-        $store = new AgentHarnessStore();
+        $store = new Store();
         $plan = WorkPlan::start(new WorkItem(Activity::Testing, 'Run focused tests', id: 'tc-4a'));
         $plan->startItem('tc-4a');
         $store->workPlan = new WorkPlanSlice($plan);
@@ -74,7 +74,7 @@ final class WorkContextTest extends TestCase
     #[Test]
     public function appendAndStartProjectWorkPlanChanges(): void
     {
-        $store = new AgentHarnessStore();
+        $store = new Store();
         $ctx = new WorkContext($this->createStub(TaskScope::class), $store);
 
         $ctx->append(new WorkItem(Activity::Testing, 'Run focused tests', id: 'tc-5a'));
@@ -85,7 +85,7 @@ final class WorkContextTest extends TestCase
         self::assertSame(
             [EventKind::WorkPrepared, EventKind::WorkItemStarted],
             array_map(
-                static fn (AgentHarnessEvent $event): EventKind => $event->kind,
+                static fn (Event $event): EventKind => $event->kind,
                 $ctx->drainProjectedEvents(),
             ),
         );
@@ -94,7 +94,7 @@ final class WorkContextTest extends TestCase
     #[Test]
     public function reviewProjectsVerdictsThroughTheStore(): void
     {
-        $store = new AgentHarnessStore();
+        $store = new Store();
         $ctx = new WorkContext($this->createStub(TaskScope::class), $store);
         $verdict = ReviewVerdict::approve();
 
@@ -108,7 +108,7 @@ final class WorkContextTest extends TestCase
     #[Test]
     public function abortProjectsARejectedReviewVerdict(): void
     {
-        $store = new AgentHarnessStore();
+        $store = new Store();
         $plan = WorkPlan::start(new WorkItem(Activity::Testing, 'Run focused tests', id: 'tc-5a'));
         $store->workPlan = new WorkPlanSlice($plan);
         $ctx = new WorkContext($this->createStub(TaskScope::class), $store);
@@ -123,7 +123,7 @@ final class WorkContextTest extends TestCase
     #[Test]
     public function failedProjectionLeavesStoreUntouched(): void
     {
-        $store = new AgentHarnessStore();
+        $store = new Store();
         $ctx = new WorkContext($this->createStub(TaskScope::class), $store);
 
         $ctx->append(new WorkItem(Activity::Testing, 'Run focused tests', id: 'tc-5a'));
@@ -142,7 +142,7 @@ final class WorkContextTest extends TestCase
     #[Test]
     public function visiblePlanCannotMutateStoreStateDirectly(): void
     {
-        $store = new AgentHarnessStore();
+        $store = new Store();
         $plan = WorkPlan::start(new WorkItem(Activity::Testing, 'Run focused tests', id: 'tc-4a'));
         $store->workPlan = new WorkPlanSlice($plan);
 

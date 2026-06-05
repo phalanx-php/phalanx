@@ -56,7 +56,7 @@
     },
     "autoload": {
         "files": [
-            "src/Tui/src/Tui/Kit/functions.php"
+            "src/Tui/src/Kit/functions.php"
         ],
         "psr-4": {
             "Phalanx\\": "src/Runtime/src/",

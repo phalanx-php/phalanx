@@ -1,0 +1,29 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Phalanx\Tui\Drawing;
+
+use Phalanx\Tui\Styles\ColorMode;
+
+final class StageConfig
+{
+    /** @param array<string, string|false> $env */
+    public function __construct(
+        private(set) ScreenMode $screenMode = ScreenMode::Alternate,
+        private(set) bool $mouseTracking = false,
+        private(set) bool $bracketedPaste = true,
+        private(set) bool $syncOutput = false,
+        private(set) bool $handleInput = false,
+        private(set) bool $defaultExitHandler = true,
+        private(set) ColorMode $colorMode = ColorMode::Ansi24,
+        private(set) int $activeIntervalUs = 10_000,
+        private(set) int $idleIntervalUs = 250_000,
+        private(set) mixed $stream = null,
+        private(set) ?string $captureFile = null,
+        private(set) bool $fullSgr = false,
+        private(set) bool $flushMemoryCaches = true,
+        private(set) array $env = [],
+    ) {
+    }
+}
