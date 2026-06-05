@@ -14,15 +14,15 @@ final class CancellationTokenReleaseTest extends TestCase
         $parent = CancellationToken::create();
         $composite = CancellationToken::composite($parent);
 
-        $compositeFired = false;
-        $composite->onCancel(static function () use (&$compositeFired): void {
-            $compositeFired = true;
+        $compositeProbe = new CancellationProbe();
+        $composite->onCancel(static function () use ($compositeProbe): void {
+            $compositeProbe->record();
         });
 
         $composite->release();
         $parent->cancel();
 
-        self::assertFalse($compositeFired);
+        self::assertSame(0, $compositeProbe->count);
         self::assertFalse($composite->isCancelled);
     }
 
@@ -39,14 +39,14 @@ final class CancellationTokenReleaseTest extends TestCase
             $composites[$i]->release();
         }
 
-        $fired = false;
-        $composites[99]->onCancel(static function () use (&$fired): void {
-            $fired = true;
+        $probe = new CancellationProbe();
+        $composites[99]->onCancel(static function () use ($probe): void {
+            $probe->record();
         });
 
         $parent->cancel();
 
-        self::assertTrue($fired);
+        self::assertSame(1, $probe->count);
         self::assertTrue($composites[99]->isCancelled);
     }
 
@@ -55,31 +55,31 @@ final class CancellationTokenReleaseTest extends TestCase
         $parent = CancellationToken::create();
         $composite = CancellationToken::composite($parent);
 
-        $cancelCount = 0;
-        $composite->onCancel(static function () use (&$cancelCount): void {
-            $cancelCount++;
+        $probe = new CancellationProbe();
+        $composite->onCancel(static function () use ($probe): void {
+            $probe->record();
         });
 
         $parent->cancel();
-        self::assertSame(1, $cancelCount);
+        self::assertSame(1, $probe->count);
 
         $composite->release();
-        self::assertSame(1, $cancelCount);
+        self::assertSame(1, $probe->count);
     }
 
     public function testReleaseClearsListeners(): void
     {
         $token = CancellationToken::create();
 
-        $fired = false;
-        $token->onCancel(static function () use (&$fired): void {
-            $fired = true;
+        $probe = new CancellationProbe();
+        $token->onCancel(static function () use ($probe): void {
+            $probe->record();
         });
 
         $token->release();
         $token->cancel();
 
-        self::assertFalse($fired);
+        self::assertSame(0, $probe->count);
     }
 
     public function testReleaseOnNonCompositeIsHarmless(): void
@@ -96,19 +96,19 @@ final class CancellationTokenReleaseTest extends TestCase
         $parentB = CancellationToken::create();
         $composite = CancellationToken::composite($parentA, $parentB);
 
-        $compositeFired = $composite->isCancelled;
-        $composite->onCancel(static function () use (&$compositeFired): void {
-            $compositeFired = true;
+        $compositeProbe = new CancellationProbe();
+        $composite->onCancel(static function () use ($compositeProbe): void {
+            $compositeProbe->record();
         });
 
         $composite->release();
 
         $parentA->cancel();
-        self::assertFalse($compositeFired);
+        self::assertSame(0, $compositeProbe->count);
         self::assertFalse($composite->isCancelled);
 
         $parentB->cancel();
-        self::assertFalse($compositeFired);
+        self::assertSame(0, $compositeProbe->count);
         self::assertFalse($composite->isCancelled);
     }
 
@@ -117,14 +117,24 @@ final class CancellationTokenReleaseTest extends TestCase
         $parent = CancellationToken::create();
         $composite = CancellationToken::composite($parent);
 
-        $fired = false;
-        $composite->onCancel(static function () use (&$fired): void {
-            $fired = true;
+        $probe = new CancellationProbe();
+        $composite->onCancel(static function () use ($probe): void {
+            $probe->record();
         });
 
         $parent->cancel();
 
-        self::assertTrue($fired);
+        self::assertSame(1, $probe->count);
         self::assertTrue($composite->isCancelled);
+    }
+}
+
+final class CancellationProbe
+{
+    public int $count = 0;
+
+    public function record(): void
+    {
+        $this->count++;
     }
 }

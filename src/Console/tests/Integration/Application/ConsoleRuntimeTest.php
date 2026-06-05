@@ -4,20 +4,18 @@ declare(strict_types=1);
 
 namespace Phalanx\Console\Tests\Integration\Application;
 
-use Phalanx\Application;
-use Phalanx\Console\Application\Console;
 use Phalanx\Console\Application\ConsoleRuntimeRunner;
 use Phalanx\Console\Command\Runtime;
+use Phalanx\Console\Tests\Support\ConsoleTestCase;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 
-final class ConsoleRuntimeTest extends TestCase
+final class ConsoleRuntimeTest extends ConsoleTestCase
 {
     #[Test]
     public function returnsConsoleRunnerForConsoleApplication(): void
     {
         $runtime = new Runtime(['error_handler' => false]);
-        $app = Console::starting()->build();
+        $app = self::console()->build();
 
         self::assertInstanceOf(ConsoleRuntimeRunner::class, $runtime->getRunner($app));
     }
@@ -30,7 +28,7 @@ final class ConsoleRuntimeTest extends TestCase
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Console runtime expects an ConsoleApplication');
 
-        $runtime->getRunner(Application::starting()->compile());
+        $runtime->getRunner($this->application());
     }
 
     protected function setUp(): void

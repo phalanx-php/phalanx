@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Console\Tests\Integration\Application;
 
-use Phalanx\Console\Application\Console;
+use Phalanx\Console\Tests\Support\ConsoleTestCase;
 use Phalanx\Console\Command\Arg;
 use Phalanx\Console\Command\CommandConfig;
 use Phalanx\Console\Command\CommandGroup;
@@ -18,10 +18,9 @@ use Phalanx\Console\Tests\Fixtures\Commands\NoopCommand;
 use Phalanx\Console\Tests\Fixtures\Commands\ScanCommand;
 use Phalanx\Runtime\Memory\ManagedResourceState;
 use Phalanx\Scope\ExecutionScope;
-use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
 
-final class NestedConsoleApplicationTest extends PhalanxTestCase
+final class NestedConsoleApplicationTest extends ConsoleTestCase
 {
     #[Test]
     public function nestedCommandDispatchesToSubcommand(): void
@@ -38,7 +37,7 @@ final class NestedConsoleApplicationTest extends PhalanxTestCase
             ], description: 'Network operations'),
         ]);
 
-        $app = Console::starting()
+        $app = self::console()
             ->commands($commands)
             ->build();
 
@@ -62,7 +61,7 @@ final class NestedConsoleApplicationTest extends PhalanxTestCase
             ]),
         ]);
 
-        $app = Console::starting()
+        $app = self::console()
             ->commands($commands)
             ->build();
 
@@ -89,7 +88,7 @@ final class NestedConsoleApplicationTest extends PhalanxTestCase
             ], description: 'Network operations'),
         ]);
 
-        $app = Console::starting()
+        $app = self::console()
             ->commands($commands)
             ->withConsoleConfig(new ConsoleConfig(output: StreamOutputHelper::output($stream)))
             ->build();
@@ -116,7 +115,7 @@ final class NestedConsoleApplicationTest extends PhalanxTestCase
             ], description: 'Network operations'),
         ]);
 
-        $app = Console::starting()
+        $app = self::console()
             ->commands($commands)
             ->withConsoleConfig(new ConsoleConfig(output: StreamOutputHelper::output($stream)))
             ->build();
@@ -144,7 +143,7 @@ final class NestedConsoleApplicationTest extends PhalanxTestCase
             ], description: 'Network operations'),
         ]);
 
-        $app = Console::starting()
+        $app = self::console()
             ->commands($commands)
             ->withConsoleConfig(new ConsoleConfig(output: StreamOutputHelper::output($stream)))
             ->build();
@@ -175,7 +174,7 @@ final class NestedConsoleApplicationTest extends PhalanxTestCase
             ], description: 'Network operations'),
         ]);
 
-        $app = Console::starting()
+        $app = self::console()
             ->commands($commands)
             ->withConsoleConfig(new ConsoleConfig(output: StreamOutputHelper::output($stream)))
             ->build();
@@ -204,7 +203,7 @@ final class NestedConsoleApplicationTest extends PhalanxTestCase
             ],
         ]);
 
-        $app = Console::starting()
+        $app = self::console()
             ->commands($commands)
             ->withConsoleConfig(new ConsoleConfig(output: StreamOutputHelper::output($stream)))
             ->build();
@@ -238,7 +237,7 @@ final class NestedConsoleApplicationTest extends PhalanxTestCase
             ], description: 'Network operations'),
         ]);
 
-        $app = Console::starting()
+        $app = self::console()
             ->commands($commands)
             ->withConsoleConfig(new ConsoleConfig(output: StreamOutputHelper::output($stream)))
             ->build();
@@ -270,7 +269,7 @@ final class NestedConsoleApplicationTest extends PhalanxTestCase
             ],
         ]);
 
-        $app = Console::starting()
+        $app = self::console()
             ->commands($commands)
             ->withConsoleConfig(new ConsoleConfig(output: StreamOutputHelper::output($stream)))
             ->build();
@@ -294,7 +293,7 @@ final class NestedConsoleApplicationTest extends PhalanxTestCase
             ], description: 'Network operations'),
         ]);
 
-        $app = Console::starting()
+        $app = self::console()
             ->commands($commands)
             ->withConsoleConfig(new ConsoleConfig(errorOutput: StreamOutputHelper::output($stream)))
             ->build();
@@ -322,7 +321,7 @@ final class NestedConsoleApplicationTest extends PhalanxTestCase
             ], description: 'Network operations'),
         ]);
 
-        $app = Console::starting()
+        $app = self::console()
             ->commands($commands)
             ->withConsoleConfig(new ConsoleConfig(errorOutput: StreamOutputHelper::output($stream)))
             ->build();
@@ -356,7 +355,7 @@ final class NestedConsoleApplicationTest extends PhalanxTestCase
             ], description: 'Network operations'),
         ]);
 
-        $app = Console::starting()
+        $app = self::console()
             ->commands($commands)
             ->withConsoleConfig(new ConsoleConfig(errorOutput: StreamOutputHelper::output($stream)))
             ->build();
@@ -387,7 +386,7 @@ final class NestedConsoleApplicationTest extends PhalanxTestCase
             ], description: 'Network operations'),
         ]);
 
-        $app = Console::starting()
+        $app = self::console()
             ->commands($commands)
             ->withConsoleConfig(new ConsoleConfig(errorOutput: StreamOutputHelper::output($stream)))
             ->build();
@@ -419,7 +418,7 @@ final class NestedConsoleApplicationTest extends PhalanxTestCase
             ],
         ]);
 
-        $app = Console::starting()
+        $app = self::console()
             ->commands($commands)
             ->withConsoleConfig(new ConsoleConfig(errorOutput: StreamOutputHelper::output($stream)))
             ->build();
@@ -447,7 +446,7 @@ final class NestedConsoleApplicationTest extends PhalanxTestCase
             ], description: 'Network operations'),
         ]);
 
-        $app = Console::starting()
+        $app = self::console()
             ->commands($commands)
             ->withConsoleConfig(new ConsoleConfig(output: StreamOutputHelper::output($stream)))
             ->build();
@@ -477,7 +476,7 @@ final class NestedConsoleApplicationTest extends PhalanxTestCase
             ],
         ]);
 
-        $app = Console::starting()
+        $app = self::console()
             ->commands($commands)
             ->withConsoleConfig(new ConsoleConfig(output: StreamOutputHelper::output($stream)))
             ->build();
@@ -511,7 +510,7 @@ final class NestedConsoleApplicationTest extends PhalanxTestCase
             ], description: 'Network operations'),
         ]);
 
-        $app = Console::starting()
+        $app = self::console()
             ->commands($commands)
             ->withConsoleConfig(new ConsoleConfig(output: StreamOutputHelper::output($stream)))
             ->build();
@@ -537,7 +536,7 @@ final class NestedConsoleApplicationTest extends PhalanxTestCase
             'scan' => [NoopCommand::class, new CommandConfig(description: 'Scan network')],
         ]);
 
-        $app = Console::starting()
+        $app = self::console()
             ->commands($commands)
             ->withConsoleConfig(new ConsoleConfig(errorOutput: StreamOutputHelper::output($stream)))
             ->build();
@@ -563,7 +562,7 @@ final class NestedConsoleApplicationTest extends PhalanxTestCase
             ], description: 'Network operations'),
         ]);
 
-        $app = Console::starting()
+        $app = self::console()
             ->commands($commands)
             ->withConsoleConfig(new ConsoleConfig(output: StreamOutputHelper::output($stream)))
             ->build();
@@ -587,7 +586,7 @@ final class NestedConsoleApplicationTest extends PhalanxTestCase
             'scan' => [NoopCommand::class, new CommandConfig(description: 'Scan network')],
         ]);
 
-        $app = Console::starting()
+        $app = self::console()
             ->commands($commands)
             ->withConsoleConfig(new ConsoleConfig(errorOutput: StreamOutputHelper::output($stream)))
             ->build();

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Console\Tests\Integration\Application;
 
-use Phalanx\Console\Application\Console;
+use Phalanx\Console\Tests\Support\ConsoleTestCase;
 use Phalanx\Console\Command\CommandGroup;
 use Phalanx\Console\Command\CommandContext;
 use Phalanx\Console\Runtime\Identity\ConsoleResourceSid;
@@ -13,13 +13,12 @@ use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Scopeable;
 use Phalanx\Task\Task;
 use Phalanx\Testing\Assert as PhalanxAssert;
-use Phalanx\Testing\PhalanxTestCase;
 
-final class ConsoleApplicationScopeTest extends PhalanxTestCase
+final class ConsoleApplicationScopeTest extends ConsoleTestCase
 {
     public function testCommandRunsInsideRuntimeConsoleScope(): void
     {
-        $app = Console::starting()
+        $app = self::console()
             ->commands(CommandGroup::of([
                 'probe' => ConsoleProbeCommand::class,
             ]))

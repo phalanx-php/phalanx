@@ -11,7 +11,7 @@ use Phalanx\Http\RequestContext;
 use Phalanx\Http\RouteGroup;
 use Phalanx\Task\Scopeable;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
+use Phalanx\Testing\PhalanxTestCase;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\UriInterface;
 
@@ -19,7 +19,7 @@ use Psr\Http\Message\UriInterface;
  * Verifies the typed Middleware interface dispatches correctly and composes in
  * the same order as the executable PrefixingMiddleware fixture.
  */
-final class MiddlewareInterfaceTest extends TestCase
+final class MiddlewareInterfaceTest extends PhalanxTestCase
 {
     private Application $app;
 
@@ -54,12 +54,7 @@ final class MiddlewareInterfaceTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->app = Application::starting()->compile();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->app->shutdown();
+        $this->app = $this->testApp()->application;
     }
 
     private function createRequest(string $method, string $path): ServerRequestInterface

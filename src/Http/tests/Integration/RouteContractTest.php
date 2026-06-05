@@ -17,12 +17,12 @@ use Phalanx\Http\Tests\Fixtures\Routes\ListTasksHandler;
 use Phalanx\Http\Tests\Fixtures\TaskPriority;
 use Phalanx\Http\Tests\Fixtures\TaskResource;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
+use Phalanx\Testing\PhalanxTestCase;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamInterface;
 use Psr\Http\Message\UriInterface;
 
-final class RouteContractTest extends TestCase
+final class RouteContractTest extends PhalanxTestCase
 {
     private Application $app;
 
@@ -174,12 +174,7 @@ final class RouteContractTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->app = Application::starting()->compile();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->app->shutdown();
+        $this->app = $this->testApp()->application;
     }
 
     /**

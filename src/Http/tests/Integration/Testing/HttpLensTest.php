@@ -5,15 +5,14 @@ declare(strict_types=1);
 namespace Phalanx\Http\Tests\Integration\Testing;
 
 use Phalanx\Http\RouteGroup;
-use Phalanx\Http\Http;
 use Phalanx\Http\Testing\HttpLens;
 use Phalanx\Http\Testing\HttpTestableBundle;
 use Phalanx\Testing\LensNotAvailable;
-use Phalanx\Testing\PhalanxTestCase;
+use Phalanx\Http\Tests\Support\HttpTestCase;
 use Phalanx\Http\Tests\Fixtures\Routes\EchoJsonHandler;
 use Phalanx\Http\Tests\Fixtures\Routes\HelloHandler;
 
-final class HttpLensTest extends PhalanxTestCase
+final class HttpLensTest extends HttpTestCase
 {
     public function testGetReturnsResponseFromRoute(): void
     {
@@ -116,7 +115,7 @@ final class HttpLensTest extends PhalanxTestCase
             'POST /echo' => EchoJsonHandler::class,
         ]);
 
-        $http = Http::starting()
+        $http = self::http()
             ->routes($routes)
             ->build();
 

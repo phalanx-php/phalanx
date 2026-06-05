@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Runtime\Tests\Integration\Handler;
 
-use Phalanx\Application;
 use Phalanx\Handler\Handler;
 use Phalanx\Handler\HandlerGroup;
 use Phalanx\Handler\HandlerMatcher;
@@ -13,12 +12,13 @@ use Phalanx\Scope\ExecutionScope;
 use Phalanx\Runtime\Tests\Fixtures\Handlers\HandlerA;
 use Phalanx\Runtime\Tests\Fixtures\Handlers\HandlerB;
 use Phalanx\Runtime\Tests\Fixtures\Handlers\PrefixingMiddleware;
+use Phalanx\Testing\PhalanxTestCase;
+use Phalanx\Testing\TestApp;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 
-final class HandlerDispatchTest extends TestCase
+final class HandlerDispatchTest extends PhalanxTestCase
 {
-    private Application $app;
+    private TestApp $testApp;
 
     #[Test]
     public function dispatches_by_handler_key(): void
@@ -28,7 +28,7 @@ final class HandlerDispatchTest extends TestCase
             'task-b' => Handler::of(HandlerB::class),
         ]);
 
-        $scope = $this->app->createScope();
+        $scope = $this->testApp->application->createScope();
 
         $result = $group->dispatch('task-b', $scope);
 
@@ -42,7 +42,7 @@ final class HandlerDispatchTest extends TestCase
             'task-a' => Handler::of(HandlerA::class),
         ]);
 
-        $scope = $this->app->createScope();
+        $scope = $this->testApp->application->createScope();
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Handler not found: nonexistent');
@@ -70,7 +70,7 @@ final class HandlerDispatchTest extends TestCase
             'task-b' => Handler::of(HandlerB::class),
         ])->withMatcher($matcher);
 
-        $scope = $this->app->createScope();
+        $scope = $this->testApp->application->createScope();
 
         $result = $scope->execute($group);
 
@@ -84,7 +84,7 @@ final class HandlerDispatchTest extends TestCase
             'task-a' => Handler::of(HandlerA::class),
         ]);
 
-        $scope = $this->app->createScope();
+        $scope = $this->testApp->application->createScope();
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('no matcher could handle this scope');
@@ -99,7 +99,7 @@ final class HandlerDispatchTest extends TestCase
             'task-a' => Handler::of(HandlerA::class),
         ])->wrap(PrefixingMiddleware::class);
 
-        $scope = $this->app->createScope();
+        $scope = $this->testApp->application->createScope();
 
         $result = $group->dispatch('task-a', $scope);
 
@@ -108,11 +108,6 @@ final class HandlerDispatchTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->app = Application::starting()->compile();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->app->shutdown();
+        $this->testApp = $this->testApp();
     }
 }

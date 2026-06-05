@@ -4,14 +4,12 @@ declare(strict_types=1);
 
 namespace Phalanx\WebSocket\Tests\Integration;
 
-use Phalanx\Application;
 use Phalanx\WebSocket\Client\WsClient;
 use Phalanx\WebSocket\WebSocket;
 use Phalanx\WebSocket\WsCloseCode;
 use Phalanx\Scope\ExecutionScope;
-use Phalanx\Task\Task;
+use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 use Swoole\Coroutine\Channel;
 use Swoole\Coroutine\Socket;
 use Swoole\WebSocket\Frame;
@@ -25,7 +23,7 @@ use Swoole\WebSocket\Frame;
  * against the spec GUID), pushes a single Swoole-framed text payload,
  * then waits for the client's close frame before tearing the listener down.
  */
-final class WsClientHandshakeTest extends TestCase
+final class WsClientHandshakeTest extends PhalanxTestCase
 {
     private const string HOST = '127.0.0.1';
 
@@ -34,89 +32,93 @@ final class WsClientHandshakeTest extends TestCase
     #[Test]
     public function handshakeYieldsFirstFrameAndClosesCleanly(): void
     {
-        Application::starting()
-            ->providers(WebSocket::services())
-            ->run(Task::named(
-                'test.websocket.client.handshake',
-                static function (ExecutionScope $scope): void {
-                    $listener = new Socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
-                    self::assertTrue($listener->bind(self::HOST, 0), "socket bind: {$listener->errMsg}");
-                    self::assertTrue($listener->listen(), "socket listen: {$listener->errMsg}");
+        $testApp = $this->testApp([], WebSocket::services());
 
-                    $name = $listener->getsockname();
-                    self::assertIsArray($name);
-                    self::assertArrayHasKey('port', $name);
-                    $port = (int) $name['port'];
-                    $url = 'ws://' . self::HOST . ':' . $port . '/echo';
+        $this->scope->run(static function (ExecutionScope $_scope) use ($testApp): void {
+            $testApp->application->startup();
+            $scope = $testApp->application->createScope();
 
-                    $serverDone = new Channel(1);
+            try {
+                $listener = new Socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
+                self::assertTrue($listener->bind(self::HOST, 0), "socket bind: {$listener->errMsg}");
+                self::assertTrue($listener->listen(), "socket listen: {$listener->errMsg}");
 
-                    $scope->go(static function (ExecutionScope $serverScope) use ($listener, $serverDone): void {
-                        try {
-                            $conn = $listener->accept(5);
-                            if ($conn === false) {
-                                return;
-                            }
+                $name = $listener->getsockname();
+                self::assertIsArray($name);
+                self::assertArrayHasKey('port', $name);
+                $port = (int) $name['port'];
+                $url = 'ws://' . self::HOST . ':' . $port . '/echo';
 
-                            $req = '';
-                            while (!str_contains($req, "\r\n\r\n")) {
-                                $piece = $conn->recv(4096, 5);
-                                if ($piece === false || $piece === '') {
-                                    break;
-                                }
-                                $req .= $piece;
-                            }
+                $serverDone = new Channel(1);
 
-                            $key = self::extractHeader($req, 'sec-websocket-key');
-                            $accept = base64_encode(sha1($key . self::WEBSOCKET_GUID, true));
-
-                            $head = "HTTP/1.1 101 Switching Protocols\r\n"
-                                . "Upgrade: websocket\r\n"
-                                . "Connection: Upgrade\r\n"
-                                . "Sec-WebSocket-Accept: {$accept}\r\n"
-                                . "\r\n";
-                            $conn->sendAll($head);
-
-                            $conn->sendAll(Frame::pack(
-                                'phalanx-ws',
-                                SWOOLE_WEBSOCKET_OPCODE_TEXT,
-                                SWOOLE_WEBSOCKET_FLAG_FIN,
-                            ));
-
-                            // Drain whatever the client sends until peer EOF.
-                            while (true) {
-                                $serverScope->throwIfCancelled();
-                                $piece = $conn->recv(4096, 1);
-                                if ($piece === false || $piece === '') {
-                                    break;
-                                }
-                            }
-                            $conn->close();
-                        } finally {
-                            $listener->close();
-                            $serverDone->push(true);
-                        }
-                    });
-
-                    $client = $scope->service(WsClient::class);
-                    $connection = $client->connect($scope, $url);
-
+                $scope->go(static function (ExecutionScope $serverScope) use ($listener, $serverDone): void {
                     try {
-                        $first = null;
-                        foreach ($connection->messages() as $msg) {
-                            $first = $msg;
-                            break;
+                        $conn = $listener->accept(5);
+                        if ($conn === false) {
+                            return;
                         }
 
-                        self::assertNotNull($first, 'expected at least one inbound frame');
-                        self::assertTrue($first->isText, 'expected text opcode');
-                        self::assertSame('phalanx-ws', $first->payload);
+                        $req = '';
+                        while (!str_contains($req, "\r\n\r\n")) {
+                            $piece = $conn->recv(4096, 5);
+                            if ($piece === false || $piece === '') {
+                                break;
+                            }
+                            $req .= $piece;
+                        }
+
+                        $key = self::extractHeader($req, 'sec-websocket-key');
+                        $accept = base64_encode(sha1($key . self::WEBSOCKET_GUID, true));
+
+                        $head = "HTTP/1.1 101 Switching Protocols\r\n"
+                            . "Upgrade: websocket\r\n"
+                            . "Connection: Upgrade\r\n"
+                            . "Sec-WebSocket-Accept: {$accept}\r\n"
+                            . "\r\n";
+                        $conn->sendAll($head);
+
+                        $conn->sendAll(Frame::pack(
+                            'phalanx-ws',
+                            SWOOLE_WEBSOCKET_OPCODE_TEXT,
+                            SWOOLE_WEBSOCKET_FLAG_FIN,
+                        ));
+
+                        // Drain whatever the client sends until peer EOF.
+                        while (true) {
+                            $serverScope->throwIfCancelled();
+                            $piece = $conn->recv(4096, 1);
+                            if ($piece === false || $piece === '') {
+                                break;
+                            }
+                        }
+                        $conn->close();
                     } finally {
-                        $connection->close(WsCloseCode::Normal, 'test_done');
-                        self::assertTrue($serverDone->pop(2), 'server fixture did not signal done within 2s');
+                        $listener->close();
+                        $serverDone->push(true);
                     }
-                },
-            ));
+                });
+
+                $client = $scope->service(WsClient::class);
+                $connection = $client->connect($scope, $url);
+
+                try {
+                    $first = null;
+                    foreach ($connection->messages() as $msg) {
+                        $first = $msg;
+                        break;
+                    }
+
+                    self::assertNotNull($first, 'expected at least one inbound frame');
+                    self::assertTrue($first->isText, 'expected text opcode');
+                    self::assertSame('phalanx-ws', $first->payload);
+                } finally {
+                    $connection->close(WsCloseCode::Normal, 'test_done');
+                    self::assertTrue($serverDone->pop(2), 'server fixture did not signal done within 2s');
+                }
+            } finally {
+                $scope->dispose();
+            }
+        });
     }
 
     private static function extractHeader(string $request, string $name): string
@@ -129,6 +131,7 @@ final class WsClientHandshakeTest extends TestCase
                 return trim(substr($line, strlen($name) + 1));
             }
         }
+
         return '';
     }
 }

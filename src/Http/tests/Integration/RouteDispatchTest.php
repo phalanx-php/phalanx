@@ -20,11 +20,11 @@ use Phalanx\Http\Tests\Fixtures\Routes\StatusPosts;
 use Phalanx\Http\Tests\Fixtures\Routes\StatusShow;
 use Phalanx\Http\Tests\Fixtures\Routes\StatusUsers;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
+use Phalanx\Testing\PhalanxTestCase;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\UriInterface;
 
-final class RouteDispatchTest extends TestCase
+final class RouteDispatchTest extends PhalanxTestCase
 {
     private Application $app;
 
@@ -249,12 +249,7 @@ final class RouteDispatchTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->app = Application::starting()->compile();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->app->shutdown();
+        $this->app = $this->testApp()->application;
     }
 
     private function createRequest(string $method, string $path): ServerRequestInterface

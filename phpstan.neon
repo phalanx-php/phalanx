@@ -350,11 +350,6 @@ parameters:
             identifier: property.onlyWritten
             path: src/Worker/tests/Unit/ParallelWorkerDispatchSerializationTest.php
             reportUnmatched: true
-        # PHPStan cannot track by-reference mutations across onCancel callback boundaries
-        -
-            identifier: staticMethod.impossibleType
-            path: src/Runtime/tests/Unit/Cancellation/CancellationTokenReleaseTest.php
-            reportUnmatched: true
     tmpDir: .phpstan-cache
     treatPhpDocTypesAsCertain: false
     bootstrapFiles:

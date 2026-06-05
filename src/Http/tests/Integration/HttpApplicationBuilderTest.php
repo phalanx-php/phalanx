@@ -6,18 +6,15 @@ namespace Phalanx\Http\Tests\Integration;
 
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\ServerRequest;
+use Phalanx\Http\HttpServerConfig;
 use Phalanx\Http\RequestContext;
 use Phalanx\Http\RouteGroup;
-use Phalanx\Http\Http;
-use Phalanx\Http\HttpApplicationBuilder;
-use Phalanx\Http\HttpServerConfig;
-use Phalanx\Supervisor\InProcessLedger;
-use Phalanx\Task\Scopeable;
+use Phalanx\Http\Tests\Support\HttpTestCase;
 use Phalanx\Scope\ExecutionScope;
-use Phalanx\Testing\PhalanxTestCase;
+use Phalanx\Task\Scopeable;
 use PHPUnit\Framework\Attributes\Test;
 
-final class HttpApplicationBuilderTest extends PhalanxTestCase
+final class HttpApplicationBuilderTest extends HttpTestCase
 {
     #[Test]
     public function buildsDispatchableApplicationWithServerConfigAndDefaultPoweredByHeader(): void
@@ -174,11 +171,6 @@ PHP);
         }
     }
 
-    /** @param array<string, mixed> $context */
-    private static function http(array $context = []): HttpApplicationBuilder
-    {
-        return Http::starting($context)->withLedger(new InProcessLedger());
-    }
 }
 
 final class BuilderHelloRoute implements Scopeable

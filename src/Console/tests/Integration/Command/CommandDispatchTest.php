@@ -7,12 +7,12 @@ namespace Phalanx\Console\Tests\Integration\Command;
 use Phalanx\Application;
 use Phalanx\Console\Command\CommandConfig;
 use Phalanx\Console\Command\CommandGroup;
+use Phalanx\Console\Tests\Support\ConsoleTestCase;
 use Phalanx\Console\Tests\Fixtures\Commands\FailingCommand;
 use Phalanx\Console\Tests\Fixtures\Commands\NoopCommand;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 
-final class CommandDispatchTest extends TestCase
+final class CommandDispatchTest extends ConsoleTestCase
 {
     private Application $app;
 
@@ -76,11 +76,6 @@ final class CommandDispatchTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->app = Application::starting()->compile();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->app->shutdown();
+        $this->app = $this->application();
     }
 }

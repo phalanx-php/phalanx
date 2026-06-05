@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Phalanx\Http\Tests\Integration\Auth;
 
 use GuzzleHttp\Psr7\ServerRequest;
-use Phalanx\Application;
 use Phalanx\Auth\AuthContext;
 use Phalanx\Auth\AuthenticationException;
 use Phalanx\Auth\Guard;
@@ -20,10 +19,10 @@ use Phalanx\Http\RouteConfig;
 use Phalanx\Http\RouteParams;
 use Phalanx\Runtime\Tests\Support\TestServiceBundle;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
+use Phalanx\Testing\PhalanxTestCase;
 use Psr\Http\Message\ServerRequestInterface;
 
-final class AuthenticateTest extends TestCase
+final class AuthenticateTest extends PhalanxTestCase
 {
     #[Test]
     public function authenticate_wraps_scope_in_authenticated_context(): void
@@ -89,7 +88,7 @@ final class AuthenticateTest extends TestCase
     private function createRequestContext(): ExecutionContext
     {
         $bundle = TestServiceBundle::create();
-        $app = Application::starting()->providers($bundle)->compile();
+        $app = $this->testApp([], $bundle)->application;
         $inner = $app->createScope();
 
         $request = new ServerRequest('GET', '/test', ['Authorization' => 'Bearer tok_abc']);

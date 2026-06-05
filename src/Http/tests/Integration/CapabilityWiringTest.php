@@ -12,7 +12,7 @@ use Phalanx\Http\Tests\Fixtures\Routes\RequireApiVersionHandler;
 use Phalanx\Http\Tests\Fixtures\Routes\ValidatedHandler;
 use Phalanx\Http\Tests\Fixtures\Routes\ValidatedInputHandler;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
+use Phalanx\Testing\PhalanxTestCase;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\UriInterface;
 
@@ -21,7 +21,7 @@ use Psr\Http\Message\UriInterface;
  * during the v0.6.0 review pass: RequiresHeaders and HasValidators run
  * before the handler is invoked, aborting dispatch on failure.
  */
-final class CapabilityWiringTest extends TestCase
+final class CapabilityWiringTest extends PhalanxTestCase
 {
     private Application $app;
 
@@ -120,12 +120,7 @@ final class CapabilityWiringTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->app = Application::starting()->compile();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->app->shutdown();
+        $this->app = $this->testApp()->application;
     }
 
     /**

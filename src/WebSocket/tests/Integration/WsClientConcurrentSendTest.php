@@ -6,14 +6,12 @@ namespace Phalanx\WebSocket\Tests\Integration;
 
 use Swoole\Coroutine\Channel;
 use Swoole\Coroutine\Socket;
-use Phalanx\Application;
 use Phalanx\WebSocket\Client\WsClient;
 use Phalanx\WebSocket\WebSocket;
 use Phalanx\WebSocket\WsCloseCode;
 use Phalanx\Scope\ExecutionScope;
-use Phalanx\Task\Task;
+use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 
 /**
  * Two writer coroutines call WsClient->send() simultaneously. The on-the-wire
@@ -21,7 +19,7 @@ use PHPUnit\Framework\TestCase;
  * order; that contract is what the writer-side Channel serialisation
  * guarantees and what real-world peers depend on.
  */
-final class WsClientConcurrentSendTest extends TestCase
+final class WsClientConcurrentSendTest extends PhalanxTestCase
 {
     private const string HOST = '127.0.0.1';
 
@@ -30,126 +28,130 @@ final class WsClientConcurrentSendTest extends TestCase
     #[Test]
     public function concurrentSendsProduceNonInterleavedFrames(): void
     {
-        Application::starting()
-            ->providers(WebSocket::services())
-            ->run(Task::named(
-                'test.websocket.client.concurrent-send',
-                static function (ExecutionScope $scope): void {
-                    $listener = new Socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
-                    self::assertTrue($listener->bind(self::HOST, 0), "bind: {$listener->errMsg}");
-                    self::assertTrue($listener->listen(), "listen: {$listener->errMsg}");
-                    $name = $listener->getsockname();
-                    self::assertIsArray($name);
-                    $port = (int) $name['port'];
-                    $url = 'ws://' . self::HOST . ':' . $port . '/echo';
+        $testApp = $this->testApp([], WebSocket::services());
 
-                    $framesChannel = new Channel(4);
-                    $serverDone = new Channel(1);
+        $this->scope->run(static function (ExecutionScope $_scope) use ($testApp): void {
+            $testApp->application->startup();
+            $scope = $testApp->application->createScope();
 
-                    $scope->go(static function (ExecutionScope $serverScope) use (
-                        $listener,
-                        $framesChannel,
-                        $serverDone
-                    ): void {
+            try {
+                $listener = new Socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
+                self::assertTrue($listener->bind(self::HOST, 0), "bind: {$listener->errMsg}");
+                self::assertTrue($listener->listen(), "listen: {$listener->errMsg}");
+                $name = $listener->getsockname();
+                self::assertIsArray($name);
+                $port = (int) $name['port'];
+                $url = 'ws://' . self::HOST . ':' . $port . '/echo';
+
+                $framesChannel = new Channel(4);
+                $serverDone = new Channel(1);
+
+                $scope->go(static function (ExecutionScope $serverScope) use (
+                    $listener,
+                    $framesChannel,
+                    $serverDone
+                ): void {
+                    try {
+                        $conn = $listener->accept(5);
+                        if ($conn === false) {
+                            return;
+                        }
+
+                        $req = '';
+                        while (!str_contains($req, "\r\n\r\n")) {
+                            $piece = $conn->recv(4096, 5);
+                            if ($piece === false || $piece === '') {
+                                break;
+                            }
+                            $req .= $piece;
+                        }
+                        $key = self::extractHeader($req, 'sec-websocket-key');
+                        $accept = base64_encode(sha1($key . self::WEBSOCKET_GUID, true));
+                        $conn->sendAll(
+                            "HTTP/1.1 101 Switching Protocols\r\n"
+                            . "Upgrade: websocket\r\n"
+                            . "Connection: Upgrade\r\n"
+                            . "Sec-WebSocket-Accept: {$accept}\r\n"
+                            . "\r\n",
+                        );
+
+                        // Drain bytes; parse each complete RFC6455 frame; push payload
+                        // onto the assertion channel. Stop after two text frames.
+                        $buffer = '';
+                        $textFrames = 0;
+                        while ($textFrames < 2) {
+                            $serverScope->throwIfCancelled();
+                            $chunk = $conn->recv(4096, 5);
+                            if ($chunk === false || $chunk === '') {
+                                break;
+                            }
+                            $buffer .= $chunk;
+
+                            while (true) {
+                                $parsed = self::parseFrame($buffer);
+                                if ($parsed === null) {
+                                    break;
+                                }
+                                [$opcode, $payload, $consumed] = $parsed;
+                                $buffer = substr($buffer, $consumed);
+
+                                // 0x1 = text. ignore pings/closes.
+                                if ($opcode === 0x1) {
+                                    $framesChannel->push($payload);
+                                    $textFrames++;
+                                }
+                            }
+                        }
+                        $conn->close();
+                    } finally {
+                        $listener->close();
+                        $serverDone->push(true);
+                    }
+                });
+
+                $client = $scope->service(WsClient::class);
+                $connection = $client->connect($scope, $url);
+
+                try {
+                    $payloadA = str_repeat('A', 32);
+                    $payloadB = str_repeat('B', 32);
+
+                    $writers = new Channel(2);
+                    $scope->go(static function () use ($connection, $payloadA, $writers): void {
                         try {
-                            $conn = $listener->accept(5);
-                            if ($conn === false) {
-                                return;
-                            }
-
-                            $req = '';
-                            while (!str_contains($req, "\r\n\r\n")) {
-                                $piece = $conn->recv(4096, 5);
-                                if ($piece === false || $piece === '') {
-                                    break;
-                                }
-                                $req .= $piece;
-                            }
-                            $key = self::extractHeader($req, 'sec-websocket-key');
-                            $accept = base64_encode(sha1($key . self::WEBSOCKET_GUID, true));
-                            $conn->sendAll(
-                                "HTTP/1.1 101 Switching Protocols\r\n"
-                                . "Upgrade: websocket\r\n"
-                                . "Connection: Upgrade\r\n"
-                                . "Sec-WebSocket-Accept: {$accept}\r\n"
-                                . "\r\n",
-                            );
-
-                            // Drain bytes; parse each complete RFC6455 frame; push payload
-                            // onto the assertion channel. Stop after two text frames.
-                            $buffer = '';
-                            $textFrames = 0;
-                            while ($textFrames < 2) {
-                                $serverScope->throwIfCancelled();
-                                $chunk = $conn->recv(4096, 5);
-                                if ($chunk === false || $chunk === '') {
-                                    break;
-                                }
-                                $buffer .= $chunk;
-
-                                while (true) {
-                                    $parsed = self::parseFrame($buffer);
-                                    if ($parsed === null) {
-                                        break;
-                                    }
-                                    [$opcode, $payload, $consumed] = $parsed;
-                                    $buffer = substr($buffer, $consumed);
-
-                                    // 0x1 = text. ignore pings/closes.
-                                    if ($opcode === 0x1) {
-                                        $framesChannel->push($payload);
-                                        $textFrames++;
-                                    }
-                                }
-                            }
-                            $conn->close();
+                            $connection->sendText($payloadA);
                         } finally {
-                            $listener->close();
-                            $serverDone->push(true);
+                            $writers->push(true);
                         }
                     });
+                    $scope->go(static function () use ($connection, $payloadB, $writers): void {
+                        try {
+                            $connection->sendText($payloadB);
+                        } finally {
+                            $writers->push(true);
+                        }
+                    });
+                    self::assertTrue($writers->pop(2), 'first writer coroutine never finished');
+                    self::assertTrue($writers->pop(2), 'second writer coroutine never finished');
 
-                    $client = $scope->service(WsClient::class);
-                    $connection = $client->connect($scope, $url);
+                    $first = $framesChannel->pop(3);
+                    $second = $framesChannel->pop(3);
+                    self::assertNotFalse($first, 'first frame never decoded server-side');
+                    self::assertNotFalse($second, 'second frame never decoded server-side');
 
-                    try {
-                        $payloadA = str_repeat('A', 32);
-                        $payloadB = str_repeat('B', 32);
-
-                        $writers = new Channel(2);
-                        $scope->go(static function () use ($connection, $payloadA, $writers): void {
-                            try {
-                                $connection->sendText($payloadA);
-                            } finally {
-                                $writers->push(true);
-                            }
-                        });
-                        $scope->go(static function () use ($connection, $payloadB, $writers): void {
-                            try {
-                                $connection->sendText($payloadB);
-                            } finally {
-                                $writers->push(true);
-                            }
-                        });
-                        self::assertTrue($writers->pop(2), 'first writer coroutine never finished');
-                        self::assertTrue($writers->pop(2), 'second writer coroutine never finished');
-
-                        $first = $framesChannel->pop(3);
-                        $second = $framesChannel->pop(3);
-                        self::assertNotFalse($first, 'first frame never decoded server-side');
-                        self::assertNotFalse($second, 'second frame never decoded server-side');
-
-                        $received = [$first, $second];
-                        sort($received);
-                        $expected = [$payloadA, $payloadB];
-                        sort($expected);
-                        self::assertSame($expected, $received, 'decoded frames must equal the two sent payloads');
-                    } finally {
-                        $connection->close(WsCloseCode::Normal, 'test_done');
-                        self::assertTrue($serverDone->pop(2), 'server fixture did not signal done');
-                    }
-                },
-            ));
+                    $received = [$first, $second];
+                    sort($received);
+                    $expected = [$payloadA, $payloadB];
+                    sort($expected);
+                    self::assertSame($expected, $received, 'decoded frames must equal the two sent payloads');
+                } finally {
+                    $connection->close(WsCloseCode::Normal, 'test_done');
+                    self::assertTrue($serverDone->pop(2), 'server fixture did not signal done');
+                }
+            } finally {
+                $scope->dispose();
+            }
+        });
     }
 
     /**
@@ -206,6 +208,7 @@ final class WsClientConcurrentSendTest extends TestCase
         for ($i = 0; $i < $len; $i++) {
             $unmasked .= chr(ord($payload[$i]) ^ ord($mask[$i % 4]));
         }
+
         return [$opcode, $unmasked, $offset];
     }
 
@@ -219,6 +222,7 @@ final class WsClientConcurrentSendTest extends TestCase
                 return trim(substr($line, strlen($name) + 1));
             }
         }
+
         return '';
     }
 }

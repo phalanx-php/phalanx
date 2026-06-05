@@ -5,14 +5,12 @@ declare(strict_types=1);
 namespace Phalanx\WebSocket\Tests\Integration;
 
 use GuzzleHttp\Psr7\ServerRequest;
-use Phalanx\Application;
 use Phalanx\WebSocket\WebSocket;
 use Phalanx\WebSocket\Server\WsServerUpgrade;
 use Phalanx\WebSocket\WsGateway;
 use Phalanx\WebSocket\WsRouteGroup;
 use Phalanx\Http\RouteGroup;
 use Phalanx\Http\HttpRunner;
-use Phalanx\Supervisor\InProcessLedger;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
@@ -37,68 +35,56 @@ final class WsServerUpgradeTest extends PhalanxTestCase
     #[Test]
     public function websocketInstallRegistersWebsocketUpgradeToken(): void
     {
-        $this->scope->run(static function (ExecutionScope $_scope): void {
-            $app = Application::starting()
-                ->withLedger(new InProcessLedger())
-                ->providers(WebSocket::services())
-                ->compile()
-                ->startup();
+        $testApp = $this->testApp([], WebSocket::services());
 
-            try {
-                $runner = HttpRunner::from($app)->withRoutes(RouteGroup::of([]));
+        $this->scope->run(static function (ExecutionScope $_scope) use ($testApp): void {
+            $app = $testApp->application->startup();
 
-                self::assertNull(
-                    $runner->upgrades()->resolve(WebSocket::UPGRADE_TOKEN),
-                    'token must be unresolved before WebSocket::install',
-                );
-                self::assertCount(0, $runner->upgrades()->tokens());
+            $runner = HttpRunner::from($app)->withRoutes(RouteGroup::of([]));
 
-                WebSocket::install($runner, $app, WsRouteGroup::of([], new WsGateway()));
+            self::assertNull(
+                $runner->upgrades()->resolve(WebSocket::UPGRADE_TOKEN),
+                'token must be unresolved before WebSocket::install',
+            );
+            self::assertCount(0, $runner->upgrades()->tokens());
 
-                $resolved = $runner->upgrades()->resolve(WebSocket::UPGRADE_TOKEN);
-                self::assertInstanceOf(WsServerUpgrade::class, $resolved);
-                self::assertContains(
-                    WebSocket::UPGRADE_TOKEN,
-                    $runner->upgrades()->tokens(),
-                    'tokens() must surface the registered upgrade',
-                );
-                self::assertTrue(
-                    $runner->upgrades()->supports(WebSocket::UPGRADE_TOKEN),
-                    'supports() must return true for the registered token',
-                );
-            } finally {
-                $app->shutdown();
-            }
+            WebSocket::install($runner, $app, WsRouteGroup::of([], new WsGateway()));
+
+            $resolved = $runner->upgrades()->resolve(WebSocket::UPGRADE_TOKEN);
+            self::assertInstanceOf(WsServerUpgrade::class, $resolved);
+            self::assertContains(
+                WebSocket::UPGRADE_TOKEN,
+                $runner->upgrades()->tokens(),
+                'tokens() must surface the registered upgrade',
+            );
+            self::assertTrue(
+                $runner->upgrades()->supports(WebSocket::UPGRADE_TOKEN),
+                'supports() must return true for the registered token',
+            );
         });
     }
 
     #[Test]
     public function upgradeRequestWithoutWebSocketInstallReturns426(): void
     {
-        $this->scope->run(static function (ExecutionScope $_scope): void {
-            $app = Application::starting()
-                ->withLedger(new InProcessLedger())
-                ->providers(WebSocket::services())
-                ->compile()
-                ->startup();
+        $testApp = $this->testApp([], WebSocket::services());
 
-            try {
-                $runner = HttpRunner::from($app)->withRoutes(RouteGroup::of([]));
+        $this->scope->run(static function (ExecutionScope $_scope) use ($testApp): void {
+            $app = $testApp->application->startup();
 
-                $response = $runner->dispatch(
-                    new ServerRequest('GET', '/socket')
-                        ->withHeader('Upgrade', 'websocket')
-                        ->withHeader('Connection', 'Upgrade'),
-                );
+            $runner = HttpRunner::from($app)->withRoutes(RouteGroup::of([]));
 
-                self::assertSame(
-                    426,
-                    $response->getStatusCode(),
-                    'unupgraded ws request must yield 426 Upgrade Required',
-                );
-            } finally {
-                $app->shutdown();
-            }
+            $response = $runner->dispatch(
+                new ServerRequest('GET', '/socket')
+                    ->withHeader('Upgrade', 'websocket')
+                    ->withHeader('Connection', 'Upgrade'),
+            );
+
+            self::assertSame(
+                426,
+                $response->getStatusCode(),
+                'unupgraded ws request must yield 426 Upgrade Required',
+            );
         });
     }
 
@@ -109,28 +95,22 @@ final class WsServerUpgradeTest extends PhalanxTestCase
         // instance WebSocket constructed — never null, and never the wrong type. The
         // request body itself is not dispatched here because that path enters
         // Swoole's native Response::upgrade() which has no test seam.
-        $this->scope->run(static function (ExecutionScope $_scope): void {
-            $app = Application::starting()
-                ->withLedger(new InProcessLedger())
-                ->providers(WebSocket::services())
-                ->compile()
-                ->startup();
+        $testApp = $this->testApp([], WebSocket::services());
 
-            try {
-                $runner = HttpRunner::from($app)->withRoutes(RouteGroup::of([]));
-                WebSocket::install($runner, $app, WsRouteGroup::of([], new WsGateway()));
+        $this->scope->run(static function (ExecutionScope $_scope) use ($testApp): void {
+            $app = $testApp->application->startup();
 
-                $resolvedFirst = $runner->upgrades()->resolve(WebSocket::UPGRADE_TOKEN);
-                $resolvedSecond = $runner->upgrades()->resolve(WebSocket::UPGRADE_TOKEN);
+            $runner = HttpRunner::from($app)->withRoutes(RouteGroup::of([]));
+            WebSocket::install($runner, $app, WsRouteGroup::of([], new WsGateway()));
 
-                self::assertSame(
-                    $resolvedFirst,
-                    $resolvedSecond,
-                    'repeated resolve() calls must return the same singleton instance',
-                );
-            } finally {
-                $app->shutdown();
-            }
+            $resolvedFirst = $runner->upgrades()->resolve(WebSocket::UPGRADE_TOKEN);
+            $resolvedSecond = $runner->upgrades()->resolve(WebSocket::UPGRADE_TOKEN);
+
+            self::assertSame(
+                $resolvedFirst,
+                $resolvedSecond,
+                'repeated resolve() calls must return the same singleton instance',
+            );
         });
     }
 }

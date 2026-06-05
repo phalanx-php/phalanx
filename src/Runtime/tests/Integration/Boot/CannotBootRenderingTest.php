@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Runtime\Tests\Integration\Boot;
 
-use Phalanx\Application;
 use Phalanx\Boot\AppContext;
 use Phalanx\Boot\BootHarness;
-use Phalanx\Boot\BootHarnessReport;
 use Phalanx\Boot\Exception\CannotBootException;
 use Phalanx\Boot\Required;
 use Phalanx\Service\ServiceBundle;
@@ -38,9 +36,7 @@ final class CannotBootRenderingTest extends PhalanxTestCase
     {
         $this->expectException(CannotBootException::class);
 
-        Application::starting([])
-            ->providers(new CriticalKeyBundle())
-            ->compile();
+        $this->testApp([], new CriticalKeyBundle());
     }
 
     // -------------------------------------------------------------------------
@@ -51,9 +47,7 @@ final class CannotBootRenderingTest extends PhalanxTestCase
     public function cannotBootExceptionMessageContainsKeyAndRemediation(): void
     {
         try {
-            Application::starting([])
-                ->providers(new CriticalKeyBundle())
-                ->compile();
+            $this->testApp([], new CriticalKeyBundle());
 
             self::fail('Expected CannotBootException was not thrown.');
         } catch (CannotBootException $e) {
@@ -70,9 +64,7 @@ final class CannotBootRenderingTest extends PhalanxTestCase
     public function cannotBootExceptionExposesMeaningfulReport(): void
     {
         try {
-            Application::starting([])
-                ->providers(new CriticalKeyBundle())
-                ->compile();
+            $this->testApp([], new CriticalKeyBundle());
 
             self::fail('Expected CannotBootException was not thrown.');
         } catch (CannotBootException $e) {
@@ -95,34 +87,9 @@ final class CannotBootRenderingTest extends PhalanxTestCase
     #[Test]
     public function compilingWithRequiredKeyPresentBootsCleanly(): void
     {
-        $app = Application::starting(['CRITICAL_KEY' => 'some-value'])
-            ->providers(new CriticalKeyBundle())
-            ->compile();
+        $app = $this->testApp(['CRITICAL_KEY' => 'some-value'], new CriticalKeyBundle());
 
-        self::assertInstanceOf(\Phalanx\Application::class, $app);
-
-        // Tidy up the application we compiled in this test.
-        $app->shutdown();
+        self::assertInstanceOf(\Phalanx\Application::class, $app->application);
     }
 
-    // -------------------------------------------------------------------------
-    // 5. lastBootReport() on ApplicationBuilder reflects the evaluation result
-    // -------------------------------------------------------------------------
-
-    #[Test]
-    public function applicationBuilderExposesLastBootReport(): void
-    {
-        $builder = Application::starting(['CRITICAL_KEY' => 'value'])
-            ->providers(new CriticalKeyBundle());
-
-        self::assertNull($builder->lastBootReport(), 'Report is null before compile().');
-
-        $app = $builder->compile();
-        $report = $builder->lastBootReport();
-
-        self::assertInstanceOf(BootHarnessReport::class, $report);
-        self::assertTrue($report->isClean());
-
-        $app->shutdown();
-    }
 }

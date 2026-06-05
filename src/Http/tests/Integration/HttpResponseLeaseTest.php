@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Phalanx\Http\Tests\Integration;
 
 use GuzzleHttp\Psr7\ServerRequest;
-use Phalanx\Application;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Runtime\Memory\RuntimeMemory;
 use Phalanx\Runtime\Memory\RuntimeMemoryConfig;
@@ -105,22 +104,19 @@ final class HttpResponseLeaseTest extends PhalanxTestCase
     #[Test]
     public function dispatchWithoutFdDoesNotAcquireLease(): void
     {
-        $this->scope->run(static function (): void {
-            $app = Application::starting()->compile()->startup();
+        $app = $this->startedApplication();
 
-            try {
-                $runner = HttpRunner::from($app)->withRoutes(RouteGroup::of([
-                    'GET /no-fd' => OkLeaseRoute::class,
-                ]));
+        $this->scope->run(static function () use ($app): void {
+            $runner = HttpRunner::from($app)->withRoutes(RouteGroup::of([
+                'GET /no-fd' => OkLeaseRoute::class,
+            ]));
 
-                $runner->dispatch(new ServerRequest('GET', '/no-fd'));
+            $runner->dispatch(new ServerRequest('GET', '/no-fd'));
 
-                (new LeaseExpectation($app->runtime()->memory))->releasedFor(ResponseLeaseDomain::DOMAIN);
-            } finally {
-                $app->shutdown();
-            }
+            (new LeaseExpectation($app->runtime()->memory))->releasedFor(ResponseLeaseDomain::DOMAIN);
         });
     }
+
 }
 
 final class OkLeaseRoute implements Scopeable

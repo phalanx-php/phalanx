@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Phalanx\Http\Tests\Integration;
 
 use GuzzleHttp\Psr7\ServerRequest;
-use Phalanx\Application;
 use Phalanx\Boot\AppContext;
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\Mark\Mark;
@@ -29,10 +28,11 @@ final class GracefulDrainTest extends PhalanxTestCase
     #[Test]
     public function inflightRequestCompletesWithinDrainTimeout(): void
     {
-        $this->scope->run(static function (ExecutionScope $scope): void {
+        $application = $this->startedApplication();
+
+        $this->scope->run(static function (ExecutionScope $scope) use ($application): void {
             DrainCompletingHandler::$entered = new Channel();
-            $app = Application::starting()->compile()->startup();
-            $runner = HttpRunner::from($app, new HttpServerConfig(requestTimeout: 5.0, drainTimeout: 2.0))
+            $runner = HttpRunner::from($application, new HttpServerConfig(requestTimeout: 5.0, drainTimeout: 2.0))
                 ->withRoutes(RouteGroup::of([
                     'GET /slow' => DrainCompletingHandler::class,
                 ]));
@@ -59,16 +59,17 @@ final class GracefulDrainTest extends PhalanxTestCase
     #[Test]
     public function drainTimeoutCancelsStuckRequest(): void
     {
-        $this->scope->run(static function (ExecutionScope $scope): void {
+        $application = $this->startedApplication();
+
+        $this->scope->run(static function (ExecutionScope $scope) use ($application): void {
             DrainStuckHandler::$cancelled = false;
             DrainStuckHandler::$resourceId = '';
             DrainStuckHandler::$entered = new Channel();
-            $app = Application::starting()->compile()->startup();
             $events = [];
-            $app->runtime()->memory->events->listen(static function ($event) use (&$events): void {
+            $application->runtime()->memory->events->listen(static function ($event) use (&$events): void {
                 $events[] = $event;
             });
-            $runner = HttpRunner::from($app, new HttpServerConfig(requestTimeout: 10.0, drainTimeout: 0.05))
+            $runner = HttpRunner::from($application, new HttpServerConfig(requestTimeout: 10.0, drainTimeout: 0.05))
                 ->withRoutes(RouteGroup::of([
                     'GET /stuck' => DrainStuckHandler::class,
                 ]));
@@ -114,10 +115,11 @@ final class GracefulDrainTest extends PhalanxTestCase
     #[Test]
     public function newRequestsAreRejectedWhileDraining(): void
     {
-        $this->scope->run(static function (ExecutionScope $scope): void {
+        $application = $this->startedApplication();
+
+        $this->scope->run(static function (ExecutionScope $scope) use ($application): void {
             DrainCompletingHandler::$entered = new Channel();
-            $app = Application::starting()->compile()->startup();
-            $runner = HttpRunner::from($app, new HttpServerConfig(requestTimeout: 5.0, drainTimeout: 2.0))
+            $runner = HttpRunner::from($application, new HttpServerConfig(requestTimeout: 5.0, drainTimeout: 2.0))
                 ->withRoutes(RouteGroup::of([
                     'GET /slow' => DrainCompletingHandler::class,
                     'GET /health' => StatusOk::class,
@@ -145,29 +147,30 @@ final class GracefulDrainTest extends PhalanxTestCase
     #[Test]
     public function serviceShutdownHooksFireAfterDrain(): void
     {
-        $this->scope->run(static function (ExecutionScope $scope): void {
-            $shutdownFired = false;
-            $bundle = new class ($shutdownFired) extends ServiceBundle {
-                public function __construct(private bool &$shutdownFired)
-                {
-                }
+        $shutdownFired = false;
+        $bundle = new class ($shutdownFired) extends ServiceBundle {
+            public function __construct(private bool &$shutdownFired)
+            {
+            }
 
-                public function services(Services $services, AppContext $context): void
-                {
-                    $fired = &$this->shutdownFired;
-                    $services->eager(\stdClass::class)
-                        ->factory(static fn(): \stdClass => new \stdClass())
-                        ->onShutdown(static function () use (&$fired): void {
-                            $fired = true;
-                        });
-                }
-            };
+            public function services(Services $services, AppContext $context): void
+            {
+                $fired = &$this->shutdownFired;
+                $services->eager(\stdClass::class)
+                    ->factory(static fn(): \stdClass => new \stdClass())
+                    ->onShutdown(static function () use (&$fired): void {
+                        $fired = true;
+                    });
+            }
+        };
 
-            DrainEventTrackingHandler::$entered = new Channel();
-            DrainEventTrackingHandler::$events = [];
+        $application = $this->startedApplication([], $bundle);
 
-            $app = Application::starting()->providers($bundle)->compile()->startup();
-            $runner = HttpRunner::from($app, new HttpServerConfig(requestTimeout: 5.0, drainTimeout: 2.0))
+        DrainEventTrackingHandler::$entered = new Channel();
+        DrainEventTrackingHandler::$events = [];
+
+        $this->scope->run(static function (ExecutionScope $scope) use ($application): void {
+            $runner = HttpRunner::from($application, new HttpServerConfig(requestTimeout: 5.0, drainTimeout: 2.0))
                 ->withRoutes(RouteGroup::of([
                     'GET /slow' => DrainEventTrackingHandler::class,
                 ]));
@@ -183,8 +186,9 @@ final class GracefulDrainTest extends PhalanxTestCase
             );
 
             self::assertContains('handler:complete', DrainEventTrackingHandler::$events);
-            self::assertTrue($shutdownFired, 'Service shutdown hook should have fired');
         });
+
+        self::assertTrue($shutdownFired, 'Service shutdown hook should have fired');
     }
 
     /**
@@ -211,6 +215,7 @@ final class GracefulDrainTest extends PhalanxTestCase
 
         self::fail('Expected drain signal.');
     }
+
 }
 
 final class DrainCompletingHandler implements Scopeable

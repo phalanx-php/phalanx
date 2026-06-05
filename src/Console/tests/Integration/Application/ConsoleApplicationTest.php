@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Console\Tests\Integration\Application;
 
-use Phalanx\Console\Application\Console;
+use Phalanx\Console\Tests\Support\ConsoleTestCase;
 use Phalanx\Console\Application\ConsoleConfig;
 use Phalanx\Console\Command\Arg;
 use Phalanx\Console\Command\CommandConfig;
@@ -24,15 +24,14 @@ use Phalanx\Mark\Mark;
 use Phalanx\Task\Scopeable;
 use Phalanx\Task\Task;
 use Phalanx\Testing\Assert as PhalanxAssert;
-use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
 
-final class ConsoleApplicationTest extends PhalanxTestCase
+final class ConsoleApplicationTest extends ConsoleTestCase
 {
     #[Test]
     public function facadeBuildsDispatchableCommandFirstApplication(): void
     {
-        $app = Console::starting()
+        $app = self::console()
             ->commands(CommandGroup::of([
                 'probe' => ConsoleApplicationProbeCommand::class,
             ]))
@@ -56,7 +55,7 @@ final class ConsoleApplicationTest extends PhalanxTestCase
     #[Test]
     public function runUsesContextArgvWithoutLeakingScriptNameIntoDispatch(): void
     {
-        $app = Console::starting([
+        $app = self::console([
             'argv' => ['bin/phalanx', 'probe'],
         ])
             ->commands(CommandGroup::of([
@@ -74,7 +73,7 @@ final class ConsoleApplicationTest extends PhalanxTestCase
     #[Test]
     public function runEntersTheRuntimeCoroutineRuntime(): void
     {
-        $app = Console::starting([
+        $app = self::console([
             'argv' => ['bin/phalanx', 'delay'],
         ])
             ->commands(CommandGroup::of([
@@ -95,7 +94,7 @@ final class ConsoleApplicationTest extends PhalanxTestCase
             options: [Opt::flag('detach', 'd')],
         );
 
-        $builder = Console::command(
+        $builder = self::consoleCommand(
             'deploy',
             static function (CommandContext $ctx) use (&$received): string {
                 $commandName = $ctx->commandName;
@@ -131,7 +130,7 @@ final class ConsoleApplicationTest extends PhalanxTestCase
     {
         $disposed = false;
         $stream = StreamOutputHelper::open();
-        $app = Console::command(
+        $app = self::consoleCommand(
             'fail',
             static function (CommandContext $ctx) use (&$disposed): int {
                 $ctx->onDispose(static function () use (&$disposed): void {
@@ -164,7 +163,7 @@ final class ConsoleApplicationTest extends PhalanxTestCase
     public function unknownCommandReturnsNonZeroWithAvailableCommands(): void
     {
         $stream = StreamOutputHelper::open();
-        $app = Console::command('known', static fn(CommandContext $_ctx): int => 0)
+        $app = self::consoleCommand('known', static fn(CommandContext $_ctx): int => 0)
             ->withConsoleConfig(new ConsoleConfig(errorOutput: StreamOutputHelper::output($stream)))
             ->build();
 
@@ -189,7 +188,7 @@ final class ConsoleApplicationTest extends PhalanxTestCase
     public function helpForMissingCommandReturnsNonZero(): void
     {
         $stream = StreamOutputHelper::open();
-        $app = Console::command('known', static fn(CommandContext $_ctx): int => 0)
+        $app = self::consoleCommand('known', static fn(CommandContext $_ctx): int => 0)
             ->withConsoleConfig(new ConsoleConfig(errorOutput: StreamOutputHelper::output($stream)))
             ->build();
 
@@ -214,7 +213,7 @@ final class ConsoleApplicationTest extends PhalanxTestCase
     {
         $stream = StreamOutputHelper::open();
         $missing = str_repeat('x', 400);
-        $app = Console::command('known', static fn(CommandContext $_ctx): int => 0)
+        $app = self::consoleCommand('known', static fn(CommandContext $_ctx): int => 0)
             ->withConsoleConfig(new ConsoleConfig(errorOutput: StreamOutputHelper::output($stream)))
             ->build();
 
@@ -235,7 +234,7 @@ final class ConsoleApplicationTest extends PhalanxTestCase
     public function cancelledCommandAbortsManagedCommandResource(): void
     {
         $stream = StreamOutputHelper::open();
-        $app = Console::command(
+        $app = self::consoleCommand(
             'cancel',
             static function (CommandContext $_ctx): int {
                 throw new Cancelled('signal:int');
@@ -263,7 +262,7 @@ final class ConsoleApplicationTest extends PhalanxTestCase
     {
         $stream = StreamOutputHelper::open();
         $token = null;
-        $app = Console::command(
+        $app = self::consoleCommand(
             'cancel',
             static function (CommandContext $ctx) use (&$token): int {
                 self::assertSame($token, $ctx->cancellation());
@@ -310,7 +309,7 @@ final class ConsoleApplicationTest extends PhalanxTestCase
         self::assertNotNull($signal);
         $signals->record($signal);
 
-        $app = Console::command(
+        $app = self::consoleCommand(
             'cancel',
             static function (CommandContext $ctx): int {
                 $ctx->cancellation()->cancel();
@@ -353,7 +352,7 @@ final class ConsoleApplicationTest extends PhalanxTestCase
         }
 
         $stream = StreamOutputHelper::open();
-        $app = Console::command(
+        $app = self::consoleCommand(
             'signal',
             static function (CommandContext $ctx): int {
                 $pid = getmypid();
@@ -383,7 +382,7 @@ final class ConsoleApplicationTest extends PhalanxTestCase
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('inline commands require static closures');
 
-        Console::command('leaky', fn(CommandContext $_ctx): int => 0);
+        self::consoleCommand('leaky', fn(CommandContext $_ctx): int => 0);
     }
 
     protected function setUp(): void

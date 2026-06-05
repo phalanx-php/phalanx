@@ -4,15 +4,13 @@ declare(strict_types=1);
 
 namespace Phalanx\WebSocket\Tests\Integration;
 
-use Phalanx\Application;
 use Phalanx\WebSocket\Client\WsClient;
 use Phalanx\WebSocket\WebSocket;
 use Phalanx\WebSocket\Runtime\Identity\WebSocketResourceSid;
 use Phalanx\WebSocket\WsCloseCode;
 use Phalanx\Scope\ExecutionScope;
-use Phalanx\Task\Task;
+use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 use Swoole\Coroutine\Channel;
 use Swoole\Coroutine\Socket;
 use Swoole\WebSocket\Frame;
@@ -26,7 +24,7 @@ use Swoole\WebSocket\Frame;
  *  2. double-close from two coroutines       -> idempotent, single transition
  *  3. abrupt server hangup mid-recv          -> reader exits, close drains
  */
-final class WsClientCancellationTest extends TestCase
+final class WsClientCancellationTest extends PhalanxTestCase
 {
     private const string HOST = '127.0.0.1';
 
@@ -35,70 +33,36 @@ final class WsClientCancellationTest extends TestCase
     #[Test]
     public function scopeDisposeCascadesCloseAndReleasesResource(): void
     {
-        Application::starting()
-            ->providers(WebSocket::services())
-            ->run(Task::named(
-                'test.websocket.client.cancel.dispose',
-                static function (ExecutionScope $scope): void {
-                    [$listener, $port, $serverDone] = self::bootListener($scope, holdSeconds: 1.0);
+        $testApp = $this->testApp([], WebSocket::services());
 
-                    $resources = $scope->runtime->memory->resources;
-                    self::assertSame(
-                        0,
-                        $resources->liveCount(WebSocketResourceSid::WebSocketClientConnection),
-                        'no live ws-client resources before connect',
-                    );
+        $this->scope->run(static function (ExecutionScope $_scope) use ($testApp): void {
+            $testApp->application->startup();
+            $scope = $testApp->application->createScope();
 
-                    $childDone = new Channel(1);
-                    $scope->go(static function (ExecutionScope $childScope) use ($port, $childDone): void {
-                        // Register the signal FIRST so onDispose runs it LAST (LIFO);
-                        // this depends on WsClient::connect() registering its
-                        // handle->close() cleanup via $scope->onDispose(...) — if that
-                        // mechanism ever changes, this ordering assumption rots silently
-                        // and the parent's liveCount assertion becomes a flake.
-                        $childScope->onDispose(static function () use ($childDone): void {
-                            $childDone->push(true);
-                        });
+            try {
+                [$listener, $port, $serverDone] = self::bootListener($scope, holdSeconds: 1.0);
 
-                        $client = $childScope->service(WsClient::class);
-                        $connection = $client->connect(
-                            $childScope,
-                            'ws://' . self::HOST . ':' . $port . '/echo',
-                        );
+                $resources = $scope->runtime->memory->resources;
+                self::assertSame(
+                    0,
+                    $resources->liveCount(WebSocketResourceSid::WebSocketClientConnection),
+                    'no live ws-client resources before connect',
+                );
 
-                        foreach ($connection->messages() as $msg) {
-                            self::assertSame('hold-open', $msg->payload);
-                            break;
-                        }
+                $childDone = new Channel(1);
+                $scope->go(static function (ExecutionScope $childScope) use ($scope, $port, $childDone): void {
+                    // Register the signal FIRST so onDispose runs it LAST (LIFO);
+                    // this depends on WsClient::connect() registering its
+                    // handle->close() cleanup via $scope->onDispose(...) — if that
+                    // mechanism ever changes, this ordering assumption rots silently
+                    // and the parent's liveCount assertion becomes a flake.
+                    $childScope->onDispose(static function () use ($childDone): void {
+                        $childDone->push(true);
                     });
-
-                    self::assertTrue($childDone->pop(3), 'child go() did not signal done within 3s');
-
-                    self::assertSame(
-                        0,
-                        $resources->liveCount(WebSocketResourceSid::WebSocketClientConnection),
-                        'child-scope dispose must release the ws-client resource',
-                    );
-
-                    self::assertTrue($serverDone->pop(2), 'server fixture did not signal done within 2s');
-                    $listener->close();
-                },
-            ));
-    }
-
-    #[Test]
-    public function doubleCloseFromTwoCoroutinesIsIdempotent(): void
-    {
-        Application::starting()
-            ->providers(WebSocket::services())
-            ->run(Task::named(
-                'test.websocket.client.cancel.double-close',
-                static function (ExecutionScope $scope): void {
-                    [$listener, $port, $serverDone] = self::bootListener($scope, holdSeconds: 1.0);
 
                     $client = $scope->service(WsClient::class);
                     $connection = $client->connect(
-                        $scope,
+                        $childScope,
                         'ws://' . self::HOST . ':' . $port . '/echo',
                     );
 
@@ -106,77 +70,123 @@ final class WsClientCancellationTest extends TestCase
                         self::assertSame('hold-open', $msg->payload);
                         break;
                     }
+                });
 
-                    $barrier = new Channel(2);
-                    $scope->go(static function () use ($connection, $barrier): void {
-                        try {
-                            $connection->close(WsCloseCode::Normal, 'double_a');
-                        } finally {
-                            $barrier->push(true);
-                        }
-                    });
-                    $scope->go(static function () use ($connection, $barrier): void {
-                        try {
-                            $connection->close(WsCloseCode::Normal, 'double_b');
-                        } finally {
-                            $barrier->push(true);
-                        }
-                    });
-                    self::assertTrue($barrier->pop(2), 'first close coroutine did not finish');
-                    self::assertTrue($barrier->pop(2), 'second close coroutine did not finish');
+                self::assertTrue($childDone->pop(3), 'child go() did not signal done within 3s');
 
-                    self::assertTrue($connection->closed, 'connection must be closed after double-close');
-                    self::assertFalse($connection->isConnected, 'isConnected must be false post-close');
+                self::assertSame(
+                    0,
+                    $resources->liveCount(WebSocketResourceSid::WebSocketClientConnection),
+                    'child-scope dispose must release the ws-client resource',
+                );
 
-                    self::assertTrue($serverDone->pop(2), 'server fixture did not signal done within 2s');
-                    $listener->close();
-                },
-            ));
+                self::assertTrue($serverDone->pop(2), 'server fixture did not signal done within 2s');
+                $listener->close();
+            } finally {
+                $scope->dispose();
+            }
+        });
+    }
+
+    #[Test]
+    public function doubleCloseFromTwoCoroutinesIsIdempotent(): void
+    {
+        $testApp = $this->testApp([], WebSocket::services());
+
+        $this->scope->run(static function (ExecutionScope $_scope) use ($testApp): void {
+            $testApp->application->startup();
+            $scope = $testApp->application->createScope();
+
+            try {
+                [$listener, $port, $serverDone] = self::bootListener($scope, holdSeconds: 1.0);
+
+                $client = $scope->service(WsClient::class);
+                $connection = $client->connect(
+                    $scope,
+                    'ws://' . self::HOST . ':' . $port . '/echo',
+                );
+
+                foreach ($connection->messages() as $msg) {
+                    self::assertSame('hold-open', $msg->payload);
+                    break;
+                }
+
+                $barrier = new Channel(2);
+                $scope->go(static function () use ($connection, $barrier): void {
+                    try {
+                        $connection->close(WsCloseCode::Normal, 'double_a');
+                    } finally {
+                        $barrier->push(true);
+                    }
+                });
+                $scope->go(static function () use ($connection, $barrier): void {
+                    try {
+                        $connection->close(WsCloseCode::Normal, 'double_b');
+                    } finally {
+                        $barrier->push(true);
+                    }
+                });
+                self::assertTrue($barrier->pop(2), 'first close coroutine did not finish');
+                self::assertTrue($barrier->pop(2), 'second close coroutine did not finish');
+
+                self::assertTrue($connection->closed, 'connection must be closed after double-close');
+                self::assertFalse($connection->isConnected, 'isConnected must be false post-close');
+
+                self::assertTrue($serverDone->pop(2), 'server fixture did not signal done within 2s');
+                $listener->close();
+            } finally {
+                $scope->dispose();
+            }
+        });
     }
 
     #[Test]
     public function abruptServerHangupTerminatesReaderCleanly(): void
     {
-        Application::starting()
-            ->providers(WebSocket::services())
-            ->run(Task::named(
-                'test.websocket.client.cancel.hangup',
-                static function (ExecutionScope $scope): void {
-                    // hangup fixture: 101 + one frame, then immediate close from server side.
-                    [$listener, $port, $serverDone] = self::bootListener($scope, holdSeconds: 0.0);
+        $testApp = $this->testApp([], WebSocket::services());
 
-                    $client = $scope->service(WsClient::class);
-                    $connection = $client->connect(
-                        $scope,
-                        'ws://' . self::HOST . ':' . $port . '/hangup',
-                    );
+        $this->scope->run(static function (ExecutionScope $_scope) use ($testApp): void {
+            $testApp->application->startup();
+            $scope = $testApp->application->createScope();
 
-                    $payloads = [];
-                    foreach ($connection->messages() as $msg) {
-                        if (!$msg->isClose) {
-                            $payloads[] = $msg->payload;
-                        }
+            try {
+                // hangup fixture: 101 + one frame, then immediate close from server side.
+                [$listener, $port, $serverDone] = self::bootListener($scope, holdSeconds: 0.0);
+
+                $client = $scope->service(WsClient::class);
+                $connection = $client->connect(
+                    $scope,
+                    'ws://' . self::HOST . ':' . $port . '/hangup',
+                );
+
+                $payloads = [];
+                foreach ($connection->messages() as $msg) {
+                    if (!$msg->isClose) {
+                        $payloads[] = $msg->payload;
                     }
+                }
 
-                    self::assertContains('hold-open', $payloads, 'reader should surface the first frame before EOF');
+                self::assertContains('hold-open', $payloads, 'reader should surface the first frame before EOF');
 
-                    // the inbound iterator drained; reader has exited. close() must be
-                    // safe to call even though the underlying socket is already gone.
-                    $connection->close(WsCloseCode::Normal, 'after_eof');
-                    self::assertTrue($connection->closed);
+                // the inbound iterator drained; reader has exited. close() must be
+                // safe to call even though the underlying socket is already gone.
+                $connection->close(WsCloseCode::Normal, 'after_eof');
+                self::assertTrue($connection->closed);
 
-                    self::assertSame(
-                        0,
-                        $scope->runtime->memory->resources->liveCount(
-                            WebSocketResourceSid::WebSocketClientConnection,
-                        ),
-                        'no leaked ws-client resources after server hangup',
-                    );
+                self::assertSame(
+                    0,
+                    $scope->runtime->memory->resources->liveCount(
+                        WebSocketResourceSid::WebSocketClientConnection,
+                    ),
+                    'no leaked ws-client resources after server hangup',
+                );
 
-                    self::assertTrue($serverDone->pop(2), 'server fixture did not signal done within 2s');
-                    $listener->close();
-                },
-            ));
+                self::assertTrue($serverDone->pop(2), 'server fixture did not signal done within 2s');
+                $listener->close();
+            } finally {
+                $scope->dispose();
+            }
+        });
     }
 
     /**
@@ -260,6 +270,7 @@ final class WsClientCancellationTest extends TestCase
                 return trim(substr($line, strlen($name) + 1));
             }
         }
+
         return '';
     }
 }

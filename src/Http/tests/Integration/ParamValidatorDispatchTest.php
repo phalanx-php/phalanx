@@ -12,7 +12,7 @@ use Phalanx\Http\Validator\Param\IntInRange;
 use Phalanx\Http\Validator\Param\OneOf;
 use Phalanx\Http\Tests\Fixtures\Routes\ShowRouteId;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
+use Phalanx\Testing\PhalanxTestCase;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\UriInterface;
 
@@ -21,7 +21,7 @@ use Psr\Http\Message\UriInterface;
  * at dispatch time and throw ValidationException with the correct field/message
  * when a parameter fails imperative validation.
  */
-final class ParamValidatorDispatchTest extends TestCase
+final class ParamValidatorDispatchTest extends PhalanxTestCase
 {
     private Application $app;
 
@@ -107,12 +107,7 @@ final class ParamValidatorDispatchTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->app = Application::starting()->compile();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->app->shutdown();
+        $this->app = $this->testApp()->application;
     }
 
     private function createRequest(string $method, string $path): ServerRequestInterface

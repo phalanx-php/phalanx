@@ -273,24 +273,18 @@ final class InWorkerTest extends PhalanxTestCase
                 static fn(): WorkerGreetingService => new WorkerGreetingServiceImpl(),
             );
 
-        $app = Application::starting()
-            ->providers($bundle, Worker::services(new ParallelConfig(agents: 1)))
-            ->compile();
-        $app->startup();
+        $testApp = $this->testApp([], $bundle, Worker::services(new ParallelConfig(agents: 1)));
+        $app = $testApp->application->startup();
 
-        try {
-            $this->scope->run(static function (ExecutionScope $_scope) use ($app): void {
-                $scope = $app->createScope();
+        $this->scope->run(static function (ExecutionScope $_scope) use ($app): void {
+            $scope = $app->createScope();
 
-                try {
-                    self::assertSame(5, $scope->inWorker(new AddNumbers(2, 3)));
-                } finally {
-                    $scope->dispose();
-                }
-            });
-        } finally {
-            $app->shutdown();
-        }
+            try {
+                self::assertSame(5, $scope->inWorker(new AddNumbers(2, 3)));
+            } finally {
+                $scope->dispose();
+            }
+        });
     }
 
     #[Test]
@@ -341,11 +335,6 @@ final class InWorkerTest extends PhalanxTestCase
         $this->app = $this->buildApp(new ParallelConfig(agents: 2));
     }
 
-    protected function tearDown(): void
-    {
-        $this->app->shutdown();
-    }
-
     private function buildApp(ParallelConfig $config): Application
     {
         $bundle = TestServiceBundle::create()
@@ -354,11 +343,7 @@ final class InWorkerTest extends PhalanxTestCase
                 static fn(): WorkerGreetingService => new WorkerGreetingServiceImpl(),
             );
 
-        $app = Application::starting()
-            ->providers($bundle)
-            ->withWorkerDispatch($config->workerDispatch())
-            ->compile();
-
+        $app = $this->testApp([], $bundle, Worker::services($config))->application;
         $app->startup();
 
         return $app;

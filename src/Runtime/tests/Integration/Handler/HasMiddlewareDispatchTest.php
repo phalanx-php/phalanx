@@ -4,23 +4,17 @@ declare(strict_types=1);
 
 namespace Phalanx\Runtime\Tests\Integration\Handler;
 
-use Phalanx\Application;
 use Phalanx\Handler\Handler;
 use Phalanx\Handler\HandlerGroup;
 use Phalanx\Runtime\Tests\Fixtures\Handlers\MiddlewareDeclaringHandler;
 use Phalanx\Runtime\Tests\Fixtures\Handlers\PrefixingMiddleware;
+use Phalanx\Testing\PhalanxTestCase;
+use Phalanx\Testing\TestApp;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 
-/**
- * Verifies the three-layer middleware composition implemented in
- * HandlerGroup::executeHandler:
- *   group-level (outermost) -> handler-config -> handler-instance HasMiddleware (innermost)
- * with class-string deduplication keeping the LAST occurrence.
- */
-final class HasMiddlewareDispatchTest extends TestCase
+final class HasMiddlewareDispatchTest extends PhalanxTestCase
 {
-    private Application $app;
+    private TestApp $testApp;
 
     #[Test]
     public function instance_middleware_runs_innermost_around_handler(): void
@@ -29,7 +23,7 @@ final class HasMiddlewareDispatchTest extends TestCase
             'h' => Handler::of(MiddlewareDeclaringHandler::class),
         ])->wrap(PrefixingMiddleware::class);
 
-        $scope = $this->app->createScope();
+        $scope = $this->testApp->application->createScope();
 
         $result = $group->dispatch('h', $scope);
 
@@ -46,7 +40,7 @@ final class HasMiddlewareDispatchTest extends TestCase
             'h' => Handler::of(MiddlewareDeclaringHandler::class),
         ]);
 
-        $scope = $this->app->createScope();
+        $scope = $this->testApp->application->createScope();
 
         $result = $group->dispatch('h', $scope);
 
@@ -55,11 +49,6 @@ final class HasMiddlewareDispatchTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->app = Application::starting()->compile();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->app->shutdown();
+        $this->testApp = $this->testApp();
     }
 }

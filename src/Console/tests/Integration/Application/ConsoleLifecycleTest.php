@@ -4,21 +4,20 @@ declare(strict_types=1);
 
 namespace Phalanx\Console\Tests\Integration\Application;
 
-use Phalanx\Console\Application\Console;
+use Phalanx\Console\Tests\Support\ConsoleTestCase;
 use Phalanx\Console\Command\CommandGroup;
 use Phalanx\Console\Command\CommandContext;
 use Phalanx\Console\Application\ConsoleConfig;
 use Phalanx\Task\Scopeable;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
-final class ConsoleLifecycleTest extends TestCase
+final class ConsoleLifecycleTest extends ConsoleTestCase
 {
     #[Test]
     public function disposesHandlerScopeAfterSuccessfulCommand(): void
     {
-        $app = Console::starting()
+        $app = self::console()
             ->commands(CommandGroup::of([
                 'lifecycle' => LifecycleCommand::class,
             ]))
@@ -35,7 +34,7 @@ final class ConsoleLifecycleTest extends TestCase
     public function disposesHandlerScopeAfterThrownCommand(): void
     {
         $stream = StreamOutputHelper::open();
-        $app = Console::starting()
+        $app = self::console()
             ->commands(CommandGroup::of([
                 'fail' => ThrowingLifecycleCommand::class,
             ]))
@@ -55,7 +54,7 @@ final class ConsoleLifecycleTest extends TestCase
     {
         $dir = $this->makeCommandDirectory();
 
-        $app = Console::starting()
+        $app = self::console()
             ->commands($dir)
             ->build();
 

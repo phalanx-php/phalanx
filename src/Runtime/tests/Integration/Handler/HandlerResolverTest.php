@@ -4,26 +4,21 @@ declare(strict_types=1);
 
 namespace Phalanx\Runtime\Tests\Integration\Handler;
 
-use Phalanx\Application;
 use Phalanx\Handler\HandlerDependencyNotResolvable;
 use Phalanx\Handler\HandlerResolver;
 use Phalanx\Runtime\Tests\Fixtures\Handlers\HandlerA;
+use Phalanx\Testing\PhalanxTestCase;
+use Phalanx\Testing\TestApp;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 
-/**
- * Verifies HandlerResolver behaviors added during the v0.6.0 review pass:
- * generic resolution over any class, nullable parameter fallback to null,
- * default-value parameter fallback, scalar parameter rejection.
- */
-final class HandlerResolverTest extends TestCase
+final class HandlerResolverTest extends PhalanxTestCase
 {
-    private Application $app;
+    private TestApp $testApp;
 
     #[Test]
     public function resolves_handler_with_no_constructor(): void
     {
-        $scope = $this->app->createScope();
+        $scope = $this->testApp->application->createScope();
         $resolver = $scope->service(HandlerResolver::class);
 
         $instance = $resolver->resolve(HandlerA::class, $scope);
@@ -34,7 +29,7 @@ final class HandlerResolverTest extends TestCase
     #[Test]
     public function rejects_scalar_constructor_parameter(): void
     {
-        $scope = $this->app->createScope();
+        $scope = $this->testApp->application->createScope();
         $resolver = $scope->service(HandlerResolver::class);
 
         $this->expectException(HandlerDependencyNotResolvable::class);
@@ -46,7 +41,7 @@ final class HandlerResolverTest extends TestCase
     #[Test]
     public function nullable_unresolved_dependency_falls_back_to_null(): void
     {
-        $scope = $this->app->createScope();
+        $scope = $this->testApp->application->createScope();
         $resolver = $scope->service(HandlerResolver::class);
 
         $instance = $resolver->resolve(NullableDepHandler::class, $scope);
@@ -57,12 +52,7 @@ final class HandlerResolverTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->app = Application::starting()->compile();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->app->shutdown();
+        $this->testApp = $this->testApp();
     }
 }
 

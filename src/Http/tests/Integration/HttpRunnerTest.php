@@ -246,8 +246,9 @@ final class HttpRunnerTest extends PhalanxTestCase
     {
         $this->expectException(MissingRequestResource::class);
 
-        $this->scope->run(static function (): void {
-            $app = Application::starting()->compile()->startup();
+        $app = $this->startedApplication();
+
+        $this->scope->run(static function () use ($app): void {
             $scope = $app->createScope();
             $context = new ExecutionContext(
                 $scope,
@@ -261,7 +262,6 @@ final class HttpRunnerTest extends PhalanxTestCase
                 self::assertSame('', $context->requestId);
             } finally {
                 $scope->dispose();
-                $app->shutdown();
             }
         });
     }
@@ -513,17 +513,13 @@ final class HttpRunnerTest extends PhalanxTestCase
         Closure $test,
         ?HttpServerConfig $config = null,
     ): mixed {
-        return $this->scope->run(static function () use ($routes, $test, $config): mixed {
-            $app = Application::starting()->compile()->startup();
+        $app = $this->startedApplication();
 
-            try {
-                $runner = ($config === null ? HttpRunner::from($app) : HttpRunner::from($app, $config))
-                    ->withRoutes($routes);
+        return $this->scope->run(static function () use ($routes, $test, $config, $app): mixed {
+            $runner = ($config === null ? HttpRunner::from($app) : HttpRunner::from($app, $config))
+                ->withRoutes($routes);
 
-                return $test($runner, $app);
-            } finally {
-                $app->shutdown();
-            }
+            return $test($runner, $app);
         });
     }
 }
