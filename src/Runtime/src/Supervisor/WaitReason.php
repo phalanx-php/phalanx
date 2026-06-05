@@ -16,7 +16,7 @@ namespace Phalanx\Supervisor;
  *   delay 2.000s
  *   http GET 127.0.0.1:8080 /slow
  *   postgres SELECT * FROM users WHERE id = '...'
- *   worker agent-2 / SummarizeDocument
+ *   worker worker-2 / SummarizeDocument
  *   singleflight user:42
  *   lock cache/user:42/write
  *

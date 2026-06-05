@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Worker\Supervisor;
 
-enum SupervisorStrategy
+enum SupervisorStrategy: string
 {
-    case Ignore;
-    case StopAll;
-    case RestartOnCrash;
+    case Ignore = 'ignore';
+    case StopAll = 'stop_all';
+    case RestartOnCrash = 'restart_on_crash';
 }

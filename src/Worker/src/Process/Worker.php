@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Worker\Agent;
+namespace Phalanx\Worker\Process;
 
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Runtime\CoroutineRuntime;
@@ -10,9 +10,6 @@ use Phalanx\Runtime\RuntimePolicy;
 use Phalanx\Scope\TaskExecutor;
 use Phalanx\Scope\TaskScope;
 use Phalanx\Supervisor\WaitReason;
-use Phalanx\Worker\Process\ProcessConfig;
-use Phalanx\Worker\Process\ProcessHandle;
-use Phalanx\Worker\Process\ProcessState;
 use Phalanx\Worker\Protocol\ServiceCall;
 use Phalanx\Worker\Protocol\TaskRequest;
 use Phalanx\Worker\Runtime\ParentServiceProxy;
@@ -22,7 +19,7 @@ use Swoole\Coroutine\Channel as SwooleChannel;
 
 class Worker
 {
-    private(set) AgentState $state = AgentState::Idle;
+    private(set) WorkerState $state = WorkerState::Idle;
 
     private readonly ProcessHandle $process;
 
@@ -35,7 +32,7 @@ class Worker
         ProcessConfig $config,
         ?string $id = null,
     ) {
-        $this->id = $id ?? uniqid('agent-', true);
+        $this->id = $id ?? uniqid('worker-', true);
         $this->process = new ProcessHandle($config);
         $this->lock = new SwooleChannel(1);
         $this->lock->push(true);
@@ -48,7 +45,7 @@ class Worker
 
     public function mailboxSize(): int
     {
-        return $this->state === AgentState::Processing ? 1 : 0;
+        return $this->state === WorkerState::Processing ? 1 : 0;
     }
 
     public function send(TaskRequest $task, TaskScope&TaskExecutor $scope, CancellationToken $token): mixed
@@ -59,19 +56,19 @@ class Worker
         $this->acquire($scope, $token);
 
         try {
-            if ($this->state === AgentState::Crashed) {
-                throw new RuntimeException("Agent {$this->id} crashed");
+            if ($this->state === WorkerState::Crashed) {
+                throw new RuntimeException("Worker {$this->id} crashed");
             }
 
-            if ($this->state === AgentState::Draining) {
-                throw new RuntimeException("Agent {$this->id} is draining");
+            if ($this->state === WorkerState::Draining) {
+                throw new RuntimeException("Worker {$this->id} is draining");
             }
 
             if (!$this->process->isRunning()) {
                 $this->process->start($scope);
             }
 
-            $this->state = AgentState::Processing;
+            $this->state = WorkerState::Processing;
             $proxy = new ParentServiceProxy($scope);
 
             $result = $this->process->execute(
@@ -80,13 +77,13 @@ class Worker
                 static fn(ServiceCall $call): mixed => $proxy->handle($call),
             );
 
-            $this->state = AgentState::Idle;
+            $this->state = WorkerState::Idle;
 
             return $result;
         } catch (\Throwable $e) {
             $this->state = $this->process->state() === ProcessState::Crashed
-                ? AgentState::Crashed
-                : AgentState::Idle;
+                ? WorkerState::Crashed
+                : WorkerState::Idle;
 
             throw $e;
         } finally {
@@ -96,7 +93,7 @@ class Worker
 
     public function drain(): void
     {
-        if ($this->state === AgentState::Crashed) {
+        if ($this->state === WorkerState::Crashed) {
             return;
         }
 
@@ -117,9 +114,9 @@ class Worker
         }
 
         try {
-            $this->state = AgentState::Draining;
+            $this->state = WorkerState::Draining;
             $this->process->drain();
-            $this->state = AgentState::Idle;
+            $this->state = WorkerState::Idle;
         } finally {
             $this->release();
         }
@@ -127,17 +124,17 @@ class Worker
 
     public function kill(): void
     {
-        $this->state = AgentState::Crashed;
+        $this->state = WorkerState::Crashed;
         $this->process->kill();
     }
 
     public function restart(): void
     {
-        if ($this->state !== AgentState::Crashed) {
+        if ($this->state !== WorkerState::Crashed) {
             return;
         }
 
-        $this->state = AgentState::Idle;
+        $this->state = WorkerState::Idle;
     }
 
     private function acquire(TaskScope&TaskExecutor $scope, CancellationToken $token): void
@@ -158,7 +155,7 @@ class Worker
             }
 
             if ($this->lock->errCode === SWOOLE_CHANNEL_CLOSED) {
-                throw new RuntimeException("Agent {$this->id} lock closed");
+                throw new RuntimeException("Worker {$this->id} lock closed");
             }
         }
     }

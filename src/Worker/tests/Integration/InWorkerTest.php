@@ -112,7 +112,7 @@ final class InWorkerTest extends PhalanxTestCase
                 $scope = $app->createScope();
 
                 try {
-                    self::assertSame('stderr-drained', $scope->inWorker(new StderrTask('agent-warning')));
+                    self::assertSame('stderr-drained', $scope->inWorker(new StderrTask('worker-warning')));
                     self::assertSame(5, $scope->inWorker(new AddNumbers(2, 3)));
                 } finally {
                     $scope->dispose();
@@ -125,7 +125,7 @@ final class InWorkerTest extends PhalanxTestCase
             );
             $chunks = implode('', array_map(static fn($e) => $e->attrs['chunk'] ?? '', $stderrEvents));
 
-            self::assertStringContainsString('agent-warning', $chunks);
+            self::assertStringContainsString('worker-warning', $chunks);
         } finally {
             $app->shutdown();
         }

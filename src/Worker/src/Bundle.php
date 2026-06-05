@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Worker;
 
 use Phalanx\Boot\AppContext;
+use Phalanx\Config\Config;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 use Phalanx\Worker\Dispatch\LeastMailboxDispatcher;
@@ -22,13 +23,22 @@ final class Bundle extends ServiceBundle
     ) {
     }
 
+    /** @return list<class-string<Config>> */
+    #[\Override]
+    public static function configs(): array
+    {
+        return [ParallelConfig::class];
+    }
+
     public function services(Services $services, AppContext $context): void
     {
         self::prewarmHookSafeClasses();
 
-        $parallelConfig = $this->config ?? ParallelConfig::fromContext($context);
-        $services->singleton(ParallelConfig::class)
-            ->factory(static fn(): ParallelConfig => $parallelConfig);
+        $parallelConfig = $this->config;
+        if ($parallelConfig !== null) {
+            $services->singleton(ParallelConfig::class)
+                ->factory(static fn(): ParallelConfig => $parallelConfig);
+        }
 
         $services->singleton(WorkerDispatch::class)
             ->needs(ParallelConfig::class)

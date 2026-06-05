@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Worker\Tests\Unit;
 
-use Phalanx\Boot\AppContext;
+use Phalanx\Config\ConfigFactory;
 use Phalanx\Worker\Dispatch\DispatchStrategy;
 use Phalanx\Worker\Facade;
 use Phalanx\Worker\ParallelConfig;
@@ -32,17 +32,24 @@ final class FacadeTest extends TestCase
     }
 
     #[Test]
+    public function servicesDeclareParallelConfigForAutoRegistration(): void
+    {
+        self::assertSame([ParallelConfig::class], Facade::services()::configs());
+    }
+
+    #[Test]
     public function parallelConfigReadsRuntimeContext(): void
     {
-        $config = ParallelConfig::fromContext(new AppContext([
+        $config = ConfigFactory::fromContext([
             ParallelConfig::CONTEXT_AGENTS => 8,
             ParallelConfig::CONTEXT_MAILBOX_LIMIT => 42,
             ParallelConfig::CONTEXT_DISPATCHER => 'round_robin',
             ParallelConfig::CONTEXT_SUPERVISION => 'stop_all',
             ParallelConfig::CONTEXT_WORKER_SCRIPT => 'worker.php',
             ParallelConfig::CONTEXT_AUTOLOAD_PATH => 'vendor/autoload.php',
-        ]));
+        ])->hydrate(ParallelConfig::class);
 
+        self::assertInstanceOf(ParallelConfig::class, $config);
         self::assertSame(8, $config->agents);
         self::assertSame(42, $config->mailboxLimit);
         self::assertSame(DispatchStrategy::RoundRobin, $config->dispatcher);

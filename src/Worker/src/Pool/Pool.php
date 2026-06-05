@@ -13,7 +13,7 @@ use function Swoole\Coroutine\run as swoole_coroutine_run;
  * Runtime-managed worker pool primitive.
  *
  * Composes `Swoole\Process\Pool` directly with a typed Phalanx-native
- * facade. The existing `Phalanx\Worker\Agent\Worker` request/response IPC
+ * facade. The existing `Phalanx\Worker\Process\Worker` request/response IPC
  * serves service-call workloads; this Pool targets the simpler
  * "spawn N processes that run a function and stay alive under a
  * supervisor" use case (plx-ops background workers, scheduled job pools,

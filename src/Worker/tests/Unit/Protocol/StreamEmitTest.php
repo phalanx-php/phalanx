@@ -15,7 +15,7 @@ final class StreamEmitTest extends TestCase
     public function to_array_includes_type_and_fields(): void
     {
         $emit = new StreamEmit(
-            taskId: 'reactor.agent-1.abc123',
+            taskId: 'worker.task-1.abc123',
             eventClass: 'App\\Event\\TokenReceived',
             payload: ['token' => 'hello', 'index' => 0],
         );
@@ -23,7 +23,7 @@ final class StreamEmitTest extends TestCase
         $array = $emit->toArray();
 
         self::assertSame('stream_emit', $array['type']);
-        self::assertSame('reactor.agent-1.abc123', $array['task_id']);
+        self::assertSame('worker.task-1.abc123', $array['task_id']);
         self::assertSame('App\\Event\\TokenReceived', $array['event_class']);
         self::assertSame(['token' => 'hello', 'index' => 0], $array['payload']);
     }
@@ -32,14 +32,14 @@ final class StreamEmitTest extends TestCase
     public function from_array_reconstructs_emit(): void
     {
         $data = [
-            'task_id' => 'reactor.agent-1.abc123',
+            'task_id' => 'worker.task-1.abc123',
             'event_class' => 'App\\Event\\TokenReceived',
             'payload' => ['delta' => 'world'],
         ];
 
         $emit = StreamEmit::fromArray($data);
 
-        self::assertSame('reactor.agent-1.abc123', $emit->taskId);
+        self::assertSame('worker.task-1.abc123', $emit->taskId);
         self::assertSame('App\\Event\\TokenReceived', $emit->eventClass);
         self::assertSame(['delta' => 'world'], $emit->payload);
     }

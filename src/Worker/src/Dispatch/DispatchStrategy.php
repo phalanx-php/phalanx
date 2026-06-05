@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Worker\Dispatch;
 
-enum DispatchStrategy
+enum DispatchStrategy: string
 {
-    case RoundRobin;
-    case LeastMailbox;
+    case RoundRobin = 'round_robin';
+    case LeastMailbox = 'least_mailbox';
 }

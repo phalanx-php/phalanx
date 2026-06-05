@@ -7,47 +7,47 @@ namespace Phalanx\Worker\Dispatch;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Scope\TaskExecutor;
 use Phalanx\Scope\TaskScope;
-use Phalanx\Worker\Agent\AgentState;
-use Phalanx\Worker\Agent\Worker;
+use Phalanx\Worker\Process\Worker;
+use Phalanx\Worker\Process\WorkerState;
 use Phalanx\Worker\Protocol\TaskRequest;
 use RuntimeException;
 
 final class LeastMailboxDispatcher implements Dispatcher
 {
     /**
-     * @param list<Worker> $agents
+     * @param list<Worker> $workers
      */
     public function __construct(
-        private readonly array $agents,
+        private readonly array $workers,
     ) {
     }
 
     public function dispatch(TaskRequest $task, TaskScope&TaskExecutor $scope, CancellationToken $token): mixed
     {
-        if (count($this->agents) === 0) {
-            throw new RuntimeException('No agents available');
+        if (count($this->workers) === 0) {
+            throw new RuntimeException('No workers available');
         }
 
-        $bestAgent = null;
+        $bestWorker = null;
         $bestSize = PHP_INT_MAX;
 
-        foreach ($this->agents as $agent) {
-            if ($agent->state === AgentState::Crashed || $agent->state === AgentState::Draining) {
+        foreach ($this->workers as $worker) {
+            if ($worker->state === WorkerState::Crashed || $worker->state === WorkerState::Draining) {
                 continue;
             }
 
-            $size = $agent->mailboxSize();
+            $size = $worker->mailboxSize();
 
             if ($size < $bestSize) {
                 $bestSize = $size;
-                $bestAgent = $agent;
+                $bestWorker = $worker;
             }
         }
 
-        if ($bestAgent === null) {
-            throw new RuntimeException('All agents unavailable');
+        if ($bestWorker === null) {
+            throw new RuntimeException('All workers unavailable');
         }
 
-        return $bestAgent->send($task, $scope, $token);
+        return $bestWorker->send($task, $scope, $token);
     }
 }

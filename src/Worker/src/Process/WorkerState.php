@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Worker\Agent;
+namespace Phalanx\Worker\Process;
 
-enum AgentState
+enum WorkerState
 {
     case Idle;
     case Processing;

@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace Phalanx\Worker;
 
-use Phalanx\Boot\AppContext;
+use Phalanx\Config\Config;
+use Phalanx\Config\Env;
+use Phalanx\Config\Issue;
+use Phalanx\Config\ValidationContext;
 use Phalanx\Worker\Dispatch\DispatchStrategy;
 use Phalanx\Worker\Supervisor\SupervisorConfig;
 use Phalanx\Worker\Supervisor\SupervisorStrategy;
 use Phalanx\Worker\WorkerDispatch;
 
-final readonly class ParallelConfig
+final class ParallelConfig implements Config
 {
     public const string CONTEXT_AGENTS = 'WORKER_AGENTS';
     public const string CONTEXT_MAILBOX_LIMIT = 'WORKER_MAILBOX_LIMIT';
@@ -19,12 +22,22 @@ final readonly class ParallelConfig
     public const string CONTEXT_WORKER_SCRIPT = 'WORKER_SCRIPT';
     public const string CONTEXT_AUTOLOAD_PATH = 'WORKER_AUTOLOAD_PATH';
 
+    public bool $configured {
+        get => true;
+    }
+
     public function __construct(
+        #[Env(key: self::CONTEXT_AGENTS, description: 'Number of worker child processes')]
         public int $agents = 4,
+        #[Env(key: self::CONTEXT_MAILBOX_LIMIT, description: 'Maximum queued tasks per worker')]
         public int $mailboxLimit = 100,
+        #[Env(key: self::CONTEXT_DISPATCHER, description: 'Worker dispatch strategy')]
         public DispatchStrategy $dispatcher = DispatchStrategy::LeastMailbox,
+        #[Env(key: self::CONTEXT_SUPERVISION, description: 'Worker supervision strategy')]
         public SupervisorStrategy $supervision = SupervisorStrategy::RestartOnCrash,
+        #[Env(key: self::CONTEXT_WORKER_SCRIPT, description: 'Worker process bootstrap script')]
         public ?string $workerScript = null,
+        #[Env(key: self::CONTEXT_AUTOLOAD_PATH, description: 'Worker process Composer autoload path')]
         public ?string $autoloadPath = null,
     ) {
     }
@@ -44,28 +57,6 @@ final readonly class ParallelConfig
         return new self(agents: self::detectCores());
     }
 
-    public static function fromContext(AppContext $context): self
-    {
-        return new self(
-            agents: $context->int(self::CONTEXT_AGENTS, self::default()->agents),
-            mailboxLimit: $context->int(self::CONTEXT_MAILBOX_LIMIT, self::default()->mailboxLimit),
-            dispatcher: self::dispatchStrategy($context->string(
-                self::CONTEXT_DISPATCHER,
-                self::default()->dispatcher->name,
-            )),
-            supervision: self::supervisorStrategy($context->string(
-                self::CONTEXT_SUPERVISION,
-                self::default()->supervision->name,
-            )),
-            workerScript: $context->has(self::CONTEXT_WORKER_SCRIPT)
-                ? $context->string(self::CONTEXT_WORKER_SCRIPT)
-                : null,
-            autoloadPath: $context->has(self::CONTEXT_AUTOLOAD_PATH)
-                ? $context->string(self::CONTEXT_AUTOLOAD_PATH)
-                : null,
-        );
-    }
-
     public function workerDispatch(): WorkerDispatch
     {
         return new ParallelDispatch($this);
@@ -79,6 +70,22 @@ final readonly class ParallelConfig
             dispatchStrategy: $this->dispatcher,
             supervision: $this->supervision,
         );
+    }
+
+    /** @return list<Issue> */
+    public function validate(ValidationContext $context): array
+    {
+        $issues = [];
+
+        if ($this->agents < 1) {
+            $issues[] = Issue::error(self::CONTEXT_AGENTS, 'Must be >= 1');
+        }
+
+        if ($this->mailboxLimit < 1) {
+            $issues[] = Issue::error(self::CONTEXT_MAILBOX_LIMIT, 'Must be >= 1');
+        }
+
+        return $issues;
     }
 
     private static function detectCores(): int
@@ -98,29 +105,5 @@ final readonly class ParallelConfig
         }
 
         return 4;
-    }
-
-    private static function dispatchStrategy(string $value): DispatchStrategy
-    {
-        return match (self::normalized($value)) {
-            'roundrobin' => DispatchStrategy::RoundRobin,
-            'leastmailbox' => DispatchStrategy::LeastMailbox,
-            default => DispatchStrategy::LeastMailbox,
-        };
-    }
-
-    private static function supervisorStrategy(string $value): SupervisorStrategy
-    {
-        return match (self::normalized($value)) {
-            'ignore' => SupervisorStrategy::Ignore,
-            'stopall' => SupervisorStrategy::StopAll,
-            'restartoncrash' => SupervisorStrategy::RestartOnCrash,
-            default => SupervisorStrategy::RestartOnCrash,
-        };
-    }
-
-    private static function normalized(string $value): string
-    {
-        return strtolower(str_replace(['-', '_', ' '], '', $value));
     }
 }
