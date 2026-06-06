@@ -11,6 +11,7 @@ use Phalanx\Console\Style\Theme;
 use Phalanx\Console\Widget\SourcePreview;
 use Phalanx\Supervisor\TaskRunSnapshot;
 use Phalanx\Supervisor\TaskTreeFormatter;
+use Phalanx\Trace\TraceEvent;
 use Throwable;
 
 /**
@@ -23,10 +24,16 @@ final readonly class DefaultErrorRenderer implements ErrorRenderer
 {
     private const string MARGIN = '  ';
 
-    /** @param list<TaskRunSnapshot> $diagnosticTree */
+    private const int MAX_TRACE_EVENTS = 12;
+
+    /**
+     * @param list<TaskRunSnapshot> $diagnosticTree
+     * @param list<TraceEvent>      $traceEvents
+     */
     public function __construct(
         private bool $debug = false,
         private array $diagnosticTree = [],
+        private array $traceEvents = [],
     ) {
     }
 
@@ -54,6 +61,8 @@ final readonly class DefaultErrorRenderer implements ErrorRenderer
             }
             $output->persist("");
 
+            $this->renderTraceEvents($output, $theme);
+
             $output->persist(self::MARGIN . $muted->apply("Stack Trace:"));
             $this->renderTrace($output, $theme, $e);
         }
@@ -61,6 +70,48 @@ final readonly class DefaultErrorRenderer implements ErrorRenderer
         $output->persist("\n");
 
         return true;
+    }
+
+    private static function isRoutineTraceEvent(TraceEvent $event): bool
+    {
+        return str_starts_with($event->name, 'resource.')
+            || str_starts_with($event->name, 'run.');
+    }
+
+    private function renderTraceEvents(StreamOutput $output, Theme $theme): void
+    {
+        $events = $this->traceEventsForRendering();
+
+        if ($events === []) {
+            return;
+        }
+
+        $muted = $theme->muted;
+        $accent = $theme->accent;
+
+        $output->persist(self::MARGIN . $muted->apply("Phalanx Trace:"));
+
+        foreach (array_slice($events, -self::MAX_TRACE_EVENTS) as $event) {
+            $output->persist(sprintf(
+                '%s %s %s %s%s',
+                self::MARGIN,
+                $muted->apply($event->type->value),
+                $accent->apply($event->name),
+                $this->formatTimestamp($event->timestamp),
+                $this->formatAttributes($event->attrs),
+            ));
+        }
+
+        $output->persist("");
+    }
+
+    /** @return list<TraceEvent> */
+    private function traceEventsForRendering(): array
+    {
+        return array_values(array_filter(
+            $this->traceEvents,
+            static fn(TraceEvent $event): bool => !self::isRoutineTraceEvent($event),
+        ));
     }
 
     private function renderTrace(StreamOutput $output, Theme $theme, Throwable $e): void
@@ -88,5 +139,26 @@ final readonly class DefaultErrorRenderer implements ErrorRenderer
                 $accent->apply(basename($file) . ':' . $line)
             ));
         }
+    }
+
+    private function formatTimestamp(float $timestamp): string
+    {
+        return date('H:i:s', (int) $timestamp);
+    }
+
+    /** @param array<string, mixed> $attrs */
+    private function formatAttributes(array $attrs): string
+    {
+        if ($attrs === []) {
+            return '';
+        }
+
+        $encoded = json_encode($attrs, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+        if (!is_string($encoded)) {
+            return '';
+        }
+
+        return ' ' . $encoded;
     }
 }

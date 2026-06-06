@@ -11,6 +11,7 @@ use Phalanx\Demos\Kit\DemoReport;
 use Phalanx\Mark\Mark;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Task;
+use Phalanx\Trace\TraceType;
 
 /**
  * Phalanx Ultra-Deep Ledger Demo
@@ -26,9 +27,17 @@ return DemoReport::demo(
 
         $app = Facade::starting($context->values)
             ->command('demo:ultra-deep', static function (CommandContext $ctx) {
+                $ctx->trace()->log(TraceType::Lifecycle, 'demo.ultra.start', [
+                    'target_depth' => 15,
+                ]);
                 
                 $buildDeepTree = static function (ExecutionScope $scope, int $depth, int $maxDepth, Closure $self): void {
                     if ($depth >= $maxDepth) {
+                        $scope->trace()->log(TraceType::Failed, 'demo.ultra.depth.limit', [
+                            'depth' => $depth,
+                            'max_depth' => $maxDepth,
+                        ]);
+
                         throw new \RuntimeException("Deep-sea failure at level {$depth}!");
                     }
 

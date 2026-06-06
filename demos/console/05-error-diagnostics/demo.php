@@ -10,6 +10,7 @@ use Phalanx\Boot\AppContext;
 use Phalanx\Demos\Kit\DemoReport;
 use Phalanx\Mark\Mark;
 use Phalanx\Scope\ExecutionScope;
+use Phalanx\Trace\TraceType;
 
 /**
  * Phalanx Deep Error Rendering Demo (Complex Hierarchy)
@@ -26,6 +27,10 @@ return DemoReport::demo(
         
         $app = Facade::starting($context->values)
             ->command('demo:deep-error', static function (CommandContext $ctx) {
+                $ctx->trace()->log(TraceType::Lifecycle, 'demo.error.connection.open', [
+                    'connection' => 'primary',
+                    'stage' => 'connect',
+                ]);
 
                 // Spawn a complex background tree
                 $ctx->go(static function (ExecutionScope $scope) {
@@ -59,6 +64,11 @@ return DemoReport::demo(
 
                 // Small delay to ensure all fibers are registered
                 $ctx->delay(Mark::ms(100));
+                $ctx->trace()->log(TraceType::Failed, 'demo.error.query.execute', [
+                    'driver' => 'pdo',
+                    'attempt' => 3,
+                    'reason' => 'connection lost',
+                ]);
 
                 throw new \RuntimeException(
                     "Critical failure in POC logic: Database connection lost!\n" .

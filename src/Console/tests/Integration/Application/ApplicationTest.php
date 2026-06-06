@@ -27,6 +27,7 @@ use Phalanx\Service\Services;
 use Phalanx\Task\Scopeable;
 use Phalanx\Task\Task;
 use Phalanx\Testing\Assert as PhalanxAssert;
+use Phalanx\Trace\TraceType;
 use PHPUnit\Framework\Attributes\Test;
 
 final class ApplicationTest extends TestCase
@@ -201,6 +202,9 @@ TOML);
         $app = self::consoleCommand(
             'fail',
             static function (CommandContext $ctx): int {
+                $ctx->trace()->log(TraceType::Lifecycle, 'console.test.before-failure', [
+                    'command' => 'fail',
+                ]);
                 $ctx->go(
                     static function (ExecutionScope $scope): void {
                         $scope->delay(Mark::s(10));
@@ -208,6 +212,9 @@ TOML);
                     'ledger.child.active',
                 );
                 $ctx->delay(Mark::ms(10));
+                $ctx->trace()->log(TraceType::Failed, 'console.test.failure-boundary', [
+                    'reason' => 'expected',
+                ]);
 
                 throw new \RuntimeException('expected ledger failure');
             },
@@ -224,6 +231,9 @@ TOML);
             self::assertStringContainsString('ledger.child.active', $output);
             self::assertStringContainsString('failed', $output);
             self::assertStringNotContainsString('Task tree unavailable', $output);
+            self::assertStringContainsString('Phalanx Trace:', $output);
+            self::assertStringContainsString('console.test.before-failure', $output);
+            self::assertStringContainsString('console.test.failure-boundary', $output);
         });
 
         PhalanxAssert::assertNoLiveTasks($app->host()->supervisor());

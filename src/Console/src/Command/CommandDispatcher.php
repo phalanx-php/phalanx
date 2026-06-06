@@ -149,6 +149,7 @@ final class CommandDispatcher
         $renderer = new DefaultErrorRenderer(
             debug: true,
             diagnosticTree: $supervisor->failureTreeFor($e) ?? $supervisor->tree(),
+            traceEvents: $this->host->trace()->events(),
         );
         $renderer->render($commandScope, $e, $this->errorOutput());
     }
