@@ -9,10 +9,10 @@ use Phalanx\Application;
 use Phalanx\Boot\AppContext;
 use Phalanx\Boot\Exception\MissingContextValue;
 use Phalanx\Runtime\RuntimeCapability;
-use Phalanx\Runtime\RuntimeHookNames;
 use Phalanx\Runtime\RuntimeHooks;
 use Phalanx\Runtime\RuntimeHookSnapshot;
 use Phalanx\Runtime\RuntimePolicy;
+use Phalanx\Runtime\SwooleHook;
 use Phalanx\Scope\ScopeIdentity;
 use PHPUnit\Framework\TestCase;
 
@@ -23,35 +23,40 @@ final class RuntimePolicyTest extends TestCase
         $policy = RuntimePolicy::phalanxManaged();
 
         self::assertTrue($policy->hasRequiredFlags(
-            SWOOLE_HOOK_TCP
-            | SWOOLE_HOOK_UDP
-            | SWOOLE_HOOK_UNIX
-            | SWOOLE_HOOK_UDG
-            | SWOOLE_HOOK_SSL
-            | SWOOLE_HOOK_TLS
-            | SWOOLE_HOOK_STREAM_FUNCTION
-            | SWOOLE_HOOK_FILE
-            | SWOOLE_HOOK_CURL
-            | SWOOLE_HOOK_NATIVE_CURL
-            | SWOOLE_HOOK_SOCKETS,
+            SwooleHook::Tcp->value
+            | SwooleHook::Udp->value
+            | SwooleHook::Unix->value
+            | SwooleHook::Udg->value
+            | SwooleHook::Ssl->value
+            | SwooleHook::Tls->value
+            | SwooleHook::StreamFunction->value
+            | SwooleHook::File->value
+            | SwooleHook::NativeCurl->value
+            | SwooleHook::Sockets->value,
         ));
+
+        self::assertSame(0, $policy->requiredFlags & SwooleHook::Curl->value);
+        self::assertSame(0, $policy->requiredFlags & SwooleHook::PdoPgsql->value);
+        self::assertSame(0, $policy->requiredFlags & SwooleHook::MongoDb->value);
     }
 
     public function testPhalanxManagedPolicyTreatsBroadSemanticHooksAsSensitive(): void
     {
         $policy = RuntimePolicy::phalanxManaged();
 
-        self::assertSame(0, $policy->requiredFlags & SWOOLE_HOOK_SLEEP);
-        self::assertSame(0, $policy->requiredFlags & SWOOLE_HOOK_STDIO);
-        self::assertSame(0, $policy->requiredFlags & SWOOLE_HOOK_NET_FUNCTION);
-        self::assertSame(0, $policy->requiredFlags & SWOOLE_HOOK_PROC);
+        self::assertSame(0, $policy->requiredFlags & SwooleHook::Sleep->value);
+        self::assertSame(0, $policy->requiredFlags & SwooleHook::Stdio->value);
+        self::assertSame(0, $policy->requiredFlags & SwooleHook::NetFunction->value);
+        self::assertSame(0, $policy->requiredFlags & SwooleHook::Proc->value);
+        self::assertSame(0, $policy->requiredFlags & SwooleHook::MongoDb->value);
 
-        self::assertSame(SWOOLE_HOOK_SLEEP, $policy->sensitiveEnabledFlags(SWOOLE_HOOK_SLEEP));
-        self::assertSame(SWOOLE_HOOK_STDIO, $policy->sensitiveEnabledFlags(SWOOLE_HOOK_STDIO));
-        self::assertSame(SWOOLE_HOOK_PROC, $policy->sensitiveEnabledFlags(SWOOLE_HOOK_PROC));
+        self::assertSame(SwooleHook::Sleep->value, $policy->sensitiveEnabledFlags(SwooleHook::Sleep->value));
+        self::assertSame(SwooleHook::Stdio->value, $policy->sensitiveEnabledFlags(SwooleHook::Stdio->value));
+        self::assertSame(SwooleHook::Proc->value, $policy->sensitiveEnabledFlags(SwooleHook::Proc->value));
+        self::assertSame(SwooleHook::MongoDb->value, $policy->sensitiveEnabledFlags(SwooleHook::MongoDb->value));
         self::assertSame(
-            SWOOLE_HOOK_NET_FUNCTION,
-            $policy->sensitiveEnabledFlags(SWOOLE_HOOK_NET_FUNCTION),
+            SwooleHook::NetFunction->value,
+            $policy->sensitiveEnabledFlags(SwooleHook::NetFunction->value),
         );
     }
 
@@ -67,19 +72,43 @@ final class RuntimePolicyTest extends TestCase
         ]));
 
         self::assertSame(
-            SWOOLE_HOOK_TCP | SWOOLE_HOOK_NATIVE_CURL | SWOOLE_HOOK_FILE | SWOOLE_HOOK_STDIO,
+            SwooleHook::Tcp->value
+                | SwooleHook::NativeCurl->value
+                | SwooleHook::File->value
+                | SwooleHook::Stdio->value,
             $policy->requiredFlags
-                & (SWOOLE_HOOK_TCP | SWOOLE_HOOK_NATIVE_CURL | SWOOLE_HOOK_FILE | SWOOLE_HOOK_PROC | SWOOLE_HOOK_STDIO),
+                & (
+                    SwooleHook::Tcp->value
+                    | SwooleHook::NativeCurl->value
+                    | SwooleHook::File->value
+                    | SwooleHook::Proc->value
+                    | SwooleHook::Stdio->value
+                ),
         );
+    }
+
+    public function testDatabaseCapabilitiesAreExplicitOptInHooks(): void
+    {
+        $policy = RuntimePolicy::forCapabilities(
+            RuntimeCapability::PdoPgsql,
+            RuntimeCapability::PdoSqlite,
+            RuntimeCapability::MongoDb,
+        );
+
+        self::assertSame(
+            SwooleHook::PdoPgsql->value | SwooleHook::PdoSqlite->value | SwooleHook::MongoDb->value,
+            $policy->requiredFlags,
+        );
+        self::assertSame(SwooleHook::MongoDb->value, $policy->sensitiveEnabledFlags(SwooleHook::MongoDb->value));
     }
 
     public function testProcessesCapabilityDoesNotEnableSemanticProcessHooks(): void
     {
         $policy = RuntimePolicy::forCapabilities(RuntimeCapability::Processes);
 
-        self::assertSame(0, $policy->requiredFlags & SWOOLE_HOOK_PROC);
-        self::assertSame(0, $policy->requiredFlags & SWOOLE_HOOK_STDIO);
-        self::assertSame(SWOOLE_HOOK_PROC, $policy->sensitiveEnabledFlags(SWOOLE_HOOK_PROC));
+        self::assertSame(0, $policy->requiredFlags & SwooleHook::Proc->value);
+        self::assertSame(0, $policy->requiredFlags & SwooleHook::Stdio->value);
+        self::assertSame(SwooleHook::Proc->value, $policy->sensitiveEnabledFlags(SwooleHook::Proc->value));
     }
 
     public function testInvalidCapabilityContextThrowsClearly(): void
@@ -139,7 +168,13 @@ final class RuntimePolicyTest extends TestCase
 
         $snapshot = RuntimeHookSnapshot::fromFlags(
             $policy,
-            SWOOLE_HOOK_TCP | SWOOLE_HOOK_SSL | SWOOLE_HOOK_SLEEP | SWOOLE_HOOK_STDIO,
+            SwooleHook::Tcp->value | SwooleHook::Ssl->value | SwooleHook::Sleep->value | SwooleHook::Stdio->value,
+            SwooleHook::Tcp->value
+                | SwooleHook::Unix->value
+                | SwooleHook::Ssl->value
+                | SwooleHook::Tls->value
+                | SwooleHook::Sleep->value
+                | SwooleHook::Stdio->value,
         );
 
         self::assertFalse($snapshot->isHealthy());
@@ -149,32 +184,59 @@ final class RuntimePolicyTest extends TestCase
         self::assertSame(['SLEEP', 'STDIO'], $snapshot->sensitiveEnabledFlagNames());
         self::assertSame([
             'policy' => $policy->name,
-            'current' => SWOOLE_HOOK_TCP | SWOOLE_HOOK_SSL | SWOOLE_HOOK_SLEEP | SWOOLE_HOOK_STDIO,
+            'current' => SwooleHook::Tcp->value
+                | SwooleHook::Ssl->value
+                | SwooleHook::Sleep->value
+                | SwooleHook::Stdio->value,
+            'available' => SwooleHook::Tcp->value
+                | SwooleHook::Unix->value
+                | SwooleHook::Ssl->value
+                | SwooleHook::Tls->value
+                | SwooleHook::Sleep->value
+                | SwooleHook::Stdio->value,
             'required' => $policy->requiredFlags,
             'missing' => $snapshot->missingFlags,
-            'sensitive_enabled' => SWOOLE_HOOK_SLEEP | SWOOLE_HOOK_STDIO,
+            'unavailable_required' => 0,
+            'sensitive_enabled' => SwooleHook::Sleep->value | SwooleHook::Stdio->value,
             'healthy' => false,
         ], $snapshot->toArray());
+    }
+
+    public function testUnavailableRequiredHooksMakeSnapshotUnhealthy(): void
+    {
+        $policy = RuntimePolicy::forCapabilities(RuntimeCapability::PdoPgsql);
+        $snapshot = RuntimeHookSnapshot::fromFlags(
+            $policy,
+            SwooleHook::PdoPgsql->value,
+            0,
+        );
+
+        self::assertFalse($snapshot->isHealthy());
+        self::assertSame(SwooleHook::PdoPgsql->value, $snapshot->unavailableRequiredFlags);
+        self::assertSame(['PDO_PGSQL'], $snapshot->unavailableRequiredFlagNames());
     }
 
     public function testHookNamesAreStableForDiagnostics(): void
     {
         self::assertSame(
             ['TCP', 'SSL', 'NATIVE_CURL'],
-            RuntimeHookNames::forMask(SWOOLE_HOOK_TCP | SWOOLE_HOOK_SSL | SWOOLE_HOOK_NATIVE_CURL),
+            SwooleHook::namesForMask(SwooleHook::Tcp->value | SwooleHook::Ssl->value | SwooleHook::NativeCurl->value),
         );
 
-        self::assertSame(['PROC'], RuntimeHookNames::forMask(SWOOLE_HOOK_PROC));
+        self::assertSame(['PROC'], SwooleHook::namesForMask(SwooleHook::Proc->value));
+        self::assertSame('SWOOLE_HOOK_PDO_PGSQL', SwooleHook::PdoPgsql->constantName());
     }
 
     public function testPhalanxManagedPolicyCanNameEveryRequiredHook(): void
     {
         $policy = RuntimePolicy::phalanxManaged();
-        $names = RuntimeHookNames::forMask($policy->requiredFlags);
+        $names = SwooleHook::namesForMask($policy->requiredFlags);
 
         self::assertNotContains('PROC', $names);
         self::assertNotContains('STDIO', $names);
         self::assertNotContains('SLEEP', $names);
-        self::assertNotContains('BLOCKING_FUNCTION', $names);
+        self::assertNotContains('NET_FUNCTION', $names);
+        self::assertNotContains('PDO_PGSQL', $names);
+        self::assertNotContains('MONGODB', $names);
     }
 }

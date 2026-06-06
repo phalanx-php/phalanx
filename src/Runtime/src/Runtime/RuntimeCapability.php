@@ -6,22 +6,24 @@ namespace Phalanx\Runtime;
 
 use InvalidArgumentException;
 
-enum RuntimeCapability: int
+enum RuntimeCapability
 {
-    case Files = SWOOLE_HOOK_FILE;
-    case Sleep = SWOOLE_HOOK_SLEEP;
-    case Network = SWOOLE_HOOK_TCP | SWOOLE_HOOK_UNIX | SWOOLE_HOOK_SSL | SWOOLE_HOOK_TLS;
-    case Streams = SWOOLE_HOOK_STREAM_FUNCTION;
-    case Sockets = SWOOLE_HOOK_SOCKETS;
-    case Datagrams = SWOOLE_HOOK_UDP | SWOOLE_HOOK_UDG;
-    case Processes = SWOOLE_HOOK_PROC;
-    case HttpClient = SWOOLE_HOOK_TCP
-        | SWOOLE_HOOK_SSL
-        | SWOOLE_HOOK_TLS
-        | SWOOLE_HOOK_CURL
-        | SWOOLE_HOOK_NATIVE_CURL;
-    case InteractiveStdio = SWOOLE_HOOK_STDIO;
-    case BlockingFunctions = SWOOLE_HOOK_NET_FUNCTION;
+    case Files;
+    case Sleep;
+    case Network;
+    case Streams;
+    case Sockets;
+    case Datagrams;
+    case Processes;
+    case HttpClient;
+    case InteractiveStdio;
+    case BlockingFunctions;
+    case PdoPgsql;
+    case PdoSqlite;
+    case PdoOdbc;
+    case PdoOracle;
+    case PdoFirebird;
+    case MongoDb;
 
     public static function fromContextValue(mixed $value): self
     {
@@ -29,13 +31,8 @@ enum RuntimeCapability: int
             return $value;
         }
 
-        if (is_int($value)) {
-            return self::tryFrom($value)
-                ?? throw new InvalidArgumentException("Unknown runtime capability: {$value}");
-        }
-
         if (!is_string($value)) {
-            throw new InvalidArgumentException('Runtime capability must be a string, int, or RuntimeCapability.');
+            throw new InvalidArgumentException('Runtime capability must be a string or RuntimeCapability.');
         }
 
         $normalized = strtolower(str_replace(['-', '_', ' '], '', $value));

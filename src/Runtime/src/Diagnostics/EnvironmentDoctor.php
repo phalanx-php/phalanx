@@ -53,14 +53,6 @@ final class EnvironmentDoctor
                 class_exists(Table::class),
                 Table::class,
             ),
-            // Swoole\Coroutine\PostgreSQL was removed in Swoole 6.0. PDO with runtime hooks
-            // is the supported path. Report as not-present so users know to migrate.
-            new DoctorCheck(
-                'swoole.postgresql',
-                false,
-                'removed in Swoole 6.0 — use PDO with SWOOLE_HOOK_PDO_PGSQL',
-                Severity::Optional,
-            ),
             // Policy name and flag details are diagnostic context — always ok=true, never block health.
             new DoctorCheck(
                 'swoole.runtime_policy',
@@ -84,8 +76,17 @@ final class EnvironmentDoctor
             // deliver coroutine-safe I/O to application code.
             new DoctorCheck(
                 'swoole.hooks.missing',
-                $hooks->isHealthy(),
+                $hooks->missingFlags === 0,
                 sprintf('%d (%s)', $hooks->missingFlags, self::formatNames($hooks->missingFlagNames())),
+            ),
+            new DoctorCheck(
+                'swoole.hooks.unavailable_required',
+                $hooks->unavailableRequiredFlags === 0,
+                sprintf(
+                    '%d (%s)',
+                    $hooks->unavailableRequiredFlags,
+                    self::formatNames($hooks->unavailableRequiredFlagNames()),
+                ),
             ),
             // Sensitive flag reporting is diagnostic context only.
             new DoctorCheck(

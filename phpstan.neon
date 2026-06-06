@@ -77,7 +77,7 @@ parameters:
     phalanxAuditPaths: []
     phalanxRuntimeHookInternalPaths:
         - src/Runtime/src/Runtime/RuntimeCapability.php
-        - src/Runtime/src/Runtime/RuntimeHookNames.php
+        - src/Runtime/src/Runtime/SwooleHook.php
         - src/Runtime/src/Runtime/RuntimeHooks.php
         - src/Runtime/src/Runtime/RuntimePolicy.php
     phalanxProcessInternalPaths:
@@ -114,11 +114,6 @@ parameters:
         -
             identifier: argument.unknown
             path: src/Runtime/src/Runtime/Memory/RuntimeClaims.php
-            reportUnmatched: true
-        # RuntimePolicyTest tests the hook mapping system itself; must reference raw SWOOLE_HOOK_* constants
-        -
-            identifier: phalanx.runtime.hookOwnership
-            path: src/Runtime/tests/Unit/Runtime/RuntimePolicyTest.php
             reportUnmatched: true
         # Ghost-initializer closures are Closure::bind()-ed to class scope at runtime; PHPStan sees test scope
         -

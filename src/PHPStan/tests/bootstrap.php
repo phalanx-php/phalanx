@@ -22,8 +22,18 @@ foreach (['ITIMER_REAL' => 0, 'ITIMER_VIRTUAL' => 1, 'ITIMER_PROF' => 2] as $con
     }
 }
 
-// SWOOLE_HOOK_NET_FUNCTION (2^21 = 2097152) is defined by ext-swoole 6 but absent
-// from the swoole/ide-helper stubs. Declaring it here keeps PHPStan analysis clean.
-if (!defined('SWOOLE_HOOK_NET_FUNCTION')) {
-    define('SWOOLE_HOOK_NET_FUNCTION', 2097152);
+foreach (
+    [
+        'SWOOLE_HOOK_PDO_PGSQL' => 65536,
+        'SWOOLE_HOOK_PDO_ODBC' => 131072,
+        'SWOOLE_HOOK_PDO_ORACLE' => 262144,
+        'SWOOLE_HOOK_PDO_SQLITE' => 524288,
+        'SWOOLE_HOOK_PDO_FIREBIRD' => 1048576,
+        'SWOOLE_HOOK_NET_FUNCTION' => 2097152,
+        'SWOOLE_HOOK_MONGODB' => 4194304,
+    ] as $constant => $value
+) {
+    if (!defined($constant)) {
+        define($constant, $value);
+    }
 }

@@ -14,7 +14,16 @@ final class RuntimePolicyViolation extends RuntimeException
         return new self(sprintf(
             'Swoole runtime policy "%s" is missing required hook flags: %s.',
             $policy->name,
-            implode(', ', RuntimeHookNames::forMask($missingFlags)),
+            implode(', ', SwooleHook::namesForMask($missingFlags)),
+        ));
+    }
+
+    public static function unavailableRequiredFlags(RuntimePolicy $policy, int $unavailableFlags): self
+    {
+        return new self(sprintf(
+            'Swoole runtime policy "%s" requires hook flags that are unavailable in this Swoole build: %s.',
+            $policy->name,
+            implode(', ', SwooleHook::namesForMask($unavailableFlags)),
         ));
     }
 
@@ -23,7 +32,7 @@ final class RuntimePolicyViolation extends RuntimeException
         return new self(sprintf(
             'Swoole runtime policy "%s" could not enable required hook flags: %s.',
             $policy->name,
-            implode(', ', RuntimeHookNames::forMask($missingFlags)),
+            implode(', ', SwooleHook::namesForMask($missingFlags)),
         ), previous: $previous);
     }
 }

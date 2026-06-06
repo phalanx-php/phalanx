@@ -14,8 +14,10 @@ use Phalanx\Runtime\Identity\RuntimeResourceSid;
 use Phalanx\Runtime\Memory\ManagedResourceState;
 use Phalanx\Runtime\Memory\RuntimeMemory;
 use Phalanx\Runtime\Memory\RuntimeMemoryConfig;
+use Phalanx\Runtime\RuntimeCapability;
 use Phalanx\Runtime\RuntimeHooks;
 use Phalanx\Runtime\RuntimePolicy;
+use Phalanx\Runtime\SwooleHook;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Supervisor\DispatchMode;
 use Phalanx\Supervisor\InProcessLedger;
@@ -43,6 +45,7 @@ final class EnvironmentDoctorTest extends TestCase
         self::assertContains('swoole.hook_flags', array_column($checks, 'name'));
         self::assertContains('swoole.hooks.required', array_column($checks, 'name'));
         self::assertContains('swoole.hooks.missing', array_column($checks, 'name'));
+        self::assertContains('swoole.hooks.unavailable_required', array_column($checks, 'name'));
         self::assertContains('swoole.hooks.sensitive', array_column($checks, 'name'));
         self::assertContains('supervisor.ledger', array_column($checks, 'name'));
     }
@@ -83,7 +86,7 @@ final class EnvironmentDoctorTest extends TestCase
     {
         $policy = new RuntimePolicy(
             name: 'test:missing-hooks',
-            requiredFlags: RuntimeHooks::currentFlags() | (1 << 30),
+            requiredFlags: RuntimeHooks::currentFlags() | SwooleHook::Sleep->value,
             sensitiveFlags: 0,
         );
 
@@ -92,6 +95,19 @@ final class EnvironmentDoctorTest extends TestCase
 
         self::assertFalse($report->isHealthy());
         self::assertFalse($check['ok']);
+    }
+
+    public function testUnavailableRequiredHooksMakeReportUnhealthy(): void
+    {
+        $policy = RuntimePolicy::forCapabilities(RuntimeCapability::PdoPgsql);
+        $report = new EnvironmentDoctor(runtimePolicy: $policy)->check();
+        $check = self::check($report->toArray(), 'swoole.hooks.unavailable_required');
+
+        self::assertSame(!SwooleHook::PdoPgsql->isAvailable(), !$check['ok']);
+        if (!SwooleHook::PdoPgsql->isAvailable()) {
+            self::assertFalse($report->isHealthy());
+            self::assertStringContainsString('PDO_PGSQL', $check['detail']);
+        }
     }
 
     public function testReportContainsHealthyRuntimeMemoryChecks(): void
@@ -209,12 +225,11 @@ final class EnvironmentDoctorTest extends TestCase
         }
     }
 
-    public function testPostgresqlProbeCarriesOptionalSeverity(): void
+    public function testBaselineReportDoesNotEmitLegacyPostgresqlProbe(): void
     {
         $pgCheck = self::findCheck(new EnvironmentDoctor()->check(), 'swoole.postgresql');
 
-        self::assertNotNull($pgCheck, 'swoole.postgresql probe not found in report');
-        self::assertSame(Severity::Optional, $pgCheck->severity);
+        self::assertNull($pgCheck, 'swoole.postgresql is a stale Swoole 6 diagnostic and should not be emitted.');
     }
 
     public function testCoroutineProbeCarriesRequiredSeverity(): void

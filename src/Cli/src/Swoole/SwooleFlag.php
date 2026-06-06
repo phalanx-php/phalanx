@@ -11,8 +11,12 @@ enum SwooleFlag: string
     case EnableSockets = 'enable-sockets';
     case EnableHttp2 = 'enable-http2';
     case EnableMysqlnd = 'enable-mysqlnd';
-    case EnableHookCurl = 'enable-hook-curl';
-    case WithPostgres = 'with-postgres';
+    case EnableSwooleCurl = 'enable-swoole-curl';
+    case EnableSwoolePgsql = 'enable-swoole-pgsql';
+    case EnableSwooleSqlite = 'enable-swoole-sqlite';
+    case WithSwooleOdbc = 'with-swoole-odbc';
+    case WithSwooleOracle = 'with-swoole-oracle';
+    case WithSwooleFirebird = 'with-swoole-firebird';
     case EnableCares = 'enable-cares';
     case EnableIoUring = 'enable-io-uring';
 
@@ -34,8 +38,12 @@ enum SwooleFlag: string
             self::EnableSockets => 'PHP sockets coroutine support',
             self::EnableHttp2 => 'HTTP/2 protocol support (requires nghttp2)',
             self::EnableMysqlnd => 'MySQL native driver coroutine support',
-            self::EnableHookCurl => 'cURL hook for coroutine-based HTTP clients',
-            self::WithPostgres => 'PostgreSQL coroutine client',
+            self::EnableSwooleCurl => 'cURL hook for coroutine-based HTTP clients',
+            self::EnableSwoolePgsql => 'PDO PostgreSQL coroutine hook support',
+            self::EnableSwooleSqlite => 'PDO SQLite coroutine hook support',
+            self::WithSwooleOdbc => 'PDO ODBC coroutine hook support',
+            self::WithSwooleOracle => 'PDO Oracle coroutine hook support',
+            self::WithSwooleFirebird => 'PDO Firebird coroutine hook support',
             self::EnableCares => 'Async DNS resolution via c-ares',
             self::EnableIoUring => 'io_uring support (Linux 5.19+ only)',
         };
@@ -44,7 +52,10 @@ enum SwooleFlag: string
     public function needsValue(): bool
     {
         return match ($this) {
-            self::WithOpensslDir, self::WithPostgres => true,
+            self::WithOpensslDir,
+            self::WithSwooleOdbc,
+            self::WithSwooleOracle,
+            self::WithSwooleFirebird => true,
             default => false,
         };
     }
@@ -55,7 +66,7 @@ enum SwooleFlag: string
             self::EnableOpenssl,
             self::EnableSockets,
             self::EnableHttp2,
-            self::EnableHookCurl => true,
+            self::EnableSwooleCurl => true,
             default => false,
         };
     }
@@ -76,11 +87,29 @@ enum SwooleFlag: string
                 new SystemDependencyHint(Platform::Rhel, 'libnghttp2-devel', 'sudo dnf install libnghttp2-devel'),
                 new SystemDependencyHint(Platform::Alpine, 'nghttp2-dev', 'apk add nghttp2-dev'),
             ],
-            self::WithPostgres => [
+            self::EnableSwoolePgsql => [
                 new SystemDependencyHint(Platform::MacOS, 'libpq', 'brew install libpq'),
                 new SystemDependencyHint(Platform::Debian, 'libpq-dev', 'sudo apt install libpq-dev'),
                 new SystemDependencyHint(Platform::Rhel, 'libpq-devel', 'sudo dnf install libpq-devel'),
                 new SystemDependencyHint(Platform::Alpine, 'libpq-dev', 'apk add libpq-dev'),
+            ],
+            self::EnableSwooleSqlite => [
+                new SystemDependencyHint(Platform::MacOS, 'sqlite', 'brew install sqlite'),
+                new SystemDependencyHint(Platform::Debian, 'libsqlite3-dev', 'sudo apt install libsqlite3-dev'),
+                new SystemDependencyHint(Platform::Rhel, 'sqlite-devel', 'sudo dnf install sqlite-devel'),
+                new SystemDependencyHint(Platform::Alpine, 'sqlite-dev', 'apk add sqlite-dev'),
+            ],
+            self::WithSwooleOdbc => [
+                new SystemDependencyHint(Platform::MacOS, 'unixodbc', 'brew install unixodbc'),
+                new SystemDependencyHint(Platform::Debian, 'unixodbc-dev', 'sudo apt install unixodbc-dev'),
+                new SystemDependencyHint(Platform::Rhel, 'unixODBC-devel', 'sudo dnf install unixODBC-devel'),
+                new SystemDependencyHint(Platform::Alpine, 'unixodbc-dev', 'apk add unixodbc-dev'),
+            ],
+            self::WithSwooleFirebird => [
+                new SystemDependencyHint(Platform::MacOS, 'firebird', 'brew install firebird'),
+                new SystemDependencyHint(Platform::Debian, 'firebird-dev', 'sudo apt install firebird-dev'),
+                new SystemDependencyHint(Platform::Rhel, 'firebird-devel', 'sudo dnf install firebird-devel'),
+                new SystemDependencyHint(Platform::Alpine, 'firebird-dev', 'apk add firebird-dev'),
             ],
             self::EnableCares => [
                 new SystemDependencyHint(Platform::MacOS, 'c-ares', 'brew install c-ares'),

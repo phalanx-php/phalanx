@@ -50,10 +50,11 @@ final readonly class RuntimePolicy
         return new self(
             name: self::nameFor($capabilities),
             requiredFlags: $required,
-            sensitiveFlags: SWOOLE_HOOK_SLEEP
-                | SWOOLE_HOOK_STDIO
-                | SWOOLE_HOOK_NET_FUNCTION
-                | SWOOLE_HOOK_PROC,
+            sensitiveFlags: SwooleHook::Sleep->value
+                | SwooleHook::Stdio->value
+                | SwooleHook::NetFunction->value
+                | SwooleHook::Proc->value
+                | SwooleHook::MongoDb->value,
         );
     }
 
@@ -88,6 +89,11 @@ final readonly class RuntimePolicy
         return $this->requiredFlags & ~$currentFlags;
     }
 
+    public function unavailableRequiredFlags(int $availableFlags): int
+    {
+        return $this->requiredFlags & ~$availableFlags;
+    }
+
     public function hasRequiredFlags(int $currentFlags): bool
     {
         return $this->missingFlags($currentFlags) === 0;
@@ -116,22 +122,28 @@ final readonly class RuntimePolicy
     private static function flagsFor(RuntimeCapability $capability): int
     {
         return match ($capability) {
-            RuntimeCapability::Network => SWOOLE_HOOK_TCP
-                | SWOOLE_HOOK_UNIX
-                | SWOOLE_HOOK_SSL
-                | SWOOLE_HOOK_TLS,
-            RuntimeCapability::HttpClient => SWOOLE_HOOK_TCP
-                | SWOOLE_HOOK_SSL
-                | SWOOLE_HOOK_TLS
-                | SWOOLE_HOOK_NATIVE_CURL,
-            RuntimeCapability::Streams => SWOOLE_HOOK_STREAM_FUNCTION,
-            RuntimeCapability::Files => SWOOLE_HOOK_FILE,
-            RuntimeCapability::Sockets => SWOOLE_HOOK_SOCKETS,
-            RuntimeCapability::Datagrams => SWOOLE_HOOK_UDP | SWOOLE_HOOK_UDG,
+            RuntimeCapability::Network => SwooleHook::Tcp->value
+                | SwooleHook::Unix->value
+                | SwooleHook::Ssl->value
+                | SwooleHook::Tls->value,
+            RuntimeCapability::HttpClient => SwooleHook::Tcp->value
+                | SwooleHook::Ssl->value
+                | SwooleHook::Tls->value
+                | SwooleHook::NativeCurl->value,
+            RuntimeCapability::Streams => SwooleHook::StreamFunction->value,
+            RuntimeCapability::Files => SwooleHook::File->value,
+            RuntimeCapability::Sockets => SwooleHook::Sockets->value,
+            RuntimeCapability::Datagrams => SwooleHook::Udp->value | SwooleHook::Udg->value,
             RuntimeCapability::Processes => 0,
-            RuntimeCapability::InteractiveStdio => SWOOLE_HOOK_STDIO,
-            RuntimeCapability::Sleep => SWOOLE_HOOK_SLEEP,
-            RuntimeCapability::BlockingFunctions => SWOOLE_HOOK_NET_FUNCTION,
+            RuntimeCapability::InteractiveStdio => SwooleHook::Stdio->value,
+            RuntimeCapability::Sleep => SwooleHook::Sleep->value,
+            RuntimeCapability::BlockingFunctions => SwooleHook::NetFunction->value,
+            RuntimeCapability::PdoPgsql => SwooleHook::PdoPgsql->value,
+            RuntimeCapability::PdoSqlite => SwooleHook::PdoSqlite->value,
+            RuntimeCapability::PdoOdbc => SwooleHook::PdoOdbc->value,
+            RuntimeCapability::PdoOracle => SwooleHook::PdoOracle->value,
+            RuntimeCapability::PdoFirebird => SwooleHook::PdoFirebird->value,
+            RuntimeCapability::MongoDb => SwooleHook::MongoDb->value,
         };
     }
 

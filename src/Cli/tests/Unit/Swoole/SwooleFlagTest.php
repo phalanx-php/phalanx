@@ -23,9 +23,12 @@ final class SwooleFlagTest extends TestCase
     public function valueBearingFlagsIdentified(): void
     {
         self::assertTrue(SwooleFlag::WithOpensslDir->needsValue());
-        self::assertTrue(SwooleFlag::WithPostgres->needsValue());
+        self::assertTrue(SwooleFlag::WithSwooleOdbc->needsValue());
+        self::assertTrue(SwooleFlag::WithSwooleOracle->needsValue());
+        self::assertTrue(SwooleFlag::WithSwooleFirebird->needsValue());
         self::assertFalse(SwooleFlag::EnableOpenssl->needsValue());
         self::assertFalse(SwooleFlag::EnableSockets->needsValue());
+        self::assertFalse(SwooleFlag::EnableSwoolePgsql->needsValue());
     }
 
     #[Test]
@@ -34,7 +37,7 @@ final class SwooleFlagTest extends TestCase
         self::assertTrue(SwooleFlag::EnableOpenssl->defaultEnabled());
         self::assertTrue(SwooleFlag::EnableSockets->defaultEnabled());
         self::assertTrue(SwooleFlag::EnableHttp2->defaultEnabled());
-        self::assertTrue(SwooleFlag::EnableHookCurl->defaultEnabled());
+        self::assertTrue(SwooleFlag::EnableSwooleCurl->defaultEnabled());
     }
 
     #[Test]
@@ -42,7 +45,11 @@ final class SwooleFlagTest extends TestCase
     {
         self::assertFalse(SwooleFlag::WithOpensslDir->defaultEnabled());
         self::assertFalse(SwooleFlag::EnableMysqlnd->defaultEnabled());
-        self::assertFalse(SwooleFlag::WithPostgres->defaultEnabled());
+        self::assertFalse(SwooleFlag::EnableSwoolePgsql->defaultEnabled());
+        self::assertFalse(SwooleFlag::EnableSwooleSqlite->defaultEnabled());
+        self::assertFalse(SwooleFlag::WithSwooleOdbc->defaultEnabled());
+        self::assertFalse(SwooleFlag::WithSwooleOracle->defaultEnabled());
+        self::assertFalse(SwooleFlag::WithSwooleFirebird->defaultEnabled());
         self::assertFalse(SwooleFlag::EnableCares->defaultEnabled());
         self::assertFalse(SwooleFlag::EnableIoUring->defaultEnabled());
     }
@@ -53,7 +60,10 @@ final class SwooleFlagTest extends TestCase
         $choices = SwooleFlag::interactiveChoices();
 
         self::assertNotContains(SwooleFlag::WithOpensslDir, $choices);
-        self::assertNotContains(SwooleFlag::WithPostgres, $choices);
+        self::assertNotContains(SwooleFlag::WithSwooleOdbc, $choices);
+        self::assertNotContains(SwooleFlag::WithSwooleOracle, $choices);
+        self::assertNotContains(SwooleFlag::WithSwooleFirebird, $choices);
+        self::assertContains(SwooleFlag::EnableSwoolePgsql, $choices);
         self::assertContains(SwooleFlag::EnableOpenssl, $choices);
 
         $excludedCount = count(array_filter(
@@ -109,5 +119,11 @@ final class SwooleFlagTest extends TestCase
     public function socketsHasNoDeps(): void
     {
         self::assertSame([], SwooleFlag::EnableSockets->systemDependencies());
+    }
+
+    #[Test]
+    public function postgresqlHookFlagUsesCurrentSwooleConfigureName(): void
+    {
+        self::assertSame('enable-swoole-pgsql', SwooleFlag::EnableSwoolePgsql->value);
     }
 }

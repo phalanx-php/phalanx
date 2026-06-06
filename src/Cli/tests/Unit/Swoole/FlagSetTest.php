@@ -20,8 +20,8 @@ final class FlagSetTest extends TestCase
         self::assertTrue($flagSet->contains(SwooleFlag::EnableOpenssl));
         self::assertTrue($flagSet->contains(SwooleFlag::EnableSockets));
         self::assertTrue($flagSet->contains(SwooleFlag::EnableHttp2));
-        self::assertTrue($flagSet->contains(SwooleFlag::EnableHookCurl));
-        self::assertFalse($flagSet->contains(SwooleFlag::WithPostgres));
+        self::assertTrue($flagSet->contains(SwooleFlag::EnableSwooleCurl));
+        self::assertFalse($flagSet->contains(SwooleFlag::EnableSwoolePgsql));
         self::assertFalse($flagSet->contains(SwooleFlag::EnableMysqlnd));
     }
 
@@ -56,9 +56,24 @@ final class FlagSetTest extends TestCase
     #[Test]
     public function valueBearingFlagWithoutValueIsSkipped(): void
     {
-        $flagSet = new FlagSet([SwooleFlag::WithPostgres]);
+        $flagSet = new FlagSet([SwooleFlag::WithSwooleOdbc]);
 
         self::assertSame([], $flagSet->toPieArgs());
+    }
+
+    #[Test]
+    public function toPieArgsUsesCurrentSwooleDatabaseFlags(): void
+    {
+        $flagSet = new FlagSet(
+            [SwooleFlag::EnableSwoolePgsql, SwooleFlag::EnableSwooleSqlite, SwooleFlag::WithSwooleOdbc],
+            [SwooleFlag::WithSwooleOdbc->value => '/opt/odbc'],
+        );
+
+        self::assertSame([
+            '--enable-swoole-pgsql',
+            '--enable-swoole-sqlite',
+            '--with-swoole-odbc=/opt/odbc',
+        ], $flagSet->toPieArgs());
     }
 
     #[Test]

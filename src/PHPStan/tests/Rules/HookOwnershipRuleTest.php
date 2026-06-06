@@ -24,6 +24,9 @@ final class HookOwnershipRuleTest extends RuleTestCase
                 ['Runtime owns Swoole coroutine hook options; use RuntimePolicy, RuntimeHooks, or RuntimeCapability instead of configuring hooks in package code.', 15],
                 ['Runtime owns Swoole global runtime hook flag; use RuntimePolicy, RuntimeHooks, or RuntimeCapability instead of configuring hooks in package code.', 15],
                 ['Runtime owns Swoole global runtime hook flag; use RuntimePolicy, RuntimeHooks, or RuntimeCapability instead of configuring hooks in package code.', 17],
+                ['Runtime owns Swoole global runtime hook flag; use RuntimePolicy, RuntimeHooks, or RuntimeCapability instead of configuring hooks in package code.', 18],
+                ['Runtime owns Swoole global runtime hook flag; use RuntimePolicy, RuntimeHooks, or RuntimeCapability instead of configuring hooks in package code.', 19],
+                ['Runtime owns Swoole global runtime hook flag; use RuntimePolicy, RuntimeHooks, or RuntimeCapability instead of configuring hooks in package code.', 20],
             ],
         );
     }

@@ -33,6 +33,14 @@ final class RuntimeHooks
             return $before->currentFlags;
         }
 
+        if ($before->unavailableRequiredFlags !== 0) {
+            if ($strict) {
+                throw RuntimePolicyViolation::unavailableRequiredFlags($policy, $before->unavailableRequiredFlags);
+            }
+
+            return $before->currentFlags;
+        }
+
         try {
             Runtime::enableCoroutine(flags: $before->currentFlags | $policy->requiredFlags);
         } catch (Throwable $e) {
@@ -44,6 +52,10 @@ final class RuntimeHooks
         }
 
         $after = self::inspect($policy);
+        if ($strict && $after->unavailableRequiredFlags !== 0) {
+            throw RuntimePolicyViolation::unavailableRequiredFlags($policy, $after->unavailableRequiredFlags);
+        }
+
         if ($strict && !$after->isHealthy()) {
             throw RuntimePolicyViolation::missingRequiredFlags($policy, $after->missingFlags);
         }
