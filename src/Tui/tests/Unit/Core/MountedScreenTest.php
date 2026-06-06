@@ -56,16 +56,16 @@ final class MountedScreenTest extends TestCase
         $mounted->render($ctx);
         self::assertFalse($mounted->isDirty);
 
-        $model->useA->set(null, false);
+        $model->useA->set(false);
         self::assertTrue($mounted->isDirty);
 
         $mounted->render($ctx);
         self::assertFalse($mounted->isDirty);
 
-        $model->a->set(null, 'old branch');
+        $model->a->set('old branch');
         self::assertFalse($mounted->isDirty);
 
-        $model->b->set(null, 'new branch');
+        $model->b->set('new branch');
         self::assertTrue($mounted->isDirty);
     }
 
@@ -114,10 +114,10 @@ final class MountedScreenTest extends TestCase
         $mounted->render($ctx);
         self::assertFalse($mounted->isDirty);
 
-        $model->bad->set(null, 'bad changed');
+        $model->bad->set('bad changed');
         self::assertFalse($mounted->isDirty);
 
-        $model->good->set(null, 'good changed');
+        $model->good->set('good changed');
         self::assertTrue($mounted->isDirty);
     }
 
@@ -151,7 +151,7 @@ final class MountedScreenTest extends TestCase
         $mounted->render($ctx);
         self::assertFalse($mounted->isDirty);
 
-        $model->source->set(null, 'second');
+        $model->source->set('second');
         self::assertTrue($mounted->isDirty);
     }
 
@@ -210,7 +210,7 @@ final class MountedScreenTest extends TestCase
         $mounted->render($ctx);
         self::assertSame(1, $model->good->subscriberCount);
 
-        $model->useBad->set(null, true);
+        $model->useBad->set(true);
 
         try {
             $mounted->render($ctx);

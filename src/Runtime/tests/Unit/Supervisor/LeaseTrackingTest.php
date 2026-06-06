@@ -249,8 +249,8 @@ final class LeaseTrackingTest extends TestCase
         $ledger = new InProcessLedger();
         $supervisor = new Supervisor($ledger, $trace);
         $run = $supervisor->start(
-            new \Phalanx\Runtime\Tests\Unit\Supervisor\NoopTask(),
             new \Phalanx\Runtime\Tests\Unit\Supervisor\BareScopeStub(),
+            new \Phalanx\Runtime\Tests\Unit\Supervisor\NoopTask(),
             DispatchMode::Inline,
             'NoopTask',
         );
@@ -276,8 +276,8 @@ final class LeaseTrackingTest extends TestCase
     private function openRun(Supervisor $supervisor): TaskRun
     {
         return $supervisor->start(
-            new NoopTask(),
             new BareScopeStub(),
+            new NoopTask(),
             DispatchMode::Inline,
             'NoopTask',
         );

@@ -207,14 +207,14 @@ final class App
             $lastMainWidth = $mainWidth;
             $lastMainHeight = $mainHeight;
 
-            self::paintRegion($renderable, $mainRegion, $renderCtx, $workspace);
+            self::paintRegion($renderCtx, $renderable, $mainRegion, $workspace);
 
             if ($topOverlay !== null) {
                 $overlayRenderable = $topOverlay->isDirty || $topOverlay->lastResult() === null
                     ? $topOverlay->render($renderCtx)
                     : $topOverlay->lastResult();
 
-                self::paintOverlay($overlayRenderable, $mainRegion, $renderCtx, $topOverlay);
+                self::paintOverlay($renderCtx, $overlayRenderable, $mainRegion, $topOverlay);
             }
 
             $statusRegion = $layout->region('status');
@@ -229,9 +229,9 @@ final class App
                     static fn(): Renderable => $statusBar->statusBar(),
                 );
                 self::paintRegion(
+                    $renderCtx,
                     $statusRenderable,
                     $statusRegion,
-                    $renderCtx,
                     $topOverlay?->component instanceof HasStatusBar ? $topOverlay : $statusMountOwner,
                 );
             } else {
@@ -478,9 +478,9 @@ final class App
     }
 
     private static function paintRegion(
+        RenderContext $renderCtx,
         Renderable $renderable,
         Region $region,
-        RenderContext $renderCtx,
         object $mountOwner,
     ): void {
         $scratch = Buffer::empty($region->area->width, $region->area->height);
@@ -501,9 +501,9 @@ final class App
     }
 
     private static function paintOverlay(
+        RenderContext $renderCtx,
         Renderable $renderable,
         Region $region,
-        RenderContext $renderCtx,
         object $mountOwner,
     ): void {
         $bounds = Rect::sized($region->area->width, $region->area->height);

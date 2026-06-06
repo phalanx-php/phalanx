@@ -382,7 +382,7 @@ final class InputEchoHandler implements Focusable, AcceptsInput
             return false;
         }
 
-        $this->screen->text->set(null, static fn(string $text): string => $text . $char);
+        $this->screen->text->update(static fn(string $text): string => $text . $char);
 
         return true;
     }

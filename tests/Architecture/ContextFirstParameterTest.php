@@ -25,6 +25,34 @@ final class ContextFirstParameterTest extends TestCase
         self::assertSame([], $violations);
     }
 
+    #[Test]
+    public function context_first_scanner_detects_inline_fixture_violations(): void
+    {
+        self::assertSame(
+            ['declares $ctx after $item'],
+            array_values(self::violationsForSource('<?php function bad($item, $ctx): void {}')),
+        );
+
+        self::assertSame(
+            [],
+            array_values(self::violationsForSource('<?php function good($ctx, $item): void {}')),
+        );
+
+        self::assertSame(
+            ['declares $rootScope after $argv'],
+            array_values(self::violationsForSource(
+                '<?php use Phalanx\Scope\ExecutionScope; function badAlias(array $argv, ExecutionScope $rootScope): void {}',
+            )),
+        );
+
+        self::assertSame(
+            [],
+            array_values(self::violationsForSource(
+                '<?php use Phalanx\Scope\ExecutionScope; function goodAlias(ExecutionScope $rootScope, array $argv): void {}',
+            )),
+        );
+    }
+
     /** @return list<string> */
     private static function phpFiles(): array
     {
@@ -63,7 +91,13 @@ final class ContextFirstParameterTest extends TestCase
     /** @return array<int, string> */
     private static function violations(string $path): array
     {
-        $tokens = token_get_all((string) file_get_contents($path));
+        return self::violationsForSource((string) file_get_contents($path));
+    }
+
+    /** @return array<int, string> */
+    private static function violationsForSource(string $source): array
+    {
+        $tokens = token_get_all($source);
         $violations = [];
         $count = count($tokens);
 
@@ -85,21 +119,24 @@ final class ContextFirstParameterTest extends TestCase
                 continue;
             }
 
-            $variables = self::parameterVariables($tokens, $i, $count);
-            if ($variables === []) {
+            $parameters = self::parameters($tokens, $i, $count);
+            if ($parameters === []) {
                 continue;
             }
 
-            $hasContext = in_array('ctx', $variables, true) || in_array('scope', $variables, true);
-            if (!$hasContext || in_array($variables[0], ['ctx', 'scope'], true)) {
+            $contextParameters = array_values(array_filter(
+                $parameters,
+                static fn(array $parameter): bool => self::isContextParameter($parameter),
+            ));
+
+            if ($contextParameters === [] || self::isContextParameter($parameters[0])) {
                 continue;
             }
 
-            $contextVars = array_values(array_intersect($variables, ['ctx', 'scope']));
             $violations[$line] = sprintf(
                 'declares $%s after $%s',
-                implode('/$', $contextVars),
-                $variables[0],
+                implode('/$', array_column($contextParameters, 'name')),
+                $parameters[0]['name'],
             );
         }
 
@@ -107,13 +144,14 @@ final class ContextFirstParameterTest extends TestCase
     }
 
     /**
-     * @param list<array|string> $tokens
-     * @return list<string>
+     * @param list<array{0:int,1:string,2:int}|string> $tokens
+     * @return list<array{name:string,type:string}>
      */
-    private static function parameterVariables(array $tokens, int $offset, int $count): array
+    private static function parameters(array $tokens, int $offset, int $count): array
     {
         $depth = 0;
-        $variables = [];
+        $parameters = [];
+        $typeParts = [];
 
         for ($i = $offset; $i < $count; $i++) {
             $token = $tokens[$i];
@@ -130,12 +168,50 @@ final class ContextFirstParameterTest extends TestCase
                 continue;
             }
 
-            if ($depth === 1 && is_array($token) && $token[0] === T_VARIABLE) {
-                $variables[] = substr($token[1], 1);
+            if ($depth !== 1) {
+                continue;
+            }
+
+            if ($token === ',') {
+                $typeParts = [];
+                continue;
+            }
+
+            if (is_string($token)) {
+                if (in_array($token, ['?', '|', '&', '\\'], true)) {
+                    $typeParts[] = $token;
+                }
+                continue;
+            }
+
+            if ($token[0] === T_VARIABLE) {
+                $parameters[] = [
+                    'name' => substr($token[1], 1),
+                    'type' => implode('', $typeParts),
+                ];
+                $typeParts = [];
+                continue;
+            }
+
+            if (in_array($token[0], [T_STRING, T_NAME_QUALIFIED, T_NAME_FULLY_QUALIFIED], true)) {
+                $typeParts[] = $token[1];
             }
         }
 
-        return $variables;
+        return $parameters;
+    }
+
+    /** @param array{name:string,type:string} $parameter */
+    private static function isContextParameter(array $parameter): bool
+    {
+        $name = $parameter['name'];
+        $lowerName = strtolower($name);
+        $type = ltrim($parameter['type'], '?\\');
+        $shortType = preg_replace('/^.*\\\\/', '', $type) ?? $type;
+
+        return in_array($lowerName, ['ctx', 'scope'], true)
+            || str_ends_with($lowerName, 'ctx')
+            || str_ends_with($shortType, 'Scope');
     }
 
     private static function isExcluded(string $path): bool

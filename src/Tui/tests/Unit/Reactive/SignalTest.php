@@ -37,7 +37,7 @@ final class SignalTest extends TestCase
             $calls++;
         });
 
-        $signal->set(null, 2);
+        $signal->set(2);
 
         self::assertSame(1, $calls);
     }
@@ -52,7 +52,7 @@ final class SignalTest extends TestCase
             $calls++;
         });
 
-        $signal->set(null, 'hello');
+        $signal->set('hello');
 
         self::assertSame(0, $calls);
     }
@@ -66,7 +66,7 @@ final class SignalTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Cannot write to a disposed signal.');
 
-        $signal->set(null, 1);
+        $signal->set(1);
     }
 
     #[Test]
@@ -120,7 +120,7 @@ final class SignalTest extends TestCase
             $b++;
         });
 
-        $signal->set(null, 1);
+        $signal->set(1);
 
         self::assertSame(1, $a);
         self::assertSame(1, $b);
@@ -142,14 +142,14 @@ final class SignalTest extends TestCase
             $calls++;
         });
 
-        $signal->set(null, 1);
+        $signal->set(1);
 
         self::assertSame(2, $calls);
         self::assertSame(1, $signal->subscriberCount);
     }
 
     #[Test]
-    public function setCanReceiveStaticUpdaterClosure(): void
+    public function updateCanReceiveStaticUpdaterClosure(): void
     {
         $signal = new Signal(1);
         $calls = 0;
@@ -158,19 +158,19 @@ final class SignalTest extends TestCase
             $calls++;
         });
 
-        $signal->set(null, static fn(int $current): int => $current + 41);
+        $signal->update(static fn(int $current): int => $current + 41);
 
         self::assertSame(42, $signal->get());
         self::assertSame(1, $calls);
     }
 
     #[Test]
-    public function setPassesScopeToUpdaterWhenProvided(): void
+    public function updateInPassesScopeToUpdaterWhenProvided(): void
     {
         $signal = new Signal('idle');
         $scope = $this->createStub(Scope::class);
 
-        $signal->set($scope, static fn(string $current, ?Scope $given): string => $given === $scope
+        $signal->updateIn($scope, static fn(Scope $given, string $current): string => $given === $scope
             ? $current . ':scoped'
             : 'wrong-scope');
 
@@ -182,7 +182,7 @@ final class SignalTest extends TestCase
     {
         $signal = new Signal(null);
 
-        $signal->set(null, 'strlen');
+        $signal->set('strlen');
 
         self::assertSame('strlen', $signal->get());
     }
@@ -198,7 +198,7 @@ final class SignalTest extends TestCase
             }
         };
 
-        $signal->set(null, $invokable);
+        $signal->set($invokable);
 
         self::assertSame($invokable, $signal->get());
     }
@@ -211,7 +211,7 @@ final class SignalTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Signal updater closures must be static closures.');
 
-        $signal->set(null, fn(int $current): int => $current + 1);
+        $signal->update(fn(int $current): int => $current + 1);
     }
 
     #[Test]

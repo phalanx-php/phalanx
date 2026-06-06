@@ -132,7 +132,7 @@ final class SupervisorLifecycleCase extends AbstractBenchmarkCase
             $this->task = Task::named('bench.supervisor', static fn(ExecutionScope $_scope): null => null);
         }
 
-        $run = $this->supervisor->start($this->task, $this->scope, DispatchMode::Inline);
+        $run = $this->supervisor->start($this->scope, $this->task, DispatchMode::Inline);
         $this->supervisor->markRunning($run);
         $this->supervisor->complete($run, null);
         $this->supervisor->reap($run);
@@ -378,7 +378,7 @@ final class InProcessLedgerLifecycleCase extends AbstractBenchmarkCase
             $this->task = Task::named('bench.ledger.inprocess', static fn(ExecutionScope $_scope): null => null);
         }
 
-        $run = $this->supervisor->start($this->task, $this->scope, DispatchMode::Inline);
+        $run = $this->supervisor->start($this->scope, $this->task, DispatchMode::Inline);
         $this->supervisor->markRunning($run);
         $this->supervisor->complete($run, null);
         $this->supervisor->reap($run);
@@ -415,7 +415,7 @@ final class SwooleTableLedgerLifecycleCase extends AbstractBenchmarkCase
             $this->task = Task::named('bench.ledger.swoole_table', static fn(ExecutionScope $_scope): null => null);
         }
 
-        $run = $this->supervisor->start($this->task, $this->scope, DispatchMode::Inline);
+        $run = $this->supervisor->start($this->scope, $this->task, DispatchMode::Inline);
         $this->supervisor->markRunning($run);
         $this->supervisor->complete($run, null);
         $this->supervisor->reap($run);
@@ -455,7 +455,7 @@ final class SwooleTableLedgerProjectionCase extends AbstractBenchmarkCase
             );
         }
 
-        $run = $this->supervisor->start($this->task, $this->scope, DispatchMode::Inline);
+        $run = $this->supervisor->start($this->scope, $this->task, DispatchMode::Inline);
         $this->supervisor->markRunning($run);
         $snapshot = $this->supervisor->ledger->snapshot($run->id);
         $tree = $this->supervisor->tree($run->id);

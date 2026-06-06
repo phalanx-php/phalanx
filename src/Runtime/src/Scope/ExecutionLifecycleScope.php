@@ -957,8 +957,8 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         $resolvedName = $name ?? self::closureLocation($fn) ?? 'go-spawn';
 
         $run = $this->supervisor->start(
-            task: $fn,
             parent: $childScope,
+            task: $fn,
             mode: DispatchMode::Concurrent,
             name: $resolvedName,
             parentRunId: $parentRunId,
@@ -1773,7 +1773,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
     ): mixed {
         $name = self::resolveTaskName($task);
         $parentRunId = $scope->currentRun?->id;
-        $run = $this->supervisor->start($task, $scope, $mode, $name, $parentRunId, token: $scope->cancellation);
+        $run = $this->supervisor->start($scope, $task, $mode, $name, $parentRunId, token: $scope->cancellation);
 
         $previousScope = CoroutineScopeRegistry::current();
         $previousRun = $scope->currentRun;
@@ -1820,8 +1820,8 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         }
 
         $run = $this->supervisor->start(
-            $task,
             $scope,
+            $task,
             DispatchMode::Worker,
             $name,
             $parentRun?->id,

@@ -50,7 +50,7 @@ final class Rfc6455TestServer
     }
 
     /**
-     * @param Closure(Socket, ExecutionScope): void $handler
+     * @param Closure(ExecutionScope, Socket): void $handler
      */
     public static function start(ExecutionScope $scope, Closure $handler): self
     {
@@ -74,7 +74,7 @@ final class Rfc6455TestServer
                 }
 
                 self::acceptHandshake($conn);
-                $handler($conn, $serverScope);
+                $handler($serverScope, $conn);
             } finally {
                 if ($conn instanceof Socket) {
                     $conn->close();

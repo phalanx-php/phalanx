@@ -32,8 +32,8 @@ final class WsClientHandshakeTest extends PhalanxTestCase
 
             try {
                 $server = Rfc6455TestServer::start($scope, static function (
-                    Socket $conn,
                     ExecutionScope $serverScope,
+                    Socket $conn,
                 ): void {
                     Rfc6455TestServer::sendText($conn, 'phalanx-ws');
                     Rfc6455TestServer::drainUntilClosed($serverScope, $conn, 30.0);

@@ -154,7 +154,7 @@ class Counter implements Component
 
     public function increment(): void
     {
-        $this->count->set(null, static fn(int $current): int => $current + 1);
+        $this->count->update(static fn(int $current): int => $current + 1);
     }
 }
 ```

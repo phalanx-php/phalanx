@@ -51,7 +51,7 @@ final class CommandDispatcher
         $rootScope = $this->host->createScope();
 
         try {
-            return $this->dispatchInScope($argv, $rootScope);
+            return $this->dispatchInScope($rootScope, $argv);
         } finally {
             $rootScope->dispose();
         }
@@ -63,11 +63,11 @@ final class CommandDispatcher
      */
     public function dispatchScoped(ExecutionScope $rootScope, array $argv, ?SignalState $signals = null): int
     {
-        return $this->dispatchInScope(array_values($argv), $rootScope, $signals);
+        return $this->dispatchInScope($rootScope, array_values($argv), $signals);
     }
 
     /** @param list<string> $argv */
-    private function dispatchInScope(array $argv, ExecutionScope $rootScope, ?SignalState $signals = null): int
+    private function dispatchInScope(ExecutionScope $rootScope, array $argv, ?SignalState $signals = null): int
     {
         $isOption = isset($argv[0]) && str_starts_with($argv[0], '-');
         $defaultCommand = $argv === [] || $isOption;

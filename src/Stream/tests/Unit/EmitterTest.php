@@ -153,16 +153,20 @@ final class EmitterTest extends PhalanxTestCase
             $emitter = Emitter::produce(static function (ExecutionScope $_scope, Channel $ch): void {
                 $ch->emit('x');
             })
-                ->onStart(static function () use (&$log): void {
+                ->onStart(static function (ExecutionScope $hookScope) use (&$log, $scope): void {
+                    self::assertSame($scope, $hookScope);
                     $log[] = 'start';
                 })
-                ->onEach(static function (ExecutionScope $_scope, mixed $v) use (&$log): void {
+                ->onEach(static function (ExecutionScope $hookScope, mixed $v) use (&$log, $scope): void {
+                    self::assertSame($scope, $hookScope);
                     $log[] = "each:{$v}";
                 })
-                ->onComplete(static function () use (&$log): void {
+                ->onComplete(static function (ExecutionScope $hookScope) use (&$log, $scope): void {
+                    self::assertSame($scope, $hookScope);
                     $log[] = 'complete';
                 })
-                ->onDispose(static function () use (&$log): void {
+                ->onDispose(static function (ExecutionScope $hookScope) use (&$log, $scope): void {
+                    self::assertSame($scope, $hookScope);
                     $log[] = 'dispose';
                 });
 
@@ -181,7 +185,8 @@ final class EmitterTest extends PhalanxTestCase
             $emitter = Emitter::produce(static function (): void {
                 throw new RuntimeException('boom');
             })
-                ->onError(static function (ExecutionScope $_scope, Throwable $e) use (&$errorLog): void {
+                ->onError(static function (ExecutionScope $hookScope, Throwable $e) use (&$errorLog, $scope): void {
+                    self::assertSame($scope, $hookScope);
                     $errorLog[] = $e->getMessage();
                 });
 

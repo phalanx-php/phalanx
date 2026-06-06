@@ -14,8 +14,8 @@ final readonly class RouteLoader
     /**
      * Load routes from a single file.
      *
-     * @param string $path Path to PHP file
      * @param Scope|null $scope For dynamic loading via closure
+     * @param string $path Path to PHP file
      */
     public static function load(?Scope $scope, string $path): RouteGroup
     {
@@ -39,8 +39,8 @@ final readonly class RouteLoader
      *
      * Non-recursive. Only loads .php files.
      *
-     * @param string $dir Directory path
      * @param Scope|null $scope For dynamic loading
+     * @param string $dir Directory path
      */
     public static function loadDirectory(?Scope $scope, string $dir): RouteGroup
     {

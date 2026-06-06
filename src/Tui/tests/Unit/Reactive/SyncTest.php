@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Tui\Tests\Unit\Reactive;
 
+use Phalanx\Scope\TaskScope;
 use Phalanx\Tui\Reactive\Sync;
+use Phalanx\Tui\Tests\Support\RecordingTaskScope;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -24,6 +26,22 @@ final class SyncTest extends TestCase
         );
 
         self::assertTrue($ran);
+    }
+
+    #[Test]
+    public function setupReceivesMountedTaskScope(): void
+    {
+        $scope = new RecordingTaskScope();
+        $seen = null;
+
+        new Sync(
+            scope: $scope,
+            setup: static function (?TaskScope $given) use (&$seen): void {
+                $seen = $given;
+            },
+        );
+
+        self::assertSame($scope, $seen);
     }
 
     #[Test]

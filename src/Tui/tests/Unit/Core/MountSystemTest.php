@@ -346,7 +346,7 @@ final class MountSystemTest extends TestCase
         $first = $system->mounted()[0];
         $first->render($ctx);
 
-        $model->parentSignal->set(null, 'parent changed');
+        $model->parentSignal->set('parent changed');
         $parent->render($ctx);
 
         self::assertSame($first, $system->mounted()[0]);
@@ -370,7 +370,7 @@ final class MountSystemTest extends TestCase
         self::assertFalse($parent->isDirty);
         self::assertFalse($child->isDirty);
 
-        $model->childSignal->set(null, 'child changed');
+        $model->childSignal->set('child changed');
 
         self::assertFalse($parent->isDirty);
         self::assertTrue($child->isDirty);
@@ -392,7 +392,7 @@ final class MountSystemTest extends TestCase
         self::assertFalse($parent->isDirty);
         self::assertFalse($child->isDirty);
 
-        $model->parentSignal->set(null, 'parent changed');
+        $model->parentSignal->set('parent changed');
 
         self::assertTrue($parent->isDirty);
         self::assertFalse($child->isDirty);
@@ -410,7 +410,7 @@ final class MountSystemTest extends TestCase
         $parent->render($ctx);
         $first = $system->mounted()[0];
 
-        $model->label->set(null, 'second');
+        $model->label->set('second');
         $parent->render($ctx);
         $second = $system->mounted()[0];
 
@@ -438,7 +438,7 @@ final class MountSystemTest extends TestCase
         $parent->render($ctx);
         $first = $system->mounted()[0];
 
-        $model->label->set(null, 'second');
+        $model->label->set('second');
         $model->fail = true;
 
         try {
@@ -468,7 +468,7 @@ final class MountSystemTest extends TestCase
         $parent->render($ctx);
         $child = $system->mounted()[0];
 
-        $model->show->set(null, false);
+        $model->show->set(false);
         $parent->render($ctx);
 
         self::assertTrue($child->isDisposed);
@@ -510,7 +510,7 @@ final class MountSystemTest extends TestCase
         $nestedParent->render($ctx);
         $descendant = $system->mounted()[1];
 
-        $model->label->set(null, 'second');
+        $model->label->set('second');
         $parent->render($ctx);
 
         self::assertTrue($nestedParent->isDisposed);
@@ -531,7 +531,7 @@ final class MountSystemTest extends TestCase
         $parent->render($ctx);
         $first = $system->mounted()[0];
 
-        $model->label->set(null, 'second');
+        $model->label->set('second');
         $model->throw = true;
 
         try {
@@ -704,7 +704,7 @@ final class MountSystemTest extends TestCase
         $first = $system->mounted()[0];
         $first->render($ctx);
 
-        $model->parentSignal->set(null, 'parent changed');
+        $model->parentSignal->set('parent changed');
         $parent->render($ctx);
 
         self::assertSame($first, $system->mounted()[0]);
@@ -724,7 +724,7 @@ final class MountSystemTest extends TestCase
         $parent->render($ctx);
         $first = $system->mounted()[0];
 
-        $model->label->set(null, 'second');
+        $model->label->set('second');
         $parent->render($ctx);
         $second = $system->mounted()[0];
 
@@ -750,7 +750,7 @@ final class MountSystemTest extends TestCase
         self::assertFalse($parent->isDirty);
         self::assertFalse($child->isDirty);
 
-        $model->childSignal->set(null, 'child changed');
+        $model->childSignal->set('child changed');
 
         self::assertFalse($parent->isDirty);
         self::assertTrue($child->isDirty);
@@ -772,7 +772,7 @@ final class MountSystemTest extends TestCase
         self::assertFalse($parent->isDirty);
         self::assertFalse($child->isDirty);
 
-        $model->parentSignal->set(null, 'parent changed');
+        $model->parentSignal->set('parent changed');
 
         self::assertTrue($parent->isDirty);
         self::assertFalse($child->isDirty);
@@ -795,7 +795,7 @@ final class MountSystemTest extends TestCase
         $descendant->render($ctx);
         self::assertFalse($system->hasDirtyOwnedSlots($parent));
 
-        $model->childSignal->set(null, 'child changed');
+        $model->childSignal->set('child changed');
 
         self::assertTrue($system->hasDirtyOwnedSlots($parent));
         self::assertTrue($system->hasDirtyOwnedSlots($nestedParent));

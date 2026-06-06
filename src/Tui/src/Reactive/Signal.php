@@ -33,26 +33,23 @@ final class Signal
         return $this->storedValue;
     }
 
-    public function set(?Scope $scope, mixed $value): void
+    public function set(mixed $value): void
     {
-        if ($this->isDisposed) {
-            throw new RuntimeException('Cannot write to a disposed signal.');
-        }
+        $this->write($value);
+    }
 
-        if ($value instanceof Closure) {
-            if (!new ReflectionFunction($value)->isStatic()) {
-                throw new RuntimeException('Signal updater closures must be static closures.');
-            }
+    /** @param Closure(mixed): mixed $updater */
+    public function update(Closure $updater): void
+    {
+        $this->guardStaticUpdater($updater);
+        $this->write($updater($this->storedValue));
+    }
 
-            $value = $value($this->storedValue, $scope);
-        }
-
-        if ($value === $this->storedValue) {
-            return;
-        }
-
-        $this->storedValue = $value;
-        $this->notify();
+    /** @param Closure(Scope, mixed): mixed $updater */
+    public function updateIn(Scope $scope, Closure $updater): void
+    {
+        $this->guardStaticUpdater($updater);
+        $this->write($updater($scope, $this->storedValue));
     }
 
     public function subscribe(Closure $subscriber): SignalSubscription
@@ -80,6 +77,27 @@ final class Signal
     {
         $this->subscribers = [];
         $this->isDisposed = true;
+    }
+
+    private function write(mixed $value): void
+    {
+        if ($this->isDisposed) {
+            throw new RuntimeException('Cannot write to a disposed signal.');
+        }
+
+        if ($value === $this->storedValue) {
+            return;
+        }
+
+        $this->storedValue = $value;
+        $this->notify();
+    }
+
+    private function guardStaticUpdater(Closure $updater): void
+    {
+        if (!new ReflectionFunction($updater)->isStatic()) {
+            throw new RuntimeException('Signal updater closures must be static closures.');
+        }
     }
 
     private function notify(): void

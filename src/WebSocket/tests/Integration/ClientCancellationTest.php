@@ -186,7 +186,7 @@ final class ClientCancellationTest extends PhalanxTestCase
     {
         return Rfc6455TestServer::start(
             $scope,
-            static function (Socket $conn, ExecutionScope $serverScope) use ($holdSeconds): void {
+            static function (ExecutionScope $serverScope, Socket $conn) use ($holdSeconds): void {
                 Rfc6455TestServer::sendText($conn, 'hold-open');
 
                 if ($holdSeconds > 0.0) {

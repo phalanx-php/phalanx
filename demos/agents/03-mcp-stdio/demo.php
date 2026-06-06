@@ -68,7 +68,7 @@ return static function (array $context): Closure {
 
     $bootClosure = DemoApp::boot(
         'Agent MCP stdio client',
-        static function (DemoApp $app, DemoReport $report, AppContext $_ctx) use ($serverScript): void {
+        static function (DemoApp $app, DemoReport $report) use ($serverScript): void {
             $report->note('Topic: Themistocles, architect of the Athenian fleet, routing commands through McpRegistry');
             $report->note(sprintf('MCP server: %s', basename($serverScript)));
 

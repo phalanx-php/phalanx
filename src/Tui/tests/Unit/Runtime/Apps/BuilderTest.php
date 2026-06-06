@@ -10,9 +10,14 @@ use Phalanx\Scope\ExecutionScope;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 use Phalanx\Testing\PhalanxTestCase;
+use Phalanx\Tui\Apps\App;
+use Phalanx\Tui\Apps\Bundle as TuiBundle;
+use Phalanx\Tui\Drawing\ScreenMode;
+use Phalanx\Tui\Drawing\StageConfig;
+use Phalanx\Tui\Runtime\Apps\Application as RuntimeApplication;
 use Phalanx\Tui\Runtime\Apps\Builder;
-use Phalanx\Tui\Runtime\Apps\Runtime;
 use Phalanx\Tui\Runtime\Apps\Bundle as RuntimeBundle;
+use Phalanx\Tui\Runtime\Apps\Runtime;
 use Phalanx\Tui\Runtime\Boundaries\BoundaryRunner;
 use Phalanx\Tui\Runtime\Boundaries\InputPromptSubmitter;
 use Phalanx\Tui\Runtime\Lifecycle\Loop;
@@ -29,10 +34,6 @@ use Phalanx\Tui\Runtime\State\WorkPlanSlice;
 use Phalanx\Tui\Runtime\WorkContext;
 use Phalanx\Tui\Tests\Support\RecordingTaskScope;
 use Phalanx\Tui\Tui;
-use Phalanx\Tui\Apps\App;
-use Phalanx\Tui\Apps\Bundle as TuiBundle;
-use Phalanx\Tui\Drawing\ScreenMode;
-use Phalanx\Tui\Drawing\StageConfig;
 use PHPUnit\Framework\Attributes\Test;
 
 final class BuilderTest extends PhalanxTestCase
@@ -82,7 +83,9 @@ TOML),
 
         self::assertSame(Store::class, $builder->registeredStore());
         self::assertSame([WorkspaceScreen::class], $builder->registeredScreens());
-        self::assertInstanceOf(App::class, $builder->build());
+        $app = $builder->build();
+        self::assertInstanceOf(RuntimeApplication::class, $app);
+        self::assertInstanceOf(App::class, $app->tui());
     }
 
     #[Test]
@@ -92,7 +95,7 @@ TOML),
             ->primary(new BuilderDoneAgentParticipant(new \ArrayObject()))
             ->providers(new BuilderExtraBundle());
 
-        $providers = $builder->resolvedProviders($builder->build());
+        $providers = $builder->build()->runtime()->providers();
 
         self::assertInstanceOf(TuiBundle::class, $providers[0]);
         self::assertInstanceOf(RuntimeBundle::class, $providers[1]);
@@ -107,9 +110,8 @@ TOML),
             ->primary(new BuilderDoneAgentParticipant($calls))
             ->stageConfig(self::stageConfig());
         $app = $builder->build();
-        $testApp = $this->testApp([], ...$builder->resolvedProviders($app));
 
-        $testApp->application->scoped(static function (ExecutionScope $scope) use ($calls): void {
+        $app->runtime()->run(static function (ExecutionScope $scope) use ($calls): void {
             $submit = $scope->service(InputPromptSubmitter::class);
             $runtime = $scope->service(Runtime::class);
             $store = $scope->service(Store::class);

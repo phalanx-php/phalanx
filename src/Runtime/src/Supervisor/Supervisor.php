@@ -124,8 +124,8 @@ final class Supervisor
      *                                      back to class FQCN, then a generated id.
      */
     public function start(
-        Scopeable|Executable|\Closure $task,
         Scope $parent,
+        Scopeable|Executable|\Closure $task,
         DispatchMode $mode,
         ?string $name = null,
         ?string $parentRunId = null,

@@ -110,9 +110,9 @@ final class InputComposer implements Component, Focusable, AcceptsInput
 
         ($this->onSubmit)($text);
 
-        $this->text->set(null, '');
-        $this->cursor->set(null, 0);
-        $this->selectionAnchor->set(null, null);
+        $this->text->set('');
+        $this->cursor->set(0);
+        $this->selectionAnchor->set(null);
 
         return true;
     }

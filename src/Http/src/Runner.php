@@ -474,8 +474,8 @@ final class Runner
             try {
                 $supervisor = $this->app->supervisor();
                 $requestRun = $supervisor->start(
-                    task: static fn() => null,
                     parent: $rootScope,
+                    task: static fn() => null,
                     mode: DispatchMode::Inline,
                     name: 'HttpRequest: ' . $resource->path
                 );

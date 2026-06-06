@@ -6,10 +6,7 @@ namespace Phalanx\Tui\Runtime\Apps;
 
 use Closure;
 use InvalidArgumentException;
-use Phalanx\Application;
 use Phalanx\Boot\AppContext;
-use Phalanx\Mark\Mark;
-use Phalanx\Scope\ExecutionScope;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Tui\Apps\App;
 use Phalanx\Tui\Apps\Builder as TuiBuilder;
@@ -182,34 +179,23 @@ final class Builder
         return $this;
     }
 
-    public function build(): App
+    public function build(): Application
     {
-        $this->requirePrimary();
+        $app = $this->buildTui();
+        $host = \Phalanx\Application::starting($this->context->values)
+            ->providers(...$this->resolvedProviders($app))
+            ->compile();
 
-        return $this->tui->build();
+        return new Application(
+            host: $host,
+            tui: $app,
+            tickIntervalSeconds: $this->tickIntervalSeconds,
+        );
     }
 
     public function run(): int
     {
-        $app = $this->build();
-        $interval = $this->tickIntervalSeconds;
-
-        Application::starting($this->context->values)
-            ->providers(...$this->resolvedProviders($app))
-            ->run(static function (ExecutionScope $scope) use ($app, $interval): void {
-                $runtime = $scope->service(Runtime::class);
-                if (!$runtime instanceof Runtime) {
-                    throw new \RuntimeException('TUI runtime service did not resolve.');
-                }
-
-                $scope->periodic(Mark::s($interval), static function () use ($runtime, $scope): void {
-                    $runtime->tick($scope);
-                });
-
-                $app->start($scope);
-            });
-
-        return 0;
+        return $this->build()->run();
     }
 
     /** @return class-string<\Phalanx\Tui\Reactive\Store>|null */
@@ -230,8 +216,15 @@ final class Builder
         return $this->providers;
     }
 
+    private function buildTui(): App
+    {
+        $this->requirePrimary();
+
+        return $this->tui->build();
+    }
+
     /** @return list<ServiceBundle> */
-    public function resolvedProviders(App $app): array
+    private function resolvedProviders(App $app): array
     {
         $primary = $this->requirePrimary();
 

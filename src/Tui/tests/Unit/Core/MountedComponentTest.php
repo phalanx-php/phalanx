@@ -157,7 +157,7 @@ final class MountedComponentTest extends TestCase
         self::assertSame(1, $component->count->subscriberCount);
         self::assertSame(1, $mounted->subscriptionCount);
 
-        $component->count->set(null, 42);
+        $component->count->set(42);
 
         self::assertTrue($mounted->isDirty);
     }
@@ -192,17 +192,17 @@ final class MountedComponentTest extends TestCase
         self::assertFalse($mounted->isDirty);
         self::assertSame(2, $mounted->subscriptionCount);
 
-        $model->useA->set(null, false);
+        $model->useA->set(false);
         self::assertTrue($mounted->isDirty);
 
         $mounted->render($ctx);
         self::assertFalse($mounted->isDirty);
         self::assertSame(2, $mounted->subscriptionCount);
 
-        $model->a->set(null, 'old branch');
+        $model->a->set('old branch');
         self::assertFalse($mounted->isDirty, 'Old render dependency must be unsubscribed');
 
-        $model->b->set(null, 'new branch');
+        $model->b->set('new branch');
         self::assertTrue($mounted->isDirty, 'Current render dependency must stay subscribed');
     }
 
@@ -329,7 +329,7 @@ final class MountedComponentTest extends TestCase
         $mounted->render($this->createRenderCtx());
         self::assertFalse($mounted->isDirty);
 
-        $model->source->set(null, 'second');
+        $model->source->set('second');
 
         self::assertTrue($mounted->isDirty);
     }
@@ -356,7 +356,7 @@ final class MountedComponentTest extends TestCase
         self::assertSame(1, $mounted->subscriptionCount);
 
         $mounted->dispose();
-        $model->signal->set(null, 'after dispose');
+        $model->signal->set('after dispose');
 
         self::assertFalse($mounted->isDirty);
         self::assertSame(0, $mounted->subscriptionCount);
@@ -421,10 +421,10 @@ final class MountedComponentTest extends TestCase
         $mounted->render($ctx);
         self::assertFalse($mounted->isDirty);
 
-        $model->bad->set(null, 'bad changed');
+        $model->bad->set('bad changed');
         self::assertFalse($mounted->isDirty, 'Failed render deps must not replace previous deps');
 
-        $model->good->set(null, 'good changed');
+        $model->good->set('good changed');
         self::assertTrue($mounted->isDirty, 'Previous successful render deps must remain active');
     }
 
@@ -457,7 +457,7 @@ final class MountedComponentTest extends TestCase
         $mounted->render($ctx);
         self::assertSame(1, $model->good->subscriberCount);
 
-        $model->useBad->set(null, true);
+        $model->useBad->set(true);
 
         try {
             $mounted->render($ctx);

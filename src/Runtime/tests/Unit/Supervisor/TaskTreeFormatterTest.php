@@ -73,15 +73,15 @@ final class TaskTreeFormatterTest extends TestCase
         $supervisor = $this->buildSupervisor();
         $root = $this->openRun($supervisor, 'Root');
         $childA = $supervisor->start(
-            new FormatterNoopTask(),
             new FormatterBareScopeStub(),
+            new FormatterNoopTask(),
             DispatchMode::Concurrent,
             'ChildA',
             $root->id,
         );
         $childB = $supervisor->start(
-            new FormatterNoopTask(),
             new FormatterBareScopeStub(),
+            new FormatterNoopTask(),
             DispatchMode::Concurrent,
             'ChildB',
             $root->id,
@@ -125,8 +125,8 @@ final class TaskTreeFormatterTest extends TestCase
     private function openRun(Supervisor $supervisor, string $name): TaskRun
     {
         return $supervisor->start(
-            new FormatterNoopTask(),
             new FormatterBareScopeStub(),
+            new FormatterNoopTask(),
             DispatchMode::Inline,
             $name,
         );
