@@ -39,7 +39,13 @@ final class HtmlErrorResponseRendererTest extends PhalanxTestCase
     #[Test]
     public function renderReturnsDebugHtmlWhenDebugIsOn(): void
     {
-        $renderer = new HtmlErrorResponseRenderer(new ServerConfig(ignitionEnabled: true));
+        $renderer = new HtmlErrorResponseRenderer(new ServerConfig(
+            ignitionEnabled: true,
+            lucideScriptUrl: '/assets/lucide.js',
+            fontStylesheetUrl: '/assets/fonts.css',
+            prismThemeStylesheetUrl: '/assets/prism.css',
+            prismScriptUrl: '/assets/prism.js',
+        ));
         [$scope, $cleanup] = $this->createExecutionContextWithRequestResource();
 
         try {
@@ -54,6 +60,10 @@ final class HtmlErrorResponseRendererTest extends PhalanxTestCase
         $html = (string) $response->getBody();
         self::assertStringContainsString('PHALANX COORDINATION ENGINE', $html);
         self::assertStringContainsString('test error', $html);
+        self::assertStringContainsString('/assets/lucide.js', $html);
+        self::assertStringContainsString('/assets/fonts.css', $html);
+        self::assertStringContainsString('/assets/prism.css', $html);
+        self::assertStringContainsString('/assets/prism.js', $html);
     }
 
     /**

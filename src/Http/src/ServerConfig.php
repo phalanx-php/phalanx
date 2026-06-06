@@ -8,6 +8,25 @@ use Phalanx\Boot\AppContext;
 
 final readonly class ServerConfig
 {
+    private const string DEFAULT_DOCS_URL = 'https://github.com/phalanx-php/phalanx';
+    private const string DEFAULT_GITHUB_URL = 'https://github.com/phalanx-php/phalanx';
+    private const string DEFAULT_SWOOLE_DOCS_URL = 'https://wiki.swoole.com';
+    private const string DEFAULT_PHP_DOCS_URL = 'https://php.net/docs';
+    private const string DEFAULT_PHP_LOGO_URL = 'https://www.php.net/images/logos/php-logo-white.svg';
+    private const string DEFAULT_SWOOLE_LOGO_URL = 'https://www.swoole.com/static/img/logo-white.png';
+    private const string DEFAULT_PHALANX_MARK_URL = 'https://raw.githubusercontent.com/phalanx-php/phalanx/refs/heads/main/mark.png';
+    private const string DEFAULT_LUCIDE_SCRIPT_URL = 'https://unpkg.com/lucide@latest';
+    private const string DEFAULT_FONT_STYLESHEET_URL = 'https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;600;800&display=swap';
+    private const string DEFAULT_FONT_PRECONNECT_URL = 'https://fonts.googleapis.com';
+    private const string DEFAULT_FONT_STATIC_PRECONNECT_URL = 'https://fonts.gstatic.com';
+    private const string DEFAULT_PRISM_THEME_STYLESHEET_URL = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css';
+    private const string DEFAULT_PRISM_LINE_NUMBERS_STYLESHEET_URL = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css';
+    private const string DEFAULT_PRISM_LINE_HIGHLIGHT_STYLESHEET_URL = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-highlight/prism-line-highlight.min.css';
+    private const string DEFAULT_PRISM_SCRIPT_URL = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js';
+    private const string DEFAULT_PRISM_PHP_SCRIPT_URL = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-php.min.js';
+    private const string DEFAULT_PRISM_LINE_NUMBERS_SCRIPT_URL = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js';
+    private const string DEFAULT_PRISM_LINE_HIGHLIGHT_SCRIPT_URL = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-highlight/prism-line-highlight.min.js';
+
     public function __construct(
         public string $host = '0.0.0.0',
         public int $port = 8080,
@@ -22,9 +41,24 @@ final readonly class ServerConfig
         public string $logoPath = '/logo.svg',
         public string $faviconPath = '/favicon.ico',
         public string $tagline = 'Supervised execution framework for modern PHP',
-        public string $docsUrl = 'https://github.com/phalanx-php/phalanx',
-        public string $githubUrl = 'https://github.com/phalanx-php/phalanx',
-        public string $swooleDocsUrl = 'https://wiki.swoole.com',
+        public string $docsUrl = self::DEFAULT_DOCS_URL,
+        public string $githubUrl = self::DEFAULT_GITHUB_URL,
+        public string $swooleDocsUrl = self::DEFAULT_SWOOLE_DOCS_URL,
+        public string $phpDocsUrl = self::DEFAULT_PHP_DOCS_URL,
+        public string $phpLogoUrl = self::DEFAULT_PHP_LOGO_URL,
+        public string $swooleLogoUrl = self::DEFAULT_SWOOLE_LOGO_URL,
+        public string $phalanxMarkUrl = self::DEFAULT_PHALANX_MARK_URL,
+        public string $lucideScriptUrl = self::DEFAULT_LUCIDE_SCRIPT_URL,
+        public string $fontStylesheetUrl = self::DEFAULT_FONT_STYLESHEET_URL,
+        public string $fontPreconnectUrl = self::DEFAULT_FONT_PRECONNECT_URL,
+        public string $fontStaticPreconnectUrl = self::DEFAULT_FONT_STATIC_PRECONNECT_URL,
+        public string $prismThemeStylesheetUrl = self::DEFAULT_PRISM_THEME_STYLESHEET_URL,
+        public string $prismLineNumbersStylesheetUrl = self::DEFAULT_PRISM_LINE_NUMBERS_STYLESHEET_URL,
+        public string $prismLineHighlightStylesheetUrl = self::DEFAULT_PRISM_LINE_HIGHLIGHT_STYLESHEET_URL,
+        public string $prismScriptUrl = self::DEFAULT_PRISM_SCRIPT_URL,
+        public string $prismPhpScriptUrl = self::DEFAULT_PRISM_PHP_SCRIPT_URL,
+        public string $prismLineNumbersScriptUrl = self::DEFAULT_PRISM_LINE_NUMBERS_SCRIPT_URL,
+        public string $prismLineHighlightScriptUrl = self::DEFAULT_PRISM_LINE_HIGHLIGHT_SCRIPT_URL,
         public ?string $banner = null,
     ) {
     }
@@ -62,9 +96,24 @@ final readonly class ServerConfig
             logoPath: self::stringValue($values, ['logo_path', 'PHALANX_LOGO_PATH'], '/logo.svg'),
             faviconPath: self::stringValue($values, ['favicon_path', 'PHALANX_FAVICON_PATH'], '/favicon.ico'),
             tagline: self::stringValue($values, ['tagline', 'PHALANX_TAGLINE'], 'Expression-based async coordination for PHP 8.4+'),
-            docsUrl: self::stringValue($values, ['docs_url', 'PHALANX_DOCS_URL'], 'https://github.com/phalanx-php/phalanx'),
-            githubUrl: self::stringValue($values, ['github_url', 'PHALANX_GITHUB_URL'], 'https://github.com/phalanx-php/phalanx'),
-            swooleDocsUrl: self::stringValue($values, ['swoole_docs_url', 'PHALANX_SWOOLE_DOCS_URL'], 'https://wiki.swoole.com'),
+            docsUrl: self::stringValue($values, ['docs_url', 'PHALANX_DOCS_URL'], self::DEFAULT_DOCS_URL),
+            githubUrl: self::stringValue($values, ['github_url', 'PHALANX_GITHUB_URL'], self::DEFAULT_GITHUB_URL),
+            swooleDocsUrl: self::stringValue($values, ['swoole_docs_url', 'PHALANX_SWOOLE_DOCS_URL'], self::DEFAULT_SWOOLE_DOCS_URL),
+            phpDocsUrl: self::stringValue($values, ['php_docs_url', 'PHALANX_PHP_DOCS_URL'], self::DEFAULT_PHP_DOCS_URL),
+            phpLogoUrl: self::stringValue($values, ['php_logo_url', 'PHALANX_PHP_LOGO_URL'], self::DEFAULT_PHP_LOGO_URL),
+            swooleLogoUrl: self::stringValue($values, ['swoole_logo_url', 'PHALANX_SWOOLE_LOGO_URL'], self::DEFAULT_SWOOLE_LOGO_URL),
+            phalanxMarkUrl: self::stringValue($values, ['phalanx_mark_url', 'PHALANX_MARK_URL'], self::DEFAULT_PHALANX_MARK_URL),
+            lucideScriptUrl: self::stringValue($values, ['lucide_script_url', 'PHALANX_LUCIDE_SCRIPT_URL'], self::DEFAULT_LUCIDE_SCRIPT_URL),
+            fontStylesheetUrl: self::stringValue($values, ['font_stylesheet_url', 'PHALANX_FONT_STYLESHEET_URL'], self::DEFAULT_FONT_STYLESHEET_URL),
+            fontPreconnectUrl: self::stringValue($values, ['font_preconnect_url', 'PHALANX_FONT_PRECONNECT_URL'], self::DEFAULT_FONT_PRECONNECT_URL),
+            fontStaticPreconnectUrl: self::stringValue($values, ['font_static_preconnect_url', 'PHALANX_FONT_STATIC_PRECONNECT_URL'], self::DEFAULT_FONT_STATIC_PRECONNECT_URL),
+            prismThemeStylesheetUrl: self::stringValue($values, ['prism_theme_stylesheet_url', 'PHALANX_PRISM_THEME_STYLESHEET_URL'], self::DEFAULT_PRISM_THEME_STYLESHEET_URL),
+            prismLineNumbersStylesheetUrl: self::stringValue($values, ['prism_line_numbers_stylesheet_url', 'PHALANX_PRISM_LINE_NUMBERS_STYLESHEET_URL'], self::DEFAULT_PRISM_LINE_NUMBERS_STYLESHEET_URL),
+            prismLineHighlightStylesheetUrl: self::stringValue($values, ['prism_line_highlight_stylesheet_url', 'PHALANX_PRISM_LINE_HIGHLIGHT_STYLESHEET_URL'], self::DEFAULT_PRISM_LINE_HIGHLIGHT_STYLESHEET_URL),
+            prismScriptUrl: self::stringValue($values, ['prism_script_url', 'PHALANX_PRISM_SCRIPT_URL'], self::DEFAULT_PRISM_SCRIPT_URL),
+            prismPhpScriptUrl: self::stringValue($values, ['prism_php_script_url', 'PHALANX_PRISM_PHP_SCRIPT_URL'], self::DEFAULT_PRISM_PHP_SCRIPT_URL),
+            prismLineNumbersScriptUrl: self::stringValue($values, ['prism_line_numbers_script_url', 'PHALANX_PRISM_LINE_NUMBERS_SCRIPT_URL'], self::DEFAULT_PRISM_LINE_NUMBERS_SCRIPT_URL),
+            prismLineHighlightScriptUrl: self::stringValue($values, ['prism_line_highlight_script_url', 'PHALANX_PRISM_LINE_HIGHLIGHT_SCRIPT_URL'], self::DEFAULT_PRISM_LINE_HIGHLIGHT_SCRIPT_URL),
         );
     }
 

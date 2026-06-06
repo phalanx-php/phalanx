@@ -57,6 +57,50 @@ final class HttpServerConfigTest extends TestCase
     }
 
     #[Test]
+    public function errorPageAssetsFlowFromContext(): void
+    {
+        $config = \Phalanx\Http\ServerConfig::fromContext(new AppContext([
+            'PHALANX_DOCS_URL' => '/docs',
+            'PHALANX_GITHUB_URL' => '/source',
+            'PHALANX_SWOOLE_DOCS_URL' => '/swoole',
+            'PHALANX_PHP_DOCS_URL' => '/php',
+            'PHALANX_PHP_LOGO_URL' => '/assets/php.svg',
+            'PHALANX_SWOOLE_LOGO_URL' => '/assets/swoole.png',
+            'PHALANX_MARK_URL' => '/assets/mark.png',
+            'PHALANX_LUCIDE_SCRIPT_URL' => '/assets/lucide.js',
+            'PHALANX_FONT_STYLESHEET_URL' => '/assets/fonts.css',
+            'PHALANX_FONT_PRECONNECT_URL' => '/assets/fonts',
+            'PHALANX_FONT_STATIC_PRECONNECT_URL' => '/assets/fonts-static',
+            'PHALANX_PRISM_THEME_STYLESHEET_URL' => '/assets/prism.css',
+            'PHALANX_PRISM_LINE_NUMBERS_STYLESHEET_URL' => '/assets/prism-line-numbers.css',
+            'PHALANX_PRISM_LINE_HIGHLIGHT_STYLESHEET_URL' => '/assets/prism-line-highlight.css',
+            'PHALANX_PRISM_SCRIPT_URL' => '/assets/prism.js',
+            'PHALANX_PRISM_PHP_SCRIPT_URL' => '/assets/prism-php.js',
+            'PHALANX_PRISM_LINE_NUMBERS_SCRIPT_URL' => '/assets/prism-line-numbers.js',
+            'PHALANX_PRISM_LINE_HIGHLIGHT_SCRIPT_URL' => '/assets/prism-line-highlight.js',
+        ]));
+
+        self::assertSame('/docs', $config->docsUrl);
+        self::assertSame('/source', $config->githubUrl);
+        self::assertSame('/swoole', $config->swooleDocsUrl);
+        self::assertSame('/php', $config->phpDocsUrl);
+        self::assertSame('/assets/php.svg', $config->phpLogoUrl);
+        self::assertSame('/assets/swoole.png', $config->swooleLogoUrl);
+        self::assertSame('/assets/mark.png', $config->phalanxMarkUrl);
+        self::assertSame('/assets/lucide.js', $config->lucideScriptUrl);
+        self::assertSame('/assets/fonts.css', $config->fontStylesheetUrl);
+        self::assertSame('/assets/fonts', $config->fontPreconnectUrl);
+        self::assertSame('/assets/fonts-static', $config->fontStaticPreconnectUrl);
+        self::assertSame('/assets/prism.css', $config->prismThemeStylesheetUrl);
+        self::assertSame('/assets/prism-line-numbers.css', $config->prismLineNumbersStylesheetUrl);
+        self::assertSame('/assets/prism-line-highlight.css', $config->prismLineHighlightStylesheetUrl);
+        self::assertSame('/assets/prism.js', $config->prismScriptUrl);
+        self::assertSame('/assets/prism-php.js', $config->prismPhpScriptUrl);
+        self::assertSame('/assets/prism-line-numbers.js', $config->prismLineNumbersScriptUrl);
+        self::assertSame('/assets/prism-line-highlight.js', $config->prismLineHighlightScriptUrl);
+    }
+
+    #[Test]
     public function poweredByHeaderCanBeDisabledFromContext(): void
     {
         $config = \Phalanx\Http\ServerConfig::fromContext(new AppContext([

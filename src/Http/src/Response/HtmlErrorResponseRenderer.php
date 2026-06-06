@@ -117,6 +117,17 @@ final readonly class HtmlErrorResponseRenderer implements ErrorResponseRenderer
     ): string {
         $logo = $this->getLogo();
         $escapedCode = htmlspecialchars($code, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $lucideScriptUrl = $this->config->lucideScriptUrl;
+        $fontStylesheetUrl = $this->config->fontStylesheetUrl;
+        $fontPreconnectUrl = $this->config->fontPreconnectUrl;
+        $fontStaticPreconnectUrl = $this->config->fontStaticPreconnectUrl;
+        $prismThemeStylesheetUrl = $this->config->prismThemeStylesheetUrl;
+        $prismLineNumbersStylesheetUrl = $this->config->prismLineNumbersStylesheetUrl;
+        $prismLineHighlightStylesheetUrl = $this->config->prismLineHighlightStylesheetUrl;
+        $prismScriptUrl = $this->config->prismScriptUrl;
+        $prismPhpScriptUrl = $this->config->prismPhpScriptUrl;
+        $prismLineNumbersScriptUrl = $this->config->prismLineNumbersScriptUrl;
+        $prismLineHighlightScriptUrl = $this->config->prismLineHighlightScriptUrl;
 
         $sourceContent = $code !== ''
             ? "<pre class='line-numbers language-php' data-line='{$line}' id='copy-source-content'><code class='language-php'>{$escapedCode}</code></pre>"
@@ -128,15 +139,15 @@ final readonly class HtmlErrorResponseRenderer implements ErrorResponseRenderer
 <head>
     <meta charset="UTF-8">
     <title>Error: {$title}</title>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="{$lucideScriptUrl}"></script>
+    <link rel="preconnect" href="{$fontPreconnectUrl}">
+    <link rel="preconnect" href="{$fontStaticPreconnectUrl}" crossorigin>
+    <link href="{$fontStylesheetUrl}" rel="stylesheet">
     
     <!-- Prism.js Assets -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet" />
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-highlight/prism-line-highlight.min.css" rel="stylesheet" />
+    <link href="{$prismThemeStylesheetUrl}" rel="stylesheet" />
+    <link href="{$prismLineNumbersStylesheetUrl}" rel="stylesheet" />
+    <link href="{$prismLineHighlightStylesheetUrl}" rel="stylesheet" />
 
     <style>
         :root { 
@@ -359,10 +370,10 @@ final readonly class HtmlErrorResponseRenderer implements ErrorResponseRenderer
     </div>
 
     <!-- Prism JS Bundle -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-php.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-highlight/prism-line-highlight.min.js"></script>
+    <script src="{$prismScriptUrl}"></script>
+    <script src="{$prismPhpScriptUrl}"></script>
+    <script src="{$prismLineNumbersScriptUrl}"></script>
+    <script src="{$prismLineHighlightScriptUrl}"></script>
 
     <script>
         lucide.createIcons();

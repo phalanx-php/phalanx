@@ -36,7 +36,17 @@ final class IgnitionErrorResponseRendererTest extends PhalanxTestCase
 
     public function testItRendersHtmlWithBrandingAndLedgerPlaceholder(): void
     {
-        $renderer = new IgnitionErrorResponseRenderer(new ServerConfig(ignitionEnabled: true));
+        $renderer = new IgnitionErrorResponseRenderer(new ServerConfig(
+            ignitionEnabled: true,
+            docsUrl: '/docs',
+            githubUrl: '/source',
+            swooleDocsUrl: '/swoole',
+            phpDocsUrl: '/php',
+            phpLogoUrl: '/assets/php.svg',
+            swooleLogoUrl: '/assets/swoole.png',
+            phalanxMarkUrl: '/assets/mark.png',
+            prismThemeStylesheetUrl: '/assets/prism.css',
+        ));
         [$scope, $cleanup] = $this->createExecutionContextWithRequestResource();
 
         try {
@@ -51,6 +61,14 @@ final class IgnitionErrorResponseRendererTest extends PhalanxTestCase
         $html = (string) $response->getBody();
         $this->assertStringContainsString('PHALANX 0.2', $html);
         $this->assertStringContainsString('Diagnostics powered by Phalanx 0.2', $html);
+        $this->assertStringContainsString('/docs', $html);
+        $this->assertStringContainsString('/source', $html);
+        $this->assertStringContainsString('/swoole', $html);
+        $this->assertStringContainsString('/php', $html);
+        $this->assertStringContainsString('/assets/php.svg', $html);
+        $this->assertStringContainsString('/assets/swoole.png', $html);
+        $this->assertStringContainsString('/assets/mark.png', $html);
+        $this->assertStringContainsString('/assets/prism.css', $html);
     }
 
     /**

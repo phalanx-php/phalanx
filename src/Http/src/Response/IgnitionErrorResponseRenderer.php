@@ -98,15 +98,18 @@ final readonly class IgnitionErrorResponseRenderer implements ErrorResponseRende
     private function getCustomHead(): string
     {
         $favicon = $this->config->faviconPath;
+        $prismThemeStylesheetUrl = $this->config->prismThemeStylesheetUrl;
+        $prismLineNumbersStylesheetUrl = $this->config->prismLineNumbersStylesheetUrl;
+        $prismLineHighlightStylesheetUrl = $this->config->prismLineHighlightStylesheetUrl;
 
         return <<<HTML
         <!-- Branding & Favicon -->
         <link rel="icon" type="image/x-icon" href="{$favicon}">
         
         <!-- Prism.js for High-Fidelity Syntax Highlighting -->
-        <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
-        <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet" />
-        <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-highlight/prism-line-highlight.min.css" rel="stylesheet" />
+        <link href="{$prismThemeStylesheetUrl}" rel="stylesheet" />
+        <link href="{$prismLineNumbersStylesheetUrl}" rel="stylesheet" />
+        <link href="{$prismLineHighlightStylesheetUrl}" rel="stylesheet" />
         <style>
             /* 1. Navbar Alignment & Branding */
             .phx-nav-branding { display: flex; align-items: center; gap: 0.75rem; padding-right: 1.5rem; margin-right: 0.5rem; border-right: 1px solid rgba(255,255,255,0.1); }
@@ -157,6 +160,10 @@ HTML;
         $docsUrl = $this->config->docsUrl;
         $osDocsUrl = $this->config->swooleDocsUrl;
         $githubUrl = $this->config->githubUrl;
+        $phpDocsUrl = $this->config->phpDocsUrl;
+        $phpLogoUrl = $this->config->phpLogoUrl;
+        $swooleLogoUrl = $this->config->swooleLogoUrl;
+        $phalanxMarkUrl = $this->config->phalanxMarkUrl;
         $tagline = $this->config->tagline;
 
         return <<<HTML
@@ -212,16 +219,16 @@ HTML;
                             cluster.className = 'px-4';
                             cluster.innerHTML = `
                                 <div class="phx-doc-cluster">
-                                    <a href="https://php.net/docs" target="_blank" class="phx-doc-item">
-                                        <img src="https://www.php.net/images/logos/php-logo-white.svg" class="phx-doc-icon" style="height:10px">
+                                    <a href="{$phpDocsUrl}" target="_blank" class="phx-doc-item">
+                                        <img src="{$phpLogoUrl}" class="phx-doc-icon" style="height:10px">
                                         <span>PHP</span>
                                     </a>
                                     <a href="{$osDocsUrl}" target="_blank" class="phx-doc-item">
-                                        <img src="https://www.swoole.com/static/img/logo-white.png" class="phx-doc-icon">
+                                        <img src="{$swooleLogoUrl}" class="phx-doc-icon">
                                         <span>Swoole</span>
                                     </a>
                                     <a href="{$githubUrl}" target="_blank" class="phx-doc-item">
-                                        <img src="https://raw.githubusercontent.com/phalanx-php/phalanx/refs/heads/main/mark.png" class="phx-doc-icon">
+                                        <img src="{$phalanxMarkUrl}" class="phx-doc-icon">
                                         <span>Phalanx</span>
                                     </a>
                                 </div>

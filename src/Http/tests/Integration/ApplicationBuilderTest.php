@@ -157,6 +157,24 @@ PHP);
     }
 
     #[Test]
+    public function errorPageAssetsFlowThroughBuilderContext(): void
+    {
+        $app = self::http([
+            'PHALANX_PRISM_SCRIPT_URL' => '/assets/prism.js',
+            'PHALANX_PHP_DOCS_URL' => '/php',
+        ])
+            ->routes(['GET /hello' => BuilderHelloRoute::class])
+            ->build();
+
+        try {
+            self::assertSame('/assets/prism.js', $app->serverConfig()->prismScriptUrl);
+            self::assertSame('/php', $app->serverConfig()->phpDocsUrl);
+        } finally {
+            $app->shutdown();
+        }
+    }
+
+    #[Test]
     public function bannerIsNullByDefault(): void
     {
         $app = self::http()
