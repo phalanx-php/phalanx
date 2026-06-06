@@ -13,6 +13,12 @@ use PHPUnit\Framework\Attributes\Test;
 final class FacadeTest extends PhalanxTestCase
 {
     #[Test]
+    public function servicesDoNotAdvertiseUnusedServerContext(): void
+    {
+        self::assertTrue(\Phalanx\WebSocket\Facade::services()::harness()->isEmpty());
+    }
+
+    #[Test]
     public function servicesRegisterGatewayClientAndClientConfig(): void
     {
         $clientConfig = new \Phalanx\WebSocket\Client\Config(connectTimeout: 1.5);
