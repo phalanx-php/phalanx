@@ -36,7 +36,7 @@ final class WsClientHandshakeTest extends PhalanxTestCase
                     ExecutionScope $serverScope,
                 ): void {
                     Rfc6455TestServer::sendText($conn, 'phalanx-ws');
-                    Rfc6455TestServer::drainUntilClosed($conn, $serverScope, 30.0);
+                    Rfc6455TestServer::drainUntilClosed($serverScope, $conn, 30.0);
                 });
 
                 $client = $scope->service(\Phalanx\WebSocket\Client::class);

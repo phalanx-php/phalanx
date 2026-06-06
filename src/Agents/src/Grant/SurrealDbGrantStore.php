@@ -109,7 +109,7 @@ final class SurrealDbGrantStore implements Store
             id: (string) $row['id'],
             subject: (string) $row['subject'],
             allowedEffects: $allowedEffects,
-            scope: (string) $row['scope'],
+            grantScope: (string) $row['scope'],
             hazardCeiling: Hazard::from((string) $row['hazard_ceiling']),
             expiresAt: isset($row['expires_at']) ? new \DateTimeImmutable((string) $row['expires_at']) : null,
             conditions: (array) ($row['conditions'] ?? []),

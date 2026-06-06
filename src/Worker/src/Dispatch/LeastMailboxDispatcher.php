@@ -22,7 +22,7 @@ final class LeastMailboxDispatcher implements Dispatcher
     ) {
     }
 
-    public function dispatch(TaskRequest $task, TaskScope&TaskExecutor $scope, CancellationToken $token): mixed
+    public function dispatch(TaskScope&TaskExecutor $scope, TaskRequest $task, CancellationToken $token): mixed
     {
         if (count($this->workers) === 0) {
             throw new RuntimeException('No workers available');
@@ -48,6 +48,6 @@ final class LeastMailboxDispatcher implements Dispatcher
             throw new RuntimeException('All workers unavailable');
         }
 
-        return $bestWorker->send($task, $scope, $token);
+        return $bestWorker->send($scope, $task, $token);
     }
 }

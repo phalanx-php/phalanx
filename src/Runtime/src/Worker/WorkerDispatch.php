@@ -11,8 +11,8 @@ use Phalanx\Scope\TaskScope;
 interface WorkerDispatch
 {
     public function dispatch(
-        WorkerTask $task,
         TaskScope&TaskExecutor $scope,
+        WorkerTask $task,
         CancellationToken $token,
     ): mixed;
 

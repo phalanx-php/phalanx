@@ -125,7 +125,7 @@ final class AuthorizerTest extends TestCase
             id: 'grant_agora_01',
             subject: 'leonidas',
             allowedEffects: $allowedEffects,
-            scope: 'polis.sparta',
+            grantScope: 'polis.sparta',
             hazardCeiling: $hazardCeiling,
         );
     }

@@ -61,9 +61,9 @@ final class Application
      * @internal
      * @param list<string> $argv
      */
-    public function dispatchScoped(array $argv, ExecutionScope $scope, ?SignalState $signals = null): int
+    public function dispatchScoped(ExecutionScope $scope, array $argv, ?SignalState $signals = null): int
     {
-        return $this->dispatcher()->dispatchScoped(array_values($argv), $scope, $signals);
+        return $this->dispatcher()->dispatchScoped($scope, array_values($argv), $signals);
     }
 
     /** @param list<string>|null $argv */

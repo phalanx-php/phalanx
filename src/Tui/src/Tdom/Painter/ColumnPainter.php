@@ -10,7 +10,7 @@ use Phalanx\Tui\Tdom\Element\ColumnElement;
 
 final class ColumnPainter
 {
-    public static function paint(ColumnElement $element, PaintContext $ctx): void
+    public static function paint(PaintContext $ctx, ColumnElement $element): void
     {
         if ($element->children === [] || $ctx->area->height === 0) {
             return;
@@ -27,7 +27,7 @@ final class ColumnPainter
 
         foreach ($element->children as $i => $child) {
             if (isset($rects[$i]) && $rects[$i]->height > 0) {
-                Painter::paint($child, $ctx->sub($rects[$i]));
+                Painter::paint($ctx->sub($rects[$i]), $child);
             }
         }
     }

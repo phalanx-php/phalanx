@@ -54,7 +54,7 @@ final class ToolDispositionTerminateTest extends PhalanxTestCase
                     id: 'grant_halt',
                     subject: 'agent-test-agent',
                     allowedEffects: [Kind::Custom],
-                    scope: 'session',
+                    grantScope: 'session',
                     hazardCeiling: Hazard::Critical,
                 ));
 

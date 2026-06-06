@@ -47,7 +47,7 @@ final class ComputedTest extends TestCase
         self::assertSame(4, $computed->value);
         self::assertSame(1, $evals);
 
-        $sig->set(10);
+        $sig->set(null, 10);
         self::assertSame(11, $computed->value);
         self::assertSame(2, $evals);
     }
@@ -60,7 +60,7 @@ final class ComputedTest extends TestCase
 
         self::assertSame(6, $computed->value);
 
-        $sig->set(4);
+        $sig->set(null, 4);
         self::assertSame(12, $computed->value);
     }
 
@@ -96,7 +96,7 @@ final class ComputedTest extends TestCase
         $computed->dispose();
         self::assertTrue($computed->isDisposed);
 
-        $sig->set(2);
+        $sig->set(null, 2);
         self::assertSame(1, $evals);
     }
 
@@ -122,7 +122,7 @@ final class ComputedTest extends TestCase
             $notified++;
         });
 
-        $sig->set(5);
+        $sig->set(null, 5);
         self::assertSame(1, $notified);
     }
 
@@ -135,7 +135,7 @@ final class ComputedTest extends TestCase
 
         self::assertSame(16, $c->value);
 
-        $sig->set(5);
+        $sig->set(null, 5);
         self::assertSame(25, $c->value);
     }
 
@@ -171,7 +171,7 @@ final class ComputedTest extends TestCase
         $computed->dispose();
         self::assertSame(0, $computed->subscriberCount);
 
-        $sig->set(2);
+        $sig->set(null, 2);
         self::assertSame(0, $notified);
     }
 

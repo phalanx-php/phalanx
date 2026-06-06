@@ -65,7 +65,7 @@ final class ActivityLifecycleTest extends PhalanxTestCase
                 id: 'grant_lifecycle',
                 subject: 'agent-test-agent',
                 allowedEffects: [Kind::FileRead],
-                scope: 'session',
+                grantScope: 'session',
                 hazardCeiling: Hazard::Critical,
             ));
 

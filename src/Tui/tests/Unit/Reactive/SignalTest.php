@@ -37,7 +37,7 @@ final class SignalTest extends TestCase
             $calls++;
         });
 
-        $signal->set(2);
+        $signal->set(null, 2);
 
         self::assertSame(1, $calls);
     }
@@ -52,7 +52,7 @@ final class SignalTest extends TestCase
             $calls++;
         });
 
-        $signal->set('hello');
+        $signal->set(null, 'hello');
 
         self::assertSame(0, $calls);
     }
@@ -66,7 +66,7 @@ final class SignalTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Cannot write to a disposed signal.');
 
-        $signal->set(1);
+        $signal->set(null, 1);
     }
 
     #[Test]
@@ -120,7 +120,7 @@ final class SignalTest extends TestCase
             $b++;
         });
 
-        $signal->set(1);
+        $signal->set(null, 1);
 
         self::assertSame(1, $a);
         self::assertSame(1, $b);
@@ -142,7 +142,7 @@ final class SignalTest extends TestCase
             $calls++;
         });
 
-        $signal->set(1);
+        $signal->set(null, 1);
 
         self::assertSame(2, $calls);
         self::assertSame(1, $signal->subscriberCount);
@@ -158,7 +158,7 @@ final class SignalTest extends TestCase
             $calls++;
         });
 
-        $signal->set(static fn(int $current): int => $current + 41);
+        $signal->set(null, static fn(int $current): int => $current + 41);
 
         self::assertSame(42, $signal->get());
         self::assertSame(1, $calls);
@@ -170,9 +170,9 @@ final class SignalTest extends TestCase
         $signal = new Signal('idle');
         $scope = $this->createStub(Scope::class);
 
-        $signal->set(static fn(string $current, ?Scope $given): string => $given === $scope
+        $signal->set($scope, static fn(string $current, ?Scope $given): string => $given === $scope
             ? $current . ':scoped'
-            : 'wrong-scope', $scope);
+            : 'wrong-scope');
 
         self::assertSame('idle:scoped', $signal->get());
     }
@@ -182,7 +182,7 @@ final class SignalTest extends TestCase
     {
         $signal = new Signal(null);
 
-        $signal->set('strlen');
+        $signal->set(null, 'strlen');
 
         self::assertSame('strlen', $signal->get());
     }
@@ -198,7 +198,7 @@ final class SignalTest extends TestCase
             }
         };
 
-        $signal->set($invokable);
+        $signal->set(null, $invokable);
 
         self::assertSame($invokable, $signal->get());
     }
@@ -211,7 +211,7 @@ final class SignalTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Signal updater closures must be static closures.');
 
-        $signal->set(fn(int $current): int => $current + 1);
+        $signal->set(null, fn(int $current): int => $current + 1);
     }
 
     #[Test]

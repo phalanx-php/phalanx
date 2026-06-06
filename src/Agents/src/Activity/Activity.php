@@ -26,7 +26,7 @@ final class Activity implements Executor
     public function __invoke(TaskScope $scope, Agent $agent, Config $config, ?Log $log = null): Result
     {
         if (!$scope instanceof ExecutionScope) {
-            return self::runInline($this->executor, $scope, $agent, $config, $log);
+            return self::runInline($scope, $this->executor, $agent, $config, $log);
         }
 
         $executor = $this->executor;
@@ -35,7 +35,7 @@ final class Activity implements Executor
             return $scope->execute(Task::named(
                 'agent.activity.' . $config->id,
                 static fn(ExecutionScope $activityScope): Result
-                    => self::runInline($executor, $activityScope, $agent, $config, $log),
+                    => self::runInline($activityScope, $executor, $agent, $config, $log),
             ));
         } catch (ScopeCancelled $error) {
             return self::cancelled($config, $log, $error);
@@ -194,8 +194,8 @@ final class Activity implements Executor
     }
 
     private static function runInline(
-        Executor $executor,
         TaskScope $scope,
+        Executor $executor,
         Agent $agent,
         Config $config,
         ?Log $log,

@@ -27,7 +27,7 @@ final class RequireAbilityTest extends PhalanxTestCase
 
         $v = new RequireAbility('admin');
 
-        self::assertSame([], $v->validate(null, $scope));
+        self::assertSame([], $v->validate($scope, null));
     }
 
     #[Test]
@@ -39,7 +39,7 @@ final class RequireAbilityTest extends PhalanxTestCase
         $v = new RequireAbility('admin');
 
         $this->expectException(AuthorizationException::class);
-        $v->validate(null, $scope);
+        $v->validate($scope, null);
     }
 
     #[Test]
@@ -50,7 +50,7 @@ final class RequireAbilityTest extends PhalanxTestCase
         $v = new RequireAbility('admin');
 
         $this->expectException(AuthorizationException::class);
-        $v->validate(null, $scope);
+        $v->validate($scope, null);
     }
 
     private function createRequestContext(): ExecutionContext

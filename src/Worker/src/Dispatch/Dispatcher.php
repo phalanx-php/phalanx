@@ -11,5 +11,5 @@ use Phalanx\Worker\Protocol\TaskRequest;
 
 interface Dispatcher
 {
-    public function dispatch(TaskRequest $task, TaskScope&TaskExecutor $scope, CancellationToken $token): mixed;
+    public function dispatch(TaskScope&TaskExecutor $scope, TaskRequest $task, CancellationToken $token): mixed;
 }

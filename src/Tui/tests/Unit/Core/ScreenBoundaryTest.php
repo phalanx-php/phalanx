@@ -20,7 +20,7 @@ final class ScreenBoundaryTest extends TestCase
             self::assertStringNotContainsString('Harness' . '\\Replay', $source, $file);
         }
 
-        foreach (self::sourceFiles(dirname(__DIR__, 3) . '/src/Collab/Screens') as $file) {
+        foreach (self::sourceFiles(dirname(__DIR__, 3) . '/src/Runtime/Screens') as $file) {
             $source = file_get_contents($file);
             self::assertIsString($source);
 

@@ -24,7 +24,7 @@ final class RoundRobinDispatcher implements Dispatcher
     ) {
     }
 
-    public function dispatch(TaskRequest $task, TaskScope&TaskExecutor $scope, CancellationToken $token): mixed
+    public function dispatch(TaskScope&TaskExecutor $scope, TaskRequest $task, CancellationToken $token): mixed
     {
         $count = count($this->workers);
 
@@ -40,7 +40,7 @@ final class RoundRobinDispatcher implements Dispatcher
             $attempts++;
 
             if ($worker->state !== WorkerState::Crashed && $worker->state !== WorkerState::Draining) {
-                return $worker->send($task, $scope, $token);
+                return $worker->send($scope, $task, $token);
             }
         }
 

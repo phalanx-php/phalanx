@@ -139,7 +139,7 @@ final class Upgrade implements \Phalanx\Http\Upgrade\Upgradeable
         );
 
         $resolver = $sessionScopeForHandler->service(HandlerResolver::class);
-        $pump = $resolver->resolve($handler->task, $sessionScopeForHandler);
+        $pump = $resolver->resolve($sessionScopeForHandler, $handler->task);
         if (!is_callable($pump)) {
             self::unlink($requestCancellation, $cancelKey);
             $server->close();

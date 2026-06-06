@@ -17,6 +17,7 @@ final class SyncTest extends TestCase
         $ran = false;
 
         new Sync(
+            scope: null,
             setup: static function () use (&$ran): void {
                 $ran = true;
             },
@@ -31,6 +32,7 @@ final class SyncTest extends TestCase
         $runs = 0;
 
         $sync = new Sync(
+            scope: null,
             setup: static function () use (&$runs): void {
                 $runs++;
             },
@@ -49,6 +51,7 @@ final class SyncTest extends TestCase
         $log = [];
 
         $sync = new Sync(
+            scope: null,
             setup: static function () use (&$log): \Closure {
                 $log[] = 'setup';
                 return static function () use (&$log): void {
@@ -70,6 +73,7 @@ final class SyncTest extends TestCase
         $cleanups = 0;
 
         $sync = new Sync(
+            scope: null,
             setup: static function () use (&$cleanups): \Closure {
                 return static function () use (&$cleanups): void {
                     $cleanups++;
@@ -87,6 +91,7 @@ final class SyncTest extends TestCase
         $cleanups = 0;
 
         $sync = new Sync(
+            scope: null,
             setup: static function () use (&$cleanups): \Closure {
                 return static function () use (&$cleanups): void {
                     $cleanups++;
@@ -105,6 +110,7 @@ final class SyncTest extends TestCase
         $runs = 0;
 
         $sync = new Sync(
+            scope: null,
             setup: static function () use (&$runs): void {
                 $runs++;
             },
@@ -124,6 +130,8 @@ final class SyncTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Sync setup must be a static closure.');
 
-        new Sync(setup: fn(): null => null);
+        new Sync(
+            scope: null,
+            setup: fn(): null => null);
     }
 }

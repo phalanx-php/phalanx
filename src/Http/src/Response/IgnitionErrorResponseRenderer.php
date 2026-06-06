@@ -89,7 +89,7 @@ final readonly class IgnitionErrorResponseRenderer implements ErrorResponseRende
             );
         } catch (Cancelled $c) {
             throw $c;
-        } catch (Throwable $renderError) {
+        } catch (Throwable) {
             // Extreme resilience: fallback to other renderers on any crash
             return null;
         }

@@ -190,7 +190,7 @@ final class ClientCancellationTest extends PhalanxTestCase
                 Rfc6455TestServer::sendText($conn, 'hold-open');
 
                 if ($holdSeconds > 0.0) {
-                    Rfc6455TestServer::drainUntilClosed($conn, $serverScope, $holdSeconds);
+                    Rfc6455TestServer::drainUntilClosed($serverScope, $conn, $holdSeconds);
                 }
             },
         );

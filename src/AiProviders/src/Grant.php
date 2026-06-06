@@ -27,6 +27,8 @@ final class Grant implements Canonicalizable
     /** @var array<string, mixed> */
     private(set) array $conditions;
 
+    private(set) string $scope;
+
     /**
      * @param list<Effect\Kind>    $allowedEffects
      * @param array<string, mixed> $conditions
@@ -35,11 +37,12 @@ final class Grant implements Canonicalizable
         private(set) string $id,
         private(set) string $subject,
         array $allowedEffects,
-        private(set) string $scope,
+        string $grantScope,
         private(set) Hazard $hazardCeiling,
         private(set) ?\DateTimeImmutable $expiresAt = null,
         array $conditions = [],
     ) {
+        $this->scope = $grantScope;
         $this->allowedEffects = self::dedupKinds($allowedEffects);
         ksort($conditions);
         $this->conditions = $conditions;
@@ -53,7 +56,7 @@ final class Grant implements Canonicalizable
         string $id,
         string $subject,
         array $allowedEffects,
-        string $scope,
+        string $grantScope,
         Hazard $hazardCeiling,
         ?\DateTimeImmutable $expiresAt = null,
         array $conditions = [],
@@ -62,7 +65,7 @@ final class Grant implements Canonicalizable
             id: $id,
             subject: $subject,
             allowedEffects: $allowedEffects,
-            scope: $scope,
+            grantScope: $grantScope,
             hazardCeiling: $hazardCeiling,
             expiresAt: $expiresAt,
             conditions: $conditions,
@@ -94,7 +97,7 @@ final class Grant implements Canonicalizable
             id: $this->id,
             subject: $this->subject,
             allowedEffects: $this->allowedEffects,
-            scope: $this->scope,
+            grantScope: $this->scope,
             hazardCeiling: $this->hazardCeiling,
             expiresAt: $expiresAt,
             conditions: $this->conditions,
@@ -107,7 +110,7 @@ final class Grant implements Canonicalizable
             id: $this->id,
             subject: $this->subject,
             allowedEffects: $this->allowedEffects,
-            scope: $this->scope,
+            grantScope: $this->scope,
             hazardCeiling: $this->hazardCeiling,
             expiresAt: $this->expiresAt,
             conditions: array_merge($this->conditions, [$key => $value]),

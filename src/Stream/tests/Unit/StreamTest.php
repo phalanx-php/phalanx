@@ -21,7 +21,7 @@ final class StreamTest extends PhalanxTestCase
             self::assertTrue($channel->isOpen);
             $channel->complete();
 
-            $source = Stream::produce(static function (Channel $ch): void {
+            $source = Stream::produce(static function (ExecutionScope $_scope, Channel $ch): void {
                 $ch->emit('alpha');
                 $ch->emit('beta');
             });

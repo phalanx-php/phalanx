@@ -21,7 +21,7 @@ final class InputCapturingValidator implements RouteValidator
         self::$capturedInput = null;
     }
 
-    public function validate(object|null $input, RequestContext $ctx): array
+    public function validate(RequestContext $ctx, object|null $input): array
     {
         self::$capturedInput = $input;
         return ['captured' => ['validator received dto']];

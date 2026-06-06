@@ -153,7 +153,7 @@ final class SuspenderTest extends TestCase
             id: 'grant_1',
             subject: 'agent_1',
             allowedEffects: [Kind::FileWrite],
-            scope: 'session',
+            grantScope: 'session',
             hazardCeiling: Hazard::Critical,
         );
     }

@@ -27,7 +27,7 @@ use Phalanx\Task\Scopeable;
 final readonly class HandlerInvocationAdapter implements Scopeable, Executable
 {
     /**
-     * @param Closure(Scopeable|Executable, ExecutionScope): mixed $invoker
+     * @param Closure(ExecutionScope, Scopeable|Executable): mixed $invoker
      */
     public function __construct(
         private Scopeable|Executable $instance,
@@ -37,6 +37,6 @@ final readonly class HandlerInvocationAdapter implements Scopeable, Executable
 
     public function __invoke(ExecutionScope $scope): mixed
     {
-        return ($this->invoker)($this->instance, $scope);
+        return ($this->invoker)($scope, $this->instance);
     }
 }

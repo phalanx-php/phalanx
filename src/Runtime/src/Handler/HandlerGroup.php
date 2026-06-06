@@ -37,7 +37,7 @@ final class HandlerGroup implements Executable
      * @param array<string, Handler> $handlers
      * @param list<class-string> $middleware
      * @param list<HandlerMatcher> $matchers
-     * @param Closure(Scopeable|Executable, ExecutionScope): mixed|null $invoker
+     * @param Closure(ExecutionScope, Scopeable|Executable): mixed|null $invoker
      */
     private function __construct(
         private(set) array $handlers,
@@ -78,7 +78,7 @@ final class HandlerGroup implements Executable
             $result = $matcher->match($scope, $this->handlers);
 
             if ($result !== null) {
-                return $this->executeHandler($result->handler, $result->scope);
+                return $this->executeHandler($result->scope, $result->handler);
             }
         }
 
@@ -88,7 +88,7 @@ final class HandlerGroup implements Executable
         );
     }
 
-    public function dispatch(string $key, ExecutionScope $scope): mixed
+    public function dispatch(ExecutionScope $scope, string $key): mixed
     {
         $handler = $this->handlers[$key] ?? null;
 
@@ -96,7 +96,7 @@ final class HandlerGroup implements Executable
             throw new RuntimeException("Handler not found: $key");
         }
 
-        return $this->executeHandler($handler, $scope);
+        return $this->executeHandler($scope, $handler);
     }
 
     /** @internal */
@@ -153,7 +153,7 @@ final class HandlerGroup implements Executable
     /**
      * Install an invocation strategy for resolved handler instances.
      *
-     * @param Closure(Scopeable|Executable, ExecutionScope): mixed $invoker
+     * @param Closure(ExecutionScope, Scopeable|Executable): mixed $invoker
      */
     public function withInvoker(Closure $invoker): self
     {
@@ -195,11 +195,11 @@ final class HandlerGroup implements Executable
     }
 
     /**
-     * @return Closure(Scopeable|Executable, ExecutionScope): mixed
+     * @return Closure(ExecutionScope, Scopeable|Executable): mixed
      */
     private static function defaultInvoker(): Closure
     {
-        return static function (Scopeable|Executable $instance, ExecutionScope $scope): mixed {
+        return static function (ExecutionScope $scope, Scopeable|Executable $instance): mixed {
             if (!is_callable($instance)) {
                 throw new RuntimeException($instance::class . ' handler must be invokable.');
             }
@@ -223,11 +223,11 @@ final class HandlerGroup implements Executable
         ));
     }
 
-    private function executeHandler(Handler $handler, ExecutionScope $scope): mixed
+    private function executeHandler(ExecutionScope $scope, Handler $handler): mixed
     {
         /** @var HandlerResolver $resolver */
         $resolver = $scope->service(HandlerResolver::class);
-        $instance = $resolver->resolve($handler->task, $scope);
+        $instance = $resolver->resolve($scope, $handler->task);
 
         $invoker = $this->invoker ?? self::defaultInvoker();
 
@@ -241,13 +241,13 @@ final class HandlerGroup implements Executable
         ]);
 
         if ($combined === []) {
-            return $invoker($instance, $scope);
+            return $invoker($scope, $instance);
         }
 
         $resolved = [];
         foreach ($combined as $cs) {
             /** @var class-string<Scopeable|Executable> $cs */
-            $resolved[] = $resolver->resolve($cs, $scope);
+            $resolved[] = $resolver->resolve($scope, $cs);
         }
 
         $terminal = new HandlerInvocationAdapter($instance, $invoker);

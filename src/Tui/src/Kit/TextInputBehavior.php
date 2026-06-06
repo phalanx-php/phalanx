@@ -173,7 +173,7 @@ trait TextInputBehavior
 
         if ($selection !== null) {
             [$start, $end] = $selection;
-            $signal->set($this->splice($text, $start, $end, $insert));
+            $signal->set(null, $this->splice($text, $start, $end, $insert));
             $this->setCursor($start + mb_strlen($insert));
             $this->clearSelection();
 
@@ -181,7 +181,7 @@ trait TextInputBehavior
         }
 
         $cursor = $this->textCursor($text);
-        $signal->set($this->splice($text, $cursor, $cursor, $insert));
+        $signal->set(null, $this->splice($text, $cursor, $cursor, $insert));
         $this->setCursor($cursor + mb_strlen($insert));
         $this->clearSelection();
     }
@@ -193,7 +193,7 @@ trait TextInputBehavior
 
         if ($selection !== null) {
             [$start, $end] = $selection;
-            $signal->set($this->splice($text, $start, $end));
+            $signal->set(null, $this->splice($text, $start, $end));
             $this->setCursor($start);
             $this->clearSelection();
 
@@ -205,7 +205,7 @@ trait TextInputBehavior
             return true;
         }
 
-        $signal->set($this->splice($text, $cursor - 1, $cursor));
+        $signal->set(null, $this->splice($text, $cursor - 1, $cursor));
         $this->setCursor($cursor - 1);
         $this->clearSelection();
 
@@ -219,7 +219,7 @@ trait TextInputBehavior
 
         if ($selection !== null) {
             [$start, $end] = $selection;
-            $signal->set($this->splice($text, $start, $end));
+            $signal->set(null, $this->splice($text, $start, $end));
             $this->setCursor($start);
             $this->clearSelection();
 
@@ -231,7 +231,7 @@ trait TextInputBehavior
             return $text === '';
         }
 
-        $signal->set($this->splice($text, $cursor, $cursor + 1));
+        $signal->set(null, $this->splice($text, $cursor, $cursor + 1));
         $this->setCursor($cursor);
         $this->clearSelection();
 
@@ -367,7 +367,7 @@ trait TextInputBehavior
         }
 
         $this->setKillRing(mb_substr($text, $start, $end - $start));
-        $signal->set($this->splice($text, $start, $end));
+        $signal->set(null, $this->splice($text, $start, $end));
         $this->setCursor($cursor);
         $this->clearSelection();
 
@@ -405,12 +405,12 @@ trait TextInputBehavior
         $signal = $this->inputCursorSignal();
 
         $text ??= (string) $this->inputSignal()->get();
-        $signal->set($this->clampCursor($cursor, $text));
+        $signal->set(null, $this->clampCursor($cursor, $text));
     }
 
     private function setKillRing(string $text): void
     {
-        $this->inputKillRingSignal()->set($text);
+        $this->inputKillRingSignal()->set(null, $text);
     }
 
     /** @return ?array{int, int} */
@@ -443,7 +443,7 @@ trait TextInputBehavior
         $selection = $this->inputSelectionAnchorSignal();
 
         if (!is_int($selection->get())) {
-            $selection->set($this->clampCursor($anchor, $text));
+            $selection->set(null, $this->clampCursor($anchor, $text));
         }
 
         if ($this->selectionRange($text) === null) {
@@ -453,6 +453,6 @@ trait TextInputBehavior
 
     private function clearSelection(): void
     {
-        $this->inputSelectionAnchorSignal()->set(null);
+        $this->inputSelectionAnchorSignal()->set(null, null);
     }
 }

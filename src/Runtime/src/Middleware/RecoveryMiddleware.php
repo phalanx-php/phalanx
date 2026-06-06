@@ -20,7 +20,7 @@ final class RecoveryMiddleware implements TaskMiddleware
         $this->runner = new RecoveryRunner();
     }
 
-    public function handle(Scopeable|Executable|Closure $task, ExecutionScope $scope, Closure $next): mixed
+    public function handle(ExecutionScope $scope, Scopeable|Executable|Closure $task, Closure $next): mixed
     {
         $plan = $task instanceof Recoverable ? $task->recovery : null;
 
@@ -29,9 +29,9 @@ final class RecoveryMiddleware implements TaskMiddleware
         }
 
         return $this->runner->run(
+            $scope,
             $plan,
             static fn(ExecutionScope $child): mixed => $next($child),
-            $scope,
         );
     }
 }

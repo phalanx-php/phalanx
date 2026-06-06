@@ -25,5 +25,5 @@ interface RouteValidator
     /**
      * @return array<string, list<string>> field => error messages, empty = valid
      */
-    public function validate(object|null $input, RequestContext $ctx): array;
+    public function validate(RequestContext $ctx, object|null $input): array;
 }

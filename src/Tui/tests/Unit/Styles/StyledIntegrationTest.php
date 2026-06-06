@@ -58,7 +58,7 @@ final class StyledIntegrationTest extends TestCase
         $ctx = new PaintContext(Rect::sized(20, 1), $buf, $sheet);
 
         $el = new TextElement('Hi');
-        Painter::paint($el, $ctx);
+        Painter::paint($ctx, $el);
 
         $filledCell = $buf->get(10, 0);
         self::assertNotNull($filledCell->style->background);
@@ -76,7 +76,7 @@ final class StyledIntegrationTest extends TestCase
         $ctx = new PaintContext(Rect::sized(20, 1), $buf, $sheet);
 
         $el = new TextElement('Thermopylae', Style::of(background: $inlineBg));
-        Painter::paint($el, $ctx);
+        Painter::paint($ctx, $el);
 
         $filledCell = $buf->get(15, 0);
         self::assertNotNull($filledCell->style->background);
@@ -157,7 +157,7 @@ final class StyledIntegrationTest extends TestCase
 
         $buf = Buffer::empty(20, 1);
         $paintCtx = new PaintContext(Rect::sized(20, 1), $buf);
-        Painter::paint($mounted, $paintCtx);
+        Painter::paint($paintCtx, $mounted);
 
         self::assertSame('S', $buf->get(0, 0)->char);
         $emptyCell = $buf->get(10, 0);

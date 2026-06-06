@@ -221,10 +221,10 @@ final class Builder
 
         try {
             if (is_dir($path)) {
-                return CommandLoader::loadDirectory($path, $scope);
+                return CommandLoader::loadDirectory($scope, $path);
             }
 
-            return CommandLoader::load($path, $scope);
+            return CommandLoader::load($scope, $path);
         } finally {
             $scope->dispose();
         }

@@ -20,7 +20,7 @@ final class EmitterTest extends PhalanxTestCase
     public function produceExposesChannel(): void
     {
         $this->scope->run(static function (ExecutionScope $scope): void {
-            $emitter = Emitter::produce(static function (Channel $ch): void {
+            $emitter = Emitter::produce(static function (ExecutionScope $_scope, Channel $ch): void {
                 $ch->emit('produced-1');
                 $ch->emit('produced-2');
             });
@@ -35,7 +35,7 @@ final class EmitterTest extends PhalanxTestCase
     public function mapOperator(): void
     {
         $this->scope->run(static function (ExecutionScope $scope): void {
-            $emitter = Emitter::produce(static function (Channel $ch): void {
+            $emitter = Emitter::produce(static function (ExecutionScope $_scope, Channel $ch): void {
                 $ch->emit(1);
                 $ch->emit(2);
                 $ch->emit(3);
@@ -52,7 +52,7 @@ final class EmitterTest extends PhalanxTestCase
     public function filterOperator(): void
     {
         $this->scope->run(static function (ExecutionScope $scope): void {
-            $emitter = Emitter::produce(static function (Channel $ch): void {
+            $emitter = Emitter::produce(static function (ExecutionScope $_scope, Channel $ch): void {
                 $ch->emit(1);
                 $ch->emit(2);
                 $ch->emit(3);
@@ -70,7 +70,7 @@ final class EmitterTest extends PhalanxTestCase
     public function takeOperator(): void
     {
         $this->scope->run(static function (ExecutionScope $scope): void {
-            $emitter = Emitter::produce(static function (Channel $ch): void {
+            $emitter = Emitter::produce(static function (ExecutionScope $_scope, Channel $ch): void {
                 for ($i = 1; $i <= 100; $i++) {
                     $ch->emit($i);
                 }
@@ -87,7 +87,7 @@ final class EmitterTest extends PhalanxTestCase
     public function distinctOperator(): void
     {
         $this->scope->run(static function (ExecutionScope $scope): void {
-            $emitter = Emitter::produce(static function (Channel $ch): void {
+            $emitter = Emitter::produce(static function (ExecutionScope $_scope, Channel $ch): void {
                 $ch->emit(1);
                 $ch->emit(1);
                 $ch->emit(2);
@@ -106,7 +106,7 @@ final class EmitterTest extends PhalanxTestCase
     public function distinctByOperator(): void
     {
         $this->scope->run(static function (ExecutionScope $scope): void {
-            $emitter = Emitter::produce(static function (Channel $ch): void {
+            $emitter = Emitter::produce(static function (ExecutionScope $_scope, Channel $ch): void {
                 $ch->emit(['name' => 'Alice', 'age' => 30]);
                 $ch->emit(['name' => 'Alice', 'age' => 31]);
                 $ch->emit(['name' => 'Bob', 'age' => 25]);
@@ -126,12 +126,12 @@ final class EmitterTest extends PhalanxTestCase
     public function mergeInterleaves(): void
     {
         $this->scope->run(static function (ExecutionScope $scope): void {
-            $a = Emitter::produce(static function (Channel $ch): void {
+            $a = Emitter::produce(static function (ExecutionScope $_scope, Channel $ch): void {
                 $ch->emit('a1');
                 $ch->emit('a2');
             });
 
-            $b = Emitter::produce(static function (Channel $ch): void {
+            $b = Emitter::produce(static function (ExecutionScope $_scope, Channel $ch): void {
                 $ch->emit('b1');
                 $ch->emit('b2');
             });
@@ -150,13 +150,13 @@ final class EmitterTest extends PhalanxTestCase
         $this->scope->run(static function (ExecutionScope $scope): void {
             $log = [];
 
-            $emitter = Emitter::produce(static function (Channel $ch): void {
+            $emitter = Emitter::produce(static function (ExecutionScope $_scope, Channel $ch): void {
                 $ch->emit('x');
             })
                 ->onStart(static function () use (&$log): void {
                     $log[] = 'start';
                 })
-                ->onEach(static function (mixed $v) use (&$log): void {
+                ->onEach(static function (ExecutionScope $_scope, mixed $v) use (&$log): void {
                     $log[] = "each:{$v}";
                 })
                 ->onComplete(static function () use (&$log): void {
@@ -181,7 +181,7 @@ final class EmitterTest extends PhalanxTestCase
             $emitter = Emitter::produce(static function (): void {
                 throw new RuntimeException('boom');
             })
-                ->onError(static function (Throwable $e) use (&$errorLog): void {
+                ->onError(static function (ExecutionScope $_scope, Throwable $e) use (&$errorLog): void {
                     $errorLog[] = $e->getMessage();
                 });
 
@@ -198,7 +198,7 @@ final class EmitterTest extends PhalanxTestCase
     public function toArrayTerminal(): void
     {
         $this->scope->run(static function (ExecutionScope $scope): void {
-            $emitter = Emitter::produce(static function (Channel $ch): void {
+            $emitter = Emitter::produce(static function (ExecutionScope $_scope, Channel $ch): void {
                 $ch->emit(1);
                 $ch->emit(2);
             });
@@ -213,7 +213,7 @@ final class EmitterTest extends PhalanxTestCase
     public function reduceTerminal(): void
     {
         $this->scope->run(static function (ExecutionScope $scope): void {
-            $emitter = Emitter::produce(static function (Channel $ch): void {
+            $emitter = Emitter::produce(static function (ExecutionScope $_scope, Channel $ch): void {
                 $ch->emit(1);
                 $ch->emit(2);
                 $ch->emit(3);
@@ -229,7 +229,7 @@ final class EmitterTest extends PhalanxTestCase
     public function firstTerminal(): void
     {
         $this->scope->run(static function (ExecutionScope $scope): void {
-            $emitter = Emitter::produce(static function (Channel $ch): void {
+            $emitter = Emitter::produce(static function (ExecutionScope $_scope, Channel $ch): void {
                 $ch->emit('first');
                 $ch->emit('second');
             });
@@ -246,7 +246,7 @@ final class EmitterTest extends PhalanxTestCase
         $this->scope->run(static function (ExecutionScope $scope): void {
             $cancelledCh = new Channel(bufferSize: 1);
 
-            $emitter = Emitter::produce(static function (Channel $ch, ExecutionScope $producerScope) use ($cancelledCh): void {
+            $emitter = Emitter::produce(static function (ExecutionScope $producerScope, Channel $ch) use ($cancelledCh): void {
                 try {
                     // @phpstan-ignore while.alwaysTrue
                     while (true) {
@@ -276,10 +276,10 @@ final class EmitterTest extends PhalanxTestCase
         $this->scope->run(static function (ExecutionScope $scope): void {
             $sideEffects = [];
 
-            $emitter = Emitter::produce(static function (Channel $ch): void {
+            $emitter = Emitter::produce(static function (ExecutionScope $_scope, Channel $ch): void {
                 $ch->emit('a');
                 $ch->emit('b');
-            })->onEach(static function (mixed $v) use (&$sideEffects): void {
+            })->onEach(static function (ExecutionScope $_scope, mixed $v) use (&$sideEffects): void {
                 $sideEffects[] = $v;
             });
 
@@ -294,7 +294,7 @@ final class EmitterTest extends PhalanxTestCase
     public function bufferWindowByCount(): void
     {
         $this->scope->run(static function (ExecutionScope $scope): void {
-            $emitter = Emitter::produce(static function (Channel $ch): void {
+            $emitter = Emitter::produce(static function (ExecutionScope $_scope, Channel $ch): void {
                 for ($i = 1; $i <= 5; $i++) {
                     $ch->emit($i);
                 }
@@ -311,7 +311,7 @@ final class EmitterTest extends PhalanxTestCase
     public function throttleDropsExtraItems(): void
     {
         $this->scope->run(static function (ExecutionScope $scope): void {
-            $emitter = Emitter::produce(static function (Channel $ch): void {
+            $emitter = Emitter::produce(static function (ExecutionScope $_scope, Channel $ch): void {
                 $ch->emit(1);
                 $ch->emit(2);
                 $ch->emit(3);

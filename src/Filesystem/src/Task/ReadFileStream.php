@@ -24,7 +24,7 @@ final readonly class ReadFileStream implements Executable
     {
         $path = $this->path;
 
-        return Emitter::produce(static function (Channel $ch, ExecutionScope $ctx) use ($path): void {
+        return Emitter::produce(static function (ExecutionScope $ctx, Channel $ch) use ($path): void {
             $pool = $ctx->service(FilePool::class);
             $pool->acquire($ctx);
             $handle = is_file($path) && is_readable($path) ? @fopen($path, 'r') : false;

@@ -21,7 +21,7 @@ final class FakeWorkerDispatch implements WorkerDispatch
 
     private(set) ?CancellationToken $lastToken = null;
 
-    public function dispatch(WorkerTask $task, TaskScope&TaskExecutor $scope, CancellationToken $token): mixed
+    public function dispatch(TaskScope&TaskExecutor $scope, WorkerTask $task, CancellationToken $token): mixed
     {
         $this->dispatched[] = $task;
         $this->dispatchCount++;

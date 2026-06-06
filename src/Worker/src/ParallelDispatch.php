@@ -26,7 +26,7 @@ class ParallelDispatch implements WorkerDispatch
     ) {
     }
 
-    public function dispatch(WorkerTask $task, TaskScope&TaskExecutor $scope, CancellationToken $token): mixed
+    public function dispatch(TaskScope&TaskExecutor $scope, WorkerTask $task, CancellationToken $token): mixed
     {
         $token->throwIfCancelled();
         $scope->throwIfCancelled();
@@ -37,7 +37,7 @@ class ParallelDispatch implements WorkerDispatch
         $scope->trace()->log(TraceType::Worker, "worker:{$name}", ['state' => 'dispatching']);
 
         try {
-            $result = $this->supervisor()->dispatch($this->serializeTask($task), $scope, $token);
+            $result = $this->supervisor()->dispatch($scope, $this->serializeTask($task), $token);
             $elapsed = (hrtime(true) - $start) / 1e6;
             $scope->trace()->log(TraceType::Worker, "worker:{$name}", ['elapsed' => $elapsed, 'state' => 'done']);
 

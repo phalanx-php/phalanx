@@ -134,7 +134,7 @@ final class GrantMonitorTest extends PhalanxTestCase
             id: 'grant_1',
             subject: 'agent_1',
             allowedEffects: [$kind],
-            scope: 'session',
+            grantScope: 'session',
             hazardCeiling: Hazard::Critical,
         );
     }

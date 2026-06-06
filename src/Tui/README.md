@@ -4,7 +4,7 @@
 
 # Tui
 
-Terminal UI and collab framework for PHP 8.4+, built on the Phalanx
+Terminal UI and runtime framework for PHP 8.4+, built on the Phalanx
 runtime.
 
 Tui apps are invokable screens and components that return TDOM trees. The
@@ -52,14 +52,14 @@ return Tui::app($context)
 ```
 
 `Tui::app(...)` owns terminal stage configuration, screen registration,
-input dispatch, and the Runtime startup path. The Collab layer owns agent loop
+input dispatch, and the Runtime startup path. The TUI runtime layer owns agent loop
 contracts, messages, work state, prompts, reviews, and UI-facing state
 projections.
 
-## Collab App Shape
+## Runtime App Shape
 
-Use `Tui::collab()` when the app is an collab workspace. The
-builder owns the default Collab store, workspace screen, receive queue, input
+Use `Tui::starting()` when the app is a runtime workspace. The
+builder owns the default Runtime store, workspace screen, receive queue, input
 submitter, boundary runner, and runtime tick loop.
 
 ```php
@@ -69,7 +69,7 @@ use Phalanx\Tui\Tui;
 
 $assistant = new Assistant();
 
-return Tui::collab($context)
+return Tui::starting($context)
     ->primary($assistant)
     ->run();
 ```
@@ -154,7 +154,7 @@ class Counter implements Component
 
     public function increment(): void
     {
-        $this->count->set(static fn(int $current): int => $current + 1);
+        $this->count->set(null, static fn(int $current): int => $current + 1);
     }
 }
 ```
@@ -386,9 +386,9 @@ use Phalanx\Tui\Inputs\Key;
 Resolution is layered: overlay stack, active screen, global bindings. The active
 binding list can be rendered with `$ctx->hints()` in component render contexts.
 
-## Collab Workspace
+## Runtime Workspace
 
-`WorkspaceScreen` is the current Collab reference screen. It renders chat,
+`WorkspaceScreen` is the current Runtime reference screen. It renders chat,
 plan, runtime, DevTools, status, and input panels from store projections. Screens
 do not call participants directly.
 

@@ -180,7 +180,7 @@ final class RecordingParallelDispatch implements WorkerDispatch
     /** @var list<DispatchMode|null> */
     public array $modes = [];
 
-    public function dispatch(WorkerTask $task, TaskScope&TaskExecutor $scope, CancellationToken $token): mixed
+    public function dispatch(TaskScope&TaskExecutor $scope, WorkerTask $task, CancellationToken $token): mixed
     {
         if (!$scope instanceof ExecutionLifecycleScope) {
             throw new \RuntimeException('Expected ExecutionLifecycleScope.');
@@ -217,7 +217,7 @@ final class CoordinatedFailFastDispatch implements WorkerDispatch
         $this->blockedCancelled = new Channel(1);
     }
 
-    public function dispatch(WorkerTask $task, TaskScope&TaskExecutor $scope, CancellationToken $token): mixed
+    public function dispatch(TaskScope&TaskExecutor $scope, WorkerTask $task, CancellationToken $token): mixed
     {
         if ($task instanceof BlockingWorkerTask) {
             $this->blockedStarted->push(true);
@@ -253,7 +253,7 @@ final class LimitRecordingDispatch implements WorkerDispatch
 
     private int $active = 0;
 
-    public function dispatch(WorkerTask $task, TaskScope&TaskExecutor $scope, CancellationToken $token): mixed
+    public function dispatch(TaskScope&TaskExecutor $scope, WorkerTask $task, CancellationToken $token): mixed
     {
         $this->active++;
         $this->maxActive = max($this->maxActive, $this->active);

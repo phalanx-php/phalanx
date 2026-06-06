@@ -96,7 +96,7 @@ final class App
         }
 
         if ($store instanceof ProvidesMountServices) {
-            $store->provideMountServices($mountSystem, $scope);
+            $store->provideMountServices($scope, $mountSystem);
         }
 
         $navigator = new WorkspaceNavigator($mountSystem, $this->screens[0]);
@@ -486,13 +486,13 @@ final class App
         $scratch = Buffer::empty($region->area->width, $region->area->height);
 
         Painter::paint(
-            $renderable,
             new PaintContext(
                 Rect::sized($region->area->width, $region->area->height),
                 $scratch,
                 renderContext: $renderCtx,
                 mountOwner: $mountOwner,
             ),
+            $renderable,
         );
 
         $region->buffer()->clear();

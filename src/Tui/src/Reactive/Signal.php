@@ -33,7 +33,7 @@ final class Signal
         return $this->storedValue;
     }
 
-    public function set(mixed $value, ?Scope $scope = null): void
+    public function set(?Scope $scope, mixed $value): void
     {
         if ($this->isDisposed) {
             throw new RuntimeException('Cannot write to a disposed signal.');

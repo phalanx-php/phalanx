@@ -18,9 +18,9 @@ class Client
     private ?\Phalanx\SurrealDb\Live\Connection $liveConnection = null;
 
     public function __construct(
+        private readonly TaskScope $scope,
         private \Phalanx\SurrealDb\Config $config,
         private readonly \Phalanx\SurrealDb\Transport $transport,
-        private readonly TaskScope $scope,
         private readonly \Phalanx\SurrealDb\ScopeGuard $guard = new \Phalanx\SurrealDb\ScopeGuard(),
         private readonly ?\Phalanx\SurrealDb\Live\Transport $liveTransport = null,
     ) {
@@ -38,9 +38,9 @@ class Client
         $this->assertNoLiveConnection('withDatabase');
 
         $client = new self(
+            $this->scope,
             $this->config->withDatabase($namespace, $database),
             $this->transport,
-            $this->scope,
             $this->guard,
             $this->liveTransport,
         );

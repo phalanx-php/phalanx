@@ -8,7 +8,7 @@ use Phalanx\Tui\Tdom\Element\DividerElement;
 
 final class DividerPainter
 {
-    public static function paint(DividerElement $element, PaintContext $ctx): void
+    public static function paint(PaintContext $ctx, DividerElement $element): void
     {
         if ($ctx->area->width === 0 || $ctx->area->height === 0) {
             return;

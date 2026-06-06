@@ -27,7 +27,7 @@ final class RequireAbility implements RouteValidator
     {
     }
 
-    public function validate(object|null $input, RequestContext $ctx): array
+    public function validate(RequestContext $ctx, object|null $input): array
     {
         if (!$ctx instanceof AuthRequestContext || !$ctx->auth->can($this->ability)) {
             throw new AuthorizationException(

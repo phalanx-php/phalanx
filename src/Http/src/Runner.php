@@ -296,7 +296,7 @@ final class Runner
 
         try {
             foreach ($paths as $dir) {
-                $group = $group->merge(RouteLoader::loadDirectory($dir, $scope));
+                $group = $group->merge(RouteLoader::loadDirectory($scope, $dir));
             }
         } finally {
             $scope->dispose();
@@ -483,7 +483,7 @@ final class Runner
                 $rootScope->currentRun = $requestRun;
 
                 try {
-                    $result = $routes->dispatch($request, $rootScope);
+                    $result = $routes->dispatch($rootScope, $request);
 
                     if ($result instanceof SseStream) {
                         if (!$result->isClosed()) {

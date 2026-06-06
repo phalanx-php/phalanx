@@ -35,8 +35,8 @@ final class RunCommand implements Executable, Recoverable
         $argv = self::argv($config, $this->credential, $this->command);
 
         [$exitCode, $stdout, $stderr, $durationMs] = ProcessAwaiter::spawn(
-            $argv,
             $scope,
+            $argv,
             $this->timeoutSeconds ?? $config->defaultTimeoutSeconds,
         );
 

@@ -24,5 +24,5 @@ interface TaskMiddleware
      *
      * @param Closure(ExecutionScope): mixed $next
      */
-    public function handle(Scopeable|Executable|Closure $task, ExecutionScope $scope, Closure $next): mixed;
+    public function handle(ExecutionScope $scope, Scopeable|Executable|Closure $task, Closure $next): mixed;
 }

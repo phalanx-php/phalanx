@@ -212,8 +212,8 @@ final class V0AcceptanceGateTest extends TestCase
                 $happyBody = '';
                 $app->scoped(static function (\Phalanx\Scope\ExecutionScope $scope) use ($successPort, &$happyBody): void {
                     $transport = new \Phalanx\AiProviders\Transport\HttpClient\Transport(
-                        \Phalanx\HttpClient\Client::client($scope),
                         $scope,
+                        \Phalanx\HttpClient\Client::client($scope),
                     );
                     $runtime = new SyncRuntime();
                     foreach ($transport->stream(Request::of('GET', "http://127.0.0.1:{$successPort}/"), $runtime) as $c) {
@@ -230,8 +230,8 @@ final class V0AcceptanceGateTest extends TestCase
                 $httpError = null;
                 $app->scoped(static function (\Phalanx\Scope\ExecutionScope $scope) use ($errorPort, &$httpError): void {
                     $transport = new \Phalanx\AiProviders\Transport\HttpClient\Transport(
-                        \Phalanx\HttpClient\Client::client($scope),
                         $scope,
+                        \Phalanx\HttpClient\Client::client($scope),
                     );
                     $runtime = new SyncRuntime();
 
@@ -254,8 +254,8 @@ final class V0AcceptanceGateTest extends TestCase
                 $cancelledEx = null;
                 $app->scoped(static function (\Phalanx\Scope\ExecutionScope $scope) use ($slowPort, &$cancelledEx): void {
                     $transport = new \Phalanx\AiProviders\Transport\HttpClient\Transport(
-                        \Phalanx\HttpClient\Client::client($scope),
                         $scope,
+                        \Phalanx\HttpClient\Client::client($scope),
                     );
                     $runtime = new SyncRuntime();
                     $runtime->cancel();

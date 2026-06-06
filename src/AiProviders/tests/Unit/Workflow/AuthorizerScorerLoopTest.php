@@ -43,7 +43,7 @@ final class AuthorizerScorerLoopTest extends TestCase
             id: 'grant_agora_01',
             subject: 'leonidas',
             allowedEffects: [EffectKind::FileRead, EffectKind::CodeSearch],
-            scope: 'polis.sparta',
+            grantScope: 'polis.sparta',
             hazardCeiling: Hazard::Critical,
         );
 
@@ -63,7 +63,7 @@ final class AuthorizerScorerLoopTest extends TestCase
             id: 'grant_agora_02',
             subject: 'leonidas',
             allowedEffects: [EffectKind::ShellExec],
-            scope: 'polis.sparta',
+            grantScope: 'polis.sparta',
             hazardCeiling: Hazard::Medium,
         );
 
@@ -83,7 +83,7 @@ final class AuthorizerScorerLoopTest extends TestCase
             id: 'grant_agora_03',
             subject: 'leonidas',
             allowedEffects: [EffectKind::ShellExec],
-            scope: 'polis.sparta',
+            grantScope: 'polis.sparta',
             hazardCeiling: Hazard::Critical,
         );
 
@@ -115,7 +115,7 @@ final class AuthorizerScorerLoopTest extends TestCase
             id: 'grant_agora_04',
             subject: 'odysseus',
             allowedEffects: [EffectKind::FileRead],
-            scope: 'polis.marathon',
+            grantScope: 'polis.marathon',
             hazardCeiling: Hazard::Medium,
         );
 
@@ -134,7 +134,7 @@ final class AuthorizerScorerLoopTest extends TestCase
             id: 'grant_determ',
             subject: 'leonidas',
             allowedEffects: [EffectKind::ShellExec],
-            scope: 'thermopylae',
+            grantScope: 'thermopylae',
             hazardCeiling: Hazard::Critical,
         );
 

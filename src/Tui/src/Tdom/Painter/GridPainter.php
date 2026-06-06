@@ -11,7 +11,7 @@ use Phalanx\Tui\Tdom\Element\GridElement;
 
 final class GridPainter
 {
-    public static function paint(GridElement $element, PaintContext $ctx): void
+    public static function paint(PaintContext $ctx, GridElement $element): void
     {
         $colCount = count($element->columns);
 
@@ -44,7 +44,7 @@ final class GridPainter
             );
 
             if ($cellRect->width > 0 && $cellRect->height > 0) {
-                Painter::paint($child, $ctx->sub($cellRect));
+                Painter::paint($ctx->sub($cellRect), $child);
             }
         }
     }

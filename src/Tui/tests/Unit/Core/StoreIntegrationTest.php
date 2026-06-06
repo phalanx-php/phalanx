@@ -89,7 +89,7 @@ final class StoreIntegrationTest extends TestCase
 
         $batch->consume();
 
-        $component->morale->set('high');
+        $component->morale->set(null, 'high');
         self::assertTrue($batch->isDirty);
     }
 

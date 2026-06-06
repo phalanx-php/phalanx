@@ -50,7 +50,7 @@ final class HandlerResolver
      * @param class-string<T> $handlerClass
      * @return T
      */
-    public function resolve(string $handlerClass, Scope $scope): object
+    public function resolve(Scope $scope, string $handlerClass): object
     {
         $params = $this->paramCache[$handlerClass] ??= self::reflectParams($handlerClass);
 

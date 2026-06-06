@@ -27,7 +27,7 @@ final class WatchTest extends TestCase
             },
         );
 
-        $sig->set(2);
+        $sig->set(null, 2);
         self::assertSame(1, $fired);
 
         unset($watch);
@@ -48,7 +48,7 @@ final class WatchTest extends TestCase
             },
         );
 
-        $sig->set(20);
+        $sig->set(null, 20);
 
         self::assertSame(20, $capturedNew);
         self::assertSame(10, $capturedOld);
@@ -69,7 +69,7 @@ final class WatchTest extends TestCase
             },
         );
 
-        $sig->set(5);
+        $sig->set(null, 5);
         self::assertSame(0, $fired);
     }
 
@@ -87,7 +87,7 @@ final class WatchTest extends TestCase
         );
 
         $watch->dispose();
-        $sig->set(2);
+        $sig->set(null, 2);
 
         self::assertSame(0, $fired);
     }
@@ -102,11 +102,11 @@ final class WatchTest extends TestCase
             static fn(): int => $sig->get(),
             static function (mixed $new) use ($sig, &$effectCount): void {
                 $effectCount++;
-                $sig->set($new + 100);
+                $sig->set(null, $new + 100);
             },
         );
 
-        $sig->set(2);
+        $sig->set(null, 2);
 
         self::assertSame(1, $effectCount);
 

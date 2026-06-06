@@ -20,9 +20,9 @@ final class ClientLiveTest extends PhalanxTestCase
         $subscription = $this->scope->run(
             static function (ExecutionScope $scope) use ($transport): mixed {
                 $surrealdb = new \Phalanx\SurrealDb\Client(
+                    $scope,
                     new \Phalanx\SurrealDb\Config(namespace: 'olympus', database: 'pantheon'),
                     new \Phalanx\SurrealDb\Tests\Unit\FakeTransport([]),
-                    $scope,
                     liveTransport: $transport,
                 );
 
@@ -49,9 +49,9 @@ final class ClientLiveTest extends PhalanxTestCase
         $subscription = $this->scope->run(
             static function (ExecutionScope $scope) use ($transport, $query): mixed {
                 $surrealdb = new \Phalanx\SurrealDb\Client(
+                    $scope,
                     new \Phalanx\SurrealDb\Config(namespace: 'olympus', database: 'pantheon'),
                     new \Phalanx\SurrealDb\Tests\Unit\FakeTransport([]),
-                    $scope,
                     liveTransport: $transport,
                 );
 
@@ -79,9 +79,9 @@ final class ClientLiveTest extends PhalanxTestCase
         $result = $this->scope->run(
             static function (ExecutionScope $scope) use ($connection, $transport): array {
                 $surrealdb = new \Phalanx\SurrealDb\Client(
+                    $scope,
                     new \Phalanx\SurrealDb\Config(namespace: 'olympus', database: 'pantheon'),
                     new \Phalanx\SurrealDb\Tests\Unit\FakeTransport([]),
-                    $scope,
                     liveTransport: $transport,
                 );
 
@@ -122,9 +122,9 @@ final class ClientLiveTest extends PhalanxTestCase
         $this->scope->run(
             static function (ExecutionScope $scope) use ($transport): void {
                 $surrealdb = new \Phalanx\SurrealDb\Client(
+                    $scope,
                     new \Phalanx\SurrealDb\Config(namespace: 'olympus', database: 'pantheon'),
                     new \Phalanx\SurrealDb\Tests\Unit\FakeTransport([]),
-                    $scope,
                     liveTransport: $transport,
                 );
 
@@ -147,9 +147,9 @@ final class ClientLiveTest extends PhalanxTestCase
         $this->scope->run(
             static function (ExecutionScope $scope) use ($transport): void {
                 $surrealdb = new \Phalanx\SurrealDb\Client(
+                    $scope,
                     new \Phalanx\SurrealDb\Config(namespace: 'olympus', database: 'pantheon'),
                     new \Phalanx\SurrealDb\Tests\Unit\FakeTransport([]),
-                    $scope,
                     liveTransport: $transport,
                 );
 

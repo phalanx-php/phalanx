@@ -73,7 +73,7 @@ final class NestedActivityTest extends PhalanxTestCase
                     id: 'grant_nested',
                     subject: 'agent-test-agent',
                     allowedEffects: [Kind::Custom],
-                    scope: 'session',
+                    grantScope: 'session',
                     hazardCeiling: Hazard::Critical,
                 ));
 

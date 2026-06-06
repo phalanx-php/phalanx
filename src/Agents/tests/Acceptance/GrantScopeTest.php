@@ -23,7 +23,7 @@ final class GrantScopeTest extends TestCase
             id: 'grant_session',
             subject: 'agent_session',
             allowedEffects: [Kind::FileRead],
-            scope: 'session',
+            grantScope: 'session',
             hazardCeiling: Hazard::High,
         );
 
@@ -47,7 +47,7 @@ final class GrantScopeTest extends TestCase
             id: 'grant_once',
             subject: 'agent_once',
             allowedEffects: [Kind::FileWrite],
-            scope: 'once',
+            grantScope: 'once',
             hazardCeiling: Hazard::Critical,
         );
 
@@ -71,7 +71,7 @@ final class GrantScopeTest extends TestCase
             id: 'grant_always',
             subject: 'agent_always',
             allowedEffects: [Kind::WebFetch],
-            scope: 'always',
+            grantScope: 'always',
             hazardCeiling: Hazard::Medium,
         );
 
@@ -92,7 +92,7 @@ final class GrantScopeTest extends TestCase
             id: 'grant_expired',
             subject: 'agent_expired',
             allowedEffects: [Kind::FileRead],
-            scope: 'session',
+            grantScope: 'session',
             hazardCeiling: Hazard::Low,
             expiresAt: new \DateTimeImmutable('-1 hour'),
         );

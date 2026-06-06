@@ -17,9 +17,9 @@ use Throwable;
 final class RecoveryRunner
 {
     public function run(
+        ExecutionScope $scope,
         RecoveryPlan $plan,
         Scopeable|Executable|Closure $task,
-        ExecutionScope $scope,
     ): mixed {
         if ($plan->isNone()) {
             return $scope->execute($task);

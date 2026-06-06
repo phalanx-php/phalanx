@@ -40,7 +40,7 @@ final class EffectDispatcherRoutingTest extends TestCase
             id: 'grant_routing',
             subject: 'agent-test-agent',
             allowedEffects: [Kind::FileRead],
-            scope: 'session',
+            grantScope: 'session',
             hazardCeiling: Hazard::Critical,
         ));
 

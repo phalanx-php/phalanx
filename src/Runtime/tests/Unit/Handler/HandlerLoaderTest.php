@@ -30,7 +30,7 @@ PHP;
 
         file_put_contents($this->fixtureDir . '/handlers.php', $content);
 
-        $group = HandlerLoader::load($this->fixtureDir . '/handlers.php');
+        $group = HandlerLoader::load(null, $this->fixtureDir . '/handlers.php');
 
         $this->assertInstanceOf(HandlerGroup::class, $group);
         $this->assertContains('task-a', $group->keys());
@@ -42,7 +42,7 @@ PHP;
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Handler file not found');
 
-        HandlerLoader::load('/nonexistent/file.php');
+        HandlerLoader::load(null, '/nonexistent/file.php');
     }
 
     #[Test]
@@ -58,7 +58,7 @@ PHP;
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Handler file must return a group or Closure');
 
-        HandlerLoader::load($this->fixtureDir . '/invalid.php');
+        HandlerLoader::load(null, $this->fixtureDir . '/invalid.php');
     }
 
     protected function setUp(): void

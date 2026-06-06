@@ -7,8 +7,8 @@ namespace Phalanx\Worker\Runtime;
 final class ServiceProxy
 {
     public function __construct(
-        private readonly string $serviceClass,
         private readonly WorkerScope $scope,
+        private readonly string $serviceClass,
     ) {
     }
 

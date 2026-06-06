@@ -138,7 +138,7 @@ final class PayloadTest extends TestCase
     #[Test]
     public function permissionModePayloadShape(): void
     {
-        $record = new PermissionMode('r', 0, self::at(), mode: Mode::Ask, scope: 'bash:*');
+        $record = new PermissionMode('r', 0, self::at(), mode: Mode::Ask, permissionScope: 'bash:*');
         $payload = $record->toCanonical()['payload'];
 
         self::assertSame('ask', $payload['mode']);

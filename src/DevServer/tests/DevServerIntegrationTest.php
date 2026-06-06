@@ -22,9 +22,9 @@ final class DevServerIntegrationTest extends PhalanxTestCase
         $config = Process::named('readiness-fixture')
             ->command(PHP_BINARY . ' -r ' . escapeshellarg($script))
             ->ready('/ready/');
+        $output = self::nullMultiplexer();
 
-        $finalState = $this->scope->run(static function (ExecutionScope $scope) use ($config): ProcessState {
-            $output = self::nullMultiplexer();
+        $finalState = $this->scope->run(static function (ExecutionScope $scope) use ($config, $output): ProcessState {
             $mp = new ManagedProcess($config);
             $mp->start($scope, $output);
             $mp->waitUntilReady($scope, timeout: 5.0);
@@ -44,9 +44,9 @@ final class DevServerIntegrationTest extends PhalanxTestCase
         $config = Process::named('stderr-readiness-fixture')
             ->command(PHP_BINARY . ' -r ' . escapeshellarg($script))
             ->ready('/ready/');
+        $output = self::nullMultiplexer();
 
-        $finalState = $this->scope->run(static function (ExecutionScope $scope) use ($config): ProcessState {
-            $output = self::nullMultiplexer();
+        $finalState = $this->scope->run(static function (ExecutionScope $scope) use ($config, $output): ProcessState {
             $mp = new ManagedProcess($config);
             $mp->start($scope, $output);
             $mp->waitUntilReady($scope, timeout: 5.0);
@@ -65,9 +65,9 @@ final class DevServerIntegrationTest extends PhalanxTestCase
         $script = 'for ($i = 0; $i < 50; $i++) { usleep(20000); }';
         $config = Process::named('immediate-fixture')
             ->command(PHP_BINARY . ' -r ' . escapeshellarg($script));
+        $output = self::nullMultiplexer();
 
-        $state = $this->scope->run(static function (ExecutionScope $scope) use ($config): ProcessState {
-            $output = self::nullMultiplexer();
+        $state = $this->scope->run(static function (ExecutionScope $scope) use ($config, $output): ProcessState {
             $mp = new ManagedProcess($config);
             $mp->start($scope, $output);
             $scope->delay(Mark::ms(50));
@@ -85,9 +85,9 @@ final class DevServerIntegrationTest extends PhalanxTestCase
     {
         $config = Process::named('crash-fixture')
             ->command(PHP_BINARY . ' -r ' . escapeshellarg('exit(2);'));
+        $output = self::nullMultiplexer();
 
-        $crashed = $this->scope->run(static function (ExecutionScope $scope) use ($config): bool {
-            $output = self::nullMultiplexer();
+        $crashed = $this->scope->run(static function (ExecutionScope $scope) use ($config, $output): bool {
             $mp = new ManagedProcess($config);
             $captured = false;
             $mp->onCrash(static function () use (&$captured): void {
@@ -143,9 +143,9 @@ final class DevServerIntegrationTest extends PhalanxTestCase
         $config = Process::named('restart-fixture')
             ->command(PHP_BINARY . ' -r ' . escapeshellarg($script))
             ->ready('/ready/');
+        $output = self::nullMultiplexer();
 
-        $pids = $this->scope->run(static function (ExecutionScope $scope) use ($config): array {
-            $output = self::nullMultiplexer();
+        $pids = $this->scope->run(static function (ExecutionScope $scope) use ($config, $output): array {
             $mp = new ManagedProcess($config);
             $mp->start($scope, $output);
             $mp->waitUntilReady($scope, timeout: 5.0);
@@ -173,9 +173,9 @@ final class DevServerIntegrationTest extends PhalanxTestCase
         $config = Process::named('idempotent-stop-fixture')
             ->command(PHP_BINARY . ' -r ' . escapeshellarg($script))
             ->ready('/ready/');
+        $output = self::nullMultiplexer();
 
-        $stoppedState = $this->scope->run(static function (ExecutionScope $scope) use ($config): ProcessState {
-            $output = self::nullMultiplexer();
+        $stoppedState = $this->scope->run(static function (ExecutionScope $scope) use ($config, $output): ProcessState {
             $mp = new ManagedProcess($config);
             $mp->start($scope, $output);
             $mp->waitUntilReady($scope, timeout: 5.0);
@@ -212,9 +212,9 @@ final class DevServerIntegrationTest extends PhalanxTestCase
     {
         $config = Process::named('natural-exit-fixture')
             ->command(PHP_BINARY . ' -r ' . escapeshellarg('echo "done\n";'));
+        $output = self::nullMultiplexer();
 
-        [$state, $live] = $this->scope->run(static function (ExecutionScope $scope) use ($config): array {
-            $output = self::nullMultiplexer();
+        [$state, $live] = $this->scope->run(static function (ExecutionScope $scope) use ($config, $output): array {
             $mp = new ManagedProcess($config);
             $mp->start($scope, $output);
             $mp->waitUntilStopped($scope, timeout: 2.0);

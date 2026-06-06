@@ -6,7 +6,7 @@ namespace Phalanx\Tui;
 
 use Phalanx\Boot\AppContext;
 use Phalanx\Tui\Apps\Builder as TuiBuilder;
-use Phalanx\Tui\Collab\Apps\Builder as CollabBuilder;
+use Phalanx\Tui\Runtime\Apps\Builder as RuntimeBuilder;
 
 final class Tui
 {
@@ -21,8 +21,8 @@ final class Tui
     }
 
     /** @param array<string,mixed> $context */
-    public static function collab(array $context = []): CollabBuilder
+    public static function starting(array $context = []): RuntimeBuilder
     {
-        return new CollabBuilder(AppContext::fromProject($context));
+        return new RuntimeBuilder(AppContext::fromProject($context));
     }
 }

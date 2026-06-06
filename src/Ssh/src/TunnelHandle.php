@@ -20,13 +20,13 @@ final class TunnelHandle implements \Stringable
     }
 
     public function __construct(
+        private readonly TaskScope $scope,
         public readonly int $localPort,
         public readonly string $remoteHost,
         public readonly int $remotePort,
         public readonly TunnelDirection $direction,
         public readonly ?SshCredential $targetCredential,
         private readonly StreamingProcessHandle $process,
-        private readonly TaskScope $scope,
     ) {
     }
 

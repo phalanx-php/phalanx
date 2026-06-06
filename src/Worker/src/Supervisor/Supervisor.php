@@ -58,12 +58,12 @@ class Supervisor
         return $this->workers;
     }
 
-    public function dispatch(TaskRequest $task, TaskScope&TaskExecutor $scope, CancellationToken $token): mixed
+    public function dispatch(TaskScope&TaskExecutor $scope, TaskRequest $task, CancellationToken $token): mixed
     {
         $this->start();
 
         try {
-            return $this->dispatcher()->dispatch($task, $scope, $token);
+            return $this->dispatcher()->dispatch($scope, $task, $token);
         } catch (\Throwable $e) {
             $this->handleCrashedWorkers();
 

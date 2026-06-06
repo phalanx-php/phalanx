@@ -33,7 +33,7 @@ final class GrantTest extends TestCase
             id: 'grant_dup_01',
             subject: 'odysseus',
             allowedEffects: [EffectKind::FileRead, EffectKind::FileRead, EffectKind::WebFetch],
-            scope: 'workspace:ithaca-project',
+            grantScope: 'workspace:ithaca-project',
             hazardCeiling: Hazard::Low,
         );
 
@@ -182,7 +182,7 @@ final class GrantTest extends TestCase
             id: 'grant_leonidas_01',
             subject: 'leonidas',
             allowedEffects: [EffectKind::FileRead, EffectKind::CodeSearch],
-            scope: 'workspace:sparta-project',
+            grantScope: 'workspace:sparta-project',
             hazardCeiling: Hazard::Medium,
         );
     }

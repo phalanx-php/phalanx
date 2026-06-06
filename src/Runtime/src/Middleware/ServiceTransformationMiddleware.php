@@ -10,5 +10,5 @@ use Phalanx\Scope\ExecutionScope;
 interface ServiceTransformationMiddleware
 {
     /** @param Closure(): object $next */
-    public function transform(string $type, Closure $next, ExecutionScope $scope): object;
+    public function transform(ExecutionScope $scope, string $type, Closure $next): object;
 }

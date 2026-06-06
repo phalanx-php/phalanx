@@ -9,7 +9,7 @@ use Phalanx\Tui\Tdom\Element\TextElement;
 
 final class TextPainter
 {
-    public static function paint(TextElement $element, PaintContext $ctx): void
+    public static function paint(PaintContext $ctx, TextElement $element): void
     {
         if ($ctx->area->width === 0 || $ctx->area->height === 0) {
             return;

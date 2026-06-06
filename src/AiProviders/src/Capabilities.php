@@ -131,7 +131,7 @@ final class Capabilities implements Canonicalizable
         ));
 
         $customLookup = array_fill_keys($other->custom, true);
-        
+
         $sharedCustom = array_values(array_filter(
             $this->custom,
             static fn (string $tag): bool => isset($customLookup[$tag]),

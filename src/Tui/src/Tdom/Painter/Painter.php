@@ -34,12 +34,12 @@ final class Painter
 
     private static ?AnsiStyle $emptyStyle = null;
 
-    public static function paint(Renderable $node, PaintContext $ctx): void
+    public static function paint(PaintContext $ctx, Renderable $node): void
     {
         $renderCtx = $ctx->renderContext;
 
         if ($renderCtx === null || $ctx->hasMountFrame() || $ctx->hasPaintBoundary()) {
-            self::paintResolved($node, $ctx);
+            self::paintResolved($ctx, $node);
 
             return;
         }
@@ -59,7 +59,7 @@ final class Painter
         $ctx->enterPaintBoundary();
 
         try {
-            self::paintResolved($node, $ctx);
+            self::paintResolved($ctx, $node);
         } finally {
             $ctx->leavePaintBoundary();
         }
@@ -83,7 +83,7 @@ final class Painter
         self::$emptyStyle = null;
     }
 
-    private static function paintResolved(Renderable $node, PaintContext $ctx): void
+    private static function paintResolved(PaintContext $ctx, Renderable $node): void
     {
         $renderCtx = $ctx->renderContext;
 
@@ -96,7 +96,7 @@ final class Painter
                 throw new \RuntimeException('Mount elements must be resolved before painting.');
             }
 
-            self::paint($renderCtx->mountSystem->resolve($node), $ctx);
+            self::paint($ctx, $renderCtx->mountSystem->resolve($node));
 
             return;
         }
@@ -115,7 +115,7 @@ final class Painter
                 $childCtx = $sheet !== null
                     ? $ctx->withStylesheet($sheet)
                     : $ctx;
-                self::paint($inner, $childCtx);
+                self::paint($childCtx, $inner);
             }
 
             return;
@@ -151,17 +151,17 @@ final class Painter
         }
 
         match (true) {
-            $node instanceof TextElement => TextPainter::paint($node, $paintCtx),
-            $node instanceof PanelElement => PanelPainter::paint($node, $paintCtx),
-            $node instanceof ColumnElement => ColumnPainter::paint($node, $paintCtx),
-            $node instanceof RowElement => RowPainter::paint($node, $paintCtx),
-            $node instanceof GridElement => GridPainter::paint($node, $paintCtx),
-            $node instanceof ScrollElement => ScrollPainter::paint($node, $paintCtx),
-            $node instanceof InputElement => InputPainter::paint($node, $paintCtx),
-            $node instanceof StatusLineElement => StatusLinePainter::paint($node, $paintCtx),
-            $node instanceof SpinnerElement => SpinnerPainter::paint($node, $paintCtx),
-            $node instanceof DividerElement => DividerPainter::paint($node, $paintCtx),
-            $node instanceof ProgressElement => ProgressPainter::paint($node, $paintCtx),
+            $node instanceof TextElement => TextPainter::paint($paintCtx, $node),
+            $node instanceof PanelElement => PanelPainter::paint($paintCtx, $node),
+            $node instanceof ColumnElement => ColumnPainter::paint($paintCtx, $node),
+            $node instanceof RowElement => RowPainter::paint($paintCtx, $node),
+            $node instanceof GridElement => GridPainter::paint($paintCtx, $node),
+            $node instanceof ScrollElement => ScrollPainter::paint($paintCtx, $node),
+            $node instanceof InputElement => InputPainter::paint($paintCtx, $node),
+            $node instanceof StatusLineElement => StatusLinePainter::paint($paintCtx, $node),
+            $node instanceof SpinnerElement => SpinnerPainter::paint($paintCtx, $node),
+            $node instanceof DividerElement => DividerPainter::paint($paintCtx, $node),
+            $node instanceof ProgressElement => ProgressPainter::paint($paintCtx, $node),
             default => null,
         };
     }

@@ -43,6 +43,6 @@ final class RouteMatcher implements HandlerMatcher
             $handler->config,
         );
 
-        return new MatchResult($handler, $scope);
+        return new MatchResult($scope, $handler);
     }
 }

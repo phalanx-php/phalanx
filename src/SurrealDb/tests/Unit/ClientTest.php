@@ -21,9 +21,9 @@ final class ClientTest extends PhalanxTestCase
         $result = $this->scope->run(
             static function (ExecutionScope $scope) use ($transport, $query): mixed {
                 $surrealdb = new \Phalanx\SurrealDb\Client(
+                    $scope,
                     new \Phalanx\SurrealDb\Config(namespace: 'olympus', database: 'pantheon'),
                     $transport,
-                    $scope,
                 );
                 $surrealdb->let('topic', 'Apollo');
 
@@ -48,9 +48,9 @@ final class ClientTest extends PhalanxTestCase
         $this->scope->run(
             static function (ExecutionScope $scope) use ($transport): void {
                 $surrealdb = new \Phalanx\SurrealDb\Client(
+                    $scope,
                     new \Phalanx\SurrealDb\Config(namespace: 'olympus', database: 'pantheon', token: 'jwt'),
                     $transport,
-                    $scope,
                 );
 
                 $surrealdb->select('oracle:apollo');
@@ -109,9 +109,9 @@ final class ClientTest extends PhalanxTestCase
         $this->scope->run(
             static function (ExecutionScope $scope) use ($transport): void {
                 $surrealdb = new \Phalanx\SurrealDb\Client(
+                    $scope,
                     new \Phalanx\SurrealDb\Config(namespace: 'olympus', database: 'pantheon', token: 'jwt'),
                     $transport,
-                    $scope,
                 );
 
                 $surrealdb->ping();
@@ -141,9 +141,9 @@ final class ClientTest extends PhalanxTestCase
         $this->scope->run(
             static function (ExecutionScope $scope) use ($transport, $query): void {
                 $surrealdb = new \Phalanx\SurrealDb\Client(
+                    $scope,
                     new \Phalanx\SurrealDb\Config(namespace: 'olympus', database: 'pantheon', token: 'jwt'),
                     $transport,
-                    $scope,
                 );
 
                 $surrealdb->let('topic', 'Apollo');
@@ -167,9 +167,9 @@ final class ClientTest extends PhalanxTestCase
         $this->scope->run(
             static function (ExecutionScope $scope) use ($transport): void {
                 $base = new \Phalanx\SurrealDb\Client(
+                    $scope,
                     new \Phalanx\SurrealDb\Config(namespace: 'olympus', database: 'pantheon', token: 'jwt'),
                     $transport,
-                    $scope,
                 );
                 $alternate = $base->withDatabase('athens', 'library');
 
@@ -193,9 +193,9 @@ final class ClientTest extends PhalanxTestCase
         $this->scope->run(
             static function (ExecutionScope $scope) use ($transport): void {
                 $surrealdb = new \Phalanx\SurrealDb\Client(
+                    $scope,
                     new \Phalanx\SurrealDb\Config(namespace: 'olympus', database: 'pantheon'),
                     $transport,
-                    $scope,
                 );
                 $token = $surrealdb->signin([
                     'NS' => 'olympus',
@@ -234,9 +234,9 @@ final class ClientTest extends PhalanxTestCase
         $this->scope->run(
             static function (ExecutionScope $scope) use ($transport): void {
                 $surrealdb = new \Phalanx\SurrealDb\Client(
+                    $scope,
                     new \Phalanx\SurrealDb\Config(namespace: 'olympus', database: 'pantheon'),
                     $transport,
-                    $scope,
                 );
                 $token = $surrealdb->signup([
                     'NS' => 'olympus',
@@ -264,12 +264,16 @@ final class ClientTest extends PhalanxTestCase
 
         $this->scope->run(
             static function (ExecutionScope $scope) use ($transport): void {
-                $surrealdb = new \Phalanx\SurrealDb\Client(new \Phalanx\SurrealDb\Config(
-                    namespace: 'olympus',
-                    database: 'pantheon',
-                    username: 'root',
-                    password: 'root',
-                ), $transport, $scope);
+                $surrealdb = new \Phalanx\SurrealDb\Client(
+                    $scope,
+                    new \Phalanx\SurrealDb\Config(
+                        namespace: 'olympus',
+                        database: 'pantheon',
+                        username: 'root',
+                        password: 'root',
+                    ),
+                    $transport,
+                );
 
                 $surrealdb->select('oracle');
             },
@@ -289,9 +293,9 @@ final class ClientTest extends PhalanxTestCase
         $this->scope->run(
             static function (ExecutionScope $scope): mixed {
                 $surrealdb = new \Phalanx\SurrealDb\Client(
+                    $scope,
                     new \Phalanx\SurrealDb\Config(namespace: 'olympus', database: 'pantheon'),
                     new \Phalanx\SurrealDb\Tests\Unit\FakeTransport([]),
-                    $scope,
                 );
 
                 return $surrealdb->signin();
@@ -309,9 +313,9 @@ final class ClientTest extends PhalanxTestCase
         $this->scope->run(
             static function (ExecutionScope $scope): mixed {
                 $surrealdb = new \Phalanx\SurrealDb\Client(
+                    $scope,
                     new \Phalanx\SurrealDb\Config(namespace: 'olympus', database: 'pantheon'),
                     new \Phalanx\SurrealDb\Tests\Unit\FakeTransport([['ok' => true]]),
-                    $scope,
                 );
 
                 return $surrealdb->signin(['user' => 'apollo']);
@@ -328,9 +332,9 @@ final class ClientTest extends PhalanxTestCase
         $this->scope->run(
             static function (ExecutionScope $scope) use ($transport): void {
                 $surrealdb = new \Phalanx\SurrealDb\Client(
+                    $scope,
                     new \Phalanx\SurrealDb\Config(namespace: 'olympus', database: 'pantheon'),
                     $transport,
-                    $scope,
                 );
 
                 $surrealdb->authenticate('jwt-token');
@@ -356,9 +360,9 @@ final class ClientTest extends PhalanxTestCase
         $result = $this->scope->run(
             static function (ExecutionScope $scope) use ($transport): array {
                 $surrealdb = new \Phalanx\SurrealDb\Client(
+                    $scope,
                     new \Phalanx\SurrealDb\Config(namespace: 'olympus', database: 'pantheon', token: 'jwt-token'),
                     $transport,
-                    $scope,
                 );
 
                 return [

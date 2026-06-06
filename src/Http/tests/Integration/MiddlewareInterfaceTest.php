@@ -72,7 +72,7 @@ final class MiddlewareInterfaceTest extends PhalanxTestCase
 
     private function dispatch(RouteGroup $group, ServerRequestInterface $request): mixed
     {
-        return $group->dispatch($request, $this->app->createScope());
+        return $group->dispatch($this->app->createScope(), $request);
     }
 }
 

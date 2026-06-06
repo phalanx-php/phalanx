@@ -22,13 +22,13 @@ use Phalanx\Scope\TaskExecutor;
  */
 final class FileWatcher
 {
-    private ?Subscription $subscription = null;
+    private int $generation = 0;
 
     private bool $running = false;
 
     private bool $scanInFlight = false;
 
-    private int $generation = 0;
+    private ?Subscription $subscription = null;
 
     /** @var array<string, int> path => mtime */
     private array $snapshot = [];

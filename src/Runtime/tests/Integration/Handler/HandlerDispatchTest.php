@@ -30,7 +30,7 @@ final class HandlerDispatchTest extends PhalanxTestCase
 
         $scope = $this->testApp->application->createScope();
 
-        $result = $group->dispatch('task-b', $scope);
+        $result = $group->dispatch($scope, 'task-b');
 
         $this->assertSame('b', $result);
     }
@@ -47,7 +47,7 @@ final class HandlerDispatchTest extends PhalanxTestCase
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Handler not found: nonexistent');
 
-        $group->dispatch('nonexistent', $scope);
+        $group->dispatch($scope, 'nonexistent');
     }
 
     #[Test]
@@ -61,7 +61,7 @@ final class HandlerDispatchTest extends PhalanxTestCase
                     return null;
                 }
 
-                return new MatchResult($handler, $scope);
+                return new MatchResult($scope, $handler);
             }
         };
 
@@ -101,7 +101,7 @@ final class HandlerDispatchTest extends PhalanxTestCase
 
         $scope = $this->testApp->application->createScope();
 
-        $result = $group->dispatch('task-a', $scope);
+        $result = $group->dispatch($scope, 'task-a');
 
         $this->assertSame('before:a:after', $result);
     }

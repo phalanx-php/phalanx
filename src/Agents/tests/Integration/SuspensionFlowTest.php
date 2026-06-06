@@ -55,7 +55,7 @@ final class SuspensionFlowTest extends PhalanxTestCase
             id: 'grant_1',
             subject: 'agent_1',
             allowedEffects: [Kind::FileWrite],
-            scope: 'session',
+            grantScope: 'session',
             hazardCeiling: Hazard::Critical,
         );
 
@@ -141,7 +141,7 @@ final class SuspensionFlowTest extends PhalanxTestCase
             id: 'grant_1',
             subject: 'agent_1',
             allowedEffects: [Kind::FileWrite],
-            scope: 'session',
+            grantScope: 'session',
             hazardCeiling: Hazard::Critical,
         );
 

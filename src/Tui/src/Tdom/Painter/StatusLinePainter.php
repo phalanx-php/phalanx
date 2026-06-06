@@ -10,7 +10,7 @@ use Phalanx\Tui\Tdom\Element\StatusLineElement;
 
 final class StatusLinePainter
 {
-    public static function paint(StatusLineElement $element, PaintContext $ctx): void
+    public static function paint(PaintContext $ctx, StatusLineElement $element): void
     {
         if ($element->sections === [] || $ctx->area->width === 0 || $ctx->area->height === 0) {
             return;
@@ -30,7 +30,7 @@ final class StatusLinePainter
 
         foreach ($element->sections as $i => $section) {
             if (isset($rects[$i]) && $rects[$i]->width > 0) {
-                Painter::paint($section, $ctx->sub($rects[$i]));
+                Painter::paint($ctx->sub($rects[$i]), $section);
             }
         }
     }

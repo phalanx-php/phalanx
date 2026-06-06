@@ -47,8 +47,8 @@ final class SftpDownload implements Executable, Recoverable
         $args = ['-b', $batchFile, ...$this->credential->toSftpArgs($config)];
 
         [$exitCode, , , $durationMs] = ProcessAwaiter::spawn(
-            ProcessAwaiter::argv($config->sftpBinaryPath, $args),
             $scope,
+            ProcessAwaiter::argv($config->sftpBinaryPath, $args),
             $this->timeoutSeconds ?? $config->defaultTimeoutSeconds,
         );
 

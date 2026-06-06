@@ -83,7 +83,7 @@ final class DispatcherTest extends TestCase
             id: 'grant_once',
             subject: 'agent_1',
             allowedEffects: [Kind::FileRead],
-            scope: GrantScope::Once->value,
+            grantScope: GrantScope::Once->value,
             hazardCeiling: Hazard::Critical,
         );
         $grantStore = new FixedGrantStore($grant);
@@ -462,7 +462,7 @@ final class DispatcherTest extends TestCase
             id: 'grant_1',
             subject: 'agent_1',
             allowedEffects: [$kind],
-            scope: 'session',
+            grantScope: 'session',
             hazardCeiling: $hazardCeiling,
         );
     }

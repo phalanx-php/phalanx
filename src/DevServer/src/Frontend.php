@@ -7,17 +7,20 @@ namespace Phalanx\DevServer;
 final class Frontend
 {
     private string $type;
+    private ?string $publicPath = null;
+    private ?string $customCommand = null;
+    private ?string $reloadPattern = null;
     private string $entry = 'resources/js/app.js';
     private string $outdir = 'public/assets/js';
-    private ?string $publicPath = null;
+
     private bool $splitting = true;
     private bool $sourcemap = true;
     private bool $minify = false;
-    private ?Css $css = null;
+
     /** @var array<string, string> */
     private array $env = [];
-    private ?string $customCommand = null;
-    private ?string $reloadPattern = null;
+
+    private ?Css $css = null;
 
     private function __construct(string $type)
     {
@@ -216,6 +219,7 @@ final class Frontend
     private function buildPluginProcess(string $cwd): Process
     {
         $bin = BinaryResolver::resolve(Binary::Bun, $this->env);
+
         $script = BuildScript::generate(
             $this->type,
             $this->entry,

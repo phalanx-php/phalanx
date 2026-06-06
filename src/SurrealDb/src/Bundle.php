@@ -72,11 +72,11 @@ class Bundle extends ServiceBundle
 
         $services->scoped(\Phalanx\SurrealDb\Client::class)
             ->factory(static fn(
+                ExecutionScope $scope,
                 \Phalanx\SurrealDb\Config $config,
                 \Phalanx\SurrealDb\Transport $transport,
                 \Phalanx\SurrealDb\Live\Transport $liveTransport,
-                ExecutionScope $scope,
-            ): \Phalanx\SurrealDb\Client => new \Phalanx\SurrealDb\Client($config, $transport, $scope, liveTransport: $liveTransport))
+            ): \Phalanx\SurrealDb\Client => new \Phalanx\SurrealDb\Client($scope, $config, $transport, liveTransport: $liveTransport))
             ->onDispose(static function (\Phalanx\SurrealDb\Client $surrealdb): void {
                 $surrealdb->close();
             });

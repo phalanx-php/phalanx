@@ -109,7 +109,7 @@ final class RouteGroup implements Executable
         return ($this->inner)($scope);
     }
 
-    public function dispatch(ServerRequestInterface $request, ExecutionScope $scope): mixed
+    public function dispatch(ExecutionScope $scope, ServerRequestInterface $request): mixed
     {
         return ($this->inner)(new ExecutionContext(
             $scope,
@@ -241,11 +241,11 @@ final class RouteGroup implements Executable
      * Validator errors are collected from all validators before throwing so
      * callers see the full error set in one response.
      *
-     * @return Closure(Scopeable|Executable, ExecutionScope): mixed
+     * @return Closure(ExecutionScope, Scopeable|Executable): mixed
      */
     private static function httpInvoker(): Closure
     {
-        return static function (Scopeable|Executable $instance, ExecutionScope $scope): mixed {
+        return static function (ExecutionScope $scope, Scopeable|Executable $instance): mixed {
             if (!$scope instanceof RequestContext) {
                 if (!is_callable($instance)) {
                     throw new RuntimeException($instance::class . ' route handler must be invokable.');
@@ -255,17 +255,17 @@ final class RouteGroup implements Executable
             }
 
             if ($instance instanceof RequiresHeaders) {
-                self::enforceRequiredHeaders($instance->requiredHeaders, $scope);
+                self::enforceRequiredHeaders($scope, $instance->requiredHeaders);
             }
 
             // Run param validators before hydration -- they operate on raw
             // route param strings, not the hydrated DTO.
             if ($scope->config->paramValidators !== []) {
-                self::enforceParamValidators($scope->config->paramValidators, $scope);
+                self::enforceParamValidators($scope, $scope->config->paramValidators);
             }
 
             // Hydrate before route validators so they receive the typed, coerced DTO.
-            $args = InputHydrator::resolve($instance, $scope);
+            $args = InputHydrator::resolve($scope, $instance);
 
             // $args is either [], [$scope], or [$scope, $input]. Extract $input for validators.
             $input = count($args) >= 2 ? $args[1] : null;
@@ -276,8 +276,8 @@ final class RouteGroup implements Executable
                 $errors = [];
                 foreach ($instance->validators as $validatorClass) {
                     /** @var RouteValidator $validator */
-                    $validator = $resolver->resolve($validatorClass, $scope);
-                    $fieldErrors = $validator->validate($input, $scope);
+                    $validator = $resolver->resolve($scope, $validatorClass);
+                    $fieldErrors = $validator->validate($scope, $input);
                     foreach ($fieldErrors as $field => $messages) {
                         $errors[$field] = array_merge($errors[$field] ?? [], $messages);
                     }
@@ -298,7 +298,7 @@ final class RouteGroup implements Executable
     /**
      * @param array<string, RouteParamValidator> $validators
      */
-    private static function enforceParamValidators(array $validators, RequestContext $ctx): void
+    private static function enforceParamValidators(RequestContext $ctx, array $validators): void
     {
         $errors = [];
 
@@ -323,7 +323,7 @@ final class RouteGroup implements Executable
     /**
      * @param list<Header> $required
      */
-    private static function enforceRequiredHeaders(array $required, RequestContext $ctx): void
+    private static function enforceRequiredHeaders(RequestContext $ctx, array $required): void
     {
         $errors = [];
 

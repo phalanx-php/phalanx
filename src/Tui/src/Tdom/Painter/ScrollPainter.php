@@ -8,7 +8,7 @@ use Phalanx\Tui\Tdom\Element\ScrollElement;
 
 final class ScrollPainter
 {
-    public static function paint(ScrollElement $element, PaintContext $ctx): void
+    public static function paint(PaintContext $ctx, ScrollElement $element): void
     {
         if ($ctx->area->width === 0 || $ctx->area->height === 0) {
             return;

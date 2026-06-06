@@ -52,7 +52,7 @@ final class MemoryDisposalChurnTest extends PhalanxTestCase
         $previous = null;
 
         for ($i = 0; $i < 25; $i++) {
-            $model->label->set("label-{$i}");
+            $model->label->set(null, "label-{$i}");
 
             $parent->render($ctx);
             $mounted = $system->mounted();
@@ -89,7 +89,7 @@ final class MemoryDisposalChurnTest extends PhalanxTestCase
         $activeSubscriberCount = null;
 
         for ($i = 0; $i < 20; $i++) {
-            $model->label->set("nested-{$i}");
+            $model->label->set(null, "nested-{$i}");
 
             $parent->render($ctx);
             $nested = $system->mounted()[0];
@@ -128,9 +128,10 @@ final class MemoryDisposalChurnTest extends PhalanxTestCase
         $previous = null;
 
         for ($i = 0; $i < 25; $i++) {
-            $model->label->set("paint-{$i}");
+            $model->label->set(null, "paint-{$i}");
 
             Painter::paint(
+                new PaintContext(Rect::sized(20, 3), $buffer, renderContext: $renderCtx, mountOwner: $owner),
                 column(
                     mount(
                         SlotChurnChild::class,
@@ -138,7 +139,6 @@ final class MemoryDisposalChurnTest extends PhalanxTestCase
                         signal: $model->childSignal,
                     ),
                 ),
-                new PaintContext(Rect::sized(20, 3), $buffer, renderContext: $renderCtx, mountOwner: $owner),
             );
 
             $mounted = $system->mounted();

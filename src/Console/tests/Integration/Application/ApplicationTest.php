@@ -404,7 +404,7 @@ TOML);
             $outerScope = $app->host()->createScope($token);
 
             try {
-                $code = $app->dispatchScoped(['cancel'], $outerScope);
+                $code = $app->dispatchScoped($outerScope, ['cancel']);
 
                 self::assertSame(130, $code);
                 self::assertStringContainsString('Cancelled: scope cancelled', StreamOutputHelper::contents($stream));
@@ -450,7 +450,7 @@ TOML);
             $outerScope = $app->host()->createScope($token);
 
             try {
-                $code = $app->dispatchScoped(['cancel'], $outerScope, $signals);
+                $code = $app->dispatchScoped($outerScope, ['cancel'], $signals);
 
                 self::assertSame(143, $code);
                 self::assertStringContainsString('Cancelled: signal:term', StreamOutputHelper::contents($stream));

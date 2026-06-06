@@ -72,11 +72,11 @@ final class AutoResolvedFactoryBundle extends ServiceBundle
 
         $services->scoped(AutoResolvedConsumer::class)
             ->factory(static fn(
-                AutoResolvedDependency $dependency,
                 Scope $scope,
+                AutoResolvedDependency $dependency,
             ): AutoResolvedConsumer => new AutoResolvedConsumer(
-                $dependency,
                 $scope,
+                $dependency,
             ));
     }
 }
@@ -100,8 +100,8 @@ final readonly class AutoResolvedDependency
 final readonly class AutoResolvedConsumer
 {
     public function __construct(
-        public AutoResolvedDependency $dependency,
         public Scope $scope,
+        public AutoResolvedDependency $dependency,
     ) {
     }
 }

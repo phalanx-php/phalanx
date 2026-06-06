@@ -40,7 +40,7 @@ final class TransportTest extends TestCase
         $client = self::stubClient();
         $scope = self::stubScope();
 
-        $transport = new Transport($client, $scope);
+        $transport = new Transport($scope, $client);
 
         self::assertSame($client, $transport->client);
         self::assertSame($scope, $transport->scope);
@@ -50,7 +50,7 @@ final class TransportTest extends TestCase
     public function streamReturnsGeneratorLazily(): void
     {
         // Generator is returned without executing — no network call until iterated.
-        $transport = new Transport(self::stubClient(), self::stubScope());
+        $transport = new Transport(self::stubScope(), self::stubClient());
         $request = Request::of('GET', 'http://127.0.0.1:1/');
 
         $generator = $transport->stream($request, new SyncRuntime());
@@ -185,7 +185,7 @@ final class TransportTest extends TestCase
                         ?TlsOptions $_tlsOptions,
                     ): TcpConnection => $connection,
                 );
-                $transport = new Transport($client, $runtimeScope);
+                $transport = new Transport($runtimeScope, $client);
                 $request = Request::of('GET', 'http://127.0.0.1:8123/');
                 $runtime = new SyncRuntime();
 
@@ -269,7 +269,7 @@ final class TransportTest extends TestCase
                         ?TlsOptions $_tlsOptions,
                     ): TcpConnection => $connection,
                 );
-                $transport = new Transport($client, $runtimeScope);
+                $transport = new Transport($runtimeScope, $client);
                 $runtime = new SyncRuntime();
                 $beforeRead?->__invoke($runtime);
 

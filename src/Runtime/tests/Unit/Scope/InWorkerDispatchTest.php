@@ -114,7 +114,7 @@ class RecordingWorkerDispatch implements WorkerDispatch
 
     public ?TaskRun $run = null;
 
-    public function dispatch(WorkerTask $task, TaskScope&TaskExecutor $scope, CancellationToken $token): mixed
+    public function dispatch(TaskScope&TaskExecutor $scope, WorkerTask $task, CancellationToken $token): mixed
     {
         if (!$scope instanceof ExecutionLifecycleScope) {
             throw new RuntimeException('Expected ExecutionLifecycleScope.');

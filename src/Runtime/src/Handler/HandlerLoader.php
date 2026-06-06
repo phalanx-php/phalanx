@@ -23,10 +23,10 @@ final readonly class HandlerLoader
     /**
      * Load handlers from a single file.
      *
-     * @param string $path Path to PHP file
      * @param Scope|null $scope For dynamic loading via closure
+     * @param string $path Path to PHP file
      */
-    public static function load(string $path, ?Scope $scope = null): mixed
+    public static function load(?Scope $scope, string $path): mixed
     {
         if (!is_file($path)) {
             throw new RuntimeException("Handler file not found: $path");
@@ -72,10 +72,10 @@ final readonly class HandlerLoader
      *
      * Non-recursive. Only loads .php files.
      *
-     * @param string $dir Directory path
      * @param Scope|null $scope For dynamic loading
+     * @param string $dir Directory path
      */
-    public static function loadDirectory(string $dir, ?Scope $scope = null): HandlerGroup
+    public static function loadDirectory(?Scope $scope, string $dir): HandlerGroup
     {
         if (!is_dir($dir)) {
             throw new RuntimeException("Handler directory not found: $dir");
@@ -89,7 +89,7 @@ final readonly class HandlerLoader
         sort($files);
 
         foreach ($files as $file) {
-            $result = self::load($file, $scope);
+            $result = self::load($scope, $file);
 
             if ($result instanceof HandlerGroup) {
                 $group = $group->merge($result);

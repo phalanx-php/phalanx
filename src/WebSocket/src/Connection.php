@@ -68,8 +68,8 @@ final class Connection
         if ($this->inboundEmitter === null) {
             $inbound = $this->inbound;
             $this->inboundEmitter = Emitter::produce(static function (
-                Channel $ch,
                 ExecutionScope $ctx,
+                Channel $ch,
             ) use (
                 $inbound,
             ): void {

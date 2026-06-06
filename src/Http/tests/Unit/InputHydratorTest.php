@@ -67,7 +67,7 @@ final class InputHydratorTest extends TestCase
         $data = ['title' => 'Test Task', 'description' => 'A description', 'priority' => 'high'];
 
         $scope = $this->mockScope('POST', $data);
-        [, $dto] = InputHydrator::resolve(CreateTaskHandler::class, $scope);
+        [, $dto] = InputHydrator::resolve($scope, CreateTaskHandler::class);
 
         $this->assertInstanceOf(CreateTaskInput::class, $dto);
         $this->assertSame('Test Task', $dto->title);
@@ -81,7 +81,7 @@ final class InputHydratorTest extends TestCase
         $data = ['title' => 'Minimal'];
 
         $scope = $this->mockScope('POST', $data);
-        [, $dto] = InputHydrator::resolve(CreateTaskHandler::class, $scope);
+        [, $dto] = InputHydrator::resolve($scope, CreateTaskHandler::class);
 
         $this->assertInstanceOf(CreateTaskInput::class, $dto);
         $this->assertSame('Minimal', $dto->title);
@@ -95,7 +95,7 @@ final class InputHydratorTest extends TestCase
         $data = ['title' => 'Test Task'];
         $scope = $this->mockScope('POST', $data);
 
-        [, $dto] = InputHydrator::resolve(CreateTaskHandler::class, $scope);
+        [, $dto] = InputHydrator::resolve($scope, CreateTaskHandler::class);
 
         $this->assertInstanceOf(CreateTaskInput::class, $dto);
         $this->assertSame('Test Task', $dto->title);
@@ -108,7 +108,7 @@ final class InputHydratorTest extends TestCase
         $scope = $this->mockScope('POST', $data);
 
         $this->expectException(ValidationException::class);
-        InputHydrator::resolve(CreateTaskHandler::class, $scope);
+        InputHydrator::resolve($scope, CreateTaskHandler::class);
     }
 
     #[Test]
@@ -119,7 +119,7 @@ final class InputHydratorTest extends TestCase
 
         $this->expectException(ValidationException::class);
         try {
-            InputHydrator::resolve(CreateTaskHandler::class, $scope);
+            InputHydrator::resolve($scope, CreateTaskHandler::class);
         } catch (ValidationException $e) {
             $this->assertArrayHasKey('title', $e->errors);
             $this->assertSame('This field is required', $e->errors['title'][0]);
@@ -135,7 +135,7 @@ final class InputHydratorTest extends TestCase
 
         $this->expectException(ValidationException::class);
         try {
-            InputHydrator::resolve(CreateTaskHandler::class, $scope);
+            InputHydrator::resolve($scope, CreateTaskHandler::class);
         } catch (ValidationException $e) {
             $this->assertArrayHasKey('priority', $e->errors);
             $this->assertStringContainsString('urgent', $e->errors['priority'][0]);
@@ -150,7 +150,7 @@ final class InputHydratorTest extends TestCase
         $data = ['title' => 'Test', 'description' => null];
         $scope = $this->mockScope('POST', $data);
 
-        [, $dto] = InputHydrator::resolve(CreateTaskHandler::class, $scope);
+        [, $dto] = InputHydrator::resolve($scope, CreateTaskHandler::class);
 
         $this->assertNull($dto->description);
     }
@@ -161,7 +161,7 @@ final class InputHydratorTest extends TestCase
         $data = ['page' => '3', 'limit' => '50'];
         $scope = $this->mockScope('GET', $data);
 
-        [, $dto] = InputHydrator::resolve(ListTasksHandler::class, $scope);
+        [, $dto] = InputHydrator::resolve($scope, ListTasksHandler::class);
 
         $this->assertInstanceOf(ListTasksQuery::class, $dto);
         $this->assertSame(3, $dto->page);
@@ -178,7 +178,7 @@ final class InputHydratorTest extends TestCase
 
         $this->expectException(ValidationException::class);
         try {
-            InputHydrator::resolve(CreateTaskHandler::class, $scope);
+            InputHydrator::resolve($scope, CreateTaskHandler::class);
         } catch (ValidationException $e) {
             $this->assertArrayHasKey('title', $e->errors);
             $this->assertSame('Title is required', $e->errors['title'][0]);

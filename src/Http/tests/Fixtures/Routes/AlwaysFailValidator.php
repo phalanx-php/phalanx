@@ -13,7 +13,7 @@ use Phalanx\Http\RequestContext;
  */
 final class AlwaysFailValidator implements RouteValidator
 {
-    public function validate(object|null $input, RequestContext $ctx): array
+    public function validate(RequestContext $ctx, object|null $input): array
     {
         return ['test_field' => ['validator ran']];
     }

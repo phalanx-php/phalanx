@@ -24,7 +24,7 @@ final class ExecutionScopeTest extends PhalanxTestCase
     public function emitterDrivesEndToEndPipelineUnderRealScope(): void
     {
         $this->scope->run(static function (ExecutionScope $scope): void {
-            $emitter = Emitter::produce(static function (Channel $ch): void {
+            $emitter = Emitter::produce(static function (ExecutionScope $_scope, Channel $ch): void {
                 foreach (['a', 'b', 'c'] as $val) {
                     $ch->emit($val);
                 }

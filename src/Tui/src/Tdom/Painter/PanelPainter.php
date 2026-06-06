@@ -11,7 +11,7 @@ use Phalanx\Tui\Tdom\Element\PanelElement;
 
 final class PanelPainter
 {
-    public static function paint(PanelElement $element, PaintContext $ctx): void
+    public static function paint(PaintContext $ctx, PanelElement $element): void
     {
         $area = $ctx->area;
 
@@ -76,7 +76,7 @@ final class PanelPainter
         }
 
         if ($innerArea->width > 0 && $innerArea->height > 0) {
-            Painter::paint($element->child, $ctx->sub($innerArea));
+            Painter::paint($ctx->sub($innerArea), $element->child);
         }
     }
 }

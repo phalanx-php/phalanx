@@ -12,7 +12,7 @@ final class InputPainter
 {
     private static ?AnsiStyle $cursorStyle = null;
 
-    public static function paint(InputElement $element, PaintContext $ctx): void
+    public static function paint(PaintContext $ctx, InputElement $element): void
     {
         if ($ctx->area->width === 0 || $ctx->area->height === 0) {
             return;
@@ -45,7 +45,7 @@ final class InputPainter
             $ctx->buffer->putString($ctx->area->x, $ctx->area->y, $text, $ansi);
         }
 
-        self::paintSelection($element, $ctx, $promptWidth, $ansi);
+        self::paintSelection($ctx, $element, $promptWidth, $ansi);
 
         $cursorX = $ctx->area->x + $promptWidth + $element->cursor;
         $totalWidth = $promptWidth + mb_strlen($element->value);
@@ -63,8 +63,8 @@ final class InputPainter
     }
 
     private static function paintSelection(
-        InputElement $element,
         PaintContext $ctx,
+        InputElement $element,
         int $promptWidth,
         AnsiStyle $ansi,
     ): void {

@@ -1,10 +1,10 @@
 {
     "name": "phalanx-php/tui",
-    "description": "Terminal UI and collab framework for Phalanx PHP",
+    "description": "Terminal UI and runtime framework for Phalanx PHP",
     "license": "MIT",
     "type": "library",
     "keywords": [
-        "collab",
+        "runtime",
         "terminal-ui",
         "tui"
     ],

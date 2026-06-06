@@ -25,23 +25,23 @@ final class Emitter implements StreamSource
 {
     use Streamable;
 
-    /** @var Closure(Channel, ExecutionScope): (?Closure) */
+    /** @var Closure(ExecutionScope, Channel): (?Closure) */
     private readonly Closure $setup;
 
-    /** @param Closure(Channel, ExecutionScope): (?Closure) $setup */
+    /** @param Closure(ExecutionScope, Channel): (?Closure) $setup */
     private function __construct(Closure $setup)
     {
         $this->setup = $setup;
         $this->initStreamState();
     }
 
-    /** @param Closure(Channel, ExecutionScope): void $producer */
+    /** @param Closure(ExecutionScope, Channel): void $producer */
     public static function produce(Closure $producer): self
     {
-        return new self(static function (Channel $ch, ExecutionScope $scope) use ($producer): Closure {
+        return new self(static function (ExecutionScope $scope, Channel $ch) use ($producer): Closure {
             $run = $scope->go(static function (ExecutionScope $producerScope) use ($producer, $ch): void {
                 try {
-                    $producer($ch, $producerScope);
+                    $producer($producerScope, $ch);
                 } catch (Cancelled $e) {
                     throw $e;
                 } catch (Throwable $e) {
@@ -60,7 +60,7 @@ final class Emitter implements StreamSource
 
     public static function interval(float $seconds): self
     {
-        return new self(static function (Channel $ch, ExecutionScope $scope) use ($seconds): Closure {
+        return new self(static function (ExecutionScope $scope, Channel $ch) use ($seconds): Closure {
             $tick = 0;
             $subscription = $scope->periodic(Mark::s($seconds), static function () use ($ch, &$tick): void {
                 $ch->emit(++$tick);
@@ -83,17 +83,17 @@ final class Emitter implements StreamSource
         $cleanup = null;
 
         try {
-            $cleanup = ($this->setup)($channel, $scope);
+            $cleanup = ($this->setup)($scope, $channel);
             $this->fireOnStart($scope);
 
             foreach ($channel->consume() as $value) {
                 $scope->throwIfCancelled();
-                $this->fireOnEach($value, $scope);
+                $this->fireOnEach($scope, $value);
                 yield $value;
             }
             $this->fireOnComplete($scope);
         } catch (Throwable $e) {
-            $this->fireOnError($e, $scope);
+            $this->fireOnError($scope, $e);
 
             throw $e;
         } finally {
@@ -110,7 +110,7 @@ final class Emitter implements StreamSource
     {
         $prev = $this;
 
-        return new self(static function (Channel $ch, ExecutionScope $scope) use ($prev, $fn): Closure {
+        return new self(static function (ExecutionScope $scope, Channel $ch) use ($prev, $fn): Closure {
             $run = $scope->go(static function (ExecutionScope $childScope) use ($prev, $ch, $fn): void {
                 try {
                     foreach ($prev($childScope) as $key => $value) {
@@ -136,7 +136,7 @@ final class Emitter implements StreamSource
     {
         $prev = $this;
 
-        return new self(static function (Channel $ch, ExecutionScope $scope) use ($prev, $predicate): Closure {
+        return new self(static function (ExecutionScope $scope, Channel $ch) use ($prev, $predicate): Closure {
             $run = $scope->go(static function (ExecutionScope $childScope) use ($prev, $ch, $predicate): void {
                 try {
                     foreach ($prev($childScope) as $key => $value) {
@@ -163,7 +163,7 @@ final class Emitter implements StreamSource
     {
         $prev = $this;
 
-        return new self(static function (Channel $ch, ExecutionScope $scope) use ($prev, $n): Closure {
+        return new self(static function (ExecutionScope $scope, Channel $ch) use ($prev, $n): Closure {
             $run = $scope->go(static function (ExecutionScope $childScope) use ($prev, $ch, $n): void {
                 try {
                     $count = 0;
@@ -192,7 +192,7 @@ final class Emitter implements StreamSource
     {
         $prev = $this;
 
-        return new self(static function (Channel $ch, ExecutionScope $scope) use ($prev, $seconds): Closure {
+        return new self(static function (ExecutionScope $scope, Channel $ch) use ($prev, $seconds): Closure {
             $run = $scope->go(static function (ExecutionScope $childScope) use ($prev, $ch, $seconds): void {
                 $lastEmitNs = 0.0;
                 $intervalNs = $seconds * 1e9;
@@ -224,7 +224,7 @@ final class Emitter implements StreamSource
     {
         $prev = $this;
 
-        return new self(static function (Channel $ch, ExecutionScope $scope) use ($prev, $seconds): Closure {
+        return new self(static function (ExecutionScope $scope, Channel $ch) use ($prev, $seconds): Closure {
             $delaySeconds = max(0.001, $seconds);
             /** @var TaskHandle|null $timerRun */
             $timerRun = null;
@@ -289,7 +289,7 @@ final class Emitter implements StreamSource
     {
         $prev = $this;
 
-        return new self(static function (Channel $ch, ExecutionScope $scope) use ($prev, $count, $seconds): Closure {
+        return new self(static function (ExecutionScope $scope, Channel $ch) use ($prev, $count, $seconds): Closure {
             $delaySeconds = max(0.001, $seconds);
             /** @var TaskHandle|null $timerRun */
             $timerRun = null;
@@ -363,7 +363,7 @@ final class Emitter implements StreamSource
     {
         $sources = [$this, ...$others];
 
-        return new self(static function (Channel $ch, ExecutionScope $scope) use ($sources): Closure {
+        return new self(static function (ExecutionScope $scope, Channel $ch) use ($sources): Closure {
             $remaining = count($sources);
             $failed = false;
             $completed = false;
@@ -417,7 +417,7 @@ final class Emitter implements StreamSource
     {
         $prev = $this;
 
-        return new self(static function (Channel $ch, ExecutionScope $scope) use ($prev): Closure {
+        return new self(static function (ExecutionScope $scope, Channel $ch) use ($prev): Closure {
             $run = $scope->go(static function (ExecutionScope $childScope) use ($prev, $ch): void {
                 $hasLast = false;
                 $lastValue = null;
@@ -450,7 +450,7 @@ final class Emitter implements StreamSource
     {
         $prev = $this;
 
-        return new self(static function (Channel $ch, ExecutionScope $scope) use ($prev, $keyFn): Closure {
+        return new self(static function (ExecutionScope $scope, Channel $ch) use ($prev, $keyFn): Closure {
             $run = $scope->go(static function (ExecutionScope $childScope) use ($prev, $ch, $keyFn): void {
                 $hasLastKey = false;
                 $lastKey = null;
@@ -483,7 +483,7 @@ final class Emitter implements StreamSource
     {
         $prev = $this;
 
-        return new self(static function (Channel $ch, ExecutionScope $scope) use ($prev, $seconds): Closure {
+        return new self(static function (ExecutionScope $scope, Channel $ch) use ($prev, $seconds): Closure {
             $state = new class () {
                 public mixed $latest = null;
                 public bool $hasLatest = false;

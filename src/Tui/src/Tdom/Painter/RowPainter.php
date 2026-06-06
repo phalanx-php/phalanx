@@ -10,7 +10,7 @@ use Phalanx\Tui\Tdom\Element\RowElement;
 
 final class RowPainter
 {
-    public static function paint(RowElement $element, PaintContext $ctx): void
+    public static function paint(PaintContext $ctx, RowElement $element): void
     {
         if ($element->children === [] || $ctx->area->width === 0) {
             return;
@@ -27,7 +27,7 @@ final class RowPainter
 
         foreach ($element->children as $i => $child) {
             if (isset($rects[$i]) && $rects[$i]->width > 0) {
-                Painter::paint($child, $ctx->sub($rects[$i]));
+                Painter::paint($ctx->sub($rects[$i]), $child);
             }
         }
     }

@@ -55,7 +55,7 @@ final class EffectApprovalFlowTest extends PhalanxTestCase
             id: 'grant_approval',
             subject: 'agent-test-agent',
             allowedEffects: [Kind::FileWrite],
-            scope: 'session',
+            grantScope: 'session',
             hazardCeiling: Hazard::Critical,
         );
 

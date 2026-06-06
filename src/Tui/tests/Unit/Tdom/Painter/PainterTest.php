@@ -51,7 +51,7 @@ final class PainterTest extends TestCase
         $buf = Buffer::empty(20, 3);
         $ctx = new PaintContext(Rect::sized(20, 3), $buf);
 
-        Painter::paint(new TextElement('Hello'), $ctx);
+        Painter::paint($ctx, new TextElement('Hello'));
 
         self::assertSame('H', $buf->get(0, 0)->char);
         self::assertSame('e', $buf->get(1, 0)->char);
@@ -72,7 +72,7 @@ final class PainterTest extends TestCase
             Style::of(border: Border::Single),
         );
 
-        Painter::paint($panel, $ctx);
+        Painter::paint($ctx, $panel);
 
         [$tl, $tr, $bl, $br, $h, $v] = Border::Single->chars();
         self::assertSame($tl, $buf->get(0, 0)->char);
@@ -95,7 +95,7 @@ final class PainterTest extends TestCase
             Style::of(border: Border::Single),
         );
 
-        Painter::paint($panel, $ctx);
+        Painter::paint($ctx, $panel);
 
         self::assertSame('X', $buf->get(1, 1)->char);
     }
@@ -111,7 +111,7 @@ final class PainterTest extends TestCase
             new TextElement('Bot', Style::of(size: Size::fixed(1))),
         ]);
 
-        Painter::paint($col, $ctx);
+        Painter::paint($ctx, $col);
 
         self::assertSame('T', $buf->get(0, 0)->char);
         self::assertSame('B', $buf->get(0, 1)->char);
@@ -128,7 +128,7 @@ final class PainterTest extends TestCase
             new TextElement('R', Style::of(size: Size::fixed(5))),
         ]);
 
-        Painter::paint($row, $ctx);
+        Painter::paint($ctx, $row);
 
         self::assertSame('L', $buf->get(0, 0)->char);
         self::assertSame('R', $buf->get(5, 0)->char);
@@ -140,7 +140,7 @@ final class PainterTest extends TestCase
         $buf = Buffer::empty(10, 1);
         $ctx = new PaintContext(Rect::sized(10, 1), $buf);
 
-        Painter::paint(new DividerElement(), $ctx);
+        Painter::paint($ctx, new DividerElement());
 
         for ($x = 0; $x < 10; $x++) {
             self::assertSame('─', $buf->get($x, 0)->char);
@@ -153,7 +153,7 @@ final class PainterTest extends TestCase
         $buf = Buffer::empty(25, 1);
         $ctx = new PaintContext(Rect::sized(25, 1), $buf);
 
-        Painter::paint(new ProgressElement(0.5), $ctx);
+        Painter::paint($ctx, new ProgressElement(0.5));
 
         $filled = 0;
         $empty = 0;
@@ -215,7 +215,7 @@ final class PainterTest extends TestCase
             Style::of(padding: Padding::all(1)),
         );
 
-        Painter::paint($text, $ctx);
+        Painter::paint($ctx, $text);
 
         self::assertSame(' ', $buf->get(0, 0)->char);
         self::assertSame('p', $buf->get(1, 1)->char);
@@ -227,7 +227,7 @@ final class PainterTest extends TestCase
         $buf = Buffer::empty(5, 5);
         $ctx = new PaintContext(Rect::sized(0, 0), $buf);
 
-        Painter::paint(new TextElement('nope'), $ctx);
+        Painter::paint($ctx, new TextElement('nope'));
 
         self::assertSame(' ', $buf->get(0, 0)->char);
     }
@@ -243,7 +243,7 @@ final class PainterTest extends TestCase
             new TextElement('right'),
         ]);
 
-        Painter::paint($sl, $ctx);
+        Painter::paint($ctx, $sl);
 
         self::assertSame('l', $buf->get(0, 0)->char);
         self::assertSame('r', $buf->get(10, 0)->char);
@@ -265,7 +265,7 @@ final class PainterTest extends TestCase
             ],
         );
 
-        Painter::paint($grid, $ctx);
+        Painter::paint($ctx, $grid);
 
         self::assertSame('A', $buf->get(0, 0)->char);
         self::assertSame('B', $buf->get(10, 0)->char);
@@ -279,7 +279,7 @@ final class PainterTest extends TestCase
         $buf = Buffer::empty(20, 2);
         $ctx = new PaintContext(Rect::sized(20, 2), $buf);
 
-        Painter::paint(new ScrollElement("line1\nline2\nline3", 2), $ctx);
+        Painter::paint($ctx, new ScrollElement("line1\nline2\nline3", 2));
 
         self::assertSame('l', $buf->get(0, 0)->char);
         self::assertSame('2', $buf->get(4, 0)->char, 'First visible line should be "line2"');
@@ -293,7 +293,7 @@ final class PainterTest extends TestCase
         $buf = Buffer::empty(20, 1);
         $ctx = new PaintContext(Rect::sized(20, 1), $buf);
 
-        Painter::paint(new InputElement('hello', '> ', 3), $ctx);
+        Painter::paint($ctx, new InputElement('hello', '> ', 3));
 
         self::assertSame('>', $buf->get(0, 0)->char);
         self::assertSame(' ', $buf->get(1, 0)->char);
@@ -311,7 +311,7 @@ final class PainterTest extends TestCase
         $buf = Buffer::empty(20, 1);
         $ctx = new PaintContext(Rect::sized(20, 1), $buf);
 
-        Painter::paint(new InputElement('hello', '> ', 3, selectionStart: 1, selectionEnd: 4), $ctx);
+        Painter::paint($ctx, new InputElement('hello', '> ', 3, selectionStart: 1, selectionEnd: 4));
 
         self::assertFalse($buf->get(2, 0)->style->hasModifier(Modifier::Reverse));
         self::assertTrue($buf->get(3, 0)->style->hasModifier(Modifier::Reverse));
@@ -329,6 +329,7 @@ final class PainterTest extends TestCase
         $ctx = new PaintContext(Rect::sized(20, 1), $buf);
 
         Painter::paint(
+            $ctx,
             new InputElement(
                 value: 'hello',
                 prompt: '> ',
@@ -337,7 +338,6 @@ final class PainterTest extends TestCase
                 selectionStart: 1,
                 selectionEnd: 3,
             ),
-            $ctx,
         );
 
         $selectedCell = $buf->get(3, 0);
@@ -353,7 +353,7 @@ final class PainterTest extends TestCase
         $buf = Buffer::empty(20, 1);
         $ctx = new PaintContext(Rect::sized(20, 1), $buf);
 
-        Painter::paint(new SpinnerElement('Wait', 0), $ctx);
+        Painter::paint($ctx, new SpinnerElement('Wait', 0));
 
         self::assertNotSame(' ', $buf->get(0, 0)->char);
         self::assertSame('W', $buf->get(2, 0)->char);
@@ -366,7 +366,7 @@ final class PainterTest extends TestCase
         $buf = Buffer::empty(25, 1);
         $ctx = new PaintContext(Rect::sized(25, 1), $buf);
 
-        Painter::paint(new ProgressElement(1.5), $ctx);
+        Painter::paint($ctx, new ProgressElement(1.5));
 
         for ($x = 0; $x < 20; $x++) {
             self::assertSame('█', $buf->get($x, 0)->char, "Cell {$x} should be filled at 150%");
@@ -384,7 +384,7 @@ final class PainterTest extends TestCase
             new TextElement('B'),
         ]);
 
-        Painter::paint($col, $ctx);
+        Painter::paint($ctx, $col);
 
         self::assertSame('A', $buf->get(0, 0)->char);
         self::assertSame('B', $buf->get(0, 2)->char);
@@ -425,7 +425,7 @@ final class PainterTest extends TestCase
         $buf = Buffer::empty(20, 1);
         $paintCtx = new PaintContext(Rect::sized(20, 1), $buf);
 
-        Painter::paint($mounted, $paintCtx);
+        Painter::paint($paintCtx, $mounted);
 
         self::assertSame(2, $tracker->count, 'Dirty MountedComponent must rerender during paint');
         self::assertSame('r', $buf->get(0, 0)->char);
@@ -464,7 +464,7 @@ final class PainterTest extends TestCase
         $buf = Buffer::empty(20, 1);
         $paintCtx = new PaintContext(Rect::sized(20, 1), $buf);
 
-        Painter::paint($mounted, $paintCtx);
+        Painter::paint($paintCtx, $mounted);
 
         self::assertSame(1, $tracker->count, 'Clean MountedComponent must not rerender');
         self::assertSame('c', $buf->get(0, 0)->char);
@@ -489,7 +489,7 @@ final class PainterTest extends TestCase
 
         $mounted->dispose();
 
-        Painter::paint($mounted, $paintCtx);
+        Painter::paint($paintCtx, $mounted);
 
         self::assertSame(' ', $buf->get(0, 0)->char, 'Disposed component with null lastResult must not crash');
     }
@@ -510,7 +510,7 @@ final class PainterTest extends TestCase
             Style::of(border: Border::Single),
         );
 
-        Painter::paint($panel, $ctx);
+        Painter::paint($ctx, $panel);
 
         self::assertSame(' ', $buf->get(1, 0)->char);
         self::assertSame('Z', $buf->get(2, 0)->char);
@@ -533,7 +533,7 @@ final class PainterTest extends TestCase
             Style::of(border: Border::Single),
         );
 
-        Painter::paint($panel, $ctx);
+        Painter::paint($ctx, $panel);
 
         [$tl, $tr] = Border::Single->chars();
         self::assertSame($tl, $buf->get(0, 0)->char);
@@ -550,7 +550,7 @@ final class PainterTest extends TestCase
             Span::styled('Loading', AnsiStyle::new()->fg('#77cc77')),
         );
 
-        Painter::paint(new SpinnerElement($label, 0), $ctx);
+        Painter::paint($ctx, new SpinnerElement($label, 0));
 
         self::assertSame('⠋', $buf->get(0, 0)->char);
         self::assertSame('L', $buf->get(2, 0)->char);
@@ -567,7 +567,7 @@ final class PainterTest extends TestCase
             Span::styled('> ', AnsiStyle::new()->fg('#88ccff')),
         );
 
-        Painter::paint(new InputElement('hello', $prompt, 3), $ctx);
+        Painter::paint($ctx, new InputElement('hello', $prompt, 3));
 
         self::assertSame('>', $buf->get(0, 0)->char);
         self::assertSame(' ', $buf->get(1, 0)->char);
@@ -588,7 +588,7 @@ final class PainterTest extends TestCase
             Span::styled('CPU', AnsiStyle::new()->bold()),
         );
 
-        Painter::paint(new ProgressElement(0.5, $label), $ctx);
+        Painter::paint($ctx, new ProgressElement(0.5, $label));
 
         self::assertSame('C', $buf->get(0, 0)->char);
         self::assertSame('P', $buf->get(1, 0)->char);
@@ -606,7 +606,7 @@ final class PainterTest extends TestCase
         $buf = Buffer::empty(20, 5);
         $paintCtx = new PaintContext(Rect::sized(20, 5), $buf, renderContext: $renderCtx);
 
-        Painter::paint(panel('Title', mount(PainterMountChildComponent::class)), $paintCtx);
+        Painter::paint($paintCtx, panel('Title', mount(PainterMountChildComponent::class)));
 
         self::assertSame('M', $buf->get(1, 1)->char);
         self::assertCount(1, $mountSystem->mounted());
@@ -623,14 +623,14 @@ final class PainterTest extends TestCase
         $renderable = panel('Title', mount(PainterMountChildComponent::class));
 
         Painter::paint(
-            $renderable,
             new PaintContext(Rect::sized(20, 5), $buf, renderContext: $renderCtx, mountOwner: $owner),
+            $renderable,
         );
         $first = $mountSystem->mounted()[0];
 
         Painter::paint(
-            $renderable,
             new PaintContext(Rect::sized(20, 5), $buf, renderContext: $renderCtx, mountOwner: $owner),
+            $renderable,
         );
 
         self::assertSame($first, $mountSystem->mounted()[0]);
@@ -650,7 +650,7 @@ final class PainterTest extends TestCase
             mount(PainterMountChildComponent::class),
         );
 
-        Painter::paint($renderable, $paintCtx);
+        Painter::paint($paintCtx, $renderable);
 
         self::assertCount(2, $mountSystem->mounted());
     }
@@ -665,17 +665,17 @@ final class PainterTest extends TestCase
         $buf = Buffer::empty(20, 5);
 
         Painter::paint(
+            new PaintContext(Rect::sized(20, 5), $buf, renderContext: $renderCtx, mountOwner: $owner),
             column(
                 mount(PainterMountChildComponent::class),
                 mount(PainterMountChildComponent::class),
             ),
-            new PaintContext(Rect::sized(20, 5), $buf, renderContext: $renderCtx, mountOwner: $owner),
         );
         $unused = $mountSystem->mounted()[1];
 
         Painter::paint(
-            column(mount(PainterMountChildComponent::class)),
             new PaintContext(Rect::sized(20, 5), $buf, renderContext: $renderCtx, mountOwner: $owner),
+            column(mount(PainterMountChildComponent::class)),
         );
 
         self::assertTrue($unused->isDisposed);
@@ -692,14 +692,14 @@ final class PainterTest extends TestCase
         $buf = Buffer::empty(20, 5);
 
         Painter::paint(
-            panel('Title', mount(PainterLabelMountChildComponent::class, label: 'first')),
             new PaintContext(Rect::sized(20, 5), $buf, renderContext: $renderCtx, mountOwner: $owner),
+            panel('Title', mount(PainterLabelMountChildComponent::class, label: 'first')),
         );
         $first = $mountSystem->mounted()[0];
 
         Painter::paint(
-            panel('Title', mount(PainterLabelMountChildComponent::class, label: 'second')),
             new PaintContext(Rect::sized(20, 5), $buf, renderContext: $renderCtx, mountOwner: $owner),
+            panel('Title', mount(PainterLabelMountChildComponent::class, label: 'second')),
         );
         $second = $mountSystem->mounted()[0];
 
@@ -718,8 +718,8 @@ final class PainterTest extends TestCase
         $buf = Buffer::empty(20, 5);
 
         Painter::paint(
-            mount(PainterMountChildComponent::class),
             new PaintContext(Rect::sized(20, 5), $buf),
+            mount(PainterMountChildComponent::class),
         );
     }
 

@@ -57,8 +57,8 @@ final class OpenTunnel implements Executable
 
         try {
             self::waitForTunnel(
-                process: $process,
                 scope: $scope,
+                process: $process,
                 direction: $this->direction,
                 localPort: $this->localPort,
                 timeout: $config->connectionTimeoutSeconds,
@@ -74,13 +74,13 @@ final class OpenTunnel implements Executable
         }
 
         $handle = new TunnelHandle(
+            scope: $scope,
             localPort: $this->localPort,
             remoteHost: $this->remoteHost,
             remotePort: $this->remotePort,
             direction: $this->direction,
             targetCredential: $this->targetCredential,
             process: $process,
-            scope: $scope,
         );
 
         $scope->onDispose(static fn() => $handle->close());
@@ -89,8 +89,8 @@ final class OpenTunnel implements Executable
     }
 
     private static function waitForTunnel(
-        StreamingProcessHandle $process,
         TaskScope&TaskExecutor $scope,
+        StreamingProcessHandle $process,
         TunnelDirection $direction,
         int $localPort,
         float $timeout,

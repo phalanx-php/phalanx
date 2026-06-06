@@ -106,8 +106,8 @@ final class CommandGroup implements Executable
         assert($handler->config instanceof CommandConfig);
 
         return $this->inner->dispatch(
-            $name,
             ExecutionContext::fromInput($scope, $name, $handler->config, $args, $resourceId),
+            $name,
         );
     }
 

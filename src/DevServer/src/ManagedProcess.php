@@ -25,15 +25,15 @@ use Phalanx\System\StreamingProcessHandle;
  */
 final class ManagedProcess
 {
-    private(set) Process $config;
-
-    private(set) ProcessState $state = ProcessState::Starting;
-
-    private(set) ?int $pid = null;
-
     public bool $isReady {
         get => $this->state === ProcessState::Running;
     }
+
+    private(set) Process $config;
+
+    private(set) ?int $pid = null;
+
+    private(set) ProcessState $state = ProcessState::Starting;
 
     private ?StreamingProcessHandle $handle = null;
 
@@ -63,6 +63,7 @@ final class ManagedProcess
         if ($this->config->cwd !== null) {
             $process = $process->withCwd($this->config->cwd);
         }
+
         if ($env !== null) {
             $process = $process->withEnv($env);
         }

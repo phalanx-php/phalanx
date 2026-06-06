@@ -94,7 +94,7 @@ final class DevServerTask implements Executable
         }
 
         $this->startWatchers($scope, $managed, $multiplexer);
-        self::wireServerCrashWatchdog($managed, $multiplexer, $scope);
+        self::wireServerCrashWatchdog($scope, $managed, $multiplexer);
 
         try {
             while (!$scope->isCancelled) {
@@ -145,9 +145,9 @@ final class DevServerTask implements Executable
 
     /** @param list<ManagedProcess> $managed */
     private static function wireServerCrashWatchdog(
+        ExecutionScope $scope,
         array $managed,
         Multiplexer $multiplexer,
-        ExecutionScope $scope,
     ): void {
         foreach ($managed as $mp) {
             if (!$mp->config->isServer) {
@@ -179,10 +179,10 @@ final class DevServerTask implements Executable
     }
 
     private static function makeWatchCallback(
+        ExecutionScope $scope,
         ManagedProcess $mp,
         string $name,
         Multiplexer $multiplexer,
-        ExecutionScope $scope,
     ): Closure {
         return static function (array $changed) use ($mp, $name, $multiplexer, $scope): void {
             $short = array_map(static fn(string $path): string => basename($path), $changed);
@@ -236,7 +236,7 @@ final class DevServerTask implements Executable
             $watcher = new FileWatcher(
                 $mp->config->watchPaths,
                 $mp->config->watchExtensions,
-                self::makeWatchCallback($mp, $name, $multiplexer, $scope),
+                self::makeWatchCallback($scope, $mp, $name, $multiplexer),
                 cwd: $cwdValue,
             );
 

@@ -17,9 +17,9 @@ final readonly class RouteLoader
      * @param string $path Path to PHP file
      * @param Scope|null $scope For dynamic loading via closure
      */
-    public static function load(string $path, ?Scope $scope = null): RouteGroup
+    public static function load(?Scope $scope, string $path): RouteGroup
     {
-        $result = HandlerLoader::load($path, $scope);
+        $result = HandlerLoader::load($scope, $path);
 
         if ($result instanceof RouteGroup) {
             return $result;
@@ -42,7 +42,7 @@ final readonly class RouteLoader
      * @param string $dir Directory path
      * @param Scope|null $scope For dynamic loading
      */
-    public static function loadDirectory(string $dir, ?Scope $scope = null): RouteGroup
+    public static function loadDirectory(?Scope $scope, string $dir): RouteGroup
     {
         if (!is_dir($dir)) {
             throw new RuntimeException("Handler directory not found: $dir");
@@ -56,7 +56,7 @@ final readonly class RouteLoader
         sort($files);
 
         foreach ($files as $file) {
-            $group = $group->merge(self::load($file, $scope));
+            $group = $group->merge(self::load($scope, $file));
         }
 
         return $group;

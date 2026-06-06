@@ -243,7 +243,7 @@ final class TurnLoopTest extends TestCase
             id: 'grant_loop',
             subject: 'agent-test-agent',
             allowedEffects: [EffectKind::Custom],
-            scope: 'session',
+            grantScope: 'session',
             hazardCeiling: \Phalanx\AiProviders\Hazard::Critical,
         ));
 

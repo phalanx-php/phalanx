@@ -48,7 +48,7 @@ class Worker
         return $this->state === WorkerState::Processing ? 1 : 0;
     }
 
-    public function send(TaskRequest $task, TaskScope&TaskExecutor $scope, CancellationToken $token): mixed
+    public function send(TaskScope&TaskExecutor $scope, TaskRequest $task, CancellationToken $token): mixed
     {
         $token->throwIfCancelled();
         $scope->throwIfCancelled();
@@ -72,8 +72,8 @@ class Worker
             $proxy = new ParentServiceProxy($scope);
 
             $result = $this->process->execute(
-                $task,
                 $scope,
+                $task,
                 static fn(ServiceCall $call): mixed => $proxy->handle($call),
             );
 

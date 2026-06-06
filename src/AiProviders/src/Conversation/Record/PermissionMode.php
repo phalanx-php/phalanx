@@ -17,13 +17,16 @@ final class PermissionMode extends Record
 {
     final public RecordType $type { get => RecordType::PermissionMode; }
 
+    private(set) ?string $scope = null;
+
     public function __construct(
         string $id,
         ?int $sequence,
         \DateTimeImmutable $at,
         private(set) PermissionMode\Mode $mode,
-        private(set) ?string $scope = null,
+        ?string $permissionScope = null,
     ) {
+        $this->scope = $permissionScope;
         parent::__construct($id, $sequence, $at);
     }
 

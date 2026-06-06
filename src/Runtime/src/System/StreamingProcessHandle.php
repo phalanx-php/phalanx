@@ -26,8 +26,8 @@ final class StreamingProcessHandle
     private string $stdoutBuffer = '';
 
     public function __construct(
-        private readonly SymfonyProcessAdapter $adapter,
         private readonly TaskScope&TaskExecutor $scope,
+        private readonly SymfonyProcessAdapter $adapter,
         private readonly RuntimeMemory $memory,
         private readonly string $resourceId,
         private readonly int $pid,

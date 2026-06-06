@@ -13,7 +13,7 @@ final class ProgressPainter
     private static ?AnsiStyle $filledStyle = null;
     private static ?AnsiStyle $emptyStyle = null;
 
-    public static function paint(ProgressElement $element, PaintContext $ctx): void
+    public static function paint(PaintContext $ctx, ProgressElement $element): void
     {
         if ($ctx->area->width === 0 || $ctx->area->height === 0) {
             return;

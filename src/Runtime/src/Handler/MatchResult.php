@@ -9,8 +9,8 @@ use Phalanx\Scope\ExecutionScope;
 final readonly class MatchResult
 {
     public function __construct(
-        public Handler $handler,
         public ExecutionScope $scope,
+        public Handler $handler,
     ) {
     }
 }

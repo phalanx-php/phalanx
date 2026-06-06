@@ -70,7 +70,7 @@ class ProcessHandle
     }
 
     /** @param callable(ServiceCall): mixed $serviceHandler */
-    public function execute(TaskRequest $task, TaskScope&TaskExecutor $scope, callable $serviceHandler): mixed
+    public function execute(TaskScope&TaskExecutor $scope, TaskRequest $task, callable $serviceHandler): mixed
     {
         if ($this->state !== ProcessState::Idle) {
             throw new RuntimeException("Process not idle: {$this->state->name}");
@@ -85,7 +85,7 @@ class ProcessHandle
         try {
             $this->process->write(Codec::encode($task), timeout: 1.0);
 
-            return $this->readTaskResult($task, $scope, $serviceHandler);
+            return $this->readTaskResult($scope, $task, $serviceHandler);
         } catch (Cancelled $e) {
             $this->kill();
 
@@ -149,7 +149,7 @@ class ProcessHandle
     }
 
     /** @param callable(ServiceCall): mixed $serviceHandler */
-    private function readTaskResult(TaskRequest $task, TaskScope&TaskExecutor $scope, callable $serviceHandler): mixed
+    private function readTaskResult(TaskScope&TaskExecutor $scope, TaskRequest $task, callable $serviceHandler): mixed
     {
         while (true) {
             $scope->throwIfCancelled();

@@ -16,15 +16,15 @@ final class Scoped
 {
     private readonly Emitter $emitter;
 
-    /** @param StreamSource<mixed>|Closure(Channel, ExecutionScope): void $source */
+    /** @param StreamSource<mixed>|Closure(ExecutionScope, Channel): void $source */
     public function __construct(
-        StreamSource|Closure $source,
         private readonly ExecutionScope $scope,
+        StreamSource|Closure $source,
     ) {
         $this->emitter = match (true) {
             $source instanceof Emitter => $source,
             $source instanceof StreamSource => Emitter::produce(
-                static function (Channel $ch, ExecutionScope $scope) use ($source): void {
+                static function (ExecutionScope $scope, Channel $ch) use ($source): void {
                     foreach ($source($scope) as $value) {
                         $ch->emit($value);
                     }
@@ -34,63 +34,63 @@ final class Scoped
         };
     }
 
-    /** @param StreamSource<mixed>|Closure(Channel, ExecutionScope): void $source */
+    /** @param StreamSource<mixed>|Closure(ExecutionScope, Channel): void $source */
     public static function from(ExecutionScope $scope, StreamSource|Closure $source): self
     {
-        return new self($source, $scope);
+        return new self($scope, $source);
     }
 
     /** @param Closure(mixed): mixed $fn */
     public function map(Closure $fn): self
     {
-        return new self($this->emitter->map($fn), $this->scope);
+        return new self($this->scope, $this->emitter->map($fn));
     }
 
     /** @param Closure(mixed): bool $predicate */
     public function filter(Closure $predicate): self
     {
-        return new self($this->emitter->filter($predicate), $this->scope);
+        return new self($this->scope, $this->emitter->filter($predicate));
     }
 
     public function take(int $n): self
     {
-        return new self($this->emitter->take($n), $this->scope);
+        return new self($this->scope, $this->emitter->take($n));
     }
 
     public function throttle(float $seconds): self
     {
-        return new self($this->emitter->throttle($seconds), $this->scope);
+        return new self($this->scope, $this->emitter->throttle($seconds));
     }
 
     public function debounce(float $seconds): self
     {
-        return new self($this->emitter->debounce($seconds), $this->scope);
+        return new self($this->scope, $this->emitter->debounce($seconds));
     }
 
     public function bufferWindow(int $count, float $seconds): self
     {
-        return new self($this->emitter->bufferWindow($count, $seconds), $this->scope);
+        return new self($this->scope, $this->emitter->bufferWindow($count, $seconds));
     }
 
     public function merge(Emitter ...$others): self
     {
-        return new self($this->emitter->merge(...$others), $this->scope);
+        return new self($this->scope, $this->emitter->merge(...$others));
     }
 
     public function distinct(): self
     {
-        return new self($this->emitter->distinct(), $this->scope);
+        return new self($this->scope, $this->emitter->distinct());
     }
 
     /** @param Closure(mixed): mixed $keyFn */
     public function distinctBy(Closure $keyFn): self
     {
-        return new self($this->emitter->distinctBy($keyFn), $this->scope);
+        return new self($this->scope, $this->emitter->distinctBy($keyFn));
     }
 
     public function sample(float $seconds): self
     {
-        return new self($this->emitter->sample($seconds), $this->scope);
+        return new self($this->scope, $this->emitter->sample($seconds));
     }
 
     /** @param Closure(ExecutionScope): void $fn */
@@ -101,7 +101,7 @@ final class Scoped
         return $this;
     }
 
-    /** @param Closure(mixed, ExecutionScope): void $fn */
+    /** @param Closure(ExecutionScope, mixed): void $fn */
     public function onEach(Closure $fn): self
     {
         $this->emitter->onEach($fn);
@@ -109,7 +109,7 @@ final class Scoped
         return $this;
     }
 
-    /** @param Closure(\Throwable, ExecutionScope): void $fn */
+    /** @param Closure(ExecutionScope, \Throwable): void $fn */
     public function onError(Closure $fn): self
     {
         $this->emitter->onError($fn);

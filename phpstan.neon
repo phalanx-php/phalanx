@@ -271,7 +271,7 @@ parameters:
             reportUnmatched: true
         -
             identifier: phalanx.cancellation.noCancelledShortcut
-            path: src/Tui/tests/Unit/Collab/Prompts/FilePromptTest.php
+            path: src/Tui/tests/Unit/Runtime/Prompts/FilePromptTest.php
             reportUnmatched: true
         # Pool tests pass non-conforming class-strings to exercise runtime type-checking and generic boundaries
         -

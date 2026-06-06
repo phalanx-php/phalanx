@@ -21,7 +21,7 @@ final class RequireQueryParamTest extends PhalanxTestCase
         $scope = $this->createScope(['page' => '1']);
         $v = new RequireQueryParam('page');
 
-        $this->assertSame([], $v->validate(null, $scope));
+        $this->assertSame([], $v->validate($scope, null));
     }
 
     #[Test]
@@ -30,7 +30,7 @@ final class RequireQueryParamTest extends PhalanxTestCase
         $scope = $this->createScope([]);
         $v = new RequireQueryParam('page');
 
-        $errors = $v->validate(null, $scope);
+        $errors = $v->validate($scope, null);
 
         $this->assertArrayHasKey('page', $errors);
         $this->assertStringContainsString('page', $errors['page'][0]);
@@ -42,7 +42,7 @@ final class RequireQueryParamTest extends PhalanxTestCase
         $scope = $this->createScope(['page' => '']);
         $v = new RequireQueryParam('page');
 
-        $errors = $v->validate(null, $scope);
+        $errors = $v->validate($scope, null);
 
         $this->assertArrayHasKey('page', $errors);
     }

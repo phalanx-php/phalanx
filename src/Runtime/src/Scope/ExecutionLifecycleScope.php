@@ -173,13 +173,13 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         $config = $this->graph->resolve($type);
 
         $scope = $this;
-        $build = static fn(): object => self::build($config, $scope);
+        $build = static fn(): object => self::build($scope, $config);
 
         if ($config->lifetime === ServiceLifetime::Singleton) {
             /** @var T $instance */
             $instance = $this->singletons->get(
                 $resolved,
-                static fn(): object => self::runMiddleware($resolved, $build, $scope),
+                static fn(): object => self::runMiddleware($scope, $resolved, $build),
             );
 
             return $instance;
@@ -188,7 +188,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         if ($config->lazy) {
             /** @var T $instance */
             $instance = $config->reflection()->newLazyProxy(static function () use ($scope, $resolved, $build): object {
-                return self::runMiddleware($resolved, $build, $scope);
+                return self::runMiddleware($scope, $resolved, $build);
             });
 
             $frame->scopedInstances[$resolved] = $instance;
@@ -197,7 +197,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
             return $instance;
         }
 
-        $instance = self::runMiddleware($resolved, $build, $this);
+        $instance = self::runMiddleware($this, $resolved, $build);
         $frame->scopedInstances[$resolved] = $instance;
         $frame->scopedCreationOrder[] = $resolved;
 
@@ -850,7 +850,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
     {
         $runner = new RecoveryRunner();
 
-        return $runner->run($plan, $task, $this);
+        return $runner->run($this, $plan, $task);
     }
 
     public function delay(Mark $duration): void
@@ -1430,13 +1430,13 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         $self = $this;
 
         return self::runTaskMiddleware(
+            $this,
             $task,
             static fn(ExecutionScope $scope): mixed => $self->runSupervised(
-                $task,
                 $scope instanceof self ? $scope : $self,
+                $task,
                 $mode,
             ),
-            $this,
         );
     }
 
@@ -1446,12 +1446,12 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         $self = $this;
 
         return self::runTaskMiddleware(
+            $this,
             $task,
             static fn(ExecutionScope $scope): mixed => $self->runWorkerSupervised(
-                $task,
                 $scope instanceof self ? $scope : $self,
+                $task,
             ),
-            $this,
         );
     }
 
@@ -1551,7 +1551,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         return $error;
     }
 
-    private static function invokeTask(Scopeable|Executable|Closure $task, self $scope): mixed
+    private static function invokeTask(self $scope, Scopeable|Executable|Closure $task): mixed
     {
         if (!is_callable($task)) {
             throw new RuntimeException($task::class . ' task must be invokable.');
@@ -1567,7 +1567,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
      *
      * @param Closure(): object $build
      */
-    private static function runMiddleware(string $type, Closure $build, self $scope): object
+    private static function runMiddleware(self $scope, string $type, Closure $build): object
     {
         if ($scope->serviceMiddlewares === []) {
             return $build();
@@ -1576,7 +1576,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         $next = $build;
         foreach (array_reverse($scope->serviceMiddlewares) as $middleware) {
             $current = $next;
-            $next = static fn(): object => $middleware->transform($type, $current, $scope);
+            $next = static fn(): object => $middleware->transform($scope, $type, $current);
         }
 
         return $next();
@@ -1590,7 +1590,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
      *
      * @param Closure(ExecutionScope): mixed $invoke
      */
-    private static function runTaskMiddleware(Scopeable|Executable|Closure $task, Closure $invoke, self $scope): mixed
+    private static function runTaskMiddleware(self $scope, Scopeable|Executable|Closure $task, Closure $invoke): mixed
     {
         if ($scope->taskMiddlewares === []) {
             return $invoke($scope);
@@ -1599,18 +1599,18 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         $next = $invoke;
         foreach (array_reverse($scope->taskMiddlewares) as $middleware) {
             $current = $next;
-            $next = static fn(ExecutionScope $s): mixed => $middleware->handle($task, $s, $current);
+            $next = static fn(ExecutionScope $s): mixed => $middleware->handle($s, $task, $current);
         }
 
         return $next($scope);
     }
 
-    private static function build(CompiledServiceConfig $config, self $scope): object
+    private static function build(self $scope, CompiledServiceConfig $config): object
     {
         if ($config->factoryFn === null) {
             throw new RuntimeException("Service {$config->type} has no factory");
         }
-        $deps = self::resolveFactoryDependencies($config, $scope);
+        $deps = self::resolveFactoryDependencies($scope, $config);
         $scope->traceLog->log(TraceType::ServiceResolve, $config->type);
         $instance = ($config->factoryFn)(...$deps);
         foreach ($config->onInitHooks as $hook) {
@@ -1621,7 +1621,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
     }
 
     /** @return list<mixed> */
-    private static function resolveFactoryDependencies(CompiledServiceConfig $config, self $scope): array
+    private static function resolveFactoryDependencies(self $scope, CompiledServiceConfig $config): array
     {
         $factory = $config->factoryFn;
         if ($factory === null) {
@@ -1639,16 +1639,16 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
 
         $deps = [];
         foreach ((new ReflectionFunction($factory))->getParameters() as $parameter) {
-            $deps[] = self::resolveFactoryParameter($config, $parameter, $scope);
+            $deps[] = self::resolveFactoryParameter($scope, $config, $parameter);
         }
 
         return $deps;
     }
 
     private static function resolveFactoryParameter(
+        self $scope,
         CompiledServiceConfig $config,
         ReflectionParameter $parameter,
-        self $scope,
     ): mixed {
         $type = $parameter->getType();
         if (!$type instanceof ReflectionNamedType || $type->isBuiltin()) {
@@ -1767,8 +1767,8 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
      * a fresh child scope built by the caller.
      */
     private function runSupervised(
-        Scopeable|Executable|Closure $task,
         self $scope,
+        Scopeable|Executable|Closure $task,
         DispatchMode $mode,
     ): mixed {
         $name = self::resolveTaskName($task);
@@ -1783,7 +1783,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
 
         try {
             $this->supervisor->markRunning($run);
-            $value = self::invokeTask($task, $scope);
+            $value = self::invokeTask($scope, $task);
             $this->supervisor->complete($run, $value);
 
             return $value;
@@ -1807,7 +1807,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         }
     }
 
-    private function runWorkerSupervised(WorkerTask $task, self $scope): mixed
+    private function runWorkerSupervised(self $scope, WorkerTask $task): mixed
     {
         if ($this->workerDispatch === null) {
             throw new RuntimeException('worker dispatch unavailable');
@@ -1838,7 +1838,7 @@ class ExecutionLifecycleScope implements ExecutionScope, ScopeIdentity
         try {
             $this->supervisor->markRunning($run);
             $clearWait = $this->supervisor->beginWait($run, WaitReason::worker('worker', $name));
-            $value = $this->workerDispatch->dispatch($task, $scope, $run->cancellation);
+            $value = $this->workerDispatch->dispatch($scope, $task, $run->cancellation);
             if ($run->cancellation->isCancelled || Coroutine::isCanceled()) {
                 throw new Cancelled("worker task {$name} cancelled");
             }

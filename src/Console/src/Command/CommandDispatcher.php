@@ -61,7 +61,7 @@ final class CommandDispatcher
      * @internal
      * @param list<string> $argv
      */
-    public function dispatchScoped(array $argv, ExecutionScope $rootScope, ?SignalState $signals = null): int
+    public function dispatchScoped(ExecutionScope $rootScope, array $argv, ?SignalState $signals = null): int
     {
         return $this->dispatchInScope(array_values($argv), $rootScope, $signals);
     }

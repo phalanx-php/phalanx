@@ -107,8 +107,8 @@ class InputHydrator
      * @return list<mixed>
      */
     public static function resolve(
-        string|Scopeable|Executable $handler,
         RequestContext $ctx,
+        string|Scopeable|Executable $handler,
     ): array {
         if (self::paramCount($handler) === 0) {
             return [];

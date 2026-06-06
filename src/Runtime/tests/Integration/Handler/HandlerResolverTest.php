@@ -21,7 +21,7 @@ final class HandlerResolverTest extends PhalanxTestCase
         $scope = $this->testApp->application->createScope();
         $resolver = $scope->service(HandlerResolver::class);
 
-        $instance = $resolver->resolve(HandlerA::class, $scope);
+        $instance = $resolver->resolve($scope, HandlerA::class);
 
         $this->assertInstanceOf(HandlerA::class, $instance);
     }
@@ -35,7 +35,7 @@ final class HandlerResolverTest extends PhalanxTestCase
         $this->expectException(HandlerDependencyNotResolvable::class);
         $this->expectExceptionMessage('scalar/builtin parameters are not allowed');
 
-        $resolver->resolve(ScalarParamHandler::class, $scope);
+        $resolver->resolve($scope, ScalarParamHandler::class);
     }
 
     #[Test]
@@ -44,7 +44,7 @@ final class HandlerResolverTest extends PhalanxTestCase
         $scope = $this->testApp->application->createScope();
         $resolver = $scope->service(HandlerResolver::class);
 
-        $instance = $resolver->resolve(NullableDepHandler::class, $scope);
+        $instance = $resolver->resolve($scope, NullableDepHandler::class);
 
         $this->assertInstanceOf(NullableDepHandler::class, $instance);
         $this->assertNull($instance->dep);

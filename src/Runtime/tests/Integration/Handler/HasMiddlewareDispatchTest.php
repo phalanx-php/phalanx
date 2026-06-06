@@ -25,7 +25,7 @@ final class HasMiddlewareDispatchTest extends PhalanxTestCase
 
         $scope = $this->testApp->application->createScope();
 
-        $result = $group->dispatch('h', $scope);
+        $result = $group->dispatch($scope, 'h');
 
         // Group middleware (PrefixingMiddleware) wraps the chain outermost,
         // instance middleware (InstanceMiddleware) wraps the handler innermost.
@@ -42,7 +42,7 @@ final class HasMiddlewareDispatchTest extends PhalanxTestCase
 
         $scope = $this->testApp->application->createScope();
 
-        $result = $group->dispatch('h', $scope);
+        $result = $group->dispatch($scope, 'h');
 
         $this->assertSame('instance(core)', $result);
     }

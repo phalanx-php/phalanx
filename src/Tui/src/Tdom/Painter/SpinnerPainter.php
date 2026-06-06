@@ -11,7 +11,7 @@ final class SpinnerPainter
 {
     private const array DOTS = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
 
-    public static function paint(SpinnerElement $element, PaintContext $ctx): void
+    public static function paint(PaintContext $ctx, SpinnerElement $element): void
     {
         if ($ctx->area->width === 0 || $ctx->area->height === 0) {
             return;

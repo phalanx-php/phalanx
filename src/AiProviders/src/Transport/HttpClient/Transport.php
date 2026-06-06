@@ -51,8 +51,8 @@ use Phalanx\Scope\Suspendable;
 final class Transport implements TransportContract
 {
     public function __construct(
-        private(set) \Phalanx\HttpClient\Client $client,
         private(set) Scope&Suspendable $scope,
+        private(set) \Phalanx\HttpClient\Client $client,
     ) {
     }
 

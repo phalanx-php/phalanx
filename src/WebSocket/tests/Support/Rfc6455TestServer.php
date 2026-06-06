@@ -107,7 +107,7 @@ final class Rfc6455TestServer
         ));
     }
 
-    public static function drainUntilClosed(Socket $conn, ExecutionScope $scope, float $seconds): void
+    public static function drainUntilClosed(ExecutionScope $scope, Socket $conn, float $seconds): void
     {
         $deadline = microtime(true) + $seconds;
 
@@ -123,7 +123,7 @@ final class Rfc6455TestServer
     /**
      * @param Channel<string> $frames
      */
-    public static function pushClientTextFrames(Socket $conn, ExecutionScope $scope, int $count, Channel $frames): void
+    public static function pushClientTextFrames(ExecutionScope $scope, Socket $conn, int $count, Channel $frames): void
     {
         $buffer = '';
         $textFrames = 0;

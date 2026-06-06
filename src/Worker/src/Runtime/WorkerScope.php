@@ -53,7 +53,7 @@ class WorkerScope implements RuntimeWorkerScope
             throw new RuntimeException($response->errorMessage ?? "Failed to resolve service: {$type}");
         }
 
-        return new ServiceProxy($type, $this); // @phpstan-ignore return.type
+        return new ServiceProxy($this, $type); // @phpstan-ignore return.type
     }
 
     public function trace(): Trace

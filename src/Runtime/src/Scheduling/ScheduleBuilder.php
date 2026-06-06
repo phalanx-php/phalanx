@@ -148,7 +148,7 @@ final class ScheduleBuilder
         if ($plan->recovery !== null && !$plan->recovery->isNone() && $plan->mode === 'task') {
             $runner = new RecoveryRunner();
 
-            return $runner->run($plan->recovery, $plan->tasks[0], $this->scope);
+            return $runner->run($this->scope, $plan->recovery, $plan->tasks[0]);
         }
 
         return match ($plan->mode) {

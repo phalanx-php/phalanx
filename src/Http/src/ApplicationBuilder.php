@@ -257,10 +257,10 @@ final class ApplicationBuilder
 
         try {
             if (is_dir($path)) {
-                return RouteLoader::loadDirectory($path, $scope);
+                return RouteLoader::loadDirectory($scope, $path);
             }
 
-            return RouteLoader::load($path, $scope);
+            return RouteLoader::load($scope, $path);
         } finally {
             $scope->dispose();
         }

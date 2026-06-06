@@ -27,10 +27,10 @@ trait Streamable
     /** @var list<Closure(ExecutionScope): void> */
     private array $onStartHooks = [];
 
-    /** @var list<Closure(mixed, ExecutionScope): void> */
+    /** @var list<Closure(ExecutionScope, mixed): void> */
     private array $onEachHooks = [];
 
-    /** @var list<Closure(Throwable, ExecutionScope): void> */
+    /** @var list<Closure(ExecutionScope, Throwable): void> */
     private array $onErrorHooks = [];
 
     /** @var list<Closure(ExecutionScope): void> */
@@ -47,7 +47,7 @@ trait Streamable
         return $this;
     }
 
-    /** @param Closure(mixed, ExecutionScope): void $fn */
+    /** @param Closure(ExecutionScope, mixed): void $fn */
     public function onEach(Closure $fn): static
     {
         $this->onEachHooks[] = $fn;
@@ -55,7 +55,7 @@ trait Streamable
         return $this;
     }
 
-    /** @param Closure(Throwable, ExecutionScope): void $fn */
+    /** @param Closure(ExecutionScope, Throwable): void $fn */
     public function onError(Closure $fn): static
     {
         $this->onErrorHooks[] = $fn;
@@ -95,17 +95,17 @@ trait Streamable
         }
     }
 
-    private function fireOnEach(mixed $value, ExecutionScope $scope): void
+    private function fireOnEach(ExecutionScope $scope, mixed $value): void
     {
         foreach ($this->onEachHooks as $hook) {
-            $hook($value, $scope);
+            $hook($scope, $value);
         }
     }
 
-    private function fireOnError(Throwable $error, ExecutionScope $scope): void
+    private function fireOnError(ExecutionScope $scope, Throwable $error): void
     {
         foreach ($this->onErrorHooks as $hook) {
-            $hook($error, $scope);
+            $hook($scope, $error);
         }
     }
 

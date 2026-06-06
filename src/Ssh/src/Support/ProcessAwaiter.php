@@ -17,7 +17,7 @@ final class ProcessAwaiter
      * @param non-empty-list<string> $argv
      * @return array{int, string, string, float} [exitCode, stdout, stderr, durationMs]
      */
-    public static function spawn(array $argv, TaskScope&TaskExecutor $scope, ?float $timeoutSeconds = null): array
+    public static function spawn(TaskScope&TaskExecutor $scope, array $argv, ?float $timeoutSeconds = null): array
     {
         $start = hrtime(true);
         $stdout = '';

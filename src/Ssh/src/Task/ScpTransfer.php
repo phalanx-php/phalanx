@@ -53,8 +53,8 @@ final class ScpTransfer implements Executable, Recoverable
         ];
 
         [$exitCode, , , $durationMs] = ProcessAwaiter::spawn(
-            ProcessAwaiter::argv($config->scpBinaryPath, $args),
             $scope,
+            ProcessAwaiter::argv($config->scpBinaryPath, $args),
             $this->timeoutSeconds ?? $config->defaultTimeoutSeconds,
         );
 

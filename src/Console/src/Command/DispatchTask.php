@@ -41,7 +41,7 @@ final class DispatchTask implements Executable, Traceable
         $trap = $this->installSignalTrap($scope);
 
         try {
-            return $this->application->dispatchScoped($this->argv, $scope, $this->signals);
+            return $this->application->dispatchScoped($scope, $this->argv, $this->signals);
         } finally {
             $trap?->restore();
         }

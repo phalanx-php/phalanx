@@ -35,13 +35,13 @@ final class OverlayPainter
         $scratch = Buffer::empty($rect->width, $rect->height);
 
         Painter::paint(
-            $renderable,
             new PaintContext(
                 Rect::sized($rect->width, $rect->height),
                 $scratch,
                 renderContext: $renderContext,
                 mountOwner: $mountOwner,
             ),
+            $renderable,
         );
 
         if ($rect->equals($bounds) && !$frame->backdrop) {

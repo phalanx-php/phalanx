@@ -17,7 +17,7 @@ final class RequireQueryParam implements RouteValidator
     {
     }
 
-    public function validate(object|null $input, RequestContext $ctx): array
+    public function validate(RequestContext $ctx, object|null $input): array
     {
         $value = $ctx->query->get($this->param);
 

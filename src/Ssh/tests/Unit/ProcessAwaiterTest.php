@@ -17,11 +17,15 @@ final class ProcessAwaiterTest extends PhalanxTestCase
     public function testProcessOutputExitCodeAndDurationAreCollected(): void
     {
         $result = $this->scope->run(static function (ExecutionScope $scope): array {
-            return ProcessAwaiter::spawn([
-                PHP_BINARY,
-                '-r',
-                'fwrite(STDOUT, "agent\n"); fwrite(STDERR, "runtime\n"); exit(7);',
-            ], $scope, 1.0);
+            return ProcessAwaiter::spawn(
+                $scope,
+                [
+                    PHP_BINARY,
+                    '-r',
+                    'fwrite(STDOUT, "agent\n"); fwrite(STDERR, "runtime\n"); exit(7);',
+                ],
+                1.0,
+            );
         });
 
         self::assertSame(7, $result[0]);
@@ -38,12 +42,16 @@ final class ProcessAwaiterTest extends PhalanxTestCase
 
         try {
             $this->scope->run(static function (ExecutionScope $scope) use ($marker): void {
-                ProcessAwaiter::spawn([
-                    PHP_BINARY,
-                    '-r',
-                    'fwrite(STDERR, "agent waits\n"); usleep(150000); file_put_contents($argv[1], "alive");',
-                    $marker,
-                ], $scope, 0.01);
+                ProcessAwaiter::spawn(
+                    $scope,
+                    [
+                        PHP_BINARY,
+                        '-r',
+                        'fwrite(STDERR, "agent waits\n"); usleep(150000); file_put_contents($argv[1], "alive");',
+                        $marker,
+                    ],
+                    0.01,
+                );
             });
         } catch (SshTimeoutException) {
             $timedOut = true;
@@ -70,12 +78,16 @@ final class ProcessAwaiterTest extends PhalanxTestCase
                     $token->cancel();
                 }, 'ssh-process-cancellation-probe');
 
-                ProcessAwaiter::spawn([
-                    PHP_BINARY,
-                    '-r',
-                    'usleep(150000); file_put_contents($argv[1], "alive");',
-                    $marker,
-                ], $scope, 1.0);
+                ProcessAwaiter::spawn(
+                    $scope,
+                    [
+                        PHP_BINARY,
+                        '-r',
+                        'usleep(150000); file_put_contents($argv[1], "alive");',
+                        $marker,
+                    ],
+                    1.0,
+                );
             });
         } catch (Cancelled) {
             $cancelled = true;
@@ -92,12 +104,16 @@ final class ProcessAwaiterTest extends PhalanxTestCase
     public function testArgvExecutesShellMetacharactersAsLiteralArguments(): void
     {
         $result = $this->scope->run(static function (ExecutionScope $scope): array {
-            return ProcessAwaiter::spawn([
-                PHP_BINARY,
-                '-r',
-                'fwrite(STDOUT, $argv[1]);',
-                'agent; echo unsafe',
-            ], $scope, 1.0);
+            return ProcessAwaiter::spawn(
+                $scope,
+                [
+                    PHP_BINARY,
+                    '-r',
+                    'fwrite(STDOUT, $argv[1]);',
+                    'agent; echo unsafe',
+                ],
+                1.0,
+            );
         });
 
         self::assertSame(0, $result[0]);

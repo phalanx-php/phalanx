@@ -36,7 +36,7 @@ final class ClientConcurrentSendTest extends PhalanxTestCase
                 $server = Rfc6455TestServer::start(
                     $scope,
                     static function (Socket $conn, ExecutionScope $serverScope) use ($framesChannel): void {
-                        Rfc6455TestServer::pushClientTextFrames($conn, $serverScope, 2, $framesChannel);
+                        Rfc6455TestServer::pushClientTextFrames($serverScope, $conn, 2, $framesChannel);
                     },
                 );
 

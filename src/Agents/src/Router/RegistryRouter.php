@@ -33,7 +33,7 @@ final class RegistryRouter implements InvocationRouter
             throw new RuntimeException("No provider registered for model alias '{$this->defaultModel}'");
         }
 
-        $transport = new Transport($scope->service(\Phalanx\HttpClient\Client::class), $scope);
+        $transport = new Transport($scope, $scope->service(\Phalanx\HttpClient\Client::class));
         $apiKey = $this->credentials[$resolution->config->id] ?? null;
 
         return Factory::create($resolution, $transport, $apiKey);

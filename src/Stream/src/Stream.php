@@ -18,7 +18,7 @@ final class Stream
         return new Channel($bufferSize);
     }
 
-    /** @param Closure(Channel, ExecutionScope): void $producer */
+    /** @param Closure(ExecutionScope, Channel): void $producer */
     public static function produce(Closure $producer): Emitter
     {
         return Emitter::produce($producer);
