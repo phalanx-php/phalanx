@@ -38,7 +38,7 @@ use PHPUnit\Framework\Attributes\Test;
 final class BuilderTest extends PhalanxTestCase
 {
     #[Test]
-    public function facadeReturnsCollabBuilder(): void
+    public function moduleEntryReturnsCollabBuilder(): void
     {
         $builder = Tui::collab(['APP_ENV' => 'test']);
 
@@ -48,7 +48,7 @@ final class BuilderTest extends PhalanxTestCase
     }
 
     #[Test]
-    public function facadeCollabLoadsProjectConfigBeforeExplicitContext(): void
+    public function moduleEntryCollabLoadsProjectConfigBeforeExplicitContext(): void
     {
         $builder = Tui::collab([
             AppContext::CONFIG_FILE => self::tomlConfig(<<<'TOML'

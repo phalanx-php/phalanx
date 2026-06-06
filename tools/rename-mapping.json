@@ -306,7 +306,7 @@
             "strategy": "targeted"
         },
         "notes": [
-            "The current module already contains a DevServer class; facade/class renames need a collision-aware pass."
+            "The current module already contains a DevServer class; entry/class renames need a collision-aware pass."
         ]
     },
     {

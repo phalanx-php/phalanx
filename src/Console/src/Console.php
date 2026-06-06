@@ -13,6 +13,10 @@ use Phalanx\Task\Scopeable;
 
 final class Console
 {
+    private function __construct()
+    {
+    }
+
     /** @param array<string,mixed> $context */
     public static function starting(array $context = []): Builder
     {

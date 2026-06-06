@@ -9,16 +9,6 @@ use Phalanx\Console\Input\ConsoleInput;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Thin facade over Runtime ConsoleInput. The KeyReader contract is exercised
- * end-to-end by every prompt test via FakeKeyReader. The real read path
- * (System::waitEvent + non-blocking fread) is Swoole-runtime dependent
- * and lives in the integration suite.
- *
- * Unit-level concerns left to verify here:
- *   - non-interactive mirroring from ConsoleInput
- *   - restoreOnDispose registers a teardown callback
- */
 final class RawInputTest extends TestCase
 {
     #[Test]

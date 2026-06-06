@@ -10,6 +10,10 @@ use Phalanx\Tui\Collab\Apps\Builder as CollabBuilder;
 
 final class Tui
 {
+    private function __construct()
+    {
+    }
+
     /** @param array<string,mixed> $context */
     public static function app(array $context = []): TuiBuilder
     {

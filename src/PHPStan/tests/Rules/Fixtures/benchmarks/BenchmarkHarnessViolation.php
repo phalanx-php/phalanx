@@ -19,12 +19,12 @@ final class BenchmarkHarnessViolation
         Application::starting()->compile();
     }
 
-    public function httpFacade(): void
+    public function httpModuleEntry(): void
     {
         Server::starting()->build();
     }
 
-    public function consoleFacade(): void
+    public function consoleModuleEntry(): void
     {
         Console::starting()->build();
     }

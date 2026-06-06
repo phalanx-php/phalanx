@@ -33,7 +33,7 @@ use PHPUnit\Framework\Attributes\Test;
 final class ApplicationTest extends TestCase
 {
     #[Test]
-    public function facadeBuildsDispatchableCommandFirstApplication(): void
+    public function moduleEntryBuildsDispatchableCommandFirstApplication(): void
     {
         $app = self::console()
             ->commands(CommandGroup::of([
@@ -82,7 +82,7 @@ final class ApplicationTest extends TestCase
     }
 
     #[Test]
-    public function facadeStartingLoadsProjectConfigBeforeExplicitContext(): void
+    public function moduleEntryStartingLoadsProjectConfigBeforeExplicitContext(): void
     {
         $configFile = self::tomlConfig(<<<'TOML'
 [app]
@@ -129,7 +129,7 @@ TOML);
     }
 
     #[Test]
-    public function oneOffCommandFacadeReceivesCommandContextAndParsedInput(): void
+    public function oneOffCommandEntryReceivesCommandContextAndParsedInput(): void
     {
         $received = null;
         $config = new CommandConfig(
@@ -501,7 +501,7 @@ TOML);
     }
 
     #[Test]
-    public function oneOffCommandFacadeRejectsNonStaticClosures(): void
+    public function oneOffCommandEntryRejectsNonStaticClosures(): void
     {
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('inline commands require static closures');

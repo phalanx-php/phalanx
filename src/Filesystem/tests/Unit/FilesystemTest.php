@@ -12,14 +12,14 @@ use Phalanx\Task\Task;
 use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
 
-final class FilesystemFacadeTest extends PhalanxTestCase
+final class FilesystemTest extends PhalanxTestCase
 {
     #[Test]
-    public function servicesRegisterFilesFacadeAndPool(): void
+    public function servicesRegisterFilesAndPool(): void
     {
         $result = $this->startedApplication(bundles: Filesystem::services())
             ->scoped(Task::named(
-                'test.filesystem.facade.services',
+                'test.filesystem.services',
                 static function (ExecutionScope $scope): array {
                     self::assertInstanceOf(Files::class, Filesystem::files($scope));
                     self::assertInstanceOf(FilePool::class, $scope->service(FilePool::class));

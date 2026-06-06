@@ -99,7 +99,7 @@ final class TestApp
 
     /**
      * Register an application built outside of TestApp::boot — typically a
-     * package-specific facade like HttpApplication or ConsoleApplication that
+     * package-specific application like HttpApplication or ConsoleApplication that
      * already wraps an underlying AppHost. Lenses that depend on the
      * package-specific surface resolve it via primaryApp().
      *

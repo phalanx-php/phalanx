@@ -57,7 +57,7 @@ final class AresBundle extends ServiceBundle
 final class BuilderTest extends TestCase
 {
     #[Test]
-    public function facadeReturnsBuilder(): void
+    public function moduleEntryReturnsBuilder(): void
     {
         $builder = Tui::app([]);
 
@@ -74,7 +74,7 @@ final class BuilderTest extends TestCase
     }
 
     #[Test]
-    public function facadeAppLoadsProjectConfigBeforeExplicitContext(): void
+    public function moduleEntryAppLoadsProjectConfigBeforeExplicitContext(): void
     {
         $builder = Tui::app([
             AppContext::CONFIG_FILE => self::tomlConfig(<<<'TOML'

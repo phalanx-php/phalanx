@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace Phalanx\WebSocket;
 
 use Phalanx\AppHost;
+use Phalanx\Http\Runner;
 use Phalanx\Scope\Scope;
 use Phalanx\Service\ServiceBundle;
+use Phalanx\WebSocket\Client\Config as ClientConfig;
+use Phalanx\WebSocket\Server\Upgrade;
 
 final class WebSocket
 {
@@ -16,19 +19,19 @@ final class WebSocket
     {
     }
 
-    public static function services(?\Phalanx\WebSocket\Client\Config $clientConfig = null): ServiceBundle
+    public static function services(?ClientConfig $clientConfig = null): ServiceBundle
     {
-        return new \Phalanx\WebSocket\Bundle($clientConfig);
+        return new Bundle($clientConfig);
     }
 
-    public static function client(Scope $scope): \Phalanx\WebSocket\Client
+    public static function client(Scope $scope): Client
     {
-        return $scope->service(\Phalanx\WebSocket\Client::class);
+        return $scope->service(Client::class);
     }
 
-    public static function gateway(Scope $scope): \Phalanx\WebSocket\Gateway
+    public static function gateway(Scope $scope): Gateway
     {
-        return $scope->service(\Phalanx\WebSocket\Gateway::class);
+        return $scope->service(Gateway::class);
     }
 
     /**
@@ -42,11 +45,11 @@ final class WebSocket
      * WebSocket::install($runner, $app, RouteGroup::of([...]));
      * ```
      */
-    public static function install(\Phalanx\Http\Runner $runner, AppHost $app, \Phalanx\WebSocket\RouteGroup $routes): void
+    public static function install(Runner $runner, AppHost $app, RouteGroup $routes): void
     {
         $runner->upgrades()->register(
             self::UPGRADE_TOKEN,
-            new \Phalanx\WebSocket\Server\Upgrade($app, $routes, $routes->gateway()),
+            new Upgrade($app, $routes, $routes->gateway()),
         );
     }
 }

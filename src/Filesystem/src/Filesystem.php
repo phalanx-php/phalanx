@@ -7,7 +7,7 @@ namespace Phalanx\Filesystem;
 use Phalanx\Scope\TaskScope;
 use Phalanx\Service\ServiceBundle;
 
-class Filesystem
+final class Filesystem
 {
     private function __construct()
     {

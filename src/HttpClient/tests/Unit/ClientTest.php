@@ -5,29 +5,31 @@ declare(strict_types=1);
 namespace Phalanx\HttpClient\Tests\Unit;
 
 use Phalanx\Application;
+use Phalanx\HttpClient\Client as HttpClient;
+use Phalanx\HttpClient\Config;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Task;
 use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
 use RuntimeException;
 
-final class HttpClientFacadeTest extends PhalanxTestCase
+final class ClientTest extends PhalanxTestCase
 {
     #[Test]
     public function servicesRegistersConfiguredHttpClient(): void
     {
-        $config = new \Phalanx\HttpClient\Config(connectTimeout: 1.25, userAgent: 'HttpClientFacadeTest');
-        $bundle = \Phalanx\HttpClient\Client::services($config);
+        $config = new Config(connectTimeout: 1.25, userAgent: 'ClientTest');
+        $bundle = HttpClient::services($config);
 
         $result = $this->testApp(bundles: $bundle)->application->scoped(
             Task::named(
                 'test.httpclient.service-bundle',
                 static function (ExecutionScope $scope): array {
-                    $resolvedConfig = $scope->service(\Phalanx\HttpClient\Config::class);
-                    $client = \Phalanx\HttpClient\Client::client($scope);
+                    $resolvedConfig = $scope->service(Config::class);
+                    $client = HttpClient::client($scope);
 
-                    self::assertInstanceOf(\Phalanx\HttpClient\Config::class, $resolvedConfig);
-                    self::assertInstanceOf(\Phalanx\HttpClient\Client::class, $client);
+                    self::assertInstanceOf(Config::class, $resolvedConfig);
+                    self::assertInstanceOf(HttpClient::class, $client);
 
                     return [
                         'connectTimeout' => $resolvedConfig->connectTimeout,
@@ -39,7 +41,7 @@ final class HttpClientFacadeTest extends PhalanxTestCase
 
         self::assertSame([
             'connectTimeout' => 1.25,
-            'userAgent' => 'HttpClientFacadeTest',
+            'userAgent' => 'ClientTest',
         ], $result);
     }
 
@@ -50,7 +52,7 @@ final class HttpClientFacadeTest extends PhalanxTestCase
         $this->expectExceptionMessage('already registered');
 
         Application::starting()
-            ->providers(\Phalanx\HttpClient\Client::services(), \Phalanx\HttpClient\Client::services())
+            ->providers(HttpClient::services(), HttpClient::services())
             ->compile();
     }
 }

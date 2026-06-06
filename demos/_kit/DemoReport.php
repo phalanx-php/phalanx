@@ -28,7 +28,7 @@ final class DemoReport
 
     /**
      * Report-only demo entry, for demos that don't need to boot an Runtime
-     * kernel (Agent, Http, Console all build their own facades that
+     * kernel (Agent, Http, Console all build their own module entries that
      * compose Runtime internally — booting a parallel kernel just for lens
      * access would be wasted work).
      *

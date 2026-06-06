@@ -13,7 +13,7 @@ use PHPUnit\Framework\Attributes\Test;
 final class StreamTest extends PhalanxTestCase
 {
     #[Test]
-    public function facadeCreatesChannelsAndScopedPipelines(): void
+    public function moduleEntryCreatesChannelsAndScopedPipelines(): void
     {
         $this->scope->run(static function (ExecutionScope $scope): void {
             $channel = Stream::channel();

@@ -19,7 +19,7 @@ final class UseTestAppViolation
         $app = Application::starting()->compile();
     }
 
-    public function httpFacade(): void
+    public function httpModuleEntry(): void
     {
         $http = Server::starting()->build();
     }

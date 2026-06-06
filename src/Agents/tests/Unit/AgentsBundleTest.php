@@ -30,7 +30,7 @@ final class AgentsBundleTest extends TestCase
     }
 
     #[Test]
-    public function facadeServicesReturnsBundle(): void
+    public function moduleEntryServicesReturnsBundle(): void
     {
         $router = new SingleProviderRouter(new NullProvider());
         $bundle = Agents::services($router);
@@ -39,7 +39,7 @@ final class AgentsBundleTest extends TestCase
     }
 
     #[Test]
-    public function facadeServicesAcceptsToolBundles(): void
+    public function moduleEntryServicesAcceptsToolBundles(): void
     {
         $router = new SingleProviderRouter(new NullProvider());
         $tools = new ToolBundle();

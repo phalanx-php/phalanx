@@ -5,9 +5,16 @@ declare(strict_types=1);
 namespace Phalanx\WebSocket\Tests\Unit;
 
 use Phalanx\Http\RouteGroup;
+use Phalanx\Http\Runner;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Task;
 use Phalanx\Testing\PhalanxTestCase;
+use Phalanx\WebSocket\Client;
+use Phalanx\WebSocket\Client\Config as ClientConfig;
+use Phalanx\WebSocket\Gateway;
+use Phalanx\WebSocket\RouteGroup as WebSocketRouteGroup;
+use Phalanx\WebSocket\Server\Upgrade;
+use Phalanx\WebSocket\WebSocket;
 use PHPUnit\Framework\Attributes\Test;
 
 final class WebSocketTest extends PhalanxTestCase
@@ -15,25 +22,25 @@ final class WebSocketTest extends PhalanxTestCase
     #[Test]
     public function servicesDoNotAdvertiseUnusedServerContext(): void
     {
-        self::assertTrue(\Phalanx\WebSocket\WebSocket::services()::harness()->isEmpty());
+        self::assertTrue(WebSocket::services()::harness()->isEmpty());
     }
 
     #[Test]
     public function servicesRegisterGatewayClientAndClientConfig(): void
     {
-        $clientConfig = new \Phalanx\WebSocket\Client\Config(connectTimeout: 1.5);
-        $bundle = \Phalanx\WebSocket\WebSocket::services($clientConfig);
+        $clientConfig = new ClientConfig(connectTimeout: 1.5);
+        $bundle = WebSocket::services($clientConfig);
 
         $result = $this->testApp(bundles: $bundle)->application->scoped(
             Task::named(
                 'test.websocket.service-bundle',
                 static function (ExecutionScope $scope): array {
-                    $resolvedConfig = $scope->service(\Phalanx\WebSocket\Client\Config::class);
-                    $client = \Phalanx\WebSocket\WebSocket::client($scope);
+                    $resolvedConfig = $scope->service(ClientConfig::class);
+                    $client = WebSocket::client($scope);
 
-                    self::assertInstanceOf(\Phalanx\WebSocket\Gateway::class, \Phalanx\WebSocket\WebSocket::gateway($scope));
-                    self::assertInstanceOf(\Phalanx\WebSocket\Client::class, $client);
-                    self::assertInstanceOf(\Phalanx\WebSocket\Client\Config::class, $resolvedConfig);
+                    self::assertInstanceOf(Gateway::class, WebSocket::gateway($scope));
+                    self::assertInstanceOf(Client::class, $client);
+                    self::assertInstanceOf(ClientConfig::class, $resolvedConfig);
 
                     return [
                         'connectTimeout' => $resolvedConfig->connectTimeout,
@@ -50,14 +57,14 @@ final class WebSocketTest extends PhalanxTestCase
     #[Test]
     public function servicesAreIdempotentAndKeepTheFirstConfiguration(): void
     {
-        $first = new \Phalanx\WebSocket\Client\Config(connectTimeout: 7.5);
-        $firstBundle = \Phalanx\WebSocket\WebSocket::services($first);
-        $secondBundle = \Phalanx\WebSocket\WebSocket::services();
+        $first = new ClientConfig(connectTimeout: 7.5);
+        $firstBundle = WebSocket::services($first);
+        $secondBundle = WebSocket::services();
 
         $result = $this->testApp([], $firstBundle, $secondBundle)->application->scoped(
             Task::named(
                 'test.websocket.idempotent-bundle',
-                static fn(ExecutionScope $scope): float => $scope->service(\Phalanx\WebSocket\Client\Config::class)->connectTimeout,
+                static fn(ExecutionScope $scope): float => $scope->service(ClientConfig::class)->connectTimeout,
             ),
         );
 
@@ -67,18 +74,18 @@ final class WebSocketTest extends PhalanxTestCase
     #[Test]
     public function installRegistersWebSocketUpgradeOnRunner(): void
     {
-        $app = $this->startedApplication(bundles: \Phalanx\WebSocket\WebSocket::services());
-        $runner = \Phalanx\Http\Runner::from($app)->withRoutes(RouteGroup::of([]));
+        $app = $this->startedApplication(bundles: WebSocket::services());
+        $runner = Runner::from($app)->withRoutes(RouteGroup::of([]));
 
-        self::assertNull($runner->upgrades()->resolve(\Phalanx\WebSocket\WebSocket::UPGRADE_TOKEN));
-        self::assertNotContains(\Phalanx\WebSocket\WebSocket::UPGRADE_TOKEN, $runner->upgrades()->tokens());
+        self::assertNull($runner->upgrades()->resolve(WebSocket::UPGRADE_TOKEN));
+        self::assertNotContains(WebSocket::UPGRADE_TOKEN, $runner->upgrades()->tokens());
 
-        \Phalanx\WebSocket\WebSocket::install($runner, $app, \Phalanx\WebSocket\RouteGroup::of([], new \Phalanx\WebSocket\Gateway()));
+        WebSocket::install($runner, $app, WebSocketRouteGroup::of([], new Gateway()));
 
-        self::assertContains(\Phalanx\WebSocket\WebSocket::UPGRADE_TOKEN, $runner->upgrades()->tokens());
+        self::assertContains(WebSocket::UPGRADE_TOKEN, $runner->upgrades()->tokens());
         self::assertInstanceOf(
-            \Phalanx\WebSocket\Server\Upgrade::class,
-            $runner->upgrades()->resolve(\Phalanx\WebSocket\WebSocket::UPGRADE_TOKEN),
+            Upgrade::class,
+            $runner->upgrades()->resolve(WebSocket::UPGRADE_TOKEN),
         );
     }
 }
