@@ -30,7 +30,7 @@ final class WsServerUpgradeTest extends PhalanxTestCase
     #[Test]
     public function websocketInstallRegistersWebsocketUpgradeToken(): void
     {
-        $testApp = $this->testApp([], \Phalanx\WebSocket\Facade::services());
+        $testApp = $this->testApp([], \Phalanx\WebSocket\WebSocket::services());
 
         $this->scope->run(static function (ExecutionScope $_scope) use ($testApp): void {
             $app = $testApp->application->startup();
@@ -38,22 +38,22 @@ final class WsServerUpgradeTest extends PhalanxTestCase
             $runner = \Phalanx\Http\Runner::from($app)->withRoutes(RouteGroup::of([]));
 
             self::assertNull(
-                $runner->upgrades()->resolve(\Phalanx\WebSocket\Facade::UPGRADE_TOKEN),
-                'token must be unresolved before Facade::install',
+                $runner->upgrades()->resolve(\Phalanx\WebSocket\WebSocket::UPGRADE_TOKEN),
+                'token must be unresolved before WebSocket::install',
             );
             self::assertCount(0, $runner->upgrades()->tokens());
 
-            \Phalanx\WebSocket\Facade::install($runner, $app, \Phalanx\WebSocket\RouteGroup::of([], new \Phalanx\WebSocket\Gateway()));
+            \Phalanx\WebSocket\WebSocket::install($runner, $app, \Phalanx\WebSocket\RouteGroup::of([], new \Phalanx\WebSocket\Gateway()));
 
-            $resolved = $runner->upgrades()->resolve(\Phalanx\WebSocket\Facade::UPGRADE_TOKEN);
+            $resolved = $runner->upgrades()->resolve(\Phalanx\WebSocket\WebSocket::UPGRADE_TOKEN);
             self::assertInstanceOf(\Phalanx\WebSocket\Server\Upgrade::class, $resolved);
             self::assertContains(
-                \Phalanx\WebSocket\Facade::UPGRADE_TOKEN,
+                \Phalanx\WebSocket\WebSocket::UPGRADE_TOKEN,
                 $runner->upgrades()->tokens(),
                 'tokens() must surface the registered upgrade',
             );
             self::assertTrue(
-                $runner->upgrades()->supports(\Phalanx\WebSocket\Facade::UPGRADE_TOKEN),
+                $runner->upgrades()->supports(\Phalanx\WebSocket\WebSocket::UPGRADE_TOKEN),
                 'supports() must return true for the registered token',
             );
         });
@@ -62,7 +62,7 @@ final class WsServerUpgradeTest extends PhalanxTestCase
     #[Test]
     public function upgradeRequestWithoutWebSocketInstallReturns426(): void
     {
-        $testApp = $this->testApp([], \Phalanx\WebSocket\Facade::services());
+        $testApp = $this->testApp([], \Phalanx\WebSocket\WebSocket::services());
 
         $this->scope->run(static function (ExecutionScope $_scope) use ($testApp): void {
             $app = $testApp->application->startup();
@@ -90,16 +90,16 @@ final class WsServerUpgradeTest extends PhalanxTestCase
         // instance WebSocket constructed — never null, and never the wrong type. The
         // request body itself is not dispatched here because that path enters
         // Swoole's native Response::upgrade() which has no test seam.
-        $testApp = $this->testApp([], \Phalanx\WebSocket\Facade::services());
+        $testApp = $this->testApp([], \Phalanx\WebSocket\WebSocket::services());
 
         $this->scope->run(static function (ExecutionScope $_scope) use ($testApp): void {
             $app = $testApp->application->startup();
 
             $runner = \Phalanx\Http\Runner::from($app)->withRoutes(RouteGroup::of([]));
-            \Phalanx\WebSocket\Facade::install($runner, $app, \Phalanx\WebSocket\RouteGroup::of([], new \Phalanx\WebSocket\Gateway()));
+            \Phalanx\WebSocket\WebSocket::install($runner, $app, \Phalanx\WebSocket\RouteGroup::of([], new \Phalanx\WebSocket\Gateway()));
 
-            $resolvedFirst = $runner->upgrades()->resolve(\Phalanx\WebSocket\Facade::UPGRADE_TOKEN);
-            $resolvedSecond = $runner->upgrades()->resolve(\Phalanx\WebSocket\Facade::UPGRADE_TOKEN);
+            $resolvedFirst = $runner->upgrades()->resolve(\Phalanx\WebSocket\WebSocket::UPGRADE_TOKEN);
+            $resolvedSecond = $runner->upgrades()->resolve(\Phalanx\WebSocket\WebSocket::UPGRADE_TOKEN);
 
             self::assertSame(
                 $resolvedFirst,

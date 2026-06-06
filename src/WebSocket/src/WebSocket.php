@@ -8,7 +8,7 @@ use Phalanx\AppHost;
 use Phalanx\Scope\Scope;
 use Phalanx\Service\ServiceBundle;
 
-final class Facade
+final class WebSocket
 {
     public const string UPGRADE_TOKEN = 'websocket';
 
@@ -39,7 +39,7 @@ final class Facade
      * ```php
      * $app = Application::starting()->providers(WebSocket::services())->compile()->startup();
      * $runner = Runner::from($app)->withRoutes($routes);
-     * Facade::install($runner, $app, RouteGroup::of([...]));
+     * WebSocket::install($runner, $app, RouteGroup::of([...]));
      * ```
      */
     public static function install(\Phalanx\Http\Runner $runner, AppHost $app, \Phalanx\WebSocket\RouteGroup $routes): void

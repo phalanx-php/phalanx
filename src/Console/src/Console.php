@@ -11,7 +11,7 @@ use Phalanx\Console\Command\CommandConfig;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 
-final class Facade
+final class Console
 {
     /** @param array<string,mixed> $context */
     public static function starting(array $context = []): Builder

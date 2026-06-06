@@ -75,6 +75,13 @@ final class ApplicationTest extends TestCase
     }
 
     #[Test]
+    public function configEnablesTraceFromContextFlag(): void
+    {
+        self::assertTrue(Config::fromContext(new AppContext(['PHALANX_TRACE' => '1']))->traceEnabled);
+        self::assertFalse(Config::fromContext(new AppContext(['PHALANX_TRACE' => '0']))->traceEnabled);
+    }
+
+    #[Test]
     public function facadeStartingLoadsProjectConfigBeforeExplicitContext(): void
     {
         $configFile = self::tomlConfig(<<<'TOML'
@@ -231,6 +238,42 @@ TOML);
             self::assertStringContainsString('ledger.child.active', $output);
             self::assertStringContainsString('failed', $output);
             self::assertStringNotContainsString('Task tree unavailable', $output);
+            self::assertStringNotContainsString('Phalanx Trace:', $output);
+            self::assertStringNotContainsString('console.test.before-failure', $output);
+            self::assertStringNotContainsString('console.test.failure-boundary', $output);
+        });
+
+        PhalanxAssert::assertNoLiveTasks($app->host()->supervisor());
+        $app->shutdown();
+    }
+
+    #[Test]
+    public function throwingOneOffCommandRendersTraceWhenEnabled(): void
+    {
+        $stream = StreamOutputHelper::open();
+        $app = self::consoleCommand(
+            'fail',
+            static function (CommandContext $ctx): int {
+                $ctx->trace()->log(TraceType::Lifecycle, 'console.test.before-failure', [
+                    'command' => 'fail',
+                ]);
+                $ctx->trace()->log(TraceType::Failed, 'console.test.failure-boundary', [
+                    'reason' => 'expected',
+                ]);
+
+                throw new \RuntimeException('expected trace failure');
+            },
+        )
+            ->withConfig(new Config(
+                errorOutput: StreamOutputHelper::output($stream),
+                traceEnabled: true,
+            ))
+            ->build();
+
+        $this->scope->run(static function (ExecutionScope $_scope) use ($app, $stream): void {
+            self::assertSame(1, $app->dispatch(['fail']));
+
+            $output = StreamOutputHelper::contents($stream);
             self::assertStringContainsString('Phalanx Trace:', $output);
             self::assertStringContainsString('console.test.before-failure', $output);
             self::assertStringContainsString('console.test.failure-boundary', $output);

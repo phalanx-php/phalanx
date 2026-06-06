@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/../../../vendor/autoload_runtime.php';
 
-use Phalanx\Console\Facade;
+use Phalanx\Console\Console;
 use Phalanx\Console\Command\CommandGroup;
 use Phalanx\Console\Input\RawInput;
 use Phalanx\Console\Output\StreamOutput;
@@ -47,7 +47,7 @@ return DemoReport::demo(
             }
             $reader = new RawInput(new ConsoleInput($nullStream));
 
-            $app = Facade::starting(['argv' => array_merge(['demo'], $argv)])
+            $app = Console::starting(['argv' => array_merge(['demo'], $argv)])
                 ->providers(new InputBundle($capture, $theme, $reader))
                 ->commands($commands)
                 ->build();

@@ -16,7 +16,7 @@ use Phalanx\Tui\Drawing\ScreenMode;
 use Phalanx\Tui\Drawing\StageConfig;
 use Phalanx\Tui\Reactive\Store;
 use Phalanx\Tui\Tdom\Renderable;
-use Phalanx\Tui\Facade;
+use Phalanx\Tui\Tui;
 use Phalanx\Tui\Apps\App;
 use Phalanx\Tui\Apps\Builder;
 use Phalanx\Tui\Apps\Bundle;
@@ -59,7 +59,7 @@ final class BuilderTest extends TestCase
     #[Test]
     public function facadeReturnsBuilder(): void
     {
-        $builder = Facade::app([]);
+        $builder = Tui::app([]);
 
         self::assertInstanceOf(Builder::class, $builder);
     }
@@ -67,7 +67,7 @@ final class BuilderTest extends TestCase
     #[Test]
     public function builderHoldsContext(): void
     {
-        $builder = Facade::app(['APP_ENV' => 'test']);
+        $builder = Tui::app(['APP_ENV' => 'test']);
 
         self::assertInstanceOf(AppContext::class, $builder->context);
         self::assertSame('test', $builder->context->get('APP_ENV'));
@@ -76,7 +76,7 @@ final class BuilderTest extends TestCase
     #[Test]
     public function facadeAppLoadsProjectConfigBeforeExplicitContext(): void
     {
-        $builder = Facade::app([
+        $builder = Tui::app([
             AppContext::CONFIG_FILE => self::tomlConfig(<<<'TOML'
 [app]
 name = "tui-file-app"
@@ -97,7 +97,7 @@ TOML),
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('screen');
 
-        Facade::app()->build();
+        Tui::app()->build();
     }
 
     #[Test]
@@ -105,13 +105,13 @@ TOML),
     {
         $this->expectException(InvalidArgumentException::class);
 
-        Facade::app()->screens([]);
+        Tui::app()->screens([]);
     }
 
     #[Test]
     public function buildProducesApp(): void
     {
-        $app = Facade::app()
+        $app = Tui::app()
             ->screens([OlympusScreen::class])
             ->build();
 
@@ -134,7 +134,7 @@ TOML),
             ],
         );
 
-        $app = Facade::app()
+        $app = Tui::app()
             ->screens([OlympusScreen::class])
             ->stageConfig($config)
             ->build();
@@ -147,7 +147,7 @@ TOML),
     #[Test]
     public function defaultStageConfigLetsBindingsOwnExitBehavior(): void
     {
-        $app = Facade::app()
+        $app = Tui::app()
             ->screens([OlympusScreen::class])
             ->build();
 
@@ -162,7 +162,7 @@ TOML),
     #[Test]
     public function defaultScreenIsFirstInList(): void
     {
-        $app = Facade::app()
+        $app = Tui::app()
             ->screens([OlympusScreen::class, SpartaScreen::class])
             ->build();
 
@@ -172,7 +172,7 @@ TOML),
     #[Test]
     public function allRegisteredScreensArePreserved(): void
     {
-        $app = Facade::app()
+        $app = Tui::app()
             ->screens([OlympusScreen::class, SpartaScreen::class])
             ->build();
 
@@ -184,7 +184,7 @@ TOML),
     {
         $binding = Binding::ctrl('c')->quit();
 
-        $app = Facade::app()
+        $app = Tui::app()
             ->screens([OlympusScreen::class])
             ->globalBindings([$binding])
             ->build();
@@ -196,7 +196,7 @@ TOML),
     #[Test]
     public function defaultGlobalBindingsIncludeQuit(): void
     {
-        $app = Facade::app()
+        $app = Tui::app()
             ->screens([OlympusScreen::class])
             ->build();
 
@@ -209,7 +209,7 @@ TOML),
     #[Test]
     public function storeClassIsPassedToApp(): void
     {
-        $app = Facade::app()
+        $app = Tui::app()
             ->screens([OlympusScreen::class])
             ->store(ZeusStore::class)
             ->build();
@@ -220,7 +220,7 @@ TOML),
     #[Test]
     public function noStoreByDefault(): void
     {
-        $app = Facade::app()
+        $app = Tui::app()
             ->screens([OlympusScreen::class])
             ->build();
 
@@ -230,7 +230,7 @@ TOML),
     #[Test]
     public function devtoolsDefaultsToFalse(): void
     {
-        $app = Facade::app()
+        $app = Tui::app()
             ->screens([OlympusScreen::class])
             ->build();
 
@@ -240,7 +240,7 @@ TOML),
     #[Test]
     public function devtoolsCanBeEnabled(): void
     {
-        $app = Facade::app()
+        $app = Tui::app()
             ->screens([OlympusScreen::class])
             ->devtools()
             ->build();
@@ -251,7 +251,7 @@ TOML),
     #[Test]
     public function devtoolsBuildCreatesSignalRegistry(): void
     {
-        $app = Facade::app()
+        $app = Tui::app()
             ->screens([OlympusScreen::class])
             ->devtools()
             ->build();
@@ -262,7 +262,7 @@ TOML),
     #[Test]
     public function buildWithoutDevtoolsHasNullRegistry(): void
     {
-        $app = Facade::app()
+        $app = Tui::app()
             ->screens([OlympusScreen::class])
             ->build();
 
@@ -272,7 +272,7 @@ TOML),
     #[Test]
     public function builderIsFluentChainable(): void
     {
-        $builder = Facade::app();
+        $builder = Tui::app();
         $returned = $builder->screens([OlympusScreen::class]);
 
         self::assertSame($builder, $returned);
@@ -281,7 +281,7 @@ TOML),
     #[Test]
     public function registeredScreensIntrospection(): void
     {
-        $builder = Facade::app()
+        $builder = Tui::app()
             ->screens([OlympusScreen::class, SpartaScreen::class]);
 
         self::assertSame([OlympusScreen::class, SpartaScreen::class], $builder->registeredScreens());
@@ -290,7 +290,7 @@ TOML),
     #[Test]
     public function registeredStoreIntrospection(): void
     {
-        $builder = Facade::app()
+        $builder = Tui::app()
             ->screens([OlympusScreen::class])
             ->store(ZeusStore::class);
 
@@ -301,7 +301,7 @@ TOML),
     public function registeredGlobalBindingsIntrospection(): void
     {
         $binding = Binding::ctrl('q')->quit();
-        $builder = Facade::app()
+        $builder = Tui::app()
             ->screens([OlympusScreen::class])
             ->globalBindings([$binding]);
 
@@ -315,7 +315,7 @@ TOML),
     public function providersAreRegisteredOnTheAppBuilder(): void
     {
         $bundle = new AresBundle();
-        $builder = Facade::app()
+        $builder = Tui::app()
             ->screens([OlympusScreen::class])
             ->providers($bundle);
 
@@ -326,7 +326,7 @@ TOML),
     public function providerFactoriesAreResolvedAgainstBuiltApp(): void
     {
         $received = null;
-        $builder = Facade::app()
+        $builder = Tui::app()
             ->screens([OlympusScreen::class])
             ->providers(
                 static function (App $app) use (&$received): Bundle {
@@ -351,7 +351,7 @@ TOML),
         $quit = Binding::ctrl('c')->quit();
         $switch = Binding::ctrl('1')->workspace(SpartaScreen::class)->label('Sparta');
 
-        $app = Facade::app()
+        $app = Tui::app()
             ->screens([OlympusScreen::class, SpartaScreen::class])
             ->globalBindings([$quit, $switch])
             ->build();

@@ -10,7 +10,7 @@ use Phalanx\Boot\AppContext;
 use Phalanx\Service\ServiceBundle;
 
 /**
- * Facade builder for DevServer dev-server applications.
+ * Module entry builder for DevServer dev-server applications.
  *
  * Bootstrap files should enter through `DevServer::starting($context)`. The
  * builder accumulates managed-process configuration plus backends and

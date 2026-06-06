@@ -6,7 +6,7 @@ namespace Phalanx\Worker;
 
 use Phalanx\Service\ServiceBundle;
 
-final class Facade
+final class Worker
 {
     private function __construct()
     {

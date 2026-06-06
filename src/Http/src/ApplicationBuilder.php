@@ -18,7 +18,7 @@ use Phalanx\Trace\Trace;
 use Phalanx\Worker\WorkerDispatch;
 
 /**
- * Facade builder for Http applications.
+ * Module entry builder for Http applications.
  *
  * Bootstrap files should enter through `Server::starting($context)`, not
  * through the root Runtime ApplicationBuilder plus a manually assembled runner.

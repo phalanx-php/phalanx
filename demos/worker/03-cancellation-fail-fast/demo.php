@@ -10,7 +10,7 @@ use Phalanx\Demos\Worker\CancellationFailFast\SlowTask;
 use Phalanx\Demos\Worker\CancellationFailFast\WorkerHealthTask;
 use Phalanx\Demos\Kit\DemoApp;
 use Phalanx\Demos\Kit\DemoReport;
-use Phalanx\Worker\Facade;
+use Phalanx\Worker\Worker;
 use Phalanx\Worker\ParallelConfig;
 use Phalanx\Mark\Mark;
 use Phalanx\Scope\ExecutionScope;
@@ -97,5 +97,5 @@ return DemoApp::boot(
         $report->record('recovery work ran outside parent process', $afterFailFast['pid'] !== $parentPid);
         $report->record('task tree cleaned', $app->ledger()->liveTaskCount() === 0);
     },
-    [Facade::services(new ParallelConfig(agents: 2))],
+    [Worker::services(new ParallelConfig(agents: 2))],
 );

@@ -31,7 +31,7 @@ final readonly class RuntimeHookSnapshot
             currentFlags: $currentFlags,
             availableFlags: $availableFlags,
             requiredFlags: $policy->requiredFlags,
-            missingFlags: $policy->missingFlags($currentFlags),
+            missingFlags: $policy->missingAvailableRequiredFlags($currentFlags, $availableFlags),
             unavailableRequiredFlags: $policy->unavailableRequiredFlags($availableFlags),
             sensitiveEnabledFlags: $policy->sensitiveEnabledFlags($currentFlags),
         );

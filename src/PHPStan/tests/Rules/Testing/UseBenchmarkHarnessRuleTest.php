@@ -30,7 +30,7 @@ final class UseBenchmarkHarnessRuleTest extends RuleTestCase
                 ],
                 [
                     'Benchmarks should boot through BenchmarkHarness instead of '
-                    . 'Phalanx\Console\Facade::starting(). '
+                    . 'Phalanx\Console\Console::starting(). '
                     . 'Bypassing the harness skips pool-stats collection, ZMM tracking, and scope-clean assertions.',
                     29,
                 ],

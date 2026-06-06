@@ -7,7 +7,7 @@ namespace Phalanx\WebSocket\Client\Tests\Unit;
 use Phalanx\Application;
 use Phalanx\WebSocket\Client;
 use Phalanx\WebSocket\Client\Exception;
-use Phalanx\WebSocket\Facade;
+use Phalanx\WebSocket\WebSocket;
 use Phalanx\WebSocket\Runtime\Identity\WebSocketResourceSid;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Task;
@@ -28,7 +28,7 @@ final class ConnectTest extends TestCase
     public function ConnectRejectsMalformedUrl(): void
     {
         Application::starting()
-            ->providers(\Phalanx\WebSocket\Facade::services())
+            ->providers(\Phalanx\WebSocket\WebSocket::services())
             ->run(Task::named(
                 'test.websocket.client.bad-url',
                 static function (ExecutionScope $scope): void {
@@ -62,7 +62,7 @@ final class ConnectTest extends TestCase
     public function ConnectRejectsUnsupportedScheme(): void
     {
         Application::starting()
-            ->providers(\Phalanx\WebSocket\Facade::services())
+            ->providers(\Phalanx\WebSocket\WebSocket::services())
             ->run(Task::named(
                 'test.websocket.client.bad-scheme',
                 static function (ExecutionScope $scope): void {

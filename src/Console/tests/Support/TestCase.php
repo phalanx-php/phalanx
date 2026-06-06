@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Console\Tests\Support;
 
 use Closure;
-use Phalanx\Console\Facade;
+use Phalanx\Console\Console;
 use Phalanx\Console\Application\Builder;
 use Phalanx\Console\Command\CommandConfig;
 use Phalanx\Task\Executable;
@@ -17,7 +17,7 @@ abstract class TestCase extends PhalanxTestCase
     /** @param array<string, mixed> $context */
     protected static function console(array $context = []): Builder
     {
-        return Facade::starting($context);
+        return Console::starting($context);
     }
 
     protected static function consoleCommand(
@@ -25,6 +25,6 @@ abstract class TestCase extends PhalanxTestCase
         Closure|Scopeable|Executable $handler,
         ?CommandConfig $config = null,
     ): Builder {
-        return Facade::command($name, $handler, $config);
+        return Console::command($name, $handler, $config);
     }
 }

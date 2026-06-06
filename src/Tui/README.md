@@ -26,7 +26,7 @@ composer install
 
 ## App Shape
 
-Configure and start a terminal UI with `Facade::app()`. Apps provide their own
+Configure and start a terminal UI with `Tui::app()`. Apps provide their own
 store, screens, bindings, and service bundles.
 
 ```php
@@ -35,14 +35,14 @@ store, screens, bindings, and service bundles.
 use Phalanx\Tui\Inputs\Binding;
 use Phalanx\Tui\Core\Screen;
 use Phalanx\Tui\Reactive\Store;
-use Phalanx\Tui\Facade;
+use Phalanx\Tui\Tui;
 
 /** @var list<class-string<Screen>> $screens */
 $screens = [StatusScreen::class];
 /** @var class-string<Store> $store */
 $store = AppStore::class;
 
-return Facade::app($context)
+return Tui::app($context)
     ->store($store)
     ->screens($screens)
     ->globalBindings([
@@ -51,25 +51,25 @@ return Facade::app($context)
     ->run();
 ```
 
-`Facade::app(...)` owns terminal stage configuration, screen registration,
+`Tui::app(...)` owns terminal stage configuration, screen registration,
 input dispatch, and the Runtime startup path. The Collab layer owns agent loop
 contracts, messages, work state, prompts, reviews, and UI-facing state
 projections.
 
 ## Collab App Shape
 
-Use `Facade::collab()` when the app is an collab workspace. The
+Use `Tui::collab()` when the app is an collab workspace. The
 builder owns the default Collab store, workspace screen, receive queue, input
 submitter, boundary runner, and runtime tick loop.
 
 ```php
 <?php
 
-use Phalanx\Tui\Facade;
+use Phalanx\Tui\Tui;
 
 $assistant = new Assistant();
 
-return Facade::collab($context)
+return Tui::collab($context)
     ->primary($assistant)
     ->run();
 ```

@@ -101,11 +101,14 @@ final class EnvironmentDoctorTest extends TestCase
     {
         $policy = RuntimePolicy::forCapabilities(RuntimeCapability::PdoPgsql);
         $report = new EnvironmentDoctor(runtimePolicy: $policy)->check();
+        $missing = self::check($report->toArray(), 'swoole.hooks.missing');
         $check = self::check($report->toArray(), 'swoole.hooks.unavailable_required');
 
         self::assertSame(!SwooleHook::PdoPgsql->isAvailable(), !$check['ok']);
         if (!SwooleHook::PdoPgsql->isAvailable()) {
             self::assertFalse($report->isHealthy());
+            self::assertTrue($missing['ok']);
+            self::assertSame('0 (none)', $missing['detail']);
             self::assertStringContainsString('PDO_PGSQL', $check['detail']);
         }
     }

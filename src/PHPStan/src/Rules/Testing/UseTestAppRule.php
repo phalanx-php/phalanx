@@ -12,7 +12,7 @@ use PHPStan\Rules\IdentifierRuleError;
 use PHPStan\Rules\Rule;
 
 /**
- * Flags direct facade boot/build calls inside integration/feature test files
+ * Flags direct entry boot/build calls inside integration/feature test files
  * where TestApp boot is the canonical entry. Encourages users to consume
  * PhalanxTestCase::testApp() so cleanup, fakes, and lens activation are
  * handled uniformly.
@@ -26,7 +26,7 @@ final class UseTestAppRule implements Rule
     private const array TARGET_METHODS_BY_CLASS = [
         'Phalanx\\Application' => ['starting'],
         'Phalanx\\Http\\Server' => ['starting'],
-        'Phalanx\\Console\\Facade' => ['starting', 'command'],
+        'Phalanx\\Console\\Console' => ['starting', 'command'],
         'Phalanx\\Agents\\Agents' => ['starting'],
     ];
 

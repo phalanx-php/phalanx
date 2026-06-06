@@ -38,9 +38,9 @@ use Phalanx\Worker\WorkerDispatch;
 /**
  * Low-level Runtime host builder.
  *
- * Package and example bootstraps should prefer their package facade builders:
+ * Package and example bootstraps should prefer their package module entry builders:
  * `Phalanx\Agents\Agents::starting()`,
- * `Phalanx\Console\Facade::starting()`, or
+ * `Phalanx\Console\Console::starting()`, or
  * `Phalanx\Http\Server::starting()`.
  */
 class ApplicationBuilder

@@ -200,11 +200,11 @@ declare(strict_types=1);
 
 require __DIR__ . '/../vendor/autoload_runtime.php';
 
-use Phalanx\Console\Facade;
+use Phalanx\Console\Console;
 use Phalanx\Console\Style\Bundle;
 
 return static function (array $context): int {
-    return Facade::starting($context)
+    return Console::starting($context)
         ->providers(new Bundle())
         ->commands(__DIR__ . '/../commands.php')
         ->run();

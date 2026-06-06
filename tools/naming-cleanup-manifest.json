@@ -188,17 +188,6 @@
       "action": "rename",
       "risk": "public-api",
       "guarded_zone": false,
-      "old_fqcn": "Phalanx\\Worker\\Worker",
-      "new_fqcn": "Phalanx\\Worker\\Facade",
-      "old_file": "src/Worker/src/Worker.php",
-      "new_file": "src/Worker/src/Facade.php",
-      "verification": ["composer test:worker", "composer examples:lint"]
-    },
-    {
-      "slice": "worker",
-      "action": "rename",
-      "risk": "public-api",
-      "guarded_zone": false,
       "old_fqcn": "Phalanx\\Worker\\WorkerServiceBundle",
       "new_fqcn": "Phalanx\\Worker\\Bundle",
       "old_file": "src/Worker/src/WorkerServiceBundle.php",
@@ -272,17 +261,6 @@
       "guarded_zone": true,
       "old_fqcn": "Phalanx\\Worker\\WorkerDispatch",
       "reason": "Cross-package dispatch contract stays explicit where Runtime accepts a worker dispatcher."
-    },
-    {
-      "slice": "stream",
-      "action": "rename",
-      "risk": "public-api",
-      "guarded_zone": false,
-      "old_fqcn": "Phalanx\\Stream\\Stream",
-      "new_fqcn": "Phalanx\\Stream\\Facade",
-      "old_file": "src/Stream/src/Stream.php",
-      "new_file": "src/Stream/src/Facade.php",
-      "verification": ["composer test:stream", "composer test:agents", "composer test:websocket"]
     },
     {
       "slice": "stream",

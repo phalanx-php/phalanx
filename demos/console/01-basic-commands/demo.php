@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/../../../vendor/autoload_runtime.php';
 
-use Phalanx\Console\Facade;
+use Phalanx\Console\Console;
 use Phalanx\Console\Command\CommandGroup;
 use Phalanx\Console\Output\StreamOutput;
 use Phalanx\Console\Output\TerminalEnvironment;
@@ -33,7 +33,7 @@ return DemoReport::demo(
             }
             $capture = new StreamOutput($stream, new TerminalEnvironment(columns: 80, lines: 24));
 
-            $app = Facade::starting(['argv' => array_merge(['demo'], $argv)])
+            $app = Console::starting(['argv' => array_merge(['demo'], $argv)])
                 ->providers(new OutputBundle($capture))
                 ->commands($commands)
                 ->build();

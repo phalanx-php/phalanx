@@ -51,19 +51,6 @@ enum SwooleHook: int
         return $names;
     }
 
-    /** @return list<string> */
-    public static function unavailableNamesForMask(int $mask): array
-    {
-        $names = [];
-        foreach (self::maskCases() as $hook) {
-            if (($mask & $hook->value) === $hook->value && !$hook->isAvailable()) {
-                $names[] = $hook->label();
-            }
-        }
-
-        return $names;
-    }
-
     public static function availableMask(): int
     {
         $mask = 0;

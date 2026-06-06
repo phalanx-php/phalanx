@@ -6,7 +6,7 @@ namespace Phalanx\Worker\Tests\Integration;
 
 use Phalanx\Application;
 use Phalanx\Cancellation\Cancelled;
-use Phalanx\Worker\Facade;
+use Phalanx\Worker\Worker;
 use Phalanx\Mark\Mark;
 use Phalanx\Worker\ParallelConfig;
 use Phalanx\Worker\Tests\Fixtures\GreetThroughServiceTask;
@@ -273,7 +273,7 @@ final class InWorkerTest extends PhalanxTestCase
                 static fn(): GreetingService => new GreetingServiceImpl(),
             );
 
-        $testApp = $this->testApp([], $bundle, Facade::services(new ParallelConfig(agents: 1)));
+        $testApp = $this->testApp([], $bundle, Worker::services(new ParallelConfig(agents: 1)));
         $app = $testApp->application->startup();
 
         $this->scope->run(static function (ExecutionScope $_scope) use ($app): void {
@@ -343,7 +343,7 @@ final class InWorkerTest extends PhalanxTestCase
                 static fn(): GreetingService => new GreetingServiceImpl(),
             );
 
-        $app = $this->testApp([], $bundle, Facade::services($config))->application;
+        $app = $this->testApp([], $bundle, Worker::services($config))->application;
         $app->startup();
 
         return $app;

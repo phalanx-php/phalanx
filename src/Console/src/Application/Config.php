@@ -22,6 +22,7 @@ final readonly class Config
         public ?StreamOutput $errorOutput = null,
         public ?TerminalEnvironment $terminal = null,
         public ?SignalPolicy $signalPolicy = null,
+        public bool $traceEnabled = false,
     ) {
     }
 
@@ -31,6 +32,7 @@ final readonly class Config
             argv: self::argvFromContext($context),
             terminal: TerminalEnvironment::fromContext($context),
             signalPolicy: SignalPolicy::default(),
+            traceEnabled: $context->bool('PHALANX_TRACE', false),
         );
     }
 
@@ -50,6 +52,7 @@ final readonly class Config
             errorOutput: $this->errorOutput,
             terminal: $this->terminal,
             signalPolicy: $this->signalPolicy,
+            traceEnabled: $this->traceEnabled,
         );
     }
 
@@ -63,6 +66,7 @@ final readonly class Config
             errorOutput: $this->errorOutput,
             terminal: $this->terminal,
             signalPolicy: $this->signalPolicy,
+            traceEnabled: $this->traceEnabled,
         );
     }
 

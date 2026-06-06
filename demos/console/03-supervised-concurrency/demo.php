@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/../../../vendor/autoload_runtime.php';
 
-use Phalanx\Console\Facade;
+use Phalanx\Console\Console;
 use Phalanx\Console\Command\CommandGroup;
 use Phalanx\Console\Output\TerminalEnvironment;
 use Phalanx\Console\Style\Theme;
@@ -34,7 +34,7 @@ return DemoReport::demo(
         ]);
 
         $start = microtime(true);
-        $app = Facade::starting(['argv' => ['demo', 'deploy', 'staging']])
+        $app = Console::starting(['argv' => ['demo', 'deploy', 'staging']])
             ->providers(new DeployBundle($stream, $terminal, $theme))
             ->commands($commands)
             ->build();

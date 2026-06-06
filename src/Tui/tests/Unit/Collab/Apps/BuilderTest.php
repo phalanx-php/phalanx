@@ -28,7 +28,7 @@ use Phalanx\Tui\Collab\State\Store;
 use Phalanx\Tui\Collab\State\WorkPlanSlice;
 use Phalanx\Tui\Collab\WorkContext;
 use Phalanx\Tui\Tests\Support\RecordingTaskScope;
-use Phalanx\Tui\Facade;
+use Phalanx\Tui\Tui;
 use Phalanx\Tui\Apps\App;
 use Phalanx\Tui\Apps\Bundle as TuiBundle;
 use Phalanx\Tui\Drawing\ScreenMode;
@@ -40,7 +40,7 @@ final class BuilderTest extends PhalanxTestCase
     #[Test]
     public function facadeReturnsCollabBuilder(): void
     {
-        $builder = Facade::collab(['APP_ENV' => 'test']);
+        $builder = Tui::collab(['APP_ENV' => 'test']);
 
         self::assertInstanceOf(Builder::class, $builder);
         self::assertInstanceOf(AppContext::class, $builder->context);
@@ -50,7 +50,7 @@ final class BuilderTest extends PhalanxTestCase
     #[Test]
     public function facadeCollabLoadsProjectConfigBeforeExplicitContext(): void
     {
-        $builder = Facade::collab([
+        $builder = Tui::collab([
             AppContext::CONFIG_FILE => self::tomlConfig(<<<'TOML'
 [app]
 name = "collab-file-app"
@@ -71,13 +71,13 @@ TOML),
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('primary');
 
-        Facade::collab()->build();
+        Tui::collab()->build();
     }
 
     #[Test]
     public function builderDefaultsToCollabStoreAndWorkspaceScreen(): void
     {
-        $builder = Facade::collab()
+        $builder = Tui::collab()
             ->primary(new BuilderDoneAgentParticipant(new \ArrayObject()));
 
         self::assertSame(Store::class, $builder->registeredStore());
@@ -88,7 +88,7 @@ TOML),
     #[Test]
     public function resolvedProvidersIncludeTuiAndCollabBundlesBeforeUserProviders(): void
     {
-        $builder = Facade::collab()
+        $builder = Tui::collab()
             ->primary(new BuilderDoneAgentParticipant(new \ArrayObject()))
             ->providers(new BuilderExtraBundle());
 
@@ -103,7 +103,7 @@ TOML),
     public function inputSubmissionRunsThroughBuilderRegisteredRuntime(): void
     {
         $calls = new \ArrayObject();
-        $builder = Facade::collab()
+        $builder = Tui::collab()
             ->primary(new BuilderDoneAgentParticipant($calls))
             ->stageConfig(self::stageConfig());
         $app = $builder->build();

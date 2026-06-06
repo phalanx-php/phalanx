@@ -207,13 +207,34 @@ final class RuntimePolicyTest extends TestCase
         $policy = RuntimePolicy::forCapabilities(RuntimeCapability::PdoPgsql);
         $snapshot = RuntimeHookSnapshot::fromFlags(
             $policy,
-            SwooleHook::PdoPgsql->value,
+            0,
             0,
         );
 
         self::assertFalse($snapshot->isHealthy());
+        self::assertSame(0, $snapshot->missingFlags);
         self::assertSame(SwooleHook::PdoPgsql->value, $snapshot->unavailableRequiredFlags);
         self::assertSame(['PDO_PGSQL'], $snapshot->unavailableRequiredFlagNames());
+    }
+
+    public function testSnapshotSeparatesMissingAvailableHooksFromUnavailableHooks(): void
+    {
+        $policy = RuntimePolicy::forCapabilities(
+            RuntimeCapability::Streams,
+            RuntimeCapability::PdoPgsql,
+        );
+        $snapshot = RuntimeHookSnapshot::fromFlags(
+            $policy,
+            0,
+            SwooleHook::StreamFunction->value,
+        );
+
+        self::assertFalse($snapshot->isHealthy());
+        self::assertSame(SwooleHook::StreamFunction->value, $snapshot->missingFlags);
+        self::assertSame(['STREAM_FUNCTION'], $snapshot->missingFlagNames());
+        self::assertSame(SwooleHook::PdoPgsql->value, $snapshot->unavailableRequiredFlags);
+        self::assertSame(['PDO_PGSQL'], $snapshot->unavailableRequiredFlagNames());
+        self::assertSame(SwooleHook::StreamFunction->value, $policy->availableRequiredFlags($snapshot->availableFlags));
     }
 
     public function testHookNamesAreStableForDiagnostics(): void

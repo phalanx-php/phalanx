@@ -7,7 +7,7 @@ namespace Phalanx\Stream;
 use Closure;
 use Phalanx\Scope\ExecutionScope;
 
-final class Facade
+final class Stream
 {
     private function __construct()
     {

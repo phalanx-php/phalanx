@@ -6,7 +6,7 @@ namespace Phalanx\Worker\Tests\Unit;
 
 use Phalanx\Config\ConfigFactory;
 use Phalanx\Worker\Dispatch\DispatchStrategy;
-use Phalanx\Worker\Facade;
+use Phalanx\Worker\Worker;
 use Phalanx\Worker\ParallelConfig;
 use Phalanx\Worker\ParallelDispatch;
 use Phalanx\Worker\Supervisor\SupervisorStrategy;
@@ -14,27 +14,27 @@ use Phalanx\Service\ServiceBundle;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-final class FacadeTest extends TestCase
+final class WorkerTest extends TestCase
 {
     #[Test]
     public function workersReturnsConfiguredWorkerDispatch(): void
     {
         self::assertInstanceOf(
             ParallelDispatch::class,
-            Facade::workers(ParallelConfig::singleWorker()),
+            Worker::workers(ParallelConfig::singleWorker()),
         );
     }
 
     #[Test]
     public function servicesReturnsServiceBundle(): void
     {
-        self::assertInstanceOf(ServiceBundle::class, Facade::services(ParallelConfig::singleWorker()));
+        self::assertInstanceOf(ServiceBundle::class, Worker::services(ParallelConfig::singleWorker()));
     }
 
     #[Test]
     public function servicesDeclareParallelConfigForAutoRegistration(): void
     {
-        self::assertSame([ParallelConfig::class], Facade::services()::configs());
+        self::assertSame([ParallelConfig::class], Worker::services()::configs());
     }
 
     #[Test]

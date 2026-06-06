@@ -9,7 +9,7 @@ use Phalanx\Testing\PhalanxTestCase;
 use Phalanx\WebSocket\Client;
 use Phalanx\WebSocket\Runtime\Identity\WebSocketResourceSid;
 use Phalanx\WebSocket\Tests\Support\Rfc6455TestServer;
-use Phalanx\WebSocket\Facade;
+use Phalanx\WebSocket\WebSocket;
 use Phalanx\WebSocket\CloseCode;
 use PHPUnit\Framework\Attributes\Test;
 use Swoole\Coroutine\Channel;
@@ -29,7 +29,7 @@ final class ClientCancellationTest extends PhalanxTestCase
     #[Test]
     public function scopeDisposeCascadesCloseAndReleasesResource(): void
     {
-        $testApp = $this->testApp([], \Phalanx\WebSocket\Facade::services());
+        $testApp = $this->testApp([], \Phalanx\WebSocket\WebSocket::services());
 
         $this->scope->run(static function (ExecutionScope $_scope) use ($testApp): void {
             $testApp->application->startup();
@@ -86,7 +86,7 @@ final class ClientCancellationTest extends PhalanxTestCase
     #[Test]
     public function doubleCloseFromTwoCoroutinesIsIdempotent(): void
     {
-        $testApp = $this->testApp([], \Phalanx\WebSocket\Facade::services());
+        $testApp = $this->testApp([], \Phalanx\WebSocket\WebSocket::services());
 
         $this->scope->run(static function (ExecutionScope $_scope) use ($testApp): void {
             $testApp->application->startup();
@@ -137,7 +137,7 @@ final class ClientCancellationTest extends PhalanxTestCase
     #[Test]
     public function abruptServerHangupTerminatesReaderCleanly(): void
     {
-        $testApp = $this->testApp([], \Phalanx\WebSocket\Facade::services());
+        $testApp = $this->testApp([], \Phalanx\WebSocket\WebSocket::services());
 
         $this->scope->run(static function (ExecutionScope $_scope) use ($testApp): void {
             $testApp->application->startup();

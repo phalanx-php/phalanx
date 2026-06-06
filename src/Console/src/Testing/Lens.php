@@ -8,7 +8,7 @@ use Phalanx\Boot\AppContext;
 use Phalanx\Console\Application\Application;
 use Phalanx\Console\Application\Config;
 use Phalanx\Console\Command\CommandGroup;
-use Phalanx\Console\Facade;
+use Phalanx\Console\Console;
 use Phalanx\Console\Output\StreamOutput;
 use Phalanx\Console\Output\TerminalEnvironment;
 use Phalanx\Service\ServiceBundle;
@@ -176,7 +176,7 @@ final class Lens implements LensContract
     {
         $captureBundle = new CaptureBundle($capturedOutput, $nullInput);
 
-        $builder = Facade::starting($this->context->values)
+        $builder = Console::starting($this->context->values)
             ->providers($captureBundle, ...$this->providers)
             ->commands($this->commands ?? CommandGroup::of([]));
 

@@ -10,7 +10,7 @@ use Phalanx\Demos\Worker\BasicWorkers\WorkerDemoServiceBundle;
 use Phalanx\Demos\Worker\BasicWorkers\ProcessIdentityTask;
 use Phalanx\Demos\Kit\DemoApp;
 use Phalanx\Demos\Kit\DemoReport;
-use Phalanx\Worker\Facade;
+use Phalanx\Worker\Worker;
 use Phalanx\Worker\ParallelConfig;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Task;
@@ -45,6 +45,6 @@ return DemoApp::boot(
     },
     [
         new WorkerDemoServiceBundle(),
-        Facade::services(ParallelConfig::singleWorker()),
+        Worker::services(ParallelConfig::singleWorker()),
     ],
 );

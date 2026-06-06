@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Phalanx\PHPStan\Tests\Rules\Fixtures\Benchmarks;
 
 use Phalanx\Application;
-use Phalanx\Console\Facade;
+use Phalanx\Console\Console;
 use Phalanx\Http\Server;
 
 /**
- * Fixture path contains /benchmarks/, so direct facade booting should be
+ * Fixture path contains /benchmarks/, so direct entry booting should be
  * rejected in favor of the benchmark harness.
  */
 final class BenchmarkHarnessViolation
@@ -26,6 +26,6 @@ final class BenchmarkHarnessViolation
 
     public function consoleFacade(): void
     {
-        Facade::starting()->build();
+        Console::starting()->build();
     }
 }

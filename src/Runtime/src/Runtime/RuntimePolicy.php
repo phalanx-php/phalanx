@@ -89,6 +89,16 @@ final readonly class RuntimePolicy
         return $this->requiredFlags & ~$currentFlags;
     }
 
+    public function missingAvailableRequiredFlags(int $currentFlags, int $availableFlags): int
+    {
+        return $this->availableRequiredFlags($availableFlags) & ~$currentFlags;
+    }
+
+    public function availableRequiredFlags(int $availableFlags): int
+    {
+        return $this->requiredFlags & $availableFlags;
+    }
+
     public function unavailableRequiredFlags(int $availableFlags): int
     {
         return $this->requiredFlags & ~$availableFlags;

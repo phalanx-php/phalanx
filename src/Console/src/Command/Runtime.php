@@ -14,7 +14,7 @@ use Symfony\Component\Runtime\RunnerInterface;
 /**
  * Symfony Runtime that returns RuntimeRunner when the application
  * closure resolves an Application. Bare AppHost instances are
- * rejected — Console entry points must build through Facade::starting()
+ * rejected — Console entry points must build through Console::starting()
  * so console-specific bootstrap (argv, signal policy, output streams)
  * lands in a proper Config before run().
  */
@@ -30,7 +30,7 @@ final class Runtime extends GenericRuntime
         if ($application instanceof AppHost) {
             throw new RuntimeException(
                 'Console runtime expects an Application. '
-                . 'Build one with Phalanx\\Console\\Application\\Facade::starting($context).',
+                . 'Build one with Phalanx\\Console\\Console::starting($context).',
             );
         }
 
