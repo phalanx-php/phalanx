@@ -105,17 +105,16 @@ final class Capabilities implements Canonicalizable
         return in_array($tag, $this->custom, strict: true);
     }
 
-    /**
-     * True only when every requested capability is present.
-     */
+    /** True only when every requested capability is present. */
     public function satisfies(Capability ...$required): bool
     {
         $cases = $this->cases;
 
         return array_all(
             $required,
-            static fn (Capability $capability): bool
-                => array_any($cases, static fn (Capability $existing): bool => $existing === $capability),
+            static function (Capability $c) use ($cases): bool {
+                return array_any($cases, static fn (Capability $existing): bool => $existing === $c);
+            }
         );
     }
 
@@ -132,6 +131,7 @@ final class Capabilities implements Canonicalizable
         ));
 
         $customLookup = array_fill_keys($other->custom, true);
+        
         $sharedCustom = array_values(array_filter(
             $this->custom,
             static fn (string $tag): bool => isset($customLookup[$tag]),

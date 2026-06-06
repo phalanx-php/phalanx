@@ -6,10 +6,10 @@ namespace Phalanx\Tui\Collab\Effects;
 
 enum EffectStatus: string
 {
-    case Requested = 'requested';
-    case Approved = 'approved';
     case Denied = 'denied';
-    case Executing = 'executing';
-    case Resolved = 'resolved';
     case Failed = 'failed';
+    case Approved = 'approved';
+    case Resolved = 'resolved';
+    case Executing = 'executing';
+    case Requested = 'requested';
 }

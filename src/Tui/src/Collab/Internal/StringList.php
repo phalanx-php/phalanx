@@ -12,16 +12,16 @@ final class StringList
      */
     public static function unique(array $values): array
     {
-        $seen = [];
         $out = [];
+        $cache = [];
         foreach ($values as $value) {
             $value = trim($value);
-            if ($value === '' || isset($seen[$value])) {
+            if ($value === '' || isset($cache[$value])) {
                 continue;
             }
 
-            $seen[$value] = true;
             $out[] = $value;
+            $cache[$value] = true;
         }
 
         return $out;

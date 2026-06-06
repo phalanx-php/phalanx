@@ -22,14 +22,14 @@ final class Loop
     /** @var list<Preparer> */
     private array $preparers;
 
-    /** @var list<AgentParticipant> */
-    private array $participants;
-
     /** @var list<Reactor> */
     private array $reactors;
 
     /** @var list<Reviewer> */
     private array $reviewers;
+    
+    /** @var list<AgentParticipant> */
+    private array $participants;
 
     /** @var array<string, true> */
     private array $emittedWorkItemIds = [];
@@ -52,10 +52,10 @@ final class Loop
             throw new \InvalidArgumentException('Collab loop max review passes must be >= 1.');
         }
 
-        $this->preparers = self::instances($preparers, Preparer::class);
-        $this->participants = self::instances($participants, AgentParticipant::class);
         $this->reactors = self::instances($reactors, Reactor::class);
+        $this->preparers = self::instances($preparers, Preparer::class);
         $this->reviewers = self::instances($reviewers, Reviewer::class);
+        $this->participants = self::instances($participants, AgentParticipant::class);
     }
 
     public function __invoke(WorkContext $ctx): WorkPlanStatus

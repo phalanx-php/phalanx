@@ -131,10 +131,10 @@ final class App
 
         self::restoreFocusAndMode($focus, $dispatcher, $navigator, $store);
 
-        $lastActivityPulseAt = 0.0;
-        $lastScreenRefreshAt = 0.0;
         $lastMainWidth = null;
         $lastMainHeight = null;
+        $lastActivityPulseAt = 0.0;
+        $lastScreenRefreshAt = 0.0;
 
         $this->stage->onDraw(static function () use (
             $scope,
@@ -151,8 +151,8 @@ final class App
             &$lastMainWidth,
             &$lastMainHeight,
         ): void {
-            $workspace = $navigator->activeWorkspace();
             $now = microtime(true);
+            $workspace = $navigator->activeWorkspace();
             $mainRegion = $layout->region('main');
             $mainWidth = $mainRegion->area->width;
             $mainHeight = $mainRegion->area->height;

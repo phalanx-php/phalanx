@@ -6,7 +6,7 @@ namespace Phalanx\AiProviders;
 
 /**
  * The agent authoring contract - and why this lib is called 'ai-providers'.
- * An agent IS a bounded capability package — identity, declared capabilities,
+ * An 'agent' constitutes a collection of characteristics: identity, declared capabilities,
  * context positioning, provider transport requirements, effect surface, and
  * output commitment. The model is the reasoning engine inside one invocation;
  * the agent is the package the runtime arms it with.
@@ -23,6 +23,8 @@ namespace Phalanx\AiProviders;
  *     public string $id      { get => 'investigator'; }
  *     public string $name    { get => 'Investigator'; }
  *     public string $purpose { get => 'Preserve context, detect deltas, surface viable paths.'; }
+ *
+ *     public Output $output { get => Output::artifact(Artifact\Kind::Thesis); }
  *
  *     public Capabilities $capabilities { get => Capabilities::of(
  *         Capability::Reasoning,
@@ -49,8 +51,6 @@ namespace Phalanx\AiProviders;
  *         Effect\Kind::FileWrite,
  *         Effect\Kind::ShellExec,
  *     ); }
- *
- *     public Output $output { get => Output::artifact(Artifact\Kind::Thesis); }
  * }
  * ```
  */

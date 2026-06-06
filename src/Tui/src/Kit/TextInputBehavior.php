@@ -63,25 +63,25 @@ trait TextInputBehavior
     {
         if (!$event->ctrl) {
             return match (true) {
-                $event->is(Key::Backspace) => $this->deleteBeforeCursor($signal),
                 $event->is(Key::Delete) => $this->deleteAtCursor($signal),
+                $event->is(Key::End) => $this->moveCursorToLineEnd($signal),
+                $event->is(Key::Home) => $this->moveCursorToLineStart($signal),
+                $event->is(Key::Backspace) => $this->deleteBeforeCursor($signal),
                 $event->is(Key::Left) => $this->moveCursor($signal, -1, $event->shift),
                 $event->is(Key::Right) => $this->moveCursor($signal, 1, $event->shift),
-                $event->is(Key::Home) => $this->moveCursorToLineStart($signal),
-                $event->is(Key::End) => $this->moveCursorToLineEnd($signal),
                 default => false,
             };
         }
 
         return match (true) {
-            $event->is('a') || $event->is(Key::Home) => $this->moveCursorToLineStart($signal),
-            $event->is('e') || $event->is(Key::End) => $this->moveCursorToLineEnd($signal),
+            $event->is('k') => $this->killToLineEnd($signal),
+            $event->is('u') => $this->killToLineStart($signal),
+            $event->is('w') => $this->killPreviousWord($signal),
             $event->is('b') || $event->is(Key::Left) => $this->moveCursor($signal, -1),
             $event->is('f') || $event->is(Key::Right) => $this->moveCursor($signal, 1),
             $event->is('d') || $event->is(Key::Delete) => $this->deleteAtCursor($signal),
-            $event->is('u') => $this->killToLineStart($signal),
-            $event->is('k') => $this->killToLineEnd($signal),
-            $event->is('w') => $this->killPreviousWord($signal),
+            $event->is('e') || $event->is(Key::End) => $this->moveCursorToLineEnd($signal),
+            $event->is('a') || $event->is(Key::Home) => $this->moveCursorToLineStart($signal),
             $event->is('y') => $this->yank($signal),
             default => false,
         };

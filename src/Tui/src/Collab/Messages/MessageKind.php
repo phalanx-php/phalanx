@@ -6,18 +6,18 @@ namespace Phalanx\Tui\Collab\Messages;
 
 enum MessageKind: string
 {
-    case Prompt = 'prompt';
-    case Response = 'response';
-    case ToolRequest = 'tool_request';
-    case ToolResult = 'tool_result';
     case Task = 'task';
-    case TaskResult = 'task_result';
     case Order = 'order';
-    case Feedback = 'feedback';
-    case Observation = 'observation';
     case Alert = 'alert';
-    case Approval = 'approval';
+    case Prompt = 'prompt';
     case Denial = 'denial';
+    case Approval = 'approval';
+    case Response = 'response';
+    case Feedback = 'feedback';
     case PlanUpdate = 'plan_update';
+    case ToolResult = 'tool_result';
+    case TaskResult = 'task_result';
+    case Observation = 'observation';
+    case ToolRequest = 'tool_request';
     case StatusUpdate = 'status_update';
 }

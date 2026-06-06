@@ -13,23 +13,23 @@ use Phalanx\Tui\Collab\Participants\Reviewer;
 
 final class Definition
 {
-    /** @var list<Preparer> */
-    private(set) array $preparers;
-
-    /** @var list<AgentParticipant> */
-    private(set) array $participants;
-
-    /** @var list<Reactor> */
-    private(set) array $reactors;
-
-    /** @var list<Reviewer> */
-    private(set) array $reviewers;
-
     /** @var list<Inlet> */
     private(set) array $inlets;
 
     /** @var list<Outlet> */
     private(set) array $outlets;
+
+    /** @var list<Reactor> */
+    private(set) array $reactors;
+    
+    /** @var list<Preparer> */
+    private(set) array $preparers;
+
+    /** @var list<Reviewer> */
+    private(set) array $reviewers;
+
+    /** @var list<AgentParticipant> */
+    private(set) array $participants;
 
     /**
      * @param list<Preparer> $preparers

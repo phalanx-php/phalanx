@@ -23,6 +23,7 @@ final class StatusBar
     public function __construct(?Color $background = null, ?Theme $theme = null)
     {
         $this->background = $background ?? ($theme !== null ? $theme->bg : Color::indexed(236));
+        
         $this->defaultTextColor = $theme !== null
             ? ($theme->bright->foreground ?? Color::brightWhite())
             : Color::brightWhite();

@@ -38,7 +38,7 @@ final class InputComposer implements Component, Focusable, AcceptsInput
         private(set) ?Style $style = null,
         ?callable $onSubmit = null,
     ) {
-        $this->onSubmit = $onSubmit === null ? null : Closure::fromCallable($onSubmit);
+        $this->onSubmit = $onSubmit === null ? null : $onSubmit(...);
         $this->cursor = new Signal(mb_strlen((string) $this->text->get()));
         $this->killRing = new Signal('');
         $this->selectionAnchor = new Signal(null);
