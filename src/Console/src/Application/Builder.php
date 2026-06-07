@@ -211,7 +211,7 @@ final class Builder
             return $group;
         }
 
-        /** @var array<string, class-string<Scopeable|Executable>|array{class-string<Scopeable|Executable>, CommandConfig}|CommandGroup> $source */
+        /** @var array<string, class-string<Scopeable|Executable>|CommandGroup> $source */
         return CommandGroup::of($source);
     }
 

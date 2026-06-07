@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Console\Tests\Unit\Command;
 
+use InvalidArgumentException;
 use Phalanx\Console\Command\Arg;
 use Phalanx\Console\Command\CommandConfig;
 use Phalanx\Console\Command\CommandGroup;
@@ -48,19 +49,12 @@ final class DescribesCommandTest extends TestCase
     }
 
     #[Test]
-    public function tuple_form_short_circuits_interface_check(): void
+    public function tuple_form_is_rejected(): void
     {
-        $override = new CommandConfig(description: 'Override from Olympus');
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Tuple command entries are no longer supported');
 
-        $group = CommandGroup::of([
-            'march' => [HopliteCommand::class, $override],
-        ]);
-
-        $commands = $group->commands();
-
-        self::assertArrayHasKey('march', $commands);
-        self::assertInstanceOf(CommandConfig::class, $commands['march']->config);
-        self::assertSame('Override from Olympus', $commands['march']->config->description);
+        CommandGroup::of((array) self::legacyTupleCommands());
     }
 
     #[Test]
@@ -96,6 +90,16 @@ final class DescribesCommandTest extends TestCase
         self::assertArrayHasKey('siege', $commands);
         self::assertInstanceOf(CommandConfig::class, $commands['siege']->config);
         self::assertSame('Lay siege to enemy fortifications', $commands['siege']->config->description);
+    }
+
+    private static function legacyTupleCommands(): mixed
+    {
+        $command = HopliteCommand::class;
+        $config = new CommandConfig(description: 'Override from Olympus');
+
+        return [
+            'march' => array_values(compact('command', 'config')),
+        ];
     }
 }
 

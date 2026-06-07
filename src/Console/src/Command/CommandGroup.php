@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Console\Command;
 
+use InvalidArgumentException;
 use Phalanx\Handler\Handler;
 use Phalanx\Handler\HandlerGroup;
 use Phalanx\Scope\ExecutionScope;
@@ -17,7 +18,6 @@ use RuntimeException;
  * Each command entry is either:
  *  - a class-string of a Scopeable/Executable command class (if the class
  *    implements DescribesCommand, its static commandConfig() provides metadata)
- *  - a tuple [class-string, CommandConfig] to override or supply config externally
  *  - another CommandGroup, for nested subcommand groups
  *
  * Command instances are constructed at dispatch time via HandlerResolver,
@@ -31,9 +31,7 @@ final class CommandGroup implements Executable
     private array $groups = [];
 
     /**
-     * @param array<string, class-string<Scopeable|Executable>
-     *     |array{class-string<Scopeable|Executable>, CommandConfig}
-     *     |self> $commands
+     * @param array<string, class-string<Scopeable|Executable>|self> $commands
      */
     private function __construct(array $commands, private string $description = '')
     {
@@ -45,10 +43,17 @@ final class CommandGroup implements Executable
                 continue;
             }
 
-            if (is_array($command)) {
-                [$class, $config] = $command;
-                $handlers[$name] = new Handler($class, $config);
-                continue;
+            if (
+                !is_string($command)
+                || (
+                    !is_a($command, Scopeable::class, true)
+                    && !is_a($command, Executable::class, true)
+                )
+            ) {
+                throw new InvalidArgumentException(
+                    'CommandGroup entries must be command class-strings or nested CommandGroup instances. '
+                    . 'Tuple command entries are no longer supported; move metadata onto DescribesCommand::commandConfig().',
+                );
             }
 
             $config = is_a($command, DescribesCommand::class, true)
@@ -62,9 +67,7 @@ final class CommandGroup implements Executable
     }
 
     /**
-     * @param array<string, class-string<Scopeable|Executable>
-     *     |array{class-string<Scopeable|Executable>, CommandConfig}
-     *     |self> $commands
+     * @param array<string, class-string<Scopeable|Executable>|self> $commands
      */
     public static function of(array $commands, string $description = ''): self
     {

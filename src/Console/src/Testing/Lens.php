@@ -35,7 +35,7 @@ use RuntimeException;
  *
  *     $app = $this->testApp($context, new TestableBundle());
  *     $app->console
- *         ->commands(CommandGroup::of(['greet' => [GreetCommand::class, ...]]))
+ *         ->commands(CommandGroup::of(['greet' => GreetCommand::class]))
  *         ->run(['greet', 'Ada'])
  *         ->assertSuccessful()
  *         ->assertOutputContains('Hello, Ada');

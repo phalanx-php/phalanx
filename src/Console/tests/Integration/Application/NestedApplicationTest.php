@@ -14,7 +14,6 @@ use Phalanx\Console\Runtime\Identity\ConsoleResourceSid;
 use Phalanx\Console\Command\Opt;
 use Phalanx\Console\Tests\Fixtures\Commands\FlatRanCommand;
 use Phalanx\Console\Tests\Fixtures\Commands\NestedRanCommand;
-use Phalanx\Console\Tests\Fixtures\Commands\NoopCommand;
 use Phalanx\Console\Tests\Fixtures\Commands\ScanCommand;
 use Phalanx\Runtime\Memory\ManagedResourceState;
 use Phalanx\Scope\ExecutionScope;
@@ -27,13 +26,7 @@ final class NestedApplicationTest extends TestCase
     {
         $commands = CommandGroup::of([
             'net' => CommandGroup::of([
-                'scan' => [
-                    ScanCommand::class,
-                    new CommandConfig(
-                        description: 'Scan network',
-                        arguments: [Arg::required('target', 'CIDR range')],
-                    ),
-                ],
+                'scan' => ScanCommand::class,
             ], description: 'Network operations'),
         ]);
 
@@ -55,7 +48,7 @@ final class NestedApplicationTest extends TestCase
     public function flatAndNestedCoexist(): void
     {
         $commands = CommandGroup::of([
-            'serve' => [FlatRanCommand::class, new CommandConfig(description: 'Start server')],
+            'serve' => FlatRanCommand::class,
             'net' => CommandGroup::of([
                 'probe' => NestedRanCommand::class,
             ]),
@@ -83,8 +76,8 @@ final class NestedApplicationTest extends TestCase
         $stream = StreamOutputHelper::open();
         $commands = CommandGroup::of([
             'net' => CommandGroup::of([
-                'scan' => [NoopCommand::class, new CommandConfig(description: 'Scan network')],
-                'probe' => [NoopCommand::class, new CommandConfig(description: 'Probe host')],
+                'scan' => ScanCommand::class,
+                'probe' => ProbeHostCommand::class,
             ], description: 'Network operations'),
         ]);
 
@@ -110,7 +103,7 @@ final class NestedApplicationTest extends TestCase
         $commands = CommandGroup::of([
             'net' => CommandGroup::of([
                 'deep' => CommandGroup::of([
-                    'scan' => [NoopCommand::class, new CommandConfig(description: 'Deep scan')],
+                    'scan' => DeepScanCommand::class,
                 ], description: 'Deep network operations'),
             ], description: 'Network operations'),
         ]);
@@ -138,7 +131,7 @@ final class NestedApplicationTest extends TestCase
         $commands = CommandGroup::of([
             'net' => CommandGroup::of([
                 'deep' => CommandGroup::of([
-                    'scan' => [NoopCommand::class, new CommandConfig(description: 'Deep scan')],
+                    'scan' => DeepScanCommand::class,
                 ], description: 'Deep network operations'),
             ], description: 'Network operations'),
         ]);
@@ -164,13 +157,7 @@ final class NestedApplicationTest extends TestCase
         $stream = StreamOutputHelper::open();
         $commands = CommandGroup::of([
             'net' => CommandGroup::of([
-                'scan' => [
-                    ScanCommand::class,
-                    new CommandConfig(
-                        description: 'Scan network',
-                        arguments: [Arg::required('target', 'CIDR range')],
-                    ),
-                ],
+                'scan' => ScanCommand::class,
             ], description: 'Network operations'),
         ]);
 
@@ -194,13 +181,7 @@ final class NestedApplicationTest extends TestCase
     {
         $stream = StreamOutputHelper::open();
         $commands = CommandGroup::of([
-            'scan' => [
-                ScanCommand::class,
-                new CommandConfig(
-                    description: 'Scan network',
-                    arguments: [Arg::required('target', 'CIDR range')],
-                ),
-            ],
+            'scan' => ScanCommand::class,
         ]);
 
         $app = self::console()
@@ -227,13 +208,7 @@ final class NestedApplicationTest extends TestCase
         $stream = StreamOutputHelper::open();
         $commands = CommandGroup::of([
             'net' => CommandGroup::of([
-                'scan' => [
-                    ScanCommand::class,
-                    new CommandConfig(
-                        description: 'Scan network',
-                        arguments: [Arg::required('target', 'CIDR range')],
-                    ),
-                ],
+                'scan' => ScanCommand::class,
             ], description: 'Network operations'),
         ]);
 
@@ -260,13 +235,7 @@ final class NestedApplicationTest extends TestCase
     {
         $stream = StreamOutputHelper::open();
         $commands = CommandGroup::of([
-            'scan' => [
-                ScanCommand::class,
-                new CommandConfig(
-                    description: 'Scan network',
-                    arguments: [Arg::required('target', 'CIDR range')],
-                ),
-            ],
+            'scan' => ScanCommand::class,
         ]);
 
         $app = self::console()
@@ -289,7 +258,7 @@ final class NestedApplicationTest extends TestCase
         $stream = StreamOutputHelper::open();
         $commands = CommandGroup::of([
             'net' => CommandGroup::of([
-                'scan' => [NoopCommand::class, new CommandConfig(description: 'Scan network')],
+                'scan' => ScanCommand::class,
             ], description: 'Network operations'),
         ]);
 
@@ -317,7 +286,7 @@ final class NestedApplicationTest extends TestCase
         $stream = StreamOutputHelper::open();
         $commands = CommandGroup::of([
             'net' => CommandGroup::of([
-                'scan' => [NoopCommand::class, new CommandConfig(description: 'Scan network')],
+                'scan' => ScanCommand::class,
             ], description: 'Network operations'),
         ]);
 
@@ -345,13 +314,7 @@ final class NestedApplicationTest extends TestCase
         $stream = StreamOutputHelper::open();
         $commands = CommandGroup::of([
             'net' => CommandGroup::of([
-                'scan' => [
-                    ScanCommand::class,
-                    new CommandConfig(
-                        description: 'Scan network',
-                        arguments: [Arg::required('target', 'CIDR range')],
-                    ),
-                ],
+                'scan' => ScanCommand::class,
             ], description: 'Network operations'),
         ]);
 
@@ -376,13 +339,7 @@ final class NestedApplicationTest extends TestCase
         $stream = StreamOutputHelper::open();
         $commands = CommandGroup::of([
             'net' => CommandGroup::of([
-                'scan' => [
-                    ScanCommand::class,
-                    new CommandConfig(
-                        description: 'Scan network',
-                        arguments: [Arg::required('target', 'CIDR range')],
-                    ),
-                ],
+                'scan' => ScanCommand::class,
             ], description: 'Network operations'),
         ]);
 
@@ -408,14 +365,7 @@ final class NestedApplicationTest extends TestCase
     {
         $stream = StreamOutputHelper::open();
         $commands = CommandGroup::of([
-            'scan' => [
-                ScanCommand::class,
-                new CommandConfig(
-                    description: 'Scan network',
-                    arguments: [Arg::required('target', 'CIDR range')],
-                    options: [Opt::flag('detach')],
-                ),
-            ],
+            'scan' => DetachScanCommand::class,
         ]);
 
         $app = self::console()
@@ -441,8 +391,8 @@ final class NestedApplicationTest extends TestCase
         $stream = StreamOutputHelper::open();
         $commands = CommandGroup::of([
             'net' => CommandGroup::of([
-                'scan' => [NoopCommand::class, new CommandConfig(description: 'Scan network')],
-                'probe' => [NoopCommand::class, new CommandConfig(description: 'Probe host')],
+                'scan' => ScanCommand::class,
+                'probe' => ProbeHostCommand::class,
             ], description: 'Network operations'),
         ]);
 
@@ -467,13 +417,7 @@ final class NestedApplicationTest extends TestCase
     {
         $stream = StreamOutputHelper::open();
         $commands = CommandGroup::of([
-            'scan' => [
-                ScanCommand::class,
-                new CommandConfig(
-                    description: 'Scan network',
-                    arguments: [Arg::required('target', 'CIDR range')],
-                ),
-            ],
+            'scan' => ScanCommand::class,
         ]);
 
         $app = self::console()
@@ -500,13 +444,7 @@ final class NestedApplicationTest extends TestCase
         $stream = StreamOutputHelper::open();
         $commands = CommandGroup::of([
             'net' => CommandGroup::of([
-                'scan' => [
-                    ScanCommand::class,
-                    new CommandConfig(
-                        description: 'Scan network',
-                        arguments: [Arg::required('target', 'CIDR range')],
-                    ),
-                ],
+                'scan' => ScanCommand::class,
             ], description: 'Network operations'),
         ]);
 
@@ -533,7 +471,7 @@ final class NestedApplicationTest extends TestCase
     {
         $stream = StreamOutputHelper::open();
         $commands = CommandGroup::of([
-            'scan' => [NoopCommand::class, new CommandConfig(description: 'Scan network')],
+            'scan' => ScanCommand::class,
         ]);
 
         $app = self::console()
@@ -556,9 +494,9 @@ final class NestedApplicationTest extends TestCase
     {
         $stream = StreamOutputHelper::open();
         $commands = CommandGroup::of([
-            'serve' => [NoopCommand::class, new CommandConfig(description: 'Start server')],
+            'serve' => FlatRanCommand::class,
             'net' => CommandGroup::of([
-                'scan' => [NoopCommand::class, new CommandConfig(description: 'Scan')],
+                'scan' => ScanCommand::class,
             ], description: 'Network operations'),
         ]);
 
@@ -583,7 +521,7 @@ final class NestedApplicationTest extends TestCase
     {
         $stream = StreamOutputHelper::open();
         $commands = CommandGroup::of([
-            'scan' => [NoopCommand::class, new CommandConfig(description: 'Scan network')],
+            'scan' => ScanCommand::class,
         ]);
 
         $app = self::console()
@@ -607,5 +545,50 @@ final class NestedApplicationTest extends TestCase
         ScanCommand::$lastTarget = null;
         FlatRanCommand::$ran = false;
         NestedRanCommand::$ran = false;
+    }
+}
+
+final class ProbeHostCommand implements \Phalanx\Task\Scopeable, \Phalanx\Console\Command\DescribesCommand
+{
+    public static function commandConfig(): CommandConfig
+    {
+        return new CommandConfig(description: 'Probe host');
+    }
+
+    public function __invoke(\Phalanx\Scope\Scope $scope): int
+    {
+        return 0;
+    }
+}
+
+final class DetachScanCommand implements \Phalanx\Task\Scopeable, \Phalanx\Console\Command\DescribesCommand
+{
+    public static function commandConfig(): CommandConfig
+    {
+        return new CommandConfig(
+            description: 'Scan network',
+            arguments: [Arg::required('target', 'CIDR range')],
+            options: [Opt::flag('detach')],
+        );
+    }
+
+    public function __invoke(\Phalanx\Console\Command\CommandContext $ctx): int
+    {
+        ScanCommand::$lastTarget = $ctx->args->get('target');
+
+        return 0;
+    }
+}
+
+final class DeepScanCommand implements \Phalanx\Task\Scopeable, \Phalanx\Console\Command\DescribesCommand
+{
+    public static function commandConfig(): CommandConfig
+    {
+        return new CommandConfig(description: 'Deep scan');
+    }
+
+    public function __invoke(\Phalanx\Scope\Scope $scope): int
+    {
+        return 0;
     }
 }

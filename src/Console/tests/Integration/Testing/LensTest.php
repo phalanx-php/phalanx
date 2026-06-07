@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Console\Tests\Integration\Testing;
 
-use Phalanx\Console\Command\CommandConfig;
 use Phalanx\Console\Command\CommandGroup;
 use Phalanx\Console\Testing\TestableBundle;
 use Phalanx\Console\Tests\Fixtures\Commands\EchoArgvCommand;
@@ -24,7 +23,7 @@ final class LensTest extends PhalanxTestCase
 
         $app->console
             ->commands(CommandGroup::of([
-                'echo' => [EchoArgvCommand::class, new CommandConfig(description: 'Echo a fixed string.')],
+                'echo' => EchoArgvCommand::class,
             ]))
             ->run(['echo'])
             ->assertSuccessful()
@@ -38,7 +37,7 @@ final class LensTest extends PhalanxTestCase
 
         $app->console
             ->commands(CommandGroup::of([
-                'noop' => [NoopCommand::class, new CommandConfig(description: 'noop')],
+                'noop' => NoopCommand::class,
             ]))
             ->run(['noop'])
             ->assertSuccessful()
@@ -55,7 +54,7 @@ final class LensTest extends PhalanxTestCase
 
         $app->console
             ->commands(CommandGroup::of([
-                'fail' => [FailingExitCommand::class, new CommandConfig(description: 'Exit non-zero.')],
+                'fail' => FailingExitCommand::class,
             ]))
             ->run(['fail'])
             ->assertExitCode(7);
@@ -82,7 +81,7 @@ final class LensTest extends PhalanxTestCase
         $app = $this->bootConsoleTestApp();
 
         $app->console->commands(CommandGroup::of([
-            'noop' => [NoopCommand::class, new CommandConfig(description: 'noop')],
+            'noop' => NoopCommand::class,
         ]));
 
         $app->reset();
@@ -104,13 +103,13 @@ final class LensTest extends PhalanxTestCase
 
         $first = $app->console
             ->commands(CommandGroup::of([
-                'echo' => [EchoArgvCommand::class, new CommandConfig(description: 'echo')],
+                'echo' => EchoArgvCommand::class,
             ]))
             ->run(['echo']);
 
         $second = $app->console
             ->commands(CommandGroup::of([
-                'echo' => [EchoArgvCommand::class, new CommandConfig(description: 'echo')],
+                'echo' => EchoArgvCommand::class,
             ]))
             ->run(['echo']);
 
@@ -125,7 +124,7 @@ final class LensTest extends PhalanxTestCase
 
         $app->console
             ->commands(CommandGroup::of([
-                'echo' => [EchoArgvCommand::class, new CommandConfig(description: 'echo')],
+                'echo' => EchoArgvCommand::class,
             ]))
             ->run(['echo'])
             ->assertOutputMatches('/^echoed: \\S+/m');

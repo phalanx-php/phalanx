@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Console\Tests\Fixtures\Commands;
 
+use Phalanx\Console\Command\CommandConfig;
+use Phalanx\Console\Command\DescribesCommand;
 use Phalanx\Console\Output\StreamOutput;
 use Phalanx\Scope\Scope;
 use Phalanx\Task\Scopeable;
@@ -12,8 +14,13 @@ use Phalanx\Task\Scopeable;
  * Test command that echoes its name to the captured StreamOutput so
  * Lens tests can assert on captured stdout.
  */
-final class EchoArgvCommand implements Scopeable
+final class EchoArgvCommand implements Scopeable, DescribesCommand
 {
+    public static function commandConfig(): CommandConfig
+    {
+        return new CommandConfig(description: 'Echo a fixed string.');
+    }
+
     public function __invoke(Scope $scope): int
     {
         $output = $scope->service(StreamOutput::class);

@@ -7,10 +7,13 @@ namespace Phalanx\Console\Tests\Integration\Command;
 use Phalanx\Application;
 use Phalanx\Console\Command\CommandConfig;
 use Phalanx\Console\Command\CommandGroup;
+use Phalanx\Console\Command\DescribesCommand;
 use Phalanx\Console\Tests\Support\TestCase;
 use Phalanx\Console\Tests\Fixtures\Commands\FailingCommand;
 use Phalanx\Console\Tests\Fixtures\Commands\NoopCommand;
 use Phalanx\Scope\ExecutionScope;
+use Phalanx\Scope\Scope;
+use Phalanx\Task\Scopeable;
 use PHPUnit\Framework\Attributes\Test;
 
 final class CommandDispatchTest extends TestCase
@@ -51,11 +54,11 @@ final class CommandDispatchTest extends TestCase
     public function command_group_keys_and_merge(): void
     {
         $group1 = CommandGroup::of([
-            'migrate' => [NoopCommand::class, new CommandConfig(description: 'Run migrations')],
+            'migrate' => MigrateCommand::class,
         ]);
 
         $group2 = CommandGroup::of([
-            'seed' => [NoopCommand::class, new CommandConfig(description: 'Seed database')],
+            'seed' => SeedCommand::class,
         ]);
 
         $merged = $group1->merge($group2);
@@ -69,7 +72,7 @@ final class CommandDispatchTest extends TestCase
     public function command_config_preserved(): void
     {
         $group = CommandGroup::of([
-            'migrate' => [NoopCommand::class, new CommandConfig(description: 'Run migrations')],
+            'migrate' => MigrateCommand::class,
         ]);
 
         $handler = $group->handlers()->get('migrate');
@@ -82,5 +85,31 @@ final class CommandDispatchTest extends TestCase
     protected function setUp(): void
     {
         $this->app = $this->application();
+    }
+}
+
+final class MigrateCommand implements Scopeable, DescribesCommand
+{
+    public static function commandConfig(): CommandConfig
+    {
+        return new CommandConfig(description: 'Run migrations');
+    }
+
+    public function __invoke(Scope $scope): int
+    {
+        return 0;
+    }
+}
+
+final class SeedCommand implements Scopeable, DescribesCommand
+{
+    public static function commandConfig(): CommandConfig
+    {
+        return new CommandConfig(description: 'Seed database');
+    }
+
+    public function __invoke(Scope $scope): int
+    {
+        return 0;
     }
 }

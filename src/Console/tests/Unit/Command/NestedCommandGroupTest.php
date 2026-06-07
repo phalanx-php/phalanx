@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Console\Tests\Unit\Command;
 
-use Phalanx\Console\Command\CommandConfig;
 use Phalanx\Console\Command\CommandGroup;
-use Phalanx\Console\Tests\Fixtures\Commands\NoopCommand;
+use Phalanx\Console\Tests\Fixtures\Commands\FlatRanCommand;
+use Phalanx\Console\Tests\Fixtures\Commands\ScanCommand;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -16,9 +16,9 @@ final class NestedCommandGroupTest extends TestCase
     public function keys_includes_groups_and_commands(): void
     {
         $group = CommandGroup::of([
-            'serve' => [NoopCommand::class, new CommandConfig(description: 'Start server')],
+            'serve' => FlatRanCommand::class,
             'net' => CommandGroup::of([
-                'scan' => [NoopCommand::class, new CommandConfig(description: 'Scan network')],
+                'scan' => ScanCommand::class,
             ], description: 'Network operations'),
         ]);
 
@@ -32,9 +32,9 @@ final class NestedCommandGroupTest extends TestCase
     public function is_group_distinguishes_groups_from_commands(): void
     {
         $group = CommandGroup::of([
-            'serve' => NoopCommand::class,
+            'serve' => FlatRanCommand::class,
             'net' => CommandGroup::of([
-                'scan' => NoopCommand::class,
+                'scan' => ScanCommand::class,
             ]),
         ]);
 
@@ -47,7 +47,7 @@ final class NestedCommandGroupTest extends TestCase
     public function group_returns_nested_group(): void
     {
         $inner = CommandGroup::of([
-            'scan' => [NoopCommand::class, new CommandConfig(description: 'Scan')],
+            'scan' => ScanCommand::class,
         ], description: 'Network ops');
 
         $root = CommandGroup::of([
@@ -65,7 +65,7 @@ final class NestedCommandGroupTest extends TestCase
     public function group_returns_null_for_nonexistent(): void
     {
         $group = CommandGroup::of([
-            'serve' => NoopCommand::class,
+            'serve' => FlatRanCommand::class,
         ]);
 
         self::assertNull($group->group('nonexistent'));
@@ -84,13 +84,13 @@ final class NestedCommandGroupTest extends TestCase
     {
         $a = CommandGroup::of([
             'net' => CommandGroup::of([
-                'scan' => NoopCommand::class,
+                'scan' => ScanCommand::class,
             ]),
         ]);
 
         $b = CommandGroup::of([
             'ssh' => CommandGroup::of([
-                'run' => NoopCommand::class,
+                'run' => FlatRanCommand::class,
             ]),
         ]);
 
@@ -104,9 +104,9 @@ final class NestedCommandGroupTest extends TestCase
     public function commands_excludes_groups(): void
     {
         $group = CommandGroup::of([
-            'serve' => [NoopCommand::class, new CommandConfig(description: 'Start server')],
+            'serve' => FlatRanCommand::class,
             'net' => CommandGroup::of([
-                'scan' => NoopCommand::class,
+                'scan' => ScanCommand::class,
             ]),
         ]);
 

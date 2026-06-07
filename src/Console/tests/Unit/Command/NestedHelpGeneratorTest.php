@@ -7,7 +7,11 @@ namespace Phalanx\Console\Tests\Unit\Command;
 use Phalanx\Console\Command\CommandConfig;
 use Phalanx\Console\Command\CommandGroup;
 use Phalanx\Console\Command\HelpGenerator;
+use Phalanx\Console\Command\DescribesCommand;
+use Phalanx\Console\Tests\Fixtures\Commands\FlatRanCommand;
 use Phalanx\Console\Tests\Fixtures\Commands\NoopCommand;
+use Phalanx\Scope\Scope;
+use Phalanx\Task\Scopeable;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -17,8 +21,8 @@ final class NestedHelpGeneratorTest extends TestCase
     public function group_help_lists_commands(): void
     {
         $group = CommandGroup::of([
-            'scan' => [NoopCommand::class, new CommandConfig(description: 'Scan a subnet')],
-            'probe' => [NoopCommand::class, new CommandConfig(description: 'Probe a host')],
+            'scan' => ScanSubnetCommand::class,
+            'probe' => ProbeHostCommand::class,
         ], description: 'Network operations');
 
         $help = HelpGenerator::forGroup('net', $group);
@@ -35,7 +39,7 @@ final class NestedHelpGeneratorTest extends TestCase
     public function top_level_help_separates_groups_and_commands(): void
     {
         $root = CommandGroup::of([
-            'serve' => [NoopCommand::class, new CommandConfig(description: 'Start server')],
+            'serve' => FlatRanCommand::class,
             'net' => CommandGroup::of([
                 'scan' => NoopCommand::class,
             ], description: 'Network operations'),
@@ -54,7 +58,7 @@ final class NestedHelpGeneratorTest extends TestCase
     public function group_help_with_nested_subgroups(): void
     {
         $group = CommandGroup::of([
-            'scan' => [NoopCommand::class, new CommandConfig(description: 'Scan')],
+            'scan' => NoopCommand::class,
             'deep' => CommandGroup::of([
                 'inner' => NoopCommand::class,
             ], description: 'Deeper group'),
@@ -66,5 +70,31 @@ final class NestedHelpGeneratorTest extends TestCase
         self::assertStringContainsString('Groups:', $help);
         self::assertStringContainsString('deep', $help);
         self::assertStringContainsString('Deeper group', $help);
+    }
+}
+
+final class ScanSubnetCommand implements Scopeable, DescribesCommand
+{
+    public static function commandConfig(): CommandConfig
+    {
+        return new CommandConfig(description: 'Scan a subnet');
+    }
+
+    public function __invoke(Scope $scope): int
+    {
+        return 0;
+    }
+}
+
+final class ProbeHostCommand implements Scopeable, DescribesCommand
+{
+    public static function commandConfig(): CommandConfig
+    {
+        return new CommandConfig(description: 'Probe a host');
+    }
+
+    public function __invoke(Scope $scope): int
+    {
+        return 0;
     }
 }
