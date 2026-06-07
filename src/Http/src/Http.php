@@ -6,7 +6,7 @@ namespace Phalanx\Http;
 
 use Phalanx\Boot\AppContext;
 
-final readonly class Http
+final class Http
 {
     private function __construct()
     {

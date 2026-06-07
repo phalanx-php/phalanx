@@ -8,6 +8,8 @@ use Phalanx\PHPStan\Support\NodeNames;
 use Phalanx\PHPStan\Support\PathPolicy;
 use Phalanx\PHPStan\Support\RuleErrors;
 use Phalanx\PHPStan\Support\ScopedRulePolicy;
+use Phalanx\Runtime\Memory\ManagedResourceRegistry;
+use Phalanx\Runtime\Memory\ManagedSwooleTables;
 use PhpParser\Node;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\New_;
@@ -15,6 +17,7 @@ use PhpParser\Node\Expr\PropertyFetch;
 use PHPStan\Analyser\Scope;
 use PHPStan\Rules\IdentifierRuleError;
 use PHPStan\Rules\Rule;
+use PHPStan\Type\ObjectType;
 
 /**
  * @implements Rule<Node>
@@ -42,10 +45,20 @@ final class LifecycleBoundaryRule implements Rule
 
     /** @var list<string> */
     private const array TABLES = [
+        'counters',
+        'resourceEvents',
         'resourceAnnotations',
         'resourceEdges',
         'resourceLeases',
         'resources',
+    ];
+
+    /** @var list<string> */
+    private const array TABLE_MUTATORS = [
+        'decr',
+        'del',
+        'incr',
+        'set',
     ];
 
     private readonly ScopedRulePolicy $policy;
@@ -85,7 +98,7 @@ final class LifecycleBoundaryRule implements Rule
             return [];
         }
 
-        if (in_array($method, ['set', 'del'], true) && self::isRuntimeTableFetch($node->var)) {
+        if (in_array($method, self::TABLE_MUTATORS, true) && self::isRuntimeTableFetch($node->var, $scope)) {
             return RuleErrors::build(
                 'Runtime lifecycle table rows are managed-resource truth; use RuntimeMemory resources/events APIs instead of direct table mutation.',
                 self::TABLE_IDENTIFIER,
@@ -93,7 +106,7 @@ final class LifecycleBoundaryRule implements Rule
             );
         }
 
-        if (in_array($method, self::RESOURCE_MUTATORS, true) && self::isResourcesFetch($node->var)) {
+        if (in_array($method, self::RESOURCE_MUTATORS, true) && self::isResourceRegistryCall($node->var, $scope)) {
             return RuleErrors::build(
                 'Package code must use a lifecycle owner/adapter instead of calling RuntimeMemory->resources mutators directly.',
                 self::ADAPTER_IDENTIFIER,
@@ -104,20 +117,23 @@ final class LifecycleBoundaryRule implements Rule
         return [];
     }
 
-    private static function isResourcesFetch(Node\Expr $expr): bool
+    private static function isResourceRegistryCall(Node\Expr $expr, Scope $scope): bool
     {
-        return $expr instanceof PropertyFetch
-            && self::propertyName($expr) === 'resources';
+        return (new ObjectType(ManagedResourceRegistry::class))
+            ->isSuperTypeOf($scope->getType($expr))
+            ->yes();
     }
 
-    private static function isRuntimeTableFetch(Node\Expr $expr): bool
+    private static function isRuntimeTableFetch(Node\Expr $expr, Scope $scope): bool
     {
         if (!$expr instanceof PropertyFetch || !in_array(self::propertyName($expr), self::TABLES, true)) {
             return false;
         }
 
         return $expr->var instanceof PropertyFetch
-            && self::propertyName($expr->var) === 'tables';
+            && (new ObjectType(ManagedSwooleTables::class))
+                ->isSuperTypeOf($scope->getType($expr->var))
+                ->yes();
     }
 
     private static function propertyName(PropertyFetch $fetch): ?string

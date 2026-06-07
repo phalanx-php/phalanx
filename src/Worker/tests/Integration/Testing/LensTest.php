@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Worker\Tests\Integration\Testing;
 
+use Phalanx\Runtime\Identity\RuntimeResourceSid;
 use Phalanx\Runtime\Tests\Support\Fixtures\AddNumbers;
 use Phalanx\Runtime\Tests\Support\Fixtures\TaskThatThrows;
 use Phalanx\Testing\PhalanxTestCase;
@@ -33,9 +34,16 @@ final class LensTest extends PhalanxTestCase
     {
         $app = $this->testApp([], new Bundle(new ParallelConfig(agents: 1)));
 
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('Intentional failure');
+        try {
+            $app->worker->run(new TaskThatThrows('Intentional failure'));
 
-        $app->worker->run(new TaskThatThrows('Intentional failure'));
+            self::fail('Expected worker task exception to propagate.');
+        } catch (\RuntimeException $e) {
+            self::assertSame('Intentional failure', $e->getMessage());
+        }
+
+        $app->runtime
+            ->assertNoLiveResources(RuntimeResourceSid::Scope)
+            ->assertNoLiveTasks();
     }
 }

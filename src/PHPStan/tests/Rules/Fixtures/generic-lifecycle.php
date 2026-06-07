@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Phalanx\PHPStan\Tests\Rules\Fixtures;
 
+use Phalanx\Lifecycle\LifecycleCallbacks;
+use Phalanx\Lifecycle\LifecyclePhase;
+
 final class GenericLifecycleFixture
 {
-    public function generic(): string
+    public function generic(LifecycleCallbacks $callbacks): LifecyclePhase
     {
-        return \Phalanx\Lifecycle\LifecyclePhase::Ready->value;
+        return LifecyclePhase::Ready;
     }
 }

@@ -4,10 +4,24 @@ declare(strict_types=1);
 
 namespace Phalanx\Service;
 
+use Phalanx\Scope\Cancellable;
+use Phalanx\Scope\Disposable;
+use Phalanx\Scope\Scope;
+use Phalanx\Scope\Suspendable;
+use ReflectionFunction;
+use ReflectionNamedType;
 use RuntimeException;
 
 class ServiceCatalog implements Services
 {
+    /** @var list<class-string> */
+    private const array SCOPE_BOUNDARY_TYPES = [
+        Cancellable::class,
+        Disposable::class,
+        Scope::class,
+        Suspendable::class,
+    ];
+
     /** @var array<class-string, CompiledServiceConfig> */
     private array $configs = [];
 
@@ -68,6 +82,16 @@ class ServiceCatalog implements Services
         ));
     }
 
+    /** @param class-string $type */
+    private static function isScopeBoundaryType(string $type): bool
+    {
+        if (is_a($type, Scope::class, true)) {
+            return true;
+        }
+
+        return in_array($type, self::SCOPE_BOUNDARY_TYPES, true);
+    }
+
     private function validateLifecycleHooks(): void
     {
         foreach ($this->configs as $config) {
@@ -78,7 +102,63 @@ class ServiceCatalog implements Services
             if ($config->onReadyHooks !== []) {
                 self::assertEagerSingletonLifecycleHook($config, 'onReady');
             }
+
+            $this->validateSingletonDependencies($config);
         }
+    }
+
+    private function validateSingletonDependencies(CompiledServiceConfig $config): void
+    {
+        if ($config->lifetime !== ServiceLifetime::Singleton) {
+            return;
+        }
+
+        foreach ($this->dependencyTypes($config) as $dependency) {
+            if (self::isScopeBoundaryType($dependency)) {
+                throw new RuntimeException(sprintf(
+                    'Service %s is a singleton and depends on scope-bound %s; singleton services cannot capture runtime scopes or scoped services.',
+                    $config->type,
+                    $dependency,
+                ));
+            }
+
+            $resolved = $this->aliases[$dependency] ?? $dependency;
+            $dependencyConfig = $this->configs[$resolved] ?? null;
+            if ($dependencyConfig?->lifetime === ServiceLifetime::Scoped) {
+                throw new RuntimeException(sprintf(
+                    'Service %s is a singleton and depends on scoped service %s; singleton services cannot capture runtime scopes or scoped services.',
+                    $config->type,
+                    $dependency,
+                ));
+            }
+        }
+    }
+
+    /** @return list<class-string> */
+    private function dependencyTypes(CompiledServiceConfig $config): array
+    {
+        if ($config->needsTypes !== []) {
+            return $config->needsTypes;
+        }
+
+        $factory = $config->factoryFn;
+        if ($factory === null) {
+            return [];
+        }
+
+        $types = [];
+        foreach ((new ReflectionFunction($factory))->getParameters() as $parameter) {
+            $type = $parameter->getType();
+            if (!$type instanceof ReflectionNamedType || $type->isBuiltin()) {
+                continue;
+            }
+
+            /** @var class-string $typeName */
+            $typeName = $type->getName();
+            $types[] = $typeName;
+        }
+
+        return $types;
     }
 
     /** @param class-string $type */

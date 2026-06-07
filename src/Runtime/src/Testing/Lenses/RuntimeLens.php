@@ -115,38 +115,43 @@ final class RuntimeLens implements LensContract
     /**
      * @return list<ManagedResource>
      */
-    public function resources(RuntimeResourceId|string|null $type = null): array
+    public function resources(?RuntimeResourceId $type = null): array
     {
         return $this->app->application->runtime()->memory->resources->all($type);
     }
 
-    public function resourceCount(RuntimeResourceId|string|null $type = null): int
+    public function resourceCount(?RuntimeResourceId $type = null): int
     {
         return count($this->resources($type));
     }
 
-    public function liveResourceCount(RuntimeResourceId|string|null $type = null): int
+    public function liveResourceCount(?RuntimeResourceId $type = null): int
     {
         return $this->app->application->runtime()->memory->resources->liveCount($type);
     }
 
+    public function liveTaskCount(): int
+    {
+        return $this->app->application->supervisor()->liveCount();
+    }
+
     public function resourceAnnotation(
         string $resourceId,
-        RuntimeAnnotationId|string $key,
+        RuntimeAnnotationId $key,
         string $default = '',
     ): string {
         return $this->app->application->runtime()->memory->resources->annotation($resourceId, $key, $default);
     }
 
-    public function assertNoLiveResources(RuntimeResourceId|string|null $type = null): self
+    public function assertNoLiveResources(?RuntimeResourceId $type = null): self
     {
         return $this->assertLiveResourceCount(0, $type);
     }
 
-    public function assertLiveResourceCount(int $expected, RuntimeResourceId|string|null $type = null): self
+    public function assertLiveResourceCount(int $expected, ?RuntimeResourceId $type = null): self
     {
         $live = $this->liveResourceCount($type);
-        $label = $type instanceof RuntimeResourceId ? $type->value() : ($type ?? 'any type');
+        $label = $type?->value() ?? 'any type';
 
         Assert::assertSame(
             $expected,
@@ -173,16 +178,29 @@ final class RuntimeLens implements LensContract
 
     public function assertResourceAnnotation(
         string $resourceId,
-        RuntimeAnnotationId|string $key,
+        RuntimeAnnotationId $key,
         string $expected,
     ): self {
         $actual = $this->resourceAnnotation($resourceId, $key);
-        $label = $key instanceof RuntimeAnnotationId ? $key->value() : $key;
+        $label = $key->value();
 
         Assert::assertSame(
             $expected,
             $actual,
             "Expected runtime resource {$resourceId} annotation {$label} to match.",
+        );
+
+        return $this;
+    }
+
+    public function assertNoLiveTasks(): self
+    {
+        $live = $this->liveTaskCount();
+
+        Assert::assertSame(
+            0,
+            $live,
+            "Expected no live tasks; {$live} still live.",
         );
 
         return $this;

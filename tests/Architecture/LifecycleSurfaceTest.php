@@ -7,6 +7,7 @@ namespace Phalanx\Tests\Architecture;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use ReflectionMethod;
 
 #[Group('architecture')]
 final class LifecycleSurfaceTest extends TestCase
@@ -18,6 +19,8 @@ final class LifecycleSurfaceTest extends TestCase
 
         self::assertFileExists($root . '/src/Http/src/Http.php');
         self::assertFileDoesNotExist($root . '/src/Http/src/Server.php');
+        self::assertTrue(class_exists(\Phalanx\Http\Http::class));
+        self::assertFalse(class_exists('Phalanx\\Http\\Server'));
         self::assertSame([], self::staleHttpServerEntries($root));
     }
 
@@ -40,18 +43,21 @@ final class LifecycleSurfaceTest extends TestCase
     #[Test]
     public function module_bootstrap_entries_expose_starting(): void
     {
-        $root = self::root();
-
         foreach ([
-            'src/Console/src/Console.php' => 'class Console',
-            'src/Http/src/Http.php' => 'class Http',
-            'src/Tui/src/Tui.php' => 'class Tui',
-            'src/DevServer/src/DevServer.php' => 'class DevServer',
-        ] as $path => $classNeedle) {
-            $source = (string) file_get_contents($root . '/' . $path);
+            \Phalanx\Console\Console::class => \Phalanx\Console\Application\Builder::class,
+            \Phalanx\Http\Http::class => \Phalanx\Http\ApplicationBuilder::class,
+            \Phalanx\Tui\Tui::class => \Phalanx\Tui\Runtime\Apps\Builder::class,
+            \Phalanx\DevServer\DevServer::class => \Phalanx\DevServer\DevServerApplicationBuilder::class,
+        ] as $entry => $builder) {
+            $method = new ReflectionMethod($entry, 'starting');
+            $parameters = $method->getParameters();
 
-            self::assertStringContainsString($classNeedle, $source);
-            self::assertStringContainsString('public static function starting(array $context = [])', $source);
+            self::assertTrue($method->isPublic());
+            self::assertTrue($method->isStatic());
+            self::assertSame('context', $parameters[0]->getName());
+            self::assertSame([], $parameters[0]->getDefaultValue());
+            self::assertSame($builder, (string) $method->getReturnType());
+            self::assertInstanceOf($builder, $method->invoke(null));
         }
     }
 
@@ -62,8 +68,9 @@ final class LifecycleSurfaceTest extends TestCase
         foreach (self::phpFiles($root) as $file) {
             $source = (string) file_get_contents($file);
             if (str_contains($source, 'use Phalanx\\Http\\Server;')
-                || str_contains($source, 'Phalanx\\Http\\Server::starting')
-                || preg_match('/(?<!Dev)Server::starting/', $source) === 1
+                || str_contains($source, 'use Phalanx\\Http\\Server as ')
+                || str_contains($source, 'Phalanx\\Http\\Server::')
+                || str_contains($source, 'Phalanx\\Http\\Server::class')
             ) {
                 $violations[] = self::relative($root, $file);
             }

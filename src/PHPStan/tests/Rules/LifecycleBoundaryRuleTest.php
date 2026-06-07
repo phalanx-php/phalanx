@@ -21,18 +21,31 @@ final class LifecycleBoundaryRuleTest extends RuleTestCase
             [
                 [
                     'Package code must use a lifecycle owner/adapter instead of calling RuntimeMemory->resources mutators directly.',
-                    13,
-                ],
-                [
-                    'Runtime lifecycle table rows are managed-resource truth; use RuntimeMemory resources/events APIs instead of direct table mutation.',
                     14,
                 ],
                 [
-                    'Runtime owns lifecycle tables; use RuntimeMemory managed-resource APIs instead of constructing Swoole\\Table in package code.',
+                    'Runtime lifecycle table rows are managed-resource truth; use RuntimeMemory resources/events APIs instead of direct table mutation.',
                     15,
+                ],
+                [
+                    'Runtime lifecycle table rows are managed-resource truth; use RuntimeMemory resources/events APIs instead of direct table mutation.',
+                    16,
+                ],
+                [
+                    'Runtime lifecycle table rows are managed-resource truth; use RuntimeMemory resources/events APIs instead of direct table mutation.',
+                    17,
+                ],
+                [
+                    'Runtime owns lifecycle tables; use RuntimeMemory managed-resource APIs instead of constructing Swoole\\Table in package code.',
+                    18,
                 ],
             ],
         );
+    }
+
+    public function testAllowsMatchingDomainPropertyNamesOnNonRuntimeTypes(): void
+    {
+        $this->analyse([__DIR__ . '/Fixtures/lifecycle-boundary-false-positives.php'], []);
     }
 
     public function testAllowsSanctionedLifecycleOwners(): void

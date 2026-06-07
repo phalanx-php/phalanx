@@ -140,6 +140,9 @@ final class RuntimeLensTest extends TestCase
         $app = TestApp::boot();
 
         try {
+            self::assertSame(0, $app->runtime->liveTaskCount());
+            $app->runtime->assertNoLiveTasks();
+
             $stats = $app->runtime->poolStats();
 
             self::assertSame(0, $stats->taskRun->borrowed);

@@ -56,6 +56,28 @@ final class FactoryDependencyResolutionTest extends TestCase
                 static fn(ExecutionScope $scope): object => $scope->service(UntypedFactoryService::class),
             ));
     }
+
+    #[Test]
+    public function singletonFactoriesCannotCaptureRuntimeScope(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('singleton services cannot capture runtime scopes or scoped services');
+
+        Application::starting()
+            ->providers(new SingletonScopeCaptureBundle())
+            ->compile();
+    }
+
+    #[Test]
+    public function singletonServicesCannotDependOnScopedServices(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('singleton services cannot capture runtime scopes or scoped services');
+
+        Application::starting()
+            ->providers(new SingletonScopedDependencyBundle())
+            ->compile();
+    }
 }
 
 final class AutoResolvedFactoryBundle extends ServiceBundle
@@ -117,4 +139,46 @@ final class UntypedFactoryBundle extends ServiceBundle
 
 final class UntypedFactoryService
 {
+}
+
+final class SingletonScopeCaptureBundle extends ServiceBundle
+{
+    public function services(Services $services, AppContext $context): void
+    {
+        $services->singleton(ScopeCapturingSingleton::class)
+            ->factory(static fn(Scope $scope): ScopeCapturingSingleton => new ScopeCapturingSingleton($scope));
+    }
+}
+
+final readonly class ScopeCapturingSingleton
+{
+    public function __construct(
+        public Scope $scope,
+    ) {
+    }
+}
+
+final class SingletonScopedDependencyBundle extends ServiceBundle
+{
+    public function services(Services $services, AppContext $context): void
+    {
+        $services->scoped(ScopedDependency::class)
+            ->factory(static fn(): ScopedDependency => new ScopedDependency());
+
+        $services->singleton(SingletonWithScopedDependency::class)
+            ->needs(ScopedDependency::class)
+            ->factory(static fn(ScopedDependency $dependency): SingletonWithScopedDependency => new SingletonWithScopedDependency($dependency));
+    }
+}
+
+final class ScopedDependency
+{
+}
+
+final readonly class SingletonWithScopedDependency
+{
+    public function __construct(
+        public ScopedDependency $dependency,
+    ) {
+    }
 }

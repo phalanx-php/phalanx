@@ -21,6 +21,7 @@ use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Task;
 use Phalanx\Testing\PhalanxTestCase;
 use Phalanx\Testing\TestApp;
+use Phalanx\Runtime\Identity\RuntimeResourceSid;
 use Phalanx\Runtime\Tests\Support\Fixtures\AddNumbers;
 use Phalanx\Runtime\Tests\Support\Fixtures\CpuIntensiveTask;
 use Phalanx\Runtime\Tests\Support\Fixtures\TaskThatThrows;
@@ -56,12 +57,19 @@ final class InWorkerTest extends PhalanxTestCase
     #[Test]
     public function propagatesExceptionsFromWorker(): void
     {
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('Intentional failure');
+        $app = $this->buildTestApp(new ParallelConfig(agents: 2));
 
-        $this->buildTestApp(new ParallelConfig(agents: 2))
-            ->worker
-            ->run(new TaskThatThrows('Intentional failure'));
+        try {
+            $app->worker->run(new TaskThatThrows('Intentional failure'));
+
+            self::fail('Expected worker task exception to propagate.');
+        } catch (\RuntimeException $e) {
+            self::assertSame('Intentional failure', $e->getMessage());
+        }
+
+        $app->runtime
+            ->assertNoLiveResources(RuntimeResourceSid::Scope)
+            ->assertNoLiveTasks();
     }
 
     #[Test]

@@ -94,8 +94,8 @@ parameters:
         - src/WebSocket/src/Client.php
         - src/WebSocket/src/Client
         - src/WebSocket/src/Server/Connection.php
+        - src/WebSocket/src/Server/Upgrade.php
         - demos/http/04-runtime-lifecycle/src/Support/RuntimeEvents.php
-        - demos/runtime/05-runtime-memory/demo.php
     phalanxProcessInternalPaths:
         - src/Runtime/src/System/Internal/SymfonyProcessAdapter.php
         - src/Cli

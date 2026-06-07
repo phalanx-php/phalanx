@@ -7,6 +7,7 @@ namespace Phalanx;
 use Closure;
 use Phalanx\Boot\AppContext;
 use Phalanx\Cancellation\CancellationToken;
+use Phalanx\Cancellation\Cancelled;
 use Phalanx\Middleware\ServiceTransformationMiddleware;
 use Phalanx\Middleware\TaskMiddleware;
 use Phalanx\Runtime\CoroutineRuntime;
@@ -111,9 +112,9 @@ class Application implements AppHost
         return CoroutineRuntime::run(
             $this->runtimePolicy,
             static function () use ($self, $task, $token): mixed {
-                $self->startup();
-
                 try {
+                    $self->startup();
+
                     return $self->executeScoped($task, $token);
                 } finally {
                     $self->shutdown();
@@ -149,12 +150,24 @@ class Application implements AppHost
             return $this;
         }
         $this->ensureRuntimeHooks();
-        $this->started = true;
         $rootScope = $this->createScope();
+        $failure = null;
         try {
             $this->singletons->startupEager(static fn(string $type): object => $rootScope->service($type));
+            $this->started = true;
+        } catch (Cancelled $e) {
+            $failure = $e;
+        } catch (\Throwable $e) {
+            $failure = $e;
         } finally {
             $rootScope->dispose();
+            if (!$this->started) {
+                $this->singletons->shutdown();
+            }
+        }
+
+        if ($failure !== null) {
+            throw $failure;
         }
 
         return $this;

@@ -10,8 +10,12 @@ use Phalanx\Application;
 use Phalanx\Boot\AppContext;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Cancellation\Cancelled;
-use Phalanx\Service\ServiceBundle;
-use Phalanx\Service\Services;
+use Phalanx\Runtime\Tests\Support\Fixtures\DependentLifecycleBundle;
+use Phalanx\Runtime\Tests\Support\Fixtures\FailingStartupLifecycleBundle;
+use Phalanx\Runtime\Tests\Support\Fixtures\InvalidReadyLifecycleBundle;
+use Phalanx\Runtime\Tests\Support\Fixtures\InvalidStartupLifecycleBundle;
+use Phalanx\Runtime\Tests\Support\Fixtures\ManagedRunnerBundle;
+use Phalanx\Runtime\Tests\Support\Fixtures\ManagedRunnerEvents;
 use Phalanx\Supervisor\InProcessLedger;
 use Phalanx\Task\Task;
 use PHPUnit\Framework\TestCase;
@@ -50,6 +54,51 @@ final class ManagedApplicationRunnerTest extends TestCase
 
         self::assertSame('done', $result);
         self::assertSame(['init', 'startup', 'ready', 'shutdown'], $events->entries);
+    }
+
+    public function testEagerStartupAndReadyHooksFollowDependencyCreationOrder(): void
+    {
+        $events = new ManagedRunnerEvents();
+        $app = Application::starting()
+            ->providers(new DependentLifecycleBundle($events))
+            ->compile();
+
+        $app->startup();
+
+        self::assertSame([
+            'dependency.init',
+            'dependent.init',
+            'dependency.startup',
+            'dependent.startup',
+            'dependency.ready',
+            'dependent.ready',
+        ], $events->entries);
+    }
+
+    public function testStartupFailureCleansPartialSingletonsAndCanRetry(): void
+    {
+        $events = new ManagedRunnerEvents();
+        $app = Application::starting()
+            ->providers(new FailingStartupLifecycleBundle($events))
+            ->compile();
+
+        for ($attempt = 0; $attempt < 2; $attempt++) {
+            try {
+                $app->startup();
+                self::fail('Expected startup failure.');
+            } catch (LogicException $e) {
+                self::assertSame('startup failed', $e->getMessage());
+            }
+        }
+
+        self::assertSame([
+            'init',
+            'startup',
+            'shutdown',
+            'init',
+            'startup',
+            'shutdown',
+        ], $events->entries);
     }
 
     public function testScopedStartsButDoesNotShutDownTheApplication(): void
@@ -146,70 +195,5 @@ final class ManagedApplicationRunnerTest extends TestCase
         }
 
         self::assertSame('inside', $result);
-    }
-}
-
-final class ManagedRunnerEvents
-{
-    /** @var list<string> */
-    public array $entries = [];
-
-    public function record(string $event): void
-    {
-        $this->entries[] = $event;
-    }
-}
-
-final class ManagedRunnerProbe
-{
-}
-
-final class ManagedRunnerBundle extends ServiceBundle
-{
-    public function __construct(
-        private readonly ManagedRunnerEvents $events,
-    ) {
-    }
-
-    public function services(Services $services, AppContext $context): void
-    {
-        $events = $this->events;
-
-        $services->eager(ManagedRunnerProbe::class)
-            ->factory(static fn(): ManagedRunnerProbe => new ManagedRunnerProbe())
-            ->onInit(static function () use ($events): void {
-                $events->record('init');
-            })
-            ->onStartup(static function () use ($events): void {
-                $events->record('startup');
-            })
-            ->onReady(static function () use ($events): void {
-                $events->record('ready');
-            })
-            ->onShutdown(static function () use ($events): void {
-                $events->record('shutdown');
-            });
-    }
-}
-
-final class InvalidStartupLifecycleBundle extends ServiceBundle
-{
-    public function services(Services $services, AppContext $context): void
-    {
-        $services->singleton(ManagedRunnerProbe::class)
-            ->factory(static fn(): ManagedRunnerProbe => new ManagedRunnerProbe())
-            ->onStartup(static function (): void {
-            });
-    }
-}
-
-final class InvalidReadyLifecycleBundle extends ServiceBundle
-{
-    public function services(Services $services, AppContext $context): void
-    {
-        $services->scoped(ManagedRunnerProbe::class)
-            ->factory(static fn(): ManagedRunnerProbe => new ManagedRunnerProbe())
-            ->onReady(static function (): void {
-            });
     }
 }

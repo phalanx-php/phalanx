@@ -20,7 +20,15 @@ final class NoGenericLifecycleRuleTest extends RuleTestCase
             [
                 [
                     'Use concrete Phalanx lifecycle surfaces: module ::starting(), ServiceConfig hooks, scope onDispose(), and cancellation onCancel(); do not use generic lifecycle callback bags.',
-                    11,
+                    12,
+                ],
+                [
+                    'Use concrete Phalanx lifecycle surfaces: module ::starting(), ServiceConfig hooks, scope onDispose(), and cancellation onCancel(); do not use generic lifecycle callback bags.',
+                    12,
+                ],
+                [
+                    'Use concrete Phalanx lifecycle surfaces: module ::starting(), ServiceConfig hooks, scope onDispose(), and cancellation onCancel(); do not use generic lifecycle callback bags.',
+                    14,
                 ],
             ],
         );
