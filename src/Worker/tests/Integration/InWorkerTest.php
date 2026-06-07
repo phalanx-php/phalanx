@@ -6,6 +6,7 @@ namespace Phalanx\Worker\Tests\Integration;
 
 use Phalanx\Application;
 use Phalanx\Cancellation\Cancelled;
+use Phalanx\Worker\Bundle;
 use Phalanx\Worker\Worker;
 use Phalanx\Mark\Mark;
 use Phalanx\Worker\ParallelConfig;
@@ -19,6 +20,7 @@ use Phalanx\Worker\Tests\Fixtures\StderrTask;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Task;
 use Phalanx\Testing\PhalanxTestCase;
+use Phalanx\Testing\TestApp;
 use Phalanx\Runtime\Tests\Support\Fixtures\AddNumbers;
 use Phalanx\Runtime\Tests\Support\Fixtures\CpuIntensiveTask;
 use Phalanx\Runtime\Tests\Support\Fixtures\TaskThatThrows;
@@ -32,74 +34,45 @@ final class InWorkerTest extends PhalanxTestCase
     #[Test]
     public function executesSimpleTaskInWorker(): void
     {
-        $app = $this->app;
-
-        $this->scope->run(static function (ExecutionScope $_scope) use ($app): void {
-            $scope = $app->createScope();
-
-            try {
-                $result = $scope->inWorker(new AddNumbers(2, 3));
-
-                self::assertSame(5, $result);
-            } finally {
-                $scope->dispose();
-            }
-        });
+        $this->buildTestApp(new ParallelConfig(agents: 2))
+            ->worker
+            ->run(new AddNumbers(2, 3))
+            ->assertValueSame(5)
+            ->assertNoLiveRuntimeScopes()
+            ->assertNoLiveTasks();
     }
 
     #[Test]
     public function executesCpuIntensiveTask(): void
     {
-        $app = $this->app;
-
-        $this->scope->run(static function (ExecutionScope $_scope) use ($app): void {
-            $scope = $app->createScope();
-
-            try {
-                $result = $scope->inWorker(new CpuIntensiveTask(100));
-
-                self::assertSame(4950, $result);
-            } finally {
-                $scope->dispose();
-            }
-        });
+        $this->buildTestApp(new ParallelConfig(agents: 2))
+            ->worker
+            ->run(new CpuIntensiveTask(100))
+            ->assertValueSame(4950)
+            ->assertNoLiveRuntimeScopes()
+            ->assertNoLiveTasks();
     }
 
     #[Test]
     public function propagatesExceptionsFromWorker(): void
     {
-        $app = $this->app;
-
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Intentional failure');
 
-        $this->scope->run(static function (ExecutionScope $_scope) use ($app): void {
-            $scope = $app->createScope();
-
-            try {
-                $scope->inWorker(new TaskThatThrows('Intentional failure'));
-            } finally {
-                $scope->dispose();
-            }
-        });
+        $this->buildTestApp(new ParallelConfig(agents: 2))
+            ->worker
+            ->run(new TaskThatThrows('Intentional failure'));
     }
 
     #[Test]
     public function proxiesParentServicesFromWorker(): void
     {
-        $app = $this->app;
-
-        $this->scope->run(static function (ExecutionScope $_scope) use ($app): void {
-            $scope = $app->createScope();
-
-            try {
-                $result = $scope->inWorker(new GreetThroughServiceTask('worker'));
-
-                self::assertSame('hello worker', $result);
-            } finally {
-                $scope->dispose();
-            }
-        });
+        $this->buildTestApp(new ParallelConfig(agents: 2))
+            ->worker
+            ->run(new GreetThroughServiceTask('worker'))
+            ->assertValueSame('hello worker')
+            ->assertNoLiveRuntimeScopes()
+            ->assertNoLiveTasks();
     }
 
     #[Test]
@@ -337,15 +310,20 @@ final class InWorkerTest extends PhalanxTestCase
 
     private function buildApp(ParallelConfig $config): Application
     {
+        $app = $this->buildTestApp($config)->application;
+        $app->startup();
+
+        return $app;
+    }
+
+    private function buildTestApp(ParallelConfig $config): TestApp
+    {
         $bundle = TestServiceBundle::create()
             ->singleton(
                 GreetingService::class,
                 static fn(): GreetingService => new GreetingServiceImpl(),
             );
 
-        $app = $this->testApp([], $bundle, Worker::services($config))->application;
-        $app->startup();
-
-        return $app;
+        return $this->testApp([], $bundle, new Bundle($config));
     }
 }

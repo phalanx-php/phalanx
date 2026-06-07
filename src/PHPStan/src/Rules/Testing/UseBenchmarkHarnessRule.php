@@ -20,7 +20,7 @@ final class UseBenchmarkHarnessRule implements Rule
 
     private const array TARGET_CLASSES = [
         'Phalanx\\Application',
-        'Phalanx\\Http\\Server',
+        'Phalanx\\Http\\Http',
         'Phalanx\\Console\\Console',
     ];
 

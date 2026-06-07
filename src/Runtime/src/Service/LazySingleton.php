@@ -71,12 +71,20 @@ class LazySingleton
     /** @param Closure(class-string): object $factory */
     public function startupEager(Closure $factory): void
     {
+        $ready = [];
         foreach ($this->graph->configs as $type => $config) {
             if ($config->lifetime !== ServiceLifetime::Singleton || $config->lazy) {
                 continue;
             }
             $instance = $this->get($type, static fn() => $factory($type));
             foreach ($config->onStartupHooks as $hook) {
+                $hook($instance);
+            }
+            $ready[] = [$config, $instance];
+        }
+
+        foreach ($ready as [$config, $instance]) {
+            foreach ($config->onReadyHooks as $hook) {
                 $hook($instance);
             }
         }

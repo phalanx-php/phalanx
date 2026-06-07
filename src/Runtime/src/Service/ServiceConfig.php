@@ -26,6 +26,8 @@ interface ServiceConfig
 
     public function onStartup(Closure $hook): self;
 
+    public function onReady(Closure $hook): self;
+
     public function onDispose(Closure $hook): self;
 
     public function onShutdown(Closure $hook): self;

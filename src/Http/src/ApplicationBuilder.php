@@ -20,7 +20,7 @@ use Phalanx\Worker\WorkerDispatch;
 /**
  * Module entry builder for Http applications.
  *
- * Bootstrap files should enter through `Server::starting($context)`, not
+ * Bootstrap files should enter through `Http::starting($context)`, not
  * through the root Runtime ApplicationBuilder plus a manually assembled runner.
  */
 final class ApplicationBuilder

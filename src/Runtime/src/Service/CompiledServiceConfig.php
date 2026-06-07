@@ -31,6 +31,9 @@ final class CompiledServiceConfig implements ServiceConfig
     public array $onStartupHooks = [];
 
     /** @var list<Closure(object): void> */
+    public array $onReadyHooks = [];
+
+    /** @var list<Closure(object): void> */
     public array $onDisposeHooks = [];
 
     /** @var list<Closure(object): void> */
@@ -111,6 +114,13 @@ final class CompiledServiceConfig implements ServiceConfig
     public function onStartup(Closure $hook): self
     {
         $this->onStartupHooks[] = $hook;
+
+        return $this;
+    }
+
+    public function onReady(Closure $hook): self
+    {
+        $this->onReadyHooks[] = $hook;
 
         return $this;
     }

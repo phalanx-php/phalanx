@@ -132,7 +132,7 @@ final class ProjectGeneratorTest extends TestCase
         $index = file_get_contents($this->tempDir . '/public/index.php');
         self::assertIsString($index);
         self::assertStringContainsString('autoload_runtime.php', $index);
-        self::assertStringContainsString('Server::starting($context)', $index);
+        self::assertStringContainsString('Http::starting($context)', $index);
         self::assertStringContainsString("->listen('127.0.0.1:8080')", $index);
     }
 

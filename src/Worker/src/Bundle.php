@@ -8,6 +8,7 @@ use Phalanx\Boot\AppContext;
 use Phalanx\Config\Config;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
+use Phalanx\Testing\TestLens;
 use Phalanx\Worker\Dispatch\LeastMailboxDispatcher;
 use Phalanx\Worker\Dispatch\RoundRobinDispatcher;
 use Phalanx\Worker\WorkerDispatch;
@@ -28,6 +29,12 @@ final class Bundle extends ServiceBundle
     public static function configs(): array
     {
         return [ParallelConfig::class];
+    }
+
+    #[\Override]
+    public static function lens(): TestLens
+    {
+        return TestLens::of(Testing\Lens::class);
     }
 
     public function services(Services $services, AppContext $context): void

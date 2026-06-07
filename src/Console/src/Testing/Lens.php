@@ -11,6 +11,9 @@ use Phalanx\Console\Command\CommandGroup;
 use Phalanx\Console\Console;
 use Phalanx\Console\Output\StreamOutput;
 use Phalanx\Console\Output\TerminalEnvironment;
+use Phalanx\Console\Runtime\Identity\ConsoleResourceSid;
+use Phalanx\Runtime\Identity\RuntimeResourceSid;
+use Phalanx\Runtime\Memory\ManagedResource;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Testing\Attribute\Lens as LensAttribute;
 use Phalanx\Testing\Lens as LensContract;
@@ -109,11 +112,20 @@ final class Lens implements LensContract
 
         try {
             $exitCode = $console->dispatch($argv);
+            $memory = $console->host()->runtime()->memory;
+            $supervisor = $console->host()->supervisor();
 
             return new Result(
                 exitCode: $exitCode,
                 stdout: self::drain($stdout),
                 stderr: self::drain($stderr),
+                liveCommandResources: $memory->resources->liveCount(ConsoleResourceSid::Command),
+                liveRuntimeScopes: $memory->resources->liveCount(RuntimeResourceSid::Scope),
+                liveTasks: $supervisor->liveCount(),
+                commandResourceStates: array_map(
+                    static fn(ManagedResource $resource) => $resource->state,
+                    $memory->resources->all(ConsoleResourceSid::Command),
+                ),
             );
         } finally {
             $console->shutdown();

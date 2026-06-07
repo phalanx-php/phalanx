@@ -24,7 +24,7 @@ final class UseBenchmarkHarnessRuleTest extends RuleTestCase
                     19,
                 ],
                 [
-                    'Benchmarks should boot through BenchmarkHarness instead of Phalanx\Http\Server::starting(). '
+                    'Benchmarks should boot through BenchmarkHarness instead of Phalanx\Http\Http::starting(). '
                     . 'Bypassing the harness skips pool-stats collection, ZMM tracking, and scope-clean assertions.',
                     24,
                 ],

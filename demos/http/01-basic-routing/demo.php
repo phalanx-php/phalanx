@@ -7,12 +7,12 @@ require __DIR__ . '/../../../vendor/autoload_runtime.php';
 use GuzzleHttp\Psr7\ServerRequest;
 use Phalanx\Boot\AppContext;
 use Phalanx\Demos\Kit\DemoReport;
-use Phalanx\Http\Server;
+use Phalanx\Http\Http;
 
 return DemoReport::demo(
     'Http Basic Routing',
     static function (DemoReport $report, AppContext $context): void {
-        $app = Server::starting($context->values)
+        $app = Http::starting($context->values)
             ->routes(__DIR__ . '/routes.php')
             ->build();
 

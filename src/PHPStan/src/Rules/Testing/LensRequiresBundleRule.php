@@ -288,6 +288,23 @@ final class LensRequiresBundleRule implements Rule
                     return $variables[$expr->name] ?? [];
                 }
 
+                if ($expr instanceof \PhpParser\Node\Expr\Array_) {
+                    $lenses = [];
+
+                    foreach ($expr->items as $item) {
+                        if ($item === null) {
+                            continue;
+                        }
+
+                        $lenses = [
+                            ...$lenses,
+                            ...self::lensesFromExpression($item->value, $variables),
+                        ];
+                    }
+
+                    return array_values(array_unique($lenses));
+                }
+
                 if (!$expr instanceof New_) {
                     return [];
                 }
@@ -346,7 +363,7 @@ final class LensRequiresBundleRule implements Rule
                     return self::lensesFromLensMethod($method);
                 }
 
-                return [];
+                return self::lensesFromNamedBundle($extends);
             }
 
             /** @return list<string> */

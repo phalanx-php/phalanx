@@ -6,6 +6,10 @@ namespace Phalanx\Testing\Lenses;
 
 use Phalanx\Diagnostics\DoctorReport;
 use Phalanx\Diagnostics\EnvironmentDoctor;
+use Phalanx\Runtime\Identity\RuntimeAnnotationId;
+use Phalanx\Runtime\Identity\RuntimeResourceId;
+use Phalanx\Runtime\Memory\ManagedResource;
+use Phalanx\Runtime\Memory\ManagedResourceState;
 use Phalanx\Supervisor\SupervisorPoolStats;
 use Phalanx\Testing\Attribute\Lens;
 use Phalanx\Testing\Lens as LensContract;
@@ -98,6 +102,87 @@ final class RuntimeLens implements LensContract
             0,
             $memory->tables->resourceAnnotations->count(),
             'Expected no retained runtime annotations.',
+        );
+
+        return $this;
+    }
+
+    public function resource(string $id): ?ManagedResource
+    {
+        return $this->app->application->runtime()->memory->resources->get($id);
+    }
+
+    /**
+     * @return list<ManagedResource>
+     */
+    public function resources(RuntimeResourceId|string|null $type = null): array
+    {
+        return $this->app->application->runtime()->memory->resources->all($type);
+    }
+
+    public function resourceCount(RuntimeResourceId|string|null $type = null): int
+    {
+        return count($this->resources($type));
+    }
+
+    public function liveResourceCount(RuntimeResourceId|string|null $type = null): int
+    {
+        return $this->app->application->runtime()->memory->resources->liveCount($type);
+    }
+
+    public function resourceAnnotation(
+        string $resourceId,
+        RuntimeAnnotationId|string $key,
+        string $default = '',
+    ): string {
+        return $this->app->application->runtime()->memory->resources->annotation($resourceId, $key, $default);
+    }
+
+    public function assertNoLiveResources(RuntimeResourceId|string|null $type = null): self
+    {
+        return $this->assertLiveResourceCount(0, $type);
+    }
+
+    public function assertLiveResourceCount(int $expected, RuntimeResourceId|string|null $type = null): self
+    {
+        $live = $this->liveResourceCount($type);
+        $label = $type instanceof RuntimeResourceId ? $type->value() : ($type ?? 'any type');
+
+        Assert::assertSame(
+            $expected,
+            $live,
+            "Expected {$expected} live runtime resources for {$label}; {$live} still live.",
+        );
+
+        return $this;
+    }
+
+    public function assertResourceState(string $resourceId, ManagedResourceState $state): self
+    {
+        $resource = $this->resource($resourceId);
+
+        Assert::assertNotNull($resource, "Expected runtime resource {$resourceId} to exist.");
+        Assert::assertSame(
+            $state,
+            $resource->state,
+            "Expected runtime resource {$resourceId} to be {$state->value}.",
+        );
+
+        return $this;
+    }
+
+    public function assertResourceAnnotation(
+        string $resourceId,
+        RuntimeAnnotationId|string $key,
+        string $expected,
+    ): self {
+        $actual = $this->resourceAnnotation($resourceId, $key);
+        $label = $key instanceof RuntimeAnnotationId ? $key->value() : $key;
+
+        Assert::assertSame(
+            $expected,
+            $actual,
+            "Expected runtime resource {$resourceId} annotation {$label} to match.",
         );
 
         return $this;

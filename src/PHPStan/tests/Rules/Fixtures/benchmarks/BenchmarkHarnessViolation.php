@@ -6,7 +6,7 @@ namespace Phalanx\PHPStan\Tests\Rules\Fixtures\Benchmarks;
 
 use Phalanx\Application;
 use Phalanx\Console\Console;
-use Phalanx\Http\Server;
+use Phalanx\Http\Http;
 
 /**
  * Fixture path contains /benchmarks/, so direct entry booting should be
@@ -21,7 +21,7 @@ final class BenchmarkHarnessViolation
 
     public function httpModuleEntry(): void
     {
-        Server::starting()->build();
+        Http::starting()->build();
     }
 
     public function consoleModuleEntry(): void

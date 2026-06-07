@@ -7,7 +7,7 @@ namespace Phalanx\Http\Tests\Support;
 use Phalanx\Application;
 use Phalanx\Http\ApplicationBuilder;
 use Phalanx\Http\RouteGroup;
-use Phalanx\Http\Server;
+use Phalanx\Http\Http;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Supervisor\InProcessLedger;
 use Phalanx\Testing\PhalanxTestCase;
@@ -20,7 +20,7 @@ abstract class TestCase extends PhalanxTestCase
     /** @param array<string, mixed> $context */
     protected static function http(array $context = []): ApplicationBuilder
     {
-        return Server::starting($context)->withLedger(new InProcessLedger());
+        return Http::starting($context)->withLedger(new InProcessLedger());
     }
 
     protected function dispatchRoute(RouteGroup $group, ServerRequestInterface $request): mixed

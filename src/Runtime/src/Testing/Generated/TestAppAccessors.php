@@ -10,6 +10,7 @@ use Phalanx\Testing\Lenses\ConfigLens;
 use Phalanx\Testing\Lenses\LedgerLens;
 use Phalanx\Testing\Lenses\RuntimeLens;
 use Phalanx\Testing\Lenses\ScopeLens;
+use Phalanx\Worker\Testing\Lens as TestingLens3;
 
 /**
  * @generated
@@ -45,5 +46,9 @@ trait TestAppAccessors
 
     public ScopeLens $scope {
         get => $this->lens(ScopeLens::class);
+    }
+
+    public TestingLens3 $worker {
+        get => $this->lens(TestingLens3::class);
     }
 }

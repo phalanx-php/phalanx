@@ -10,13 +10,13 @@ use GuzzleHttp\Psr7\Utils;
 use Phalanx\Boot\AppContext;
 use Phalanx\Demos\Kit\DemoReport;
 use Phalanx\Http\OpenApi\OpenApiGenerator;
-use Phalanx\Http\Server;
+use Phalanx\Http\Http;
 
 return DemoReport::demo(
     'Http API',
     static function (DemoReport $report, AppContext $context): void {
         $routes = require __DIR__ . '/routes.php';
-        $app = Server::starting($context->values)
+        $app = Http::starting($context->values)
             ->providers(new ApiServiceBundle())
             ->routes($routes)
             ->build();

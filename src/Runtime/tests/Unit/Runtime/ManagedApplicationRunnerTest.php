@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Runtime\Tests\Unit\Runtime;
 
 use LogicException;
+use RuntimeException;
 use Phalanx\Application;
 use Phalanx\Boot\AppContext;
 use Phalanx\Cancellation\CancellationToken;
@@ -48,7 +49,7 @@ final class ManagedApplicationRunnerTest extends TestCase
         ));
 
         self::assertSame('done', $result);
-        self::assertSame(['startup', 'shutdown'], $events->entries);
+        self::assertSame(['init', 'startup', 'ready', 'shutdown'], $events->entries);
     }
 
     public function testScopedStartsButDoesNotShutDownTheApplication(): void
@@ -64,11 +65,31 @@ final class ManagedApplicationRunnerTest extends TestCase
         ));
 
         self::assertSame('scoped', $result);
-        self::assertSame(['startup'], $events->entries);
+        self::assertSame(['init', 'startup', 'ready'], $events->entries);
 
         $app->shutdown();
 
-        self::assertSame(['startup', 'shutdown'], $events->entries);
+        self::assertSame(['init', 'startup', 'ready', 'shutdown'], $events->entries);
+    }
+
+    public function testStartupHooksRequireEagerSingletonServices(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('onStartup');
+
+        Application::starting()
+            ->providers(new InvalidStartupLifecycleBundle())
+            ->compile();
+    }
+
+    public function testReadyHooksRequireEagerSingletonServices(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('onReady');
+
+        Application::starting()
+            ->providers(new InvalidReadyLifecycleBundle())
+            ->compile();
     }
 
     public function testRunRethrowsTheOriginalException(): void
@@ -156,11 +177,39 @@ final class ManagedRunnerBundle extends ServiceBundle
 
         $services->eager(ManagedRunnerProbe::class)
             ->factory(static fn(): ManagedRunnerProbe => new ManagedRunnerProbe())
+            ->onInit(static function () use ($events): void {
+                $events->record('init');
+            })
             ->onStartup(static function () use ($events): void {
                 $events->record('startup');
             })
+            ->onReady(static function () use ($events): void {
+                $events->record('ready');
+            })
             ->onShutdown(static function () use ($events): void {
                 $events->record('shutdown');
+            });
+    }
+}
+
+final class InvalidStartupLifecycleBundle extends ServiceBundle
+{
+    public function services(Services $services, AppContext $context): void
+    {
+        $services->singleton(ManagedRunnerProbe::class)
+            ->factory(static fn(): ManagedRunnerProbe => new ManagedRunnerProbe())
+            ->onStartup(static function (): void {
+            });
+    }
+}
+
+final class InvalidReadyLifecycleBundle extends ServiceBundle
+{
+    public function services(Services $services, AppContext $context): void
+    {
+        $services->scoped(ManagedRunnerProbe::class)
+            ->factory(static fn(): ManagedRunnerProbe => new ManagedRunnerProbe())
+            ->onReady(static function (): void {
             });
     }
 }

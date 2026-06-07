@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Console\Testing;
 
+use Phalanx\Runtime\Memory\ManagedResourceState;
 use PHPUnit\Framework\Assert;
 
 /**
@@ -11,10 +12,15 @@ use PHPUnit\Framework\Assert;
  */
 final readonly class Result
 {
+    /** @param list<ManagedResourceState> $commandResourceStates */
     public function __construct(
         public int $exitCode,
         public string $stdout,
         public string $stderr,
+        public int $liveCommandResources = 0,
+        public int $liveRuntimeScopes = 0,
+        public int $liveTasks = 0,
+        public array $commandResourceStates = [],
     ) {
     }
 
@@ -69,6 +75,58 @@ final readonly class Result
             $this->stdout,
             'Stdout did not match expected pattern.',
         );
+
+        return $this;
+    }
+
+    public function assertNoLiveCommandResources(): self
+    {
+        Assert::assertSame(
+            0,
+            $this->liveCommandResources,
+            "Expected no live console command resources; {$this->liveCommandResources} still live.",
+        );
+
+        return $this;
+    }
+
+    public function assertNoLiveRuntimeScopes(): self
+    {
+        Assert::assertSame(
+            0,
+            $this->liveRuntimeScopes,
+            "Expected no live runtime scopes; {$this->liveRuntimeScopes} still live.",
+        );
+
+        return $this;
+    }
+
+    public function assertNoLiveTasks(): self
+    {
+        Assert::assertSame(
+            0,
+            $this->liveTasks,
+            "Expected no live tasks; {$this->liveTasks} still live.",
+        );
+
+        return $this;
+    }
+
+    public function assertCommandResourcesClosed(int $expected = 1): self
+    {
+        Assert::assertCount(
+            $expected,
+            $this->commandResourceStates,
+            "Expected {$expected} tracked console command resource(s).",
+        );
+
+        foreach ($this->commandResourceStates as $state) {
+            Assert::assertSame(
+                ManagedResourceState::Closed,
+                $state,
+                'Expected every tracked console command resource to be closed.',
+            );
+        }
 
         return $this;
     }

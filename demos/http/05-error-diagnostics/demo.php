@@ -13,7 +13,7 @@ use Phalanx\Mark\Mark;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Http\RequestContext;
 use Phalanx\Http\RouteGroup;
-use Phalanx\Http\Server;
+use Phalanx\Http\Http;
 use Phalanx\Task\Scopeable;
 use Phalanx\Task\Task;
 
@@ -44,7 +44,7 @@ return DemoReport::demo(
             'GET /fail' => FailingDemoHandler::class,
         ]);
 
-        $app = Server::starting($context->values)
+        $app = Http::starting($context->values)
             ->routes($routes)
             ->ignition()
             ->build();

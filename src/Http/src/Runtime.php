@@ -34,7 +34,7 @@ final class Runtime extends GenericRuntime
 
         if ($application instanceof AppHost) {
             throw new RuntimeException(
-                'HTTP runtime expects a Phalanx\\Http\\Application. Build one with Phalanx\\Http\\Server::starting($context).'
+                'HTTP runtime expects a Phalanx\\Http\\Application. Build one with Phalanx\\Http\\Http::starting($context).'
             );
         }
 

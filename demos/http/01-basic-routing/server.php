@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 require __DIR__ . '/../../../vendor/autoload_runtime.php';
 
-use Phalanx\Http\Server;
+use Phalanx\Http\Http;
 
 return static fn(array $context): \Closure => static function () use ($context): int {
     $listen = $context['argv'][1] ?? '127.0.0.1:8188';
 
-    return Server::starting($context)
+    return Http::starting($context)
         ->routes(__DIR__ . '/routes.php')
         ->listen($listen)
         ->withBanner(<<<'BANNER'

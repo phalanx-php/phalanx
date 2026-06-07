@@ -80,6 +80,22 @@ parameters:
         - src/Runtime/src/Runtime/SwooleHook.php
         - src/Runtime/src/Runtime/RuntimeHooks.php
         - src/Runtime/src/Runtime/RuntimePolicy.php
+    phalanxLifecycleInternalPaths:
+        - src/Runtime/src/Runtime/Memory
+        - src/Runtime/src/Supervisor/SwooleTableLedger.php
+        - src/Runtime/src/System/StreamingProcess.php
+        - src/Runtime/src/System/StreamingProcessHandle.php
+        - src/Runtime/tests
+        - src/Console/src/Command/CommandLifecycle.php
+        - src/Http/src/RequestResource.php
+        - src/Http/src/Udp
+        - src/HttpClient/src/Client.php
+        - src/HttpClient/src/Stream.php
+        - src/WebSocket/src/Client.php
+        - src/WebSocket/src/Client
+        - src/WebSocket/src/Server/Connection.php
+        - demos/http/04-runtime-lifecycle/src/Support/RuntimeEvents.php
+        - demos/runtime/05-runtime-memory/demo.php
     phalanxProcessInternalPaths:
         - src/Runtime/src/System/Internal/SymfonyProcessAdapter.php
         - src/Cli

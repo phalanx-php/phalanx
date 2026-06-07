@@ -29,7 +29,7 @@ final class UseTestAppRuleTest extends RuleTestCase
                 ],
                 [
                     'High-level Phalanx tests should boot through PhalanxTestCase::testApp() instead of '
-                    . 'Phalanx\\Http\\Server::starting(). '
+                    . 'Phalanx\\Http\\Http::starting(). '
                     . 'Bypassing TestApp skips lens activation, fake registry resets, and ledger teardown assertions.',
                     24,
                 ],

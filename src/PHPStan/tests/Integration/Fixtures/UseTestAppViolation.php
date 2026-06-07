@@ -6,7 +6,7 @@ namespace Phalanx\PHPStan\Tests\Rules\Fixtures\Integration;
 
 use Phalanx\Application;
 use Phalanx\Console\Console;
-use Phalanx\Http\Server;
+use Phalanx\Http\Http;
 
 /**
  * Fixture sitting at a path containing /Integration/ — the UseTestAppRule
@@ -21,7 +21,7 @@ final class UseTestAppViolation
 
     public function httpModuleEntry(): void
     {
-        $http = Server::starting()->build();
+        $http = Http::starting()->build();
     }
 
     public function consoleCommand(): void

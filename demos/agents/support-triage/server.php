@@ -15,7 +15,7 @@ use Phalanx\Agents\Tool\ToolBundle;
 use Phalanx\Demos\Agents\Support\DemoContextKeys;
 use Phalanx\Demos\Kit\DemoProvider;
 use Phalanx\Demos\Kit\FakeCueScript;
-use Phalanx\Http\Server;
+use Phalanx\Http\Http;
 
 return static fn(array $context): \Closure => static function () use ($context): int {
     $listen   = $context['argv'][1] ?? '0.0.0.0:8080';
@@ -47,7 +47,7 @@ return static fn(array $context): \Closure => static function () use ($context):
         toolBundles: [$toolBundle],
     );
 
-    return Server::starting($effective->values)
+    return Http::starting($effective->values)
         ->providers($bundle)
         ->routes(['POST /triage' => TriageHandler::class])
         ->listen($listen)

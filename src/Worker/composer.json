@@ -92,6 +92,11 @@
     "extra": {
         "branch-alias": {
             "dev-main": "0.7.x-dev"
+        },
+        "phalanx": {
+            "bundles": [
+                "Phalanx\\Worker\\Bundle"
+            ]
         }
     },
     "minimum-stability": "dev",

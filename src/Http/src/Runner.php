@@ -36,7 +36,7 @@ use Throwable;
 /**
  * Native HTTP runner assembled by Application.
  *
- * Bootstrap files should use `Server::starting($context)->routes(...)->run()`
+ * Bootstrap files should use `Http::starting($context)->routes(...)->run()`
  * so route loading, server config, and Runtime host setup stay behind the
  * HTTP module entry.
  */

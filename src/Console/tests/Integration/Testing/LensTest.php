@@ -32,6 +32,23 @@ final class LensTest extends PhalanxTestCase
     }
 
     #[Test]
+    public function runResultAssertsCommandLifecycleCleanup(): void
+    {
+        $app = $this->bootConsoleTestApp();
+
+        $app->console
+            ->commands(CommandGroup::of([
+                'noop' => [NoopCommand::class, new CommandConfig(description: 'noop')],
+            ]))
+            ->run(['noop'])
+            ->assertSuccessful()
+            ->assertCommandResourcesClosed()
+            ->assertNoLiveCommandResources()
+            ->assertNoLiveRuntimeScopes()
+            ->assertNoLiveTasks();
+    }
+
+    #[Test]
     public function runReportsNonZeroExitCode(): void
     {
         $app = $this->bootConsoleTestApp();

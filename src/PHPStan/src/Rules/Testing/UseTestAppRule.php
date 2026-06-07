@@ -21,7 +21,7 @@ final class UseTestAppRule implements Rule
 
     private const array TARGET_METHODS_BY_CLASS = [
         'Phalanx\\Application' => ['starting'],
-        'Phalanx\\Http\\Server' => ['starting'],
+        'Phalanx\\Http\\Http' => ['starting'],
         'Phalanx\\Console\\Console' => ['starting', 'command'],
         'Phalanx\\DevServer\\DevServer' => ['starting'],
         'Phalanx\\Tui\\Tui' => ['app', 'starting'],

@@ -41,7 +41,7 @@ use Phalanx\Worker\WorkerDispatch;
  * Package and example bootstraps should prefer their package module entry builders:
  * `Phalanx\Agents\Agents::starting()`,
  * `Phalanx\Console\Console::starting()`, or
- * `Phalanx\Http\Server::starting()`.
+ * `Phalanx\Http\Http::starting()`.
  */
 class ApplicationBuilder
 {

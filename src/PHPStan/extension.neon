@@ -3,6 +3,7 @@ parameters:
     phalanxEnforcedPaths: []
     phalanxAuditPaths: []
     phalanxRuntimeHookInternalPaths: []
+    phalanxLifecycleInternalPaths: []
     phalanxProcessInternalPaths: []
     phalanxCoroutineInternalPaths: []
     phalanxTestingPaths: []
@@ -21,6 +22,7 @@ parametersSchema:
     phalanxEnforcedPaths: listOf(string())
     phalanxAuditPaths: listOf(string())
     phalanxRuntimeHookInternalPaths: listOf(string())
+    phalanxLifecycleInternalPaths: listOf(string())
     phalanxProcessInternalPaths: listOf(string())
     phalanxCoroutineInternalPaths: listOf(string())
     phalanxTestingPaths: listOf(string())
@@ -115,6 +117,27 @@ services:
         arguments:
             - @Phalanx\PHPStan\Support\PathPolicy
             - %phalanxRuntimeHookInternalPaths%
+        tags:
+            - phpstan.rules.rule
+
+    -
+        class: Phalanx\PHPStan\Rules\Runtime\LifecycleBoundaryRule
+        arguments:
+            - @Phalanx\PHPStan\Support\PathPolicy
+            - %phalanxLifecycleInternalPaths%
+        tags:
+            - phpstan.rules.rule
+
+    -
+        class: Phalanx\PHPStan\Rules\Runtime\RuntimeSidLiteralRule
+        arguments:
+            - @Phalanx\PHPStan\Support\PathPolicy
+            - %phalanxLifecycleInternalPaths%
+        tags:
+            - phpstan.rules.rule
+
+    -
+        class: Phalanx\PHPStan\Rules\Runtime\NoGenericLifecycleRule
         tags:
             - phpstan.rules.rule
 

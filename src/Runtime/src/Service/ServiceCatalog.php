@@ -50,7 +50,35 @@ class ServiceCatalog implements Services
 
     public function compile(): ServiceGraph
     {
+        $this->validateLifecycleHooks();
+
         return new ServiceGraph($this->configs, $this->aliases);
+    }
+
+    private static function assertEagerSingletonLifecycleHook(CompiledServiceConfig $config, string $hook): void
+    {
+        if ($config->lifetime === ServiceLifetime::Singleton && !$config->lazy) {
+            return;
+        }
+
+        throw new RuntimeException(sprintf(
+            'Service %s registered %s(), but startup/ready lifecycle hooks are only valid on eager singleton services.',
+            $config->type,
+            $hook,
+        ));
+    }
+
+    private function validateLifecycleHooks(): void
+    {
+        foreach ($this->configs as $config) {
+            if ($config->onStartupHooks !== []) {
+                self::assertEagerSingletonLifecycleHook($config, 'onStartup');
+            }
+
+            if ($config->onReadyHooks !== []) {
+                self::assertEagerSingletonLifecycleHook($config, 'onReady');
+            }
+        }
     }
 
     /** @param class-string $type */

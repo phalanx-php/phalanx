@@ -14,7 +14,7 @@ use Phalanx\Testing\TestLens;
  *
  * Adoption pattern in tests:
  *
- *     $http = Server::starting($context)->routes($routes)->build();
+ *     $http = Http::starting($context)->routes($routes)->build();
  *
  *     $app = $this->testApp($context, new TestableBundle())
  *         ->withPrimary($http);

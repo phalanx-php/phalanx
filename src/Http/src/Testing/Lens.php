@@ -22,7 +22,7 @@ use Psr\Http\Message\ServerRequestInterface;
  * The lens reaches into the Application registered as a primary app
  * via TestApp::withPrimary(). Booting:
  *
- *     $http = Server::starting($context)->routes($routes)->build();
+ *     $http = Http::starting($context)->routes($routes)->build();
  *     $app  = $this->testApp($context, new TestableBundle())->withPrimary($http);
  *     $app->http->postJson('/api/orders', ['sku' => 'WIDGET'])->assertCreated();
  */

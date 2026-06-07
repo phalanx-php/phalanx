@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Phalanx\Runtime\Tests\Unit\Testing\Lenses;
 
 use Phalanx\Diagnostics\DoctorReport;
+use Phalanx\Runtime\Identity\RuntimeAnnotationSid;
+use Phalanx\Runtime\Identity\RuntimeResourceSid;
+use Phalanx\Runtime\Memory\ManagedResourceState;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Supervisor\DispatchMode;
 use Phalanx\Task\Task;
@@ -71,6 +74,62 @@ final class RuntimeLensTest extends TestCase
 
         try {
             $app->runtime->assertResourcesClean();
+        } finally {
+            $app->shutdown();
+        }
+    }
+
+    public function testResourceAssertionsExposeManagedResourceState(): void
+    {
+        $app = TestApp::boot();
+
+        try {
+            $resources = $app->application->runtime()->memory->resources;
+            $handle = $resources->open(RuntimeResourceSid::Test, id: 'runtime-lens-resource');
+            $active = $resources->activate($handle);
+            $resources->annotate($active, RuntimeAnnotationSid::RunState, 'running');
+
+            $app->runtime
+                ->assertLiveResourceCount(1, RuntimeResourceSid::Test)
+                ->assertResourceState('runtime-lens-resource', ManagedResourceState::Active)
+                ->assertResourceAnnotation('runtime-lens-resource', RuntimeAnnotationSid::RunState, 'running');
+
+            self::assertSame(1, $app->runtime->resourceCount(RuntimeResourceSid::Test));
+            self::assertSame('running', $app->runtime->resourceAnnotation(
+                'runtime-lens-resource',
+                RuntimeAnnotationSid::RunState,
+            ));
+
+            $closed = $resources->close($active, 'test-cleanup');
+
+            $app->runtime
+                ->assertNoLiveResources(RuntimeResourceSid::Test)
+                ->assertResourceState('runtime-lens-resource', ManagedResourceState::Closed);
+
+            $resources->release($closed->id);
+        } finally {
+            $app->shutdown();
+        }
+    }
+
+    public function testAssertNoLiveResourcesFailsWithTypedMessage(): void
+    {
+        $app = TestApp::boot();
+
+        try {
+            $resources = $app->application->runtime()->memory->resources;
+            $handle = $resources->activate($resources->open(RuntimeResourceSid::Test, id: 'runtime-lens-live'));
+
+            try {
+                $this->expectException(AssertionFailedError::class);
+                $this->expectExceptionMessage(
+                    'Expected 0 live runtime resources for runtime.test; 1 still live.',
+                );
+
+                $app->runtime->assertNoLiveResources(RuntimeResourceSid::Test);
+            } finally {
+                $resources->release($handle->id);
+            }
         } finally {
             $app->shutdown();
         }

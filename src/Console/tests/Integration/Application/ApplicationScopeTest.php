@@ -4,39 +4,34 @@ declare(strict_types=1);
 
 namespace Phalanx\Console\Tests\Integration\Application;
 
-use Phalanx\Console\Tests\Support\TestCase;
 use Phalanx\Console\Command\CommandGroup;
 use Phalanx\Console\Command\CommandContext;
-use Phalanx\Console\Runtime\Identity\ConsoleResourceSid;
-use Phalanx\Runtime\Memory\ManagedResourceState;
-use Phalanx\Scope\ExecutionScope;
+use Phalanx\Console\Testing\TestableBundle;
+use Phalanx\Console\Tests\Support\TestCase;
 use Phalanx\Task\Scopeable;
 use Phalanx\Task\Task;
-use Phalanx\Testing\Assert as PhalanxAssert;
 
 final class ApplicationScopeTest extends TestCase
 {
     public function testCommandRunsInsideRuntimeConsoleScope(): void
     {
-        $app = self::console()
+        $app = $this->testApp([], new TestableBundle());
+
+        $app->console
             ->commands(CommandGroup::of([
                 'probe' => ConsoleProbeCommand::class,
             ]))
-            ->build();
-
-        $this->scope->run(static function (ExecutionScope $_scope) use ($app): void {
-            self::assertSame(0, $app->dispatch(['probe']));
-        });
+            ->run(['probe'])
+            ->assertSuccessful()
+            ->assertCommandResourcesClosed()
+            ->assertNoLiveCommandResources()
+            ->assertNoLiveRuntimeScopes()
+            ->assertNoLiveTasks();
 
         self::assertTrue(ConsoleProbeCommand::$receivedCommandContext);
         self::assertSame('probe', ConsoleProbeCommand::$commandName);
         self::assertNotSame('', ConsoleProbeCommand::$commandResourceId);
         self::assertSame('task:probe', ConsoleProbeCommand::$taskResult);
-        self::assertSame(ManagedResourceState::Closed, $app->host()->runtime()->memory->resources->all(
-            ConsoleResourceSid::Command,
-        )[0]->state);
-        PhalanxAssert::assertNoLiveTasks($app->host()->supervisor());
-        $app->shutdown();
     }
 
     protected function setUp(): void
