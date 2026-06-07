@@ -14,6 +14,7 @@ use Phalanx\Http\QueryParams;
 use Phalanx\Http\RouteConfig;
 use Phalanx\Http\RouteParams;
 use Phalanx\Http\Validator\RequireAbility;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
 
@@ -22,40 +23,46 @@ final class RequireAbilityTest extends PhalanxTestCase
     #[Test]
     public function returns_empty_when_user_has_ability(): void
     {
-        $auth = AuthContext::authenticated(new TestAbilityIdentity(1), null, ['admin', 'write']);
-        $scope = new AuthExecutionContext($this->createRequestContext(), $auth);
+        $result = $this->scope->run(static function (ExecutionScope $inner): array {
+            $auth = AuthContext::authenticated(new TestAbilityIdentity(1), null, ['admin', 'write']);
+            $scope = new AuthExecutionContext(self::createRequestContext($inner), $auth);
+            $v = new RequireAbility('admin');
 
-        $v = new RequireAbility('admin');
+            return $v->validate($scope, null);
+        });
 
-        self::assertSame([], $v->validate($scope, null));
+        self::assertSame([], $result);
     }
 
     #[Test]
     public function throws_when_user_lacks_ability(): void
     {
-        $auth = AuthContext::authenticated(new TestAbilityIdentity(1), null, ['read']);
-        $scope = new AuthExecutionContext($this->createRequestContext(), $auth);
-
-        $v = new RequireAbility('admin');
-
         $this->expectException(AuthorizationException::class);
-        $v->validate($scope, null);
+
+        $this->scope->run(static function (ExecutionScope $inner): void {
+            $auth = AuthContext::authenticated(new TestAbilityIdentity(1), null, ['read']);
+            $scope = new AuthExecutionContext(self::createRequestContext($inner), $auth);
+            $v = new RequireAbility('admin');
+
+            $v->validate($scope, null);
+        });
     }
 
     #[Test]
     public function throws_when_scope_is_not_authenticated(): void
     {
-        $scope = $this->createRequestContext();
-
-        $v = new RequireAbility('admin');
-
         $this->expectException(AuthorizationException::class);
-        $v->validate($scope, null);
+
+        $this->scope->run(static function (ExecutionScope $inner): void {
+            $scope = self::createRequestContext($inner);
+            $v = new RequireAbility('admin');
+
+            $v->validate($scope, null);
+        });
     }
 
-    private function createRequestContext(): ExecutionContext
+    private static function createRequestContext(ExecutionScope $inner): ExecutionContext
     {
-        $inner = $this->application()->createScope();
         $request = new ServerRequest('GET', '/test');
 
         return new ExecutionContext(

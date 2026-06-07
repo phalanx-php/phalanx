@@ -31,7 +31,7 @@ final class WebSocketTest extends PhalanxTestCase
         $clientConfig = new ClientConfig(connectTimeout: 1.5);
         $bundle = WebSocket::services($clientConfig);
 
-        $result = $this->testApp(bundles: $bundle)->application->scoped(
+        $result = $this->testApp(bundles: $bundle)->scoped(
             Task::named(
                 'test.websocket.service-bundle',
                 static function (ExecutionScope $scope): array {
@@ -61,7 +61,7 @@ final class WebSocketTest extends PhalanxTestCase
         $firstBundle = WebSocket::services($first);
         $secondBundle = WebSocket::services();
 
-        $result = $this->testApp([], $firstBundle, $secondBundle)->application->scoped(
+        $result = $this->testApp([], $firstBundle, $secondBundle)->scoped(
             Task::named(
                 'test.websocket.idempotent-bundle',
                 static fn(ExecutionScope $scope): float => $scope->service(ClientConfig::class)->connectTimeout,
@@ -74,7 +74,7 @@ final class WebSocketTest extends PhalanxTestCase
     #[Test]
     public function installRegistersWebSocketUpgradeOnRunner(): void
     {
-        $app = $this->startedApplication(bundles: WebSocket::services());
+        $app = $this->testApp(bundles: WebSocket::services())->start()->hostForInternalTesting();
         $runner = Runner::from($app)->withRoutes(RouteGroup::of([]));
 
         self::assertNull($runner->upgrades()->resolve(WebSocket::UPGRADE_TOKEN));

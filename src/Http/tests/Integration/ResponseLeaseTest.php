@@ -104,7 +104,7 @@ final class HttpResponseLeaseTest extends PhalanxTestCase
     #[Test]
     public function dispatchWithoutFdDoesNotAcquireLease(): void
     {
-        $app = $this->startedApplication();
+        $app = $this->testApp()->start()->hostForInternalTesting();
 
         $this->scope->run(static function () use ($app): void {
             $runner = \Phalanx\Http\Runner::from($app)->withRoutes(RouteGroup::of([

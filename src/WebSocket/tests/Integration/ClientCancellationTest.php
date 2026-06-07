@@ -32,8 +32,8 @@ final class ClientCancellationTest extends PhalanxTestCase
         $testApp = $this->testApp([], \Phalanx\WebSocket\WebSocket::services());
 
         $this->scope->run(static function (ExecutionScope $_scope) use ($testApp): void {
-            $testApp->application->startup();
-            $scope = $testApp->application->createScope();
+            $testApp->start();
+            $scope = $testApp->hostForInternalTesting()->createScope();
 
             try {
                 $server = self::bootServer($scope, holdSeconds: 1.0);
@@ -89,8 +89,8 @@ final class ClientCancellationTest extends PhalanxTestCase
         $testApp = $this->testApp([], \Phalanx\WebSocket\WebSocket::services());
 
         $this->scope->run(static function (ExecutionScope $_scope) use ($testApp): void {
-            $testApp->application->startup();
-            $scope = $testApp->application->createScope();
+            $testApp->start();
+            $scope = $testApp->hostForInternalTesting()->createScope();
 
             try {
                 $server = self::bootServer($scope, holdSeconds: 1.0);
@@ -140,8 +140,8 @@ final class ClientCancellationTest extends PhalanxTestCase
         $testApp = $this->testApp([], \Phalanx\WebSocket\WebSocket::services());
 
         $this->scope->run(static function (ExecutionScope $_scope) use ($testApp): void {
-            $testApp->application->startup();
-            $scope = $testApp->application->createScope();
+            $testApp->start();
+            $scope = $testApp->hostForInternalTesting()->createScope();
 
             try {
                 // hangup fixture: 101 + one frame, then immediate close from server side.

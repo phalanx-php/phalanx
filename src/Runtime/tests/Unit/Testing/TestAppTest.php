@@ -31,7 +31,7 @@ final class TestAppTest extends TestCase
         $app = TestApp::boot();
 
         try {
-            self::assertInstanceOf(Application::class, $app->application);
+            self::assertInstanceOf(Application::class, $app->hostForInternalTesting());
             self::assertInstanceOf(FakeRegistry::class, $app->fakes);
         } finally {
             $app->shutdown();
@@ -43,7 +43,7 @@ final class TestAppTest extends TestCase
         $app = TestApp::boot(['argv' => ['phpunit']], new FixtureBundle());
 
         try {
-            self::assertInstanceOf(Application::class, $app->application);
+            self::assertInstanceOf(Application::class, $app->hostForInternalTesting());
         } finally {
             $app->shutdown();
         }

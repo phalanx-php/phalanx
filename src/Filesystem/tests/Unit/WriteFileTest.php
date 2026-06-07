@@ -20,7 +20,7 @@ final class WriteFileTest extends PhalanxTestCase
         $tmpFile = tempnam(sys_get_temp_dir(), 'phalanx_test_');
 
         try {
-            $this->startedApplication()
+            $this->testApp()
                 ->scoped(Task::named(
                     'test.filesystem.write-file',
                     static fn(ExecutionScope $scope): mixed => $scope->execute(new WriteFile($tmpFile, 'test content')),
@@ -38,7 +38,7 @@ final class WriteFileTest extends PhalanxTestCase
         $tmpFile = tempnam(sys_get_temp_dir(), 'phalanx_test_');
 
         try {
-            $this->startedApplication()
+            $this->testApp()
                 ->scoped(Task::named(
                     'test.filesystem.append-file',
                     static function (ExecutionScope $scope) use ($tmpFile): void {
@@ -58,7 +58,7 @@ final class WriteFileTest extends PhalanxTestCase
     {
         $this->expectException(FilesystemException::class);
 
-        $this->startedApplication()
+        $this->testApp()
             ->scoped(Task::named(
                 'test.filesystem.write-file.unwritable',
                 static fn(ExecutionScope $scope): mixed => $scope->execute(new WriteFile('/nonexistent/dir/file.txt', 'data')),

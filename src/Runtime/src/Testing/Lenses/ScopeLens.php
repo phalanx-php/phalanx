@@ -38,7 +38,7 @@ final class ScopeLens implements LensContract
 
     public function liveCount(): int
     {
-        return $this->app->application->supervisor()->liveScopeCount();
+        return $this->app->supervisor()->liveScopeCount();
     }
 
     public function assertDisposed(): self

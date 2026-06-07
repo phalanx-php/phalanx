@@ -40,7 +40,7 @@ final class ServerUpgradeTest extends PhalanxTestCase
         $testApp = $this->testApp([], WebSocket::services());
 
         $this->scope->run(static function (ExecutionScope $_scope) use ($testApp): void {
-            $app = $testApp->application->startup();
+            $app = $testApp->start()->hostForInternalTesting();
 
             $runner = Runner::from($app)->withRoutes(RouteGroup::of([]));
 
@@ -72,7 +72,7 @@ final class ServerUpgradeTest extends PhalanxTestCase
         $testApp = $this->testApp([], WebSocket::services());
 
         $this->scope->run(static function (ExecutionScope $_scope) use ($testApp): void {
-            $app = $testApp->application->startup();
+            $app = $testApp->start()->hostForInternalTesting();
 
             $runner = Runner::from($app)->withRoutes(RouteGroup::of([]));
 
@@ -96,7 +96,7 @@ final class ServerUpgradeTest extends PhalanxTestCase
         $testApp = $this->testApp([], WebSocket::services());
 
         $this->scope->run(static function (ExecutionScope $_scope) use ($testApp): void {
-            $app = $testApp->application->startup();
+            $app = $testApp->start()->hostForInternalTesting();
 
             $runner = Runner::from($app)->withRoutes(RouteGroup::of([]));
             WebSocket::install($runner, $app, WebSocketRouteGroup::of([], new Gateway()));

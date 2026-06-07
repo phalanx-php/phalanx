@@ -16,7 +16,7 @@ final class SeamTest extends PhalanxTestCase
     #[Test]
     public function upgradeRequestWithoutRegistrarReturns426(): void
     {
-        $app = $this->startedApplication();
+        $app = $this->testApp()->start()->hostForInternalTesting();
 
         $this->scope->run(static function (ExecutionScope $_scope) use ($app): void {
             $runner = \Phalanx\Http\Runner::from($app)->withRoutes(RouteGroup::of([]));
@@ -34,7 +34,7 @@ final class SeamTest extends PhalanxTestCase
     #[Test]
     public function plainRequestSkipsUpgradePath(): void
     {
-        $app = $this->startedApplication();
+        $app = $this->testApp()->start()->hostForInternalTesting();
 
         $this->scope->run(static function (ExecutionScope $_scope) use ($app): void {
             $runner = \Phalanx\Http\Runner::from($app)->withRoutes(RouteGroup::of([]));
@@ -48,7 +48,7 @@ final class SeamTest extends PhalanxTestCase
     #[Test]
     public function upgradeHeaderWithoutConnectionUpgradeIsIgnored(): void
     {
-        $app = $this->startedApplication();
+        $app = $this->testApp()->start()->hostForInternalTesting();
 
         $this->scope->run(static function (ExecutionScope $_scope) use ($app): void {
             $runner = \Phalanx\Http\Runner::from($app)->withRoutes(RouteGroup::of([]));
@@ -65,7 +65,7 @@ final class SeamTest extends PhalanxTestCase
     #[Test]
     public function registeredTokenAppearsInRegistry(): void
     {
-        $app = $this->startedApplication();
+        $app = $this->testApp()->start()->hostForInternalTesting();
 
         $this->scope->run(static function (ExecutionScope $_scope) use ($app): void {
             $runner = \Phalanx\Http\Runner::from($app)->withRoutes(RouteGroup::of([]));

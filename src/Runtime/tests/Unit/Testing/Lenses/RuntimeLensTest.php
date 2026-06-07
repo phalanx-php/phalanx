@@ -54,7 +54,7 @@ final class RuntimeLensTest extends TestCase
         try {
             $reportedHealthy = false;
 
-            $app->application->scoped(Task::named(
+            $app->scoped(Task::named(
                 'demo.runtime.health',
                 static function (ExecutionScope $_scope) use ($app, &$reportedHealthy): void {
                     $app->runtime->assertHealthy();
@@ -84,7 +84,7 @@ final class RuntimeLensTest extends TestCase
         $app = TestApp::boot();
 
         try {
-            $resources = $app->application->runtime()->memory->resources;
+            $resources = $app->runtime()->memory->resources;
             $handle = $resources->open(RuntimeResourceSid::Test, id: 'runtime-lens-resource');
             $active = $resources->activate($handle);
             $resources->annotate($active, RuntimeAnnotationSid::RunState, 'running');
@@ -117,7 +117,7 @@ final class RuntimeLensTest extends TestCase
         $app = TestApp::boot();
 
         try {
-            $resources = $app->application->runtime()->memory->resources;
+            $resources = $app->runtime()->memory->resources;
             $handle = $resources->activate($resources->open(RuntimeResourceSid::Test, id: 'runtime-lens-live'));
 
             try {
@@ -160,8 +160,8 @@ final class RuntimeLensTest extends TestCase
         $app = TestApp::boot();
 
         try {
-            $scope = $app->application->createScope();
-            $supervisor = $app->application->supervisor();
+            $scope = $app->hostForInternalTesting()->createScope();
+            $supervisor = $app->supervisor();
             $task = Task::named('runtime.lens.borrowed', static fn(ExecutionScope $_scope): null => null);
             $run = $supervisor->start($scope, $task, DispatchMode::Inline);
 

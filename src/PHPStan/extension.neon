@@ -11,6 +11,7 @@ parameters:
     phalanxTestingUseTestScopeExemptPaths: []
     phalanxTestingNoRawSleepExemptPaths: []
     phalanxTestingLensRequiresBundleExemptPaths: []
+    phalanxTestingDirectTestAppApplicationExemptPaths: []
     phalanxRuntimeNativeLensClasses:
         - Phalanx\Testing\Lenses\ConfigLens
         - Phalanx\Testing\Lenses\LedgerLens
@@ -30,6 +31,7 @@ parametersSchema:
     phalanxTestingUseTestScopeExemptPaths: listOf(string())
     phalanxTestingNoRawSleepExemptPaths: listOf(string())
     phalanxTestingLensRequiresBundleExemptPaths: listOf(string())
+    phalanxTestingDirectTestAppApplicationExemptPaths: listOf(string())
     phalanxRuntimeNativeLensClasses: listOf(string())
 
 services:
@@ -48,6 +50,7 @@ services:
             - %phalanxTestingUseTestScopeExemptPaths%
             - %phalanxTestingNoRawSleepExemptPaths%
             - %phalanxTestingLensRequiresBundleExemptPaths%
+            - %phalanxTestingDirectTestAppApplicationExemptPaths%
 
     -
         class: Phalanx\PHPStan\Rules\Migration\RootScopeAliasRule
@@ -181,6 +184,13 @@ services:
 
     -
         class: Phalanx\PHPStan\Rules\Testing\UseTestAppRule
+        arguments:
+            - @Phalanx\PHPStan\Support\TestingPathPolicy
+        tags:
+            - phpstan.rules.rule
+
+    -
+        class: Phalanx\PHPStan\Rules\Testing\DirectTestAppApplicationRule
         arguments:
             - @Phalanx\PHPStan\Support\TestingPathPolicy
         tags:

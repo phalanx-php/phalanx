@@ -104,12 +104,31 @@ parameters:
     phalanxCoroutineInternalPaths:
         - src/Runtime/src/Scope/ExecutionLifecycleScope.php
         - benchmarks/kernel/cases/ContextSwitchCases.php
+    phalanxTestingPaths:
+        - tests/Integration
+        - tests/Feature
+        - tests/Acceptance
+        - tests/Smoke
+        - tests/Resilience
+        - src/Agents/tests/Unit
+        - src/AiProviders/tests/Unit
+        - src/Console/tests/Unit
+        - src/Filesystem/tests/Unit
+        - src/Http/tests/Unit
+        - src/HttpClient/tests/Unit
+        - src/SurrealDb/tests/Unit
+        - src/Tui/tests/Unit
+        - src/WebSocket/tests/Unit
+        - src/Worker/tests/Unit
     phalanxTestingUseTestAppExemptPaths:
         - src/Runtime/tests/Resilience/CancellationPropagationTimingTest.php
         - src/Runtime/tests/Resilience/LeaseLedgerConcurrencyTest.php
         - src/Runtime/tests/Resilience/LedgerChurnTest.php
         - src/Runtime/tests/Resilience/SiblingCancelIsolationStressTest.php
         - src/Runtime/tests/Smoke/WorkingRuntimeSmokeTest.php
+        - src/Tui/tests/Unit/Apps/BuilderTest.php
+        - src/Tui/tests/Unit/Runtime/Apps/BuilderTest.php
+    phalanxTestingDirectTestAppApplicationExemptPaths: []
     phalanxTestingUseTestScopeExemptPaths:
         - src/Runtime/tests/Resilience/CancellationPropagationTimingTest.php
         - src/Runtime/tests/Resilience/LeaseLedgerConcurrencyTest.php
@@ -120,9 +139,12 @@ parameters:
         - src/WebSocket/tests/Integration/ClientConcurrentSendTest.php
         - src/WebSocket/tests/Integration/ClientHandshakeTest.php
         - src/Worker/tests/Integration/InWorkerTest.php
+        - src/Http/tests/Unit/Response/HtmlErrorResponseRendererTest.php
+        - src/Http/tests/Unit/Response/IgnitionErrorResponseRendererTest.php
     phalanxTestingNoRawSleepExemptPaths:
         - src/Agents/tests/Integration/ChannelBackedLoopTest.php
         - src/AiProviders/tests/Acceptance/V0AcceptanceGateTest.php
+        - src/AiProviders/tests/Unit/Transport/Sync/TransportTest.php
         - src/Console/tests/Integration/Application/ApplicationTest.php
         - src/Console/tests/Integration/Runtime/Identity/SignalTrapTest.php
         - src/Network/tests/Integration/UdpEchoTest.php

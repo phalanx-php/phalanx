@@ -71,7 +71,7 @@ final class HtmlErrorResponseRendererTest extends PhalanxTestCase
      */
     private function createExecutionContextWithRequestResource(): array
     {
-        $app = $this->startedApplication();
+        $app = $this->testApp()->start()->hostForInternalTesting();
         $inner = $app->createScope();
         self::assertInstanceOf(ExecutionLifecycleScope::class, $inner);
 

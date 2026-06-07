@@ -203,7 +203,7 @@ final class V0AcceptanceGateTest extends PhalanxTestCase
         }
 
         try {
-            $app = $this->testApp([], \Phalanx\HttpClient\Client::services())->application;
+            $app = $this->testApp([], \Phalanx\HttpClient\Client::services());
 
             $happyBody = '';
             $app->scoped(static function (\Phalanx\Scope\ExecutionScope $scope) use ($successPort, &$happyBody): void {

@@ -28,7 +28,7 @@ final class HandlerDispatchTest extends PhalanxTestCase
             'task-b' => Handler::of(HandlerB::class),
         ]);
 
-        $result = $this->testApp->application->scoped(static function (ExecutionScope $scope) use ($group): mixed {
+        $result = $this->testApp->scoped(static function (ExecutionScope $scope) use ($group): mixed {
             return $group->dispatch($scope, 'task-b');
         });
 
@@ -45,7 +45,7 @@ final class HandlerDispatchTest extends PhalanxTestCase
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Handler not found: nonexistent');
 
-        $this->testApp->application->scoped(static function (ExecutionScope $scope) use ($group): mixed {
+        $this->testApp->scoped(static function (ExecutionScope $scope) use ($group): mixed {
             return $group->dispatch($scope, 'nonexistent');
         });
     }
@@ -70,7 +70,7 @@ final class HandlerDispatchTest extends PhalanxTestCase
             'task-b' => Handler::of(HandlerB::class),
         ])->withMatcher($matcher);
 
-        $result = $this->testApp->application->scoped(static function (ExecutionScope $scope) use ($group): mixed {
+        $result = $this->testApp->scoped(static function (ExecutionScope $scope) use ($group): mixed {
             return $scope->execute($group);
         });
 
@@ -87,7 +87,7 @@ final class HandlerDispatchTest extends PhalanxTestCase
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('no matcher could handle this scope');
 
-        $this->testApp->application->scoped(static function (ExecutionScope $scope) use ($group): mixed {
+        $this->testApp->scoped(static function (ExecutionScope $scope) use ($group): mixed {
             return $scope->execute($group);
         });
     }
@@ -99,7 +99,7 @@ final class HandlerDispatchTest extends PhalanxTestCase
             'task-a' => Handler::of(HandlerA::class),
         ])->wrap(PrefixingMiddleware::class);
 
-        $result = $this->testApp->application->scoped(static function (ExecutionScope $scope) use ($group): mixed {
+        $result = $this->testApp->scoped(static function (ExecutionScope $scope) use ($group): mixed {
             return $group->dispatch($scope, 'task-a');
         });
 

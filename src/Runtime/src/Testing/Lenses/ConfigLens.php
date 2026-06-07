@@ -38,7 +38,7 @@ final class ConfigLens implements LensContract
     /** @param class-string<Config> $type */
     public function hydrate(string $type): ConfigExpectation
     {
-        $config = $this->app->application->scoped(Task::named(
+        $config = $this->app->scoped(Task::named(
             'testing.config.hydrate',
             static function (ExecutionScope $scope) use ($type): Config {
                 return $scope->service(ConfigFactory::class)->hydrate($type);
@@ -61,7 +61,7 @@ final class ConfigLens implements LensContract
      */
     public function validateWith(ValidationContext $context, string ...$roots): ConfigValidationExpectation
     {
-        $result = $this->app->application->scoped(Task::named(
+        $result = $this->app->scoped(Task::named(
             'testing.config.validate',
             static function (ExecutionScope $scope) use ($context, $roots): ValidationResult {
                 $resolvedRoots = array_values($roots);
@@ -79,7 +79,7 @@ final class ConfigLens implements LensContract
 
     public function catalog(): ConfigCatalogExpectation
     {
-        $catalog = $this->app->application->scoped(Task::named(
+        $catalog = $this->app->scoped(Task::named(
             'testing.config.catalog',
             static fn(ExecutionScope $scope): ConfigCatalog => $scope->service(ConfigCatalog::class),
         ));

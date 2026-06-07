@@ -24,7 +24,7 @@ final class HasMiddlewareDispatchTest extends PhalanxTestCase
             'h' => Handler::of(MiddlewareDeclaringHandler::class),
         ])->wrap(PrefixingMiddleware::class);
 
-        $result = $this->testApp->application->scoped(static function (ExecutionScope $scope) use ($group): mixed {
+        $result = $this->testApp->scoped(static function (ExecutionScope $scope) use ($group): mixed {
             return $group->dispatch($scope, 'h');
         });
 
@@ -41,7 +41,7 @@ final class HasMiddlewareDispatchTest extends PhalanxTestCase
             'h' => Handler::of(MiddlewareDeclaringHandler::class),
         ]);
 
-        $result = $this->testApp->application->scoped(static function (ExecutionScope $scope) use ($group): mixed {
+        $result = $this->testApp->scoped(static function (ExecutionScope $scope) use ($group): mixed {
             return $group->dispatch($scope, 'h');
         });
 

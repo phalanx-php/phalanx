@@ -41,6 +41,20 @@ final class UseTestScopeRuleTest extends RuleTestCase
         );
     }
 
+    public function testDirectTestAppApplicationExemptionDoesNotHideScopeRule(): void
+    {
+        $this->analyse(
+            [__DIR__ . '/../Fixtures/TestingPaths/tests/Acceptance/DirectTestAppApplicationExemptionStillReports.php'],
+            [
+                [
+                    'High-level Phalanx tests should use $this->scope->run(...), $this->testApp(...), '
+                    . 'or a package lens instead of direct createScope(); direct scopes bypass managed cleanup expectations.',
+                    15,
+                ],
+            ],
+        );
+    }
+
     protected function getRule(): Rule
     {
         return new UseTestScopeRule(new TestingPathPolicy());

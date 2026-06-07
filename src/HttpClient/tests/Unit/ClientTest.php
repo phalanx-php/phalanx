@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\HttpClient\Tests\Unit;
 
-use Phalanx\Application;
 use Phalanx\HttpClient\Client as HttpClient;
 use Phalanx\HttpClient\Config;
 use Phalanx\Scope\ExecutionScope;
@@ -21,7 +20,7 @@ final class ClientTest extends PhalanxTestCase
         $config = new Config(connectTimeout: 1.25, userAgent: 'ClientTest');
         $bundle = HttpClient::services($config);
 
-        $result = $this->testApp(bundles: $bundle)->application->scoped(
+        $result = $this->testApp(bundles: $bundle)->scoped(
             Task::named(
                 'test.httpclient.service-bundle',
                 static function (ExecutionScope $scope): array {
@@ -51,8 +50,6 @@ final class ClientTest extends PhalanxTestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('already registered');
 
-        Application::starting()
-            ->providers(HttpClient::services(), HttpClient::services())
-            ->compile();
+        $this->testApp([], HttpClient::services(), HttpClient::services());
     }
 }

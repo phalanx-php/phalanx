@@ -28,7 +28,7 @@ final class RuntimeTest extends TestCase
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Console runtime expects an Application');
 
-        $runtime->getRunner($this->application());
+        $runtime->getRunner($this->testApp()->hostForInternalTesting());
     }
 
     protected function setUp(): void

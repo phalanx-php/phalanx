@@ -255,7 +255,7 @@ final class InWorkerTest extends PhalanxTestCase
             );
 
         $testApp = $this->testApp([], $bundle, Worker::services(new ParallelConfig(agents: 1)));
-        $app = $testApp->application->startup();
+        $app = $testApp->start()->hostForInternalTesting();
 
         $this->scope->run(static function (ExecutionScope $_scope) use ($app): void {
             $scope = $app->createScope();
@@ -318,10 +318,7 @@ final class InWorkerTest extends PhalanxTestCase
 
     private function buildApp(ParallelConfig $config): Application
     {
-        $app = $this->buildTestApp($config)->application;
-        $app->startup();
-
-        return $app;
+        return $this->buildTestApp($config)->start()->hostForInternalTesting();
     }
 
     private function buildTestApp(ParallelConfig $config): TestApp

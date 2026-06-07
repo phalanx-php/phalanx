@@ -19,7 +19,7 @@ final class HandlerResolverTest extends PhalanxTestCase
     #[Test]
     public function resolves_handler_with_no_constructor(): void
     {
-        $instance = $this->testApp->application->scoped(static function (ExecutionScope $scope): object {
+        $instance = $this->testApp->scoped(static function (ExecutionScope $scope): object {
             $resolver = $scope->service(HandlerResolver::class);
 
             return $resolver->resolve($scope, HandlerA::class);
@@ -34,7 +34,7 @@ final class HandlerResolverTest extends PhalanxTestCase
         $this->expectException(HandlerDependencyNotResolvable::class);
         $this->expectExceptionMessage('scalar/builtin parameters are not allowed');
 
-        $this->testApp->application->scoped(static function (ExecutionScope $scope): object {
+        $this->testApp->scoped(static function (ExecutionScope $scope): object {
             $resolver = $scope->service(HandlerResolver::class);
 
             return $resolver->resolve($scope, ScalarParamHandler::class);
@@ -44,7 +44,7 @@ final class HandlerResolverTest extends PhalanxTestCase
     #[Test]
     public function nullable_unresolved_dependency_falls_back_to_null(): void
     {
-        $instance = $this->testApp->application->scoped(static function (ExecutionScope $scope): object {
+        $instance = $this->testApp->scoped(static function (ExecutionScope $scope): object {
             $resolver = $scope->service(HandlerResolver::class);
 
             return $resolver->resolve($scope, NullableDepHandler::class);

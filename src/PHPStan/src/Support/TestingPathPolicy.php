@@ -23,6 +23,7 @@ final class TestingPathPolicy
      * @param list<string> $useTestScopeExemptPaths
      * @param list<string> $noRawSleepExemptPaths
      * @param list<string> $lensRequiresBundleExemptPaths
+     * @param list<string> $directTestAppApplicationExemptPaths
      */
     public function __construct(
         array $paths = [],
@@ -30,6 +31,7 @@ final class TestingPathPolicy
         private readonly array $useTestScopeExemptPaths = [],
         private readonly array $noRawSleepExemptPaths = [],
         private readonly array $lensRequiresBundleExemptPaths = [],
+        private readonly array $directTestAppApplicationExemptPaths = [],
     ) {
         $this->paths = $paths === [] ? self::DEFAULT_PATHS : $paths;
     }
@@ -90,6 +92,7 @@ final class TestingPathPolicy
             'phalanx.testing.useTestScope' => $this->useTestScopeExemptPaths,
             'phalanx.testing.noRawSleep' => $this->noRawSleepExemptPaths,
             'phalanx.testing.lensRequiresBundle' => $this->lensRequiresBundleExemptPaths,
+            'phalanx.testing.directTestAppApplication' => $this->directTestAppApplicationExemptPaths,
             default => [],
         };
     }

@@ -17,7 +17,7 @@ final class FilesystemTest extends PhalanxTestCase
     #[Test]
     public function servicesRegisterFilesAndPool(): void
     {
-        $result = $this->startedApplication(bundles: Filesystem::services())
+        $result = $this->testApp(bundles: Filesystem::services())
             ->scoped(Task::named(
                 'test.filesystem.services',
                 static function (ExecutionScope $scope): array {

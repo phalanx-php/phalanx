@@ -15,7 +15,7 @@ final class HttpRunnerActiveRequestsTest extends PhalanxTestCase
     #[Test]
     public function workerScopeReturnsLocalRegistrySize(): void
     {
-        $app = $this->startedApplication();
+        $app = $this->testApp()->start()->hostForInternalTesting();
         $runner = \Phalanx\Http\Runner::from($app)->withRoutes(RouteGroup::of([]));
 
         self::assertSame(0, $runner->activeRequests());
@@ -27,7 +27,7 @@ final class HttpRunnerActiveRequestsTest extends PhalanxTestCase
     #[Test]
     public function serverScopeQueriesInjectedServerStats(): void
     {
-        $app = $this->startedApplication();
+        $app = $this->testApp()->start()->hostForInternalTesting();
         $runner = \Phalanx\Http\Runner::from($app)
             ->withRoutes(RouteGroup::of([]))
             ->withServerStats(ServerStats::fromArray([
@@ -44,7 +44,7 @@ final class HttpRunnerActiveRequestsTest extends PhalanxTestCase
     #[Test]
     public function serverScopeFallsBackToWorkerCountWhenStatsAbsent(): void
     {
-        $app = $this->startedApplication();
+        $app = $this->testApp()->start()->hostForInternalTesting();
         $runner = \Phalanx\Http\Runner::from($app)->withRoutes(RouteGroup::of([]));
 
         self::assertSame(0, $runner->activeRequests(RegistryScope::Server));

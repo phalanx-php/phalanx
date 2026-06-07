@@ -93,7 +93,7 @@ final class AppRenderDiagnosticsTest extends PhalanxTestCase
             $app,
         ));
 
-        $testApp->application->scoped(static function (ExecutionScope $scope) use ($app): void {
+        $testApp->scoped(static function (ExecutionScope $scope) use ($app): void {
             $serviceStore = $scope->service(StoreInstanceProbeStore::class);
             $app->start($scope);
 

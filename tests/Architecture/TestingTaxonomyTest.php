@@ -15,52 +15,14 @@ final class TestingTaxonomyTest extends TestCase
     /** @var list<string> */
     private const array TESTING_EXCEPTION_PARAMETERS = [
         'phalanxTestingUseTestAppExemptPaths',
+        'phalanxTestingDirectTestAppApplicationExemptPaths',
         'phalanxTestingUseTestScopeExemptPaths',
         'phalanxTestingNoRawSleepExemptPaths',
         'phalanxTestingLensRequiresBundleExemptPaths',
     ];
 
     /** @var list<string> */
-    private const array OSR_182_TESTAPP_REACH_THROUGH_FILES = [
-        'src/AiProviders/tests/Acceptance/V0AcceptanceGateTest.php',
-        'src/Console/tests/Integration/Application/RuntimeTest.php',
-        'src/Console/tests/Integration/Command/CommandDispatchTest.php',
-        'src/Filesystem/tests/Unit/FilePoolTest.php',
-        'src/Filesystem/tests/Unit/FilesystemTest.php',
-        'src/Filesystem/tests/Unit/ReadFileTest.php',
-        'src/Filesystem/tests/Unit/WriteFileTest.php',
-        'src/Http/tests/Integration/Auth/AuthenticateTest.php',
-        'src/Http/tests/Integration/GracefulDrainTest.php',
-        'src/Http/tests/Integration/ResponseLeaseTest.php',
-        'src/Http/tests/Integration/RunnerTest.php',
-        'src/Http/tests/Integration/Upgrade/SeamTest.php',
-        'src/Http/tests/Support/TestCase.php',
-        'src/Http/tests/Unit/Response/HtmlErrorResponseRendererTest.php',
-        'src/Http/tests/Unit/Response/IgnitionErrorResponseRendererTest.php',
-        'src/Http/tests/Unit/RunnerActiveRequestsTest.php',
-        'src/Http/tests/Unit/Validator/RequireAbilityTest.php',
-        'src/Http/tests/Unit/Validator/RequireQueryParamTest.php',
-        'src/HttpClient/tests/Unit/ClientTest.php',
-        'src/Runtime/tests/Integration/Boot/CannotBootRenderingTest.php',
-        'src/Runtime/tests/Integration/Handler/HandlerDispatchTest.php',
-        'src/Runtime/tests/Integration/Handler/HandlerResolverTest.php',
-        'src/Runtime/tests/Integration/Handler/HasMiddlewareDispatchTest.php',
-        'src/Runtime/tests/Unit/Scope/PeriodicTest.php',
-        'src/Runtime/tests/Unit/Testing/Lenses/LedgerLensTest.php',
-        'src/Runtime/tests/Unit/Testing/Lenses/RuntimeLensTest.php',
-        'src/Runtime/tests/Unit/Testing/Lenses/ScopeLensTest.php',
-        'src/Runtime/tests/Unit/Testing/PhalanxTestCaseTestAppTest.php',
-        'src/Runtime/tests/Unit/Testing/TestAppTest.php',
-        'src/SurrealDb/tests/Unit/BundleTest.php',
-        'src/Tui/tests/Unit/Apps/AppInputTest.php',
-        'src/Tui/tests/Unit/Apps/AppRenderDiagnosticsTest.php',
-        'src/WebSocket/tests/Integration/ClientCancellationTest.php',
-        'src/WebSocket/tests/Integration/ClientConcurrentSendTest.php',
-        'src/WebSocket/tests/Integration/ClientHandshakeTest.php',
-        'src/WebSocket/tests/Integration/ServerUpgradeTest.php',
-        'src/WebSocket/tests/Unit/WebSocketTest.php',
-        'src/Worker/tests/Integration/InWorkerTest.php',
-    ];
+    private const array OSR_182_TESTAPP_REACH_THROUGH_FILES = [];
 
     #[Test]
     public function every_test_file_has_one_taxonomy_bucket(): void

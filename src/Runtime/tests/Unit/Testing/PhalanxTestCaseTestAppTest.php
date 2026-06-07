@@ -16,7 +16,7 @@ final class PhalanxTestCaseTestAppTest extends PhalanxTestCase
         $second = $this->testApp();
 
         self::assertNotSame($first, $second);
-        self::assertNotSame($first->application, $second->application);
+        self::assertNotSame($first->hostForInternalTesting(), $second->hostForInternalTesting());
     }
 
     public function testTestAppAcceptsBundlesAndContext(): void

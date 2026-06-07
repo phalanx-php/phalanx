@@ -89,7 +89,7 @@ final class CannotBootRenderingTest extends PhalanxTestCase
     {
         $app = $this->testApp(['CRITICAL_KEY' => 'some-value'], new CriticalKeyBundle());
 
-        self::assertInstanceOf(\Phalanx\Application::class, $app->application);
+        self::assertInstanceOf(\Phalanx\Application::class, $app->hostForInternalTesting());
     }
 
 }

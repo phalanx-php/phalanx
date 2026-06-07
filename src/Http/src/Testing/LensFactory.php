@@ -12,6 +12,6 @@ final class LensFactory implements LensFactoryContract
 {
     public function create(TestApp $app): LensContract
     {
-        return new \Phalanx\Http\Testing\Lens($app, $app->primaryApp(\Phalanx\Http\Application::class));
+        return new \Phalanx\Http\Testing\Lens($app, $app->primary(\Phalanx\Http\Application::class));
     }
 }

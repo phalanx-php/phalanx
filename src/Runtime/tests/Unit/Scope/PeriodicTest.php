@@ -71,7 +71,7 @@ final class PeriodicTest extends PhalanxTestCase
 
     public function testScopeDisposalCancelsThePeriodic(): void
     {
-        $innerApp = $this->startedApplication();
+        $innerApp = $this->testApp()->start()->hostForInternalTesting();
 
         $this->scope->run(static function (ExecutionScope $_scope) use ($innerApp): void {
             $count = 0;

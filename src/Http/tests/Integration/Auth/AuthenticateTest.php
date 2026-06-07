@@ -89,7 +89,7 @@ final class AuthenticateTest extends PhalanxTestCase
     private function withRequestContext(Closure $test): mixed
     {
         $bundle = TestServiceBundle::create();
-        $app = $this->testApp([], $bundle)->application;
+        $app = $this->testApp([], $bundle);
         $request = new ServerRequest('GET', '/test', ['Authorization' => 'Bearer tok_abc']);
 
         return $app->scoped(static function (ExecutionScope $inner) use ($request, $test): mixed {

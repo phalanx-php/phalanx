@@ -28,7 +28,7 @@ final class GracefulDrainTest extends PhalanxTestCase
     #[Test]
     public function inflightRequestCompletesWithinDrainTimeout(): void
     {
-        $application = $this->startedApplication();
+        $application = $this->testApp()->start()->hostForInternalTesting();
 
         $this->scope->run(static function (ExecutionScope $scope) use ($application): void {
             DrainCompletingHandler::$entered = new Channel();
@@ -59,7 +59,7 @@ final class GracefulDrainTest extends PhalanxTestCase
     #[Test]
     public function drainTimeoutCancelsStuckRequest(): void
     {
-        $application = $this->startedApplication();
+        $application = $this->testApp()->start()->hostForInternalTesting();
 
         $this->scope->run(static function (ExecutionScope $scope) use ($application): void {
             DrainStuckHandler::$cancelled = false;
@@ -115,7 +115,7 @@ final class GracefulDrainTest extends PhalanxTestCase
     #[Test]
     public function newRequestsAreRejectedWhileDraining(): void
     {
-        $application = $this->startedApplication();
+        $application = $this->testApp()->start()->hostForInternalTesting();
 
         $this->scope->run(static function (ExecutionScope $scope) use ($application): void {
             DrainCompletingHandler::$entered = new Channel();
@@ -164,7 +164,7 @@ final class GracefulDrainTest extends PhalanxTestCase
             }
         };
 
-        $application = $this->startedApplication([], $bundle);
+        $application = $this->testApp([], $bundle)->start()->hostForInternalTesting();
 
         DrainEventTrackingHandler::$entered = new Channel();
         DrainEventTrackingHandler::$events = [];

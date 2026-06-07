@@ -4,9 +4,15 @@ declare(strict_types=1);
 
 namespace Phalanx\Testing;
 
+use Closure;
 use Phalanx\Application;
+use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Cancellation\Cancelled;
+use Phalanx\Runtime\RuntimeContext;
 use Phalanx\Service\ServiceBundle;
+use Phalanx\Supervisor\Supervisor;
+use Phalanx\Task\Executable;
+use Phalanx\Task\Scopeable;
 use Phalanx\Testing\Attribute\Lens as LensAttribute;
 use Phalanx\Testing\Fakes\FakeRegistry;
 use Phalanx\Testing\Generated\TestAppAccessors;
@@ -36,9 +42,9 @@ use Throwable;
  * Hard-fail discipline: accessing $app->http when no Http bundle was passed
  * raises LensNotAvailable with a message naming the missing bundle.
  *
- * Lens authors must use $app->application->scoped(...) for in-scope work —
- * never $app->application->run(...), which shuts the host down at the end of
- * the call.
+ * Lens authors drive in-scope work through TestApp::scoped(). Ordinary tests
+ * should use TestApp methods and package lenses rather than reaching through
+ * to the underlying Application.
  */
 final class TestApp
 {
@@ -73,7 +79,7 @@ final class TestApp
 
     private bool $shutdownComplete = false;
 
-    private function __construct(private(set) Application $application)
+    private function __construct(private Application $application)
     {
         $this->fakes = new FakeRegistry();
     }
@@ -102,7 +108,7 @@ final class TestApp
      * Register an application built outside of TestApp::boot — typically a
      * package-specific application like HttpApplication or ConsoleApplication that
      * already wraps an underlying AppHost. Lenses that depend on the
-     * package-specific surface resolve it via primaryApp().
+     * package-specific surface resolve it via primary().
      *
      * @template T of object
      * @param T $primary
@@ -122,7 +128,7 @@ final class TestApp
      * @param class-string<T> $class
      * @return T
      */
-    public function primaryApp(string $class): object
+    public function primary(string $class): object
     {
         if (!isset($this->primaryApps[$class])) {
             throw new RuntimeException(
@@ -133,6 +139,41 @@ final class TestApp
 
         /** @var T */
         return $this->primaryApps[$class];
+    }
+
+    /**
+     * Execute work inside the managed Application without exposing the host
+     * object to ordinary tests.
+     */
+    public function scoped(Scopeable|Executable|Closure $task, ?CancellationToken $token = null): mixed
+    {
+        return $this->application->scoped($task, $token);
+    }
+
+    public function start(): self
+    {
+        $this->application->startup();
+
+        return $this;
+    }
+
+    public function runtime(): RuntimeContext
+    {
+        return $this->application->runtime();
+    }
+
+    public function supervisor(): Supervisor
+    {
+        return $this->application->supervisor();
+    }
+
+    /**
+     * Explicit escape hatch for tests that prove TestApp or Runtime internals.
+     * Ordinary tests use scoped(), runtime(), supervisor(), and lenses.
+     */
+    public function hostForInternalTesting(): Application
+    {
+        return $this->application;
     }
 
     /**
@@ -155,8 +196,7 @@ final class TestApp
      * resolution is unaffected — fakes only intercept direct lens access.
      *
      * For non-fake bundle-bound services, lenses must drive an active scope
-     * via $app->application->scoped(...) — never run(...), which tears the
-     * application down at the end of the call.
+     * through TestApp::scoped().
      *
      * @template T of object
      * @param class-string<T> $service
@@ -173,7 +213,7 @@ final class TestApp
         throw new RuntimeException(
             "TestApp::service({$service}) currently resolves only registered fakes. "
             . 'Lenses requiring bundle-bound services must drive a scope via '
-            . '$app->application->scoped(...).',
+            . 'TestApp::scoped(...).',
         );
     }
 

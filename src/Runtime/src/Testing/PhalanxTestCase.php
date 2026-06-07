@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Phalanx\Testing;
 
 use Closure;
-use Phalanx\Application;
 use Phalanx\Service\ServiceBundle;
 use PHPUnit\Framework\Attributes\After;
 use PHPUnit\Framework\TestCase;
@@ -35,18 +34,6 @@ abstract class PhalanxTestCase extends TestCase
         $this->testApps[] = $app;
 
         return $app;
-    }
-
-    /** @param array<string, mixed> $context */
-    protected function application(array $context = [], ServiceBundle ...$bundles): Application
-    {
-        return $this->testApp($context, ...$bundles)->application;
-    }
-
-    /** @param array<string, mixed> $context */
-    protected function startedApplication(array $context = [], ServiceBundle ...$bundles): Application
-    {
-        return $this->application($context, ...$bundles)->startup();
     }
 
     #[After]

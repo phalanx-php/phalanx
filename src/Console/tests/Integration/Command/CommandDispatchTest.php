@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Console\Tests\Integration\Command;
 
-use Phalanx\Application;
 use Phalanx\Console\Command\CommandConfig;
 use Phalanx\Console\Command\CommandGroup;
 use Phalanx\Console\Command\DescribesCommand;
@@ -14,11 +13,12 @@ use Phalanx\Console\Tests\Fixtures\Commands\NoopCommand;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\Scope;
 use Phalanx\Task\Scopeable;
+use Phalanx\Testing\TestApp;
 use PHPUnit\Framework\Attributes\Test;
 
 final class CommandDispatchTest extends TestCase
 {
-    private Application $app;
+    private TestApp $app;
 
     #[Test]
     public function dispatches_command_by_direct_key(): void
@@ -84,7 +84,7 @@ final class CommandDispatchTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->app = $this->application();
+        $this->app = $this->testApp();
     }
 }
 

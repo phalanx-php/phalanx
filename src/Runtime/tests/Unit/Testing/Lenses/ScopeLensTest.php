@@ -41,7 +41,7 @@ final class ScopeLensTest extends TestCase
         try {
             $observed = null;
 
-            $app->application->scoped(Task::named(
+            $app->scoped(Task::named(
                 'demo.scope.observe',
                 static function (ExecutionScope $_scope) use ($app, &$observed): void {
                     $observed = $app->scope->current();
@@ -71,7 +71,7 @@ final class ScopeLensTest extends TestCase
 
         try {
             self::assertSame(
-                $app->application->supervisor()->liveScopeCount(),
+                $app->supervisor()->liveScopeCount(),
                 $app->scope->liveCount(),
             );
         } finally {

@@ -44,7 +44,7 @@ final class RuntimeLens implements LensContract
     /**
      * Assert every doctor check is green. Only meaningful inside an active
      * coroutine — runtime hook state is not engaged outside of scoped runs,
-     * so this method should be called from within $app->application->scoped(...)
+     * so this method should be called from within TestApp::scoped(...)
      * for it to reflect production health. For post-run teardown checks,
      * prefer assertResourcesClean().
      */
@@ -75,7 +75,7 @@ final class RuntimeLens implements LensContract
      */
     public function assertResourcesClean(): self
     {
-        $memory = $this->app->application->runtime()->memory;
+        $memory = $this->app->runtime()->memory;
         $live = $memory->resources->liveCount();
 
         Assert::assertSame(
@@ -109,7 +109,7 @@ final class RuntimeLens implements LensContract
 
     public function resource(string $id): ?ManagedResource
     {
-        return $this->app->application->runtime()->memory->resources->get($id);
+        return $this->app->runtime()->memory->resources->get($id);
     }
 
     /**
@@ -117,7 +117,7 @@ final class RuntimeLens implements LensContract
      */
     public function resources(?RuntimeResourceId $type = null): array
     {
-        return $this->app->application->runtime()->memory->resources->all($type);
+        return $this->app->runtime()->memory->resources->all($type);
     }
 
     public function resourceCount(?RuntimeResourceId $type = null): int
@@ -127,12 +127,12 @@ final class RuntimeLens implements LensContract
 
     public function liveResourceCount(?RuntimeResourceId $type = null): int
     {
-        return $this->app->application->runtime()->memory->resources->liveCount($type);
+        return $this->app->runtime()->memory->resources->liveCount($type);
     }
 
     public function liveTaskCount(): int
     {
-        return $this->app->application->supervisor()->liveCount();
+        return $this->app->supervisor()->liveCount();
     }
 
     public function resourceAnnotation(
@@ -140,7 +140,7 @@ final class RuntimeLens implements LensContract
         RuntimeAnnotationId $key,
         string $default = '',
     ): string {
-        return $this->app->application->runtime()->memory->resources->annotation($resourceId, $key, $default);
+        return $this->app->runtime()->memory->resources->annotation($resourceId, $key, $default);
     }
 
     public function assertNoLiveResources(?RuntimeResourceId $type = null): self
@@ -208,7 +208,7 @@ final class RuntimeLens implements LensContract
 
     public function poolStats(): SupervisorPoolStats
     {
-        return $this->app->application->supervisor()->poolStats();
+        return $this->app->supervisor()->poolStats();
     }
 
     public function assertPoolsClean(): self
@@ -261,9 +261,9 @@ final class RuntimeLens implements LensContract
     private function doctor(): EnvironmentDoctor
     {
         return new EnvironmentDoctor(
-            ledger: $this->app->application->supervisor()->ledger,
-            memory: $this->app->application->runtime()->memory,
-            supervisor: $this->app->application->supervisor(),
+            ledger: $this->app->supervisor()->ledger,
+            memory: $this->app->runtime()->memory,
+            supervisor: $this->app->supervisor(),
         );
     }
 }

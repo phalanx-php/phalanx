@@ -44,7 +44,7 @@ final class LedgerLensTest extends TestCase
         $app = TestApp::boot();
 
         try {
-            $app->application->scoped(Task::named(
+            $app->scoped(Task::named(
                 'demo.ledger.completed',
                 static fn(ExecutionScope $_scope): int => 1,
             ));
@@ -62,7 +62,7 @@ final class LedgerLensTest extends TestCase
         try {
             $observed = '';
 
-            $app->application->scoped(Task::named(
+            $app->scoped(Task::named(
                 'demo.ledger.snapshot.parent',
                 static function (ExecutionScope $_scope) use ($app, &$observed): void {
                     $observed = $app->ledger->tree();

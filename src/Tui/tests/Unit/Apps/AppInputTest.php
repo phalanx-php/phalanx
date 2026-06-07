@@ -170,7 +170,7 @@ final class AppInputTest extends PhalanxTestCase
         );
         $testApp = $this->testApp([], new Bundle($app));
 
-        $testApp->application->scoped(static function (ExecutionScope $scope) use ($app): void {
+        $testApp->scoped(static function (ExecutionScope $scope) use ($app): void {
             $store = $scope->service(KeySequenceProbeStore::class);
             $scope->go(static function () use ($app, $scope): void {
                 $app->start($scope);
@@ -309,7 +309,7 @@ final class AppInputTest extends PhalanxTestCase
         );
         $testApp = $this->testApp([], new Bundle($app));
 
-        $testApp->application->scoped(static function (ExecutionScope $scope) use ($app): void {
+        $testApp->scoped(static function (ExecutionScope $scope) use ($app): void {
             $store = $scope->service(PulseStore::class);
             $store->pulse = new PulseSlice(isBusy: true);
             $app->stage->onFrame(static function () use ($scope, $store): void {

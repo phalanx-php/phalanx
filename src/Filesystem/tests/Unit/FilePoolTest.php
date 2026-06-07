@@ -156,7 +156,7 @@ final class FilePoolTest extends PhalanxTestCase
         file_put_contents($tmpFile, 'streamed');
 
         try {
-            $result = $this->startedApplication(bundles: Filesystem::services(maxOpen: 1))
+            $result = $this->testApp(bundles: Filesystem::services(maxOpen: 1))
                 ->scoped(Task::named(
                     'test.filesystem.stream.read-release',
                     static function (ExecutionScope $scope) use ($tmpFile): array {
@@ -184,7 +184,7 @@ final class FilePoolTest extends PhalanxTestCase
     #[Test]
     public function readStreamReleasesSlotAfterOpenFailure(): void
     {
-        $result = $this->startedApplication(bundles: Filesystem::services(maxOpen: 1))
+        $result = $this->testApp(bundles: Filesystem::services(maxOpen: 1))
             ->scoped(Task::named(
                 'test.filesystem.stream.read-open-failure',
                 static function (ExecutionScope $scope): array {

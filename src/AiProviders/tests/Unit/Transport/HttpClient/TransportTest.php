@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\AiProviders\Tests\Unit\Transport\HttpClient;
 
-use Phalanx\Application;
 use Phalanx\HttpClient\Client;
 use Phalanx\HttpClient\Config;
 use Phalanx\AiProviders\Runtime\CancellationException;
@@ -17,22 +16,22 @@ use Phalanx\Scope\Scope;
 use Phalanx\Scope\Suspendable;
 use Phalanx\System\TcpConnection;
 use Phalanx\System\TlsOptions;
+use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 
 /**
  * Unit tests for {@see Transport}.
  *
  * Constructor shape and generator-return tests run without Swoole. Streaming
  * tests annotated {@see RequiresPhpExtension}('swoole') use scripted TCP
- * connections and a real Runtime scope via {@see Application::scoped()}.
+ * connections and a real Runtime scope via TestApp::scoped().
  *
  * Transport\HttpClient\Transport is the third documented boundary exception in
  * ai-providers: it bridges the adapter family to phalanx-http-client. Concurrent +
  * mid-stream cancellation coverage lives in the acceptance gate (gate 9).
  */
-final class TransportTest extends TestCase
+final class TransportTest extends PhalanxTestCase
 {
     #[Test]
     public function constructorStoresClientAndScope(): void
@@ -68,7 +67,7 @@ final class TransportTest extends TestCase
             self::httpChunk('sparta thermopylae'),
             "0\r\n\r\n",
         ]);
-        $body = self::streamFromConnection($connection);
+        $body = $this->streamFromConnection($connection);
 
         self::assertStringContainsString('agora', $body);
         self::assertStringContainsString('sparta', $body);
@@ -86,7 +85,7 @@ final class TransportTest extends TestCase
         $caught = null;
 
         try {
-            self::streamFromConnection($connection);
+            $this->streamFromConnection($connection);
         } catch (HttpError $e) {
             $caught = $e;
         }
@@ -104,7 +103,7 @@ final class TransportTest extends TestCase
         $caught = null;
 
         try {
-            self::streamFromConnection($connection, static function (SyncRuntime $runtime): void {
+            $this->streamFromConnection($connection, static function (SyncRuntime $runtime): void {
                 $runtime->cancel();
             });
         } catch (CancellationException $e) {
@@ -120,7 +119,7 @@ final class TransportTest extends TestCase
     {
         $connection = self::scriptedConnection([self::httpResponseHeaders(), "0\r\n\r\n"]);
 
-        self::assertSame('', self::streamFromConnection($connection));
+        self::assertSame('', $this->streamFromConnection($connection));
     }
 
     #[Test]
@@ -134,7 +133,7 @@ final class TransportTest extends TestCase
             "0\r\n\r\n",
         ]);
 
-        self::assertSame($expected, self::streamFromConnection($connection), 'All bytes must be preserved across chunked delivery');
+        self::assertSame($expected, $this->streamFromConnection($connection), 'All bytes must be preserved across chunked delivery');
     }
 
     #[Test]
@@ -146,7 +145,7 @@ final class TransportTest extends TestCase
             self::httpChunk('accepted'),
             "0\r\n\r\n",
         ]);
-        $body = self::streamFromConnection(
+        $body = $this->streamFromConnection(
             $connection,
             request: Request::of(
                 'POST',
@@ -176,7 +175,7 @@ final class TransportTest extends TestCase
         ]);
         $chunkSeen = false;
 
-        self::bootApp()->scoped(
+        $this->testApp([], Client::services())->scoped(
             static function (ExecutionScope $runtimeScope) use ($connection, &$chunkSeen): void {
                 $client = new \Phalanx\HttpClient\Client(
                     tcpFactory: static fn(
@@ -199,13 +198,6 @@ final class TransportTest extends TestCase
 
         self::assertTrue($chunkSeen, 'Generator must yield at least one chunk before abandonment');
         self::assertTrue($connection->closed, 'Abandoning the generator must close the underlying stream');
-    }
-
-    private static function bootApp(): Application
-    {
-        return Application::starting()
-            ->providers(\Phalanx\HttpClient\Client::services())
-            ->compile();
     }
 
     private static function stubClient(): \Phalanx\HttpClient\Client
@@ -253,14 +245,14 @@ final class TransportTest extends TestCase
     /**
      * @param null|\Closure(SyncRuntime): void $beforeRead
      */
-    private static function streamFromConnection(
+    private function streamFromConnection(
         TcpConnection $connection,
         ?\Closure $beforeRead = null,
         ?Request $request = null,
     ): string {
         $body = '';
 
-        self::bootApp()->scoped(
+        $this->testApp([], Client::services())->scoped(
             static function (ExecutionScope $runtimeScope) use ($connection, $beforeRead, $request, &$body): void {
                 $client = new \Phalanx\HttpClient\Client(
                     tcpFactory: static fn(

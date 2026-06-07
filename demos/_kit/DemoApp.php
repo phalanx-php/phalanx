@@ -20,7 +20,7 @@ use Phalanx\Testing\TestApp;
  * machinery, but without PhalanxTestCase's reset/shutdown lifecycle.
  *
  * Demos own their lifecycle explicitly: boot(), zero or more run() calls,
- * then shutdown(). run() delegates to Application::scoped(), which leaves
+ * then shutdown(). run() delegates to TestApp::scoped(), which leaves
  * the host alive after the task body returns so post-run lens reads
  * (ledger / scope / runtime) see real state. The default SwooleTableLedger
  * is destroyed at Application::shutdown(), so any lens read must happen
@@ -73,7 +73,7 @@ final class DemoApp
 
     public function run(Scopeable|Executable|Closure $task, ?CancellationToken $token = null): mixed
     {
-        return $this->inner->application->scoped($task, $token);
+        return $this->inner->scoped($task, $token);
     }
 
     public function ledger(): LedgerLens

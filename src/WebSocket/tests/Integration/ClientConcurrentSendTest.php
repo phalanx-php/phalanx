@@ -28,8 +28,8 @@ final class ClientConcurrentSendTest extends PhalanxTestCase
         $testApp = $this->testApp([], \Phalanx\WebSocket\WebSocket::services());
 
         $this->scope->run(static function (ExecutionScope $_scope) use ($testApp): void {
-            $testApp->application->startup();
-            $scope = $testApp->application->createScope();
+            $testApp->start();
+            $scope = $testApp->hostForInternalTesting()->createScope();
 
             try {
                 $framesChannel = new Channel(4);

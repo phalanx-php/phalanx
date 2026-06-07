@@ -63,7 +63,7 @@ final class BundleTest extends PhalanxTestCase
                 readTimeout: 7.5,
                 maxResponseBytes: 4096,
             )),
-        )->application->scoped(Task::named(
+        )->scoped(Task::named(
             'test.surrealdb.bundle-explicit-config',
             static function (ExecutionScope $scope): array {
                 $config = $scope->service(\Phalanx\SurrealDb\Config::class);

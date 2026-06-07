@@ -246,7 +246,7 @@ final class HttpRunnerTest extends PhalanxTestCase
     {
         $this->expectException(MissingRequestResource::class);
 
-        $app = $this->startedApplication();
+        $app = $this->testApp()->start()->hostForInternalTesting();
 
         $this->scope->run(static function () use ($app): void {
             $app->scoped(static function (\Phalanx\Scope\ExecutionScope $scope): void {
@@ -510,7 +510,7 @@ final class HttpRunnerTest extends PhalanxTestCase
         Closure $test,
         ?\Phalanx\Http\ServerConfig $config = null,
     ): mixed {
-        $app = $this->startedApplication();
+        $app = $this->testApp()->start()->hostForInternalTesting();
 
         return $this->scope->run(static function () use ($routes, $test, $config, $app): mixed {
             $runner = ($config === null ? \Phalanx\Http\Runner::from($app) : \Phalanx\Http\Runner::from($app, $config))

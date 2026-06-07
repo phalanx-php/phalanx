@@ -20,7 +20,7 @@ final class ReadFileTest extends PhalanxTestCase
         file_put_contents($tmpFile, 'hello world');
 
         try {
-            $result = $this->startedApplication()
+            $result = $this->testApp()
                 ->scoped(Task::named(
                     'test.filesystem.read-file',
                     static fn(ExecutionScope $scope): string => $scope->execute(new ReadFile($tmpFile)),
@@ -37,7 +37,7 @@ final class ReadFileTest extends PhalanxTestCase
     {
         $this->expectException(FilesystemException::class);
 
-        $this->startedApplication()
+        $this->testApp()
             ->scoped(Task::named(
                 'test.filesystem.read-file.missing',
                 static fn(ExecutionScope $scope): string => $scope->execute(new ReadFile('/nonexistent/path/file.txt')),

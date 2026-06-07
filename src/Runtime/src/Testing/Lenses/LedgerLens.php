@@ -87,6 +87,6 @@ final class LedgerLens implements LensContract
 
     private function supervisor(): Supervisor
     {
-        return $this->app->application->supervisor();
+        return $this->app->supervisor();
     }
 }

@@ -26,16 +26,15 @@ final class Lens implements LensContract
 
     public function run(WorkerTask $task): Result
     {
-        $value = $this->app->application->scoped(Task::named(
+        $value = $this->app->scoped(Task::named(
             'worker.testing.dispatch',
             static fn(ExecutionScope $scope): mixed => $scope->inWorker($task),
         ));
-        $application = $this->app->application;
 
         return new Result(
             value: $value,
-            liveTasks: $application->supervisor()->liveCount(),
-            liveRuntimeScopes: $application->runtime()->memory->resources->liveCount(RuntimeResourceSid::Scope),
+            liveTasks: $this->app->supervisor()->liveCount(),
+            liveRuntimeScopes: $this->app->runtime()->memory->resources->liveCount(RuntimeResourceSid::Scope),
         );
     }
 
