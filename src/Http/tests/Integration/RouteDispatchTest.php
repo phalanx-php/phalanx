@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Http\Tests\Integration;
 
-use Phalanx\Application;
 use Phalanx\Http\MethodNotAllowedException;
 use Phalanx\Http\RouteConfig;
 use Phalanx\Http\RouteGroup;
@@ -20,14 +19,12 @@ use Phalanx\Http\Tests\Fixtures\Routes\StatusPosts;
 use Phalanx\Http\Tests\Fixtures\Routes\StatusShow;
 use Phalanx\Http\Tests\Fixtures\Routes\StatusUsers;
 use PHPUnit\Framework\Attributes\Test;
-use Phalanx\Testing\PhalanxTestCase;
+use Phalanx\Http\Tests\Support\TestCase;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\UriInterface;
 
-final class RouteDispatchTest extends PhalanxTestCase
+final class RouteDispatchTest extends TestCase
 {
-    private Application $app;
-
     #[Test]
     public function dispatches_route_by_request_attribute(): void
     {
@@ -38,7 +35,7 @@ final class RouteDispatchTest extends PhalanxTestCase
 
         $request = $this->createRequest('GET', '/users');
 
-        $result = $this->dispatch($group, $request);
+        $result = $this->dispatchRoute($group, $request);
 
         $this->assertSame(['users' => []], $result);
     }
@@ -52,7 +49,7 @@ final class RouteDispatchTest extends PhalanxTestCase
 
         $request = $this->createRequest('GET', '/users/42');
 
-        $result = $this->dispatch($group, $request);
+        $result = $this->dispatchRoute($group, $request);
 
         $this->assertSame('42', $result['id']);
         $this->assertSame(['id' => '42'], $result['params']);
@@ -65,11 +62,11 @@ final class RouteDispatchTest extends PhalanxTestCase
             'GET /users/{id:int}' => ShowRouteId::class,
         ]);
 
-        self::assertSame('42', $this->dispatch($group, $this->createRequest('GET', '/users/42')));
+        self::assertSame('42', $this->dispatchRoute($group, $this->createRequest('GET', '/users/42')));
 
         $this->expectException(RouteNotFoundException::class);
 
-        $this->dispatch($group, $this->createRequest('GET', '/users/int'));
+        $this->dispatchRoute($group, $this->createRequest('GET', '/users/int'));
     }
 
     #[Test]
@@ -79,11 +76,11 @@ final class RouteDispatchTest extends PhalanxTestCase
             'GET /posts/{id:slug}' => ShowRouteId::class,
         ]);
 
-        self::assertSame('hello-world', $this->dispatch($group, $this->createRequest('GET', '/posts/hello-world')));
+        self::assertSame('hello-world', $this->dispatchRoute($group, $this->createRequest('GET', '/posts/hello-world')));
 
         $this->expectException(RouteNotFoundException::class);
 
-        $this->dispatch($group, $this->createRequest('GET', '/posts/HelloWorld'));
+        $this->dispatchRoute($group, $this->createRequest('GET', '/posts/HelloWorld'));
     }
 
     #[Test]
@@ -93,11 +90,11 @@ final class RouteDispatchTest extends PhalanxTestCase
             'GET /codes/{id:code}' => ShowRouteId::class,
         ])->withPatterns(['code' => '[A-Z]+']);
 
-        self::assertSame('ABC', $this->dispatch($group, $this->createRequest('GET', '/codes/ABC')));
+        self::assertSame('ABC', $this->dispatchRoute($group, $this->createRequest('GET', '/codes/ABC')));
 
         $this->expectException(RouteNotFoundException::class);
 
-        $this->dispatch($group, $this->createRequest('GET', '/codes/abc'));
+        $this->dispatchRoute($group, $this->createRequest('GET', '/codes/abc'));
     }
 
     #[Test]
@@ -112,7 +109,7 @@ final class RouteDispatchTest extends PhalanxTestCase
         $this->expectException(\Phalanx\Http\RouteNotFoundException::class);
         $this->expectExceptionMessage('No route matches GET /posts');
 
-        $this->dispatch($group, $request);
+        $this->dispatchRoute($group, $request);
     }
 
     #[Test]
@@ -123,7 +120,7 @@ final class RouteDispatchTest extends PhalanxTestCase
         ]);
 
         try {
-            $this->dispatch($group, $this->createRequest('DELETE', '/resource'));
+            $this->dispatchRoute($group, $this->createRequest('DELETE', '/resource'));
             $this->fail('Expected MethodNotAllowedException');
         } catch (MethodNotAllowedException $e) {
             self::assertSame(['GET', 'POST'], $e->allowedMethods);
@@ -139,7 +136,7 @@ final class RouteDispatchTest extends PhalanxTestCase
 
         $request = $this->createRequest('GET', '/test');
 
-        $result = $this->dispatch($group, $request);
+        $result = $this->dispatchRoute($group, $request);
 
         $this->assertSame('before:ok:after', $result);
     }
@@ -154,7 +151,7 @@ final class RouteDispatchTest extends PhalanxTestCase
         foreach (['GET', 'POST'] as $method) {
             $request = $this->createRequest($method, '/resource');
 
-            $result = $this->dispatch($group, $request);
+            $result = $this->dispatchRoute($group, $request);
 
             $this->assertSame('ok', $result);
         }
@@ -175,7 +172,7 @@ final class RouteDispatchTest extends PhalanxTestCase
 
         $request = $this->createRequest('GET', '/api/v1/users/42');
 
-        $result = $this->dispatch($mounted, $request);
+        $result = $this->dispatchRoute($mounted, $request);
 
         $this->assertSame('42', $result);
     }
@@ -194,8 +191,8 @@ final class RouteDispatchTest extends PhalanxTestCase
             ->mount('/api', $public)
             ->mount('/api', $admin);
 
-        self::assertSame('ok', $this->dispatch($mounted, $this->createRequest('GET', '/api/public')));
-        self::assertSame('before:ok:after', $this->dispatch($mounted, $this->createRequest('GET', '/api/admin')));
+        self::assertSame('ok', $this->dispatchRoute($mounted, $this->createRequest('GET', '/api/public')));
+        self::assertSame('before:ok:after', $this->dispatchRoute($mounted, $this->createRequest('GET', '/api/admin')));
     }
 
     #[Test]
@@ -207,11 +204,11 @@ final class RouteDispatchTest extends PhalanxTestCase
 
         $mounted = RouteGroup::of([])->mount('/api/v1', $group);
 
-        self::assertSame('42', $this->dispatch($mounted, $this->createRequest('GET', '/api/v1/users/42')));
+        self::assertSame('42', $this->dispatchRoute($mounted, $this->createRequest('GET', '/api/v1/users/42')));
 
         $this->expectException(RouteNotFoundException::class);
 
-        $this->dispatch($mounted, $this->createRequest('GET', '/api/v1/users/int'));
+        $this->dispatchRoute($mounted, $this->createRequest('GET', '/api/v1/users/int'));
     }
 
     #[Test]
@@ -247,11 +244,6 @@ final class RouteDispatchTest extends PhalanxTestCase
         $this->assertSame('/users/{id}', $handler->config->fastRoutePath);
     }
 
-    protected function setUp(): void
-    {
-        $this->app = $this->testApp()->application;
-    }
-
     private function createRequest(string $method, string $path): ServerRequestInterface
     {
         $uri = $this->createStub(UriInterface::class);
@@ -263,10 +255,5 @@ final class RouteDispatchTest extends PhalanxTestCase
         $request->method('getQueryParams')->willReturn([]);
 
         return $request;
-    }
-
-    private function dispatch(RouteGroup $group, ServerRequestInterface $request): mixed
-    {
-        return $group->dispatch($this->app->createScope(), $request);
     }
 }

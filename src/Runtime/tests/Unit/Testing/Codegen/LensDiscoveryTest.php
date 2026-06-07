@@ -7,6 +7,7 @@ namespace Phalanx\Runtime\Tests\Unit\Testing\Codegen;
 use Phalanx\Testing\Codegen\LensDiscovery;
 use Phalanx\Testing\Codegen\LensMetadata;
 use Phalanx\Service\ServiceBundle;
+use Phalanx\Testing\Lenses\ConfigLens;
 use Phalanx\Testing\Lenses\LedgerLens;
 use Phalanx\Testing\Lenses\RuntimeLens;
 use Phalanx\Testing\Lenses\ScopeLens;
@@ -30,6 +31,7 @@ final class LensDiscoveryTest extends TestCase
         self::assertContains('ledger', $accessors);
         self::assertContains('scope', $accessors);
         self::assertContains('runtime', $accessors);
+        self::assertContains('config', $accessors);
     }
 
     public function testResultsAreSortedByAccessor(): void
@@ -54,6 +56,7 @@ final class LensDiscoveryTest extends TestCase
 
         self::assertArrayHasKey(FixtureLens::class, $byClass);
         self::assertArrayHasKey(RecordingLens::class, $byClass);
+        self::assertArrayHasKey(ConfigLens::class, $byClass);
         self::assertArrayHasKey(LedgerLens::class, $byClass);
         self::assertArrayHasKey(RuntimeLens::class, $byClass);
         self::assertArrayHasKey(ScopeLens::class, $byClass);

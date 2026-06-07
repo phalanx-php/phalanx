@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Http\Tests\Integration;
 
-use Phalanx\Application;
 use Phalanx\Http\RouteGroup;
 use Phalanx\Http\RouteNotFoundException;
 use Phalanx\Http\ValidationException;
@@ -12,7 +11,7 @@ use Phalanx\Http\Validator\Param\IntInRange;
 use Phalanx\Http\Validator\Param\OneOf;
 use Phalanx\Http\Tests\Fixtures\Routes\ShowRouteId;
 use PHPUnit\Framework\Attributes\Test;
-use Phalanx\Testing\PhalanxTestCase;
+use Phalanx\Http\Tests\Support\TestCase;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\UriInterface;
 
@@ -21,10 +20,8 @@ use Psr\Http\Message\UriInterface;
  * at dispatch time and throw ValidationException with the correct field/message
  * when a parameter fails imperative validation.
  */
-final class ParamValidatorDispatchTest extends PhalanxTestCase
+final class ParamValidatorDispatchTest extends TestCase
 {
-    private Application $app;
-
     #[Test]
     public function param_validator_passes_for_valid_value(): void
     {
@@ -34,7 +31,7 @@ final class ParamValidatorDispatchTest extends PhalanxTestCase
 
         $request = $this->createRequest('GET', '/items/42');
 
-        $result = $this->dispatch($group, $request);
+        $result = $this->dispatchRoute($group, $request);
 
         $this->assertSame('42', $result);
     }
@@ -50,7 +47,7 @@ final class ParamValidatorDispatchTest extends PhalanxTestCase
 
         $this->expectException(RouteNotFoundException::class);
 
-        $this->dispatch($group, $request);
+        $this->dispatchRoute($group, $request);
     }
 
     #[Test]
@@ -65,7 +62,7 @@ final class ParamValidatorDispatchTest extends PhalanxTestCase
         $request = $this->createRequest('GET', '/items/1000');
 
         try {
-            $this->dispatch($group, $request);
+            $this->dispatchRoute($group, $request);
             $this->fail('Expected ValidationException');
         } catch (ValidationException $e) {
             $this->assertArrayHasKey('id', $e->errors);
@@ -83,7 +80,7 @@ final class ParamValidatorDispatchTest extends PhalanxTestCase
         $request = $this->createRequest('GET', '/items/qux');
 
         try {
-            $this->dispatch($group, $request);
+            $this->dispatchRoute($group, $request);
             $this->fail('Expected ValidationException');
         } catch (ValidationException $e) {
             $this->assertArrayHasKey('id', $e->errors);
@@ -100,14 +97,9 @@ final class ParamValidatorDispatchTest extends PhalanxTestCase
 
         $request = $this->createRequest('GET', '/items/bar');
 
-        $result = $this->dispatch($group, $request);
+        $result = $this->dispatchRoute($group, $request);
 
         $this->assertSame('bar', $result);
-    }
-
-    protected function setUp(): void
-    {
-        $this->app = $this->testApp()->application;
     }
 
     private function createRequest(string $method, string $path): ServerRequestInterface
@@ -121,10 +113,5 @@ final class ParamValidatorDispatchTest extends PhalanxTestCase
         $request->method('getQueryParams')->willReturn([]);
 
         return $request;
-    }
-
-    private function dispatch(RouteGroup $group, ServerRequestInterface $request): mixed
-    {
-        return $group->dispatch($this->app->createScope(), $request);
     }
 }

@@ -28,9 +28,9 @@ final class HandlerDispatchTest extends PhalanxTestCase
             'task-b' => Handler::of(HandlerB::class),
         ]);
 
-        $scope = $this->testApp->application->createScope();
-
-        $result = $group->dispatch($scope, 'task-b');
+        $result = $this->testApp->application->scoped(static function (ExecutionScope $scope) use ($group): mixed {
+            return $group->dispatch($scope, 'task-b');
+        });
 
         $this->assertSame('b', $result);
     }
@@ -42,12 +42,12 @@ final class HandlerDispatchTest extends PhalanxTestCase
             'task-a' => Handler::of(HandlerA::class),
         ]);
 
-        $scope = $this->testApp->application->createScope();
-
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Handler not found: nonexistent');
 
-        $group->dispatch($scope, 'nonexistent');
+        $this->testApp->application->scoped(static function (ExecutionScope $scope) use ($group): mixed {
+            return $group->dispatch($scope, 'nonexistent');
+        });
     }
 
     #[Test]
@@ -70,9 +70,9 @@ final class HandlerDispatchTest extends PhalanxTestCase
             'task-b' => Handler::of(HandlerB::class),
         ])->withMatcher($matcher);
 
-        $scope = $this->testApp->application->createScope();
-
-        $result = $scope->execute($group);
+        $result = $this->testApp->application->scoped(static function (ExecutionScope $scope) use ($group): mixed {
+            return $scope->execute($group);
+        });
 
         $this->assertSame('b', $result);
     }
@@ -84,12 +84,12 @@ final class HandlerDispatchTest extends PhalanxTestCase
             'task-a' => Handler::of(HandlerA::class),
         ]);
 
-        $scope = $this->testApp->application->createScope();
-
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('no matcher could handle this scope');
 
-        $scope->execute($group);
+        $this->testApp->application->scoped(static function (ExecutionScope $scope) use ($group): mixed {
+            return $scope->execute($group);
+        });
     }
 
     #[Test]
@@ -99,9 +99,9 @@ final class HandlerDispatchTest extends PhalanxTestCase
             'task-a' => Handler::of(HandlerA::class),
         ])->wrap(PrefixingMiddleware::class);
 
-        $scope = $this->testApp->application->createScope();
-
-        $result = $group->dispatch($scope, 'task-a');
+        $result = $this->testApp->application->scoped(static function (ExecutionScope $scope) use ($group): mixed {
+            return $group->dispatch($scope, 'task-a');
+        });
 
         $this->assertSame('before:a:after', $result);
     }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Http\Tests\Integration\Auth;
 
+use Closure;
 use GuzzleHttp\Psr7\ServerRequest;
 use Phalanx\Auth\AuthContext;
 use Phalanx\Auth\AuthenticationException;
@@ -30,25 +31,25 @@ final class AuthenticateTest extends PhalanxTestCase
         $identity = new TestIdentity(42);
         $guard = new TestGuard(AuthContext::authenticated($identity, 'tok_abc'));
 
-        $capturedScope = null;
         $middleware = new Authenticate($guard);
 
-        $requestCtx = $this->createRequestContext();
-        $result = $middleware(
-            $requestCtx,
-            static function (ExecutionScope $scope) use (&$capturedScope): string {
-                $capturedScope = $scope;
-                return 'ok';
-            },
+        $result = $this->withRequestContext(
+            static fn(ExecutionContext $requestCtx): string => $middleware(
+                $requestCtx,
+                static function (ExecutionScope $scope): string {
+                    self::assertInstanceOf(AuthExecutionContext::class, $scope);
+                    self::assertInstanceOf(AuthRequestContext::class, $scope);
+                    self::assertTrue($scope->auth->isAuthenticated);
+                    self::assertNotNull($scope->auth->identity);
+                    self::assertSame(42, $scope->auth->identity->id);
+                    self::assertSame('tok_abc', $scope->auth->token());
+
+                    return 'ok';
+                },
+            ),
         );
 
         self::assertSame('ok', $result);
-        self::assertInstanceOf(AuthExecutionContext::class, $capturedScope);
-        self::assertInstanceOf(AuthRequestContext::class, $capturedScope);
-        self::assertTrue($capturedScope->auth->isAuthenticated);
-        self::assertNotNull($capturedScope->auth->identity);
-        self::assertSame(42, $capturedScope->auth->identity->id);
-        self::assertSame('tok_abc', $capturedScope->auth->token());
     }
 
     #[Test]
@@ -58,9 +59,11 @@ final class AuthenticateTest extends PhalanxTestCase
         $middleware = new Authenticate($guard);
 
         $this->expectException(AuthenticationException::class);
-        $middleware(
-            $this->createRequestContext(),
-            static fn(): string => 'should not reach',
+        $this->withRequestContext(
+            static fn(ExecutionContext $requestCtx): string => $middleware(
+                $requestCtx,
+                static fn(): string => 'should not reach',
+            ),
         );
     }
 
@@ -69,37 +72,35 @@ final class AuthenticateTest extends PhalanxTestCase
     {
         $guard = new TestGuard(AuthContext::authenticated(new TestIdentity(1)));
 
-        $capturedScope = null;
         $middleware = new Authenticate($guard);
-        $middleware(
-            $this->createRequestContext(),
-            static function (ExecutionScope $scope) use (&$capturedScope): null {
-                $capturedScope = $scope;
+        $this->withRequestContext(static fn(ExecutionContext $requestCtx): mixed => $middleware(
+            $requestCtx,
+            static function (ExecutionScope $scope): null {
+                self::assertSame('GET', $scope->method());
+                self::assertSame('/test', $scope->path());
+                self::assertSame('lobby', $scope->params->get('room'));
+
                 return null;
             },
-        );
-
-        self::assertNotNull($capturedScope);
-        self::assertSame('GET', $capturedScope->method());
-        self::assertSame('/test', $capturedScope->path());
-        self::assertSame('lobby', $capturedScope->params->get('room'));
+        ));
     }
 
-    private function createRequestContext(): ExecutionContext
+    /** @param Closure(ExecutionContext): mixed $test */
+    private function withRequestContext(Closure $test): mixed
     {
         $bundle = TestServiceBundle::create();
         $app = $this->testApp([], $bundle)->application;
-        $inner = $app->createScope();
-
         $request = new ServerRequest('GET', '/test', ['Authorization' => 'Bearer tok_abc']);
 
-        return new ExecutionContext(
-            $inner,
-            $request,
-            new RouteParams(['room' => 'lobby']),
-            new QueryParams($request->getQueryParams()),
-            new RouteConfig(),
-        );
+        return $app->scoped(static function (ExecutionScope $inner) use ($request, $test): mixed {
+            return $test(new ExecutionContext(
+                $inner,
+                $request,
+                new RouteParams(['room' => 'lobby']),
+                new QueryParams($request->getQueryParams()),
+                new RouteConfig(),
+            ));
+        });
     }
 }
 

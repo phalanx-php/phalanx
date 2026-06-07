@@ -7,6 +7,7 @@ namespace Phalanx\Runtime\Tests\Integration\Handler;
 use Phalanx\Handler\HandlerDependencyNotResolvable;
 use Phalanx\Handler\HandlerResolver;
 use Phalanx\Runtime\Tests\Fixtures\Handlers\HandlerA;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Testing\PhalanxTestCase;
 use Phalanx\Testing\TestApp;
 use PHPUnit\Framework\Attributes\Test;
@@ -18,10 +19,11 @@ final class HandlerResolverTest extends PhalanxTestCase
     #[Test]
     public function resolves_handler_with_no_constructor(): void
     {
-        $scope = $this->testApp->application->createScope();
-        $resolver = $scope->service(HandlerResolver::class);
+        $instance = $this->testApp->application->scoped(static function (ExecutionScope $scope): object {
+            $resolver = $scope->service(HandlerResolver::class);
 
-        $instance = $resolver->resolve($scope, HandlerA::class);
+            return $resolver->resolve($scope, HandlerA::class);
+        });
 
         $this->assertInstanceOf(HandlerA::class, $instance);
     }
@@ -29,22 +31,24 @@ final class HandlerResolverTest extends PhalanxTestCase
     #[Test]
     public function rejects_scalar_constructor_parameter(): void
     {
-        $scope = $this->testApp->application->createScope();
-        $resolver = $scope->service(HandlerResolver::class);
-
         $this->expectException(HandlerDependencyNotResolvable::class);
         $this->expectExceptionMessage('scalar/builtin parameters are not allowed');
 
-        $resolver->resolve($scope, ScalarParamHandler::class);
+        $this->testApp->application->scoped(static function (ExecutionScope $scope): object {
+            $resolver = $scope->service(HandlerResolver::class);
+
+            return $resolver->resolve($scope, ScalarParamHandler::class);
+        });
     }
 
     #[Test]
     public function nullable_unresolved_dependency_falls_back_to_null(): void
     {
-        $scope = $this->testApp->application->createScope();
-        $resolver = $scope->service(HandlerResolver::class);
+        $instance = $this->testApp->application->scoped(static function (ExecutionScope $scope): object {
+            $resolver = $scope->service(HandlerResolver::class);
 
-        $instance = $resolver->resolve($scope, NullableDepHandler::class);
+            return $resolver->resolve($scope, NullableDepHandler::class);
+        });
 
         $this->assertInstanceOf(NullableDepHandler::class, $instance);
         $this->assertNull($instance->dep);

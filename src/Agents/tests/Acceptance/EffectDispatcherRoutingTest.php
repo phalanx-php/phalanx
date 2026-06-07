@@ -11,7 +11,6 @@ use Phalanx\Agents\Effect\Resolution;
 use Phalanx\Agents\Grant\MemoryGrantStore;
 use Phalanx\Agents\Mcp\McpRegistry;
 use Phalanx\Agents\Stream\ArrayCueEmitter;
-use Phalanx\Agents\Testing\ScopeStub;
 use Phalanx\Agents\Tool\Tool;
 use Phalanx\Agents\Tool\ToolRegistry;
 use Phalanx\AiProviders\Cue\Effect\Executed;
@@ -21,53 +20,57 @@ use Phalanx\AiProviders\Effect\Kind;
 use Phalanx\AiProviders\Grant;
 use Phalanx\AiProviders\Hazard;
 use Phalanx\AiProviders\Hazard\Scorer\Rules\Scorer;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\TaskScope;
+use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 
-final class EffectDispatcherRoutingTest extends TestCase
+final class EffectDispatcherRoutingTest extends PhalanxTestCase
 {
     #[Test]
     public function fileReadRequestRoutesThroughToolExecutorAndEmitsExecutedCue(): void
     {
         $at = new \DateTimeImmutable('2026-05-18T10:00:00Z');
-        $scope = new ScopeStub();
-        $registry = new ToolRegistry();
-        $registry->register('file.read', RoutingEchoTool::class);
 
-        $grantStore = new MemoryGrantStore();
-        $grantStore->remember($scope, Grant::of(
-            id: 'grant_routing',
-            subject: 'agent-test-agent',
-            allowedEffects: [Kind::FileRead],
-            grantScope: 'session',
-            hazardCeiling: Hazard::Critical,
-        ));
+        $emitted = $this->scope->run(static function (ExecutionScope $scope) use ($at): array {
+            $registry = new ToolRegistry();
+            $registry->register('file.read', RoutingEchoTool::class);
 
-        $dispatcher = new Dispatcher(
-            authorizer: new Authorizer(),
-            scorer: new Scorer(),
-            grantStore: $grantStore,
-            toolRegistry: $registry,
-            mcpRegistry: new McpRegistry(),
-        );
+            $grantStore = new MemoryGrantStore();
+            $grantStore->remember($scope, Grant::of(
+                id: 'grant_routing',
+                subject: 'agent-test-agent',
+                allowedEffects: [Kind::FileRead],
+                grantScope: 'session',
+                hazardCeiling: Hazard::Critical,
+            ));
 
-        $request = new Requested(
-            id: 'cue_r1',
-            sequence: 1,
-            activityId: 'act_routing',
-            invocationId: null,
-            agentId: 'agent-test-agent',
-            at: $at,
-            effectId: 'file.read',
-            kind: Kind::FileRead,
-            summary: 'read config',
-        );
+            $dispatcher = new Dispatcher(
+                authorizer: new Authorizer(),
+                scorer: new Scorer(),
+                grantStore: $grantStore,
+                toolRegistry: $registry,
+                mcpRegistry: new McpRegistry(),
+            );
 
-        $emitter = new ArrayCueEmitter();
-        $dispatcher->dispatch($scope, $request, $emitter);
+            $request = new Requested(
+                id: 'cue_r1',
+                sequence: 1,
+                activityId: 'act_routing',
+                invocationId: null,
+                agentId: 'agent-test-agent',
+                at: $at,
+                effectId: 'file.read',
+                kind: Kind::FileRead,
+                summary: 'read config',
+            );
 
-        $emitted = $emitter->cues;
+            $emitter = new ArrayCueEmitter();
+            $dispatcher->dispatch($scope, $request, $emitter);
+
+            return $emitter->cues;
+        });
+
         $types = array_map(static fn($cue): string => $cue->type, $emitted);
 
         self::assertContains('cue.effect.authorized', $types);
@@ -86,4 +89,3 @@ final class RoutingEchoTool implements Tool
         return EffectOutcome::routed(Resolution::LocalTool, data: 'content');
     }
 }
-

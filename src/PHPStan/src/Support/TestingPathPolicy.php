@@ -1,0 +1,96 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Phalanx\PHPStan\Support;
+
+final class TestingPathPolicy
+{
+    private const array DEFAULT_PATHS = [
+        'tests/Integration',
+        'tests/Feature',
+        'tests/Acceptance',
+        'tests/Smoke',
+        'tests/Resilience',
+    ];
+
+    /** @var list<string> */
+    private readonly array $paths;
+
+    /**
+     * @param list<string> $paths
+     * @param list<string> $useTestAppExemptPaths
+     * @param list<string> $useTestScopeExemptPaths
+     * @param list<string> $noRawSleepExemptPaths
+     * @param list<string> $lensRequiresBundleExemptPaths
+     */
+    public function __construct(
+        array $paths = [],
+        private readonly array $useTestAppExemptPaths = [],
+        private readonly array $useTestScopeExemptPaths = [],
+        private readonly array $noRawSleepExemptPaths = [],
+        private readonly array $lensRequiresBundleExemptPaths = [],
+    ) {
+        $this->paths = $paths === [] ? self::DEFAULT_PATHS : $paths;
+    }
+
+    public function shouldReport(string $file, string $identifier): bool
+    {
+        return self::matchesAny($file, $this->paths)
+            && !self::matchesAny($file, $this->exemptionsFor($identifier));
+    }
+
+    /** @param list<string> $paths */
+    public function matches(string $file, array $paths): bool
+    {
+        return self::matchesAny($file, $paths);
+    }
+
+    private static function normalize(string $path): string
+    {
+        return trim(str_replace('\\', '/', $path), '/');
+    }
+
+    /** @param list<string> $paths */
+    private static function matchesAny(string $file, array $paths): bool
+    {
+        $normalizedFile = self::normalize($file);
+
+        foreach ($paths as $path) {
+            $normalizedPath = self::normalize($path);
+            if ($normalizedPath === '') {
+                continue;
+            }
+
+            if ($normalizedFile === $normalizedPath) {
+                return true;
+            }
+
+            if (str_starts_with($normalizedFile, rtrim($normalizedPath, '/') . '/')) {
+                return true;
+            }
+
+            if (str_ends_with($normalizedFile, '/' . $normalizedPath)) {
+                return true;
+            }
+
+            if (str_contains($normalizedFile, '/' . rtrim($normalizedPath, '/') . '/')) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** @return list<string> */
+    private function exemptionsFor(string $identifier): array
+    {
+        return match ($identifier) {
+            'phalanx.testing.useTestApp' => $this->useTestAppExemptPaths,
+            'phalanx.testing.useTestScope' => $this->useTestScopeExemptPaths,
+            'phalanx.testing.noRawSleep' => $this->noRawSleepExemptPaths,
+            'phalanx.testing.lensRequiresBundle' => $this->lensRequiresBundleExemptPaths,
+            default => [],
+        };
+    }
+}

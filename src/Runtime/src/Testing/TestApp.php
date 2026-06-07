@@ -30,8 +30,8 @@ use Throwable;
  *   $app->shutdown();                               // disposes Application
  *
  * Bundles that override the lens() hook activate their lenses automatically.
- * Runtime-native lenses (LedgerLens, ScopeLens, RuntimeLens) are registered
- * unconditionally; all other lenses require their bundle.
+ * Runtime-native lenses (ConfigLens, LedgerLens, ScopeLens, RuntimeLens) are
+ * registered unconditionally; all other lenses require their bundle.
  *
  * Hard-fail discipline: accessing $app->http when no Http bundle was passed
  * raises LensNotAvailable with a message naming the missing bundle.
@@ -51,6 +51,7 @@ final class TestApp
      * @var list<class-string<Lens>>
      */
     private const array RUNTIME_NATIVE_LENSES = [
+        Lenses\ConfigLens::class,
         Lenses\LedgerLens::class,
         Lenses\ScopeLens::class,
         Lenses\RuntimeLens::class,
@@ -306,9 +307,9 @@ final class TestApp
     }
 
     /**
-     * Register the always-on Runtime-native lenses (LedgerLens, ScopeLens,
-     * RuntimeLens). These are runtime-kernel facts, not optional package
-     * contributions, so no bundle is required to activate them.
+     * Register the always-on Runtime-native lenses (ConfigLens, LedgerLens,
+     * ScopeLens, RuntimeLens). These are runtime-kernel facts, not optional
+     * package contributions, so no bundle is required to activate them.
      */
     private function registerRuntimeNativeLenses(): void
     {

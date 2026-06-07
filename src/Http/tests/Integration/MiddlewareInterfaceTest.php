@@ -5,13 +5,12 @@ declare(strict_types=1);
 namespace Phalanx\Http\Tests\Integration;
 
 use Closure;
-use Phalanx\Application;
 use Phalanx\Http\Contract\Middleware;
 use Phalanx\Http\RequestContext;
 use Phalanx\Http\RouteGroup;
 use Phalanx\Task\Scopeable;
 use PHPUnit\Framework\Attributes\Test;
-use Phalanx\Testing\PhalanxTestCase;
+use Phalanx\Http\Tests\Support\TestCase;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\UriInterface;
 
@@ -19,10 +18,8 @@ use Psr\Http\Message\UriInterface;
  * Verifies the typed Middleware interface dispatches correctly and composes in
  * the same order as the executable PrefixingMiddleware fixture.
  */
-final class MiddlewareInterfaceTest extends PhalanxTestCase
+final class MiddlewareInterfaceTest extends TestCase
 {
-    private Application $app;
-
     #[Test]
     public function middleware_interface_wraps_result_in_order(): void
     {
@@ -32,7 +29,7 @@ final class MiddlewareInterfaceTest extends PhalanxTestCase
 
         $request = $this->createRequest('GET', '/test');
 
-        $result = $this->dispatch($group, $request);
+        $result = $this->dispatchRoute($group, $request);
 
         // Same order as PrefixingMiddleware: outermost runs first and last
         self::assertSame('before:ok:after', $result);
@@ -47,14 +44,9 @@ final class MiddlewareInterfaceTest extends PhalanxTestCase
 
         $request = $this->createRequest('GET', '/test');
 
-        $result = $this->dispatch($group, $request);
+        $result = $this->dispatchRoute($group, $request);
 
         self::assertSame('aborted', $result);
-    }
-
-    protected function setUp(): void
-    {
-        $this->app = $this->testApp()->application;
     }
 
     private function createRequest(string $method, string $path): ServerRequestInterface
@@ -68,11 +60,6 @@ final class MiddlewareInterfaceTest extends PhalanxTestCase
         $request->method('getQueryParams')->willReturn([]);
 
         return $request;
-    }
-
-    private function dispatch(RouteGroup $group, ServerRequestInterface $request): mixed
-    {
-        return $group->dispatch($this->app->createScope(), $request);
     }
 }
 
@@ -97,6 +84,7 @@ final class PrefixingMiddlewareV2 implements Middleware
     public function __invoke(RequestContext $ctx, Closure $next): mixed
     {
         $inner = $next($ctx);
+
         return 'before:' . $inner . ':after';
     }
 }

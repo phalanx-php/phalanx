@@ -6,6 +6,7 @@ namespace Phalanx\PHPStan\Rules\Testing;
 
 use Phalanx\Cancellation\Cancelled;
 use Phalanx\PHPStan\Support\RuleErrors;
+use Phalanx\PHPStan\Support\TestingPathPolicy;
 use Phalanx\Service\ServiceBundle;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\New_;
@@ -23,26 +24,11 @@ use PHPStan\Rules\Rule;
 use PHPStan\Type\ObjectType;
 
 /**
- * Flags TestApp lens accessor reads that have no corresponding ServiceBundle
- * registered via testApp(...). Each accessor (e.g. $app->http) requires a
- * bundle whose static::lens() declares the backing lens class (e.g. Lens).
- *
- * Runtime-native lenses (LedgerLens, ScopeLens, RuntimeLens) are always
- * available and are never flagged regardless of the bundles passed.
- *
- * The rule is path-gated to integration/feature test directories, matching
- * the same policy as UseTestAppRule.
- *
  * @implements Rule<PropertyFetch>
  */
 final class LensRequiresBundleRule implements Rule
 {
     private const string IDENTIFIER = 'phalanx.testing.lensRequiresBundle';
-
-    private const array TEST_DIRECTORIES = [
-        '/tests/Integration/',
-        '/tests/Feature/',
-    ];
 
     private const string TEST_APP_CLASS = 'Phalanx\\Testing\\TestApp';
 
@@ -53,7 +39,8 @@ final class LensRequiresBundleRule implements Rule
      *
      * @var list<class-string>
      */
-    private const array RUNTIME_NATIVE_LENSES = [
+    private const array DEFAULT_RUNTIME_NATIVE_LENSES = [
+        'Phalanx\\Testing\\Lenses\\ConfigLens',
         'Phalanx\\Testing\\Lenses\\LedgerLens',
         'Phalanx\\Testing\\Lenses\\ScopeLens',
         'Phalanx\\Testing\\Lenses\\RuntimeLens',
@@ -69,6 +56,15 @@ final class LensRequiresBundleRule implements Rule
      */
     private array $fileMethodCache = [];
 
+    /**
+     * @param list<class-string> $runtimeNativeLensClasses
+     */
+    public function __construct(
+        private readonly TestingPathPolicy $paths,
+        private readonly array $runtimeNativeLensClasses = self::DEFAULT_RUNTIME_NATIVE_LENSES,
+    ) {
+    }
+
     public function getNodeType(): string
     {
         return PropertyFetch::class;
@@ -77,7 +73,7 @@ final class LensRequiresBundleRule implements Rule
     /** @return list<IdentifierRuleError> */
     public function processNode(\PhpParser\Node $node, Scope $scope): array
     {
-        if (!self::isInTestDirectory($scope->getFile())) {
+        if (!$this->paths->shouldReport($scope->getFile(), self::IDENTIFIER)) {
             return [];
         }
 
@@ -100,7 +96,7 @@ final class LensRequiresBundleRule implements Rule
         $lensFqcn = $map[$property];
 
         // Runtime-native lenses need no bundle — skip immediately.
-        if (in_array($lensFqcn, self::RUNTIME_NATIVE_LENSES, true)) {
+        if (in_array($lensFqcn, $this->runtimeNativeLensClasses, true)) {
             return [];
         }
 
@@ -114,12 +110,10 @@ final class LensRequiresBundleRule implements Rule
             return [];
         }
 
-        $bundleClasses = self::collectBundleClasses($method);
-        if ($bundleClasses === null) {
+        $availableLenses = self::collectAvailableLenses($method);
+        if ($availableLenses === null) {
             return [];
         }
-
-        $availableLenses = self::aggregateLenses($bundleClasses);
 
         if (in_array($lensFqcn, $availableLenses, true)) {
             return [];
@@ -208,6 +202,7 @@ final class LensRequiresBundleRule implements Rule
                 if ($node instanceof ClassMethod) {
                     $this->methods[] = $node;
                 }
+
                 return null;
             }
         };
@@ -221,22 +216,32 @@ final class LensRequiresBundleRule implements Rule
 
     /**
      * Scan the method body for `$this->testApp(...)` calls and collect the
-     * class names of `new Foo()` bundle arguments.
+     * lens class names available through each ServiceBundle argument.
      *
      * Returns null when no testApp() call is found (rule cannot determine state).
      * Returns an empty list when testApp() is called with no bundle args.
      *
      * @return list<string>|null
      */
-    private static function collectBundleClasses(ClassMethod $method): ?array
+    private static function collectAvailableLenses(ClassMethod $method): ?array
     {
         $collector = new class extends NodeVisitorAbstract {
             public bool $found = false;
+
             /** @var list<string> */
-            public array $classes = [];
+            public array $lenses = [];
+
+            /** @var array<string, list<string>> */
+            private array $variables = [];
 
             public function enterNode(\PhpParser\Node $node): null
             {
+                if ($node instanceof \PhpParser\Node\Expr\Assign) {
+                    $this->recordAssignment($node);
+
+                    return null;
+                }
+
                 if (!$node instanceof MethodCall) {
                     return null;
                 }
@@ -251,41 +256,171 @@ final class LensRequiresBundleRule implements Rule
 
                 $this->found = true;
 
-                // @dev-cleanup-ignore — VariadicPlaceholder nodes have no $value; skip non-Arg entries
-                foreach ($node->args as $arg) {
+                foreach ($node->args as $offset => $arg) {
                     if (!$arg instanceof \PhpParser\Node\Arg) {
                         continue;
                     }
 
-                    $value = $arg->value;
-                    if (!$value instanceof New_) {
+                    if ($offset === 0 && $arg->name === null) {
                         continue;
                     }
 
-                    if (!$value->class instanceof \PhpParser\Node\Name) {
-                        continue;
-                    }
-
-                    $className = $value->class->toString();
-
-                    if (!self::isServiceBundle($className)) {
-                        continue;
-                    }
-
-                    $this->classes[] = $className;
+                    $this->lenses = [
+                        ...$this->lenses,
+                        ...self::lensesFromExpression($arg->value, $this->variables),
+                    ];
                 }
+
+                $this->lenses = array_values(array_unique($this->lenses));
 
                 return null;
             }
 
-            private static function isServiceBundle(string $class): bool
-            {
-                if (!class_exists($class)) {
-                    return false;
+            /**
+             * @param array<string, list<string>> $variables
+             * @return list<string>
+             */
+            private static function lensesFromExpression(
+                \PhpParser\Node\Expr $expr,
+                array $variables,
+            ): array {
+                if ($expr instanceof \PhpParser\Node\Expr\Variable && is_string($expr->name)) {
+                    return $variables[$expr->name] ?? [];
                 }
 
-                return $class === ServiceBundle::class
-                    || is_subclass_of($class, ServiceBundle::class);
+                if (!$expr instanceof New_) {
+                    return [];
+                }
+
+                if ($expr->class instanceof \PhpParser\Node\Name) {
+                    return self::lensesFromNamedBundle($expr->class->toString());
+                }
+
+                if ($expr->class instanceof \PhpParser\Node\Stmt\Class_) {
+                    return self::lensesFromAnonymousBundle($expr->class);
+                }
+
+                return [];
+            }
+
+            /** @return list<string> */
+            private static function lensesFromNamedBundle(string $class): array
+            {
+                if (!class_exists($class)) {
+                    return [];
+                }
+
+                if ($class !== ServiceBundle::class && !is_subclass_of($class, ServiceBundle::class)) {
+                    return [];
+                }
+
+                try {
+                    /** @var \Phalanx\Testing\TestLens $collection */
+                    $collection = $class::lens();
+
+                    return $collection->all();
+                } catch (Cancelled $e) {
+                    throw $e;
+                } catch (\Throwable) {
+                    return [];
+                }
+            }
+
+            /** @return list<string> */
+            private static function lensesFromAnonymousBundle(\PhpParser\Node\Stmt\Class_ $class): array
+            {
+                if ($class->extends === null) {
+                    return [];
+                }
+
+                $extends = $class->extends->toString();
+                if ($extends !== ServiceBundle::class && !is_subclass_of($extends, ServiceBundle::class)) {
+                    return [];
+                }
+
+                foreach ($class->getMethods() as $method) {
+                    if ($method->name->toString() !== 'lens') {
+                        continue;
+                    }
+
+                    return self::lensesFromLensMethod($method);
+                }
+
+                return [];
+            }
+
+            /** @return list<string> */
+            private static function lensesFromLensMethod(ClassMethod $method): array
+            {
+                $collector = new class extends NodeVisitorAbstract {
+                    /** @var list<string> */
+                    public array $lenses = [];
+
+                    public function enterNode(\PhpParser\Node $node): null
+                    {
+                        if (!$node instanceof \PhpParser\Node\Expr\StaticCall) {
+                            return null;
+                        }
+
+                        if (!$node->class instanceof \PhpParser\Node\Name) {
+                            return null;
+                        }
+
+                        if (!$node->name instanceof Identifier) {
+                            return null;
+                        }
+
+                        if ($node->class->toString() !== 'Phalanx\\Testing\\TestLens') {
+                            return null;
+                        }
+
+                        if ($node->name->toString() !== 'of') {
+                            return null;
+                        }
+
+                        foreach ($node->args as $arg) {
+                            if (!$arg instanceof \PhpParser\Node\Arg) {
+                                continue;
+                            }
+
+                            $value = $arg->value;
+                            if (!$value instanceof \PhpParser\Node\Expr\ClassConstFetch) {
+                                continue;
+                            }
+
+                            if (!$value->class instanceof \PhpParser\Node\Name) {
+                                continue;
+                            }
+
+                            $this->lenses[] = $value->class->toString();
+                        }
+
+                        return null;
+                    }
+                };
+
+                $traverser = new NodeTraverser();
+                $traverser->addVisitor($collector);
+
+                if ($method->stmts !== null) {
+                    $traverser->traverse($method->stmts);
+                }
+
+                return array_values(array_unique($collector->lenses));
+            }
+
+            private function recordAssignment(\PhpParser\Node\Expr\Assign $assign): void
+            {
+                if (!$assign->var instanceof \PhpParser\Node\Expr\Variable || !is_string($assign->var->name)) {
+                    return;
+                }
+
+                $lenses = self::lensesFromExpression($assign->expr, $this->variables);
+                if ($lenses === []) {
+                    return;
+                }
+
+                $this->variables[$assign->var->name] = $lenses;
             }
         };
 
@@ -300,51 +435,7 @@ final class LensRequiresBundleRule implements Rule
             return null;
         }
 
-        return $collector->classes;
-    }
-
-    /**
-     * Call static::lens() on each bundle class and collect the lens FQCNs.
-     * Bundles that are not loadable or that throw are silently skipped.
-     *
-     * @param list<string> $bundleClasses
-     * @return list<string>
-     */
-    private static function aggregateLenses(array $bundleClasses): array
-    {
-        $lenses = [];
-
-        foreach ($bundleClasses as $class) {
-            if (!class_exists($class)) {
-                continue;
-            }
-
-            try {
-                /** @var \Phalanx\Testing\TestLens $collection */
-                $collection = $class::lens();
-                foreach ($collection->all() as $lensFqcn) {
-                    $lenses[] = $lensFqcn;
-                }
-            } catch (Cancelled $e) {
-                throw $e;
-            } catch (\Throwable) {
-            }
-        }
-
-        return array_values(array_unique($lenses));
-    }
-
-    private static function isInTestDirectory(string $file): bool
-    {
-        $normalized = str_replace('\\', '/', $file);
-
-        foreach (self::TEST_DIRECTORIES as $needle) {
-            if (str_contains($normalized, $needle)) {
-                return true;
-            }
-        }
-
-        return false;
+        return $collector->lenses;
     }
 
     /**
@@ -370,12 +461,14 @@ final class LensRequiresBundleRule implements Rule
 
         if ($traitFile === null || !file_exists($traitFile)) {
             $this->accessorMap = [];
+
             return $this->accessorMap;
         }
 
         $source = file_get_contents($traitFile);
         if ($source === false) {
             $this->accessorMap = [];
+
             return $this->accessorMap;
         }
 
@@ -387,6 +480,7 @@ final class LensRequiresBundleRule implements Rule
             throw $e;
         } catch (\Throwable) {
             $this->accessorMap = [];
+
             return $this->accessorMap;
         }
 
@@ -441,6 +535,7 @@ final class LensRequiresBundleRule implements Rule
         $extractTraverser->traverse($stmts);
 
         $this->accessorMap = $extractor->map;
+
         return $this->accessorMap;
     }
 

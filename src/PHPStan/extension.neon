@@ -5,6 +5,16 @@ parameters:
     phalanxRuntimeHookInternalPaths: []
     phalanxProcessInternalPaths: []
     phalanxCoroutineInternalPaths: []
+    phalanxTestingPaths: []
+    phalanxTestingUseTestAppExemptPaths: []
+    phalanxTestingUseTestScopeExemptPaths: []
+    phalanxTestingNoRawSleepExemptPaths: []
+    phalanxTestingLensRequiresBundleExemptPaths: []
+    phalanxRuntimeNativeLensClasses:
+        - Phalanx\Testing\Lenses\ConfigLens
+        - Phalanx\Testing\Lenses\LedgerLens
+        - Phalanx\Testing\Lenses\ScopeLens
+        - Phalanx\Testing\Lenses\RuntimeLens
 
 parametersSchema:
     phalanxInternalPaths: listOf(string())
@@ -13,6 +23,12 @@ parametersSchema:
     phalanxRuntimeHookInternalPaths: listOf(string())
     phalanxProcessInternalPaths: listOf(string())
     phalanxCoroutineInternalPaths: listOf(string())
+    phalanxTestingPaths: listOf(string())
+    phalanxTestingUseTestAppExemptPaths: listOf(string())
+    phalanxTestingUseTestScopeExemptPaths: listOf(string())
+    phalanxTestingNoRawSleepExemptPaths: listOf(string())
+    phalanxTestingLensRequiresBundleExemptPaths: listOf(string())
+    phalanxRuntimeNativeLensClasses: listOf(string())
 
 services:
     -
@@ -21,6 +37,15 @@ services:
             - %phalanxInternalPaths%
             - %phalanxEnforcedPaths%
             - %phalanxAuditPaths%
+
+    -
+        class: Phalanx\PHPStan\Support\TestingPathPolicy
+        arguments:
+            - %phalanxTestingPaths%
+            - %phalanxTestingUseTestAppExemptPaths%
+            - %phalanxTestingUseTestScopeExemptPaths%
+            - %phalanxTestingNoRawSleepExemptPaths%
+            - %phalanxTestingLensRequiresBundleExemptPaths%
 
     -
         class: Phalanx\PHPStan\Rules\Migration\RootScopeAliasRule
@@ -133,11 +158,30 @@ services:
 
     -
         class: Phalanx\PHPStan\Rules\Testing\UseTestAppRule
+        arguments:
+            - @Phalanx\PHPStan\Support\TestingPathPolicy
         tags:
             - phpstan.rules.rule
 
     -
         class: Phalanx\PHPStan\Rules\Testing\LensRequiresBundleRule
+        arguments:
+            - @Phalanx\PHPStan\Support\TestingPathPolicy
+            - %phalanxRuntimeNativeLensClasses%
+        tags:
+            - phpstan.rules.rule
+
+    -
+        class: Phalanx\PHPStan\Rules\Testing\UseTestScopeRule
+        arguments:
+            - @Phalanx\PHPStan\Support\TestingPathPolicy
+        tags:
+            - phpstan.rules.rule
+
+    -
+        class: Phalanx\PHPStan\Rules\Testing\NoRawTestSleepRule
+        arguments:
+            - @Phalanx\PHPStan\Support\TestingPathPolicy
         tags:
             - phpstan.rules.rule
 

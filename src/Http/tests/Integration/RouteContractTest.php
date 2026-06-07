@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Http\Tests\Integration;
 
-use Phalanx\Application;
 use Phalanx\Http\Response\Created;
 use Phalanx\Http\Response\NoContent;
 use Phalanx\Http\RouteGroup;
@@ -17,15 +16,13 @@ use Phalanx\Http\Tests\Fixtures\Routes\ListTasksHandler;
 use Phalanx\Http\Tests\Fixtures\TaskPriority;
 use Phalanx\Http\Tests\Fixtures\TaskResource;
 use PHPUnit\Framework\Attributes\Test;
-use Phalanx\Testing\PhalanxTestCase;
+use Phalanx\Http\Tests\Support\TestCase;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamInterface;
 use Psr\Http\Message\UriInterface;
 
-final class RouteContractTest extends PhalanxTestCase
+final class RouteContractTest extends TestCase
 {
-    private Application $app;
-
     #[Test]
     public function post_route_hydrates_input_from_body(): void
     {
@@ -38,7 +35,7 @@ final class RouteContractTest extends PhalanxTestCase
             'priority' => 'high',
         ]);
 
-        $result = $this->dispatch($group, $request);
+        $result = $this->dispatchRoute($group, $request);
 
         $this->assertInstanceOf(Created::class, $result);
         $this->assertInstanceOf(TaskResource::class, $result->data);
@@ -60,7 +57,7 @@ final class RouteContractTest extends PhalanxTestCase
             'status' => 'done',
         ]);
 
-        $result = $this->dispatch($group, $request);
+        $result = $this->dispatchRoute($group, $request);
 
         $this->assertSame(2, $result['page']);
         $this->assertSame(10, $result['limit']);
@@ -77,7 +74,7 @@ final class RouteContractTest extends PhalanxTestCase
 
         $request = $this->createRequest('GET', '/health');
 
-        $result = $this->dispatch($group, $request);
+        $result = $this->dispatchRoute($group, $request);
 
         $this->assertSame(['status' => 'ok'], $result);
     }
@@ -95,7 +92,7 @@ final class RouteContractTest extends PhalanxTestCase
 
         $request = $this->createRequest('GET', '/ping');
 
-        $result = $this->dispatch($group, $request);
+        $result = $this->dispatchRoute($group, $request);
 
         $this->assertSame(['status' => 'ok'], $result);
     }
@@ -112,7 +109,7 @@ final class RouteContractTest extends PhalanxTestCase
         ]);
 
         try {
-            $this->dispatch($group, $request);
+            $this->dispatchRoute($group, $request);
             $this->fail('Expected ValidationException');
         } catch (ValidationException $e) {
             $this->assertArrayHasKey('title', $e->errors);
@@ -132,7 +129,7 @@ final class RouteContractTest extends PhalanxTestCase
         ]);
 
         try {
-            $this->dispatch($group, $request);
+            $this->dispatchRoute($group, $request);
             $this->fail('Expected ValidationException');
         } catch (ValidationException $e) {
             $this->assertArrayHasKey('priority', $e->errors);
@@ -151,7 +148,7 @@ final class RouteContractTest extends PhalanxTestCase
         ]);
 
         try {
-            $this->dispatch($group, $request);
+            $this->dispatchRoute($group, $request);
             $this->fail('Expected ValidationException');
         } catch (ValidationException $e) {
             $this->assertArrayHasKey('title', $e->errors);
@@ -167,14 +164,9 @@ final class RouteContractTest extends PhalanxTestCase
 
         $request = $this->createRequest('DELETE', '/tasks/42');
 
-        $result = $this->dispatch($group, $request);
+        $result = $this->dispatchRoute($group, $request);
 
         $this->assertInstanceOf(NoContent::class, $result);
-    }
-
-    protected function setUp(): void
-    {
-        $this->app = $this->testApp()->application;
     }
 
     /**
@@ -205,10 +197,5 @@ final class RouteContractTest extends PhalanxTestCase
         );
 
         return $request;
-    }
-
-    private function dispatch(RouteGroup $group, ServerRequestInterface $request): mixed
-    {
-        return $group->dispatch($this->app->createScope(), $request);
     }
 }

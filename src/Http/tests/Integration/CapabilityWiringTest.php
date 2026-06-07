@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Http\Tests\Integration;
 
-use Phalanx\Application;
 use Phalanx\Http\RouteGroup;
 use Phalanx\Http\ValidationException;
 use Phalanx\Http\Tests\Fixtures\Routes\InputCapturingValidator;
@@ -12,7 +11,7 @@ use Phalanx\Http\Tests\Fixtures\Routes\RequireApiVersionHandler;
 use Phalanx\Http\Tests\Fixtures\Routes\ValidatedHandler;
 use Phalanx\Http\Tests\Fixtures\Routes\ValidatedInputHandler;
 use PHPUnit\Framework\Attributes\Test;
-use Phalanx\Testing\PhalanxTestCase;
+use Phalanx\Http\Tests\Support\TestCase;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\UriInterface;
 
@@ -21,10 +20,8 @@ use Psr\Http\Message\UriInterface;
  * during the v0.6.0 review pass: RequiresHeaders and HasValidators run
  * before the handler is invoked, aborting dispatch on failure.
  */
-final class CapabilityWiringTest extends PhalanxTestCase
+final class CapabilityWiringTest extends TestCase
 {
-    private Application $app;
-
     #[Test]
     public function requires_headers_aborts_when_header_missing(): void
     {
@@ -35,7 +32,7 @@ final class CapabilityWiringTest extends PhalanxTestCase
         $request = $this->createRequest('GET', '/v', headers: []);
 
         try {
-            $this->dispatch($group, $request);
+            $this->dispatchRoute($group, $request);
             $this->fail('Expected ValidationException');
         } catch (ValidationException $e) {
             $this->assertArrayHasKey('X-Api-Version', $e->errors);
@@ -53,7 +50,7 @@ final class CapabilityWiringTest extends PhalanxTestCase
         $request = $this->createRequest('GET', '/v', headers: ['X-Api-Version' => 'beta']);
 
         try {
-            $this->dispatch($group, $request);
+            $this->dispatchRoute($group, $request);
             $this->fail('Expected ValidationException');
         } catch (ValidationException $e) {
             $this->assertArrayHasKey('X-Api-Version', $e->errors);
@@ -70,7 +67,7 @@ final class CapabilityWiringTest extends PhalanxTestCase
 
         $request = $this->createRequest('GET', '/v', headers: ['X-Api-Version' => 'v2']);
 
-        $result = $this->dispatch($group, $request);
+        $result = $this->dispatchRoute($group, $request);
 
         $this->assertSame(['ok' => true], $result);
     }
@@ -85,7 +82,7 @@ final class CapabilityWiringTest extends PhalanxTestCase
         $request = $this->createRequest('GET', '/v');
 
         try {
-            $this->dispatch($group, $request);
+            $this->dispatchRoute($group, $request);
             $this->fail('Expected ValidationException from validator');
         } catch (ValidationException $e) {
             $this->assertArrayHasKey('test_field', $e->errors);
@@ -106,7 +103,7 @@ final class CapabilityWiringTest extends PhalanxTestCase
         $request = $this->createRequest('GET', '/v', queryParams: ['name' => 'alice']);
 
         try {
-            $this->dispatch($group, $request);
+            $this->dispatchRoute($group, $request);
             $this->fail('Expected ValidationException from validator');
         } catch (ValidationException $e) {
             $this->assertArrayHasKey('captured', $e->errors);
@@ -116,11 +113,6 @@ final class CapabilityWiringTest extends PhalanxTestCase
         $this->assertNotNull(InputCapturingValidator::$capturedInput, 'Validator should receive a hydrated DTO');
         $this->assertInstanceOf(\Phalanx\Http\Tests\Fixtures\Routes\SimpleInputDto::class, InputCapturingValidator::$capturedInput);
         $this->assertSame('alice', InputCapturingValidator::$capturedInput->name);
-    }
-
-    protected function setUp(): void
-    {
-        $this->app = $this->testApp()->application;
     }
 
     /**
@@ -145,10 +137,5 @@ final class CapabilityWiringTest extends PhalanxTestCase
         );
 
         return $request;
-    }
-
-    private function dispatch(RouteGroup $group, ServerRequestInterface $request): mixed
-    {
-        return $group->dispatch($this->app->createScope(), $request);
     }
 }

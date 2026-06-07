@@ -8,6 +8,7 @@ use Phalanx\Handler\Handler;
 use Phalanx\Handler\HandlerGroup;
 use Phalanx\Runtime\Tests\Fixtures\Handlers\MiddlewareDeclaringHandler;
 use Phalanx\Runtime\Tests\Fixtures\Handlers\PrefixingMiddleware;
+use Phalanx\Scope\ExecutionScope;
 use Phalanx\Testing\PhalanxTestCase;
 use Phalanx\Testing\TestApp;
 use PHPUnit\Framework\Attributes\Test;
@@ -23,9 +24,9 @@ final class HasMiddlewareDispatchTest extends PhalanxTestCase
             'h' => Handler::of(MiddlewareDeclaringHandler::class),
         ])->wrap(PrefixingMiddleware::class);
 
-        $scope = $this->testApp->application->createScope();
-
-        $result = $group->dispatch($scope, 'h');
+        $result = $this->testApp->application->scoped(static function (ExecutionScope $scope) use ($group): mixed {
+            return $group->dispatch($scope, 'h');
+        });
 
         // Group middleware (PrefixingMiddleware) wraps the chain outermost,
         // instance middleware (InstanceMiddleware) wraps the handler innermost.
@@ -40,9 +41,9 @@ final class HasMiddlewareDispatchTest extends PhalanxTestCase
             'h' => Handler::of(MiddlewareDeclaringHandler::class),
         ]);
 
-        $scope = $this->testApp->application->createScope();
-
-        $result = $group->dispatch($scope, 'h');
+        $result = $this->testApp->application->scoped(static function (ExecutionScope $scope) use ($group): mixed {
+            return $group->dispatch($scope, 'h');
+        });
 
         $this->assertSame('instance(core)', $result);
     }

@@ -249,20 +249,17 @@ final class HttpRunnerTest extends PhalanxTestCase
         $app = $this->startedApplication();
 
         $this->scope->run(static function () use ($app): void {
-            $scope = $app->createScope();
-            $context = new ExecutionContext(
-                $scope,
-                new ServerRequest('GET', '/missing-resource'),
-                new RouteParams(),
-                new QueryParams(),
-                RouteConfig::compile('/missing-resource'),
-            );
+            $app->scoped(static function (\Phalanx\Scope\ExecutionScope $scope): void {
+                $context = new ExecutionContext(
+                    $scope,
+                    new ServerRequest('GET', '/missing-resource'),
+                    new RouteParams(),
+                    new QueryParams(),
+                    RouteConfig::compile('/missing-resource'),
+                );
 
-            try {
                 self::assertSame('', $context->requestId);
-            } finally {
-                $scope->dispose();
-            }
+            });
         });
     }
 

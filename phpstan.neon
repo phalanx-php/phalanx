@@ -88,6 +88,31 @@ parameters:
     phalanxCoroutineInternalPaths:
         - src/Runtime/src/Scope/ExecutionLifecycleScope.php
         - benchmarks/kernel/cases/ContextSwitchCases.php
+    phalanxTestingUseTestAppExemptPaths:
+        - src/Runtime/tests/Resilience/CancellationPropagationTimingTest.php
+        - src/Runtime/tests/Resilience/LeaseLedgerConcurrencyTest.php
+        - src/Runtime/tests/Resilience/LedgerChurnTest.php
+        - src/Runtime/tests/Resilience/SiblingCancelIsolationStressTest.php
+        - src/Runtime/tests/Smoke/WorkingRuntimeSmokeTest.php
+    phalanxTestingUseTestScopeExemptPaths:
+        - src/Runtime/tests/Resilience/CancellationPropagationTimingTest.php
+        - src/Runtime/tests/Resilience/LeaseLedgerConcurrencyTest.php
+        - src/Runtime/tests/Resilience/LedgerChurnTest.php
+        - src/Runtime/tests/Resilience/SiblingCancelIsolationStressTest.php
+        - src/Runtime/tests/Smoke/WorkingRuntimeSmokeTest.php
+        - src/WebSocket/tests/Integration/ClientCancellationTest.php
+        - src/WebSocket/tests/Integration/ClientConcurrentSendTest.php
+        - src/WebSocket/tests/Integration/ClientHandshakeTest.php
+        - src/Worker/tests/Integration/InWorkerTest.php
+    phalanxTestingNoRawSleepExemptPaths:
+        - src/Agents/tests/Integration/ChannelBackedLoopTest.php
+        - src/AiProviders/tests/Acceptance/V0AcceptanceGateTest.php
+        - src/Console/tests/Integration/Application/ApplicationTest.php
+        - src/Console/tests/Integration/Runtime/Identity/SignalTrapTest.php
+        - src/Network/tests/Integration/UdpEchoTest.php
+        - src/Runtime/tests/Resilience/CancellationPropagationTimingTest.php
+        - src/Runtime/tests/Resilience/SiblingCancelIsolationStressTest.php
+        - src/Runtime/tests/Smoke/WorkingRuntimeSmokeTest.php
     # swoole/ide-helper's Swoole\Lock::lock() stub omits $operation and $timeout.
     # stubs/swoole-lock.php documents the correct ext-swoole 6 signature but cannot
     # override scanDirectories entries in PHPStan 2.x; the ignoreErrors below are

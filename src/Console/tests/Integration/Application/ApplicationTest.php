@@ -401,16 +401,12 @@ TOML);
 
         $this->scope->run(static function (ExecutionScope $_scope) use ($app, $stream, &$token): void {
             $token = CancellationToken::create();
-            $outerScope = $app->host()->createScope($token);
-
-            try {
+            $app->host()->scoped(static function (ExecutionScope $outerScope) use ($app, $stream): void {
                 $code = $app->dispatchScoped($outerScope, ['cancel']);
 
                 self::assertSame(130, $code);
                 self::assertStringContainsString('Cancelled: scope cancelled', StreamOutputHelper::contents($stream));
-            } finally {
-                $outerScope->dispose();
-            }
+            }, $token);
         });
 
         $resource = $app->host()->runtime()->memory->resources->all(ConsoleResourceSid::Command)[0];
@@ -447,16 +443,12 @@ TOML);
 
         $this->scope->run(static function (ExecutionScope $_scope) use ($app, $signals, $stream): void {
             $token = CancellationToken::create();
-            $outerScope = $app->host()->createScope($token);
-
-            try {
+            $app->host()->scoped(static function (ExecutionScope $outerScope) use ($app, $signals, $stream): void {
                 $code = $app->dispatchScoped($outerScope, ['cancel'], $signals);
 
                 self::assertSame(143, $code);
                 self::assertStringContainsString('Cancelled: signal:term', StreamOutputHelper::contents($stream));
-            } finally {
-                $outerScope->dispose();
-            }
+            }, $token);
         });
 
         $resource = $app->host()->runtime()->memory->resources->all(ConsoleResourceSid::Command)[0];

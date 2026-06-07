@@ -10,6 +10,7 @@ use Phalanx\Console\Command\CommandGroup;
 use Phalanx\Console\Tests\Support\TestCase;
 use Phalanx\Console\Tests\Fixtures\Commands\FailingCommand;
 use Phalanx\Console\Tests\Fixtures\Commands\NoopCommand;
+use Phalanx\Scope\ExecutionScope;
 use PHPUnit\Framework\Attributes\Test;
 
 final class CommandDispatchTest extends TestCase
@@ -24,7 +25,9 @@ final class CommandDispatchTest extends TestCase
             'seed' => FailingCommand::class,
         ]);
 
-        $result = $group->dispatch($this->app->createScope(), 'migrate', [], 'console-command-test');
+        $result = $this->app->scoped(static function (ExecutionScope $scope) use ($group): int {
+            return $group->dispatch($scope, 'migrate', [], 'console-command-test');
+        });
 
         self::assertSame(0, $result);
     }
@@ -39,7 +42,9 @@ final class CommandDispatchTest extends TestCase
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Command not found: unknown');
 
-        $group->dispatch($this->app->createScope(), 'unknown', [], 'console-command-test');
+        $this->app->scoped(static function (ExecutionScope $scope) use ($group): int {
+            return $group->dispatch($scope, 'unknown', [], 'console-command-test');
+        });
     }
 
     #[Test]

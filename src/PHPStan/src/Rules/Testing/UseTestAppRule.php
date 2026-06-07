@@ -6,17 +6,13 @@ namespace Phalanx\PHPStan\Rules\Testing;
 
 use Phalanx\PHPStan\Support\NodeNames;
 use Phalanx\PHPStan\Support\RuleErrors;
+use Phalanx\PHPStan\Support\TestingPathPolicy;
 use PhpParser\Node\Expr\StaticCall;
 use PHPStan\Analyser\Scope;
 use PHPStan\Rules\IdentifierRuleError;
 use PHPStan\Rules\Rule;
 
 /**
- * Flags direct entry boot/build calls inside integration/feature test files
- * where TestApp boot is the canonical entry. Encourages users to consume
- * PhalanxTestCase::testApp() so cleanup, fakes, and lens activation are
- * handled uniformly.
- *
  * @implements Rule<StaticCall>
  */
 final class UseTestAppRule implements Rule
@@ -27,13 +23,13 @@ final class UseTestAppRule implements Rule
         'Phalanx\\Application' => ['starting'],
         'Phalanx\\Http\\Server' => ['starting'],
         'Phalanx\\Console\\Console' => ['starting', 'command'],
-        'Phalanx\\Agents\\Agents' => ['starting'],
+        'Phalanx\\DevServer\\DevServer' => ['starting'],
+        'Phalanx\\Tui\\Tui' => ['app', 'starting'],
     ];
 
-    private const array TEST_DIRECTORIES = [
-        '/tests/Integration/',
-        '/tests/Feature/',
-    ];
+    public function __construct(private readonly TestingPathPolicy $paths)
+    {
+    }
 
     public function getNodeType(): string
     {
@@ -43,7 +39,7 @@ final class UseTestAppRule implements Rule
     /** @return list<IdentifierRuleError> */
     public function processNode(\PhpParser\Node $node, Scope $scope): array
     {
-        if (!self::isInTestDirectory($scope->getFile())) {
+        if (!$this->paths->shouldReport($scope->getFile(), self::IDENTIFIER)) {
             return [];
         }
 
@@ -60,7 +56,7 @@ final class UseTestAppRule implements Rule
 
         return RuleErrors::build(
             sprintf(
-                'Integration tests should boot through PhalanxTestCase::testApp() instead of %s::%s(). '
+                'High-level Phalanx tests should boot through PhalanxTestCase::testApp() instead of %s::%s(). '
                 . 'Bypassing TestApp skips lens activation, fake registry resets, and ledger teardown assertions.',
                 $class,
                 $method,
@@ -68,18 +64,5 @@ final class UseTestAppRule implements Rule
             self::IDENTIFIER,
             $node->getStartLine(),
         );
-    }
-
-    private static function isInTestDirectory(string $file): bool
-    {
-        $normalized = str_replace('\\', '/', $file);
-
-        foreach (self::TEST_DIRECTORIES as $needle) {
-            if (str_contains($normalized, $needle)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 }
