@@ -4,15 +4,14 @@ declare(strict_types=1);
 
 namespace Phalanx\WebSocket\Client\Tests\Unit;
 
-use Phalanx\Application;
 use Phalanx\WebSocket\Client;
 use Phalanx\WebSocket\Client\Exception;
 use Phalanx\WebSocket\WebSocket;
 use Phalanx\WebSocket\Runtime\Identity\WebSocketResourceSid;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Task;
+use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 
 /**
  * URL validation and resource-cleanup paths for Client::connect().
@@ -22,17 +21,16 @@ use PHPUnit\Framework\TestCase;
  * StreamChunkedTest); these cases pin the synchronous failure
  * paths so the resource ledger is never leaked on bad input.
  */
-final class ConnectTest extends TestCase
+final class ConnectTest extends PhalanxTestCase
 {
     #[Test]
-    public function ConnectRejectsMalformedUrl(): void
+    public function connectRejectsMalformedUrl(): void
     {
-        Application::starting()
-            ->providers(\Phalanx\WebSocket\WebSocket::services())
-            ->run(Task::named(
+        $this->testApp(bundles: WebSocket::services())
+            ->scoped(Task::named(
                 'test.websocket.client.bad-url',
                 static function (ExecutionScope $scope): void {
-                    $client = $scope->service(\Phalanx\WebSocket\Client::class);
+                    $client = $scope->service(Client::class);
 
                     $beforeLive = $scope->runtime->memory->resources->liveCount(
                         WebSocketResourceSid::WebSocketClientConnection,
@@ -41,7 +39,7 @@ final class ConnectTest extends TestCase
                     try {
                         $client->connect($scope, 'not-a-url');
                         self::fail('Expected WsClientException for malformed URL.');
-                    } catch (\Phalanx\WebSocket\Client\Exception $e) {
+                    } catch (Exception $e) {
                         self::assertStringContainsString('Invalid WebSocket URL', $e->getMessage());
                     }
 
@@ -59,19 +57,18 @@ final class ConnectTest extends TestCase
     }
 
     #[Test]
-    public function ConnectRejectsUnsupportedScheme(): void
+    public function connectRejectsUnsupportedScheme(): void
     {
-        Application::starting()
-            ->providers(\Phalanx\WebSocket\WebSocket::services())
-            ->run(Task::named(
+        $this->testApp(bundles: WebSocket::services())
+            ->scoped(Task::named(
                 'test.websocket.client.bad-scheme',
                 static function (ExecutionScope $scope): void {
-                    $client = $scope->service(\Phalanx\WebSocket\Client::class);
+                    $client = $scope->service(Client::class);
 
                     try {
                         $client->connect($scope, 'http://example.test/socket');
                         self::fail('Expected WsClientException for non-ws scheme.');
-                    } catch (\Phalanx\WebSocket\Client\Exception $e) {
+                    } catch (Exception $e) {
                         self::assertStringContainsString('Unsupported WebSocket scheme', $e->getMessage());
                     }
                 },

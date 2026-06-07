@@ -119,6 +119,7 @@ parameters:
         - src/SurrealDb/tests/Unit
         - src/Tui/tests/Unit
         - src/WebSocket/tests/Unit
+        - src/WebSocket/tests/Client/Unit
         - src/Worker/tests/Unit
     phalanxTestingUseTestAppExemptPaths:
         - src/Runtime/tests/Resilience/CancellationPropagationTimingTest.php

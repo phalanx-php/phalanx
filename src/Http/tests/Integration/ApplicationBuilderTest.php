@@ -20,9 +20,7 @@ final class ApplicationBuilderTest extends TestCase
     public function buildsDispatchableApplicationWithServerConfigAndDefaultPoweredByHeader(): void
     {
         $this->scope->run(static function (ExecutionScope $_scope): void {
-            $app = self::http([
-                'PHALANX_REQUEST_TIMEOUT' => '2.5',
-            ])
+            $app = self::http(['PHALANX_REQUEST_TIMEOUT' => '2.5'])
                 ->routes([
                     'GET /hello' => BuilderHelloRoute::class,
                 ])

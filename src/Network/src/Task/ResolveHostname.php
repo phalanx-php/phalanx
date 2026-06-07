@@ -14,9 +14,7 @@ use Phalanx\Task\Scopeable;
 final class ResolveHostname implements Scopeable, Recoverable
 {
     public RecoveryPlan $recovery {
-        get {
-            return $this->recoveryPlan();
-        }
+        get => $this->recoveryPlan();
     }
 
     public function __construct(

@@ -15,9 +15,7 @@ use Phalanx\Task\Scopeable;
 final class ProbePort implements Scopeable, Recoverable
 {
     public RecoveryPlan $recovery {
-        get {
-            return $this->recoveryPlan();
-        }
+        get => $this->recoveryPlan();
     }
 
     public function __construct(
@@ -30,16 +28,19 @@ final class ProbePort implements Scopeable, Recoverable
     public function __invoke(TaskScope $scope): ProbeResult
     {
         $client = new TcpClient();
-        $start = hrtime(true);
+        $start = Mark::now();
 
-        $reachable = $client->connect($scope, $this->ip, $this->port, $this->timeoutSeconds);
-        $elapsed = (hrtime(true) - $start) / 1e6;
-        $client->close();
+        try {
+            $reachable = $client->connect($scope, $this->ip, $this->port, $this->timeoutSeconds);
+            $elapsed = $start->elapsed();
+        } finally {
+            $client->close();
+        }
 
         return new ProbeResult(
             ip: $this->ip,
             reachable: $reachable,
-            latencyMs: $reachable ? $elapsed : null,
+            latencyMs: $reachable ? $elapsed->toMilliseconds() : null,
             method: 'tcp',
             port: $this->port,
         );

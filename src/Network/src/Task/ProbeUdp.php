@@ -16,9 +16,7 @@ use Phalanx\Task\Scopeable;
 final class ProbeUdp implements Scopeable, Recoverable
 {
     public RecoveryPlan $recovery {
-        get {
-            return $this->recoveryPlan();
-        }
+        get => $this->recoveryPlan();
     }
 
     public function __construct(
@@ -46,22 +44,22 @@ final class ProbeUdp implements Scopeable, Recoverable
             );
         }
 
-        $start = hrtime(true);
-        $client->send($scope, $this->payload, $this->timeoutSeconds);
-
+        $start = Mark::now();
         $response = null;
+
         try {
+            $client->send($scope, $this->payload, $this->timeoutSeconds);
             $response = $client->recv($scope, $this->timeoutSeconds);
         } finally {
             $client->close();
         }
 
-        $elapsed = (hrtime(true) - $start) / 1e6;
+        $elapsed = $start->elapsed();
 
         return new ProbeResult(
             ip: $this->ip,
             reachable: $response !== null,
-            latencyMs: $response !== null ? $elapsed : null,
+            latencyMs: $response !== null ? $elapsed->toMilliseconds() : null,
             method: 'udp',
             port: $this->port,
             responseData: $response,

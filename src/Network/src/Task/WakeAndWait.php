@@ -17,9 +17,7 @@ use Phalanx\Task\Executable;
 final class WakeAndWait implements Executable, Recoverable
 {
     public RecoveryPlan $recovery {
-        get {
-            return $this->recoveryPlan();
-        }
+        get => $this->recoveryPlan();
     }
 
     public function __construct(

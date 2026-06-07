@@ -17,9 +17,7 @@ use Phalanx\Task\Scopeable;
 final class PingHost implements Scopeable, Recoverable
 {
     public RecoveryPlan $recovery {
-        get {
-            return $this->recoveryPlan();
-        }
+        get => $this->recoveryPlan();
     }
 
     public function __construct(
@@ -43,14 +41,14 @@ final class PingHost implements Scopeable, Recoverable
             $this->ip,
         );
 
-        $start = hrtime(true);
+        $start = Mark::now();
         $result = $command($scope);
-        $elapsed = (hrtime(true) - $start) / 1e6;
+        $elapsed = $start->elapsed();
 
         return new ProbeResult(
             ip: $this->ip,
             reachable: $result->successful,
-            latencyMs: $result->successful ? $elapsed : null,
+            latencyMs: $result->successful ? $elapsed->toMilliseconds() : null,
             method: 'icmp',
         );
     }
