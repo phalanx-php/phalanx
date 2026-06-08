@@ -125,13 +125,15 @@ jobs:
 
       - name: Split module
         if: github.event.inputs.action == 'split'
-        uses: driesvints/monorepo-split-github-action@v2
-        with:
-          package_directory: ${{ matrix.package.local_path }}
-          repository_organization: 'phalanx-php'
-          repository_name: ${{ matrix.package.split_repository }}
-          user_name: "github-actions[bot]"
-          user_email: "41898282+github-actions[bot]@users.noreply.github.com"
-          branch: "main"
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
+        run: |
+          REPO_NAME=$(basename ${{ matrix.package.split_repository }})
+          SPLIT_BRANCH="split-${REPO_NAME}-${GITHUB_RUN_ID}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git subtree split --prefix="${{ matrix.package.local_path }}" -b "$SPLIT_BRANCH"
+          git push "https://x-access-token:${GH_TOKEN}@github.com/phalanx-php/${REPO_NAME}.git" "$SPLIT_BRANCH:main" --force
+          git branch -D "$SPLIT_BRANCH"

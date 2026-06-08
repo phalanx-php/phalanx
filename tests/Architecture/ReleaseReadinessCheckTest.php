@@ -238,7 +238,12 @@ jobs:
 
       - name: Split module
         if: github.event.inputs.action == 'split'
-        uses: driesvints/monorepo-split-github-action@v2
+        run: |
+          REPO_NAME=$(basename ${{ matrix.package.split_repository }})
+          SPLIT_BRANCH="split-${REPO_NAME}-${GITHUB_RUN_ID}"
+          git subtree split --prefix="${{ matrix.package.local_path }}" -b "$SPLIT_BRANCH"
+          git push "https://x-access-token:${GH_TOKEN}@github.com/phalanx-php/${REPO_NAME}.git" "$SPLIT_BRANCH:main" --force
+          git branch -D "$SPLIT_BRANCH"
 YAML;
     }
 }
