@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Phalanx\Console\Command;
 
 use Phalanx\Console\Application\Application;
-use Phalanx\Console\Runtime\Identity\Signal;
-use Phalanx\Console\Runtime\Identity\SignalPolicy;
-use Phalanx\Console\Runtime\Identity\SignalState;
-use Phalanx\Console\Runtime\Identity\SignalTrap;
+use Phalanx\Console\Runtime\Signal;
+use Phalanx\Console\Runtime\SignalPolicy;
+use Phalanx\Console\Runtime\SignalState;
+use Phalanx\Console\Runtime\SignalTrap;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Traceable;

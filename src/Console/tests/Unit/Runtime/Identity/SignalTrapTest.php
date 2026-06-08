@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phalanx\Console\Tests\Unit\Runtime\Identity;
 
-use Phalanx\Console\Runtime\Identity\SignalPolicy;
-use Phalanx\Console\Runtime\Identity\SignalTrap;
+use Phalanx\Console\Runtime\SignalPolicy;
+use Phalanx\Console\Runtime\SignalTrap;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 

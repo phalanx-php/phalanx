@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Console\Tests\Integration\Runtime\Identity;
 
-use Phalanx\Console\Runtime\Identity\Signal;
-use Phalanx\Console\Runtime\Identity\SignalPolicy;
-use Phalanx\Console\Runtime\Identity\SignalTrap;
+use Phalanx\Console\Runtime\Signal;
+use Phalanx\Console\Runtime\SignalPolicy;
+use Phalanx\Console\Runtime\SignalTrap;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;

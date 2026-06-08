@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Phalanx\Console\Command;
 
-use Phalanx\Console\Runtime\Identity\ConsoleAnnotationSid;
-use Phalanx\Console\Runtime\Identity\ConsoleEventSid;
-use Phalanx\Console\Runtime\Identity\ConsoleResourceSid;
+use Phalanx\Console\Runtime\ConsoleAnnotationSid;
+use Phalanx\Console\Runtime\ConsoleEventSid;
+use Phalanx\Console\Runtime\ConsoleResourceSid;
 use Phalanx\Runtime\Identity\RuntimeAnnotationId;
 use Phalanx\Runtime\Identity\RuntimeEventId;
 use Phalanx\Runtime\Memory\ManagedResourceHandle;

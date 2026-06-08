@@ -51,11 +51,11 @@ final readonly class DefaultErrorRenderer implements ErrorRenderer
         $output->persist(self::MARGIN . $theme->error->apply($e->getMessage()));
 
         $output->persist("\n" . self::MARGIN . $muted->apply("Source: ") . $accent->apply($file . ':' . $line));
-        $output->persist((new SourcePreview($theme))->render($file, $line));
+        $output->persist(new SourcePreview($theme)->render($file, $line));
 
         if ($this->debug) {
             $output->persist(self::MARGIN . $muted->apply("Active Ledger Snapshot:"));
-            $tree = (new TaskTreeFormatter())->format($this->diagnosticTree);
+            $tree = new TaskTreeFormatter()->format($this->diagnosticTree);
             foreach (explode("\n", rtrim($tree)) as $treeLine) {
                 $output->persist(self::MARGIN . $treeLine);
             }

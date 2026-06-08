@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Console\Runtime\Identity;
+namespace Phalanx\Console\Runtime;
 
 use Closure;
 use Swoole\Process;

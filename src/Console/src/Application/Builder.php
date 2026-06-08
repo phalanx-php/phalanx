@@ -28,7 +28,7 @@ use Phalanx\Trace\Trace;
 use Phalanx\Worker\WorkerDispatch;
 
 /**
- * Module entry builder for Console console applications.
+ * Module entry builder for console applications.
  *
  * Bootstrap files should enter through `Console::starting($context)`, not
  * through the root Runtime ApplicationBuilder plus a manually assembled runner.

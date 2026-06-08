@@ -7,7 +7,7 @@ namespace Phalanx\Console\Application;
 use Phalanx\Boot\AppContext;
 use Phalanx\Console\Output\StreamOutput;
 use Phalanx\Console\Output\TerminalEnvironment;
-use Phalanx\Console\Runtime\Identity\SignalPolicy;
+use Phalanx\Console\Runtime\SignalPolicy;
 
 final readonly class Config
 {

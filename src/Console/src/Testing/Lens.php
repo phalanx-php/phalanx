@@ -11,7 +11,7 @@ use Phalanx\Console\Command\CommandGroup;
 use Phalanx\Console\Console;
 use Phalanx\Console\Output\StreamOutput;
 use Phalanx\Console\Output\TerminalEnvironment;
-use Phalanx\Console\Runtime\Identity\ConsoleResourceSid;
+use Phalanx\Console\Runtime\ConsoleResourceSid;
 use Phalanx\Runtime\Identity\RuntimeResourceSid;
 use Phalanx\Runtime\Memory\ManagedResource;
 use Phalanx\Service\ServiceBundle;

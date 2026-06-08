@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace Phalanx\Console\Tests\Integration\Application;
 
-use Phalanx\Console\Tests\Support\TestCase;
+use Phalanx\Console\Application\Config;
 use Phalanx\Console\Command\Arg;
 use Phalanx\Console\Command\CommandConfig;
 use Phalanx\Console\Command\CommandGroup;
-use Phalanx\Console\Application\Config;
-use Phalanx\Console\Runtime\Identity\ConsoleAnnotationSid;
-use Phalanx\Console\Runtime\Identity\ConsoleResourceSid;
 use Phalanx\Console\Command\Opt;
+use Phalanx\Console\Runtime\ConsoleAnnotationSid;
+use Phalanx\Console\Runtime\ConsoleResourceSid;
 use Phalanx\Console\Tests\Fixtures\Commands\FlatRanCommand;
 use Phalanx\Console\Tests\Fixtures\Commands\NestedRanCommand;
 use Phalanx\Console\Tests\Fixtures\Commands\ScanCommand;
+use Phalanx\Console\Tests\Support\TestCase;
 use Phalanx\Runtime\Memory\ManagedResourceState;
 use Phalanx\Scope\ExecutionScope;
 use PHPUnit\Framework\Attributes\Test;

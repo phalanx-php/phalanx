@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Console\Tests\Unit\Runtime\Identity;
 
 use InvalidArgumentException;
-use Phalanx\Console\Runtime\Identity\SignalPolicy;
+use Phalanx\Console\Runtime\SignalPolicy;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 

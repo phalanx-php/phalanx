@@ -9,7 +9,7 @@ use Phalanx\Console\Command\CommandDispatcher;
 use Phalanx\Console\Command\CommandGroup;
 use Phalanx\Console\Command\DispatchTask;
 use Phalanx\Console\Command\InlineCommand;
-use Phalanx\Console\Runtime\Identity\SignalState;
+use Phalanx\Console\Runtime\SignalState;
 use Phalanx\Scope\ExecutionScope;
 
 final class Application

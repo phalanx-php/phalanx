@@ -95,7 +95,7 @@ final class DescribesCommandTest extends TestCase
     private static function legacyTupleCommands(): mixed
     {
         $command = HopliteCommand::class;
-        $config = new CommandConfig(description: 'Override from Olympus');
+        $config = new CommandConfig(description: 'Override from command config');
 
         return [
             'march' => array_values(compact('command', 'config')),
