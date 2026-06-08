@@ -14,12 +14,14 @@ use Phalanx\Runtime\Identity\RuntimeResourceSid;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Service\Services;
 use Phalanx\Testing\PhalanxTestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 final class OpenTunnelTest extends PhalanxTestCase
 {
     private ?string $sshBinaryPath = null;
 
-    public function testLocalTunnelWaitsForForwardedPortBeforeReturning(): void
+    #[Test]
+    public function localTunnelWaitsForForwardedPortBeforeReturning(): void
     {
         $this->sshBinaryPath = $this->writeExecutable(<<<'PHP'
 #!/usr/bin/env php
@@ -74,7 +76,8 @@ PHP);
         self::assertSame([true, 0], $result);
     }
 
-    public function testFailedTunnelStartupReleasesManagedProcess(): void
+    #[Test]
+    public function failedTunnelStartupReleasesManagedProcess(): void
     {
         $this->sshBinaryPath = PHP_BINARY;
         $this->expectException(SshConnectionException::class);
@@ -118,7 +121,7 @@ PHP);
 
     private function writeExecutable(string $contents): string
     {
-        $path = $this->tempWorkspace('phalanx-ssh-fake-')->file(bin2hex(random_bytes(4)), $contents);
+        $path = $this->tempWorkspace('phalanx-ssh-fake-')->file(uniqid('script-', true), $contents);
         chmod($path, 0755);
 
         return $path;

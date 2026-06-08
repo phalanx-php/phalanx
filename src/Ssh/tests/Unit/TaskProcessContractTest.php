@@ -17,6 +17,7 @@ use Phalanx\Runtime\Identity\RuntimeResourceSid;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Service\Services;
 use Phalanx\Testing\PhalanxTestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 final class TaskProcessContractTest extends PhalanxTestCase
 {
@@ -24,7 +25,8 @@ final class TaskProcessContractTest extends PhalanxTestCase
     private ?string $sftpBinaryPath = null;
     private ?string $sshBinaryPath = null;
 
-    public function testRunCommandUsesConfiguredBinaryAndCollectsResult(): void
+    #[Test]
+    public function runCommandUsesConfiguredBinaryAndCollectsResult(): void
     {
         $this->sshBinaryPath = $this->writeExecutable(<<<'PHP'
 #!/usr/bin/env php
@@ -51,7 +53,8 @@ PHP);
         self::assertSame(0, $this->scope->memory->resources->liveCount(RuntimeResourceSid::StreamingProcess));
     }
 
-    public function testScpTransferUsesConfiguredBinaryAndReportsLocalBytes(): void
+    #[Test]
+    public function scpTransferUsesConfiguredBinaryAndReportsLocalBytes(): void
     {
         $this->scpBinaryPath = $this->writeExecutable(<<<'PHP'
 #!/usr/bin/env php
@@ -75,7 +78,8 @@ PHP);
         self::assertSame(0, $this->scope->memory->resources->liveCount(RuntimeResourceSid::StreamingProcess));
     }
 
-    public function testSftpUploadCleansBatchAndContentTempFiles(): void
+    #[Test]
+    public function sftpUploadCleansBatchAndContentTempFiles(): void
     {
         $marker = $this->writeDataFile('');
         $this->sftpBinaryPath = $this->writeExecutable(<<<PHP
@@ -147,6 +151,6 @@ PHP);
 
     private function writeDataFile(string $contents): string
     {
-        return $this->tempWorkspace('phalanx-ssh-task-')->file(bin2hex(random_bytes(4)), $contents);
+        return $this->tempWorkspace('phalanx-ssh-task-')->file(uniqid('script-', true), $contents);
     }
 }

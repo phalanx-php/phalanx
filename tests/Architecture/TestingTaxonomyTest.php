@@ -185,13 +185,29 @@ final class TestingTaxonomyTest extends TestCase
     }
 
     #[Test]
+    public function raw_io_exceptions_name_files_that_contain_raw_io_boundaries(): void
+    {
+        $expected = self::phpStanParameters()['phalanxTestingNoRawIoExemptPaths'] ?? [];
+        $violations = [];
+
+        foreach (array_unique($expected) as $path) {
+            if (self::rawIoHits(self::root() . '/' . $path) === []) {
+                $violations[] = "Raw-IO exception {$path} no longer contains a raw IO boundary.";
+            }
+        }
+
+        self::assertSame([], $violations);
+    }
+
+    #[Test]
     public function raw_test_io_is_fenced_for_osr_183(): void
     {
         $violations = [];
+        $exemptPaths = array_fill_keys(self::phpStanParameters()['phalanxTestingNoRawIoExemptPaths'] ?? [], true);
 
         foreach (self::testPhpFiles() as $file) {
             $signals = TestFileSignals::from($file, self::root());
-            if ($signals->architecture || $signals->phpstan) {
+            if ($signals->architecture || $signals->phpstan || isset($exemptPaths[$signals->path])) {
                 continue;
             }
 
@@ -356,10 +372,85 @@ final class TestingTaxonomyTest extends TestCase
         return [
             ...self::sourceHits($source, '/fopen\s*\(\s*[\'"]php:\/\/(?:temp|memory)[\'"]/', 'raw php:// stream open'),
             ...self::sourceHits($source, '/fopen\s*\(\s*[\'"]\/dev\/null[\'"]/', 'raw null stream open'),
-            ...self::sourceHits($source, '/(?<![A-Za-z_])tempnam\s*\(/', 'tempnam()'),
-            ...self::sourceHits($source, '/(?<![A-Za-z_])sys_get_temp_dir\s*\(/', 'sys_get_temp_dir()'),
-            ...self::sourceHits($source, '/(?<![A-Za-z_])tmpfile\s*\(/', 'tmpfile()'),
+            ...self::functionCallHits($source, [
+                'file_put_contents' => 'file_put_contents()',
+                'mkdir' => 'mkdir()',
+                'rmdir' => 'rmdir()',
+                'sys_get_temp_dir' => 'sys_get_temp_dir()',
+                'tempnam' => 'tempnam()',
+                'tmpfile' => 'tmpfile()',
+                'unlink' => 'unlink()',
+            ]),
         ];
+    }
+
+    /**
+     * @param array<string, string> $labelsByFunction
+     * @return list<SourceHit>
+     */
+    private static function functionCallHits(string $source, array $labelsByFunction): array
+    {
+        $tokens = token_get_all($source);
+        $hits = [];
+
+        foreach ($tokens as $index => $token) {
+            if (!is_array($token) || $token[0] !== T_STRING) {
+                continue;
+            }
+
+            $function = strtolower($token[1]);
+            if (!isset($labelsByFunction[$function])) {
+                continue;
+            }
+
+            if (in_array(
+                self::previousSignificantToken($tokens, $index),
+                [T_FUNCTION, T_OBJECT_OPERATOR, T_NULLSAFE_OBJECT_OPERATOR, T_DOUBLE_COLON],
+                true,
+            )) {
+                continue;
+            }
+
+            if (self::nextSignificantToken($tokens, $index) !== '(') {
+                continue;
+            }
+
+            $hits[] = new SourceHit(label: $labelsByFunction[$function], line: $token[2]);
+        }
+
+        return $hits;
+    }
+
+    /** @param list<array{0:int, 1:string, 2:int}|string> $tokens */
+    private static function previousSignificantToken(array $tokens, int $index): int|string|null
+    {
+        for ($cursor = $index - 1; $cursor >= 0; $cursor--) {
+            $token = $tokens[$cursor];
+            if (is_array($token) && in_array($token[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
+                continue;
+            }
+
+            return is_array($token) ? $token[0] : $token;
+        }
+
+        return null;
+    }
+
+    /** @param list<array{0:int, 1:string, 2:int}|string> $tokens */
+    private static function nextSignificantToken(array $tokens, int $index): int|string|null
+    {
+        $count = count($tokens);
+
+        for ($cursor = $index + 1; $cursor < $count; $cursor++) {
+            $token = $tokens[$cursor];
+            if (is_array($token) && in_array($token[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
+                continue;
+            }
+
+            return is_array($token) ? $token[0] : $token;
+        }
+
+        return null;
     }
 
     /**

@@ -91,7 +91,7 @@ final class LiveRegionRendererTest extends TestCase
             $renderer->update('frame 2');
             $renderer->settle('done');
 
-            self::assertSame("done\n", $stream->drain());
+            self::assertSame("done\n", $stream->contents());
         } finally {
             $stream->close();
         }

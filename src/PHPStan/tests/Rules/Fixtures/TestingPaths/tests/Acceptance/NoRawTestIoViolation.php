@@ -14,5 +14,9 @@ final class NoRawTestIoViolation
         sys_get_temp_dir();
         tempnam('.', 'phalanx-');
         tmpfile();
+        file_put_contents('fixture.txt', 'fixture');
+        mkdir('fixtures');
+        unlink('fixture.txt');
+        rmdir('fixtures');
     }
 }

@@ -22,8 +22,7 @@ final class TempWorkspace
     {
         $root = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR)
             . DIRECTORY_SEPARATOR
-            . $prefix
-            . bin2hex(random_bytes(8));
+            . uniqid($prefix, true);
 
         if (!mkdir($root, 0o755, true) && !is_dir($root)) {
             throw new RuntimeException("Unable to create temporary workspace: {$root}");
@@ -39,7 +38,7 @@ final class TempWorkspace
 
     public function path(string $relative = ''): string
     {
-        $relative = trim($relative, '/\\');
+        $relative = self::normalizeRelativePath($relative);
 
         return $relative === '' ? $this->root : $this->root . DIRECTORY_SEPARATOR . $relative;
     }
@@ -115,5 +114,28 @@ final class TempWorkspace
         }
 
         rmdir($this->root);
+    }
+
+    private static function normalizeRelativePath(string $relative): string
+    {
+        $path = str_replace('\\', '/', $relative);
+
+        if (str_starts_with($path, '/') || preg_match('/^[A-Za-z]:\//', $path) === 1) {
+            throw new RuntimeException("Invalid temporary workspace path: {$relative}");
+        }
+
+        $relative = trim($path, '/');
+
+        if ($relative === '') {
+            return '';
+        }
+
+        foreach (explode('/', $relative) as $segment) {
+            if ($segment === '' || $segment === '.' || $segment === '..') {
+                throw new RuntimeException("Invalid temporary workspace path: {$relative}");
+            }
+        }
+
+        return str_replace('/', DIRECTORY_SEPARATOR, $relative);
     }
 }

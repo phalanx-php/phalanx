@@ -7,6 +7,7 @@ namespace Phalanx\Filesystem\Tests\Unit\NativeFastPath;
 use Phalanx\Filesystem\NativeFastPath\NativeFastPath;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Testing\PhalanxTestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 /**
  * Round-trips a small payload through `Coroutine\System::readFile` /
@@ -17,7 +18,8 @@ use Phalanx\Testing\PhalanxTestCase;
  */
 final class NativeFastPathTest extends PhalanxTestCase
 {
-    public function testReadAndWriteRoundTrip(): void
+    #[Test]
+    public function readAndWriteRoundTrip(): void
     {
         $path = $this->tempWorkspace('phalanx-native-fast-')->path('payload.txt');
 

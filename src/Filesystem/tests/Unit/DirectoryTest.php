@@ -9,13 +9,15 @@ use Phalanx\Filesystem\Task\ExistsFile;
 use Phalanx\Filesystem\Task\ListDirectory;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Testing\UsesTempWorkspace;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class DirectoryTest extends TestCase
 {
     use UsesTempWorkspace;
 
-    public function test_create_directory(): void
+    #[Test]
+    public function createsDirectory(): void
     {
         $tmpDir = $this->tempWorkspace('phalanx-directory-')->path('created');
 
@@ -26,7 +28,8 @@ final class DirectoryTest extends TestCase
         $this->assertTrue(is_dir($tmpDir));
     }
 
-    public function test_create_directory_recursive(): void
+    #[Test]
+    public function createsDirectoryRecursively(): void
     {
         $tmpDir = $this->tempWorkspace('phalanx-directory-')->path('nested/deep');
 
@@ -37,7 +40,8 @@ final class DirectoryTest extends TestCase
         $this->assertTrue(is_dir($tmpDir));
     }
 
-    public function test_list_directory(): void
+    #[Test]
+    public function listsDirectory(): void
     {
         $workspace = $this->tempWorkspace('phalanx-directory-');
         $tmpDir = $workspace->dir('list');
@@ -56,7 +60,8 @@ final class DirectoryTest extends TestCase
         $this->assertNotContains('..', $entries);
     }
 
-    public function test_exists_file(): void
+    #[Test]
+    public function checksFileExistence(): void
     {
         $scope = $this->createStub(ExecutionScope::class);
 

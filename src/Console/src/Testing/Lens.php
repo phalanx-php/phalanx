@@ -118,8 +118,8 @@ final class Lens implements LensContract
 
             return new Result(
                 exitCode: $exitCode,
-                stdout: $stdout->drain(),
-                stderr: $stderr->drain(),
+                stdout: $stdout->contents(),
+                stderr: $stderr->contents(),
                 liveCommandResources: $memory->resources->liveCount(ConsoleResourceSid::Command),
                 liveRuntimeScopes: $memory->resources->liveCount(RuntimeResourceSid::Scope),
                 liveTasks: $supervisor->liveCount(),

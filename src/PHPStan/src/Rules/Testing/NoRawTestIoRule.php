@@ -20,10 +20,14 @@ final class NoRawTestIoRule implements Rule
 {
     private const string IDENTIFIER = 'phalanx.testing.noRawIo';
 
-    private const array RAW_TEMP_FUNCTIONS = [
+    private const array RAW_TEST_IO_FUNCTIONS = [
+        'file_put_contents',
+        'mkdir',
+        'rmdir',
         'sys_get_temp_dir',
         'tempnam',
         'tmpfile',
+        'unlink',
     ];
 
     public function __construct(private readonly TestingPathPolicy $paths)
@@ -48,7 +52,7 @@ final class NoRawTestIoRule implements Rule
         }
 
         $function = strtolower(ltrim($function, '\\'));
-        if (in_array($function, self::RAW_TEMP_FUNCTIONS, true)) {
+        if (in_array($function, self::RAW_TEST_IO_FUNCTIONS, true)) {
             return $this->report($node, "{$function}()");
         }
 

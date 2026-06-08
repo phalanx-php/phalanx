@@ -23,6 +23,6 @@ final class StreamOutputHelper
 
     public static function contents(ResourceHandle $stream): string
     {
-        return $stream->drain();
+        return $stream->contents();
     }
 }

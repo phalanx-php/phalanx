@@ -16,13 +16,15 @@ use Phalanx\Stream\ResourceHandle;
 use Phalanx\Stream\Stream;
 use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\After;
+use PHPUnit\Framework\Attributes\Test;
 
 final class DevServerIntegrationTest extends PhalanxTestCase
 {
     /** @var list<ResourceHandle> */
     private array $streams = [];
 
-    public function testManagedProcessReachesRunningOnReadinessMatch(): void
+    #[Test]
+    public function managedProcessReachesRunningOnReadinessMatch(): void
     {
         $script = 'echo "ready\n"; for ($i = 0; $i < 50; $i++) { usleep(20000); }';
         $config = Process::named('readiness-fixture')
@@ -44,7 +46,8 @@ final class DevServerIntegrationTest extends PhalanxTestCase
         self::assertSame(0, $this->scope->memory->resources->liveCount(RuntimeResourceSid::StreamingProcess));
     }
 
-    public function testManagedProcessReachesRunningOnStderrReadinessMatch(): void
+    #[Test]
+    public function managedProcessReachesRunningOnStderrReadinessMatch(): void
     {
         $script = 'fwrite(STDERR, "ready\n"); for ($i = 0; $i < 50; $i++) { usleep(20000); }';
         $config = Process::named('stderr-readiness-fixture')
@@ -66,7 +69,8 @@ final class DevServerIntegrationTest extends PhalanxTestCase
         self::assertSame(0, $this->scope->memory->resources->liveCount(RuntimeResourceSid::StreamingProcess));
     }
 
-    public function testManagedProcessImmediateReadinessRunsWithoutPattern(): void
+    #[Test]
+    public function managedProcessImmediateReadinessRunsWithoutPattern(): void
     {
         $script = 'for ($i = 0; $i < 50; $i++) { usleep(20000); }';
         $config = Process::named('immediate-fixture')
@@ -87,7 +91,8 @@ final class DevServerIntegrationTest extends PhalanxTestCase
         self::assertSame(0, $this->scope->memory->resources->liveCount(RuntimeResourceSid::StreamingProcess));
     }
 
-    public function testManagedProcessCrashFiresCallback(): void
+    #[Test]
+    public function managedProcessCrashFiresCallback(): void
     {
         $config = Process::named('crash-fixture')
             ->command(PHP_BINARY . ' -r ' . escapeshellarg('exit(2);'));
@@ -109,11 +114,11 @@ final class DevServerIntegrationTest extends PhalanxTestCase
         self::assertSame(0, $this->scope->memory->resources->liveCount(RuntimeResourceSid::StreamingProcess));
     }
 
-    public function testFileWatcherDetectsMtimeChange(): void
+    #[Test]
+    public function fileWatcherDetectsMtimeChange(): void
     {
         $tmpDir = $this->tempDir();
-        $file = $tmpDir . '/probe.php';
-        file_put_contents($file, "<?php\n\$probe = 1;\n");
+        $file = $this->tempWorkspace()->file(basename($tmpDir) . '/probe.php', "<?php\n\$probe = 1;\n");
 
         $changes = $this->scope->run(static function (ExecutionScope $scope) use ($tmpDir, $file): array {
             $captured = [];
@@ -140,7 +145,8 @@ final class DevServerIntegrationTest extends PhalanxTestCase
         self::assertContains($file, $changes);
     }
 
-    public function testManagedProcessRestartsCleanly(): void
+    #[Test]
+    public function managedProcessRestartsCleanly(): void
     {
         $script = 'echo "ready\n"; for ($i = 0; $i < 50; $i++) { usleep(20000); }';
         $config = Process::named('restart-fixture')
@@ -170,7 +176,8 @@ final class DevServerIntegrationTest extends PhalanxTestCase
         self::assertSame(0, $this->scope->memory->resources->liveCount(RuntimeResourceSid::StreamingProcess));
     }
 
-    public function testManagedProcessStopIsIdempotent(): void
+    #[Test]
+    public function managedProcessStopIsIdempotent(): void
     {
         $script = 'echo "ready\n"; for ($i = 0; $i < 50; $i++) { usleep(20000); }';
         $config = Process::named('idempotent-stop-fixture')
@@ -196,7 +203,8 @@ final class DevServerIntegrationTest extends PhalanxTestCase
         self::assertSame(0, $this->scope->memory->resources->liveCount(RuntimeResourceSid::StreamingProcess));
     }
 
-    public function testManagedProcessStopBeforeStartIsSafe(): void
+    #[Test]
+    public function managedProcessStopBeforeStartIsSafe(): void
     {
         $config = Process::named('stop-before-start-fixture')
             ->command(PHP_BINARY . ' -r ' . escapeshellarg('echo "ready\n";'));
@@ -211,7 +219,8 @@ final class DevServerIntegrationTest extends PhalanxTestCase
         self::assertSame(0, $this->scope->memory->resources->liveCount(RuntimeResourceSid::StreamingProcess));
     }
 
-    public function testManagedProcessNaturalExitReleasesResourceBeforeScopeDisposal(): void
+    #[Test]
+    public function managedProcessNaturalExitReleasesResourceBeforeScopeDisposal(): void
     {
         $config = Process::named('natural-exit-fixture')
             ->command(PHP_BINARY . ' -r ' . escapeshellarg('echo "done\n";'));
@@ -233,7 +242,8 @@ final class DevServerIntegrationTest extends PhalanxTestCase
         self::assertSame(0, $this->scope->memory->resources->liveCount(RuntimeResourceSid::StreamingProcess));
     }
 
-    public function testFileWatcherStopWithoutStartIsSafe(): void
+    #[Test]
+    public function fileWatcherStopWithoutStartIsSafe(): void
     {
         $tmpDir = $this->tempDir();
 
@@ -252,11 +262,11 @@ final class DevServerIntegrationTest extends PhalanxTestCase
         self::assertSame(0, $this->scope->memory->resources->liveCount(RuntimeResourceSid::StreamingProcess));
     }
 
-    public function testFileWatcherStopSuppressesLaterChanges(): void
+    #[Test]
+    public function fileWatcherStopSuppressesLaterChanges(): void
     {
         $tmpDir = $this->tempDir();
-        $file = $tmpDir . '/probe.php';
-        file_put_contents($file, "<?php\n\$probe = 1;\n");
+        $file = $this->tempWorkspace()->file(basename($tmpDir) . '/probe.php', "<?php\n\$probe = 1;\n");
 
         $changes = $this->scope->run(static function (ExecutionScope $scope) use ($tmpDir, $file): array {
             $captured = [];
@@ -301,6 +311,6 @@ final class DevServerIntegrationTest extends PhalanxTestCase
 
     private function tempDir(): string
     {
-        return $this->tempWorkspace('dev-server-test-')->dir(bin2hex(random_bytes(4)));
+        return $this->tempWorkspace('dev-server-test-')->dir(uniqid('watcher-', true));
     }
 }

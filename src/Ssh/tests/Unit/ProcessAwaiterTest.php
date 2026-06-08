@@ -11,10 +11,12 @@ use Phalanx\Mark\Mark;
 use Phalanx\Runtime\Identity\RuntimeResourceSid;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Testing\PhalanxTestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 final class ProcessAwaiterTest extends PhalanxTestCase
 {
-    public function testProcessOutputExitCodeAndDurationAreCollected(): void
+    #[Test]
+    public function processOutputExitCodeAndDurationAreCollected(): void
     {
         $result = $this->scope->run(static function (ExecutionScope $scope): array {
             return ProcessAwaiter::spawn(
@@ -35,7 +37,8 @@ final class ProcessAwaiterTest extends PhalanxTestCase
         self::assertSame(0, $this->scope->memory->resources->liveCount(RuntimeResourceSid::StreamingProcess));
     }
 
-    public function testProcessTimeoutKillsAndReleasesManagedProcess(): void
+    #[Test]
+    public function processTimeoutKillsAndReleasesManagedProcess(): void
     {
         $marker = $this->tempPath();
         $timedOut = false;
@@ -59,13 +62,12 @@ final class ProcessAwaiterTest extends PhalanxTestCase
             self::assertSame(0, $this->scope->memory->resources->liveCount(RuntimeResourceSid::StreamingProcess));
         }
 
-        usleep(250000);
-
         self::assertTrue($timedOut);
-        self::assertFileDoesNotExist($marker);
+        self::assertFileRemainsMissing($marker, Mark::ms(250));
     }
 
-    public function testScopeCancellationKillsAndReleasesManagedProcess(): void
+    #[Test]
+    public function scopeCancellationKillsAndReleasesManagedProcess(): void
     {
         $marker = $this->tempPath();
         $cancelled = false;
@@ -95,13 +97,12 @@ final class ProcessAwaiterTest extends PhalanxTestCase
             self::assertSame(0, $this->scope->memory->resources->liveCount(RuntimeResourceSid::StreamingProcess));
         }
 
-        usleep(250000);
-
         self::assertTrue($cancelled);
-        self::assertFileDoesNotExist($marker);
+        self::assertFileRemainsMissing($marker, Mark::ms(250));
     }
 
-    public function testArgvExecutesShellMetacharactersAsLiteralArguments(): void
+    #[Test]
+    public function argvExecutesShellMetacharactersAsLiteralArguments(): void
     {
         $result = $this->scope->run(static function (ExecutionScope $scope): array {
             return ProcessAwaiter::spawn(
@@ -122,6 +123,16 @@ final class ProcessAwaiterTest extends PhalanxTestCase
 
     private function tempPath(): string
     {
-        return $this->tempWorkspace('phalanx-ssh-marker-')->missingPath(bin2hex(random_bytes(4)));
+        return $this->tempWorkspace('phalanx-ssh-marker-')->missingPath(uniqid('marker-', true));
+    }
+
+    private static function assertFileRemainsMissing(string $path, Mark $duration): void
+    {
+        $deadline = Mark::now()->plus($duration);
+
+        do {
+            self::assertFileDoesNotExist($path);
+            usleep(10_000);
+        } while (Mark::now()->until($deadline)->nanoseconds > 0);
     }
 }

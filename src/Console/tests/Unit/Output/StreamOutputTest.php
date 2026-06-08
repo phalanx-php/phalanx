@@ -39,7 +39,7 @@ final class StreamOutputTest extends TestCase
         try {
             $output->persist('hello');
 
-            self::assertSame("hello\n", $stream->drain());
+            self::assertSame("hello\n", $stream->contents());
         } finally {
             $stream->close();
         }
@@ -57,7 +57,7 @@ final class StreamOutputTest extends TestCase
         try {
             $output->persist('hello');
 
-            self::assertSame("\033[?2026hhello\n\033[?2026l", $stream->drain());
+            self::assertSame("\033[?2026hhello\n\033[?2026l", $stream->contents());
         } finally {
             $stream->close();
         }
@@ -74,7 +74,7 @@ final class StreamOutputTest extends TestCase
             $output->update('frame 2');
             $output->persist('done');
 
-            self::assertSame("done\n", $stream->drain());
+            self::assertSame("done\n", $stream->contents());
         } finally {
             $stream->close();
         }
@@ -93,7 +93,7 @@ final class StreamOutputTest extends TestCase
             $output->update('abcdefghijkl');
             $output->update('x');
 
-            self::assertStringContainsString("\033[2A\r\033[Jx", $stream->drain());
+            self::assertStringContainsString("\033[2A\r\033[Jx", $stream->contents());
         } finally {
             $stream->close();
         }

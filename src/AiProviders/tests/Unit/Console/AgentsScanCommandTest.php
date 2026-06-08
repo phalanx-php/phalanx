@@ -12,23 +12,11 @@ use Phalanx\Trace\Trace;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Unit tests for {@see AgentsScanCommand}.
- *
- * Uses a minimal {@see Scope} stub — the command performs no scope
- * interactions; the stub just satisfies the type constraint so we can invoke
- * the command directly without booting an Runtime application.
- *
- * Tests operate against the fixture discovered/ directory to exercise the
- * full scan → cache-write pipeline.
- */
 final class AgentsScanCommandTest extends TestCase
 {
     use UsesTempWorkspace;
 
     private string $cacheFile;
-
-    // ── test methods ───────────────────────────────────────────────────────────
 
     #[Test]
     public function commandWritesCacheFile(): void
@@ -129,7 +117,6 @@ final class AgentsScanCommandTest extends TestCase
         $command(self::makeScope());
         $contentAfterFirstRun = file_get_contents($this->cacheFile);
 
-        // Second run — source is unchanged, cache should be preserved.
         $command(self::makeScope());
         $contentAfterSecondRun = file_get_contents($this->cacheFile);
 
@@ -176,46 +163,27 @@ final class AgentsScanCommandTest extends TestCase
     #[Test]
     public function sourceMtimeMatchesMaxMtimeOfFixtureFiles(): void
     {
-        // Touch a known fixture file to a fixed epoch so max-mtime is predictable.
-        $fixtureFile = self::discoveredDir() . '/HoplitesAgent.php';
-        $originalTime = filemtime($fixtureFile);
-        $knownEpoch = 1700000000; // 2023-11-14T22:13:20Z — a fixed past timestamp
-
-        // Set the mtime to a known value; touch the other files to 0 so they
-        // don't accidentally have a newer mtime than $knownEpoch.
-        // We only need to verify the max-mtime logic, so touching HoplitesAgent
-        // to a known epoch and checking payload['source_mtime'] === that epoch
-        // only works reliably if we set ALL fixtures to <= $knownEpoch.
-        // Instead, use a temp directory with a single PHP file at $knownEpoch.
+        $knownEpoch = 1700000000;
         $tempDir = $this->tempWorkspace('ai-providers-mtime-')->dir('source');
         $tempFile = $this->tempWorkspace()->file('source/Sparta.php', "<?php\n// mtime fixture\n");
         touch($tempFile, $knownEpoch);
 
-        try {
-            $command = new AgentsScanCommand(
-                $tempDir,
-                'App\\Agents',
-                $this->cacheFile,
-            );
-            $command(self::makeScope());
+        $command = new AgentsScanCommand(
+            $tempDir,
+            'App\\Agents',
+            $this->cacheFile,
+        );
+        $command(self::makeScope());
 
-            $payload = self::readCache($this->cacheFile);
+        $payload = self::readCache($this->cacheFile);
 
-            self::assertSame($knownEpoch, $payload['source_mtime']);
-        } finally {
-            // Restore original mtime on the fixture (best-effort).
-            if ($originalTime !== false) {
-                touch($fixtureFile, $originalTime);
-            }
-        }
+        self::assertSame($knownEpoch, $payload['source_mtime']);
     }
 
     #[Test]
     public function writeCacheThrowsRuntimeExceptionWhenPathIsInvalid(): void
     {
-        // /dev/null/sub is an always-invalid target: /dev/null is a character
-        // device, so mkdir(/dev/null/sub) and file_put_contents will both fail.
-        $invalidPath = '/dev/null/ai-providers_test_' . uniqid() . '/cache.json';
+        $invalidPath = $this->tempWorkspace('ai-providers-invalid-')->file('not-a-directory', '') . '/cache.json';
 
         $command = new AgentsScanCommand(
             self::discoveredDir(),
@@ -228,15 +196,11 @@ final class AgentsScanCommandTest extends TestCase
         $command(self::makeScope());
     }
 
-    // ── lifecycle ──────────────────────────────────────────────────────────────
-
     protected function setUp(): void
     {
         parent::setUp();
         $this->cacheFile = $this->tempWorkspace('ai-providers-scan-')->path('cache.json');
     }
-
-    // ── helpers ────────────────────────────────────────────────────────────────
 
     private static function discoveredDir(): string
     {

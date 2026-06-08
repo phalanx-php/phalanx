@@ -85,7 +85,7 @@ final class AppInputTest extends PhalanxTestCase
         $screen = InputEchoScreen::$lastInstance;
         self::assertInstanceOf(InputEchoScreen::class, $screen);
         self::assertSame('x', $screen->text->get());
-        self::assertStringContainsString('x', $stream->drain());
+        self::assertStringContainsString('x', $stream->contents());
     }
 
     #[Test]
@@ -269,7 +269,7 @@ final class AppInputTest extends PhalanxTestCase
             $scope->delay(Mark::ms(20));
 
             $scope->cancellation()->cancel();
-            $output = $stream->drain();
+            $output = $stream->contents();
             self::assertStringContainsString('overlay-status', $output);
             $finalStatus = substr($output, strrpos($output, 'overlay-status') ?: 0);
             self::assertStringNotContainsString('screen-status', $finalStatus);

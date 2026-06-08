@@ -27,7 +27,7 @@ final class PasswordInputTest extends PromptTestCase
 
         $this->password()->prompt($this->scope, $this->output, $reader);
 
-        $written = $this->stream->drain();
+        $written = $this->stream->contents();
 
         self::assertStringNotContainsString('mypass', $written);
         self::assertStringContainsString('•', $written);

@@ -8,13 +8,17 @@ use Phalanx\PHPStan\Rules\Testing\NoRawTestIoRule;
 use Phalanx\PHPStan\Support\TestingPathPolicy;
 use PHPStan\Rules\Rule;
 use PHPStan\Testing\RuleTestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 /**
  * @extends RuleTestCase<NoRawTestIoRule>
  */
 final class NoRawTestIoRuleTest extends RuleTestCase
 {
-    public function testFlagsRawTestIoInHighLevelTests(): void
+    private ?TestingPathPolicy $pathPolicy = null;
+
+    #[Test]
+    public function flagsRawTestIoInHighLevelTests(): void
     {
         $this->analyse(
             [__DIR__ . '/../Fixtures/TestingPaths/tests/Acceptance/NoRawTestIoViolation.php'],
@@ -49,11 +53,32 @@ final class NoRawTestIoRuleTest extends RuleTestCase
                     . 'use Phalanx\\Stream\\Stream buffers or Phalanx\\Testing\\TempWorkspace.',
                     16,
                 ],
+                [
+                    'High-level Phalanx tests should not use raw test IO via file_put_contents(); '
+                    . 'use Phalanx\\Stream\\Stream buffers or Phalanx\\Testing\\TempWorkspace.',
+                    17,
+                ],
+                [
+                    'High-level Phalanx tests should not use raw test IO via mkdir(); '
+                    . 'use Phalanx\\Stream\\Stream buffers or Phalanx\\Testing\\TempWorkspace.',
+                    18,
+                ],
+                [
+                    'High-level Phalanx tests should not use raw test IO via unlink(); '
+                    . 'use Phalanx\\Stream\\Stream buffers or Phalanx\\Testing\\TempWorkspace.',
+                    19,
+                ],
+                [
+                    'High-level Phalanx tests should not use raw test IO via rmdir(); '
+                    . 'use Phalanx\\Stream\\Stream buffers or Phalanx\\Testing\\TempWorkspace.',
+                    20,
+                ],
             ],
         );
     }
 
-    public function testAcceptsPhalanxIoPrimitives(): void
+    #[Test]
+    public function acceptsPhalanxIoPrimitives(): void
     {
         $this->analyse(
             [__DIR__ . '/../Fixtures/TestingPaths/tests/Acceptance/NoRawTestIoValid.php'],
@@ -61,8 +86,38 @@ final class NoRawTestIoRuleTest extends RuleTestCase
         );
     }
 
+    #[Test]
+    public function configuredPathsExtendRawIoCoverage(): void
+    {
+        $fixture = __DIR__ . '/../Fixtures/TestingPaths/src/Module/tests/Unit/ConfiguredNoRawTestIoViolation.php';
+        $this->pathPolicy = new TestingPathPolicy(noRawIoPaths: ['src/Module/tests']);
+
+        $this->analyse(
+            [$fixture],
+            [
+                [
+                    'High-level Phalanx tests should not use raw test IO via file_put_contents(); '
+                    . 'use Phalanx\\Stream\\Stream buffers or Phalanx\\Testing\\TempWorkspace.',
+                    11,
+                ],
+            ],
+        );
+    }
+
+    #[Test]
+    public function configuredExemptionsSuppressRawIoCoverage(): void
+    {
+        $fixture = __DIR__ . '/../Fixtures/TestingPaths/src/Module/tests/Unit/ConfiguredNoRawTestIoViolation.php';
+        $this->pathPolicy = new TestingPathPolicy(
+            noRawIoPaths: ['src/Module/tests'],
+            noRawIoExemptPaths: ['src/Module/tests/Unit/ConfiguredNoRawTestIoViolation.php'],
+        );
+
+        $this->analyse([$fixture], []);
+    }
+
     protected function getRule(): Rule
     {
-        return new NoRawTestIoRule(new TestingPathPolicy());
+        return new NoRawTestIoRule($this->pathPolicy ?? new TestingPathPolicy());
     }
 }

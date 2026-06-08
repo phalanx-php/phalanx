@@ -18,6 +18,11 @@ trait UsesTempWorkspace
     #[After]
     protected function cleanupTempWorkspace(): void
     {
+        $this->disposeTempWorkspace();
+    }
+
+    protected function disposeTempWorkspace(): void
+    {
         $workspace = $this->tempWorkspace;
         $this->tempWorkspace = null;
         $workspace?->cleanup();

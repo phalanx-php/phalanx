@@ -19,7 +19,7 @@ final class ResourceHandleTest extends TestCase
         $buffer->write('alpha');
         $buffer->write(' beta');
 
-        self::assertSame('alpha beta', $buffer->drain());
+        self::assertSame('alpha beta', $buffer->contents());
     }
 
     #[Test]
@@ -27,7 +27,7 @@ final class ResourceHandleTest extends TestCase
     {
         $input = Stream::memoryInput('typed input');
 
-        self::assertSame('typed input', $input->drain());
+        self::assertSame('typed input', $input->contents());
     }
 
     #[Test]

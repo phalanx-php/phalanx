@@ -71,7 +71,7 @@ final class ResourceHandle
         rewind($this->resource());
     }
 
-    public function drain(): string
+    public function contents(): string
     {
         $this->rewind();
 

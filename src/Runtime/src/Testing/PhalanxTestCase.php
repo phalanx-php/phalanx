@@ -39,7 +39,37 @@ abstract class PhalanxTestCase extends TestCase
     }
 
     #[After]
-    protected function shutdownTestApps(): void
+    protected function shutdownPhalanxTestCase(): void
+    {
+        try {
+            $this->shutdownTestApps();
+        } finally {
+            try {
+                $this->shutdownPhalanxRuntime();
+            } finally {
+                $this->disposeTempWorkspace();
+            }
+        }
+    }
+
+    protected function cleanupTempWorkspace(): void
+    {
+        // PhalanxTestCase owns teardown ordering through shutdownPhalanxTestCase().
+    }
+
+    /** @return array<string, mixed> */
+    protected function phalanxContext(): array
+    {
+        return [];
+    }
+
+    /** @return null|Closure(\Phalanx\Service\Services, \Phalanx\Boot\AppContext): void */
+    protected function phalanxServices(): ?Closure
+    {
+        return null;
+    }
+
+    private function shutdownTestApps(): void
     {
         $apps = $this->testApps;
         $this->testApps = [];
@@ -49,8 +79,7 @@ abstract class PhalanxTestCase extends TestCase
         }
     }
 
-    #[After]
-    protected function shutdownPhalanxRuntime(): void
+    private function shutdownPhalanxRuntime(): void
     {
         if ($this->phalanxRuntime === null) {
             return;
@@ -66,17 +95,5 @@ abstract class PhalanxTestCase extends TestCase
             $this->phalanxRuntime->shutdown();
             $this->phalanxRuntime = null;
         }
-    }
-
-    /** @return array<string, mixed> */
-    protected function phalanxContext(): array
-    {
-        return [];
-    }
-
-    /** @return null|Closure(\Phalanx\Service\Services, \Phalanx\Boot\AppContext): void */
-    protected function phalanxServices(): ?Closure
-    {
-        return null;
     }
 }

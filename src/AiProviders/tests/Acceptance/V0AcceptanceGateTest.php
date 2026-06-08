@@ -327,7 +327,7 @@ final class V0AcceptanceGateTest extends PhalanxTestCase
 
     private function writeGate09Server(string $phpBody): string
     {
-        return $this->tempWorkspace('gate09-')->file(bin2hex(random_bytes(4)) . '.php', "<?php {$phpBody}");
+        return $this->tempWorkspace('gate09-')->file(uniqid('server-', true) . '.php', "<?php {$phpBody}");
     }
 
     /**

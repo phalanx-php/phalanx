@@ -189,6 +189,6 @@ final class ConcurrentTaskListTest extends PhalanxTestCase
 
     private function contents(ResourceHandle $stream): string
     {
-        return $stream->drain();
+        return $stream->contents();
     }
 }

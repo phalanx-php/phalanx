@@ -14,11 +14,8 @@ use RuntimeException;
 final class HandlerLoaderTest extends TestCase
 {
     use UsesTempWorkspace;
-
-    private string $fixtureDir;
-
     #[Test]
-    public function loads_handler_group_from_file(): void
+    public function loadsHandlerGroupFromFile(): void
     {
         $content = <<<'PHP'
 <?php
@@ -31,41 +28,36 @@ return HandlerGroup::of([
 ]);
 PHP;
 
-        file_put_contents($this->fixtureDir . '/handlers.php', $content);
+        $handlers = $this->tempWorkspace()->file('handlers/handlers.php', $content);
 
-        $group = HandlerLoader::load(null, $this->fixtureDir . '/handlers.php');
+        $group = HandlerLoader::load(null, $handlers);
 
         $this->assertInstanceOf(HandlerGroup::class, $group);
         $this->assertContains('task-a', $group->keys());
     }
 
     #[Test]
-    public function throws_for_missing_file(): void
+    public function throwsForMissingFile(): void
     {
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Handler file not found');
 
-        HandlerLoader::load(null, '/nonexistent/file.php');
+        HandlerLoader::load(null, $this->tempWorkspace('phalanx-handler-test-')->missingPath('missing.php'));
     }
 
     #[Test]
-    public function throws_for_invalid_return_type(): void
+    public function throwsForInvalidReturnType(): void
     {
         $content = <<<'PHP'
 <?php
 return 'not a handler group';
 PHP;
 
-        file_put_contents($this->fixtureDir . '/invalid.php', $content);
+        $invalid = $this->tempWorkspace()->file('handlers/invalid.php', $content);
 
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Handler file must return a group or Closure');
 
-        HandlerLoader::load(null, $this->fixtureDir . '/invalid.php');
-    }
-
-    protected function setUp(): void
-    {
-        $this->fixtureDir = $this->tempWorkspace('phalanx-handler-test-')->dir('handlers');
+        HandlerLoader::load(null, $invalid);
     }
 }
