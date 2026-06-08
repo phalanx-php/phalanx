@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Console\Tests\Unit\Command;
 
+use InvalidArgumentException;
 use Phalanx\Console\Command\Arg;
 use Phalanx\Console\Command\CommandConfig;
 use Phalanx\Console\Command\CommandGroup;
@@ -45,6 +46,17 @@ final class DescribesCommandTest extends TestCase
         self::assertArrayHasKey('noop', $commands);
         self::assertInstanceOf(CommandConfig::class, $commands['noop']->config);
         self::assertSame('', $commands['noop']->config->description);
+    }
+
+    #[Test]
+    public function invalid_command_entry_is_rejected(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('CommandGroup entries must be command class-strings or nested CommandGroup instances.');
+
+        (new \ReflectionMethod(CommandGroup::class, 'of'))->invoke(null, [
+            'march' => new CommandConfig(description: 'Override from command config'),
+        ]);
     }
 
     #[Test]
