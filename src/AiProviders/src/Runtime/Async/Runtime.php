@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\AiProviders\Runtime\Runtime;
+namespace Phalanx\AiProviders\Runtime\Async;
 
 use Phalanx\AiProviders\Runtime as RuntimeContract;
 use Phalanx\AiProviders\Runtime\CancellationException;

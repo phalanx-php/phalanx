@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\AiProviders\Tests\Unit\Runtime\Runtime;
+namespace Phalanx\AiProviders\Tests\Unit\Runtime\Async;
 
 use Phalanx\Cancellation\CancellationToken;
-use Phalanx\AiProviders\Runtime\Runtime\Runtime;
+use Phalanx\AiProviders\Runtime\Async\Runtime;
 use Phalanx\AiProviders\Runtime\CancellationException;
 use Phalanx\Runtime\RuntimeContext;
 use Phalanx\Scope\TaskScope;

@@ -26,7 +26,7 @@ use Phalanx\Scope\Suspendable;
  * Phalanx-independence boundary. The exception is deliberate and mirrors
  * conventions followed in:
  *
- *   - {@see \Phalanx\AiProviders\Runtime\Runtime\Runtime} (imports Phalanx\Scope\TaskScope)
+ *   - {@see \Phalanx\AiProviders\Runtime\Async\Runtime} (imports Phalanx\Scope\TaskScope)
  *   - {@see \Phalanx\AiProviders\Console\AgentsScanCommand} (imports Phalanx\Scope\Scope, Phalanx\Task\Scopeable)
  *
  * Imports in this file: {@see \Phalanx\HttpClient\Client},
@@ -40,7 +40,7 @@ use Phalanx\Scope\Suspendable;
  *
  * Scope injection: this transport requires a {@see Scope}&{@see Suspendable}
  * at construction time. Callers that wire ai-providers with the Runtime runtime
- * extract the scope from {@see \Phalanx\AiProviders\Runtime\Runtime\Runtime::$scope}
+ * extract the scope from {@see \Phalanx\AiProviders\Runtime\Async\Runtime::$scope}
  * (public-read via `private(set)`) before building this transport. Closures
  * inside {@see self::stream()} are `static` to prevent `$this` capture in a
  * long-running process.

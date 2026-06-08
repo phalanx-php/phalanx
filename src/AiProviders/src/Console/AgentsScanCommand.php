@@ -15,7 +15,7 @@ use Phalanx\Task\Scopeable;
  * JSON cache file consumable by {@see \Phalanx\AiProviders\Agent\Loader\Cached}.
  *
  * This is the SECOND documented boundary exception in phalanx-ai-providers (after
- * `Runtime/Runtime/Runtime.php`). It imports `Phalanx\Scope\Scope` and
+ * `Runtime/Async/Runtime.php`). It imports `Phalanx\Scope\Scope` and
  * `Phalanx\Task\Scopeable` to participate in the Console runtime as a supervised
  * task. The boundary is narrow and intentional — no further Phalanx-package
  * imports are permitted in this class.
