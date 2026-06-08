@@ -2,7 +2,11 @@
 
 declare(strict_types=1);
 
-final class ReleaseReadinessCheck
+use Symfony\Component\Yaml\Yaml;
+
+require_once __DIR__ . '/../vendor/autoload.php';
+
+class ReleaseReadinessCheck
 {
     /** @var list<string> */
     private array $errors = [];
@@ -15,13 +19,15 @@ final class ReleaseReadinessCheck
     public function __invoke(): int
     {
         $rootComposer = $this->json('composer.json');
+        $workflow = $this->workflow();
         $modules = $this->modules();
-        $matrix = $this->splitMatrix();
+        $matrix = $this->splitMatrix($workflow);
 
         $this->assertRootComposer($rootComposer, $modules);
+        $this->assertModuleBranchAliases($modules);
         $this->assertModuleMetadata($modules);
         $this->assertSplitMatrix($modules, $matrix);
-        $this->assertWorkflowGate();
+        $this->assertWorkflowGate($workflow);
 
         if ($this->errors === []) {
             fwrite(STDOUT, "Release readiness checks passed.\n");
@@ -94,6 +100,30 @@ final class ReleaseReadinessCheck
     /**
      * @param array<string, array{path: string, composer: array<string, mixed>}> $modules
      */
+    private function assertModuleBranchAliases(array $modules): void
+    {
+        $aliases = [];
+
+        foreach ($modules as $module => $record) {
+            $alias = $this->branchAlias($record['composer']);
+
+            if ($alias === null) {
+                $this->errors[] = "{$module} branch alias must be defined as MAJOR.MINOR.x-dev.";
+
+                continue;
+            }
+
+            $aliases[$alias] = true;
+        }
+
+        if (count($aliases) > 1) {
+            $this->errors[] = 'Module branch aliases must all use the same release line.';
+        }
+    }
+
+    /**
+     * @param array<string, array{path: string, composer: array<string, mixed>}> $modules
+     */
     private function assertModuleMetadata(array $modules): void
     {
         foreach ($modules as $module => $record) {
@@ -114,16 +144,17 @@ final class ReleaseReadinessCheck
                 $this->errors[] = "{$module} support.source must be {$expectedUrl}.";
             }
 
-            if (($composer['extra']['branch-alias']['dev-main'] ?? null) !== '0.7.x-dev') {
-                $this->errors[] = "{$module} branch alias must be 0.7.x-dev.";
-            }
-
             $this->assertInterModuleRequires($module, $composer);
         }
     }
 
     private function assertInterModuleRequires(string $module, array $composer): void
     {
+        $expectedConstraint = $this->publishConstraint($composer);
+        if ($expectedConstraint === null) {
+            return;
+        }
+
         foreach (['require', 'require-dev'] as $section) {
             $requirements = $composer[$section] ?? [];
             if (!is_array($requirements)) {
@@ -135,8 +166,8 @@ final class ReleaseReadinessCheck
                     continue;
                 }
 
-                if ($constraint !== '^0.7') {
-                    $this->errors[] = "{$module} {$section}.{$package} must use ^0.7 for publish metadata.";
+                if ($constraint !== $expectedConstraint) {
+                    $this->errors[] = "{$module} {$section}.{$package} must use {$expectedConstraint} for publish metadata.";
                 }
             }
         }
@@ -163,46 +194,72 @@ final class ReleaseReadinessCheck
         }
     }
 
-    private function assertWorkflowGate(): void
+    /**
+     * @param array<string, mixed> $workflow
+     */
+    private function assertWorkflowGate(array $workflow): void
     {
-        $workflow = $this->read('.github/workflows/split_modules.yaml');
-
-        if (preg_match('/^\s*push\s*:/m', $workflow) === 1) {
-            $this->errors[] = 'Split workflow must not run from push or tag events.';
+        $on = $workflow['on'] ?? null;
+        if (!is_array($on) || array_keys($on) !== ['workflow_dispatch']) {
+            $this->errors[] = 'Split workflow must only run from workflow_dispatch.';
         }
 
-        foreach (['workflow_dispatch:', 'inputs:', 'action:', 'confirmation:', 'SPLIT PHALANX PACKAGES'] as $token) {
-            if (!str_contains($workflow, $token)) {
-                $this->errors[] = "Split workflow is missing manual gate token: {$token}";
-            }
+        $jobs = $workflow['jobs'] ?? [];
+        if (!is_array($jobs)) {
+            $this->errors[] = 'Split workflow must define jobs.';
+
+            return;
         }
 
-        if (!str_contains($workflow, "github.event.inputs.action == 'split'")) {
-            $this->errors[] = 'Split workflow mutation steps must be gated by action == split.';
-        }
-
-        if (!str_contains($workflow, 'composer release:check')) {
+        $readiness = $jobs['readiness'] ?? null;
+        $split = $jobs['split'] ?? null;
+        if (!is_array($readiness)) {
+            $this->errors[] = 'Split workflow must define a readiness job.';
+        } elseif (!$this->jobHasRunStep($readiness, 'composer release:check')) {
             $this->errors[] = 'Split workflow readiness job must run composer release:check.';
         }
+
+        if (!is_array($split)) {
+            $this->errors[] = 'Split workflow must define a split job.';
+
+            return;
+        }
+
+        if (($split['needs'] ?? null) !== 'readiness') {
+            $this->errors[] = 'Split job must depend on readiness.';
+        }
+
+        if (($split['if'] ?? null) !== "github.event.inputs.action == 'split'") {
+            $this->errors[] = 'Split job must be gated by action == split.';
+        }
+
+        $this->assertSplitMutationSteps($split);
     }
 
     /**
+     * @param array<string, mixed> $workflow
      * @return array<string, string>
      */
-    private function splitMatrix(): array
+    private function splitMatrix(array $workflow): array
     {
-        $workflow = $this->read('.github/workflows/split_modules.yaml');
-        preg_match_all(
-            "/local_path:\\s*'([^']+)'\\s*,\\s*split_repository:\\s*'([^']+)'/",
-            $workflow,
-            $matches,
-            PREG_SET_ORDER,
-        );
+        $packages = $workflow['jobs']['split']['strategy']['matrix']['package'] ?? [];
+        if (!is_array($packages)) {
+            $this->errors[] = 'Split workflow matrix must define package rows.';
+
+            return [];
+        }
 
         $matrix = [];
+        foreach ($packages as $package) {
+            if (!is_array($package)) {
+                continue;
+            }
 
-        foreach ($matches as $match) {
-            $matrix[$match[1]] = $match[2];
+            $localPath = $package['local_path'] ?? null;
+            $splitRepository = $package['split_repository'] ?? null;
+            if (is_string($localPath) && is_string($splitRepository)) {
+                $matrix[$localPath] = $splitRepository;
+            }
         }
 
         return $matrix;
@@ -273,6 +330,126 @@ final class ReleaseReadinessCheck
     {
         return is_string($value) ? $value : '';
     }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function workflow(): array
+    {
+        $workflow = Yaml::parseFile($this->root . '/.github/workflows/split_modules.yaml');
+        if (!is_array($workflow)) {
+            throw new RuntimeException('Split workflow did not decode to an object.');
+        }
+
+        return $workflow;
+    }
+
+    /**
+     * @param array<string, mixed> $job
+     */
+    private function jobHasRunStep(array $job, string $run): bool
+    {
+        $steps = $job['steps'] ?? [];
+        if (!is_array($steps)) {
+            return false;
+        }
+
+        foreach ($steps as $step) {
+            if (is_array($step) && ($step['run'] ?? null) === $run) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param array<string, mixed> $split
+     */
+    private function assertSplitMutationSteps(array $split): void
+    {
+        $steps = $split['steps'] ?? [];
+        if (!is_array($steps)) {
+            $this->errors[] = 'Split job must define steps.';
+
+            return;
+        }
+
+        $confirmationIndex = null;
+        $mutationIndexes = [];
+        foreach ($steps as $index => $step) {
+            if (!is_array($step)) {
+                continue;
+            }
+
+            $name = $step['name'] ?? null;
+            if ($name === 'Require explicit split confirmation') {
+                $confirmationIndex = $index;
+                if (!is_string($step['run'] ?? null) || !str_contains($step['run'], 'SPLIT PHALANX PACKAGES')) {
+                    $this->errors[] = 'Split confirmation step must require the exact confirmation phrase.';
+                }
+            }
+
+            if ($name === 'Ensure split repositories exist' || $name === 'Split module') {
+                $mutationIndexes[] = $index;
+                if (($step['if'] ?? null) !== "github.event.inputs.action == 'split'") {
+                    $this->errors[] = "{$name} step must be gated by action == split.";
+                }
+            }
+        }
+
+        if ($confirmationIndex === null) {
+            $this->errors[] = 'Split job must require explicit confirmation before mutation.';
+
+            return;
+        }
+
+        foreach ($mutationIndexes as $index) {
+            if ($confirmationIndex > $index) {
+                $this->errors[] = 'Split confirmation step must run before all mutation steps.';
+            }
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $composer
+     */
+    private function branchAlias(array $composer): ?string
+    {
+        $alias = $composer['extra']['branch-alias']['dev-main'] ?? null;
+        if (!is_string($alias) || preg_match('/^\d+\.\d+\.x-dev$/', $alias) !== 1) {
+            return null;
+        }
+
+        return $alias;
+    }
+
+    /**
+     * @param array<string, mixed> $composer
+     */
+    private function publishConstraint(array $composer): ?string
+    {
+        $alias = $this->branchAlias($composer);
+        if ($alias === null) {
+            return null;
+        }
+
+        return '^' . str_replace('.x-dev', '', $alias);
+    }
 }
 
-exit((new ReleaseReadinessCheck(dirname(__DIR__)))());
+exit((new ReleaseReadinessCheck(releaseReadinessRoot($argv)))());
+
+/** @param list<string> $argv */
+function releaseReadinessRoot(array $argv): string
+{
+    $root = dirname(__DIR__);
+
+    foreach ($argv as $index => $argument) {
+        if ($argument === '--root' && isset($argv[$index + 1])) {
+            $root = $argv[$index + 1];
+        }
+    }
+
+    return $root;
+}
