@@ -233,6 +233,7 @@ class ReleaseReadinessCheck
             $this->errors[] = 'Split job must be gated by action == split.';
         }
 
+        $this->assertSplitCheckoutCredentials($split);
         $this->assertSplitMutationSteps($split);
     }
 
@@ -396,6 +397,17 @@ class ReleaseReadinessCheck
                     $this->errors[] = "{$name} step must be gated by action == split.";
                 }
             }
+
+            if ($name === 'Split module') {
+                $run = $step['run'] ?? null;
+                if (!is_string($run) || !str_contains($run, 'GH_ACCESS_TOKEN secret is required to push split repositories.')) {
+                    $this->errors[] = 'Split module step must fail clearly when GH_ACCESS_TOKEN is missing.';
+                }
+
+                if (!is_string($run) || !str_contains($run, 'git config --local --unset-all http.https://github.com/.extraheader')) {
+                    $this->errors[] = 'Split module step must clear checkout GitHub credentials before pushing with GH_ACCESS_TOKEN.';
+                }
+            }
         }
 
         if ($confirmationIndex === null) {
@@ -409,6 +421,42 @@ class ReleaseReadinessCheck
                 $this->errors[] = 'Split confirmation step must run before all mutation steps.';
             }
         }
+    }
+
+    /**
+     * @param array<string, mixed> $split
+     */
+    private function assertSplitCheckoutCredentials(array $split): void
+    {
+        $steps = $split['steps'] ?? [];
+        if (!is_array($steps)) {
+            return;
+        }
+
+        foreach ($steps as $step) {
+            if (!is_array($step) || ($step['uses'] ?? null) !== 'actions/checkout@v6') {
+                continue;
+            }
+
+            $with = $step['with'] ?? [];
+            if (!is_array($with)) {
+                $this->errors[] = 'Split checkout step must define checkout options.';
+
+                return;
+            }
+
+            if (($with['fetch-depth'] ?? null) !== 0) {
+                $this->errors[] = 'Split checkout step must fetch full history for subtree splits.';
+            }
+
+            if (($with['persist-credentials'] ?? null) !== false) {
+                $this->errors[] = 'Split checkout step must set persist-credentials: false so GH_ACCESS_TOKEN is used for split pushes.';
+            }
+
+            return;
+        }
+
+        $this->errors[] = 'Split job must check out the repository before splitting modules.';
     }
 
     /**

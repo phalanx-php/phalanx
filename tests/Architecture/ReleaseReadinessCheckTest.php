@@ -86,6 +86,8 @@ final class ReleaseReadinessCheckTest extends TestCase
         $confirmation = <<<'YAML'
       - name: Require explicit split confirmation
         run: |
+          set -euo pipefail
+
           if [ "${{ github.event.inputs.confirmation }}" != "SPLIT PHALANX PACKAGES" ]; then
             exit 1
           fi
@@ -94,7 +96,10 @@ YAML;
         $mutation = <<<'YAML'
       - name: Ensure split repositories exist
         if: github.event.inputs.action == 'split'
-        run: gh repo view phalanx-php/example
+        run: |
+          set -euo pipefail
+
+          gh repo view phalanx-php/example
 
 YAML;
         $workflow = str_replace($confirmation, '', $workflow);
@@ -105,6 +110,50 @@ YAML;
 
         self::assertSame(1, $exitCode);
         self::assertStringContainsString('Split confirmation step must run before all mutation steps.', $output);
+    }
+
+    #[Test]
+    public function release_readiness_requires_split_checkout_to_avoid_default_github_credentials(): void
+    {
+        $workspace = $this->fixture();
+        $workspace->file(
+            '.github/workflows/split_modules.yaml',
+            str_replace(
+                "          persist-credentials: false\n",
+                '',
+                self::workflow(),
+            ),
+        );
+
+        [$exitCode, $output] = self::runCheck($workspace);
+
+        self::assertSame(1, $exitCode);
+        self::assertStringContainsString(
+            'Split checkout step must set persist-credentials: false so GH_ACCESS_TOKEN is used for split pushes.',
+            $output,
+        );
+    }
+
+    #[Test]
+    public function release_readiness_requires_split_push_to_clear_checkout_credentials(): void
+    {
+        $workspace = $this->fixture();
+        $workspace->file(
+            '.github/workflows/split_modules.yaml',
+            str_replace(
+                "          git config --local --unset-all http.https://github.com/.extraheader || true\n",
+                '',
+                self::workflow(),
+            ),
+        );
+
+        [$exitCode, $output] = self::runCheck($workspace);
+
+        self::assertSame(1, $exitCode);
+        self::assertStringContainsString(
+            'Split module step must clear checkout GitHub credentials before pushing with GH_ACCESS_TOKEN.',
+            $output,
+        );
     }
 
     private function fixture(): TempWorkspace
@@ -207,7 +256,7 @@ jobs:
   readiness:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Validate release readiness
         run: composer release:check
@@ -224,26 +273,42 @@ jobs:
           - { local_path: 'src/Console', split_repository: 'phalanx-console' }
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
 
       - name: Require explicit split confirmation
         run: |
+          set -euo pipefail
+
           if [ "${{ github.event.inputs.confirmation }}" != "SPLIT PHALANX PACKAGES" ]; then
             exit 1
           fi
 
       - name: Ensure split repositories exist
         if: github.event.inputs.action == 'split'
-        run: gh repo view phalanx-php/example
+        run: |
+          set -euo pipefail
+
+          gh repo view phalanx-php/example
 
       - name: Split module
         if: github.event.inputs.action == 'split'
         run: |
-          REPO_NAME=$(basename ${{ matrix.package.split_repository }})
+          set -euo pipefail
+
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "GH_ACCESS_TOKEN secret is required to push split repositories." >&2
+            exit 1
+          fi
+
+          REPO_NAME="${{ matrix.package.split_repository }}"
           SPLIT_BRANCH="split-${REPO_NAME}-${GITHUB_RUN_ID}"
+          trap 'git branch -D "$SPLIT_BRANCH" >/dev/null 2>&1 || true' EXIT
+          git config --local --unset-all http.https://github.com/.extraheader || true
           git subtree split --prefix="${{ matrix.package.local_path }}" -b "$SPLIT_BRANCH"
           git push "https://x-access-token:${GH_TOKEN}@github.com/phalanx-php/${REPO_NAME}.git" "$SPLIT_BRANCH:main" --force
-          git branch -D "$SPLIT_BRANCH"
 YAML;
     }
 }

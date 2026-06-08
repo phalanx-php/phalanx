@@ -16,11 +16,14 @@ on:
         required: false
         type: string
 
+permissions:
+  contents: read
+
 jobs:
   readiness:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -64,12 +67,15 @@ jobs:
           - { local_path: 'src/Config', split_repository: 'phalanx-config' }
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Require explicit split confirmation
         run: |
+          set -euo pipefail
+
           if [ "${{ github.event.inputs.confirmation }}" != "SPLIT PHALANX PACKAGES" ]; then
             echo "Type SPLIT PHALANX PACKAGES in the confirmation input to create repositories and push splits." >&2
             exit 1
@@ -80,7 +86,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
         run: |
-          REPO_NAME=$(basename ${{ matrix.package.split_repository }})
+          set -euo pipefail
+
+          REPO_NAME="${{ matrix.package.split_repository }}"
           REPO_FULL_NAME="phalanx-php/$REPO_NAME"
           CREATE_OUTPUT=$(mktemp)
           trap 'rm -f "$CREATE_OUTPUT"' EXIT
@@ -128,12 +136,20 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
         run: |
-          REPO_NAME=$(basename ${{ matrix.package.split_repository }})
+          set -euo pipefail
+
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "GH_ACCESS_TOKEN secret is required to push split repositories." >&2
+            exit 1
+          fi
+
+          REPO_NAME="${{ matrix.package.split_repository }}"
           SPLIT_BRANCH="split-${REPO_NAME}-${GITHUB_RUN_ID}"
+          trap 'git branch -D "$SPLIT_BRANCH" >/dev/null 2>&1 || true' EXIT
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --local --unset-all http.https://github.com/.extraheader || true
 
           git subtree split --prefix="${{ matrix.package.local_path }}" -b "$SPLIT_BRANCH"
           git push "https://x-access-token:${GH_TOKEN}@github.com/phalanx-php/${REPO_NAME}.git" "$SPLIT_BRANCH:main" --force
-          git branch -D "$SPLIT_BRANCH"
