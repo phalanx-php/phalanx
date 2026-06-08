@@ -147,7 +147,7 @@ parameters:
         - src/AiProviders/tests/Acceptance/V0AcceptanceGateTest.php
         - src/AiProviders/tests/Unit/Transport/Sync/TransportTest.php
         - src/Console/tests/Integration/Application/ApplicationTest.php
-        - src/Console/tests/Integration/Runtime/Identity/SignalTrapTest.php
+        - src/Console/tests/Integration/Runtime/SignalTrapTest.php
         - src/Network/tests/Integration/UdpEchoTest.php
         - src/Runtime/tests/Resilience/CancellationPropagationTimingTest.php
         - src/Runtime/tests/Resilience/SiblingCancelIsolationStressTest.php
@@ -224,7 +224,7 @@ parameters:
             reportUnmatched: true
         -
             identifier: phalanx.cancellation.rawSleep
-            path: src/Console/tests/Integration/Runtime/Identity/SignalTrapTest.php
+            path: src/Console/tests/Integration/Runtime/SignalTrapTest.php
             reportUnmatched: true
         -
             identifier: phalanx.cancellation.rawSleep

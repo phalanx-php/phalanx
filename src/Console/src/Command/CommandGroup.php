@@ -52,7 +52,7 @@ final class CommandGroup implements Executable
             ) {
                 throw new InvalidArgumentException(
                     'CommandGroup entries must be command class-strings or nested CommandGroup instances. '
-                    . 'Tuple command entries are no longer supported; move metadata onto DescribesCommand::commandConfig().',
+                    . 'Move command metadata onto DescribesCommand::commandConfig().',
                 );
             }
 

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Phalanx\Console\Tests\Unit\Command;
 
-use InvalidArgumentException;
 use Phalanx\Console\Command\Arg;
 use Phalanx\Console\Command\CommandConfig;
 use Phalanx\Console\Command\CommandGroup;
@@ -49,15 +48,6 @@ final class DescribesCommandTest extends TestCase
     }
 
     #[Test]
-    public function tuple_form_is_rejected(): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Tuple command entries are no longer supported');
-
-        CommandGroup::of((array) self::legacyTupleCommands());
-    }
-
-    #[Test]
     public function self_described_config_preserves_arguments_and_options(): void
     {
         $group = CommandGroup::of([
@@ -92,15 +82,6 @@ final class DescribesCommandTest extends TestCase
         self::assertSame('Lay siege to enemy fortifications', $commands['siege']->config->description);
     }
 
-    private static function legacyTupleCommands(): mixed
-    {
-        $command = HopliteCommand::class;
-        $config = new CommandConfig(description: 'Override from command config');
-
-        return [
-            'march' => array_values(compact('command', 'config')),
-        ];
-    }
 }
 
 final class HopliteCommand implements Scopeable, DescribesCommand

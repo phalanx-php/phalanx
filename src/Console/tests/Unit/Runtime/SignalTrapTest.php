@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Console\Tests\Unit\Runtime\Identity;
+namespace Phalanx\Console\Tests\Unit\Runtime;
 
 use Phalanx\Console\Runtime\SignalPolicy;
 use Phalanx\Console\Runtime\SignalTrap;
