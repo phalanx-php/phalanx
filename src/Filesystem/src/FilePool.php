@@ -12,19 +12,9 @@ use Throwable;
 
 final class FilePool
 {
-    public int $activeCount {
-        get {
-            return $this->active;
-        }
-    }
+    private(set) int $activeCount = 0;
 
-    public int $waitingCount {
-        get {
-            return $this->waiterCount();
-        }
-    }
-
-    private int $active = 0;
+    private(set) int $waitingCount = 0;
 
     /** @var list<Channel> */
     private array $waiters = [];
@@ -39,14 +29,16 @@ final class FilePool
 
     public function acquire(Suspendable $scope): void
     {
-        if ($this->active < $this->maxOpen) {
-            $this->active++;
+        if ($this->activeCount < $this->maxOpen) {
+            $this->activeCount++;
 
             return;
         }
 
         $waiter = new Channel(bufferSize: 1);
         $this->waiters[] = $waiter;
+        $this->waitingCount++;
+
         try {
             $scope->call(
                 static fn(): mixed => $waiter->next(),
@@ -57,27 +49,23 @@ final class FilePool
 
             throw $e;
         }
-        $this->active++;
+        $this->activeCount++;
     }
 
     public function release(): void
     {
-        if ($this->active < 1) {
+        if ($this->activeCount < 1) {
             throw new RuntimeException('FilePool::release(): no active file slot to release');
         }
 
-        $this->active--;
+        $this->activeCount--;
 
         if ($this->waiters !== []) {
             $waiter = array_shift($this->waiters);
+            $this->waitingCount--;
             $waiter->emit(true);
             $waiter->complete();
         }
-    }
-
-    private function waiterCount(): int
-    {
-        return count($this->waiters);
     }
 
     private function removeWaiter(Channel $waiter): void
@@ -88,6 +76,7 @@ final class FilePool
             }
 
             array_splice($this->waiters, $index, 1);
+            $this->waitingCount--;
             $waiter->complete();
 
             return;

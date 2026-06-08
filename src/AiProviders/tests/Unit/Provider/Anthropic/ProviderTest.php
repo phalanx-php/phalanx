@@ -28,6 +28,7 @@ use Phalanx\AiProviders\Provider\Preference;
 use Phalanx\AiProviders\Runtime\Sync\Runtime;
 use Phalanx\AiProviders\Transport\Fake\Transport as FakeTransport;
 use Phalanx\AiProviders\Transport\Needs as TransportNeeds;
+use Phalanx\Testing\FixtureFile;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -261,11 +262,7 @@ final class ProviderTest extends TestCase
     private static function script(string $fixture): array
     {
         $path = dirname(__DIR__, 3) . '/Fixtures/Provider/Anthropic/' . $fixture;
-        $raw = file_get_contents($path);
-
-        if ($raw === false) {
-            throw new \RuntimeException("Fixture not found: {$path}");
-        }
+        $raw = FixtureFile::read($path);
 
         // Split at double-newlines to create realistic chunk boundaries.
         $chunks = array_values(array_filter(

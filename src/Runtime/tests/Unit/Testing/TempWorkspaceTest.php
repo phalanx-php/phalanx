@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Runtime\Tests\Unit\Testing;
 
 use Phalanx\Testing\TempWorkspace;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -50,21 +51,54 @@ final class TempWorkspaceTest extends TestCase
     }
 
     #[Test]
-    public function rejectsPathsThatEscapeOwnedRoot(): void
+    #[DataProvider('invalidWorkspacePaths')]
+    public function rejectsPathsThatEscapeOwnedRoot(string $path): void
     {
         $workspace = TempWorkspace::create('phalanx-workspace-test-');
 
         try {
-        foreach (['../outside.php', 'a/../../outside.php', '/absolute.php', 'C:/absolute.php'] as $path) {
-                try {
-                    $workspace->file($path, 'escape');
-                    self::fail("Expected {$path} to be rejected.");
-                } catch (RuntimeException) {
-                    self::assertFileDoesNotExist(dirname($workspace->root) . '/outside.php');
-                }
+            try {
+                $workspace->file($path, 'escape');
+                self::fail("Expected {$path} to be rejected.");
+            } catch (RuntimeException $exception) {
+                self::assertStringStartsWith('Invalid temporary workspace path:', $exception->getMessage());
+                self::assertDirectoryExists($workspace->root);
             }
         } finally {
+            $root = $workspace->root;
             $workspace->cleanup();
         }
+
+        self::assertDirectoryDoesNotExist($root);
+    }
+
+    #[Test]
+    #[DataProvider('invalidWorkspacePrefixes')]
+    public function rejectsPrefixesThatEscapeSystemTempRoot(string $prefix): void
+    {
+        try {
+            TempWorkspace::create($prefix);
+            self::fail("Expected {$prefix} to be rejected.");
+        } catch (RuntimeException $exception) {
+            self::assertStringStartsWith('Invalid temporary workspace prefix:', $exception->getMessage());
+        }
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function invalidWorkspacePaths(): iterable
+    {
+        yield 'parent' => ['../outside.php'];
+        yield 'nested parent' => ['a/../../outside.php'];
+        yield 'absolute' => ['/absolute.php'];
+        yield 'windows drive' => ['C:/absolute.php'];
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function invalidWorkspacePrefixes(): iterable
+    {
+        yield 'empty' => [''];
+        yield 'parent' => ['../escape-'];
+        yield 'nested' => ['nested/path-'];
+        yield 'windows drive' => ['C:/escape-'];
     }
 }

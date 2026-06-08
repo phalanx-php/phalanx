@@ -64,8 +64,9 @@ final class DirectoryTest extends TestCase
     public function checksFileExistence(): void
     {
         $scope = $this->createStub(ExecutionScope::class);
+        $missingPath = $this->tempWorkspace('phalanx-directory-')->missingPath('missing.txt');
 
         $this->assertTrue((new ExistsFile(__FILE__))($scope));
-        $this->assertFalse((new ExistsFile('/nonexistent'))($scope));
+        $this->assertFalse((new ExistsFile($missingPath))($scope));
     }
 }

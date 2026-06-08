@@ -60,7 +60,7 @@ final class TestingPathPolicy
     /** @param list<string> $paths */
     private static function matchesAny(string $file, array $paths): bool
     {
-        $normalizedFile = self::normalize($file);
+        $candidateFiles = self::candidateFiles($file);
 
         foreach ($paths as $path) {
             $normalizedPath = self::normalize($path);
@@ -68,24 +68,36 @@ final class TestingPathPolicy
                 continue;
             }
 
-            if ($normalizedFile === $normalizedPath) {
-                return true;
-            }
+            foreach ($candidateFiles as $candidateFile) {
+                if ($candidateFile === $normalizedPath) {
+                    return true;
+                }
 
-            if (str_starts_with($normalizedFile, rtrim($normalizedPath, '/') . '/')) {
-                return true;
-            }
-
-            if (str_ends_with($normalizedFile, '/' . $normalizedPath)) {
-                return true;
-            }
-
-            if (str_contains($normalizedFile, '/' . rtrim($normalizedPath, '/') . '/')) {
-                return true;
+                if (str_starts_with($candidateFile, rtrim($normalizedPath, '/') . '/')) {
+                    return true;
+                }
             }
         }
 
         return false;
+    }
+
+    /** @return list<string> */
+    private static function candidateFiles(string $file): array
+    {
+        $normalizedFile = self::normalize($file);
+        $candidates = [$normalizedFile];
+
+        foreach (['/src/', '/tests/'] as $rootMarker) {
+            $position = strrpos("/{$normalizedFile}", $rootMarker);
+            if ($position === false) {
+                continue;
+            }
+
+            $candidates[] = substr($normalizedFile, $position);
+        }
+
+        return array_values(array_unique($candidates));
     }
 
     /** @return list<string> */

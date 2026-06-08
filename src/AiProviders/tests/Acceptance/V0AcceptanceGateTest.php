@@ -36,6 +36,7 @@ use Phalanx\AiProviders\Tests\Fixtures\Agent\Discovered\HoplitesAgent;
 use Phalanx\AiProviders\Transport\Needs as TransportNeeds;
 use Phalanx\AiProviders\Transport\Request;
 use Phalanx\AiProviders\Transport\Sync\HttpError;
+use Phalanx\Testing\FixtureFile;
 use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\Attributes\Test;
@@ -74,8 +75,7 @@ final class V0AcceptanceGateTest extends PhalanxTestCase
 
         $fileName = new \ReflectionClass($agent)->getFileName();
         self::assertIsString($fileName, 'HoplitesAgent must be a file-based class');
-        $source = file_get_contents($fileName);
-        self::assertNotFalse($source);
+        $source = FixtureFile::read($fileName);
         self::assertStringNotContainsString('use Phalanx\AiProviders\Provider\Anthropic', $source);
         self::assertStringNotContainsString('use Phalanx\AiProviders\Provider\Fake', $source);
         self::assertStringNotContainsString('use Phalanx\AiProviders\Provider\Gemini', $source);

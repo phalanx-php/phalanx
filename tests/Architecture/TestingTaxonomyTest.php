@@ -370,18 +370,51 @@ final class TestingTaxonomyTest extends TestCase
         $source = (string) file_get_contents($file);
 
         return [
-            ...self::sourceHits($source, '/fopen\s*\(\s*[\'"]php:\/\/(?:temp|memory)[\'"]/', 'raw php:// stream open'),
-            ...self::sourceHits($source, '/fopen\s*\(\s*[\'"]\/dev\/null[\'"]/', 'raw null stream open'),
+            ...self::fopenHits($source),
             ...self::functionCallHits($source, [
+                'file_get_contents' => 'file_get_contents()',
                 'file_put_contents' => 'file_put_contents()',
                 'mkdir' => 'mkdir()',
                 'rmdir' => 'rmdir()',
                 'sys_get_temp_dir' => 'sys_get_temp_dir()',
                 'tempnam' => 'tempnam()',
                 'tmpfile' => 'tmpfile()',
+                'touch' => 'touch()',
                 'unlink' => 'unlink()',
             ]),
         ];
+    }
+
+    /**
+     * @return list<SourceHit>
+     */
+    private static function fopenHits(string $source): array
+    {
+        $tokens = token_get_all($source);
+        $hits = [];
+
+        foreach ($tokens as $index => $token) {
+            if (self::functionName($token) !== 'fopen' || self::isMemberOrDeclarationCall($tokens, $index)) {
+                continue;
+            }
+
+            $openParen = self::nextSignificantTokenIndex($tokens, $index);
+            if ($openParen === null || $tokens[$openParen] !== '(') {
+                continue;
+            }
+
+            $target = self::firstStringArgument($tokens, $openParen);
+            if (!in_array($target, ['php://temp', 'php://memory', '/dev/null'], true)) {
+                continue;
+            }
+
+            $hits[] = new SourceHit(
+                label: str_starts_with($target, 'php://') ? 'raw php:// stream open' : 'raw null stream open',
+                line: self::tokenLine($token),
+            );
+        }
+
+        return $hits;
     }
 
     /**
@@ -394,20 +427,16 @@ final class TestingTaxonomyTest extends TestCase
         $hits = [];
 
         foreach ($tokens as $index => $token) {
-            if (!is_array($token) || $token[0] !== T_STRING) {
+            $function = self::functionName($token);
+            if ($function === null) {
                 continue;
             }
 
-            $function = strtolower($token[1]);
             if (!isset($labelsByFunction[$function])) {
                 continue;
             }
 
-            if (in_array(
-                self::previousSignificantToken($tokens, $index),
-                [T_FUNCTION, T_OBJECT_OPERATOR, T_NULLSAFE_OBJECT_OPERATOR, T_DOUBLE_COLON],
-                true,
-            )) {
+            if (self::isMemberOrDeclarationCall($tokens, $index)) {
                 continue;
             }
 
@@ -415,10 +444,62 @@ final class TestingTaxonomyTest extends TestCase
                 continue;
             }
 
-            $hits[] = new SourceHit(label: $labelsByFunction[$function], line: $token[2]);
+            $hits[] = new SourceHit(label: $labelsByFunction[$function], line: self::tokenLine($token));
         }
 
         return $hits;
+    }
+
+    /** @param array{0:int, 1:string, 2:int}|string $token */
+    private static function functionName(array|string $token): ?string
+    {
+        if (!is_array($token)) {
+            return null;
+        }
+
+        if (!in_array($token[0], [T_STRING, T_NAME_FULLY_QUALIFIED, T_NAME_QUALIFIED], true)) {
+            return null;
+        }
+
+        $parts = explode('\\', ltrim($token[1], '\\'));
+
+        return strtolower((string) end($parts));
+    }
+
+    /**
+     * @param list<array{0:int, 1:string, 2:int}|string> $tokens
+     */
+    private static function isMemberOrDeclarationCall(array $tokens, int $index): bool
+    {
+        return in_array(
+            self::previousSignificantToken($tokens, $index),
+            [T_FUNCTION, T_OBJECT_OPERATOR, T_NULLSAFE_OBJECT_OPERATOR, T_DOUBLE_COLON],
+            true,
+        );
+    }
+
+    /**
+     * @param list<array{0:int, 1:string, 2:int}|string> $tokens
+     */
+    private static function firstStringArgument(array $tokens, int $openParen): ?string
+    {
+        $argument = self::nextSignificantTokenIndex($tokens, $openParen);
+        if ($argument === null) {
+            return null;
+        }
+
+        $token = $tokens[$argument];
+        if (!is_array($token) || $token[0] !== T_CONSTANT_ENCAPSED_STRING) {
+            return null;
+        }
+
+        return stripcslashes(substr($token[1], 1, -1));
+    }
+
+    /** @param array{0:int, 1:string, 2:int}|string $token */
+    private static function tokenLine(array|string $token): int
+    {
+        return is_array($token) ? $token[2] : 1;
     }
 
     /** @param list<array{0:int, 1:string, 2:int}|string> $tokens */
@@ -439,6 +520,19 @@ final class TestingTaxonomyTest extends TestCase
     /** @param list<array{0:int, 1:string, 2:int}|string> $tokens */
     private static function nextSignificantToken(array $tokens, int $index): int|string|null
     {
+        $next = self::nextSignificantTokenIndex($tokens, $index);
+        if ($next === null) {
+            return null;
+        }
+
+        $token = $tokens[$next];
+
+        return is_array($token) ? $token[0] : $token;
+    }
+
+    /** @param list<array{0:int, 1:string, 2:int}|string> $tokens */
+    private static function nextSignificantTokenIndex(array $tokens, int $index): ?int
+    {
         $count = count($tokens);
 
         for ($cursor = $index + 1; $cursor < $count; $cursor++) {
@@ -447,7 +541,7 @@ final class TestingTaxonomyTest extends TestCase
                 continue;
             }
 
-            return is_array($token) ? $token[0] : $token;
+            return $cursor;
         }
 
         return null;

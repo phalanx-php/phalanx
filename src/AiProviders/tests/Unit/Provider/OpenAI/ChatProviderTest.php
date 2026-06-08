@@ -29,6 +29,7 @@ use Phalanx\AiProviders\Provider\Preference;
 use Phalanx\AiProviders\Runtime\Sync\Runtime;
 use Phalanx\AiProviders\Transport\Fake\Transport as FakeTransport;
 use Phalanx\AiProviders\Transport\Needs as TransportNeeds;
+use Phalanx\Testing\FixtureFile;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -306,11 +307,7 @@ final class ChatProviderTest extends TestCase
     private static function script(string $fixture): array
     {
         $path = dirname(__DIR__, 3) . '/Fixtures/Provider/OpenAI/' . $fixture;
-        $raw = file_get_contents($path);
-
-        if ($raw === false) {
-            throw new \RuntimeException("Fixture not found: {$path}");
-        }
+        $raw = FixtureFile::read($path);
 
         $chunks = array_values(array_filter(
             array_map(

@@ -153,7 +153,6 @@ parameters:
         - src/Runtime/tests/Resilience/SiblingCancelIsolationStressTest.php
         - src/Runtime/tests/Smoke/WorkingRuntimeSmokeTest.php
     phalanxTestingNoRawIoPaths:
-        - tests
         - src/Agents/tests
         - src/AiProviders/tests
         - src/Cli/tests

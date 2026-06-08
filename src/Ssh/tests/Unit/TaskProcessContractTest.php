@@ -105,7 +105,7 @@ PHP);
             ));
         });
 
-        $paths = json_decode((string) file_get_contents($marker), true, 512, JSON_THROW_ON_ERROR);
+        $paths = json_decode($this->tempWorkspace()->readPath($marker), true, 512, JSON_THROW_ON_ERROR);
 
         self::assertSame(strlen('agent-upload-body'), $result->bytesTransferred);
         self::assertIsArray($paths);

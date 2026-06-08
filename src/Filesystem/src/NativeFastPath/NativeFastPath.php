@@ -34,6 +34,7 @@ final class NativeFastPath
             static fn(): string|false => System::readFile($path),
             WaitReason::custom("filesystem.native.read {$path}"),
         );
+
         if ($result === false) {
             throw new RuntimeException("NativeFastPath::read({$path}) failed");
         }
@@ -47,6 +48,7 @@ final class NativeFastPath
             static fn(): bool|int => System::writeFile($path, $data, $flags),
             WaitReason::custom("filesystem.native.write {$path}"),
         );
+
         if ($result === false) {
             throw new RuntimeException("NativeFastPath::write({$path}) failed");
         }

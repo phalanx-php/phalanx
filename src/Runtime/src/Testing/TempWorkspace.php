@@ -20,6 +20,8 @@ final class TempWorkspace
 
     public static function create(string $prefix = 'phalanx-test-'): self
     {
+        self::assertValidPrefix($prefix);
+
         $root = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR)
             . DIRECTORY_SEPARATOR
             . uniqid($prefix, true);
@@ -78,13 +80,24 @@ final class TempWorkspace
     public function read(string $relative): string
     {
         $path = $this->path($relative);
-        $contents = file_get_contents($path);
 
-        if ($contents === false) {
-            throw new RuntimeException("Unable to read temporary file: {$path}");
+        return $this->readOwnedPath($path);
+    }
+
+    public function readPath(string $path): string
+    {
+        return $this->readOwnedPath($this->ownedPath($path));
+    }
+
+    public function touch(string $relative, ?int $modifiedAt = null): string
+    {
+        $path = $this->path($relative);
+
+        if (!touch($path, $modifiedAt ?? time())) {
+            throw new RuntimeException("Unable to touch temporary file: {$path}");
         }
 
-        return $contents;
+        return $path;
     }
 
     public function cleanup(): void
@@ -137,5 +150,39 @@ final class TempWorkspace
         }
 
         return str_replace('/', DIRECTORY_SEPARATOR, $relative);
+    }
+
+    private static function assertValidPrefix(string $prefix): void
+    {
+        if ($prefix === '' || str_contains($prefix, '/') || str_contains($prefix, '\\')) {
+            throw new RuntimeException("Invalid temporary workspace prefix: {$prefix}");
+        }
+
+        if ($prefix === '.' || $prefix === '..' || preg_match('/^[A-Za-z]:/', $prefix) === 1) {
+            throw new RuntimeException("Invalid temporary workspace prefix: {$prefix}");
+        }
+    }
+
+    private function readOwnedPath(string $path): string
+    {
+        $contents = file_get_contents($path);
+
+        if ($contents === false) {
+            throw new RuntimeException("Unable to read temporary file: {$path}");
+        }
+
+        return $contents;
+    }
+
+    private function ownedPath(string $path): string
+    {
+        $path = realpath($path) ?: $path;
+        $root = rtrim($this->root, DIRECTORY_SEPARATOR);
+
+        if ($path !== $root && !str_starts_with($path, $root . DIRECTORY_SEPARATOR)) {
+            throw new RuntimeException("Path is outside temporary workspace: {$path}");
+        }
+
+        return $path;
     }
 }

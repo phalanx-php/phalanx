@@ -63,7 +63,7 @@ final class ProcessAwaiterTest extends PhalanxTestCase
         }
 
         self::assertTrue($timedOut);
-        self::assertFileRemainsMissing($marker, Mark::ms(250));
+        $this->assertFileRemainsMissing($marker, Mark::ms(250));
     }
 
     #[Test]
@@ -98,7 +98,7 @@ final class ProcessAwaiterTest extends PhalanxTestCase
         }
 
         self::assertTrue($cancelled);
-        self::assertFileRemainsMissing($marker, Mark::ms(250));
+        $this->assertFileRemainsMissing($marker, Mark::ms(250));
     }
 
     #[Test]
@@ -126,13 +126,12 @@ final class ProcessAwaiterTest extends PhalanxTestCase
         return $this->tempWorkspace('phalanx-ssh-marker-')->missingPath(uniqid('marker-', true));
     }
 
-    private static function assertFileRemainsMissing(string $path, Mark $duration): void
+    private function assertFileRemainsMissing(string $path, Mark $duration): void
     {
-        $deadline = Mark::now()->plus($duration);
+        $this->scope->run(static function (ExecutionScope $scope) use ($duration): void {
+            $scope->delay($duration);
+        });
 
-        do {
-            self::assertFileDoesNotExist($path);
-            usleep(10_000);
-        } while (Mark::now()->until($deadline)->nanoseconds > 0);
+        self::assertFileDoesNotExist($path);
     }
 }

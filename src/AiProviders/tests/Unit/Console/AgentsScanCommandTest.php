@@ -44,7 +44,7 @@ final class AgentsScanCommandTest extends TestCase
 
         $command(self::makeScope());
 
-        $payload = self::readCache($this->cacheFile);
+        $payload = $this->readCache();
 
         self::assertArrayHasKey('agents', $payload);
         self::assertContains(
@@ -68,7 +68,7 @@ final class AgentsScanCommandTest extends TestCase
 
         $command(self::makeScope());
 
-        $payload = self::readCache($this->cacheFile);
+        $payload = $this->readCache();
 
         self::assertArrayHasKey('source_mtime', $payload);
         self::assertIsInt($payload['source_mtime']);
@@ -86,7 +86,7 @@ final class AgentsScanCommandTest extends TestCase
 
         $command(self::makeScope());
 
-        $payload = self::readCache($this->cacheFile);
+        $payload = $this->readCache();
 
         self::assertArrayHasKey('generated_at', $payload);
         self::assertIsString($payload['generated_at']);
@@ -115,10 +115,10 @@ final class AgentsScanCommandTest extends TestCase
         );
 
         $command(self::makeScope());
-        $contentAfterFirstRun = file_get_contents($this->cacheFile);
+        $contentAfterFirstRun = $this->tempWorkspace()->read('cache.json');
 
         $command(self::makeScope());
-        $contentAfterSecondRun = file_get_contents($this->cacheFile);
+        $contentAfterSecondRun = $this->tempWorkspace()->read('cache.json');
 
         self::assertSame($contentAfterFirstRun, $contentAfterSecondRun);
     }
@@ -152,7 +152,7 @@ final class AgentsScanCommandTest extends TestCase
         );
 
         $result = $command(self::makeScope());
-        $payload = self::readCache($this->cacheFile);
+        $payload = $this->readCache();
 
         self::assertSame(0, $result);
         self::assertArrayHasKey('agents', $payload);
@@ -165,8 +165,8 @@ final class AgentsScanCommandTest extends TestCase
     {
         $knownEpoch = 1700000000;
         $tempDir = $this->tempWorkspace('ai-providers-mtime-')->dir('source');
-        $tempFile = $this->tempWorkspace()->file('source/Sparta.php', "<?php\n// mtime fixture\n");
-        touch($tempFile, $knownEpoch);
+        $this->tempWorkspace()->file('source/Sparta.php', "<?php\n// mtime fixture\n");
+        $this->tempWorkspace()->touch('source/Sparta.php', $knownEpoch);
 
         $command = new AgentsScanCommand(
             $tempDir,
@@ -175,7 +175,7 @@ final class AgentsScanCommandTest extends TestCase
         );
         $command(self::makeScope());
 
-        $payload = self::readCache($this->cacheFile);
+        $payload = $this->readCache();
 
         self::assertSame($knownEpoch, $payload['source_mtime']);
     }
@@ -215,10 +215,9 @@ final class AgentsScanCommandTest extends TestCase
     /**
      * @return array<string, mixed>
      */
-    private static function readCache(string $path): array
+    private function readCache(): array
     {
-        $raw = file_get_contents($path);
-        self::assertNotFalse($raw);
+        $raw = $this->tempWorkspace()->read('cache.json');
 
         /** @var array<string, mixed> $decoded */
         $decoded = json_decode($raw, associative: true, flags: JSON_THROW_ON_ERROR);

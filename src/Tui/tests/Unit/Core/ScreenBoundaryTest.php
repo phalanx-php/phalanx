@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Tui\Tests\Unit\Core;
 
+use Phalanx\Testing\FixtureFile;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -13,16 +14,13 @@ final class ScreenBoundaryTest extends TestCase
     public function tuiScreensDoNotExecuteAgentRuntimeDirectly(): void
     {
         foreach (self::sourceFiles(dirname(__DIR__, 3) . '/src') as $file) {
-            $source = file_get_contents($file);
-            self::assertIsString($source);
+            $source = FixtureFile::read($file);
 
-            self::assertStringNotContainsString('Phalanx\\' . 'Harness\\', $source, $file);
-            self::assertStringNotContainsString('Harness' . '\\Replay', $source, $file);
+            self::assertStringNotContainsString('Phalanx\\Agents\\Runtime\\Replay', $source, $file);
         }
 
         foreach (self::sourceFiles(dirname(__DIR__, 3) . '/src/Runtime/Screens') as $file) {
-            $source = file_get_contents($file);
-            self::assertIsString($source);
+            $source = FixtureFile::read($file);
 
             self::assertStringNotContainsString('Agents::run(', $source, $file);
         }

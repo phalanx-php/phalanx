@@ -54,24 +54,49 @@ final class NoRawTestIoRuleTest extends RuleTestCase
                     16,
                 ],
                 [
-                    'High-level Phalanx tests should not use raw test IO via file_put_contents(); '
+                    'High-level Phalanx tests should not use raw test IO via file_get_contents(); '
                     . 'use Phalanx\\Stream\\Stream buffers or Phalanx\\Testing\\TempWorkspace.',
                     17,
                 ],
                 [
-                    'High-level Phalanx tests should not use raw test IO via mkdir(); '
+                    'High-level Phalanx tests should not use raw test IO via file_put_contents(); '
                     . 'use Phalanx\\Stream\\Stream buffers or Phalanx\\Testing\\TempWorkspace.',
                     18,
                 ],
                 [
-                    'High-level Phalanx tests should not use raw test IO via unlink(); '
+                    'High-level Phalanx tests should not use raw test IO via mkdir(); '
                     . 'use Phalanx\\Stream\\Stream buffers or Phalanx\\Testing\\TempWorkspace.',
                     19,
                 ],
                 [
-                    'High-level Phalanx tests should not use raw test IO via rmdir(); '
+                    'High-level Phalanx tests should not use raw test IO via touch(); '
                     . 'use Phalanx\\Stream\\Stream buffers or Phalanx\\Testing\\TempWorkspace.',
                     20,
+                ],
+                [
+                    'High-level Phalanx tests should not use raw test IO via unlink(); '
+                    . 'use Phalanx\\Stream\\Stream buffers or Phalanx\\Testing\\TempWorkspace.',
+                    21,
+                ],
+                [
+                    'High-level Phalanx tests should not use raw test IO via rmdir(); '
+                    . 'use Phalanx\\Stream\\Stream buffers or Phalanx\\Testing\\TempWorkspace.',
+                    22,
+                ],
+                [
+                    "High-level Phalanx tests should not use raw test IO via fopen('php://memory'); "
+                    . 'use Phalanx\\Stream\\Stream buffers or Phalanx\\Testing\\TempWorkspace.',
+                    25,
+                ],
+                [
+                    "High-level Phalanx tests should not use raw test IO via fopen('php://temp'); "
+                    . 'use Phalanx\\Stream\\Stream buffers or Phalanx\\Testing\\TempWorkspace.',
+                    28,
+                ],
+                [
+                    'High-level Phalanx tests should not use raw test IO via file_put_contents(); '
+                    . 'use Phalanx\\Stream\\Stream buffers or Phalanx\\Testing\\TempWorkspace.',
+                    30,
                 ],
             ],
         );
@@ -112,6 +137,15 @@ final class NoRawTestIoRuleTest extends RuleTestCase
             noRawIoPaths: ['src/Module/tests'],
             noRawIoExemptPaths: ['src/Module/tests/Unit/ConfiguredNoRawTestIoViolation.php'],
         );
+
+        $this->analyse([$fixture], []);
+    }
+
+    #[Test]
+    public function configuredPathsDoNotMatchArbitraryNestedSegments(): void
+    {
+        $fixture = __DIR__ . '/../Fixtures/TestingPaths/src/Module/tests/Unit/ConfiguredNoRawTestIoViolation.php';
+        $this->pathPolicy = new TestingPathPolicy(noRawIoPaths: ['Module/tests']);
 
         $this->analyse([$fixture], []);
     }

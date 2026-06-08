@@ -52,9 +52,9 @@ abstract class PhalanxTestCase extends TestCase
         }
     }
 
+    /** PHPUnit teardown is ordered by shutdownPhalanxTestCase(). */
     protected function cleanupTempWorkspace(): void
     {
-        // PhalanxTestCase owns teardown ordering through shutdownPhalanxTestCase().
     }
 
     /** @return array<string, mixed> */

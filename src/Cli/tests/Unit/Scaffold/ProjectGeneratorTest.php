@@ -44,8 +44,7 @@ final class ProjectGeneratorTest extends TestCase
 
         (new ProjectGenerator())('my-app', $this->tempDir, $output, ProjectType::Api);
 
-        $content = file_get_contents($this->tempDir . '/composer.json');
-        self::assertIsString($content);
+        $content = $this->generated('composer.json');
         self::assertStringContainsString('"app/my-app"', $content);
     }
 
@@ -56,12 +55,10 @@ final class ProjectGeneratorTest extends TestCase
 
         (new ProjectGenerator())('my-cool-app', $this->tempDir, $output, ProjectType::Api);
 
-        $home = file_get_contents($this->tempDir . '/src/Routes/Home.php');
-        self::assertIsString($home);
+        $home = $this->generated('src/Routes/Home.php');
         self::assertStringContainsString('namespace App\MyCoolApp\Routes;', $home);
 
-        $routes = file_get_contents($this->tempDir . '/routes.php');
-        self::assertIsString($routes);
+        $routes = $this->generated('routes.php');
         self::assertStringContainsString('use App\MyCoolApp\Routes\Home;', $routes);
     }
 
@@ -72,8 +69,7 @@ final class ProjectGeneratorTest extends TestCase
 
         (new ProjectGenerator())('myapp', $this->tempDir, $output, ProjectType::Api);
 
-        $home = file_get_contents($this->tempDir . '/src/Routes/Home.php');
-        self::assertIsString($home);
+        $home = $this->generated('src/Routes/Home.php');
         self::assertStringContainsString('namespace App\Myapp\Routes;', $home);
     }
 
@@ -84,8 +80,7 @@ final class ProjectGeneratorTest extends TestCase
 
         (new ProjectGenerator())('my-app', $this->tempDir, $output, ProjectType::Api);
 
-        $content = file_get_contents($this->tempDir . '/composer.json');
-        self::assertIsString($content);
+        $content = $this->generated('composer.json');
         self::assertStringContainsString('"App\\\\MyApp\\\\": "src/"', $content);
     }
 
@@ -96,8 +91,7 @@ final class ProjectGeneratorTest extends TestCase
 
         (new ProjectGenerator())('test-project', $this->tempDir, $output, ProjectType::Api);
 
-        $routes = file_get_contents($this->tempDir . '/routes.php');
-        self::assertIsString($routes);
+        $routes = $this->generated('routes.php');
         self::assertStringContainsString('use Phalanx\Http\RouteGroup;', $routes);
         self::assertStringNotContainsString('Routing\RouteGroup', $routes);
     }
@@ -122,8 +116,7 @@ final class ProjectGeneratorTest extends TestCase
 
         (new ProjectGenerator())('my-app', $this->tempDir, $output, ProjectType::Api);
 
-        $index = file_get_contents($this->tempDir . '/public/index.php');
-        self::assertIsString($index);
+        $index = $this->generated('public/index.php');
         self::assertStringContainsString('autoload_runtime.php', $index);
         self::assertStringContainsString('Http::starting($context)', $index);
         self::assertStringContainsString("->listen('127.0.0.1:8080')", $index);
@@ -136,8 +129,7 @@ final class ProjectGeneratorTest extends TestCase
 
         (new ProjectGenerator())('my-app', $this->tempDir, $output, ProjectType::Api);
 
-        $gitignore = file_get_contents($this->tempDir . '/.gitignore');
-        self::assertIsString($gitignore);
+        $gitignore = $this->generated('.gitignore');
         self::assertStringContainsString('/vendor/', $gitignore);
     }
 
@@ -164,8 +156,7 @@ final class ProjectGeneratorTest extends TestCase
 
         (new ProjectGenerator())('my-tool', $this->tempDir, $output, ProjectType::Console);
 
-        $content = file_get_contents($this->tempDir . '/composer.json');
-        self::assertIsString($content);
+        $content = $this->generated('composer.json');
         self::assertStringContainsString('"phalanx-php/console"', $content);
         self::assertStringNotContainsString('"phalanx-php/http"', $content);
         self::assertStringContainsString('"bin/app"', $content);
@@ -178,8 +169,7 @@ final class ProjectGeneratorTest extends TestCase
 
         (new ProjectGenerator())('my-tool', $this->tempDir, $output, ProjectType::Console);
 
-        $commands = file_get_contents($this->tempDir . '/commands.php');
-        self::assertIsString($commands);
+        $commands = $this->generated('commands.php');
         self::assertStringContainsString('use Phalanx\Console\Command\CommandGroup;', $commands);
         self::assertStringContainsString('CommandGroup::of(', $commands);
         self::assertStringContainsString('use App\MyTool\Commands\Hello;', $commands);
@@ -193,8 +183,7 @@ final class ProjectGeneratorTest extends TestCase
 
         (new ProjectGenerator())('my-tool', $this->tempDir, $output, ProjectType::Console);
 
-        $hello = file_get_contents($this->tempDir . '/src/Commands/Hello.php');
-        self::assertIsString($hello);
+        $hello = $this->generated('src/Commands/Hello.php');
         self::assertStringContainsString('implements Scopeable, DescribesCommand', $hello);
         self::assertStringContainsString('use Phalanx\Console\Command\Arg;', $hello);
         self::assertStringContainsString('use Phalanx\Console\Command\DescribesCommand;', $hello);
@@ -213,8 +202,7 @@ final class ProjectGeneratorTest extends TestCase
 
         (new ProjectGenerator())('my-tool', $this->tempDir, $output, ProjectType::Console);
 
-        $bin = file_get_contents($this->tempDir . '/bin/app');
-        self::assertIsString($bin);
+        $bin = $this->generated('bin/app');
         self::assertStringContainsString('#!/usr/bin/env php', $bin);
         self::assertStringContainsString('autoload_runtime.php', $bin);
         self::assertStringContainsString('Console::starting($context)', $bin);
@@ -227,8 +215,7 @@ final class ProjectGeneratorTest extends TestCase
 
         (new ProjectGenerator())('my-app', $this->tempDir, $output, ProjectType::Api);
 
-        $content = file_get_contents($this->tempDir . '/composer.json');
-        self::assertIsString($content);
+        $content = $this->generated('composer.json');
         self::assertStringContainsString('"phalanx-php/http"', $content);
         self::assertStringNotContainsString('"phalanx-php/console"', $content);
         self::assertStringNotContainsString('"bin":', $content);
@@ -252,8 +239,7 @@ final class ProjectGeneratorTest extends TestCase
 
         (new ProjectGenerator())('my-app', $this->tempDir, $output, $type);
 
-        $content = file_get_contents($this->tempDir . '/composer.json');
-        self::assertIsString($content);
+        $content = $this->generated('composer.json');
         self::assertIsArray(json_decode($content, associative: true, flags: JSON_THROW_ON_ERROR));
     }
 
@@ -298,5 +284,10 @@ final class ProjectGeneratorTest extends TestCase
         sort($files);
 
         return $files;
+    }
+
+    private function generated(string $relative): string
+    {
+        return $this->tempWorkspace()->read('project/' . $relative);
     }
 }

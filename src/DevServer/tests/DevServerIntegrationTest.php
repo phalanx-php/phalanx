@@ -118,9 +118,15 @@ final class DevServerIntegrationTest extends PhalanxTestCase
     public function fileWatcherDetectsMtimeChange(): void
     {
         $tmpDir = $this->tempDir();
-        $file = $this->tempWorkspace()->file(basename($tmpDir) . '/probe.php', "<?php\n\$probe = 1;\n");
+        $workspace = $this->tempWorkspace();
+        $relativeFile = basename($tmpDir) . '/probe.php';
+        $file = $workspace->file($relativeFile, "<?php\n\$probe = 1;\n");
 
-        $changes = $this->scope->run(static function (ExecutionScope $scope) use ($tmpDir, $file): array {
+        $changes = $this->scope->run(static function (ExecutionScope $scope) use (
+            $tmpDir,
+            $workspace,
+            $relativeFile,
+        ): array {
             $captured = [];
             $watcher = new FileWatcher(
                 paths: [$tmpDir],
@@ -135,7 +141,7 @@ final class DevServerIntegrationTest extends PhalanxTestCase
             $watcher->start($scope);
             $scope->delay(Mark::ms(200));
 
-            touch($file, time() + 5);
+            $workspace->touch($relativeFile, time() + 5);
             $scope->delay(Mark::ms(300));
             $watcher->stop();
 
@@ -266,9 +272,15 @@ final class DevServerIntegrationTest extends PhalanxTestCase
     public function fileWatcherStopSuppressesLaterChanges(): void
     {
         $tmpDir = $this->tempDir();
-        $file = $this->tempWorkspace()->file(basename($tmpDir) . '/probe.php', "<?php\n\$probe = 1;\n");
+        $workspace = $this->tempWorkspace();
+        $relativeFile = basename($tmpDir) . '/probe.php';
+        $workspace->file($relativeFile, "<?php\n\$probe = 1;\n");
 
-        $changes = $this->scope->run(static function (ExecutionScope $scope) use ($tmpDir, $file): array {
+        $changes = $this->scope->run(static function (ExecutionScope $scope) use (
+            $tmpDir,
+            $workspace,
+            $relativeFile,
+        ): array {
             $captured = [];
             $watcher = new FileWatcher(
                 paths: [$tmpDir],
@@ -283,7 +295,7 @@ final class DevServerIntegrationTest extends PhalanxTestCase
             $watcher->start($scope);
             $watcher->stop();
 
-            touch($file, time() + 5);
+            $workspace->touch($relativeFile, time() + 5);
             $scope->delay(Mark::ms(150));
 
             return $captured;

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Worker\Tests\Unit\Process;
 
+use Phalanx\Testing\FixtureFile;
 use Phalanx\Worker\Process\ProcessConfig;
 use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\Attributes\Test;
@@ -113,8 +114,8 @@ final class ProcessConfigTest extends TestCase
             if (!is_file($file)) {
                 continue;
             }
-            $content = file_get_contents($file);
-            if ($content !== false && preg_match($pattern, $content)) {
+
+            if (preg_match($pattern, FixtureFile::read($file))) {
                 return true;
             }
         }

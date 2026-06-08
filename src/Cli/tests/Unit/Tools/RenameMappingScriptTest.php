@@ -102,7 +102,7 @@ TEXT;
         self::assertSame(0, $exitCode);
         self::assertSame(
             'use Phalanx\Hydra\WorkerPool;',
-            (string) file_get_contents($this->tempDir . '/.daemon8/snapshots/foo.md'),
+            $this->fixture('tree/.daemon8/snapshots/foo.md'),
         );
     }
 
@@ -119,7 +119,7 @@ TEXT;
 
         self::assertStringContainsString(
             'use Phalanx\Hydra\WorkerPool;',
-            (string) file_get_contents($this->tempDir . '/sample.php'),
+            $this->fixture('tree/sample.php'),
         );
         self::assertFileExists($this->tempDir . '/HydraDemoServiceBundle.php');
         self::assertFileDoesNotExist($this->tempDir . '/WorkerDemoServiceBundle.php');
@@ -138,7 +138,7 @@ TEXT;
 
         self::assertStringContainsString(
             'use Phalanx\Worker\WorkerPool;',
-            (string) file_get_contents($this->tempDir . '/sample.php'),
+            $this->fixture('tree/sample.php'),
         );
         self::assertFileDoesNotExist($this->tempDir . '/HydraDemoServiceBundle.php');
         self::assertFileExists($this->tempDir . '/WorkerDemoServiceBundle.php');
@@ -196,5 +196,10 @@ TEXT;
         );
         $this->tempWorkspace()->file('tree/sample.php', 'use Phalanx\Hydra\WorkerPool;');
         $this->tempWorkspace()->file('tree/HydraDemoServiceBundle.php', '<?php');
+    }
+
+    private function fixture(string $relative): string
+    {
+        return $this->tempWorkspace()->read($relative);
     }
 }

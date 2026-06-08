@@ -14,9 +14,19 @@ final class NoRawTestIoViolation
         sys_get_temp_dir();
         tempnam('.', 'phalanx-');
         tmpfile();
+        file_get_contents('fixture.txt');
         file_put_contents('fixture.txt', 'fixture');
         mkdir('fixtures');
+        touch('fixture.txt');
         unlink('fixture.txt');
         rmdir('fixtures');
+
+        $memory = 'php://memory';
+        fopen($memory, 'w+');
+
+        $temp = 'php://' . 'temp';
+        \fopen($temp, 'w+');
+
+        \file_put_contents('fixture.txt', 'fixture');
     }
 }

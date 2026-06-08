@@ -8,7 +8,6 @@ use Phalanx\PHPStan\Support\NodeNames;
 use Phalanx\PHPStan\Support\RuleErrors;
 use Phalanx\PHPStan\Support\TestingPathPolicy;
 use PhpParser\Node\Expr\FuncCall;
-use PhpParser\Node\Scalar\String_;
 use PHPStan\Analyser\Scope;
 use PHPStan\Rules\IdentifierRuleError;
 use PHPStan\Rules\Rule;
@@ -21,12 +20,14 @@ final class NoRawTestIoRule implements Rule
     private const string IDENTIFIER = 'phalanx.testing.noRawIo';
 
     private const array RAW_TEST_IO_FUNCTIONS = [
+        'file_get_contents',
         'file_put_contents',
         'mkdir',
         'rmdir',
         'sys_get_temp_dir',
         'tempnam',
         'tmpfile',
+        'touch',
         'unlink',
     ];
 
@@ -61,16 +62,20 @@ final class NoRawTestIoRule implements Rule
         }
 
         $target = $node->args[0]->value ?? null;
-        if (!$target instanceof String_) {
+        if ($target === null) {
             return [];
         }
 
-        $path = $target->value;
-        if (!in_array($path, ['php://temp', 'php://memory', '/dev/null'], true)) {
-            return [];
+        foreach ($scope->getType($target)->getConstantStrings() as $constantString) {
+            $path = $constantString->getValue();
+            if (!in_array($path, ['php://temp', 'php://memory', '/dev/null'], true)) {
+                continue;
+            }
+
+            return $this->report($node, "fopen('{$path}')");
         }
 
-        return $this->report($node, "fopen('{$path}')");
+        return [];
     }
 
     /** @return list<IdentifierRuleError> */

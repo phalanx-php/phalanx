@@ -87,8 +87,7 @@ final class AccessorTraitWriterTest extends TestCase
         new AccessorTraitWriter()->write($this->runtimeFixtures(), $target);
 
         self::assertFileExists($target);
-        $contents = file_get_contents($target);
-        self::assertNotFalse($contents);
+        $contents = $this->tempWorkspace()->read('Generated/TestAppAccessors.php');
         self::assertStringContainsString('trait TestAppAccessors', $contents);
     }
 
