@@ -19,19 +19,14 @@ final class NativeFastPathTest extends PhalanxTestCase
 {
     public function testReadAndWriteRoundTrip(): void
     {
-        $path = tempnam(sys_get_temp_dir(), 'phalanx-native-fast');
-        self::assertNotFalse($path);
+        $path = $this->tempWorkspace('phalanx-native-fast-')->path('payload.txt');
 
-        try {
-            $this->scope->run(static function (ExecutionScope $scope) use ($path): void {
-                $fp = new NativeFastPath();
-                $written = $fp->write($scope, $path, "alpha\nbeta\n");
+        $this->scope->run(static function (ExecutionScope $scope) use ($path): void {
+            $fp = new NativeFastPath();
+            $written = $fp->write($scope, $path, "alpha\nbeta\n");
 
-                self::assertGreaterThan(0, $written);
-                self::assertSame("alpha\nbeta\n", $fp->read($scope, $path));
-            });
-        } finally {
-            @unlink($path);
-        }
+            self::assertGreaterThan(0, $written);
+            self::assertSame("alpha\nbeta\n", $fp->read($scope, $path));
+        });
     }
 }

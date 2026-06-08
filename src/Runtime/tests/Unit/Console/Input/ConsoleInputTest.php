@@ -7,6 +7,7 @@ namespace Phalanx\Runtime\Tests\Unit\Console\Input;
 use Phalanx\Console\Input\ConsoleInput;
 use Phalanx\Console\Input\NonInteractiveTtyException;
 use Phalanx\Scope\ExecutionScope;
+use Phalanx\Stream\Stream;
 use Phalanx\Testing\PhalanxTestCase;
 
 /**
@@ -80,23 +81,21 @@ final class ConsoleInputTest extends PhalanxTestCase
 
     public function testNonTtyResourceReportsAsNonInteractive(): void
     {
-        $resource = fopen('php://memory', 'r+');
-        self::assertNotFalse($resource);
+        $resource = Stream::memoryInput();
 
-        $input = new ConsoleInput($resource);
+        $input = new ConsoleInput($resource->resource());
 
         self::assertFalse($input->isInteractive);
 
-        fclose($resource);
+        $resource->close();
     }
 
     public function testEnableRawModeOnNonTtyThrows(): void
     {
         $this->scope->run(static function (ExecutionScope $scope): void {
-            $resource = fopen('php://memory', 'r+');
-            self::assertNotFalse($resource);
+            $resource = Stream::memoryInput();
 
-            $input = new ConsoleInput($resource);
+            $input = new ConsoleInput($resource->resource());
 
             $caught = null;
             try {
@@ -106,22 +105,21 @@ final class ConsoleInputTest extends PhalanxTestCase
             }
 
             self::assertNotNull($caught);
-            fclose($resource);
+            $resource->close();
         });
     }
 
     public function testRestoreIsNoOpWhenRawModeNotEnabled(): void
     {
         $this->scope->run(static function (ExecutionScope $scope): void {
-            $resource = fopen('php://memory', 'r+');
-            self::assertNotFalse($resource);
+            $resource = Stream::memoryInput();
 
-            $input = new ConsoleInput($resource);
+            $input = new ConsoleInput($resource->resource());
 
             $input->restore($scope);
 
             self::assertFalse($input->isInteractive);
-            fclose($resource);
+            $resource->close();
         });
     }
 

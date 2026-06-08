@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Cli\Tests\Integration\Command;
 
 use Phalanx\Cli\Command\NewCommand;
-use Phalanx\Cli\Tests\Support\RemovesDirectories;
+use Phalanx\Testing\UsesTempWorkspace;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Command\Command;
@@ -13,21 +13,13 @@ use Symfony\Component\Console\Tester\CommandTester;
 
 final class NewCommandTest extends TestCase
 {
-    use RemovesDirectories;
+    use UsesTempWorkspace;
 
     private string $tempDir;
 
     protected function setUp(): void
     {
-        $this->tempDir = sys_get_temp_dir() . '/' . uniqid('phalanx-cmd-test-', true);
-        mkdir($this->tempDir, 0755, true);
-    }
-
-    protected function tearDown(): void
-    {
-        if (is_dir($this->tempDir)) {
-            self::removeDir($this->tempDir);
-        }
+        $this->tempDir = $this->tempWorkspace('phalanx-cmd-test-')->dir('projects');
     }
 
     #[Test]
@@ -67,9 +59,7 @@ final class NewCommandTest extends TestCase
     #[Test]
     public function rejectsNonEmptyDirectory(): void
     {
-        $projectDir = $this->tempDir . '/existing-project';
-        mkdir($projectDir, 0755, true);
-        file_put_contents($projectDir . '/file.txt', 'content');
+        $this->tempWorkspace()->file('projects/existing-project/file.txt', 'content');
 
         $tester = new CommandTester(new NewCommand());
         $tester->execute([
@@ -85,8 +75,7 @@ final class NewCommandTest extends TestCase
     #[Test]
     public function allowsEmptyExistingDirectory(): void
     {
-        $projectDir = $this->tempDir . '/empty-project';
-        mkdir($projectDir, 0755, true);
+        $projectDir = $this->tempWorkspace()->dir('projects/empty-project');
 
         $tester = new CommandTester(new NewCommand());
         $tester->execute([
@@ -158,8 +147,8 @@ final class NewCommandTest extends TestCase
     #[Test]
     public function handlesFilesystemError(): void
     {
-        $readOnlyDir = $this->tempDir . '/readonly';
-        mkdir($readOnlyDir, 0555, true);
+        $readOnlyDir = $this->tempWorkspace()->dir('projects/readonly');
+        chmod($readOnlyDir, 0555);
 
         try {
             $tester = new CommandTester(new NewCommand());

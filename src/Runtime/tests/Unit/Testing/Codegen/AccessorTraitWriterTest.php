@@ -12,10 +12,13 @@ use Phalanx\Testing\Lenses\RuntimeLens;
 use Phalanx\Testing\Lenses\RuntimeLensFactory;
 use Phalanx\Testing\Lenses\ScopeLens;
 use Phalanx\Testing\Lenses\ScopeLensFactory;
+use Phalanx\Testing\UsesTempWorkspace;
 use PHPUnit\Framework\TestCase;
 
 final class AccessorTraitWriterTest extends TestCase
 {
+    use UsesTempWorkspace;
+
     public function testRendersEmptyTraitForEmptyInput(): void
     {
         $output = new AccessorTraitWriter()->render([]);
@@ -78,63 +81,25 @@ final class AccessorTraitWriterTest extends TestCase
 
     public function testWritePersistsContentsToTarget(): void
     {
-        $target = sys_get_temp_dir()
-            . '/phalanx-codegen-test-'
-            . uniqid()
-            . '/Generated/TestAppAccessors.php';
+        $target = $this->tempWorkspace('phalanx-codegen-test-')
+            ->path('Generated/TestAppAccessors.php');
 
-        try {
-            new AccessorTraitWriter()->write($this->runtimeFixtures(), $target);
+        new AccessorTraitWriter()->write($this->runtimeFixtures(), $target);
 
-            self::assertFileExists($target);
-            $contents = file_get_contents($target);
-            self::assertNotFalse($contents);
-            self::assertStringContainsString('trait TestAppAccessors', $contents);
-        } finally {
-            if (is_file($target)) {
-                @unlink($target);
-            }
-            $dir = dirname($target);
-            if (is_dir($dir)) {
-                @rmdir($dir);
-                @rmdir(dirname($dir));
-            }
-        }
+        self::assertFileExists($target);
+        $contents = file_get_contents($target);
+        self::assertNotFalse($contents);
+        self::assertStringContainsString('trait TestAppAccessors', $contents);
     }
 
     public function testWriteCreatesMissingParentDirectories(): void
     {
-        $base = sys_get_temp_dir() . '/phalanx-codegen-test-' . uniqid();
-        $target = $base . '/deeply/nested/Generated/TestAppAccessors.php';
+        $target = $this->tempWorkspace('phalanx-codegen-test-')
+            ->path('deeply/nested/Generated/TestAppAccessors.php');
 
-        try {
-            new AccessorTraitWriter()->write([], $target);
+        new AccessorTraitWriter()->write([], $target);
 
-            self::assertFileExists($target);
-        } finally {
-            if (is_file($target)) {
-                @unlink($target);
-            }
-            self::removeRecursive($base);
-        }
-    }
-
-    private static function removeRecursive(string $path): void
-    {
-        if (!is_dir($path)) {
-            return;
-        }
-
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($path, \FilesystemIterator::SKIP_DOTS),
-            \RecursiveIteratorIterator::CHILD_FIRST,
-        );
-
-        foreach ($iterator as $file) {
-            $file->isDir() ? @rmdir($file->getPathname()) : @unlink($file->getPathname());
-        }
-
-        @rmdir($path);
+        self::assertFileExists($target);
     }
 
     /** @return list<LensMetadata> */

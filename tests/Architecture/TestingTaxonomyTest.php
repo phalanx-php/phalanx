@@ -19,6 +19,7 @@ final class TestingTaxonomyTest extends TestCase
         'phalanxTestingUseTestScopeExemptPaths',
         'phalanxTestingNoRawSleepExemptPaths',
         'phalanxTestingLensRequiresBundleExemptPaths',
+        'phalanxTestingNoRawIoExemptPaths',
     ];
 
     /** @var list<string> */
@@ -183,6 +184,30 @@ final class TestingTaxonomyTest extends TestCase
         self::assertSame([], $violations);
     }
 
+    #[Test]
+    public function raw_test_io_is_fenced_for_osr_183(): void
+    {
+        $violations = [];
+
+        foreach (self::testPhpFiles() as $file) {
+            $signals = TestFileSignals::from($file, self::root());
+            if ($signals->architecture || $signals->phpstan) {
+                continue;
+            }
+
+            foreach (self::rawIoHits($file) as $hit) {
+                $violations[] = sprintf(
+                    '%s:%d uses %s; ordinary tests should use Stream buffers or TempWorkspace.',
+                    $signals->path,
+                    $hit->line,
+                    $hit->label,
+                );
+            }
+        }
+
+        self::assertSame([], $violations);
+    }
+
     /**
      * @return list<string>
      */
@@ -319,6 +344,43 @@ final class TestingTaxonomyTest extends TestCase
     private static function root(): string
     {
         return dirname(__DIR__, 2);
+    }
+
+    /**
+     * @return list<SourceHit>
+     */
+    private static function rawIoHits(string $file): array
+    {
+        $source = (string) file_get_contents($file);
+
+        return [
+            ...self::sourceHits($source, '/fopen\s*\(\s*[\'"]php:\/\/(?:temp|memory)[\'"]/', 'raw php:// stream open'),
+            ...self::sourceHits($source, '/fopen\s*\(\s*[\'"]\/dev\/null[\'"]/', 'raw null stream open'),
+            ...self::sourceHits($source, '/(?<![A-Za-z_])tempnam\s*\(/', 'tempnam()'),
+            ...self::sourceHits($source, '/(?<![A-Za-z_])sys_get_temp_dir\s*\(/', 'sys_get_temp_dir()'),
+            ...self::sourceHits($source, '/(?<![A-Za-z_])tmpfile\s*\(/', 'tmpfile()'),
+        ];
+    }
+
+    /**
+     * @return list<SourceHit>
+     */
+    private static function sourceHits(string $source, string $pattern, string $label): array
+    {
+        $count = preg_match_all($pattern, $source, $matches, PREG_OFFSET_CAPTURE);
+        if ($count === false || $count === 0) {
+            return [];
+        }
+
+        $hits = [];
+        foreach ($matches[0] as $match) {
+            $hits[] = new SourceHit(
+                label: $label,
+                line: substr_count(substr($source, 0, $match[1]), "\n") + 1,
+            );
+        }
+
+        return $hits;
     }
 }
 

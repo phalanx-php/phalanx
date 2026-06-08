@@ -328,9 +328,7 @@ final class HttpRunnerTest extends PhalanxTestCase
     #[Test]
     public function translates_uploaded_files_from_swoole_request(): void
     {
-        $tmpFile = tempnam(sys_get_temp_dir(), 'http-upload-');
-        self::assertIsString($tmpFile);
-        file_put_contents($tmpFile, 'upload-body');
+        $tmpFile = $this->tempWorkspace('http-upload-')->file('avatar.txt', 'upload-body');
 
         $request = new SwooleRequest();
         $request->server = [
@@ -353,11 +351,7 @@ final class HttpRunnerTest extends PhalanxTestCase
             ],
         ];
 
-        try {
-            $psrRequest = new \Phalanx\Http\RequestFactory()->create($request);
-        } finally {
-            @unlink($tmpFile);
-        }
+        $psrRequest = new \Phalanx\Http\RequestFactory()->create($request);
 
         self::assertSame('/upload', $psrRequest->getUri()->getPath());
         self::assertSame('debug=1', $psrRequest->getUri()->getQuery());
@@ -371,12 +365,9 @@ final class HttpRunnerTest extends PhalanxTestCase
     #[Test]
     public function translates_indexed_uploaded_file_list_from_swoole_request(): void
     {
-        $first = tempnam(sys_get_temp_dir(), 'http-upload-a-');
-        $second = tempnam(sys_get_temp_dir(), 'http-upload-b-');
-        self::assertIsString($first);
-        self::assertIsString($second);
-        file_put_contents($first, 'first-body');
-        file_put_contents($second, 'second-body');
+        $workspace = $this->tempWorkspace('http-upload-');
+        $first = $workspace->file('a.txt', 'first-body');
+        $second = $workspace->file('b.txt', 'second-body');
 
         $request = new SwooleRequest();
         $request->server = [
@@ -394,12 +385,7 @@ final class HttpRunnerTest extends PhalanxTestCase
             ],
         ];
 
-        try {
-            $psrRequest = new \Phalanx\Http\RequestFactory()->create($request);
-        } finally {
-            @unlink($first);
-            @unlink($second);
-        }
+        $psrRequest = new \Phalanx\Http\RequestFactory()->create($request);
 
         $uploads = $psrRequest->getUploadedFiles();
         self::assertArrayHasKey('attachments', $uploads);
@@ -412,9 +398,7 @@ final class HttpRunnerTest extends PhalanxTestCase
     #[Test]
     public function defensively_skips_indexed_uploaded_files_with_missing_tmp_name(): void
     {
-        $present = tempnam(sys_get_temp_dir(), 'http-upload-c-');
-        self::assertIsString($present);
-        file_put_contents($present, 'only-real');
+        $present = $this->tempWorkspace('http-upload-')->file('real.txt', 'only-real');
 
         $request = new SwooleRequest();
         $request->server = [
@@ -439,11 +423,7 @@ final class HttpRunnerTest extends PhalanxTestCase
             ],
         ];
 
-        try {
-            $psrRequest = new \Phalanx\Http\RequestFactory()->create($request);
-        } finally {
-            @unlink($present);
-        }
+        $psrRequest = new \Phalanx\Http\RequestFactory()->create($request);
 
         $uploads = $psrRequest->getUploadedFiles();
         self::assertArrayHasKey('attachments', $uploads);

@@ -7,6 +7,7 @@ namespace Phalanx\AiProviders\Tests\Unit\Agent\Loader;
 use Phalanx\AiProviders\Agent\Loader\LoaderError;
 use Phalanx\AiProviders\Agent\Loader\Manifest;
 use Phalanx\AiProviders\Agent\Registry;
+use Phalanx\Testing\UsesTempWorkspace;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -16,6 +17,8 @@ use PHPUnit\Framework\TestCase;
  */
 final class ManifestTest extends TestCase
 {
+    use UsesTempWorkspace;
+
     #[Test]
     public function validManifestRegistersAllAgents(): void
     {
@@ -140,8 +143,7 @@ final class ManifestTest extends TestCase
 
     private function writeTempManifest(string $content): string
     {
-        $path = tempnam(sys_get_temp_dir(), 'ai-providers_manifest_') . '.yaml';
-        file_put_contents($path, $content);
+        $path = $this->tempWorkspace('ai-providers-manifest-')->file('manifest.yaml', $content);
         $this->assertTrue(is_file($path));
 
         return $path;

@@ -6,7 +6,7 @@ namespace Phalanx\Cli\Tests\Unit\Scaffold;
 
 use Phalanx\Cli\Scaffold\ProjectGenerator;
 use Phalanx\Cli\Scaffold\ProjectType;
-use Phalanx\Cli\Tests\Support\RemovesDirectories;
+use Phalanx\Testing\UsesTempWorkspace;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -14,20 +14,13 @@ use Symfony\Component\Console\Output\BufferedOutput;
 
 final class ProjectGeneratorTest extends TestCase
 {
-    use RemovesDirectories;
+    use UsesTempWorkspace;
 
     private string $tempDir;
 
     protected function setUp(): void
     {
-        $this->tempDir = sys_get_temp_dir() . '/' . uniqid('phalanx-test-', true);
-    }
-
-    protected function tearDown(): void
-    {
-        if (is_dir($this->tempDir)) {
-            self::removeDir($this->tempDir);
-        }
+        $this->tempDir = $this->tempWorkspace('phalanx-generator-test-')->missingPath('project');
     }
 
     #[Test]

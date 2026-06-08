@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\AiProviders\Tests\Unit\HomeDir\Codex;
 
 use Phalanx\AiProviders\HomeDir\Codex\JsonlReader;
+use Phalanx\Testing\UsesTempWorkspace;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -14,6 +15,8 @@ use PHPUnit\Framework\TestCase;
  */
 final class JsonlReaderTest extends TestCase
 {
+    use UsesTempWorkspace;
+
     #[Test]
     public function readsAllLinesFromSessionFile(): void
     {
@@ -46,40 +49,30 @@ final class JsonlReaderTest extends TestCase
     #[Test]
     public function malformedLineIsDroppedSilently(): void
     {
-        $tmpFile = tempnam(sys_get_temp_dir(), 'ai-providers_jr_') . '.jsonl';
-        file_put_contents(
-            $tmpFile,
+        $tmpFile = $this->jsonlFixture(
+            'malformed.jsonl',
             '{"type":"message","role":"user","content":"valid","ts":1000,"raw_hash":"h1"}' . "\n" .
             'not valid json at all' . "\n" .
             '{"type":"message","role":"assistant","content":"also valid","ts":1001,"raw_hash":"h2"}' . "\n",
         );
 
-        try {
-            $rows = iterator_to_array(JsonlReader::read($tmpFile));
-            self::assertCount(2, $rows);
-        } finally {
-            unlink($tmpFile);
-        }
+        $rows = iterator_to_array(JsonlReader::read($tmpFile));
+        self::assertCount(2, $rows);
     }
 
     #[Test]
     public function emptyLinesAreSkipped(): void
     {
-        $tmpFile = tempnam(sys_get_temp_dir(), 'ai-providers_jr_') . '.jsonl';
-        file_put_contents(
-            $tmpFile,
+        $tmpFile = $this->jsonlFixture(
+            'empty-lines.jsonl',
             '{"type":"message","role":"user","content":"hello","ts":1000,"raw_hash":"h1"}' . "\n" .
             "\n" .
             "\n" .
             '{"type":"message","role":"assistant","content":"world","ts":1001,"raw_hash":"h2"}' . "\n",
         );
 
-        try {
-            $rows = iterator_to_array(JsonlReader::read($tmpFile));
-            self::assertCount(2, $rows);
-        } finally {
-            unlink($tmpFile);
-        }
+        $rows = iterator_to_array(JsonlReader::read($tmpFile));
+        self::assertCount(2, $rows);
     }
 
     #[Test]
@@ -110,5 +103,10 @@ final class JsonlReaderTest extends TestCase
     private static function fixtureRoot(): string
     {
         return dirname(__DIR__, 3) . '/Fixtures/HomeDir/Codex';
+    }
+
+    private function jsonlFixture(string $name, string $contents): string
+    {
+        return $this->tempWorkspace('ai-providers-jsonl-')->file($name, $contents);
     }
 }

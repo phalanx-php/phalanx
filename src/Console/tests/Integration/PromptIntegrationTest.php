@@ -12,6 +12,8 @@ use Phalanx\Console\Style\Style;
 use Phalanx\Console\Style\Theme;
 use Phalanx\Console\Input\ConsoleInput;
 use Phalanx\Scope\ExecutionScope;
+use Phalanx\Stream\ResourceHandle;
+use Phalanx\Stream\Stream;
 use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
 
@@ -31,11 +33,10 @@ final class PromptIntegrationTest extends PhalanxTestCase
         $output = $this->streamOutput($outStream);
         $theme = $this->theme();
 
-        $resource = fopen('php://memory', 'r+');
-        self::assertNotFalse($resource);
+        $resource = Stream::memoryInput();
 
         try {
-            $consoleInput = new ConsoleInput($resource);
+            $consoleInput = new ConsoleInput($resource->resource());
             $reader = new RawInput($consoleInput);
 
             self::assertFalse($reader->isInteractive);
@@ -55,7 +56,7 @@ final class PromptIntegrationTest extends PhalanxTestCase
 
             self::assertSame('fallback', $captured);
         } finally {
-            fclose($resource);
+            $resource->close();
         }
     }
 
@@ -154,16 +155,13 @@ final class PromptIntegrationTest extends PhalanxTestCase
         );
     }
 
-    /** @return resource */
-    private function outStream(): mixed
+    private function outStream(): ResourceHandle
     {
-        $stream = fopen('php://temp', 'w+');
-        self::assertNotFalse($stream);
-        return $stream;
+        return Stream::captureBuffer();
     }
 
-    private function streamOutput(mixed $stream): StreamOutput
+    private function streamOutput(ResourceHandle $stream): StreamOutput
     {
-        return new StreamOutput($stream, new TerminalEnvironment(columns: 80, lines: 24));
+        return new StreamOutput($stream->resource(), new TerminalEnvironment(columns: 80, lines: 24));
     }
 }

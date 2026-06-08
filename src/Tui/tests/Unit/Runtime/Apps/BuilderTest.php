@@ -7,6 +7,8 @@ namespace Phalanx\Tui\Tests\Unit\Runtime\Apps;
 use InvalidArgumentException;
 use Phalanx\Boot\AppContext;
 use Phalanx\Scope\ExecutionScope;
+use Phalanx\Stream\ResourceHandle;
+use Phalanx\Stream\Stream;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
 use Phalanx\Testing\PhalanxTestCase;
@@ -34,10 +36,24 @@ use Phalanx\Tui\Runtime\State\WorkPlanSlice;
 use Phalanx\Tui\Runtime\WorkContext;
 use Phalanx\Tui\Tests\Support\RecordingTaskScope;
 use Phalanx\Tui\Tui;
+use PHPUnit\Framework\Attributes\After;
 use PHPUnit\Framework\Attributes\Test;
 
 final class BuilderTest extends PhalanxTestCase
 {
+    /** @var list<ResourceHandle> */
+    private array $streams = [];
+
+    #[After]
+    protected function closeStreams(): void
+    {
+        foreach ($this->streams as $stream) {
+            $stream->close();
+        }
+
+        $this->streams = [];
+    }
+
     #[Test]
     public function moduleEntryReturnsRuntimeBuilder(): void
     {
@@ -52,7 +68,7 @@ final class BuilderTest extends PhalanxTestCase
     public function moduleEntryRuntimeLoadsProjectConfigBeforeExplicitContext(): void
     {
         $builder = Tui::starting([
-            AppContext::CONFIG_FILE => self::tomlConfig(<<<'TOML'
+            AppContext::CONFIG_FILE => $this->tomlConfig(<<<'TOML'
 [app]
 name = "runtime-file-app"
 
@@ -108,7 +124,7 @@ TOML),
         $calls = new \ArrayObject();
         $builder = Tui::starting()
             ->primary(new BuilderDoneAgentParticipant($calls))
-            ->stageConfig(self::stageConfig());
+            ->stageConfig($this->stageConfig());
         $app = $builder->build();
 
         $app->runtime()->run(static function (ExecutionScope $scope) use ($calls): void {
@@ -151,15 +167,14 @@ TOML),
         self::assertSame(WorkPlanStatus::Complete, $store->workPlan->plan->status);
     }
 
-    private static function stageConfig(): StageConfig
+    private function stageConfig(): StageConfig
     {
-        $stream = fopen('php://memory', 'w+');
-        self::assertIsResource($stream);
+        $stream = $this->streams[] = Stream::memoryBuffer();
 
         return new StageConfig(
             screenMode: ScreenMode::Inline,
             handleInput: false,
-            stream: $stream,
+            stream: $stream->resource(),
             env: [
                 'COLUMNS' => '40',
                 'LINES' => '12',
@@ -167,13 +182,9 @@ TOML),
         );
     }
 
-    private static function tomlConfig(string $contents): string
+    private function tomlConfig(string $contents): string
     {
-        $path = tempnam(sys_get_temp_dir(), 'phalanx-runtime-config-');
-        self::assertIsString($path);
-        file_put_contents($path, $contents);
-
-        return $path;
+        return $this->tempWorkspace('phalanx-runtime-config-')->file('config.toml', $contents);
     }
 }
 

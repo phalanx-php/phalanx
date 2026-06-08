@@ -21,7 +21,7 @@ final class OpenTunnelTest extends PhalanxTestCase
 
     public function testLocalTunnelWaitsForForwardedPortBeforeReturning(): void
     {
-        $this->sshBinaryPath = self::writeExecutable(<<<'PHP'
+        $this->sshBinaryPath = $this->writeExecutable(<<<'PHP'
 #!/usr/bin/env php
 <?php
 declare(strict_types=1);
@@ -116,14 +116,9 @@ PHP);
         ];
     }
 
-    private static function writeExecutable(string $contents): string
+    private function writeExecutable(string $contents): string
     {
-        $path = tempnam(sys_get_temp_dir(), 'phalanx-ssh-fake-');
-        if ($path === false) {
-            $path = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'phalanx-ssh-fake-' . uniqid('', true);
-        }
-
-        file_put_contents($path, $contents);
+        $path = $this->tempWorkspace('phalanx-ssh-fake-')->file(bin2hex(random_bytes(4)), $contents);
         chmod($path, 0755);
 
         return $path;

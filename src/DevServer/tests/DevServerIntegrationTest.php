@@ -12,17 +12,23 @@ use Phalanx\DevServer\ManagedProcess;
 use Phalanx\DevServer\Output\Multiplexer;
 use Phalanx\DevServer\Process;
 use Phalanx\DevServer\ProcessState;
+use Phalanx\Stream\ResourceHandle;
+use Phalanx\Stream\Stream;
 use Phalanx\Testing\PhalanxTestCase;
+use PHPUnit\Framework\Attributes\After;
 
 final class DevServerIntegrationTest extends PhalanxTestCase
 {
+    /** @var list<ResourceHandle> */
+    private array $streams = [];
+
     public function testManagedProcessReachesRunningOnReadinessMatch(): void
     {
         $script = 'echo "ready\n"; for ($i = 0; $i < 50; $i++) { usleep(20000); }';
         $config = Process::named('readiness-fixture')
             ->command(PHP_BINARY . ' -r ' . escapeshellarg($script))
             ->ready('/ready/');
-        $output = self::nullMultiplexer();
+        $output = $this->nullMultiplexer();
 
         $finalState = $this->scope->run(static function (ExecutionScope $scope) use ($config, $output): ProcessState {
             $mp = new ManagedProcess($config);
@@ -44,7 +50,7 @@ final class DevServerIntegrationTest extends PhalanxTestCase
         $config = Process::named('stderr-readiness-fixture')
             ->command(PHP_BINARY . ' -r ' . escapeshellarg($script))
             ->ready('/ready/');
-        $output = self::nullMultiplexer();
+        $output = $this->nullMultiplexer();
 
         $finalState = $this->scope->run(static function (ExecutionScope $scope) use ($config, $output): ProcessState {
             $mp = new ManagedProcess($config);
@@ -65,7 +71,7 @@ final class DevServerIntegrationTest extends PhalanxTestCase
         $script = 'for ($i = 0; $i < 50; $i++) { usleep(20000); }';
         $config = Process::named('immediate-fixture')
             ->command(PHP_BINARY . ' -r ' . escapeshellarg($script));
-        $output = self::nullMultiplexer();
+        $output = $this->nullMultiplexer();
 
         $state = $this->scope->run(static function (ExecutionScope $scope) use ($config, $output): ProcessState {
             $mp = new ManagedProcess($config);
@@ -85,7 +91,7 @@ final class DevServerIntegrationTest extends PhalanxTestCase
     {
         $config = Process::named('crash-fixture')
             ->command(PHP_BINARY . ' -r ' . escapeshellarg('exit(2);'));
-        $output = self::nullMultiplexer();
+        $output = $this->nullMultiplexer();
 
         $crashed = $this->scope->run(static function (ExecutionScope $scope) use ($config, $output): bool {
             $mp = new ManagedProcess($config);
@@ -105,7 +111,7 @@ final class DevServerIntegrationTest extends PhalanxTestCase
 
     public function testFileWatcherDetectsMtimeChange(): void
     {
-        $tmpDir = self::tempDir();
+        $tmpDir = $this->tempDir();
         $file = $tmpDir . '/probe.php';
         file_put_contents($file, "<?php\n\$probe = 1;\n");
 
@@ -132,9 +138,6 @@ final class DevServerIntegrationTest extends PhalanxTestCase
         });
 
         self::assertContains($file, $changes);
-
-        @unlink($file);
-        @rmdir($tmpDir);
     }
 
     public function testManagedProcessRestartsCleanly(): void
@@ -143,7 +146,7 @@ final class DevServerIntegrationTest extends PhalanxTestCase
         $config = Process::named('restart-fixture')
             ->command(PHP_BINARY . ' -r ' . escapeshellarg($script))
             ->ready('/ready/');
-        $output = self::nullMultiplexer();
+        $output = $this->nullMultiplexer();
 
         $pids = $this->scope->run(static function (ExecutionScope $scope) use ($config, $output): array {
             $mp = new ManagedProcess($config);
@@ -173,7 +176,7 @@ final class DevServerIntegrationTest extends PhalanxTestCase
         $config = Process::named('idempotent-stop-fixture')
             ->command(PHP_BINARY . ' -r ' . escapeshellarg($script))
             ->ready('/ready/');
-        $output = self::nullMultiplexer();
+        $output = $this->nullMultiplexer();
 
         $stoppedState = $this->scope->run(static function (ExecutionScope $scope) use ($config, $output): ProcessState {
             $mp = new ManagedProcess($config);
@@ -212,7 +215,7 @@ final class DevServerIntegrationTest extends PhalanxTestCase
     {
         $config = Process::named('natural-exit-fixture')
             ->command(PHP_BINARY . ' -r ' . escapeshellarg('echo "done\n";'));
-        $output = self::nullMultiplexer();
+        $output = $this->nullMultiplexer();
 
         [$state, $live] = $this->scope->run(static function (ExecutionScope $scope) use ($config, $output): array {
             $mp = new ManagedProcess($config);
@@ -232,7 +235,7 @@ final class DevServerIntegrationTest extends PhalanxTestCase
 
     public function testFileWatcherStopWithoutStartIsSafe(): void
     {
-        $tmpDir = self::tempDir();
+        $tmpDir = $this->tempDir();
 
         $this->scope->run(static function () use ($tmpDir): void {
             $watcher = new FileWatcher(
@@ -246,14 +249,12 @@ final class DevServerIntegrationTest extends PhalanxTestCase
             $watcher->stop();
         });
 
-        @rmdir($tmpDir);
-
         self::assertSame(0, $this->scope->memory->resources->liveCount(RuntimeResourceSid::StreamingProcess));
     }
 
     public function testFileWatcherStopSuppressesLaterChanges(): void
     {
-        $tmpDir = self::tempDir();
+        $tmpDir = $this->tempDir();
         $file = $tmpDir . '/probe.php';
         file_put_contents($file, "<?php\n\$probe = 1;\n");
 
@@ -278,25 +279,28 @@ final class DevServerIntegrationTest extends PhalanxTestCase
             return $captured;
         });
 
-        @unlink($file);
-        @rmdir($tmpDir);
-
         self::assertSame([], $changes);
     }
 
-    private static function nullMultiplexer(): Multiplexer
+    #[After]
+    protected function closeStreams(): void
     {
-        $stream = fopen('php://temp', 'wb+');
-        if ($stream === false) {
-            throw new \RuntimeException('php://temp unavailable');
+        foreach ($this->streams as $stream) {
+            $stream->close();
         }
-        return new Multiplexer($stream);
+
+        $this->streams = [];
     }
 
-    private static function tempDir(): string
+    private function nullMultiplexer(): Multiplexer
     {
-        $dir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'dev-server-test-' . uniqid('', true);
-        mkdir($dir, 0o755, true);
-        return $dir;
+        $stream = $this->streams[] = Stream::captureBuffer();
+
+        return new Multiplexer($stream->resource());
+    }
+
+    private function tempDir(): string
+    {
+        return $this->tempWorkspace('dev-server-test-')->dir(bin2hex(random_bytes(4)));
     }
 }

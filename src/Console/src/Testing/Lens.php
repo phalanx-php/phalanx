@@ -15,6 +15,7 @@ use Phalanx\Console\Runtime\Identity\ConsoleResourceSid;
 use Phalanx\Runtime\Identity\RuntimeResourceSid;
 use Phalanx\Runtime\Memory\ManagedResource;
 use Phalanx\Service\ServiceBundle;
+use Phalanx\Stream\Stream;
 use Phalanx\Testing\Attribute\Lens as LensAttribute;
 use Phalanx\Testing\Lens as LensContract;
 use RuntimeException;
@@ -100,15 +101,15 @@ final class Lens implements LensContract
             );
         }
 
-        $stdout = self::openCaptureStream();
-        $stderr = self::openCaptureStream();
+        $stdout = Stream::captureBuffer();
+        $stderr = Stream::captureBuffer();
         $capturedOutput = new StreamOutput(
-            stream: $stdout,
+            stream: $stdout->resource(),
             terminal: new TerminalEnvironment(columns: 80, lines: 24, isTty: false),
         );
-        $nullInput = self::openNullInput();
+        $nullInput = Stream::nullInput();
 
-        $console = $this->buildConsole($capturedOutput, $nullInput);
+        $console = $this->buildConsole($capturedOutput, $nullInput->resource());
 
         try {
             $exitCode = $console->dispatch($argv);
@@ -117,8 +118,8 @@ final class Lens implements LensContract
 
             return new Result(
                 exitCode: $exitCode,
-                stdout: self::drain($stdout),
-                stderr: self::drain($stderr),
+                stdout: $stdout->drain(),
+                stderr: $stderr->drain(),
                 liveCommandResources: $memory->resources->liveCount(ConsoleResourceSid::Command),
                 liveRuntimeScopes: $memory->resources->liveCount(RuntimeResourceSid::Scope),
                 liveTasks: $supervisor->liveCount(),
@@ -129,9 +130,9 @@ final class Lens implements LensContract
             );
         } finally {
             $console->shutdown();
-            self::close($stdout);
-            self::close($stderr);
-            self::close($nullInput);
+            $stdout->close();
+            $stderr->close();
+            $nullInput->close();
         }
     }
 
@@ -141,46 +142,6 @@ final class Lens implements LensContract
         $this->commands = null;
         $this->providers = [];
         $this->config = null;
-    }
-
-    /** @return resource */
-    private static function openCaptureStream(): mixed
-    {
-        $stream = fopen('php://temp', 'w+');
-
-        if ($stream === false) {
-            throw new RuntimeException('Unable to open capture stream for Lens.');
-        }
-
-        return $stream;
-    }
-
-    /** @return resource */
-    private static function openNullInput(): mixed
-    {
-        $stream = fopen('/dev/null', 'r');
-
-        if ($stream === false) {
-            throw new RuntimeException('Unable to open /dev/null for Lens key input.');
-        }
-
-        return $stream;
-    }
-
-    /** @param resource $stream */
-    private static function drain(mixed $stream): string
-    {
-        rewind($stream);
-
-        return (string) stream_get_contents($stream);
-    }
-
-    /** @param resource $stream */
-    private static function close(mixed $stream): void
-    {
-        if (is_resource($stream)) {
-            fclose($stream);
-        }
     }
 
     /** @param resource $nullInput */

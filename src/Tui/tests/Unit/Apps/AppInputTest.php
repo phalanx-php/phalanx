@@ -6,6 +6,7 @@ namespace Phalanx\Tui\Tests\Unit\Apps;
 
 use Phalanx\Mark\Mark;
 use Phalanx\Scope\ExecutionScope;
+use Phalanx\Stream\Stream;
 use Phalanx\Testing\PhalanxTestCase;
 use Phalanx\Tui\Inputs\Binding;
 use Phalanx\Tui\Core\RenderContext;
@@ -44,8 +45,7 @@ final class AppInputTest extends PhalanxTestCase
     {
         InputEchoScreen::$lastInstance = null;
 
-        $stream = fopen('php://memory', 'w+');
-        self::assertIsResource($stream);
+        $stream = Stream::memoryBuffer();
 
         $stage = Stage::boot(new StageConfig(
             screenMode: ScreenMode::Inline,
@@ -53,7 +53,7 @@ final class AppInputTest extends PhalanxTestCase
             handleInput: false,
             defaultExitHandler: false,
             activeIntervalUs: 1_000,
-            stream: $stream,
+            stream: $stream->resource(),
             env: [
                 'COLUMNS' => '20',
                 'LINES' => '5',
@@ -85,8 +85,7 @@ final class AppInputTest extends PhalanxTestCase
         $screen = InputEchoScreen::$lastInstance;
         self::assertInstanceOf(InputEchoScreen::class, $screen);
         self::assertSame('x', $screen->text->get());
-        rewind($stream);
-        self::assertStringContainsString('x', stream_get_contents($stream));
+        self::assertStringContainsString('x', $stream->drain());
     }
 
     #[Test]
@@ -95,8 +94,7 @@ final class AppInputTest extends PhalanxTestCase
         OverlayPriorityProbe::$handled = 0;
         OverlayPriorityProbe::$global = 0;
 
-        $stream = fopen('php://memory', 'w+');
-        self::assertIsResource($stream);
+        $stream = Stream::memoryBuffer();
 
         $stage = Stage::boot(new StageConfig(
             screenMode: ScreenMode::Inline,
@@ -104,7 +102,7 @@ final class AppInputTest extends PhalanxTestCase
             handleInput: false,
             defaultExitHandler: false,
             activeIntervalUs: 1_000,
-            stream: $stream,
+            stream: $stream->resource(),
             env: [
                 'COLUMNS' => '20',
                 'LINES' => '5',
@@ -146,8 +144,7 @@ final class AppInputTest extends PhalanxTestCase
         KeySequencePriorityOverlay::$handled = 0;
         KeySequencePriorityScreen::$started = 0;
 
-        $stream = fopen('php://memory', 'w+');
-        self::assertIsResource($stream);
+        $stream = Stream::memoryBuffer();
 
         $app = new App(
             Stage::boot(new StageConfig(
@@ -156,7 +153,7 @@ final class AppInputTest extends PhalanxTestCase
                 handleInput: false,
                 defaultExitHandler: false,
                 activeIntervalUs: 1_000,
-                stream: $stream,
+                stream: $stream->resource(),
                 env: [
                     'COLUMNS' => '20',
                     'LINES' => '5',
@@ -195,8 +192,7 @@ final class AppInputTest extends PhalanxTestCase
         InputEchoScreen::$lastInstance = null;
         ModalConsumeProbe::$handled = 0;
 
-        $stream = fopen('php://memory', 'w+');
-        self::assertIsResource($stream);
+        $stream = Stream::memoryBuffer();
 
         $stage = Stage::boot(new StageConfig(
             screenMode: ScreenMode::Inline,
@@ -204,7 +200,7 @@ final class AppInputTest extends PhalanxTestCase
             handleInput: false,
             defaultExitHandler: false,
             activeIntervalUs: 1_000,
-            stream: $stream,
+            stream: $stream->resource(),
             env: [
                 'COLUMNS' => '20',
                 'LINES' => '5',
@@ -240,8 +236,7 @@ final class AppInputTest extends PhalanxTestCase
     #[Test]
     public function overlayStatusBarReplacesScreenStatusBar(): void
     {
-        $stream = fopen('php://memory', 'w+');
-        self::assertIsResource($stream);
+        $stream = Stream::memoryBuffer();
 
         $stage = Stage::boot(new StageConfig(
             screenMode: ScreenMode::Inline,
@@ -249,7 +244,7 @@ final class AppInputTest extends PhalanxTestCase
             handleInput: false,
             defaultExitHandler: false,
             activeIntervalUs: 1_000,
-            stream: $stream,
+            stream: $stream->resource(),
             env: [
                 'COLUMNS' => '30',
                 'LINES' => '5',
@@ -274,8 +269,7 @@ final class AppInputTest extends PhalanxTestCase
             $scope->delay(Mark::ms(20));
 
             $scope->cancellation()->cancel();
-            rewind($stream);
-            $output = stream_get_contents($stream);
+            $output = $stream->drain();
             self::assertStringContainsString('overlay-status', $output);
             $finalStatus = substr($output, strrpos($output, 'overlay-status') ?: 0);
             self::assertStringNotContainsString('screen-status', $finalStatus);
@@ -285,8 +279,7 @@ final class AppInputTest extends PhalanxTestCase
     #[Test]
     public function runningActivityPulseTicksDuringDrawLoop(): void
     {
-        $stream = fopen('php://memory', 'w+');
-        self::assertIsResource($stream);
+        $stream = Stream::memoryBuffer();
 
         $app = new App(
             Stage::boot(new StageConfig(
@@ -295,7 +288,7 @@ final class AppInputTest extends PhalanxTestCase
                 handleInput: false,
                 defaultExitHandler: false,
                 activeIntervalUs: 1_000,
-                stream: $stream,
+                stream: $stream->resource(),
                 env: [
                     'COLUMNS' => '20',
                     'LINES' => '5',

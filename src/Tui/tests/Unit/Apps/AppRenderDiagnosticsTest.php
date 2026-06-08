@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Tui\Tests\Unit\Apps;
 
 use Phalanx\Scope\ExecutionScope;
+use Phalanx\Stream\Stream;
 use Phalanx\Supervisor\TaskRunSnapshot;
 use Phalanx\Testing\PhalanxTestCase;
 use Phalanx\Tui\Core\ScreenContext;
@@ -26,8 +27,7 @@ final class AppRenderDiagnosticsTest extends PhalanxTestCase
     {
         AppRenderDiagnosticsProbeScreen::$renderRun = null;
 
-        $stream = fopen('php://memory', 'w+');
-        self::assertIsResource($stream);
+        $stream = Stream::memoryBuffer();
 
         $app = new App(
             Stage::boot(new StageConfig(
@@ -36,7 +36,7 @@ final class AppRenderDiagnosticsTest extends PhalanxTestCase
                 handleInput: false,
                 defaultExitHandler: false,
                 activeIntervalUs: 1_000,
-                stream: $stream,
+                stream: $stream->resource(),
                 env: [
                     'COLUMNS' => '20',
                     'LINES' => '5',
@@ -66,8 +66,7 @@ final class AppRenderDiagnosticsTest extends PhalanxTestCase
     {
         StoreInstanceProbeScreen::$renderedStoreId = null;
 
-        $stream = fopen('php://memory', 'w+');
-        self::assertIsResource($stream);
+        $stream = Stream::memoryBuffer();
 
         $stageConfig = new StageConfig(
             screenMode: ScreenMode::Inline,
@@ -75,7 +74,7 @@ final class AppRenderDiagnosticsTest extends PhalanxTestCase
             handleInput: false,
             defaultExitHandler: false,
             activeIntervalUs: 1_000,
-            stream: $stream,
+            stream: $stream->resource(),
             env: [
                 'COLUMNS' => '20',
                 'LINES' => '5',

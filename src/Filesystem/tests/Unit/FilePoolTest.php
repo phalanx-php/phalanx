@@ -151,34 +151,28 @@ final class FilePoolTest extends PhalanxTestCase
     #[Test]
     public function readStreamReleasesSlotAfterConsumption(): void
     {
-        $tmpFile = tempnam(sys_get_temp_dir(), 'phalanx-stream-read-');
-        self::assertIsString($tmpFile);
-        file_put_contents($tmpFile, 'streamed');
+        $tmpFile = $this->tempWorkspace('phalanx-stream-read-')->file('stream.txt', 'streamed');
 
-        try {
-            $result = $this->testApp(bundles: Filesystem::services(maxOpen: 1))
-                ->scoped(Task::named(
-                    'test.filesystem.stream.read-release',
-                    static function (ExecutionScope $scope) use ($tmpFile): array {
-                        $pool = $scope->service(FilePool::class);
-                        $stream = Filesystem::files($scope)->readStream($tmpFile);
-                        $chunks = [];
+        $result = $this->testApp(bundles: Filesystem::services(maxOpen: 1))
+            ->scoped(Task::named(
+                'test.filesystem.stream.read-release',
+                static function (ExecutionScope $scope) use ($tmpFile): array {
+                    $pool = $scope->service(FilePool::class);
+                    $stream = Filesystem::files($scope)->readStream($tmpFile);
+                    $chunks = [];
 
-                        foreach ($stream($scope) as $chunk) {
-                            $chunks[] = $chunk;
-                        }
+                    foreach ($stream($scope) as $chunk) {
+                        $chunks[] = $chunk;
+                    }
 
-                        return [
-                            'contents' => implode('', $chunks),
-                            'active' => $pool->activeCount,
-                        ];
-                    },
-                ));
+                    return [
+                        'contents' => implode('', $chunks),
+                        'active' => $pool->activeCount,
+                    ];
+                },
+            ));
 
-            self::assertSame(['contents' => 'streamed', 'active' => 0], $result);
-        } finally {
-            unlink($tmpFile);
-        }
+        self::assertSame(['contents' => 'streamed', 'active' => 0], $result);
     }
 
     #[Test]

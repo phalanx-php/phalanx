@@ -4,18 +4,13 @@ declare(strict_types=1);
 
 namespace Phalanx\AiProviders\Tests\Support;
 
+use Phalanx\Testing\TempWorkspace;
+
 /**
  * Builds a temporary SQLite database for Codex SqliteReader tests.
  * Creates the `events` table matching the schema documented in
  * {@see \Phalanx\AiProviders\HomeDir\Codex\SqliteReader} and populates it
  * with a small set of test rows.
- *
- * Usage:
- * ```php
- * $path = SqliteFixtureBuilder::build();
- * // ... run assertions against the path ...
- * SqliteFixtureBuilder::cleanup($path);
- * ```
  *
  * Final — support class; no extension needed.
  */
@@ -29,9 +24,9 @@ final class SqliteFixtureBuilder
      * Build a temporary SQLite file with the Codex events schema and seed rows.
      * Returns the absolute path to the created file.
      */
-    public static function build(): string
+    public static function build(TempWorkspace $workspace): string
     {
-        $path = sys_get_temp_dir() . '/ai-providers_codex_test_' . bin2hex(random_bytes(6)) . '.sqlite';
+        $path = $workspace->path('codex.sqlite');
 
         $db = new \SQLite3($path);
         $db->enableExceptions(true);
@@ -106,13 +101,4 @@ final class SqliteFixtureBuilder
         return $path;
     }
 
-    /**
-     * Delete the temporary database file created by {@see self::build()}.
-     */
-    public static function cleanup(string $path): void
-    {
-        if (is_file($path)) {
-            unlink($path);
-        }
-    }
 }

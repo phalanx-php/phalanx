@@ -8,6 +8,8 @@ use InvalidArgumentException;
 use Phalanx\Boot\AppContext;
 use Phalanx\Service\ServiceBundle;
 use Phalanx\Service\Services;
+use Phalanx\Stream\Stream;
+use Phalanx\Testing\UsesTempWorkspace;
 use Phalanx\Tui\Inputs\Binding;
 use Phalanx\Tui\Core\ScreenContext;
 use Phalanx\Tui\Core\Screen;
@@ -56,6 +58,8 @@ final class AresBundle extends ServiceBundle
 
 final class BuilderTest extends TestCase
 {
+    use UsesTempWorkspace;
+
     #[Test]
     public function moduleEntryReturnsBuilder(): void
     {
@@ -77,7 +81,7 @@ final class BuilderTest extends TestCase
     public function moduleEntryAppLoadsProjectConfigBeforeExplicitContext(): void
     {
         $builder = Tui::app([
-            AppContext::CONFIG_FILE => self::tomlConfig(<<<'TOML'
+            AppContext::CONFIG_FILE => $this->tomlConfig(<<<'TOML'
 [app]
 name = "tui-file-app"
 
@@ -121,13 +125,12 @@ TOML),
     #[Test]
     public function customStageConfigIsAppliedToBuiltApp(): void
     {
-        $stream = fopen('php://memory', 'w+');
-        self::assertIsResource($stream);
+        $stream = Stream::memoryBuffer();
 
         $config = new StageConfig(
             screenMode: ScreenMode::Inline,
             handleInput: false,
-            stream: $stream,
+            stream: $stream->resource(),
             env: [
                 'COLUMNS' => '24',
                 'LINES' => '8',
@@ -359,12 +362,8 @@ TOML),
         self::assertCount(2, $app->globalBindings());
     }
 
-    private static function tomlConfig(string $contents): string
+    private function tomlConfig(string $contents): string
     {
-        $path = tempnam(sys_get_temp_dir(), 'phalanx-tui-config-');
-        self::assertIsString($path);
-        file_put_contents($path, $contents);
-
-        return $path;
+        return $this->tempWorkspace('phalanx-tui-config-')->file('config.toml', $contents);
     }
 }

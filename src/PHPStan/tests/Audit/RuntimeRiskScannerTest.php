@@ -6,11 +6,14 @@ namespace Phalanx\PHPStan\Tests\Audit;
 
 use Phalanx\PHPStan\Audit\RuntimeRisk;
 use Phalanx\PHPStan\Audit\RuntimeRiskScanner;
+use Phalanx\Testing\UsesTempWorkspace;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class RuntimeRiskScannerTest extends TestCase
 {
+    use UsesTempWorkspace;
+
     #[Test]
     public function testScansRuntimeRiskSymbolsWithoutFailingThePhpstanGate(): void
     {
@@ -37,10 +40,7 @@ final class RuntimeRiskScannerTest extends TestCase
     #[Test]
     public function testDoesNotReportSameNamespaceChannelWrapperAsRawSwooleChannel(): void
     {
-        $file = sys_get_temp_dir() . '/' . uniqid('phalanx-risk-', true) . '.php';
-
-        try {
-            file_put_contents($file, <<<'PHP'
+        $file = $this->tempWorkspace('phalanx-risk-')->file('LocalChannelFixture.php', <<<'PHP'
 <?php
 
 declare(strict_types=1);
@@ -56,11 +56,8 @@ final class LocalChannelFixture
 }
 PHP);
 
-            $risks = (new RuntimeRiskScanner())->scanFile($file);
+        $risks = (new RuntimeRiskScanner())->scanFile($file);
 
-            self::assertSame([], $risks);
-        } finally {
-            unlink($file);
-        }
+        self::assertSame([], $risks);
     }
 }

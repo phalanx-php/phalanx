@@ -84,7 +84,7 @@ final class ApplicationTest extends TestCase
     #[Test]
     public function moduleEntryStartingLoadsProjectConfigBeforeExplicitContext(): void
     {
-        $configFile = self::tomlConfig(<<<'TOML'
+        $configFile = $this->tomlConfig(<<<'TOML'
 [app]
 name = "console-file-app"
 
@@ -513,13 +513,9 @@ TOML);
         ConsoleContextProbeBundle::$appEnv = null;
     }
 
-    private static function tomlConfig(string $contents): string
+    private function tomlConfig(string $contents): string
     {
-        $path = tempnam(sys_get_temp_dir(), 'phalanx-console-config-');
-        self::assertIsString($path);
-        file_put_contents($path, $contents);
-
-        return $path;
+        return $this->tempWorkspace('phalanx-console-config-')->file('config.toml', $contents);
     }
 }
 

@@ -37,7 +37,7 @@ final class ProcessAwaiterTest extends PhalanxTestCase
 
     public function testProcessTimeoutKillsAndReleasesManagedProcess(): void
     {
-        $marker = self::tempPath();
+        $marker = $this->tempPath();
         $timedOut = false;
 
         try {
@@ -67,7 +67,7 @@ final class ProcessAwaiterTest extends PhalanxTestCase
 
     public function testScopeCancellationKillsAndReleasesManagedProcess(): void
     {
-        $marker = self::tempPath();
+        $marker = $this->tempPath();
         $cancelled = false;
 
         try {
@@ -120,15 +120,8 @@ final class ProcessAwaiterTest extends PhalanxTestCase
         self::assertSame('agent; echo unsafe', $result[1]);
     }
 
-    private static function tempPath(): string
+    private function tempPath(): string
     {
-        $path = tempnam(sys_get_temp_dir(), 'phalanx-ssh-marker-');
-        if ($path === false) {
-            return sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'phalanx-ssh-marker-' . uniqid('', true);
-        }
-
-        unlink($path);
-
-        return $path;
+        return $this->tempWorkspace('phalanx-ssh-marker-')->missingPath(bin2hex(random_bytes(4)));
     }
 }

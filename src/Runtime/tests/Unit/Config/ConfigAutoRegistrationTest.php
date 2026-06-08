@@ -14,11 +14,14 @@ use Phalanx\Config\Config;
 use Phalanx\Config\Env;
 use Phalanx\Config\Issue;
 use Phalanx\Config\ValidationContext;
+use Phalanx\Testing\UsesTempWorkspace;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class ConfigAutoRegistrationTest extends TestCase
 {
+    use UsesTempWorkspace;
+
     #[Test]
     public function configDeclaredInConfigsIsResolvableWithoutExplicitRegistration(): void
     {
@@ -123,11 +126,7 @@ TOML);
 
     private function temporaryToml(string $contents): string
     {
-        $path = tempnam(sys_get_temp_dir(), 'phalanx-config-auto-');
-        self::assertIsString($path);
-        file_put_contents($path, $contents);
-
-        return $path;
+        return $this->tempWorkspace('phalanx-config-auto-')->file('config.toml', $contents);
     }
 }
 

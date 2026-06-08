@@ -8,6 +8,7 @@ use Phalanx\AiProviders\Capabilities;
 use Phalanx\AiProviders\Capability;
 use Phalanx\AiProviders\Hash\Canonical;
 use Phalanx\AiProviders\Hash\UncanonicalizableValue;
+use Phalanx\Stream\Stream;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -101,14 +102,12 @@ final class CanonicalTest extends TestCase
     #[Test]
     public function resourceIsRejected(): void
     {
-        $resource = fopen('php://memory', 'rb');
+        $resource = Stream::memoryInput();
         try {
             $this->expectException(UncanonicalizableValue::class);
-            Canonical::of($resource);
+            Canonical::of($resource->resource());
         } finally {
-            if (is_resource($resource)) {
-                fclose($resource);
-            }
+            $resource->close();
         }
     }
 

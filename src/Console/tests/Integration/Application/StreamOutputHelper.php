@@ -6,37 +6,23 @@ namespace Phalanx\Console\Tests\Integration\Application;
 
 use Phalanx\Console\Output\StreamOutput;
 use Phalanx\Console\Output\TerminalEnvironment;
-use PHPUnit\Framework\Assert;
+use Phalanx\Stream\ResourceHandle;
+use Phalanx\Stream\Stream;
 
-/**
- * Shared php://temp + StreamOutput plumbing for integration tests that
- * want to assert on what a command wrote. Static helpers, no state.
- */
 final class StreamOutputHelper
 {
-    /** @return resource */
-    public static function open(): mixed
+    public static function open(): ResourceHandle
     {
-        $stream = fopen('php://temp', 'w+');
-
-        if ($stream === false) {
-            Assert::fail('Unable to open memory stream.');
-        }
-
-        return $stream;
+        return Stream::captureBuffer();
     }
 
-    /** @param resource $stream */
-    public static function output(mixed $stream): StreamOutput
+    public static function output(ResourceHandle $stream): StreamOutput
     {
-        return new StreamOutput($stream, new TerminalEnvironment(columns: 80, lines: 24));
+        return new StreamOutput($stream->resource(), new TerminalEnvironment(columns: 80, lines: 24));
     }
 
-    /** @param resource $stream */
-    public static function contents(mixed $stream): string
+    public static function contents(ResourceHandle $stream): string
     {
-        rewind($stream);
-
-        return (string) stream_get_contents($stream);
+        return $stream->drain();
     }
 }

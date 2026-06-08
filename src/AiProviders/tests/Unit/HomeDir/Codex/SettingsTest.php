@@ -6,11 +6,14 @@ namespace Phalanx\AiProviders\Tests\Unit\HomeDir\Codex;
 
 use Phalanx\AiProviders\HomeDir\Codex\Settings;
 use Phalanx\AiProviders\HomeDir\SettingsError;
+use Phalanx\Testing\UsesTempWorkspace;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class SettingsTest extends TestCase
 {
+    use UsesTempWorkspace;
+
     #[Test]
     public function noConfigPathProducesUnavailableFallbacks(): void
     {
@@ -26,7 +29,7 @@ final class SettingsTest extends TestCase
     public function missingConfigPathProducesUnavailableFallbacks(): void
     {
         $settings = new Settings(
-            configTomlPath: sys_get_temp_dir() . '/' . uniqid('codex-settings-missing-', true) . '.toml',
+            configTomlPath: $this->tempWorkspace('codex-settings-missing-')->missingPath('config.toml'),
         );
 
         self::assertFalse($settings->isAvailable());

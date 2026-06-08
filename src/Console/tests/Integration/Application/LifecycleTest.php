@@ -77,13 +77,9 @@ final class LifecycleTest extends TestCase
 
     private function makeCommandDirectory(): string
     {
-        $dir = sys_get_temp_dir() . '/' . uniqid('phalanx-console-', true);
+        $dir = $this->tempWorkspace('phalanx-console-')->dir('commands');
 
-        if (!mkdir($dir) && !is_dir($dir)) {
-            self::fail("Unable to create command directory: $dir");
-        }
-
-        file_put_contents($dir . '/commands.php', <<<'PHP'
+        $this->tempWorkspace()->file('commands/commands.php', <<<'PHP'
 <?php
 
 declare(strict_types=1);

@@ -8,6 +8,8 @@ use Phalanx\Console\Output\StreamOutput;
 use Phalanx\Console\Output\TerminalEnvironment;
 use Phalanx\Console\Style\Style;
 use Phalanx\Console\Style\Theme;
+use Phalanx\Stream\ResourceHandle;
+use Phalanx\Stream\Stream;
 use PHPUnit\Framework\TestCase;
 
 abstract class PromptTestCase extends TestCase
@@ -26,8 +28,7 @@ abstract class PromptTestCase extends TestCase
 
     protected Theme $theme;
 
-    /** @var resource */
-    protected mixed $stream;
+    protected ResourceHandle $stream;
     protected StreamOutput $output;
     protected StubScope $scope;
 
@@ -46,20 +47,15 @@ abstract class PromptTestCase extends TestCase
             active: $plain,
         );
 
-        $stream = fopen('php://memory', 'w+');
-        if ($stream === false) {
-            self::fail('Unable to open memory stream.');
-        }
-
-        $this->stream = $stream;
+        $this->stream = Stream::memoryBuffer();
         $terminal = new TerminalEnvironment(columns: 80, lines: 24);
-        $this->output = new StreamOutput($this->stream, $terminal);
+        $this->output = new StreamOutput($this->stream->resource(), $terminal);
         $this->scope = new StubScope();
     }
 
     protected function tearDown(): void
     {
-        fclose($this->stream);
+        $this->stream->close();
     }
 
     /** @param list<string> $keys */

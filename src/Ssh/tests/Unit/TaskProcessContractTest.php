@@ -26,7 +26,7 @@ final class TaskProcessContractTest extends PhalanxTestCase
 
     public function testRunCommandUsesConfiguredBinaryAndCollectsResult(): void
     {
-        $this->sshBinaryPath = self::writeExecutable(<<<'PHP'
+        $this->sshBinaryPath = $this->writeExecutable(<<<'PHP'
 #!/usr/bin/env php
 <?php
 declare(strict_types=1);
@@ -53,14 +53,14 @@ PHP);
 
     public function testScpTransferUsesConfiguredBinaryAndReportsLocalBytes(): void
     {
-        $this->scpBinaryPath = self::writeExecutable(<<<'PHP'
+        $this->scpBinaryPath = $this->writeExecutable(<<<'PHP'
 #!/usr/bin/env php
 <?php
 declare(strict_types=1);
 
 exit(0);
 PHP);
-        $localFile = self::writeDataFile('agent-scp-body');
+        $localFile = $this->writeDataFile('agent-scp-body');
 
         $result = $this->scope->run(static function (ExecutionScope $scope) use ($localFile) {
             return $scope->execute(new ScpTransfer(
@@ -77,8 +77,8 @@ PHP);
 
     public function testSftpUploadCleansBatchAndContentTempFiles(): void
     {
-        $marker = self::writeDataFile('');
-        $this->sftpBinaryPath = self::writeExecutable(<<<PHP
+        $marker = $this->writeDataFile('');
+        $this->sftpBinaryPath = $this->writeExecutable(<<<PHP
 #!/usr/bin/env php
 <?php
 declare(strict_types=1);
@@ -137,23 +137,16 @@ PHP);
         ];
     }
 
-    private static function writeExecutable(string $contents): string
+    private function writeExecutable(string $contents): string
     {
-        $path = self::writeDataFile($contents);
+        $path = $this->writeDataFile($contents);
         chmod($path, 0755);
 
         return $path;
     }
 
-    private static function writeDataFile(string $contents): string
+    private function writeDataFile(string $contents): string
     {
-        $path = tempnam(sys_get_temp_dir(), 'phalanx-ssh-task-');
-        if ($path === false) {
-            $path = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'phalanx-ssh-task-' . uniqid('', true);
-        }
-
-        file_put_contents($path, $contents);
-
-        return $path;
+        return $this->tempWorkspace('phalanx-ssh-task-')->file(bin2hex(random_bytes(4)), $contents);
     }
 }

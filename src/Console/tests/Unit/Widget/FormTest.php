@@ -15,14 +15,15 @@ use Phalanx\Console\Widget\Form;
 use Phalanx\Console\Widget\FormRevertedException;
 use Phalanx\Console\Tests\Unit\Input\FakeKeyReader;
 use Phalanx\Console\Tests\Unit\Input\StubScope;
+use Phalanx\Stream\ResourceHandle;
+use Phalanx\Stream\Stream;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class FormTest extends TestCase
 {
     private Theme $theme;
-    /** @var resource */
-    private mixed $stream;
+    private ResourceHandle $stream;
     private StreamOutput $output;
     private StubScope $scope;
 
@@ -208,16 +209,13 @@ final class FormTest extends TestCase
         $plain = Style::new();
         $this->theme = new Theme($plain, $plain, $plain, $plain, $plain, $plain, $plain, $plain, $plain);
 
-        $stream = fopen('php://memory', 'w+');
-        self::assertNotFalse($stream);
-        $this->stream = $stream;
-
-        $this->output = new StreamOutput($stream, new TerminalEnvironment(columns: 80, lines: 24));
+        $this->stream = Stream::memoryBuffer();
+        $this->output = new StreamOutput($this->stream->resource(), new TerminalEnvironment(columns: 80, lines: 24));
         $this->scope = new StubScope();
     }
 
     protected function tearDown(): void
     {
-        fclose($this->stream);
+        $this->stream->close();
     }
 }

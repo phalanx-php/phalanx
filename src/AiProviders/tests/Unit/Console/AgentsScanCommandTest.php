@@ -7,6 +7,7 @@ namespace Phalanx\AiProviders\Tests\Unit\Console;
 use Phalanx\AiProviders\Console\AgentsScanCommand;
 use Phalanx\Runtime\RuntimeContext;
 use Phalanx\Scope\Scope;
+use Phalanx\Testing\UsesTempWorkspace;
 use Phalanx\Trace\Trace;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -23,6 +24,8 @@ use PHPUnit\Framework\TestCase;
  */
 final class AgentsScanCommandTest extends TestCase
 {
+    use UsesTempWorkspace;
+
     private string $cacheFile;
 
     // ── test methods ───────────────────────────────────────────────────────────
@@ -136,50 +139,38 @@ final class AgentsScanCommandTest extends TestCase
     #[Test]
     public function commandCreatesOutputDirectoryIfNeeded(): void
     {
-        $nestedPath = sys_get_temp_dir() . '/ai-providers_scan_nested_' . uniqid() . '/cache.json';
+        $nestedPath = $this->tempWorkspace('ai-providers-scan-')->path('nested/cache.json');
 
-        try {
-            $command = new AgentsScanCommand(
-                self::discoveredDir(),
-                self::discoveredPrefix(),
-                $nestedPath,
-            );
+        $command = new AgentsScanCommand(
+            self::discoveredDir(),
+            self::discoveredPrefix(),
+            $nestedPath,
+        );
 
-            $result = $command(self::makeScope());
+        $result = $command(self::makeScope());
 
-            self::assertSame(0, $result);
-            self::assertFileExists($nestedPath);
-        } finally {
-            if (is_file($nestedPath)) {
-                unlink($nestedPath);
-                rmdir(dirname($nestedPath));
-            }
-        }
+        self::assertSame(0, $result);
+        self::assertFileExists($nestedPath);
     }
 
     #[Test]
     public function emptySourceDirectoryWritesCacheWithEmptyAgents(): void
     {
-        $emptyDir = sys_get_temp_dir() . '/ai-providers_empty_' . uniqid();
-        mkdir($emptyDir, 0755);
+        $emptyDir = $this->tempWorkspace('ai-providers-empty-')->dir('source');
 
-        try {
-            $command = new AgentsScanCommand(
-                $emptyDir,
-                'App\\Agents',
-                $this->cacheFile,
-            );
+        $command = new AgentsScanCommand(
+            $emptyDir,
+            'App\\Agents',
+            $this->cacheFile,
+        );
 
-            $result = $command(self::makeScope());
-            $payload = self::readCache($this->cacheFile);
+        $result = $command(self::makeScope());
+        $payload = self::readCache($this->cacheFile);
 
-            self::assertSame(0, $result);
-            self::assertArrayHasKey('agents', $payload);
-            self::assertIsArray($payload['agents']);
-            self::assertSame([], $payload['agents']);
-        } finally {
-            rmdir($emptyDir);
-        }
+        self::assertSame(0, $result);
+        self::assertArrayHasKey('agents', $payload);
+        self::assertIsArray($payload['agents']);
+        self::assertSame([], $payload['agents']);
     }
 
     #[Test]
@@ -196,10 +187,8 @@ final class AgentsScanCommandTest extends TestCase
         // to a known epoch and checking payload['source_mtime'] === that epoch
         // only works reliably if we set ALL fixtures to <= $knownEpoch.
         // Instead, use a temp directory with a single PHP file at $knownEpoch.
-        $tempDir = sys_get_temp_dir() . '/ai-providers_mtime_' . uniqid();
-        mkdir($tempDir, 0755);
-        $tempFile = $tempDir . '/Sparta.php';
-        file_put_contents($tempFile, "<?php\n// mtime fixture\n");
+        $tempDir = $this->tempWorkspace('ai-providers-mtime-')->dir('source');
+        $tempFile = $this->tempWorkspace()->file('source/Sparta.php', "<?php\n// mtime fixture\n");
         touch($tempFile, $knownEpoch);
 
         try {
@@ -214,8 +203,6 @@ final class AgentsScanCommandTest extends TestCase
 
             self::assertSame($knownEpoch, $payload['source_mtime']);
         } finally {
-            unlink($tempFile);
-            rmdir($tempDir);
             // Restore original mtime on the fixture (best-effort).
             if ($originalTime !== false) {
                 touch($fixtureFile, $originalTime);
@@ -246,16 +233,7 @@ final class AgentsScanCommandTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->cacheFile = tempnam(sys_get_temp_dir(), 'ai-providers_scan_test_') . '.json';
-    }
-
-    protected function tearDown(): void
-    {
-        parent::tearDown();
-
-        if (is_file($this->cacheFile)) {
-            unlink($this->cacheFile);
-        }
+        $this->cacheFile = $this->tempWorkspace('ai-providers-scan-')->path('cache.json');
     }
 
     // ── helpers ────────────────────────────────────────────────────────────────

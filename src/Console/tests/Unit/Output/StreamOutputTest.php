@@ -6,6 +6,8 @@ namespace Phalanx\Console\Tests\Unit\Output;
 
 use Phalanx\Console\Output\StreamOutput;
 use Phalanx\Console\Output\TerminalEnvironment;
+use Phalanx\Stream\ResourceHandle;
+use Phalanx\Stream\Stream;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -14,98 +16,75 @@ final class StreamOutputTest extends TestCase
     #[Test]
     public function terminalDimensionsComeFromInjectedEnvironment(): void
     {
-        $stream = fopen('php://memory', 'w+');
-        if ($stream === false) {
-            self::fail('Unable to open memory stream.');
-        }
-
-        $output = new StreamOutput($stream, new TerminalEnvironment(columns: 120, lines: 40));
+        $stream = Stream::memoryBuffer();
+        $output = self::streamOutput($stream, new TerminalEnvironment(columns: 120, lines: 40));
 
         try {
             self::assertSame(120, $output->width());
             self::assertSame(40, $output->height());
         } finally {
-            fclose($stream);
+            $stream->close();
         }
     }
 
     #[Test]
     public function appleTerminalDisablesSynchronizedOutputFromInjectedEnvironment(): void
     {
-        $stream = fopen('php://memory', 'w+');
-        if ($stream === false) {
-            self::fail('Unable to open memory stream.');
-        }
-
-        $output = new StreamOutput(
+        $stream = Stream::memoryBuffer();
+        $output = self::streamOutput(
             $stream,
             new TerminalEnvironment(columns: 80, lines: 24, isTty: true, termProgram: 'Apple_Terminal'),
         );
 
         try {
             $output->persist('hello');
-            rewind($stream);
 
-            self::assertSame("hello\n", stream_get_contents($stream));
+            self::assertSame("hello\n", $stream->drain());
         } finally {
-            fclose($stream);
+            $stream->close();
         }
     }
 
     #[Test]
     public function ttyPersistUsesSynchronizedOutputWhenSupported(): void
     {
-        $stream = fopen('php://memory', 'w+');
-        if ($stream === false) {
-            self::fail('Unable to open memory stream.');
-        }
-
-        $output = new StreamOutput(
+        $stream = Stream::memoryBuffer();
+        $output = self::streamOutput(
             $stream,
             new TerminalEnvironment(columns: 80, lines: 24, isTty: true),
         );
 
         try {
             $output->persist('hello');
-            rewind($stream);
 
-            self::assertSame("\033[?2026hhello\n\033[?2026l", stream_get_contents($stream));
+            self::assertSame("\033[?2026hhello\n\033[?2026l", $stream->drain());
         } finally {
-            fclose($stream);
+            $stream->close();
         }
     }
 
     #[Test]
     public function nonTtyUpdatesRemainTransient(): void
     {
-        $stream = fopen('php://memory', 'w+');
-        if ($stream === false) {
-            self::fail('Unable to open memory stream.');
-        }
-
-        $output = new StreamOutput($stream, new TerminalEnvironment(columns: 80, lines: 24));
+        $stream = Stream::memoryBuffer();
+        $output = self::streamOutput($stream, new TerminalEnvironment(columns: 80, lines: 24));
 
         try {
             $output->update('frame 1');
             $output->update('frame 2');
             $output->persist('done');
-            rewind($stream);
 
-            self::assertSame("done\n", stream_get_contents($stream));
+            self::assertSame("done\n", $stream->drain());
         } finally {
-            fclose($stream);
+            $stream->close();
         }
     }
 
     #[Test]
     public function ttyUpdatesClearWrappedVisualRows(): void
     {
-        $stream = fopen('php://memory', 'w+');
-        if ($stream === false) {
-            self::fail('Unable to open memory stream.');
-        }
-
-        $output = new StreamOutput(
+        $stream = Stream::memoryBuffer();
+        $output = self::streamOutput(
             $stream,
             new TerminalEnvironment(columns: 5, lines: 24, isTty: true, termProgram: 'Apple_Terminal'),
         );
@@ -113,11 +92,15 @@ final class StreamOutputTest extends TestCase
         try {
             $output->update('abcdefghijkl');
             $output->update('x');
-            rewind($stream);
 
-            self::assertStringContainsString("\033[2A\r\033[Jx", (string) stream_get_contents($stream));
+            self::assertStringContainsString("\033[2A\r\033[Jx", $stream->drain());
         } finally {
-            fclose($stream);
+            $stream->close();
         }
+    }
+
+    private static function streamOutput(ResourceHandle $stream, TerminalEnvironment $terminal): StreamOutput
+    {
+        return new StreamOutput($stream->resource(), $terminal);
     }
 }

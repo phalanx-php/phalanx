@@ -15,6 +15,8 @@ use Phalanx\Console\Tests\Support\RecordingLiveRegionWriter;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Scope\Scope;
 use Phalanx\Mark\Mark;
+use Phalanx\Stream\ResourceHandle;
+use Phalanx\Stream\Stream;
 use Phalanx\Task\Executable;
 use Phalanx\Task\Scopeable;
 use Phalanx\Testing\PhalanxTestCase;
@@ -175,22 +177,18 @@ final class ConcurrentTaskListTest extends PhalanxTestCase
         );
     }
 
-    /** @return resource */
-    private function stream(): mixed
+    private function stream(): ResourceHandle
     {
-        $stream = fopen('php://temp', 'w+');
-        self::assertNotFalse($stream);
-        return $stream;
+        return Stream::captureBuffer();
     }
 
-    private function streamOutput(mixed $stream): StreamOutput
+    private function streamOutput(ResourceHandle $stream): StreamOutput
     {
-        return new StreamOutput($stream, new TerminalEnvironment(columns: 80, lines: 24));
+        return new StreamOutput($stream->resource(), new TerminalEnvironment(columns: 80, lines: 24));
     }
 
-    private function contents(mixed $stream): string
+    private function contents(ResourceHandle $stream): string
     {
-        rewind($stream);
-        return (string) stream_get_contents($stream);
+        return $stream->drain();
     }
 }

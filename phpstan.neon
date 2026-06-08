@@ -152,6 +152,28 @@ parameters:
         - src/Runtime/tests/Resilience/CancellationPropagationTimingTest.php
         - src/Runtime/tests/Resilience/SiblingCancelIsolationStressTest.php
         - src/Runtime/tests/Smoke/WorkingRuntimeSmokeTest.php
+    phalanxTestingNoRawIoPaths:
+        - tests
+        - src/Agents/tests
+        - src/AiProviders/tests
+        - src/Cli/tests
+        - src/Config/tests
+        - src/Console/tests
+        - src/DevServer/tests
+        - src/Filesystem/tests
+        - src/Http/tests
+        - src/HttpClient/tests
+        - src/Mark/tests
+        - src/Network/tests
+        - src/PHPStan/tests
+        - src/Runtime/tests
+        - src/Ssh/tests
+        - src/Stream/tests
+        - src/SurrealDb/tests
+        - src/Tui/tests
+        - src/WebSocket/tests
+        - src/Worker/tests
+    phalanxTestingNoRawIoExemptPaths: []
     # swoole/ide-helper's Swoole\Lock::lock() stub omits $operation and $timeout.
     # stubs/swoole-lock.php documents the correct ext-swoole 6 signature but cannot
     # override scanDirectories entries in PHPStan 2.x; the ignoreErrors below are

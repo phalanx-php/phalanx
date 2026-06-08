@@ -6,11 +6,14 @@ namespace Phalanx\Runtime\Tests\Unit\Boot;
 
 use Phalanx\Boot\AppContext;
 use Phalanx\Boot\Exception\MissingContextValue;
+use Phalanx\Testing\UsesTempWorkspace;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class AppContextTest extends TestCase
 {
+    use UsesTempWorkspace;
+
     #[Test]
     public function constructorReturnsStringValue(): void
     {
@@ -229,10 +232,6 @@ TOML);
 
     private function temporaryToml(string $contents): string
     {
-        $path = tempnam(sys_get_temp_dir(), 'phalanx-app-context-');
-        self::assertIsString($path);
-        file_put_contents($path, $contents);
-
-        return $path;
+        return $this->tempWorkspace('phalanx-app-context-')->file('config.toml', $contents);
     }
 }

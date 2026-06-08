@@ -7,6 +7,7 @@ namespace Phalanx\AiProviders\Tests\Unit\Agent\Loader;
 use Phalanx\AiProviders\Agent\Loader\Cached;
 use Phalanx\AiProviders\Agent\Loader\LoaderError;
 use Phalanx\AiProviders\Agent\Registry;
+use Phalanx\Testing\UsesTempWorkspace;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -17,6 +18,8 @@ use PHPUnit\Framework\TestCase;
  */
 final class CachedTest extends TestCase
 {
+    use UsesTempWorkspace;
+
     #[Test]
     public function validCacheRegistersAllAgents(): void
     {
@@ -190,9 +193,6 @@ final class CachedTest extends TestCase
 
     private function writeTempCache(string $content): string
     {
-        $path = tempnam(sys_get_temp_dir(), 'ai-providers_cache_') . '.json';
-        file_put_contents($path, $content);
-
-        return $path;
+        return $this->tempWorkspace('ai-providers-cache-')->file('cache.json', $content);
     }
 }

@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace Phalanx\Config\Tests\Unit;
 
 use Phalanx\Config\TomlConfigSource;
+use Phalanx\Testing\UsesTempWorkspace;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class TomlConfigSourceTest extends TestCase
 {
+    use UsesTempWorkspace;
+
     #[Test]
     public function missingFileReturnsEmptyArray(): void
     {
@@ -54,10 +57,6 @@ TOML);
 
     private function temporaryToml(string $contents): string
     {
-        $path = tempnam(sys_get_temp_dir(), 'phalanx-toml-');
-        self::assertIsString($path);
-        file_put_contents($path, $contents);
-
-        return $path;
+        return $this->tempWorkspace('phalanx-toml-')->file('config.toml', $contents);
     }
 }

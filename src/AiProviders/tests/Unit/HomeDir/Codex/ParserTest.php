@@ -13,6 +13,7 @@ use Phalanx\AiProviders\HomeDir\Codex\Source\All;
 use Phalanx\AiProviders\HomeDir\Codex\Source\History;
 use Phalanx\AiProviders\HomeDir\Codex\Source\Sessions;
 use Phalanx\AiProviders\HomeDir\Codex\Source\Sqlite;
+use Phalanx\Testing\UsesTempWorkspace;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -21,6 +22,8 @@ use PHPUnit\Framework\TestCase;
  */
 final class ParserTest extends TestCase
 {
+    use UsesTempWorkspace;
+
     #[Test]
     public function sessionsSourceProducesRecordsFromAllSessionFiles(): void
     {
@@ -181,41 +184,33 @@ final class ParserTest extends TestCase
         // Two JSONL sources with the same timestamp. The sessions source is
         // declared first in All(); the merge must yield its record before the
         // history record when timestamps are equal.
-        $sessionsDir = sys_get_temp_dir() . '/ai-providers_tie_sess_' . uniqid();
-        mkdir($sessionsDir, recursive: true);
-        $sessionFile = $sessionsDir . '/tie.jsonl';
-        file_put_contents(
-            $sessionFile,
+        $workspace = $this->tempWorkspace('ai-providers-codex-');
+        $sessionsDir = $workspace->dir('sessions');
+        $workspace->file(
+            'sessions/tie.jsonl',
             '{"type":"message","role":"user","content":"Leonidas at Thermopylae","ts":100,"raw_hash":"tie_a"}' . "\n",
         );
 
-        $historyFile = sys_get_temp_dir() . '/ai-providers_tie_hist_' . uniqid() . '.jsonl';
         $historyRow = '{"type":"message","role":"user","content":"Ephialtes betrays the pass",'
             . '"ts":100,"raw_hash":"tie_b"}';
-        file_put_contents($historyFile, $historyRow . "\n");
+        $historyFile = $workspace->file('history.jsonl', $historyRow . "\n");
 
-        try {
-            $parser = new Parser();
-            $source = new All(
-                sessions: new Sessions($sessionsDir),
-                history: new History($historyFile),
-                sqlite: null,
-            );
-            $records = $parser->parse($source, Options::lenient())->toArray();
+        $parser = new Parser();
+        $source = new All(
+            sessions: new Sessions($sessionsDir),
+            history: new History($historyFile),
+            sqlite: null,
+        );
+        $records = $parser->parse($source, Options::lenient())->toArray();
 
-            // Both records have distinct payloads so neither is deduped — we get 2.
-            self::assertCount(2, $records);
+        // Both records have distinct payloads so neither is deduped — we get 2.
+        self::assertCount(2, $records);
 
-            // The sessions source is declared first in All(); on a timestamp tie
-            // it must win (strict < means earlier-declared source yields first).
-            $first = $records[0];
-            self::assertInstanceOf(Message::class, $first);
-            self::assertSame('Leonidas at Thermopylae', $first->text);
-        } finally {
-            unlink($sessionFile);
-            rmdir($sessionsDir);
-            unlink($historyFile);
-        }
+        // The sessions source is declared first in All(); on a timestamp tie
+        // it must win (strict < means earlier-declared source yields first).
+        $first = $records[0];
+        self::assertInstanceOf(Message::class, $first);
+        self::assertSame('Leonidas at Thermopylae', $first->text);
     }
 
     #[Test]

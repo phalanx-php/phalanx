@@ -6,12 +6,15 @@ namespace Phalanx\Runtime\Tests\Unit\Handler;
 
 use Phalanx\Handler\HandlerGroup;
 use Phalanx\Handler\HandlerLoader;
+use Phalanx\Testing\UsesTempWorkspace;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
 final class HandlerLoaderTest extends TestCase
 {
+    use UsesTempWorkspace;
+
     private string $fixtureDir;
 
     #[Test]
@@ -63,16 +66,6 @@ PHP;
 
     protected function setUp(): void
     {
-        $this->fixtureDir = sys_get_temp_dir() . '/phalanx-handler-test-' . uniqid();
-        mkdir($this->fixtureDir);
-    }
-
-    protected function tearDown(): void
-    {
-        $files = glob($this->fixtureDir . '/*') ?: [];
-        foreach ($files as $file) {
-            unlink($file);
-        }
-        rmdir($this->fixtureDir);
+        $this->fixtureDir = $this->tempWorkspace('phalanx-handler-test-')->dir('handlers');
     }
 }

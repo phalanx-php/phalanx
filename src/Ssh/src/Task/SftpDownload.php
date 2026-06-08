@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\Ssh\Task;
 
 use Phalanx\Filesystem\Exception\FilesystemException;
+use Phalanx\Filesystem\ScopedTempFile;
 use Phalanx\Filesystem\Task\StatFile;
 use Phalanx\Mark\Mark;
 use Phalanx\Recovery\Recoverable;
@@ -13,7 +14,6 @@ use Phalanx\Scope\ExecutionScope;
 use Phalanx\Ssh\Exception\SshException;
 use Phalanx\Ssh\SshConfig;
 use Phalanx\Ssh\SshCredential;
-use Phalanx\Ssh\Support\LocalTempFile;
 use Phalanx\Ssh\Support\ProcessAwaiter;
 use Phalanx\Ssh\TransferResult;
 use Phalanx\Task\Executable;
@@ -39,7 +39,7 @@ final class SftpDownload implements Executable, Recoverable
         /** @var SshConfig $config */
         $config = $scope->service(SshConfig::class);
 
-        $batchFile = LocalTempFile::write(
+        $batchFile = ScopedTempFile::write(
             $scope,
             'phalanx-sftp-batch-',
             "get {$this->remotePath} {$this->localPath}\n",

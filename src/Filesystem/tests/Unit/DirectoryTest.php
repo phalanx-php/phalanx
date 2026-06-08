@@ -8,65 +8,52 @@ use Phalanx\Filesystem\Task\CreateDirectory;
 use Phalanx\Filesystem\Task\ExistsFile;
 use Phalanx\Filesystem\Task\ListDirectory;
 use Phalanx\Scope\ExecutionScope;
+use Phalanx\Testing\UsesTempWorkspace;
 use PHPUnit\Framework\TestCase;
 
 final class DirectoryTest extends TestCase
 {
+    use UsesTempWorkspace;
+
     public function test_create_directory(): void
     {
-        $tmpDir = sys_get_temp_dir() . '/phalanx_test_' . uniqid();
+        $tmpDir = $this->tempWorkspace('phalanx-directory-')->path('created');
 
-        try {
-            $task = new CreateDirectory($tmpDir);
-            $scope = $this->createStub(ExecutionScope::class);
-            $task($scope);
+        $task = new CreateDirectory($tmpDir);
+        $scope = $this->createStub(ExecutionScope::class);
+        $task($scope);
 
-            $this->assertTrue(is_dir($tmpDir));
-        } finally {
-            @rmdir($tmpDir);
-        }
+        $this->assertTrue(is_dir($tmpDir));
     }
 
     public function test_create_directory_recursive(): void
     {
-        $tmpDir = sys_get_temp_dir() . '/phalanx_test_' . uniqid() . '/nested/deep';
+        $tmpDir = $this->tempWorkspace('phalanx-directory-')->path('nested/deep');
 
-        try {
-            $task = new CreateDirectory($tmpDir, recursive: true);
-            $scope = $this->createStub(ExecutionScope::class);
-            $task($scope);
+        $task = new CreateDirectory($tmpDir, recursive: true);
+        $scope = $this->createStub(ExecutionScope::class);
+        $task($scope);
 
-            $this->assertTrue(is_dir($tmpDir));
-        } finally {
-            @rmdir($tmpDir);
-            @rmdir(dirname($tmpDir));
-            @rmdir(dirname($tmpDir, 2));
-        }
+        $this->assertTrue(is_dir($tmpDir));
     }
 
     public function test_list_directory(): void
     {
-        $tmpDir = sys_get_temp_dir() . '/phalanx_test_' . uniqid();
-        mkdir($tmpDir);
-        touch($tmpDir . '/a.txt');
-        touch($tmpDir . '/b.txt');
+        $workspace = $this->tempWorkspace('phalanx-directory-');
+        $tmpDir = $workspace->dir('list');
+        $workspace->file('list/a.txt');
+        $workspace->file('list/b.txt');
 
-        try {
-            $task = new ListDirectory($tmpDir);
+        $task = new ListDirectory($tmpDir);
 
-            $scope = $this->createStub(ExecutionScope::class);
-            $entries = $task($scope);
+        $scope = $this->createStub(ExecutionScope::class);
+        $entries = $task($scope);
 
-            $this->assertCount(2, $entries);
-            $this->assertContains('a.txt', $entries);
-            $this->assertContains('b.txt', $entries);
-            $this->assertNotContains('.', $entries);
-            $this->assertNotContains('..', $entries);
-        } finally {
-            @unlink($tmpDir . '/a.txt');
-            @unlink($tmpDir . '/b.txt');
-            @rmdir($tmpDir);
-        }
+        $this->assertCount(2, $entries);
+        $this->assertContains('a.txt', $entries);
+        $this->assertContains('b.txt', $entries);
+        $this->assertNotContains('.', $entries);
+        $this->assertNotContains('..', $entries);
     }
 
     public function test_exists_file(): void

@@ -9,6 +9,7 @@ use Phalanx\AiProviders\Runtime\Sync\Runtime as SyncRuntime;
 use Phalanx\AiProviders\Transport\Request;
 use Phalanx\AiProviders\Transport\Sync\HttpError;
 use Phalanx\AiProviders\Transport\Sync\Transport;
+use Phalanx\Testing\UsesTempWorkspace;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -26,6 +27,8 @@ use PHPUnit\Framework\TestCase;
  */
 final class TransportTest extends TestCase
 {
+    use UsesTempWorkspace;
+
     #[Test]
     public function defaultTimeoutsAreApplied(): void
     {
@@ -95,11 +98,10 @@ final class TransportTest extends TestCase
         // Spin up a local PHP built-in server serving a fixed response.
         // Pick a random high port and retry up to five times to avoid racing
         // with other parallel test processes that may have claimed the port.
-        $serverScript = self::writeServerScript();
+        $serverScript = $this->writeServerScript();
         [$proc, $pipes, $port] = self::startServer($serverScript);
 
         if ($proc === null) {
-            @unlink($serverScript);
             self::markTestSkipped('Could not bind a local PHP server after 5 attempts');
         }
 
@@ -118,7 +120,6 @@ final class TransportTest extends TestCase
             fclose($pipes[2]);
             proc_terminate($proc);
             proc_close($proc);
-            @unlink($serverScript);
         }
     }
 
@@ -201,12 +202,10 @@ final class TransportTest extends TestCase
         return false;
     }
 
-    private static function writeServerScript(): string
+    private function writeServerScript(): string
     {
-        $path = sys_get_temp_dir() . '/' . uniqid('ai-providers_sync_', true) . '_server_' . getmypid() . '.php';
         $content = '<?php header("Content-Type: text/plain"); echo "agora response";';
-        file_put_contents($path, $content);
 
-        return $path;
+        return $this->tempWorkspace('ai-providers-sync-')->file('server.php', $content);
     }
 }

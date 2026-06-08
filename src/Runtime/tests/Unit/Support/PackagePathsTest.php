@@ -5,112 +5,61 @@ declare(strict_types=1);
 namespace Phalanx\Runtime\Tests\Unit\Support;
 
 use Phalanx\Support\PackagePaths;
+use Phalanx\Testing\UsesTempWorkspace;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class PackagePathsTest extends TestCase
 {
+    use UsesTempWorkspace;
+
     #[Test]
     public function ancestorCandidatesWalkFromAnchorToParents(): void
     {
-        $root = self::makeTempTree();
+        $root = $this->tempWorkspace('phalanx-package-paths-')->path();
 
-        try {
-            $anchor = "{$root}/package/src/Response";
-            mkdir($anchor, 0777, true);
+        $anchor = $this->tempWorkspace()->dir('package/src/Response');
 
-            $candidates = PackagePaths::ancestorCandidates($anchor, 'resources/view.php', maxDepth: 3);
+        $candidates = PackagePaths::ancestorCandidates($anchor, 'resources/view.php', maxDepth: 3);
 
-            self::assertSame(
-                [
-                    "{$root}/package/src/Response/resources/view.php",
-                    "{$root}/package/src/resources/view.php",
-                    "{$root}/package/resources/view.php",
-                    "{$root}/resources/view.php",
-                ],
-                $candidates,
-            );
-        } finally {
-            self::removeTree($root);
-        }
+        self::assertSame(
+            [
+                "{$root}/package/src/Response/resources/view.php",
+                "{$root}/package/src/resources/view.php",
+                "{$root}/package/resources/view.php",
+                "{$root}/resources/view.php",
+            ],
+            $candidates,
+        );
     }
 
     #[Test]
     public function firstExistingFileReturnsNearestCandidate(): void
     {
-        $root = self::makeTempTree();
+        $root = $this->tempWorkspace('phalanx-package-paths-')->path();
 
-        try {
-            $nested = "{$root}/package/src/Response";
-            $resource = "{$root}/package/resources/view.php";
-            mkdir($nested, 0777, true);
-            mkdir(dirname($resource), 0777, true);
-            file_put_contents($resource, '<?php');
+        $nested = $this->tempWorkspace()->dir('package/src/Response');
+        $resource = $this->tempWorkspace()->file('package/resources/view.php', '<?php');
 
-            $path = PackagePaths::firstExistingFile(
-                PackagePaths::ancestorCandidates($nested, 'resources/view.php'),
-            );
+        $path = PackagePaths::firstExistingFile(
+            PackagePaths::ancestorCandidates($nested, 'resources/view.php'),
+        );
 
-            self::assertSame($resource, $path);
-        } finally {
-            self::removeTree($root);
-        }
+        self::assertSame($resource, $path);
     }
 
     #[Test]
     public function firstExistingDirectoryFindsStandaloneVendorFromSourceRoot(): void
     {
-        $root = self::makeTempTree();
+        $root = $this->tempWorkspace('phalanx-package-paths-')->path();
 
-        try {
-            $anchor = "{$root}/package/src";
-            $vendor = "{$root}/package/vendor";
-            mkdir($anchor, 0777, true);
-            mkdir($vendor, 0777, true);
+        $anchor = $this->tempWorkspace()->dir('package/src');
+        $vendor = $this->tempWorkspace()->dir('package/vendor');
 
-            $path = PackagePaths::firstExistingDirectory(
-                PackagePaths::ancestorCandidates($anchor, 'vendor'),
-            );
+        $path = PackagePaths::firstExistingDirectory(
+            PackagePaths::ancestorCandidates($anchor, 'vendor'),
+        );
 
-            self::assertSame($vendor, $path);
-        } finally {
-            self::removeTree($root);
-        }
-    }
-
-    private static function makeTempTree(): string
-    {
-        $root = sys_get_temp_dir() . '/' . uniqid('phalanx-package-paths-', true);
-        mkdir($root, 0777, true);
-
-        return realpath($root) ?: $root;
-    }
-
-    private static function removeTree(string $path): void
-    {
-        if (!is_dir($path)) {
-            return;
-        }
-
-        $children = scandir($path);
-        if ($children === false) {
-            return;
-        }
-
-        foreach ($children as $child) {
-            if ($child === '.' || $child === '..') {
-                continue;
-            }
-
-            $childPath = "{$path}/{$child}";
-            if (is_dir($childPath)) {
-                self::removeTree($childPath);
-                continue;
-            }
-
-            unlink($childPath);
-        }
-
-        rmdir($path);
+        self::assertSame($vendor, $path);
     }
 }

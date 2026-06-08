@@ -11,6 +11,8 @@ use PHPUnit\Framework\TestCase;
 
 abstract class PhalanxTestCase extends TestCase
 {
+    use UsesTempWorkspace;
+
     protected PhalanxTestRuntime $phalanx {
         get => $this->phalanxRuntime ??= PhalanxTestRuntime::start(
             services: $this->phalanxServices(),

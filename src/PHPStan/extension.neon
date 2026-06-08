@@ -12,6 +12,8 @@ parameters:
     phalanxTestingNoRawSleepExemptPaths: []
     phalanxTestingLensRequiresBundleExemptPaths: []
     phalanxTestingDirectTestAppApplicationExemptPaths: []
+    phalanxTestingNoRawIoPaths: []
+    phalanxTestingNoRawIoExemptPaths: []
     phalanxRuntimeNativeLensClasses:
         - Phalanx\Testing\Lenses\ConfigLens
         - Phalanx\Testing\Lenses\LedgerLens
@@ -32,6 +34,8 @@ parametersSchema:
     phalanxTestingNoRawSleepExemptPaths: listOf(string())
     phalanxTestingLensRequiresBundleExemptPaths: listOf(string())
     phalanxTestingDirectTestAppApplicationExemptPaths: listOf(string())
+    phalanxTestingNoRawIoPaths: listOf(string())
+    phalanxTestingNoRawIoExemptPaths: listOf(string())
     phalanxRuntimeNativeLensClasses: listOf(string())
 
 services:
@@ -51,6 +55,8 @@ services:
             - %phalanxTestingNoRawSleepExemptPaths%
             - %phalanxTestingLensRequiresBundleExemptPaths%
             - %phalanxTestingDirectTestAppApplicationExemptPaths%
+            - %phalanxTestingNoRawIoPaths%
+            - %phalanxTestingNoRawIoExemptPaths%
 
     -
         class: Phalanx\PHPStan\Rules\Migration\RootScopeAliasRule
@@ -213,6 +219,13 @@ services:
 
     -
         class: Phalanx\PHPStan\Rules\Testing\NoRawTestSleepRule
+        arguments:
+            - @Phalanx\PHPStan\Support\TestingPathPolicy
+        tags:
+            - phpstan.rules.rule
+
+    -
+        class: Phalanx\PHPStan\Rules\Testing\NoRawTestIoRule
         arguments:
             - @Phalanx\PHPStan\Support\TestingPathPolicy
         tags:

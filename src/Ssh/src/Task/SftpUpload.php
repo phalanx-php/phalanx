@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Ssh\Task;
 
+use Phalanx\Filesystem\ScopedTempFile;
 use Phalanx\Filesystem\Task\StatFile;
 use Phalanx\Mark\Mark;
 use Phalanx\Recovery\Recoverable;
@@ -12,7 +13,6 @@ use Phalanx\Scope\ExecutionScope;
 use Phalanx\Ssh\Exception\SshException;
 use Phalanx\Ssh\SshConfig;
 use Phalanx\Ssh\SshCredential;
-use Phalanx\Ssh\Support\LocalTempFile;
 use Phalanx\Ssh\Support\ProcessAwaiter;
 use Phalanx\Ssh\TransferResult;
 use Phalanx\Task\Executable;
@@ -53,13 +53,13 @@ final class SftpUpload implements Executable, Recoverable
         $actualLocalPath = $this->localPath;
 
         if ($this->localContent !== null) {
-            $tempFile = LocalTempFile::write($scope, 'phalanx-sftp-', $this->localContent);
+            $tempFile = ScopedTempFile::write($scope, 'phalanx-sftp-', $this->localContent);
             $actualLocalPath = $tempFile;
         }
 
         \assert($actualLocalPath !== null);
 
-        $batchFile = LocalTempFile::write(
+        $batchFile = ScopedTempFile::write(
             $scope,
             'phalanx-sftp-batch-',
             "put {$actualLocalPath} {$this->remotePath}\n",

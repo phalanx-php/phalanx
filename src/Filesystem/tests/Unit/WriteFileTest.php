@@ -17,40 +17,32 @@ final class WriteFileTest extends PhalanxTestCase
     #[Test]
     public function writesFile(): void
     {
-        $tmpFile = tempnam(sys_get_temp_dir(), 'phalanx_test_');
+        $tmpFile = $this->tempWorkspace('phalanx-write-file-')->path('output.txt');
 
-        try {
-            $this->testApp()
-                ->scoped(Task::named(
-                    'test.filesystem.write-file',
-                    static fn(ExecutionScope $scope): mixed => $scope->execute(new WriteFile($tmpFile, 'test content')),
-                ));
+        $this->testApp()
+            ->scoped(Task::named(
+                'test.filesystem.write-file',
+                static fn(ExecutionScope $scope): mixed => $scope->execute(new WriteFile($tmpFile, 'test content')),
+            ));
 
-            $this->assertSame('test content', file_get_contents($tmpFile));
-        } finally {
-            unlink($tmpFile);
-        }
+        $this->assertSame('test content', $this->tempWorkspace()->read('output.txt'));
     }
 
     #[Test]
     public function appendsFile(): void
     {
-        $tmpFile = tempnam(sys_get_temp_dir(), 'phalanx_test_');
+        $tmpFile = $this->tempWorkspace('phalanx-write-file-')->path('append.txt');
 
-        try {
-            $this->testApp()
-                ->scoped(Task::named(
-                    'test.filesystem.append-file',
-                    static function (ExecutionScope $scope) use ($tmpFile): void {
-                        $scope->execute(new WriteFile($tmpFile, 'first'));
-                        $scope->execute(new AppendFile($tmpFile, '-second'));
-                    },
-                ));
+        $this->testApp()
+            ->scoped(Task::named(
+                'test.filesystem.append-file',
+                static function (ExecutionScope $scope) use ($tmpFile): void {
+                    $scope->execute(new WriteFile($tmpFile, 'first'));
+                    $scope->execute(new AppendFile($tmpFile, '-second'));
+                },
+            ));
 
-            $this->assertSame('first-second', file_get_contents($tmpFile));
-        } finally {
-            unlink($tmpFile);
-        }
+        $this->assertSame('first-second', $this->tempWorkspace()->read('append.txt'));
     }
 
     #[Test]

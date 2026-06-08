@@ -11,6 +11,7 @@ use Phalanx\AiProviders\Conversation\Record\ToolResult;
 use Phalanx\AiProviders\Conversation\Record\Unknown;
 use Phalanx\AiProviders\HomeDir\GeminiCli\Parser;
 use Phalanx\AiProviders\HomeDir\GeminiCli\Source;
+use Phalanx\Testing\UsesTempWorkspace;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -20,6 +21,8 @@ use PHPUnit\Framework\TestCase;
  */
 final class ParserTest extends TestCase
 {
+    use UsesTempWorkspace;
+
     #[Test]
     public function parsesUserRoleAsUserMessage(): void
     {
@@ -84,58 +87,43 @@ final class ParserTest extends TestCase
     #[Test]
     public function unknownRoleInLenientModeYieldsUnknown(): void
     {
-        $tmpFile = tempnam(sys_get_temp_dir(), 'ai-providers_gc_') . '.jsonl';
-        file_put_contents(
-            $tmpFile,
+        $tmpFile = $this->jsonlFixture(
+            'unknown-lenient.jsonl',
             '{"role":"oracle","parts":[{"text":"The gods speak."}],"timestamp":"2026-05-17T10:00:00Z"}' . "\n",
         );
 
-        try {
-            $parser = new Parser();
-            $records = $parser->parse(new Source($tmpFile), Options::lenient())->toArray();
+        $parser = new Parser();
+        $records = $parser->parse(new Source($tmpFile), Options::lenient())->toArray();
 
-            $unknown = array_filter($records, static fn ($r): bool => $r instanceof Unknown);
-            self::assertNotEmpty($unknown);
-        } finally {
-            unlink($tmpFile);
-        }
+        $unknown = array_filter($records, static fn ($r): bool => $r instanceof Unknown);
+        self::assertNotEmpty($unknown);
     }
 
     #[Test]
     public function unknownRoleInLoudModeThrows(): void
     {
-        $tmpFile = tempnam(sys_get_temp_dir(), 'ai-providers_gc_') . '.jsonl';
-        file_put_contents(
-            $tmpFile,
+        $tmpFile = $this->jsonlFixture(
+            'unknown-loud.jsonl',
             '{"role":"oracle","parts":[{"text":"The gods speak."}],"timestamp":"2026-05-17T10:00:00Z"}' . "\n",
         );
 
-        try {
-            $this->expectException(\UnexpectedValueException::class);
+        $this->expectException(\UnexpectedValueException::class);
 
-            $parser = new Parser();
-            $parser->parse(new Source($tmpFile), Options::default())->toArray();
-        } finally {
-            unlink($tmpFile);
-        }
+        $parser = new Parser();
+        $parser->parse(new Source($tmpFile), Options::default())->toArray();
     }
 
     #[Test]
     public function unknownRoleInSilentModeDropsRecord(): void
     {
-        $tmpFile = tempnam(sys_get_temp_dir(), 'ai-providers_gc_') . '.jsonl';
-        file_put_contents(
-            $tmpFile,
+        $tmpFile = $this->jsonlFixture(
+            'unknown-silent.jsonl',
             '{"role":"oracle","parts":[{"text":"The gods speak."}],"timestamp":"2026-05-17T10:00:00Z"}' . "\n",
         );
 
-        try {
-            $parser = new Parser();
-            $records = $parser->parse(new Source($tmpFile), Options::silent())->toArray();
-            self::assertCount(0, $records);
-        } finally {
-            unlink($tmpFile);
-        }
+        $parser = new Parser();
+        $records = $parser->parse(new Source($tmpFile), Options::silent())->toArray();
+        self::assertCount(0, $records);
     }
 
     #[Test]
@@ -175,5 +163,10 @@ final class ParserTest extends TestCase
         return new Source(
             dirname(__DIR__, 3) . '/Fixtures/HomeDir/GeminiCli/history/proj-marathon/abc.jsonl',
         );
+    }
+
+    private function jsonlFixture(string $name, string $contents): string
+    {
+        return $this->tempWorkspace('ai-providers-gemini-')->file($name, $contents);
     }
 }

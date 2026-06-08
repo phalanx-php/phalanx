@@ -24,6 +24,8 @@ final class TestingPathPolicy
      * @param list<string> $noRawSleepExemptPaths
      * @param list<string> $lensRequiresBundleExemptPaths
      * @param list<string> $directTestAppApplicationExemptPaths
+     * @param list<string> $noRawIoPaths
+     * @param list<string> $noRawIoExemptPaths
      */
     public function __construct(
         array $paths = [],
@@ -32,13 +34,15 @@ final class TestingPathPolicy
         private readonly array $noRawSleepExemptPaths = [],
         private readonly array $lensRequiresBundleExemptPaths = [],
         private readonly array $directTestAppApplicationExemptPaths = [],
+        private readonly array $noRawIoPaths = [],
+        private readonly array $noRawIoExemptPaths = [],
     ) {
         $this->paths = $paths === [] ? self::DEFAULT_PATHS : $paths;
     }
 
     public function shouldReport(string $file, string $identifier): bool
     {
-        return self::matchesAny($file, $this->paths)
+        return self::matchesAny($file, $this->pathsFor($identifier))
             && !self::matchesAny($file, $this->exemptionsFor($identifier));
     }
 
@@ -93,7 +97,18 @@ final class TestingPathPolicy
             'phalanx.testing.noRawSleep' => $this->noRawSleepExemptPaths,
             'phalanx.testing.lensRequiresBundle' => $this->lensRequiresBundleExemptPaths,
             'phalanx.testing.directTestAppApplication' => $this->directTestAppApplicationExemptPaths,
+            'phalanx.testing.noRawIo' => $this->noRawIoExemptPaths,
             default => [],
         };
+    }
+
+    /** @return list<string> */
+    private function pathsFor(string $identifier): array
+    {
+        if ($identifier === 'phalanx.testing.noRawIo' && $this->noRawIoPaths !== []) {
+            return $this->noRawIoPaths;
+        }
+
+        return $this->paths;
     }
 }

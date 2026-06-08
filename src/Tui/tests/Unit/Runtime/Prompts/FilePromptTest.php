@@ -7,7 +7,7 @@ namespace Phalanx\Tui\Tests\Unit\Runtime\Prompts;
 use Phalanx\Tui\Runtime\Prompts\FilePrompt;
 use Phalanx\Tui\Runtime\Prompts\PromptSource;
 use Phalanx\Tui\Tests\Support\RecordingTaskScope;
-use PHPUnit\Framework\Attributes\After;
+use Phalanx\Testing\UsesTempWorkspace;
 use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -15,8 +15,7 @@ use PHPUnit\Framework\TestCase;
 #[RequiresPhpExtension('swoole')]
 final class FilePromptTest extends TestCase
 {
-    /** @var list<string> */
-    private array $promptFiles = [];
+    use UsesTempWorkspace;
 
     #[Test]
     public function filePromptLoadsTextThroughTaskScope(): void
@@ -50,7 +49,7 @@ final class FilePromptTest extends TestCase
     #[Test]
     public function filePromptRejectsMissingFileWhenResolved(): void
     {
-        $path = sys_get_temp_dir() . '/phalanx-missing-' . uniqid('', true) . '.prompt.md';
+        $path = $this->tempWorkspace('phalanx-prompt-')->missingPath('missing.prompt.md');
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Prompt file does not exist');
@@ -64,7 +63,7 @@ final class FilePromptTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('must reference a file');
 
-        new FilePrompt(sys_get_temp_dir());
+        new FilePrompt($this->tempWorkspace('phalanx-prompt-')->dir('prompts'));
     }
 
     protected function setUp(): void
@@ -72,18 +71,6 @@ final class FilePromptTest extends TestCase
         if (!extension_loaded('swoole') || version_compare((string) phpversion('swoole'), '6.0.0', '<')) {
             self::markTestSkipped('FilePrompt coroutine tests require the swoole 6.x extension.');
         }
-    }
-
-    #[After]
-    protected function removePromptFiles(): void
-    {
-        foreach ($this->promptFiles as $path) {
-            if (is_file($path)) {
-                unlink($path);
-            }
-        }
-
-        $this->promptFiles = [];
     }
 
     private static function insideCoroutine(\Closure $callback): mixed
@@ -108,11 +95,6 @@ final class FilePromptTest extends TestCase
 
     private function writePrompt(string $content): string
     {
-        $path = tempnam(sys_get_temp_dir(), 'phalanx-prompt-');
-        self::assertIsString($path);
-        file_put_contents($path, $content);
-        $this->promptFiles[] = $path;
-
-        return $path;
+        return $this->tempWorkspace('phalanx-prompt-')->file('prompt.md', $content);
     }
 }

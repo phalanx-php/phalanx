@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Cli\Tests\Unit\Tools;
 
-use Phalanx\Cli\Tests\Support\RemovesDirectories;
+use Phalanx\Testing\UsesTempWorkspace;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -14,7 +14,7 @@ use function Phalanx\Tools\RenameMapping\replaceContent;
 
 final class RenameMappingScriptTest extends TestCase
 {
-    use RemovesDirectories;
+    use UsesTempWorkspace;
 
     private string $tempDir;
 
@@ -25,14 +25,7 @@ final class RenameMappingScriptTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->tempDir = sys_get_temp_dir() . '/' . uniqid('phalanx-rename-tool-', true);
-    }
-
-    protected function tearDown(): void
-    {
-        if (is_dir($this->tempDir)) {
-            self::removeDir($this->tempDir);
-        }
+        $this->tempDir = $this->tempWorkspace('phalanx-rename-tool-')->dir('tree');
     }
 
     #[Test]
@@ -100,8 +93,7 @@ TEXT;
     public function applyModeSkipsHiddenPrivateStateDirectories(): void
     {
         $this->writeFixtureTree();
-        mkdir($this->tempDir . '/.daemon8/snapshots', 0755, true);
-        file_put_contents($this->tempDir . '/.daemon8/snapshots/foo.md', 'use Phalanx\Hydra\WorkerPool;');
+        $this->tempWorkspace()->file('tree/.daemon8/snapshots/foo.md', 'use Phalanx\Hydra\WorkerPool;');
 
         ob_start();
         $exitCode = main($this->tempDir, ['apply-rename-mapping.php', '--apply']);
@@ -198,12 +190,11 @@ TEXT;
 
     private function writeFixtureTree(): void
     {
-        mkdir($this->tempDir . '/tools', 0755, true);
-        file_put_contents(
-            $this->tempDir . '/tools/rename-mapping.json',
+        $this->tempWorkspace()->file(
+            'tree/tools/rename-mapping.json',
             json_encode(self::mapping(), JSON_THROW_ON_ERROR),
         );
-        file_put_contents($this->tempDir . '/sample.php', 'use Phalanx\Hydra\WorkerPool;');
-        file_put_contents($this->tempDir . '/HydraDemoServiceBundle.php', '<?php');
+        $this->tempWorkspace()->file('tree/sample.php', 'use Phalanx\Hydra\WorkerPool;');
+        $this->tempWorkspace()->file('tree/HydraDemoServiceBundle.php', '<?php');
     }
 }

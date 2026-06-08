@@ -8,6 +8,7 @@ use Phalanx\Console\Output\LiveRegionRenderer;
 use Phalanx\Console\Output\LiveRegionWriter;
 use Phalanx\Console\Output\StreamOutput;
 use Phalanx\Console\Output\TerminalEnvironment;
+use Phalanx\Stream\Stream;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -78,13 +79,10 @@ final class LiveRegionRendererTest extends TestCase
     #[Test]
     public function nonTtyStreamOutputKeepsOnlySettledOutput(): void
     {
-        $stream = fopen('php://memory', 'w+');
-        if ($stream === false) {
-            self::fail('Unable to open memory stream.');
-        }
+        $stream = Stream::memoryBuffer();
 
         $renderer = new LiveRegionRenderer(new StreamOutput(
-            $stream,
+            $stream->resource(),
             new TerminalEnvironment(columns: 80, lines: 24),
         ));
 
@@ -92,11 +90,10 @@ final class LiveRegionRendererTest extends TestCase
             $renderer->update('frame 1');
             $renderer->update('frame 2');
             $renderer->settle('done');
-            rewind($stream);
 
-            self::assertSame("done\n", stream_get_contents($stream));
+            self::assertSame("done\n", $stream->drain());
         } finally {
-            fclose($stream);
+            $stream->close();
         }
     }
 }

@@ -16,20 +16,15 @@ final class ReadFileTest extends PhalanxTestCase
     #[Test]
     public function readsExistingFile(): void
     {
-        $tmpFile = tempnam(sys_get_temp_dir(), 'phalanx_test_');
-        file_put_contents($tmpFile, 'hello world');
+        $tmpFile = $this->tempWorkspace('phalanx-read-file-')->file('input.txt', 'hello world');
 
-        try {
-            $result = $this->testApp()
-                ->scoped(Task::named(
-                    'test.filesystem.read-file',
-                    static fn(ExecutionScope $scope): string => $scope->execute(new ReadFile($tmpFile)),
-                ));
+        $result = $this->testApp()
+            ->scoped(Task::named(
+                'test.filesystem.read-file',
+                static fn(ExecutionScope $scope): string => $scope->execute(new ReadFile($tmpFile)),
+            ));
 
-            $this->assertSame('hello world', $result);
-        } finally {
-            unlink($tmpFile);
-        }
+        $this->assertSame('hello world', $result);
     }
 
     #[Test]

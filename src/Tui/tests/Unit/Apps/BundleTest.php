@@ -6,6 +6,8 @@ namespace Phalanx\Tui\Tests\Unit\Apps;
 
 use Phalanx\Boot\AppContext;
 use Phalanx\Service\ServiceCatalog;
+use Phalanx\Stream\ResourceHandle;
+use Phalanx\Stream\Stream;
 use Phalanx\Tui\Inputs\BindingRegistry;
 use Phalanx\Tui\Core\ScreenContext;
 use Phalanx\Tui\Core\HasRuntimeContext;
@@ -17,6 +19,7 @@ use Phalanx\Tui\Styles\Theme;
 use Phalanx\Tui\Tdom\Renderable;
 use Phalanx\Tui\Apps\App;
 use Phalanx\Tui\Apps\Bundle;
+use PHPUnit\Framework\Attributes\After;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -39,6 +42,19 @@ final class ContextAwareStore extends Store implements HasRuntimeContext
 
 final class BundleTest extends TestCase
 {
+    /** @var list<ResourceHandle> */
+    private array $streams = [];
+
+    #[After]
+    protected function closeStreams(): void
+    {
+        foreach ($this->streams as $stream) {
+            $stream->close();
+        }
+
+        $this->streams = [];
+    }
+
     #[Test]
     public function registersStageAsSingleton(): void
     {
@@ -175,13 +191,12 @@ final class BundleTest extends TestCase
     /** @param class-string<Store>|null $storeClass */
     private function app(?string $storeClass = null, ?Theme $theme = null): App
     {
-        $stream = fopen('php://memory', 'w+');
-        self::assertIsResource($stream);
+        $stream = $this->streams[] = Stream::memoryBuffer();
 
         return new App(
             Stage::boot(new StageConfig(
                 handleInput: false,
-                stream: $stream,
+                stream: $stream->resource(),
                 env: [
                     'COLUMNS' => '20',
                     'LINES' => '5',

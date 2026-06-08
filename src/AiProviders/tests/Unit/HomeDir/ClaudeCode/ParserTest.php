@@ -12,6 +12,7 @@ use Phalanx\AiProviders\Conversation\Record\ToolResult;
 use Phalanx\AiProviders\Conversation\Record\Unknown;
 use Phalanx\AiProviders\HomeDir\ClaudeCode\Parser;
 use Phalanx\AiProviders\HomeDir\ClaudeCode\Source;
+use Phalanx\Testing\UsesTempWorkspace;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -20,6 +21,8 @@ use PHPUnit\Framework\TestCase;
  */
 final class ParserTest extends TestCase
 {
+    use UsesTempWorkspace;
+
     #[Test]
     public function parsesSystemMessageFromFixture(): void
     {
@@ -115,55 +118,46 @@ final class ParserTest extends TestCase
     #[Test]
     public function unknownTypeInLenientModeYieldsUnknownRecord(): void
     {
-        $tmpFile = tempnam(sys_get_temp_dir(), 'ai-providers_cc_') . '.jsonl';
         $line = '{"type":"unknown_future_type","timestamp":"2026-05-17T10:00:00.000Z","content":"data"}';
-        file_put_contents($tmpFile, $line . "\n");
+        $tmpFile = $this->jsonlFixture('unknown-lenient.jsonl', $line . "\n");
 
-        try {
-            $parser = new Parser();
-            $records = $parser->parse(new Source($tmpFile), Options::lenient())->toArray();
+        $parser = new Parser();
+        $records = $parser->parse(new Source($tmpFile), Options::lenient())->toArray();
 
-            $unknown = array_filter($records, static fn ($r): bool => $r instanceof Unknown);
-            self::assertNotEmpty($unknown);
+        $unknown = array_filter($records, static fn ($r): bool => $r instanceof Unknown);
+        self::assertNotEmpty($unknown);
 
-            $u = array_values($unknown)[0];
-            self::assertInstanceOf(Unknown::class, $u);
-            self::assertSame('unknown_future_type', $u->parserHint);
-        } finally {
-            unlink($tmpFile);
-        }
+        $u = array_values($unknown)[0];
+        self::assertInstanceOf(Unknown::class, $u);
+        self::assertSame('unknown_future_type', $u->parserHint);
     }
 
     #[Test]
     public function unknownTypeInLoudModeThrows(): void
     {
-        $tmpFile = tempnam(sys_get_temp_dir(), 'ai-providers_cc_') . '.jsonl';
-        file_put_contents($tmpFile, '{"type":"weird_type","timestamp":"2026-05-17T10:00:00.000Z"}' . "\n");
+        $tmpFile = $this->jsonlFixture(
+            'unknown-loud.jsonl',
+            '{"type":"weird_type","timestamp":"2026-05-17T10:00:00.000Z"}' . "\n",
+        );
 
-        try {
-            $this->expectException(\UnexpectedValueException::class);
+        $this->expectException(\UnexpectedValueException::class);
 
-            $parser = new Parser();
-            $parser->parse(new Source($tmpFile), Options::default())->toArray();
-        } finally {
-            unlink($tmpFile);
-        }
+        $parser = new Parser();
+        $parser->parse(new Source($tmpFile), Options::default())->toArray();
     }
 
     #[Test]
     public function unknownTypeInSilentModeDropsRecord(): void
     {
-        $tmpFile = tempnam(sys_get_temp_dir(), 'ai-providers_cc_') . '.jsonl';
-        file_put_contents($tmpFile, '{"type":"weird_type","timestamp":"2026-05-17T10:00:00.000Z"}' . "\n");
+        $tmpFile = $this->jsonlFixture(
+            'unknown-silent.jsonl',
+            '{"type":"weird_type","timestamp":"2026-05-17T10:00:00.000Z"}' . "\n",
+        );
 
-        try {
-            $parser = new Parser();
-            $records = $parser->parse(new Source($tmpFile), Options::silent())->toArray();
+        $parser = new Parser();
+        $records = $parser->parse(new Source($tmpFile), Options::silent())->toArray();
 
-            self::assertCount(0, $records);
-        } finally {
-            unlink($tmpFile);
-        }
+        self::assertCount(0, $records);
     }
 
     #[Test]
@@ -221,5 +215,10 @@ final class ParserTest extends TestCase
         $base = dirname(__DIR__, 3) . '/Fixtures/HomeDir/ClaudeCode/projects';
 
         return new Source($base . '/-Users-jhavens-marathon/def-pheidippides.jsonl');
+    }
+
+    private function jsonlFixture(string $name, string $contents): string
+    {
+        return $this->tempWorkspace('ai-providers-claude-')->file($name, $contents);
     }
 }

@@ -7,6 +7,7 @@ namespace Phalanx\AiProviders\Tests\Unit\HomeDir\Codex;
 use Phalanx\AiProviders\HomeDir\Codex\SqliteReader;
 use Phalanx\AiProviders\HomeDir\Codex\SqliteUnavailable;
 use Phalanx\AiProviders\Tests\Support\SqliteFixtureBuilder;
+use Phalanx\Testing\UsesTempWorkspace;
 use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -18,6 +19,8 @@ use PHPUnit\Framework\TestCase;
  */
 final class SqliteReaderTest extends TestCase
 {
+    use UsesTempWorkspace;
+
     private ?string $dbPath = null;
 
     #[Test]
@@ -70,7 +73,7 @@ final class SqliteReaderTest extends TestCase
     #[RequiresPhpExtension('sqlite3')]
     public function nonExistentFileProducesEmptyGenerator(): void
     {
-        $rows = iterator_to_array(SqliteReader::read('/does/not/exist.sqlite'));
+        $rows = iterator_to_array(SqliteReader::read($this->tempWorkspace()->missingPath('missing.sqlite')));
 
         self::assertCount(0, $rows);
     }
@@ -99,17 +102,7 @@ final class SqliteReaderTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->dbPath = SqliteFixtureBuilder::build();
-    }
-
-    protected function tearDown(): void
-    {
-        parent::tearDown();
-
-        if ($this->dbPath !== null) {
-            SqliteFixtureBuilder::cleanup($this->dbPath);
-            $this->dbPath = null;
-        }
+        $this->dbPath = SqliteFixtureBuilder::build($this->tempWorkspace('ai-providers-sqlite-'));
     }
 
     /** Returns the db path, asserting setUp() has run and it is non-null. */

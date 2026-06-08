@@ -202,8 +202,7 @@ final class BootHarnessRunnerTest extends PhalanxTestCase
     #[Test]
     public function runPicksUpComposerExtraHarness(): void
     {
-        $tmpDir = sys_get_temp_dir() . '/phalanx_harness_runner_' . uniqid('plx_');
-        mkdir($tmpDir . '/composer', recursive: true);
+        $tmpDir = $this->tempWorkspace('phalanx-harness-runner-')->dir('project');
 
         $stub = ComposerExtraHarnessStub::class;
         $installed = [
@@ -218,9 +217,9 @@ final class BootHarnessRunnerTest extends PhalanxTestCase
                 ],
             ],
         ];
-        file_put_contents(
-            $tmpDir . '/composer/installed.json',
-            json_encode($installed),
+        $this->tempWorkspace()->file(
+            'project/composer/installed.json',
+            json_encode($installed, JSON_THROW_ON_ERROR),
         );
 
         try {
@@ -229,10 +228,6 @@ final class BootHarnessRunnerTest extends PhalanxTestCase
             self::fail('Expected CannotBootException for FROM_EXTRA was not thrown.');
         } catch (CannotBootException $e) {
             self::assertStringContainsString('FROM_EXTRA', $e->getMessage());
-        } finally {
-            unlink($tmpDir . '/composer/installed.json');
-            rmdir($tmpDir . '/composer');
-            rmdir($tmpDir);
         }
     }
 
@@ -309,8 +304,7 @@ final class BootHarnessRunnerTest extends PhalanxTestCase
     #[Test]
     public function contextSchemaListsBundleAndComposerExtraKeys(): void
     {
-        $tmpDir = sys_get_temp_dir() . '/phalanx_harness_schema_' . uniqid('plx_', true);
-        mkdir($tmpDir . '/composer', recursive: true);
+        $tmpDir = $this->tempWorkspace('phalanx-harness-schema-')->dir('project');
 
         $stub = ComposerExtraHarnessStub::class;
         $installed = [
@@ -325,27 +319,21 @@ final class BootHarnessRunnerTest extends PhalanxTestCase
                 ],
             ],
         ];
-        file_put_contents(
-            $tmpDir . '/composer/installed.json',
-            json_encode($installed),
+        $this->tempWorkspace()->file(
+            'project/composer/installed.json',
+            json_encode($installed, JSON_THROW_ON_ERROR),
         );
 
-        try {
-            $schema = (new BootHarnessRunner())->contextSchema([RequiredEnvBundle::class], $tmpDir);
-            $keys = $schema->all();
+        $schema = (new BootHarnessRunner())->contextSchema([RequiredEnvBundle::class], $tmpDir);
+        $keys = $schema->all();
 
-            self::assertCount(2, $keys);
-            self::assertSame('CRITICAL_KEY', $keys[0]->name);
-            self::assertSame(RequiredEnvBundle::class, $keys[0]->owner);
-            self::assertSame('FROM_EXTRA', $keys[1]->name);
-            self::assertSame('composer-extra', $keys[1]->owner);
-            self::assertStringContainsString('CRITICAL_KEY', $schema->render());
-            self::assertStringContainsString(RequiredEnvBundle::class, $schema->render());
-        } finally {
-            unlink($tmpDir . '/composer/installed.json');
-            rmdir($tmpDir . '/composer');
-            rmdir($tmpDir);
-        }
+        self::assertCount(2, $keys);
+        self::assertSame('CRITICAL_KEY', $keys[0]->name);
+        self::assertSame(RequiredEnvBundle::class, $keys[0]->owner);
+        self::assertSame('FROM_EXTRA', $keys[1]->name);
+        self::assertSame('composer-extra', $keys[1]->owner);
+        self::assertStringContainsString('CRITICAL_KEY', $schema->render());
+        self::assertStringContainsString(RequiredEnvBundle::class, $schema->render());
     }
 
     #[Test]

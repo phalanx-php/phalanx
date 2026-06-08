@@ -97,12 +97,8 @@ final class ApplicationBuilderTest extends TestCase
     #[Test]
     public function loadsRoutesFromAFileOrDirectory(): void
     {
-        $this->scope->run(static function (ExecutionScope $_scope): void {
-            $dir = sys_get_temp_dir() . '/' . uniqid('http-routes-', true);
-            mkdir($dir);
-
-            $file = $dir . '/routes.php';
-            file_put_contents($file, <<<'PHP'
+        $dir = $this->tempWorkspace('http-routes-')->dir('routes');
+        $file = $this->tempWorkspace()->file('routes/routes.php', <<<'PHP'
 <?php
 
 declare(strict_types=1);
@@ -115,6 +111,7 @@ return RouteGroup::of([
 ]);
 PHP);
 
+        $this->scope->run(static function (ExecutionScope $_scope) use ($dir, $file): void {
             $fromFile = self::http()->routes($file)->build();
             $fromDir = self::http()->routes($dir)->build();
 
@@ -130,8 +127,6 @@ PHP);
             } finally {
                 $fromFile->shutdown();
                 $fromDir->shutdown();
-                unlink($file);
-                rmdir($dir);
             }
         });
     }

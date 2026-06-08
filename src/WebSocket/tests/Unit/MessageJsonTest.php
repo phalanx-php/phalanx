@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phalanx\WebSocket\Tests\Unit;
 
 use Phalanx\WebSocket\Message;
+use Phalanx\Stream\Stream;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -33,6 +34,8 @@ final class WsMessageJsonTest extends TestCase
     {
         $this->expectException(\JsonException::class);
 
-        \Phalanx\WebSocket\Message::json(fopen('php://memory', 'r'));
+        $input = Stream::memoryInput();
+
+        \Phalanx\WebSocket\Message::json($input->resource());
     }
 }

@@ -33,4 +33,24 @@ final class Stream
     {
         return Scoped::from($scope, $emitter);
     }
+
+    public static function captureBuffer(): ResourceHandle
+    {
+        return ResourceHandle::captureBuffer();
+    }
+
+    public static function memoryBuffer(string $contents = ''): ResourceHandle
+    {
+        return ResourceHandle::memoryBuffer($contents);
+    }
+
+    public static function memoryInput(string $contents = ''): ResourceHandle
+    {
+        return ResourceHandle::memoryInput($contents);
+    }
+
+    public static function nullInput(): ResourceHandle
+    {
+        return ResourceHandle::nullInput();
+    }
 }

@@ -186,19 +186,15 @@ final class V0AcceptanceGateTest extends PhalanxTestCase
     #[RequiresPhpExtension('swoole')]
     public function gate09HttpClientTransportSequentialStreamingAndCancellation(): void
     {
-        $successScript = self::writeGate09Server('echo "pericles won at marathon\n";');
-        $errorScript = self::writeGate09Server('http_response_code(503); echo "service unavailable";');
-        $slowScript = self::writeGate09Server('sleep(3); echo "never reached";');
+        $successScript = $this->writeGate09Server('echo "pericles won at marathon\n";');
+        $errorScript = $this->writeGate09Server('http_response_code(503); echo "service unavailable";');
+        $slowScript = $this->writeGate09Server('sleep(3); echo "never reached";');
 
         [$successProc, $successPipes, $successPort] = self::startGate09Server($successScript);
         [$errorProc, $errorPipes, $errorPort] = self::startGate09Server($errorScript);
         [$slowProc, $slowPipes, $slowPort] = self::startGate09Server($slowScript);
 
         if ($successProc === null || $errorProc === null || $slowProc === null) {
-            foreach ([$successScript, $errorScript, $slowScript] as $f) {
-                @unlink($f);
-            }
-
             self::markTestSkipped('Could not bind all three local PHP servers');
         }
 
@@ -277,7 +273,6 @@ final class V0AcceptanceGateTest extends PhalanxTestCase
                 fclose($pipes[2]);
                 proc_terminate($proc);
                 proc_close($proc);
-                @unlink($script);
             }
         }
     }
@@ -330,12 +325,9 @@ final class V0AcceptanceGateTest extends PhalanxTestCase
         $this->testApp()->ledger->assertNoOrphans();
     }
 
-    private static function writeGate09Server(string $phpBody): string
+    private function writeGate09Server(string $phpBody): string
     {
-        $path = sys_get_temp_dir() . '/' . uniqid('gate09-', true) . '_' . getmypid() . '.php';
-        file_put_contents($path, "<?php {$phpBody}");
-
-        return $path;
+        return $this->tempWorkspace('gate09-')->file(bin2hex(random_bytes(4)) . '.php', "<?php {$phpBody}");
     }
 
     /**
