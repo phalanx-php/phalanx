@@ -1,13 +1,33 @@
 name: Split Modules
 
 on:
-  push:
-    tags:
-      - 'v*'
   workflow_dispatch:
+    inputs:
+      action:
+        description: "Run readiness checks only, or split packages after explicit confirmation."
+        required: true
+        default: "dry-run"
+        type: choice
+        options:
+          - "dry-run"
+          - "split"
+      confirmation:
+        description: "Required for split: type SPLIT PHALANX PACKAGES"
+        required: false
+        type: string
 
 jobs:
+  readiness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate release readiness
+        run: composer release:check
+
   split:
+    needs: readiness
+    if: github.event.inputs.action == 'split'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -38,7 +58,15 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Require explicit split confirmation
+        run: |
+          if [ "${{ github.event.inputs.confirmation }}" != "SPLIT PHALANX PACKAGES" ]; then
+            echo "Type SPLIT PHALANX PACKAGES in the confirmation input to create repositories and push splits." >&2
+            exit 1
+          fi
+
       - name: Ensure split repositories exist
+        if: github.event.inputs.action == 'split'
         env:
           GH_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
         run: |
@@ -86,6 +114,7 @@ jobs:
           esac
 
       - name: Split module
+        if: github.event.inputs.action == 'split'
         uses: driesvints/monorepo-split-github-action@v2
         with:
           package_directory: ${{ matrix.package.local_path }}
