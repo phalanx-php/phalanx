@@ -1,5 +1,0 @@
-{"model":"qwen3:4b","created_at":"2026-05-23T00:00:00Z","message":{"role":"assistant","content":"","thinking":""},"done":false}
-{"model":"qwen3:4b","created_at":"2026-05-23T00:00:01Z","message":{"role":"assistant","content":"","thinking":"First, "},"done":false}
-{"model":"qwen3:4b","created_at":"2026-05-23T00:00:02Z","message":{"role":"assistant","content":"","thinking":"identify the pass. "},"done":false}
-{"model":"qwen3:4b","created_at":"2026-05-23T00:00:03Z","message":{"role":"assistant","content":"Hold Thermopylae.","thinking":"Then answer."},"done":false}
-{"model":"qwen3:4b","created_at":"2026-05-23T00:00:04Z","message":{"role":"assistant","content":""},"done":true,"prompt_eval_count":12,"eval_count":5,"total_duration":100000000}

@@ -1,5 +1,0 @@
-data: {"id":"chatcmpl-SPARTA01","object":"chat.completion.chunk","model":"gpt-5","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
-
-data: {"id":"chatcmpl-SPARTA01","object":"chat.completion.chunk","model":"gpt-5","choices":[{"index":0,"delta":{"content":"Sparta endures."},"finish_reason":null}]}
-
-data: [DONE]

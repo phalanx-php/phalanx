@@ -1,2 +1,0 @@
-{"model":"llama3.1","created_at":"2026-05-17T00:00:00Z","message":{"role":"assistant","content":""},"done":false}
-{"model":"llama3.1","created_at":"2026-05-17T00:00:01Z","message":{"role":"assistant","content":"","tool_calls":[{"function":{"name":"search_agora","arguments":{"query":"Sparta marathon records"}}}]},"done":true,"prompt_eval_count":45,"eval_count":22,"total_duration":120000000}

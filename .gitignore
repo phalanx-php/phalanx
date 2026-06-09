@@ -21,6 +21,7 @@ roadmap/**/RTK.md
 vendor/
 node_modules/
 /src/*/composer.lock
+.v2-reference/
 
 # Build artifacts
 /build/

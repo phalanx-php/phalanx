@@ -1,5 +1,0 @@
-id: codex
-display_name: "Codex"
-roots:
-  - "~/.codex"
-adapter: "Phalanx\\AiProviders\\HomeDir\\Codex\\HomeDir"

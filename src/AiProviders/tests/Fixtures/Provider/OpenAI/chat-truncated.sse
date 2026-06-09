@@ -1,3 +1,0 @@
-data: {"id":"chatcmpl-TRUNC01","object":"chat.completion.chunk","model":"gpt-5","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
-
-data: {"id":"chatcmpl-TRUNC01","object":"chat.completion.chunk","model":"gpt-5","choices":[{"index":0,"delta":{"content":"Leonidas "},"finish_reason":null}]}

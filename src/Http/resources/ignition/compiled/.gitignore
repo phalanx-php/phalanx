@@ -1,7 +1,0 @@
-.*
-*.md
-
-*
-!.gitignore
-!ignition.css
-!ignition.js

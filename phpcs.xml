@@ -1,87 +1,24 @@
 <?xml version="1.0"?>
 <ruleset name="Phalanx">
-    <file>src/Runtime</file>
-    <file>src/Console</file>
-    <file>src/Network</file>
-    <file>src/Agents</file>
-    <file>src/Cli</file>
-    <file>src/Ssh</file>
-    <file>src/Filesystem</file>
-    <file>src/WebSocket</file>
-    <file>src/Worker</file>
-    <file>src/HttpClient</file>
-    <file>src/Mark</file>
-    <file>src/PHPStan</file>
-    <file>src/AiProviders</file>
-    <file>src/DevServer</file>
-    <file>src/Http</file>
-    <file>src/Stream</file>
-    <file>src/SurrealDb</file>
-    <file>src/Tui</file>
-    <file>src/Config</file>
+    <file>src</file>
+    <file>tests</file>
+
     <arg name="colors"/>
     <arg name="warning-severity" value="0"/>
     <arg value="sp"/>
-    <exclude-pattern>*/.phpunit.cache/*</exclude-pattern>
-    <exclude-pattern>*/bin/*</exclude-pattern>
-    <exclude-pattern>*/resources/*</exclude-pattern>
-    <exclude-pattern>*/tests/*</exclude-pattern>
 
-    <!-- PSR-12 base -->
+    <exclude-pattern>*/.phpunit.cache/*</exclude-pattern>
+
     <rule ref="PSR12">
         <exclude name="PSR1.Classes.ClassDeclaration.MultipleClasses"/>
-        <!-- PHP 8.4 property hooks: phpcs parser doesn't understand { get => } syntax -->
         <exclude name="PSR2.Classes.PropertyDeclaration.Multiple"/>
         <exclude name="PSR2.Classes.PropertyDeclaration.ScopeMissing"/>
     </rule>
 
-    <!-- PHP 8.4 property hooks: interface property hooks trigger false positives -->
     <rule ref="Internal.ParseError.InterfaceHasMemberVar">
         <severity>0</severity>
     </rule>
 
-    <!-- PHP 8.4 property hooks: Slevomat doesn't understand hooked properties vs regular properties -->
-    <rule ref="SlevomatCodingStandard.Classes.ClassStructure.IncorrectGroupOrder">
-        <exclude-pattern>*/SettlementBag.php</exclude-pattern>
-        <exclude-pattern>*/ExecutionScope.php</exclude-pattern>
-        <exclude-pattern>*/DeferredScope.php</exclude-pattern>
-        <exclude-pattern>*/CancellationToken.php</exclude-pattern>
-        <exclude-pattern>*/ExecutionContext.php</exclude-pattern>
-        <exclude-pattern>*/CommandResult.php</exclude-pattern>
-        <exclude-pattern>*/Reactive/Signal.php</exclude-pattern>
-        <exclude-pattern>*/Reactive/Computed.php</exclude-pattern>
-        <exclude-pattern>*/Component/MountedComponent.php</exclude-pattern>
-        <exclude-pattern>*/Focus/FocusManager.php</exclude-pattern>
-    </rule>
-
-    <!-- PHP 8.4 property hooks: spacing rules misfire on hook syntax -->
-    <rule ref="PSR2.Classes.PropertyDeclaration.SpacingAfterType">
-        <exclude-pattern>*/SettlementBag.php</exclude-pattern>
-        <exclude-pattern>*/ExecutionContext.php</exclude-pattern>
-        <exclude-pattern>*/CommandResult.php</exclude-pattern>
-        <exclude-pattern>*/Reactive/Signal.php</exclude-pattern>
-        <exclude-pattern>*/Reactive/Computed.php</exclude-pattern>
-        <exclude-pattern>*/Component/MountedComponent.php</exclude-pattern>
-        <exclude-pattern>*/Focus/FocusManager.php</exclude-pattern>
-        <exclude-pattern>*/ScriptContext.php</exclude-pattern>
-        <exclude-pattern>*/SchedulerConfig.php</exclude-pattern>
-    </rule>
-
-    <!-- Phalanx style: config object constructor parameters are visually grouped by env attribute. -->
-    <rule ref="Squiz.Functions.MultiLineFunctionDeclaration.EmptyLine">
-        <exclude-pattern>*/NetworkConfig.php</exclude-pattern>
-        <exclude-pattern>*/SshConfig.php</exclude-pattern>
-        <exclude-pattern>*/HttpClientConfig.php</exclude-pattern>
-        <exclude-pattern>*/SurrealDbConfig.php</exclude-pattern>
-    </rule>
-
-    <!-- PHP 8.4 property hooks: indentation rule misfires on hook bodies -->
-    <rule ref="Generic.WhiteSpace.ScopeIndent.IncorrectExact">
-        <exclude-pattern>*/ExecutionContext.php</exclude-pattern>
-        <exclude-pattern>*/Reactive/Computed.php</exclude-pattern>
-    </rule>
-
-    <!-- Slevomat: Member ordering -->
     <rule ref="SlevomatCodingStandard.Classes.ClassStructure">
         <properties>
             <property name="groups" type="array">

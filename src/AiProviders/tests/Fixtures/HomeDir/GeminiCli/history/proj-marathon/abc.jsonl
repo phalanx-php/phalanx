@@ -1,4 +1,0 @@
-{"role":"user","parts":[{"text":"Achilles, describe the formation of hoplites at Marathon."}],"timestamp":"2026-05-17T09:00:01Z"}
-{"role":"model","parts":[{"text":"The Athenians deployed in a phalanx formation — shields interlocked, doru spears levelled. The wings were reinforced while the center was thinned to encircle the Persian flanks."},{"functionCall":{"id":"fc_01abc","name":"describe_formation","args":{"battle":"marathon","side":"athenian"}}}],"timestamp":"2026-05-17T09:00:02Z"}
-{"role":"user","parts":[{"functionResponse":{"name":"fc_01abc","response":{"output":"Athenian phalanx: 10,000 hoplites, double-envelopment maneuver confirmed."}}}],"timestamp":"2026-05-17T09:00:03Z"}
-{"role":"model","parts":[{"text":"The double-envelopment crushed the Persian infantry. Delphi records this as one of the greatest tactical victories of the ancient world."}],"timestamp":"2026-05-17T09:00:04Z"}

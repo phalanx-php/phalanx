@@ -1,3 +1,0 @@
-data: {"id":"chatcmpl-HF_ERR01","object":"chat.completion.chunk","model":"meta-llama/Meta-Llama-3.1-70B-Instruct","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
-
-data: {"error":{"message":"Sparta rate limit reached — the agora is busy.","type":"tokens","param":null,"code":"rate_limit_exceeded"}}
