@@ -6,4 +6,5 @@ namespace Phalanx\Err;
 
 interface Err
 {
+    public Severity $severity { get; }
 }
