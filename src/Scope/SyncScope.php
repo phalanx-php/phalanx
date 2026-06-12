@@ -148,6 +148,38 @@ final class SyncScope implements Scope
         return $this->run($work[0]);
     }
 
+    /**
+     * @template TFirst
+     * @template TStep
+     * @template TIn = mixed
+     *
+     * @param Executable<TFirst> $first
+     * @param callable(TIn): Executable<TStep> ...$steps
+     *
+     * @return TFirst|TStep
+     */
+    public function series(Executable $first, callable ...$steps): mixed
+    {
+        $outcome = $this->run($first);
+
+        foreach ($steps as $step) {
+            if ($outcome instanceof Err) {
+                return $outcome;
+            }
+
+            /**
+             * The kernel trust boundary again: a step factory consumes the
+             * prior step's success value; the chain itself is the task
+             * author's contract.
+             *
+             * @var callable(mixed): Executable<TStep> $step
+             */
+            $outcome = $this->run($step($outcome));
+        }
+
+        return $outcome;
+    }
+
     public function onErr(callable $compensation): void
     {
         $this->compensations[] = $compensation;

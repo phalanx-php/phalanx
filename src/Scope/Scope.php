@@ -60,6 +60,23 @@ interface Scope
      */
     public function race(array $work): mixed;
 
+    /**
+     * Sequential composition: each step is a full supervised child run, the
+     * first Err short-circuits and later factories never run, and the
+     * accumulated union means a parent cannot drop any step's Err. Step
+     * factories receive the prior step's success value.
+     *
+     * @template TFirst
+     * @template TStep
+     * @template TIn = mixed
+     *
+     * @param Executable<TFirst> $first
+     * @param callable(TIn): Executable<TStep> ...$steps
+     *
+     * @return TFirst|TStep
+     */
+    public function series(Executable $first, callable ...$steps): mixed;
+
     /** Compensation on any non-success frame outcome (returned Err or escaping Fault). */
     public function onErr(callable $compensation): void;
 

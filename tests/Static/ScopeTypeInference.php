@@ -6,6 +6,7 @@ namespace Phalanx\Tests\Static;
 
 use Phalanx\Scope\Scope;
 use Phalanx\Tests\Fixture\OneFile\ChargeCard;
+use Phalanx\Tests\Fixture\OneFile\EmailReceipt;
 
 use function PHPStan\Testing\assertType;
 
@@ -42,6 +43,17 @@ final class ScopeTypeInference
         assertType(
             'Phalanx\Tests\Fixture\OneFile\ChargeDeclined|string',
             $scope->race([new ChargeCard(invoice: 'inv_1')]),
+        );
+    }
+
+    public function seriesAccumulatesTheOutcomeUnionAcrossSteps(Scope $scope): void
+    {
+        assertType(
+            'bool|Phalanx\Tests\Fixture\OneFile\ChargeDeclined|Phalanx\Tests\Fixture\OneFile\ReceiptBounced|string',
+            $scope->series(
+                new ChargeCard(invoice: 'inv_1'),
+                static fn (string $receipt): EmailReceipt => new EmailReceipt(receipt: $receipt),
+            ),
         );
     }
 }

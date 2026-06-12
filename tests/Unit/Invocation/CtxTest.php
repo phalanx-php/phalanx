@@ -95,6 +95,11 @@ final class CtxTest extends TestCase
                 throw new LogicException('not dispatched in this stub');
             }
 
+            public function series(Executable $first, callable ...$steps): mixed
+            {
+                throw new LogicException('not dispatched in this stub');
+            }
+
             public function onErr(callable $compensation): void
             {
             }

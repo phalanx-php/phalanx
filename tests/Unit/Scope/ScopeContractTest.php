@@ -12,7 +12,7 @@ use ReflectionClass;
 final class ScopeContractTest extends TestCase
 {
     #[Test]
-    public function theKernelOwnsExactlyTheSixOperationsPlusStateReadsAndNarrowing(): void
+    public function theKernelOwnsExactlyTheSevenOperationsPlusStateReadsAndNarrowing(): void
     {
         $methods = array_map(
             static fn ($method): string => $method->getName(),
@@ -31,6 +31,7 @@ final class ScopeContractTest extends TestCase
             'race',
             'remaining',
             'run',
+            'series',
             'withDeadline',
             'withRetry',
             'withoutRetry',

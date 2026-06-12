@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Phalanx\Tests\Unit\Scope;
 
 use Phalanx\Engine\Wiring;
+use Phalanx\Err\Err;
+use Phalanx\Err\Fault;
 use Phalanx\Err\FaultEscaped;
 use Phalanx\Invocation\Ctx;
 use Phalanx\Invocation\Executable;
@@ -14,6 +16,7 @@ use Phalanx\Scope\Scope;
 use Phalanx\Scope\SyncScope;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 
 final class ScopeCombinatorTest extends TestCase
 {
@@ -65,6 +68,94 @@ final class ScopeCombinatorTest extends TestCase
 
         self::assertInstanceOf(ExpectedErr::class, $outcome, 'an Err counts as completed');
         self::assertSame(1, $probe->frames, 'losers are never dispatched in the sync backend');
+    }
+
+    #[Test]
+    public function seriesThreadsEachStepsValueIntoTheNextFactory(): void
+    {
+        $outcome = SyncScope::root(new Wiring())->series(
+            new ItemTask(item: 'alpha'),
+            static fn (string $value): ItemTask => new ItemTask(item: $value . '+beta'),
+            static fn (string $value): ItemTask => new ItemTask(item: $value . '+gamma'),
+        );
+
+        self::assertSame('item:item:item:alpha+beta+gamma', $outcome);
+    }
+
+    #[Test]
+    public function theFirstErrShortCircuitsTheSeriesAndLaterFactoriesNeverRun(): void
+    {
+        $probe = new KernelProbe(['expected']);
+        $factoryCalls = 0;
+
+        $outcome = $this->scope($probe)->series(
+            new ProbeTask(),
+            static function (string $value) use (&$factoryCalls): ItemTask {
+                $factoryCalls++;
+
+                return new ItemTask(item: $value);
+            },
+        );
+
+        self::assertInstanceOf(ExpectedErr::class, $outcome);
+        self::assertSame(0, $factoryCalls, 'the chain stops before any later factory runs');
+        self::assertSame(1, $probe->frames);
+    }
+
+    #[Test]
+    public function aRetriedStepsIntermediateAttemptsAreInvisibleToTheChain(): void
+    {
+        $probe = new KernelProbe(['transient', 'ok']);
+        $received = [];
+
+        $outcome = $this->scope($probe)->withRetry(2, Backoff::none())->series(
+            new ProbeTask(),
+            static function (string $value) use (&$received): ItemTask {
+                $received[] = $value;
+
+                return new ItemTask(item: $value);
+            },
+        );
+
+        self::assertSame('item:done', $outcome);
+        self::assertSame(['done'], $received, 'only the post-supervision outcome reaches the chain (EM1.3)');
+        self::assertSame(2, $probe->frames);
+    }
+
+    #[Test]
+    public function eachSeriesStepSpendsTheDispatchSiteBudgetIndependently(): void
+    {
+        $probe = new KernelProbe(['transient', 'ok', 'transient', 'ok']);
+
+        $outcome = $this->scope($probe)->withRetry(2, Backoff::none())->series(
+            new ProbeTask(),
+            static fn (string $value): ProbeTask => new ProbeTask(),
+        );
+
+        self::assertSame('done', $outcome);
+        self::assertSame(4, $probe->frames, 'each step retries under its own copy of the dispatch budget');
+        self::assertSame([1, 2, 1, 2], $probe->attempts);
+    }
+
+    #[Test]
+    public function aFaultAbsorbedAtTheDispatchSiteShortCircuitsTheSeries(): void
+    {
+        $probe = new KernelProbe(['throw']);
+        $factoryCalls = 0;
+
+        $outcome = $this->scope($probe)
+            ->faultsAs(static fn (Fault $fault): Err|Fault => $fault->isA(RuntimeException::class) ? new ExpectedErr() : $fault)
+            ->series(
+                new ProbeTask(),
+                static function (string $value) use (&$factoryCalls): ItemTask {
+                    $factoryCalls++;
+
+                    return new ItemTask(item: $value);
+                },
+            );
+
+        self::assertInstanceOf(ExpectedErr::class, $outcome);
+        self::assertSame(0, $factoryCalls);
     }
 
     #[Test]
