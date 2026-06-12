@@ -59,6 +59,25 @@ final class PackageSkeletonTest extends TestCase
         self::assertArrayNotHasKey('bia', $extra);
     }
 
+    #[Test]
+    public function frameworkPackageDoesNotCarryAnOptionalSwooleBranch(): void
+    {
+        $composer = $this->composerJson();
+        $require = $this->composerValue($composer, 'require');
+
+        self::assertIsArray($require);
+        self::assertArrayNotHasKey('ext-swoole', $require);
+        self::assertArrayNotHasKey('ext-openswoole', $require);
+        self::assertArrayNotHasKey('suggest', $composer);
+
+        $source = $this->sourceText(dirname(__DIR__, 2) . '/src');
+
+        self::assertStringNotContainsString('extension_loaded', $source);
+        self::assertStringNotContainsString('class_exists(\'Swoole', $source);
+        self::assertStringNotContainsString('class_exists("Swoole', $source);
+        self::assertStringNotContainsString('OpenSwoole', $source);
+    }
+
     /** @return array<string, mixed> */
     private function composerJson(): array
     {
@@ -95,5 +114,23 @@ final class PackageSkeletonTest extends TestCase
         }
 
         return $value;
+    }
+
+    private function sourceText(string $directory): string
+    {
+        $text = '';
+        $files = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($directory, \FilesystemIterator::SKIP_DOTS),
+        );
+
+        foreach ($files as $file) {
+            if (!$file instanceof \SplFileInfo || $file->getExtension() !== 'php') {
+                continue;
+            }
+
+            $text .= (string) file_get_contents($file->getPathname());
+        }
+
+        return $text;
     }
 }
