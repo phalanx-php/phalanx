@@ -6,6 +6,7 @@ namespace Phalanx\Tests\Unit\Contracts;
 
 use Phalanx\Engine\Engine;
 use Phalanx\Err\Err;
+use Phalanx\Err\FaultBorn;
 use Phalanx\Err\Severity;
 use Phalanx\Invocation\Caps;
 use Phalanx\Invocation\Executable;
@@ -34,6 +35,18 @@ final class ContractNamespaceMapTest extends TestCase
 
             self::assertSame([], $reflection->getMethods(), "{$contract} must stay behavior-free in PV2-A.02.");
         }
+    }
+
+    #[Test]
+    public function faultBornDeclaresOnlyTheFromFaultConstructionSurface(): void
+    {
+        $reflection = new ReflectionClass(FaultBorn::class);
+
+        self::assertTrue($reflection->isInterface());
+        self::assertSame(['fromFault'], array_map(
+            static fn ($method): string => $method->getName(),
+            $reflection->getMethods(),
+        ));
     }
 
     #[Test]
