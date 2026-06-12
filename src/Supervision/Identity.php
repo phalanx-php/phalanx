@@ -8,7 +8,7 @@ use Attribute;
 use InvalidArgumentException;
 
 #[Attribute(Attribute::TARGET_PARAMETER | Attribute::TARGET_PROPERTY)]
-final readonly class IdempotencyPart
+final readonly class Identity
 {
     public ?string $name;
 
@@ -16,7 +16,7 @@ final readonly class IdempotencyPart
         ?string $name = null,
     ) {
         if ($name === '') {
-            throw new InvalidArgumentException('Idempotency part name cannot be empty.');
+            throw new InvalidArgumentException('Identity name cannot be empty.');
         }
 
         $this->name = $name;

@@ -8,7 +8,7 @@ use Attribute;
 use InvalidArgumentException;
 
 #[Attribute(Attribute::TARGET_CLASS)]
-final readonly class Trace
+final readonly class Operation
 {
     public string $name;
 
@@ -16,7 +16,7 @@ final readonly class Trace
         string $name,
     ) {
         if ($name === '') {
-            throw new InvalidArgumentException('Trace name cannot be empty.');
+            throw new InvalidArgumentException('Operation name cannot be empty.');
         }
 
         $this->name = $name;

@@ -7,9 +7,9 @@ namespace Phalanx\Tests\Unit\Contracts;
 use Attribute;
 use InvalidArgumentException;
 use Phalanx\Scope\Scope;
-use Phalanx\Supervision\IdempotencyPart;
+use Phalanx\Supervision\Identity;
+use Phalanx\Supervision\Operation;
 use Phalanx\Supervision\Redact;
-use Phalanx\Supervision\Trace;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
@@ -19,19 +19,19 @@ final class SupervisionAttributeContractTest extends TestCase
     #[Test]
     public function supervisionAttributesExposeOnlyDeclarativeMetadata(): void
     {
-        self::assertSame(['__construct'], $this->publicMethodNames(Trace::class));
-        self::assertSame(['__construct'], $this->publicMethodNames(IdempotencyPart::class));
+        self::assertSame(['__construct'], $this->publicMethodNames(Operation::class));
+        self::assertSame(['__construct'], $this->publicMethodNames(Identity::class));
         self::assertSame(['__construct'], $this->publicMethodNames(Redact::class));
 
-        self::assertSame(['name' => 'string'], $this->publicPropertyTypes(Trace::class));
-        self::assertSame(['name' => '?string'], $this->publicPropertyTypes(IdempotencyPart::class));
+        self::assertSame(['name' => 'string'], $this->publicPropertyTypes(Operation::class));
+        self::assertSame(['name' => '?string'], $this->publicPropertyTypes(Identity::class));
         self::assertSame(['label' => '?string'], $this->publicPropertyTypes(Redact::class));
     }
 
     #[Test]
     public function supervisionAttributesAreFrozenMetadataContracts(): void
     {
-        foreach ([Trace::class, IdempotencyPart::class, Redact::class] as $class) {
+        foreach ([Operation::class, Identity::class, Redact::class] as $class) {
             $reflection = new ReflectionClass($class);
 
             self::assertTrue($reflection->isFinal(), "{$class} should not be extended.");
@@ -42,10 +42,10 @@ final class SupervisionAttributeContractTest extends TestCase
     #[Test]
     public function supervisionAttributesDeclareExactTargets(): void
     {
-        self::assertSame(Attribute::TARGET_CLASS, $this->attributeFlags(Trace::class));
+        self::assertSame(Attribute::TARGET_CLASS, $this->attributeFlags(Operation::class));
         self::assertSame(
             Attribute::TARGET_PARAMETER | Attribute::TARGET_PROPERTY,
-            $this->attributeFlags(IdempotencyPart::class),
+            $this->attributeFlags(Identity::class),
         );
         self::assertSame(
             Attribute::TARGET_PARAMETER | Attribute::TARGET_PROPERTY,
@@ -56,35 +56,35 @@ final class SupervisionAttributeContractTest extends TestCase
     #[Test]
     public function supervisionAttributesCarryTypedMetadata(): void
     {
-        $trace = new Trace('billing.charge');
-        $idempotencyPart = new IdempotencyPart('customerId');
-        $anonymousIdempotencyPart = new IdempotencyPart();
+        $operation = new Operation('billing.charge');
+        $identity = new Identity('customerId');
+        $anonymousIdentity = new Identity();
         $redact = new Redact('secret');
         $anonymousRedact = new Redact();
 
-        self::assertSame('billing.charge', $trace->name);
-        self::assertSame('customerId', $idempotencyPart->name);
-        self::assertNull($anonymousIdempotencyPart->name);
+        self::assertSame('billing.charge', $operation->name);
+        self::assertSame('customerId', $identity->name);
+        self::assertNull($anonymousIdentity->name);
         self::assertSame('secret', $redact->label);
         self::assertNull($anonymousRedact->label);
     }
 
     #[Test]
-    public function supervisionAttributesRejectEmptyMetadataNames(): void
+    public function supervisionAttributesRejectEmptyOperationNames(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Trace name cannot be empty.');
+        $this->expectExceptionMessage('Operation name cannot be empty.');
 
-        new Trace('');
+        new Operation('');
     }
 
     #[Test]
-    public function supervisionAttributesRejectEmptyIdempotencyNames(): void
+    public function supervisionAttributesRejectEmptyIdentityNames(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Idempotency part name cannot be empty.');
+        $this->expectExceptionMessage('Identity name cannot be empty.');
 
-        new IdempotencyPart('');
+        new Identity('');
     }
 
     #[Test]
