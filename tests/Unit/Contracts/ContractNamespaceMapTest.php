@@ -7,10 +7,9 @@ namespace Phalanx\Tests\Unit\Contracts;
 use Phalanx\Engine\Engine;
 use Phalanx\Err\Err;
 use Phalanx\Err\Severity;
+use Phalanx\Invocation\Caps;
 use Phalanx\Invocation\Executable;
-use Phalanx\Invocation\InvocationArgs;
 use Phalanx\Invocation\InvocationCtx;
-use Phalanx\Invocation\InvocationDeps;
 use Phalanx\Phalanx;
 use Phalanx\Schema\SchemaProjectable;
 use Phalanx\Scope\Scope;
@@ -62,12 +61,11 @@ final class ContractNamespaceMapTest extends TestCase
     private function markerContracts(): array
     {
         return [
+            Caps::class,
             Engine::class,
             Err::class,
             Executable::class,
-            InvocationArgs::class,
             InvocationCtx::class,
-            InvocationDeps::class,
             SchemaProjectable::class,
             Scope::class,
         ];
