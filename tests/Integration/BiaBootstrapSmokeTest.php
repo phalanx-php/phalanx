@@ -12,6 +12,7 @@ use PHPUnit\Framework\TestCase;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RuntimeException;
+use SplFileInfo;
 
 final class BiaBootstrapSmokeTest extends TestCase
 {
@@ -78,6 +79,10 @@ final class BiaBootstrapSmokeTest extends TestCase
         );
 
         foreach ($iterator as $file) {
+            if (!$file instanceof SplFileInfo) {
+                continue;
+            }
+
             if ($file->isLink()) {
                 unlink($file->getPathname());
                 continue;

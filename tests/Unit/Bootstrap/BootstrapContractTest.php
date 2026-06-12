@@ -38,6 +38,13 @@ final class BootstrapContractTest extends TestCase
         );
 
         self::assertIsArray($composer);
-        self::assertSame(Phalanx::bootstrapContract()->toArray(), $composer['extra']['phalanx']['bootstrap'] ?? null);
+
+        $extra = $composer['extra'] ?? null;
+        self::assertIsArray($extra);
+
+        $phalanx = $extra['phalanx'] ?? null;
+        self::assertIsArray($phalanx);
+
+        self::assertSame(Phalanx::bootstrapContract()->toArray(), $phalanx['bootstrap'] ?? null);
     }
 }
