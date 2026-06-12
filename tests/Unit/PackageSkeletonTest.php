@@ -20,6 +20,7 @@ final class PackageSkeletonTest extends TestCase
         self::assertSame('^8.4', $this->composerValue($composer, 'require', 'php'));
         self::assertSame('src/', $this->composerValue($composer, 'autoload', 'psr-4', 'Phalanx\\'));
         self::assertSame('tests/', $this->composerValue($composer, 'autoload-dev', 'psr-4', 'Phalanx\\Tests\\'));
+        self::assertSame(['tests/Fixture/'], $this->composerValue($composer, 'autoload-dev', 'classmap'));
     }
 
     #[Test]
