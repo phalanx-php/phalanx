@@ -48,15 +48,15 @@ final class PackageSkeletonTest extends TestCase
     }
 
     #[Test]
-    public function publicBootstrapMetadataRemainsTheOnlyCommittedFrameworkContract(): void
+    public function composerMetadataCarriesNoHostBootstrapContract(): void
     {
         $composer = $this->composerJson();
+        $extra = $this->composerValue($composer, 'extra');
 
         self::assertSame('2.0-dev', Phalanx::VERSION);
-        self::assertSame(
-            Phalanx::bootstrapContract()->toArray(),
-            $this->composerValue($composer, 'extra', 'phalanx', 'bootstrap'),
-        );
+        self::assertIsArray($extra);
+        self::assertArrayNotHasKey('phalanx', $extra);
+        self::assertArrayNotHasKey('bia', $extra);
     }
 
     /** @return array<string, mixed> */

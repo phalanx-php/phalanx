@@ -12,7 +12,7 @@ use PHPUnit\Framework\TestCase;
 final class BootstrapContractTest extends TestCase
 {
     #[Test]
-    public function publicContractNamesTheComposerBootstrapSurface(): void
+    public function publicContractNamesTheBootstrapSurface(): void
     {
         $contract = Phalanx::bootstrapContract();
 
@@ -29,7 +29,7 @@ final class BootstrapContractTest extends TestCase
     }
 
     #[Test]
-    public function composerMetadataMatchesThePublicContract(): void
+    public function composerMetadataCarriesNoFrameworkBootstrapContract(): void
     {
         $composer = json_decode(
             (string) file_get_contents(dirname(__DIR__, 3) . '/composer.json'),
@@ -42,9 +42,7 @@ final class BootstrapContractTest extends TestCase
         $extra = $composer['extra'] ?? null;
         self::assertIsArray($extra);
 
-        $phalanx = $extra['phalanx'] ?? null;
-        self::assertIsArray($phalanx);
-
-        self::assertSame(Phalanx::bootstrapContract()->toArray(), $phalanx['bootstrap'] ?? null);
+        self::assertArrayNotHasKey('phalanx', $extra);
+        self::assertArrayNotHasKey('bia', $extra);
     }
 }

@@ -8,21 +8,4 @@ Current active source is intentionally minimal until the v2 foundation is rebuil
 
 ## Bootstrap Contract
 
-Bia can discover the v2 Phalanx bootstrap surface from Composer metadata before autoloading the package:
-
-```json
-{
-    "extra": {
-        "phalanx": {
-            "bootstrap": {
-                "contract": "2.0",
-                "entrypoint": "Phalanx\\Phalanx",
-                "package": "phalanx-php/phalanx",
-                "version": "2.0-dev"
-            }
-        }
-    }
-}
-```
-
-After Composer loads the package, the same contract is available through `Phalanx\Phalanx::bootstrapContract()`.
+Bia receives host facts through its typed runtime handoff. After Composer loads the package, the framework bootstrap contract is available through `Phalanx\Phalanx::bootstrapContract()`.
