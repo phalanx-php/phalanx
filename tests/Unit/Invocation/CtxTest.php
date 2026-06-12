@@ -129,7 +129,7 @@ final class CtxTest extends TestCase
                 return $this;
             }
 
-            public function faultsAs(callable $absorb): Scope
+            public function faultsAs(array|callable $absorb): Scope
             {
                 return $this;
             }

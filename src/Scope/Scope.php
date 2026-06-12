@@ -6,8 +6,10 @@ namespace Phalanx\Scope;
 
 use Phalanx\Err\Err;
 use Phalanx\Err\Fault;
+use Phalanx\Err\FaultBorn;
 use Phalanx\Invocation\Executable;
 use Phalanx\Mark\Mark;
+use Throwable;
 
 interface Scope
 {
@@ -80,9 +82,14 @@ interface Scope
 
     /**
      * The only userland Fault conversion surface: absorb at the dispatch
-     * site, or return the Fault to keep unwinding.
+     * site, or decline to keep unwinding. Three shapes: a literal map of
+     * throwable lineage to FaultBorn class (FQCN values only — a bare-map
+     * Err instance would construct on the hot path), a fault-built map
+     * callable whose arms may mix Err instances and FaultBorn classes, or
+     * the bare absorber callable. Map arms match chain-wide in iteration
+     * order, first match wins; an unmatched fault declines.
      *
-     * @param callable(Fault): (Err|Fault) $absorb
+     * @param array<class-string<Throwable>, class-string<FaultBorn>>|callable(Fault): (Err|Fault|array<class-string<Throwable>, Err|class-string<FaultBorn>>) $absorb
      */
-    public function faultsAs(callable $absorb): Scope;
+    public function faultsAs(array|callable $absorb): Scope;
 }

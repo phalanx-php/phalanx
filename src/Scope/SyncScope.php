@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Scope;
 
+use InvalidArgumentException;
 use Phalanx\Engine\CancelFlag;
 use Phalanx\Engine\FaultSignal;
 use Phalanx\Engine\FrameCtx;
@@ -11,6 +12,7 @@ use Phalanx\Engine\InvokeSignature;
 use Phalanx\Engine\Wiring;
 use Phalanx\Err\Err;
 use Phalanx\Err\Fault;
+use Phalanx\Err\FaultBorn;
 use Phalanx\Err\FaultEscaped;
 use Phalanx\Err\Retryable;
 use Phalanx\Err\Severity;
@@ -222,8 +224,11 @@ final class SyncScope implements Scope
         );
     }
 
-    public function faultsAs(callable $absorb): Scope
+    /** @param array<array-key, mixed>|callable(Fault): (Err|Fault|array<array-key, mixed>) $absorb */
+    public function faultsAs(array|callable $absorb): Scope
     {
+        $absorber = is_array($absorb) ? self::bareMapAbsorber($absorb) : self::deferredAbsorber($absorb);
+
         return new self(
             $this->wiring,
             $this->flag,
@@ -232,8 +237,85 @@ final class SyncScope implements Scope
             $this->attempts,
             $this->backoff,
             $this->deadline,
-            [...$this->absorbers, $absorb],
+            [...$this->absorbers, $absorber],
         );
+    }
+
+    /**
+     * A bare map exists eagerly, so its arms are validated eagerly: FQCN
+     * values only — an Err instance here would construct on the hot path.
+     *
+     * @param array<array-key, mixed> $map
+     *
+     * @return callable(Fault): (Err|Fault)
+     */
+    private static function bareMapAbsorber(array $map): callable
+    {
+        foreach ($map as $thrown => $born) {
+            if ($born instanceof Err) {
+                throw new InvalidArgumentException(sprintf(
+                    'faultsAs map arm "%s" is an Err instance; instances construct eagerly - use the fault-built callable map.',
+                    $thrown,
+                ));
+            }
+
+            if (!is_string($born) || !is_a($born, FaultBorn::class, true)) {
+                throw new InvalidArgumentException(sprintf(
+                    'faultsAs map arm "%s" must map to a FaultBorn class-string.',
+                    $thrown,
+                ));
+            }
+        }
+
+        return static fn (Fault $fault): Err|Fault => self::convertThroughMap($map, $fault);
+    }
+
+    /**
+     * One callable shape, disambiguated by what it returns: an array is a
+     * fault-built map (built only on the fault path), anything else is the
+     * bare absorber outcome.
+     *
+     * @param callable(Fault): (Err|Fault|array<array-key, mixed>) $absorb
+     *
+     * @return callable(Fault): (Err|Fault)
+     */
+    private static function deferredAbsorber(callable $absorb): callable
+    {
+        return static function (Fault $fault) use ($absorb): Err|Fault {
+            $produced = $absorb($fault);
+
+            return is_array($produced) ? self::convertThroughMap($produced, $fault) : $produced;
+        };
+    }
+
+    /**
+     * Arms match chain-wide lineage in map iteration order, first match
+     * wins; an unmatched fault declines and keeps unwinding.
+     *
+     * @param array<array-key, mixed> $map
+     */
+    private static function convertThroughMap(array $map, Fault $fault): Err|Fault
+    {
+        foreach ($map as $thrown => $born) {
+            if (!is_string($thrown) || !$fault->is($thrown)) {
+                continue;
+            }
+
+            if ($born instanceof Err) {
+                return $born;
+            }
+
+            if (is_string($born) && is_a($born, FaultBorn::class, true)) {
+                return $born::fromFault($fault);
+            }
+
+            throw new InvalidArgumentException(sprintf(
+                'faultsAs map arm "%s" must map to an Err instance or a FaultBorn class-string.',
+                $thrown,
+            ));
+        }
+
+        return $fault;
     }
 
     /**
