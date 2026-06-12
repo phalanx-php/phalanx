@@ -257,6 +257,11 @@ final class SyncScope implements Scope
         return $capsClass === null ? $work($ctx) : $work($ctx, $this->wiring->supply($capsClass, $frameScope));
     }
 
+    /**
+     * A fresh frame inherits TIME and CANCELLATION (deadline, flag chain) and
+     * the wiring — never the dispatch site's absorbers or retry budget. Those
+     * are per-dispatch narrowings; a body re-narrows for its own children.
+     */
     private function frameScope(): self
     {
         return new self(
@@ -264,10 +269,10 @@ final class SyncScope implements Scope
             new CancelFlag($this->flag),
             $this->originScope(),
             true,
-            $this->attempts,
-            $this->backoff,
+            1,
+            Backoff::none(),
             $this->deadline,
-            $this->absorbers,
+            [],
         );
     }
 
