@@ -152,11 +152,11 @@ final class PlainParent implements Executable
     }
 }
 
-/** @implements Executable<string|ChildFailed> */
+/** @implements Executable<string> */
 #[Operation('kernel.absorbing-parent')]
 final class AbsorbingParent implements Executable
 {
-    public function __invoke(Ctx $ctx, ParentCaps $caps): string|ChildFailed
+    public function __invoke(Ctx $ctx, ParentCaps $caps): string
     {
         $caps->scope->onErr(static function () use ($caps): void {
             $caps->log->events[] = 'parent-comp';

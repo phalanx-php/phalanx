@@ -116,10 +116,6 @@ final class SyncScope implements Scope
         $pendingFault = null;
 
         foreach ($work as $unit) {
-            if ($pendingFault !== null) {
-                continue;
-            }
-
             try {
                 $outcomes[] = $this->run($unit);
             } catch (FaultSignal | FaultEscaped $unwinding) {
