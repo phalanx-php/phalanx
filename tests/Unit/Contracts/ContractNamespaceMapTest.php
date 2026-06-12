@@ -12,7 +12,6 @@ use Phalanx\Invocation\Executable;
 use Phalanx\Invocation\InvocationCtx;
 use Phalanx\Phalanx;
 use Phalanx\Schema\SchemaProjectable;
-use Phalanx\Scope\Scope;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
@@ -67,7 +66,6 @@ final class ContractNamespaceMapTest extends TestCase
             Executable::class,
             InvocationCtx::class,
             SchemaProjectable::class,
-            Scope::class,
         ];
     }
 }

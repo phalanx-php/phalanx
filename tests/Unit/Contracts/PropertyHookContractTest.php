@@ -8,7 +8,6 @@ use Error;
 use Phalanx\Err\Err;
 use Phalanx\Err\Severity;
 use Phalanx\Invocation\InvocationCtx;
-use Phalanx\Scope\Scope;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
@@ -152,7 +151,7 @@ final class DeclaredSeverityErr implements Err
     }
 }
 
-final class SpikeScope implements Scope
+final class SpikeScope
 {
     private bool $cancelled = false;
 

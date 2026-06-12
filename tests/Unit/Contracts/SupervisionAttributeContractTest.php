@@ -6,7 +6,6 @@ namespace Phalanx\Tests\Unit\Contracts;
 
 use Attribute;
 use InvalidArgumentException;
-use Phalanx\Scope\Scope;
 use Phalanx\Supervision\Identity;
 use Phalanx\Supervision\Operation;
 use Phalanx\Supervision\Redact;
@@ -94,14 +93,6 @@ final class SupervisionAttributeContractTest extends TestCase
         $this->expectExceptionMessage('Redaction label cannot be empty.');
 
         new Redact('');
-    }
-
-    #[Test]
-    public function scopeRemainsBehaviorFreeUntilTheInvocationKernelOwnsExecution(): void
-    {
-        $reflection = new ReflectionClass(Scope::class);
-
-        self::assertSame([], $reflection->getMethods());
     }
 
     /**

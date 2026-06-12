@@ -12,6 +12,7 @@ use Phalanx\Invocation\InvocationCtx;
 use Phalanx\Supervision\Identity;
 use Phalanx\Supervision\Operation;
 
+/** @implements Executable<string|ChargeDeclined> */
 #[Operation('billing.charge')]
 final class ChargeCard implements Executable
 {
